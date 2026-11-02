@@ -47,6 +47,24 @@ In cad-agent, SendCutSend is a **named shop profile** (`shops: sendcutsend` in t
   supplier-neutral;
 - a project's chosen suppliers (#284) will select the profile.
 
+```mermaid
+flowchart TD
+    G["generic rules<br/>(no shop: field)"] --> Q["rules_for(shop=...)"]
+    S["shop: sendcutsend<br/>rules and shop_tables"] --> Q
+    Q --> N["no shop named:<br/>generic rules only"]
+    Q --> Y["shop named: generic +<br/>that shop's rules"]
+    Q --> E["misspelt shop:<br/>an error, not silence"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class G,S near
+    class Q here
+    class N,Y,E out
+```
+
+*How `cadagent.manufacturing.process` picks the rules a check sees. Each arrow means "feeds". A shop's rules reach a
+check only when the caller names that shop, and a shop the data file does not list raises an error.*
+
 The vendored text-to-cad `sendcutsend` skill [ref:text-to-cad] reads the same feeds for a preflight.
 
 ## A2. Materials and thicknesses
@@ -79,6 +97,22 @@ differs.*
 ## A3. Cutting
 
 From the cutting guidelines [ref:sendcutsend-sheet-cutting]:
+
+```mermaid
+flowchart TD
+    U["one flat part,<br/>one file"] --> L["fibre laser<br/>hole 0.5T · ±0.005 in"]
+    U --> W["waterjet<br/>hole 0.070 in · ±0.009 in"]
+    U --> R["router<br/>hole 0.125 in · ±0.005 in"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class U near
+    class L,W,R here
+```
+
+*SendCutSend's three cutting processes and the smallest hole and the tolerance each holds, from its cutting guidelines
+[ref:sendcutsend-sheet-cutting]. The process follows the material and thickness, not the buyer's choice.*
+
 - **Smallest hole or cut-out:**
   - laser: at least 50 % of T;
   - waterjet: 0.070 in;
@@ -96,6 +130,28 @@ From the cutting guidelines [ref:sendcutsend-sheet-cutting]:
 
 From the bending guidelines [ref:sendcutsend-bending-service] and the deformation page
 [ref:sendcutsend-bend-deformation]:
+
+```mermaid
+flowchart TD
+    C["cut: laser, waterjet<br/>or router"] --> T["tap · countersink ·<br/>deburr · tumble"]
+    T --> D["dimples"]
+    D --> B["bend"]
+    B --> F["anodise or plate"]
+    F --> H["press in PEM<br/>hardware"]
+    H --> P["powder coat, with the<br/>hardware capped"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class C near
+    class T,D,B,F,H here
+    class P out
+```
+
+*The order SendCutSend runs its processes, from its dimple, hardware and finishing pages
+[ref:sendcutsend-dimple-forming] [ref:sendcutsend-hardware-service] [ref:sendcutsend-finishing]. Each arrow means
+"comes before". Hardware goes in after anodising and plating, but before powder coat. PEM's own handbook says never to
+install after paint or powder ([`sheet-metal-joining.md`](sheet-metal-joining.md)).*
+
 - **Part and bend size:** the flat part from 0.375 × 1.5 in to 30 × 44 in. A bend is 16–44 in long, depending on the
   thickness.
 - **Angle:** at most 130°, and at least 5°. It does no hems, curls, rolls or coining.
@@ -119,27 +175,6 @@ reproduce its published 90° bend deduction within 0.005 in for 53 of its 56 ben
 from the feed's R and K matches the shop's own, except on those three stocks. (The calculator page's own worked
 example prints two different flat lengths, 17.612 and 17.765 in, for the same part.)
 
-```mermaid
-flowchart TD
-    C["cut: laser, waterjet<br/>or router"] --> T["tap · countersink ·<br/>deburr · tumble"]
-    T --> D["dimples"]
-    D --> B["bend"]
-    B --> F["anodise or plate"]
-    F --> H["press in PEM<br/>hardware"]
-    H --> P["powder coat, with the<br/>hardware capped"]
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class C near
-    class T,D,B,F,H here
-    class P out
-```
-
-*The order SendCutSend runs its processes, from its dimple, hardware and finishing pages
-[ref:sendcutsend-dimple-forming] [ref:sendcutsend-hardware-service] [ref:sendcutsend-finishing]. Each arrow means
-"comes before". Hardware goes in after anodising and plating, but before powder coat. PEM's own handbook says never to
-install after paint or powder ([`sheet-metal-joining.md`](sheet-metal-joining.md)).*
-
 ## A5. Hardware, taps, countersinks and dimples
 
 - **PEM hardware** [ref:sendcutsend-hardware-service] [ref:sendcutsend-hardware-catalog]:
@@ -150,6 +185,12 @@ install after paint or powder ([`sheet-metal-joining.md`](sheet-metal-joining.md
   - A hardware hole's centre must be at least BA/2 + N from the bend centre.
   - No hardware goes on a part with an acute bend.
   - The full analysis is on [`sheet-metal-joining.md`](sheet-metal-joining.md).
+
+<img src="../docs/img/sheet-metal/shop-hardware.svg" alt="Range chart of SendCutSend's least distances for pressed-in hardware by sheet family: hole centre to a cut edge 7.2 to 11.2 mm, to a bend line 10.4 to 14 mm, and to the next part of the same kind 10.3 to 17.5 mm" width="680">
+
+  *Drawn by `tools/process_profile_figures.py` from SendCutSend's `sendcutsend-cut-and-hardware-limits` table in
+  [`process-profiles.yaml`](process-profiles.yaml): the per-stock minimums of its specs feed, across 27 stocks.*
+
 - **Tapping** [ref:sendcutsend-tapping]:
   - sheet from 0.059 in;
   - holes drawn at the tap-drill size (M3 0.102 in, M4 0.134 in, #10-32 0.164 in);
@@ -175,6 +216,22 @@ install after paint or powder ([`sheet-metal-joining.md`](sheet-metal-joining.md
 
 Add powder build-up to slots and tab fits on both faces.
 
+```mermaid
+flowchart TD
+    A["Type II anodise<br/>0.0002–0.0009 in a side"] --> F["a slot or tab fit:<br/>add the build-up of<br/>both coated faces"]
+    Z["zinc plate<br/>about 0.0003 in a side"] --> F
+    P["powder coat<br/>0.002–0.005 in a side"] --> F
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A,Z near
+    class P out
+    class F here
+```
+
+*Finish build-up per side from SendCutSend's finish-thickness FAQ [ref:sendcutsend-finish-thickness]. Powder is ten
+times the others, so it is the one that closes a fit.*
+
 ## A7. Pricing and lead time
 
 From the pricing page [ref:sendcutsend-pricing]:
@@ -187,6 +244,9 @@ From the pricing page [ref:sendcutsend-pricing]:
 
 ## A8. Where SendCutSend's own pages disagree
 
+<details>
+<summary>Seven topics where SendCutSend's newer and older pages disagree</summary>
+
 | Topic | Newer or more authoritative | Older or conflicting |
 |---|---|---|
 | Thinnest tapped sheet | tapping page (2026): 0.059 in | blog (2023): 1/8 in |
@@ -196,6 +256,8 @@ From the pricing page [ref:sendcutsend-pricing]:
 | #10-32 nut hole | catalogue page, SS-032-1: 0.250 in | catalogue feed: 0.253 in; blog (2025): 0.252 in |
 | M3 nut hole | catalogue page, S-M3-0: 0.168 in | catalogue feed: 0.171 in |
 | Flat length in the calculator example | 17.612 in | 17.765 in on the same page |
+
+</details>
 
 The hardware feed also has rows that contradict their own SKU. SP-440-1 is labelled #6-32, FH4-M3-12 is labelled
 M4 × 0.7, and SO4-440-12 is labelled #6-32. The catalogue page prints "A236" where PEM's A286 is meant.
@@ -208,6 +270,9 @@ The rest of this page is the generic sweep drafted in #119, read on 2026-10-31. 
 
 ## B1. Minimum inside bend radius
 
+<details>
+<summary>The six bend-radius rules, by source and process</summary>
+
 | Rule | Who | Process |
 |---|---|---|
 | R ≥ T | Boothroyd Dewhurst checklist [ref:dfma-dfm-checklist]; Hubs [ref:hubs-sheet-metal]; Greg Paulsen [ref:paulsen-2017-machine-design-sheet-metal] | press brake, generic |
@@ -217,7 +282,26 @@ The rest of this page is the generic sweep drafted in #119, read on 2026-10-31. 
 | Standard radii 0.030, 0.060, 0.090, 0.120 in; use one radius for every bend | Protolabs [ref:protolabs-sheet-metal] | press brake |
 | The radius is set by the tooling and cannot be chosen. For its metals, R/T runs from 0.36 (5052, 0.090 in) to 2.67 (304, 0.030 in) [derived from `bend_radius` / `thickness`] | SendCutSend [ref:sendcutsend-ordering-guide], [ref:sendcutsend-specs] | air bending |
 
+</details>
+
 **Agree.** R ≥ T is the common generic default, and everyone says the material and the tooling decide.
+
+```mermaid
+flowchart TD
+    Q["which inside radius?"] --> G["the caller gives R"]
+    Q --> S["the named shop has a<br/>row for this stock:<br/>its tooling's R"]
+    Q --> N["no row: the largest<br/>generic minimum<br/>(T for 5052, mild steel)"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Q near
+    class G,S here
+    class N out
+```
+
+*The order `cadagent.manufacturing.sheet_metal.bend` reads a radius in: a given one, then the shop's row, then the
+strictest generic rule. A shop's K and shortest flange hold only for its own radius, so a different R drops to the
+generic rules for those too.*
 
 **Disagree.**
 - SendCutSend's own tooling bends at R < T for half its 5052 SKUs, four of five brass and copper SKUs and seven of
@@ -251,6 +335,24 @@ The rest of this page is the generic sweep drafted in #119, read on 2026-10-31. 
 
 **Disagree.** Hubs and OSH Cut put K higher for harder metals. SendCutSend's measured values run the other way:
 0.37–0.48 for 5052 against 0.34–0.38 for 304 [derived]. Use the shop's measured K, or a test bend, over any rule.
+
+```mermaid
+flowchart TD
+    I["R, K, T and<br/>the angle A"] --> BA["BA = π(R + K·T)·A/180"]
+    BA --> BD["BD = 2·OSSB − BA"]
+    BD --> F["flat length =<br/>outside flanges − BD"]
+    F --> C["the cut part"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class I near
+    class BA,BD,F here
+    class C out
+```
+
+*From the bend's R, K and T to the flat pattern the laser cuts (SOLIDWORKS help [ref:solidworks-k-factor];
+SendCutSend's calculator [ref:sendcutsend-bending-calculator]). OSSB is the outside setback, (R + T)·tan(A/2). A wrong K
+moves every flat length by the change in BA.*
 
 **Why it matters** [derived]: a 90° bend in 1.5 mm sheet at R = 1.5 mm has BA = 3.13 mm at K = 0.33 and 3.53 mm at
 K = 0.5. That is 0.4 mm per bend, more than the cut tolerance, from the default alone.
@@ -300,7 +402,17 @@ fails if the committed chart differs.*
 
 **Hole to hole.** ≥ 2T (Hubs; Century Tywood for punched holes) against ≥ 6t (Greg Paulsen).
 
+<img src="../docs/img/research/process-sheet-holes.svg" alt="Range chart of sheet-metal bend radius, smallest hole, hole to edge, hole to hole and hem return at 1.5 mm thickness, by source" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in
+[`process-profiles.yaml`](process-profiles.yaml), at a sheet thickness of 1.5 mm. A test redraws it and fails if the
+committed chart differs.*
+
+
 **Hole to bend.** Every source uses a different datum:
+
+<details>
+<summary>The six hole-to-bend rules and the datum each measures from</summary>
 
 | Rule | Datum | Who |
 |---|---|---|
@@ -311,10 +423,15 @@ fails if the committed chart differs.*
 | features within about 4T are at risk | "of a bend" | Protolabs [ref:protolabs-sheet-metal] |
 | hardware 0.41–0.65 in centre to bend line by thickness; countersinks half the die width from the bend centre | bend line or bend centre | SendCutSend [ref:sendcutsend-specs], [ref:sendcutsend-countersink] |
 
+</details>
+
 The vendored text-to-cad DFM checklist already says to state the convention (tangent, centreline or edge) before
 comparing [ref:text-to-cad]. These sources show why.
 
 ## B5. Bend relief and corner relief
+
+<details>
+<summary>The five relief rules, by source</summary>
 
 | Rule | Who |
 |---|---|
@@ -324,12 +441,29 @@ comparing [ref:text-to-cad]. These sources show why.
 | Corner gap between flanges ≥ 0.015 in | SendCutSend [ref:sendcutsend-bend-relief] |
 | Reliefs discussed, no numbers | Protolabs [ref:protolabs-sheet-metal] |
 
+</details>
+
 - SendCutSend's specs file agrees with its own article: its `bend_relief_depth` equals T + R + 0.020 in for the
   SKUs checked (0.030 in mild steel, 0.063 in 5052, 0.100 in 304) [derived].
 - Davis adds two reasons for reliefs: a relief keeps the part from slipping in the tooling, and a relief cut with
   curves, not sharp inside corners, stops cracks from growing under vibration.
 
 **Disagree** on width: T/2 (SendCutSend) against T (Hubs, Paulsen).
+
+```mermaid
+flowchart TD
+    B["a bend that stops<br/>short of the edge"] --> D["relief depth past the<br/>bend line: T + R<br/>(SendCutSend + 0.020 in)"]
+    B --> W["relief width: T/2<br/>(SendCutSend) or T<br/>(Hubs, Paulsen)"]
+    B --> C["corner gap between<br/>flanges: 0.015 in"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B near
+    class D,C here
+    class W out
+```
+
+*The three relief sizes of §B5 for one bend. The width is the one the sources disagree on, so it is drawn in orange.*
 
 ## B6. Hems, curls, jogs and countersinks
 
@@ -342,6 +476,22 @@ comparing [ref:text-to-cad]. These sources show why.
 - Not every shop hems. SendCutSend bends to 120–130° at most [ref:sendcutsend-ordering-guide]. Xometry quotes hems
   and curls by hand [ref:xometry-manufacturing-standards].
 - **Disagree** on the return: 6T (Protolabs) against 4t (Paulsen).
+
+```mermaid
+flowchart TD
+    H["a hem: does the<br/>shop form one?"] --> O["open hem: inside<br/>dia ≥ T, return 4–6T"]
+    H --> T["tear-drop: opening<br/>≥ T/4, return ≥ 4T"]
+    H --> N["SendCutSend: no,<br/>130° at most"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class H near
+    class O,T here
+    class N out
+```
+
+*The hem rules above, by kind (Protolabs [ref:protolabs-sheet-metal], Paulsen
+[ref:paulsen-2017-machine-design-sheet-metal]). A shop that only air-bends cannot form one, so check the shop first.*
 
 **Curls** (Greg Paulsen): outside radius ≥ 2t; holes at least the curl radius plus t away. Under the same heading the
 article gives bends at least 6t plus the curl radius away.
@@ -363,17 +513,18 @@ article gives bends at least 6t plus the curl radius away.
 This section moved to [`sheet-metal-joining.md`](sheet-metal-joining.md), which reads PEM's handbook and bulletins
 in full.
 
-One finding from the first sweep stays here: "stainless nut for stainless sheet" is the wrong rule. Read the sheet's
-hardness against the fastener's limit instead:
-- SendCutSend lists 304 at HB 123 and 316 at HB 149 [ref:sendcutsend-specs].
-- A CLS nut is rated to HRB 70 (HB 125), so it sits at its limit in 304 and is over it in 316.
-- An SP nut covers both [ref:pem-catalog-self-clinching-nuts].
+One finding from the first sweep stays here: "a stainless nut is fine in stainless sheet" is the wrong rule.
+- PEM: only its SP and SMPP nuts go into stainless sheet, and 300-series stainless fasteners such as CLS never do,
+  because they are not hard enough [ref:pem-bulletin-cl]. Its handbook gives the reason: the fastener must be about
+  20 HRB harder than the sheet [ref:pem-handbook].
+- SendCutSend lists 304 at HB 123 and 316 at HB 149 [ref:sendcutsend-specs]. Against CLS's rating of HRB 70 (HB 125)
+  that leaves no margin in 304 and none at all in 316.
+- An SP nut, rated to HRB 90, covers both [ref:pem-catalog-self-clinching-nuts].
 
-<img src="../docs/img/research/process-sheet-holes.svg" alt="Range chart of sheet-metal bend radius, smallest hole, hole to edge, hole to hole and hem return at 1.5 mm thickness, by source" width="680">
+<img src="../docs/img/sheet-metal/clinch-hardness.svg" alt="Range chart of the hardest sheet each PEM fastener material takes: aluminium parts up to HRB 50, 300-series stainless up to HRB 70, hardened steel up to HRB 80, hardened stainless 88 to 92" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in
-[`process-profiles.yaml`](process-profiles.yaml), at a sheet thickness of 1.5 mm. A test redraws it and fails if the
-committed chart differs.*
+*Drawn by `tools/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
+[`process-profiles.yaml`](process-profiles.yaml). 304 at HB 123 sits just under the 300-series line.*
 
 ## B8. Tabs, slots and notches
 
@@ -393,6 +544,23 @@ Fictiv mean a tab that locates in a slot in another part.
     per side for laser, 0.15–0.2 mm for waterjet. Slot corner radius 0.1–0.2 mm (laser) or 0.2–0.3 mm (waterjet).
     At least 2T from the sheet edge and 1.5T from the bend tangent; tabs 3–6T apart; 2–4 tabs per joint
     [ref:fictiv-tabs-slots].
+```mermaid
+flowchart TD
+    T["tab: width w,<br/>thickness t"] --> SW["slot width =<br/>w + 2 × cut tolerance"]
+    T --> SH["slot height = t + its<br/>plus tolerance +<br/>2 × cut tolerance"]
+    SW --> P["+ 0.002–0.005 in per<br/>powder-coated face"]
+    SH --> P
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class T near
+    class SW,SH here
+    class P out
+```
+
+*SendCutSend's tab-and-slot sizing [ref:sendcutsend-tab-slot]: the slot grows by each part's cut tolerance, and by the
+powder on every coated face.*
+
 - **Disagree** on tab length: 1.0–1.2T (Willson) against 0.5–0.75 of the mating depth (SendCutSend). They may
   measure different things; neither defines the datum.
 
@@ -423,6 +591,9 @@ Fictiv mean a tab that locates in a slot in another part.
 
 ## B11. Tolerances by process
 
+<details>
+<summary>The tolerances by process, from five shops and one standard</summary>
+
 | Process | Tolerance | Who |
 |---|---|---|
 | Cut, one surface | ±0.005 in under 0.13 in stock, ±0.015 in above | Protolabs |
@@ -437,8 +608,28 @@ Fictiv mean a tab that locates in a slot in another part.
 | Flatness | grows with length; e.g. 0.005 in up to 1 in | Century Tywood |
 | General tolerances | ISO 2768-1 applies to parts formed from sheet metal (scope only; content not read) | [ref:iso-2768-1] |
 
+</details>
+
 **Agree.** Protolabs, Xometry and SendCutSend all give bend angle ±1°. Tolerance grows with each bend between two features, so dimension
 critical features from one flat face.
+
+```mermaid
+flowchart TD
+    F["two features on<br/>one flat face"] --> A["± 0.005 in<br/>(the cut alone)"]
+    F2["across 2 bends"] --> B["± 0.015–0.025 in"]
+    F3["across 3 or more<br/>bends"] --> C["± 0.030–0.040 in"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class F,F2,F3 near
+    class A here
+    class B,C out
+```
+
+*Protolabs' tolerance between two features, by the bends between them: the ranges are from its design guidelines
+[ref:protolabs-sheet-metal], and its one-pager gives the low ends, ±0.015 and ±0.030 in
+[ref:protolabs-sheet-metal-tolerances]. The
+band grows with every bend between them, so a hole pattern that must line up belongs on one face.*
 
 ## B12. What this changes in cad-agent
 
@@ -449,14 +640,35 @@ generic K table and the strictest generic rule. With #283 the YAML adds four thi
 - its per-stock cutting and hardware limits;
 - supplier-neutral rules for clinch hardware and blind rivets.
 
+```mermaid
+flowchart TD
+    Y["process-profiles.yaml<br/>rules + shop_tables"] --> P["manufacturing.process<br/>rules_for · limits"]
+    P --> B["sheet_metal.bend<br/>and flat_length"]
+    P --> D["the sheet DFM check<br/>(generic rules only)"]
+    P --> J["the clinch and rivet<br/>checks (PR B)"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class Y near
+    class P,B,D here
+    class J out
+```
+
+*Where the rules go. Each arrow means "read by". The orange box is the next step, not yet merged.*
+
+<details>
+<summary>The six planned checks: what the sources say and where each stands</summary>
+
 | Planned check | What the sources say | Status |
 |---|---|---|
 | Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first |
 | Hole to bend | Five rules on four datums (§B4); SendCutSend: half the die width | Each rule carries its `datum`; a check must state one |
 | R ≥ T | Fails SendCutSend's own 5052 radii; unsafe for 6061 and 2024 | `sheet_metal.bend` reads the shop's R |
 | Bend relief | SendCutSend's feed gives a depth per stock | In `shop_tables` (`relief_depth`) |
-| Clinch hardware near an edge or a bend | PEM: C/L to edge from the outside of the bend radius; SendCutSend: BA/2 + N from the bend centre | Rules `sm-clinch-*`; the check is #283's PR B |
+| Clinch hardware near an edge or a bend | PEM: C/L to edge from the outside of the bend radius; SendCutSend: BA/2 + N from the bend centre. On one datum they are the same rule, since the outside of the radius lies BA/2 from the bend centre on the flat | Rules `sm-clinch-*`, both written from the bend centre line; the check is #283's PR B |
 | Rivet edge distance and pitch | 2D edge (POP, FAA, NASA nominal), 1.5D minimum; 3D pitch (FAA), 4D nominal | Rules `sm-rivet-*`; the check is #283's PR B |
+
+</details>
 
 ## B13. Open-source tools for bent parts
 
@@ -465,6 +677,9 @@ The adopt, wrap, borrow or build decision for every tool, fastener libraries inc
 unreleased, and FreeCAD SheetMetal is at 0.8.26. The table below gives the bent-part detail from `gh api` and the
 READMEs on 2026-10-31. build123d and FreeCAD SheetMetal were checked twice (registry entries);
 the other rows come from a separate survey on the same day and were not re-opened.
+
+<details>
+<summary>The eight bent-part projects: licence, activity, what each does, and the decision</summary>
 
 | Project | Licence | Activity | What it does | Use |
 |---|---|---|---|---|
@@ -476,6 +691,8 @@ the other rows come from a separate survey on the same day and were not re-opene
 | [earthtojake/text-to-cad](https://github.com/earthtojake/text-to-cad) `dfm`, `sendcutsend` skills | MIT | vendored | A sheet-metal review checklist; a SendCutSend preflight against its JSON. Its unfold proposal (#614) is still open | Already vendored; **reference** |
 | [richiewillmott/FreeShape](https://github.com/richiewillmott/FreeShape) | GPL-3.0 | pushed 2026-10-30 | Desktop app: flanges, K-factor flat pattern, DXF | Skip (an app, GPL) |
 | [alexneufeld/YouCanNotUnfold](https://github.com/alexneufeld/YouCanNotUnfold), [ulrich1a/sheet_ufo](https://github.com/ulrich1a/sheet_ufo) | LGPL-2.1; GPL-2.0+ | merged into SheetMetal; 2018 | Earlier FreeCAD unfolders | Skip (superseded) |
+
+</details>
 
 No open-source tool measures a sheet-metal part against DFM rules (hole to bend, flange length, radius against a
 shop table). That checker, on top of build123d's face map and the cited rules above, is the real gap. The small

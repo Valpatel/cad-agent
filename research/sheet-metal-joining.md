@@ -207,6 +207,9 @@ flowchart TD
 **Loose parts, from a distributor** [ref:bossard-pem-prices]. Bossard Americas' web shop, read 2026-11-01. US dollars
 each at 1–249 / 1000–4999, and the stock count:
 
+<details>
+<summary>Nine common PEM parts at Bossard: price at 1–249 and 1000–4999, and stock</summary>
+
 | Part | 1–249 | 1000–4999 | In stock |
 |---|---|---|---|
 | S-M3-1ZI (steel nut) | $0.0845 | $0.0672 | 421 261 |
@@ -218,6 +221,8 @@ each at 1–249 / 1000–4999, and the stock count:
 | FH-832-8ZI | $0.0867 | $0.0689 | 157 461 |
 | SO-M3-6ZI (steel standoff) | $0.2134 | $0.1698 | 12 737 |
 | BSO-M3-6ZI (blind standoff) | $0.5060 | $0.4025 | 19 801 |
+
+</details>
 
 From those 40 pages [derived]:
 - zinc-plated steel S nuts and FH studs are the cheapest, about $0.07–0.09 for M3–M5 and #4–#10, and the most stocked;
@@ -248,13 +253,64 @@ SO4) or where the part must not rust.
 The specs feed, the ordering feed, the hardware catalogue page [ref:sendcutsend-hardware-catalog] and PEM's bulletins
 were compared part by part [derived]:
 
-- **Hole sizes.** The ordering feed's hole is SendCutSend's own: it redraws every hardware hole to that size.
-  - Against the catalogue page's H, the feed is equal for 24 parts, 0.001 in larger for 67, 0.003 in for 51 and
-    0.005 in for 3.
-  - For 13 of 21 common nuts, studs and standoffs, the feed's hole is above PEM's band (nominal +0.003 in). Examples:
-    S-M3-0 0.171 in against PEM's 4.22 mm (0.166 in), and FH-M3-10 0.124 in against 3.0 mm (0.118 in).
-  - SendCutSend cuts with a laser, and the feed may allow for that. When ordering from it, let it resize the hole.
-    For a hole made elsewhere, use PEM's value.
+```mermaid
+flowchart TD
+    P["PEM bulletin:<br/>nominal hole,<br/>+0.003 in / -0"] --> C["catalogue page H:<br/>PEM's value, or up<br/>to 0.002 in over"]
+    C --> D["feed hole_diameter:<br/>0-0.005 in over H"]
+    D --> R["feed resize: the same<br/>for steel parts; the<br/>steel part's hole for<br/>75 stainless parts"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P near
+    class C,D here
+    class R out
+```
+
+- **Hole sizes.** The ordering feed has two hole fields per part, `hole_diameter` and `additional_specs.resize`, and
+  does not say which one SendCutSend cuts to.
+  - Against the catalogue page's H, `hole_diameter` is equal for 24 parts, 0.001 in larger for 67, 0.003 in for 51
+    and 0.005 in for 3.
+  - For the 68 steel parts (S, SS, FH, SO) the two fields agree. For 75 of the 80 stainless parts (F, FH4, SO4, SP)
+    `resize` differs, and seems to repeat the steel part of the same thread. F-M4-1 lists `resize` 0.213 in, the S-M4
+    nut's hole, though the flush nut needs 0.290 in (its `hole_diameter` and the page's H).
+  - For 13 of 21 common steel nuts, studs and standoffs, the feed's hole is above PEM's band (nominal +0.003 in), by
+    up to 0.006 in. Examples: S-M3-0 0.171 in against PEM's 4.22 mm (0.166 in), and FH-M3-10 0.124 in against 3.0 mm
+    (0.118 in). The 21 parts are listed below.
+  - Until SendCutSend says which field it cuts to, draw the catalogue page's H, which matches PEM's hole, and check
+    the hole SendCutSend's quote shows. Do not rely on `resize` for stainless or flush parts.
+
+<details>
+<summary>The 21 common parts compared: PEM's hole, the catalogue page's H and the feed's hole_diameter</summary>
+
+| Part | PEM nominal (in) | Page H (in) | Feed (in) | Feed over PEM (in) |
+|---|---|---|---|---|
+| S-M3-0 | 0.1661 | 0.168 | 0.171 | 0.0049 |
+| S-M4-0 | 0.2130 | 0.212 | 0.213 | 0.0000 |
+| SS-M5-0 | 0.2500 | 0.251 | 0.254 | 0.0040 |
+| S-M6-0 | 0.3445 | 0.345 | 0.348 | 0.0035 |
+| S-440-1 | 0.166 | 0.166 | 0.169 | 0.003 |
+| S-632-1 | 0.1875 | 0.187 | 0.190 | 0.0025 |
+| S-832-1 | 0.213 | 0.213 | 0.216 | 0.003 |
+| SS-032-1 | 0.250 | 0.250 | 0.253 | 0.003 |
+| S-0420-1 | 0.344 | 0.344 | 0.347 | 0.003 |
+| FH-M3-10 | 0.1181 | 0.121 | 0.124 | 0.0059 |
+| FH-M4-10 | 0.1575 | 0.159 | 0.162 | 0.0045 |
+| FH-M5-10 | 0.1969 | 0.198 | 0.201 | 0.0041 |
+| FH-M6-12 | 0.2362 | 0.236 | 0.239 | 0.0028 |
+| FH-440-6 | 0.111 | 0.113 | 0.116 | 0.005 |
+| FH-632-8 | 0.137 | 0.139 | 0.142 | 0.005 |
+| FH-832-8 | 0.163 | 0.165 | 0.168 | 0.005 |
+| FH-032-8 | 0.189 | 0.191 | 0.194 | 0.005 |
+| SO-M3-6 | 0.1661 | 0.166 | 0.171 | 0.0049 |
+| SO-M4-6 | 0.2811 | 0.281 | 0.282 | 0.0009 |
+| SO-440-12 | 0.166 | 0.168 | 0.171 | 0.005 |
+| SO-632-8 | 0.213 | 0.215 | 0.218 | 0.005 |
+
+PEM's metric holes are converted from mm (4.22 mm = 0.1661 in). Over 0.003 in: S-M3-0, SS-M5-0, S-M6-0, FH-M3-10,
+FH-M4-10, FH-M5-10, the four inch FH studs, SO-M3-6, SO-440-12 and SO-632-8 [derived].
+
+</details>
+
 - **Thread codes.** Five feed entries carry the wrong thread code. For example, SP-440-1 is listed as 6-32 (its title
   says 4-40), and FH4-M3-12 as M4.
 - **Spacing.**
@@ -343,7 +399,7 @@ if the committed file differs.*
 | Pitch, two rows | 4D, rows 4D apart | [ref:faa-ac-43-13-1b] Fig. 4-5 |
 | Pitch, nominal | 4D | [ref:nasa-1228] pp. 21, 34 |
 | Rivet size | D ≈ 3 × the thicker sheet | [ref:faa-ac-43-13-1b] 4-57c |
-| Sheet for the bearing allowables | t ≥ 0.18D; take care below 0.25D | [ref:mil-hdbk-5j] 8.1.2.1, 8.1.3 |
+| Sheet for the bearing allowables | t ≥ 0.18D (solid rivets, 8.1.2.1); blind rivets: take care below 0.25D (8.1.3) | [ref:mil-hdbk-5j] |
 | Allowables hold | only within the maker's grip and hole, and e/D ≥ 2 | [ref:mil-hdbk-5j] 8.1.3 |
 | Loading | rivets in shear, not in tension | [ref:faa-ac-43-13-1b] 4-57g |
 | Mixing | no bolts and rivets sharing one load | [ref:nasa-1228] p. 21 |
@@ -372,7 +428,8 @@ flowchart TD
 - MIL-HDBK-5J tabulates the bearing strength Fbru by edge distance (e/D 1.5 and 2.0), so the bearing check also
   covers the sheet tearing out to the edge [ref:mil-hdbk-5j].
 - Two of its values serve as test vectors [ref:mil-hdbk-5j]:
-  - single shear of a 1/8 in 5056 rivet: 28 ksi × π/4 × 0.1285² = **363 lbf** (Table 8.1.2(b));
+  - single shear of a 1/8 in 5056 **solid** rivet: 28 ksi × π/4 × 0.1285² = **363 lbf** (Table 8.1.2(b)). It tests
+    the equation; a blind rivet's shear is its maker's rating;
   - bearing at 100 ksi, 1/8 in, t = 0.040 in: 100 ksi × 0.1285 × 0.040 = **514 lbf** (Table 8.1.2.1(a)).
 
 **Worked example** [derived]: two 1.6 mm (0.063 in) 5052-H32 sheets in a single lap. One row of 1/8 in aluminium
@@ -422,6 +479,9 @@ flowchart TD
 
 **Rivet prices** [ref:mcmaster-blind-rivets], read 2026-11-01, dome head:
 
+<details>
+<summary>Five 1/8 in McMaster-Carr rivets: body, grip, pack and price each</summary>
+
 | Part | Body / mandrel | Size and grip | Pack | Price | Each [derived] |
 |---|---|---|---|---|---|
 | 97447A015 | aluminium / aluminium | 1/8 in, 0.063–0.125 in | 250 | $10.78 | $0.043 |
@@ -430,9 +490,14 @@ flowchart TD
 | 97519A015 | steel / steel | 1/8 in | 250 | $13.83 | $0.055 |
 | 97525A415 | 18-8 / 18-8 | 1/8 in, 0.063–0.125 in | 100 | $11.54 | $0.115 |
 
+</details>
+
 A riveted seam therefore costs a few cents a rivet, against about $0.77 for each part SendCutSend presses in.
 
 ## 10. Where the sources disagree
+
+<details>
+<summary>Eight rivet and clinch topics where the sources disagree, and what is kept</summary>
 
 | Topic | Spread | Kept as |
 |---|---|---|
@@ -443,7 +508,9 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
 | HB for PEM's aluminium limit HRB 50 | HB 82 (bulletins CL, FH, SO) or HB 89 (handbook, CL table) | HRB 50 governs |
 | HB for PEM's hardened-stainless limit HRB 92 | HB 195 (FH bulletin) or HB 202 (handbook) | HRB governs |
 | Stainless clinch parts in aluminium | PEM tests them in 5052; a SendCutSend post says no | PEM for the rule; the shop's limit in its profile |
-| Hole for a clinch part | PEM nominal +0.08 mm; SendCutSend's feed up to 0.15 mm over | PEM generically; the shop's own value when it cuts the hole |
+| Hole for a clinch part | PEM nominal +0.08 mm; SendCutSend's feed up to 0.15 mm over | PEM's hole, which the catalogue page's H matches; confirm the feed's with the shop |
+
+</details>
 
 ## 11. What this changes in cad-agent
 

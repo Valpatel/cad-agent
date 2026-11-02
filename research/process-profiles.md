@@ -483,9 +483,9 @@ The rows here are the profile values, with the same source ids. A shop's own tab
 publishes its tooling per stock size, and the YAML holds 23 of its bend rows (`shop_tables`): 5052, mild steel, 304 and
 316 stainless, and G90. Its own process limits are rules marked `shop: sendcutsend` (below).
 
-<img src="../docs/img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052 aluminium and mild-steel sheet it stocks, with the K-factor in each label: 0.61 to 3.17 mm, not simply the thickness" width="680">
+<img src="../docs/img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052, mild steel, 304, 316 and G90 stock it bends, with the K-factor in each label: from 0.61 to 4.75 mm, not simply the thickness" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the SendCutSend tooling table in [`process-profiles.yaml`](process-profiles.yaml) (`shop_tables`), read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/process_profile_figures.py` from SendCutSend's bend tables in [`process-profiles.yaml`](process-profiles.yaml) (`shop_tables`), read 2026-10-31 and 2026-11-01. A test redraws it and fails if the committed chart differs.*
 
 ### Bend radius and K-factor
 
@@ -568,6 +568,9 @@ These are SendCutSend's process limits, not design advice. Each is a rule with `
 (`shop="sendcutsend"`), so the generic rules stay supplier-neutral. A project's chosen suppliers (#284) will pick the
 shop.
 
+<details>
+<summary>The eleven SendCutSend limits: cutting, bending, hardware, taps, countersinks and finish</summary>
+
 | Limit | Value | Source |
 |---|---|---|
 | Smallest laser-cut hole | ≥ 0.5T (waterjet 1.78 mm, router 3.18 mm); its specs file gives smaller per stock | [cutting guidelines][sendcutsend-sheet-cutting] |
@@ -582,13 +585,25 @@ shop.
 | Countersink depth | ≤ 60 % of T; aluminium and plastics from 3.18 mm only | [countersinking guidelines][sendcutsend-countersinking-service] |
 | Finish build-up per side | powder 0.051–0.127 mm; Type II anodise 0.005–0.023 mm | [finish thickness FAQ][sendcutsend-finish-thickness] |
 
+</details>
+
 A further table in the YAML gives, per stock, the thickness tolerance, the smallest hole, the narrowest bridge, the
 hole-to-edge distance and the least hardware distances (`sendcutsend-cut-and-hardware-limits`).
+
+<img src="../docs/img/sheet-metal/shop-hardware.svg" alt="Range chart of SendCutSend's least distances for pressed-in hardware by sheet family: hole centre to a cut edge 7.2 to 11.2 mm, to a bend line 10.4 to 14 mm, and to the next part of the same kind 10.3 to 17.5 mm" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from that `sendcutsend-cut-and-hardware-limits` table: the least
+hardware distances by sheet family, across 27 stocks. A test redraws it and fails if the committed file differs.*
 
 ### Clinch hardware and blind rivets
 
 These rules apply to any shop. The research and the per-size data are on
 [`sheet-metal-joining.md`](sheet-metal-joining.md).
+
+<img src="../docs/img/sheet-metal/rivet-spacing.svg" alt="Range chart of rivet edge distance and pitch in rivet diameters by source: edge distance at least 2 D from POP, the FAA and MIL-HDBK-5J, 2 D nominal and 1.5 D minimum from NASA; pitch at least 3 D for a single row (FAA) and 4 D for a double row (FAA) and nominal (NASA)" width="680">
+
+*Diagram drawn by `tools/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch`
+rules below, divided by the rivet diameter. A test redraws it and fails if the committed file differs.*
 
 | Rule | Value | Source |
 |---|---|---|
@@ -599,7 +614,7 @@ These rules apply to any shop. The research and the per-size data are on
 | Spacing | ≥ C/L-to-edge + half the second part's hole | [Handbook][pem-handbook] |
 | Rivet edge distance | ≥ 2D (POP, FAA); 2D nominal and 1.5D minimum (NASA); 2D for the allowables to hold (MIL-HDBK-5J) | [POP catalogue][pop-rivet-catalog]; [FAA AC 43.13-1B][faa-ac-43-13-1b]; Richard T. Barrett, [NASA RP-1228][nasa-1228]; [MIL-HDBK-5J][mil-hdbk-5j] |
 | Rivet pitch | ≥ 3D single row (FAA); 4D nominal (NASA; FAA double row) | [FAA AC 43.13-1B][faa-ac-43-13-1b]; [NASA RP-1228][nasa-1228] |
-| Sheet for the bearing allowables | t ≥ 0.18D | [MIL-HDBK-5J][mil-hdbk-5j] |
+| Sheet for the bearing allowables | t ≥ 0.18D (solid rivets; blind-rivet tables warn below 0.25D) | [MIL-HDBK-5J][mil-hdbk-5j] |
 | Rivet length | grip + D | [GESIPA][gesipa-rivet-length] |
 
 ## 8. CNC machining

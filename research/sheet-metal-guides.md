@@ -34,6 +34,9 @@ flowchart TD
     class P,C,K out
 ```
 
+<details>
+<summary>Each topic's primary source, what backs it up, and why it leads</summary>
+
 | Topic | Primary source | Then | Why this one leads |
 |---|---|---|---|
 | Bend radius, K-factor, minimum flange, relief (for a named shop) | The shop's own data. For SendCutSend: its specification feed [ref:sendcutsend-specs] and bending guidelines [ref:sendcutsend-bending-service] | Protolabs guidelines [ref:protolabs-sheet-metal]; DIN 6935 [ref:din-6935] for the steel radius floor | Bend results depend on the shop's tooling, so the shop's numbers are what gets checked when the order is placed. Standards give only the material limit. |
@@ -45,6 +48,8 @@ flowchart TD
 | Rivet edge distance and pitch | FAA AC 43.13-1B [ref:faa-ac-43-13-1b] and NASA RP-1228 [ref:nasa-1228] | POP [ref:pop-rivet-catalog] | Both are US government works, free to quote, and they agree on 2D for edge distance. FAA also says where blind rivets must not be used. |
 | Joint strength: shear, bearing, tear-out, pull-out | NASA RP-1228 [ref:nasa-1228] for the method; makers' tables for the capacities | MIL-HDBK-5J [ref:mil-hdbk-5j] for blind-rivet allowables and their validity limits | The only free, licence-clean source that gives both the formulas and the spacing rules. |
 | Galvanic pairing | MIL-STD-889C [ref:mil-std-889c] | PEM's finish tech sheet [ref:pem-tech-sheet-finish]; the POP galvanic chart [ref:pop-rivet-catalog] | It is public, and it says which way round a fastener and sheet pair may go. Its successor, 889D, is unread. |
+
+</details>
 
 ## How the guides were rated
 
@@ -59,12 +64,29 @@ Each guide's **authority** is one of:
 A maker or a government source outranks a shop's rule of thumb on the physics of the part. A shop outranks everyone on
 what that shop's machines can do.
 
+```mermaid
+flowchart TD
+    M["maker: the part's own<br/>physics (PEM, POP)"] --> R["a rule in cad-agent,<br/>with its source"]
+    G["government: free to<br/>quote (FAA, NASA, DoD)"] --> R
+    S["shop: what its own<br/>machines can do"] --> R
+    R --> C["a check names the rule;<br/>a paid standard is<br/>cited by number only"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class M,G,S near
+    class R here
+    class C out
+```
+
 The **terms** column says how cad-agent may use each guide:
 - *cite* means summarise it and cite it as facts with page references, but do not reproduce it;
 - *public* means a US government work;
 - *by number* means a paid standard, cited by number and title only.
 
 ## 1. Sheet-metal design guides
+
+<details>
+<summary>The 16 sheet-metal guides compared: authority, coverage, terms, date and whether each was read</summary>
 
 | Guide | Authority | Covers | Terms | Date | Read |
 |---|---|---|---|---|---|
@@ -85,12 +107,17 @@ The **terms** column says how cad-agent may use each guide:
 | FAA AC 43.13-1B, chapter 4 [ref:faa-ac-43-13-1b] | Government | Bend allowance and setback for aircraft sheet | public | 1998, Change 1 2001 | yes |
 | DIN 6935 [ref:din-6935] | Standard | Cold bending of flat steel: least radius and the compensation value | by number | 2011 | catalogue page only |
 
+</details>
+
 **Choice.** A named shop's own data comes first: for SendCutSend, its feed and guidelines. The generic default when no
 shop is chosen is Protolabs, cross-checked against OSH Cut and The Fabricator. The Protolabs one-pager sets the tolerances.
 SendCutSend's figures sit in `research/process-profiles.yaml` as a named shop profile. A project's `style.suppliers`
 (cad-agent#284) can select it later, and the generic rules stay supplier-neutral.
 
 ## 2. Self-clinching hardware (PEM and its equivalents)
+
+<details>
+<summary>The 11 clinch-hardware guides compared</summary>
 
 | Guide | Authority | Covers | Terms | Date | Read |
 |---|---|---|---|---|---|
@@ -106,13 +133,24 @@ SendCutSend's figures sit in `research/process-profiles.yaml` as a named shop pr
 | SendCutSend hardware guidelines, catalogue and PEM posts [ref:sendcutsend-hardware-service] [ref:sendcutsend-hardware-catalog] [ref:sendcutsend-pem-guide] | Shop | Which 151 hardware SKUs it installs, in which sheet, with hole, edge, bend and spacing limits and unit prices | cite | 2024–2026 | yes |
 | Protolabs and Protocase hardware notes [ref:protolabs-sheet-metal] [ref:protocase-design-resources] | Shop | Both defer to PEM | cite | — | yes |
 
+</details>
+
 **Choice.** The PEM handbook and bulletins are primary for every clinch rule. SendCutSend's catalogue is primary only for
 what it will install, and where; its K/N values per sheet are sometimes stricter than PEM's, and then the stricter one
 applies. PEM's terms allow personal, non-commercial use and forbid republishing. So cad-agent records the rules and a
 cited subset of common sizes as facts with page numbers. It never copies whole tables, and never commits PEM's PDFs or
 CAD models.
 
+<img src="../docs/img/sheet-metal/clinch-hardness.svg" alt="Range chart of the hardest sheet each PEM fastener material takes: aluminium parts up to HRB 50, 300-series stainless up to HRB 70, hardened steel up to HRB 80, hardened stainless 88 to 92" width="680">
+
+*One rule the PEM bulletins alone supply: the hardest sheet each fastener material takes. Drawn by
+`tools/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
+[`process-profiles.yaml`](process-profiles.yaml); [`sheet-metal-joining.md`](sheet-metal-joining.md) reads it.*
+
 ## 3. Blind rivets
+
+<details>
+<summary>The 9 rivet guides compared</summary>
 
 | Guide | Authority | Covers | Terms | Date | Read |
 |---|---|---|---|---|---|
@@ -123,15 +161,26 @@ CAD models.
 | GESIPA rivet length [ref:gesipa-rivet-length] | Maker | Length = grip + diameter | cite | undated | yes |
 | FAA AC 43.13-1B, 4-57 and 4-58 [ref:faa-ac-43-13-1b] | Government | Edge 2D, pitch 3D, rows; where blind rivets must not go; a worked splice | public | 1998/2001 | yes |
 | NASA RP-1228 [ref:nasa-1228] | Government | Edge 2D nominal and 1.5D minimum, pitch 4D; a rivet section; blind-rivet requirements | public | 1990 | yes |
-| MIL-HDBK-5J, chapter 8 [ref:mil-hdbk-5j] | Government | Blind-rivet joint allowables, valid only for e/D ≥ 2 and t/D ≥ 0.18 | public | 2003 (superseded by MMPDS) | yes |
+| MIL-HDBK-5J, chapter 8 [ref:mil-hdbk-5j] | Government | Rivet joint allowables: solid rivets (8.1.2, bearing valid for t/D ≥ 0.18) and blind rivets (8.1.3, valid for e/D ≥ 2, care below t/D 0.25) | public | 2003 (superseded by MMPDS) | yes |
 | ISO 15977 to 15984 [ref:iso-15977-15984], ISO 14588 [ref:iso-14588], ISO 14589 [ref:iso-14589] | Standard | Metric open-end blind rivets by body and mandrel material; terms; test methods | by number | 2000–2002, confirmed 2023–2026 | catalogue pages |
+
+</details>
 
 **Choice.** POP is primary for industrial, non-structural rivets. Marson, Avdel and GESIPA cross-check the strength per
 rivet. FAA and NASA set the edge distance and pitch, and MIL-HDBK-5J sets when its allowables hold. A rivet check
 labels its result "typical values, not certified", because POP, NASA and FAA all say that pop rivets are not for
 critical structure.
 
+<img src="../docs/img/sheet-metal/rivet-spacing.svg" alt="Range chart of rivet edge distance and pitch in rivet diameters by source: edge distance at least 2 D from POP, the FAA and MIL-HDBK-5J, 2 D nominal and 1.5 D minimum from NASA; pitch at least 3 D for a single row (FAA) and 4 D for a double row (FAA) and nominal (NASA)" width="680">
+
+*Where the rivet guides agree and where they do not: edge distance and pitch in rivet diameters. Drawn by
+`tools/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch` rules in
+[`process-profiles.yaml`](process-profiles.yaml).*
+
 ## 4. Joint strength, tolerance and corrosion references
+
+<details>
+<summary>The 5 joint, tolerance and corrosion references</summary>
 
 | Reference | Authority | Use in cad-agent | Terms | Read |
 |---|---|---|---|---|
@@ -141,10 +190,15 @@ critical structure.
 | MIL-STD-889C [ref:mil-std-889c] | Government | Galvanic pairing; a stainless screw into aluminium is acceptable only with sealed faying edges | public | yes |
 | Protolabs tolerances [ref:protolabs-sheet-metal-tolerances] | Shop | Tolerance stacks across bends and to hardware | cite | yes |
 
+</details>
+
 ## 5. Paid standards and handbooks (cited by number and title)
 
 These are recorded so that a reader with access can check cad-agent's rules against them. Nothing is taken from their
 contents.
+
+<details>
+<summary>The eight paid standards cited by number, and the seven sources that could not be opened</summary>
 
 - **DIN 6935** [ref:din-6935]: cold bending of flat steel.
 - **ISO 2768-1** [ref:iso-2768-1]: general tolerances.
@@ -166,9 +220,14 @@ The following were named, but not even their catalogue pages could be read. They
 - the Cherry process manuals;
 - MIL-STD-889D.
 
+</details>
+
 ## 6. Where the sources disagree
 
 Where two sources give different numbers, cad-agent records both, with the spread, and states which one it applies.
+
+<details>
+<summary>Each disagreement, with its spread and what cad-agent does</summary>
 
 | Topic | One source | Another | Spread | What cad-agent does |
 |---|---|---|---|---|
@@ -179,9 +238,11 @@ Where two sources give different numbers, cad-agent records both, with the sprea
 | Powder coat and PEM parts | PEM: never install after paint or powder coat (HB-12) | SendCutSend: installs before powder and masks the hardware with caps | opposite order | Each rule is kept with its source. The SendCutSend profile follows SendCutSend's order, because it does the coating. |
 | 304 stainless sheet hardness | SendCutSend lists 304 at HB 123 | PEM: "304 annealed HRB 80+"; ASTM A240 allows 304 up to HRB 92, while SP nuts are rated to HRB 90 | about 10 HRB | Checks against the sheet's stated hardness, not just the alloy name. |
 | Hardness limit for an aluminium PEM part | HRB 50 = HB 82 (bulletins CL, FH, SO) | HRB 50 = HB 89 (CL-9 header, handbook HB-6) | 7 HB | Uses HRB 50 and keeps both HB values with their sources. |
-| Hardware C/L to edge in thin aluminium | SendCutSend per sheet: 0.382 in for 0.063 in 5052 | SendCutSend per part (K) and PEM: 0.25 in for S-440-1 | 0.13 in | Uses the larger value for that shop. |
+| Hardware C/L to edge in thin aluminium | SendCutSend per sheet: 0.382 in for 0.063 in 5052 | SendCutSend per part (K): 0.25 in for S-440-1; PEM's bulletin CL: 0.19 in | 0.19 in | Uses the larger value for that shop, and PEM's generically. |
 | Bend relief depth | SendCutSend feed: a value per thickness | SendCutSend bend-relief post: T + R + 0.02 in; deformation page: R + 0.020 in | per gauge | Uses the feed, which is the newest and the one checked when an order is placed. |
 | Thinnest sheet SendCutSend will tap | Tapping page (2026): 0.059 in | Blog (2023): 1/8 in | 0.066 in | Uses the newer page. |
+
+</details>
 
 The data errors found in the feeds are listed with the rules that use them, in the sheet-metal and joining pages.
 For example, SendCutSend's feed labels SP-440-1 as #6-32, and prints "A236" where A286 is meant.
@@ -210,6 +271,9 @@ flowchart TD
     class U out
 ```
 
+<details>
+<summary>Each tool, its licence, what it covers and the decision</summary>
+
 | Tool | Licence | What it covers | Decision |
 |---|---|---|---|
 | build123d sheet metal [ref:build123d-sheet-metal] | Apache-2.0 | Bent parts and unfolding; still only on `dev`, not in release v0.13.0 | Adopt once it is released. Until then, cad-agent's own bend maths stays. |
@@ -221,6 +285,8 @@ flowchart TD
 | ranf_thread_fast [ref:ranf-thread-fast] | MIT | NASA-STD-5020B bolted joints | Borrow golden vectors for any bolted-joint check; too young to adopt. |
 | AISIS100.jl [ref:aisis100-jl] | MIT (Julia) | AISI S100 bolt bearing in cold-formed steel; no screws or rivets | Borrow its test values. |
 | OpenSCAD libraries, KiCad footprints, FreeCAD-library, cq_warehouse | various | None has PEM parts or blind rivets | Pass. |
+
+</details>
 
 **Gaps that cad-agent must build:**
 - There is no open dataset of PEM specifications. cad-agent's table is built from the PEM bulletins, with a citation on

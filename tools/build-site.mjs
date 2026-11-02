@@ -243,7 +243,7 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
 // Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
-// the build and kept from growing by tests/website-build.test.mjs.
+// the build and kept from growing by tests/site/website-build.test.mjs.
 // What counts as something to look at in a doc page's sanitized HTML (the sanitizer drops inline <svg>, <video> and
 // custom elements, so pictures arrive as <img> and diagrams as Mermaid blocks; the browser test checks they render).
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;

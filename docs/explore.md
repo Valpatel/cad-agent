@@ -14,7 +14,7 @@ cad-agent optimise --trials 200   # search parts and parameters for better trade
 
 Worked example: [`examples/explore-two-wheel`](../examples/explore-two-wheel/) compares small two-wheel-legged robot
 configurations. The tests use a second, non-robot project: an electronics enclosure choosing a fan, a power supply and
-screws sold in packs (`tests/explore_fixtures.py`).
+screws sold in packs (`tests/simulation/explore/explore_fixtures.py`).
 
 ![The comparison page of examples/explore-two-wheel: four two-wheel-legged robot designs plotted by cost and mass, two on the Pareto front, one infeasible, with the leaderboard below](img/explore/two-wheel-compare.png)
 

@@ -1,5 +1,5 @@
 name: Gates
-# Merge gates (CONTRIBUTING.md "Gates"; rules in tools/ci_gates.py, tested in tests/test_ci_gates.py).
+# Merge gates (CONTRIBUTING.md "Gates"; rules in tools/ci_gates.py, tested in tests/repo/test_ci_gates.py).
 #
 # pull_request_target runs THIS file and tools/ci_gates.py as they are on the default branch (dev), so a PR that edits
 # the gates cannot pass them; PRs into main come from dev, so dev's copy judges them too. It never checks out or runs

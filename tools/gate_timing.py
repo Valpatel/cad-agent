@@ -7,7 +7,7 @@ neighbours touch, overlap, sit inside one another or hover 0.5 mm apart, by row;
 20 mm apart so only in-row neighbours are broad-phase candidates. Prints the table's stats
 (broad and narrow phase seconds, candidates, kernel queries, cache hits). Run it twice with
 the same ``--cache`` to see the warm figure: the second run must make no kernel query.
-``tests/test_gate_relations.py`` imports ``synthetic_assembly`` from here and asserts the
+``tests/review/test_gate_relations.py`` imports ``synthetic_assembly`` from here and asserts the
 cold run is under 5 s.
 
 ``--motion SAMPLES`` times the motion gate instead, on the same assembly with three joints (``motion_joints``):

@@ -16,7 +16,7 @@ it needs, then writes the views named below into docs/img/packets/ as WebP:
 The renders are the packet's own (its caption bar, section hash and note are part of each image). With them it writes
 docs/img/packets/SOURCE.json: the toolkit's version, the kernel and renderer versions, and for each scenario the
 cad-agent commit it ran on, the seed's words and every gate's status, counts and failing checks, so a caption on the
-site can be held to the run that drew the picture (tests/test_packet_pictures.py). A seeded picture shows a defect put there on purpose;
+site can be held to the run that drew the picture (tests/review/test_packet_pictures.py). A seeded picture shows a defect put there on purpose;
 its caption says so. Renders are for diagnosis, not proof: the gates measure, the pictures show what they measured.
 """
 from __future__ import annotations

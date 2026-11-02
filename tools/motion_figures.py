@@ -16,7 +16,7 @@ Nothing is keyframed by eye. Each figure draws one fixture or worked example fro
   - the motion gate's sampled poses, collision and bisected onset;
   - the hole check's probe volumes.
 
-``tests/test_motion_figures.py`` runs ``--check`` and compares these fixtures with the tests' own copies. Where
+``tests/mechanical/test_motion_figures.py`` runs ``--check`` and compares these fixtures with the tests' own copies. Where
 CadQuery is installed, it also checks the 2D numbers against the real motion gate, hole check and connector sweep.
 
 The SVGs animate with CSS only, with no script, so they run in an ``<img>`` under the site's Content-Security-Policy
@@ -205,7 +205,7 @@ def gap(a, b) -> float:
 
 # The gate bench (tests/fixtures/gate_bench/build.py), in the XZ plane, in millimetres. The arm spans Y 40..44 and
 # the frame Y 36..48, so a section of the arm and the beam is exact, and their shared area times the arm's 4 mm is
-# the shared volume. tests/test_motion_figures.py checks these numbers against the built bench and its verdict.
+# the shared volume. tests/mechanical/test_motion_figures.py checks these numbers against the built bench and its verdict.
 BENCH = {"pivot": (105.0, 20.0), "pin_r": 2.5, "arm": (100.0, 14.0, 150.0, 26.0), "arm_thickness": 4.0,
          "hinge_block": (99.0, 4.0, 111.0, 26.0), "stop": (140.0, 4.0, 150.0, 14.0),
          "post": (152.0, 4.0, 156.0, 60.0), "beam": (112.0, 56.0, 156.0, 60.0), "base": (0.0, 0.0, 160.0, 4.0),
@@ -358,7 +358,7 @@ def hinge_svg() -> str:
 
 # ----------------------------------------------------------------------------- 2. holes: a rib in a counterbore
 
-# tests/test_holes.py, plate_with_counterbore: a 40 x 40 x 10 plate, a D3.4 clearance hole with a D6.4 x 4
+# tests/mechanical/test_holes.py, plate_with_counterbore: a 40 x 40 x 10 plate, a D3.4 clearance hole with a D6.4 x 4
 # counterbore, and a 2 mm rib (X -22..0, Y -1..1, Z 0..14) that runs to the hole's centre. Drawn as the section
 # through the hole's axis (Y = 0).
 CBORE = {"plate": (-20.0, 0.0, 20.0, 10.0), "hole_r": 1.7, "cbore_r": 3.2, "cbore_depth": 4.0,
@@ -543,7 +543,7 @@ def counterbore_svg() -> str:
 
 # ----------------------------------------------------------------------------- 3. connectors: plug through window
 
-# tests/test_connectors.py: an RJ45 jack whose face is at w = 2, a 3 mm wall at w 3.5..6.5 (cut from a slab spanning
+# tests/mechanical/test_connectors.py: an RJ45 jack whose face is at w = 2, a 3 mm wall at w 3.5..6.5 (cut from a slab spanning
 # u, v -20..40), and the bounding-box-style window that test uses as the bad case.
 RJ45 = {"face": [0.0, 0.5, 16.0, 14.0], "face_w": 2.0, "centre_on": "receptacle", "clearance": 0.5,
         "plugs": [{"family": "rj45", "cavity": [2.0, 3.0, 14.0, 13.0]}]}
@@ -662,7 +662,7 @@ def connector_svg() -> str:
 
 # ----------------------------------------------------------------------------- 4. assembly: a rigid module
 
-# tests/test_gate_subassembly.py, fixture(): boxes (x0, y0, z0, x1, y1, z1), the fasteners, the module and the
+# tests/review/test_gate_subassembly.py, fixture(): boxes (x0, y0, z0, x1, y1, z1), the fasteners, the module and the
 # parent steps, run through the real kernel-free core (run_sequence) on exact box relations.
 SUB_BOXES = {"base": (-1, 0, 0, 0, 3, 3), "carrier": (2, 0, 0, 3, 3, 3), "board": (1, 0, 0, 2, 3, 3),
              "board_screw": (.8, -.15, .75, 2.5, .35, 1.25), "retainer": (-.5, 1.9, 1.9, 3.2, 2.1, 2.1),
@@ -680,7 +680,7 @@ SUB_SERVICE = {"electronics": ["bumper", "retainer"]}
 
 def box_world(boxes: dict):
     """A ``SequenceWorld`` of axis-aligned boxes (x0, y0, z0, x1, y1, z1) whose relations are exact, as
-    tests/test_gate_assembly.py's ``BoxWorld``. ``queries`` records each exact query: (key, shift, other, relation)."""
+    tests/review/test_gate_assembly.py's ``BoxWorld``. ``queries`` records each exact query: (key, shift, other, relation)."""
     from cadagent.review.gates.assembly import SequenceWorld
     from cadagent.review.gates.relations import Relation, Tolerances
 
@@ -742,7 +742,7 @@ def subassembly_svg() -> str:
          "base": (5.2, 6.0), "module": (6.3, 7.5), "retainer": (7.8, 8.5), "bumper": (8.8, 9.6),
          "removed": (10.4, 10.8), "withdraw": (11.2, 12.4)}
     body = [text(20, 28, "A rigid module: its bench sequence first, then one parent step", 15, INK, weight="700"),
-            text(20, 46, "the tests/test_gate_subassembly.py fixture through the assembly gate's own core (run_sequence)",
+            text(20, 46, "the tests/review/test_gate_subassembly.py fixture through the assembly gate's own core (run_sequence)",
                  11, MUTED),
             ntext(20, 38, "A rigid module", 28, weight="700")]
 
@@ -982,7 +982,7 @@ def search_svg() -> str:
 
 # ----------------------------------------------------------------------------- 6. connectors: the cable behind the plug
 
-# tests/test_connectors.py: the same RJ45 port and wall, a Cat6 patch cord (Belden's data sheet: 6.1 mm, minimum bend
+# tests/mechanical/test_connectors.py: the same RJ45 port and wall, a Cat6 patch cord (Belden's data sheet: 6.1 mm, minimum bend
 # radius 25 mm) and the shelf the enclosure stands on. The figure runs the real check: the obstacles are boxes in the
 # panel frame, which cable_bend measures without a CAD kernel.
 CAT6 = {"od": 6.1, "min_bend_radius": {"mm": 25.0},
@@ -1119,7 +1119,7 @@ def cable_svg() -> str:
 
 # ----------------------------------------------------------------------------- 7. motion trace: captures against the CAD
 
-# tests/test_motion_trace.py, contract(): the analytic shaft. The yaw joint turns the housing about Z through
+# tests/mechanical/test_motion_trace.py, contract(): the analytic shaft. The yaw joint turns the housing about Z through
 # (10, 20, 30); the spin joint rides on it and turns the rotor about X through (40, 20, 30); the base stands still.
 # MT_OFFSET is its 'offset-pivot' defect: the renderer spins the rotor about a pivot 48 mm off the shaft, in +Y.
 MT_CONTRACT = {"schema_version": 1, "length_unit": "mm", "frame": "assembly-home",
@@ -1277,7 +1277,7 @@ def motion_trace_svg() -> str:
 
     body = [text(20, 28, "Motion trace: what a renderer draws, against the CAD, at every required pose", 15, INK,
                  weight="700"),
-            text(20, 46, "the analytic shaft of tests/test_motion_trace.py through validate_motion_trace, with two "
+            text(20, 46, "the analytic shaft of tests/mechanical/test_motion_trace.py through validate_motion_trace, with two "
                          "renderers capturing the same poses", 11, MUTED),
             ntext(20, 38, "Motion trace", 28, weight="700"),
             f'<clipPath id="sc"><rect x="20" y="{top - 24}" width="640" height="{num(bottom - top + 24)}"/></clipPath>',
@@ -1388,7 +1388,7 @@ def motion_trace_svg() -> str:
 
 # ----------------------------------------------------------------------------- 8. assembly: one insertion, swept
 
-# tests/test_gate_assembly.py: BOXES (a base, a block on it, a card standing against the block's side, a cover over
+# tests/review/test_gate_assembly.py: BOXES (a base, a block on it, a card standing against the block's side, a cover over
 # both), the card moved 3 mm off the block (the clearance test's ``near``), and the clearance test's diagonal
 # approach past a block, which it also runs with max_step_mm = 5. Boxes (x0, y0, z0, x1, y1, z1), mm.
 GATE_BOXES = {"base": (0, 0, 0, 100, 100, 5), "block": (10, 10, 5, 30, 30, 25), "card": (30, 10, 5, 32, 30, 20),
@@ -1478,7 +1478,7 @@ def sweep_svg() -> str:
     end = 15.0
     body = [text(20, 28, "Assembly gate: one part moved in along a straight line, against one other part", 15, INK,
                  weight="700"),
-            text(20, 46, "sweep_pair on the box world of tests/test_gate_assembly.py, seen from the side. s: how far "
+            text(20, 46, "sweep_pair on the box world of tests/review/test_gate_assembly.py, seen from the side. s: how far "
                          "the part is from its seat", 11, MUTED),
             ntext(20, 38, "Insertion sweep", 28, weight="700")]
     solid = f'fill="{PALE}" stroke="{GREEN}"'

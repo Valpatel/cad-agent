@@ -5,7 +5,7 @@
  * at which the two outlines do not overlap, so the hook rides the catch's lead-in, slides over its top, drops in behind
  * its retaining face and holds when the part is pulled back. Rigid rotation about the root stands in for bending:
  * it is a picture of the motion, not a deflection result (`cad-agent snapfit` does the sizing).
- * Coordinates are SVG user units, y down. tests/website-snap-demo.test.mjs checks contact, engagement and the lock.
+ * Coordinates are SVG user units, y down. tests/site/website-snap-demo.test.mjs checks contact, engagement and the lock.
  *
  * Why the retaining faces lean: the hook hangs below the arm's pivot, so a square (vertical) face pushed by a
  * pull-back has a lever arm about the root and turns the arm upward: the joint would hold only by friction.

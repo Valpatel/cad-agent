@@ -124,5 +124,5 @@ continuous collision clearance, dynamic forces, speed, timing, physical fit, or 
 Break the renderer deliberately and demonstrate the check fails: offset a pivot while preserving home placement,
 change an axis/sign, lose a parent, spin a stationary housing, and introduce a unit/basis mismatch. For a loop, also
 pose its joints as a serial chain and on the other assembly. Restore the
-correct implementation and retain the negative test. `tests/test_motion_trace.py` exercises these classes with an
+correct implementation and retain the negative test. `tests/mechanical/test_motion_trace.py` exercises these classes with an
 independent analytic fixture; product tests must also capture their actual exported geometry and renderer.

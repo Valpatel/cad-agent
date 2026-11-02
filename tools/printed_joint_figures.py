@@ -2,7 +2,7 @@
 """Draw docs/img/joints/*.svg from cadagent.mechanical.printed_joints and cadagent.manufacturing.fit_coupons.
 
     python3 tools/printed_joint_figures.py            # write the SVGs
-    python3 tools/printed_joint_figures.py --check    # exit 1 if a committed SVG differs (tests/test_printed_joints.py)
+    python3 tools/printed_joint_figures.py --check    # exit 1 if a committed SVG differs (tests/mechanical/test_printed_joints.py)
 
 Pure Python, so the page shows exactly what the checks computed on the worked examples below (generic parts, not
 any one project's). Colours: the categorical slots and status steps of the site's chart palette, each with a label,

@@ -16,7 +16,7 @@
 [![Last commit](https://img.shields.io/github/last-commit/Valpatel/cad-agent/dev)](https://github.com/Valpatel/cad-agent/commits/dev)
 [![Stars](https://img.shields.io/github/stars/Valpatel/cad-agent?style=flat&logo=github)](https://github.com/Valpatel/cad-agent/stargazers)
 <br>
-[![Agents](https://img.shields.io/badge/agents-Claude_Code_·_Codex_·_Copilot_·_Cursor_·_Gemini-8b5cf6)](https://cad-agent.valpatel.com/#agent-guide)
+[![Agents](https://img.shields.io/badge/agents-Claude_Code_·_Codex_·_Copilot_·_Cursor_·_Gemini_·_opencode-8b5cf6)](https://cad-agent.valpatel.com/#use-it)
 [![CAD](https://img.shields.io/badge/CAD-CadQuery_·_OpenCASCADE-0ea5e9)](https://github.com/CadQuery/cadquery)
 [![Telemetry](https://img.shields.io/badge/telemetry-none-22c55e)](docs/supply-chain.md#usage-reporting)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-ec4899)](CONTRIBUTING.md)
@@ -25,45 +25,32 @@
 
 ## Build with your favorite AI agent
 
-Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.
-Claude Code, Codex CLI, Copilot CLI, Cursor, Gemini CLI: see the [step-by-step guide for your agent](https://cad-agent.valpatel.com/#agent-guide).
+macOS and Linux:
 
-<!-- The block is docs/agent-prompt.txt, verbatim (tests/repo/test_agent_prompt.py); the site's home page shows it too. -->
-```text
-Use cad-agent (github.com/Valpatel/cad-agent, MIT) for what I ask at the end.
-
-1. Install once. Needs git and Python 3.11 or newer (if python3 is older,
-   name a newer one, e.g. python3.12). Windows: .venv\Scripts for .venv/bin.
-   git clone --depth 1 -b main https://github.com/Valpatel/cad-agent "$HOME/cad-agent"
-   python3 -m venv "$HOME/cad-agent/.venv"
-   "$HOME/cad-agent/.venv/bin/pip" install -e "$HOME/cad-agent[cad]"
-   "$HOME/cad-agent/.venv/bin/cad-agent" agents install
-   More extras inside the brackets, comma-separated: fea (strength), sim
-   (airflow, topology, renders), robot (URDF, MuJoCo), explore (search).
-2. Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
-   the page or catalog/<area>.json it points to (any page also as .md),
-   and `cad-agent <command> --help`. Skills: ~/cad-agent/skills/*/SKILL.md.
-3. Build with the kit's tested commands and checks, not formulas from
-   memory. Make it a cad-agent project (cad-agent.yaml, as in
-   ~/cad-agent/docs/toolkit.md) so `cad-agent all` builds, exports and runs
-   every check. Say what each check assumes: CAD and simulation narrow a
-   design down, they do not prove that a printed part fits or holds.
-4. Give back, through GitHub only: cad-agent collects no telemetry. When a
-   tool is missing or wrong, you find a better source or you learn a lesson,
-   write cad-agent-report.md with these headings: Model, Harness, cad-agent
-   commit (git -C "$HOME/cad-agent" rev-parse --short HEAD), Layer (the
-   cad-agent tool, or the upstream it wraps, with its version), Building,
-   Missing or learned, Sources (links), Confidence (low, medium or high).
-   Leave out anything private. Show it to me, and send it only if I say
-   yes: best as a PR into dev from a fork (a test, a source, a lesson or a
-   fix; fill in the template's "Made with"), else as an issue:
-   gh issue create -R Valpatel/cad-agent -t "Agent report: <topic>" -F cad-agent-report.md
-
-What I want:
+```bash
+curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
 ```
 
-Your agent sends back what it learns as a pull request or an issue that you approve; cad-agent collects no telemetry.
-By hand: run the four install lines, then `cad-agent all --project <your project>` and see [Extras](#extras).
+Windows, in PowerShell:
+
+```powershell
+irm https://cad-agent.valpatel.com/install.ps1 | iex
+```
+
+It installs uv if it is missing, puts cad-agent in `~/cad-agent` with the `cad-agent` command in `~/.local/bin`, and adds
+its design skills for Claude Code, Codex, Copilot CLI, Cursor, Gemini CLI and opencode. Run it again, or
+`cad-agent update`, to update.
+
+Or paste this into your agent, followed by what you want made:
+
+<!-- The first line of docs/agent-prompt.txt (tests/repo/test_agent_prompt.py); the site's home page shows it too. -->
+```text
+Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:
+```
+
+cad-agent collects no telemetry. When your agent finds a gap or learns a lesson, it shows you a short report and sends
+it as a pull request or an issue only if you say yes. By hand, extras and uninstall:
+[Install](docs/agent-workflow.md#install).
 
 ## What it is
 

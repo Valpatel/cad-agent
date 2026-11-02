@@ -48,11 +48,12 @@ def test_unverified_sources_the_code_cites_only_shrink(registry):
 def test_the_scan_finds_every_key_the_modules_define():
     """The AST scan must not miss a key the modules really use: compare it with the modules' own tables."""
     from cadagent.formulas import SOURCES
+    from cadagent.manufacturing.process import FDM_MATERIALS
     from cadagent.mechanical import inserts, printed_joints
     from cadagent.simulation.fea import MATERIALS
     found = {c.key for c in citations(ROOT)}
     want = set(SOURCES) | set(inserts.sources()) | set(printed_joints.sources()) | \
-        {m.source for m in MATERIALS.values() if m.source}
+        {m.source for m in MATERIALS.values() if m.source} | {source for _, source in FDM_MATERIALS.values()}
     assert not want - found, f"keys the scan misses: {sorted(want - found)}"
     pp = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text(encoding="utf-8"))
     assert {r["source"] for r in pp["rules"] if not r["source"].startswith("dataset:")} <= found
@@ -130,10 +131,12 @@ def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
         SRC = {"good-guide": "Maker, A Guide, p. 2", "gone": "nowhere"}
         x = cite("good-guide", "p. 3")
         m = Material("PLA", 1, 0.3, 1, 1, source="good-guide")
+        FDM_MATERIALS = {"pla-maker": ("pla", "good-guide"), "odd": ("pla", 3)}
     '''))
     (tmp_path / "docs" / "page.md").write_text("A rule [ref:good-guide] and one [ref:elsewhere]; the syntax is "
                                                "[ref:<id>].\n")
     (tmp_path / "README.md").write_text("Top level: [ref:good-guide].\n")
+    (tmp_path / "CHANGELOG.md").write_text("Released notes quote a tag as text: [ref:not-scanned].\n")
     (tmp_path / "research" / "process-profiles.yaml").write_text(yaml.safe_dump({
         "rules": [{"id": "fdm-wall-maker", "source": "good-guide"}, {"id": "fdm-x", "source": "dataset:tds"}],
         "datasets": [{"id": "tds", "cites": "prose, not an id"}]}))
@@ -147,6 +150,7 @@ def test_the_scan_reads_each_way_of_citing(tmp_path):
     found = {(c.key, c.path, c.how) for c in citations(root)}
     assert found == {("good-guide", "src/cadagent/mod.py", "table"), ("gone", "src/cadagent/mod.py", "table"),
                      ("good-guide", "src/cadagent/mod.py", "cite"), ("good-guide", "src/cadagent/mod.py", "material"),
+                     ("good-guide", "src/cadagent/mod.py", "row"),
                      ("good-guide", "docs/page.md", "tag"), ("elsewhere", "docs/page.md", "tag"),
                      ("good-guide", "README.md", "tag"),
                      ("good-guide", "research/process-profiles.yaml", "process-profile")}
@@ -188,6 +192,8 @@ def test_check_warns_on_code_citing_an_unverified_entry(tmp_path):
     ({"access": "online"}, "access 'online'"),
     ({"id": "Bad_Id"}, "not a kebab-case key"),
     ({"aliases": ["good-guide"]}, "used twice"),
+    ({"aliases": "gg"}, "aliases must be a list"),
+    ({"aliases": ["Good Guide"]}, "aliases must be a list"),
 ])
 def test_each_malformed_entry_is_reported(tmp_path, change, message):
     entry = {**GOOD, **change}

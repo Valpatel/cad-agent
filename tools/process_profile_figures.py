@@ -9,12 +9,11 @@ The YAML is the source: a chart can never disagree with the rules it shows. Each
 `compare` key, so a rule added to the file appears in its chart on the next run. Stdlib and PyYAML only; the SVGs carry
 their own light background so they read the same on the site and on GitHub in dark mode.
 
-`evaluate()` is the one place a rule's expression ("2*T + R", "max(0.005*L, 0.5)", "1.574 if T <= 0.914 else 3.175")
+`evaluate()` (from `cadagent.manufacturing.process`) is the one place a rule's expression ("2*T + R", "max(0.005*L, 0.5)", "1.574 if T <= 0.914 else 3.175")
 is turned into a number; the tests use it to check every expression in the file.
 """
 from __future__ import annotations
 
-import ast
 import math
 import sys
 from pathlib import Path
@@ -31,57 +30,9 @@ FONT = "system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
 
 # ----------------------------------------------------------------------------- expressions
 
-_BIN = {ast.Add: lambda a, b: a + b, ast.Sub: lambda a, b: a - b, ast.Mult: lambda a, b: a * b,
-        ast.Div: lambda a, b: a / b}
-_CMP = {ast.Lt: lambda a, b: a < b, ast.LtE: lambda a, b: a <= b, ast.Gt: lambda a, b: a > b,
-        ast.GtE: lambda a, b: a >= b}
-_FUN = {"min": min, "max": max}
-
-
-def evaluate(expr: float | int | str, env: dict[str, float]) -> float:
-    """A rule's min/max/value as a number. Numbers pass through; a string may use the names in ``env``, numbers,
-    + - * / ( ), unary minus, min(), max(), pi, and one ``a if <comparison> else b`` (not nested, not two). Anything
-    else raises ValueError, as does dividing by zero, so a typo in the data file fails the tests instead of being
-    skipped and a caller needs to catch only ValueError."""
-    if isinstance(expr, bool):
-        raise ValueError(f"{expr!r} is not a number")
-    if isinstance(expr, (int, float)):
-        return float(expr)
-    names = dict(env, pi=math.pi)
-
-    def ev(node: ast.AST) -> float:
-        if isinstance(node, ast.Expression):
-            return ev(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
-            return float(node.value)
-        if isinstance(node, ast.Name):
-            if node.id not in names:
-                raise ValueError(f"{expr!r}: unknown name {node.id!r}")
-            return float(names[node.id])
-        if isinstance(node, ast.BinOp) and type(node.op) in _BIN:
-            return _BIN[type(node.op)](ev(node.left), ev(node.right))
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-            return -ev(node.operand)
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _FUN and node.args \
-                and not node.keywords:
-            return _FUN[node.func.id](ev(a) for a in node.args)
-        if isinstance(node, ast.IfExp) and isinstance(node.test, ast.Compare) and len(node.test.ops) == 1 \
-                and type(node.test.ops[0]) in _CMP:
-            test = _CMP[type(node.test.ops[0])](ev(node.test.left), ev(node.test.comparators[0]))
-            return ev(node.body) if test else ev(node.orelse)
-        raise ValueError(f"{expr!r}: {type(node).__name__} is not allowed in a rule expression")
-
-    try:
-        tree = ast.parse(str(expr), mode="eval")
-    except SyntaxError as e:
-        raise ValueError(f"{expr!r}: {e.msg}") from None
-    if sum(isinstance(n, ast.IfExp) for n in ast.walk(tree)) > 1:
-        raise ValueError(f"{expr!r}: only one `a if <comparison> else b` is allowed")
-    try:
-        return ev(tree)
-    except ZeroDivisionError:
-        raise ValueError(f"{expr!r}: division by zero at {env}") from None
-
+# The one evaluator lives in the package, which checks and calculators use too (#99).
+sys.path.insert(0, str(ROOT / "src"))
+from cadagent.manufacturing.process import evaluate  # noqa: E402
 
 # ----------------------------------------------------------------------------- data
 

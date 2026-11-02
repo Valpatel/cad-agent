@@ -230,6 +230,7 @@ sources:
     terms: cited; values quoted with the TDS version; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
+      - src/cadagent/manufacturing/process.py
       - src/cadagent/mechanical/compliant/allowables.py
       - src/cadagent/simulation/fea.py
       - lessons/simulation/simulation-and-material.md
@@ -251,7 +252,10 @@ sources:
     access: free
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: opened the PDF; read E 1960 / 1670 MPa, UTS 32 / 25 MPa, elongation 32.8 / 4.8 % (X-Y / Z).
 
@@ -265,6 +269,7 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
+      - src/cadagent/manufacturing/process.py
       - src/cadagent/mechanical/compliant/allowables.py
       - src/cadagent/simulation/fea.py
       - lessons/simulation/simulation-and-material.md
@@ -285,7 +290,10 @@ sources:
     access: free
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - src/cadagent/manufacturing/process.py
     verified: "2026-10-31: opened the PDF; read E 1810 / 1540 MPa, UTS 34 / 23 MPa, elongation 8.6 / 5.1 % (X-Y / Z)."
 
   - id: bambu-petg-cf-tds
@@ -298,6 +306,7 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
+      - src/cadagent/manufacturing/process.py
       - src/cadagent/mechanical/compliant/allowables.py
       - src/cadagent/simulation/fea.py
       - docs/compliant.md
@@ -316,7 +325,10 @@ sources:
     access: free
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - src/cadagent/manufacturing/process.py
     verified: "2026-10-31: opened the PDF; read E 2450 / 2120 MPa, UTS 52 / 35 MPa, elongation 9.2 / 4.6 % (X-Y / Z)."
 
   - id: bambu-tpu-95a-hf-tds
@@ -343,7 +355,11 @@ sources:
     access: free
     terms: cited; values quoted with the TDS version; never copied
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page (Markdown view); E 3426.9 / 3064.9 MPa, UTS 52.3 / 40.5 MPa, elongation 6.3
       / 1.8 % (X-Y / Z).
@@ -357,7 +373,11 @@ sources:
     access: free
     terms: cited; never copied
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; E 2116.8 / 1898.7 MPa, UTS 50.8 / 42.8 MPa, elongation 8.4 / 3.3 % (X-Y /
       Z).
@@ -371,7 +391,11 @@ sources:
     access: free
     terms: cited; never copied
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; E 2379 / 1965 MPa, UTS 43.8 / 32 MPa, elongation 6.7 / 1.65 % (X-Y / Z).
 
@@ -384,7 +408,11 @@ sources:
     access: free
     terms: cited; never copied
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; dry E 2703 / 2209 MPa, UTS 78.0 / 45.8 MPa, elongation 12.7 / 1.3 % (X-Y /
       Z).
@@ -410,7 +438,11 @@ sources:
     access: free
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/mechanical/compliant/allowables.py, docs/compliant.md, tests/test_snapfit.py]
+    used_for:
+      - src/cadagent/mechanical/compliant/allowables.py
+      - docs/compliant.md
+      - tests/test_snapfit.py
+      - src/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: opened the PDF; dry E 8636.5 / 3759.5 MPa, UTS 109.3 / 54.0 MPa, elongation 2.1 / 1.9 %; wet E
       2508.1 / 1056.1 MPa, UTS 54.7 / 25.5 MPa, elongation 7.0 / 6.7 % (X-Y / Z).

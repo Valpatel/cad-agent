@@ -8,6 +8,7 @@ Where code cites by id (``citations()`` finds them all):
 
 * a module-level ``SRC`` or ``SOURCES`` dict whose keys are ids (``cadagent.formulas``, ``cadagent.mechanical.inserts``,
   ``cadagent.mechanical.printed_joints``), and ``cite("<id>", ...)`` calls;
+* a module-level ``FDM_MATERIALS`` dict whose values are tuples ending in an id (``cadagent.manufacturing.process``);
 * ``Material(..., source="<id>")`` (``cadagent.simulation.fea``);
 * ``research/process-profiles.yaml``: each rule's, formula's and shop table's ``source``, and each dataset's ``cites``;
 * ``[ref:<id>]`` tags in Markdown, YAML and Python text (a malformed tag is reported, not skipped).
@@ -61,6 +62,7 @@ KEY = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 TAG = re.compile(r"\[ref:([^\]\n]*)\]")
 PLACEHOLDER = re.compile(r"<[^>]*>")   # "[ref:<id>]" in prose explains the syntax; it cites nothing
 TABLES = ("SRC", "SOURCES")         # module-level dicts whose keys are ids
+ROW_TABLES = ("FDM_MATERIALS",)     # module-level dicts whose values are tuples that end in an id
 TAG_FOLDERS = ("docs", "lessons", "research", "skills", "src", "agents", "tools", "examples", "web")
 TAG_SUFFIXES = (".md", ".py", ".yaml", ".yml")
 
@@ -144,7 +146,10 @@ class Registry:
                 self.entries[rid] = Reference(rid, kind, item)
         # aliases after every id, so an alias that names an entry is caught wherever either is written
         for ref in self.entries.values():
-            for alias in ref.data.get("aliases") or []:
+            aliases = ref.data.get("aliases") or []
+            for alias in aliases if isinstance(aliases, list) else []:      # a string is reported by problems()
+                if not isinstance(alias, str):
+                    continue
                 if alias in self.aliases or alias in self.entries:
                     self._duplicates.append(alias)
                     continue
@@ -224,6 +229,9 @@ def _entry_problems(ref: Reference, reg: Registry, root: Path, today: dt.date) -
         out.append("authors must be a list of names ([] when the source names none)")
     if not (authors or str(d.get("org") or "").strip()):
         out.append("no author and no publisher (org)")
+    aliases = d.get("aliases", [])
+    if not isinstance(aliases, list) or not all(isinstance(a, str) and KEY.fullmatch(a) for a in aliases):
+        out.append(f"aliases must be a list of kebab-case keys: {aliases!r}")
     for p in d.get("used_for") or []:
         if not isinstance(p, str) or not _path_ok(p, root):
             out.append(f"used_for {p!r} is not a file or folder in the repo (or 'proposed: ...')")
@@ -300,6 +308,10 @@ def _python_citations(path: Path, rel: str) -> List[Citation]:
         if isinstance(target, ast.Name) and target.id in TABLES and isinstance(value, ast.Dict):
             out += [Citation(k.value, rel, k.lineno, "table") for k in value.keys
                     if isinstance(k, ast.Constant) and isinstance(k.value, str)]
+        if isinstance(target, ast.Name) and target.id in ROW_TABLES and isinstance(value, ast.Dict):
+            out += [Citation(v.elts[-1].value, rel, v.elts[-1].lineno, "row") for v in value.values
+                    if isinstance(v, ast.Tuple) and v.elts and isinstance(v.elts[-1], ast.Constant)
+                    and isinstance(v.elts[-1].value, str)]
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -363,7 +375,8 @@ def citations(root: Path = ROOT) -> List[Citation]:
     if pp.is_file():
         out += _process_profile_citations(pp, pp.relative_to(root).as_posix())
     for path in sorted(root.glob("*.md")):
-        out += _tag_citations(path, path.relative_to(root).as_posix())
+        if path.name != "CHANGELOG.md":           # released notes quote tags as text; changelog.d is not scanned either
+            out += _tag_citations(path, path.relative_to(root).as_posix())
     for folder in TAG_FOLDERS:
         for path in sorted((root / folder).rglob("*")):
             if path.suffix in TAG_SUFFIXES and path.is_file() and "vendor" not in path.parts and path.resolve() != me:

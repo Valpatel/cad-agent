@@ -243,9 +243,13 @@ def test_the_shops_relief_rule_holds_on_its_own_row_too():
 
 def test_the_shops_angle_range_and_hardware_on_acute_bends():
     sc = dict(shop="sendcutsend")
-    assert _by(sm.check_bends("5052", 1.6, [20], 3.0, **sc))["angle 1"]["verdict"] == "fail"       # under 5 deg
-    assert _by(sm.check_bends("5052", 1.6, [20], 120.0, **sc))["angle 1"]["verdict"] == "pass"
-    assert _by(sm.check_bends("5052", 1.6, [20], 120.0, hardware=True, **sc))["angle 1"]["verdict"] == "fail"
+    low = _by(sm.check_bends("5052", 1.6, [20], 3.0, **sc))                                       # under 5 deg
+    assert low["angle 1 (min)"]["verdict"] == "fail" and low["angle 1 (min)"]["rule"] == "sm-bend-angle-min-sendcutsend"
+    ok = _by(sm.check_bends("5052", 1.6, [20], 120.0, **sc))
+    assert ok["angle 1"]["verdict"] == "pass" and "angle 1 (hardware)" not in ok
+    hw = _by(sm.check_bends("5052", 1.6, [20], 120.0, hardware=True, **sc))["angle 1 (hardware)"]
+    assert hw["verdict"] == "fail" and hw["rule"] == "sm-bend-angle-max-hardware-sendcutsend"
+    assert _by(sm.check_bends("5052", 1.6, [20], 90.0, hardware=True, **sc))["angle 1 (hardware)"]["verdict"] == "pass"
 
 
 def test_shop_only_inputs_without_a_shop_say_so():

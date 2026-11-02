@@ -6,7 +6,7 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25   # ~15 min since the dark theme (#306) drew every diagram twice; a hung step must not hold a PR for hours
     strategy:
       fail-fast: false
       matrix:

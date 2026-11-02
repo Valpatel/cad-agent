@@ -55,9 +55,9 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site-catalog.mjs` builds from the
    repo), the [landscape survey](research/landscape.md), [`upstreams/registry.yaml`](upstreams/registry.yaml), the
-   skills in [`skills/`](skills/), and the open-source libraries and agent skills outside them. Under "Considered existing tools" in the PR, name each candidate and
-   whether you adopted it, wrapped it, borrowed from it or passed on it, and why. Write our own only for the gap, and
-   credit what you use.
+   skills in [`skills/`](skills/), and the open-source libraries and agent skills outside them. Under "Considered
+   existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
+   on it, and why. Write our own only for the gap, and credit what you use.
 2. **Worktree from `dev`.** Never edit a checkout another session may be using:
    ```bash
    git fetch origin

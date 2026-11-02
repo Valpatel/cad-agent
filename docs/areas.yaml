@@ -347,7 +347,7 @@ domains:
         scope: Pitfalls, checks and the evidence a reviewer needs.
         maturity: tooling
         pages: [docs/common-issues.md]
-        api: [cadagent.review.evidence, cadagent.review]
+        api: [cadagent.review.evidence, cadagent.review, cadagent.review.references]
         lessons: review
         issues: [97, 118]
       - slug: supply-chain

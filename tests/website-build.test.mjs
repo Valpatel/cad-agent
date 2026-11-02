@@ -83,6 +83,31 @@ test('code samples keep their text, and every code block has a copy button', asy
   assert.ok(files.includes('kit/copy.js'));
 });
 
+test('the home page, llms.txt and the README carry the one "copy this to your agent" block (#278)', async () => {
+  const block = git('show', 'HEAD:docs/agent-prompt.txt').replace(/\n$/, '');
+  const index = await readFile(path.join(out, 'index.html'), 'utf8');
+  const pre = index.match(/<section class="use-band" id="use-it"[\s\S]*?<pre class="agent-box"[^>]*>([\s\S]*?)<\/pre>/)?.[1];
+  assert.ok(pre, 'the home page has the copy card');
+  const text = pre.replace(/<\/?b>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  assert.equal(text, block, 'the card shows docs/agent-prompt.txt verbatim (only <b> added)');
+  assert.ok(index.indexOf('id="use-it"') < index.indexOf('id="outputs"'), 'the card comes before the first band');
+  assert.match(index, /href="#use-it"/, 'the hero links to it');
+  for (const f of ['llms.txt', 'index.md']) assert.ok((await readFile(path.join(out, f), 'utf8')).includes('```text\n' + block + '\n```'), `${f} carries the block`);
+  assert.ok(git('show', 'HEAD:README.md').includes('```text\n' + block + '\n```'), 'the README carries the block');
+  const card = index.match(/<section class="use-band"[\s\S]*?<\/section>/)[0];
+  const heading = card.match(/<h2 id="use-title">(.+?)<\/h2>/)[1].replace(/<[^>]+>/g, '').replace(/\.$/, ''), lead = card.match(/<p class="use-lead">([^<]+)<\/p>/)[1];
+  const readme = git('show', 'HEAD:README.md');
+  assert.ok(readme.includes(`## ${heading}\n\n${lead.replace(/&#39;/g, "'")}\n`), 'the README has the card\'s heading and lead-in');
+  assert.match(card, /<cad-copy class="agent-copy" label="Copy prompt">/, 'one clear Copy prompt button');
+  const tabs = [...card.matchAll(/<input type="radio" name="agent-guide" id="(ag-[a-z]+)"/g)].map(m => m[1]);
+  assert.ok(tabs.length >= 5, 'a step-by-step guide per agent');
+  for (const id of tabs) {
+    assert.match(card, new RegExp(`<label class="agent-badge" for="${id}">`), `${id} has a badge that opens its guide`);
+    assert.match(card, new RegExp(`class="guide-panel panel-${id.slice(3)}"><p class="visually-hidden">[^<]+</p><ol><li>`), `${id} has its steps`);
+  }
+  assert.doesNotMatch(card, /<img|<use /, 'the badges are text, not product marks');
+});
+
 test('pages say when they were last updated and how to give feedback', async () => {
   const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
   const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'lessons/process/verify-from-source.md').trim();

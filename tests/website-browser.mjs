@@ -145,6 +145,15 @@ try {
       const hits = await page.$$eval('.group .card:not([hidden])', cs => cs.map(c => c.dataset.text));
       if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
     }
+    if (route === '/' && width === 1366) {   // the agent badges and tabs open each agent's steps, with no script (#278)
+      const shown = () => page.$$eval('.guide-panel', ps => ps.filter(p => getComputedStyle(p).display !== 'none').map(p => p.className));
+      if ((await shown()).join() !== 'guide-panel panel-claude') seen.push(`the guide opens on ${await shown()}, not Claude Code`);
+      await page.click('label.agent-badge[for="ag-codex"]');
+      if ((await shown()).join() !== 'guide-panel panel-codex') seen.push('a badge does not switch the guide');
+      await page.click('label.guide-tab[for="ag-any"]');
+      if ((await shown()).join() !== 'guide-panel panel-any') seen.push('a tab does not switch the guide');
+      await page.click('label.guide-tab[for="ag-claude"]');
+    }
     if ((route === '/' || route === '/docs/toolkit') && width === 360) {   // copy buttons: one click, exact text
       const block = page.locator(route === '/' ? 'cad-copy.agent-copy' : '.prose cad-copy').first();
       const button = block.locator('.cad-copy-btn');

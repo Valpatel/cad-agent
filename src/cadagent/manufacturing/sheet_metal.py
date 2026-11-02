@@ -75,8 +75,8 @@ def _strictest(prof: pp.Profile, compare: str, env: Dict[str, float], excludes: 
 
 def bend(material: str, thickness_mm: float, angle_deg: float = 90.0, *, radius_mm: Optional[float] = None,
          k: Optional[float] = None, shop: bool = True, path: Any = None) -> Dict[str, Any]:
-    """One bend in ``material`` (``5052`` or ``mild-steel``) of ``thickness_mm``, turned ``angle_deg`` from flat
-    (0 < A < 180). Returns the radius, K, bend allowance, outside setback, bend deduction, the shortest flange and the
+    """One bend in ``material`` (a key of ``process.SHEET_MATERIALS``: ``5052``, ``mild-steel``, ``g90``, ``304`` or
+    ``316``) of ``thickness_mm``, turned ``angle_deg`` from flat (0 < A < 180). Returns the radius, K, bend allowance, outside setback, bend deduction, the shortest flange and the
     relief depth, each with where it came from."""
     t = _num("thickness_mm", thickness_mm)
     a = _num("angle_deg", angle_deg)
@@ -154,3 +154,132 @@ def flat_length(legs_mm: Sequence[float], material: str, thickness_mm: float,
             "verdict": "fail" if short else "pass",
             "detail": (f"legs {short} are shorter than the {need:.4g} mm flange ({bends[0]['min_flange_mm']['rule']})"
                        if short else f"every leg is at least the {need:.4g} mm flange")}
+
+
+# ----------------------------------------------------------------------------- features near a bend, and shop limits
+
+ORDER = {"pass": 0, "warn": 1, "fail": 2}
+
+
+def _check(name: str, verdict: str, value: Any, limit: str, rule: str, source: str, detail: str) -> Dict[str, Any]:
+    return {"check": name, "verdict": verdict, "value": value, "limit": limit, "rule": rule, "source": source,
+            "detail": detail}
+
+
+def feature_to_bend(material: str, thickness_mm: float, edge_to_tangent_mm: float, angle_deg: float = 90.0, *,
+                    radius_mm: Optional[float] = None, shop: bool = True, path: Any = None) -> Dict[str, Any]:
+    """A hole or cut-out near a bend, against every generic hole-to-bend rule (``compare: sm-hole-to-bend``), each on
+    its own datum. ``edge_to_tangent_mm`` is measured on the flat from the feature's nearest edge to the bend's tangent
+    line (where the bend radius starts), the datum Hubs and Davis use. Century Tywood measures to the inside face of the
+    other leg; this takes that as the inside mould line, the inside setback R tan(A/2) further on (R at 90 degrees,
+    where the two are the same). Where a rule does not state its datum, the tangent
+    is assumed and the result says so: a feature that clears every rule with a stated datum but not one of those gets
+    a warning, not a fail."""
+    d = _num("edge_to_tangent_mm", edge_to_tangent_mm, positive=False)
+    b = bend(material, thickness_mm, angle_deg, radius_mm=radius_mm, shop=shop, path=path)
+    t, r, a = b["thickness_mm"], b["radius_mm"]["value"], b["angle_deg"]
+    prof = pp.profile("sheet-metal", path)
+    mat = prof.material(material)
+    inside = r * math.tan(math.radians(a) / 2.0)
+    rows, worst = [], "pass"
+    for lim in prof.limits(compare="sm-hole-to-bend", exclude=mat.excludes, T=t, R=r):
+        if not lim.verified or lim.min is None:
+            continue
+        datum = prof.rule(lim.rule).datum or "not stated"
+        if "inside" in datum:
+            have, on, stated = d + inside, "the inside face of the other leg", True
+        else:
+            stated = "tangent" in datum or "start of the bend radius" in datum
+            have, on = d, "the tangent" + ("" if stated else " (assumed: the rule states no datum)")
+        ok = have + 1e-9 >= lim.min
+        v = "pass" if ok else ("fail" if stated else "warn")
+        worst = max(worst, v, key=ORDER.get)
+        rows.append({"rule": lim.rule, "source": lim.source, "datum": datum, "measured_from": on,
+                     "distance_mm": round(have, 4), "min_mm": round(lim.min, 4), "verdict": v})
+    if not rows:
+        raise pp.ProfileDataError("no verified sm-hole-to-bend rule")
+    return {"verdict": worst, "material": b["material"], "thickness_mm": t, "radius_mm": r, "angle_deg": a,
+            "stock": b["stock"], "rules": rows,
+            "limits": ["the sources measure from different datums; the conversions assume a sharp flat pattern with the "
+                       "tangent line at the start of the bend radius",
+                       "a shop's own distance (SendCutSend: half its die width from the bend centre line) needs that "
+                       "shop's die width, which its tables here do not give: ask the shop"]}
+
+
+def check_bends(material: str, thickness_mm: float, flanges_mm: Sequence[float], angles: Union[float, Iterable[float]] = 90.0,
+                *, relief_depth_mm: Optional[float] = None, relief_width_mm: Optional[float] = None,
+                box: bool = False, hardware: bool = False, channel_base_mm: Optional[float] = None,
+                shop: Optional[str] = None, radius_mm: Optional[float] = None, path: Any = None) -> Dict[str, Any]:
+    """A bent part's bends: each flange (``flanges_mm``, to the outside mould line) at least the shortest flange; the
+    bend relief, when given, at least the depth (the shop's row, else the strictest generic rule) and the width (the
+    strictest generic rule; the shop's own as well when ``shop`` is named); and, with ``shop`` named, its own limits:
+    the largest bend angle, the longest flange of a four-sided ``box`` (shorter with ``hardware``), and a channel's
+    base (``channel_base_mm``) at least twice its flange."""
+    prof = pp.profile("sheet-metal", path)
+    flanges = [_num("a flange", x) for x in flanges_mm]
+    if not flanges:
+        raise ValueError("give at least one flange")
+    angs = [float(angles)] * len(flanges) if isinstance(angles, (int, float)) else [float(x) for x in angles]
+    if len(angs) != len(flanges):
+        raise ValueError(f"{len(flanges)} flanges need {len(flanges)} angles, not {len(angs)}")
+    rules = {r.id: r for r in prof.rules_for(shop=shop)} if shop else {}
+    checks: List[Dict[str, Any]] = []
+    for i, (f, a) in enumerate(zip(flanges, angs)):
+        b = bend(material, thickness_mm, a, radius_mm=radius_mm, path=path)
+        need = b["min_flange_mm"]
+        checks.append(_check(f"flange {i + 1}", "pass" if f + 1e-9 >= need["value"] else "fail", f,
+                             f"at least {need['value']:.3f} mm", need["rule"], need["source"], need["how"]))
+        key = f"sm-bend-angle-max-{shop}"
+        if shop and key in rules:
+            top = rules[key].limit().max
+            checks.append(_check(f"angle {i + 1}", "pass" if a <= top + 1e-9 else "fail", a, f"at most {top:g} deg",
+                                 key, rules[key].source, f"{shop} bends to {top:g} degrees at most (no hems)"))
+    b = bend(material, thickness_mm, angs[0], radius_mm=radius_mm, path=path)
+    t, r = b["thickness_mm"], b["radius_mm"]["value"]
+    mat = prof.material(material)
+    if relief_depth_mm is not None:
+        dep = _num("relief_depth_mm", relief_depth_mm)
+        need = dict(b["relief_depth_mm"])
+        key = f"sm-relief-depth-min-{shop}"
+        if shop and b["stock"] is None and key in rules:
+            own = rules[key].limit(T=t, R=r).min
+            if own > need["value"]:
+                need = _value(own, key, rules[key].source, True, f"{shop}'s own rule, stricter than the generic ones")
+        checks.append(_check("relief depth", "pass" if dep + 1e-9 >= need["value"] else "fail", dep,
+                             f"at least {need['value']:.3f} mm", need["rule"], need["source"], need["how"]))
+    if relief_width_mm is not None:
+        w = _num("relief_width_mm", relief_width_mm)
+        lims = [l for l in prof.limits(compare="sm-relief-width", exclude=mat.excludes, shop=shop, T=t, R=r)
+                if l.verified and l.min is not None]
+        generic = [l for l in lims if not prof.rule(l.rule).shop]
+        own = [l for l in lims if prof.rule(l.rule).shop]
+        top = max(generic, key=lambda l: l.min)
+        if w + 1e-9 >= top.min:
+            v, why = "pass", f"at least the strictest generic width ({top.rule})"
+        elif own and w + 1e-9 >= max(l.min for l in own):
+            v, why = "warn", f"meets {shop}'s own width but not the strictest generic one ({top.rule})"
+        else:
+            v, why = "fail", "narrower than every rule"
+        checks.append(_check("relief width", v, w, f"at least {top.min:.3f} mm", top.rule, top.source, why))
+    if shop and box:
+        key = f"sm-box-flange-max{'-hardware' if hardware else ''}-{shop}"
+        if key in rules:
+            top = rules[key].limit().max
+            longest = max(flanges)
+            checks.append(_check("box flange", "pass" if longest <= top + 1e-9 else "fail", longest,
+                                 f"at most {top:g} mm", key, rules[key].source,
+                                 f"a four-sided box {'with' if hardware else 'without'} hardware"))
+    if shop and channel_base_mm is not None:
+        key = f"sm-channel-base-{shop}"
+        if key in rules:
+            base = _num("channel_base_mm", channel_base_mm)
+            ratio = rules[key].limit().min
+            need = ratio * max(flanges)
+            checks.append(_check("channel base", "pass" if base + 1e-9 >= need else "fail", base,
+                                 f"at least {need:.3f} mm ({ratio:g} x the flange)", key, rules[key].source,
+                                 "a U channel's base must clear the tooling between its flanges"))
+    verdict = max((c["verdict"] for c in checks), key=ORDER.get)
+    return {"verdict": verdict, "material": b["material"], "thickness_mm": t, "stock": b["stock"], "checks": checks,
+            "limits": ["a shop's limits apply only when that shop is named; its tooling rows (radius, K, flange, relief "
+                       "depth) are read by default, as in bend()",
+                       "flanges are measured to the outside mould line; most sources do not state a datum"]}

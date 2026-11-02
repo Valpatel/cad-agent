@@ -9,6 +9,80 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.15.0 (2026-11-02)
+
+**New**
+- One-line install: `curl -fsSL https://cad-agent.valpatel.com/install.sh | sh`, or on Windows
+  `irm https://cad-agent.valpatel.com/install.ps1 | iex`. It needs git, installs uv if it is missing, clones `main`
+  into `~/cad-agent`, installs the `cad-agent` command with `uv tool install --editable` (Python 3.12, in
+  `~/.local/bin`) and adds the skills. Options: `--extras fea,sim`, `--ref vX.Y.Z`, `--dir`, `--uninstall`. Running
+  it again updates (#282).
+- `cad-agent update`: fast-forwards `main` (or moves to `--ref <tag>`), reinstalls only when `pyproject.toml` or
+  `uv.lock` changed or `--extras` adds some, relinks the skills, prints the CHANGELOG since the old commit with
+  "Projects must change" first, and in a project folder says what to re-run. It refuses a checkout with changes or
+  on another branch. Its only network use is that git fetch (#282).
+- `cad: {cad-agent: "0.14"}` in `cad-agent.yaml`: the oldest cad-agent a project builds with; `cad-agent all` refuses
+  an older one, and notes when the checkout's last commit is more than 14 days old. `cad-agent-results.json` records
+  the version that built it as `cad_agent` (#282).
+- `cad-agent agents uninstall` removes every skill and subagent it placed (#282).
+- `cadagent.mechanical.clinch` checks where a self-clinching (PEM-type) nut, stud or standoff may go in a sheet:
+  - the sheet's hardness against the part's material, with no listed part allowed in stainless sheet;
+  - the thickness for its shank;
+  - the hole band (+0.08 mm / −0);
+  - the edge distance;
+  - the distance to a bend (BA/2 + E from the bend centre line, with the bend allowance from `sheet_metal.bend`);
+  - the spacing to each neighbour;
+  - push-out, torque and pull-through loads against PEM's averages.
+  Each check names its `sm-clinch-*` rule or the PEM bulletin it uses. It holds a cited subset of PEM's common S, SS, CLS, CLSS, FH, SO and BSO parts, and `parts_for()` lists the ones that clinch into a given sheet (#283).
+- `cadagent.mechanical.rivets` checks a riveted lap joint of sheet parts: the grip band with each sheet's thickness
+  tolerance, the hole against the maker's drill range, edge distance (2D full strength, 1.5D floor), pitch (3D, 4D
+  for several rows), t/D, the thinnest aluminium under an open-end rivet, the rivet's metal against each sheet, and
+  the strength per pitch. Each check names its `sm-rivet-*` rule in `research/process-profiles.yaml`. It lists POP and
+  McMaster-Carr blind rivets with hole, grip and rated strength, and `rivets_for()` finds those whose grip covers a
+  stack (#283).
+- `cadagent.formulas` gains riveted lap-joint equations: `rivet_shear_force`, `bearing_force`, `tearing_force`,
+  `solid_sheet_force` and `lap_joint` (strength and efficiency per pitch). They are tested against MIL-HDBK-5J's shear
+  and bearing tables and the worked lap joints of Abbud's lecture notes (#283).
+- The rivet check takes e/D on the hole, as MIL-HDBK-5J does, with Fbru linear between e/D 1.5 and 2.0. When a
+  sheet has no bearing value at the joint's e/D, it says which edge distance would give one. Rows follow the FAA's
+  layouts: two rows at 4D with the rows 4D apart, and for three or more rows the outer rows at 6D and the inner rows
+  at 3D, with the rows 3D apart (#283).
+- `cadagent.manufacturing.sheet_metal.feature_to_bend` checks a hole or cut-out near a bend against every hole-to-bend
+  rule on the rule's own datum: the tangent line for Hubs and Davis, and the inside face for Century Tywood (plus
+  R tan(A/2), capped at R, so a bend past 90° earns no extra distance). A rule that states no datum is read from the
+  tangent and only warns (#283).
+- `cadagent.manufacturing.sheet_metal.check_bends` checks a bent part's flanges, relief depth and relief width. A
+  value that clears only a shop's own number (its row or its rule), and not the strictest generic rule, warns.
+  `rows=False` drops the shop's tooling rows (#283).
+- With a shop named, `check_bends` also checks that shop's limits: the bend angles it makes (SendCutSend: 5–130°), no
+  hardware on a part with a bend past 90°, the flanges of a four-sided box (with and without hardware), the channel
+  base, and the shop's own relief depth (#283).
+- `sheet_metal.bend` takes `g90`, `304` and `316` and reads SendCutSend's galvanised and stainless rows for them. Off
+  the table, stainless takes the generic hard-metal rules and G90 the medium (steel) ones (#283).
+
+**Changed**
+- Skills for Codex, Copilot CLI, Cursor, Gemini CLI and opencode go in `~/.agents/skills`, which they all read;
+  `agents install` removes what earlier versions put in `~/.codex/skills`. `--target codex` is now `--target agents`
+  (the old name still works). Where links are not allowed, it copies (#282).
+- The README and the home page lead with the one-line install and an eight-word line to paste into an agent; the
+  install and working rules moved into llms.txt (#282).
+
+**Fixed**
+- Five SendCutSend rules were not marked `shop: sendcutsend`, so generic checks read them. They are the K range, the
+  relief depth, the relief width, the corner-relief gap and the bend-angle tolerance. Off the shop's table, the
+  strictest generic relief depth is now T + R (Davis, Century Tywood), not SendCutSend's T + R + 0.5 mm. The generic
+  relief width is T (Hubs, Paulsen), not SendCutSend's T/2 (#283).
+
+**Projects must change**
+- Codex users: start a new Codex session after `cad-agent update` (or the installer) so it finds the skills in
+  `~/.agents/skills` (#282).
+- Sheet DFM reports (`cadagent.manufacturing.dfm.check`) change in two ways. A relief narrower than T now fails where
+  it used to warn (for example 0.9 mm on 1.6 mm sheet). Off a shop's table, the relief depth limit is now T + R, not
+  T + R + 0.5 mm. `dfm.check` cannot name a shop, so use `sheet_metal.check_bends(..., shop=...)` for the shop's own
+  rules (#283).
+- In `check_bends`, a flange at exactly the shop's shortest flange now warns on most stocks, because the shop's rows
+  are shorter than Century Tywood's 3.5 (T + R). Keep the flange or name the shop's tooling as the reason (#283).
+
 ## v0.14.0 (2026-11-02)
 
 **New**

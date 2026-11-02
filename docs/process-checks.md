@@ -21,11 +21,10 @@ it. **A rule from a design guide says a part is likely to be made well. It does 
 0.4 mm nozzle. Each row is one rule from the profile, coloured by its verdict.*
 
 Sources disagree. Prusa prints a 0.45 mm wall from a single 0.4 mm extrusion, while Xometry's industrial machines ask
-for 1.2 mm. So `dfm.check` keeps every source rather than choosing one. A feature **passes** when it meets every verified rule. It
-**fails** when it is beyond every verified rule, so no source would accept it. Anything between is a **warn** that
-names the rules it does not fully meet. A rule with a
-range ("0.75 mm supported, 1.0 mm unsupported") passes above its strict end and warns inside it, because the source's
-own conditions decide. Each rule's `applies` text (machine, material, part size) comes with it.
+for 1.2 mm. So `dfm.check` keeps every source rather than choosing one. A feature **passes** when it meets every
+verified rule. It **fails** when it is beyond every verified rule, so no source would accept it. Anything between is a
+**warn** that names the rules it does not fully meet. A rule with a range ("0.75 mm supported, 1.0 mm unsupported")
+passes above its strict end and warns inside it, because the source's own conditions decide. Each rule's `applies` text (machine, material, part size) comes with it.
 
 ```python
 from cadagent.manufacturing import dfm

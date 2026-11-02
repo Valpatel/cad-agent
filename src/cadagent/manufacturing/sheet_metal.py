@@ -15,7 +15,8 @@ rule):
    different ``radius_mm`` drops to step 3 for K, flange and relief);
 3. the generic rules: the inside radius is the largest verified ``sm-bend-radius-min`` (T for 5052 and mild steel);
    K is the Protolabs Network air-bending table, by the material's hardness class and R / T (``sm-k-air-*-hubs``:
-   0 to T, T to 3T, above 3T; on a boundary the lower band, so R = T takes "0 to T"); the minimum flange and relief depth are the strictest verified rule, every one listed.
+   0 to T, T to 3T, above 3T; on a boundary the lower band, so R = T takes "0 to T"); the minimum flange and relief
+   depth are the strictest verified rule, every one listed.
 
 **The equations.** Bend allowance, the neutral line's arc: ``BA = pi (R + K T) A / 180`` (the profile's formula
 ``sm-bend-allowance``, from SolidWorks' K-factor page), A the bend angle in degrees (how far the flange turns from flat,

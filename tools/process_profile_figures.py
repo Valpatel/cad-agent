@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Draw the process-profile charts (docs/img/research/process-*.svg) from research/process-profiles.yaml.
+"""Draw the process-profile charts (docs/img/research/process-*.svg) from research/process-profiles.yaml (and
+research/references.yaml, the sources it cites).
 
     python3 tools/process_profile_figures.py            # write the SVGs
     python3 tools/process_profile_figures.py --check    # exit 1 if a committed SVG differs from the data (tests run this)
@@ -23,6 +24,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "research" / "references.yaml"
 OUT = ROOT / "docs" / "img" / "research"
 INK, MUTED, LINE, BG, GREEN, ORANGE = "#173d3c", "#526863", "#d8e0d3", "#fffdf5", "#6f8a80", "#bd3a12"
 FONT = "system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
@@ -84,7 +86,11 @@ def evaluate(expr: float | int | str, env: dict[str, float]) -> float:
 # ----------------------------------------------------------------------------- data
 
 def load() -> dict:
-    return yaml.safe_load(DATA.read_text(encoding="utf-8"))
+    """The profiles, with ``sources``: the entries of the reference registry (research/references.yaml, #118) that
+    the rules cite."""
+    data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
+    data["sources"] = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))["sources"]
+    return data
 
 
 def credit(source: dict) -> str:

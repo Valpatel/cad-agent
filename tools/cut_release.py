@@ -238,9 +238,8 @@ def main(argv=None) -> int:
           f"  git add -A && git commit -m 'Release v{version}' && git push -u origin HEAD\n"
           f"  gh pr create --base dev --title 'Release v{version}: version and CHANGELOG'   # review, merge\n"
           f"  gh pr create --base main --head dev --title 'Release v{version}'              # review, merge (merge commit)\n"
-          f"release.yml then tags v{version} and publishes the GitHub release. It deploys the site only if the owner\n"
-          f"has set the production environment's deploy secret; otherwise its site job warns and skips, and the site\n"
-          f"is deployed by hand from main (CONTRIBUTING.md#releases).")
+          f"release.yml then tags v{version} and publishes the GitHub release. Cloudflare Pages builds and deploys the\n"
+          f"site from main by itself; check https://cad-agent.valpatel.com/version.json (CONTRIBUTING.md#releases).")
     return 0
 
 

@@ -1,6 +1,6 @@
 // The catalogue (/catalog, /catalog.json, /catalog/index.json, /catalog/<area>.json), built from HEAD: every entry has
 // a picture of our own and a place in the area map, the JSON files agree with each other and with the page, and the
-// schema-1 fields and old links keep working. Behaviour in browsers: tests/website-catalog-browser.mjs.
+// schema-1 fields and old links keep working. Behaviour in browsers: tests/site/website-catalog-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';

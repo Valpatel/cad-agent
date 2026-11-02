@@ -3,7 +3,7 @@
    figures or drawn from data by tools/catalog-art.mjs; the tints below match theirs. */
 .catalog{--bar-top:84px;--side-w:268px;--glyph-accent:var(--orange)}
 /* Each domain's tone: two tints for backgrounds (the covers' too: TINT in tools/catalog-art.mjs) and an ink for accents,
-   at least 3:1 against white and against both tints. Every domain in docs/areas.yaml has one: tests/website-catalog.test.mjs. */
+   at least 3:1 against white and against both tints. Every domain in docs/areas.yaml has one: tests/site/website-catalog.test.mjs. */
 [data-tone=mechanical]{--tint-a:#eef8fb;--tint-b:#cfe3ec;--tone:#3f7f9c}[data-tone=manufacturing]{--tint-a:#fff7d9;--tint-b:#f4e1a2;--tone:#a07a0c}
 [data-tone=thermal]{--tint-a:#ffefe3;--tint-b:#f6d3b8;--tone:#c0602a}[data-tone=simulation]{--tint-a:#eef8e4;--tint-b:#d0e8b6;--tone:#4f8a35}
 [data-tone=electrical]{--tint-a:#eef1fb;--tint-b:#d3dbf0;--tone:#5468b0}[data-tone=practice]{--tint-a:#f7f5ea;--tint-b:#e5e7d3;--tone:#7d7f55}

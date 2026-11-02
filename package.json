@@ -7,6 +7,7 @@
     "test:part-table": "node tests/webkit/webkit-part-table-browser.mjs",
     "test:file-viewer": "node tests/webkit/webkit-file-viewer-browser.mjs",
     "test:diagrams": "node tests/webkit/webkit-diagrams-browser.mjs && node tests/site/site-diagrams-browser.mjs",
+    "build": "node tools/pages-build.mjs",
     "build:site": "node tools/build-site.mjs",
     "preview:site": "node tools/build-site.mjs --worktree && node tools/preview-site.mjs",
     "deploy:site": "node tools/build-site.mjs --release && npx --yes wrangler@4.86.0 pages deploy dist --project-name cad-agent --branch main --commit-dirty=false",

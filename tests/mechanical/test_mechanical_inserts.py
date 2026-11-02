@@ -579,6 +579,7 @@ def test_a_far_side_insert_is_pressed_onto_its_shoulder_and_its_melt_goes_back_t
     assert rows["hole depth"]["verdict"] == "pass" and rows["hole depth"]["limit"] == 5.7
     # the result's hole and install note say the same as the rows
     assert r["hole"]["depth_mm"] == 5.7 and "far face" in r["hole"]["why"][2]
+    assert r["hole"]["overflow_mm3"] == 0.0
     assert "on to the shoulder" in r["install"]["how"] and "never below" not in r["install"]["how"]
     assert rows["melt volume"]["value"] is None and "far face" in rows["melt volume"]["detail"]
     deep = _rows(I.check_joint(**base, hole_depth_mm=6.7))["hole depth"]
@@ -611,6 +612,8 @@ def test_a_printed_part_clamped_on_a_flush_insert_bears_on_its_ring():
     over = _rows(I.check_joint("mcmaster-94459A140", "petg-bambu-basic", boss_outside_mm=9.5, head_mm=7.0,
                                clearance_mm=3.4, clamped={"thickness_mm": 4.0}, torque_nm=0.64))["clamped on insert"]
     assert over["verdict"] == "fail" and over["value"] > strength
+    # a washer under the head does not help the ring; the row says which washer would
+    assert "not under the head" in row["detail"] and "cautious side" in row["detail"]
     # clamping metal, nothing printed sits on the ring
     metal = I.check_joint("mcmaster-94459A140", "petg-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"})
     assert "clamped on insert" not in _rows(metal)

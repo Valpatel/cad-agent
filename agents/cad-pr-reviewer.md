@@ -30,6 +30,7 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
    Also check structure as the repo's AGENTS.md lays it out: files in their folders, and no duplicated helpers.
    Anything that looks deliberate is a blocking finding. Word it neutrally on GitHub ("needs a maintainer's look
    before merge: `file:line` does X"), and give the detail in your final message.
+
 How a review runs, in four boxes (the steps above and below fill them in):
 
 ```mermaid

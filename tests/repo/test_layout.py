@@ -61,7 +61,7 @@ OVER_LIMIT = {
 }
 
 IMPORT = re.compile(r"^\s*(?:from|import)\s+cadagent\.([a-z_.]+)", re.M)     # cadagent.<pkg>[.<sub>...]
-FROM_TOP = re.compile(r"^\s*from\s+cadagent\s+import\s+\(?([^)\n]+)", re.M)  # from cadagent import a, b as c
+FROM_TOP = re.compile(r"^\s*from\s+cadagent\s+import\s+(\([^)]*\)|[^\n]+)", re.M)  # from cadagent import a, b as c
 README_GUIDE = "the table in tests/README.md"
 
 
@@ -97,7 +97,8 @@ def imported_modules(text: str) -> list[str]:
     ``from cadagent import geometry, formulas as fx``."""
     mods = IMPORT.findall(text)
     for names in FROM_TOP.findall(text):
-        mods += [n.split(" as ")[0].strip() for n in names.split(",") if n.strip() and not n.strip().startswith("#")]
+        names = re.sub(r"#[^\n]*", "", names).strip("()")            # a trailing comment, a parenthesised list
+        mods += [n.split(" as ")[0].strip() for n in names.split(",") if n.strip()]
     return [m.rstrip(".") for m in mods]
 
 
@@ -339,6 +340,8 @@ def test_the_main_subject_wins_over_a_helper_import():
     assert domain_for("test_new.py", "from cadagent import formulas as fx\nfrom cadagent.thermal import fans\n"
                                      "from cadagent import formulas\n") == "formulas"
     assert domain_for("test_new.py", "from cadagent import MissingDependency\n") == "repo"
+    assert domain_for("test_new.py", "from cadagent import geometry  # noqa: E402\n") == "geometry"
+    assert domain_for("test_new.py", "from cadagent import (MissingDependency,  # why\n    review)\n") == "review"
     # named after what it tests: a package, a top-level module, a module inside a package
     assert domain_for("test_formulas.py", "from cadagent.thermal import fans\n") == "formulas"
     assert domain_for("test_cli.py", "from cadagent.publish import serve\n") == "cli"

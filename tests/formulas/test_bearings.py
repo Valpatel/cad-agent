@@ -15,7 +15,7 @@ from cadagent import formulas as fx
 from cadagent.formulas.bearings import _agm_elliptic
 from cadagent.mechanical import bearings as mb
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VECTORS = json.loads((ROOT / "tests" / "fixtures" / "bearing-vectors.json").read_text())
 KNEE = dict(oscillation={"amplitude_deg": 30, "cycles_per_min": 60},
             duty=[{"name": "stance", "radial_n": 900, "share": 0.6}, {"name": "swing", "radial_n": 150, "share": 0.4}],

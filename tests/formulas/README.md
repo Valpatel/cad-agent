@@ -21,6 +21,7 @@ flowchart TD
 | File | What it tests |
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
+| `test_bearings.py` | Rolling bearings: ISO 281 life and ISO 76 static safety against the makers' worked examples |
 | `test_formulas.py` | `cadagent.formulas` against worked examples from the cited sources, or derivations written out here |
 | `test_inserts_formulas.py` | Threaded inserts and compression limiters: golden vectors and an independent derivation |
 | `test_torsion_snap_boss.py` | The torsion-bar snap and the screw in a printed boss, against Saint-Venant and thread statics |

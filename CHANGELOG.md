@@ -4,11 +4,122 @@ Every release of cad-agent: what projects using it gain and what they must chang
 fragment in [`changelog.d/`](changelog.d/README.md). Releasing is part of the development loop
 ([CONTRIBUTING.md](CONTRIBUTING.md#releases)): `tools/cut_release.py` folds the fragments into `## Unreleased` and
 dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check requires. Merging the release PR
-(`dev` → `main`) tags the release and deploys the site, when the owner has set the `production` environment's deploy
-secret; until then the site job warns and skips, and the site is deployed by hand from `main`. Releases up to v0.4.2
+(`dev` → `main`) tags the release, and Cloudflare Pages builds and deploys the site from `main` by itself. Releases up to v0.4.2
 are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
+
+## v0.14.0 (2026-11-02)
+
+**New**
+- `research/references.yaml`, the reference registry: 161 read sources, each with its authors or publisher, year, an
+  https link or ISBN, access, terms, the design areas it supports, the repo files that rely on it, and what was read
+  and when. It merges the first sweep of #119 with the sources of `research/process-profiles.yaml`, and adds every
+  source that `cadagent.formulas` (with the rolling-bearing sources of #180), `cadagent.mechanical.inserts`,
+  `cadagent.mechanical.printed_joints` and `cadagent.simulation.fea` cite by key. Sources are cited, never copied:
+  paid standards by number and title only, paid papers by author, title and equation, and no PDF of a source is kept
+  in the repo (#118).
+- `cadagent.review.references`: `lookup("covestro")` and `citation("roark")` resolve an id or a module's own key (an
+  alias such as `shigley-torque`) to its entry. `check()` finds every place the code cites by id and reports a key
+  that resolves to nothing, a malformed entry, or a citing file missing from the entry's `used_for`. From a shell:
+  `python -m cadagent.review.references roark` or `--check` (#118).
+- `cad-agent slice` with PrusaSlicer: set `cad.slicer.engine: prusa` (the default stays `bambu`).
+  `cadagent.manufacturing.slicer_prusa` runs `prusa-slicer` (on PATH or the flatpak) as a separate process. PrusaSlicer
+  itself resolves the named printer, print and filament presets, user presets included, so a multi-tool printer such
+  as the XL gets every filament setting once per tool, and it refuses a preset that does not fit the printer. Overrides
+  use PrusaSlicer's names; an unknown key such as Bambu's `wall_loops` is an error. Grams and time come from the
+  G-code footer, and the slice records the SHA-256 of its config and of every profile file read (#242, by Jeff Patrick).
+- A PrusaSlicer slice report records `engine: prusa` and is not current for a Bambu Studio project, or the other way
+  round. The release page says which slicer's presets it lists (#242, by Jeff Patrick).
+- `cad-agent slice` with PrusaSlicer keeps what PrusaSlicer said about each part: it runs with `--loglevel 3`, saves
+  the log next to the G-code (`build/slicer/<part>/out/slicer.log`) and records each part's `warnings`, `errors`,
+  `stability_issues` (the categories after "Detected print stability issues", such as `Long bridging extrusions`) and
+  `benign_log_lines` (a count of PrusaSlicer's notes that say nothing about the print).
+  `cadagent.manufacturing.slicer_prusa.parse_log` reads a log (#246, by Jeff Patrick).
+- Per-part slicer settings: `cad.slicer.parts` may be a mapping of part name to `{overrides: {...}}`, applied on top
+  of `cad.slicer.overrides` (a brim for a tall part, more perimeters for a pin-loaded link). A report row records its
+  `part_overrides` and is stale once they change (#246, by Jeff Patrick).
+- `cadagent.manufacturing.prusa3mf`: PrusaSlicer project 3MFs. `write_project` writes objects made of several
+  volumes, each on its own tool (`Metadata/Slic3r_PE_model.config` volume ranges), and the wipe tower's place, which
+  PrusaSlicer 2.9 reads from the project and not from the print config; `write_plates` packs every part at its
+  quantity with the build-plates layout, grouped by tools or filament, one 3MF per plate, keeping parts clear of the
+  tower. Each file is read back (triangles, watertightness, volume, tool and place of every volume) and is
+  byte-reproducible; checked by slicing with PrusaSlicer 2.9.4 (#248, by Jeff Patrick).
+- `cadagent.mechanical.clearance`: a range-of-motion collision check. `collisions(instances)` relates every pair of
+  placed solids whose bounding boxes meet with the relation gate's exact narrow phase (`relate`) and reports pairs
+  overlapping by more than `tolerance_mm3` (2 mm³ by default), with `skip` for intended overlaps and `only` to limit
+  the check; a pair the gate cannot decide is an error, never a pass. `sweep(poses, place_fn)` runs it at every named
+  pose and writes a check JSON with a top-level `pass` and `physical_fit_verified: false`; with `travel_mm` it also
+  proves each pair clear between consecutive poses by the gap bound `(g1 + g2 - travel) / 2`, or fails the step.
+  `swept_envelope(pieces)` builds a revolved swept-volume cutter with slopes capped at 45°, as one revolve (no flat
+  ceilings, no many-tool fuse). Contributed by Jeff Patrick (docs/toolkit.md, #251).
+- "Copy this to your agent": one block, in `docs/agent-prompt.txt`, that a person pastes into Claude Code, Codex, Copilot CLI or any agent with a shell. The agent installs cad-agent and its skills from the public repository, finds the tool through `llms.txt`, builds with the kit's tested checks, and drafts what it learned as a pull request or an issue that the person approves. It is the README's first section, under the animated hero ("Build with your favorite AI agent", which replaces the old Quick start) and in a card on the site's home page, with a copy button; `llms.txt` and `index.md` carry it too. Tests keep all of them identical (#278).
+- Provenance on reports: the feedback issue form takes optional Model, Harness, cad-agent commit, Layer (a cad-agent tool or the upstream under it), Building, Sources and Confidence fields, and the PR template has a "Made with" section. With these, the project counts which models, harnesses and layers work from GitHub data alone. cad-agent collects no telemetry (#278).
+- `tools/quickstart_eval.py` checks the block for someone with nothing of ours. `install` runs its commands in an empty folder and smoke-tests the result. `agent` gives the block and a small request to a fresh Claude Code or Codex session, in a new home with none of your skills, memory, settings or MCP servers. `grade` scores the run from its transcript and files, and prints tool calls, tokens and checks as one JSON line: a first job for the evaluation runner (#142).
+- Usage reporting off: every project step `cad-agent` runs gets `DO_NOT_TRACK=1`, `CADGEN_TELEMETRY=0` and `CADGEN_UPDATE_CHECK=0` (text-to-cad's cadgen), `KICAD_MCP_TELEMETRY_ENABLED=false` (kicad-mcp-pro), `WRANGLER_SEND_METRICS=false` and `WRANGLER_SEND_ERROR_REPORTS=false` (Cloudflare wrangler), unless a variable is already set; the calling shell is left as it was. `npm run deploy:site` sets both wrangler opt-outs too. cad-agent itself sends nothing. The survey behind the list is in `docs/supply-chain.md` ("Usage reporting"), and a test fails when a vendored tool names a switch the list does not cover (#278).
+- `cad-agent agents install` and `agents list` say which skills and agents you can't use yet and why (`gh` not logged in; `git`, `ssh` or `rsync` not on PATH; Playwright or Google Chrome missing), which ones work with some steps left out, and what they cannot check from here (write access to the repository, a compute host). The checks run on this computer with no network call. Each skill or agent declares its needs as `metadata: {requires: ..., optional: ...}` in its frontmatter and opens with a `> **Needs:**` line saying the same. Everything is still installed for everyone (#282).
+- `cadagent.library`, the parts library (#287). It holds KiCad footprints and CadQuery 3D bodies for real parts, drawn from their datasheets, with the datasheet numbers as golden vectors. It starts with the parts Gyropup's fuse board needed: the Littelfuse MINI FL1 holder (and MINI fuses by rating), the Bourns CSS2H-3920 shunt on a Kelvin layout, M4 and M6 lug studs, an M5 bonding mounting hole and a non-plated slot. cad-agent commits no footprint or STEP files. `cad-agent library build OUT --project DIR` writes `cad-agent.pretty` and `cad-agent.3dshapes` (coloured, reproducible STEP) for a project's `fp-lib-table`.
+- `cad-agent library audit board.kicad_pcb` fails on any footprint with no 3D model, or whose model does not resolve, unless a waiver gives the reason it is not a part (`--waive 'TP*=bare test pad'`). `cadagent.library.audit.registration` checks that a body sits on the board, that its pins pass through their pads' holes, and that its terminals lie over the right pads (the pin-1 frame).
+- `cadagent.library.hardware`: socket-head and button-head dimensions, tested against the vendored `bd_warehouse` tables. It also has nyloc and ring-lug envelopes (marked unverified) and `register()`, where other families such as clinch hardware (#283) plug in.
+- `tests/repo/test_markdown_images.py`: every local image in every Markdown page must be in git with the exact case,
+  non-empty, not a Git LFS pointer, and match its extension's magic bytes.
+  It ignores fenced and inline code and HTML comments, follows reference-style images, unquoted `src=`, every
+  `srcset` entry and percent-encoded paths, and fails an image on a site-rendered page that sits outside `docs/img/`
+  (the only image folder the site copies) (#294).
+
+**Changed**
+- `tests/` is grouped by domain: each test sits in `tests/<domain>/`, the folder named after the
+  `src/cadagent/<domain>/` package it tests, or in `tests/cli/`, `tests/site/` (the website and its build) or
+  `tests/repo/` (the repo's own rules and tooling); design exploration's are in `tests/simulation/explore/`. File
+  names are unchanged, and `git log --follow` keeps each file's history. The same tests are collected and pass. Every folder has a README with a map, and `tests/README.md` lists
+  them (#113).
+- `tests/repo/test_layout.py` checks where files go. It fails on a test file directly in `tests/`, a `tests/` folder
+  that is neither a package nor a listed area, a new top-level folder in the repo, a new file at the top of `src/` or
+  `src/cadagent/`, and a folder newly over 20 files. Each failure names the folder the file belongs in. The folders
+  over 20 files today (`docs/`, `tools/`, `src/cadagent/webkit/`) are on a list that may only shrink (#113).
+- `AGENTS.md` has a "Repo structure and where files go" section with the growth rule: split a folder when it gets
+  cluttered, not before, with a README and map for each new folder. `CONTRIBUTING.md` has a "Where files go" table.
+  The `cad-pr-reviewer` agent and the `cad-pr-review` skill check structure and sprawl, so projects that install the
+  kit get the same check against their own map (#113).
+- `research/process-profiles.yaml` no longer has its own `sources` and `standards` blocks: its rules cite registry
+  ids, and `tools/process_profile_figures.py` reads the credits from the registry. The charts are unchanged (#118,
+  #163).
+- `cadagent.manufacturing.process` reads its sources from the registry, so the FDM data-sheet ids of its material
+  factors (`bambu-petg-basic-tds` and the rest) now resolve to an entry instead of falling back to the sheet's link.
+  A data file with no registry beside it still loads, with those ids unresolved (#118, #99).
+- `cadagent.mechanical.bearings.SRC` (#180) is now `WHERE`: its keys are the checks (`life`, `load`, ...), not source
+  ids, and a module-level `SRC` or `SOURCES` table is where the registry's check looks for ids (#118).
+- `tests/simulation/test_fea_materials.py` now checks that every material's `source` is a read entry of the registry. It was
+  skipped while the registry was missing (#118).
+- A PR into cad-agent that adds a `[ref:<id>]` tag, a `source=` on an FEA material, a key to a module's `SRC` or
+  `SOURCES` table, or a sheet to `FDM_MATERIALS` must add that source to `research/references.yaml`, or
+  `tests/review/test_references.py` fails (#118).
+- The registry records two out-of-date citations, for follow-up. ISO 68-1:1998, which `cadagent.formulas` cites for
+  the metric thread profile, was withdrawn on 2023-10-05 and replaced by ISO 68-1:2023. Freudenstein's 1955 paper is
+  pp. 853-859; the discussion after it runs to p. 861, which the formulas' citation includes (#118).
+- `export-3mf` for a PrusaSlicer project writes plates without Bambu Studio project settings, and says so (#242, by Jeff Patrick).
+- A PrusaSlicer slice report gives each part an `ok`: true only with exit code 0, G-code written and no error or print
+  stability issue. The report's `pass` needs every part ok, and `cad-agent slice` exits 1 otherwise, so a part that
+  slices but PrusaSlicer says will print badly no longer reports as fine. Bambu Studio reports are unchanged (#246, by Jeff Patrick).
+- A part PrusaSlicer flagged keeps its grams and time, and says so: its print-release card carries a `slicer: …` pill,
+  the release warnings (and `manifest.json`) name it, and the results report's slicer line adds `NOT OK, flagged by
+  the slicer` (#270).
+- Slicing some parts (`cad-agent slice PART ...`) keeps only the old rows that are still current; `pass` is about the
+  rows in the report, so a part left out is reported as not sliced (#270).
+- The README's Quick start is folded into "Build with your favorite AI agent". The table of extras moved to "What's in the box" (#278).
+- README: the animated hero is back at the top, above the title and the copy-to-your-agent prompt, as on
+  text-to-cad's README, with two rows of badges (release, Python, site, last commit, stars, supported agents, CAD
+  kernel, no telemetry). A test keeps the hero first (#294).
+
+**Projects must change**
+- If a project or CI job runs cad-agent's tests by file path, add the domain folder:
+  `tests/test_fea.py` is now `tests/simulation/test_fea.py`, and `tests/webkit-*.test.mjs` is now
+  `tests/webkit/webkit-*.test.mjs`. `tests/README.md` lists every folder. Running `pytest tests` or `npm run test:*`
+  works as before.
+- Code that imports a test module as a helper takes the new module path: `tests.test_report` is now
+  `tests.publish.test_report` (#113).
+- PrusaSlicer projects: re-run `cad-agent slice`. A part with a stability issue or slicer error now fails it; fix the
+  geometry, or set that part's own overrides under `cad.slicer.parts` (#246, by Jeff Patrick).
 
 ## v0.13.0 (2026-11-02)
 
@@ -37,7 +148,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   5052 and mild steel, from the shop's table first and the generic rules after (#99).
 - Docs: [Process profiles in code](docs/process-checks.md), with three figures drawn from these modules (#99).
 - `cad-agent overhangs [PART ...] [--limit 45] [--min-area 4]`: groups each part STL's downward faces flatter than the limit (slope from horizontal, 0° a flat ceiling) into connected regions, each with area, bounds, centre and flattest angle, in `exports/overhang-screen.json`. A screen, not a slicer: bridges anchored on both sides are listed too (#247, by Jeff Patrick).
-- `cadagent.geometry.overhang_regions(mesh_or_path, limit_deg=45, min_area=4)`: the regions behind that command; `downward_area` still gives one total (#247, by Jeff Patrick).
+- `cadagent.geometry.overhang_regions(mesh, limit_deg=45, min_area=4)`: the regions behind that command; `downward_area` still gives one total (#247, by Jeff Patrick).
 - `cadagent.manufacturing.gcode.bridge_report(path, n)`: the longest bridge and overhang-perimeter extrusions in PrusaSlicer, Bambu Studio or OrcaSlicer G-code (or a sliced `.gcode.3mf`), with height and position, to find what a "long bridging extrusions" warning is about (#247, by Jeff Patrick).
 - Lessons on printing agent-designed parts without supports (`lessons/mechanical/printing-without-supports.md`, #253, by Jeff Patrick),
   from a 46-part excavator for a Prusa XL 5T: teardrop horizontal holes, 45° cone ends on clearance cutters, clevis

@@ -6,7 +6,11 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25   # ~15 min since the dark theme (#306) drew every diagram twice; a hung step must not hold a PR for hours
+    # About 7 minutes (#315). Most of it is the site's pages in a real browser (website-browser.mjs, whose page checks
+    # the dark theme, #306, doubled: both themes, more widths) and, in the Chromium job, the build's own tests. Building
+    # the site is a few seconds once the diagram cache below is warm. 15 leaves room for a cold cache and a slow runner;
+    # a hung step must not hold a PR for hours.
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

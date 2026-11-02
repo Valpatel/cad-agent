@@ -106,12 +106,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   the slicer` (#270).
 - Slicing some parts (`cad-agent slice PART ...`) keeps only the old rows that are still current; `pass` is about the
   rows in the report, so a part left out is reported as not sliced (#270).
-- The README's Quick start is folded into "Build with your favorite AI agent". The table of extras moved to "What's in the box" (#278).
+- The README's Quick start is folded into "Build with your favorite AI agent". The table of extras moved to its own "Extras" section after "What's in the box" (#278).
 - README: the animated hero is back at the top, above the title and the copy-to-your-agent prompt, as on
   text-to-cad's README, with two rows of badges (release, Python, site, last commit, stars, supported agents, CAD
   kernel, no telemetry). A test keeps the hero first (#294).
 
 **Projects must change**
+- `cadagent.mechanical.bearings.SRC` is now `WHERE`, with no alias: code that imports `SRC` from it must import
+  `WHERE` (#118).
 - If a project or CI job runs cad-agent's tests by file path, add the domain folder:
   `tests/test_fea.py` is now `tests/simulation/test_fea.py`, and `tests/webkit-*.test.mjs` is now
   `tests/webkit/webkit-*.test.mjs`. `tests/README.md` lists every folder. Running `pytest tests` or `npm run test:*`
@@ -148,7 +150,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   5052 and mild steel, from the shop's table first and the generic rules after (#99).
 - Docs: [Process profiles in code](docs/process-checks.md), with three figures drawn from these modules (#99).
 - `cad-agent overhangs [PART ...] [--limit 45] [--min-area 4]`: groups each part STL's downward faces flatter than the limit (slope from horizontal, 0° a flat ceiling) into connected regions, each with area, bounds, centre and flattest angle, in `exports/overhang-screen.json`. A screen, not a slicer: bridges anchored on both sides are listed too (#247, by Jeff Patrick).
-- `cadagent.geometry.overhang_regions(mesh, limit_deg=45, min_area=4)`: the regions behind that command; `downward_area` still gives one total (#247, by Jeff Patrick).
+- `cadagent.geometry.overhang_regions(mesh, limit_deg=45, min_area=4)` (`mesh` is a mesh or an STL path): the regions behind that command; `downward_area` still gives one total (#247, by Jeff Patrick).
 - `cadagent.manufacturing.gcode.bridge_report(path, n)`: the longest bridge and overhang-perimeter extrusions in PrusaSlicer, Bambu Studio or OrcaSlicer G-code (or a sliced `.gcode.3mf`), with height and position, to find what a "long bridging extrusions" warning is about (#247, by Jeff Patrick).
 - Lessons on printing agent-designed parts without supports (`lessons/mechanical/printing-without-supports.md`, #253, by Jeff Patrick),
   from a 46-part excavator for a Prusa XL 5T: teardrop horizontal holes, 45° cone ends on clearance cutters, clevis

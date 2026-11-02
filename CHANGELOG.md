@@ -40,11 +40,22 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   and `preload_retained_limited` (#230).
 - `docs/inserts.md` with five figures drawn from the module, and `tools/insert_coupons.py`, which writes the test
   coupons as STEP and STL in their print orientation (#230).
-- `cadagent.mechanical.printed_joints.pin_eye`: a pin through a printed eye, checked before printing: bearing, shear-out and net tension resolved on the print's layers with the FEA layer check's criterion, whether the eye fails gradually (bearing, from e/D 3 and w/D 6 in PLA, 4.5 and 9 in ABS and untested filaments) or suddenly, a pin turning in plastic, and what a metal bushing gains and costs. Pass, warn or fail with the safety factor (#97).
-- `cadagent.mechanical.printed_joints.root_peel`: the root of a boss or rib loaded from the side, where the layers peel when it is built upright, and the preload a through-bolt (threaded rod and nuts) must keep to hold the layer seam closed, as tightened and after the plastic relaxes, with the torque window that closes it without crushing the boss (#97).
-- `cadagent.mechanical.printed_joints.thread_locking`: a screw backing out under vibration: transverse slip against friction on the kept preload (Junker), the locking element against the thread it is in (an anaerobic threadlocker on a printed thread fails, a jam nut or spring washer warns), and preload held by plastic (#97).
-- `cadagent.manufacturing.fit_coupons`: a printable coupon per fit, holes swept round nominal + allowance + the process profile's undersize, as STEP and print-oriented STL with a measurement sheet, so the first print calibrates pins, bushings, bearings and inserts; `from_coupon` reads the result back (#97).
-- `docs/printed-joints.md`: the four pitfalls with figures drawn from the checks, and new rows in `docs/common-issues.md` (#97).
+- `cadagent.mechanical.printed_joints.pin_eye`: a pin through a printed eye, checked before printing: bearing, shear-out
+  and net tension resolved on the print's layers with the FEA layer check's criterion, whether the eye fails gradually
+  (bearing, from e/D 3 and w/D 6 in PLA, 4.5 and 9 in ABS and untested filaments) or suddenly, a pin turning in plastic,
+  and what a metal bushing gains and costs. Pass, warn or fail with the safety factor (#97).
+- `cadagent.mechanical.printed_joints.root_peel`: the root of a boss or rib loaded from the side, where the layers peel
+  when it is built upright, and the preload a through-bolt (threaded rod and nuts) must keep to hold the layer seam
+  closed, as tightened and after the plastic relaxes, with the torque window that closes it without crushing the boss
+  (#97).
+- `cadagent.mechanical.printed_joints.thread_locking`: a screw backing out under vibration: transverse slip against
+  friction on the kept preload (Junker), the locking element against the thread it is in (an anaerobic threadlocker on a
+  printed thread fails, a jam nut or spring washer warns), and preload held by plastic (#97).
+- `cadagent.manufacturing.fit_coupons`: a printable coupon per fit, holes swept round nominal + allowance + the process
+  profile's undersize, as STEP and print-oriented STL with a measurement sheet, so the first print calibrates pins,
+  bushings, bearings and inserts; `from_coupon` reads the result back (#97).
+- `docs/printed-joints.md`: the four pitfalls, three of them with figures drawn from the checks, and new rows in
+  `docs/common-issues.md` (#97).
 
 **Changed**
 - `catalog.json`: `fields.removed` records that v0.10.0 took `gyropup` off entries while the schema stayed
@@ -52,6 +63,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   area (#104).
 - `cadagent.formulas.nut_factor` refuses a flank angle outside 0 to π/2 radians. 60 passed as degrees used to give
   about three times the nut factor without complaint (#230).
+  `kit/formulas.js`'s `nutFactor` refuses it the same way, and `screwBoss` with it. For now the angle must be a
+  Python `int` or `float`: a NumPy scalar or a `Decimal` inside the range is refused too, wrongly reported as out of
+  range; a follow-up accepts any real number (#230).
 
 **Fixed**
 - Catalogue: the status line reads "1 of 181 entries", not "1 of 181 entry". Its noun now agrees with the total it
@@ -60,11 +74,16 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   `CanvasText` and empty ones as outlined `Canvas`, and the chosen area row takes the system's selection colours
   (`Highlight`, `HighlightText`). Before, every step and the chosen row painted the same `Canvas`, so the bars vanished
   and only bold text marked the choice (#104).
-- Kit `<cad-nav>`: on a wide screen, at the end of a long page, the sticky page tree no longer slides up under the header. It shrinks to the room its column leaves, so its filter stays in view and typing in it no longer scrolls the page. Adding a page to the site's tree had pushed it under (#230).
+- Kit `<cad-nav>`: on a wide screen, at the end of a long page, the sticky page tree no longer slides up under the
+  header. It shrinks to the room its column leaves, so its filter stays in view and typing in it no longer scrolls the
+  page. Adding a page to the site's tree had pushed it under (#230).
 
 **Projects must change**
-- Pass `flank_angle` to `nut_factor` in radians (`math.radians(60.0)`, the default). A call that passed degrees now
-  raises `ValueError` instead of returning a wrong number (#230).
+- Pass `flank_angle` in radians to `nut_factor` (default `math.radians(60.0)`) and to the functions that pass it on
+  (`screw_boss`, `insert_limited_torque`). A call that passed degrees now raises `ValueError` instead of returning
+  a wrong number. Convert a NumPy angle with `float()` first (#230).
+- In the browser kit (`kit/formulas.js`), pass `nutFactor`'s and `screwBoss`'s flank angle in radians too (ISO's
+  60 degrees is `Math.PI / 3`). Degrees now throw `RangeError` (#230).
 
 ## v0.11.0 (2026-11-01)
 

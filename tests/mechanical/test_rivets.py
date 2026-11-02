@@ -143,8 +143,9 @@ def test_bad_inputs(kw):
         R.check_joint("pop-AD43", [("5052-h32", 1.6)], edge_mm=6.35, pitch_mm=9.525)
 
 
-def test_three_or_more_rows_follow_the_faa_staggered_layout():
-    # FAA AC 43.13-1B Fig. 4-5 (B): staggered rows 3D apart, 6D pitch in each row
+def test_three_or_more_rows_follow_the_faa_layout():
+    # FAA AC 43.13-1B Fig. 4-5 (B): the outer rows at 6D, the inner rows at 3D, rows 3D apart and in line;
+    # pitch_mm is the outer rows' pitch
     six = joint(pitch=6 * 3.175, rows=3, row_spacing_mm=3 * 3.175)
     assert by(six, "pitch")["verdict"] == "pass" and "sm-rivet-pitch-multiple-faa" in by(six, "pitch")["rule"]
     assert by(six, "row spacing")["verdict"] == "pass" and by(six, "row spacing")["rule"] == "sm-rivet-row-spacing-multiple-faa"

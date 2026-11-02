@@ -3668,11 +3668,11 @@ rules:
   - id: sm-rivet-pitch-multiple-faa
     process: sheet-metal
     feature: rivet
-    variant: three or more rows, staggered
-    quantity: rivet centre to centre along a row
+    variant: three or more rows, the outer rows
+    quantity: rivet centre to centre along an outer row
     value: "6*D"
     units: mm
-    applies: three or more staggered rows (FAA AC 43.13-1B Fig. 4-5 (B)); each row offset half a pitch from the next
+    applies: three or more rows (FAA AC 43.13-1B Fig. 4-5 (B)); the outer rows at 6D, the inner rows at 3D with a rivet halfway between the outer rows' rivets, the rows 3D apart and in line. The figure gives the sheet 83 % of its strength through the outer row, (6D - D) / 6D
     datum: hole centre to hole centre
     source: faa-ac-43-13-1b
     status: read
@@ -3694,11 +3694,11 @@ rules:
     process: sheet-metal
     feature: rivet
     compare: sm-rivet-row-spacing
-    variant: three or more rows, staggered
+    variant: three or more rows
     quantity: distance between two rows of rivets
     min: "3*D"
     units: mm
-    applies: three or more staggered rows (FAA AC 43.13-1B Fig. 4-5 (B)), with a 6D pitch in each row
+    applies: three or more rows (FAA AC 43.13-1B Fig. 4-5 (B)), in line; the outer rows at a 6D pitch, the inner rows at 3D
     datum: row centre line to row centre line
     source: faa-ac-43-13-1b
     status: read

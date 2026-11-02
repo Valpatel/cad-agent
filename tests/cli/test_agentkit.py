@@ -192,7 +192,10 @@ def test_readiness_says_what_is_missing_and_what_cannot_be_checked(tmp_path):
     assert agentkit.notice(rows) == ["agents: you can use these, but some of their steps can't run yet:",
                                      '  skill alpha: `rsync` is not on PATH']
     item = agentkit.items(some)[0]
-    assert agentkit.needs_line(item).startswith('> **Needs:** `git`; some steps also need `rsync`.')
+    assert agentkit.needs_line(item).startswith('> **Needs:** `git`; `rsync` for some steps.')
+    (some / 'skills/alpha/SKILL.md').write_text('---\nname: alpha\ndescription: A\nmetadata:\n  optional-for: "x"\n---\n')
+    with pytest.raises(ValueError, match='only with metadata.optional'):
+        agentkit.items(some)
     assert agentkit.needs_line(agentkit.items(kit(tmp_path / 'none'))[0]) == ''
 
 

@@ -29,7 +29,7 @@ otherwise shadow Claude's subagents. Run a generated agent skill only in a separ
 that session wrote.
 
 Everything is installed for everyone. A skill or agent that needs something you may not have names it in its
-frontmatter (`metadata: {requires: "gh git"}`, and `optional:` for what only some of its steps use) and opens with a
+frontmatter (`metadata: {requires: "gh git"}`; `optional:` and `optional-for:` for what only some steps use) and opens with a
 `> **Needs:**` line saying the same. `install` and `list` then say which ones you can't use yet and why, checked on
 this computer without any network call, and what they cannot check from here.
 

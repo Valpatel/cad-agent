@@ -16,7 +16,7 @@ at a destination, including the user's own links, is reported as a conflict and 
 
 Everything is installed for everyone (#282). A skill or agent that needs something a person may lack (``gh`` logged
 in, write access to the repository, a toolchain) names it in its frontmatter as ``metadata: {requires: "gh git"}``,
-and what only some of its steps use as ``optional: "rsync"`` (the Agent Skills format keeps extra fields under
+and what only some of its steps use as ``optional: "rsync"`` with ``optional-for:`` naming those steps (the Agent Skills format keeps extra fields under
 ``metadata``). It says the same in a ``> **Needs:**`` line at the top of its text. ``readiness`` checks what this computer can tell without any network call, and the CLI says which skills
 cannot be used yet and why, and what it cannot check from here.
 """
@@ -44,6 +44,7 @@ class Item:
     description: str
     requires: Tuple[str, ...] = field(default=())   # REQUIREMENTS keys, from frontmatter metadata.requires
     optional: Tuple[str, ...] = field(default=())   # ...that only some of its steps use (metadata.optional)
+    optional_for: str = ""                          # which steps those are, in a few words (metadata.optional-for)
 
 
 def _on_path(*names: str) -> bool:
@@ -63,7 +64,8 @@ def _gh_logged_in() -> Optional[str]:
 
 # Google Chrome itself: cadagent.mechanical.mcmaster launches Playwright's "chrome" channel, so Chromium does not count.
 CHROME = ("google-chrome", "google-chrome-stable", "chrome")
-CHROME_APPS = ("/Applications/Google Chrome.app", "~/Applications/Google Chrome.app",
+# Only the places Playwright itself looks for the "chrome" channel (a per-user macOS app is not one of them).
+CHROME_APPS = ("/Applications/Google Chrome.app", "/opt/google/chrome/chrome",
                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
                r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
@@ -126,8 +128,9 @@ def _frontmatter(text: str, where: Path) -> Dict[str, str]:
     return fields
 
 
-def _requires(fields: Dict, where: Path) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
-    """(requires, optional) from the frontmatter's metadata: each one string of REQUIREMENTS names."""
+def _requires(fields: Dict, where: Path) -> Tuple[Tuple[str, ...], Tuple[str, ...], str]:
+    """(requires, optional, optional-for) from the frontmatter's metadata: the first two are each one string of
+    REQUIREMENTS names; optional-for says which steps the optional ones serve."""
     meta = fields.get("metadata") or {}
     if not isinstance(meta, dict):
         raise ValueError(f"{where}: frontmatter metadata must be a mapping")
@@ -144,7 +147,10 @@ def _requires(fields: Dict, where: Path) -> Tuple[Tuple[str, ...], Tuple[str, ..
     every = out[0] + out[1]
     if len(set(every)) != len(every):
         raise ValueError(f"{where}: metadata names a need twice: {sorted(n for n in set(every) if every.count(n) > 1)}")
-    return out[0], out[1]
+    steps = meta.get("optional-for", "")
+    if not isinstance(steps, str) or (steps and not out[1]):
+        raise ValueError(f"{where}: metadata.optional-for is a few words, and only with metadata.optional")
+    return out[0], out[1], steps.strip()
 
 
 def items(root: Path) -> List[Item]:
@@ -168,6 +174,7 @@ def items(root: Path) -> List[Item]:
 
 
 def _listed(names: Tuple[str, ...]) -> str:
+    """The needs' labels as one phrase."""
     labels = [REQUIREMENTS[r].label for r in names]
     return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
 
@@ -177,15 +184,17 @@ def needs_line(item: Item) -> str:
     if not item.requires and not item.optional:
         return ""
     if item.requires and item.optional:
-        what = f"{_listed(item.requires)}; some steps also need {_listed(item.optional)}"
+        what = (f"{_listed(item.requires)}; {_listed(item.optional)} for {item.optional_for or 'some steps'}. "
+                "`cad-agent agents install` says which of these this computer lacks. Without "
+                f"{_listed(item.optional)}, skip {'that step' if item.optional_for else 'those steps'}; without the "
+                "rest, do not use it.")
     elif item.requires:
-        what = _listed(item.requires)
+        what = (f"{_listed(item.requires)}. `cad-agent agents install` says which of these this computer lacks; "
+                "without them, do not use it.")
     else:
-        what = f"nothing more, but some steps need {_listed(item.optional)}"
-    then = ("without the first, do not use it; without the rest, skip the steps that need them" if item.requires
-            and item.optional else "without them, do not use it" if item.requires else
-            "without them, skip those steps")
-    return f"> **Needs:** {what}. `cad-agent agents install` says which of these this computer lacks; {then}."
+        what = (f"nothing, except {_listed(item.optional)} for {item.optional_for or 'some steps'}. `cad-agent agents "
+                "install` says whether this computer has them; without them, skip those steps.")
+    return f"> **Needs:** {what}"
 
 
 def readiness(root: Path, checks: Optional[Dict[str, Optional[str]]] = None) -> List[dict]:

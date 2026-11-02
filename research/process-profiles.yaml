@@ -2731,6 +2731,7 @@ rules:
   - id: sm-k-factor-range-sendcutsend
     process: sheet-metal
     feature: k-factor
+    shop: sendcutsend
     quantity: K-factor across SendCutSend's materials and thicknesses
     min: 0.33
     max: 0.50
@@ -2971,6 +2972,7 @@ rules:
     process: sheet-metal
     feature: relief
     compare: sm-relief-depth
+    shop: sendcutsend
     quantity: minimum relief depth
     min: "T + R + 0.5"
     units: mm
@@ -2996,6 +2998,7 @@ rules:
     process: sheet-metal
     feature: relief
     compare: sm-relief-width
+    shop: sendcutsend
     quantity: minimum relief width
     min: "T/2"
     units: mm
@@ -3028,6 +3031,7 @@ rules:
   - id: sm-corner-relief-gap-sendcutsend
     process: sheet-metal
     feature: relief
+    shop: sendcutsend
     quantity: gap between two flanges meeting at a corner
     min: 0.4
     units: mm
@@ -3197,6 +3201,7 @@ rules:
     process: sheet-metal
     feature: tolerance
     compare: sm-bend-angle-tolerance
+    shop: sendcutsend
     quantity: bend angle tolerance (±)
     value: 1
     units: deg
@@ -3275,6 +3280,28 @@ rules:
     max: 130
     units: deg
     applies: SendCutSend air bending; no hems, curls, coining or bends under 5°. No hardware on parts with acute bends
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-bend-angle-min-sendcutsend
+    process: sheet-metal
+    feature: bend-angle
+    shop: sendcutsend
+    quantity: smallest bend angle (from flat)
+    min: 5
+    units: deg
+    applies: SendCutSend air bending; it does not form bends under 5°
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-bend-angle-max-hardware-sendcutsend
+    process: sheet-metal
+    feature: bend-angle
+    shop: sendcutsend
+    quantity: largest bend angle (from flat) on a part with hardware
+    max: 90
+    units: deg
+    applies: SendCutSend puts no hardware on parts with acute bends; an acute bend is taken as one past 90° from flat (an included angle under 90°)
     source: sendcutsend-bending-service
     status: read
     verified: 2026-11-01

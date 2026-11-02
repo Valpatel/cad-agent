@@ -44,7 +44,7 @@ flowchart TD
 | `gcode.py` | The longest bridge and overhang-perimeter extrusions in sliced G-code (PrusaSlicer, Bambu Studio, OrcaSlicer), with height and position: where a "long bridging extrusions" warning points. Pure Python, imports nothing from cad-agent |
 | `process.py` | The process profiles as typed values: rules, limits, tolerances, FDM layer factors by filament, a shop's bend table; each value with its rule id and source id, unverified rows marked `(u)` ([process checks](../../../docs/process-checks.md)) |
 | `dfm.py` | Minimum features (walls, holes, pins, gaps, bridges, overhangs, flanges, hole-to-bend) against every cited source, and which way a printed feature's stress crosses the layers |
-| `sheet_metal.py` | Bend allowance, deduction, flat length, K-factor, shortest flange and relief, from the shop's table first, then the generic rules |
+| `sheet_metal.py` | Bend allowance, deduction, flat length, K-factor, shortest flange and relief, from the shop's table first, then the generic rules; `feature_to_bend` (hole to bend on each rule's datum) and `check_bends` (flanges, relief, and a named shop's angle, box and channel limits) |
 | `plates.py` | Every printed part at its quantity packed onto build plates (MaxRects), in one Bambu Studio project 3MF with a read-back check and a top-down picture (`cad-agent export-3mf`) |
 | `prusa3mf.py` | PrusaSlicer project 3MFs: objects of several volumes, each on its own tool, the wipe tower's place, and build plates one 3MF per plate, with a read-back check |
 

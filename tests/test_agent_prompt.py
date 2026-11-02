@@ -96,6 +96,9 @@ def _planted(tmp_path: Path, report: str, calls: list) -> Path:
     (work / "transcript.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     (work / "project" / "cad-agent-report.md").write_text(report)
     (work / "project" / "box.stl").write_text("solid x\nendsolid x\n")
+    cli = work / "home" / "cad-agent" / "src" / "cadagent" / "cli.py"        # the commands the agent's clone defines
+    cli.parent.mkdir(parents=True)
+    cli.write_text('sub.add_parser("inserts", help="x")\nsub.add_parser("all", help="x")\nsub.add_parser("agents", help="x")\n')
     return work
 
 
@@ -111,11 +114,25 @@ def test_the_grader_reads_the_transcript_and_the_files(tmp_path):
     assert g["tool_calls"] == 7 and g["calls_to_install"] == 2 and g["calls_to_first_kit_use"] == 6
     assert g["discovery_calls_before_first_kit_use"] == 3
     assert g["kit_used"] == ["cadagent (Python)", "inserts"]
+    assert g["clone_commit"] == "", "the planted clone is not a git checkout"
     c = g["checks"]
     assert c["read_llms_txt"] and c["used_kit_commands"] and c["made_a_part"] and c["report_has_every_heading"]
-    assert c["report_model_filled"] and c["report_harness_filled"] and c["did_not_try_to_post"]
+    assert c["report_model_filled"] and c["report_harness_filled"] and c["did_not_try_to_post"] and c["report_cites_a_source"]
     assert not c["installed"], "no venv in the planted home: graded from the files, not from the transcript"
     assert (g["tokens_in"], g["tokens_out"], g["turns"]) == (100, 7, 7)
+    # Text the agent wrote (a heredoc, a report) is not a run; `git -C ~/cad-agent ...` is not a kit command; an import in
+    # a file it wrote is kit use.
+    written = ["cat > README.md <<'EOF'\nI did not run `cad-agent all`.\nEOF", "git -C ~/cad-agent rev-parse --short HEAD",
+               "echo '## cad-agent commit'"]
+    g2 = qe.grade(_planted(tmp_path / "c", report, written))
+    assert g2["kit_used"] == [] and g2["calls_to_first_kit_use"] is None
+    work = _planted(tmp_path / "d", report, ["$P/cad-agent all"])
+    rows = (work / "transcript.jsonl").read_text().splitlines()
+    wrote = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Write",
+                                                             "input": {"file_path": "b.py", "content": "from cadagent import geometry"}}]}}
+    (work / "transcript.jsonl").write_text("\n".join([json.dumps(wrote), *rows]) + "\n")
+    g3 = qe.grade(work)
+    assert g3["kit_used"] == ["all", "cadagent (Python)"] and g3["calls_to_first_kit_use"] == 1
     posted = qe.grade(_planted(tmp_path / "b", "", calls + ["gh issue create -R Valpatel/cad-agent -t x -F r.md"]))
     assert not posted["checks"]["did_not_try_to_post"] and not posted["checks"]["report_has_every_heading"]
 

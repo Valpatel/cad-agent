@@ -45,12 +45,13 @@ REQUEST = ("A 60 x 40 x 25 mm project box with a lid held by four M3 heat-set in
 UNATTENDED = ("Nobody is watching this session: do not ask me questions, make sensible choices and say what you chose. "
               "Do not file anything on GitHub or push anywhere; leave any report as cad-agent-report.md here.")
 REPORT_HEADINGS = ("Model", "Harness", "cad-agent commit", "Layer", "Building", "Missing or learned", "Sources", "Confidence")
-# A kit command that does design work (not install, help or listing), or the Python package itself.
-# Run as a command (at the start, after a space, a shell operator or a quote, or as .venv/bin/cad-agent; not a path such as
-# ~/cad-agent), only in commands the agent ran, not in files it wrote. `agents`, `--help` and `-h` are install and help.
-KIT_USE = re.compile(r"(?:^|(?<=[\s;&|(`'\"])|(?<=bin/))cad-agent\s+(?!agents\b|--help\b|-h\b)[a-z][a-z0-9-]*(?![a-z0-9-])"
-                     r"(?!\s+(?:--help|-h)\b)|\b(?:from|import)\s+cadagent\b", re.M)
+# Kit use: a `cad-agent` command that does design work (one the agent's own clone defines; not `agents`, and not with
+# --help or -h) in a command the agent ran, with heredoc bodies taken out (text it wrote, not ran); or the Python
+# package imported, in a command or in a file it wrote.
+IMPORTS = re.compile(r"\b(?:from|import)\s+cadagent\b")
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?^\s*\2\s*$", re.S | re.M)
 RUNS = ("Bash", "command_execution")
+WRITES = ("Write", "Edit", "MultiEdit", "file_change")
 # Finding the way: the site's indexes and pages, the clone's docs, lessons and skills, and the commands' help.
 DISCOVERY = re.compile(r"llms(?:-full)?\.txt|catalog(?:/[\w-]+)?\.json|\.md\b|(?:docs|lessons|skills|examples)/|"
                        r"cad-agent(?:\s+[a-z0-9-]+)?\s+(?:--help|-h)\b")
@@ -265,6 +266,34 @@ def _session(rows: list, work: Path) -> dict:
             "plugins": sorted(p.get("source", "") for p in init.get("plugins") or [])}
 
 
+def _kit_commands(home: Path) -> list:
+    """The `cad-agent` commands the agent's clone defines (its cli.py), or none if it never cloned."""
+    cli = home / "cad-agent" / "src" / "cadagent" / "cli.py"
+    names = re.findall(r'add_parser\(\s*"([a-z0-9-]+)"', cli.read_text()) if cli.is_file() else []
+    return [n for n in names if n != "agents"]
+
+
+def _kit_use(commands: list):
+    if not commands:
+        return None
+    alt = "|".join(sorted(map(re.escape, commands), key=len, reverse=True))
+    return re.compile(rf"\bcad-agent\s+({alt})(?![\w-])(?!\s+(?:--help|-h)\b)")
+
+
+def _uses(call: dict, kit) -> set:
+    """What of the kit one tool call used: command names, and "cadagent (Python)" for an import."""
+    found = set()
+    if call["name"] in RUNS:
+        ran = HEREDOC.sub("", call["text"])
+        if kit:
+            found |= {m.group(1) for m in kit.finditer(ran)}
+        if IMPORTS.search(ran):
+            found.add("cadagent (Python)")
+    elif call["name"] in WRITES and IMPORTS.search(call["text"]):
+        found.add("cadagent (Python)")
+    return found
+
+
 def grade(work: Path) -> dict:
     """Grade a run from its transcript and files only."""
     run = json.loads((work / "run.json").read_text())
@@ -275,11 +304,11 @@ def grade(work: Path) -> dict:
     texts = [c["text"] for c in calls]
     first = lambda pat: next((i + 1 for i, t in enumerate(texts) if re.search(pat, t)), None)
     installed = first(r"agents install")
-    ran = [c["text"] if c["name"] in RUNS else "" for c in calls]
-    first_use = next((i + 1 for i, t in enumerate(ran) if KIT_USE.search(t)), None)
-    kit_used = sorted({m.group(0).split()[1] if m.group(0).startswith("cad-agent") else "cadagent (Python)"
-                       for t in ran for m in KIT_USE.finditer(t)})
     home = work / "home"
+    kit = _kit_use(_kit_commands(home))
+    uses = [_uses(c, kit) for c in calls]
+    first_use = next((i + 1 for i, u in enumerate(uses) if u), None)
+    kit_used = sorted(set().union(*uses))
     venv_ok = (home / "cad-agent" / ".venv" / "bin" / "cad-agent").exists()
     head = subprocess.run(["git", "-C", str(home / "cad-agent"), "rev-parse", "--short", "HEAD"],
                           capture_output=True, text=True).stdout.strip()
@@ -299,6 +328,7 @@ def grade(work: Path) -> dict:
         "report_has_every_heading": report.get("exists", False) and all(report["headings"].values()),
         "report_model_filled": bool(report.get("model")),
         "report_harness_filled": bool(report.get("harness")),
+        "report_cites_a_source": report.get("links", 0) > 0,
         "report_commit_matches": bool(head) and head[:7] in report.get("commit", ""),
         "did_not_try_to_post": not any(POSTS.search(t) for t in texts),
         "stayed_in_its_folder": not any(own_home in t and str(work) not in t for t in texts),

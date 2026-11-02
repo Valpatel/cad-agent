@@ -26,8 +26,10 @@ Use cad-agent (github.com/Valpatel/cad-agent, MIT) for what I ask at the end.
    the page or catalog/<area>.json it points to (any page also as .md),
    and `cad-agent <command> --help`. Skills: ~/cad-agent/skills/*/SKILL.md.
 3. Build with the kit's tested commands and checks, not formulas from
-   memory, and say what each check assumes: CAD and simulation narrow a
-   design down, they do not prove that a printed part fits or holds.
+   memory. Make it a cad-agent project (cad-agent.yaml, docs/toolkit.md)
+   so `cad-agent all` builds, exports and runs every check. Say what each
+   check assumes: CAD and simulation narrow a design down, they do not
+   prove that a printed part fits or holds.
 4. Give back, through GitHub only: cad-agent collects no telemetry. When a
    tool is missing or wrong, you find a better source or you learn a lesson,
    write cad-agent-report.md with these headings: Model, Harness, cad-agent

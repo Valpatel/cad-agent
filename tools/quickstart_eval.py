@@ -3,7 +3,7 @@
 
     python3 tools/quickstart_eval.py commands                       # the block's install commands, one per line
     python3 tools/quickstart_eval.py install --work DIR [--ref main] # run them in an empty DIR, then smoke-test
-    python3 tools/quickstart_eval.py agent --work DIR --harness claude --model opus [--request TEXT]
+    python3 tools/quickstart_eval.py agent --work DIR [--harness claude|codex] [--model opus] [--request TEXT]
     python3 tools/quickstart_eval.py grade --work DIR               # grade a finished agent run again
 
 ``install`` runs the block's commands verbatim with HOME set to ``DIR/home`` (so ``~/cad-agent`` and the installed
@@ -15,7 +15,7 @@ CadQuery and VTK (about 1 GB); the PR that added it ran it on a CPU cluster node
 is watching and nothing may be filed. The agent gets a clean environment: HOME and its config folder are new and
 empty folders under DIR (no skills, memory, CLAUDE.md, settings, plugins or MCP servers of yours), and only the
 variables below pass through. Auth comes from the environment only: ``CLAUDE_CODE_OAUTH_TOKEN`` (``claude
-setup-token``) or ``ANTHROPIC_API_KEY`` for Claude Code, ``OPENAI_API_KEY`` or a ``CODEX_AUTH_FILE`` you point at for
+setup-token``) or ``ANTHROPIC_API_KEY`` for Claude Code, ``CODEX_API_KEY`` or a ``CODEX_AUTH_FILE`` you point at for
 Codex. This script never reads your credential files. With no gh or git credentials in the new HOME, the agent cannot
 file an issue or push, even if it tries; the grade records whether it tried. Limit: the agent still runs as your user
 (no container), so it could read absolute paths outside DIR; the grade flags any tool call that names your home.
@@ -139,21 +139,24 @@ def agent(work: Path, harness: str, model: str, request: str, timeout: int) -> d
         if not auth:
             raise SystemExit("set CLAUDE_CODE_OAUTH_TOKEN (claude setup-token) or ANTHROPIC_API_KEY")
         env = _clean_env(home, {**auth, "CLAUDE_CONFIG_DIR": str(home / ".claude"), "PATH": f"{bindir}:/usr/local/bin:/usr/bin:/bin"})
+        model = model or "opus"
         cmd = [exe, "-p", prompt, "--model", model, "--output-format", "stream-json", "--verbose",
                "--dangerously-skip-permissions", "--strict-mcp-config", "--no-session-persistence"]
         version = _version([exe, "--version"])
     elif harness == "codex":
         extra = {"CODEX_HOME": str(home / ".codex"), "PATH": f"{bindir}:/usr/local/bin:/usr/bin:/bin"}
-        if os.environ.get("OPENAI_API_KEY"):
-            extra["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
+        key = os.environ.get("CODEX_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        if key:                                          # codex exec reads CODEX_API_KEY; older releases OPENAI_API_KEY
+            extra.update(CODEX_API_KEY=key, OPENAI_API_KEY=key)
         elif os.environ.get("CODEX_AUTH_FILE"):          # a copy of a Codex auth.json you chose to lend this run
             (home / ".codex").mkdir(parents=True, exist_ok=True)
             shutil.copy(os.environ["CODEX_AUTH_FILE"], home / ".codex" / "auth.json")
         else:
-            raise SystemExit("set OPENAI_API_KEY, or CODEX_AUTH_FILE to a copy of a Codex auth.json")
+            raise SystemExit("set CODEX_API_KEY (or OPENAI_API_KEY), or CODEX_AUTH_FILE to a copy of a Codex auth.json")
         env = _clean_env(home, extra)
         cmd = [exe, "exec", "--json", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox",
-               "-m", model, "-C", str(project), prompt]
+               *(["-m", model] if model else []), "-C", str(project), prompt]
+        model = model or "codex default"
         version = _version([exe, "--version"])
     else:
         raise SystemExit("harness is claude or codex")
@@ -320,7 +323,7 @@ def main(argv=None) -> int:
     a = sub.add_parser("agent")
     a.add_argument("--work", type=Path, required=True)
     a.add_argument("--harness", choices=("claude", "codex"), default="claude")
-    a.add_argument("--model", default="opus")
+    a.add_argument("--model", help="the harness's model name (default: opus for Claude Code, Codex's own default)")
     a.add_argument("--request", default=REQUEST)
     a.add_argument("--timeout", type=int, default=3600)
     g = sub.add_parser("grade")

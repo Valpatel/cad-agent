@@ -1061,12 +1061,16 @@ async function themeProblems() {
   // placeholders are checked against the input, and `extra` (a selector) adds elements whose own text to check.
   const lowContrast = (page, only = null) => page.evaluate(only => {
     const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
-    const rgba = c => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+    // Each colour is read back from the canvas once, and each element's backdrop worked out once: a page asks for the
+    // same few colours thousands of times, and a canvas read is slow (in WebKit most of all).
+    const seen = new Map(), backdrops = new Map();
+    const rgba = c => { if (seen.has(c)) return seen.get(c); ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; seen.set(c, [d[0], d[1], d[2], d[3] / 255]); return seen.get(c); };
     const lum = ([r, g, b]) => [r, g, b].map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
     const ratio = (a, b) => { const [h, l] = [lum(a), lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
     // What can be behind: a colour, or each stop of a CSS gradient (text must read on all of them); null for a picture.
     const over = ([r, g, b, a], under) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a));
-    const behind = el => {
+    const behind = el => { if (!backdrops.has(el)) backdrops.set(el, backdrop(el)); return backdrops.get(el); };
+    const backdrop = el => {
       const layers = [];
       for (let e = el; e; e = e.parentElement) {
         const cs = getComputedStyle(e), c = rgba(cs.backgroundColor);

@@ -331,6 +331,17 @@ SHEET_MATERIALS: Dict[str, Dict[str, Any]] = {
     "mild-steel": {"name": "cold-rolled mild steel", "hardness": "medium", "shop_material": "cold-rolled mild steel",
                    "excludes": ("sm-bend-radius-min-davis-hard-al",),
                    "why": "the K table's 'medium metal (steel)'; Davis's minimum radius for mild steel is T"},
+    "g90": {"name": "G90 galvanised steel", "hardness": "medium", "shop_material": "G90 galvanised steel",
+            "excludes": ("sm-bend-radius-min-davis-hard-al",),
+            "why": "zinc-coated mild steel: the K table's 'medium metal (steel)' and Davis's mild-steel radius T"},
+    "304": {"name": "304 stainless steel", "hardness": "hard", "shop_material": "304 stainless steel",
+            "excludes": ("sm-bend-radius-min-davis-hard-al", "sm-bend-radius-min-davis-mild"),
+            "why": "the K table's 'hard metal (stainless steel)'; Davis's radius rows are for aluminium and mild steel, "
+                   "not stainless"},
+    "316": {"name": "316 stainless steel", "hardness": "hard", "shop_material": "316 stainless steel",
+            "excludes": ("sm-bend-radius-min-davis-hard-al", "sm-bend-radius-min-davis-mild"),
+            "why": "the K table's 'hard metal (stainless steel)'; Davis's radius rows are for aluminium and mild steel, "
+                   "not stainless"},
 }
 
 # The FDM filaments whose data sheets cadagent.mechanical.compliant.allowables holds, by its PRINTED key: the family and

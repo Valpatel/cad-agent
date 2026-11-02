@@ -1,9 +1,11 @@
-"""The "copy this to your agent" block (#278): docs/agent-prompt.txt, shown verbatim in the README and on the site.
+"""What people paste and what agents read (#278, #282): docs/agent-prompt.txt.
 
-The site side (the home page card, llms.txt and index.md) is checked in tests/site/website-build.test.mjs. Here: the
-README carries the block where people look first; its commands are the public ones and name real `cad-agent`
-commands; its report headings match the issue form, the PR template and the grader in tools/quickstart_eval.py; it
-asks nothing risky of an outside agent; and the grader reads a planted run the way it reads a real one.
+Its first line is what a person pastes into an agent; the rest is how to install and work with the kit, which llms.txt
+carries. The README opens with the one-line install commands and that line (the site's card, llms.txt and index.md are
+checked in tests/site/website-build.test.mjs). Here: the README section stays short; the install commands are the
+public ones and name real `cad-agent` commands; the report headings match the issue form, the PR template and the
+grader in tools/quickstart_eval.py; it asks nothing risky of an outside agent; and the grader reads a planted run the
+way it reads a real one.
 """
 from __future__ import annotations
 
@@ -16,8 +18,11 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 BLOCK = (ROOT / "docs" / "agent-prompt.txt").read_text()
+PASTE, GUIDE = BLOCK.split("\n", 1)
 README = (ROOT / "README.md").read_text()
 USE_HEADING = "Build with your favorite AI agent"     # the site's card says the same (tests/site/website-build.test.mjs)
+ONE_LINERS = ("curl -fsSL https://cad-agent.valpatel.com/install.sh | sh",
+              "irm https://cad-agent.valpatel.com/install.ps1 | iex")
 
 
 def _eval():
@@ -27,28 +32,32 @@ def _eval():
     return mod
 
 
-def test_readme_opens_with_the_block_verbatim():
-    fenced = "```text\n" + BLOCK + "```\n"
-    assert fenced in README, "README.md must carry docs/agent-prompt.txt verbatim in a ```text fence: paste it again"
+def test_readme_opens_with_one_command_and_the_paste_in_line():
     headings = re.findall(r"^## (.+)$", README, re.M)
     assert headings[0] == USE_HEADING, f"'## {USE_HEADING}' is the README's first section, not {headings[0]!r}"
     use_it = README.split(f"## {USE_HEADING}\n", 1)[1].split("\n## ", 1)[0]
-    assert fenced in use_it, "the block sits in that first section"
-    assert "https://cad-agent.valpatel.com/#agent-guide" in use_it, "it links the site's step-by-step guide"
-    prose = [ln for ln in use_it.replace(fenced, "").splitlines() if ln.strip() and not ln.startswith("<!--")]
-    assert len(prose) <= 6, "keep the words around the block to a few lines"
+    for cmd in ONE_LINERS:
+        assert f"\n{cmd}\n" in use_it, f"the README gives {cmd!r} on a line of its own"
+    assert "```text\n" + PASTE + "\n```" in use_it, "and the first line of docs/agent-prompt.txt to paste"
+    words = len(re.sub(r"<!--.*?-->", "", use_it, flags=re.S).split())
+    assert words <= 140, f"{words} words: keep the section about as short as text-to-cad's quick start (~125)"
+    flat = " ".join(use_it.split())
+    assert "collects no telemetry" in flat and "only if you say yes" in flat
+    assert "docs/agent-workflow.md#install" in use_it, "the long form is one link away"
     assert "## Quick start" not in README, "one quick start: the first section replaced it"
+
+
+def test_the_paste_in_line_is_short_and_points_at_llms_txt():
+    assert PASTE == "Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:"
+    assert len(PASTE.split()) == 8 and GUIDE.startswith("\n"), "one line, then a blank line"
 
 
 def test_commands_are_public_and_name_real_commands():
     qe = _eval()
     cmds = qe.commands(BLOCK)
-    assert len(cmds) == 4, cmds
-    assert cmds[0] == 'git clone --depth 1 -b main https://github.com/Valpatel/cad-agent "$HOME/cad-agent"'
-    assert cmds[2].endswith('"$HOME/cad-agent[cad]"'), "quote the extras path: zsh reads [cad] as a glob"
-    assert cmds[3].endswith('cad-agent" agents install')
-    # "$HOME", not "~": PowerShell expands $HOME inside quotes but hands a bare ~ to git and python as it is.
-    assert all("~" not in c for c in cmds) and all('"$HOME/cad-agent' in c for c in cmds)
+    assert cmds == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], "the README's command, nothing else"
+    assert "Windows: irm https://cad-agent.valpatel.com/install.ps1 | iex" in BLOCK
+    assert "`cad-agent update`" in BLOCK, "an agent that finds it installed updates first"
     from cadagent.cli import build_parser
     names = set(build_parser()._subparsers._group_actions[0].choices)
     named = set(re.findall(r"(?:bin/|`)cad-agent\"? ([a-z][a-z0-9-]+)", BLOCK))
@@ -77,14 +86,15 @@ def test_report_fields_match_the_form_the_pr_template_and_the_grader():
 
 
 def test_the_block_asks_nothing_risky():
-    flat = BLOCK.replace("\n   ", " ")
-    assert "only if I say yes" in flat, "the person approves every report before it is sent"
+    flat = " ".join(BLOCK.split())
+    assert "send it only if they say yes" in flat, "the person approves every report before it is sent"
     assert "no telemetry" in flat and "through GitHub only" in flat
     assert "Leave out anything private" in flat
-    assert not re.search(r"\|\s*(?:ba|z)?sh\b|curl\b[^\n]*\|", BLOCK), "no pipe-to-shell installs"
+    piped = re.findall(r"[^\n]*\|\s*(?:ba|z)?sh\b[^\n]*|[^\n]*curl\b[^\n]*\|[^\n]*", BLOCK)
+    assert [p.strip() for p in piped] == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], \
+        "the only script piped to a shell is our own installer, from our own site"
     assert not re.search(r"sudo|--force|rm -rf|token|password|secret|ignore (?:previous|all)|maintainer", BLOCK, re.I)
     assert "gh issue create -R Valpatel/cad-agent" in BLOCK and "--label" not in BLOCK   # outsiders cannot set labels
-    assert BLOCK.rstrip().endswith("What I want:"), "the person's request goes last"
 
 
 def _planted(tmp_path: Path, report: str, calls: list) -> Path:

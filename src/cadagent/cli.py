@@ -20,7 +20,7 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "bearings",
+               "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
                "overhangs", "library")
 LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
@@ -527,6 +527,16 @@ def cmd_holes(project: CadProject, args: argparse.Namespace) -> int:
     return 0 if result["pass"] else 1
 
 def cmd_all(project: CadProject, args: argparse.Namespace) -> int:
+    from cadagent import __version__, agentkit
+    if project.min_cad_agent and agentkit.version_ok(__version__, project.min_cad_agent) is False:
+        raise _Unusable(f"this project needs cad-agent {project.min_cad_agent} or newer (cad: cad-agent:) and this is "
+                        f"{__version__}: run `cad-agent update`")
+    try:
+        stale = agentkit.staleness(agentkit.kit_root())
+    except (FileNotFoundError, OSError):
+        stale = None
+    if stale:
+        _warn(stale)
     args.from_step = None
     args.only = None
     if cmd_build(project, args):
@@ -916,6 +926,10 @@ def cmd_agents(args: argparse.Namespace) -> int:
     root = agentkit.kit_root(args.source)
     home = Path(args.home).expanduser() if args.home else Path.home()
     targets = agentkit.TARGETS if args.target == "all" else (args.target,)
+    if args.action == "uninstall":
+        for line in agentkit.uninstall(home, dry_run=args.dry_run):
+            _say(("would " if args.dry_run else "") + line)
+        return 0
     if args.action == "list":
         for row in agentkit.status(home, root, targets):
             _say(f"{row['kind']:5}  {row['name']:24} {row['state']:12} {row['dest']}")
@@ -926,7 +940,7 @@ def cmd_agents(args: argparse.Namespace) -> int:
     if warning:
         _warn(warning)
     result = agentkit.install(home, root, targets, copy=args.copy, dry_run=args.dry_run)
-    for line in result["done"]:
+    for line in result["removed"] + result["done"]:
         _say(("would " if args.dry_run else "") + line)
     for dest in result["conflicts"]:
         _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
@@ -935,6 +949,84 @@ def cmd_agents(args: argparse.Namespace) -> int:
     for line in agentkit.notice(agentkit.readiness(root)):
         _say(line)
     return 1 if result["conflicts"] else 0
+
+def _update_notes(root: Path, old: str, project: Optional[str]) -> None:
+    """What `update` says after moving: the CHANGELOG since ``old``, then what a project here must re-run."""
+    import cadagent
+    from cadagent import agentkit
+    for line in agentkit.notes_lines(agentkit.release_notes(root, old)):
+        _say(line)
+    version = cadagent._pyproject_version(str(root / "pyproject.toml")) or cadagent.__version__
+    here = Path(project or Path.cwd())
+    if (here / "cad-agent.yaml").is_file():
+        for line in agentkit.project_advice(here, version):
+            _say(f"update: {here.name}: {line}")
+
+
+def cmd_update(args: argparse.Namespace) -> int:
+    """Update cad-agent the way re-running the one-line installer does: fast-forward the checkout to main (or move it
+    to --ref), reinstall only when the dependencies changed, --extras adds some, an earlier reinstall did not finish or
+    the command runs from another checkout, relink the skills, show what changed, and say what a project here must
+    re-run. Its only network use is the checkout's own git fetch."""
+    from cadagent import agentkit
+    try:
+        running = agentkit.kit_root()
+    except FileNotFoundError:                       # installed from a wheel, not a checkout
+        running = None
+    root = agentkit.kit_root(args.dir) if args.dir else running
+    if root is None:
+        _err("update: this cad-agent was not installed from a checkout: reinstall with the one-line installer "
+             "(docs/agent-workflow.md#install), or pass --dir <checkout>")
+        return 2
+    asked = [e for e in (args.extras or "").replace(" ", "").split(",") if e]
+    # Before the pull (a newer pyproject.toml may list packages not installed yet), plus those of an unfinished reinstall.
+    pending = agentkit.reinstall_pending(root)
+    have = sorted(set(agentkit.installed_extras(root)) | set(pending or []))
+    extras = sorted(set(have) | set(asked))
+    if args.reinstall_command:       # for install.ps1: Windows cannot replace cad-agent.exe while it runs (exit 3)
+        print(json.dumps(agentkit.reinstall_command(root, extras)))
+        return 0
+    if args.reinstalled:             # install.ps1 ran that command: nothing is pending any more
+        agentkit.reinstall_pending(root, clear=True)
+        return 0
+    try:
+        moved = agentkit.pull(root, args.ref)
+    except agentkit.UpdateRefused as exc:
+        _err(f"update: {exc}")
+        return 2
+    if moved["old"] == moved["new"]:
+        _say(f"update: already at the newest {moved['at']} ({moved['new'][:7]})")
+    else:
+        _say(f"update: {moved['old'][:7]} -> {moved['new'][:7]} ({moved['at']}), {len(moved['changed'])} files changed")
+    elsewhere = running is None or running.resolve() != root.resolve()
+    why = ("the dependencies changed" if moved["dependencies_changed"] else
+           f"extras added: {','.join(sorted(set(asked) - set(have)))}" if set(asked) - set(have) else
+           "an earlier reinstall did not finish" if pending is not None else
+           f"the cad-agent command runs from {running or 'a wheel'}, not {root}" if elsewhere else "")
+    if why:
+        cmd = agentkit.reinstall_command(root, extras)
+        agentkit.reinstall_pending(root, extras)
+        if os.name == "nt" and cmd[0] == "uv":       # this process holds cad-agent.exe: the installer finishes it
+            _update_notes(root, moved["old"], args.project)
+            _say(f"update: {why}; finish with: " + " ".join(cmd) + ", then cad-agent update --reinstalled and "
+                 "cad-agent agents install (install.ps1 does this)")
+            return agentkit.REINSTALL_LATER
+        _say(f"update: {why}: reinstalling with extras [{','.join(extras)}]")
+        if subprocess.run(cmd).returncode:
+            _err("update: the reinstall failed (run update again to retry): " + " ".join(cmd))
+            return 1
+        agentkit.reinstall_pending(root, clear=True)
+    else:
+        _say("update: dependencies unchanged, nothing to reinstall")
+    # The skills, from the updated checkout: a new process, so the new agentkit does it.
+    relink = [sys.executable, "-m", "cadagent.cli", "agents", "install", "--source", str(root)]
+    if agentkit.copies_installed(Path.home()):
+        relink.append("--copy")
+    if subprocess.run(relink).returncode not in (0, 1):
+        _err("update: relinking the skills failed: " + " ".join(relink))
+        return 1
+    _update_notes(root, moved["old"], args.project)
+    return 0
 
 def cmd_snapfit(args: argparse.Namespace) -> int:
     """Size and check declared snap fits (cadagent.mechanical.compliant.snapfit); exit 1 if any check fails."""
@@ -1097,6 +1189,12 @@ def dispatch(args: argparse.Namespace) -> int:
         except (OSError, ValueError) as exc:
             _err(f"motion-trace: {exc}")
             return 2
+    if sub == "update":                                    # updates the kit itself: no project needed
+        try:
+            return cmd_update(args)
+        except (FileNotFoundError, ValueError, OSError) as exc:
+            _err(f"update: {exc}")
+            return 2
     if sub == "agents":                                    # installs into the user's home: no project needed
         try:
             return cmd_agents(args)
@@ -1237,15 +1335,30 @@ def build_parser() -> argparse.ArgumentParser:
                                            "axial load and speed, turning or oscillating (docs/bearings.md)")
     be_p.add_argument("spec", help="file with a 'bearings' list")
     be_p.add_argument("--output", help="write the full result as JSON")
-    ag_p = sub.add_parser("agents", help="Install the agent workflow kit (skills and subagents) for Claude Code and Codex, "
-                                         "or list what is installed (docs/agent-workflow.md)")
-    ag_p.add_argument("action", choices=("install", "list"))
-    ag_p.add_argument("--target", choices=("all", "claude", "codex"), default="all")
+    ag_p = sub.add_parser("agents", help="Install the skills and subagents for Claude Code (~/.claude) and the other "
+                                         "agents (~/.agents/skills), list what is installed, or remove it "
+                                         "(docs/agent-workflow.md)")
+    ag_p.add_argument("action", choices=("install", "list", "uninstall"))
+    ag_p.add_argument("--target", choices=("all", "claude", "agents", "codex"), default="all",
+                      help="agents: ~/.agents/skills, which Codex, Copilot CLI, Cursor, Gemini CLI and opencode read "
+                           "(codex is the same)")
     ag_p.add_argument("--source", type=Path, help="cad-agent checkout holding skills/ and agents/ (default: the one "
                                                   "this cadagent is installed from)")
     ag_p.add_argument("--home", help="home folder to install into (default: yours)")
     ag_p.add_argument("--copy", action="store_true", help="copy instead of linking (for a checkout that will move)")
     ag_p.add_argument("--dry-run", action="store_true", help="show what would be installed")
+    up_p = sub.add_parser("update", help="Update cad-agent like re-running the installer: pull main (or --ref), "
+                                         "reinstall if the dependencies changed, relink the skills, show the "
+                                         "changelog and what a project here must re-run (docs/agent-workflow.md)")
+    up_p.add_argument("--ref", help="a release tag (or branch) to move to instead of the newest main, e.g. v0.14.0")
+    up_p.add_argument("--extras", help="extras to add, comma-separated (fea, sim, robot, explore, site); "
+                                       "installed ones are kept")
+    up_p.add_argument("--dir", help="the checkout to update (default: the one this cad-agent runs from); the "
+                                    "command is reinstalled from it if it runs from another")
+    up_p.add_argument("--reinstall-command", action="store_true",
+                      help="print the reinstall command as JSON and change nothing (install.ps1 runs it on Windows)")
+    up_p.add_argument("--reinstalled", action="store_true",
+                      help="record that the reinstall printed by --reinstall-command has run (install.ps1)")
     lib_p = sub.add_parser("library", help="Write the parts library (KiCad footprints and STEP bodies) for a project, "
                                            "or audit a board for footprints with no 3D model (src/cadagent/library)")
     lib_actions = lib_p.add_subparsers(dest="action", required=True)

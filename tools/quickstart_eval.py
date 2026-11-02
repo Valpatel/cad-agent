@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Check that the "copy this to your agent" block (docs/agent-prompt.txt) works for someone who has nothing of ours.
+"""Check that the one-line install and the paste-in line (docs/agent-prompt.txt) work for someone who has nothing of ours.
 
-    python3 tools/quickstart_eval.py commands                       # the block's install commands, one per line
-    python3 tools/quickstart_eval.py install --work DIR [--ref main] # run them in an empty DIR, then smoke-test
+    python3 tools/quickstart_eval.py commands                       # the agent's install command (step 1), one per line
+    python3 tools/quickstart_eval.py install --work DIR [--ref main] [--local]   # run it twice in an empty DIR, then smoke-test
     python3 tools/quickstart_eval.py agent --work DIR [--harness claude|codex] [--model opus] [--request TEXT]
     python3 tools/quickstart_eval.py grade --work DIR               # grade a finished agent run again
 
-``install`` runs the block's commands verbatim with HOME set to ``DIR/home`` (so ``~/cad-agent`` and the installed
-skills land there, never in your own home), then checks that ``cad-agent`` runs, the skills are installed, CadQuery
-makes and exports a solid, and the site's llms.txt answers. It is light enough for a laptop, but it downloads
+``install`` runs the install command verbatim with HOME set to ``DIR/home`` (so ``~/cad-agent``, uv and the installed
+skills land there, never in your own home), twice (the second run is an update and must change nothing), then checks
+that ``cad-agent`` runs, the skills are installed, CadQuery makes and exports a solid, and the site's llms.txt answers.
+``--local`` runs this checkout's ``web/install.sh`` with ``--ref REF`` instead of the site's copy, to try a change
+before it is deployed. It is light enough for a laptop, but it downloads
 CadQuery and VTK (about 1 GB); the PR that added it ran it on a CPU cluster node.
 
-``agent`` starts a fresh agent session in ``DIR/project``: the block, a small request and one line saying that nobody
+``agent`` starts a fresh agent session in ``DIR/project``: the paste-in line (the file's first line), a small request and one line saying that nobody
 is watching and nothing may be filed. The agent gets a clean environment: HOME and its config folder are new and
 empty folders under DIR (no skills, memory, CLAUDE.md, settings, plugins or MCP servers of yours), and only the
 variables below pass through. Auth comes from the environment only: ``CLAUDE_CODE_OAUTH_TOKEN`` (``claude
@@ -72,18 +74,31 @@ def block() -> str:
     return PROMPT.read_text()
 
 
+def paste_line(text: str | None = None) -> str:
+    """The line a person pastes into their agent: the file's first line."""
+    return (block() if text is None else text).split("\n", 1)[0]
+
+
 def commands(text: str | None = None) -> list:
-    """The shell commands of step 1 (install), as the block prints them: its indented lines that start a command."""
+    """The shell commands of step 1 (install), as the file prints them: its indented lines that start a command."""
     text = block() if text is None else text
     step1 = text.split("\n1. ", 1)[1].split("\n2. ", 1)[0]
-    return [ln.strip() for ln in step1.splitlines() if re.match(r"\s{3}(git|python3|~/|\"\$HOME/)\S*\s", ln)]
+    return [ln.strip() for ln in step1.splitlines() if re.match(r"\s{3}(curl|git|python3|~/|\"\$HOME/)\S*\s", ln)]
+
+
+def _tool_python(home: Path) -> Path:
+    """The Python of the installed cad-agent: uv's tool environment, or an older install's venv."""
+    uv = home / ".local" / "share" / "uv" / "tools" / "cad-agent" / "bin" / "python"
+    return uv if uv.exists() else home / "cad-agent" / ".venv" / "bin" / "python"
 
 
 def _run(cmd: str, env: dict, cwd: Path, timeout: int = 1800) -> dict:
     t = time.time()
     p = subprocess.run(["bash", "-c", cmd], env=env, cwd=cwd, capture_output=True, text=True, timeout=timeout)
-    return {"cmd": cmd, "exit": p.returncode, "seconds": round(time.time() - t, 1),
-            "tail": (p.stdout + p.stderr).strip().splitlines()[-3:]}
+    lines = (p.stdout + p.stderr).strip().splitlines()
+    # The installer's and update's own progress lines, to show which path a run took.
+    said = [ln for ln in lines if ln.startswith(("cad-agent: ", "update: "))][:12]
+    return {"cmd": cmd, "exit": p.returncode, "seconds": round(time.time() - t, 1), "tail": lines[-3:], "said": said}
 
 
 def _clean_env(home: Path, extra: dict | None = None) -> dict:
@@ -95,33 +110,40 @@ def _clean_env(home: Path, extra: dict | None = None) -> dict:
     return env
 
 
-def install(work: Path, ref: str = "main") -> dict:
-    """Run the block's install commands in an empty folder, then smoke-test what they installed."""
+def install(work: Path, ref: str = "main", local: bool = False) -> dict:
+    """Run the install command twice in an empty folder (install, then update), then smoke-test what it installed."""
     home = work / "home"
     if home.exists() and any(home.iterdir()):
         raise SystemExit(f"{home} is not empty: use a new folder")
     home.mkdir(parents=True, exist_ok=True)
     env = _clean_env(home)
-    steps = [_run(c.replace("-b main ", f"-b {ref} ") if ref != "main" else c, env, home) for c in commands()]
-    venv = home / "cad-agent" / ".venv" / "bin"
+    if local:
+        cmds = [f'sh "{ROOT}/web/install.sh" --ref {ref}']
+    else:
+        cmds = [c.replace("| sh", f"| sh -s -- --ref {ref}") if ref != "main" else c for c in commands()]
+    steps = [_run(c, env, home) for c in cmds + cmds]
+    exe = home / ".local" / "bin" / "cad-agent"
     smoke = {
-        "cad-agent --help": f"{venv}/cad-agent --help",
-        "agents list": f"{venv}/cad-agent agents list",
+        "cad-agent --help": f"{exe} --help",
+        "agents list": f"{exe} agents list",
         "commit": 'git -C "$HOME/cad-agent" rev-parse --short HEAD',
-        "box to STL": f"{venv}/python -c \"import cadquery as cq; s=cq.Workplane().box(60,40,25).shell(-2); "
+        "box to STL": f"{_tool_python(home)} -c \"import cadquery as cq; s=cq.Workplane().box(60,40,25).shell(-2); "
                       "cq.exporters.export(s, 'box.stl'); print(round(s.val().Volume()))\"",
     }
     checks = {name: _run(cmd, env, home, timeout=600) for name, cmd in smoke.items()}
     linked = [ln for ln in "\n".join(checks["agents list"]["tail"]).splitlines()]
     skills = sorted(p.name for p in (home / ".claude" / "skills").iterdir()) if (home / ".claude" / "skills").is_dir() else []
+    shared = sorted(p.name for p in (home / ".agents" / "skills").iterdir()) if (home / ".agents" / "skills").is_dir() else []
+    updated = any(ln.startswith("cad-agent: updating") for ln in steps[-1]["said"])   # the second run took the update path
     # With curl, as agents fetch it. (Python's urllib, with its default User-Agent, gets a 403 from the site's CDN.)
     fetched = _run(f"curl -s -o /dev/null -w '%{{http_code}}' {LLMS}", env, home, timeout=60)
     llms = int(fetched["tail"][0]) if fetched["exit"] == 0 and fetched["tail"] else fetched
-    ok = all(s["exit"] == 0 for s in steps) and all(c["exit"] == 0 for c in checks.values()) and skills and llms == 200
-    venv_py = _run(f"{venv}/python --version", env, home, timeout=60)["tail"]
-    return {"job": "quickstart-install", "ok": bool(ok), "ref": ref, "python": (venv_py or ["?"])[-1],
+    ok = (all(s["exit"] == 0 for s in steps) and all(c["exit"] == 0 for c in checks.values()) and skills
+          and shared and updated and llms == 200)
+    py = _run(f"{_tool_python(home)} --version", env, home, timeout=60)["tail"]
+    return {"job": "quickstart-install", "ok": bool(ok), "ref": ref, "local": local, "python": (py or ["?"])[-1],
             "platform": sys.platform, "steps": steps, "smoke": checks, "claude_skills": skills,
-            "agents_list_tail": linked, "llms_txt": llms}
+            "agents_skills": shared, "second_run_updated": updated, "agents_list_tail": linked, "llms_txt": llms}
 
 
 def _version(cmd: list) -> str:
@@ -145,7 +167,7 @@ def agent(work: Path, harness: str, model: str, request: str, timeout: int) -> d
     above = [d / f for d in work.parents for f in ("CLAUDE.md", "AGENTS.md", ".claude") if (d / f).exists()]
     if above:
         raise SystemExit(f"{above[0]} is in a folder above {work}: the agent would load it; use another folder")
-    prompt = f"{block().rstrip()} {request}\n\n{UNATTENDED}\n"
+    prompt = f"{paste_line()} {request}\n\n{UNATTENDED}\n"
     (work / "prompt.txt").write_text(prompt)
     exe = shutil.which(harness)
     if not exe:
@@ -285,7 +307,7 @@ def _sections(text: str) -> dict:
 
 def _parts(work: Path) -> list:
     """Each printable file in the project with its bounding box, measured by the trimesh in the agent's own install."""
-    py = work / "home" / "cad-agent" / ".venv" / "bin" / "python"
+    py = _tool_python(work / "home")
     files = sorted(p for p in (work / "project").rglob("*") if p.suffix.lower() in (".stl", ".3mf", ".step", ".stp")
                    and ".venv" not in p.parts)
     out = []
@@ -359,7 +381,7 @@ def grade(work: Path) -> dict:
     uses = [_uses(c, kit) for c in calls]
     first_use = next((i + 1 for i, u in enumerate(uses) if u), None)
     kit_used = sorted(set().union(*uses))
-    venv_ok = (home / "cad-agent" / ".venv" / "bin" / "cad-agent").exists()
+    venv_ok = (home / ".local" / "bin" / "cad-agent").exists() or (home / "cad-agent" / ".venv" / "bin" / "cad-agent").exists()
     head = subprocess.run(["git", "-C", str(home / "cad-agent"), "rev-parse", "--short", "HEAD"],
                           capture_output=True, text=True).stdout.strip()
     report = _report(work / "project")
@@ -371,7 +393,7 @@ def grade(work: Path) -> dict:
                                                    and session["cwd_in_work"] and builtin
                                                    and not set(session["skills"]) & _kit_skills(home)),
         "installed": venv_ok and (home / ".claude" / "skills").is_dir() if run["harness"] == "claude"
-        else venv_ok and (home / ".codex" / "skills").is_dir(),
+        else venv_ok and (home / ".agents" / "skills").is_dir(),
         "read_llms_txt": first(r"llms(?:-full)?\.txt") is not None,
         "used_kit_commands": bool(kit_used),
         "made_a_part": any(p.get("bytes", 0) > 0 for p in parts),
@@ -401,7 +423,8 @@ def main(argv=None) -> int:
     sub.add_parser("commands")
     i = sub.add_parser("install")
     i.add_argument("--work", type=Path, required=True)
-    i.add_argument("--ref", default="main", help="branch or tag to clone instead of main (to try a change first)")
+    i.add_argument("--ref", default="main", help="branch or tag to install instead of main (to try a change first)")
+    i.add_argument("--local", action="store_true", help="run this checkout's web/install.sh, not the site's")
     a = sub.add_parser("agent")
     a.add_argument("--work", type=Path, required=True)
     a.add_argument("--harness", choices=("claude", "codex"), default="claude")
@@ -416,7 +439,7 @@ def main(argv=None) -> int:
         return 0
     work = args.work.resolve()
     if args.cmd == "install":
-        res = install(work, args.ref)
+        res = install(work, args.ref, args.local)
         print(json.dumps(res))
         return 0 if res["ok"] else 1
     res = agent(work, args.harness, args.model, args.request, args.timeout) if args.cmd == "agent" else grade(work)

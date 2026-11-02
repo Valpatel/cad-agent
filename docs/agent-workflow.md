@@ -1,32 +1,85 @@
 # Agent workflow: skills, subagents and work that survives a crash
 
-cad-agent projects are mostly built by AI agents (Claude Code, Codex) working with a person. The way that work is
+cad-agent projects are mostly built by AI agents (Claude Code, Codex and others) working with a person. The way that work is
 done (where it is recorded, how it is reviewed, where heavy runs go) is part of cad-agent. It ships as **skills**
-and **subagents** that both tools load, not only as prose.
+and **subagents** that these tools load, not only as prose.
 
 ## Install
 
-From a cad-agent checkout installed with `pip install -e`:
+One command, for your user only (no sudo or administrator rights):
 
 ```bash
-cad-agent agents install            # Claude Code and Codex, for your user
-cad-agent agents list               # what is installed where, and what is out of date
-cad-agent agents install --dry-run  # show first
+curl -fsSL https://cad-agent.valpatel.com/install.sh | sh        # macOS, Linux, WSL
+irm https://cad-agent.valpatel.com/install.ps1 | iex             # Windows PowerShell
+curl -fsSLO https://cad-agent.valpatel.com/install.sh && less install.sh && sh install.sh   # read it first
 ```
 
-| Kit file | Claude Code | Codex |
-|---|---|---|
-| `skills/<name>/SKILL.md` | `~/.claude/skills/<name>` (link) | `~/.codex/skills/<name>` (link) |
-| `agents/<name>.md` | `~/.claude/agents/<name>.md` (link): a subagent | `~/.codex/skills/<name>/SKILL.md` (generated): run it as a separate Codex session |
+The scripts are [`web/install.sh`](../web/install.sh) and [`web/install.ps1`](../web/install.ps1). They:
 
-Links follow the checkout, so `git pull` updates the skills; rerun `install` after pulling to refresh the generated
-Codex files (`list` shows them as out of date). Link a long-lived checkout, not a feature worktree that will be
-removed; `--copy` copies instead. The installer replaces only what it installed (links into a cad-agent checkout,
-generated files and marked copies); anything else at a destination, including your own links, is reported as a
-conflict and left alone. Codex's folder follows `$CODEX_HOME` when set. If `~/.codex/skills` is a link to
-`~/.claude/skills`, install with `--target claude`: Codex then sees the skills, and the generated agent skills would
-otherwise shadow Claude's subagents. Run a generated agent skill only in a separate Codex session, never on work
-that session wrote.
+1. need git, and install [uv](https://docs.astral.sh/uv/) (a pinned version, from astral.sh) into `~/.local/bin` if it
+   is missing, without editing your shell profile;
+2. clone `main` into `~/cad-agent`, or update the checkout that is there;
+3. run `uv tool install --editable ~/cad-agent[cad]`: the `cad-agent` command goes in `~/.local/bin`, with a
+   Python 3.12 of its own that uv manages, and runs the checkout's code, so the skills and the code stay in step;
+4. run `cad-agent agents install` (below), which says which skills this computer can't use yet.
+
+Options: `sh -s -- --extras fea,sim` (see [Extras](../README.md#extras)), `--ref v0.14.0` for a release tag, `--dir`
+for another folder and `--uninstall`, which removes the command and the skills and keeps the checkout. In
+PowerShell set `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`, `$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL=1`
+first. They turn usage reporting off for everything they start; cad-agent itself sends nothing.
+
+**Update** by running the command again, or `cad-agent update`; both do the same. `update` refuses a checkout with
+changes or on another branch (use a fork for your own work), then:
+
+- fast-forwards `main` (`git fetch`, then `git merge --ff-only`), or moves to `--ref`: a tag is checked out pinned, a
+  branch is followed; that fetch is its only network use;
+- reinstalls only when `pyproject.toml` or `uv.lock` changed, `--extras` adds some, an earlier reinstall did not
+  finish, or the command runs from another checkout (`--dir`), keeping the extras you installed;
+- links new skills, removes ones the kit dropped, and refreshes copies;
+- prints the CHANGELOG entries since the old commit, "Projects must change" first;
+- in a project folder, says what to re-run when the project was built with an older cad-agent.
+
+Nothing checks for updates in the background. `cad-agent all` notes it when the checkout's last commit is more than 14
+days old (not for a checkout pinned to a release tag), and refuses a project whose `cad: {cad-agent: "0.14"}` asks
+for a newer cad-agent ([toolkit](toolkit.md)).
+
+**By hand**, with Python 3.11 or newer and git:
+
+```bash
+git clone --depth 1 -b main https://github.com/Valpatel/cad-agent ~/cad-agent
+python3 -m venv ~/cad-agent/.venv
+~/cad-agent/.venv/bin/pip install -e "$HOME/cad-agent[cad]"   # Windows: .venv\Scripts
+~/cad-agent/.venv/bin/cad-agent agents install
+```
+
+`cad-agent update` works for this install too (it reinstalls with pip).
+
+### The skills
+
+```bash
+cad-agent agents install            # for your user: Claude Code, and every agent that reads ~/.agents/skills
+cad-agent agents list               # what is installed where, and what is out of date
+cad-agent agents install --dry-run  # show first
+cad-agent agents uninstall          # remove everything it placed
+```
+
+| Kit file | Claude Code | `~/.agents/skills`: Codex, Copilot CLI, Cursor, Gemini CLI, opencode |
+|---|---|---|
+| `skills/<name>/SKILL.md` | `~/.claude/skills/<name>` (link) | `~/.agents/skills/<name>` (link) |
+| `agents/<name>.md` | `~/.claude/agents/<name>.md` (link): a subagent | `~/.agents/skills/<name>/SKILL.md` (generated): run it as a separate session |
+
+Links follow the checkout, so pulling updates the skills; `update` reruns `install` to refresh the generated files
+(`list` shows them as out of date) and to remove links to skills the kit dropped. Link a long-lived checkout, not a
+feature worktree that will be removed; `--copy` copies instead, and `install` copies by itself where links are not
+allowed (Windows without Developer Mode). The installer replaces only what it installed (links into a cad-agent
+checkout, generated files and marked copies); anything else at a destination, including your own links, is reported
+as a conflict and left alone. `--target claude` or `--target agents` installs one side only.
+
+Earlier versions put Codex's skills in `~/.codex/skills` (`$CODEX_HOME/skills`). Codex now reads `~/.agents/skills`,
+so `install` removes what cad-agent put in the old folder and leaves the rest. If `~/.agents/skills` is a link to
+`~/.claude/skills`, install with `--target claude`: the generated agent skills would otherwise shadow Claude's
+subagents. Cursor and opencode read both folders, so they may list a skill twice. Run a generated agent skill only in
+a separate session, never on work that session wrote.
 
 Everything is installed for everyone. A skill or agent that needs something you may not have names it in its
 frontmatter (`metadata: {requires: "gh git"}`; `optional:` and `optional-for:` for what only some steps use) and opens with a

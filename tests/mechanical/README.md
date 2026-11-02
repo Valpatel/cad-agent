@@ -34,6 +34,8 @@ flowchart TD
 | `test_motion_figures.py` | The animated concept figures (`tools/motion_figures.py`) match the tests they copy |
 | `test_motion_trace.py` | `cadagent.mechanical.motion_trace` on an independent analytic fixture |
 | `test_printed_joints.py` | `cadagent.mechanical.printed_joints`: printed-part load pitfalls, each with a planted defect |
+| `test_clinch.py` | `cadagent.mechanical.clinch`: the parts against PEM's bulletins, SendCutSend's worked 1/4-20 example, spacing both ways, BA/2 + E to a bend, hardness by material, thickness, hole, loads and `parts_for` |
+| `test_rivets.py` | `cadagent.mechanical.rivets`: the catalogue rivets, the worked lap joint, grip with tolerance, edge, pitch, hole, thin sheet, metals and load |
 | `test_snapfit.py` | The snap-fit calculator against the Covestro guide's worked examples, plus its check rows |
 | `test_snapfit_sheets.py` | The printed snap-fit allowables pinned to the data-sheet editions they cite |
 

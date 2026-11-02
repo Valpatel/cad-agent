@@ -1815,6 +1815,7 @@ sources:
       - research/process-profiles.yaml
       - research/process-profiles.md
       - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: the NTRS record opened. cadagent.mechanical.printed_joints cites pp. 6-8 (locking methods:
       locknuts, jam nuts, nylon patches, spring lock washers).
@@ -2197,10 +2198,19 @@ sources:
       - research/process-profiles.yaml
       - research/process-profiles.md
       - research/sheet-metal-joining.md
+      - src/cadagent/formulas/_registry.py
+      - src/cadagent/formulas/rivets.py
+      - tests/formulas/test_rivet_formulas.py
+      - src/cadagent/mechanical/rivets.py
     verified: >-
       2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
       3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
       tests/simulation/test_fea_materials.py record them. The everyspec page resolved again on 2026-11-01.
+      2026-11-01, for #283: read 1.4.7 and 1.4.7.1 (D is the pin; Fbru between e/D 1.5 and 2.0 by linear
+      interpolation; bearing values apply to t/D 0.25-0.50), Tables 3.5.1.0(b1) (5052-H32, H34: Ftu, Fty, Fsu, Fbru at e/D 1.5 and 2.0) and 2.7.1.0(b)
+      (304 annealed), 8.1.2 and Table 8.1.2(b) (solid-rivet single shear), 8.1.2.1 and Table 8.1.2.1(a) (unit
+      bearing; t/D at least 0.18), 8.1.3 (blind fasteners: care below t/D 0.25) and Table 9.7.1.1(a) (blind rivets
+      whose shanks deform use the nominal hole).
 
   - id: brass
     title: Brass Alloy C36000 data sheet
@@ -2861,6 +2871,7 @@ sources:
       - research/process-profiles.md
       - research/sheet-metal-joining.md
       - research/sheet-metal.md
+      - src/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the 20-page PDF (© 2025, created 2025-11-14) through pdftotext. Read HB-4 (the sheet
       softer than the fastener, about 20 points of Rockwell B), HB-5 (general push-out and torque-out for -1
@@ -2883,6 +2894,7 @@ sources:
       - research/sheet-metal-guides.md
       - research/sheet-metal-joining.md
       - research/sheet-metal.md
+      - src/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 10/13/26), text and the table pages rendered. Read
       CL-4 and CL-5 (S, SS, CLS, CLSS, SP dimensions by shank code: minimum sheet, hole +0.08 mm / +0.003 in,
@@ -2899,7 +2911,10 @@ sources:
     access: free
     terms: cited by part number and page; values not tabulated wholesale; never copied
     areas: [sheet-metal, pem-hardware, fasteners]
-    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 10/19/26). Read FH-5 (FH, FHS, FHA dimensions: minimum
       sheet, hole, head, edge distance), FH-17 (materials and sheet hardness), FH-29 (FH and FHS push-out,
@@ -2915,7 +2930,10 @@ sources:
     access: free
     terms: cited by part number and page; values not tabulated wholesale; never copied
     areas: [sheet-metal, pem-hardware, fasteners]
-    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 6/12/26). Read SO-3 and SO-4 (SO and BSO dimensions:
       minimum sheet, hole, edge distance), SO-9 (materials and sheet hardness) and SO-12 (push-out, torque-out,
@@ -2967,6 +2985,7 @@ sources:
       - research/process-profiles.yaml
       - research/process-profiles.md
       - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the 7-page sheet (July 2019). Read Table 1 (stainless sheet by UNS number in three
       groups, HRB 88, 90 and 92 maximum per ASTM A240, and the PEM parts rated for each; 304 is in the HRB 92
@@ -3034,6 +3053,7 @@ sources:
       - research/process-profiles.yaml
       - research/process-profiles.md
       - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: opened the 68-page PDF (© 2012, Rev. D 6/12; the URL redirects to Stanley's CDN). Read the
       design guidelines pp. 10–12 (edge distance at least twice the diameter for full strength, open end down to
@@ -3066,7 +3086,10 @@ sources:
     access: free
     terms: cited by part number and page; never copied (a distributor-hosted copy of the maker's catalogue)
     areas: [rivets, fasteners]
-    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: opened the DigiKey-hosted PDF (© 2018). Read the design information p. 4 (rated strength times
       count meets the load, compatible body material, grip covers the stack, oversize holes lose strength,
@@ -3135,7 +3158,10 @@ sources:
     access: free
     terms: cited by section and table, never copied (distribution statement A, public release)
     areas: [corrosion, rivets, fasteners]
-    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal-joining.md
+      - src/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: opened the PDF (22 August 2016; superseded by 889D in 2021). Read 5.1.3 (the small fastener
       the same metal or more noble), 5.1.6, 5.2a (stainless screws in aluminium acceptable with sealed faying
@@ -3151,12 +3177,38 @@ sources:
     access: free
     terms: part numbers, ratings and prices cited as dated facts, never copied; prices change without notice
     areas: [rivets, pricing]
-    used_for: [research/sheet-metal-joining.md]
+    used_for: [research/sheet-metal-joining.md, src/cadagent/mechanical/rivets.py]
     verified: >-
       2026-11-01: opened the aluminium, 18-8 stainless and zinc-plated steel domed-head pages in a browser,
       without logging in. Read part numbers, grip, pack size, pack price and the listed shear and tensile
       ratings; for example 97447A015 (1/8 in aluminium/aluminium, 0.063-0.125 in grip, 120/150 lbf) at $10.78
-      for 250, and 97525A415 (1/8 in 18-8/18-8, 420/530 lbf) at $11.54 for 100.
+      for 250, and 97525A415 (1/8 in 18-8/18-8, 420/530 lbf) at $11.54 for 100. The rows
+      cadagent.mechanical.rivets uses (diameter, grip in, shear/tensile lbf): 97447A015 1/8 .063-.125 120/150;
+      97447A020 1/8 .126-.187 120/150; 97447A025 1/8 .188-.250 120/150; 97447A050 3/16 .126-.250 260/320;
+      97517A015 1/8 .063-.125 170/220; 97517A050 3/16 .188-.250 380/500; 97525A415 1/8 .063-.125 420/530;
+      97525A490 3/16 .126-.250 950/1200.
+
+  - id: abbud-riveted-joints
+    title: Riveted Joints (Mechanical Engineering Design, 3rd class, lecture notes)
+    authors: [Luay Hashem Abbud]
+    org: Al-Mustaqbal University College
+    year: null
+    url: https://uomus.edu.iq/img/lectures21/MUCLecture_2023_1147353.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers are used as test vectors
+    areas: [rivets, formulas]
+    used_for:
+      - src/cadagent/formulas/_registry.py
+      - src/cadagent/formulas/rivets.py
+      - tests/formulas/test_rivet_formulas.py
+    verified: >-
+      2026-11-01: opened the 10-page PDF. Read the tearing, shearing and crushing resistances per pitch, Pt = (p - d)
+      t sigma_t, Ps = n tau pi d^2 / 4 and Pc = n d t sigma_c, the joint's strength as the least of them, the solid
+      plate p t sigma_t, and the efficiency; and Problem 2: a single-riveted lap joint of 6 mm plates, 20 mm rivets,
+      50 mm pitch, 120 / 90 / 180 MPa, gives Pt 21 600 N, Ps 28 278 N, Pc 21 600 N, P 36 000 N and efficiency 60 %;
+      the double-riveted joint at 65 mm pitch gives Pt 32 400 N, Ps 56 556 N, Pc 43 200 N, P 46 800 N and 69.2 %.
+      The notes follow the standard textbook treatment (their Problem 2 resembles a worked example in Khurmi and
+      Gupta, A Textbook of Machine Design, which was not opened here, so it is not cited).
 
   # ---------------------------------------------------------------- tolerance and joint references (#283)
 

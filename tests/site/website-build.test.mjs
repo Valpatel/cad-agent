@@ -83,29 +83,40 @@ test('code samples keep their text, and every code block has a copy button', asy
   assert.ok(files.includes('kit/copy.js'));
 });
 
-test('the home page, llms.txt and the README carry the one "copy this to your agent" block (#278)', async () => {
-  const block = git('show', 'HEAD:docs/agent-prompt.txt').replace(/\n$/, '');
+test('the home page, llms.txt and the README give one install command and one line to paste (#278, #282)', async () => {
+  const [paste, ...rest] = git('show', 'HEAD:docs/agent-prompt.txt').replace(/\n$/, '').split('\n');
+  const guide = rest.join('\n').trim();
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
-  const pre = index.match(/<section class="use-band" id="use-it"[\s\S]*?<pre class="agent-box"[^>]*>([\s\S]*?)<\/pre>/)?.[1];
-  assert.ok(pre, 'the home page has the copy card');
-  const text = pre.replace(/<\/?b>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-  assert.equal(text, block, 'the card shows docs/agent-prompt.txt verbatim (only <b> added)');
+  const card = index.match(/<section class="use-band" id="use-it"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(card, 'the home page has the install card');
+  const unesc = t => t.replace(/<\/?b>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  const boxes = [...card.matchAll(/<pre class="(install-box|agent-box)"[^>]*>([\s\S]*?)<\/pre>/g)].map(m => [m[1], unesc(m[2])]);
+  const cmds = ['curl -fsSL https://cad-agent.valpatel.com/install.sh | sh', 'irm https://cad-agent.valpatel.com/install.ps1 | iex'];
+  assert.deepEqual(boxes, [['install-box', cmds[0]], ['install-box', cmds[1]], ['agent-box', paste]], 'a command per platform, then the paste-in line');
+  assert.equal(paste.split(' ').length, 8, 'the paste-in line is eight words');
   assert.ok(index.indexOf('id="use-it"') < index.indexOf('id="outputs"'), 'the card comes before the first band');
   assert.match(index, /href="#use-it"/, 'the hero links to it');
-  for (const f of ['llms.txt', 'index.md']) assert.ok((await readFile(path.join(out, f), 'utf8')).includes('```text\n' + block + '\n```'), `${f} carries the block`);
-  assert.ok(git('show', 'HEAD:README.md').includes('```text\n' + block + '\n```'), 'the README carries the block');
-  const card = index.match(/<section class="use-band"[\s\S]*?<\/section>/)[0];
-  const heading = card.match(/<h2 id="use-title">(.+?)<\/h2>/)[1].replace(/<[^>]+>/g, '').replace(/\.$/, ''), lead = card.match(/<p class="use-lead">([^<]+)<\/p>/)[1];
+  const seen = card.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<p class="visually-hidden">[^<]*<\/p>/g, '').replace(/<[^>]+>/g, ' ');
+  const words = unesc(seen).split(/\s+/).filter(Boolean).length;
+  assert.ok(words <= 95, `the card shows ${words} words; keep it near 90`);
+  assert.match(card, /No telemetry\./); assert.match(card, /only when you say yes/);
+  assert.match(card, /href="\/docs\/agent-workflow#install"/, 'the long form is one link away');
+  const tabs = [...card.matchAll(/<input type="radio" name="install-os" id="(os-[a-z]+)"/g)].map(m => m[1]);
+  assert.deepEqual(tabs, ['os-unix', 'os-win']);
+  for (const id of tabs) assert.match(card, new RegExp(`<label for="${id}" class="os-tab`), `${id} has a tab`);
+  assert.doesNotMatch(card, /<img|<use |agent-guide/, 'the badges are text, not product marks; the per-agent guide is gone');
+  const heading = card.match(/<h2 id="use-title">(.+?)<\/h2>/)[1].replace(/<[^>]+>/g, '').replace(/\.$/, '');
   const readme = git('show', 'HEAD:README.md');
-  assert.ok(readme.includes(`## ${heading}\n\n${lead.replace(/&#39;/g, "'")}\n`), 'the README has the card\'s heading and lead-in');
-  assert.match(card, /<cad-copy class="agent-copy" label="Copy prompt">/, 'one clear Copy prompt button');
-  const tabs = [...card.matchAll(/<input type="radio" name="agent-guide" id="(ag-[a-z]+)"/g)].map(m => m[1]);
-  assert.ok(tabs.length >= 5, 'a step-by-step guide per agent');
-  for (const id of tabs) {
-    assert.match(card, new RegExp(`<label class="agent-badge" for="${id}">`), `${id} has a badge that opens its guide`);
-    assert.match(card, new RegExp(`class="guide-panel panel-${id.slice(3)}"><p class="visually-hidden">[^<]+</p><ol><li>`), `${id} has its steps`);
+  assert.ok(readme.includes(`## ${heading}\n`) && cmds.every(c => readme.includes(`\n${c}\n`)) && readme.includes('```text\n' + paste + '\n```'),
+    'the README has the card\'s heading, commands and line');
+  for (const f of ['llms.txt', 'index.md']) {
+    const text = await readFile(path.join(out, f), 'utf8');
+    assert.ok(text.includes('```text\n' + paste + '\n```') && text.includes('```text\n' + guide + '\n```'), `${f} carries the line and how to install and work`);
+    assert.ok(text.indexOf('## Install and work with it') < text.indexOf('## Start here'), `${f}: installing comes first`);
   }
-  assert.doesNotMatch(card, /<img|<use /, 'the badges are text, not product marks');
+  for (const f of ['install.sh', 'install.ps1']) {
+    assert.equal(await readFile(path.join(out, f), 'utf8'), git('show', `HEAD:web/${f}`), `/${f} is web/${f}`);
+  }
 });
 
 test('pages say when they were last updated and how to give feedback', async () => {
@@ -213,12 +224,13 @@ test('catalogue statuses are honest', async () => {
 test('headers: each header comes from one rule, and every inline script is allowed by hash', async () => {
   const text = await readFile(path.join(out, '_headers'), 'utf8');
   const rules = parseHeaders(text);
-  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/kit/vendor/three/three.module.min.js', '/kit/viewer']) {
+  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/vendor/three/three.module.min.js', '/kit/viewer']) {
     const seen = {};
     for (const r of rules) if (r.pattern.test(p)) for (const [k] of r.headers) seen[k.toLowerCase()] = (seen[k.toLowerCase()] || 0) + 1;
     for (const [k, n] of Object.entries(seen)) assert.equal(n, 1, `${p}: ${k} is set by ${n} rules and Pages would join them`);
     assert.ok(seen['content-security-policy'], `${p} has no CSP`);
   }
+  for (const p of ['/install.sh', '/install.ps1']) assert.ok(rules.some(r => r.pattern.test(p) && r.headers.some(([k, v]) => k === 'Content-Type' && v.startsWith('text/plain'))), `${p} is served as text, so curl and irm get the script and a browser shows it`);
   const csp = text.match(/Content-Security-Policy: (.*)/)[1];
   assert.doesNotMatch(csp, /'unsafe-inline'[^;]*;.*script-src|script-src[^;]*'unsafe-inline'/);
   // The policy allows exactly the kit pages' inline scripts (copied byte for byte from the kit); site pages have none.

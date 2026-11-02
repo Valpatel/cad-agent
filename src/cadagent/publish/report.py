@@ -307,6 +307,7 @@ def collect(project: CadProject) -> Dict[str, Any]:
         },
         "project": project.name,
         "revision": revision,
+        "cad_agent": _kit_version(),          # which cad-agent built it: `cad-agent update` compares it
         "physical_fit_verified": False,
         "slicer_run": bool(sliced),
         "pass": counts["fail"] == 0,
@@ -419,3 +420,7 @@ def downloads_snippet(
         f"<tbody>{''.join(rows)}</tbody></table>"
         f"<script>{_DOWNLOADS_JS}</script></section>"
     )
+
+def _kit_version() -> str:
+    from cadagent import __version__
+    return __version__

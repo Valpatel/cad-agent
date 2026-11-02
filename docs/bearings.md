@@ -40,6 +40,11 @@ FAIL  knee: oscillating, 2.42e+03 million oscillations (672,798 h), least s0 0.8
       fail: static safety: power cut: s0 = C0 / P0 = 3100 / 3485 N = 0.89 against 1 (infrequent motion, ...
 ```
 
+![The example above, checked: each row's margin to its limit on a log axis from 0.2 to 1000. The rope sheave passes every row, the nearest being the minimum load at 2 times. The knee passes life at 336 times and speed at 478 times, warns on the critical amplitude at 0.43 times and fails the power-cut s0 at 0.89 times](img/bearings/checks.svg)
+
+*Drawn by `tools/bearing_figures.py` from `check_spec` on the file above: each row's value over its limit (limit
+over value for the load range and speed), so anything left of 1 warns or fails.*
+
 It exits 1 on a fail and 2 on a bad file. In Python, `check_bearing(...)` takes the same keys and returns each
 row's value, limit, verdict and reason, with the life, the static cases and the limits:
 

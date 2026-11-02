@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -32,12 +34,17 @@ LIFE_BEARINGS = ("skf-61804", "skf-6201", "skf-6301", "skf-nu-202-ecp")
 STYLE = ("<style>text{font:13px system-ui,sans-serif;fill:#1d1d1b}.muted{fill:#5c5b56;font-size:11px}"
          ".axis{stroke:#9b9a93;stroke-width:1;fill:none}.grid{stroke:#e2e1dc;stroke-width:1}"
          ".s1{fill:#2a78d6;stroke:#2a78d6}.s2{fill:#eb6834;stroke:#eb6834}.s3{fill:#1baf7a;stroke:#1baf7a}"
-         ".s4{fill:#eda100;stroke:#eda100}.band{fill:#efeee9;stroke:none}.bg{fill:#fcfcfb}.ring{stroke:#fcfcfb}"
+         ".s4{fill:#eda100;stroke:#eda100}.bad{fill:#d1242f;stroke:#d1242f}.band{fill:#efeee9;stroke:none}"
+         ".bg{fill:#fcfcfb}.ring{stroke:#fcfcfb}"
          "@media (prefers-color-scheme:dark){text{fill:#f0efec}.muted{fill:#c3c2b7}.axis{stroke:#8a897f}"
          ".grid{stroke:#383835}.s1{fill:#3987e5;stroke:#3987e5}.s2{fill:#d95926;stroke:#d95926}"
          ".s3{fill:#199e70;stroke:#199e70}.s4{fill:#c98500;stroke:#c98500}.band{fill:#262624}"
-         ".bg{fill:#1a1a19}.ring{stroke:#1a1a19}}</style>")
+         ".bg{fill:#1a1a19}.ring{stroke:#1a1a19}.bad{fill:#e5484d;stroke:#e5484d}}"
+         "</style>")
 MARK = {"pass": "pass", "warn": "warn ▲", "fail": "fail ✕"}
+VERDICT_CLASS = {"pass": "s3", "warn": "s4", "fail": "bad"}
+# Rows whose value must stay below the limit; every other row with a limit must stay above it.
+UPPER = {"axial load", "load range", "speed"}
 
 
 def _svg(width: int, height: int, label: str, body: list) -> str:
@@ -219,7 +226,56 @@ def knee_figure() -> str:
                 "knee's check rows for a 6201 and a 6301", body)
 
 
-FIGURES = {"life-load.svg": life_figure, "xy-table.svg": table_figure, "knee.svg": knee_figure}
+def page_example() -> dict:
+    """The spec in docs/bearings.md's "Check a bearing" section, read from the page so the figure shows its output."""
+    text = (ROOT / "docs" / "bearings.md").read_text()
+    return yaml.safe_load(text.split("```yaml\n", 1)[1].split("```", 1)[0])
+
+
+def margin_figure() -> str:
+    """The page's example spec, checked: each row's margin to its limit (value over limit, or limit over value for a
+    row that must stay below it) on a log axis, with 1 the limit; dots coloured and labelled by verdict."""
+    result = mb.check_spec(page_example())
+    lo, hi, x0, x1 = 0.2, 1000.0, 230.0, 630.0
+    X = lambda m: _log(min(max(m, lo), hi), lo, hi, x0, x1)                   # noqa: E731
+    body = ['<text x="20" y="24">The example above, checked: how far each row is from its limit</text>']
+    y = 44.0
+    for item in result["bearings"]:
+        rows = [r for r in item["checks"] if r.get("limit") not in (None, 0) and isinstance(r.get("value"), float)]
+        top = y + 30
+        bottom = top + 22 * len(rows)
+        body += [f'<text x="20" y="{y + 18:.0f}" style="font-weight:700">{escape(item["name"])}: '
+                 f'{escape(item["bearing"]["designation"])}, {MARK[item["verdict"]]}</text>',
+                 f'<rect class="band" x="{x0}" y="{top - 12:.0f}" width="{X(1) - x0:.1f}" '
+                 f'height="{bottom - top + 6:.0f}"/>']
+        for m in (1, 10, 100, 1000):
+            body.append(f'<line class="grid" x1="{X(m):.1f}" y1="{top - 12:.0f}" x2="{X(m):.1f}" '
+                        f'y2="{bottom - 6:.0f}"/>')
+        body.append(f'<line class="axis" x1="{X(1):.1f}" y1="{top - 12:.0f}" x2="{X(1):.1f}" y2="{bottom - 6:.0f}" '
+                    'stroke-width="2"/>')
+        for k, row in enumerate(rows):
+            ry = top + 22 * k
+            m = row["limit"] / row["value"] if row["check"] in UPPER else row["value"] / row["limit"]
+            label = row["check"].replace("static safety: ", "s0, ").replace(" (heaviest block)", "")
+            mark = f' {MARK[row["verdict"]]}' if row["verdict"] != "pass" else ""
+            shown = f"{m:.2g}" if m < 10 else f"{m:.0f}"
+            body += [f'<text x="{x0 - 10}" y="{ry + 4:.0f}" text-anchor="end">{escape(label)}</text>',
+                     f'<line class="grid" x1="{x0}" y1="{ry:.0f}" x2="{x1}" y2="{ry:.0f}" stroke-dasharray="2 4"/>',
+                     f'<circle class="{VERDICT_CLASS[row["verdict"]]} ring" cx="{X(m):.1f}" cy="{ry:.0f}" r="6" '
+                     f'stroke-width="2"><title>{escape(row["detail"])}</title></circle>',
+                     f'<text x="{X(m) + 11:.1f}" y="{ry + 4:.0f}">{shown}×{mark}</text>']
+        y = bottom + 4
+    for m in (0.2, 1, 10, 100, 1000):
+        body.append(f'<text x="{X(m):.1f}" y="{y + 12:.0f}" text-anchor="middle" class="muted">{m:g}</text>')
+    body += [f'<text x="{x0}" y="{y + 30:.0f}" class="muted">margin: value / limit, or limit / value for the load '
+             'range and speed (log scale)</text>',
+             f'<text x="{x0}" y="{y + 46:.0f}" class="muted">shaded: past the limit</text>']
+    return _svg(720, int(y + 60), "The docs example checked: each row's margin to its limit for the rope sheave and "
+                "the knee; the knee's power-cut s0 is past its limit and the critical amplitude warns", body)
+
+
+FIGURES = {"checks.svg": margin_figure, "life-load.svg": life_figure, "xy-table.svg": table_figure,
+           "knee.svg": knee_figure}
 
 
 def main(argv=None) -> int:

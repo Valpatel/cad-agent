@@ -206,3 +206,44 @@ def test_robust_booleans_use_the_relation_gates_validity_and_volume():
     sphere = cq.Workplane().sphere(5).val()
     out = geometry.robust_cut(box(20, 20, 20, at=(-10, -10, -10)), sphere)
     assert out.Volume() == pytest.approx(8000 - 4 / 3 * math.pi * 125, rel=1e-6)
+
+def test_a_compound_of_overlapping_solids_is_refused():
+    """Its volume counts the shared part twice, so a cut by it removed 2000 mm^3, not 1500, and passed the bound."""
+    comp = cq.Compound.makeCompound([box(10, 10, 10), box(10, 10, 10, at=(5, 0, 0))])
+    base = box(40, 40, 40, at=(-5, -5, -5))
+    with pytest.raises(geometry.GeometryError, match="cut tool 0.*share 500"):
+        geometry.robust_cut(base, comp)
+    with pytest.raises(geometry.GeometryError, match="union argument 0.*share"):
+        geometry.robust_union(comp, box(1, 1, 1))
+    fused = geometry.robust_union(*comp.Solids())
+    assert geometry.robust_cut(base, fused).Volume() == pytest.approx(64000 - 1500)
+    apart = cq.Compound.makeCompound([box(1, 1, 1), box(1, 1, 1, at=(5, 0, 0))])   # disjoint solids are fine
+    assert geometry.robust_cut(base, apart).Volume() == pytest.approx(64000 - 2)
+
+def test_a_one_at_a_time_fuse_that_loses_what_was_fused_is_refused(monkeypatch):
+    def patched(real):
+        def fuse(self, *others, **kw):
+            if len(others) > 1:
+                return _Invalid()                         # force the one-at-a-time path
+            if len(others) == 1 and others[0].Volume() < 2:  # the small box's step returns only the small box
+                return others[0]
+            return real(self, *others, **kw)
+        return fuse
+
+    for cls in (cq.Shape, cq.Compound):                   # a fuse result is a Compound, with its own fuse
+        monkeypatch.setattr(cls, "fuse", patched(cls.fuse))
+    with pytest.raises(geometry.GeometryError, match="shape 2 of 3"):
+        geometry.robust_union(box(10, 10, 10), box(10, 10, 10, at=(5, 0, 0)), box(1, 1, 1, at=(40, 0, 0)))
+
+def test_the_weld_leaves_a_chain_wider_than_its_tolerance_open():
+    """Three copies of a corner 0.8 µm apart: each pair of neighbours is within 1 µm, the chain is 1.6 µm long."""
+    np = pytest.importorskip("numpy")
+    cube = trimesh.creation.box(extents=(10, 10, 10))
+    vertices = np.vstack([cube.vertices, cube.vertices[0] + (0.0008, 0, 0), cube.vertices[0] + (0.0016, 0, 0)])
+    faces = np.array(cube.faces)
+    users = np.flatnonzero((faces == 0).any(axis=1))
+    for k, f in enumerate(users):
+        faces[f][faces[f] == 0] = [0, len(vertices) - 2, len(vertices) - 1][k % 3]
+    mesh = trimesh.Trimesh(vertices, faces, process=False)
+    assert geometry.weld_open_vertices(mesh) == 0 and not mesh.is_watertight
+    assert geometry.weld_open_vertices(mesh, tolerance_mm=0.002) == 2 and mesh.is_watertight

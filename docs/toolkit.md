@@ -174,8 +174,8 @@ boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
   inverted or free-faced shapes fail), and its adaptive integration, since the default volume can be off by several
   mm³ on curved, trimmed faces ([volume precision](volume-precision.md)). An invalid input is refused, not fused.
 - **The report:** pass `report=[]` to get one dict per fallback and per nudge; each is also logged as a warning on
-  `cadagent.geometry`. The nudges are `CUT_NUDGES_MM`, or pass `nudges=`. A nudge moves that cut by up to 0.01 mm,
-  so check it does not touch a fit that matters.
+  `cadagent.geometry`. The nudges are `CUT_NUDGES_MM`, or pass `nudges=`. A nudge moves that cut by its length (0.01 mm on an
+  axis, 0.017 mm on the default diagonal), so check it does not touch a fit that matters.
 - **The STL weld:** `export_print_stl` welds the tessellation's open-edge vertices that lie within 1 µm of each other
   (`weld_mm=`, default `WELD_MM`, 0 turns it off; `weld_open_vertices` on a trimesh) before its watertight check:
   OCCT can split a vertex by less than that where faces meet tangentially, so a valid solid's STL came out open. Its

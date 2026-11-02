@@ -46,13 +46,15 @@ def solid_report(shape: Any) -> Dict[str, Any]:
     }
 
 # The tool offsets robust_cut tries, in order, when a tool's cut fails or gives a bad shape: 0.01 mm along each axis,
-# both ways, then along the diagonal. 10 µm is well under any printer's resolution, but it does move the cut: each
-# nudge used is reported.
+# both ways, then along the diagonal (0.017 mm long). That is well under any printer's resolution, but it does move
+# the cut: each nudge used is reported.
 CUT_NUDGES_MM: Tuple[Tuple[float, float, float], ...] = (
     (0.01, 0.0, 0.0), (-0.01, 0.0, 0.0), (0.0, 0.01, 0.0), (0.0, -0.01, 0.0), (0.0, 0.0, 0.01), (0.0, 0.0, -0.01),
     (0.01, 0.01, 0.01))
-# Relative slack on robust_union / robust_cut's volume bounds: OCCT's volumes of the same swept solid differ by ~1e-5.
-_VOLUME_SLACK = 1e-4
+# Relative slack on robust_union / robust_cut's volume bounds, on top of the adaptive integration's own error estimate:
+# the inputs' volumes carry their own small errors and clean() can move a volume by float noise. 1 mm^3 on a 1e6 mm^3
+# block, under any real cut.
+_VOLUME_SLACK = 1e-6
 _log = logging.getLogger(__name__)
 
 def _shape(shape: Any, what: str) -> Any:
@@ -120,8 +122,23 @@ def _attempt(op: Any, low: float, high: float, clean: bool) -> Tuple[Any, Option
     return None, why
 
 def _check_inputs(shapes: Sequence[Any], names: Sequence[str]) -> None:
+    """Refuse an input the check fails, or a compound whose solids share volume: OCCT treats such a compound as a
+    boolean argument without complaint and cuts or fuses it wrong (its volume counts the shared part twice, so even
+    the volume bound passes), as the relation gate's ``solid_interference`` says."""
+    from cadagent.review.gates.relations import solid_interference   # lazy, as in _measured
+
     for shape, name in zip(shapes, names):
         why = _boolean_problem(shape, 0.0, float("inf"))
+        if why is None and len(shape.Solids()) > 1:
+            try:
+                shared = solid_interference(shape)
+            except Exception as exc:                      # noqa: BLE001
+                why = f"solid interference check raised {type(exc).__name__}: {exc}"
+            else:
+                if shared:
+                    i, j, mm3 = shared[0]
+                    why = (f"a compound whose solids {i} and {j} share {mm3:.6g} mm^3; fuse its solids first "
+                           "(robust_union(*shape.Solids()))")
         if why is not None:
             raise GeometryError(f"{name} is not a usable shape ({why}); fix it before the boolean")
 
@@ -144,7 +161,9 @@ def robust_union(*shapes: Any, clean: bool = True, report: Optional[List[Dict[st
     "reason": ...}``); each is also logged as a warning on the ``cadagent.geometry`` logger. ``clean``: run
     ``Shape.clean()`` on each result (a result that cleaning breaks is kept uncleaned).
 
-    Limits: the check proves the result is a valid solid of plausible volume, not that it is the union you meant.
+    Limits: the check proves the result is a valid solid of plausible volume, not that it is the union you meant. Each
+    one-at-a-time step must keep what is already fused, but the first multi-argument fuse is bounded only by the
+    largest input and the sum: one that drops a whole solid and still holds more than the largest input passes.
     """
     require("cadquery", "robust_union")
     parts = [_shape(s, f"union argument {i}") for i, s in enumerate(shapes) if s is not None]
@@ -159,10 +178,13 @@ def robust_union(*shapes: Any, clean: bool = True, report: Optional[List[Dict[st
     if result is not None:
         return result
     _note(report, {"op": "union", "fallback": "sequential", "shapes": len(parts), "reason": why})
-    out, out_low, out_high = first, volumes[0], volumes[0]
+    out, so_far = first, volumes[0]
     for i, (part, volume) in enumerate(zip(rest, volumes[1:]), 1):
-        out_low, out_high = max(out_low, volume), out_high + volume
-        out, why = _attempt(lambda: out.fuse(part), out_low, out_high, clean)  # noqa: B023  (called at once)
+        # each step keeps what is already fused: between max(vol(out), vol(part)) and their sum
+        prev = out
+        out, why = _attempt(lambda: prev.fuse(part), max(so_far, volume), so_far + volume, clean)  # noqa: B023
+        if out is not None:
+            so_far = _volume(out)
         if out is None:
             raise GeometryError(f"robust_union: fusing shape {i} of {len(parts)} one at a time failed ({why})")
     return out
@@ -179,7 +201,7 @@ def robust_cut(base: Any, *tools: Any, clean: bool = True, nudges: Sequence[Sequ
 
     ``report``: a list that gets one dict per fallback (``{"op": "cut", "fallback": "one_at_a_time", ...}``) and
     per nudge used (``{"op": "cut", "tool": i, "nudge_mm": [dx, dy, dz], "reason": ...}``), each also logged as a
-    warning on the ``cadagent.geometry`` logger. A nudge moves that tool's cut by up to 0.01 mm: check it matters
+    warning on the ``cadagent.geometry`` logger. A nudge moves that tool's cut by the nudge's length (0.01 mm on an axis, 0.017 mm on the default diagonal): check it matters
     nowhere (a press fit, a sealing face) before shipping the part.
 
     Limits: a valid result can still miss a cut a tool does not reach; the check bounds volume, not intent.
@@ -232,7 +254,8 @@ def weld_open_vertices(mesh: Any, tolerance_mm: float = WELD_MM) -> int:
     other, in place, and return how many vertices were merged away.
 
     Only open-edge vertices are candidates, so a closed part of the mesh is never touched, and two vertices merge
-    when they are within the tolerance (chains merge transitively), not when they round to the same grid cell.
+    when they are within the tolerance (chains merge transitively), not when they round to the same grid cell; a
+    group whose points lie more than the tolerance from the one it keeps is left as it is.
     Each group keeps its lowest-index vertex's position. Faces that collapse are left for the caller's
     degenerate-face pass. A gap wider than the tolerance stays open: welding does not fill holes.
     """
@@ -266,13 +289,22 @@ def weld_open_vertices(mesh: Any, tolerance_mm: float = WELD_MM) -> int:
                         a, b = root(int(candidates[i])), root(int(candidates[j]))
                         if a != b:
                             parent[max(a, b)] = min(a, b)
-    remap = np.arange(len(mesh.vertices))
-    merged = 0
+    groups: Dict[int, List[int]] = {}
     for v in parent:
-        r = root(v)
-        if r != v:
-            remap[v] = r
-            merged += 1
+        groups.setdefault(root(v), []).append(v)
+    remap = np.arange(len(mesh.vertices))
+    vertices = np.asarray(mesh.vertices)
+    merged = 0
+    for r, members in groups.items():
+        if len(members) < 2:
+            continue
+        # a chain of near pairs can span more than the tolerance: leave such a group open, so the check still fails
+        if float(np.linalg.norm(vertices[members] - vertices[r], axis=1).max()) > tolerance_mm:
+            continue
+        for v in members:
+            if v != r:
+                remap[v] = r
+                merged += 1
     if merged:
         mesh.faces = remap[np.asarray(mesh.faces)]
     return merged

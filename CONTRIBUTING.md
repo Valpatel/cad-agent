@@ -107,10 +107,9 @@ such as a new command or check, even one that asks nothing of projects.
    - tags `vX.Y.Z` on the merge commit;
    - publishes the GitHub release from the CHANGELOG entry;
 
-   Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` is connected to this
-   repository like every Valpatel Pages site. A Direct Upload project cannot be switched to Git, so it is created as
-   a new Git-connected project under the same name `cad-agent` after the old one is deleted. That keeps
-   `cad-agent.pages.dev`, the DNS of both custom domains, `wrangler.toml` and `npm run deploy:site` pointing at it.
+   Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` (the name in
+   `wrangler.toml` and `npm run deploy:site`) is connected to this repository like every Valpatel Pages site, with
+   the same settings: build command `npm ci && npm run build`, output `dist`, root directory blank.
    - On each push to `main` it runs `npm ci && npm run build` and publishes `dist` to cad-agent.valpatel.com and
      cad-agent.gyropup.com. `tools/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
      which Cloudflare's clone lacks, then runs `tools/build-site.mjs --release`.

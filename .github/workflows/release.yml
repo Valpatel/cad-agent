@@ -1,8 +1,8 @@
 name: Release
 # After a release PR merges into main: tag vX.Y.Z with a GitHub release from CHANGELOG.md.
-# The site is not deployed from here. Its Cloudflare Pages project `cad-agent` is Git-connected (a Direct Upload
-# project cannot switch, so it was recreated under the same name) and builds and publishes cad-agent.valpatel.com and
-# cad-agent.gyropup.com on every push to main (`npm ci && npm run build`, output `dist`).
+# The site is not deployed from here. Its Cloudflare Pages project `cad-agent` is connected to this repository and
+# builds and publishes cad-agent.valpatel.com and cad-agent.gyropup.com on every push to main
+# (`npm ci && npm run build`, output `dist`).
 on:
   push:
     branches: [main]

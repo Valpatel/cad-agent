@@ -146,7 +146,7 @@ try {
       if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
     }
     if (route === '/' && width === 1366) {   // the OS tabs switch the install command, with no script (#282)
-      const shown = () => page.$$eval('.os-panel', ps => ps.filter(p => getComputedStyle(p).display !== 'none').map(p => p.querySelector('pre').textContent.trim()));
+      const shown = () => page.$$eval('.os-panel', ps => ps.filter(p => getComputedStyle(p).visibility === 'visible').map(p => p.querySelector('pre').textContent.trim()));
       if (!/install\.sh \| sh$/.test((await shown()).join())) seen.push(`the install card opens on ${await shown()}, not macOS / Linux`);
       await page.click('label.os-tab[for="os-win"]');
       if (!/install\.ps1 \| iex$/.test((await shown()).join())) seen.push('the Windows tab does not show the PowerShell command');

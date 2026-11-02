@@ -148,7 +148,7 @@ def torsion_snap_bar(length: float, width: float, thickness: float, twist: float
     # The trapeze (Buckley) effect: twisted, the fibres off the axis run as helices and stretch, and with no net
     # axial force the edges are in tension, eps(y) = (theta')^2 (y^2 - b^2 / 12) / 2 across the long side b. Their
     # pull, leaning at y theta', adds a torque integral of E eps y^2 theta' t dy = E t b^5 theta'^3 / 360 (derived in
-    # tests/test_torsion_snap_boss.py). A thin-strip result, used as a flag for when the closed form stops holding.
+    # tests/formulas/test_torsion_snap_boss.py). A thin-strip result, used as a flag for when the closed form stops holding.
     long_side, short_side, rate = max(width, thickness), min(width, thickness), twist / length
     b2 = long_side * long_side
     trapeze = modulus * short_side * b2 * b2 * long_side * rate * rate / (360.0 * torsion_constant_rect(width, thickness) * g)

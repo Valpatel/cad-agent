@@ -42,7 +42,7 @@ it. Once a check exists, move the entry from "review" to the check.
 
 ![Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear](img/motion/rib-in-counterbore.svg)
 
-*Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and `cad-agent holes` finds it inside both. An illustration of the counterbore plate in `tests/test_holes.py`, in section; the volumes match the hole check's.*
+*Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and `cad-agent holes` finds it inside both. An illustration of the counterbore plate in `tests/mechanical/test_holes.py`, in section; the volumes match the hole check's.*
 
 ## Bought parts, sources and assumptions
 
@@ -56,7 +56,7 @@ it. Once a check exists, move the entry from "review" to the check.
 
 ![An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance](img/motion/connector-window.svg)
 
-*`cadagent.mechanical.connectors` sizes the window from the mated plug and sweeps the plug in along its mating axis. A window sized from the jack's bounding box is too short where the latch passes. An illustration of the RJ45 port in `tests/test_connectors.py`, in section; the swept volumes match the connector check's.*
+*`cadagent.mechanical.connectors` sizes the window from the mated plug and sweeps the plug in along its mating axis. A window sized from the jack's bounding box is too short where the latch passes. An illustration of the RJ45 port in `tests/mechanical/test_connectors.py`, in section; the swept volumes match the connector check's.*
 
 ## Fasteners and assembly
 
@@ -70,7 +70,7 @@ it. Once a check exists, move the entry from "review" to the check.
 
 ![An RJ45 plug seated in its jack, and its Cat6 cable leaving the boot and turning at its 25 mm minimum bend radius: turned down, it runs 1.35 mm into the shelf the enclosure stands on; turned up, it clears](img/motion/cable-bend.svg)
 
-*`cable_bend` turns the cable behind the plug at its data sheet's minimum bend radius, each way across the mating axis, and finds the way it fits. An illustration of the RJ45 port in `tests/test_connectors.py` with a Cat6 patch cord (Belden's data sheet: 6.1 mm across, 25 mm minimum bend radius) and the shelf the enclosure stands on, in section; the clearances are the check's.*
+*`cable_bend` turns the cable behind the plug at its data sheet's minimum bend radius, each way across the mating axis, and finds the way it fits. An illustration of the RJ45 port in `tests/mechanical/test_connectors.py` with a Cat6 patch cord (Belden's data sheet: 6.1 mm across, 25 mm minimum bend radius) and the shelf the enclosure stands on, in section; the clearances are the check's.*
 
 ## Printed load-bearing parts
 

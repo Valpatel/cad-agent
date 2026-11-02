@@ -11,7 +11,7 @@ fan-curve explorer (``webkit/fan-curve.js``).
 Each curve is the datasheet's own marked points on its air-performance chart, read from the vector drawing in the PDF
 (the chart's lines and markers are stored as coordinates, so no picture is digitised by eye): to about 1 m3/h and
 1 Pa. The datasheet also tabulates a few measured values at each voltage, rounded to 5 m3/h and 1 Pa, where the fan
-meets three published system curves (``table``); tests/test_formulas.py solves those operating points from ``points``
+meets three published system curves (``table``); tests/formulas/test_formulas.py solves those operating points from ``points``
 and the system curves and finds the table again.
 
 Limits: the maker's test rig (ISO 5801, installation category A: free inlet, free outlet, so the pressure is the static

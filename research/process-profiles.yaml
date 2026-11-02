@@ -9,7 +9,7 @@
 # summarised and cited, never copied. Paid standards are cited by number and title only.
 #
 # Sources live in the reference registry, research/references.yaml (#118): every `source` here is an id there, and
-# tests/test_references.py checks that each resolves and that the registry lists this file in its used_for.
+# tests/review/test_references.py checks that each resolves and that the registry lists this file in its used_for.
 #
 # Rules
 #   id         unique, kebab-case: <process>-<feature>-<qualifier>-<source short name>

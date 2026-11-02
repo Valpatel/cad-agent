@@ -1,6 +1,6 @@
 /* <cad-fan-curve> (kit/fan-curve.js). Link this in <head>: it reserves the element's full size before the script runs
    (the still image, then the panel's height), so the live chart and controls replace them without moving the page. The
-   panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing overflows. The
+   panel has a fixed height per layout; tests/site/website-browser.mjs checks the size and that nothing overflows. The
    script sets data-theme (light or dark) from the page's color-scheme; override the colours with the --fc-* custom
    properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
 cad-fan-curve{--fc-ink:#173d3c;--fc-muted:#526863;--fc-sage:#6f8a80;--fc-mist:#eef1e4;--fc-back:#fffdf5;--fc-peach:#ffe1cc;

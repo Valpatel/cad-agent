@@ -108,7 +108,7 @@ export function compareBy(key, dir = 'asc') {
   };
 }
 
-// The element needs a browser; the functions above also run in Node (tests/webkit-gallery.test.mjs).
+// The element needs a browser; the functions above also run in Node (tests/webkit/webkit-gallery.test.mjs).
 const Base = globalThis.HTMLElement ?? class {};
 
 export class CadGallery extends Base {

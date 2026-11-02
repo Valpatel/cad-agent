@@ -7,7 +7,7 @@ The generic correction (issue #68 / PR #69) executes an internal plan against on
 Initial focused command evidence on 2026-10-29, before the final disabled-tool and conditional-removal guards:
 
 ```text
-$ PYTHONDONTWRITEBYTECODE=1 <CAD-environment>/bin/python -m pytest -q tests/test_gate_subassembly.py tests/test_gate_assembly.py tests/test_gate_fasteners.py
+$ PYTHONDONTWRITEBYTECODE=1 <CAD-environment>/bin/python -m pytest -q tests/review/test_gate_subassembly.py tests/review/test_gate_assembly.py tests/review/test_gate_fasteners.py
 103 passed in 25.04s
 ```
 
@@ -27,4 +27,4 @@ Independent review of `3e2af8c` found a second scope error: `assembly_gate(..., 
 
 The correction validates every explicit target before any geometry check. Member keys/owner aliases, unknown targets and fastener-only requests fail as unsupported; a member-removal request is not silently converted into whole-module withdrawal. Valid parent aliases resolve to exact instances with individual service checks, and `service=True` retains parent-part plus explicitly conditional module evidence. Kernel-free regressions assert no geometry/tool calls for rejected targets; BREP regressions assert the verdict fails instead of reporting service enabled with no findings. This is limited to the new scoped API; existing single-part semantics remain unchanged, and internal member teardown still needs a separately supported operation.
 
-Correction validation on 2026-10-29: the complete kernel-free suite passed 820 tests with 172 optional-dependency skips in 28.08 s. The CAD-enabled `tests/test_gate_subassembly.py tests/test_gate_assembly.py tests/test_gate_fasteners.py` run passed all 133 tests in 26.22 s. These are local regression results; current-head CI and independent recheck are still required.
+Correction validation on 2026-10-29: the complete kernel-free suite passed 820 tests with 172 optional-dependency skips in 28.08 s. The CAD-enabled `tests/review/test_gate_subassembly.py tests/review/test_gate_assembly.py tests/review/test_gate_fasteners.py` run passed all 133 tests in 26.22 s. These are local regression results; current-head CI and independent recheck are still required.

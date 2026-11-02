@@ -8,7 +8,7 @@
 #   uses      another domain's cadagent modules the node relies on (never one of its own `api`)
 #   agents    agents/<name>.md                                       lessons  a lessons/ folder this node owns (#133)
 #   issues    open cad-agent issues or pull requests                 projects keys of `projects` below
-# A list may name the same item under several nodes. tests/test_areas.py checks that every item exists, that every
+# A list may name the same item under several nodes. tests/repo/test_areas.py checks that every item exists, that every
 # docs/ and research/ page, command, skill and agent is placed somewhere, and that every lessons/ folder is claimed.
 #
 # Keep the map whole: a PR that adds a docs or research page, a `cad-agent` command, a skill or an agent adds its line
@@ -23,7 +23,7 @@
 # with the practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared
 # core (`cadagent.geometry`, `.project`, `.links`, ...) at the top. A domain package's module is listed in `api` under
 # its own domain only, so each module has one home; a node that relies on another domain's module names it in `uses`
-# instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/test_package_areas.py keeps code and tree in step.
+# instead (thermal's airflow uses `cadagent.simulation.cfd`). tests/repo/test_package_areas.py keeps code and tree in step.
 # The old flat paths still import with a warning, until a release that the CHANGELOG announces a minor release ahead
 # (cadagent._moved), but the tests reject them here.
 version: 1

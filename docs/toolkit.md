@@ -214,7 +214,7 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
   without them it opens the parts on one plate. The file is read back and deleted unless every copy is where the
   layout put it.
 - **Checked in Bambu Studio 02.08.04.57.** Its command line loads the plates without re-arranging them and slices
-  each plate with its own filament (`tests/test_plates.py` does this wherever Bambu Studio is installed). Its window
+  each plate with its own filament (`tests/manufacturing/test_plates.py` does this wherever Bambu Studio is installed). Its window
   opens the file on its plates, with the printer, filaments and process set and no errors.
 
 <details>
@@ -308,7 +308,7 @@ command line. Whether the tower clears the parts is the slicer's check, and noth
   volume (within 0.1 %), is watertight and is on its tool, every object is where it was placed, and the tower is
   where it was asked. Entries are sorted with a fixed date, so the same objects give the same bytes.
 - **Checked in PrusaSlicer 2.9.4.** Its command line loads the volumes on their tools, puts the wipe tower where the
-  file says and slices (`tests/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
+  file says and slices (`tests/manufacturing/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
   Flathub, with a two-tool printer from PrusaSlicer's defaults).
 
 </details>
@@ -569,7 +569,7 @@ skip the work silently.
 
 Modules are grouped by domain, as the [topic tree](areas.yaml) groups the work: `cadagent.<domain>.<module>`, with the
 practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared core at the
-top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/test_package_areas.py` keeps each package and its
+top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/repo/test_package_areas.py` keeps each package and its
 domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
 same module, with a `DeprecationWarning`; so do the old package paths and everything under them
 (`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
@@ -613,7 +613,7 @@ flowchart TD
 path. They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under
 **Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0). The warning then names that
 release. A project that hashes its source folders in evidence receipts can move its imports when it next regenerates
-them. `tests/test_package_layout.py` pins the old paths, so none can go unannounced.
+them. `tests/repo/test_package_layout.py` pins the old paths, so none can go unannounced.
 
 Two published modules became packages and keep their paths: `cadagent.geometry` is still the shared CAD helpers
 (`export_step` and the rest), and `cadagent.review` is still the review workbench (`review_html`), now also the review
@@ -807,7 +807,7 @@ form: a 90° turn needs the inside radius plus one diameter, ahead and beside (3
 
 ![An RJ45 plug seated in its jack, and its Cat6 cable leaving the boot and turning at its 25 mm minimum bend radius: turned down, it runs 1.35 mm into the shelf the enclosure stands on; turned up, it clears](img/motion/cable-bend.svg)
 
-*An illustration of the check on the RJ45 port in `tests/test_connectors.py`, in section: the clearances are
+*An illustration of the check on the RJ45 port in `tests/mechanical/test_connectors.py`, in section: the clearances are
 `cable_bend`'s.*
 
 `cable_bend()` takes CadQuery shapes in assembly position, placed through the port's `PanelFrame`, or boxes in the
@@ -1097,7 +1097,7 @@ so it is the lower exactly where σn(σ11 + σ22 − σn) > 3τn². That needs �
 smaller, with too little shear between the layers to make up the difference. The layers are then squeezed while the
 plane is compressed harder, or pulled while it is pulled harder.
 
-Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/test_fea_layers.py`
+Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/simulation/test_fea_layers.py`
 checks each, and that the options reproduce a project's own three maximum-stress checks):
 
 | Corner (MPa) | Bond, combined | Bond, max-stress | Bulk, full | Bulk, in-plane |
@@ -1110,8 +1110,8 @@ checks each, and that the options reproduce a project's own three maximum-stress
 
 S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
 X-Y / Z tensile strength ratio, the lowest over the editions read. So in the layer plane it sits at least as far below
-each sheet, as a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths. `tests/test_fea_materials.py` pins the rule, and
-`tests/test_fea_layers.py` checks the check against hand-computed cases.
+each sheet, as a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths. `tests/simulation/test_fea_materials.py` pins the rule, and
+`tests/simulation/test_fea_layers.py` checks the check against hand-computed cases.
 
 </details>
 
@@ -1130,7 +1130,7 @@ A record made on one toolkit can be checked on another. `material_changes(old_re
 that differs, with now / recorded. Under forces and torques, deflections scale by the inverse of the E ratio, safety
 factors by the strength ratio and masses by the density ratio. A built-in material's numbers are result-changing. A
 change to any of them needs a `**Projects must change**` fragment in [`changelog.d/`](../changelog.d/README.md), and
-`tests/test_fea_layers.py` pins every row's hash so it cannot slip through.
+`tests/simulation/test_fea_layers.py` pins every row's hash so it cannot slip through.
 
 </details>
 

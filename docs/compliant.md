@@ -214,7 +214,7 @@ V5.4 and Bambu Lab PETG-CF V3.0. Printed snaps need a test print.*
   under-states the push: check those with FEA or a push test.
 
 The figure's spec, `tools/anim/snap-engagement.yaml`, is a snap declaration too: `cad-agent snapfit
-tools/anim/snap-engagement.yaml` prints the same two verdicts. `tests/test_anim_snapfit.py` runs the calculator
+tools/anim/snap-engagement.yaml` prints the same two verdicts. `tests/publish/test_anim_snapfit.py` runs the calculator
 again and checks the figure against it ([animated figures](animated-figures.md#a-snap-fit-engaging)).
 
 ## Limits
@@ -233,10 +233,10 @@ again and checks the figure against it ([animated figures](animated-figures.md#a
 
 ## Tests that keep it honest
 
-`tests/test_snapfit.py` reproduces the guide's worked examples — Example I (h 3.28 mm, P 32.5 N, W 58.5 N), Example II
+`tests/mechanical/test_snapfit.py` reproduces the guide's worked examples — Example I (h 3.28 mm, P 32.5 N, W 58.5 N), Example II
 (ring-segment hook, y 2.11 mm) and the annular lamp cover (P 748 N, W 1346 N) — checks that every printed row matches
 the derived table in the research note, that direction changes the verdict for the same geometry, that uncomputable
 limits, out-of-range inputs and unstated processes fail, the ring section against numerical integration (arcs up to
 360°), the torsion relations from first principles, and that this page's YAML example and printed table match the
-code. `tests/test_torsion_snap_boss.py` checks the torsion bar against Saint-Venant's series solution and this page's
+code. `tests/formulas/test_torsion_snap_boss.py` checks the torsion bar against Saint-Venant's series solution and this page's
 explorer numbers against the Python. The stated elongation and strength ranges are checked against the datasheet rows too.

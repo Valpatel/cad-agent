@@ -4,7 +4,7 @@
  *
  * The gate bench (tests/fixtures/gate_bench/) is the repo's own test assembly. Its committed site_snapshot/ holds the
  * exports of a clean `cad-agent gates --build` run (refresh them with tests/fixtures/gate_bench/site_snapshot.py), so
- * the review site builds here without CadQuery, exactly as tests/test_site_review.py builds it. This copies the bench
+ * the review site builds here without CadQuery, exactly as tests/publish/test_site_review.py builds it. This copies the bench
  * to a temporary folder, runs `cad-agent site` there and writes into docs/img/gates/:
  *
  * - bench-connectivity.svg: the connectivity graph the site draws from exports/gates/connectivity.dot;

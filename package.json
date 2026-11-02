@@ -3,16 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:webkit-unit": "node --test tests/webkit-*.test.mjs",
-    "test:part-table": "node tests/webkit-part-table-browser.mjs",
-    "test:file-viewer": "node tests/webkit-file-viewer-browser.mjs",
-    "test:diagrams": "node tests/webkit-diagrams-browser.mjs && node tests/site-diagrams-browser.mjs",
+    "test:webkit-unit": "node --test tests/webkit/webkit-*.test.mjs",
+    "test:part-table": "node tests/webkit/webkit-part-table-browser.mjs",
+    "test:file-viewer": "node tests/webkit/webkit-file-viewer-browser.mjs",
+    "test:diagrams": "node tests/webkit/webkit-diagrams-browser.mjs && node tests/site/site-diagrams-browser.mjs",
     "build": "node tools/pages-build.mjs",
     "build:site": "node tools/build-site.mjs",
     "preview:site": "node tools/build-site.mjs --worktree && node tools/preview-site.mjs",
     "deploy:site": "node tools/build-site.mjs --release && npx --yes wrangler@4.86.0 pages deploy dist --project-name cad-agent --branch main --commit-dirty=false",
     "build:site:draft": "node tools/build-site.mjs --worktree",
-    "test:site": "node --test tests/website-*.test.mjs && node tests/website-browser.mjs && node tests/website-catalog-browser.mjs"
+    "test:site": "node --test tests/site/website-*.test.mjs && node tests/site/website-browser.mjs && node tests/site/website-catalog-browser.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

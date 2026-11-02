@@ -272,7 +272,7 @@ fits), Section 5-5 (shear yield), Table A-5 (metals' moduli); ISO 68-1 (thread s
 
 ## Tests that keep it honest
 
-`tests/test_inserts_formulas.py` checks each relation against a hand evaluation or a closed form it must reach.
-`tests/test_mechanical_inserts.py` reproduces the published tests from the calibration, checks the makers' hole and
+`tests/formulas/test_inserts_formulas.py` checks each relation against a hand evaluation or a closed form it must reach.
+`tests/mechanical/test_mechanical_inserts.py` reproduces the published tests from the calibration, checks the makers' hole and
 boss rules, each row's verdicts on built cases, the CLI's exit codes, and the coupons' CAD volumes.
-`tests/test_insert_figures.py` redraws every figure on this page from the module and fails if one has gone stale.
+`tests/mechanical/test_insert_figures.py` redraws every figure on this page from the module and fails if one has gone stale.

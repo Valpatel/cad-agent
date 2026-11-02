@@ -20,7 +20,7 @@ and the declarations that belong in the YAML dossier rather than the build scrip
 intended overlaps, ``contains``, decisions, per-part minimum walls, tool envelopes) as plain data
 until the bench grows a ``dossier/`` directory.
 
-Seeds (``SEEDS``) each inject one defect; ``tests/test_gate_bench.py`` runs them per gate.
+Seeds (``SEEDS``) each inject one defect; ``tests/review/test_gate_bench.py`` runs them per gate.
 """
 
 from __future__ import annotations

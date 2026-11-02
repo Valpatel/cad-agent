@@ -12,7 +12,7 @@ When the old paths go: not yet. They stay until a release whose CHANGELOG announ
 release ahead, under **Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0), and
 ``REMOVED_IN`` then names that release, so the warning does too. Downstream projects hash their source folders in
 evidence receipts, so moving an import changes a receipt: a project needs the warning to plan that. Up to v0.8.0 this
-said v0.7.0, which shipped with every old path. ``tests/test_package_layout.py`` pins the table, so a path cannot go
+said v0.7.0, which shipped with every old path. ``tests/repo/test_package_layout.py`` pins the table, so a path cannot go
 unannounced.
 
 Two published modules became packages and keep their paths, so they need nothing here: ``cadagent.geometry`` (the

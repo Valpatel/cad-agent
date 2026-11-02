@@ -1,5 +1,5 @@
 """Refresh ``site_snapshot/``: the clean gate bench's exports (geometry record, gate verdicts, dossier status), so
-the review-site tests (``tests/test_site_review.py``) build the pages in core CI without CadQuery.
+the review-site tests (``tests/publish/test_site_review.py``) build the pages in core CI without CadQuery.
 
 Run it after a change to the bench, its dossier or the gates (needs the ``cad`` extra)::
 

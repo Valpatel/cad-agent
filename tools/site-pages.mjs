@@ -5,7 +5,7 @@
  * site build, never written into the Markdown, so the .md twins and llms.txt stay exactly as written and GitHub shows
  * the page as before. Every placed picture says what it is: a real output of a tool, or a diagram (a drawing of
  * something real), which tool made it and what it was computed on. Used by tools/build-site.mjs; tested in
- * tests/website-pages.test.mjs.
+ * tests/site/website-pages.test.mjs.
  *
  * The template, top to bottom:
  * - a band under the title and its first paragraph: a hero figure and/or two to four input → tool → output tiles;

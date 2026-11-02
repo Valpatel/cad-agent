@@ -7,7 +7,7 @@
  *   torsionSnapBar(0.015, 0.004, 0.0012, 0.14, 2.68e9, 0.0095, 0.010, 2);   // shear strain, torque, lever force
  *   screwBoss(0.003, 0.00112, 0.006, 0.006, 0.3, 15.5e6, 35e6, 0.2, 0.65); // clamp band, strip, window, hoop
  *
- * The Python package is the reference. tests/webkit-formulas.test.mjs runs every function here on the golden vectors
+ * The Python package is the reference. tests/webkit/webkit-formulas.test.mjs runs every function here on the golden vectors
  * that tools/formula_vectors.py writes from the Python, so the two agree to 1e-12. Change the Python first, then
  * this file, then regenerate the vectors. Units, limits and sources are documented on the Python functions
  * (cadagent/formulas/beams.py, linkages.py, thermal.py, torsion.py and screws.py) and in docs/formulas.md.

@@ -96,13 +96,16 @@ def test_python_expands_the_home_directory(tmp_path, monkeypatch, written):
     (tmp_path / "cad-agent.yaml").write_text(f"cad:\n  name: h\n  python: {written}\n")
     assert load_project(tmp_path).python == str(home / "tools" / "venv" / "bin" / "python")
 
-def test_python_relative_paths_and_bare_names_keep_their_meaning(tmp_path):
+def test_python_relative_paths_and_bare_names_keep_their_meaning(tmp_path, monkeypatch):
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  python: venv/bin/python\n")
     assert load_project(tmp_path).python == str(tmp_path.resolve() / "venv" / "bin" / "python")
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  python: python3\n")
     assert load_project(tmp_path).python == "python3"
-    (tmp_path / "cad-agent.yaml").write_text("cad:\n  python: sub/$HOMEDIR/python\n")
-    assert load_project(tmp_path).python == str(tmp_path.resolve() / "sub" / "$HOMEDIR" / "python")
+    # only the home directory expands: another variable, even one starting HOME and set, stays literal
+    monkeypatch.setenv("HOMEDIR", str(tmp_path / "elsewhere"))
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  python: $HOMEDIR/python\n")
+    assert load_project(tmp_path).python == str(tmp_path.resolve() / "$HOMEDIR" / "python")
 
 def test_literal_revision_wins_and_missing_revision_file_is_unknown(tmp_path):
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  revision_from: cad/p.json:revision\n")

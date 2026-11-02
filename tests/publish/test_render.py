@@ -71,12 +71,15 @@ def test_only_filter_matches_a_bare_name_either_way(tmp_path, monkeypatch):
     assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("b", meshes=[(stl, (1, 0, 0))]) is not None
     assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("c", meshes=[(stl, (1, 0, 0))]) is None
 
-def test_unknown_extensions_are_refused_before_rendering(tmp_path, monkeypatch):
+@pytest.mark.parametrize("name", ["part.v2", "part.xbm", "part.wmf"])
+def test_unwritable_extensions_are_refused_before_rendering(tmp_path, monkeypatch, name):
+    """Unknown to Pillow (.v2), unable to hold RGB (.xbm) or with no save handler (.wmf): refused up front."""
     monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
     r = Renderer(tmp_path, size=(200, 150))
-    with pytest.raises(ValueError, match=r"cannot write a '\.v2' image; name it part\.v2\.png"):
-        r.render("part.v2", meshes=[("never-read.stl", (1, 0, 0))])
-    assert not (tmp_path / "part.v2").exists()
+    suffix = name.split(".")[1]
+    with pytest.raises(ValueError, match=rf"cannot write a '\.{suffix}' image; name it part\.{suffix}\.png"):
+        r.render(name, meshes=[("never-read.stl", (1, 0, 0))])
+    assert not (tmp_path / name).exists()
 
 def test_other_image_extensions_still_save_in_their_format(tmp_path, monkeypatch):
     stl = cube_stl(tmp_path / "cube.stl")

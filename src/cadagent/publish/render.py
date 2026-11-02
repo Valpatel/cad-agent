@@ -22,6 +22,7 @@ rendered, for iterating on one picture without re-rendering the gallery.
 
 from __future__ import annotations
 
+import io
 import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -308,16 +309,22 @@ def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
 def _image_name(name: str, pil: Any) -> str:
     """``name`` with ``.png`` added when it has no extension (#289).
 
-    A ValueError, before anything renders, for an extension Pillow cannot write (``part.v2``): the render used to
-    finish and then fail in ``Image.save``.
+    A ValueError, before anything renders, for an extension Pillow cannot write an RGB image to (``part.v2``,
+    ``.xbm``, ``.wmf``): the render used to finish and then fail in ``Image.save``. A 1 x 1 save in memory is the test,
+    since Pillow registers some formats it cannot save, or cannot save in RGB.
     """
     suffix = Path(name).suffix
     if not suffix:
         return name + ".png"
     pil.init()
-    if pil.registered_extensions().get(suffix.lower()) not in pil.SAVE:
+    fmt = pil.registered_extensions().get(suffix.lower())
+    try:
+        if fmt is None:
+            raise KeyError(suffix)
+        pil.new("RGB", (1, 1)).save(io.BytesIO(), format=fmt)
+    except Exception:
         raise ValueError(f"{name}: Pillow cannot write a {suffix!r} image; name it {name}.png, "
-                         f"or leave the extension off and Renderer adds .png")
+                         f"or leave the extension off and Renderer adds .png") from None
     return name
 
 def _is_plane(clip: Any) -> bool:

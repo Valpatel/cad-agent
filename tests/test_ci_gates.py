@@ -55,6 +55,18 @@ def test_latest_verdict_wins_by_review_order():
     assert gate([review("block"), review("pass")])[0]
 
 
+@pytest.mark.parametrize("login,permission,ok", [
+    ("mvalancy", "admin", True),
+    ("MValancy", "write", True),            # GitHub logins are case-insensitive
+    ("mvalancy", "read", False),            # a maintainer who lost write access
+    ("a-collaborator", "write", False),     # write access alone: can push and run CI, cannot pass its own review
+    ("a-collaborator", "admin", False),
+    ("outsider", "read", False),
+])
+def test_only_maintainers_verdicts_count(login, permission, ok):
+    assert gates.may_review(login, permission) is ok
+
+
 def test_only_reviewers_with_write_access_count():
     assert not gate([review("pass", who="outsider")])[0]
     assert not gate([review("pass", who="")])[0]

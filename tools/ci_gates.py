@@ -42,6 +42,16 @@ FEATURE_BRANCH = re.compile(
     r"^(feat|fix|ci|docs|research|test|refactor|release|vendor-update|dependabot)/[A-Za-z0-9._/-]+$")
 MARKER = re.compile(r"^<!--\s*cad-review\s+verdict=(pass|block)\s+sha=([0-9a-f]{40})\s*-->$")
 WRITERS = {"admin", "maintain", "write"}
+# Whose review verdicts count. Write access alone is not enough: a collaborator with write access can push branches
+# and run CI, but their PRs merge only after a maintainer's review. All of the project's agents review through the
+# maintainer account, so this is the project's own review, not a person's. Change this list only by a reviewed PR;
+# the gates run from dev's copy, so a PR cannot add itself.
+MAINTAINERS = frozenset({"mvalancy"})
+
+
+def may_review(login: str, permission: str) -> bool:
+    """A verdict counts when its author is a maintainer who still has write access."""
+    return login.lower() in MAINTAINERS and permission in WRITERS
 GATED = ("dev", "main")
 
 Result = Tuple[bool, str]
@@ -71,7 +81,7 @@ def marker(body: Optional[str]) -> Optional[Tuple[str, str]]:
 
 
 def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[Tuple[int, str, str, str]]:
-    """(review id, verdict, sha, reviewer) for every live review with a marker by someone with write access, in the
+    """(review id, verdict, sha, reviewer) for every live review with a marker by a maintainer (`can_write`), in the
     order GitHub created them (ids increase; timestamps can tie)."""
     out = []
     for r in reviews:
@@ -166,7 +176,8 @@ def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, D
     def can_write(login: str) -> bool:
         if login not in cache:
             try:
-                cache[login] = json.loads(_gh("api", f"repos/{repo}/collaborators/{login}/permission"))["permission"] in WRITERS
+                permission = json.loads(_gh("api", f"repos/{repo}/collaborators/{login}/permission"))["permission"]
+                cache[login] = may_review(login, permission)
             except subprocess.CalledProcessError:
                 cache[login] = False
         return cache[login]

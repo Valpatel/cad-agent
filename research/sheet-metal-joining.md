@@ -307,6 +307,9 @@ flowchart TD
     FH-M3-10 0.0029 in over its nominal. Until SendCutSend says which field it cuts to, draw PEM's own hole (the
     bulletin's nominal) and check the hole SendCutSend's quote shows. Do not rely on `resize` for stainless or flush
     parts.
+  - **Which field is cut is not known.** cad-agent takes the conservative reading. `cadagent.mechanical.clinch`
+    checks a drawn hole against PEM's band (nominal +0.08 mm / −0), never against either feed field, so a part
+    drawn to the feed's larger hole fails there. Asking SendCutSend is left to the project's owner.
 
 <details>
 <summary>The 21 common parts compared: PEM's hole, the catalogue page's H and the feed's hole_diameter</summary>

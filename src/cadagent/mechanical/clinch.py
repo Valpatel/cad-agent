@@ -28,6 +28,10 @@ thickness is not printed for the nuts), not allowables: PEM asks for a test in t
 thickness or hole changes them. The data is a cited subset of PEM's bulletins, by part and page, for the sizes most
 enclosures use; PEM's own catalogue governs. A shop's own limits (SendCutSend's per-part K, N and M) are not checked
 here: they belong to that shop's profile. Nothing here proves a part holds: test one.
+
+**Data policy.** The module keeps only the factual per-size numbers a check needs (hole, minimum sheet, edge
+distance and ratings), cited by part and page, as bd_warehouse carries ISO tables; no PEM prose, figure or whole
+table is copied.
 """
 from __future__ import annotations
 

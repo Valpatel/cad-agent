@@ -28,8 +28,8 @@ def project(tmp_path):
 
 
 def _cache(root: Path, **kw) -> PartCache:
-    return PartCache(root / "exports" / ".partcache", sources=[root / "cad" / "parameters.json",
-                                                                root / "cad" / "common.py"], **kw)
+    return PartCache(root / ".cadagent-cache" / "parts", sources=[root / "cad" / "parameters.json",
+                                                                   root / "cad" / "common.py"], **kw)
 
 
 # keys: no cadquery needed
@@ -235,3 +235,30 @@ def test_a_builder_must_return_a_shape(project):
     pytest.importorskip("cadquery")
     with pytest.raises(TypeError, match="not a cadquery Shape"):
         _cache(project).get_or_build("arm", lambda: 42)
+
+
+def test_the_cache_lives_out_of_exports_and_is_never_committed(project, monkeypatch):
+    """The default root is beside the gates' pair cache, and any root ignores itself in git."""
+    cq = pytest.importorskip("cadquery")
+    assert C.DEFAULT_ROOT == Path(".cadagent-cache") / "parts" and PartCache().root == C.DEFAULT_ROOT
+    env = {"PATH": os.environ.get("PATH", ""), "HOME": str(project), "GIT_CONFIG_GLOBAL": os.devnull,
+           "GIT_CONFIG_NOSYSTEM": "1"}
+    subprocess.run(["git", "-C", str(project), "init", "-q"], check=True, env=env)
+    cache = PartCache(project / "exports" / "anywhere", sources=[project / "cad" / "common.py"])
+    cache.get_or_build("arm", lambda: cq.Workplane().box(1, 1, 1))
+    status = subprocess.run(["git", "-C", str(project), "status", "--porcelain", "--untracked-files=all"],
+                            check=True, capture_output=True, text=True, env=env).stdout
+    assert "cad/common.py" in status and "anywhere" not in status
+    assert (cache.root / ".gitignore").read_text() == C.GITIGNORE_TEXT
+
+
+def test_clear_keeps_markers_it_did_not_write(project):
+    cq = pytest.importorskip("cadquery")
+    cache = _cache(project)
+    cache.root.mkdir(parents=True)
+    (cache.root / ".gitignore").write_text("*.brep\n")                           # the project's own
+    cache.get_or_build("arm", lambda: cq.Workplane().box(1, 1, 1))
+    assert (cache.root / ".gitignore").read_text() == "*.brep\n"                  # never overwritten
+    cache.clear()
+    assert (cache.root / ".gitignore").read_text() == "*.brep\n"
+    assert not (cache.root / C.CACHE_TAG).exists() and not cache.path("arm").exists()

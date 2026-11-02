@@ -205,7 +205,7 @@ rebuilds only the parts whose sources changed, and the clearance, render and sli
 ```python
 from cadagent.geometry.cache import PartCache
 
-cache = PartCache("exports/.partcache",
+cache = PartCache(".cadagent-cache/parts",                        # the default; any folder works
                   sources=["cad/parameters.json", "cad/common.py"],   # files or folders every part reads
                   key_extra={"variant": "long-reach"},                # other values the build depends on
                   max_bytes=2_000_000_000)                            # optional size cap
@@ -243,16 +243,14 @@ flowchart TD
 - **Size cap.** With `max_bytes`, after each part is stored the least recently used key folders (by the time a run
   last loaded or wrote one) are removed until the cache fits; folders the current run used are kept. `prune()` and
   `size()` do the same by hand.
-- **Out of the evidence.** Keep the cache under `exports_dir`: [reproducible outputs](#reproducible-outputs) leave
-  that folder out of the source date, and `cad-agent release` skips hidden folders. The root holds a `CACHEDIR.TAG`,
-  so `cad-agent package` never zips it, even from an `exports/**` glob. Do not commit it; add to `.gitignore`:
-
-  ```gitignore
-  exports/.partcache/
-  ```
+- **Where it lives.** `root` defaults to `.cadagent-cache/parts`, beside the gates' pair cache
+  (`.cadagent-cache/gates`), and out of `exports/`, which projects commit. Wherever it is, the root holds a
+  `.gitignore` that ignores everything in it, so the cache is never committed, and a `CACHEDIR.TAG`, so
+  `cad-agent package` never zips it, even from a glob that reaches into it. Deleting it is always safe.
 
 Limits: the key covers only what it is given. A builder that reads a file or setting not in `sources`, `deps` or
-`key_extra` is not rebuilt when that changes: list it, or `clear()`. The checks catch a damaged file, not a stale one.
+`key_extra` is not rebuilt when that changes: list it, or `clear()`. The checks catch a damaged file, not a stale one, and not a planted one: the record is not signed, so anyone who
+can write the folder can change a part (as they could change the build script); never load someone else's cache.
 A hit loads the stored B-rep; the builder's warnings and side effects do not happen. Another cadquery version starts
 a fresh key (its OCCT can build the same source differently); other library versions are not in the key, so pass
 them in `key_extra` if they matter.

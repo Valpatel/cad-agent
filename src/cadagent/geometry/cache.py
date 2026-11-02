@@ -6,7 +6,7 @@ instead of rebuilding while that hash is unchanged::
 
     from cadagent.geometry.cache import PartCache
 
-    cache = PartCache("exports/.partcache", sources=["cad/parameters.json", "cad/common.py"],
+    cache = PartCache(".cadagent-cache/parts", sources=["cad/parameters.json", "cad/common.py"],
                       key_extra={"variant": "long-reach"})
     boom = cache.get_or_build("boom", build_boom, deps=["cad/boom.py"])
     parts = cache.get_all({"boom": (build_boom, ["cad/boom.py"]), "bucket": (build_bucket, ["cad/bucket.py"])})
@@ -20,12 +20,18 @@ import, is rebuilt and stored again. Files are written next to their final name 
 then the JSON that vouches for it), so a parallel run or a killed one never reads half a file.
 
 ``max_bytes`` caps the folder's size: after a part is stored, the least recently used key folders are removed until
-the cache fits, never one this process has used. ``clear()`` removes every key folder. The root holds a
-``CACHEDIR.TAG`` (https://bford.info/cachedir/), which ``cad-agent package`` and backup tools skip.
+the cache fits, never one this process has used. ``clear()`` removes every key folder.
+
+Where it lives: ``root`` defaults to ``.cadagent-cache/parts`` (relative to the working directory), beside the gates'
+pair cache (``.cadagent-cache/gates``), out of ``exports/``, which projects commit. Wherever it is put, the root holds
+a ``.gitignore`` that ignores everything in it, so the cache is never committed, and a ``CACHEDIR.TAG``
+(https://bford.info/cachedir/), which ``cad-agent package`` and backup tools skip.
 
 Limits: the key covers only the files and values it is given. A part that reads a file or setting not listed in
 ``sources``, ``deps`` or ``key_extra`` is not rebuilt when that changes: list everything the builder reads, or call
-``clear()``. The checks on load catch a damaged file, not a stale one. A cached part is the same B-rep, not a
+``clear()``. The checks on load catch a damaged file, not a stale one, and not a planted one: the record is not
+signed, so anyone who can write the folder can change a part, as they could change the build script. Never load a
+cache folder that came from someone else. A cached part is the same B-rep, not a
 re-run of the build: warnings or side effects of the builder do not happen on a hit.
 """
 
@@ -49,6 +55,8 @@ Builder = Callable[[], Any]
 FORMAT = 1
 KEY_LENGTH = 16
 CACHE_TAG = "CACHEDIR.TAG"
+DEFAULT_ROOT = Path(".cadagent-cache") / "parts"
+GITIGNORE_TEXT = "# cad-agent part cache (cadagent.geometry.cache): regenerated, never committed\n*\n"
 CACHE_TAG_TEXT = ("Signature: 8a477f597d28d172789f06886806bc55\n"
                   "# This folder is a cad-agent part cache (cadagent.geometry.cache); it can be deleted.\n")
 # Relative and absolute volume tolerance on load. A BREP round trip keeps the geometry exactly, so these only absorb
@@ -115,7 +123,7 @@ class PartCache:
     its check on load to the reason (``"brep sha256 differs"``, ``"volume differs"``, ...).
     """
 
-    def __init__(self, root: PathLike, sources: Iterable[PathLike] = (), key_extra: Any = None,
+    def __init__(self, root: PathLike = DEFAULT_ROOT, sources: Iterable[PathLike] = (), key_extra: Any = None,
                  max_bytes: Optional[int] = None):
         if max_bytes is not None and max_bytes < 0:
             raise ValueError(f"max_bytes must be at least 0, got {max_bytes}")
@@ -197,7 +205,13 @@ class PartCache:
         for child in self.root.iterdir():
             if child.is_dir() and _KEY.match(child.name):
                 shutil.rmtree(child, ignore_errors=True)
-        (self.root / CACHE_TAG).unlink(missing_ok=True)
+        for marker, text in ((CACHE_TAG, CACHE_TAG_TEXT), (".gitignore", GITIGNORE_TEXT)):
+            path = self.root / marker                     # only the markers this cache wrote, not a project's own
+            try:
+                if path.read_text() == text:
+                    path.unlink()
+            except OSError:
+                pass
         try:
             self.root.rmdir()
         except OSError:
@@ -279,6 +293,9 @@ class PartCache:
         tag = self.root / CACHE_TAG
         if not tag.exists():
             _replace_atomically(tag, lambda tmp: Path(tmp).write_text(CACHE_TAG_TEXT))
+        ignore = self.root / ".gitignore"
+        if not ignore.exists():                           # never committed, wherever the root is
+            _replace_atomically(ignore, lambda tmp: Path(tmp).write_text(GITIGNORE_TEXT))
         brep.parent.mkdir(parents=True, exist_ok=True)
 
         def write_brep(tmp: str) -> None:

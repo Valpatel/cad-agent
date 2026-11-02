@@ -10,8 +10,8 @@
 #   price_checked    the day it was read; prices change without notice, so re-read before a buy
 #   specs.price_usd_1000  the 1000-4999 break (Bossard), specs.stock the stock count shown that day
 #   installed        what a shop charges to press the part in, from its ordering feed (SendCutSend's
-#                    sendcutsend-catalog.json, generated 2026-04-29, read 2026-11-02); whether that includes the
-#                    part is not stated
+#                    sendcutsend-catalog.json): shop, sku, price_usd, the feed's generated date and the day it was
+#                    read (checked); whether that includes the part is not stated
 #   mass_g           null: not read
 # Only parts the checks know are listed (FH studs in M3-M6; no inch FH rows yet).
 # The table in research/sheet-metal-joining.md §4 and §9 explains which of these are the common, cheap choices.
@@ -154,7 +154,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/s-440-1zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-440-1zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: S-440-1, price_usd: 0.77, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: S-440-1, price_usd: 0.77, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-CLS-440-1
     category: clinch_nut
@@ -185,7 +185,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/s-632-1zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-632-1zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: S-632-1, price_usd: 0.77, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: S-632-1, price_usd: 0.77, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-CLS-632-1
     category: clinch_nut
@@ -216,7 +216,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/s-832-1zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-832-1zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: S-832-1, price_usd: 0.77, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: S-832-1, price_usd: 0.77, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-CLS-832-1
     category: clinch_nut
@@ -247,7 +247,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/ss-032-1zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/ss-032-1zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: SS-032-1, price_usd: 0.77, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: SS-032-1, price_usd: 0.77, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-CLSS-032-1
     category: clinch_nut
@@ -278,7 +278,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/s-0420-1zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-0420-1zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: S-0420-1, price_usd: 1.13, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: S-0420-1, price_usd: 1.13, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-CLS-0420-1
     category: clinch_nut
@@ -309,7 +309,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/fh-m3-10zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m3-10zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: FH-M3-10, price_usd: 0.77, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: FH-M3-10, price_usd: 0.77, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-FH-M4-10ZI
     category: clinch_stud
@@ -325,7 +325,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/fh-m4-10zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m4-10zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: FH-M4-10, price_usd: 0.77, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: FH-M4-10, price_usd: 0.77, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-FH-M5-10ZI
     category: clinch_stud
@@ -341,7 +341,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/fh-m5-10zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m5-10zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: FH-M5-10, price_usd: 1.23, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: FH-M5-10, price_usd: 1.23, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-FH-M6-12ZI
     category: clinch_stud
@@ -357,7 +357,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/fh-m6-12zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m6-12zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: FH-M6-12, price_usd: 0.91, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: FH-M6-12, price_usd: 0.91, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-SO-M3-6ZI
     category: clinch_standoff
@@ -373,7 +373,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/so-m3-6zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/so-m3-6zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: SO-M3-6, price_usd: 1.23, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: SO-M3-6, price_usd: 1.23, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-SO-M4-6ZI
     category: clinch_standoff
@@ -389,7 +389,7 @@ items:
     reference: bossard-pem-prices
     sources: ['https://americas.bossard.com/products/so-m4-6zi-by-penn-engineering.html']
     buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/so-m4-6zi-by-penn-engineering.html', in_stock: true}]
-    installed: {shop: sendcutsend, sku: SO-M4-6, price_usd: 1.33, reference: sendcutsend-catalog}
+    installed: {shop: sendcutsend, sku: SO-M4-6, price_usd: 1.33, generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}
 
   - id: pem-BSO-M3-6ZI
     category: clinch_standoff

@@ -46,20 +46,43 @@ class CatalogueError(ValueError):
     """The hardware catalogue does not load or does not check."""
 
 
+def _item_problems(item: Mapping[str, Any]) -> List[str]:
+    """What the generic catalogue check cannot know: the part, its kind, the sources and the installed block."""
+    out, iid, part = [], item["id"], item.get("part")
+    if item.get("category") == "blind_rivet":
+        if part not in rivets.RIVETS:
+            out.append(f"{iid}: part {part!r} is not in cadagent.mechanical.rivets.RIVETS")
+    elif part not in clinch.PARTS:
+        out.append(f"{iid}: part {part!r} is not in cadagent.mechanical.clinch.PARTS")
+    elif item.get("category") != f"clinch_{clinch.PARTS[part].kind}":
+        out.append(f"{iid}: {part} is a {clinch.PARTS[part].kind}, so its category is clinch_{clinch.PARTS[part].kind}, "
+                   f"not {item.get('category')!r}")
+    if item.get("reference") not in SRC:
+        out.append(f"{iid}: reference {item.get('reference')!r} is not one of {sorted(SRC)}")
+    inst = item.get("installed")
+    if inst is not None:
+        if item.get("category") == "blind_rivet":
+            out.append(f"{iid}: a rivet has no installed price")
+        elif not isinstance(inst, dict):
+            out.append(f"{iid}: installed must be a mapping")
+        else:
+            for key in ("shop", "sku", "generated", "checked"):
+                if not isinstance(inst.get(key), str) or not inst.get(key):
+                    out.append(f"{iid}: installed needs {key}")
+            if not cat.is_number(inst.get("price_usd")) or inst["price_usd"] < 0:
+                out.append(f"{iid}: installed.price_usd must be a number >= 0, got {inst.get('price_usd')!r}")
+            if inst.get("reference") not in SRC:
+                out.append(f"{iid}: installed.reference {inst.get('reference')!r} is not one of {sorted(SRC)}")
+    return out
+
+
 @lru_cache(maxsize=4)
 def _load(path: str) -> cat.Catalogue:
     catalogue, issues = cat.load_catalogue([Path(path)])
     issues += cat.check_catalogue(catalogue, categories=CATEGORIES, max_price_age_days=None)
     errors = [str(i) for i in issues if i.level == "error"]
     for item in catalogue:
-        part = item.get("part")
-        if item.get("category") == "blind_rivet":
-            if part not in rivets.RIVETS:
-                errors.append(f"{item['id']}: part {part!r} is not in cadagent.mechanical.rivets.RIVETS")
-        elif part not in clinch.PARTS:
-            errors.append(f"{item['id']}: part {part!r} is not in cadagent.mechanical.clinch.PARTS")
-        if item.get("reference") not in SRC:
-            errors.append(f"{item['id']}: reference {item.get('reference')!r} is not one of {sorted(SRC)}")
+        errors += _item_problems(item)
     if errors:
         raise CatalogueError(f"{path}: " + "; ".join(errors))
     return catalogue
@@ -137,7 +160,7 @@ def cost(quantities: Mapping[str, int], *, path: Any = None) -> Dict[str, Any]:
         o = next((x for x in offers(part, path) if x["each_usd"] is not None), None)
         if o is None:
             unpriced.append(part)
-            every_installed = False
+            every_installed = every_installed and part not in clinch.PARTS     # a rivet is never pressed in
             continue
         packs = math.ceil(qty / o["pack_qty"])
         line = {"part": part, "qty": qty, "model": o["model"], "seller": o["seller"], "url": o["url"],
@@ -153,7 +176,7 @@ def cost(quantities: Mapping[str, int], *, path: Any = None) -> Dict[str, Any]:
         lines.append(line)
         loose += line["pieces_usd"]
         packs_total += line["packs_usd"]
-    clinch_lines = [x for x in lines if x["part"] in clinch.PARTS]
+    clinch_lines = [x for x in lines if x["part"] in clinch.PARTS]      # priced clinch parts
     return {"lines": lines, "unpriced": unpriced, "pieces_usd": round(loose, 4), "packs_usd": round(packs_total, 4),
             "installed_usd": round(installed, 4) if clinch_lines and every_installed else None,
             "limits": ["prices as read on each line's price_checked date, before shipping and tax; re-read the seller's "

@@ -71,3 +71,23 @@ def test_cost_counts_packs_pieces_and_the_shops_price():
 def test_cost_refuses(q):
     with pytest.raises((ValueError, KeyError)):
         sh.cost(q)
+
+
+@pytest.mark.parametrize("extra, match", [
+    ("category: clinch_stud, part: S-M3-1", "category is clinch_nut"),
+    ("category: clinch_nut, part: S-M3-1, installed: {shop: sendcutsend, price_usd: 0.77,"
+     " generated: '2026-04-29', checked: '2026-11-02', reference: sendcutsend-catalog}", "installed needs sku"),
+    ("category: clinch_nut, part: S-M3-1, installed: {shop: s, sku: S-M3-1, price_usd: 0.77,"
+     " generated: '2026-04-29', checked: '2026-11-02', reference: nope}", "installed.reference"),
+])
+def test_the_kind_and_the_installed_block_are_checked(tmp_path, extra, match):
+    p = tmp_path / "bad.yaml"
+    p.write_text("items:\n  - {id: x, " + extra + ", reference: bossard-pem-prices, price_usd: 0.1,"
+                 " price_checked: '2026-11-02', sources: ['https://example.com']}\n")
+    with pytest.raises(sh.CatalogueError, match=match):
+        sh.load(p)
+
+
+def test_an_unpriced_rivet_leaves_the_installed_total_alone():
+    r = sh.cost({"S-632-1": 8, "pop-AD42": 10})
+    assert r["unpriced"] == ["pop-AD42"] and r["installed_usd"] == pytest.approx(6.16)

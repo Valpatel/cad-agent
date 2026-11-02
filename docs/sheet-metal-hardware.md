@@ -33,7 +33,8 @@ walks an agent through it.*
 ```python
 from cadagent.manufacturing import sheet_metal as sm
 from cadagent.mechanical import clinch, rivets, sheet_hardware as sh
-sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6, shop="sendcutsend")   # flanges, relief, the shop's limits
+sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6, hardware=True,   # flanges, relief, and the
+               shop="sendcutsend")                    # shop's limits for a part with hardware
 sh.choose_clinch("632", "5052-h32", 1.6)       # S-632-1 ($0.0847), then CLS-632-1 (no price read)
 clinch.check_placement("S-632-1", "5052-h32", 1.6, edge_mm=6.5, to_bend_mm=8.0,
                        bend_allowance_mm=sm.bend("5052", 1.6)["allowance_mm"])
@@ -57,7 +58,8 @@ sh.cost({"S-632-1": 8, "mcmaster-97447A015": 24})   # $1.71 in pieces, $11.46 in
 ([ref:mcmaster-blind-rivets], read 2026-11-01). The pressed-in prices come from SendCutSend's ordering feed
 ([ref:sendcutsend-catalog]), which does not say whether its price includes the part.*
 
-So pressing a part in costs about ten times the loose part. A riveted seam costs a few cents per rivet. Stainless
+So pressing a part in costs 7 to 11 times the loose part for the nuts and studs up to #10 and M5, and 3.6 to 5.8
+times for the larger parts and the standoffs. A riveted seam costs a few cents per rivet. Stainless
 parts cost 1.8 to 3.3 times the steel ones, and none of the listed parts goes into stainless sheet.
 
 ## Where to buy

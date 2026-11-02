@@ -27,7 +27,7 @@ flowchart TD
    zinc-plated steel clinch parts. Stainless sheet takes none of the listed parts; it needs PEM's SP, FH4 or SO4 types.
 2. **Check the bends** with `cadagent.manufacturing.sheet_metal.check_bends`. Give the flanges to the outside, the
    angles and the reliefs. Name the shop (`shop="sendcutsend"`) when you know it, so its angle, box and channel limits
-   apply. `cadagent.manufacturing.sheet_metal.bend` gives the bend allowance the next steps need, and `flat_length`
+   apply, and pass `hardware=True` when the part gets clinch parts: shops limit bends and box flanges on such parts. `cadagent.manufacturing.sheet_metal.bend` gives the bend allowance the next steps need, and `flat_length`
    gives the blank.
 3. **Check each hole near a bend** with `cadagent.manufacturing.sheet_metal.feature_to_bend`. Measure from the hole's
    edge to the bend's tangent line. A warning means it meets only the rules with a stated datum; move the hole if you
@@ -49,7 +49,7 @@ flowchart TD
 ```python
 from cadagent.manufacturing import sheet_metal as sm
 from cadagent.mechanical import clinch, rivets, sheet_hardware as sh
-sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6, shop="sendcutsend")["verdict"]
+sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6, hardware=True, shop="sendcutsend")["verdict"]
 sh.choose_clinch("632", "5052-h32", 1.6)[0]["part"]["key"]               # "S-632-1", $0.0847 loose
 clinch.check_placement("S-632-1", "5052-h32", 1.6, edge_mm=6.5, to_bend_mm=8.0,
                        bend_allowance_mm=sm.bend("5052", 1.6)["allowance_mm"])["verdict"]

@@ -206,8 +206,15 @@ def sheet_hardware_prices() -> str:
             out.append(f'<circle cx="{x(inst):.1f}" cy="{cy:.1f}" r="5" fill="{COLOUR["fail"]}"/>')
     _legend(out, h - 34, [(INK, "loose, smallest break"), (COLOUR["pass"], "loose, 1000-4999"),
                           (COLOUR["fail"], "pressed in by SendCutSend, per part")])
-    out.append(f'<text x="{PAD}" y="{h - 12}" font-size="10.5" fill="{MUTED}">Bossard read 2026-11-02, McMaster-Carr '
-               'packs read 2026-11-01 (per rivet), SendCutSend feed generated 2026-04-29. Prices change: re-read.</text>')
+    def dates(values) -> str:
+        v = sorted({str(d) for d in values if d})
+        return v[0] if len(v) == 1 else f"{v[0]} to {v[-1]}"
+    read = {ref: dates(i.get("price_checked") for i in items if i.get("reference") == ref)
+            for ref in ("bossard-pem-prices", "mcmaster-blind-rivets")}
+    feed = dates((i.get("installed") or {}).get("generated") for i in items)
+    out.append(f'<text x="{PAD}" y="{h - 12}" font-size="10.5" fill="{MUTED}">Bossard read '
+               f'{escape(read["bossard-pem-prices"])}, McMaster-Carr packs read {escape(read["mcmaster-blind-rivets"])} '
+               f'(per rivet), SendCutSend feed generated {escape(feed)}. Prices change: re-read.</text>')
     out.append("</svg>")
     return "\n".join(out) + "\n"
 

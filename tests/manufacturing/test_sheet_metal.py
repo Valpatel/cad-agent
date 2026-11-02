@@ -212,3 +212,44 @@ def test_check_bends_refuses():
         sm.check_bends("5052", 1.6, [])
     with pytest.raises(Exception):
         sm.check_bends("5052", 1.6, [20], shop="no-such-shop")
+
+
+def test_feature_to_bend_gives_no_extra_credit_past_90_degrees():
+    # T 2, R 6: Century needs 1.5 (2 + 6) = 12. At 120 deg R tan 60 = 10.39 would pass a hole 4 mm from the tangent;
+    # capped at R it is 10 mm, a fail, as at 90 deg
+    for a in (90.0, 120.0):
+        c = {x["rule"]: x for x in sm.feature_to_bend("mild-steel", 2.0, 4.0, a, radius_mm=6.0)["rules"]}
+        assert c["sm-hole-to-bend-min-century"]["distance_mm"] == pytest.approx(10.0)
+        assert c["sm-hole-to-bend-min-century"]["verdict"] == "fail"
+
+
+def test_a_flange_that_clears_only_the_shops_row_warns():
+    # ALU-063's row: 7.696 mm; Century's 3.5 (T + R) = 3.5 x 2.489 = 8.7115 mm at the row's radius
+    c = _by(sm.check_bends("5052", 1.6, [8.0]))["flange 1"]
+    assert c["verdict"] == "warn" and c["rule"] == "sm-flange-min-century"
+    assert c["limit"] == "at least 8.711 mm"
+    # without the rows the radius is the generic T = 1.6 and Century needs 3.5 x 3.2 = 11.2 mm
+    assert _by(sm.check_bends("5052", 1.6, [8.0], rows=False))["flange 1"]["verdict"] == "fail"
+
+
+def test_the_shops_relief_rule_holds_on_its_own_row_too():
+    # SST316-060: the feed's depth is 2.997 mm, the shop's own rule T + R + 0.5 = 1.524 + 1.778 + 0.5 = 3.802 mm
+    c = _by(sm.check_bends("316", 1.524, [20], relief_depth_mm=3.0, shop="sendcutsend"))["relief depth"]
+    assert c["verdict"] == "fail" and c["rule"] == "sm-relief-depth-min-sendcutsend"
+    assert c["limit"] == "at least 3.802 mm"
+    # no shop: 3.0 clears the row (2.997) but not the generic T + R = 3.302 (Davis, Century Tywood), so it warns
+    assert _by(sm.check_bends("316", 1.524, [20], relief_depth_mm=3.0))["relief depth"]["verdict"] == "warn"
+
+
+def test_the_shops_angle_range_and_hardware_on_acute_bends():
+    sc = dict(shop="sendcutsend")
+    assert _by(sm.check_bends("5052", 1.6, [20], 3.0, **sc))["angle 1"]["verdict"] == "fail"       # under 5 deg
+    assert _by(sm.check_bends("5052", 1.6, [20], 120.0, **sc))["angle 1"]["verdict"] == "pass"
+    assert _by(sm.check_bends("5052", 1.6, [20], 120.0, hardware=True, **sc))["angle 1"]["verdict"] == "fail"
+
+
+def test_shop_only_inputs_without_a_shop_say_so():
+    r = sm.check_bends("5052", 1.6, [20, 20], box=True, channel_base_mm=40)
+    assert {c["check"] for c in r["checks"]} == {"flange 1", "flange 2"} and r["notes"]
+    with pytest.raises(ValueError):
+        sm.check_bends("5052", 1.6, [20, 20], channel_base_mm=-5)

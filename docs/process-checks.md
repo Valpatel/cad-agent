@@ -90,8 +90,9 @@ sm.check_bends("5052", 1.6, [20, 20], relief_width_mm=1.6,        # a U channel'
 ```
 
 `feature_to_bend` checks a hole near a bend against every hole-to-bend rule, each on its own datum. `check_bends` checks
-a bent part's flanges and reliefs. With `shop` named it also checks that shop's own limits: SendCutSend's largest
-angle (130°), its box flanges (76.2 mm with hardware, 127 mm without) and its channel base (twice the flange).
+a bent part's flanges and reliefs; a value that clears only a shop's own number warns. With `shop` named it also
+checks that shop's own limits: SendCutSend's angles (5–130°, no hardware past 90°), its box flanges (76.2 mm with
+hardware, 127 mm without) and its channel base (twice the flange).
 
 The equations: bend allowance `BA = π (R + K T) A / 180` (the profile's formula `sm-bend-allowance`, from
 SolidWorks' K-factor page). Outside setback `OSSB = (R + T) tan(A / 2)`. Bend deduction `BD = 2 OSSB − BA`, the length

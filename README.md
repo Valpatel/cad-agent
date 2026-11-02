@@ -1,9 +1,17 @@
+<div align="center">
+
+<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
+
+<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
+
 # cad-agent
+
+**A workshop where AI agents get better at CAD by learning from everyone else.**
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**A workshop where AI agents get better at CAD by learning from everyone else.**
+</div>
 
 ## Build with your favorite AI agent
 
@@ -62,9 +70,6 @@ design down; they do not prove that a printed part fits or holds. Only testing t
 coupon replaces a data-sheet number for one filament and print direction.
 Browse it at [cad-agent.valpatel.com](https://cad-agent.valpatel.com) (every page also as Markdown, plus `llms.txt`
 and `catalog.json`).
-
-<p align="center"><img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%"><br>
-<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub></p>
 
 <table>
 <tr>

@@ -131,3 +131,14 @@ def test_nothing_to_check_or_a_material_it_cannot_use_is_refused():
         dfm.check("fdm", [])
     with pytest.raises(ValueError, match="material"):
         dfm.check("sla", [dfm.Feature("w", "wall", 1.0)], material="petg-bambu-basic")
+
+
+def test_a_shops_own_rules_stay_out_of_the_generic_sheet_check():
+    # #286 review: SendCutSend's 0.5T laser-hole rule (sm-hole-min-laser-sendcutsend) must not join the generic
+    # sources; a 1.0 mm hole in 1.5 mm 5052 fails the generic 1 x T rules, as before the shop profile existed.
+    from cadagent.manufacturing import process as pp
+    f = _one("sheet-metal", dfm.Feature("h", "hole", 1.0), thickness_mm=1.5, material="5052")
+    assert f["verdict"] == "fail"
+    shop_ids = {r.id for r in pp.profile("sheet-metal").rules if r.shop}
+    seen = {r["rule"] for r in f["rules"] + f.get("advisory", [])} | {s["rule"] for s in f.get("skipped", [])}
+    assert shop_ids and not seen & shop_ids

@@ -1244,9 +1244,9 @@ sources:
     used_for:
       - research/compliant-mechanisms.md
       - research/fea-and-process-tools.md
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the 2-page PDF. Read the sheet-metal items: bend radii at least the thickness; hole to
       edge at least 2x thickness; hole to bend at least 2x thickness plus the bend radius; minimum flange length
@@ -1269,10 +1269,11 @@ sources:
     used_for:
       - research/compliant-mechanisms.md
       - research/fea-and-process-tools.md
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the page. Read the thickness range, the tolerance tables (one surface and across
       bends), bend angle tolerance (+/-1 deg), standard bend radii, minimum flange 4T, features within 4T of a
@@ -1293,10 +1294,11 @@ sources:
     terms: cited and summarised, never copied; its K-factor chart is not reproduced
     areas: [sheet-metal, laser-cutting, waterjet]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the page and its raw HTML. Read the K-factor definition and chart (air bending,
       bottoming and coining; soft, medium and hard materials; three R/T bands), the laser corner fillet (T/2),
@@ -1316,10 +1318,12 @@ sources:
     terms: fetched and cited by SKU and field path with the access date; the file is not redistributed. Treat as live data, not a stable API (it changes).
     areas: [sheet-metal, laser-cutting, waterjet, pem-hardware, tolerances]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - vendor/text-to-cad/skills/sendcutsend/references/official-sources.md
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
+      - research/sheet-metal-joining.md
     verified: >-
       2026-10-31: downloaded the JSON (_meta.generated_at 2026-04-29, 178 materials; 57 with bending_specs).
       Read per SKU: thickness, bend_radius, k_factor, bend_deduction, die_width, min flange before and after
@@ -1342,9 +1346,10 @@ sources:
     terms: cited and summarised; never copied
     areas: [sheet-metal]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: read the file. Bend radius is set by the tooling and is not adjustable; maximum bend angle
       typically 120-130 deg (no full 180 deg hem); bend angle tolerance +/-1 deg up to 24 in, +/-2 deg over;
@@ -1361,7 +1366,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, tabs-and-slots]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the page (published 2023-01-16, no byline). Read the slot width and height formulas,
       the powder-coat allowance and the tab-length rule.
@@ -1376,9 +1381,10 @@ sources:
     terms: cited and summarised, never copied
     areas: [sheet-metal]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the page (2024-01-18, no byline). Read relief width (>= T/2), relief depth (>= T + R +
       0.02 in, from the bend line), and the 0.015 in minimum corner gap. For research/process-profiles.yaml:
@@ -1395,7 +1401,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, fasteners]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the page (2022-12-05, no byline). Read the example edge distance (0.781 in on 5052) and
       the bend rule (half the die width from the bend centre).
@@ -1409,7 +1415,7 @@ sources:
     access: free
     terms: cited and summarised; never copied
     areas: [sheet-metal]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md]
     verified: "2026-10-31: opened the page. Its only number is a gauging edge at least 0.25 in long for small parts."
 
   - id: oshcut-material-304
@@ -1421,7 +1427,7 @@ sources:
     access: free
     terms: cited and summarised; never copied
     areas: [sheet-metal, laser-cutting]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the page. Read kerf 0.006 in at every thickness, minimum and recommended hole sizes,
       channel and wall minimums, and the K-factor note (about 0.4 for soft metals such as aluminium, about 0.45
@@ -1436,7 +1442,7 @@ sources:
     access: free
     terms: cited and summarised; never copied
     areas: [sheet-metal, tolerances]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the page. Read the sheet-metal default tolerances (edge to bend, across bend, bend to
       hole, overall, bend angle +/-1 deg, multiple formed surfaces, cut features) and that hems, curls and
@@ -1451,7 +1457,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, tabs-and-slots, laser-cutting]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the page (byline David Willson, 2025-11-20). Read tab width and length, slot clearance
       by process, corner radii, edge distance, tab spacing, distance from the bend tangent and kerf width.
@@ -1466,9 +1472,9 @@ sources:
     terms: cited and summarised, never copied
     areas: [sheet-metal, tolerances]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the 13-page PDF (a third-party copy). Read grain direction, minimum flange 3.5 x (T +
       R), bend relief T + R, punched hole to bend 1.5 x (T + R), minimum hole = T, and hole-to-edge and hole
@@ -1486,9 +1492,10 @@ sources:
     terms: cited and summarised, never copied
     areas: [sheet-metal, grain-direction]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: the live page is behind a bot check, so read the Internet Archive copy of 2017-12-01
       (https://web.archive.org/web/20171201015017/http://www.thefabricator.com:80/article/bending/design-tips-for-sheet-metal-bend-relief-small-holes-hole-distortion-near-bends-and-minimum-flange-widths).
@@ -1506,7 +1513,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [sheet-metal, bend-radius, k-factor]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: the live page is behind a bot check, so read the Internet Archive copy of 2025-08-25. Byline
       Steve Benson, 2015-08-12. Read the "20 percent rule" (air-formed inside radius as a share of the die
@@ -1523,9 +1530,10 @@ sources:
     terms: cited and summarised, never copied
     areas: [sheet-metal, hems, countersinks, tabs-and-slots]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the page (byline Greg Paulsen, 2017-09-22). Read the rules for bends, curls,
       countersinks, hems, holes and slots, notches and tabs, corner fillets and relief cuts. For
@@ -1541,7 +1549,7 @@ sources:
     access: free
     terms: cited by part number; values not tabulated wholesale; never copied
     areas: [sheet-metal, pem-hardware, fasteners]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the CLS-M3-1 and SP-M3-1 pages. Read minimum sheet thickness 1.00 mm, hole in sheet
       4.22 +0.08 mm, minimum hole centreline to edge 4.8 mm, and the sheet hardness limits (CLS, 300-series
@@ -1558,9 +1566,9 @@ sources:
     terms: cited; never copied
     areas: [sheet-metal, k-factor]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
       - research/process-profiles.yaml
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: opened the page; read BA = pi(R + KT) A/180 with K = t/T, t measured from the inside face to
       the neutral sheet. For research/process-profiles.yaml: the live page renders with script only, so read the
@@ -1576,7 +1584,7 @@ sources:
     access: free
     terms: cited; never copied
     areas: [sheet-metal, k-factor]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the page; read the bend calculation options and the defaults (bend K Factor 0.45,
       rolled K Factor 0.5).
@@ -1592,7 +1600,8 @@ sources:
     areas: [sheet-metal, k-factor, unfolding]
     used_for:
       - research/fea-and-process-tools.md
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: gh api (LGPL-2.1, pushed 2026-10-17, 350 stars, not archived). Read the README developer
       credits, test case and material-definition table (R/T 1 -> 0.38, 3 -> 0.43, 99 -> 0.5, ANSI), the
@@ -1611,7 +1620,8 @@ sources:
     used_for:
       - research/agent-toolkits-2026-10.md
       - research/fea-and-process-tools.md
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: gh api (Apache-2.0, default branch dev, pushed 2026-10-30, latest release v0.13.0 of
       2026-09-21). Listed the dev tree (build_sheet.py, operations_sheet.py, sheet_utils.py, docs/sheet_metal/*)
@@ -1799,7 +1809,12 @@ sources:
     access: free
     terms: cited and summarised, never copied (a US government work)
     areas: [fasteners]
-    used_for: [src/cadagent/mechanical/printed_joints.py]
+    used_for:
+      - src/cadagent/mechanical/printed_joints.py
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
     verified: >-
       2026-11-01: the NTRS record opened. cadagent.mechanical.printed_joints cites pp. 6-8 (locking methods:
       locknuts, jam nuts, nylon patches, spring lock washers).
@@ -2175,7 +2190,13 @@ sources:
     access: free
     terms: cited by table and page; never copied (a public, superseded handbook; its successor MMPDS is paid and not used)
     areas: [materials, metals, fea]
-    used_for: [tests/simulation/test_fea_materials.py, src/cadagent/simulation/fea.py]
+    used_for:
+      - tests/simulation/test_fea_materials.py
+      - src/cadagent/simulation/fea.py
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
     verified: >-
       2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
       3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
@@ -2206,7 +2227,7 @@ sources:
     access: paid
     terms: cited by number and title only
     areas: [sheet-metal, k-factor]
-    used_for: ["proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
     verified: >-
       2026-10-31: opened the DIN Media store page; read the number, edition 2011-10, both titles, status
       current, 13 pages. Content not read.
@@ -2221,8 +2242,9 @@ sources:
     terms: cited by number and title only
     areas: [tolerances, sheet-metal, machining, cnc]
     used_for:
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
       - research/process-profiles.md
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: iso.org was bot-blocked; opened the Estonian Centre for Standardisation store page. Read the
       title and the scope, which covers parts made by metal removal or formed from sheet metal. Content not
@@ -2471,7 +2493,8 @@ sources:
     used_for:
       - vendor/text-to-cad
       - research/landscape.md
-      - "proposed: research/sheet-metal.md (the sheet-metal sweep of #118, drafted in PR #119)"
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
     verified: >-
       2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright "2026 Thompson Labs LLC"; read the vendored
       skills/dfm/references/sheet-metal.md and skills/sendcutsend/references/official-sources.md.
@@ -2537,10 +2560,876 @@ sources:
     access: free
     terms: Apache-2.0; vendored with attribution
     areas: [cad, fasteners]
-    used_for: [vendor/bd_warehouse]
+    used_for: [vendor/bd_warehouse, research/sheet-metal-guides.md]
     verified: >-
       2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the
       owner's GitHub profile name.
+
+  # ---------------------------------------------------------------- SendCutSend: the feeds and the guideline pages (#283)
+
+  - id: sendcutsend-catalog
+    title: SendCutSend ordering catalogue (sendcutsend-catalog.json, schema 1.0)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://cdn.sendcutsend.com/specs/sendcutsend-catalog.json
+    access: free
+    terms: fetched and cited by SKU and field path with the access date; the file is not redistributed. Live data, not a stable API
+    areas: [sheet-metal, pem-hardware, pricing]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
+      - research/sheet-metal-joining.md
+    verified: >-
+      2026-11-01: downloaded the JSON (_meta.generated_at 2026-04-29T20:52:33Z, 178 materials, 151 hardware
+      items, 25 finishes). Read per material SKU: name, thickness, cutting process, part-size limits and
+      available_services; per hardware SKU: title, category, fastener material, unit_price, hole_diameter,
+      min_cl_to_edge_distance, manufacturing_specs.material_ranges, recommended panel material and stock. Some
+      hardware rows contradict their own SKU (SP-440-1 is labelled #6-32, FH4-M3-12 M4 x 0.7, SO4-440-12 #6-32);
+      research/sheet-metal-joining.md lists them.
+
+  - id: sendcutsend-sheet-cutting
+    title: Sheet Cutting Guidelines
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/guidelines/sheet-cutting/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, laser-cutting]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the page (published 2026-06-16, modified 2026-09-29) and the sheet-cutting service page
+      (modified 2026-09-29). Read file rules, the smallest hole by process (laser 50 % of T, waterjet 0.070 in,
+      router 0.125 in), internal corner radii, nesting and common-line gaps (0.006–0.012 in), and the cut
+      tolerances (laser and router ±0.005 in, waterjet ±0.009 in).
+
+  - id: sendcutsend-bending-service
+    title: Sheet Metal Bending Services (bending guidelines)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/services/cnc-bending/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the page (published 2021-06-22, modified 2026-10-20), its guidelines section. Read the
+      materials and ranges (10 materials, 0.030–0.250 in), part size (0.375 x 1.5 in to 30 x 44 in), bend length
+      16–44 in, largest angle 130°, what it cannot do, bend-to-edge ±0.015 in plus 0.015 in per further bend,
+      angles ±1° to 24 in and ±2° above, channel base at least twice the flange, the box limits (3.00 in flanges
+      with hardware, 5 in without; 1.1 in wide for 3.5–5 in flanges) and the window-bend table by die width.
+
+  - id: sendcutsend-bend-deformation
+    title: Bending Deformation Guidelines
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/guidelines/bend-deformation/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the page (published 2023-04-25, modified 2026-09-29). Read tapered flanges, the
+      unsupported-bend relief example (0.187 in 5052: R 0.250 + 0.020 in), the half-length rule for 0.250 in
+      stock, and the die-width rule: cut features within half the die width of the bend line distort (0.104 in
+      mild steel, 0.630 in die, so 0.315 in).
+
+  - id: sendcutsend-hardware-service
+    title: Online Hardware Installation Service (hardware guidelines)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/services/hardware/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+      - research/sheet-metal-joining.md
+    verified: >-
+      2026-11-01: opened the page (published 2022-10-15, modified 2026-07-02), its guidelines section. Read the
+      materials and ranges (5052, 6061, 7075, G90, mild steel, 304, 316), part size (1 x 1.5 in to 36 x 46 in),
+      hole resizing to H (+0.003/-0 in), the catalogue symbols H, J, K, N, M and P, hardware to bend (hole centre
+      to the edge of the bend-allowance area at least N, so bend centre to hole centre at least BA/2 + N), no
+      hardware on acute bends, the load directions for nuts, standoffs and studs, and the finish order (after
+      anodising and plating, before powder coat with the hardware capped).
+
+  - id: sendcutsend-hardware-catalog
+    title: Hardware Catalog
+    authors: []
+    org: SendCutSend
+    year: 2025
+    url: https://sendcutsend.com/guidelines/hardware/catalog/
+    access: free
+    terms: cited by SKU; values not tabulated wholesale; never copied
+    areas: [sheet-metal, pem-hardware]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal.md
+      - research/sheet-metal-joining.md
+    verified: >-
+      2026-11-01: opened the page (published 2022-10-20, modified 2025-05-19) and its 159 spec blocks: SKU,
+      thread, hole H, sheet range, fastener material, K/N, M, panel material, height above the sheet and the
+      ranges per sheet family. The page has typos (0.39 for 0.039, A236 for A286, two FH-032-8 rows).
+
+  - id: sendcutsend-tapping
+    title: Sheet Metal Tapping Services (tapping guidelines)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/services/tapping/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, threads]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the page (published 2021-07-08, modified 2026-09-28). Read thinnest tapped sheet 0.059
+      in, the materials, the spacing rule (tap hole / 2 + the stock's min tap hole-to-edge), half the die width
+      from a bend, and the tap-hole table (M3 0.102 in, M4 0.134 in, #10-32 0.164 in and the rest).
+
+  - id: sendcutsend-countersinking-service
+    title: Online Countersinking Services (countersink guidelines)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/services/countersinking/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, countersinks]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the page (published 2022-09-01, modified 2026-09-28). Read the materials (aluminium and
+      plastics, 0.125 in and up; no steel or stainless), depth at most 60 % of T, 82° inch and 90° metric, the
+      ±0.015 in accuracy and the two size charts.
+
+  - id: sendcutsend-dimple-forming
+    title: Online Dimple Forming Services (dimple guidelines)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/services/dimple-forming/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
+    verified: >-
+      2026-11-01: opened the page (published 2023-10-24, modified 2026-09-29). Read the materials (0.025–0.125
+      in), the dimple sizes (0.5–3 in), edge distance and spacing by size (centre to bend = D + BA/2), and the
+      process order (before bending, hardware and finishing).
+
+  - id: sendcutsend-finishing
+    title: Anodizing, Plating and Powder Coating services (finishing guidelines)
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/services/powder-coating/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, finishing]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
+    verified: >-
+      2026-11-01: opened the powder-coating page (published 2021-12-08, modified 2026-09-29), the anodising page
+      (https://sendcutsend.com/services/anodizing/, modified 2026-10-19) and the plating page
+      (https://sendcutsend.com/services/plating/, modified 2026-09-29). Read the materials and ranges, part
+      sizes (anodise and plate 23 x 23 in, powder 30 x 36 in), hanging holes (0.063 in), smallest holes (0.040
+      in), Type II anodise only, ASTM B633 zinc grades, 15 powder colours and the hardware order on each.
+
+  - id: sendcutsend-finish-thickness
+    title: What are the thicknesses for your finishes? (FAQ)
+    authors: []
+    org: SendCutSend
+    year: 2025
+    url: https://sendcutsend.com/faq/what-are-the-thicknesses-for-your-finishes/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, finishing]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the FAQ (published 2023-04-26, modified 2025-12-04). Read the build-up per side: Type II
+      anodise 0.0002–0.0009 in, zinc 0.0003 in, nickel 0.0002 in, powder 0.002–0.005 in.
+
+  - id: sendcutsend-pricing
+    title: Laser Cutting Online Quotes & Pricing
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/pricing/
+    access: free
+    terms: cited and summarised, never copied; prices are examples the page calls estimates
+    areas: [sheet-metal, pricing]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
+    verified: >-
+      2026-11-01: opened the page (published 2022-04-04, modified 2026-10-29). Read no minimum quantity, volume
+      discounts up to 80 %, free US shipping from $39, the price drivers, and the example prices at quantity 1,
+      100 and 1000. Also opened the shipping page (https://sendcutsend.com/shipping/, modified 2026-09-17) and
+      the processing-times page (https://sendcutsend.com/sendcutsend-processing-times/, modified 2026-09-14):
+      ships in 2–4 business days, plus 1–2 days for bending and 1–3 for hardware.
+
+  - id: sendcutsend-bending-calculator
+    title: Sheet Metal Bending Calculator
+    authors: []
+    org: SendCutSend
+    year: 2026
+    url: https://sendcutsend.com/bending-calculator/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, k-factor]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
+    verified: >-
+      2026-11-01: opened the page (published 2020-09-23, modified 2026-01-08). Read its formulas (K = t/T, BA =
+      π(R + K·T)·A/180, BD = 2·OSSB − BA) and the worked example (0.119 in mild steel, BD 0.194 in; the page
+      prints two flat lengths, 17.612 and 17.765 in, for the same part).
+
+  - id: sendcutsend-pem-guide
+    title: A Guide to PEM Hardware Inserts in Sheet Metal
+    authors: []
+    org: SendCutSend
+    year: 2024
+    url: https://sendcutsend.com/blog/pem-hardware-inserts-in-sheet-metal/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the post (2024-09-26, no byline). Read the sheet families (aluminium except 2024,
+      mild steel, G90, 304, 316), the side to install a nut on, and the worked example: 1/4-20 nut in 0.063 in
+      5052, centre to edge 0.340, centre to centre 0.512 and centre to bend line 0.425 in. Also opened "PEM
+      Hardware: Stainless Steel vs Zinc Coated Mild Steel"
+      (https://sendcutsend.com/blog/pem-hardware-stainless-steel-vs-zinc-coated-mild-steel/, 2024-05-06) and
+      "The Best Way to Save Time Assembling Sheet Metal Parts"
+      (https://sendcutsend.com/blog/assembling-sheet-metal-parts/, 2025-03-20): stainless hardware in stainless
+      sheet; no stainless hardware pressed into aluminium.
+
+  - id: sendcutsend-galvanic
+    title: How to Avoid Galvanic Corrosion on Your Laser Cut Parts
+    authors: []
+    org: SendCutSend
+    year: 2025
+    url: https://sendcutsend.com/blog/how-to-avoid-galvanic-corrosion-on-your-laser-cut-parts/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, corrosion]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the post (2025-01-14). Read its qualitative series (magnesium to graphite) and fixes:
+      compatible metals, isolation, non-conductive coatings, sacrificial zinc.
+
+  # ---------------------------------------------------------------- PennEngineering (PEM) self-clinching fasteners (#283)
+
+  - id: pem-handbook
+    title: The Self Clinching Fastener Handbook
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2025
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/self-clinching-fastener-handbook.pdf
+    access: free
+    terms: cited by page with the values as facts; the PDF, its tables and figures are never copied (PEM's terms of use allow personal, non-commercial use only)
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the 20-page PDF (© 2025, created 2025-11-14) through pdftotext. Read HB-4 (the sheet
+      softer than the fastener, about 20 points of Rockwell B), HB-5 (general push-out and torque-out for -1
+      shank nuts; push-out about 5–10 % of the installation force), HB-6 (the most sheet hardness each fastener
+      material takes and typical sheet hardness), HB-9 (holes +0.003 in / +0.08 mm, broken edges at most 0.005
+      in, punch side at 0.09 in / 2.29 mm and up, no deburring; install after plating or anodising), HB-10, HB-12
+      (edge distances for one edge only, the bend rule, spacing = C/L to edge + half the second hole, never after
+      paint or powder coat) and HB-14 (0.030–0.040 in usual minimum sheet).
+
+  - id: pem-bulletin-cl
+    title: CL Self-Clinching Nuts (Bulletin CL)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2026
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/cldata.pdf
+    access: free
+    terms: cited by part number and page; values not tabulated wholesale; never copied
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/sheet-metal-joining.md
+      - research/sheet-metal.md
+    verified: >-
+      2026-11-01: opened the PDF (© 2026, back page dated 10/13/26), text and the table pages rendered. Read
+      CL-4 and CL-5 (S, SS, CLS, CLSS, SP dimensions by shank code: minimum sheet, hole +0.08 mm / +0.003 in,
+      edge distance), CL-9 (materials, finishes and the sheet hardness each takes), CL-13 (S, CLS, CLSS push-out
+      and torque-out in 5052-H34 and cold-rolled steel; test thickness not printed), CL-15 (SP in 304), CL-16 and
+      CL-18 (dos and don'ts: punch side, no deburring, only SP or SMPP into stainless sheet).
+
+  - id: pem-bulletin-fh
+    title: FH Self-Clinching Studs and Pins (Bulletin FH)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2026
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/fhdata.pdf
+    access: free
+    terms: cited by part number and page; values not tabulated wholesale; never copied
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the PDF (© 2026, back page dated 10/19/26). Read FH-5 (FH, FHS, FHA dimensions: minimum
+      sheet, hole, head, edge distance), FH-17 (materials and sheet hardness), FH-29 (FH and FHS push-out,
+      torque-out, pull-through and nut torque, with the test sheet's thickness and HRB) and FH-30 (FHA, FH4,
+      FHP).
+
+  - id: pem-bulletin-so
+    title: SO Self-Clinching Standoffs (Bulletin SO)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2026
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/sodata.pdf
+    access: free
+    terms: cited by part number and page; values not tabulated wholesale; never copied
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the PDF (© 2026, back page dated 6/12/26). Read SO-3 and SO-4 (SO and BSO dimensions:
+      minimum sheet, hole, edge distance), SO-9 (materials and sheet hardness) and SO-12 (push-out, torque-out,
+      pull-through and the most screw torque in 1.5 mm / 0.060 in 5052-H34 and cold-rolled steel; SO4 in 300
+      series stainless).
+
+  - id: pem-bulletin-f
+    title: F PEMSERT Self-Clinching Flush Nuts (Bulletin F)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2026
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/fdata.pdf
+    access: free
+    terms: cited by part number and page; values not tabulated wholesale; never copied
+    areas: [sheet-metal, pem-hardware, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the PDF (© 2026, back page dated 10/19/26). Read F-3 (sheet from 1.5 mm / 0.060 in;
+      shank codes by thickness, hole and edge distance), F-4 (materials) and F-6 (push-out and torque). The
+      metric F4 table prints inch thread codes beside metric values, so only its inch rows are used.
+
+  - id: pem-tech-sheet-cl-to-edge
+    title: "Tech Sheet PEM REF/ C/L to Edge: Minimum distance hole C/L to edge"
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2019
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/CLtoEdgeRev419.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the 1-page sheet (April 2019). Read the definition of the minimum C/L-to-edge
+      distance, that catalogue performance no longer holds near more than one edge or once it is violated, and
+      the bend rules: punch after bending, install outside the bend radius on flat sheet, then as close as the
+      tooling allows.
+
+  - id: pem-tech-sheet-stainless
+    title: "Tech Sheet PEM REF/ Fasteners for use in stainless steel sheets"
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2019
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/Stainless_Steel_Sheets.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
+    verified: >-
+      2026-11-01: opened the 7-page sheet (July 2019). Read Table 1 (stainless sheet by UNS number in three
+      groups, HRB 88, 90 and 92 maximum per ASTM A240, and the PEM parts rated for each; 304 is in the HRB 92
+      group) and p. 4 (why the punch side: the die side is oversized and burred).
+
+  - id: pem-tech-sheet-finish
+    title: "Tech Sheet PEM REF/ Choosing a fastener finish: metal fasteners in contact with metal panels"
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2019
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/Fastener_Finish.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware, corrosion, finishing]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the 3-page sheet (July 2019). Read Table I and sections B (300-series stainless in
+      aluminium: a large galvanic potential), M (aluminium fastener and panel anodised together), N (assemblies
+      plated after installing) and O (stainless panels passivated after installing).
+
+  - id: pem-mating-screw-torque
+    title: Axial Strength and Mating Screw Recommended Tightening Torque for PEM Brand Self-clinching Nuts (Unified)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2021
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/Mating-Screw-tightening-torque-10_28_21-Unified.pdf
+    access: free
+    terms: cited by part number; never copied
+    areas: [pem-hardware, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the sheet (© 2021, file dated 10_28_21). Read the S, CLS and SP rows: the least axial
+      strength with a 180 ksi screw and the tightening torque by screw grade, assuming K = 0.20. The metric
+      sheet was not found.
+
+  - id: bossard-pem-prices
+    title: Self-clinching nuts, studs and standoffs by PennEngineering (PEM), Bossard Americas web shop
+    authors: []
+    org: Bossard
+    year: 2026
+    url: https://americas.bossard.com/self-clinching-hardware/self-clinching-nuts/
+    access: free
+    terms: prices and stock counts cited as dated facts, never copied; prices change without notice
+    areas: [pem-hardware, pricing]
+    used_for: [research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the listing and 40 product pages (https://americas.bossard.com/products/<part
+      number>-by-penn-engineering.html), without logging in. Read the price per part for 1-249, 1000-4999 and
+      20000+ and the stock count, in US dollars; for example CLS-M3-1 $0.1527 / $0.1215 / $0.0930 with 186313 in
+      stock, and S-M3-1ZI $0.0845 with 421261. S-M2.5-1ZI and CLS-632-1 showed "Request a quote".
+
+  # ---------------------------------------------------------------- blind rivets (#283)
+
+  - id: pop-rivet-catalog
+    title: POP Blind Riveting Systems (catalogue P3100 Rev. D)
+    authors: []
+    org: Emhart Teknologies (Stanley Engineered Fastening)
+    year: 2012
+    url: https://www.stanleyengineeredfastening.com/-/media/Web/SEF/Resources/Docs/POP/POP-Rivet-Catalog.pdf
+    access: free
+    terms: cited by part number and page with the values as facts; the catalogue is never copied
+    areas: [rivets, fasteners, corrosion]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
+    verified: >-
+      2026-11-01: opened the 68-page PDF (© 2012, Rev. D 6/12; the URL redirects to Stanley's CDN). Read the
+      design guidelines pp. 10–12 (edge distance at least twice the diameter for full strength, open end down to
+      0.020 in aluminium, closed end seals to 100 psi, large flange twice the bearing area, the galvanic chart),
+      the materials p. 7, the open, closed and multi-grip tables pp. 14–41 (hole range, head, grip by length
+      code, shear and tensile per rivet, all "typical") and the front-end kits p. 60. It says its rivets are not
+      certified for structural aerospace use.
+
+  - id: avdel-breakstem-catalog
+    title: POP Avdel Breakstem Riveting Systems (NA P3200 02 2015)
+    authors: []
+    org: Stanley Engineered Fastening (POP, Avdel)
+    year: 2015
+    url: https://www.stanleyengineeredfastening.com/
+    access: free
+    terms: cited by part number and page; never copied
+    areas: [rivets, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the 128-page PDF from Stanley Engineered Fastening's resource library. Read p. 5
+      (same material as the parent to reduce corrosion; hole per data sheet), Avex pp. 77–78, Monobolt p. 93 and
+      Interlock pp. 100–103 (grip, hole, head, shear and tensile; minimum and typical where printed).
+
+  - id: marson-rivet-catalog
+    title: Marson Rivets, Rivet Nuts and Installation Tools (AFS6010 0518)
+    authors: []
+    org: Arconic Fastening Systems (Marson; now Howmet)
+    year: 2018
+    url: https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/5880/a3862.pdf
+    access: free
+    terms: cited by part number and page; never copied (a distributor-hosted copy of the maker's catalogue)
+    areas: [rivets, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the DigiKey-hosted PDF (© 2018). Read the design information p. 4 (rated strength times
+      count meets the load, compatible body material, grip covers the stack, oversize holes lose strength,
+      button head twice the body), the drill table (1/8 in: #30, 0.129–0.133 in) and the open, closed and
+      multi-grip strength tables (IFI-114 grades). Also found the 2020 full-line catalogue at
+      https://www.howmet.com/wp-content/uploads/sites/3/2023/05/Marson_Full_Line_Catalog.pdf.
+
+  - id: gesipa-eta-13-0255
+    title: European Technical Assessment ETA-13/0255 (GESIPA blind rivets)
+    authors: []
+    org: Deutsches Institut für Bautechnik (DIBt), for GESIPA Blindniettechnik GmbH
+    year: 2022
+    url: https://www.dibt.de/pdf_storage/2022/ETA-13!0255(8.06.02-495!16)e.pdf
+    access: free
+    terms: cited by annex, never copied (DIBt allows partial reproduction only with its written consent)
+    areas: [rivets, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the PDF (issued 2022-07-22). Read Annex 1 (design resistance Rd = α·Rk/γM, γM = 1.25)
+      and annexes 3–5, 7, 8, 14–16 and 25–28 (characteristic shear, tension and joint values per rivet and sheet
+      thickness, including PolyGrip 4.8 in aluminium of Rm 165 and 215 MPa from 0.5 mm). The end and edge
+      distance lines read "e1 ≤ 30 mm, e2 ≤ 25 mm" in the extracted text, which is ambiguous.
+
+  - id: gesipa-rivet-length
+    title: Calculate the length of blind rivets
+    authors: []
+    org: GESIPA Blindniettechnik GmbH
+    year: null
+    url: https://www.gesipa.com/service/gesipa-makes-it-clear/calculate-the-length-of-blind-rivets/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [rivets]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
+    verified: "2026-11-01: opened the page. Read the rule rivet length = grip + diameter (a 4 x 10 rivet for a 6 mm grip)."
+
+  - id: faa-ac-43-13-1b
+    title: "AC 43.13-1B with Change 1: Acceptable Methods, Techniques, and Practices - Aircraft Inspection and Repair"
+    authors: []
+    org: US Federal Aviation Administration
+    year: 1998
+    url: https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_43.13-1B_w-chg1.pdf
+    access: free
+    terms: cited by paragraph, never copied (a US government work)
+    areas: [rivets, sheet-metal]
+    used_for:
+      - research/sheet-metal-guides.md
+      - research/process-profiles.yaml
+      - research/process-profiles.md
+      - research/sheet-metal-joining.md
+    verified: >-
+      2026-11-01: opened the 646-page PDF (issued 1998-09-08, Change 1 2001-09-27; the status page says active).
+      Read 4-57c (single row: edge distance at least 2D, pitch at least 3D; D about three times the thicker
+      sheet), Fig 4-5 (double and triple rows), 4-57f (where blind rivets must not be used), 4-57g, Table 4-8,
+      Table 4-11 and the worked splice 4-58g (0.032 in clad 2024, 10 in wide: two rows of 19 rivets of 1/8 in).
+
+  - id: mil-std-889c
+    title: "MIL-STD-889C: Dissimilar Metals"
+    authors: []
+    org: US Department of Defense (NAVAIR)
+    year: 2016
+    url: https://everyspec.com/MIL-STD/MIL-STD-0800-0899/MIL-STD-889C_55418/
+    access: free
+    terms: cited by section and table, never copied (distribution statement A, public release)
+    areas: [corrosion, rivets, fasteners]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the PDF (22 August 2016; superseded by 889D in 2021). Read 5.1.3 (the small fastener
+      the same metal or more noble), 5.1.6, 5.2a (stainless screws in aluminium acceptable with sealed faying
+      edges, not the reverse), Table I (aluminium with carbon steel or austenitic stainless incompatible in
+      marine and industrial settings) and Table II.
+
+  - id: mcmaster-blind-rivets
+    title: Blind rivets (aluminium, 18-8 stainless and zinc-plated steel domed head), McMaster-Carr catalogue pages
+    authors: []
+    org: McMaster-Carr
+    year: 2026
+    url: https://www.mcmaster.com/products/blind-rivets/
+    access: free
+    terms: part numbers, ratings and prices cited as dated facts, never copied; prices change without notice
+    areas: [rivets, pricing]
+    used_for: [research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the aluminium, 18-8 stainless and zinc-plated steel domed-head pages in a browser,
+      without logging in. Read part numbers, grip, pack size, pack price and the listed shear and tensile
+      ratings; for example 97447A015 (1/8 in aluminium/aluminium, 0.063-0.125 in grip, 120/150 lbf) at $10.78
+      for 250, and 97525A415 (1/8 in 18-8/18-8, 420/530 lbf) at $11.54 for 100.
+
+  # ---------------------------------------------------------------- tolerance and joint references (#283)
+
+  - id: protolabs-sheet-metal-tolerances
+    title: Sheet Metal Tolerances (one-pager)
+    authors: []
+    org: Protolabs
+    year: 2023
+    url: https://protolabs.com/media/roognect/sheet-metal-tolerances-one-pager-2.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, tolerances]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal.md]
+    verified: >-
+      2026-11-01: opened the PDF (© 2023). Read the hole (±0.005 in) and hardware hole (+0.003/-0 in)
+      tolerances, the one-surface table (feature to feature ±0.005 in, to hardware ±0.010 in, hardware to
+      hardware ±0.015 in) and the bend table (bend to hole or hardware ±0.015 in, bend to edge ±0.010 in; across
+      2 bends ±0.015 in, 3 or more ±0.030 in).
+
+  # ---------------------------------------------------------------- open-source tools surveyed for #283
+
+  - id: freecad-fasteners-wb
+    title: FreeCAD Fasteners Workbench
+    authors: [Shai Seger]
+    org: FreeCAD community (github.com/shaise)
+    year: null
+    url: https://github.com/shaise/FreeCAD_FastenersWB
+    access: free
+    terms: cited as a reference only (GPL-2.0-or-later); its code and tables are not copied into cad-agent
+    areas: [fasteners, pem-hardware]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: gh api (GPL-2.0, version 0.5.67, last commit 2026-09-10). Read FsData/PEMFasteners.csv and the
+      generators: metric PEM press nuts M2–M12 (shank codes 00–2), SO and BSO standoffs M3–M5 and FH studs
+      M2.5–M8, geometry only, with no hole, sheet or edge rules and no source; no rivets.
+
+  - id: open-mrp-dfm
+    title: open-mrp/dfm, a deterministic DFM engine for laser cutting and bending
+    authors: []
+    org: open-mrp (github.com/open-mrp)
+    year: 2026
+    url: https://github.com/open-mrp/dfm
+    access: free
+    terms: Apache-2.0; ideas and fixtures may be borrowed with attribution
+    areas: [sheet-metal, dfm, pem-hardware]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: gh api (Apache-2.0, created 2026-10-10, v0.52.0, pushed 2026-10-13, 1 star) and a read-only
+      shallow clone, nothing run. Read the README, the check codes (hole operation too close to an edge or a
+      bend, flange too short, missing corner relief, tool collision), the cited laser and press-brake capability
+      JSON and its example self-clinching nut operations (M3 and M4, values not cited), and the 229 golden
+      fixtures.
+
+  - id: blueprints-structural
+    title: Blueprints (blue-prints), structural engineering calculations in Python
+    authors: []
+    org: Blueprints-org (github.com/Blueprints-org)
+    year: 2026
+    url: https://github.com/Blueprints-org/blueprints
+    access: free
+    terms: MIT; may be adopted or borrowed with attribution
+    areas: [fasteners, rivets, steel]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: gh api and PyPI (MIT, blue-prints 0.8.0, with tests). It implements EN 1993-1-8 Table 3.4:
+      bolt and rivet shear, bearing with edge distance and pitch, tension and punching; not the thin-sheet blind
+      rivets of EN 1993-1-3, nor aluminium.
+
+  - id: pem-tech-sheet-surface-finishing
+    title: "Tech Sheet PEM REF/ Surface finishing sheet metal assemblies"
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2019
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/Surface_Finish.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware, finishing]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: opened the 10-page sheet (July 2019). Read that powder coat applied before installing stops the
+      displacer clinching, and that hard-coat anodise, nitriding, brittle electroless nickel and thick hot-dip
+      galvanising cause problems.
+
+  - id: pem-fastener-guide
+    title: The Design Engineer's Fastener Guide
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2022
+    url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/09/Fastener-Guide_9-02-22.pdf
+    access: free
+    terms: cited and summarised, never copied
+    areas: [pem-hardware, fasteners]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: downloaded the 20-page PDF (the download-centre page asks for a form; the direct link does not)
+      and skimmed it. A general overview of fastening methods; no rule is taken from it.
+
+  - id: pem-terms-of-use
+    title: Terms of Use
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2024
+    url: https://www.pemnet.com/terms-of-use/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [pem-hardware]
+    used_for: [research/sheet-metal-guides.md, research/sheet-metal-joining.md]
+    verified: >-
+      2026-11-01: opened the page (modified 2024-09-30). It allows personal, non-commercial use of the site's
+      material and forbids reproducing or republishing it, so cad-agent cites PEM values as facts with page
+      references and keeps no PEM PDF, table, figure or CAD model.
+
+  - id: approved-sheet-metal-resources
+    title: Resources (sheet metal design charts)
+    authors: []
+    org: Approved Sheet Metal
+    year: 2026
+    url: https://www.approvedsheetmetal.com/resources/
+    access: free
+    terms: cited and summarised, never copied
+    areas: [sheet-metal, pem-hardware]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: opened the resources page. It lists a hardware hole-size chart, a hardware reference chart, a
+      forming tolerance chart and a DFM eBook as downloads, which were not opened. Its design page
+      (https://www.approvedsheetmetal.com/sheet-metal-design) is dated 2022-11-16, modified 2026-02-05.
+
+  - id: protocase-design-resources
+    title: Design & Manufacturing Guides (resources index and component pages)
+    authors: []
+    org: Protocase
+    year: null
+    url: https://www.protocase.com/resources/guides/
+    access: free
+    terms: cited by title only so far, never copied; its terms of use are not yet read
+    areas: [sheet-metal, pem-hardware]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: opened the guides index and, to confirm each title, the bend radii, bend types, tolerances,
+      self-clinching fasteners (PEM brand) and component pages and the cut-out library. Their rules were not
+      read. The 31-page sheet-metal design guide is behind a form and was not opened.
+
+  - id: nasa-std-5020b
+    title: "NASA-STD-5020B: Requirements for Threaded Fastening Systems in Spaceflight Hardware"
+    authors: []
+    org: NASA
+    year: 2021
+    url: https://standards.nasa.gov/standard/NASA/NASA-STD-5020
+    access: free
+    terms: cited by number and title only so far, never copied (a US government work)
+    areas: [fasteners]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: opened the NASA standards page: document date 2021-08-06, revalidated 2026-01-05, PDF linked.
+      The PDF was not read.
+
+  - id: mmpds
+    title: Metallic Materials Properties Development and Standardization (MMPDS)
+    authors: []
+    org: Battelle
+    year: 2026
+    url: https://www.mmpds.org/
+    access: paid
+    terms: cited by number and title only
+    areas: [fasteners, rivets, materials]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: opened mmpds.org, which says MMPDS-2026 is released. MIL-HDBK-5J (2003) was cancelled in
+      favour of MMPDS-01 (everyspec listing). Contents not read.
+
+  - id: iso-15977-15984
+    title: "ISO 15977 to ISO 15984: Open end blind rivets with break pull mandrel and protruding or countersunk head"
+    authors: []
+    org: ISO (ISO/TC 2)
+    year: 2002
+    url: https://committee.iso.org/home/tc2
+    access: paid
+    terms: cited by number and title only
+    areas: [rivets, fasteners]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: iso.org blocks scripts, so the eight standards were read on ISO/TC 2's committee pages: all
+      published 2002-11 and confirmed 2023. 15977 AlA/St protruding head 2.4–6.4 mm; 15978 AlA/St countersunk;
+      15979 St/St protruding; 15980 St/St countersunk; 15981 AlA/AlA protruding; 15982 AlA/AlA countersunk;
+      15983 A2/A2 protruding 3–5 mm; 15984 A2/A2 countersunk. Contents not read.
+
+  - id: iso-14588
+    title: "ISO 14588:2000 Blind rivets - Terminology and definitions"
+    authors: []
+    org: ISO (ISO/TC 2)
+    year: 2000
+    url: https://committee.iso.org/home/tc2
+    access: paid
+    terms: cited by number and title only
+    areas: [rivets]
+    used_for: [research/sheet-metal-guides.md]
+    verified: "2026-11-01: read the number, title, 16 pages and status (confirmed 2026) on ISO/TC 2's pages. Contents not read."
+
+  - id: iso-14589
+    title: "ISO 14589:2000 Blind rivets - Mechanical testing"
+    authors: []
+    org: ISO (ISO/TC 2)
+    year: 2000
+    url: https://committee.iso.org/home/tc2
+    access: paid
+    terms: cited by number and title only
+    areas: [rivets]
+    used_for: [research/sheet-metal-guides.md]
+    verified: "2026-11-01: read the number, title, 13 pages and status (confirmed 2026) on ISO/TC 2's pages. Contents not read."
+
+  - id: astm-b209
+    title: "ASTM B209/B209M-21 Standard Specification for Aluminum and Aluminum-Alloy Sheet and Plate"
+    authors: []
+    org: ASTM International
+    year: 2021
+    url: https://store.astm.org/b0209_b0209m-21.html
+    access: paid
+    terms: cited by number and title only
+    areas: [sheet-metal, materials, tolerances]
+    used_for: [research/sheet-metal-guides.md]
+    verified: "2026-11-01: opened the ASTM store page: active, updated 2022-01-12; read scope 1.1. Contents not read."
+
+  - id: aa-adm-2020
+    title: Aluminum Design Manual 2020
+    authors: []
+    org: Aluminum Association
+    year: 2020
+    url: https://www.aluminum.org/aluminum-design-manual-2020
+    access: paid
+    terms: cited by number and title only
+    areas: [materials, fasteners, rivets]
+    used_for: [research/sheet-metal-guides.md]
+    verified: "2026-11-01: opened the product page: released February 2020, 9 sections, covering structural design including mechanical connections. Contents not read."
+
+  - id: smacna-duct
+    title: "HVAC Duct Construction Standards - Metal and Flexible, 4th edition"
+    authors: []
+    org: SMACNA (sold by ICC)
+    year: 2020
+    url: https://shop.iccsafe.org/hvac-duct-construction-standards-metal-and-flexible-4th-edition.html
+    access: paid
+    terms: cited by number and title only
+    areas: [sheet-metal]
+    used_for: [research/sheet-metal-guides.md]
+    verified: "2026-11-01: opened the ICC listing; read the title, edition and what changed in it. No seam or rivet numbers. Contents not read."
+
+  - id: ranf-thread-fast
+    title: ranf_thread_fast, threaded fastener and bolted joint analysis
+    authors: []
+    org: github.com/tpw809
+    year: 2026
+    url: https://github.com/tpw809/ranf_thread_fast
+    access: free
+    terms: MIT; test values may be borrowed with attribution
+    areas: [fasteners]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: gh api (MIT, pushed 2026-10-10, not on PyPI). Read the README and the example reproducing NASA
+      TM-2012-217454. It covers bolt preload, separation and strength, not sheet bearing or rivets.
+
+  - id: aisis100-jl
+    title: AISIS100.jl, AISI S100 cold-formed steel design in Julia
+    authors: []
+    org: runtosolve (github.com/runtosolve)
+    year: 2026
+    url: https://github.com/runtosolve/AISIS100.jl
+    access: free
+    terms: MIT; test values may be borrowed with attribution
+    areas: [steel, fasteners]
+    used_for: [research/sheet-metal-guides.md]
+    verified: >-
+      2026-11-01: gh api (MIT, pushed 2026-10-15). It has welds, bolt bearing (J3.3.1) and shear rupture, with a
+      test per equation; no screw (J4) or blind rivet (J5) connections.
 
 # -------------------------------------------------------------------------------------------------------------------
 # Named but not yet read, or read but not yet found online. Not citable until someone reads it and moves it up;
@@ -2709,6 +3598,70 @@ unverified:
       2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
       recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
       script. Record the document's URL.
+
+  # ---- named by the sheet-metal guide survey (research/sheet-metal-guides.md, #283), not yet read
+
+  - id: xometry-sheet-metal-guide
+    title: Sheet Metal Fabrication Design Guide
+    org: Xometry
+    url: https://www.xometry.com/resources/design-guides/design-guide-sheet-metal-fabrication/
+    why: Behind a sign-up form (published 2020-10-09, modified 2026-07-20); not opened, and cad-agent creates no accounts.
+
+  - id: fictiv-sheet-metal-guide
+    title: Sheet Metal Design Guide (eBook)
+    org: Fictiv
+    url: https://www.fictiv.com/ebooks/sheet-metal-design-guide
+    why: Behind a sign-up form (published 2024-06-20, modified 2026-02-20); not opened.
+
+  - id: protocase-sheet-metal-guide
+    title: Sheet Metal Design Guide (31 pages)
+    org: Protocase
+    url: https://www.protocase.com/resources/sheet-metal-design.php
+    why: Behind a form; not opened. Read Protocase's terms of use before taking anything for a second supplier profile.
+
+  - id: cherry-process-manuals
+    title: CherryMAX, CherryLOCK and Maxibolt process manuals
+    org: Cherry Aerospace
+    url: https://www.cherryaerospace.com/documents/catalogs?Catalog=All%20Catalogs
+    why: The catalogue index was opened; the manuals were not. Needed only for structural or aerospace blind rivets.
+
+  - id: ifi-fastener-standards
+    title: IFI Book of Fastener Standards (12th edition), including IFI-114 and IFI-116 blind rivets
+    org: Industrial Fasteners Institute
+    why: indfast.org blocks scripts; edition and prices seen only in search snippets.
+
+  - id: nas1398-1399
+    title: NAS1398 and NAS1399 blind rivets
+    org: Aerospace Industries Association (NAS)
+    why: The publisher's page was not read.
+
+  - id: mil-std-889d
+    title: "MIL-STD-889D: Galvanic Compatibility of Electrically Conductive Materials"
+    org: US Department of Defense
+    why: >-
+      Dated 2021-07-21 and supersedes 889C; only a reseller listing was opened. Check for a free DoD ASSIST copy
+      before citing; until then cad-agent cites MIL-STD-889C.
+
+  - id: aa-standards-and-data
+    title: Aluminum Standards and Data
+    org: Aluminum Association
+    why: No product page was found; its recommended 90-degree bend radii were seen only in a search snippet.
+
+  - id: asm-handbook-14b
+    title: "ASM Handbook Volume 14B: Metalworking: Sheet Forming (2006, ed. S. L. Semiatin)"
+    org: ASM International
+    why: The publisher's page returned 403; the ISBNs came from search results only.
+
+  - id: machinerys-handbook-32
+    title: Machinery's Handbook, 32nd edition (2024)
+    org: Industrial Press
+    why: The publisher's page was not reached; the edition and ISBNs came from retailers only.
+
+  - id: ansi-h35-2
+    title: "ANSI H35.2 / H35.2M Dimensional Tolerances for Aluminum Mill Products"
+    org: Aluminum Association (secretariat of ASC H35)
+    url: https://www.aluminum.org/standards
+    why: The standards page lists it for sale, but its current edition and year were not read.
 
 # -------------------------------------------------------------------------------------------------------------------
 # Keys code uses that are not outside sources, said openly: general knowledge, a module's own judgement, or

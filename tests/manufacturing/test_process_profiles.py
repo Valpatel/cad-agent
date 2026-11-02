@@ -18,8 +18,11 @@ DATA = ROOT / "research" / "process-profiles.yaml"
 REGISTRY = ROOT / "research" / "references.yaml"
 PAGE = ROOT / "research" / "process-profiles.md"
 # Sample values for every variable, so each expression can be evaluated; two sets catch thickness-stepped rules.
-ENVS = [dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5, texture=0.05, area=36.0),
-        dict(T=0.6, R=0.4, wall=1.2, D=3.0, L=150.0, depth=3.0, width=2.0, H=3.0, nozzle=0.25, rib=0.6, texture=0.0, area=4.0)]
+ENVS = [dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5, texture=0.05, area=36.0,
+             die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2),
+        dict(T=0.6, R=0.4, wall=1.2, D=3.0, L=150.0, depth=3.0, width=2.0, H=3.0, nozzle=0.25, rib=0.6, texture=0.0, area=4.0,
+             die=12.0, BA=1.1, E=4.8, hole=4.2, grip=1.2)]
+SHEET_PAGES = [ROOT / "research" / n for n in ("sheet-metal.md", "sheet-metal-joining.md", "sheet-metal-guides.md")]
 
 
 def _figures():
@@ -190,3 +193,37 @@ def test_the_page_shows_the_charts_and_links_every_source(data):
     assert not missing, f"sources not linked from research/process-profiles.md: {missing}"
     named = [a for s in data["sources"] for a in s["authors"] if a not in page]
     assert not named, f"people the page does not name: {named}"
+
+
+def test_every_variable_a_rule_uses_is_listed_and_sampled(data):
+    """A rule may use only the variables the file lists, and the sample settings above give each one a value."""
+    names = set()
+    for r in data["rules"]:
+        for k in ("min", "max", "value"):
+            if isinstance(r.get(k), str):
+                names |= set(re.findall(r"[A-Za-z_]+", r[k])) - {"min", "max", "if", "else"}
+    assert names <= set(data["variables"]), sorted(names - set(data["variables"]))
+    assert all(names <= set(env) for env in ENVS), sorted(names - set(ENVS[0]))
+
+
+def test_shop_rules_and_tables_name_a_listed_shop(data):
+    """A shop's own rules (#283) and tables point at `shops`; its rule ids end in the shop's id, and no generic rule
+    takes its value from a shop that is not marked."""
+    shops = {s["id"] for s in data["shops"]}
+    assert "sendcutsend" in shops
+    for r in data["rules"]:
+        if "shop" in r:
+            assert r["shop"] in shops and r["id"].endswith("-" + r["shop"]), r["id"]
+    for t in data["shop_tables"]:
+        assert t.get("shop") in shops and t["id"].startswith(t["shop"] + "-"), t["id"]
+    shop_sources = {"sendcutsend-" + k for k in ("sheet-cutting", "bending-service", "bend-deformation",
+                                                  "hardware-service", "tapping", "countersinking-service",
+                                                  "finish-thickness")}
+    unmarked = [r["id"] for r in data["rules"] if r["source"] in shop_sources and "shop" not in r]
+    assert not unmarked, f"rules from a shop's own process pages without `shop:`: {unmarked}"
+
+
+def test_the_sheet_metal_pages_show_their_diagrams():
+    text = "".join(p.read_text(encoding="utf-8") for p in SHEET_PAGES if p.exists())
+    for name in _figures().SHEET_FIGURES:
+        assert f"docs/img/sheet-metal/{name}" in text, f"{name} is on none of the sheet-metal pages"

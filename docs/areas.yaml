@@ -190,9 +190,17 @@ domains:
         title: Sheet metal
         scope: Bent metal parts.
         maturity: tooling
-        pages: [docs/process-checks.md, research/fea-and-process-tools.md]
+        pages:
+          - docs/process-checks.md
+          - research/fea-and-process-tools.md
+          - research/sheet-metal-guides.md
+          - research/sheet-metal.md
+          - research/sheet-metal-joining.md
         api: [cadagent.manufacturing.sheet_metal]
-        issues: [99, 118, 119]
+        issues: [99, 118, 119, 283]
+        topics:
+          - {slug: clinch-hardware, title: Clinch hardware, scope: "PEM-type nuts, studs and standoffs pressed into sheet.", maturity: surveyed, pages: [research/sheet-metal-joining.md], issues: [283]}
+          - {slug: blind-rivets, title: Blind rivets, scope: "Joining bent parts from one side: grip, edge, pitch, strength.", maturity: surveyed, pages: [research/sheet-metal-joining.md], issues: [283]}
       - slug: mould-making
         title: Mould making
         scope: Short-run moulds made in the shop.

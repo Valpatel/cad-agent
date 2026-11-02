@@ -18,7 +18,7 @@ import YAML from 'yaml';
 import { snapDemo } from './snap-demo.mjs';
 import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
-import { drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
+import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
@@ -191,15 +191,19 @@ const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'c
   'cad-torsion-snap': 'torsion-snap', 'cad-printed-boss': 'printed-boss' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
   .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
+// The theme button (web/theme.js shows it and keeps aria-pressed true while the page is dark).
+const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="false" title="Dark theme" hidden><span class="visually-hidden">Dark theme</span>' +
+  '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
+  '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>';
 function frame({ title, body, md, description = LEDE, current = '', page = 'doc', css = [], updated = committed, url = current || '/' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
-<link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
+<script src="/web/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
-<body class="${page}-page" data-diagram-theme="light"><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
-<nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a></nav></div></header>
+<body class="${page}-page"><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
+<nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
 <main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${body}</main>
 <footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
 <div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
@@ -333,14 +337,17 @@ for (const p of pages) {
   await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
 }
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
-// Every Mermaid block drawn once, in the site's theme (frame() sets data-diagram-theme="light"), and written into its
-// page as a finished figure. A block left as it is (no browser, or one Mermaid cannot draw) is drawn by kit/diagrams.js
-// in the reader's browser.
-const diagrams = await drawDiagrams(docPages.map(([, html]) => html), {
-  kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`web/${f}`), theme: 'light', client: CLIENT_DIAGRAMS,
+// Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
+// web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by
+// kit/diagrams.js in the reader's browser, in the page's theme.
+const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
+  kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`web/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
 });
-for (const [dest, html] of docPages) await writeFile(dest, diagrams.draw(html));
+const drawnLight = await drawIn('light'), drawnDark = await drawIn('dark');
+for (const [dest, html] of docPages) await writeFile(dest, drawBoth(html, drawnLight, drawnDark));
+const diagrams = { stats: { ...drawnLight.stats, cached: drawnLight.stats.cached + drawnDark.stats.cached, drawn: drawnLight.stats.drawn + drawnDark.stats.drawn,
+  left: Math.max(drawnLight.stats.left, drawnDark.stats.left) } };
 // Images referenced by docs.
 for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
 
@@ -460,10 +467,10 @@ const [pasteLine, agentGuide] = (([first, ...rest]) => [first, rest.join('\n').t
 const INSTALL = [['unix', 'macOS / Linux', `curl -fsSL ${ORIGIN}/install.sh | sh`], ['win', 'Windows', `irm ${ORIGIN}/install.ps1 | iex`]];
 const USE_STEPS = [['Install', 'one line'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
 const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop it sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
-<defs><marker id="use-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#bd3a12"/></marker></defs>
-${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect width="86" height="74" rx="14" fill="${i === 3 ? '#ffe1cc' : '#fffdf5'}" stroke="${i === 3 ? '#bd3a12' : '#173d3c'}"/><text x="43" y="26" text-anchor="middle" font-size="22" font-weight="750" fill="#bd3a12">${i + 1}</text><text x="43" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#173d3c">${esc(t)}</text><text class="sub" x="43" y="62" text-anchor="middle" font-size="8.5" fill="#526863">${esc(d)}</text></g>${i < 3 ? `<path d="M${96 + i * 98} 47h8" stroke="#bd3a12" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
-<path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
-<text class="sub" x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
+<defs><marker id="use-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="tip" d="M0 0L8 4L0 8z"/></marker></defs>
+${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect class="box${i === 3 ? ' out' : ''}" width="86" height="74" rx="14"/><text class="num" x="43" y="26" text-anchor="middle" font-size="22" font-weight="750">${i + 1}</text><text class="name" x="43" y="47" text-anchor="middle" font-size="12" font-weight="700">${esc(t)}</text><text class="sub" x="43" y="62" text-anchor="middle" font-size="8.5">${esc(d)}</text></g>${i < 3 ? `<path class="flow" d="M${96 + i * 98} 47h8" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
+<path class="flow" d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
+<text class="sub" x="200" y="128" text-anchor="middle" font-size="10">the next agent finds what this one learned</text></svg>`;
 // The card's heading is the README's too (tests/site/website-build.test.mjs).
 const USE_HEADING = 'Build with your favorite AI agent';
 // Where the skills work. Names only, in plain text badges: no product marks, and no endorsement implied. They read

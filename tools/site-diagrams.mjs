@@ -139,11 +139,37 @@ const idOf = key => `cad-diagram-s${key.slice(0, 12)}`;
 /** The source as it is drawn ahead of time. A page drawn once cannot know the reader's day, so a gantt chart gets
  * `todayMarker off` (Mermaid otherwise draws a "today" line from the build machine's clock, and the cache would keep
  * the first build's day). The reader still sees the source as written. */
-export function forDrawing(source) {
+export function forDrawing(source, theme = 'light') {
+  if (theme === 'dark') source = darkPalette(source);
   const [, front = '', body] = source.match(/^(\s*---\n[\s\S]*?\n---[ \t]*\n)?([\s\S]*)$/);
   const type = body.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('%%'))?.split(/\s/)[0];
   if (type !== 'gantt') return source;
   return front + body.replace(/^[ \t]*todayMarker\b.*\n?/gm, '').replace(/^([ \t]*gantt\b.*)$/m, '$1\n    todayMarker off');
+}
+
+/** The site's diagram palette (the style guide's classDefs: tools/build-site.mjs PALETTE and the pages' own) on a dark
+ * page: each of its colours in a `classDef` or `style` line becomes its dark counterpart, the tokens of web/site.css's
+ * dark theme. Other colours are left as written. Only the drawing changes; the reader sees the source as written. */
+export const DARK_COLOURS = { '#fffdf5': '#16211f', '#173d3c': '#e2eee8', '#eef1e4': '#1f2e2b', '#6f8a80': '#8fb0a6', '#ffe1cc': '#3d281c',
+  '#bd3a12': '#ff9466', '#d8efbb': '#22361d', '#386248': '#93cf9e' };
+export const darkPalette = source => source.replace(/^([ \t]*(?:classDef|style)\b.*)$/gm,
+  line => line.replace(/#[0-9a-fA-F]{6}\b/g, c => DARK_COLOURS[c.toLowerCase()] ?? c));
+
+/** One page's HTML with each Mermaid block replaced by its two drawings, from `light` and `dark` (two drawDiagrams
+ * results), each marked data-theme-only for the page's CSS to show the one for its theme. A block either drawing lacks
+ * is left whole, for kit/diagrams.js to draw in the reader's browser. A diagram drawn twice on one page gets numbered ids. */
+export function drawBoth(html, light, dark) {
+  const seen = new Map();
+  return html.replace(BLOCK, block => {
+    const pair = [[light.draw(block), 'light'], [dark.draw(block), 'dark']];
+    if (pair.some(([figure]) => figure === block)) return block;
+    const n = seen.get(block) || 0; seen.set(block, n + 1);
+    return pair.map(([figure, theme]) => {
+      const marked = figure.replace(/^<figure class="cad-diagram"/, `<figure class="cad-diagram" data-theme-only="${theme}"`);
+      const id = marked.match(/cad-diagram-s[0-9a-f]{12}/)?.[0];
+      return n && id ? marked.replaceAll(id, `${id}-${n}`) : marked;
+    }).join('');
+  });
 }
 
 /** Draw [key, source] pairs in a page that serves the kit from memory. Returns [key, { html } or { error }] pairs and
@@ -223,7 +249,7 @@ async function drawInBrowser(browser, todo, { files, theme, css, timeout = 20000
     for (const [key, source] of todo) {
       let timer;
       const late = new Promise(ok => { timer = setTimeout(() => ok({ error: `it took more than ${timeout / 1000} s` }), timeout); });
-      const drawing = page.evaluate(item => window.__cadDraw(item), { key, source: forDrawing(source), shown: source, id: idOf(key) })
+      const drawing = page.evaluate(item => window.__cadDraw(item), { key, source: forDrawing(source, theme), shown: source, id: idOf(key) })
         .catch(e => ({ error: `the drawing page failed (${e.message.split('\n')[0]})` }));
       const result = await Promise.race([drawing, late]);
       clearTimeout(timer);

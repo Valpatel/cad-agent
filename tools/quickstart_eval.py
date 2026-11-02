@@ -215,12 +215,17 @@ def _calls(rows: list) -> list:
 
 
 def _usage(rows: list) -> dict:
-    for r in reversed(rows):
-        if r.get("type") == "result":                    # Claude Code's last line
-            u = r.get("usage") or {}
-            return {"tokens_in": u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
-                    + u.get("cache_creation_input_tokens", 0), "tokens_out": u.get("output_tokens", 0),
-                    "turns": r.get("num_turns"), "cost_usd": r.get("total_cost_usd"), "result": r.get("subtype")}
+    """Tokens, turns and cost. Claude Code writes a result line each time the session goes idle (twice when a background
+    task wakes it again): its usage is that stretch's and its cost the running total, so tokens and turns add up and the
+    cost is the last. Codex writes usage per turn."""
+    results = [r for r in rows if r.get("type") == "result"]
+    if results:
+        us = [r.get("usage") or {} for r in results]
+        return {"tokens_in": sum(u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+                                 + u.get("cache_creation_input_tokens", 0) for u in us),
+                "tokens_out": sum(u.get("output_tokens", 0) for u in us),
+                "turns": sum(r.get("num_turns") or 0 for r in results), "cost_usd": results[-1].get("total_cost_usd"),
+                "result": results[-1].get("subtype")}
     total = {"tokens_in": 0, "tokens_out": 0}
     for r in rows:
         if r.get("type") == "turn.completed":             # Codex: one per turn

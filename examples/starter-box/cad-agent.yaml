@@ -2,6 +2,7 @@
 # the print files and runs every check below, plus the "Holes clear" check on every hole. See README.md.
 cad:                                  # name and title: the folder's name
   revision: A
+  cad-agent: "0.17"                   # the oldest cad-agent this builds with (insert checks write `pass`)
   printer: {name: small printer, bed_mm: [180, 180, 180]}
   steps:
     - {name: build, run: cad/build.py, log: build.log}

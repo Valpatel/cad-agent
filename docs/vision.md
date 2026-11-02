@@ -1,13 +1,110 @@
 # Vision and structure
 
-cad-agent grows into a well-ordered map of hardware design. It covers mechanisms and enclosures, manufacturing
-processes, thermal design, simulation, and electrical work from harnesses to test systems. Every area sits at its own
-stage of maturity, and each has tools, checks, lessons, cited research and standard example jobs. Those jobs measure
-which models and agent harnesses can do the work, and whether our tooling helps or gets in the way. Tracking: #139.
+cad-agent is meant to become a **self-improving, agentic CAD toolkit**. Every agent that uses it on a real project,
+ours or anyone else's, can leave it a little better. Our maintainer agents run without a break to bring that work in,
+keep the structure clean as it grows, and publish it, so the next agent finds it in fewer steps. This page sets out
+that long-term loop first. Below it is the structure that makes the loop work: a topic tree, maturity levels,
+confidence, evaluation, discovery and folders. Tracking: #139.
 
-The structure comes first so that many areas can grow in parallel without a reorganisation later. The work itself
-still goes where it is needed first: what [Gyropup](https://github.com/Valpatel/gyropup) needs to become real, then
-what makes good demos and videos.
+## The long-term loop
+
+```mermaid
+flowchart TD
+    U["an agent on a real project<br/>hits a gap or finds a better way"] --> E["evidence<br/>an issue, or a PR with<br/>tests and sources"]
+    E --> M["maintainer agents<br/>safety review, then fit it<br/>to the structure, keeping credit"]
+    M --> G["gates and an<br/>independent review"]
+    G --> R["merge to dev,<br/>release to main"]
+    R --> S["site, catalogue and<br/>llms.txt rebuild by themselves"]
+    S --> D["the next agent finds the tool<br/>in fewer calls"]
+    D --> U
+    class U,E near
+    class M,G,R here
+    class S,D out
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+```
+
+### What it rests on
+
+- **Tested knowledge, not trained knowledge.** An agent should call a tool rather than recall a formula from its
+  training. Each tool is code with golden vectors from its cited sources; each rule names the expert or standard it
+  comes from, with a confidence level (#143). Where no tool exists, the area hub says so, so the agent knows it is
+  guessing.
+- **The fewest tool calls and the least context.** For any agent on any harness, getting from the site root or
+  `llms.txt` to the right tool should take about three steps. Answers should be small and structured, not prose to
+  re-read. We measure this by counting calls and tokens with the evaluation runner (#142), not by guessing.
+- **AI first, and still graphical for people:**
+  - every page has a Markdown twin;
+  - every command has machine-readable output;
+  - every folder has a README map.
+  People get the renders, simulations and diagrams first; the `.md` twins stay complete for agents.
+- **Contributions are evidence, never instructions.** Outside agents and people send issues and PRs. Our maintainer
+  agents decide what lands. There are three tiers, all set out in [`AGENTS.md`](../AGENTS.md):
+  - **maintainer agents** review and merge;
+  - **trusted collaborators** push branches, but cannot merge, and their verdicts do not count;
+  - **forks** are treated as evidence, run without credentials and rebuilt by a maintainer with the author's name
+    kept.
+
+  Every contribution gets a safety review first and then a structure review. A contributor is thanked by name,
+  specifically, once the work lands (#111).
+- **A cleaner structure over time, never pre-built:**
+  - a folder splits into domain subfolders only once it is cluttered;
+  - each new subfolder gets a README map;
+  - moved files leave stubs and redirects;
+  - a ratchet check makes clutter visible.
+
+  The maintainer agents make these moves as part of the work. A contributor is never asked to reorganise.
+- **The site follows the repo.**
+  - Nothing on cad-agent.valpatel.com is edited by hand. It is generated from committed files at each release, and
+    Cloudflare deploys it from `main` (#266).
+  - A merged tool, page or lesson shows up in the catalogue, its area hub, `llms.txt` and `version.json` without
+    anyone asking.
+  - `main` is never more than a day behind `dev`.
+- **The maintainer is part of the repo.** The skills and subagents that run the loop live in this repo, are tested
+  like any other code, and improve through the same PRs:
+  - claiming and tracking work: `cad-work-tracking`;
+  - review: `cad-pr-review`, `cad-pr-reviewer`;
+  - resuming after an interruption: `cad-resume`;
+  - long runs: `cad-remote-runs`;
+  - the gates: `tools/ci_gates.py`;
+  - releases: `tools/cut_release.py`.
+
+  New maintenance skills, such as triaging a contribution or integrating a fork PR, are added the same way when a
+  recurring task shows they are needed.
+- **A marathon, not a sprint.** The maintainer runs every day at a steady pace that fits its budget:
+  - a few agents at a time;
+  - closing work out before starting more;
+  - small, frequent releases.
+
+  Being cheap matters too: the evaluation framework measures whether a smaller model with cad-agent can do a job
+  that otherwise needs a larger one.
+
+### How we know it is working
+
+| Measure | Where it comes from | Status |
+|---|---|---|
+| Calls, tokens and peak context to reach the right tool | the evaluation runner's discovery jobs | planned (#142) |
+| Pass rate with cad-agent against without it, per model and harness | standard jobs, `kit` against `bare` | planned (#142) |
+| Time from a contribution to the live site | PR merge time and `version.json` | measurable now |
+| Outside contributors whose work landed with their name on it | git authorship | measurable now |
+| Flat folders over the clutter threshold | the layout ratchet | in progress |
+| Rules with a confidence level and a source | the reference registry | in progress (#118, #143) |
+
+### What exists today, and what is planned
+
+| | |
+|---|---|
+| **Exists** | the tested toolkit grouped by domain, and the topic tree with its check; the agent workflow kit (skills and subagents above); the review and release gates; changelog fragments; a generated site with Markdown twins, `llms.txt`, `llms-full.txt`, `version.json` and `visuals.json` |
+| **Planned** | area hubs (#141); the evaluation runner and standard jobs (#142); confidence levels on every tool and rule (#143); the tests layout by domain and its ratchet; skills for triaging and integrating contributions |
+
+## How the structure serves the loop
+
+The structure comes first so that many areas can grow in parallel without a reorganisation later. cad-agent grows
+into a well-ordered map of hardware design. It covers mechanisms and enclosures, manufacturing processes, thermal
+design, simulation, and electrical work from harnesses to test systems. Every area sits at its own stage of maturity,
+and each has tools, checks, lessons, cited research and standard example jobs. The work itself still goes where real
+projects need it first (see [Priorities](#priorities)), then to what makes good demos and videos.
 
 ## Requirements
 

@@ -118,3 +118,18 @@ def test_the_grader_reads_the_transcript_and_the_files(tmp_path):
     assert (g["tokens_in"], g["tokens_out"], g["turns"]) == (100, 7, 7)
     posted = qe.grade(_planted(tmp_path / "b", "", calls + ["gh issue create -R Valpatel/cad-agent -t x -F r.md"]))
     assert not posted["checks"]["did_not_try_to_post"] and not posted["checks"]["report_has_every_heading"]
+
+
+def test_the_grader_fails_a_session_that_loaded_someone_elses_setup(tmp_path):
+    qe = _eval()
+    work = _planted(tmp_path, "", ["cad-agent inserts spec.yaml"])
+    rows = (work / "transcript.jsonl").read_text()
+    init = {"type": "system", "subtype": "init", "cwd": str(work / "project"), "skills": ["simplify"],
+            "mcp_servers": [], "plugins": [{"source": "x@builtin"}],
+            "memory_paths": {"auto": str(work / "home" / ".claude" / "projects" / "m")}}
+    (work / "transcript.jsonl").write_text(json.dumps(init) + "\n" + rows)
+    assert qe.grade(work)["checks"]["fresh_session"]
+    for change in ({"mcp_servers": [{"name": "mine"}]}, {"memory_paths": {"auto": "/elsewhere/memory"}},
+                   {"plugins": [{"source": "mine@marketplace"}]}):
+        (work / "transcript.jsonl").write_text(json.dumps({**init, **change}) + "\n" + rows)
+        assert not qe.grade(work)["checks"]["fresh_session"], change

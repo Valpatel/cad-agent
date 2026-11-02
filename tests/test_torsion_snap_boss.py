@@ -178,6 +178,15 @@ def test_nut_factor_flank_angle_defaults_to_the_iso_thread():
         assert fx.nut_factor(*args, math.radians(30)) < fx.nut_factor(*args)
 
 
+@pytest.mark.parametrize("bad", [60.0, 30.0, 0.0, -0.5, math.pi / 2, 2.0, math.nan, math.inf, True, "1.047"])
+def test_nut_factor_refuses_a_flank_angle_outside_0_to_90_degrees(bad):
+    # 60 passed as degrees used to give K = 0.59 instead of 0.20 (about 3 x) without complaint
+    with pytest.raises(ValueError, match="radians"):
+        fx.nut_factor(3 * MM, 0.5 * MM, 0.15, 0.15, bad)
+    # just inside the range still computes
+    assert fx.nut_factor(3 * MM, 0.5 * MM, 0.15, 0.15, math.pi / 2 - 1e-9) > 0
+
+
 def test_screw_boss_is_its_parts_and_covestros_window():
     d, P, Le, D, T, tau, hoop = 3 * MM, 1.12 * MM, 6 * MM, 6 * MM, 0.3, 15.5e6, 35e6
     r = fx.screw_boss(d, P, Le, D, T, tau, hoop)

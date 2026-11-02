@@ -130,6 +130,7 @@ domains:
         topics:
           - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling}
           - {slug: screw-bosses, title: Screw bosses, scope: "Thread-forming screws in printed bosses: clamp, stripping, torque window, wall.", maturity: tooling, priority: [demo], pages: [docs/screw-bosses.md], api: [cadagent.mechanical.bosses], issues: [161]}
+          - {slug: threaded-inserts, title: Threaded inserts and limiters, scope: "Heat-set inserts and compression limiters in printed parts: hole, boss, load path, pull-out, torque, preload.", maturity: tooling, pages: [docs/inserts.md], cli: [inserts], api: [cadagent.mechanical.inserts], issues: [230]}
           - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
           - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
       - slug: fixtures-and-jigs

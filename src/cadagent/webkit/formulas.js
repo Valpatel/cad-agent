@@ -343,6 +343,7 @@ const FORMING_FLANK = 30 * DEG, RATIO_SLACK = 1e-9;
 
 /** Nut factor from friction: K = (dm / 2d)(tan lambda + f sec alpha) / (1 - f tan lambda sec alpha) + 0.625 fc. */
 export function nutFactor(diameter, pitch, threadFriction, collarFriction, flankAngle = ISO_FLANK) {
+  if (!isNum(flankAngle) || !(flankAngle > 0 && flankAngle < Math.PI / 2)) throw new RangeError(`flank_angle is the included angle in radians, between 0 and pi/2, not ${flankAngle}`);
   const dm = diameter - PITCH_DIAMETER * pitch;
   const tanLead = pitch / (Math.PI * dm);
   const sec = 1 / Math.cos(flankAngle / 2);

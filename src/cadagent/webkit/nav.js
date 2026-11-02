@@ -28,6 +28,8 @@
  * - marks the section being read in every outline (in the tree, and in any element matched by `rail`, e.g. a right-hand
  *   "On this page" column) with aria-current="location", as you scroll and when you follow an outline link;
  * - narrows the tree as you type in the filter (Esc clears; says so when nothing matches);
+ * - on wide screens keeps the sticky panel inside the room <cad-nav> leaves on screen, so at the end of a long page
+ *   its filter does not slide up under the page's header;
  * - keeps the fold open on wide screens (for browsers without ::details-content), and never opens or closes it on
  *   narrow ones, except to close again a fold it opened for a wide window.
  * No dependencies.
@@ -99,8 +101,29 @@ export class CadNav extends HTMLElement {
       panel.prepend(filter);
     }
     this.#filter(filter, panel, signal);
+    this.#room(panel, signal);
     this.#outline(panel, signal);
     this.#reveal(panel, filter);
+  }
+
+  /** On a wide screen the panel sticks below the page's header, inside <cad-nav>, which ends where the page's content
+   * does. Near the end of a long page that end comes up the window and pushes a tall panel up, filter first, under the
+   * header, where typing in the filter scrolls the page to show it. So the panel is never taller than the room from
+   * its sticky top to the end of <cad-nav> or of the window, whichever comes first (nav.css's 16px gap below kept). */
+  #room(panel, signal) {
+    let queued = false;
+    const fit = () => {
+      queued = false;
+      const style = getComputedStyle(panel);
+      if (style.position !== 'sticky') { panel.style.maxHeight = ''; return; }
+      const end = Math.min(innerHeight, this.getBoundingClientRect().bottom);
+      const room = Math.floor(end - (parseFloat(style.top) || 0) - 16);
+      panel.style.maxHeight = `${Math.max(room, 120)}px`;        // a few links at least, on a very short window
+    };
+    const queue = () => { if (!queued) { queued = true; requestAnimationFrame(fit); } };
+    fit();
+    addEventListener('scroll', queue, { passive: true, signal });
+    addEventListener('resize', queue, { passive: true, signal });
   }
 
   disconnectedCallback() {

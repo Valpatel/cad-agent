@@ -297,3 +297,28 @@ def test_settings_from_config_do_not_claim_slicing_when_nothing_is_current(tmp_p
     p.slicer = {"filament": "petg"}
     page = (build_release(p, out=tmp_path / "out/c").folder / "index.html").read_text()
     assert "Recommended print settings" in page and "PETG" in page and "were sliced with them" not in page
+
+
+def test_prusa_project_release_says_prusaslicer_presets(tmp_path):
+    p = project(tmp_path, {})
+    p.slicer = {"engine": "prusa", "filament": "pla"}
+    report = json.loads((p.root / "exports/slice-report.json").read_text())
+    report.update(_settings(p), slicer="PrusaSlicer (command line)")
+    (p.root / "exports/slice-report.json").write_text(json.dumps(report))
+    page = (build_release(p, out=tmp_path / "out/demo").folder / "index.html").read_text()
+    assert "PrusaSlicer presets" in page and "Bambu" not in page
+
+
+def test_a_part_the_slicer_flagged_keeps_its_numbers_and_says_so(tmp_path):
+    """A PrusaSlicer row with ok false is current (its 3MF and settings are unchanged), so its grams stand; the card
+    and the release warnings name what PrusaSlicer said."""
+    p = project(tmp_path, {})
+    p.slicer = {"engine": "prusa", "filament": "pla"}
+    report = json.loads((p.root / "exports/slice-report.json").read_text())
+    report.update(_settings(p), slicer="PrusaSlicer (command line)")
+    report["parts"]["lid"].update(ok=False, stability_issues=["Long bridging extrusions"], errors=[])
+    (p.root / "exports/slice-report.json").write_text(json.dumps(report))
+    result = build_release(p, out=tmp_path / "out/flag")
+    lid = card((result.folder / "index.html").read_text(), "lid")
+    assert "50.0 g" in lid and "slicer: Long bridging extrusions" in lid
+    assert any("lid: sliced, but the slicer flagged it: Long bridging extrusions" in w for w in result.warnings)

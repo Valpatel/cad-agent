@@ -244,3 +244,80 @@ def test_check_runs_the_dossier_lint(tmp_path, capsys):
     assert main(["check", "--project", str(root)]) == 1
     out = capsys.readouterr().out
     assert "dossier card-no-function" in out and "section S1" in out
+
+
+def test_slice_without_prusaslicer_is_unusable(tmp_path, monkeypatch, capsys):
+    from cadagent.manufacturing import slicer_prusa
+    root = make_project(tmp_path)
+    (root / "cad-agent.yaml").write_text((root / "cad-agent.yaml").read_text() + "  slicer: {engine: prusa}\n")
+    monkeypatch.setattr(slicer_prusa, "executable", lambda: None)
+    assert main(["slice", "--project", str(root)]) == 2
+    captured = capsys.readouterr()
+    assert "PrusaSlicer is not installed" in captured.out + captured.err
+
+
+@pytest.mark.parametrize("slicer_cfg, said", [
+    ("{engine: cura}", "cad.slicer.engine must be one of bambu, prusa, got 'cura'"),
+    ("{engine: prusa, printer: Test MK4S, process: 0.20mm TEST, filament: Test PLA, overrides: {wall_loops: '3'}}",
+     "cannot slice: Unknown PrusaSlicer setting(s) 'wall_loops'"),
+    ("{engine: prusa, printer: Test MK4S, process: 0.20mm TSET, filament: Test PLA}",
+     "cannot slice: PrusaSlicer print profile '0.20mm TSET' not found"),
+])
+def test_slice_config_errors_exit_2_with_the_reason(tmp_path, monkeypatch, capsys, slicer_cfg, said):
+    import shutil
+    from cadagent.manufacturing import slicer_prusa
+    from tests.test_slicer_prusa import FIXTURE, fake_run
+    shutil.copytree(FIXTURE, tmp_path / "PrusaSlicer")
+    monkeypatch.setenv("CADAGENT_PRUSA_PROFILES", str(tmp_path / "PrusaSlicer" / "vendor"))
+    root = make_project(tmp_path / "p")
+    (root / "cad-agent.yaml").write_text((root / "cad-agent.yaml").read_text() + f"  slicer: {slicer_cfg}\n")
+    monkeypatch.setattr(slicer_prusa, "executable", lambda: ["/fake/prusa-slicer"])
+    monkeypatch.setattr(slicer_prusa.subprocess, "run", fake_run([]))
+    assert main(["slice", "--project", str(root)]) == 2
+    captured = capsys.readouterr()
+    assert said in captured.out + captured.err
+
+
+@pytest.mark.parametrize("command", ["report", "check"])
+def test_a_misspelt_engine_is_a_config_error_everywhere(tmp_path, capsys, command):
+    root = make_project(tmp_path)
+    (root / "cad-agent.yaml").write_text((root / "cad-agent.yaml").read_text() + "  slicer: {engine: Prusa}\n")
+    assert main([command, "--project", str(root)]) == 2
+    captured = capsys.readouterr()
+    assert "cad.slicer.engine" in captured.out + captured.err
+
+
+def test_slice_lists_what_prusaslicer_said_and_exits_1_when_a_part_is_not_ok(tmp_path, monkeypatch, capsys):
+    from cadagent.manufacturing import slicer, slicer_prusa
+    monkeypatch.setattr(slicer_prusa, "executable", lambda: ["/fake/prusa-slicer"])
+    monkeypatch.setattr(slicer, "engine_of", lambda project: "prusa")
+    rows = {"box": {"grams": 5.0, "minutes": 10.0, "ok": True, "warnings": [], "errors": [], "stability_issues": []},
+            "lid": {"grams": 7.0, "minutes": 12.0, "ok": False, "stability_issues": ["Floating bridge anchors"],
+                    "warnings": ["Detected print stability issues:"],
+                    "errors": ["gcode path conflicts found between WipeTower and lid.stl"]}}
+    monkeypatch.setattr(slicer, "slice_project", lambda project, parts=None: {
+        "parts": rows, "total_grams": 12.0, "total_hours": 0.4, "process": "p", "filament": "f", "path": "x",
+        "pass": False})
+    assert cli_cmd_slice() == 1
+    out = capsys.readouterr().out
+    assert "NOT OK" in out and "stability: Floating bridge anchors" in out
+    assert "error: gcode path conflicts found between WipeTower and lid.stl" in out
+    assert "warning: Detected print stability" not in out and "not ok" in out and ": lid" in out
+
+
+def cli_cmd_slice():
+    from cadagent import cli
+    return cli.cmd_slice(None, type("A", (), {"parts": []})())
+
+
+@pytest.mark.parametrize("parts, said", [
+    ("{box: {overrides: [1]}}", "cad.slicer.parts.box.overrides must be a mapping"),
+    ("{box: {brim: 3}}", "cad.slicer.parts.box: unknown keys ['brim']"),
+    ("box", "cad.slicer.parts must be a list of part names or a mapping"),
+])
+def test_bad_part_overrides_are_config_errors(tmp_path, capsys, parts, said):
+    root = make_project(tmp_path)
+    (root / "cad-agent.yaml").write_text((root / "cad-agent.yaml").read_text() + f"  slicer: {{parts: {parts}}}\n")
+    assert main(["slice", "--project", str(root)]) == 2
+    captured = capsys.readouterr()
+    assert said in captured.out + captured.err

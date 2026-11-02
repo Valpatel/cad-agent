@@ -165,9 +165,10 @@ domains:
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
         cli: [export-3mf, slice, overhangs]
-        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.mesh3mf, cadagent.manufacturing.plates,
-              cadagent.manufacturing.fit_coupons, cadagent.manufacturing.gcode]
-        issues: [84, 99, 247, 253]
+        api: [cadagent.manufacturing.slicer, cadagent.manufacturing.slicer_prusa, cadagent.manufacturing.mesh3mf,
+              cadagent.manufacturing.plates, cadagent.manufacturing.prusa3mf, cadagent.manufacturing.fit_coupons,
+              cadagent.manufacturing.gcode]
+        issues: [84, 99, 242, 246, 247, 248, 253]
         projects: [gyropup, j501-enclosure]
         topics:
           - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling}

@@ -133,6 +133,7 @@ my-cad-project/
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 | `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
+| `<name>.3mf`, `<stem>-NN-<group>.3mf` (PrusaSlicer) | print orientation, placed on the bed | PrusaSlicer projects from `cadagent.manufacturing.prusa3mf`: objects of several volumes, each on its own tool, and the wipe tower's place; one 3MF per plate; read back and verified; byte-reproducible ([PrusaSlicer projects](#prusaslicer-projects-cadagentmanufacturingprusa3mf)) |
 
 ### Checked booleans (`cadagent.geometry`)
 
@@ -249,6 +250,66 @@ plates Bambu Studio holds.
   inside one another: tighter nesting (hulls, no-fit polygons) would save plates. The layout says nothing about
   whether a plate prints well (adhesion, warping, how much one failure costs): that is the slicer's and the
   printer's evidence. Per-part supports, brims and process settings are not written; set them in Bambu Studio.
+
+</details>
+
+### PrusaSlicer projects (`cadagent.manufacturing.prusa3mf`)
+
+`export-3mf` writes Bambu Studio files. For PrusaSlicer, a build script calls `cadagent.manufacturing.prusa3mf`:
+
+```python
+from cadagent.manufacturing.prusa3mf import write_project, write_plates
+# one object, two volumes: the body on tool 1, the inlay on tool 3, at the bed centre + (0, 40) mm
+write_project("exports/lid.3mf", [("lid", [(body, "body", 1), (inlay, "inlay", 3)], (0, 40))],
+              bed=(360, 360, 360), wipe_tower=(20, 20))
+# every part at its quantity, packed by the tools it uses, one 3MF per plate: exports/plates/plate-01-t1-t3.3mf, ...
+write_plates("exports/plates", {"lid": [(body, "body", 1), (inlay, "inlay", 3)], "pin": [(pin, "pin", 2)]},
+             bed=(360, 360, 360), quantities={"pin": 4})
+```
+
+```mermaid
+flowchart TD
+    V["parts as volumes<br/>mesh, name, tool"] --> WP["write_project<br/>volumes on their tools"]
+    V --> PL["write_plates<br/>packed by tools"]
+    PL --> WP
+    WP --> F["project 3MF<br/>volumes · wipe tower"]
+    F --> RB["read back<br/>every volume checked"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class WP,PL here
+    class V near
+    class F,RB out
+```
+
+**Limits.** No printer, print or filament settings are written: load them in PrusaSlicer or pass them to its
+command line. Whether the tower clears the parts is the slicer's check, and nothing here says a part prints well.
+
+<details>
+<summary>Objects and volumes, the wipe tower, plates, the read-back and the PrusaSlicer check</summary>
+
+- **Objects and volumes.** An object is `(name, [(mesh, volume name, tool)], (dx, dy[, angle]))`: the meshes (a
+  trimesh, or `(vertices, faces)`) in print orientation and the object's own coordinates, so the volumes keep their
+  places relative to one another. The object's outline is centred on the bed centre plus `(dx, dy)`, its lowest point
+  on z = 0, turned `angle` degrees about z. The file is PrusaSlicer's: one mesh per object, and
+  `Metadata/Slic3r_PE_model.config` with a `firstid`/`lastid` triangle range, name and extruder per volume.
+- **The wipe tower.** PrusaSlicer 2.9 keeps its place in the project
+  (`Metadata/Prusa_Slicer_wipe_tower_information.xml`: `position_x`, `position_y`, `rotation_deg` for the bed), not
+  in the print config, and refuses `wipe_tower_x` as an override. With more than one tool it is written at
+  `wipe_tower` (default `(20, 20)`, the front-left corner, clear of a part centred on the bed); `False` writes none.
+  PrusaSlicer's own default place can collide with a part centred on a large bed (`gcode path conflicts found
+  between WipeTower and <part>`).
+- **Plates.** `write_plates` packs with the [build plates](#build-plates-cadagentmanufacturingplates) MaxRects
+  layout: parts that use different tools (or different `groups`, such as filaments) never share a plate, and on a
+  plate with more than one tool the parts keep the gap clear of the tower's corner area (`wipe_tower_size`, 60 x 60
+  mm by default: an estimate, as PrusaSlicer sizes the tower from the purge volumes). It removes earlier
+  `<stem>-NN-*.3mf` files first and returns each plate's layout and read-back report.
+- **Read-back.** Each file is read back and deleted unless every volume has its source mesh's triangle count and
+  volume (within 0.1 %), is watertight and is on its tool, every object is where it was placed, and the tower is
+  where it was asked. Entries are sorted with a fixed date, so the same objects give the same bytes.
+- **Checked in PrusaSlicer 2.9.4.** Its command line loads the volumes on their tools, puts the wipe tower where the
+  file says and slices (`tests/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
+  Flathub, with a two-tool printer from PrusaSlicer's defaults).
 
 </details>
 
@@ -1139,10 +1200,10 @@ Turns CAD parts into a simulator model with real mass properties:
 ## Simulation and optimisation (standard practice for anything that carries load or heat)
 
 Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for
-stiffness and strength, pyMOTO for topology optimisation, Bambu Studio for real filament grams, PyVista/VTK for
+stiffness and strength, pyMOTO for topology optimisation, Bambu Studio or PrusaSlicer for real filament grams, PyVista/VTK for
 pictures and animations. The survey that chose them, with licences and sources, is
 [`research/simulation-tools.md`](../research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
-Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio for slicing.
+Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio or PrusaSlicer for slicing.
 
 **Standard practice.** For every design that holds a heat source, carries a load or will be printed in quantity:
 1. **Slice it** (`cad-agent slice`): grams and print time per part, with the profile named. This is the number a
@@ -1297,7 +1358,17 @@ regions, and a panel with no data says why). Colour follows the job: one-hue ram
 (blue), never a rainbow.
 
 ### Real grams (`cadagent.manufacturing.slicer`, `cad-agent slice`)
-Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
+Slices each part's 3MF with Bambu Studio's command line, or PrusaSlicer's with `cad.slicer.engine: prusa`
+(`cadagent.manufacturing.slicer_prusa`). Both are external AGPL programs, only ever run as a separate process.
+It writes `exports/slice-report.json`: grams and time per part, the settings used and each 3MF's SHA-256, so a stale
+row is told from a current one. A PrusaSlicer row also keeps what PrusaSlicer's log said, and its `ok` is false when
+PrusaSlicer reports an error or a print stability issue. That is PrusaSlicer's own heuristic: an ok part can still
+print badly, and a slice does not prove a part prints or fits.
+
+<details>
+<summary>Bambu Studio profiles, and the <code>cad.slicer</code> keys</summary>
+
+Bambu Studio's system
 profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles
 can report 0 g or retain generic startup G-code). Missing, cyclic, duplicate, malformed or escaping profile
 dependencies fail explicitly. `flatten(kind, name)` returns the resolved settings; `resolve_profile(kind, name)`
@@ -1305,9 +1376,64 @@ also returns `files`, the relative paths and SHA-256 hashes of the exact consume
 record those dependency hashes and the settings JSON hashes. These identities describe the captured inputs, not
 ongoing filesystem stability or validation of the resulting executable G-code. Inspect actual temperature waits
 and startup order before printing; a filament label or successful slice does not establish physical readiness.
+
 Configure under
-`cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
-`parts`. Writes `exports/slice-report.json`.
+`cad.slicer`: `engine` (`bambu`, the default, or `prusa`), `printer`, `process`, `filament` (`pla`, `petg` or a
+profile name), `overrides` (settings, named as that slicer names them) and `parts`: a list of the parts to slice
+(default all), or a mapping of part name to `{overrides: {...}}`, that part's own settings on top of
+`cad.slicer.overrides` (tall parts a brim, thin shells fewer perimeters, pin-loaded links denser infill; a part with
+none: `name: {}`). Writes `exports/slice-report.json`; a row records its `part_overrides`, and changing them makes
+it stale. A PrusaSlicer report records `engine: prusa`, and a report made with one slicer is not current for the
+other.
+
+</details>
+
+<details>
+<summary>PrusaSlicer: profiles, overrides, what its log says, and an example</summary>
+
+Runs `prusa-slicer` (on PATH, or the flatpak `com.prusa3d.PrusaSlicer`).
+- **Profiles:** PrusaSlicer's vendor bundles and your own saved presets, from `$CADAGENT_PRUSA_PROFILES` when set,
+  else the first of `~/.config/PrusaSlicer/vendor`, the flatpak's config folder, `/usr/share/PrusaSlicer/profiles`
+  and `/usr/share/prusa-slicer/profiles` that holds any.
+- **Resolution:** PrusaSlicer itself resolves the three presets (`--save`, on a private copy of the profile folder),
+  as its window does. A multi-tool printer such as the XL gets each filament setting once per tool, and a print or
+  filament preset that does not fit the printer is refused with PrusaSlicer's reason.
+- **Overrides:** PrusaSlicer names, one value each (one value applies to every tool). A key PrusaSlicer does not
+  have, such as Bambu's `wall_loops`, is an error.
+- **Defaults:** `Original Prusa MK4S 0.4 nozzle` and `0.20mm SPEED @MK4S 0.4`; `pla` and `petg` mean the MK4S
+  Prusament profiles, so for another printer name its filament profile, e.g. `Prusament PLA @XLIS`.
+- **Records:** G-code is written as text (`binary_gcode = 0`) because grams and time are read from its footer. The
+  slice records the SHA-256 of its `config.ini` and of every profile file read; bundles change when PrusaSlicer
+  updates them.
+- **What PrusaSlicer said:** it runs with `--loglevel 3` and the whole log goes next to the G-code
+  (`build/slicer/<part>/out/slicer.log`). A part that slices but will print badly shows only there, with exit code 0:
+  "Detected print stability issues" (long bridging extrusions, floating bridge anchors, collapsing overhang, low bed
+  adhesion, loose extrusions) or an error such as `gcode path conflicts found between WipeTower and …`. Each report
+  row keeps `warnings`, `errors` (each message once), `stability_issues` (the categories PrusaSlicer names),
+  `benign_log_lines` (a count of lines that say nothing about the print: a multi-tool printer's "SupportSpotsGenerator
+  does not currently handle different materials" and Arachne's "Detected … Voronoi … rotated back and forth"), `log`
+  and `ok`: true only with exit code 0, G-code written and no error or stability issue. Other warnings are listed but
+  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok. The
+  stability check is PrusaSlicer's own heuristic, run with the settings sliced: an ok part can still print badly, and
+  turning supports or a brim on may clear an issue rather than fix the geometry.
+- **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry
+  no Bambu Studio project settings for a PrusaSlicer project.
+
+```yaml
+cad:
+  slicer:
+    engine: prusa                                        # default: bambu
+    printer: Original Prusa XL - 5T Input Shaper 0.4 nozzle
+    process: 0.20mm SPEED @XLIS 0.4
+    filament: Prusament PLA @XLIS                        # or pla / petg (the MK4S variants)
+    overrides: {perimeters: "3", fill_density: "20%"}    # PrusaSlicer names
+    parts:                                               # default: every part, cad.slicer.overrides only
+      tower: {overrides: {brim_width: "10"}}
+      link: {overrides: {perimeters: "4", fill_density: "40%"}}
+      lid: {}
+```
+
+</details>
 
 ### Overhangs and bridges (`cad-agent overhangs`)
 

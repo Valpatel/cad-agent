@@ -2,8 +2,7 @@
 - `tests/` is grouped by domain: each test sits in `tests/<domain>/`, the folder named after the
   `src/cadagent/<domain>/` package it tests, or in `tests/cli/`, `tests/site/` (the website and its build) or
   `tests/repo/` (the repo's own rules and tooling); design exploration's are in `tests/simulation/explore/`. File
-  names are unchanged, and `git log --follow` keeps each file's
-  history. The same tests are collected and pass. Every folder has a README with a map, and `tests/README.md` lists
+  names are unchanged, and `git log --follow` keeps each file's history. The same tests are collected and pass. Every folder has a README with a map, and `tests/README.md` lists
   them (#113).
 - `tests/repo/test_layout.py` checks where files go. It fails on a test file directly in `tests/`, a `tests/` folder
   that is neither a package nor a listed area, a new top-level folder in the repo, a new file at the top of `src/` or

@@ -6,7 +6,7 @@
   with a top-level ``pass`` and ``physical_fit_verified: false``.
 * ``swept_envelope(pieces)`` builds the cutter for a neighbour's clearance: a solid of revolution about +x whose radius
   at each x is the largest of the axial ``pieces``, with its slopes capped (45 degrees by default), made as one
-  revolved profile. One revolve leaves no flat ceilings in the cut and avoids the failures of fusing many tools.
+  revolved profile. One revolve leaves no flat shoulders in the cut and avoids the failures of fusing many tools.
   ``envelope_profile`` gives the same profile as numbers, without a CAD kernel.
 
 Limits, stated in every report: the poses are samples, not a continuous sweep, so two parts can pass through each
@@ -46,7 +46,9 @@ from cadagent.review.gates.relations import Tolerances, relate
 
 LIMITS = ("Poses are samples, not a continuous sweep: parts can pass through each other between two poses unseen. "
           "Only the solids passed in are checked. Overlaps up to the tolerance pass (parts touching on a face). "
-          "Without travel_mm nothing is proven between poses. "
+          "Without travel_mm nothing is proven between poses; with it, the bound holds only if travel_mm bounds the "
+          "path length (not the chord) of every point's motion relative to every other part between consecutive "
+          "poses, in the order given. "
           "CAD clearance does not prove physical fit: tolerances, deflection and wear are not modelled.")
 
 Pair = Tuple[str, Any]                       # (instance name, part)
@@ -116,9 +118,10 @@ def _check(instances: Mapping[str, Any], tolerance_mm3: float, skip: Skip, only:
             continue
         if is_skipped((ka, pa), (kb, pb)):
             continue
+        pair = (ka, kb) if ka <= kb else (kb, ka)            # by name: place_fn's order can change between poses
         apart = box_distance(boxes[ka], boxes[kb])
         if apart > margin_mm + 1e-6:
-            gaps[(ka, kb)] = apart
+            gaps[pair] = apart
             continue
         intersected += 1
         row = {"a": ka, "b": kb, "part_a": str(pa), "part_b": str(pb)}
@@ -128,12 +131,12 @@ def _check(instances: Mapping[str, Any], tolerance_mm3: float, skip: Skip, only:
             shared, gap, error = None, 0.0, f"boolean intersection failed: {type(e).__name__}: {e}"
         if error is not None:
             hits.append({**row, "error": error})
-            gaps[(ka, kb)] = None
+            gaps[pair] = None
         elif shared is not None:
             hits.append({**row, "volume_mm3": round(shared, 3)})
-            gaps[(ka, kb)] = None
+            gaps[pair] = None
         else:
-            gaps[(ka, kb)] = gap
+            gaps[pair] = gap
     return hits, intersected, gaps
 
 
@@ -216,7 +219,10 @@ def sweep(poses: Mapping[str, Any], place_fn: Callable[[Any], Mapping[str, Any]]
         for (p1, g1), (p2, g2) in zip(steps, steps[1:]):
             if g1 is None or g2 is None:                             # a pose that failed: its error already fails
                 continue
-            for pair in g1.keys() & g2.keys():
+            for pair in sorted(g1.keys() ^ g2.keys()):                # placed at one end only: nothing proves it
+                between.append({"from": p1, "to": p2, "a": pair[0], "b": pair[1], "gaps_mm": None,
+                                "reason": "the pair is checked at one end of the step only"})
+            for pair in sorted(g1.keys() & g2.keys()):
                 if g1[pair] is None or g2[pair] is None:             # a hit or an error at an end: already counted
                     continue
                 lb = max(0.0, (g1[pair] + g2[pair] - travel_mm) / 2)
@@ -252,7 +258,8 @@ def envelope_profile(pieces: Sequence[Sequence[float]], step: float = 0.5, max_s
     about ``r_end / tan(max_slope_deg)``, to the sample where the radius reaches 0) instead of ending in flat discs.
 
     Sampled every ``step`` mm, plus every piece's ends: two pieces whose lines cross between samples can be
-    under-filled there by a fraction of ``step``. Collinear samples are dropped.
+    over-filled there, by a fraction of ``step`` where a cone's foot falls between samples (never under-filled: every
+    piece's ends are samples). Collinear samples are dropped.
     """
     if not pieces:
         raise ValueError("swept_envelope needs at least one piece")
@@ -306,7 +313,8 @@ def swept_envelope(pieces: Sequence[Sequence[float]], step: float = 0.5, max_slo
     Use it as the cutter for a moving part's clearance: describe the part's swept radius along its own axis as pieces
     (a barrel, a rod, an eye body), place one envelope per pose on that axis (``Shape.moved`` or
     ``Shape.transformShape``) and cut them from the neighbour. The profile is one closed polygon revolved once, so the
-    cutter has no internal faces and no flat ceilings where the radius steps.
+    cutter has no internal faces, and no flat shoulder where the radius steps (which prints as a ceiling when the axis
+    is near the build direction of the neighbour's print orientation).
     """
     import cadquery as cq
 

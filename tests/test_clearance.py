@@ -241,3 +241,27 @@ def test_a_pair_the_relation_gate_cannot_decide_is_an_error():
     other = cq.Solid.makeBox(4, 4, 4, pnt=cq.Vector(6, 3, 3))
     (row,) = C.collisions({"pair": cq.Compound.makeCompound([a, b]), "other": other})
     assert "volume_mm3" not in row and "share volume" in row["error"]
+
+
+def test_the_between_poses_proof_does_not_depend_on_instance_order():
+    """place_fn may return the same parts in another order at the next pose; the pair is the same pair."""
+    def place(x):
+        block, wall = ("block", cube(x)), ("wall", Box((50, -5, -5), (60, 15, 15)))
+        return {"block": block, "wall": wall} if x < 50 else {"wall": wall, "block": block}
+
+    report = C.sweep({"before": 30.0, "after": 70.0}, place, travel_mm=40.0)
+    assert report["pass"] is False and report["gap_lower_bound_mm"] == 0.0
+    assert [(r["a"], r["b"]) for r in report["between_poses"]] == [("block", "wall")]
+
+
+def test_a_pair_placed_at_one_end_of_a_step_only_is_unproven():
+    def place(x):
+        parts = slider(x)
+        if x > 40:
+            parts["probe"] = ("probe", cube(x + 100))
+        return parts
+
+    report = C.sweep({"a": 0.0, "b": 45.0}, place, travel_mm=1.0)
+    rows = [r for r in report["between_poses"] if r["gaps_mm"] is None]
+    assert report["pass"] is False and {(r["a"], r["b"]) for r in rows} == {("block", "probe"), ("probe", "wall")}
+    assert all("one end" in r["reason"] for r in rows)

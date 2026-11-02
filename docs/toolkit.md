@@ -609,18 +609,20 @@ this is for kinematics that live in the build script as a function from pose to 
 
 ```mermaid
 flowchart TD
-    P["each pose: place_fn(params)<br/>→ placed solids"] --> B{"boxes meet?"}
-    B -->|"no"| G["clear by the<br/>box distance"]
+    P["each pose: place_fn(params)<br/>→ placed solids"] --> B{"boxes within travel / 2?<br/>(meeting, without travel_mm)"}
+    B -->|"no"| G["clear: gap g<br/>(box or exact)"]
     B -->|"yes"| R["relations.relate"]
     R -->|"apart or touching"| G
     R -->|"overlap or unknown"| H["collision or error:<br/>never a pass"]
-    G --> T{"travel_mm given: is<br/>(g1 + g2 − travel) / 2 > 0?"}
-    T -->|"no"| U["unproven between poses"]
-    T -->|"yes"| OK["clear"]
+    G --> T{"travel_mm given?"}
+    T -->|"no"| S["clear at the poses only"]
+    T -->|"yes"| T2{"(g1 + g2 − travel) / 2 > 0<br/>on each step?"}
+    T2 -->|"no"| U["unproven between poses"]
+    T2 -->|"yes"| OK["clear between poses too"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class P,B,R,G,T here
-    class H,U,OK out
+    class P,B,R,G,T,T2 here
+    class H,S,U,OK out
 ```
 
 ```python
@@ -633,7 +635,8 @@ def place(q):                       # the project's own kinematics: {instance: (
             "barrel": ("cyl_barrel", barrel_at(q)), "rod": ("cyl_rod", rod_at(q)),
             "base": ("base", base)}
 
-poses = {f"q1={a}_q2={b}": (a, b) for a in range(0, 91, 15) for b in range(-120, 1, 15)}
+poses = {f"q1={a}_q2={b}": (a, b) for i, a in enumerate(range(0, 91, 15))   # snake order: each pose one step
+         for b in (range(-120, 1, 15) if i % 2 == 0 else range(0, -121, -15))}  # from the last (travel_mm needs it)
 report = sweep(poses, place, out_path="exports/clearance-checks.json",
                tolerance_mm3=2.0, skip={("cyl_rod", "cyl_barrel")})   # the rod is meant to run inside its barrel
 assert report["pass"], [(p, r.get("collisions") or r.get("error"))
@@ -655,16 +658,17 @@ assert report["pass"], [(p, r.get("collisions") or r.get("error"))
   the pairs it related, its collisions), and a top-level `pass` that is true only when at least one pose was checked
   and none has a collision or an error. `physical_fit_verified` is always `false`.
 - **Between poses.** Pass `travel_mm`, the most any point of one part moves relative to another between two
-  consecutive poses (for a rotation step, the step in radians times the largest radius it carries), and each pair
+  consecutive poses, in the order given, measured along its path, not the chord (for a rotation step, the step in
+  radians times the largest radius it carries; order the poses so each is one step from the last), and each pair
   clear at both ends of a step must be proven clear between them: the gap there is at least `(g1 + g2 - travel) / 2`,
-  the bound the assembly gate's `sweep_pair` uses on an insertion path. A step it cannot prove is a row in
-  `between_poses` and fails the check; `gap_lower_bound_mm` is the smallest bound over the sweep. Pairs meant to
-  touch cannot be proven clear: `skip` them.
+  the bound the assembly gate's `sweep_pair` uses on an insertion path. A step it cannot prove, or a pair placed at
+  only one end of it, is a row in `between_poses` and fails the check; `gap_lower_bound_mm` is the smallest bound
+  over the sweep. Pairs meant to touch cannot be proven clear: `skip` them.
 - **`swept_envelope(pieces, step=0.5, max_slope_deg=45.0, taper_ends=False)`** makes the cutter that clears a
   neighbour. Describe the moving part's radius along its own axis as pieces `(x0, x1, r0, r1)` (a barrel, then a rod,
   then an eye), and get a cadquery `Solid` of revolution about +x. Its radius is the largest piece at each x, raised so
-  it never changes faster than `max_slope_deg` from the axis: a step becomes a 45° cone, not a flat shoulder that
-  prints as a ceiling. `taper_ends=True` closes the ends with cones too. The profile is one polygon revolved once:
+  it never changes faster than `max_slope_deg` from the axis: a step becomes a 45° cone, not a flat shoulder (which
+  prints as a ceiling when the axis is near the neighbour's build direction). `taper_ends=True` closes the ends with cones too. The profile is one polygon revolved once:
   place one envelope per pose and cut them from the neighbour, rather than fusing many small tools, which is where OCC
   booleans fail. `envelope_profile` gives the same `(xs, rs)` profile without a CAD kernel.
 - **Limits.** Without `travel_mm` the poses are samples, not a continuous sweep: two parts can pass through each

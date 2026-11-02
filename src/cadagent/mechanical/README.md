@@ -22,14 +22,13 @@ flowchart TD
     H --> HJ["exports/<br/>hole-checks.json"]
     HJ --> R["publish/report.py<br/>results JSON"]
     HJ ~~~ MT["motion_trace.py<br/>renders vs joints"]
-    B -->|"placed solids per pose"| CL["clearance.py<br/>range of motion"]
-    RG["review/gates/relations.py<br/>relate"] --> CL
+    B -->|"placed solids per pose"| CL["clearance.py<br/>relate per pair"]
     CL --> CJ["exports/<br/>clearance-checks.json"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class MC,FK,CC,H,MT,CL here
-    class G,B,R,RG near
+    class G,B,R near
     class X,HJ,CJ out
 ```
 

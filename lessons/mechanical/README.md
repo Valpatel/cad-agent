@@ -1,15 +1,17 @@
 # Lessons — mechanical
 
-Printed parts: strength, printability, fasteners and the enclosure's own features.
+Printed parts: strength, printability, fasteners, the enclosure's own features, and printing without supports.
 
 ```mermaid
 flowchart TD
     D["design-rules.md<br/>the shape of each part"] --> F["fasteners-and-assembly-access.md<br/>how the parts go together"]
     D --> E["enclosure-features.md<br/>what the enclosure carries"]
+    D --> P["printing-without-supports.md<br/>no supports, slicer warnings"]
+    F ~~~ P
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class D,F,E here
+    class D,F,E,P here
 ```
 
 | File | Lessons on |
@@ -17,5 +19,6 @@ flowchart TD
 | [design-rules.md](design-rules.md) | Strength, printability, landings, reliefs, windows, grilles, shell |
 | [fasteners-and-assembly-access.md](fasteners-and-assembly-access.md) | Tool access, assembly order, screw length, inserts, drive screws |
 | [enclosure-features.md](enclosure-features.md) | Antennas, service pins, storage trays, mount plate, cap, power budget |
+| [printing-without-supports.md](printing-without-supports.md) | Teardrops, 45° cutter ends, print orientation, shells printed upside down, tangent faces, slicer warnings, slicing early |
 
 Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source. Back to [all lessons](../README.md).

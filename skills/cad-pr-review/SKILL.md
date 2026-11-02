@@ -66,6 +66,13 @@ flowchart TD
     checkout (`cad-agent holes --out /tmp/<scratch>/holes.json`). Each
     review-only row is checked by looking at the model and named in the summary. A mistake the index does not list
     is a finding, and it is added to the index.
+- **Structure and sprawl.** Check each new or moved file against the repo's map of where files go (its AGENTS.md or
+  CONTRIBUTING): code in the package for its domain, tests in the folder that mirrors that package, no new top-level
+  folder, no file loose at the top of the package or of `tests/`. Search for what each new helper does: a second copy
+  of an existing one is blocking. A function or two joins the existing module for its topic rather than a new file. A
+  folder the change takes past the repo's clutter limit is split by its growth rule (subfolders named after the
+  domains, each with a README and map, `git mv`, every reference updated), and not before. A misplaced file is a minor
+  finding that names the path it belongs at.
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,
   `line`, `side=RIGHT`), then one summary review (`gh pr review <n> --comment --body ...`) that says plainly whether
   anything is blocking. Its last line is the verdict marker for the head commit you reviewed:

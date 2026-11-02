@@ -25,14 +25,26 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
      known misses.
    - For each review row, look at the geometry (sections, renders, the STEP) and say in the summary what you checked.
    - When you find a mistake the index does not list, say so: it belongs in the index.
-6. Post inline comments on exact lines with severity (blocking / minor / nit) via
+6. **Structure and sprawl.** Check every new or moved file against the repo's own map of where files go (its
+   AGENTS.md or CONTRIBUTING; cad-agent: "Repo structure and where files go"):
+   - each file is in the folder for its kind and domain: code in the package for its domain, tests in the test folder
+     that mirrors that package, not loose at the top of `tests/` or of the package;
+   - no new top-level folder;
+   - no helper that repeats one the repo already has: search for what the function does, not only its name;
+   - a small new module (a function or two) belongs in the existing module for its topic;
+   - a folder the change takes past the repo's clutter limit is split by its growth rule, not before: subfolders named
+     after the domains, each with a README and map, moved with `git mv` and every reference updated.
+
+   A misplaced file is a minor finding that names the path it belongs at; a new top-level folder or a second copy of a
+   helper is blocking.
+7. Post inline comments on exact lines with severity (blocking / minor / nit) via
    `gh api repos/<owner>/<repo>/pulls/<n>/comments` (`commit_id` = head SHA, `path`, `line`, `side=RIGHT`), then one
    summary review with `gh pr review <n> --comment` that states plainly whether anything blocks the merge. End the summary with the verdict marker on its own line, for the head commit you reviewed:
    `<!-- cad-review verdict=pass sha=<full 40-character head sha> -->` when nothing blocking is left, otherwise
    `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
    commit); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.
    Do not approve or merge.
-7. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
+8. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.
 
 ```mermaid

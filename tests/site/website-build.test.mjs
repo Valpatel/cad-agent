@@ -2,19 +2,22 @@
 import test from 'node:test';
 import YAML from 'yaml';
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { parseHeaders } from '../../tools/preview-site.mjs';
+import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
+const execFileAsync = promisify(execFile);
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-'));
 const build = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root }).toString();
-const out = path.join(tmp, 'a');
-const buildLog = build(out);
-test.after(() => rm(tmp, { recursive: true, force: true }));
+const site = await builtSite('cad-agent-website-a-');            // CAD_AGENT_SITE, or a fresh build of HEAD
+const out = site.dir, buildLog = site.log;
+test.after(() => Promise.all([rm(tmp, { recursive: true, force: true }), site.done()]));
 
 const files = (await readdir(out, { recursive: true, withFileTypes: true })).filter(e => e.isFile())
   .map(e => path.relative(out, path.join(e.parentPath, e.name)).split(path.sep).join('/'));
@@ -60,7 +63,8 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
     assert.equal(await readFile(path.join(clean, 'web/site.css'), 'utf8'), git('show', 'HEAD:web/site.css'));
     assert.ok(!existsSync(path.join(clean, 'docs/planted.html')), 'an untracked page was published');
     assert.doesNotMatch(await readFile(path.join(clean, 'docs/toolkit.html'), 'utf8'), /local edit/);
-    run('--worktree', '--out', draft);
+    // Drawn by the reader's browser: this stylesheet would redraw every diagram (it is in their cache key) to no purpose.
+    run('--worktree', '--client-diagrams', '--out', draft);
     const toolkit = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
     assert.match(toolkit, /local edit/);
     assert.match(toolkit, /\+ local changes/);
@@ -611,10 +615,10 @@ test('two builds with empty diagram caches draw every page byte for byte the sam
   const pages = async dir => new Map(await Promise.all((await readdir(dir, { recursive: true, withFileTypes: true }))
     .filter(e => e.isFile() && e.name.endsWith('.html')).map(async e => [path.relative(dir, path.join(e.parentPath, e.name)), await readFile(path.join(e.parentPath, e.name))])));
   const [a, b] = ['det-a', 'det-b'].map(n => path.join(tmp, n));
-  for (const d of [a, b]) {
-    const log = execFileSync(process.execPath, ['tools/build-site.mjs', '--out', d], { cwd: root, env: { ...process.env, CAD_AGENT_DIAGRAM_CACHE: `${d}-cache` } }).toString();
-    assert.match(log, /0 from the cache, \d+ drawn in /, log);
-  }
+  // Two builds at once, each in its own browser with its own empty cache: as independent as one after the other.
+  for (const { stdout } of await Promise.all([a, b].map(d => execFileAsync(process.execPath, ['tools/build-site.mjs', '--out', d],
+    { cwd: root, env: { ...process.env, CAD_AGENT_DIAGRAM_CACHE: `${d}-cache` }, maxBuffer: 64 << 20 }))))
+    assert.match(stdout, /0 from the cache, \d+ drawn in /, stdout);
   const [pa, pb] = [await pages(a), await pages(b)];
   assert.deepEqual([...pa.keys()].sort(), [...pb.keys()].sort());
   const differ = [...pa].filter(([f, buf]) => !buf.equals(pb.get(f))).map(([f]) => f);

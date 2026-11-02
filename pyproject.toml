@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cad-agent"
-version = "0.16.0"
+version = "0.17.0"
 description = "Agent toolkit for mechanical and electrical design: CAD checks, simulation, manufacturing files and review reports"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -42,6 +42,15 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 cadagent = ["webkit/*", "webkit/vendor/**/*"]
+
+# `cad-agent init`'s starter, for a wheel install: examples/starter-box installed under <prefix>/share/cad-agent/. A
+# checkout's own examples/starter-box comes first (cadagent.project.starter_dir); tests/cli/test_init.py keeps this list
+# the starter's files.
+[tool.setuptools.data-files]
+"share/cad-agent/starter-box" = ["examples/starter-box/.gitignore", "examples/starter-box/README.md",
+                                 "examples/starter-box/cad-agent.yaml"]
+"share/cad-agent/starter-box/cad" = ["examples/starter-box/cad/build.py"]
+"share/cad-agent/starter-box/tools" = ["examples/starter-box/tools/checks.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

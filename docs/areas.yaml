@@ -357,7 +357,7 @@ domains:
         scope: Requirements and the dossier that holds them, integrity gates and section reviews, through to release.
         maturity: tooling
         pages: [docs/design-process-plan.md, docs/dossier.md, docs/gates.md, docs/review-packet.md, docs/volume-precision.md, research/design-workflows.md]
-        cli: [build, check, report, all, dossier, gates, review-packet, review-section]
+        cli: [init, build, check, report, all, dossier, gates, review-packet, review-section]
         api: [cadagent.review.gates, cadagent.review.dossier, cadagent.review.packet]
         skills: [design-process]
         issues: [40, 41, 97]

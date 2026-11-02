@@ -22,6 +22,7 @@ rendered, for iterating on one picture without re-rendering the gallery.
 
 from __future__ import annotations
 
+import io
 import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -176,13 +177,18 @@ class Renderer:
     ) -> Optional[Path]:
         """Render one PNG into ``out_dir``; returns its path, or None when filtered out.
 
+        ``name``: the file name. A name with no extension gets ``.png``. Another image extension Pillow can write
+        (``.jpg``, ``.webp``) saves in that format; any other extension is refused before rendering. ``only`` matches
+        the name as written or with ``.png`` added.
         ``shapes``: ``(shape, color[, offset])``; ``meshes``: ``(stl_path, color[, offset])``.
         ``labels``: ``(code, text, world_point, (text_x, text_y))`` leader callouts.
         ``clip``: one ``(origin, normal)`` plane or a list of them; geometry on the
         side the normal points away from is cut.
         ``fit``: a ``(min, max)`` box to frame instead of everything drawn (parts outside it are cropped).
         """
-        if not self.wanted(name):
+        written = name
+        name = _image_name(name, self.pil)
+        if not (self.wanted(name) or self.wanted(written)):
             return None
         vtk = self.vtk
         labels = list(labels)
@@ -299,6 +305,27 @@ def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
     from cadagent.review.packet import review_packet as _review_packet
     return _review_packet(section, **kwargs)
 
+
+def _image_name(name: str, pil: Any) -> str:
+    """``name`` with ``.png`` added when it has no extension (#289).
+
+    A ValueError, before anything renders, for an extension Pillow cannot write an RGB image to (``part.v2``,
+    ``.xbm``, ``.wmf``): the render used to finish and then fail in ``Image.save``. A 1 x 1 save in memory is the test,
+    since Pillow registers some formats it cannot save, or cannot save in RGB.
+    """
+    suffix = Path(name).suffix
+    if not suffix:
+        return name + ".png"
+    pil.init()
+    fmt = pil.registered_extensions().get(suffix.lower())
+    try:
+        if fmt is None:
+            raise KeyError(suffix)
+        pil.new("RGB", (1, 1)).save(io.BytesIO(), format=fmt)
+    except Exception:
+        raise ValueError(f"{name}: Pillow cannot write a {suffix!r} image; name it {name}.png, "
+                         f"or leave the extension off and Renderer adds .png") from None
+    return name
 
 def _is_plane(clip: Any) -> bool:
     return len(clip) == 2 and all(isinstance(v, (int, float)) for v in clip[0])

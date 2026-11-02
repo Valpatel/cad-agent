@@ -1,0 +1,16 @@
+# The starter box (`cad-agent init`): a box and lid on four M3 heat-set inserts. `cad-agent all` builds it, writes
+# the print files and runs every check below, plus the "Holes clear" check on every hole. See README.md.
+cad:                                  # name and title: the folder's name
+  revision: A
+  cad-agent: "0.17"                   # the oldest cad-agent this builds with (insert checks write `pass`)
+  printer: {name: small printer, bed_mm: [180, 180, 180]}
+  steps:
+    - {name: build, run: cad/build.py, log: build.log}
+    - {name: checks, run: tools/checks.py, log: checks.log, needs: [build]}
+  checks:
+    - {id: inserts, title: Insert joints, file: exports/inserts.json}
+    - {id: overhangs, title: No overhangs to support, file: exports/overhangs.json}
+  html_pages: [README.md]
+  package:
+    include: [README.md, cad-agent.yaml, "cad/*.py", "tools/*.py", "exports/*.step", "exports/*.stl", "exports/*.3mf",
+              "exports/*.json", docs/cad-agent-report.html]

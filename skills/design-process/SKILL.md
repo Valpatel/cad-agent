@@ -38,6 +38,8 @@ References: [`docs/dossier.md`](../../docs/dossier.md) (the YAML and the build-s
 - **Long runs go off the shared machine** (`cad-agent all`, the gates on a large assembly, FEA, CFD): run them
   detached on a compute host and record host role, command, log and done marker in the issue (the
   `cad-remote-runs` skill, where installed). Where agents share a workstation, one `nice`d job at a time.
+- **No project yet?** `cad-agent init <dir>` copies the starter box (a box and lid on four M3 heat-set inserts, wired
+  for `cad-agent all`). Change it rather than writing `cad-agent.yaml` and the scripts by hand.
 - **Set `CAD_AGENT_ACTOR`** to your session id. Builds record it; a reviewer's sign-off is refused when it equals the
   build's.
 

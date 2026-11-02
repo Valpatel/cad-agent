@@ -393,6 +393,33 @@ def test_every_insert_and_material_checks_without_error():
                 assert r["torque"]["allowed_nm"] > 0 and r["capacity"]["pull_out"]["low"] > 0
 
 
+def test_cad_allowance_matches_the_process_profile():
+    """inserts and fit_coupons take the printed insert hole's allowance from the same row (#290)."""
+    import yaml
+    rules = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text())["rules"]
+    row = next(r for r in rules if r["id"] == "fdm-insert-hole-cad-offset-cnckitchen")
+    assert I.CAD_ALLOWANCE_MM == (row["min"], row["max"])
+
+
+def test_spec_result_has_a_boolean_pass_a_checks_row_reads(tmp_path):
+    """``pass`` is true unless a joint fails, so a ``cad: checks:`` row reads it with no wrapper (#292)."""
+    from cadagent.project import load_project
+    from cadagent.publish import report
+    warn = I.check_spec({"joints": [{"insert": "mcmaster-94459A140", "material": "pla-bambu-basic",
+                                     "boss_outside_mm": 8, "clamped": {"material": "metal"}}]})
+    fail = I.check_spec({"joints": [{"insert": "mcmaster-94459A140", "material": "pla-bambu-basic",
+                                     "boss_outside_mm": 6, "clamped": {"material": "metal"}}]})
+    assert (warn["verdict"], warn["pass"]) == ("warn", True)
+    assert (fail["verdict"], fail["pass"]) == ("fail", False)
+    (tmp_path / "exports").mkdir()
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: lid\n  checks:\n"
+                                             "    - {id: inserts, title: Inserts, file: exports/inserts.json}\n")
+    for result, status in ((warn, "pass"), (fail, "fail")):
+        (tmp_path / "exports" / "inserts.json").write_text(json.dumps(result, default=str))
+        row = report.checks_feature(load_project(tmp_path), tmp_path)["checks"][0]
+        assert row["status"] == status, row
+
+
 def test_cli_checks_a_spec_file_and_exits_1_only_on_a_fail(tmp_path):
     spec = tmp_path / "joints.yaml"
     spec.write_text("defaults: {material: pla-bambu-basic, clamped: {material: metal}}\n"

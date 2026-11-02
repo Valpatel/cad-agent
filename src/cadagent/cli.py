@@ -21,7 +21,7 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
-               "overhangs", "library")
+               "overhangs", "library", "init")
 LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
 # person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
@@ -1181,8 +1181,31 @@ def cmd_library(args: argparse.Namespace) -> int:
     return 0 if result["pass"] else 1
 
 
+def cmd_init(args: argparse.Namespace) -> int:
+    """Copy the starter project (examples/starter-box: a box and lid on four M3 heat-set inserts) into a folder, and
+    say what to run next."""
+    import shlex
+
+    from cadagent.project import init_project
+    quote = shlex.quote if os.name != "nt" else (lambda s: f'"{s}"' if any(ch in s for ch in ' &()^') else s)
+    dest = Path(args.dir)
+    files = init_project(dest, force=args.force)
+    _say(f"init: the starter box, {len(files)} files, in {dest.resolve()}")
+    _say("next:")
+    if dest.resolve() != Path.cwd().resolve():
+        _say(f"  cd {quote(args.dir)}")
+    _say("  cad-agent all          # build, print files, every check, report; then edit cad/build.py (README.md)")
+    return 0
+
+
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "init":                                      # makes a project: none needed yet
+        try:
+            return cmd_init(args)
+        except (OSError, ValueError) as exc:
+            _err(f"init: {exc}")
+            return 2
     if sub == "motion-trace":
         try:
             return cmd_motion_trace(args)
@@ -1318,6 +1341,11 @@ def build_parser() -> argparse.ArgumentParser:
     pcb_p.add_argument("--output", default="exports/pcb-evidence.json")
     sub.add_parser("all", parents=[common], help="build, export-3mf, holes, gates and the dossier lint (when configured), "
                                                  "check + report, package")
+    init_p = sub.add_parser("init", help="Start a project: copy the starter box (a box and lid on four M3 heat-set "
+                                         "inserts, examples/starter-box) into DIR, ready for `cad-agent all`")
+    init_p.add_argument("dir", nargs="?", default=".", metavar="DIR", help="folder to make (default: this one)")
+    init_p.add_argument("--force", action="store_true", help="write the starter's files into a folder that is not "
+                                                            "empty (files of the same name are replaced)")
     mt_p = sub.add_parser("motion-trace", help="Validate rendered joint pivots against independent CAD landmarks")
     mt_p.add_argument("contract", type=Path, help="Independent joint/component reference JSON")
     mt_p.add_argument("trace", type=Path, nargs="?", help="Actual renderer capture JSON")

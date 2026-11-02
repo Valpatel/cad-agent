@@ -66,9 +66,9 @@ parts cost 1.8 to 3.3 times the steel ones, and none of the listed parts goes in
 
 ```mermaid
 flowchart TD
-    P["PEM parts<br/>Bossard, loose"] --> Y["you press<br/>or rivet"]
-    S["SendCutSend<br/>cuts, bends, presses"] --> Y
-    R["rivets<br/>McMaster-Carr packs"] --> Y
+    P["PEM parts<br/>Bossard"] --> Y["you press<br/>or rivet"]
+    S["SendCutSend<br/>sheet, pressed"] --> Y
+    R["rivets<br/>McMaster"] --> Y
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class P,S,R here

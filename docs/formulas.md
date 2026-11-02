@@ -111,7 +111,7 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 63 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 84 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
@@ -158,6 +158,14 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `fivebar_point` | a five-bar's tip from its two crank angles, on either assembly | Gonçalves, Carvalho and Santos (COBEM 2009), Section 2.2, after Liu, Wang and Zheng (2006) | position only; a crank of 0 makes it a four-bar |
 | `fivebar_inputs` | the two crank angles that put the tip at a point, on any of the four working modes | Gonçalves et al. (2009), Section 2.1 | position only; the tip inside both arms' reach |
 | `fivebar_jacobians` | how near the five-bar is to a lock (distal links in line) or an arm's edge (crank and distal link in line), and the transmission angle | Gosselin and Angeles (1990) | first order: where a singularity is, not a force |
+| `rating_life`, `required_dynamic_rating` | a rolling bearing's basic rating life L10 = (C / P)^p (p = 3 ball, 10/3 roller), and the C a life needs | SKF *Rolling bearings* (2018-10), Section B.3, p. 89 (ISO 281) | 90 % of a group of bearings; no lubrication or contamination factors |
+| `life_hours` | a life in millions of revolutions as hours at a speed, 10⁶ L / 60 n | SKF (2018-10), p. 89 | constant speed |
+| `reliability_factor` | a1 for 90 to 99.95 % reliability | SKF (2018-10), Table 3, p. 90 (ISO 281), and the Weibull form that rounds to it | ISO 281's range |
+| `equivalent_load`, `deep_groove_factors`, `deep_groove_load` | P = X Fr + Y Fa; a deep-groove ball bearing's e, X and Y by f0 Fa / C0 and clearance | SKF (2018-10), p. 91, p. 254 and Table 9, p. 257 (ISO 281 Table 3) | single row; interpolated, clamped outside the table |
+| `static_equivalent_load`, `static_safety`, `static_rating_iso76` | P0 = 0.6 Fr + 0.5 Fa (not below Fr), s0 = C0 / P0, and C0 = f0 Z Dw² from the internal geometry | SKF (2018-10), pp. 104–106 and 254; ISO 76:2006 | radial ball bearings |
+| `miner_life`, `duty_cycle_load`, `revolution_fractions`, `varying_load_mean` | a duty cycle's life (Palmgren–Miner) and its cubic-mean load; time shares into revolution shares; (Fmin + 2 Fmax) / 3 | SKF (2018-10), pp. 90 and 92 | linear damage; blocks in any order |
+| `harris_factor`, `critical_amplitude`, `rumbarger_factor`, `rolling_travel` | an oscillating bearing: oscillations per revolution (90 / θ), the critical amplitude 360 / Z(1 ± γ), the shorter life below it, the arc a contact rolls | Menck and Stammler, *Wind Energy Science* 9 (2024), Eqs. (3)–(5); SKF (2018-10), Table 4, p. 91 | not below 10°, where wear and false brinelling govern |
+| `stribeck_ball_load`, `hertz_point_contact`, `ball_raceway_contact` | the most loaded ball (5 Fr / Z), and the exact Hertz ellipse and peak pressure of a ball in its groove | NSK Technical Report E728h (2024), Sections 5.2 and 5.4; Johnson 1st ed., Chapter 4; Hamrock and Brewe (1983) | elastic, frictionless; the groove's osculation is the maker's |
 | `wall_resistance`, `film_resistance` | R = L / k A, R = 1 / h A | Incropera 7th ed., Section 3.1.2, Eqs. (3.6), (3.9) | steady, 1-D |
 | `wall_heat_flow` | layers and films in series: heat flow and every face temperature | Incropera 7th ed., Section 3.1.3 | no contact resistance |
 | `fan_curve_line`, `system_coefficient` | the datasheet fan line; k in Δp = k Q² | White 7th ed., Section 11.5 | same air density |

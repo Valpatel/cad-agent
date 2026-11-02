@@ -6,7 +6,11 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25   # ~15 min since the dark theme (#306) drew every diagram twice; a hung step must not hold a PR for hours
+    # About 7 minutes (#315). Most of it is the site's pages in a real browser (website-browser.mjs, whose page checks
+    # the dark theme, #306, doubled: both themes, more widths) and, in the Chromium job, the build's own tests. Building
+    # the site is a few seconds once the diagram cache below is warm. 15 leaves room for a cold cache and a slow runner;
+    # a hung step must not hold a PR for hours.
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -21,8 +25,39 @@ jobs:
       # The site build draws its diagrams in headless Chromium (tools/site-diagrams.mjs, #132), so both engines' jobs
       # need it: the WebKit job then tests the drawn pages in WebKit.
       - run: npx playwright install --with-deps chromium ${{ matrix.engine == 'webkit' && 'webkit' || '' }}
+      # The site's Mermaid diagrams as earlier runs drew them (tools/site-diagrams.mjs: .cache/site-diagrams/, one file per
+      # drawing, named by a hash of its source, theme, Mermaid, the kit, the font and the drawing code, so a changed
+      # diagram is drawn again and a stale one never used). The key adds what that hash leaves out: the browser that draws
+      # and the font packages `--with-deps` installs for it (both follow Playwright's version, in package-lock.json), and
+      # the runner image with its other fonts (a new image draws everything once). It also names the files in that hash,
+      # so a change to them starts an empty cache instead of carrying every old drawing along.
+      - name: Key the diagram cache
+        id: diagrams
+        run: echo "key=site-diagrams-$ImageOS-$ImageVersion-${{ hashFiles('package-lock.json', 'tools/site-diagrams.mjs', 'web/site.css', 'src/cadagent/webkit/diagrams.*', 'src/cadagent/webkit/vendor/mermaid/**', 'src/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
+        with:
+          path: .cache/site-diagrams
+          key: ${{ steps.diagrams.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.engine }}
+          restore-keys: ${{ steps.diagrams.outputs.key }}-
+      # One build of HEAD for every site test below: CAD_AGENT_SITE points them at it (tests/site/built-site.mjs).
+      - name: Build the site
+        id: site
+        run: |
+          set -o pipefail
+          node tools/build-site.mjs --out "$RUNNER_TEMP/site" | tee "$RUNNER_TEMP/site.log"
+          echo "CAD_AGENT_SITE=$RUNNER_TEMP/site" >> "$GITHUB_ENV"
+          grep -q ', 0 drawn' "$RUNNER_TEMP/site.log" || echo "drew=true" >> "$GITHUB_OUTPUT"
+      # Saved only when this build drew something the cache lacked, and before the tests below add their own drawings.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
+        if: steps.site.outputs.drew == 'true'
+        with:
+          path: .cache/site-diagrams
+          key: ${{ steps.diagrams.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.engine }}
       - run: npm run test:webkit-unit
+      # The build's own tests do not depend on the engine (their diagrams are drawn in Chromium either way), so they run
+      # once, in the Chromium job.
       - run: node --test tests/site/website-*.test.mjs
+        if: matrix.engine == 'chromium'
       - run: node tests/site/website-browser.mjs
         env:
           PLAYWRIGHT_CHANNEL: chromium

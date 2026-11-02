@@ -119,7 +119,8 @@ my-cad-project/
   missing file, missing key, `"yes"`, `1` or a list all count as failures.
 - In the results and the report, a row status other than the known pass, fail
   and skip spellings counts as a failure, never as a pass.
-- The overhang screen (`geometry.downward_area`) is a screen, not a slicer.
+- The overhang screens (`geometry.downward_area`, `geometry.overhang_regions`, `cad-agent overhangs`) and the
+  G-code bridge report (`manufacturing.gcode.bridge_report`) are screens, not a slicer ([below](#overhangs-and-bridges-cad-agent-overhangs)).
 - `export-3mf` re-reads every 3MF it writes and deletes it unless triangle count,
   edge-manifold watertightness and volume (within 0.1 %) match the STL.
 
@@ -476,6 +477,7 @@ after that every step runs, and the exit code says whether anything failed.*
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
+| `cad-agent overhangs [PART ...] [--limit DEG] [--min-area MM2]` | groups each part's (`exports/<part>.stl`, every part in the parts file) downward faces flatter than `--limit` (slope from horizontal, 0° a flat ceiling; default 45°) into connected regions, each with area, bounds, centre and flattest angle, and writes `exports/overhang-screen.json`; a screen, not a slicer: bridges anchored on both sides are listed too ([below](#overhangs-and-bridges-cad-agent-overhangs)) | 1 if a part's STL is missing or unreadable |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
@@ -566,9 +568,11 @@ its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
-                               min_gap, downward_area, within_bed, robust_union, robust_cut, weld_open_vertices)
+                               min_gap, downward_area, overhang_regions, within_bed, robust_union, robust_cut,
+                               weld_open_vertices)
 from cadagent.geometry.cache import PartCache
 from cadagent.manufacturing.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
+from cadagent.manufacturing.gcode import bridge_report, extrusions, FEATURES
 from cadagent.publish.render import Renderer
 from cadagent.publish.report import collect, write_report, downloads_snippet, bambu_studio_url
 from cadagent.publish.htmlreport import render_page, canonical_status, SCHEMA_VERSION
@@ -1304,6 +1308,65 @@ and startup order before printing; a filament label or successful slice does not
 Configure under
 `cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
 `parts`. Writes `exports/slice-report.json`.
+
+### Overhangs and bridges (`cad-agent overhangs`)
+
+A slicer names a stability problem ("Long bridging extrusions", "Floating bridge anchors") but not where it is. Two
+screens point at the feature: `cadagent.geometry.overhang_regions` (and `cad-agent overhangs`, which writes
+`exports/overhang-screen.json`) on the part's STL, and `cadagent.manufacturing.gcode.bridge_report` on the sliced
+G-code.
+
+```mermaid
+flowchart TD
+    STL["part STL<br/>in print orientation"] --> OR["overhang_regions<br/>cad-agent overhangs"]
+    GC["sliced G-code<br/>or .gcode.3mf"] --> BR["bridge_report"]
+    OR --> W["where it is: area, height,<br/>centre, flattest slope"]
+    BR --> W2["the longest bridge moves:<br/>length, z, start and end"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class OR,BR here
+    class STL,GC near
+    class W,W2 out
+```
+
+Limits: both are screens, not a slicer or a print. A bridge anchored on both sides prints fine and shows up in both;
+a listed region may print well with the slicer's overhang settings and cooling, and an unlisted one can still sag.
+The G-code report sees only what the slicer labelled, and a file with no labels lists nothing (`"labelled": false`).
+Check the slicer preview, and a test print, before changing geometry.
+
+<details>
+<summary>Overhang regions: the angle, the regions and the JSON</summary>
+
+**Overhang regions** (`cadagent.geometry.overhang_regions(mesh_or_path, limit_deg=45, min_area=4)`, `cad-agent
+overhangs`). The angle is a face's slope from horizontal, as PrusaSlicer's support threshold and Bambu Studio's
+threshold angle measure it: 0° is a flat ceiling, 90° a vertical wall, and a downward face flatter than the limit is
+flagged (a face at the limit, such as a 45° chamfer, is not). Faces within 0.3 mm of the part's lowest point sit on
+the bed. Flagged faces that share an edge are one region, listed largest first with `area_mm2`, `faces`, `bounds_mm`,
+`centre_mm`, `flattest_deg` and `mean_slope_deg`; regions under `min_area` mm² are only counted. The regions point
+at what to change: a flat ring left by a cutter's end, a cavity roof, a wall that starts above the bed.
+`downward_area` gives one total, and its `max_angle_deg` is the normal's angle below horizontal (90° minus this
+slope). `cad-agent overhangs` writes `exports/overhang-screen.json` (`version`, `limit_deg`, `min_area_mm2`,
+`parts: {part: {stl, sha256, downward_area_mm2, regions, small_regions, small_area_mm2}}`, or `{error}` for a missing
+or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps the other rows when the settings match.
+Needs trimesh and scipy (`sim` extra).
+
+</details>
+
+<details>
+<summary>Bridges in the G-code: the labels, merging and arcs</summary>
+
+**Bridges in the G-code** (`cadagent.manufacturing.gcode.bridge_report(path, n=10)`). Lists the `n` longest bridge
+and overhang-perimeter extrusions the slicer labelled (PrusaSlicer `;TYPE:Bridge infill`, `;TYPE:Overhang
+perimeter`; Bambu Studio and OrcaSlicer `; FEATURE: Bridge`, `Internal Bridge`, `Overhang wall`; `features=` takes
+other labels), each with `length_mm`, `z_mm`, `height_mm`, XY `start_mm` and `end_mm` and the G-code `line`, and a
+summary per feature. Collinear moves of one feature (split where the speed changes) are one extrusion; G2/G3 arcs
+count with their arc length; M82/M83, G92, G90/G91 and G20 are followed. `path` is a `.gcode` file or a sliced
+Bambu Studio `.gcode.3mf`. Pure Python. Many long bridges are internal (the first solid layer over sparse infill,
+which can run the part's full width): slicer settings fix those (PrusaSlicer `solid_infill_below_area`, for one),
+not geometry. A long overhang perimeter or a bridge under a feature's underside is the geometry's.
+
+</details>
 
 ### The print release (`cad-agent release`)
 

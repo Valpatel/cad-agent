@@ -20,7 +20,8 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
-               "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "bearings")
+               "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "bearings",
+               "overhangs")
 LOG_TAIL_LINES = 20
 
 class _Unusable(Exception):
@@ -782,6 +783,70 @@ def cmd_optimise(project: CadProject, args: argparse.Namespace) -> int:
     return 0 if r["feasible"] and not r["interrupted"] else 1
 
 
+OVERHANG_SCREEN_VERSION = 1
+
+
+def cmd_overhangs(project: CadProject, args: argparse.Namespace) -> int:
+    """Group each part STL's downward faces flatter than --limit into connected regions and write
+    exports/overhang-screen.json (``cadagent.geometry.overhang_regions``). A screen, not a slicer."""
+    import hashlib
+
+    from cadagent.geometry import overhang_regions
+    from cadagent.publish.report import load_parts
+
+    known, error = load_parts(project)
+    if error:
+        raise _Unusable(error)
+    parts = list(getattr(args, "parts", None) or [])
+    stray = sorted(set(parts) - set(known))
+    if stray:
+        raise _Unusable(f"no such part(s) {stray}; parts: {sorted(known)}")
+    limit, min_area = float(args.limit), float(args.min_area)
+    if not 0.0 < limit <= 90.0:
+        raise _Unusable(f"--limit must be in (0, 90] degrees, not {limit:g}")
+    settings = {"limit_deg": limit, "min_area_mm2": min_area}
+    path = project.exports_dir / "overhang-screen.json"
+    rows: Dict[str, Any] = {}
+    if parts and path.is_file():          # a partial run keeps the other parts' current rows from a run with the same settings
+        try:
+            old = json.loads(path.read_text())
+            if old.get("version") == OVERHANG_SCREEN_VERSION and all(old.get(k) == v for k, v in settings.items()):
+                rows = {k: v for k, v in (old.get("parts") or {}).items()     # only rows whose STL is unchanged
+                        if k in known and isinstance(v, dict) and (project.exports_dir / f"{k}.stl").is_file()
+                        and hashlib.sha256((project.exports_dir / f"{k}.stl").read_bytes()).hexdigest() == v.get("sha256")}
+        except (OSError, ValueError, AttributeError):
+            rows = {}
+    failed = 0
+    for name in parts or list(known):
+        stl = project.exports_dir / f"{name}.stl"
+        if not stl.is_file():
+            rows[name] = {"error": f"{stl.name} not found; run the build first"}
+            failed += 1
+            _say(f"  FAIL  {name}: {stl.name} not found")
+            continue
+        try:
+            r = overhang_regions(stl, limit_deg=limit, min_area=min_area)
+        except (ValueError, OSError, IndexError, KeyError) as exc:     # an STL trimesh cannot read
+            rows[name] = {"error": f"{stl.name}: {type(exc).__name__}: {exc}"}
+            failed += 1
+            _say(f"  FAIL  {name}: {rows[name]['error']}")
+            continue
+        rows[name] = {"stl": stl.name, "sha256": hashlib.sha256(stl.read_bytes()).hexdigest(),
+                      **{k: r[k] for k in ("downward_area_mm2", "regions", "small_regions", "small_area_mm2")}}
+        big = r["regions"][0] if r["regions"] else None
+        where = (f"; largest {big['area_mm2']} mm2 at {big['centre_mm']} (z {big['bounds_mm'][2]}-{big['bounds_mm'][5]}, "
+                 f"flattest {big['flattest_deg']} deg)") if big else ""
+        _say(f"  {name:<24} {r['downward_area_mm2']:9.1f} mm2 flatter than {limit:g} deg, "
+             f"{len(r['regions'])} region(s) of {min_area:g} mm2 or more{where}")
+    project.exports_dir.mkdir(parents=True, exist_ok=True)
+    data = {"version": OVERHANG_SCREEN_VERSION, **settings, "bed_z_mm": 0.3,
+            "angle": "slope from horizontal: 0 = flat ceiling, 90 = vertical wall; faces flatter than limit_deg",
+            "note": "a screen of downward faces, not a slicer: bridges anchored on both sides are listed too",
+            "parts": {k: rows[k] for k in sorted(rows)}}
+    path.write_text(json.dumps(data, indent=1) + "\n")
+    _say(f"overhangs: {path}")
+    return 1 if failed else 0
+
 HANDLERS = {
     "build": cmd_build,
     "export-3mf": cmd_export_3mf,
@@ -804,6 +869,7 @@ HANDLERS = {
     "gates": cmd_gates,
     "review-packet": cmd_review_packet,
     "review-section": cmd_review_section,
+    "overhangs": cmd_overhangs,
 }
 
 def cmd_agents(args: argparse.Namespace) -> int:
@@ -1028,6 +1094,15 @@ def build_parser() -> argparse.ArgumentParser:
                                                   "parts' rows are kept from a result made with the same settings")
     holes_p.add_argument("--out", help="write the result here instead of exports/hole-checks.json (a reviewer's "
                                        "read-only run)")
+    oh_p = sub.add_parser("overhangs", parents=[common], help="Group each part STL's downward faces flatter than "
+                          "--limit into regions (area, height, centre): exports/overhang-screen.json; a screen, not a slicer")
+    oh_p.add_argument("parts", nargs="*", help="only these parts (default: every part in the parts file); the other "
+                                               "parts' rows are kept from a result made with the same settings")
+    oh_p.add_argument("--limit", type=float, default=45.0, help="slope from horizontal in degrees (0 = flat ceiling, "
+                                                                "90 = vertical wall) under which a face is listed "
+                                                                "(default 45)")
+    oh_p.add_argument("--min-area", type=float, default=4.0, help="regions smaller than this in mm2 are counted, "
+                                                                  "not listed (default 4)")
     check_p = sub.add_parser("check", parents=[common], help="Collect check results; exit 1 if any fail")
     check_p.add_argument("--json", action="store_true", help="Print the results JSON (schema 1.0)")
     report_p = sub.add_parser("report", parents=[common], help="Write results JSON + standalone HTML report")

@@ -127,7 +127,8 @@ def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
         x = cite("good-guide", "p. 3")
         m = Material("PLA", 1, 0.3, 1, 1, source="good-guide")
     '''))
-    (tmp_path / "docs" / "page.md").write_text("A rule [ref:good-guide] and one [ref:elsewhere].\n")
+    (tmp_path / "docs" / "page.md").write_text("A rule [ref:good-guide] and one [ref:elsewhere]; the syntax is "
+                                               "[ref:<id>].\n")
     (tmp_path / "research" / "process-profiles.yaml").write_text(yaml.safe_dump({
         "rules": [{"id": "fdm-wall-maker", "source": "good-guide"}, {"id": "fdm-x", "source": "dataset:tds"}],
         "datasets": [{"id": "tds", "cites": "prose, not an id"}]}))

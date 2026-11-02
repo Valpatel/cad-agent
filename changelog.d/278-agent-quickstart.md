@@ -1,0 +1,10 @@
+**New**
+- "Copy this to your agent": one block, in `docs/agent-prompt.txt`, that a person pastes into Claude Code, Codex, Copilot CLI or any agent with a shell. The agent installs cad-agent and its skills from the public repository, finds the tool through `llms.txt`, builds with the kit's tested checks, and drafts what it learned as a pull request or an issue that the person approves. It sits at the top of the README (the "Use it" section, which replaces the old Quick start) and in a card on the site's home page, with a copy button; `llms.txt` and `index.md` carry it too. Tests keep all of them identical (#278).
+- Provenance on reports: the feedback issue form takes optional Model, Harness, cad-agent commit, Layer (a cad-agent tool or the upstream under it), Building, Sources and Confidence fields, and the PR template has a "Made with" section. With these, the project counts which models, harnesses and layers work from GitHub data alone. cad-agent collects no telemetry (#278).
+- `tools/quickstart_eval.py` checks the block for someone with nothing of ours:
+  - `install` runs its commands in an empty folder and smoke-tests the result;
+  - `agent` gives the block and a small request to a fresh Claude Code or Codex session, in a new home with none of your skills, memory, settings or MCP servers;
+  - `grade` scores the run from its transcript and files. It records tool calls, tokens and the checks as one JSON line, a first job for the evaluation runner (#142).
+
+**Changed**
+- The README's Quick start is folded into "Use it". The table of extras moved to "What's in the box" (#278).

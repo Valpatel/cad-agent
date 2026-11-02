@@ -207,6 +207,12 @@ def _usage(rows: list) -> dict:
     return total
 
 
+def _kit_skills(home: Path) -> set:
+    """The kit's skill and agent names, read from the agent's own clone (empty if it never cloned)."""
+    clone = home / "cad-agent"
+    return ({p.parent.name for p in clone.glob("skills/*/SKILL.md")} | {p.stem for p in clone.glob("agents/*.md")}) - {"README"}
+
+
 def _report(project: Path) -> dict:
     f = project / "cad-agent-report.md"
     if not f.is_file():
@@ -238,10 +244,23 @@ def _parts(work: Path) -> list:
     return out
 
 
+def _session(rows: list, work: Path) -> dict:
+    """What the session loaded at its start (Claude Code's init line): it must hold nothing of the person running it."""
+    init = next((r for r in rows if r.get("type") == "system" and r.get("subtype") == "init"), None)
+    if not init:
+        return {}
+    memory = (init.get("memory_paths") or {}).get("auto", "")
+    return {"skills": init.get("skills") or [], "mcp_servers": init.get("mcp_servers") or [],
+            "memory_in_work": not memory or memory.startswith(str(work)), "cwd_in_work": str(init.get("cwd", "")).startswith(str(work)),
+            "plugins": sorted(p.get("source", "") for p in init.get("plugins") or [])}
+
+
 def grade(work: Path) -> dict:
     """Grade a run from its transcript and files only."""
     run = json.loads((work / "run.json").read_text())
     rows = _events(work)
+    session = _session(rows, work)
+    builtin = all(p.endswith("@builtin") for p in session.get("plugins", []))
     calls = _calls(rows)
     texts = [c["text"] for c in calls]
     first = lambda pat: next((i + 1 for i, t in enumerate(texts) if re.search(pat, t)), None)
@@ -257,6 +276,9 @@ def grade(work: Path) -> dict:
     parts = _parts(work)
     own_home = str(Path.home())
     checks = {
+        "fresh_session": not session or (not session["mcp_servers"] and session["memory_in_work"]
+                                         and session["cwd_in_work"] and builtin
+                                         and not set(session["skills"]) & _kit_skills(home)),
         "installed": venv_ok and (home / ".claude" / "skills").is_dir() if run["harness"] == "claude"
         else venv_ok and (home / ".codex" / "skills").is_dir(),
         "read_llms_txt": first(r"llms(?:-full)?\.txt") is not None,
@@ -276,7 +298,7 @@ def grade(work: Path) -> dict:
             "tool_calls": len(calls), "calls_to_install": installed,
             "calls_to_first_kit_use": first_use,
             "discovery_calls_before_first_kit_use": sum(1 for t in texts[:(first_use or len(texts)) - 1] if DISCOVERY.search(t)),
-            "kit_used": kit_used, "parts": parts, "report": report, "clone_commit": head, **_usage(rows)}
+            "kit_used": kit_used, "parts": parts, "session": session, "report": report, "clone_commit": head, **_usage(rows)}
 
 
 def main(argv=None) -> int:

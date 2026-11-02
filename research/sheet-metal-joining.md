@@ -128,6 +128,32 @@ flowchart TD
 [`process-profiles.yaml`](process-profiles.yaml): the per-stock minimums of its specs feed, across 27 stocks. Each
 part's own catalogue value may be larger. A test redraws it and fails if the committed file differs.*
 
+**The check.** `cadagent.mechanical.clinch.check_placement` runs PEM's rules in this section on one part: the sheet's
+hardness against the part's material (and no listed part in stainless sheet), the thickness for its shank, the hole
+band, the edge, the bend (BA/2 + E from the bend centre line, with the bend allowance from
+`cadagent.manufacturing.sheet_metal.bend` for 5052 and cold-rolled steel), each neighbour both ways round, and any
+push-out, torque or pull-through load against PEM's averages. Its parts are the cited subset in §3, and `parts_for`
+lists those that clinch into a given sheet, steel nuts first. A shop's per-part limits stay in that shop's profile.
+
+```mermaid
+flowchart TD
+    P["a PEM part in a sheet<br/>(check_placement)"] --> M["material:<br/>hardness,<br/>thickness"]
+    P --> G["layout: hole,<br/>edge, bend,<br/>neighbours"]
+    P --> L["loads:<br/>push-out, torque,<br/>pull-through"]
+    M --> V["pass, warn or fail,<br/>each with its rule"]
+    G --> V
+    L --> V
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P near
+    class M,G,L here
+    class V out
+```
+
+*What `check_placement` reads. The loads are optional; each check names the `sm-clinch-*` rule or the PEM bulletin row
+it compares against.*
+
 ## 3. The common parts, by the numbers
 
 These are a cited subset of PEM's bulletins for the sizes most enclosures use. Strengths are averages from PEM's own
@@ -171,12 +197,12 @@ flowchart TD
 **Studs FH (hardened steel) and FHS (stainless)**, flush head, for sheet from 1 mm (0.040 in) [ref:pem-bulletin-fh].
 Strengths are for FH in 1.6 mm aluminium (HRB 29) / 1.5 mm steel (HRB 59); M6 in 2.4 / 2.2 mm.
 
-| Thread | Hole | Thinnest sheet | Centre to edge | Push-out | Pull-through |
-|---|---|---|---|---|---|
-| M3 | 3.0 mm | 1.0 mm | 5.6 mm | 600 / 820 N | 3150 / 3840 N |
-| M4 | 4.0 mm | 1.0 mm | 7.2 mm | 975 / 1780 N | 4448 / 5650 N |
-| M5 | 5.0 mm | 1.0 mm | 7.2 mm | 1070 / 2000 N | 5170 / 6270 N |
-| M6 | 6.0 mm | 1.6 mm | 7.9 mm | 1660 / 2560 N | 10200 / 11300 N |
+| Thread | Hole | Thinnest sheet | Centre to edge | Push-out | Torque-out | Pull-through |
+|---|---|---|---|---|---|---|
+| M3 | 3.0 mm | 1.0 mm | 5.6 mm | 600 / 820 N | 1.7 / 1.7 N m | 3150 / 3840 N |
+| M4 | 4.0 mm | 1.0 mm | 7.2 mm | 975 / 1780 N | 2.9 / 4.2 N m | 4448 / 5650 N |
+| M5 | 5.0 mm | 1.0 mm | 7.2 mm | 1070 / 2000 N | 3.5 / 6.5 N m | 5170 / 6270 N |
+| M6 | 6.0 mm | 1.6 mm | 7.9 mm | 1660 / 2560 N | 7.3 / 11.3 N m | 10200 / 11300 N |
 
 **Standoffs SO (through-threaded) and BSO (blind)** [ref:pem-bulletin-so]. Strengths are for steel SO parts in
 1.5 mm 5052-H34 / cold-rolled steel. PEM notes that the screw, not the standoff, often fails first.
@@ -281,6 +307,9 @@ flowchart TD
     FH-M3-10 0.0029 in over its nominal. Until SendCutSend says which field it cuts to, draw PEM's own hole (the
     bulletin's nominal) and check the hole SendCutSend's quote shows. Do not rely on `resize` for stainless or flush
     parts.
+  - **Which field is cut is not known.** cad-agent takes the conservative reading. `cadagent.mechanical.clinch`
+    checks a drawn hole against PEM's band (nominal +0.08 mm / −0 for metric parts, +0.003 in for inch parts), never
+    against either feed field, so a part drawn to the feed's larger hole fails there. Asking SendCutSend is left to the project's owner.
 
 <details>
 <summary>The 21 common parts compared: PEM's hole, the catalogue page's H and the feed's hole_diameter</summary>
@@ -400,6 +429,7 @@ if the committed file differs.*
 | Edge distance | 2D nominal, 1.5D at least | [ref:nasa-1228] p. 21 |
 | Pitch, one row | ≥ 3D | [ref:faa-ac-43-13-1b] 4-57c |
 | Pitch, two rows | 4D, rows 4D apart | [ref:faa-ac-43-13-1b] Fig. 4-5 |
+| Pitch, three or more rows | 6D in the outer rows, 3D in the inner rows, rows 3D apart and in line | [ref:faa-ac-43-13-1b] Fig. 4-5 (B) |
 | Pitch, nominal | 4D | [ref:nasa-1228] pp. 21, 34 |
 | Rivet size | D ≈ 3 × the thicker sheet | [ref:faa-ac-43-13-1b] 4-57c |
 | Sheet for the bearing allowables | t ≥ 0.18D (solid rivets, 8.1.2.1); blind rivets: take care below 0.25D (8.1.3) | [ref:mil-hdbk-5j] |
@@ -527,7 +557,8 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
 - **Rules:** the `sm-clinch-*` and `sm-rivet-*` rules in [`process-profiles.yaml`](process-profiles.yaml) cite these
   sources. SendCutSend's limits are a shop profile, used only when a caller names it.
 - **Next, the checks (#283, PR B):**
-  - a clinch-hardware check: sheet hardness, hole, thickness by shank, and distances to edges, bends and other parts;
+  - a clinch-hardware check: sheet hardness, hole, thickness by shank, and distances to edges, bends and other parts
+    (`cadagent.mechanical.clinch`);
   - a rivet-joint check: grip band, hole, edge, pitch, shear, bearing and tear-out, with the vectors above as tests
     (`cadagent.mechanical.rivets`, the first of these).
 - **Then the catalogue and skill (#283, PR C):**

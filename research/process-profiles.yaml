@@ -3638,6 +3638,44 @@ rules:
     source: nasa-1228
     status: read
     verified: 2026-11-01
+  - id: sm-rivet-pitch-multiple-faa
+    process: sheet-metal
+    feature: rivet
+    variant: three or more rows, the outer rows
+    quantity: rivet centre to centre along an outer row
+    value: "6*D"
+    units: mm
+    applies: three or more rows (FAA AC 43.13-1B Fig. 4-5 (B)); the outer rows at 6D, the inner rows at 3D with a rivet halfway between the outer rows' rivets, the rows 3D apart and in line. The figure gives the sheet 83 % of its strength through the outer row, (6D - D) / 6D
+    datum: hole centre to hole centre
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-02
+  - id: sm-rivet-row-spacing-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-row-spacing
+    variant: double row
+    quantity: distance between two rows of rivets
+    min: "4*D"
+    units: mm
+    applies: two rows (FAA AC 43.13-1B Fig. 4-5 (A))
+    datum: row centre line to row centre line
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-02
+  - id: sm-rivet-row-spacing-multiple-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-row-spacing
+    variant: three or more rows
+    quantity: distance between two rows of rivets
+    min: "3*D"
+    units: mm
+    applies: three or more rows (FAA AC 43.13-1B Fig. 4-5 (B)), in line; the outer rows at a 6D pitch, the inner rows at 3D
+    datum: row centre line to row centre line
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-02
   - id: sm-rivet-sheet-ratio-mil5j
     process: sheet-metal
     feature: rivet

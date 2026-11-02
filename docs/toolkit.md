@@ -1088,9 +1088,12 @@ ongoing filesystem stability or validation of the resulting executable G-code. I
 and startup order before printing; a filament label or successful slice does not establish physical readiness.
 Configure under
 `cad.slicer`: `engine` (`bambu`, the default, or `prusa`), `printer`, `process`, `filament` (`pla`, `petg` or a
-profile name), `overrides` (settings, named as that slicer names them) and `parts`. Writes
-`exports/slice-report.json`. A PrusaSlicer report records `engine: prusa`, and a report made with one slicer is
-not current for the other.
+profile name), `overrides` (settings, named as that slicer names them) and `parts`: a list of the parts to slice
+(default all), or a mapping of part name to `{overrides: {...}}`, that part's own settings on top of
+`cad.slicer.overrides` (tall parts a brim, thin shells fewer perimeters, pin-loaded links denser infill; a part with
+none: `name: {}`). Writes `exports/slice-report.json`; a row records its `part_overrides`, and changing them makes
+it stale. A PrusaSlicer report records `engine: prusa`, and a report made with one slicer is not current for the
+other.
 
 **PrusaSlicer** (`engine: prusa`, `cadagent.manufacturing.slicer_prusa`). Runs `prusa-slicer` (on PATH, or the
 flatpak `com.prusa3d.PrusaSlicer`), also AGPL and only ever a separate process.
@@ -1107,6 +1110,17 @@ flatpak `com.prusa3d.PrusaSlicer`), also AGPL and only ever a separate process.
 - **Records:** G-code is written as text (`binary_gcode = 0`) because grams and time are read from its footer. The
   slice records the SHA-256 of its `config.ini` and of every profile file read; bundles change when PrusaSlicer
   updates them.
+- **What PrusaSlicer said:** it runs with `--loglevel 3` and the whole log goes next to the G-code
+  (`build/slicer/<part>/out/slicer.log`). A part that slices but will print badly shows only there, with exit code 0:
+  "Detected print stability issues" (long bridging extrusions, floating bridge anchors, collapsing overhang, low bed
+  adhesion, loose extrusions) or an error such as `gcode path conflicts found between WipeTower and …`. Each report
+  row keeps `warnings`, `errors` (each message once), `stability_issues` (the categories PrusaSlicer names),
+  `benign_log_lines` (a count of lines that say nothing about the print: a multi-tool printer's "SupportSpotsGenerator
+  does not currently handle different materials" and Arachne's "Detected … Voronoi … rotated back and forth"), `log`
+  and `ok`: true only with exit code 0, G-code written and no error or stability issue. Other warnings are listed but
+  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok. The
+  stability check is PrusaSlicer's own heuristic, run with the settings sliced: an ok part can still print badly, and
+  turning supports or a brim on may clear an issue rather than fix the geometry.
 - **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry
   no Bambu Studio project settings for a PrusaSlicer project.
 
@@ -1118,6 +1132,10 @@ cad:
     process: 0.20mm SPEED @XLIS 0.4
     filament: Prusament PLA @XLIS                        # or pla / petg (the MK4S variants)
     overrides: {perimeters: "3", fill_density: "20%"}    # PrusaSlicer names
+    parts:                                               # default: every part, cad.slicer.overrides only
+      tower: {overrides: {brim_width: "10"}}
+      link: {overrides: {perimeters: "4", fill_density: "40%"}}
+      lid: {}
 ```
 
 ### The print release (`cad-agent release`)

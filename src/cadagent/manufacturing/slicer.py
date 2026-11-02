@@ -379,6 +379,23 @@ def settings_differ(report: dict, project) -> List[str]:
     return [k for k, v in st.items() if (report.get(k, 'bambu') if k == 'engine' else report.get(k)) != v]
 
 
+def part_overrides(project, name: str) -> dict:
+    """``cad.slicer.parts.<name>.overrides``: the part's own settings, applied on top of ``cad.slicer.overrides``
+    (``{}`` when ``cad.slicer.parts`` is a list or names none)."""
+    parts = (getattr(project, 'slicer', None) or {}).get('parts')
+    if isinstance(parts, dict):
+        return dict((parts.get(name) or {}).get('overrides') or {})
+    return {}
+
+
+def _row_current(project, name: str, row) -> bool:
+    """A report row is current while its part's 3MF has the sha256 recorded and its part overrides are the ones
+    ``cad.slicer.parts`` names now."""
+    f = project.exports_dir / f'{name}.3mf'
+    return (isinstance(row, dict) and bool(row.get('grams')) and f.is_file() and _sha(f) == row.get('sha256')
+            and (row.get('part_overrides') or {}) == part_overrides(project, name))
+
+
 def _expected_parts(project) -> List[str]:
     from cadagent.publish.report import load_parts
     cfg = dict(project.slicer or {})
@@ -386,13 +403,23 @@ def _expected_parts(project) -> List[str]:
     return list(cfg.get('parts') or known)
 
 
+def _row_ok(row: dict) -> bool:
+    """A report row's ``ok``; a row without one (Bambu Studio, a missing 3MF) is ok when it has grams."""
+    return bool(row.get('ok')) if 'ok' in row else bool(row.get('grams'))
+
+
 def slice_project(project, parts=None) -> dict:
     """Slice each part's 3MF (``exports/<part>.3mf``) with the project's ``cad.slicer`` settings and write
     ``exports/slice-report.json``: grams and minutes per part, the totals, the settings, and each 3MF's sha256 so the
     report can tell a stale result from a current one.
 
-    ``cad.slicer`` keys (all optional): printer, process, filament (``pla``, ``petg`` or a profile name), overrides
-    (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default all)."""
+    ``cad.slicer`` keys (all optional): engine, printer, process, filament (``pla``, ``petg`` or a profile name),
+    overrides (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default all): a list of
+    names, or a mapping of name to ``{overrides: {...}}``, the part's own settings on top of ``overrides``.
+
+    A PrusaSlicer row also carries what PrusaSlicer's log said (``warnings``, ``errors``, ``stability_issues``,
+    ``benign_log_lines``, ``log``) and ``ok``: exit code 0, G-code written and no error or stability issue. The
+    report passes only when every row is ok; a Bambu Studio row is ok when it has grams."""
     from cadagent.publish.report import load_parts
 
     cfg = dict(project.slicer or {})
@@ -416,10 +443,20 @@ def slice_project(project, parts=None) -> dict:
         if not model.exists():
             rows[name] = {'error': f'{model.name} not found'}
             continue
+        own = part_overrides(project, name)
         r = slice_part(model, workdir=work / name, printer=st['printer'], process=st['process'],
-                       filament=st['filament'], overrides=st['overrides'] or None, engine=engine)
+                       filament=st['filament'], overrides={**st['overrides'], **own} or None, engine=engine)
         r['sha256'] = _sha(model)
         rows[name] = {k: r.get(k) for k in ('grams', 'minutes', 'filament_m', 'error', 'sha256')}
+        if own:
+            rows[name]['part_overrides'] = own
+        if engine == 'prusa':
+            rows[name].update({k: r.get(k) for k in ('warnings', 'errors', 'stability_issues', 'benign_log_lines')})
+            log = r.get('log')
+            if log and Path(log).resolve().is_relative_to(project.root.resolve()):
+                log = str(Path(log).resolve().relative_to(project.root.resolve()))
+            rows[name]['log'] = log
+            rows[name]['ok'] = bool(r.get('ok', r.get('grams') and not r.get('error')))
     total_g = sum(v.get('grams') or 0.0 for v in rows.values())
     total_min = sum(v.get('minutes') or 0.0 for v in rows.values())
     exe = engine_executable(engine)
@@ -427,7 +464,7 @@ def slice_project(project, parts=None) -> dict:
         exe = str(Path(exe).resolve())
     out = {'slicer': f"{ENGINE_NAMES[engine]} (command line)", **st, 'slicer_executable': exe,
            'parts': rows, 'total_grams': round(total_g, 1), 'total_hours': round(total_min / 60, 2),
-           'pass': bool(rows) and all(v.get('grams') for v in rows.values()),
+           'pass': bool(rows) and all(_row_ok(v) for v in rows.values()),
            'note': 'Slicer estimates for one copy of each part with the stated profile; supports off unless the profile turns them on.'}
     path.write_text(json.dumps(out, indent=2) + '\n')
     out['path'] = str(path)
@@ -436,7 +473,8 @@ def slice_project(project, parts=None) -> dict:
 
 def current_report(project) -> Optional[dict]:
     """The slice report only when it is complete and current: every expected part (``cad.slicer.parts``, else every
-    part) sliced, with the settings ``cad.slicer`` names now, from 3MF files unchanged since (sha256). Else None."""
+    part) sliced, with the settings ``cad.slicer`` names now (each part's own overrides too), from 3MF files unchanged
+    since (sha256). Else None."""
     path = project.exports_dir / 'slice-report.json'
     if not path.exists():
         return None
@@ -449,7 +487,6 @@ def current_report(project) -> Optional[dict]:
     if settings_differ(rep, project):
         return None
     for name, row in rep.get('parts', {}).items():
-        f = project.exports_dir / f'{name}.3mf'
-        if not row.get('grams') or not f.exists() or _sha(f) != row.get('sha256'):
+        if not _row_current(project, name, row):
             return None
     return rep

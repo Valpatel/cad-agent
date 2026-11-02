@@ -342,3 +342,51 @@ def test_slice_project_uses_prusa_engine(tmp_path, monkeypatch):
     assert slicer.current_report(project) is not None
     project.slicer = {}                                  # back to Bambu: the Prusa report is no longer current
     assert slicer.current_report(project) is None
+
+
+def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monkeypatch):
+    """cad.slicer.parts.<part>.overrides: tall parts want a brim, thin shells fewer perimeters."""
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'overrides': {'wall_loops': '3', 'brim_width': '0'},
+                      'parts': {'box': {'overrides': {'brim_width': '8'}}, 'lid': None}}
+    seen = {}
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/true')
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.update({pathlib.Path(m).stem: kw['overrides']})
+                        or {'grams': 5.0, 'minutes': 10.0})
+    rep = slicer.slice_project(project)
+    assert seen == {'box': {'wall_loops': '3', 'brim_width': '8'}, 'lid': {'wall_loops': '3', 'brim_width': '0'}}
+    assert rep['parts']['box']['part_overrides'] == {'brim_width': '8'}
+    assert 'part_overrides' not in rep['parts']['lid'] and 'ok' not in rep['parts']['lid']   # Bambu rows as before
+    assert rep['pass'] and slicer.current_report(project) is not None
+    project.slicer['parts']['box']['overrides']['brim_width'] = '10'      # the box's row is stale now
+    assert slicer.current_report(project) is None
+    project.slicer['parts'] = ['box', 'lid']                               # a list still names the parts
+    assert slicer.part_overrides(project, 'box') == {} and slicer.current_report(project) is None
+
+
+def test_a_prusa_part_that_is_not_ok_fails_the_report(tmp_path, monkeypatch):
+    import pathlib
+    from tests.test_report import make_project
+    from cadagent.project import load_project
+    from cadagent.manufacturing import slicer_prusa
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'engine': 'prusa'}
+    said = {'box': {'ok': True, 'warnings': [], 'errors': [], 'stability_issues': [], 'benign_log_lines': 2},
+            'lid': {'ok': False, 'warnings': ['Detected print stability issues:'], 'errors': [],
+                    'stability_issues': ['Long bridging extrusions'], 'benign_log_lines': 0}}
+
+    def fake(m, **kw):
+        name = pathlib.Path(m).stem
+        return dict(said[name], grams=5.0, minutes=10.0, log=str(kw['workdir'] / 'out' / 'slicer.log'))
+    monkeypatch.setattr(slicer, 'slice_part', fake)
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    rep = slicer.slice_project(project)
+    lid = rep['parts']['lid']
+    assert lid['ok'] is False and lid['stability_issues'] == ['Long bridging extrusions'] and not rep['pass']
+    assert rep['parts']['box']['ok'] is True and rep['parts']['box']['benign_log_lines'] == 2
+    assert lid['log'] == 'build/slicer/lid/out/slicer.log'                # relative to the project
+    said['lid'] = said['box']
+    assert slicer.slice_project(project, ['lid'])['pass']                  # re-slicing the part alone clears it

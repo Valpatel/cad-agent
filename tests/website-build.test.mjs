@@ -95,7 +95,7 @@ test('the home page, llms.txt and the README carry the one "copy this to your ag
   for (const f of ['llms.txt', 'index.md']) assert.ok((await readFile(path.join(out, f), 'utf8')).includes('```text\n' + block + '\n```'), `${f} carries the block`);
   assert.ok(git('show', 'HEAD:README.md').includes('```text\n' + block + '\n```'), 'the README carries the block');
   const card = index.match(/<section class="use-band"[\s\S]*?<\/section>/)[0];
-  const heading = card.match(/<h2 id="use-title">([^<]+)<\/h2>/)[1], lead = card.match(/<p class="use-lead">([^<]+)<\/p>/)[1];
+  const heading = card.match(/<h2 id="use-title">(.+?)<\/h2>/)[1].replace(/<[^>]+>/g, '').replace(/\.$/, ''), lead = card.match(/<p class="use-lead">([^<]+)<\/p>/)[1];
   const readme = git('show', 'HEAD:README.md');
   assert.ok(readme.includes(`## ${heading}\n\n${lead.replace(/&#39;/g, "'")}\n`), 'the README has the card\'s heading and lead-in');
   assert.match(card, /<cad-copy class="agent-copy" label="Copy prompt">/, 'one clear Copy prompt button');

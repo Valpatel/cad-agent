@@ -488,7 +488,7 @@ const AGENTS = [
 ];
 const agentBadge = ([id, name, mark]) => `<label class="agent-badge" for="ag-${id}"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</label>`;
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
-<div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">${esc(USE_HEADING)}</h2>
+<div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
 <p class="use-lead">${esc(USE_LEAD)}</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(a => `<li>${agentBadge(a)}</li>`).join('')}</ul>
 ${useLoop}

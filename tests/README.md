@@ -10,7 +10,7 @@ Arrows: which code each group of folders tests.
 ```mermaid
 flowchart TD
     D["mechanical/ · thermal/<br/>manufacturing/ · simulation/<br/>electrical/"] -->|"tests"| S["src/cadagent/<br/>domain packages"]
-    C["geometry/ · formulas/<br/>review/ · publish/ · webkit/"] -->|"tests"| S
+    C["geometry/ · formulas/ · library/<br/>review/ · publish/ · webkit/"] -->|"tests"| S
     A["cli/ · site/ · repo/<br/>not packages"] -->|"tests"| T["cli.py · tools/<br/>the repo's rules"]
     F["fixtures/<br/>shared data"] --> D
     F --> C
@@ -29,6 +29,7 @@ flowchart TD
 | [`electrical/`](electrical/README.md) | `cadagent.electrical`: PCB evidence, routed boards |
 | [`formulas/`](formulas/README.md) | `cadagent.formulas`: closed forms against worked examples and derivations |
 | [`geometry/`](geometry/README.md) | `cadagent.geometry`: CAD helpers, reproducible STEP |
+| [`library/`](library/README.md) | `cadagent.library`: footprints and bodies against their datasheets, the model audit, registration, hardware tables |
 | [`manufacturing/`](manufacturing/README.md) | `cadagent.manufacturing`: 3MF, build plates, slicer numbers, fit coupons, process profiles |
 | [`mechanical/`](mechanical/README.md) | `cadagent.mechanical`: holes, fasteners, connectors, inserts, compliant features, linkages, motion |
 | [`publish/`](publish/README.md) | `cadagent.publish`: results, reports, renders, views, a project's site, the release, animated figures |

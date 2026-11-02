@@ -46,7 +46,7 @@ def test_parser_exposes_every_subcommand():
     assert set(sub.choices) == {"build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit",
                                 "pcb-check", "all", "mcmaster", "catalogue", "compare", "optimise", "dossier",
                                 "gates", "review-packet", "review-section", "agents", "update", "motion-trace", "release", "snapfit",
-                                "inserts", "bearings", "overhangs"}
+                                "inserts", "bearings", "overhangs", "library"}
     assert set(sub.choices) == set(SUBCOMMANDS)
     args = parser.parse_args(["build", "--project", "/p", "--from", "two", "--only", "two", "three"])
     assert (args.cad_command, args.project, args.from_step, args.only) == ("build", "/p", "two", ["two", "three"])
@@ -321,3 +321,24 @@ def test_bad_part_overrides_are_config_errors(tmp_path, capsys, parts, said):
     assert main(["slice", "--project", str(root)]) == 2
     captured = capsys.readouterr()
     assert said in captured.out + captured.err
+
+
+def test_library_build_and_audit_from_the_command_line(tmp_path, capsys):
+    """`cad-agent library build --no-models` writes footprints whose model paths are relative to the project, and
+    `library audit` fails on the missing models, then passes once a waiver covers a footprint with no model."""
+    from cadagent.cli import main
+    proj = tmp_path / "board"
+    assert main(["library", "build", str(proj / "lib"), "--project", str(proj), "--no-models",
+                 "--parts", "lug_stud_m4", "slot_4x10"]) == 0
+    text = next((proj / "lib" / "cad-agent.pretty").glob("LugStud_M4*")).read_text()
+    assert '(model "${KIPRJMOD}/lib/cad-agent.3dshapes/LugStud_M4.step"' in text
+    assert main(["library", "audit", str(proj / "lib" / "cad-agent.pretty")]) == 1
+    out = capsys.readouterr().out
+    assert "missing_model" in out and "no_model" in out
+    (proj / "lib" / "cad-agent.3dshapes").mkdir()
+    (proj / "lib" / "cad-agent.3dshapes" / "LugStud_M4.step").write_text("ISO-10303-21;")
+    # a library alone has no project: ${KIPRJMOD} is the folder holding the .pretty unless --env names the project
+    assert main(["library", "audit", str(proj / "lib" / "cad-agent.pretty"), "--waive", "Slot_*=a hole",
+                 "--env", f"KIPRJMOD={proj}", "--output", str(tmp_path / "audit.json")]) == 0
+    assert json.loads((tmp_path / "audit.json").read_text())["waived"][0]["reason"] == "a hole"
+    assert main(["library", "build", str(tmp_path / "x"), "--no-models", "--parts", "nope"]) == 2

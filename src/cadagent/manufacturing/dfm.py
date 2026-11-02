@@ -200,7 +200,8 @@ def _feature(f: Feature, prof: pp.Profile, env: Dict[str, float], excludes: Iter
              stock: Optional[pp.Stock]) -> Dict[str, Any]:
     kind = KINDS[f.kind]
     skip = set(excludes)
-    rules = [r for r in prof.rules if kind.pick(r) and r.units == kind.units and r.id not in skip]
+    # Generic rules only: a shop's own rules (``shop:``) speak for that shop, and its tables decide below.
+    rules = [r for r in prof.rules_for() if kind.pick(r) and r.units == kind.units and r.id not in skip]
     rows, skipped, advisory = [], [], []
     for r in rules:
         missing = [v for v in r.variables if v not in env]

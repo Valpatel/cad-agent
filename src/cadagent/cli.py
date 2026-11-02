@@ -21,7 +21,7 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
-               "overhangs")
+               "overhangs", "library")
 LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
 # person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
@@ -1114,6 +1114,45 @@ def cmd_motion_trace(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_library(args: argparse.Namespace) -> int:
+    """``library build``: write the parts library (footprints and STEP bodies) for a KiCad project.
+    ``library audit``: every footprint of a board or library has a 3D model that resolves, or a waiver with its
+    reason (cadagent.library); exit 1 on a finding."""
+    from cadagent.library import audit, parts
+    if args.action == "build":
+        out = Path(args.out)
+        if args.model_dir:
+            model_dir = args.model_dir
+        elif args.project:
+            rel = os.path.relpath(out.resolve() / f"{parts.LIBRARY}.3dshapes", Path(args.project).resolve())
+            model_dir = "${KIPRJMOD}/" + Path(rel).as_posix()
+        else:
+            model_dir = None
+        written = parts.build(out, model_dir=model_dir, keys=args.parts or None, models=not args.no_models,
+                              fuses=args.fuse or ())
+        _say(f"{len(written['footprints'])} footprints in {out / (parts.LIBRARY + '.pretty')}, "
+             f"{len(written['models'])} models in {out / (parts.LIBRARY + '.3dshapes')}")
+        return 0
+    waivers: Dict[str, str] = {}
+    if args.waivers:
+        data = _read_spec(args.waivers)
+        waivers.update(data.get("waivers", data) if isinstance(data, dict) else {})
+    for w in args.waive or []:
+        key, _, reason = w.partition("=")
+        waivers[key] = reason
+    env = dict(e.partition("=")[::2] for e in args.env or [])
+    result = audit.model_audit(args.path, env=env, waivers=waivers)
+    for f in result["findings"]:
+        _say(f"FAIL  {f['check']}: {f['footprint']}: {f['detail']}")
+    for w in result["unused_waivers"]:
+        _say(f"warning: waiver {w!r} matched no footprint without a model")
+    _say(f"{'PASS' if result['pass'] else 'FAIL'}  {result['with_model']} of {result['footprints']} footprints carry "
+         f"a model; {len(result['waived'])} waived; {len(result['findings'])} findings")
+    if args.output:
+        Path(args.output).write_text(json.dumps(result, indent=2) + "\n")
+    return 0 if result["pass"] else 1
+
+
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
     if sub == "motion-trace":
@@ -1151,6 +1190,12 @@ def dispatch(args: argparse.Namespace) -> int:
             return cmd_bearings(args)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             _err(f"bearings: {exc}")
+            return 2
+    if sub == "library":                                   # works on files only: no project needed
+        try:
+            return cmd_library(args)
+        except (OSError, ValueError, KeyError, MissingDependency) as exc:
+            _err(f"library: {exc}")
             return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
@@ -1282,6 +1327,25 @@ def build_parser() -> argparse.ArgumentParser:
                                        "installed ones are kept")
     up_p.add_argument("--reinstall-command", action="store_true",
                       help="print the reinstall command as JSON and change nothing (install.ps1 runs it on Windows)")
+    lib_p = sub.add_parser("library", help="Write the parts library (KiCad footprints and STEP bodies) for a project, "
+                                           "or audit a board for footprints with no 3D model (src/cadagent/library)")
+    lib_actions = lib_p.add_subparsers(dest="action", required=True)
+    lb = lib_actions.add_parser("build", help="write <out>/cad-agent.pretty and <out>/cad-agent.3dshapes")
+    lb.add_argument("out", help="folder to write the library into")
+    lb.add_argument("--project", help="the KiCad project's folder: model paths become ${KIPRJMOD}/<path to out>")
+    lb.add_argument("--model-dir", help="model folder as the footprints should name it (overrides --project)")
+    lb.add_argument("--parts", nargs="+", help="only these parts (default: all; cadagent.library.parts.PARTS)")
+    lb.add_argument("--fuse", nargs="+", type=float, help="also write a MINI blade fuse body per rating (A)")
+    lb.add_argument("--no-models", action="store_true", help="footprints only (no CadQuery needed)")
+    la = lib_actions.add_parser("audit", help="every footprint carries a 3D model that resolves, or a waiver")
+    la.add_argument("path", help="a .kicad_pcb, a .kicad_mod or a .pretty folder")
+    la.add_argument("--waive", action="append", metavar="PATTERN=REASON",
+                    help="a reference or library id pattern that needs no model, and why (e.g. 'TP*=bare test pad')")
+    la.add_argument("--waivers", help="YAML/JSON file: {waivers: {pattern: reason}}")
+    la.add_argument("--env", action="append", metavar="VAR=PATH",
+                    help="a path variable for model paths, e.g. KICAD10_3DMODEL_DIR=... or KIPRJMOD=<project> when "
+                         "auditing a .pretty (default: the board's folder, or the folder holding the .pretty)")
+    la.add_argument("--output", help="write the full result as JSON")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")

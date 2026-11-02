@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 236" width="680" height="236" role="img" aria-label="Self-clinching fasteners: the hardest sheet each fastener material takes" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="680" height="236" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Self-clinching fasteners: the hardest sheet each fastener material takes</text>
+<text x="18" y="50" font-size="12" fill="#526863">4 rules (compare: sm-clinch-sheet-hardness). The sheet must also be about 20 HRB softer than the fastener.</text>
+<line x1="300.0" y1="70" x2="300.0" y2="190" stroke="#d8e0d3"/>
+<text x="300.0" y="205" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="331.8" y1="70" x2="331.8" y2="190" stroke="#d8e0d3"/>
+<text x="331.8" y="205" font-size="11" fill="#526863" text-anchor="middle">10</text>
+<line x1="363.6" y1="70" x2="363.6" y2="190" stroke="#d8e0d3"/>
+<text x="363.6" y="205" font-size="11" fill="#526863" text-anchor="middle">20</text>
+<line x1="395.4" y1="70" x2="395.4" y2="190" stroke="#d8e0d3"/>
+<text x="395.4" y="205" font-size="11" fill="#526863" text-anchor="middle">30</text>
+<line x1="427.2" y1="70" x2="427.2" y2="190" stroke="#d8e0d3"/>
+<text x="427.2" y="205" font-size="11" fill="#526863" text-anchor="middle">40</text>
+<line x1="459.0" y1="70" x2="459.0" y2="190" stroke="#d8e0d3"/>
+<text x="459.0" y="205" font-size="11" fill="#526863" text-anchor="middle">50</text>
+<line x1="490.8" y1="70" x2="490.8" y2="190" stroke="#d8e0d3"/>
+<text x="490.8" y="205" font-size="11" fill="#526863" text-anchor="middle">60</text>
+<line x1="522.6" y1="70" x2="522.6" y2="190" stroke="#d8e0d3"/>
+<text x="522.6" y="205" font-size="11" fill="#526863" text-anchor="middle">70</text>
+<line x1="554.4" y1="70" x2="554.4" y2="190" stroke="#d8e0d3"/>
+<text x="554.4" y="205" font-size="11" fill="#526863" text-anchor="middle">80</text>
+<line x1="586.2" y1="70" x2="586.2" y2="190" stroke="#d8e0d3"/>
+<text x="586.2" y="205" font-size="11" fill="#526863" text-anchor="middle">90</text>
+<line x1="618.0" y1="70" x2="618.0" y2="190" stroke="#d8e0d3"/>
+<text x="618.0" y="205" font-size="11" fill="#526863" text-anchor="middle">100</text>
+<text x="618.0" y="220" font-size="11" fill="#526863" text-anchor="end">HRB</text>
+<text x="18" y="93" font-size="12.5" font-weight="700" fill="#173d3c">Fastener material</text>
+<text x="290" y="116.0" font-size="12" fill="#173d3c" text-anchor="end">PEM · aluminium: CLA, FHA, SOA</text>
+<line x1="300" y1="112.0" x2="459.0" y2="112.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="459.0" cy="112.0" r="5" fill="#6f8a80"/>
+<text x="468.0" y="116.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 50</text>
+<text x="290" y="136.0" font-size="12" fill="#173d3c" text-anchor="end">PEM · 300 stainless: CLS, FHS, SOS, F</text>
+<line x1="300" y1="132.0" x2="522.6" y2="132.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="522.6" cy="132.0" r="5" fill="#6f8a80"/>
+<text x="531.6" y="136.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 70</text>
+<text x="290" y="156.0" font-size="12" fill="#173d3c" text-anchor="end">PEM · hardened steel: S, SS, FH, SO, BSO</text>
+<line x1="300" y1="152.0" x2="554.4" y2="152.0" stroke="#6f8a80" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="554.4" cy="152.0" r="5" fill="#6f8a80"/>
+<text x="563.4" y="156.0" font-size="11" fill="#173d3c" text-anchor="start">≤ 80</text>
+<text x="290" y="176.0" font-size="12" fill="#173d3c" text-anchor="end">PEM · hardened stainless: SO4, F4, SP, FH4</text>
+<rect x="579.8" y="168.0" width="12.7" height="8" rx="4" fill="#6f8a80"/>
+<text x="599.6" y="176.0" font-size="11" fill="#173d3c" text-anchor="start">88–92</text>
+<text x="18" y="224" font-size="11" fill="#526863">Each source's own wording and conditions are in the YAML file and on the page. Read 2026-11-01.</text>
+</svg>

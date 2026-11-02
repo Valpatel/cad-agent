@@ -2089,6 +2089,81 @@ sources:
       2026-11-01: the DOI, title, authors and year checked against Crossref; read for
       cadagent.mechanical.inserts (#230), PLA relaxation.
 
+  # ---------------------------------------------------------------- rolling bearings
+
+  - id: skf-2018
+    title: Rolling bearings (PUB BU/P1 17000/1 EN)
+    authors: []
+    org: SKF Group
+    year: 2018
+    url: https://www.skf.com/binaries/pub12/Images/0901d196802809de-Rolling-bearings---17000_1-EN_tcm_12-121486.pdf
+    access: free
+    terms: cited by section, table and page; the catalogue is SKF's copyright and is never copied
+    areas: [bearings]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: opened the PDF (1152 pages): "PUB BU/P1 17000/1 EN · October 2018", © SKF Group 2018. The
+      page and table numbers are cadagent.formulas.bearings' and cadagent.mechanical.bearings' (#180).
+
+  - id: nsk-e728
+    title: Technical Report (CAT. No. E728h)
+    authors: []
+    org: NSK Ltd.
+    year: 2024
+    url: https://www.nsk.com/content/dam/nsk/common/catalogs/ctrgPdf/bearings/e728.pdf
+    access: free
+    terms: cited by page; the report is NSK's copyright and is never copied
+    areas: [bearings]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: opened the PDF linked from NSK's Technical Report page (154 pages, made 2024-11-26): it is CAT.
+      No. E728h, the edition cadagent.formulas cites.
+
+  - id: menck-2024
+    title: >-
+      Review of rolling contact fatigue life calculation for oscillating bearings and application-dependent
+      recommendations for use
+    authors: [Oliver Menck, Matthias Stammler]
+    org: Wind Energy Science 9 (4)
+    year: 2024
+    url: https://doi.org/10.5194/wes-9-777-2024
+    access: free
+    terms: cited and summarised by equation, never copied; the paper is open access under CC BY 4.0
+    areas: [bearings]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: the DOI, title, authors, volume, issue, pages 777-798 and licence (CC BY 4.0) checked against
+      Crossref.
+
+  - id: johnson-contact-mechanics
+    title: Contact Mechanics
+    authors: [K. L. Johnson]
+    org: Cambridge University Press
+    year: 1985
+    isbn: 978-0-521-25576-9
+    url: https://doi.org/10.1017/CBO9781139171731
+    access: paid
+    terms: cited by chapter and equation; never copied
+    areas: [bearings, contact]
+    aliases: [johnson]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py]
+    verified: >-
+      2026-11-01: title, author, year and ISBN (the 1985 hardback; the 1987 paperback is 978-0-521-34796-9)
+      checked against Open Library; the DOI is the Cambridge Core edition. Content not re-read.
+
+  - id: hamrock-brewe-1983
+    title: Simplified Solution for Stresses and Deformations
+    authors: [B. J. Hamrock, D. Brewe]
+    org: Journal of Lubrication Technology 105 (2)
+    year: 1983
+    url: https://doi.org/10.1115/1.3254558
+    access: paid
+    terms: cited by author, title and equation; never copied
+    areas: [bearings, contact]
+    aliases: [hamrock-brewe]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py]
+    verified: "2026-11-01: the DOI, title, authors, volume, issue and pages 171-177 checked against Crossref."
+
   # ---------------------------------------------------------------- metals
 
   - id: mil-hdbk-5j
@@ -2322,6 +2397,21 @@ sources:
     aliases: [iso898]
     used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
     verified: "2026-11-01: read the Estonian standards body's listing: valid since 2013-01-14. Content not read."
+
+  - id: iso-76
+    title: "ISO 76:2006 Rolling bearings - Static load ratings"
+    authors: []
+    org: ISO
+    year: 2006
+    url: https://www.evs.ee/en/iso-76-2006
+    access: paid
+    terms: cited by number and title only; never copied
+    areas: [bearings]
+    aliases: [iso76]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/bearings.md]
+    verified: >-
+      2026-11-01: read the Estonian standards body's listing: valid since 2006-05-05, amended by ISO 76:2006/Amd
+      1:2017. Content not read.
 
   - id: astm-d5961
     title: ASTM D5961/D5961M Standard Test Method for Bearing Response of Polymer Matrix Composite Laminates

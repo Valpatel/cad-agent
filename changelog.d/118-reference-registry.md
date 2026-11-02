@@ -1,10 +1,11 @@
 **New**
-- `research/references.yaml`, the reference registry: 155 read sources, each with its authors or publisher, year, an
+- `research/references.yaml`, the reference registry: 161 read sources, each with its authors or publisher, year, an
   https link or ISBN, access, terms, the design areas it supports, the repo files that rely on it, and what was read
   and when. It merges the first sweep of #119 with the sources of `research/process-profiles.yaml`, and adds every
-  source that `cadagent.formulas`, `cadagent.mechanical.inserts`, `cadagent.mechanical.printed_joints` and
-  `cadagent.simulation.fea` cite by key. Sources are cited, never copied: paid standards by number and title only,
-  paid papers by author, title and equation, and no PDF of a source is kept in the repo (#118).
+  source that `cadagent.formulas` (with the rolling-bearing sources of #180), `cadagent.mechanical.inserts`,
+  `cadagent.mechanical.printed_joints` and `cadagent.simulation.fea` cite by key. Sources are cited, never copied:
+  paid standards by number and title only, paid papers by author, title and equation, and no PDF of a source is kept
+  in the repo (#118).
 - `cadagent.review.references`: `lookup("covestro")` and `citation("roark")` resolve an id or a module's own key (an
   alias such as `shigley-torque`) to its entry. `check()` finds every place the code cites by id and reports a key
   that resolves to nothing, a malformed entry, or a citing file missing from the entry's `used_for`. From a shell:
@@ -17,6 +18,8 @@
 - `cadagent.manufacturing.process` reads its sources from the registry, so the FDM data-sheet ids of its material
   factors (`bambu-petg-basic-tds` and the rest) now resolve to an entry instead of falling back to the sheet's link.
   A data file with no registry beside it still loads, with those ids unresolved (#118, #99).
+- `cadagent.mechanical.bearings.SRC` (#180) is now `WHERE`: its keys are the checks (`life`, `load`, ...), not source
+  ids, and a module-level `SRC` or `SOURCES` table is where the registry's check looks for ids (#118).
 - `tests/test_fea_materials.py` now checks that every material's `source` is a read entry of the registry. It was
   skipped while the registry was missing (#118).
 - A PR into cad-agent that adds a `[ref:<id>]` tag, a `source=` on an FEA material, a key to a module's `SRC` or

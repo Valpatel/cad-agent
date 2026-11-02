@@ -7,7 +7,8 @@ cited, never copied, and paid documents are cited by number and title only. Noth
 Where code cites by id (``citations()`` finds them all):
 
 * a module-level ``SRC`` or ``SOURCES`` dict whose keys are ids (``cadagent.formulas``, ``cadagent.mechanical.inserts``,
-  ``cadagent.mechanical.printed_joints``), and ``cite("<id>", ...)`` calls;
+  ``cadagent.mechanical.printed_joints``), and ``cite("<id>", ...)`` calls. A table keyed by anything else takes
+  another name (``cadagent.mechanical.bearings.WHERE`` is keyed by check);
 * a module-level ``FDM_MATERIALS`` dict whose values are tuples ending in an id (``cadagent.manufacturing.process``);
 * ``Material(..., source="<id>")`` (``cadagent.simulation.fea``);
 * ``research/process-profiles.yaml``: each rule's, formula's and shop table's ``source``, and each dataset's ``cites``;

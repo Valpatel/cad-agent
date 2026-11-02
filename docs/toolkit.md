@@ -129,6 +129,7 @@ my-cad-project/
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 | `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
+| `<name>.3mf`, `<stem>-NN-<group>.3mf` (PrusaSlicer) | print orientation, placed on the bed | PrusaSlicer projects from `cadagent.manufacturing.prusa3mf`: objects of several volumes, each on its own tool, and the wipe tower's place; one 3MF per plate; read back and verified; byte-reproducible ([PrusaSlicer projects](#prusaslicer-projects-cadagentmanufacturingprusa3mf)) |
 
 ### Build plates (`cadagent.manufacturing.plates`)
 
@@ -194,6 +195,45 @@ plates Bambu Studio holds.
   printer's evidence. Per-part supports, brims and process settings are not written; set them in Bambu Studio.
 
 </details>
+
+### PrusaSlicer projects (`cadagent.manufacturing.prusa3mf`)
+
+`export-3mf` writes Bambu Studio files. For PrusaSlicer, a build script calls `cadagent.manufacturing.prusa3mf`:
+
+```python
+from cadagent.manufacturing.prusa3mf import write_project, write_plates
+# one object, two volumes: the body on tool 1, the inlay on tool 3, at the bed centre + (0, 40) mm
+write_project("exports/lid.3mf", [("lid", [(body, "body", 1), (inlay, "inlay", 3)], (0, 40))],
+              bed=(360, 360, 360), wipe_tower=(20, 20))
+# every part at its quantity, packed by the tools it uses, one 3MF per plate: exports/plates/plate-01-t1-t3.3mf, ...
+write_plates("exports/plates", {"lid": [(body, "body", 1), (inlay, "inlay", 3)], "pin": [(pin, "pin", 2)]},
+             bed=(360, 360, 360), quantities={"pin": 4})
+```
+
+- **Objects and volumes.** An object is `(name, [(mesh, volume name, tool)], (dx, dy[, angle]))`: the meshes (a
+  trimesh, or `(vertices, faces)`) in print orientation and the object's own coordinates, so the volumes keep their
+  places relative to one another. The object's outline is centred on the bed centre plus `(dx, dy)`, its lowest point
+  on z = 0, turned `angle` degrees about z. The file is PrusaSlicer's: one mesh per object, and
+  `Metadata/Slic3r_PE_model.config` with a `firstid`/`lastid` triangle range, name and extruder per volume.
+- **The wipe tower.** PrusaSlicer 2.9 keeps its place in the project
+  (`Metadata/Prusa_Slicer_wipe_tower_information.xml`: `position_x`, `position_y`, `rotation_deg` for the bed), not
+  in the print config, and refuses `wipe_tower_x` as an override. With more than one tool it is written at
+  `wipe_tower` (default `(20, 20)`, the front-left corner, clear of a part centred on the bed); `False` writes none.
+  PrusaSlicer's own default place can collide with a part centred on a large bed (`gcode path conflicts found
+  between WipeTower and <part>`).
+- **Plates.** `write_plates` packs with the [build plates](#build-plates-cadagentmanufacturingplates) MaxRects
+  layout: parts that use different tools (or different `groups`, such as filaments) never share a plate, and on a
+  plate with more than one tool the parts keep the gap clear of the tower's corner area (`wipe_tower_size`, 60 x 60
+  mm by default: an estimate, as PrusaSlicer sizes the tower from the purge volumes). It removes earlier
+  `<stem>-NN-*.3mf` files first and returns each plate's layout and read-back report.
+- **Read-back.** Each file is read back and deleted unless every volume has its source mesh's triangle count and
+  volume (within 0.1 %), is watertight and is on its tool, every object is where it was placed, and the tower is
+  where it was asked. Entries are sorted with a fixed date, so the same objects give the same bytes.
+- **Checked in PrusaSlicer 2.9.4.** Its command line loads the volumes on their tools, puts the wipe tower where the
+  file says and slices (`tests/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
+  Flathub, with a two-tool printer from PrusaSlicer's defaults).
+- **Limits.** No printer, print or filament settings are written: load them in PrusaSlicer or pass them to its
+  command line. Whether the tower clears the parts is the slicer's check, and nothing here says a part prints well.
 
 ### Reproducible outputs
 

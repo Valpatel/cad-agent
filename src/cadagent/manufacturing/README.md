@@ -7,7 +7,8 @@ Arrows follow the files. `slicer.py` imports `publish/report.py`'s `load_parts` 
 `publish/report.py` and `publish/release.py` import `slicer.py` to read a current slice report; `slicer_prusa.py` runs
 PrusaSlicer for `slicer.py` when `cad.slicer.engine` is `prusa`. `mesh3mf.py` imports
 nothing from cad-agent. `plates.py` uses `mesh3mf.py`'s 3MF parts, asks `slicer.py` for Bambu Studio's project
-settings, and reads the release's parts and quantities from `publish/release.py`.
+settings, and reads the release's parts and quantities from `publish/release.py`. `prusa3mf.py` uses `mesh3mf.py`'s
+3MF parts and `plates.py`'s layout for PrusaSlicer projects.
 
 ```mermaid
 flowchart TD
@@ -16,6 +17,8 @@ flowchart TD
     SL -->|"engine: prusa"| SP["slicer_prusa.py<br/>PrusaSlicer CLI"]
     B -->|"STL"| PL["plates.py<br/>build plates"]
     SL -->|"project settings"| PL
+    PL -->|"layout"| PR["prusa3mf.py<br/>PrusaSlicer project"]
+    PR --> PF
     PL --> PF["exports/<br/>plates 3MF · SVG"]
     SL --> SR["exports/<br/>slice report"]
     SR --> R["publish/report.py<br/>results JSON"]
@@ -23,7 +26,7 @@ flowchart TD
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class M3,SL,SP,PL here
+    class M3,SL,SP,PL,PR here
     class B,R,REL near
     class SR,PF out
 ```
@@ -35,6 +38,7 @@ flowchart TD
 | `slicer_prusa.py` | The same from PrusaSlicer's command line (`cad.slicer.engine: prusa`): vendor-bundle and user presets, grams and time from the G-code, and the warnings, errors and print stability issues from its log |
 | `fit_coupons.py` | A printable coupon per fit (pin, bushing, bearing, insert), holes swept round nominal + allowance + the process profile's undersize, with a measurement sheet: the first print calibrates the fits ([printed joints](../../../docs/printed-joints.md#fit-coupons-let-the-first-print-calibrate-the-fits)) |
 | `plates.py` | Every printed part at its quantity packed onto build plates (MaxRects), in one Bambu Studio project 3MF with a read-back check and a top-down picture (`cad-agent export-3mf`) |
+| `prusa3mf.py` | PrusaSlicer project 3MFs: objects of several volumes, each on its own tool, the wipe tower's place, and build plates one 3MF per plate, with a read-back check |
 
 Related: [package map](../README.md) · [publish](../publish/README.md) (the print release) ·
 [toolkit: print files](../../../docs/toolkit.md#print-files) ·

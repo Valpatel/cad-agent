@@ -1,5 +1,5 @@
-"""cadagent.manufacturing.process: every profile loads, every value carries a source id that resolves (or is a
-registry id waiting on #118), unverified rows say so, and the numbers are the cited sources' (#99)."""
+"""cadagent.manufacturing.process: every profile loads, every value carries a source id that resolves in the reference
+registry (#118), unverified rows say so, and the numbers are the cited sources' (#99)."""
 from __future__ import annotations
 
 import math
@@ -13,8 +13,6 @@ from cadagent.mechanical.compliant.allowables import PRINTED
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text(encoding="utf-8"))
-# Registry ids (#118) the FDM data sheets cite; research/references.yaml is not on the branch yet, so they do not resolve.
-PENDING_REGISTRY = {source for _, source in pp.FDM_MATERIALS.values()}
 
 
 @pytest.fixture(scope="module")
@@ -31,8 +29,8 @@ def test_every_process_loads_with_its_rules(profiles):
 
 
 def test_every_value_has_a_source_that_resolves(profiles):
-    """Rules, shop rows, formulas and material factors: each names a source id, and the id is in the data file (or
-    one of its datasets), or is a registry id that waits on #118."""
+    """Rules, shop rows, formulas and material factors: each names a source id, and the id is in the reference
+    registry (or is one of the data file's datasets)."""
     for p in profiles:
         for r in p.rules:
             assert r.source and r.source in p.sources and p.sources[r.source].resolved, r.id
@@ -41,7 +39,7 @@ def test_every_value_has_a_source_that_resolves(profiles):
                 for q, f in m.factors.items():
                     assert f.source == m.source and f.citation.startswith(("Bambu Lab", "Polymaker")), (m.key, q)
                     assert "https://" in f.citation, (m.key, q)
-                    assert p.source(f.source).resolved or f.source in PENDING_REGISTRY, (m.key, q)
+                    assert p.source(f.source).resolved, (m.key, q)
             else:
                 for s in m.stocks:
                     assert p.sources[s.source].resolved and p.sources[s.source].url.startswith("https://"), s.sku
@@ -178,7 +176,8 @@ def test_an_unknown_process_material_or_rule_is_refused():
 
 
 def test_registry_ids_resolve_once_the_registry_is_beside_the_data(tmp_path):
-    """When research/references.yaml (#118) sits beside the data file, the data-sheet ids resolve with no code change."""
+    """The ids resolve through the research/references.yaml (#118) beside the data file: a copy with none beside it
+    loads but resolves nothing, and a registry put beside it is read with no code change."""
     data = tmp_path / "process-profiles.yaml"
     data.write_text((ROOT / "research" / "process-profiles.yaml").read_text(encoding="utf-8"), encoding="utf-8")
     assert not pp.load(data)["fdm"].source("bambu-petg-basic-tds").resolved

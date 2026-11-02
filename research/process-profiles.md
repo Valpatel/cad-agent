@@ -475,7 +475,8 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 ## 7. Sheet metal
 
 Symbols: T thickness, R inside bend radius, K K-factor. The deep sheet-metal sweep, with more sources (OSH Cut, Fictiv,
-PEM, the CAD tools), is in #119; the rows here are the profile values, with the same source ids. A shop's own table
+PEM, the CAD tools), was drafted in #119 and is still to land; its sources are in the registry already, and the rows
+here are the profile values, with the same source ids. A shop's own table
 beats all of them: SendCutSend publishes its tooling per stock size, and ten 5052 and mild-steel rows are in the YAML
 (`shop_tables`).
 
@@ -682,7 +683,8 @@ flowchart TD
 
 ## 10. Sources
 
-People and organisations whose published rules this page uses. Each entry in the YAML says what was read and when.
+People and organisations whose published rules this page uses. Each one's entry in the reference registry,
+[`references.yaml`](references.yaml), says what was read and when.
 
 <details>
 <summary>Every source, by process: the articles, guides, data sheets and standards behind the rules</summary>
@@ -848,7 +850,7 @@ YAML under `standards`)
 [sendcutsend-specs]: https://cdn.sendcutsend.com/specs/sendcutsend-specs.json
 [solidworks-k-factor]: https://help.solidworks.com/2022/English/SolidWorks/sldworks/c_K_Factor.htm
 [iso-2768-1]: https://www.iso.org/standard/7748.html
-[iso-20457]: https://www.evs.ee/en/iso-20457-2018
+[iso-20457]: https://www.evs.ee/en/iso-20457-2026
 [din-16742]: https://www.dinmedia.de/en/standard/din-16742/192658755
 [iso-astm-52910]: https://www.iso.org/standard/67289.html
 [iso-astm-52911-2]: https://store.astm.org/f3281-19r25.html

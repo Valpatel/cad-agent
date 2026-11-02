@@ -17,13 +17,14 @@ flowchart TD
     DS --> G["gates/<br/>access · motion · walls"]
     G -->|"verdicts"| GJ["exports/gates/<br/>gate verdicts"]
     DS & G --> PK["packet.py<br/>section packet"]
+    RY["research/references.yaml<br/>sources by id"] --> RF["references.py<br/>lookup · check"]
     PK -->|"views"| RN["publish/render.py<br/>captioned PNGs"]
     PK --> PO["exports/review/<br/>manifest.json"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class DS,EV,W,G,PK here
-    class Y,ST,RN near
+    class DS,EV,W,G,PK,RF here
+    class Y,ST,RN,RY near
     class GJ,PO out
 ```
 
@@ -33,6 +34,7 @@ flowchart TD
 | [`dossier/`](dossier/__init__.py) | The design dossier: requirements, sections, spec cards, interfaces, decisions, and its lint (`cad-agent dossier`) |
 | [`gates/`](gates/__init__.py) | Assembly integrity gates (access order, connectivity, containment, fasteners, motion, walls), each written as a verdict (`cad-agent gates`) |
 | `packet.py` | The section review packet: captioned renders with the measurements first (`cad-agent review-packet`) |
+| `references.py` | The reference registry (`research/references.yaml`, #118): look up a cited source by id or alias (`lookup`, `citation`), and `check()` that every id the code cites resolves, every entry is well formed and no source is copied (`python -m cadagent.review.references --check`) |
 | `evidence.py` | Shared integrity screen for source-bound CAD and PCB records: content hashes and whether a record is current, the platform a hash was made on (`hash_platform`, `record_hash_platform`), and a platform-stable `geometry_identity` |
 
 Related: [package map](../README.md) · [publish](../publish/README.md) (the review pages) ·

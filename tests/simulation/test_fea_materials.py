@@ -264,26 +264,17 @@ def test_carbon_tube_is_labelled_typical():
 
 
 def test_sources_are_in_the_reference_registry():
-    """Once the registry (#118, PR #119) is on this branch, every printed source must be an id in it."""
-    yaml = pytest.importorskip("yaml")
-    reg = ROOT / "research" / "references.yaml"
-    if not reg.exists():
-        pytest.skip("research/references.yaml is not on this branch yet (#119)")
-    data = yaml.safe_load(reg.read_text())
-    ids = set()
-
-    def walk(x):
-        if isinstance(x, dict):
-            if "id" in x:
-                ids.add(x["id"])
-            for v in x.values():
-                walk(v)
-        elif isinstance(x, list):
-            for v in x:
-                walk(v)
-    walk(data)
-    missing = sorted({r.source for r in PRINTED.values()} - ids)
-    assert not missing, f"sources missing from research/references.yaml: {missing}"
+    """Every material's source is a read entry of the registry (#118), and the registry lists fea.py as relying on it."""
+    from cadagent.review.references import load
+    reg = load(ROOT / "research" / "references.yaml")
+    for key, m in MATERIALS.items():
+        if not m.source:
+            assert "typical" in m.note, f"{key}: no source, and the note does not say its values are typical"
+            continue
+        ref = reg.resolve(m.source)
+        assert ref.kind == "source", f"{key}: {m.source} is {ref.kind} in research/references.yaml, not a read source"
+        assert "src/cadagent/simulation/fea.py" in ref["used_for"], m.source
+    assert {r.source for r in PRINTED.values()} <= set(reg.entries)
 
 
 @pytest.mark.parametrize("key", sorted(PRINTED))

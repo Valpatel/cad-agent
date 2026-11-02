@@ -1,5 +1,8 @@
-"""research/process-profiles.yaml: every rule is sourced, has units and a value that evaluates, every source is
-credited with an https link, and the page and charts stay in step with the data (#99, #118)."""
+"""research/process-profiles.yaml: every rule is sourced, has units and a value that evaluates, every source it cites
+is credited with an https link, and the page and charts stay in step with the data (#99, #118).
+
+The sources themselves are entries of the reference registry, research/references.yaml (#163 moved them there);
+tests/test_references.py checks the registry's fields. Here: the entries this file and its page use."""
 import datetime as dt
 import importlib.util
 import re
@@ -12,9 +15,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "research" / "references.yaml"
 PAGE = ROOT / "research" / "process-profiles.md"
-SOURCE_FIELDS = ("id", "title", "authors", "org", "year", "url", "access", "terms", "areas", "used_for", "verified")
-ACCESS = {"free", "free-registration", "paid", "print"}
 # Sample values for every variable, so each expression can be evaluated; two sets catch thickness-stepped rules.
 ENVS = [dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5, texture=0.05, area=36.0),
         dict(T=0.6, R=0.4, wall=1.2, D=3.0, L=150.0, depth=3.0, width=2.0, H=3.0, nozzle=0.25, rib=0.6, texture=0.0, area=4.0)]
@@ -29,7 +31,13 @@ def _figures():
 
 @pytest.fixture(scope="module")
 def data():
-    return yaml.safe_load(DATA.read_text(encoding="utf-8"))
+    """The profiles, with ``sources``: the registry entries this file or its page relies on (their ``used_for``)."""
+    data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    data["registry"] = {s["id"]: s for s in registry["sources"]}
+    data["sources"] = [s for s in registry["sources"]
+                       if {"research/process-profiles.yaml", "research/process-profiles.md"} & set(s["used_for"])]
+    return data
 
 
 def _date(text) -> dt.date:
@@ -38,13 +46,15 @@ def _date(text) -> dt.date:
 
 def test_the_file_parses_with_the_expected_sections(data):
     assert data["schema"] == 1
-    for key in ("units", "variables", "processes", "datasets", "sources", "formulas", "rules", "shop_tables", "standards"):
+    for key in ("units", "variables", "processes", "datasets", "formulas", "rules", "shop_tables"):
         assert data[key], key
+    assert "standards" not in data and "sources" not in yaml.safe_load(DATA.read_text(encoding="utf-8")), \
+        "sources and standards live in research/references.yaml"
     assert len(data["rules"]) >= 100 and len(data["sources"]) >= 20
 
 
 def test_ids_are_unique_and_kebab_case(data):
-    for kind in ("sources", "rules", "datasets", "formulas", "shop_tables"):
+    for kind in ("rules", "datasets", "formulas", "shop_tables"):
         ids = [x["id"] for x in data[kind]]
         assert len(ids) == len(set(ids)), f"duplicate {kind} ids: {sorted(i for i in ids if ids.count(i) > 1)}"
         bad = [i for i in ids if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", i)]
@@ -52,20 +62,14 @@ def test_ids_are_unique_and_kebab_case(data):
 
 
 def test_every_source_is_credited_with_an_https_link(data):
+    """The page links each source, so each needs a URL (the registry also allows a book's ISBN alone)."""
     for s in data["sources"]:
-        missing = [f for f in SOURCE_FIELDS if f not in s]
-        assert not missing, f"{s.get('id')}: missing {missing}"
-        assert s["url"].startswith("https://"), f"{s['id']}: {s['url']} is not https"
-        assert " " not in s["url"], f"{s['id']}: a space in the url"
-        assert s["access"] in ACCESS, f"{s['id']}: access {s['access']!r}"
+        assert str(s.get("url", "")).startswith("https://"), f"{s['id']}: {s.get('url')} is not https"
         assert isinstance(s["authors"], list) and s["org"].strip(), s["id"]
-        assert s["year"] is None or 1900 < int(s["year"]) <= dt.date.today().year, s["id"]
-        assert _date(s["verified"]) <= dt.date.today(), f"{s['id']}: verified must start with its ISO date"
-        assert "never copied" in s["terms"] or "cited" in s["terms"], f"{s['id']}: terms must say it is cited, not copied"
 
 
 def test_every_rule_has_a_source_units_a_value_and_a_date(data):
-    sources = {s["id"] for s in data["sources"]}
+    sources = set(data["registry"])
     datasets = {d["id"] for d in data["datasets"]}
     for r in data["rules"]:
         rid = r["id"]
@@ -115,22 +119,25 @@ def test_every_source_is_used(data):
         {t["source"] for t in data["shop_tables"]}
     # A source the page cites for prose only (its used_for leaves out this file) need not back a rule.
     unused = [s["id"] for s in data["sources"] if s["id"] not in used and "research/process-profiles.yaml" in s["used_for"]]
+    missing = sorted(i for i in used if not i.startswith("dataset:")
+                     and "research/process-profiles.yaml" not in data["registry"][i]["used_for"])
+    assert not missing, f"registry entries cited here without this file in their used_for: {missing}"
     assert not unused, f"sources no rule cites: {unused}"
 
 
 def test_standards_are_cited_by_number_and_title_only(data):
-    ids = [s["id"] for s in data["standards"]]
-    assert len(ids) == len(set(ids)) and not set(ids) & {s["id"] for s in data["sources"]}
-    for s in data["standards"]:
-        assert s["url"].startswith("https://") and s["access"] == "paid", s["id"]
+    standards = [s for s in data["sources"] if s["access"] == "paid"]
+    assert {"iso-2768-1", "iso-20457", "din-16742", "iso-astm-52910", "iso-astm-52911-2"} <= {s["id"] for s in standards}
+    for s in standards:
+        assert "by number and title only" in s["terms"], s["id"]
         assert _date(s["verified"]) <= dt.date.today(), s["id"]
     cited = {r["source"] for r in data["rules"]}
-    assert not cited & set(ids), "a rule takes a value from a paid standard nobody read"
+    assert not cited & {s["id"] for s in standards}, "a rule takes a value from a paid standard nobody read"
 
 
 def test_the_shop_table_converts_inches_exactly(data):
     for table in data["shop_tables"]:
-        assert table["source"] in {s["id"] for s in data["sources"]}
+        assert table["source"] in data["registry"]
         cols = table["columns"]
         for row in table["rows"]:
             assert len(row) == len(cols), row

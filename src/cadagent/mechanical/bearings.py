@@ -165,7 +165,7 @@ S0_GUIDE = {
     ("roller", "low", "continuous", "yes"): 2.5, ("roller", "low", "continuous", "some"): 3.0,
     ("roller", "low", "continuous", "no"): 4.0, ("roller", "low", "infrequent", "yes"): 2.0,
 }
-SRC = {
+WHERE = {
     "life": "ISO 281 basic rating life as SKF 17000/1 EN applies it, Section B.3, p. 89; a1 from Table 3, p. 90; the "
             "duty cycle by Palmgren-Miner, p. 90",
     "load": "SKF 17000/1 EN, Section 1, Loads, p. 254 and Table 9, p. 257 (e, X, Y by f0 Fa / C0)",
@@ -386,7 +386,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                                             for blk in axial_used) if axial_used else "; the axial load is below e Fr, "
                            "so P = Fr" if any(blk["axial_n"] for blk in blocks) else "") +
                           ("; f0 Fa / C0 lies outside SKF's table (0.172 to 6.89): its end row is used" if clamped else "")),
-                         SRC["load"]))
+                         WHERE["load"]))
 
         # -- axial load against what the type takes
         fa_max = max(blk["axial_n"] for blk in blocks)
@@ -401,7 +401,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
             rows.append(_row("axial load", fa_max, round(lim, 1), "fail" if fa_max > lim else "pass",
                              f"Fa {fa_max:.0f} N against {share:g} C0 = {lim:.0f} N" +
                              (" (a small or light-series bearing)" if small else "") +
-                             "; more cuts the bearing's life considerably", SRC["axial"]))
+                             "; more cuts the bearing's life considerably", WHERE["axial"]))
 
         # -- life
         life: Dict[str, Any] = {"equivalent_load_n": pm, "exponent": p}
@@ -430,7 +430,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
             rows.append(_row("amplitude", theta, 10.0, "warn" if theta < 10 else "pass",
                              f"a swing of +/-{theta:g} degrees: {a_osc:.3g} million oscillations per million revolutions"
                              + ("; SKF's conversion is not valid below 10 degrees, where wear and false brinelling "
-                                "usually end the bearing first" if theta < 10 else ""), SRC["oscillation"]))
+                                "usually end the bearing first" if theta < 10 else ""), WHERE["oscillation"]))
             if crit:
                 below = theta < crit["outer"]
                 rows.append(_row("critical amplitude", theta, round(crit["outer"], 2), "warn" if below else "pass",
@@ -439,12 +439,12 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                                   f"often, so the Rumbarger factor is used, {a_osc / a_h:.0%} of Harris's"
                                   if below else f"every part of both raceways is rolled over (critical amplitude outer "
                                                 f"{crit['outer']:.1f}, inner {crit['inner']:.1f} degrees): Harris's factor"),
-                                 SRC["oscillation"]))
+                                 WHERE["oscillation"]))
             else:
                 rows.append(_row("critical amplitude", theta, None, "warn",
                                  "no internal geometry (balls, ball_mm): the critical amplitude is not checked and Harris's "
                                  "factor is used; below it the life is shorter (for balls by (theta / theta_crit)^0.1)",
-                                 SRC["oscillation"]))
+                                 WHERE["oscillation"]))
             fr_max = max(blk["radial_n"] for blk in blocks)
             width = contact_width(b, fr_max, internal)
             if width:
@@ -459,11 +459,11 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                                  f"{fr_max:.0f} N ({width['basis']})" +
                                  (("" if (internal or {}).get("ball_mm") else "; the ball is taken as 0.3 (D - d)")) +
                                  ("; below 1 the contact never leaves its footprint: false brinelling and wear, not "
-                                  "fatigue, set the life" if ratio < 1 else ""), SRC["travel"]))
+                                  "fatigue, set the life" if ratio < 1 else ""), WHERE["travel"]))
             elif not b.roller:
                 rows.append(_row("contact travel", None, 1.0, "warn",
                                  "no internal geometry and no published contact constants for this size: the wear and "
-                                 "false-brinelling risk of a small swing is not checked", SRC["travel"]))
+                                 "false-brinelling risk of a small swing is not checked", WHERE["travel"]))
         life["life_million"] = life_m
         life["unit"] = unit
         hours = fx.life_hours(life_m, rate) if rate else None
@@ -487,10 +487,10 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
             ok = got >= need
             rows.append(_row("rating life", round(got, 4 if kind == "millions" else 0), need, "pass" if ok else "fail",
                              what + f"; {'reaches' if ok else 'falls short of'} the {need:g}"
-                             f"{' h' if kind == 'hours' else ' million ' + unit} asked", SRC["life"]))
+                             f"{' h' if kind == 'hours' else ' million ' + unit} asked", WHERE["life"]))
         elif speed is not None or oscillation is not None:
             rows.append(_row("rating life", round(life_m, 4), None, "warn",
-                             what + "; no required life given (required_hours or required_millions)", SRC["life"]))
+                             what + "; no required life given (required_hours or required_millions)", WHERE["life"]))
 
         # -- the load range the life equation is robust in, and the minimum load
         if speed is not None or oscillation is not None:
@@ -500,7 +500,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                              f"the heaviest block's P = {pmax / b.dynamic_n:.2f} C" +
                              (f", above {top:g} C: the life is sensitive to the load there, and the static safety and "
                               "plastic deformation may govern" if pmax > top * b.dynamic_n else
-                              f", within the {top:g} C in which the makers' life is robust"), SRC["ratio"]))
+                              f", within the {top:g} C in which the makers' life is robust"), WHERE["ratio"]))
         if speed is not None:
             share = 0.02 if b.roller else 0.01
             pmin = min(loads)
@@ -508,7 +508,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                              "warn" if pmin < share * b.dynamic_n else "pass",
                              f"the lightest block's P = {pmin:.0f} N against {share:g} C = {share * b.dynamic_n:.0f} N" +
                              (": too light a load lets the balls or rollers skid and smear the raceways; preload the "
-                              "bearing or choose a smaller one" if pmin < share * b.dynamic_n else ""), SRC["minimum"]))
+                              "bearing or choose a smaller one" if pmin < share * b.dynamic_n else ""), WHERE["minimum"]))
 
         # -- speed
         top_speed = None
@@ -534,7 +534,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                                    f"{lim:,.0f} r/min") if lim else "no speed rating given")
             rows.append(_row("speed", round(top_speed, 1), lim, v, f"{how} {top_speed:,.1f} r/min: {why}"
                              + ("; contact seals: no reference speed, the seals' friction sets it" if b.seals ==
-                                "contact seals" else ""), SRC["speed"]))
+                                "contact seals" else ""), WHERE["speed"]))
 
     # -- static safety: the heaviest running block, and each peak
     run = {"certainty": "low", "deformation": "some", **(running or {})}
@@ -569,7 +569,7 @@ def check_bearing(bearing_key: Any, radial_n: float = 0.0, axial_n: float = 0.0,
                          f"s0 = C0 / P0 = {b.static_n:.0f} / {p0:.0f} N = {s0:.2f} against {need:g} ({case['motion']} "
                          f"motion, {case['certainty']} certainty, permanent deformation accepted: "
                          f"{case['deformation']})" + ("; below 1 the raceways dent (brinell): a turning bearing then "
-                                                      "runs rough" if s0 < 1 else ""), SRC["static"]))
+                                                      "runs rough" if s0 < 1 else ""), WHERE["static"]))
 
     return {"verdict": _worst(rows), "name": name or f"{b.maker} {b.designation}", "bearing": b.as_dict(),
             "motion": ("oscillating" if oscillation is not None else "turning" if speed is not None else "static"),

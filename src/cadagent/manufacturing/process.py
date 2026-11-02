@@ -24,7 +24,8 @@ never passes or fails a part on it. :meth:`Profile.verified_rule` refuses one, f
   the ``path`` given to :func:`load`. A wheel without the checkout has no data: :func:`load` says so.
 * FDM materials: the maker's data sheets that :mod:`cadagent.mechanical.compliant.allowables` holds, one entry per
   filament with every edition read. Their source ids (``bambu-petg-basic-tds`` and so on) are the reference registry's
-  (#118). Until ``research/references.yaml`` is on the branch they do not resolve to an entry, so
+  (#118), and so are the rules' sources: ``research/references.yaml`` beside the data file holds every one. A data
+  file with no registry beside it (a copy elsewhere) still loads, but its ids do not resolve, so
   :attr:`Source.resolved` is False and each factor keeps the sheet's own link as its citation.
 * Sheet metal: the shop's table (``shop_tables``) for 5052 aluminium and cold-rolled mild steel, and the generic rules.
   :data:`SHEET_MATERIALS` says which generic K-factor row (soft, medium) a material takes and which rules are for other
@@ -47,7 +48,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "research" / "process-profiles.yaml"
-REGISTRY = ROOT / "research" / "references.yaml"     # the reference registry (#118), when it is on the branch
+REGISTRY = ROOT / "research" / "references.yaml"     # the reference registry (#118): every source id resolves there
 ENV = "CADAGENT_PROCESS_PROFILES"
 UNVERIFIED = "(u)"
 
@@ -122,8 +123,9 @@ def names_in(expr: Any) -> Tuple[str, ...]:
 
 @dataclass(frozen=True)
 class Source:
-    """Who a value comes from. ``resolved`` is False for an id this checkout cannot look up yet (a registry id from
-    #118 before research/references.yaml lands); ``url`` is then the citation the value itself carries."""
+    """Who a value comes from. ``resolved`` is False for an id this checkout cannot look up (no
+    research/references.yaml beside the data file, or an id it lacks); ``url`` is then the citation the value itself
+    carries."""
     id: str
     title: str = ""
     org: str = ""
@@ -483,7 +485,8 @@ def data_path(path: Any = None) -> Path:
 def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles:
     import yaml
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    sources: Dict[str, Source] = {s["id"]: _source(s) for s in data["sources"]}
+    # The sources live in the registry since #118; a data file of before then carries its own blocks.
+    sources: Dict[str, Source] = {s["id"]: _source(s) for s in data.get("sources", [])}
     sources.update({s["id"]: _source(s) for s in data.get("standards", [])})
     registry = path.parent / REGISTRY.name
     if registry.is_file():

@@ -606,3 +606,14 @@ def test_bambu_studio_slices_each_plate_as_laid_out():
         assert trimesh  # the STLs above were written with it
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def test_a_prusaslicer_project_gets_no_bambu_project_settings(tmp_path, monkeypatch):
+    from cadagent.project import load_project
+    monkeypatch.setattr(slicer, "executable", lambda: "/fake/BambuStudio")
+    monkeypatch.setattr(slicer, "project_settings", lambda *a, **kw: pytest.fail("Bambu settings for a Prusa project"))
+    project = load_project(stl_project(tmp_path))
+    project.slicer = {"engine": "prusa"}
+    rec = P.export_plates(project)
+    assert rec["project_settings"] == {"embedded": False}
+    assert any("cad.slicer.engine is prusa" in w for w in rec["warnings"])

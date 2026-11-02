@@ -43,6 +43,7 @@ Run: `node --test tests/site/website-*.test.mjs`, then `npm run test:site`; `pyt
 The files that read the whole site (`website-build`, `website-catalog` and the two `-browser` scripts) each build it
 from HEAD into a temporary folder, unless `CAD_AGENT_SITE` names a folder already built from HEAD
 (`node tools/build-site.mjs --out <dir> > <dir>.log`): then they all read that one, which is how CI builds the site
-once per job. A folder built from another commit is refused; leave the variable unset to build afresh.
+once per job. A folder built from another commit, or a `--worktree` draft, is refused; leave the variable unset to
+build afresh.
 
 Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)

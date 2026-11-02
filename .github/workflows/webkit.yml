@@ -28,8 +28,9 @@ jobs:
       # The site's Mermaid diagrams as earlier runs drew them (tools/site-diagrams.mjs: .cache/site-diagrams/, one file per
       # drawing, named by a hash of its source, theme, Mermaid, the kit, the font and the drawing code, so a changed
       # diagram is drawn again and a stale one never used). The key adds what that hash leaves out: the browser that draws
-      # (Playwright's version, in package-lock.json) and the runner image (its fallback fonts). It also names the files in
-      # that hash, so a change to them starts an empty cache instead of carrying every old drawing along.
+      # and the font packages `--with-deps` installs for it (both follow Playwright's version, in package-lock.json), and
+      # the runner image with its other fonts (a new image draws everything once). It also names the files in that hash,
+      # so a change to them starts an empty cache instead of carrying every old drawing along.
       - name: Key the diagram cache
         id: diagrams
         run: echo "key=site-diagrams-$ImageOS-$ImageVersion-${{ hashFiles('package-lock.json', 'tools/site-diagrams.mjs', 'web/site.css', 'src/cadagent/webkit/diagrams.*', 'src/cadagent/webkit/vendor/mermaid/**', 'src/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"

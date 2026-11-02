@@ -1,4 +1,0 @@
-**New**
-- `cad-agent overhangs [PART ...] [--limit 45] [--min-area 4]`: groups each part STL's downward faces flatter than the limit (slope from horizontal, 0° a flat ceiling) into connected regions, each with area, bounds, centre and flattest angle, in `exports/overhang-screen.json`. A screen, not a slicer: bridges anchored on both sides are listed too (#247, by Jeff Patrick).
-- `cadagent.geometry.overhang_regions(mesh_or_path, limit_deg=45, min_area=4)`: the regions behind that command; `downward_area` still gives one total (#247, by Jeff Patrick).
-- `cadagent.manufacturing.gcode.bridge_report(path, n)`: the longest bridge and overhang-perimeter extrusions in PrusaSlicer, Bambu Studio or OrcaSlicer G-code (or a sliced `.gcode.3mf`), with height and position, to find what a "long bridging extrusions" warning is about (#247, by Jeff Patrick).

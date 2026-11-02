@@ -36,6 +36,16 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - `cadagent.manufacturing.sheet_metal`: bend allowance, deduction, flat length, K-factor, shortest flange and relief for
   5052 and mild steel, from the shop's table first and the generic rules after (#99).
 - Docs: [Process profiles in code](docs/process-checks.md), with three figures drawn from these modules (#99).
+- `cad-agent overhangs [PART ...] [--limit 45] [--min-area 4]`: groups each part STL's downward faces flatter than the limit (slope from horizontal, 0° a flat ceiling) into connected regions, each with area, bounds, centre and flattest angle, in `exports/overhang-screen.json`. A screen, not a slicer: bridges anchored on both sides are listed too (#247, by Jeff Patrick).
+- `cadagent.geometry.overhang_regions(mesh_or_path, limit_deg=45, min_area=4)`: the regions behind that command; `downward_area` still gives one total (#247, by Jeff Patrick).
+- `cadagent.manufacturing.gcode.bridge_report(path, n)`: the longest bridge and overhang-perimeter extrusions in PrusaSlicer, Bambu Studio or OrcaSlicer G-code (or a sliced `.gcode.3mf`), with height and position, to find what a "long bridging extrusions" warning is about (#247, by Jeff Patrick).
+- Lessons on printing agent-designed parts without supports (`lessons/mechanical/printing-without-supports.md`, #253, by Jeff Patrick),
+  from a 46-part excavator for a Prusa XL 5T: teardrop horizontal holes, 45° cone ends on clearance cutters, clevis
+  sections standing on their splice face, 45°-capped bosses on shells printed upside down, bottom cuts that keep the
+  walls, roofs steeper than 45°, cutter tips kept off the faces they meet, finding a "long bridging" warning in the
+  G-code (often an internal bridge over sparse infill), and slicing one part of each class early.
+- Two agent-process lessons (`lessons/process/agent-process.md`, #253, by Jeff Patrick): never `pkill -f`/`pgrep -f` a pattern that is
+  in your own command line, and test a flagged part alone before rerunning the full pipeline.
 
 **Changed**
 - `CONTRIBUTING.md`: a new workflow step 1, "Look before building". Before writing a new command, check, calculator,

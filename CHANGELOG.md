@@ -47,6 +47,10 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Merge gates: a review verdict counts only from a maintainer (`MAINTAINERS` in `tools/ci_gates.py`) who still has
   write access. Write access alone no longer lets a collaborator pass the review gate on their own PR. Collaborators
   push branches and run CI, and a maintainer reviews before anything merges (#111).
+- The `cad-pr-reviewer` subagent checks PRs from collaborators and forks for unsafe code, CI or agent edits and
+  prompt injection, and blocks with a neutral note. AGENTS.md and CONTRIBUTING.md set out three contributor tiers
+  (maintainers, trusted collaborators, forks), and a repository ruleset lets only maintainers merge into `dev` and
+  `main` (#111).
 - The site is built and published by Cloudflare Pages from Git: every push to `main` runs `npm ci && npm run build`,
   the same settings as every other Valpatel Pages site.
   The new `npm run build` (`tools/pages-build.mjs`) fetches the full history, `origin/main` and `origin/dev`, which
@@ -80,10 +84,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   `TypeError`. They are now used as their float values. (`np.float64` subclasses
   `float` and was always accepted.) A bool, a string or `None` is refused with a message saying it is not a real
   number. The range checks are unchanged (#230).
-- `cadagent.geometry.export_print_stl`: open-edge vertices within 1 µm are welded before the watertight check, so a valid solid whose tessellation split a vertex no longer fails as non-watertight. The report adds `vertices_welded`, `mesh_volume_before_weld_mm3` and `mesh_volume_mm3`; a real hole still fails (#249).
+- `cadagent.geometry.export_print_stl`: open-edge vertices within 1 µm are welded before the watertight check, so a valid solid whose tessellation split a vertex no longer fails as non-watertight. The report adds `vertices_welded`, `mesh_volume_before_weld_mm3` and `mesh_volume_mm3`; a real hole still fails. Contributed by Jeff Patrick (#249).
 
 **Projects must change**
 - To sweep `nut_factor` over several diameters, pitches or frictions, call it once per value (#230).
+- Install cad-agent editable (as CONTRIBUTING.md asks), or set `CADAGENT_PROCESS_PROFILES` to the profiles file,
+  before importing `cadagent.manufacturing.fit_coupons` (#99).
 
 ## v0.12.0 (2026-11-02)
 

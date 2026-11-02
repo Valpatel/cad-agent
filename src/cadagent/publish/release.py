@@ -569,6 +569,8 @@ def _card(project: CadProject, cfg: ReleaseConfig, p: Dict[str, Any]) -> str:
     rows += [(k.replace("_", " ").capitalize(), v) for k, v in cfg.notes.get(name, {}).items()]
     sliced = (f'{p["grams"]:.1f} g · {_e(_duration(p.get("minutes")))}' if p.get("grams")
               else '<span class="pill warn">not sliced</span>')
+    if p.get("grams") and p.get("slicer_flags"):     # sliced, but the slicer said it may print badly (PrusaSlicer's ok)
+        sliced += f' <span class="pill warn">slicer: {_e(", ".join(p["slicer_flags"]))}</span>'
     dl = "".join(f"<dt>{_e(k)}</dt><dd>{_e(v)}</dd>" for k, v in rows) + f"<dt>Each</dt><dd>{sliced}</dd>"
     files = "".join(f'<a href="{_u(f["href"])}" download>{_e(f["kind"])} <small>{_e(f["size"])}</small></a>'
                     for f in p["files"])
@@ -802,9 +804,13 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             if not row:
                 warnings.append(f"{name}: not sliced" + (f" ({slice_note})" if slice_note else
                                                          f" (no current slice-report row for {name}.3mf)"))
+            flags = (list(row.get("stability_issues") or []) + list(row.get("errors") or [])
+                     or ["a slicer error"]) if row.get("ok") is False else []
+            if flags:
+                warnings.append(f"{name}: sliced, but the slicer flagged it: {'; '.join(flags)}")
             parts.append({"part": name, "group": g.title, "optional": g.optional, "pick_one": g.pick_one, "quantity": cfg.quantities.get(name, 1),
                           "material": material, "files": files, "image": image, "grams": row.get("grams"),
-                          "minutes": row.get("minutes")})
+                          "minutes": row.get("minutes"), "slicer_flags": flags})
     skipped: List[str] = []
     extra = []
     for src in _glob(project.root, cfg.extra_cad, skipped=skipped):

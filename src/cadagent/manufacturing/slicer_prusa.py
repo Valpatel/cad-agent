@@ -203,11 +203,12 @@ def parse_gcode_stats(text: str) -> Dict[str, Optional[float]]:
 # PrusaSlicer's own log lines that say nothing about the print being sliced: a multi-tool printer makes the support-spot
 # search note on every slice that it reads one material, and Arachne notes when it re-runs a Voronoi diagram with
 # rotated input. They are counted (``benign_log_lines``), not listed.
-BENIGN = re.compile(r'SupportSpotsGenerator does not currently handle different materials|Voronoi')
+BENIGN = re.compile(r'SupportSpotsGenerator does not currently handle different materials'
+                    r'|Detected non-planar Voronoi diagram, input polygons will be rotated back and forth')
 # "[2026-11-01 15:31:12.011855] [0x00007759b5089ec0] [warning] message", as --loglevel 3 writes to stderr
 _LOGGED = re.compile(r'^\[[^\]]*\]\s+\[0x[0-9a-fA-F]+\]\s+\[(\w+)\]\s*(.*)$')
 # "print warning: message", "error: message", as PrusaSlicer's command line prints a print's own warnings
-_SAID = re.compile(r'^(?:[a-z]+ )?(warning|error):\s*(.*)$', re.I)
+_SAID = re.compile(r'^(?:print |object )?(warning|error):\s*(.*)$', re.I)
 _PROGRESS = re.compile(r'^\d+ => ')
 _STABILITY = 'Detected print stability issues'
 # what ends the stability block: PrusaSlicer's advice, its next progress line, or another log line
@@ -357,6 +358,9 @@ def resolved_by_prusaslicer(exe: List[str], printer: str, process: str, filament
 
 
 def _ini_value(v) -> str:
+    if isinstance(v, str) and ('\n' in v or '\r' in v):
+        raise ValueError(f'cad.slicer.overrides values are one line; {v!r} would write a second setting into config.ini '
+                         '(PrusaSlicer writes a G-code template\'s line breaks as \\n)')
     if isinstance(v, bool):
         return '1' if v else '0'
     if v is None or isinstance(v, (list, tuple, dict)):

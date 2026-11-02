@@ -139,10 +139,8 @@ def _layout(objects: Sequence[Obj], bed: Sequence[float]):
             if not isinstance(ext, (int, np.integer)) or isinstance(ext, bool) or int(ext) < 1:
                 raise Prusa3mfError(f"{name}/{vname}: the extruder is a whole number from 1, not {ext!r}")
             arrays.append((v, f, str(vname), int(ext)))
-        allv = np.vstack([a[0] for a in arrays])
-        lo, hi = allv.min(axis=0), allv.max(axis=0)
-        shift = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
-        normed = [(np.round(v - shift, 4) + 0.0, f, vn, e) for v, f, vn, e in arrays]
+        shift = P._centring_shift(np.vstack([a[0] for a in arrays]))     # one move for all the volumes
+        normed = [(P._normalised(v, shift), f, vn, e) for v, f, vn, e in arrays]
         fp = P.footprint(np.vstack([a[0] for a in normed]))
         bx0, by0, bx1, by1 = P._box(P._turn(fp.hull, angle))
         tx, ty = round(W / 2 + dx, 4), round(D / 2 + dy, 4)
@@ -340,10 +338,8 @@ def write_plates(directory: Path, parts: Dict[str, Sequence[Volume]], bed: Seque
         if not vols:
             raise Prusa3mfError(f"{name}: a part needs at least one volume")
         arrays = [(_arrays(m), str(vn), e) for m, vn, e in vols]
-        allv = np.vstack([a[0][0] for a in arrays])
-        lo, hi = allv.min(axis=0), allv.max(axis=0)
-        shift = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
-        norm_parts[name] = [((np.round(v - shift, 4) + 0.0, f), vn, e) for (v, f), vn, e in arrays]
+        shift = P._centring_shift(np.vstack([a[0][0] for a in arrays]))
+        norm_parts[name] = [((P._normalised(v, shift), f), vn, e) for (v, f), vn, e in arrays]
         fps[name] = P.footprint(np.vstack([a[0][0] for a in norm_parts[name]]))
     group_of = {n: (groups or {}).get(n) or tools_group(parts[n]) for n in parts}
     order: List[str] = []
@@ -375,8 +371,7 @@ def write_plates(directory: Path, parts: Dict[str, Sequence[Volume]], bed: Seque
     for plate, tower in plates:
         objs = []
         for q in plate.placements:
-            bx0, by0, _, _ = P._box(P._turn(fps[q.part].hull, q.angle))
-            dx, dy = round(q.x - bx0 - W / 2, 4), round(q.y - by0 - D / 2, 4)
+            dx, dy = P._placed_offset(P._box(P._turn(fps[q.part].hull, q.angle)), q, (-W / 2, -D / 2))
             name = q.part if quantities.get(q.part, 1) == 1 else f"{q.part} #{q.copy}"
             objs.append((name, norm_parts[q.part], (dx, dy, q.angle)))
         path = directory / f"{stem}-{plate.index:02d}-{_slug(plate.group)}.3mf"

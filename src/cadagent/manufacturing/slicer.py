@@ -435,7 +435,8 @@ def slice_project(project, parts=None) -> dict:
         try:
             old = json.loads(path.read_text())
             if not settings_differ(old, project):
-                rows = dict(old.get('parts', {}))
+                # only the rows still current: a part whose 3MF or own overrides changed is sliced again or left out
+                rows = {n: r for n, r in (old.get('parts') or {}).items() if _row_current(project, n, r)}
         except json.JSONDecodeError:
             pass
     for name in names:

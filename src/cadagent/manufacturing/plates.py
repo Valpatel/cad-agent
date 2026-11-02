@@ -524,12 +524,19 @@ def _num(v: float, digits: int) -> str:
     return "0" if s in ("-0", "") else s
 
 
-def _normalised(vertices: np.ndarray) -> np.ndarray:
-    """The mesh moved so its footprint's centre is on the z axis and its lowest point on z=0, rounded to the 1e-4 mm
-    the file stores, so the layout is computed from exactly the vertices written."""
+def _centring_shift(vertices: np.ndarray) -> np.ndarray:
+    """The move (subtracted) that puts a mesh's footprint centre on the z axis and its lowest point on z=0."""
     v = np.asarray(vertices, dtype=float)
     lo, hi = v.min(axis=0), v.max(axis=0)
-    return np.round(v - np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]]), 4) + 0.0
+    return np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
+
+
+def _normalised(vertices: np.ndarray, shift: Optional[np.ndarray] = None) -> np.ndarray:
+    """The mesh moved so its footprint's centre is on the z axis and its lowest point on z=0 (or by ``shift``, a
+    shared move for several volumes), rounded to the 1e-4 mm the file stores, so the layout is computed from exactly
+    the vertices written."""
+    v = np.asarray(vertices, dtype=float)
+    return np.round(v - (_centring_shift(v) if shift is None else shift), 4) + 0.0
 
 
 def _transform(angle: int, tx: float, ty: float) -> str:

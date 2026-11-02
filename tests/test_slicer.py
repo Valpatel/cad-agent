@@ -363,6 +363,8 @@ def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monk
     assert rep['pass'] and slicer.current_report(project) is not None
     project.slicer['parts']['box']['overrides']['brim_width'] = '10'      # the box's row is stale now
     assert slicer.current_report(project) is None
+    rep = slicer.slice_project(project, ['lid'])          # re-slicing another part drops the box's stale row
+    assert set(rep['parts']) == {'lid'}
     project.slicer['parts'] = ['box', 'lid']                               # a list still names the parts
     assert slicer.part_overrides(project, 'box') == {} and slicer.current_report(project) is None
 
@@ -388,5 +390,7 @@ def test_a_prusa_part_that_is_not_ok_fails_the_report(tmp_path, monkeypatch):
     assert lid['ok'] is False and lid['stability_issues'] == ['Long bridging extrusions'] and not rep['pass']
     assert rep['parts']['box']['ok'] is True and rep['parts']['box']['benign_log_lines'] == 2
     assert lid['log'] == 'build/slicer/lid/out/slicer.log'                # relative to the project
+    from cadagent.publish.report import collect
+    assert 'NOT OK, flagged by the slicer: lid' in collect(project)['footer_meta']['slicer']
     said['lid'] = said['box']
     assert slicer.slice_project(project, ['lid'])['pass']                  # re-slicing the part alone clears it

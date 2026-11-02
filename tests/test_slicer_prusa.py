@@ -307,6 +307,13 @@ def test_prusaslicer_timing_out_on_save_is_an_error(bundle_root, tmp_path, monke
 def test_prusa_empty_override_is_refused():
     with pytest.raises(ValueError, match='single values'):
         slicer_prusa.build_config(RESOLVED, {'perimeters': None})
+    with pytest.raises(ValueError, match='one line'):          # a line break would write a second setting
+        slicer_prusa.build_config(RESOLVED, {'perimeters': '2\nbinary_gcode = 1'})
+
+
+def test_only_the_known_notes_are_benign_and_only_print_warnings_count():
+    said = slicer_prusa.parse_log('[t] [0x1] [warning] Voronoi cell has no point\nObjects error: none\n')
+    assert said['warnings'] == ['Voronoi cell has no point'] and said['errors'] == [] and said['benign_log_lines'] == 0
 
 
 def test_gcode_without_a_weight_says_so(bundle_root, tmp_path, monkeypatch):
@@ -327,7 +334,8 @@ WIPE_TOWER = ('[2026-11-01 16:10:02.114210] [0x00007956cf711ec0] [error] gcode p
 
 def test_parse_log_reads_a_real_stability_block():
     """PrusaSlicer 2.9.4's own output for an overhanging test part (paths replaced): the stability block is on
-    stdout, the log lines on stderr; the multi-material and Voronoi notes are benign."""
+    stdout, the log lines on stderr; the multi-material and Voronoi notes are benign. The Voronoi line comes from
+    another 2.9.4 run (its thread id and time differ), added so both benign notes are covered."""
     said = slicer_prusa.parse_log((LOGS / 'stability.log').read_text())
     assert said['stability_issues'] == ['Floating bridge anchors', 'Low bed adhesion', 'Loose extrusions',
                                         'Long bridging extrusions']

@@ -11,7 +11,13 @@ from the user's own presets saved next to them (``<config>/printer/<name>.ini`` 
 merges a profile's parents into one flat set of settings and returns hashes of the files it read. ``slice_part``
 has PrusaSlicer resolve the three presets itself (``--save``, so a multi-tool printer gets each filament setting once
 per extruder, as PrusaSlicer's window gives them, and a preset that does not fit the printer is refused), applies the
-overrides, writes one ``config.ini`` and slices with ``prusa-slicer --export-gcode``.
+overrides, writes one ``config.ini`` and slices with ``prusa-slicer --loglevel 3 --export-gcode``.
+
+PrusaSlicer reports a part that slices but will print badly only in its log, and exits 0: "Detected print stability
+issues" (long bridging extrusions, floating bridge anchors, collapsing overhangs, low bed adhesion, loose
+extrusions), or an error such as G-code paths of the wipe tower and a part conflicting. ``slice_part`` saves the log
+next to the G-code (``slicer.log``) and returns its ``warnings``, ``errors`` and ``stability_issues``; ``ok`` is
+true only with exit code 0, G-code written and no error or stability issue (``parse_log``).
 
 The profiles are found in ``CADAGENT_PRUSA_PROFILES`` when set (a folder of ``*.ini`` bundles), else in the first of
 ``~/.config/PrusaSlicer/vendor``, the flatpak's ``~/.var/app/com.prusa3d.PrusaSlicer/config/PrusaSlicer/vendor``,
@@ -194,6 +200,79 @@ def parse_gcode_stats(text: str) -> Dict[str, Optional[float]]:
     return out
 
 
+# PrusaSlicer's own log lines that say nothing about the print being sliced: a multi-tool printer makes the support-spot
+# search note on every slice that it reads one material, and Arachne notes when it re-runs a Voronoi diagram with
+# rotated input. They are counted (``benign_log_lines``), not listed.
+BENIGN = re.compile(r'SupportSpotsGenerator does not currently handle different materials|Voronoi')
+# "[2026-11-01 15:31:12.011855] [0x00007759b5089ec0] [warning] message", as --loglevel 3 writes to stderr
+_LOGGED = re.compile(r'^\[[^\]]*\]\s+\[0x[0-9a-fA-F]+\]\s+\[(\w+)\]\s*(.*)$')
+# "print warning: message", "error: message", as PrusaSlicer's command line prints a print's own warnings
+_SAID = re.compile(r'^(?:[a-z]+ )?(warning|error):\s*(.*)$', re.I)
+_PROGRESS = re.compile(r'^\d+ => ')
+_STABILITY = 'Detected print stability issues'
+# what ends the stability block: PrusaSlicer's advice, its next progress line, or another log line
+_BLOCK_END = re.compile(r'^(?:Consider |Also consider |\d+ => |\[)')
+
+
+def _stability_block(lines: List[str]) -> List[str]:
+    """The categories in the block after "Detected print stability issues:": a blank line, then for each object its
+    name on one line and its issues on the next, comma-separated."""
+    said = []
+    for ln in lines:
+        ln = ln.strip()
+        if _BLOCK_END.match(ln) or _SAID.match(ln):
+            break
+        if ln:
+            said.append(ln)
+    named = said[1::2] if len(said) > 1 else said     # (object, issues) pairs; one line alone is the issues
+    out: List[str] = []
+    for line in named:
+        for cat in line.split(','):
+            if cat.strip() and cat.strip() not in out:
+                out.append(cat.strip())
+    return out
+
+
+def parse_log(text: str) -> dict:
+    """What PrusaSlicer's log (stdout and stderr of a ``--loglevel 3`` slice) says about the print: ``warnings`` and
+    ``errors`` (the messages at those levels, each once, in order; fatal counts as error), ``stability_issues`` (the
+    categories named after "Detected print stability issues:", e.g. ``Long bridging extrusions``) and
+    ``benign_log_lines`` (how many warning lines ``BENIGN`` matched, which are not listed)."""
+    lines = (text or '').splitlines()
+    out = {'warnings': [], 'errors': [], 'stability_issues': [], 'benign_log_lines': 0}
+    for i, raw in enumerate(lines):
+        ln = raw.strip()
+        m = _LOGGED.match(ln) or _SAID.match(ln)
+        if not m:
+            continue
+        level, msg = m.group(1).lower(), m.group(2).strip()
+        if level not in ('warning', 'error', 'fatal'):
+            continue
+        if BENIGN.search(msg):
+            out['benign_log_lines'] += 1
+            continue
+        kept = out['warnings'] if level == 'warning' else out['errors']
+        if msg not in kept:
+            kept.append(msg)
+        if _STABILITY in msg:
+            for cat in _stability_block(lines[i + 1:]):
+                if cat not in out['stability_issues']:
+                    out['stability_issues'].append(cat)
+    return out
+
+
+def _reason(stdout: str, stderr: str) -> Optional[str]:
+    """PrusaSlicer's last word on a failed slice: the last line it printed that is not an info, debug or progress line
+    (stderr first, then stdout)."""
+    for text in (stderr, stdout):
+        said = [ln.strip() for ln in (text or '').splitlines() if ln.strip()]
+        said = [ln for ln in said if not _PROGRESS.match(ln) and not (
+            _LOGGED.match(ln) and _LOGGED.match(ln).group(1).lower() not in ('warning', 'error', 'fatal'))]
+        if said:
+            return said[-1]
+    return None
+
+
 def executable() -> Optional[List[str]]:
     """The command that runs PrusaSlicer: a ``prusa-slicer`` on PATH, else the flatpak; None if neither."""
     for name in ('prusa-slicer', 'PrusaSlicer', 'prusa-slicer.AppImage', 'PrusaSlicer.AppImage'):
@@ -327,19 +406,26 @@ def slice_part(model, workdir, printer: str, process: str, filament: str, overri
     gcode = out / 'sliced.gcode'
     if gcode.exists():
         gcode.unlink()
-    cmd = exe + ['--export-gcode', '--load', str(config), '--output', str(gcode), str(model)]
+    cmd = exe + ['--loglevel', '3', '--export-gcode', '--load', str(config), '--output', str(gcode), str(model)]
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    log_text = (p.stdout or '') + '\n' + (p.stderr or '')
+    log = out / 'slicer.log'
+    log.write_text(log_text, encoding='utf-8')
+    said = parse_log(log_text)
     stats = parse_gcode_stats(gcode.read_text(encoding='utf-8', errors='replace')) if gcode.exists() else \
         {'grams': None, 'seconds': None, 'filament_m': None}
     r = dict(stats, model=str(model), printer=printer, process=process, filament=filament,
              overrides=dict(overrides or {}), exit_code=p.returncode, profile_sources=sources,
              settings_sha256={'config': settings_hash}, slicer=Path(exe[-1] if exe[0] != 'flatpak' else 'prusa-slicer').name,
-             minutes=round(stats['seconds'] / 60, 1) if stats['seconds'] else None, error=None)
+             minutes=round(stats['seconds'] / 60, 1) if stats['seconds'] else None, error=None, log=str(log), **said)
     if not r['grams']:
         # PrusaSlicer prints its reason last, on stderr or stdout, and exits 0 for some failures (2.9.4: "All
         # objects are outside of the print volume.")
-        said = [ln.strip() for ln in (p.stderr or p.stdout or '').splitlines() if ln.strip()]
+        reason = said['errors'][-1] if said['errors'] else _reason(p.stdout, p.stderr)
         r['error'] = ('no "filament used [g]" in the G-code (is filament_density 0?)' if gcode.exists() else
-                      said[-1] if said else 'no G-code produced')
-        r['log_tail'] = ((p.stdout or '') + (p.stderr or ''))[-2000:]
+                      reason or 'no G-code produced')
+        r['log_tail'] = log_text[-2000:]
+    # a slice that exits 0 with G-code can still say the part will print badly
+    r['ok'] = (p.returncode == 0 and gcode.exists() and r['error'] is None and not said['errors']
+               and not said['stability_issues'])
     return r

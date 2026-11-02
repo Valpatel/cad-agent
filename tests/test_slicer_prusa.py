@@ -157,6 +157,9 @@ def test_prusa_slice_uses_prusaslicers_own_resolution(bundle_root, tmp_path, mon
     assert r['profile_sources']['print'] == {'vendor/Mini.ini': sha(bundle_root / 'Mini.ini')}
     assert r['slicer'] == 'prusa-slicer' and r['exit_code'] == 0 and r['error'] is None and 'log_tail' not in r
     assert r['printer'] == 'Test MK4S' and r['overrides'] == {'perimeters': 5}
+    assert cmd[1:3] == ['--loglevel', '3']                 # warnings and errors reach the log
+    assert r['ok'] is True and r['warnings'] == r['errors'] == r['stability_issues'] == []
+    assert r['log'] == str(work / 'out' / 'slicer.log') and 'Slicing...' in Path(r['log']).read_text()
 
 
 def test_a_misspelt_profile_fails_before_prusaslicer_runs(bundle_root, tmp_path, monkeypatch):
@@ -315,6 +318,72 @@ def test_gcode_without_a_weight_says_so(bundle_root, tmp_path, monkeypatch):
     assert r['grams'] is None and 'filament used [g]' in r['error']
 
 
+# --- what PrusaSlicer's log says ---
+
+LOGS = Path(__file__).parent / 'fixtures' / 'prusa_logs'
+WIPE_TOWER = ('[2026-11-01 16:10:02.114210] [0x00007956cf711ec0] [error] gcode path conflicts found between WipeTower '
+              'and boom_foot.stl\n')
+
+
+def test_parse_log_reads_a_real_stability_block():
+    """PrusaSlicer 2.9.4's own output for an overhanging test part (paths replaced): the stability block is on
+    stdout, the log lines on stderr; the multi-material and Voronoi notes are benign."""
+    said = slicer_prusa.parse_log((LOGS / 'stability.log').read_text())
+    assert said['stability_issues'] == ['Floating bridge anchors', 'Low bed adhesion', 'Loose extrusions',
+                                        'Long bridging extrusions']
+    assert said['warnings'] == ['Detected print stability issues:'] and said['errors'] == []
+    assert said['benign_log_lines'] == 3
+
+
+def test_parse_log_keeps_errors_and_each_objects_issues():
+    text = ('print warning: Detected print stability issues:\n\nleft, part.stl\nCollapsing overhang\n\n'
+            'right.stl\nLow bed adhesion, Collapsing overhang\n\nConsider enabling supports.\n'
+            '[2026-11-01 16:10:01.0] [0x7f] [warning] Some other warning\n'
+            '[2026-11-01 16:10:01.5] [0x7f] [info]    Slicing process finished.\n' + WIPE_TOWER * 2)
+    said = slicer_prusa.parse_log(text)
+    assert said['stability_issues'] == ['Collapsing overhang', 'Low bed adhesion']   # an object name is not an issue
+    assert said['errors'] == ['gcode path conflicts found between WipeTower and boom_foot.stl']   # once
+    assert said['warnings'] == ['Detected print stability issues:', 'Some other warning']
+    assert slicer_prusa.parse_log('') == {'warnings': [], 'errors': [], 'stability_issues': [], 'benign_log_lines': 0}
+
+
+@pytest.mark.parametrize('stderr, issues, errors', [
+    ((LOGS / 'stability.log').read_text(), 4, 0),
+    (WIPE_TOWER, 0, 1),                                    # an error PrusaSlicer exits 0 with, G-code written
+])
+def test_a_slice_that_will_print_badly_is_not_ok(bundle_root, tmp_path, monkeypatch, stderr, issues, errors):
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    monkeypatch.setattr(slicer_prusa.subprocess, 'run', fake_run([], stderr=stderr))
+    model = tmp_path / 'part.3mf'
+    model.write_text('x')
+    r = slicer_prusa.slice_part(model, tmp_path / 'w', 'Test MK4S', '0.20mm TEST', 'Test PLA', {})
+    assert r['grams'] == 3.83 and r['exit_code'] == 0 and r['error'] is None    # it sliced...
+    assert r['ok'] is False                                                     # ...but is not ok
+    assert len(r['stability_issues']) == issues and len(r['errors']) == errors
+    assert stderr.strip() in (tmp_path / 'w' / 'out' / 'slicer.log').read_text()
+
+
+def test_benign_warnings_alone_leave_a_slice_ok(bundle_root, tmp_path, monkeypatch):
+    benign = ''.join(ln + '\n' for ln in (LOGS / 'stability.log').read_text().splitlines() if ln.startswith('['))
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    monkeypatch.setattr(slicer_prusa.subprocess, 'run', fake_run([], stderr=benign))
+    model = tmp_path / 'part.3mf'
+    model.write_text('x')
+    r = slicer_prusa.slice_part(model, tmp_path / 'w', 'Test MK4S', '0.20mm TEST', 'Test PLA', {})
+    assert r['ok'] is True and r['warnings'] == [] and r['benign_log_lines'] == 3
+
+
+def test_the_reason_skips_log_lines_printed_after_it(bundle_root, tmp_path, monkeypatch):
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    monkeypatch.setattr(slicer_prusa.subprocess, 'run', fake_run(
+        [], footer=None, stderr='All objects are outside of the print volume.\n'
+                                '[2026-11-01 16:10:01.5] [0x7f] [info]    Exporting G-code...\n'))
+    model = tmp_path / 'part.3mf'
+    model.write_text('x')
+    r = slicer_prusa.slice_part(model, tmp_path / 'w', 'Test MK4S', '0.20mm TEST', 'Test PLA', {})
+    assert r['error'] == 'All objects are outside of the print volume.' and r['ok'] is False
+
+
 # --- the real PrusaSlicer, where installed ---
 
 def _has_profile(kind, name):
@@ -355,6 +424,22 @@ def test_prusaslicer_slices_a_cube(home_work):
                                 slicer_prusa.FILAMENTS['pla'], {})
     assert 2.5 < r['grams'] < 6, r
     assert r['minutes'] and r['minutes'] > 1
+    assert r['ok'] and r['stability_issues'] == [] and r['errors'] == [], r
+    assert (home_work / 'out' / 'out' / 'slicer.log').is_file()
+
+
+@pytest.mark.skipif(not _installed(slicer_prusa.PRINTER), reason='PrusaSlicer or its MK4S profile not installed')
+def test_prusaslicer_names_the_stability_issues_of_an_overhang(home_work):
+    """A plate on two thin posts, supports off: PrusaSlicer 2.9.4 exits 0 with G-code and names its issues."""
+    trimesh = pytest.importorskip('trimesh')
+    stl = home_work / 'overhang.stl'
+    trimesh.util.concatenate([trimesh.creation.box(extents=(4, 4, 20)).apply_translation((0, 0, 10)),
+                              trimesh.creation.box(extents=(4, 4, 20)).apply_translation((25, 25, 10)),
+                              trimesh.creation.box(extents=(60, 60, 2)).apply_translation((0, 0, 21))]).export(str(stl))
+    r = slicer_prusa.slice_part(stl, home_work / 'out', slicer_prusa.PRINTER, slicer_prusa.PROCESS,
+                                slicer_prusa.FILAMENTS['pla'], {'support_material': 0, 'support_material_auto': 0})
+    assert r['grams'] and r['exit_code'] == 0 and r['ok'] is False, r
+    assert 'Long bridging extrusions' in r['stability_issues'], r
 
 
 @pytest.mark.skipif(not _installed(slicer_prusa.PRINTER), reason='PrusaSlicer or its MK4S profile not installed')

@@ -387,8 +387,9 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
     """The slice report, its per-part rows that are still current, and why the others are not.
 
     A row is current only while the report was made with the settings ``cad.slicer`` names now (the rule
-    ``slicer.current_report`` uses) and the part's 3MF still has the sha256 recorded for it."""
-    from cadagent.manufacturing.slicer import settings_differ
+    ``slicer.current_report`` uses), the part's 3MF still has the sha256 recorded for it and its own overrides
+    (``cad.slicer.parts.<part>.overrides``) are unchanged."""
+    from cadagent.manufacturing.slicer import _row_current, settings_differ
 
     path = project.exports_dir / "slice-report.json"
     try:
@@ -400,11 +401,7 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
     differ = settings_differ(rep, project)
     if differ:
         return rep, {}, f"the slice report used other settings ({', '.join(differ)}) than cad.slicer now"
-    current = {}
-    for name, row in (rep.get("parts") or {}).items():
-        f = project.exports_dir / f"{name}.3mf"
-        if isinstance(row, dict) and row.get("grams") and f.is_file() and _sha(f) == row.get("sha256"):
-            current[name] = row
+    current = {name: row for name, row in (rep.get("parts") or {}).items() if _row_current(project, name, row)}
     return rep, current, ""
 
 

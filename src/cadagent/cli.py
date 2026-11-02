@@ -154,9 +154,20 @@ def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
     for name, row in rep["parts"].items():
         if row.get("grams"):
             minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
-            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}")
+            flag = "  NOT OK" if row.get("ok") is False else ""
+            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}{flag}")
         else:
             _say(f"  {name:<24} FAILED: {row.get('error')}")
+        # what PrusaSlicer's log said (Bambu Studio rows carry none of these)
+        if row.get("stability_issues"):
+            _say(f"      stability: {', '.join(row['stability_issues'])}")
+        for level in ("errors", "warnings"):
+            for line in row.get(level) or []:
+                if "print stability issues" not in line:      # listed above, by category
+                    _say(f"      {level[:-1]}: {line}")
+    not_ok = [n for n, row in rep["parts"].items() if row.get("ok") is False and row.get("grams")]
+    if not_ok:
+        _say(f"{len(not_ok)} part(s) sliced but not ok (a slicer error or print stability issue): {', '.join(not_ok)}")
     _say(f"{rep['total_grams']} g, {rep['total_hours']} h ({rep['process']}, {rep['filament']}) -> {rep['path']}")
     return 0 if rep["pass"] else 1
 

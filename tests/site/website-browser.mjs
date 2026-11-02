@@ -707,12 +707,15 @@ async function fanCurveProblems() {
         if (await status()) say('the status line spoke before anyone touched the demo');
         if ((await tile('flow')) !== '150 m³/h' || (await tile('verdict')) !== 'Clear of stall') say(`the default reads ${await tile('flow')}, ${await tile('verdict')}`);
         // the page follows the reader's system and the theme button (#305); the element follows the page
+        // (the button is pressed from script, so the keyboard focus the steps below use stays where it is; the theme pass
+        // presses it for real)
+        const themed = async t => page.waitForFunction(([el, want]) => el.dataset.theme === want, [await demo.elementHandle(), t], { timeout: 3000 }).then(() => true, () => false);
         await page.emulateMedia({ colorScheme: 'dark' });
-        if ((await demo.getAttribute('data-theme')) !== 'dark') say('the demo stayed light on a dark page');
-        await page.click('.theme-toggle');                 // the reader picks light
-        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo did not follow the theme button to light');
-        await page.click('.theme-toggle');                 // and back to dark, the system's: the choice is forgotten
-        if ((await demo.getAttribute('data-theme')) !== 'dark') say('the demo did not follow the theme button back to dark');
+        if (!(await themed('dark'))) say('the demo stayed light on a dark page');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // the reader picks light
+        if (!(await themed('light'))) say('the demo did not follow the theme button to light');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // and back to dark, the system's
+        if (!(await themed('dark'))) say('the demo did not follow the theme button back to dark');
         for (const theme of ['light', 'dark']) {
           await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
           if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
@@ -859,12 +862,15 @@ async function explorerProblems(x) {
         if (await status()) say('the status line spoke before anyone touched the demo');
         for (const [k, want] of Object.entries(x.start)) if ((await tile(k)) !== want) say(`the default reads ${k} ${await tile(k)}, not ${want}`);
         // the page follows the reader's system and the theme button (#305); the element follows the page
+        // (the button is pressed from script, so the keyboard focus the steps below use stays where it is; the theme pass
+        // presses it for real)
+        const themed = async t => page.waitForFunction(([el, want]) => el.dataset.theme === want, [await demo.elementHandle(), t], { timeout: 3000 }).then(() => true, () => false);
         await page.emulateMedia({ colorScheme: 'dark' });
-        if ((await demo.getAttribute('data-theme')) !== 'dark') say('the demo stayed light on a dark page');
-        await page.click('.theme-toggle');                 // the reader picks light
-        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo did not follow the theme button to light');
-        await page.click('.theme-toggle');                 // and back to dark, the system's: the choice is forgotten
-        if ((await demo.getAttribute('data-theme')) !== 'dark') say('the demo did not follow the theme button back to dark');
+        if (!(await themed('dark'))) say('the demo stayed light on a dark page');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // the reader picks light
+        if (!(await themed('light'))) say('the demo did not follow the theme button to light');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // and back to dark, the system's
+        if (!(await themed('dark'))) say('the demo did not follow the theme button back to dark');
         for (const theme of ['light', 'dark']) {
           await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
           if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);
@@ -1311,12 +1317,15 @@ async function fourbarProblems() {
         if (await status()) say('the status line spoke before anyone touched the demo');
         if ((await demo.locator('[data-out=class]').textContent()) !== 'Crank-rocker') say('the default linkage is not a crank-rocker');
         // the page follows the reader's system and the theme button (#305); the element follows the page
+        // (the button is pressed from script, so the keyboard focus the steps below use stays where it is; the theme pass
+        // presses it for real)
+        const themed = async t => page.waitForFunction(([el, want]) => el.dataset.theme === want, [await demo.elementHandle(), t], { timeout: 3000 }).then(() => true, () => false);
         await page.emulateMedia({ colorScheme: 'dark' });
-        if ((await demo.getAttribute('data-theme')) !== 'dark') say('the demo stayed light on a dark page');
-        await page.click('.theme-toggle');                 // the reader picks light
-        if ((await demo.getAttribute('data-theme')) !== 'light') say('the demo did not follow the theme button to light');
-        await page.click('.theme-toggle');                 // and back to dark, the system's: the choice is forgotten
-        if ((await demo.getAttribute('data-theme')) !== 'dark') say('the demo did not follow the theme button back to dark');
+        if (!(await themed('dark'))) say('the demo stayed light on a dark page');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // the reader picks light
+        if (!(await themed('light'))) say('the demo did not follow the theme button to light');
+        await page.evaluate(() => document.querySelector('.theme-toggle').click());   // and back to dark, the system's
+        if (!(await themed('dark'))) say('the demo did not follow the theme button back to dark');
         for (const theme of ['light', 'dark']) {
           await demo.evaluate((d, t) => d.setAttribute('theme', t), theme);
           if ((await demo.getAttribute('data-theme')) !== theme) say(`theme="${theme}" is not applied`);

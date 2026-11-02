@@ -5,7 +5,8 @@ name: Gates
 # the gates cannot pass them; PRs into main come from dev, so dev's copy judges them too. It never checks out or runs
 # the PR's code: the PR is read as data (API, and for release PRs two files read with git show). Results are commit
 # statuses on the PR's head, named cad-gates/<base>/<gate>; branch protection requires cad-gates/dev/{branch-flow,review}
-# on dev and cad-gates/main/{branch-flow,review,release} on main.
+# on dev; on main, cad-gates/main/{branch-flow,review,release} are not required yet (#112), so ci_gates.py all checks
+# them before every merge into main.
 #
 # Reviews cannot trigger a workflow that may post statuses, so a new verdict is read by: the reviewer's re-run
 # (gh workflow run gates.yml -R <repo> -f pr=<n>), the sweep every 15 minutes, or the next push. Whoever merges first

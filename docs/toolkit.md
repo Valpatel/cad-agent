@@ -92,6 +92,9 @@ my-cad-project/
    header and link ids fixed as for a part, each node added without a name called `<parent>.<k>` instead of a random
    uuid, and the colour records in one order. Sub-shape names and colours (`Assembly.addSubshape`) are refused.
    See [reproducible outputs](#reproducible-outputs) for the other files.
+
+   Build the parts with `robust_union` and `robust_cut` where booleans meet nearly coincident faces: they check
+   every boolean and fall back instead of returning a bad shape ([checked booleans](#checked-booleans-cadagentgeometry), #249).
 3. **Each check is a script** in `tools/` that writes `exports/<name>.json` with
    a top-level boolean `"pass"`. A check that cannot compute its answer writes
    `"pass": false` with the reason; it never omits the file or the key.
@@ -125,11 +128,64 @@ my-cad-project/
 
 | File | Orientation | Notes |
 |------|-------------|-------|
-| `exports/<part>.stl` | print orientation, lowest point on z=0 | degenerate faces removed; must be watertight |
+| `exports/<part>.stl` | print orientation, lowest point on z=0 | open-edge vertices within 1 µm welded, degenerate faces removed; must be watertight |
 | `exports/<part>.3mf` | print orientation, centred on `printer.bed_mm` | written by `cad-agent export-3mf`, read back and verified; byte-reproducible (fixed zip dates), so a rebuild of unchanged geometry keeps the slice report current |
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 | `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
+
+### Checked booleans (`cadagent.geometry`)
+
+OpenCASCADE can fail a boolean without raising where faces nearly coincide: a multi-argument fuse of nearly
+coincident solids can return an empty compound that `isValid()` passes, and a cut can raise
+`Null TopoDS_Shape object`. `robust_union` and `robust_cut` check every boolean they run and fall back step by step;
+they raise `GeometryError` rather than return a shape that fails the check.
+
+```mermaid
+flowchart TD
+    A["one multi-argument fuse or cut"] --> C1{"check"}
+    C1 -->|"pass"| OK["checked shape"]
+    C1 -->|"fail: report a fallback"| B["one shape or tool at a time"]
+    B --> C2{"check each step"}
+    C2 -->|"pass"| OK
+    C2 -->|"a cut fails"| N["that tool moved 0.01 mm<br/>along ±x, ±y, ±z, then the diagonal"]
+    N --> C3{"check"}
+    C3 -->|"pass: report the nudge"| OK
+    C3 -->|"every nudge fails"| E["GeometryError"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A,B,N,C1,C2,C3 here
+    class OK,E out
+```
+
+```python
+from cadagent.geometry import robust_union, robust_cut
+notes = []
+boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
+# notes, after a fallback: [{"op": "cut", "fallback": "one_at_a_time", ...},
+#                           {"op": "cut", "tool": 2, "nudge_mm": [0.01, 0.0, 0.0], "reason": ...}]
+```
+
+<details>
+<summary>The check, the report, the STL weld and the limits</summary>
+
+- **The check**, after every boolean and on every input first: not null, valid, at least one solid, and a volume
+  within the bounds the inputs set (a union between its largest input and their sum; a cut between the base less
+  the tools and the base). Validity and volume are the relation gate's: `isValid()` and its stricter checks (open,
+  inverted or free-faced shapes fail), and its adaptive integration, since the default volume can be off by several
+  mm³ on curved, trimmed faces ([volume precision](volume-precision.md)). An invalid input is refused, not fused.
+- **The report:** pass `report=[]` to get one dict per fallback and per nudge; each is also logged as a warning on
+  `cadagent.geometry`. The nudges are `CUT_NUDGES_MM`, or pass `nudges=`. A nudge moves that cut by its length (0.01 mm on an
+  axis, 0.017 mm on the default diagonal), so check it does not touch a fit that matters.
+- **The STL weld:** `export_print_stl` welds the tessellation's open-edge vertices that lie within 1 µm of each other
+  (`weld_mm=`, default `WELD_MM`, 0 turns it off; `weld_open_vertices` on a trimesh) before its watertight check:
+  OCCT can split a vertex by less than that where faces meet tangentially, so a valid solid's STL came out open. Its
+  report adds `vertices_welded`, `mesh_volume_before_weld_mm3` and `mesh_volume_mm3`. A gap wider than the weld
+  still fails the check.
+- **Limits:** the checks bound shape and volume; they do not prove the boolean is the one you meant, and a cut a
+  tool does not reach is still a valid result.
+
+</details>
 
 ### Build plates (`cadagent.manufacturing.plates`)
 
@@ -445,7 +501,8 @@ its new path instead (`monkeypatch.setitem(sys.modules, "cadagent.publish.report
 ```python
 from cadagent.project import load_project    # CadProject, Step, Check, CadConfigError
 from cadagent.geometry import (solid_report, export_print_stl, export_step, step_timestamp, pairwise_intersections,
-                               min_gap, downward_area, overhang_regions, within_bed)
+                               min_gap, downward_area, overhang_regions, within_bed, robust_union, robust_cut,
+                               weld_open_vertices)
 from cadagent.manufacturing.mesh3mf import write_3mf, read_3mf, verify_3mf, export_parts_3mf, is_edge_manifold
 from cadagent.manufacturing.gcode import bridge_report, extrusions, FEATURES
 from cadagent.publish.render import Renderer

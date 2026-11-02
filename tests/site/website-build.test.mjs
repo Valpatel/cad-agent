@@ -584,8 +584,15 @@ test('every diagram arrives drawn, with its source, and the Markdown twins keep 
     const page = await readFile(path.join(out, f), 'utf8');
     assert.doesNotMatch(page, /class="language-mermaid"|<pre class="mermaid"/, `${f}: a Mermaid block was left for the reader's browser`);
     const figs = [...page.matchAll(/<figure class="cad-diagram"[\s\S]*?<\/figure>/g)].map(m => m[0]);
-    for (const fig of figs) {
-      assert.match(fig, /^<figure class="cad-diagram" data-theme="light" aria-label="Engineering diagram" data-state="ready" aria-busy="false" style="--cad-diagram-w: [\d.]+px;">/, f);
+    // Each block arrives drawn twice, light then dark (#305), with the same source; the page's CSS shows one.
+    assert.equal(figs.length % 2, 0, `${f}: a diagram without its twin`);
+    for (let i = 0; i < figs.length; i += 2) {
+      const source = fig => fig.match(/<pre class="cad-diagram-source">([^<]+)<\/pre>/)?.[1];
+      assert.equal(source(figs[i]), source(figs[i + 1]), `${f}: a diagram's light and dark drawings show different sources`);
+    }
+    for (const [i, fig] of figs.entries()) {
+      const theme = i % 2 ? 'dark' : 'light';
+      assert.match(fig, new RegExp(`^<figure class="cad-diagram" data-theme-only="${theme}" data-theme="${theme}" aria-label="Engineering diagram" data-state="ready" aria-busy="false" style="--cad-diagram-w: [\\d.]+px;">`), f);
       assert.match(fig, /<div class="cad-diagram-view"[^>]*><svg id="cad-diagram-s[0-9a-f]{12}(?:-\d+)?" /, f);
       assert.match(fig, /<details><summary>Diagram source<\/summary><pre class="cad-diagram-source">[^<]+<\/pre><\/details><\/figure>$/, f);
       // Real tags only (the source is text): no script, handler or javascript: link in what Mermaid drew.
@@ -596,7 +603,7 @@ test('every diagram arrives drawn, with its source, and the Markdown twins keep 
     assert.equal(new Set(ids).size, ids.length, `${f}: two diagrams share an SVG id`);
     figures += figs.length;
   }
-  assert.ok(figures >= 60, `${figures} diagrams`);
+  assert.ok(figures >= 120, `${figures} drawings`);
   assert.match(await readFile(path.join(out, 'docs/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
 });
 

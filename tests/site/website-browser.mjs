@@ -1074,7 +1074,7 @@ async function themeProblems() {
         await settled(page);
         if (how === 'button') {
           await page.click('.theme-toggle');
-          await page.waitForTimeout(100);
+          await page.waitForTimeout(400);                 // past the copy buttons' 0.15 s colour transition
         }
         const st = await state(page);
         if (!st.shown) out.push(`${where}: no theme button`);
@@ -1100,7 +1100,7 @@ async function themeProblems() {
           if (next.chosen !== theme || next.scheme !== theme) out.push(`${where}: the choice is not kept on the next page (${next.chosen}, ${next.scheme})`);
           // pressed again, the page is back on the system's theme and the choice is forgotten
           await page.click('.theme-toggle');
-          await page.waitForTimeout(100);
+          await page.waitForTimeout(400);                 // past the copy buttons' 0.15 s colour transition
           const back = await state(page), kept = await page.evaluate(() => { try { return localStorage.getItem('cad-theme'); } catch { return 'unreadable'; } });
           if (back.scheme !== system || back.chosen !== null || kept !== null) out.push(`${where}: pressed again, the page is ${back.scheme} with ${back.chosen} chosen and ${kept} kept`);
         }

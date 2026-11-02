@@ -64,9 +64,10 @@ for (const theme of ['light', 'dark']) {
 }
 
 // Rules that keep fixed colours in both themes: the always-dark panels (the reel, the install and prompt boxes, the
-// command tiles), the orange buttons and badges with white text, and picture frames. Any other literal colour outside
+// command tiles), the orange buttons and badges with white text, picture frames, and the copy buttons' "Copied" green
+// (white text, on :root so the catalogue's buttons outside <cad-copy> get it too). Any other literal colour outside
 // the token blocks would show light in the dark theme.
-const FIXED = /^(?:\.reel|\.install-|\.use-card \.agent-|\.fit-cmd|\.band-flow code|\.button\.primary|\.rung|\.status-dot|\.hero-scene|\.hero-model cad-model|\.projects img|\.scene-|\.area-link(?:\.dom-all)?\[aria-current|\.key-means|\.sheet-open \.count|\.cat-side\[data-open\]|:root(?::not\(\[data-theme=light\]\)|\[data-theme=dark\]) \[data-tone\])/;
+const FIXED = /^(?:\.reel|\.install-|\.use-card \.agent-|\.fit-cmd|\.band-flow code|\.button\.primary|\.rung|\.status-dot|\.hero-scene|\.hero-model cad-model|\.projects img|\.scene-|\.area-link(?:\.dom-all)?\[aria-current|\.key-means|\.sheet-open \.count|\.cat-side\[data-open\]|:root$|:root(?::not\(\[data-theme=light\]\)|\[data-theme=dark\]) \[data-tone\])/;
 test('outside the token blocks, colours are tokens (or one of the fixed, always-dark parts)', () => {
   const stray = [];
   for (const [file, text] of [['web/site.css', css], ['web/catalog.css', catalog]]) {

@@ -74,7 +74,7 @@ test('outside the token blocks, colours are tokens (or one of the fixed, always-
     const body = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^:root\{--cream:[^}]*\}$/m, '').replace(/^@media\(prefers-color-scheme:dark\)\{:root:not\(\[data-theme=light\]\)\{[^}]*\}\}$/m, '')
       .replace(/^:root\[data-theme=dark\]\{[^}]*\}$/m, '').replace(/\[data-tone=[\w-]+\]\{[^}]*\}/g, '');
     for (const m of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      const selector = m[1].trim(), colours = m[2].match(/#[0-9a-f]{3,8}\b/gi);
+      const selector = m[1].split(/[;\n]/).map(x => x.trim()).filter(Boolean).at(-1), colours = m[2].match(/#[0-9a-f]{3,8}\b/gi);
       if (colours && !FIXED.test(selector) && !/var\(--[\w-]+,#/.test(m[2])) stray.push(`${file}: ${selector.slice(0, 70)} { ${colours.join(' ')} }`);
     }
   }

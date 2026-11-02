@@ -65,16 +65,18 @@ for (const theme of ['light', 'dark']) {
 
 // Rules that keep fixed colours in both themes: the always-dark panels (the reel, the install and prompt boxes, the
 // command tiles), the orange buttons and badges with white text, picture frames, and the copy buttons' "Copied" green
-// (white text, on :root so the catalogue's buttons outside <cad-copy> get it too). Any other literal colour outside
+// (white text; set on :root so the catalogue's buttons outside <cad-copy> get it too, and allowed there by name). Any other literal colour outside
 // the token blocks would show light in the dark theme.
-const FIXED = /^(?:\.reel|\.install-|\.use-card \.agent-|\.fit-cmd|\.band-flow code|\.button\.primary|\.rung|\.status-dot|\.hero-scene|\.hero-model cad-model|\.projects img|\.scene-|\.area-link(?:\.dom-all)?\[aria-current|\.key-means|\.sheet-open \.count|\.cat-side\[data-open\]|:root$|:root(?::not\(\[data-theme=light\]\)|\[data-theme=dark\]) \[data-tone\])/;
+const FIXED = /^(?:\.reel|\.install-|\.use-card \.agent-|\.fit-cmd|\.band-flow code|\.button\.primary|\.rung|\.status-dot|\.hero-scene|\.hero-model cad-model|\.projects img|\.scene-|\.area-link(?:\.dom-all)?\[aria-current|\.key-means|\.sheet-open \.count|\.cat-side\[data-open\]|:root(?::not\(\[data-theme=light\]\)|\[data-theme=dark\]) \[data-tone\])/;
 test('outside the token blocks, colours are tokens (or one of the fixed, always-dark parts)', () => {
   const stray = [];
   for (const [file, text] of [['web/site.css', css], ['web/catalog.css', catalog]]) {
     const body = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^:root\{--cream:[^}]*\}$/m, '').replace(/^@media\(prefers-color-scheme:dark\)\{:root:not\(\[data-theme=light\]\)\{[^}]*\}\}$/m, '')
       .replace(/^:root\[data-theme=dark\]\{[^}]*\}$/m, '').replace(/\[data-tone=[\w-]+\]\{[^}]*\}/g, '');
     for (const m of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      const selector = m[1].split(/[;\n]/).map(x => x.trim()).filter(Boolean).at(-1), colours = m[2].match(/#[0-9a-f]{3,8}\b/gi);
+      // the copy buttons' "Copied" green (white text on it in both themes) is the one fixed colour a :root rule may set
+      const selector = m[1].split(/[;\n]/).map(x => x.trim()).filter(Boolean).at(-1);
+      const colours = m[2].replace(selector === ':root' ? /--cad-copy-ok-bg:#[0-9a-f]{6};?/i : /$^/, '').match(/#[0-9a-f]{3,8}\b/gi);
       if (colours && !FIXED.test(selector) && !/var\(--[\w-]+,#/.test(m[2])) stray.push(`${file}: ${selector.slice(0, 70)} { ${colours.join(' ')} }`);
     }
   }

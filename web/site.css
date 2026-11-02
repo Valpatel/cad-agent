@@ -269,7 +269,8 @@ cad-gallery{--cad-gallery-muted:var(--faint);--cad-gallery-chip-bg:var(--soft-3)
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .cad-diagram[data-theme-only=light]{display:none}
   :root:not([data-theme=light]) .cad-diagram[data-theme-only=dark]{display:block}}
 :root[data-theme=dark] .cad-diagram[data-theme-only=light]{display:none}:root[data-theme=dark] .cad-diagram[data-theme-only=dark]{display:block}
-.cad-diagram[data-theme=dark]{background:var(--card);border-color:var(--line-2)}
+/* body: kit/diagrams.css loads after this file, and its rule has the same specificity */
+body .cad-diagram[data-theme=dark]{background:var(--card);border-color:var(--line-2)}
 cad-copy{--cad-copy-font:var(--font);--cad-copy-fg:var(--ink);--cad-copy-bg:var(--cream);--cad-copy-border:var(--line-3);--cad-copy-focus:var(--orange);--cad-copy-warn-bg:var(--peach-2);margin:16px 0}
 cad-nav input::placeholder{color:var(--faint);opacity:1}
 .agent-copy cad-copy,.prose cad-copy>pre{margin:0}

@@ -1085,11 +1085,13 @@ async function themeProblems() {
         if (st.diagrams.some(t => t !== theme)) out.push(`${where}: shows diagrams drawn for ${st.diagrams.join(' and ')}`);
         if (st.sideways > 0) out.push(`${where}: scrolls sideways by ${st.sideways}px`);
         for (const l of await lowContrast(page)) out.push(`${where}: low contrast: ${l}`);
-        // the copy buttons' other states: "Copied" and the fallback ("Press Ctrl+C") when the clipboard refuses
-        for (const s of ['copied', 'failed']) {
-          if (!(await page.evaluate(st => { const b = [...document.querySelectorAll('.cad-copy-btn')]; b.forEach(x => { x.dataset.was = x.dataset.state ?? ''; x.dataset.state = st; }); return b.length; }, s))) break;
+        // the copy buttons' other states (kit/copy.js): "Copied", and "manual", the fallback ("Press Ctrl+C") when the
+        // clipboard refuses; measured with the buttons' colour transition off, so the state's own colours are read
+        for (const s of ['copied', 'manual']) {
+          if (!(await page.evaluate(st => { const b = [...document.querySelectorAll('.cad-copy-btn')];
+            b.forEach(x => { x.dataset.was = x.dataset.state ?? ''; x.style.transition = 'none'; x.dataset.state = st; }); return b.length; }, s))) break;
           for (const l of await lowContrast(page, '.cad-copy-btn')) out.push(`${where}: low contrast, copy button ${s}: ${l}`);
-          await page.evaluate(() => document.querySelectorAll('.cad-copy-btn').forEach(x => { if (x.dataset.was) x.dataset.state = x.dataset.was; else delete x.dataset.state; delete x.dataset.was; }));
+          await page.evaluate(() => document.querySelectorAll('.cad-copy-btn').forEach(x => { if (x.dataset.was) x.dataset.state = x.dataset.was; else delete x.dataset.state; delete x.dataset.was; x.style.transition = ''; }));
         }
         if (how === 'button') {
           // remembered on the next page (web/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)

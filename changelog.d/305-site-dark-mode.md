@@ -9,3 +9,9 @@
 **Changed**
 - `web/site.css` and `web/catalog.css` keep their colours as tokens on `:root`, a light set and a dark one; a
   catalogue domain's tone is now `--tone-ink`, with `--tone` and the tints mixed from it in the dark theme.
+
+**Fixed**
+- The site's copy buttons read in every state: "Copied" is a darker green under its white text (was 3.45:1), and the
+  home page's orange buttons keep white text readable when the clipboard refuses (was 1.24:1).
+- The headers of `install.sh` and `install.ps1` name every folder the installer writes, including the subagents in
+  `~/.claude/agents`, and say that it removes the kit's own old links from `~/.codex/skills` (#308 review).

@@ -31,6 +31,16 @@ SOURCES: Dict[str, str] = {
     "bulten": "Bulten AB, DELTA PT: a superior thread-former for plastics, brochure version 250422 (2025-04-22), made "
               "under licence from EJOT",
     "spirol-inserts": "SPIROL International, Inserts for Plastics Design Guide, edition 05/26 (2026-05)",
+    "iso76": "ISO 76:2006, Rolling bearings - Static load ratings",
+    "skf-2018": "SKF Group, Rolling bearings, PUB BU/P1 17000/1 EN, edition 2018-10 (it applies ISO 281 and ISO 76 "
+                "and prints the makers' tables)",
+    "nsk-e728": "NSK Ltd., Technical Report, CAT. No. E728h (PDF of 2024-11-26)",
+    "menck-2024": "O. Menck and M. Stammler, Review of rolling contact fatigue life calculation for oscillating "
+                  "bearings and application-dependent recommendations for use, Wind Energy Science 9 (2024) 777-798, "
+                  "doi:10.5194/wes-9-777-2024 (CC BY 4.0)",
+    "johnson": "K. L. Johnson, Contact Mechanics, 1st ed., Cambridge University Press, 1985",
+    "hamrock-brewe": "B. J. Hamrock and D. E. Brewe, Simplified solution for stresses and deformations, Journal of "
+                     "Lubrication Technology, Transactions of the ASME 105 (1983) 171-177",
 }
 
 

@@ -22,7 +22,8 @@ shared geometry screens, the renderer, link validation, the report, packaging an
 
 ```bash
 pip install -e ".[cad]"          # in the cad-agent checkout; or install it into the project's own venv
-cd my-cad-project
+cad-agent init my-box            # a project to start from: the starter box (examples/starter-box)
+cd my-box
 cad-agent all                    # build -> export-3mf -> check + report -> package
 cad-agent check                  # re-collect results; exit 1 if anything fails
 cad-agent report --open          # exports/cad-agent-results.json + docs/cad-agent-report.html
@@ -54,6 +55,9 @@ flowchart TD
 ```
 
 ## The project contract
+
+`cad-agent init DIR` copies the smallest project that keeps it: [`examples/starter-box`](../examples/starter-box/README.md),
+a box and lid on four M3 heat-set inserts with the insert and overhang checks wired in.
 
 ```
 my-cad-project/
@@ -536,6 +540,7 @@ after that every step runs, and the exit code says whether anything failed.*
 
 | Command | Does | Exit code |
 |---------|------|-----------|
+| `cad-agent init [DIR] [--force]` | copies the starter project ([`examples/starter-box`](../examples/starter-box/README.md): a box and lid on four M3 heat-set inserts, `cad-agent.yaml`, `cad/build.py`, `tools/checks.py`) into `DIR` (default: here) and prints the next commands; from a wheel, the copy installed under `<prefix>/share/cad-agent/` | 2 if `DIR` is not empty (`--force` writes the starter's files over it) |
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |

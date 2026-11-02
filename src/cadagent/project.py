@@ -381,7 +381,7 @@ def load_project(root: Union[str, Path, None] = None) -> CadProject:
             hint = (f"; {', '.join(others)} have a cad: section but only {CONFIG_NAME} is read: rename the one "
                     f"that holds the project config to {CONFIG_NAME}")
         else:
-            hint = ""
+            hint = "; `cad-agent init` starts one from the starter box"
         raise CadConfigError(
             f"{CONFIG_NAME} not found in {root}; a CAD project needs one with a cad: section{hint}"
         )
@@ -502,3 +502,46 @@ def source_stamp(root: Union[str, Path], outputs: Iterable[Union[str, Path]] = (
         return "undated (no commit; set SOURCE_DATE_EPOCH)"
     when, origin = found
     return f"{when.strftime(fmt)} ({origin})"
+
+
+# ----------------------------------------------------------------------------- `cad-agent init`: the starter project
+
+STARTER = "starter-box"
+# Written by `cad-agent all` in a starter that was run where it lives: never copied (the starter's .gitignore too).
+STARTER_OUTPUTS = ("build", "exports", "preview", "site", "docs", "__pycache__", ".cadagent-cache")
+
+
+def starter_dir() -> Path:
+    """The starter project ``cad-agent init`` copies: ``examples/starter-box`` in the checkout this package runs from
+    (the installer's editable install), else the copy a wheel installs as data (pyproject.toml's ``data-files``)."""
+    here = Path(__file__).resolve().parent
+    found = [here.parents[1] / "examples" / STARTER]
+    try:
+        from importlib import metadata
+        dist = metadata.distribution("cad-agent")
+        found += [Path(dist.locate_file(f)).resolve().parent for f in dist.files or ()
+                  if f.as_posix().endswith(f"share/cad-agent/{STARTER}/{CONFIG_NAME}")]
+    except metadata.PackageNotFoundError:
+        pass
+    for folder in found:
+        if (folder / CONFIG_NAME).is_file():
+            return folder
+    raise FileNotFoundError(f"the starter project ({STARTER}) is not installed with this cad-agent: reinstall it "
+                            "with the one-line installer (docs/agent-workflow.md#install)")
+
+
+def init_project(dest: Union[str, Path], force: bool = False) -> List[Path]:
+    """Copy the starter project into ``dest`` (made if missing) and return the files written. A folder that holds
+    anything but ``.git`` is refused unless ``force``, which writes the starter's files over it and leaves the rest."""
+    import shutil
+    dest = Path(dest)
+    if dest.exists() and not dest.is_dir():
+        raise FileExistsError(f"{dest} is a file, not a folder")
+    if dest.is_dir() and any(f.name != ".git" for f in dest.iterdir()) and not force:   # a fresh `git init` is empty
+        raise FileExistsError(f"{dest} is not empty: choose a new folder, or pass --force to write the starter's files "
+                              "over it")
+    source = starter_dir()
+    shutil.copytree(source, dest, ignore=shutil.ignore_patterns(*STARTER_OUTPUTS), dirs_exist_ok=True)
+    skip = set(STARTER_OUTPUTS)
+    return sorted(dest / f.relative_to(source) for f in source.rglob("*")
+                  if f.is_file() and not skip & set(f.relative_to(source).parts))

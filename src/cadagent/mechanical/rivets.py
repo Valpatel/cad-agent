@@ -13,12 +13,16 @@ strength, and one check of a riveted lap joint against the published rules (#283
 - the hole, when given: inside the maker's drill range (an oversize hole loses strength);
 - the edge distance: at least 2D (POP, the FAA, NASA nominal; MIL-HDBK-5J's allowables need it), at least 1.5D
   (NASA's minimum), a warning between;
-- the pitch: at least 3D in one row (FAA), and 4D, the nominal (NASA) and the FAA's two-row value, else a warning;
-- each sheet: t at least 0.18D for the bearing values to hold (MIL-HDBK-5J), and aluminium at least 0.020 in under
-  an open-end rivet (POP);
-- the metals: rivet body against each sheet (MIL-STD-889C, NASA RP-1228);
+- the pitch and the rows (FAA AC 43.13-1B 4-57c, Fig. 4-5): at least 3D; 4D nominal for one row (NASA), 4D with the
+  rows 4D apart for two, and 6D with staggered rows 3D apart for three or more, else a warning;
+- each sheet: t/D on the hole at least 0.18 (MIL-HDBK-5J 8.1.2.1), with a warning up to 0.25 for blind rivets
+  (1.4.7.1, 8.1.3); and the sheet under the formed head (the last in the stack), if aluminium, at least 0.020 in
+  for an open-end rivet (POP);
+- the metals: rivet body against each sheet (MIL-STD-889C, NASA RP-1228), and a mandrel of another metal;
 - the strength per pitch (:func:`cadagent.formulas.lap_joint`): the rivet's rated shear, the sheet's bearing at the
-  joint's e/D, and the tear between the holes, from MIL-HDBK-5J's sheet strengths.
+  joint's e/D, and the tear between the holes, from MIL-HDBK-5J's sheet strengths. e/D is taken on the hole, as
+  MIL-HDBK-5J does (1.4.7), with Fbru linear between e/D 1.5 and 2.0 (1.4.7.1); a sheet it gives no value for at
+  this e/D gets a warning naming the edge distance that would.
 
 **Limits.** The rivets' strengths are the makers' typical values or the distributor's ratings, not design allowables:
 POP says its rivets are not certified for structural aerospace use, and NASA and the FAA keep blind (pop) rivets out
@@ -279,7 +283,7 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
         v, why = "fail", "the stack is outside the rivet's grip band"
     if v != "pass":
         fits = [x["key"] for x in rivets_for(D, max(g_lo, 1e-6), g_hi, r.body)]
-        why += f"; rivets that cover {g_lo:.3f}-{g_hi:.3f} mm: {', '.join(fits) or 'none listed'}"
+        why += f"; rivets that cover {max(g_lo, 0.0):.3f}-{g_hi:.3f} mm: {', '.join(fits) or 'none listed'}"
     checks.append(_check("grip", v, round(grip, 4), f"{b_lo:.3f}-{b_hi:.3f} mm", r.part, r.source, why))
 
     # Hole.
@@ -299,29 +303,36 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
                          {"pass": "full strength", "warn": "weaker than at 2D; MIL-HDBK-5J's allowables need 2D",
                           "fail": "below NASA's minimum"}[v]))
 
-    # Pitch.
+    # Pitch, and the rows' spacing: one row (3D, 4D nominal), two rows (4D, rows 4D apart) or three or more staggered
+    # rows (6D, rows 3D apart), as FAA AC 43.13-1B 4-57c and Fig. 4-5 lay them out.
     least = _limit(prof, "sm-rivet-pitch-faa", D=D)
-    nominal = _limit(prof, "sm-rivet-pitch-nasa", D=D)
-    double = _limit(prof, "sm-rivet-pitch-double-faa", D=D)
-    second = double if rows > 1 else nominal
+    if rows == 1:
+        second, layout = _limit(prof, "sm-rivet-pitch-nasa", D=D), "one row"
+    elif rows == 2:
+        second, layout = _limit(prof, "sm-rivet-pitch-double-faa", D=D), "two rows"
+    else:
+        second, layout = _limit(prof, "sm-rivet-pitch-multiple-faa", D=D), "three or more staggered rows"
+    k = round(second.value / D)
     if p + 1e-9 < least.min:
         v, why = "fail", "below the FAA's 3D"
-    elif rows > 1 and p + 1e-9 < double.value:
-        v, why = "warn", "the FAA spaces two or more rows at 4D"
+    elif p + 1e-9 < second.value:
+        v, why = ("pass", "between 3D and 4D (one row)") if rows == 1 else ("warn", f"the FAA lays {layout} out at {k}D")
     else:
-        v, why = "pass", ("at least 4D, the nominal" if p + 1e-9 >= nominal.value else "between 3D and 4D (one row)")
-    checks.append(_check("pitch", v, round(p, 4), f"at least {least.min:.3f} mm (3D); {second.value:.3f} mm (4D) "
-                         "nominal", f"{least.rule}, {second.rule}", f"{least.source}, {second.source}", why))
+        v, why = "pass", f"at least {k}D, the layout's nominal for {layout}"
+    checks.append(_check("pitch", v, round(p, 4), f"at least {least.min:.3f} mm (3D); {second.value:.3f} mm ({k}D) for "
+                         f"{layout}", f"{least.rule}, {second.rule}", f"{least.source}, {second.source}", why))
     if rows > 1:
+        gap = _limit(prof, "sm-rivet-row-spacing-faa" if rows == 2 else "sm-rivet-row-spacing-multiple-faa", D=D)
+        m = round(gap.min / D)
         if row_spacing_mm is None:
-            checks.append(_check("row spacing", "warn", None, f"at least {double.value:.3f} mm (4D)", double.rule,
-                                 double.source, "not given: the FAA spaces the rows 4D apart too"))
+            checks.append(_check("row spacing", "warn", None, f"at least {gap.min:.3f} mm ({m}D)", gap.rule, gap.source,
+                                 f"not given: the FAA spaces {layout} {m}D apart"))
         else:
             g = _num("row_spacing_mm", row_spacing_mm)
-            v = "pass" if g + 1e-9 >= double.value else "warn"
-            checks.append(_check("row spacing", v, round(g, 4), f"at least {double.value:.3f} mm (4D)", double.rule,
-                                 double.source, "the rows are 4D apart" if v == "pass" else
-                                 "closer than the FAA's 4D between rows"))
+            v = "pass" if g + 1e-9 >= gap.min else "warn"
+            checks.append(_check("row spacing", v, round(g, 4), f"at least {gap.min:.3f} mm ({m}D)", gap.rule,
+                                 gap.source, f"the rows are at least {m}D apart" if v == "pass" else
+                                 f"closer than the FAA's {m}D between {layout}"))
 
     # Each sheet: t/D, the thinnest aluminium, and the metals.
     thin_al = _limit(prof, "sm-rivet-sheet-min-pop")
@@ -343,8 +354,8 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
                                  thin_al.rule, thin_al.source, "POP sets the formed head of an open-end rivet against aluminium from 0.020 in"))
         v, why = _galvanic(r.body, s)
         if r.mandrel != r.body:
-            why += (f"; its {r.mandrel} mandrel head stays in the set rivet, a second metal against the sheet that "
-                    "MIL-STD-889C 5.1.3 applies to as well")
+            why += (f"; its {r.mandrel} mandrel head stays inside the rivet's blind end, against the {r.body} body and "
+                    "open to moisture there, a couple of its own")
         checks.append(_check(f"sheet {i + 1} metals", v, f"{r.body} in {s.family}", "the same metal, or a more "
                              "noble fastener", "", "mil-std-889c" if "889C" in why else "nasa-1228", why))
 
@@ -360,6 +371,14 @@ def check_joint(rivet: str, sheets: Sequence[Tuple[str, float]], edge_mm: float,
                          rivet_shear=r.shear_lbf * LBF)
         per_sheet.append({"sheet": s.key, "thickness_mm": t, "fbru_ksi": round(fbru, 3), "e_over_d": round(eod, 4),
                           **{k: (round(v, 4 if k == "efficiency" else 2) if isinstance(v, float) else v) for k, v in j.items()}})
+    short = sorted({sh.key: sh for sh, _ in stack if _fbru(sh, eod) is None}.values(), key=lambda sh: sh.key)
+    if short:
+        k_need = max(min(sh.fbru_ksi) for sh in short)
+        need = k_need * hole
+        names = ", ".join(sh.name for sh in short)
+        checks.append(_check("bearing edge", "warn", round(e, 4), f"at least {need:.3f} mm (e/D {k_need:g} on the hole)",
+                             "", "mil-hdbk-5j", f"MIL-HDBK-5J gives {names} a bearing strength only from e/D {k_need:g}, "
+                             "measured on the hole: the joint's strength is unknown at this edge distance"))
     strong = [x for x in per_sheet if "strength_n" in x]
     strength = min(strong, key=lambda x: x["strength_n"]) if len(strong) == len(per_sheet) else None
     if load_per_pitch_n is not None:

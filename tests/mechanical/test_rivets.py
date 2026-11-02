@@ -141,3 +141,26 @@ def test_bad_inputs(kw):
         joint(**kw)
     with pytest.raises(ValueError):
         R.check_joint("pop-AD43", [("5052-h32", 1.6)], edge_mm=6.35, pitch_mm=9.525)
+
+
+def test_three_or_more_rows_follow_the_faa_staggered_layout():
+    # FAA AC 43.13-1B Fig. 4-5 (B): staggered rows 3D apart, 6D pitch in each row
+    six = joint(pitch=6 * 3.175, rows=3, row_spacing_mm=3 * 3.175)
+    assert by(six, "pitch")["verdict"] == "pass" and "sm-rivet-pitch-multiple-faa" in by(six, "pitch")["rule"]
+    assert by(six, "row spacing")["verdict"] == "pass" and by(six, "row spacing")["rule"] == "sm-rivet-row-spacing-multiple-faa"
+    assert by(joint(pitch=4 * 3.175, rows=3), "pitch")["verdict"] == "warn"
+    assert by(joint(pitch=4 * 3.175, rows=2, row_spacing_mm=3 * 3.175), "row spacing")["verdict"] == "warn"
+
+
+def test_steel_sheet_needs_e_over_d_2_on_the_hole_for_a_bearing_value():
+    s = R.check_joint("mcmaster-97525A415", [("mild-steel", T063), ("mild-steel", T063)], edge_mm=6.35, pitch_mm=9.525)
+    c = by(s, "bearing edge")                              # 2D of the rivet is e/D 1.94 on the 0.131 in hole
+    assert c["verdict"] == "warn" and c["limit"].startswith(f"at least {2 * 0.131 * IN:.3f} mm")
+    assert s["strength_n"] is None
+    ok = R.check_joint("mcmaster-97525A415", [("mild-steel", T063), ("mild-steel", T063)], edge_mm=2 * 0.131 * IN,
+                       pitch_mm=9.525)
+    assert not [x for x in ok["checks"] if x["check"] == "bearing edge"] and ok["strength_n"] is not None
+
+
+def test_the_grip_message_never_prints_a_negative_stack():
+    assert "-0." not in by(joint(thickness_tol_mm=1.0), "grip")["detail"].split("cover ")[1][:3]

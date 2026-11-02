@@ -426,6 +426,7 @@ if the committed file differs.*
 | Edge distance | 2D nominal, 1.5D at least | [ref:nasa-1228] p. 21 |
 | Pitch, one row | ≥ 3D | [ref:faa-ac-43-13-1b] 4-57c |
 | Pitch, two rows | 4D, rows 4D apart | [ref:faa-ac-43-13-1b] Fig. 4-5 |
+| Pitch, three or more rows | 6D in each row, staggered, rows 3D apart | [ref:faa-ac-43-13-1b] Fig. 4-5 (B) |
 | Pitch, nominal | 4D | [ref:nasa-1228] pp. 21, 34 |
 | Rivet size | D ≈ 3 × the thicker sheet | [ref:faa-ac-43-13-1b] 4-57c |
 | Sheet for the bearing allowables | t ≥ 0.18D (solid rivets, 8.1.2.1); blind rivets: take care below 0.25D (8.1.3) | [ref:mil-hdbk-5j] |

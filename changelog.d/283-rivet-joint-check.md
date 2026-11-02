@@ -8,3 +8,7 @@
 - `cadagent.formulas` gains riveted lap-joint equations: `rivet_shear_force`, `bearing_force`, `tearing_force`,
   `solid_sheet_force` and `lap_joint` (strength and efficiency per pitch). They are tested against MIL-HDBK-5J's shear
   and bearing tables and the worked lap joints of Abbud's lecture notes (#283).
+- The rivet check takes e/D on the hole, as MIL-HDBK-5J does, with Fbru linear between e/D 1.5 and 2.0. When a
+  sheet has no bearing value at the joint's e/D, it says which edge distance would give one. Rows follow the FAA's
+  layouts: two rows at 4D with the rows 4D apart, and three or more staggered rows at 6D with the rows 3D apart
+  (#283).

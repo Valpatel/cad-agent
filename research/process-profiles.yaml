@@ -3638,6 +3638,44 @@ rules:
     source: nasa-1228
     status: read
     verified: 2026-11-01
+  - id: sm-rivet-pitch-multiple-faa
+    process: sheet-metal
+    feature: rivet
+    variant: three or more rows, staggered
+    quantity: rivet centre to centre along a row
+    value: "6*D"
+    units: mm
+    applies: three or more staggered rows (FAA AC 43.13-1B Fig. 4-5 (B)); each row offset half a pitch from the next
+    datum: hole centre to hole centre
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-02
+  - id: sm-rivet-row-spacing-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-row-spacing
+    variant: double row
+    quantity: distance between two rows of rivets
+    min: "4*D"
+    units: mm
+    applies: two rows (FAA AC 43.13-1B Fig. 4-5 (A))
+    datum: row centre line to row centre line
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-02
+  - id: sm-rivet-row-spacing-multiple-faa
+    process: sheet-metal
+    feature: rivet
+    compare: sm-rivet-row-spacing
+    variant: three or more rows, staggered
+    quantity: distance between two rows of rivets
+    min: "3*D"
+    units: mm
+    applies: three or more staggered rows (FAA AC 43.13-1B Fig. 4-5 (B)), with a 6D pitch in each row
+    datum: row centre line to row centre line
+    source: faa-ac-43-13-1b
+    status: read
+    verified: 2026-11-02
   - id: sm-rivet-sheet-ratio-mil5j
     process: sheet-metal
     feature: rivet

@@ -113,3 +113,32 @@ flowchart TD
   search snippets".
 - **Check:** The answer cites the file, part or URL that was inspected.
 - **Source:** 2026-10-25T01:30, 02:19.
+
+### Never `pkill -f` or `pgrep -f` a pattern that is also in your own command line
+- **Rule:** `pkill -f` and `pgrep -f` match the whole command line of every process, including the shell running
+  the command. A pattern that appears in that command matches the agent's own shell, and the kill ends it. Match on
+  the program's path with the bracket trick (`ps -eo pid,args | grep "[/]app/bin/..."`), or kill a PID you saved
+  when you started the job.
+- **Incident:** in the Cat 323 excavator session (2026-11-01, session `47707e1e-b3c1-4114-b10e-9fc722a426bd`), the
+  agent ran `pkill -f "cad/build.py" ; ... sed -i ... cad/assembly.py` to stop a background build. The pattern was in
+  its own command, so the shell died with exit code 144, and the agent had to check whether the `sed` had run. Later,
+  `for p in $(pgrep -f "exports/slice/_gui/datadir"); do kill $p; done` to close a PrusaSlicer window killed the shell
+  the same way (exit 144), with the relaunch in the same command.
+- **Check:** before any `pkill -f`, `pgrep -f | kill` or `killall`, the pattern is not a substring of the command
+  being run. A long-running job's PID is saved when it starts (`$!`), and that PID is what gets killed.
+- **Source:** Cat 323 session 2026-11-01T20:30, 22:12, 22:36.
+
+### When a check flags one part, test that part alone before rerunning the full pipeline
+- **Rule:** a fix for one flagged part is tried on that part alone: build it, export it and slice or check it in
+  seconds. Rerun the full pipeline once, when the local fixes pass. To find what a warning is about, slice the part in
+  pieces.
+- **Incident:** the excavator's full rebuild of 46 parts took about 13 minutes, and a round with the clearance sweep
+  and slicing took up to about 40. When the track frame's roller-pocket arches were flagged, the agent built just the
+  frame with the steeper arch, exported its sections and sliced those, "before doing a full rebuild". The track link's
+  fix was tested by building and slicing one link. Slicing the frame in sections showed which one carried the
+  warning. The project then cached the built parts as BREP under one hash of all its sources, so the clearance,
+  render and slice steps share one build. Any source edit still rebuilds every part.
+- **Check:** each fix's report names the single-part test that confirmed it, before the full run. Full runs are
+  counted, and the final one is the run whose outputs are reported. A part cache (#250) keeps the full run short.
+- **Source:** Cat 323 session 2026-11-01T19:54, 20:31, 21:17, 21:18, 22:36; the project's `cad/assembly.py`
+  (`exports/.partcache/<source hash>/`).

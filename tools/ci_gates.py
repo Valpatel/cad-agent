@@ -10,9 +10,10 @@ Gates, for PRs into dev and main (CONTRIBUTING.md "Gates"):
 
 - branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ research/ test/ refactor/ release/
   vendor-update/ dependabot/ branches of this repo, or a fork's PR (the outside-contribution checks, #111, apply).
-- review: the latest verdict from a reviewer with write access must be pass, on the PR's head commit (a push after the
-  pass needs a new verdict, so everything that reaches dev or main was reviewed as it is). The verdict is the last line
-  of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->`` (or ``verdict=block``).
+- review: the latest verdict from a maintainer (MAINTAINERS, with write access) must be pass, on the PR's head
+  commit (a push after the pass needs a new verdict, so everything that reaches dev or main was reviewed as it is).
+  The verdict is the last line of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->``
+  (or ``verdict=block``).
 - release (main only): the pyproject.toml version is above main's and CHANGELOG.md has ``## vX.Y.Z (YYYY-MM-DD)``.
 
 Why statuses and not job results: the workflow runs on ``pull_request_target``, so the default branch's (dev's) copy of
@@ -20,7 +21,9 @@ this file decides, never the PR's (a PR that edits the gates cannot pass them), 
 into main come from dev, so dev's gates judge them too. Each result is
 posted as a commit status on the PR's head commit with the base in its name (``cad-gates/main/review``), so a PR into
 one branch cannot supply another branch's required check. A fork's own workflows get a read-only token and cannot post
-statuses. Anyone with write access can, which is why write access is the trust boundary throughout.
+statuses. Anyone with write access can, even through a workflow of their own, so statuses alone are not the trust
+boundary: only maintainers' verdicts count here, and the repository ruleset "Only maintainers merge into dev and main"
+lets only the admin role update those branches, so a collaborator cannot merge at all.
 
 Reviews do not trigger workflows that can post statuses, so a verdict posted after the last run is read by the next
 one: the reviewer's re-run (``workflow_dispatch``), the scheduled sweep (every 15 minutes; it posts only statuses that
@@ -42,6 +45,19 @@ FEATURE_BRANCH = re.compile(
     r"^(feat|fix|ci|docs|research|test|refactor|release|vendor-update|dependabot)/[A-Za-z0-9._/-]+$")
 MARKER = re.compile(r"^<!--\s*cad-review\s+verdict=(pass|block)\s+sha=([0-9a-f]{40})\s*-->$")
 WRITERS = {"admin", "maintain", "write"}
+# Whose review verdicts count. Write access alone is not enough: a collaborator with write access can push branches
+# and run CI, but their PRs merge only after a maintainer's review, and only a maintainer merges them. All of the
+# project's agents review through the maintainer account, so this is the project's own review, not a person's. Change
+# this list only by a reviewed PR; the gates run from dev's copy, so a PR cannot add itself. Logins are compared in
+# lower case (GitHub logins are case-insensitive), however they are written here.
+MAINTAINERS = frozenset(login.lower() for login in {"mvalancy"})
+
+
+def may_review(login: str, permission: str) -> bool:
+    """A verdict counts when its author is a maintainer who still has write access."""
+    return login.lower() in MAINTAINERS and permission in WRITERS
+
+
 GATED = ("dev", "main")
 
 Result = Tuple[bool, str]
@@ -70,8 +86,8 @@ def marker(body: Optional[str]) -> Optional[Tuple[str, str]]:
     return (m.group(1), m.group(2)) if m else None
 
 
-def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[Tuple[int, str, str, str]]:
-    """(review id, verdict, sha, reviewer) for every live review with a marker by someone with write access, in the
+def verdicts(reviews: Iterable[dict], can_review: Callable[[str], bool]) -> List[Tuple[int, str, str, str]]:
+    """(review id, verdict, sha, reviewer) for every live review with a marker by a maintainer (`can_review`), in the
     order GitHub created them (ids increase; timestamps can tie)."""
     out = []
     for r in reviews:
@@ -79,13 +95,13 @@ def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[
             continue
         found = marker(r.get("body"))
         login = (r.get("user") or {}).get("login") or ""
-        if found and login and can_write(login):
+        if found and login and can_review(login):
             out.append((int(r["id"]), found[0], found[1], login))
     return sorted(out)
 
 
-def review_gate(reviews: Iterable[dict], head_sha: str, can_write: Callable[[str], bool]) -> Result:
-    marked = verdicts(reviews, can_write)
+def review_gate(reviews: Iterable[dict], head_sha: str, can_review: Callable[[str], bool]) -> Result:
+    marked = verdicts(reviews, can_review)
     if not marked:
         return False, "no review verdict yet: ask a separate reviewer; their summary review ends with the verdict marker"
     _, verdict, sha, who = marked[-1]
@@ -163,15 +179,16 @@ def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, D
         "--jq", ".[] | {id, state, body, user: {login: .user.login}}").splitlines() if line.strip()]
     cache: Dict[str, bool] = {}
 
-    def can_write(login: str) -> bool:
+    def can_review(login: str) -> bool:
         if login not in cache:
             try:
-                cache[login] = json.loads(_gh("api", f"repos/{repo}/collaborators/{login}/permission"))["permission"] in WRITERS
+                permission = json.loads(_gh("api", f"repos/{repo}/collaborators/{login}/permission"))["permission"]
+                cache[login] = may_review(login, permission)
             except subprocess.CalledProcessError:
                 cache[login] = False
         return cache[login]
 
-    results["review"] = review_gate(reviews, head["sha"], can_write)
+    results["review"] = review_gate(reviews, head["sha"], can_review)
     if base == "main":
         # The PR's files are read as data from its head commit (fetched, never checked out or run).
         subprocess.run(release_fetch(number), check=True)

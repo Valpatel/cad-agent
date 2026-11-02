@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 296" width="720" height="296" role="img" aria-label="A 0.9 mm FDM wall, checked against every source: warn" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<rect width="720" height="296" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">A 0.9 mm FDM wall, checked against every source: warn</text>
+<text x="18" y="50" font-size="12" fill="#526863">cadagent.manufacturing.dfm.check, nozzle 0.4 mm: meets 2 of 5 verified rules</text>
+<line x1="300.0" y1="76" x2="300.0" y2="214" stroke="#d8e0d3"/>
+<text x="300.0" y="229" font-size="11" fill="#526863" text-anchor="middle">0</text>
+<line x1="393.0" y1="76" x2="393.0" y2="214" stroke="#d8e0d3"/>
+<text x="393.0" y="229" font-size="11" fill="#526863" text-anchor="middle">0.5</text>
+<line x1="486.0" y1="76" x2="486.0" y2="214" stroke="#d8e0d3"/>
+<text x="486.0" y="229" font-size="11" fill="#526863" text-anchor="middle">1</text>
+<line x1="579.0" y1="76" x2="579.0" y2="214" stroke="#d8e0d3"/>
+<text x="579.0" y="229" font-size="11" fill="#526863" text-anchor="middle">1.5</text>
+<line x1="672.0" y1="76" x2="672.0" y2="214" stroke="#d8e0d3"/>
+<text x="672.0" y="229" font-size="11" fill="#526863" text-anchor="middle">2</text>
+<text x="676" y="244" font-size="11" fill="#526863" text-anchor="end">minimum wall, mm</text>
+<line x1="467.4" y1="70" x2="467.4" y2="214" stroke="#173d3c" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="472.4" y="68" font-size="11" font-weight="700" fill="#173d3c">the wall, 0.9 mm</text>
+<text x="290" y="101.0" font-size="12" fill="#173d3c" text-anchor="end">fdm-wall-min-prusa</text>
+<circle cx="383.7" cy="97.0" r="6" fill="#6f8a80"/>
+<text x="393.7" y="101.0" font-size="11" fill="#173d3c">≥ 0.45 · pass</text>
+<text x="290" y="127.0" font-size="12" fill="#173d3c" text-anchor="end">fdm-wall-min-hubs</text>
+<circle cx="448.8" cy="123.0" r="6" fill="#6f8a80"/>
+<text x="458.8" y="127.0" font-size="11" fill="#173d3c">≥ 0.8 · pass</text>
+<text x="290" y="153.0" font-size="12" fill="#173d3c" text-anchor="end">fdm-wall-min-xometry-eu</text>
+<rect x="439.5" y="144.0" width="46.5" height="10" rx="5" fill="#c98a16"/>
+<text x="494.0" y="153.0" font-size="11" fill="#173d3c">0.75–1 · warn</text>
+<text x="290" y="179.0" font-size="12" fill="#173d3c" text-anchor="end">fdm-wall-min-nozzle-xometry-eu</text>
+<circle cx="523.2" cy="175.0" r="6" fill="#bd3a12"/>
+<text x="533.2" y="179.0" font-size="11" fill="#173d3c">≥ 1.2 · fail</text>
+<text x="290" y="205.0" font-size="12" fill="#173d3c" text-anchor="end">fdm-wall-min-xometry-us</text>
+<rect x="523.2" y="196.0" width="55.8" height="10" rx="5" fill="#bd3a12"/>
+<text x="587.0" y="205.0" font-size="11" fill="#173d3c">1.2–1.5 · fail</text>
+<rect x="18" y="259" width="12" height="12" rx="3" fill="#6f8a80"/>
+<text x="35" y="269" font-size="11" fill="#173d3c">meets the rule</text>
+<rect x="131.60000000000002" y="259" width="12" height="12" rx="3" fill="#c98a16"/>
+<text x="148.60000000000002" y="269" font-size="11" fill="#173d3c">inside its range</text>
+<rect x="258.0" y="259" width="12" height="12" rx="3" fill="#bd3a12"/>
+<text x="275.0" y="269" font-size="11" fill="#173d3c">below it</text>
+<text x="18" y="288" font-size="10.5" fill="#526863">A bar: one limit somewhere in the range by the source's own conditions. Rules are research/process-profiles.yaml's, by id.</text>
+</svg>

@@ -1,8 +1,9 @@
 # Manufacturing-process profiles: design rules by process, each cited to the person, company or standard behind it
 # (Valpatel/cad-agent#99). The page that explains them is research/process-profiles.md.
 #
-# Who reads this: agents choosing limits for a part, and future checks and calculators (cadagent.process, #99) that
-# need a process's minimum wall, hole-to-bend distance or draft instead of hard-coding one printer's numbers.
+# Who reads this: agents choosing limits for a part, and the checks and calculators (cadagent.manufacturing.process,
+# .dfm, .sheet_metal and .fit_coupons, #99) that need a process's minimum wall, hole-to-bend distance or draft instead
+# of hard-coding one printer's numbers.
 #
 # "We are highlighting experts, not taking credit for their tips." Every rule names its source; sources are
 # summarised and cited, never copied. Paid standards are cited by number and title only.

@@ -11,7 +11,7 @@ it. **A rule from a design guide says a part is likely to be made well. It does 
 | `cadagent.manufacturing.process` | Loads the profiles as typed values: rules, limits, tolerances, FDM layer factors, a shop's bend table. Every value carries its rule id and source id | the YAML; the data sheets in `cadagent.mechanical.compliant.allowables` |
 | `cadagent.manufacturing.dfm` | **The check.** Holds walls, holes, pins, gaps, bridges, overhangs, flanges and hole-to-bend distances against every verified source, and says which way a printed feature's stress crosses the layers | the rules by `compare` key; the material's layer factors |
 | `cadagent.manufacturing.sheet_metal` | **The calculator.** K-factor, bend allowance and deduction, flat length, shortest flange and relief | the shop's table first, then the generic rules and the bend-allowance formula |
-| `cadagent.manufacturing.fit_coupons` | Its hole undersize and fit allowances are now read from the profile by rule id, not typed in | `fdm-hole-undersize-cnckitchen`, `fdm-clearance-*` |
+| `cadagent.manufacturing.fit_coupons` | Its hole undersize and fit allowances are now read from the profile by rule id, not typed in | `fdm-hole-undersize-cnckitchen`, `fdm-clearance-*`, `fdm-insert-hole-cad-offset-cnckitchen` |
 
 ## The check: every source, side by side
 

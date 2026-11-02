@@ -32,6 +32,21 @@ def test_numbers_stay_in_step_with_the_process_profile():
             _rule(rule_id)                                                  # every cited row exists
 
 
+def test_insert_sweep_centres_on_the_hole_inserts_draws():
+    """The coupon's middle hole is the hole ``inserts.hole_design`` draws the part with (#290): CNC Kitchen's 4.2 mm
+    in CAD for its 4.0 mm M3 hole, 0.2 mm over the maker's, not the maker's hole plus the 0.25 mm undersize."""
+    from cadagent.mechanical import inserts
+    for key, ins in inserts.INSERTS.items():
+        fit = fc.Fit(key, ins.hole_mm, "insert")
+        drawn = inserts.hole_design(ins)["diameter_mm"]
+        assert fit.centre_mm == pytest.approx(drawn), key
+        assert fit.diameters()[fit.count // 2] == pytest.approx(drawn), key
+    m3 = fc.Fit("M3 insert", inserts.INSERTS["mcmaster-94459A140"].hole_mm, "insert")
+    assert m3.centre_mm == pytest.approx(4.2)
+    # read back, the middle hole means the printer printed as CNC Kitchen's did: the profile's undersize
+    assert fc.from_coupon(m3, 4.2)["printer_offset_mm"] == pytest.approx(fc.UNDERSIZE_MM)
+
+
 def test_sweep_is_centred_on_nominal_plus_allowance_plus_undersize():
     fit = fc.Fit("pivot pin", 5.0, "slide")
     assert fit.centre_mm == pytest.approx(5.5)

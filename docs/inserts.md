@@ -33,7 +33,9 @@ WARN  bracket: M4 clamping Bambu PLA Basic; tighten to at most 0.68 N m (head be
 ```
 
 The command exits 1 when a joint fails and 2 when the file is wrong. A warning does not fail it. The JSON holds every
-row with its value, limit, verdict and reason, the insert's capacities, the torque ceilings and the limits.
+row with its value, limit, verdict and reason, the insert's capacities, the torque ceilings and the limits. Its
+top-level `pass` is true unless a joint fails, so a project's `cad: checks` row can read the file as it is:
+`{id: inserts, title: Insert joints, file: exports/inserts.json}` (the row's `pass_key` defaults to `pass`).
 
 From Python:
 

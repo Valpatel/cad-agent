@@ -20,8 +20,11 @@ by rule id when the module loads:
 * undersize, ``fdm-hole-undersize-cnckitchen``: printed holes came out about 0.25 mm under CAD (one printer, PLA);
 * ``slide``, ``fdm-clearance-sliding-xometry-eu``: 0.2-0.3 mm clearance for a sliding fit (0.25 taken);
 * ``free``, ``fdm-clearance-moving-prusa``: at least 0.3 mm for parts that move;
-* ``insert``: the insert maker's hole, plus the undersize, which is CNC Kitchen's 0.2-0.3 mm CAD allowance
-  (``fdm-insert-hole-cad-offset-cnckitchen``);
+* ``insert``: centred on the hole :func:`cadagent.mechanical.inserts.hole_design` draws, the maker's hole plus
+  the low end of CNC Kitchen's 0.2-0.3 mm CAD offset (``fdm-insert-hole-cad-offset-cnckitchen``): for its M3 insert's
+  4.0 mm hole, 4.2 mm in CAD was the sweet spot (about 90 % of the highest pull-out, pre-seating with slight
+  resistance). The offset already covers the printed hole's undersize, measured on the same printer, so the allowance
+  is the offset less the undersize (-0.05 mm), and nominal + allowance + undersize lands on it;
 * ``press``: no allowance (line to line once the undersize is added); no published interference for a press fit in a
   printed hole was found, so the sweep is how you find it.
 
@@ -53,14 +56,20 @@ _SLIDE = _FDM.verified_rule("fdm-clearance-sliding-xometry-eu").limit()
 _FREE = _FDM.verified_rule("fdm-clearance-moving-prusa").limit()
 _INSERT = _FDM.verified_rule("fdm-insert-hole-cad-offset-cnckitchen").limit()
 UNDERSIZE_MM = _UNDER.value
-ALLOWANCE_MM = {"press": 0.0, "slide": round((_SLIDE.min + _SLIDE.max) / 2, 4), "free": _FREE.min, "insert": 0.0}
+# an insert's hole: CNC Kitchen's CAD offset includes the undersize it measured on the same printer, so the allowance
+# (the hole wanted as printed, over the maker's) is the offset less the undersize, and the sweep centres on the offset
+# (#290: the hole inserts.hole_design draws)
+ALLOWANCE_MM = {"press": 0.0, "slide": round((_SLIDE.min + _SLIDE.max) / 2, 4), "free": _FREE.min,
+                "insert": round(_INSERT.min - _UNDER.value, 4)}
 ALLOWANCE_SOURCE = {
     "press": "none published for a printed hole: the sweep finds it",
     "slide": f"research/process-profiles.yaml {_SLIDE.cite()} ({_SLIDE.text}; the middle, "
              f"{ALLOWANCE_MM['slide']:g}, taken)",
     "free": f"research/process-profiles.yaml {_FREE.cite()} ({_FREE.text})",
-    "insert": f"the insert maker's hole; the undersize is CNC Kitchen's {_INSERT.text} CAD allowance "
-              f"(research/process-profiles.yaml {_INSERT.cite()})",
+    "insert": f"the insert maker's hole plus {_INSERT.min:g} mm in CAD, the low end of CNC Kitchen's {_INSERT.text} "
+              f"(research/process-profiles.yaml {_INSERT.cite()}; its sweet spot for its M3's 4.0 mm hole was 4.2 mm, about 90 % of the highest pull-out), as "
+              f"cadagent.mechanical.inserts.hole_design draws it; that offset includes the {_UNDER.value:g} mm "
+              f"undersize, so the allowance is {round(_INSERT.min - _UNDER.value, 4):g}",
 }
 UNDERSIZE_SOURCE = (f"research/process-profiles.yaml {_UNDER.cite()}: printed holes about {UNDERSIZE_MM:g} mm under "
                     "CAD (one printer, PLA); every printer and filament differs, which is why the coupon is printed")

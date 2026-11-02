@@ -90,6 +90,10 @@ SolidWorks' K-factor page). Outside setback `OSSB = (R + T) tan(A / 2)`. Bend de
 a bend takes off the sum of the legs measured to the outside. The tests check them against vectors worked by hand
 (`tests/test_sheet_metal.py`).
 
+This calculator gives a bend's numbers; it does not unfold a model. Unfolding a 3D part into its flat pattern is the
+job of build123d's `BuildSheet` and `unfold` (to adopt once released) or FreeCAD's SheetMetal workbench, which take
+the same K-factor and radius ([the survey](../research/fea-and-process-tools.md#4-sheet-metal-unfold-and-bend-tables)).
+
 <details>
 <summary>Feature kinds the check knows, and the limits it states</summary>
 

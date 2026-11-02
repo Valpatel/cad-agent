@@ -51,7 +51,8 @@ def rows(results, feature_id):
     return {c["name"]: c for c in feature["checks"]}
 
 TOP_KEYS = {"schema_version", "title", "features", "header_meta", "footer_meta", "project",
-            "revision", "physical_fit_verified", "slicer_run", "pass"}
+            "revision", "physical_fit_verified", "slicer_run", "pass",
+            "cad_agent"}   # added in schema 1.0 (#282): the cad-agent version that wrote it; `update` compares it
 
 def assert_schema(results):
     """The results schema 1.0 shape that readers of the file rely on."""

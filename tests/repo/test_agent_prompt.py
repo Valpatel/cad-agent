@@ -55,7 +55,7 @@ def test_the_paste_in_line_is_short_and_points_at_llms_txt():
 def test_commands_are_public_and_name_real_commands():
     qe = _eval()
     cmds = qe.commands(BLOCK)
-    assert cmds == ["curl -fsSLO https://cad-agent.valpatel.com/install.sh && sh install.sh"], cmds
+    assert cmds == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], "the README's command, nothing else"
     assert "Windows: irm https://cad-agent.valpatel.com/install.ps1 | iex" in BLOCK
     assert "`cad-agent update`" in BLOCK, "an agent that finds it installed updates first"
     from cadagent.cli import build_parser
@@ -90,7 +90,9 @@ def test_the_block_asks_nothing_risky():
     assert "send it only if they say yes" in flat, "the person approves every report before it is sent"
     assert "no telemetry" in flat and "through GitHub only" in flat
     assert "Leave out anything private" in flat
-    assert not re.search(r"\|\s*(?:ba|z)?sh\b|curl\b[^\n]*\|", BLOCK), "the agent downloads the script, then runs it"
+    piped = re.findall(r"[^\n]*\|\s*(?:ba|z)?sh\b[^\n]*|[^\n]*curl\b[^\n]*\|[^\n]*", BLOCK)
+    assert [p.strip() for p in piped] == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], \
+        "the only script piped to a shell is our own installer, from our own site"
     assert not re.search(r"sudo|--force|rm -rf|token|password|secret|ignore (?:previous|all)|maintainer", BLOCK, re.I)
     assert "gh issue create -R Valpatel/cad-agent" in BLOCK and "--label" not in BLOCK   # outsiders cannot set labels
 

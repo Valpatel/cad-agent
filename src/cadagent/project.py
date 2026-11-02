@@ -318,6 +318,9 @@ def _min_version(value: Any) -> str:
     """``cad: cad-agent:``, the oldest cad-agent a project builds with: a release number such as 0.14 or 0.14.0."""
     if value in (None, ""):
         return ""
+    if isinstance(value, float):        # YAML reads 0.10 as the number 0.1: the release meant cannot be recovered
+        raise CadConfigError(f"cad.cad-agent must be a string, such as \"0.14\" in quotes: YAML reads the number "
+                             f"{value!r} with its trailing zeros dropped (0.10 becomes 0.1)")
     text = str(value).strip().lstrip("v")
     if not re.fullmatch(r"\d+\.\d+(\.\d+)?", text):
         raise CadConfigError(f"cad.cad-agent is the oldest cad-agent release this project builds with, such as "

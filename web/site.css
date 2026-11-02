@@ -46,11 +46,10 @@ text-decoration:none;min-height:48px;transition:transform .2s,box-shadow .2s;bor
 .agent-badges{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0;padding:0}
 .agent-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border:1px solid #c9d8ca;border-radius:999px;background:#fff;font:600 12px/1.2 var(--font);color:var(--ink)}
 .agent-mark{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--ink);color:var(--cream);font:700 10px/1 var(--mono)}
-.use-card .agent-copy{margin:0;max-width:none}.use-card .agent-box{max-width:none;white-space:pre;overflow-x:auto;font-size:12px;line-height:1.65;background:#173d3c;border-color:#173d3c;color:#e4efe6;padding:56px 20px 18px}
+.use-card .agent-copy{margin:0;max-width:none}.use-card .agent-box{max-width:none;background:#173d3c;border-color:#173d3c;color:#e4efe6;padding:14px 128px 14px 16px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:14px}
 .use-card .agent-box b{color:#ffb38a}
 .use-card .agent-copy>.cad-copy-btn{--cad-copy-bg:#bd3a12;--cad-copy-fg:#fff;--cad-copy-border:#bd3a12;font-size:13px;min-height:2.6em;padding:.4em 1.1em}
 .use-paste{display:grid;gap:10px}.paste-title{margin:0;font-weight:700;font-size:15px}
-.use-card .agent-box{padding:14px 128px 14px 16px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:14px}
 .os-tabs{margin-top:18px}.os-tab-row{display:flex;gap:6px;margin-bottom:8px}
 .os-tab{padding:7px 13px;border-radius:999px;border:1px solid #c9d8ca;background:#fff;font:600 12.5px/1 var(--font);cursor:pointer;color:var(--ink)}
 .os-tab:hover{border-color:var(--teal)}

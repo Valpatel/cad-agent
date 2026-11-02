@@ -36,6 +36,22 @@ usage() {
     say "  Run it again to update: the same steps as \`cad-agent update\`."
 }
 
+# A release tag is checked out detached (pinned); a branch is followed as a local branch, fast-forward only. The same
+# as `cad-agent update --ref`, for a checkout whose cad-agent is older than that command.
+move_to_ref() {
+    if git -C "$1" fetch --quiet origin "+refs/tags/$2:refs/tags/$2" 2>/dev/null; then
+        git -C "$1" checkout --quiet --detach "refs/tags/$2"
+    else
+        git -C "$1" fetch --quiet origin "+refs/heads/$2:refs/remotes/origin/$2" || die "$2 is not a tag or branch of cad-agent"
+        if git -C "$1" rev-parse --verify -q "refs/heads/$2" >/dev/null; then
+            git -C "$1" switch --quiet "$2"
+            git -C "$1" merge --quiet --ff-only "origin/$2" || die "$1's $2 has its own commits: fork cad-agent to change it"
+        else
+            git -C "$1" switch --quiet -c "$2" "origin/$2"
+        fi
+    fi
+}
+
 main() {
     repo="${CAD_AGENT_REPO:-https://github.com/Valpatel/cad-agent}"
     dir="${CAD_AGENT_DIR:-$HOME/cad-agent}"
@@ -86,21 +102,22 @@ main() {
         command -v uv >/dev/null 2>&1 || die "uv did not install: see https://docs.astral.sh/uv/getting-started/installation/"
     fi
 
-    if [ -d "$dir/.git" ] && command -v cad-agent >/dev/null 2>&1 && cad-agent update --help >/dev/null 2>&1; then
+    if [ -d "$dir/.git" ] && command -v cad-agent >/dev/null 2>&1 && cad-agent update --help 2>/dev/null | grep -q -- --dir; then
         say "updating $dir"
-        set -- update
+        set -- update --dir "$dir"
         [ -n "$ref" ] && set -- "$@" --ref "$ref"
         [ -n "$extras" ] && set -- "$@" --extras "$extras"
         cad-agent "$@"
     else
         if [ -d "$dir/.git" ]; then
             say "found $dir: bringing it up to date and installing the cad-agent command from it"
+            [ -z "$(git -C "$dir" status --porcelain --untracked-files=no)" ] ||
+                die "$dir has changes to tracked files: commit or stash them; to change cad-agent itself, fork it"
             if [ -n "$ref" ]; then
-                git -C "$dir" fetch --quiet --depth 1 origin "$ref" || die "could not fetch $ref into $dir"
-                git -C "$dir" checkout --quiet --detach FETCH_HEAD || die "could not move $dir to $ref"
+                move_to_ref "$dir" "$ref"
             elif [ "$(git -C "$dir" symbolic-ref -q --short HEAD || true)" = main ]; then
                 git -C "$dir" pull --quiet --ff-only origin main ||
-                    die "$dir has its own changes on main: fork cad-agent to change it, or move $dir away and run this again"
+                    die "$dir has its own commits on main: fork cad-agent to change it, or move $dir away and run this again"
             fi
         elif [ -e "$dir" ]; then
             die "$dir exists and is not a git checkout: move it away, or choose another folder with --dir"

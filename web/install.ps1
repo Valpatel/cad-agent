@@ -30,6 +30,14 @@ function Install-CadAgent {
         & $exe @rest
         if ($LASTEXITCODE -ne 0) { throw "cad-agent: $exe $($rest -join ' ') failed (exit $LASTEXITCODE)" }
     }
+    # A native command whose failure is an answer, not an error: its output is dropped. PowerShell 5.1 turns redirected
+    # stderr into error records, which 'Stop' would throw, so it runs with 'Continue'.
+    function Test-Native {
+        $ErrorActionPreference = 'Continue'
+        $exe, $rest = $args
+        & $exe @rest *> $null
+        return ($LASTEXITCODE -eq 0)
+    }
 
     $repo = if ($env:CAD_AGENT_REPO) { $env:CAD_AGENT_REPO } else { 'https://github.com/Valpatel/cad-agent' }
     $dir = if ($env:CAD_AGENT_DIR) { $env:CAD_AGENT_DIR } else { Join-Path $HOME 'cad-agent' }
@@ -73,25 +81,42 @@ function Install-CadAgent {
     $refArgs = @(); if ($ref) { $refArgs = @('--ref', $ref) }
     $canUpdate = $false
     if ((Test-Path (Join-Path $dir '.git')) -and (Get-Command cad-agent -ErrorAction SilentlyContinue)) {
-        try { & cad-agent update --help *> $null; $canUpdate = ($LASTEXITCODE -eq 0) } catch { $canUpdate = $false }
+        $help = & { $ErrorActionPreference = 'Continue'; & cad-agent update --help 2>$null }
+        $canUpdate = ($LASTEXITCODE -eq 0) -and [bool]($help -match '--dir')
     }
     if ($canUpdate) {
         Say "updating $dir"
-        & cad-agent update @refArgs @extraArgs
+        & cad-agent update --dir $dir @refArgs @extraArgs
         if ($LASTEXITCODE -eq 3) {
-            # The dependencies changed, and cad-agent.exe cannot replace itself while it runs: finish here.
-            $cmd = @((& cad-agent update --reinstall-command @extraArgs) | ConvertFrom-Json)
+            # The reinstall is due, and cad-agent.exe cannot replace itself while it runs: finish here.
+            $json = (& cad-agent update --dir $dir --reinstall-command @extraArgs) -join ''
+            $cmd = @(ConvertFrom-Json $json | ForEach-Object { $_ })    # PowerShell 5.1 returns the array as one item
             Invoke-Native @cmd
-            & cad-agent agents install
+            Invoke-Native cad-agent update --dir $dir --reinstalled
+            & cad-agent agents install --source $dir
+            if ($LASTEXITCODE -gt 1) { throw "cad-agent: cad-agent agents install failed (exit $LASTEXITCODE)" }
         } elseif ($LASTEXITCODE -ne 0) {
             throw "cad-agent: cad-agent update failed (exit $LASTEXITCODE)"
         }
     } else {
         if (Test-Path (Join-Path $dir '.git')) {
             Say "found ${dir}: bringing it up to date and installing the cad-agent command from it"
+            if (& git -C $dir status --porcelain --untracked-files=no) {
+                throw "cad-agent: $dir has changes to tracked files: commit or stash them; to change cad-agent itself, fork it"
+            }
             if ($ref) {
-                Invoke-Native git -C $dir fetch --quiet --depth 1 origin $ref
-                Invoke-Native git -C $dir checkout --quiet --detach FETCH_HEAD
+                # A release tag is checked out detached (pinned); a branch is followed as a local branch (as update --ref).
+                if (Test-Native git -C $dir fetch --quiet origin "+refs/tags/${ref}:refs/tags/${ref}") {
+                    Invoke-Native git -C $dir checkout --quiet --detach "refs/tags/$ref"
+                } else {
+                    Invoke-Native git -C $dir fetch --quiet origin "+refs/heads/${ref}:refs/remotes/origin/${ref}"
+                    if (Test-Native git -C $dir rev-parse --verify -q "refs/heads/$ref") {
+                        Invoke-Native git -C $dir switch --quiet $ref
+                        Invoke-Native git -C $dir merge --quiet --ff-only "origin/$ref"
+                    } else {
+                        Invoke-Native git -C $dir switch --quiet -c $ref "origin/$ref"
+                    }
+                }
             } elseif ((& git -C $dir symbolic-ref -q --short HEAD) -eq 'main') {
                 Invoke-Native git -C $dir pull --quiet --ff-only origin main
             }

@@ -120,7 +120,7 @@ def install(work: Path, ref: str = "main", local: bool = False) -> dict:
     if local:
         cmds = [f'sh "{ROOT}/web/install.sh" --ref {ref}']
     else:
-        cmds = [c + (f" --ref {ref}" if ref != "main" else "") for c in commands()]
+        cmds = [c.replace("| sh", f"| sh -s -- --ref {ref}") if ref != "main" else c for c in commands()]
     steps = [_run(c, env, home) for c in cmds + cmds]
     exe = home / ".local" / "bin" / "cad-agent"
     smoke = {

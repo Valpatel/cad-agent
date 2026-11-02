@@ -422,8 +422,9 @@ def install(home: Path, root: Path, targets=TARGETS, copy: bool = False, dry_run
     replaced or removed; anything else at a destination is a conflict and left untouched. A link that cannot be made
     (Windows without Developer Mode) becomes a copy."""
     done, conflicts = [], []
+    plan = _plan(home, root, targets)              # checks the folders first, before anything is removed
     removed = migrate(home, dry_run) + prune(home, root, targets, dry_run)
-    for item, dest, how in _plan(home, root, targets):
+    for item, dest, how in plan:
         if (dest.exists() or dest.is_symlink()) and not _ours(dest):
             conflicts.append(str(dest))
             continue
@@ -564,16 +565,42 @@ def pull(root: Path, ref: Optional[str] = None) -> dict:
             "at": ref or "main", "dependencies_changed": any(f in DEPENDENCY_FILES for f in changed)}
 
 
+def _receipt_extras() -> Optional[List[str]]:
+    """The extras uv recorded when it installed this cad-agent (``uv-receipt.toml`` in the tool environment), or None
+    for an install uv did not make."""
+    text = _text(Path(sys.prefix) / "uv-receipt.toml")
+    if not text:
+        return None
+    try:
+        import tomllib
+        reqs = tomllib.loads(text).get("tool", {}).get("requirements", [])
+        for req in reqs if isinstance(reqs, list) else []:
+            if isinstance(req, dict) and req.get("name") == "cad-agent":
+                return sorted(str(e) for e in req.get("extras", []))
+    except (ImportError, ValueError):
+        m = re.search(r'name\s*=\s*"cad-agent"[^}]*?extras\s*=\s*\[([^\]]*)\]', text)
+        if m:
+            return sorted(re.findall(r'"([^"]+)"', m.group(1)))
+    return None
+
+
 def installed_extras(root: Path) -> List[str]:
-    """The extras whose every package is installed in this Python: what to keep when reinstalling."""
+    """The extras this cad-agent was installed with: what uv recorded, else the extras whose every package is
+    installed in this Python. Call it before pulling: a newer pyproject.toml may list packages not installed yet."""
+    receipt = _receipt_extras()
+    if receipt is not None:
+        return receipt
     import importlib.metadata as md
     try:
         import tomllib
     except ImportError:                                    # Python 3.10: read the table by hand
         tomllib = None
-    text = (root / "pyproject.toml").read_text()
+    text = _text(root / "pyproject.toml")
     if tomllib:
-        extras = tomllib.loads(text).get("project", {}).get("optional-dependencies", {})
+        try:
+            extras = tomllib.loads(text).get("project", {}).get("optional-dependencies", {})
+        except ValueError:                                 # a damaged pyproject.toml: update refuses it next
+            return []
     else:
         block = text.split("[project.optional-dependencies]", 1)[-1].split("\n[", 1)[0]
         extras = {m.group(1): re.findall(r'"([^"]+)"', m.group(2))
@@ -604,6 +631,28 @@ def reinstall_command(root: Path, extras: List[str]) -> List[str]:
         return ["uv", "tool", "install", "--quiet", "--force", "--editable", "--python",
                 f"{sys.version_info.major}.{sys.version_info.minor}", spec]
     return [sys.executable, "-m", "pip", "install", "--quiet", "-e", spec]
+
+
+def _pending_file(root: Path) -> Optional[Path]:
+    git_dir = _git(root, "rev-parse", "--absolute-git-dir", check=False)
+    return Path(git_dir) / "cad-agent-reinstall-pending" if git_dir else None
+
+
+def reinstall_pending(root: Path, extras: Optional[List[str]] = None, clear: bool = False) -> Optional[List[str]]:
+    """The extras of a reinstall that was started and has not finished (it failed, or install.ps1 has not run it yet),
+    so the next update tries again with the same extras; None when nothing is pending. ``extras`` records one, ``clear``
+    forgets it. The marker is a small JSON file in the checkout's .git folder."""
+    marker = _pending_file(root)
+    if marker is None:
+        return None
+    if clear:
+        marker.unlink(missing_ok=True)
+    elif extras is not None:
+        marker.write_text(json.dumps({"reinstall": "started by cad-agent update, not finished", "extras": extras}) + "\n")
+    try:
+        return list(json.loads(marker.read_text()).get("extras", []))
+    except (OSError, ValueError, AttributeError):
+        return [] if marker.exists() else None
 
 
 def release_notes(root: Path, old: str) -> List[dict]:
@@ -681,7 +730,10 @@ def project_advice(project_root: Path, kit_version: str, results_name: str = "ca
     except (OSError, yaml.YAMLError):
         return lines
     need = cad.get("cad-agent")
-    if need and version_ok(kit_version, str(need)) is False:
+    if isinstance(need, float):
+        lines.append(f"write cad-agent: as a string in cad-agent.yaml (\"{need}\" in quotes): YAML reads {need} as a "
+                     "number, so 0.10 becomes 0.1")
+    elif need and version_ok(kit_version, str(need)) is False:
         lines.append(f"this project needs cad-agent {need} or newer and this is {kit_version}: update to it, or pin "
                      "it with --ref")
     exports = project_root / str(cad.get("exports_dir", "exports"))
@@ -702,6 +754,9 @@ def staleness(root: Path, now: Optional[float] = None) -> Optional[str]:
     stamp = _git(root, "log", "-1", "--format=%ct", check=False) if (root / ".git").exists() else ""
     if not stamp.isdigit():
         return None
+    if not _git(root, "symbolic-ref", "-q", "HEAD", check=False) and _git(root, "describe", "--tags", "--exact-match",
+                                                                          "HEAD", check=False):
+        return None                                      # pinned to a release on purpose (--ref vX.Y.Z)
     import time
     days = int(((now or time.time()) - int(stamp)) // 86400)
     if days <= STALE_DAYS:

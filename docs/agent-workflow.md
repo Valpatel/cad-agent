@@ -31,14 +31,17 @@ first. They turn usage reporting off for everything they start; cad-agent itself
 **Update** by running the command again, or `cad-agent update`; both do the same. `update` refuses a checkout with
 changes or on another branch (use a fork for your own work), then:
 
-- fast-forwards `main` with `git pull --ff-only`, or moves to `--ref <tag>`; that fetch is its only network use;
-- reinstalls only when `pyproject.toml` or `uv.lock` changed, or `--extras` adds some, keeping the extras you have;
+- fast-forwards `main` (`git fetch`, then `git merge --ff-only`), or moves to `--ref`: a tag is checked out pinned, a
+  branch is followed; that fetch is its only network use;
+- reinstalls only when `pyproject.toml` or `uv.lock` changed, `--extras` adds some, an earlier reinstall did not
+  finish, or the command runs from another checkout (`--dir`), keeping the extras you installed;
 - links new skills, removes ones the kit dropped, and refreshes copies;
 - prints the CHANGELOG entries since the old commit, "Projects must change" first;
 - in a project folder, says what to re-run when the project was built with an older cad-agent.
 
 Nothing checks for updates in the background. `cad-agent all` notes it when the checkout's last commit is more than 14
-days old, and refuses a project whose `cad: {cad-agent: "0.14"}` asks for a newer cad-agent ([toolkit](toolkit.md)).
+days old (not for a checkout pinned to a release tag), and refuses a project whose `cad: {cad-agent: "0.14"}` asks
+for a newer cad-agent ([toolkit](toolkit.md)).
 
 **By hand**, with Python 3.11 or newer and git:
 

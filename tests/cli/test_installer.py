@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 
 import pytest
@@ -24,15 +25,19 @@ PASTE = (ROOT / "docs" / "agent-prompt.txt").read_text().split("\n", 1)[0]
 GIT = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_NOSYSTEM": "1"}
 FAKE_UV = """#!/bin/sh
-# Stand-in for uv: records each call; `tool install --editable <dir>[extras]` puts a cad-agent that runs <dir>'s code.
-printf '%s\\n' "$*" >> "$HOME/uv-calls.log"
+# Stand-in for uv: records each call. `tool install --editable <dir>[extras]` puts a cad-agent that runs <dir>'s code
+# in a tool environment with uv's receipt (so cad-agent knows uv installed it, and with which extras).
+printf '%s\\n' "$*" >> "${HOME:?}/uv-calls.log"
 [ "$1 $2" = "tool install" ] || [ "$1 $2" = "tool uninstall" ] || exit 0
-mkdir -p "$HOME/.local/bin"
-if [ "$2" = uninstall ]; then rm -f "$HOME/.local/bin/cad-agent"; exit 0; fi
+mkdir -p "${HOME:?}/.local/bin"
+if [ "$2" = uninstall ]; then rm -f "${HOME:?}/.local/bin/cad-agent"; exit 0; fi
 for last; do :; done
-src="${last%%[*}/src"
-printf '#!/bin/sh\\nPYTHONPATH="%s" exec "%s" -m cadagent.cli "$@"\\n' "$src" "@PYTHON@" > "$HOME/.local/bin/cad-agent"
-chmod +x "$HOME/.local/bin/cad-agent"
+extras=$(printf '%s' "$last" | sed -n 's/.*\\[\\(.*\\)\\]$/\\1/p' | sed 's/\\([^,]*\\)/"\\1"/g; s/,/, /g')
+printf '[tool]\\nrequirements = [{ name = "cad-agent", editable = "%s", extras = [%s] }]\\n' "${last%%[*}" "$extras" \\
+    > "@ENV@/uv-receipt.toml"
+printf '#!/bin/sh\\nPYTHONPATH="%s:@SITE@" exec "@ENV@/bin/python" -m cadagent.cli "$@"\\n' "${last%%[*}/src" \\
+    > "${HOME:?}/.local/bin/cad-agent"
+chmod +x "${HOME:?}/.local/bin/cad-agent"
 """
 
 
@@ -54,7 +59,10 @@ def world(tmp_path):
     _git(remote, "commit", "-q", "-m", "kit")
     tools = tmp_path / "tools"
     tools.mkdir()
-    (tools / "uv").write_text(FAKE_UV.replace("@PYTHON@", sys.executable))
+    env_dir = tmp_path / "tool-env"                 # what `uv tool install` makes: a Python of its own
+    subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(env_dir)], check=True)
+    site = ":".join(dict.fromkeys(sysconfig.get_paths()[k] for k in ("purelib", "platlib")))   # PyYAML, NumPy
+    (tools / "uv").write_text(FAKE_UV.replace("@ENV@", str(env_dir)).replace("@SITE@", site))
     (tools / "uv").chmod(0o755)
     home = tmp_path / "home"
     home.mkdir()
@@ -94,6 +102,27 @@ def test_it_installs_then_a_second_run_updates(world):
     assert "dependencies unchanged, nothing to reinstall" in second.stdout
     assert _git(kit, "rev-parse", "HEAD") == _git(remote, "rev-parse", "HEAD"), "fast-forwarded to the new main"
     assert len((home / "uv-calls.log").read_text().splitlines()) == 1, "no reinstall when the dependencies are the same"
+
+    log = lambda: (home / "uv-calls.log").read_text().splitlines()
+    with (remote / "pyproject.toml").open("a") as f:      # a dependency change: reinstall, with the extras it had
+        f.write("# a new dependency would go here\n")
+    _git(remote, "commit", "-qam", "deps")
+    third = _install(env)
+    assert third.returncode == 0, third.stdout + third.stderr
+    assert "the dependencies changed" in third.stdout and log()[-1].endswith(f"{kit}[cad]"), log()
+    fourth = _install(env, "--extras", "fea")               # adding an extra: reinstall with both
+    assert fourth.returncode == 0, fourth.stdout + fourth.stderr
+    assert "extras added: fea" in fourth.stdout and log()[-1].endswith(f"{kit}[cad,fea]"), log()
+    calls = len(log())
+    _git(remote, "tag", "v9.9.9")
+    (remote / "NEWS.txt").write_text("after the release\n")
+    _git(remote, "commit", "-qam", "after v9.9.9")
+    pinned = _install(env, "--ref", "v9.9.9")               # a release tag: pinned, detached
+    assert pinned.returncode == 0, pinned.stdout + pinned.stderr
+    assert _git(kit, "rev-parse", "HEAD") == _git(remote, "rev-parse", "v9.9.9"), pinned.stdout
+    back = _install(env)                                    # and back to main
+    assert back.returncode == 0 and _git(kit, "rev-parse", "HEAD") == _git(remote, "rev-parse", "main"), back.stderr
+    assert log()[calls:] == [], "moving between commits with the same dependencies reinstalls nothing"
 
     (kit / "pyproject.toml").write_text("mine\n")
     refused = _install(env)

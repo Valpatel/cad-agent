@@ -37,7 +37,7 @@ Windows, in PowerShell:
 irm https://cad-agent.valpatel.com/install.ps1 | iex
 ```
 
-It installs uv if it is missing, puts cad-agent in `~/cad-agent` with the `cad-agent` command on your PATH, and adds
+It installs uv if it is missing, puts cad-agent in `~/cad-agent` with the `cad-agent` command in `~/.local/bin`, and adds
 its design skills for Claude Code, Codex, Copilot CLI, Cursor, Gemini CLI and opencode. Run it again, or
 `cad-agent update`, to update.
 

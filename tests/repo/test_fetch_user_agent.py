@@ -2,8 +2,10 @@
 
 cad-agent.valpatel.com is served by Cloudflare Pages, which answers Python urllib's default User-Agent
 (``Python-urllib/3.x``) with error 1010, on the cad-agent hosts and on pages.dev alike; curl, browsers and the agents'
-own fetch tools get through. So code here never fetches with the default: each ``urlopen`` gets a ``Request`` that
-sets ``User-Agent``, and ``urlretrieve`` (which cannot) is not used. docs/agent-prompt.txt tells agents the same.
+own fetch tools get through. So code here never fetches with urllib's default: each ``urlopen``, and each ``open`` of an
+opener from ``build_opener``, is in a function that sets ``User-Agent``; so is each ``http.client`` connection (which
+sends none); and ``urlretrieve`` (which cannot set one) is not used. requests and httpx send their own User-Agent,
+which the CDN lets through. docs/agent-prompt.txt tells agents the same.
 """
 from __future__ import annotations
 
@@ -48,6 +50,9 @@ def offenders(source: str, where: str = "") -> list:
                     bad.append(f"{where}:{node.lineno}: urlopen on a bare URL sends urllib's default User-Agent")
                 elif "User-Agent" not in (text or ""):
                     bad.append(f"{where}:{node.lineno}: urlopen without a User-Agent header in the same function")
+            elif ((name == "open" and "build_opener" in (text or "")) or name in ("HTTPConnection", "HTTPSConnection")) \
+                    and "User-Agent" not in (text or ""):
+                bad.append(f"{where}:{node.lineno}: {name} without a User-Agent header in the same function")
     return sorted(set(bad))
 
 
@@ -63,6 +68,9 @@ def test_the_check_catches_the_default():
     good = ("import urllib.request as r\ndef f(u):\n"
             "    req = r.Request(u, headers={'User-Agent': 'cad-agent/1'})\n    return r.urlopen(req)\n")
     assert offenders(good) == []
+    assert offenders("import urllib.request as r\ndef f(u):\n    return r.build_opener().open(u)\n")
+    assert offenders("import http.client\ndef f():\n    return http.client.HTTPSConnection('x')\n")
+    assert offenders("def f(p):\n    return open(p)\n") == [], "a file open is not a fetch"
 
 
 def test_agents_are_told():

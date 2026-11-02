@@ -11,6 +11,7 @@ import json
 import os
 import subprocess
 import time
+import types
 from pathlib import Path
 
 import pytest
@@ -186,3 +187,48 @@ def test_all_refuses_a_project_that_needs_a_newer_cad_agent(tmp_path, capsys):
     from cadagent.project import CadConfigError, load_project
     with pytest.raises(CadConfigError, match="oldest cad-agent release"):
         load_project(tmp_path)
+
+
+def test_a_dependency_change_keeps_the_extras_and_a_failed_reinstall_is_retried(kit, monkeypatch, capsys):
+    """The extras are read before the pull (a newer pyproject.toml may list a package that is not installed yet), and
+    a reinstall that failed is tried again by the next update, even though the checkout no longer moves."""
+    remote, clone, _ = kit
+    monkeypatch.setattr(agentkit, "kit_root", lambda source=None: clone)
+    monkeypatch.setattr(agentkit, "_receipt_extras", lambda: None)
+    # What metadata would say: with the old pyproject every package of [cad] is installed; the new one adds a package.
+    monkeypatch.setattr(agentkit, "installed_extras",
+                        lambda root: ["cad"] if 'version = "0.1.0"' in (root / "pyproject.toml").read_text() else [])
+    commit(remote, "deps", {"pyproject.toml": '[project]\nname = "cad-agent"\nversion = "0.2.0"\n'})
+    ran, results = [], iter([1, 0, 0, 0])
+    fake = lambda cmd, **kw: (ran.append(cmd), subprocess.CompletedProcess(cmd, next(results)))[1]
+    monkeypatch.setattr(cli, "subprocess", types.SimpleNamespace(run=fake))     # cli's runs only, not agentkit's git
+    assert cli.main(["update"]) == 1, "the reinstall failed"
+    assert ran[0][-1] == f"{clone}[cad]", "the extras it had before the pull"
+    assert agentkit.reinstall_pending(clone) == ["cad"], "remembered with its extras"
+    assert "run update again to retry" in capsys.readouterr().err
+    assert cli.main(["update"]) == 0
+    out = capsys.readouterr().out
+    assert "already at the newest" in out and "an earlier reinstall did not finish" in out
+    assert ran[1][-1] == f"{clone}[cad]" and ran[2][3:5] == ["agents", "install"], "reinstalled, then relinked"
+    assert agentkit.reinstall_pending(clone) is None
+
+
+def test_the_receipt_says_which_extras_uv_installed(tmp_path, monkeypatch):
+    monkeypatch.setattr(agentkit.sys, "prefix", str(tmp_path))
+    assert agentkit._receipt_extras() is None
+    (tmp_path / "uv-receipt.toml").write_text(
+        '[tool]\nrequirements = [{ name = "cad-agent", editable = "/x/cad-agent", extras = ["sim", "cad"] }]\n')
+    assert agentkit._receipt_extras() == ["cad", "sim"]
+    assert agentkit.installed_extras(tmp_path) == ["cad", "sim"]
+
+
+def test_an_unquoted_version_and_a_pinned_tag(kit, tmp_path):
+    from cadagent.project import CadConfigError, load_project
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  cad-agent: 0.10\n")
+    with pytest.raises(CadConfigError, match="must be a string"):
+        load_project(tmp_path)
+    assert "as a string" in agentkit.project_advice(tmp_path, "0.2.0")[0]
+    _, clone, _ = kit
+    stamp = int(git(clone, "log", "-1", "--format=%ct"))
+    agentkit.pull(clone, "v0.1.0")
+    assert agentkit.staleness(clone, now=stamp + 99 * 86400) is None, "a release pinned on purpose is not nagged"

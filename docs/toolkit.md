@@ -609,16 +609,16 @@ this is for kinematics that live in the build script as a function from pose to 
 
 ```mermaid
 flowchart TD
-    P["each pose: place_fn(params)<br/>→ placed solids"] --> B{"boxes within travel / 2?<br/>(meeting, without travel_mm)"}
+    P["each pose: place_fn(params)<br/>→ placed solids"] --> B{"boxes near?<br/>(within travel / 2)"}
     B -->|"no"| G["clear: gap g<br/>(box or exact)"]
     B -->|"yes"| R["relations.relate"]
     R -->|"apart or touching"| G
     R -->|"overlap or unknown"| H["collision or error:<br/>never a pass"]
     G --> T{"travel_mm given?"}
-    T -->|"no"| S["clear at the poses only"]
-    T -->|"yes"| T2{"(g1 + g2 − travel) / 2 > 0<br/>on each step?"}
-    T2 -->|"no"| U["unproven between poses"]
-    T2 -->|"yes"| OK["clear between poses too"]
+    T -->|"no"| S["clear at<br/>the poses only"]
+    T -->|"yes"| T2{"each step:<br/>(g1 + g2 − travel) / 2 > 0?"}
+    T2 -->|"no"| U["unproven<br/>between poses"]
+    T2 -->|"yes"| OK["clear between<br/>poses too"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class P,B,R,G,T,T2 here

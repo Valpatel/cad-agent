@@ -42,7 +42,7 @@ these tools directly.
 | Cloudflare wrangler (`npm run deploy:site`) | yes, on by default | `WRANGLER_SEND_METRICS=false`, set in the script too |
 | Python extras, npm dev packages, the other vendored projects | none found (survey of 2026-11-01) | |
 
-`tests/test_cli_privacy.py` fails when a vendored tool names a telemetry switch that `OPT_OUTS` does not cover.
+`tests/cli/test_privacy.py` fails when a vendored tool names a telemetry switch that `OPT_OUTS` does not cover.
 
 ## Where it runs
 

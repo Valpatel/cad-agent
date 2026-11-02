@@ -25,6 +25,7 @@ flowchart TD
 | `test_cli.py` | `cad-agent ...` end to end through `cadagent.cli.main`, on throwaway projects |
 | `test_deps.py` | A missing heavy dependency raises `MissingDependency` naming the module, never a quiet skip |
 | `test_links.py` | `cadagent.links`: local link checks for HTML and Markdown pages |
+| `test_privacy.py` | Usage reporting off: every command sets the opt-outs in `OPT_OUTS` for what it runs, and every telemetry switch a vendored tool names is covered |
 | `test_project.py` | `cadagent.project`: the `cad:` section of `cad-agent.yaml`, beside other tools' sections |
 | `test_version.py` | `cadagent.__version__` from a checkout, an editable install or a wheel |
 

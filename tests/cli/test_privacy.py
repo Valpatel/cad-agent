@@ -15,7 +15,7 @@ from pathlib import Path
 
 from cadagent import cli
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SWITCH = re.compile(r"\b[A-Z][A-Z0-9_]*(?:TELEMETRY|ANALYTICS|SEND_METRICS|DO_NOT_TRACK|USAGE_STATS)[A-Z0-9_]*\b")
 # Names that match the pattern but switch nothing on or off.
 NOT_SWITCHES = {

@@ -26,7 +26,7 @@ LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
 # person chooses to send on GitHub. `main` sets these for every command, so each program it runs (and anything those
 # start) inherits them, unless the variable is already set: a person's own explicit choice stands. The list is the
-# survey in docs/supply-chain.md ("Usage reporting"); tests/test_cli_privacy.py fails when a vendored tool names a
+# survey in docs/supply-chain.md ("Usage reporting"); tests/cli/test_privacy.py fails when a vendored tool names a
 # switch this list does not cover.
 OPT_OUTS = {
     "DO_NOT_TRACK": ("1", "the Console Do Not Track convention (consoledonottrack.com); text-to-cad's cadgen reads it"),

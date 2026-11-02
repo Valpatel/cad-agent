@@ -50,10 +50,10 @@ In cad-agent, SendCutSend is a **named shop profile** (`shops: sendcutsend` in t
 ```mermaid
 flowchart TD
     G["generic rules<br/>(no shop: field)"] --> Q["rules_for(shop=...)"]
-    S["shop: sendcutsend<br/>rules and shop_tables"] --> Q
-    Q --> N["no shop named:<br/>generic rules only"]
-    Q --> Y["shop named: generic +<br/>that shop's rules"]
-    Q --> E["misspelt shop:<br/>an error, not silence"]
+    S["shop: sendcutsend<br/>rules"] --> Q
+    Q --> N["no shop named:<br/>generic only"]
+    Q --> Y["shop named:<br/>generic + its own"]
+    Q --> E["misspelt shop:<br/>an error"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -62,8 +62,10 @@ flowchart TD
     class N,Y,E out
 ```
 
-*How `cadagent.manufacturing.process` picks the rules a check sees. Each arrow means "feeds". A shop's rules reach a
-check only when the caller names that shop, and a shop the data file does not list raises an error.*
+*How `cadagent.manufacturing.process` picks the rules a check sees. Each arrow means "feeds". A rule marked `shop:`
+reaches a check only when the caller names that shop, and a shop the data file does not list raises an error. The
+per-stock tooling rows (`shop_tables`) are different: `sheet_metal.bend` and the sheet DFM check read them by default
+(`shop=True`), because a bend is always made on some shop's tooling, and `shop=False` drops them.*
 
 The vendored text-to-cad `sendcutsend` skill [ref:text-to-cad] reads the same feeds for a preflight.
 
@@ -100,9 +102,9 @@ From the cutting guidelines [ref:sendcutsend-sheet-cutting]:
 
 ```mermaid
 flowchart TD
-    U["one flat part,<br/>one file"] --> L["fibre laser<br/>hole 0.5T · ±0.005 in"]
-    U --> W["waterjet<br/>hole 0.070 in · ±0.009 in"]
-    U --> R["router<br/>hole 0.125 in · ±0.005 in"]
+    U["one flat part,<br/>one file"] --> L["fibre laser<br/>hole 0.5T<br/>±0.005 in"]
+    U --> W["waterjet<br/>hole 0.070 in<br/>±0.009 in"]
+    U --> R["router<br/>hole 0.125 in<br/>±0.005 in"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -110,8 +112,8 @@ flowchart TD
     class L,W,R here
 ```
 
-*SendCutSend's three cutting processes and the smallest hole and the tolerance each holds, from its cutting guidelines
-[ref:sendcutsend-sheet-cutting]. The process follows the material and thickness, not the buyer's choice.*
+*The three cutting processes SendCutSend's cutting guidelines name, with the smallest hole and the tolerance each
+holds [ref:sendcutsend-sheet-cutting]; the feed also lists a CO2 laser for some stocks. The process follows the material and thickness, not the buyer's choice.*
 
 - **Smallest hole or cut-out:**
   - laser: at least 50 % of T;
@@ -218,9 +220,9 @@ Add powder build-up to slots and tab fits on both faces.
 
 ```mermaid
 flowchart TD
-    A["Type II anodise<br/>0.0002–0.0009 in a side"] --> F["a slot or tab fit:<br/>add the build-up of<br/>both coated faces"]
-    Z["zinc plate<br/>about 0.0003 in a side"] --> F
-    P["powder coat<br/>0.002–0.005 in a side"] --> F
+    A["Type II anodise<br/>0.0002–0.0009 in"] --> F["a slot or tab fit:<br/>add both coated<br/>faces' build-up"]
+    Z["zinc plate<br/>about 0.0003 in"] --> F
+    P["powder coat<br/>0.002–0.005 in"] --> F
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -229,7 +231,7 @@ flowchart TD
     class F here
 ```
 
-*Finish build-up per side from SendCutSend's finish-thickness FAQ [ref:sendcutsend-finish-thickness]. Powder is ten
+*Finish build-up per side from SendCutSend's finish-thickness FAQ [ref:sendcutsend-finish-thickness]. Powder is 5–25
 times the others, so it is the one that closes a fit.*
 
 ## A7. Pricing and lead time
@@ -288,9 +290,9 @@ The rest of this page is the generic sweep drafted in #119, read on 2026-10-31. 
 
 ```mermaid
 flowchart TD
-    Q["which inside radius?"] --> G["the caller gives R"]
-    Q --> S["the named shop has a<br/>row for this stock:<br/>its tooling's R"]
-    Q --> N["no row: the largest<br/>generic minimum<br/>(T for 5052, mild steel)"]
+    Q["which inside radius?"] --> G["first: the<br/>caller's R"]
+    Q --> S["then the shop's<br/>row: its<br/>tooling's R"]
+    Q --> N["else the largest<br/>generic minimum<br/>(T: 5052, steel)"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -299,8 +301,8 @@ flowchart TD
     class N out
 ```
 
-*The order `cadagent.manufacturing.sheet_metal.bend` reads a radius in: a given one, then the shop's row, then the
-strictest generic rule. A shop's K and shortest flange hold only for its own radius, so a different R drops to the
+*The order `cadagent.manufacturing.sheet_metal.bend` reads a radius in: a given one, then the shop's row (read by
+default; `shop=False` skips it), then the strictest generic rule. A shop's K and shortest flange hold only for its own radius, so a different R drops to the
 generic rules for those too.*
 
 **Disagree.**
@@ -452,9 +454,9 @@ comparing [ref:text-to-cad]. These sources show why.
 
 ```mermaid
 flowchart TD
-    B["a bend that stops<br/>short of the edge"] --> D["relief depth past the<br/>bend line: T + R<br/>(SendCutSend + 0.020 in)"]
-    B --> W["relief width: T/2<br/>(SendCutSend) or T<br/>(Hubs, Paulsen)"]
-    B --> C["corner gap between<br/>flanges: 0.015 in"]
+    B["a bend that stops<br/>short of the edge"] --> D["relief depth:<br/>T + R past the<br/>bend line"]
+    B --> W["relief width:<br/>T/2 or T"]
+    B --> C["corner gap:<br/>0.015 in"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -463,7 +465,8 @@ flowchart TD
     class W out
 ```
 
-*The three relief sizes of §B5 for one bend. The width is the one the sources disagree on, so it is drawn in orange.*
+*The three relief sizes of §B5 for one bend. SendCutSend adds 0.020 in to the depth and gives the corner gap. The
+width is the one the sources disagree on (T/2 SendCutSend, T Hubs and Paulsen), so it is drawn in orange.*
 
 ## B6. Hems, curls, jogs and countersinks
 
@@ -479,9 +482,9 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    H["a hem: does the<br/>shop form one?"] --> O["open hem: inside<br/>dia ≥ T, return 4–6T"]
-    H --> T["tear-drop: opening<br/>≥ T/4, return ≥ 4T"]
-    H --> N["SendCutSend: no,<br/>130° at most"]
+    H["a hem: does the<br/>shop form one?"] --> O["open hem:<br/>inside dia ≥ T<br/>return 4–6T"]
+    H --> T["tear-drop:<br/>opening ≥ T/4<br/>return ≥ 4T"]
+    H --> N["SendCutSend:<br/>none, 130°<br/>at most"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -518,13 +521,13 @@ One finding from the first sweep stays here: "a stainless nut is fine in stainle
   because they are not hard enough [ref:pem-bulletin-cl]. Its handbook gives the reason: the fastener must be about
   20 HRB harder than the sheet [ref:pem-handbook].
 - SendCutSend lists 304 at HB 123 and 316 at HB 149 [ref:sendcutsend-specs]. Against CLS's rating of HRB 70 (HB 125)
-  that leaves no margin in 304 and none at all in 316.
+  that leaves no margin in 304, and 316 is harder than CLS's limit.
 - An SP nut, rated to HRB 90, covers both [ref:pem-catalog-self-clinching-nuts].
 
 <img src="../docs/img/sheet-metal/clinch-hardness.svg" alt="Range chart of the hardest sheet each PEM fastener material takes: aluminium parts up to HRB 50, 300-series stainless up to HRB 70, hardened steel up to HRB 80, hardened stainless 88 to 92" width="680">
 
 *Drawn by `tools/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
-[`process-profiles.yaml`](process-profiles.yaml). 304 at HB 123 sits just under the 300-series line.*
+[`process-profiles.yaml`](process-profiles.yaml).*
 
 ## B8. Tabs, slots and notches
 
@@ -592,7 +595,7 @@ powder on every coated face.*
 ## B11. Tolerances by process
 
 <details>
-<summary>The tolerances by process, from five shops and one standard</summary>
+<summary>The tolerances by process, from six sources and one standard</summary>
 
 | Process | Tolerance | Who |
 |---|---|---|
@@ -615,20 +618,20 @@ critical features from one flat face.
 
 ```mermaid
 flowchart TD
-    F["two features on<br/>one flat face"] --> A["± 0.005 in<br/>(the cut alone)"]
-    F2["across 2 bends"] --> B["± 0.015–0.025 in"]
-    F3["across 3 or more<br/>bends"] --> C["± 0.030–0.040 in"]
+    F["two features on<br/>one flat face<br/>± 0.005 in"] --> A["across 1 bend<br/>± 0.010 in"]
+    A --> B["across 2 bends<br/>± 0.015 in"]
+    B --> C["across 3 or more<br/>± 0.030 in"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class F,F2,F3 near
+    class F near
     class A here
     class B,C out
 ```
 
-*Protolabs' tolerance between two features, by the bends between them: the ranges are from its design guidelines
-[ref:protolabs-sheet-metal], and its one-pager gives the low ends, ±0.015 and ±0.030 in
-[ref:protolabs-sheet-metal-tolerances]. The
+*Protolabs' tolerance between two features in stock under 0.13 in, by the bends between them (its guidelines
+[ref:protolabs-sheet-metal]; the one-pager gives the 2- and 3-bend values [ref:protolabs-sheet-metal-tolerances]).
+In thicker stock the steps are ±0.015, ±0.020, ±0.025 and ±0.040 in. The
 band grows with every bend between them, so a hole pattern that must line up belongs on one face.*
 
 ## B12. What this changes in cad-agent
@@ -643,9 +646,9 @@ generic K table and the strictest generic rule. With #283 the YAML adds four thi
 ```mermaid
 flowchart TD
     Y["process-profiles.yaml<br/>rules + shop_tables"] --> P["manufacturing.process<br/>rules_for · limits"]
-    P --> B["sheet_metal.bend<br/>and flat_length"]
-    P --> D["the sheet DFM check<br/>(generic rules only)"]
-    P --> J["the clinch and rivet<br/>checks (PR B)"]
+    P --> B["sheet_metal.bend<br/>flat_length"]
+    P --> D["the sheet DFM<br/>check"]
+    P --> J["clinch and rivet<br/>checks (PR B)"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -654,7 +657,8 @@ flowchart TD
     class J out
 ```
 
-*Where the rules go. Each arrow means "read by". The orange box is the next step, not yet merged.*
+*Where the rules go. Each arrow means "read by". The DFM check takes only the generic rules, beside the shop's bend
+row for the stock (read by default; `shop=False` drops it). The orange box is the next step, not yet merged.*
 
 <details>
 <summary>The six planned checks: what the sources say and where each stands</summary>
@@ -662,7 +666,7 @@ flowchart TD
 | Planned check | What the sources say | Status |
 |---|---|---|
 | Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first |
-| Hole to bend | Five rules on four datums (§B4); SendCutSend: half the die width | Each rule carries its `datum`; a check must state one |
+| Hole to bend | Six rules, each on its own datum or none (§B4); SendCutSend: half the die width | Each rule carries its `datum`; a check must state one |
 | R ≥ T | Fails SendCutSend's own 5052 radii; unsafe for 6061 and 2024 | `sheet_metal.bend` reads the shop's R |
 | Bend relief | SendCutSend's feed gives a depth per stock | In `shop_tables` (`relief_depth`) |
 | Clinch hardware near an edge or a bend | PEM: C/L to edge from the outside of the bend radius; SendCutSend: BA/2 + N from the bend centre. On one datum they are the same rule, since the outside of the radius lies BA/2 from the bend centre on the flat | Rules `sm-clinch-*`, both written from the bend centre line; the check is #283's PR B |

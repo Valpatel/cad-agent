@@ -106,10 +106,16 @@ such as a new command or check, even one that asks nothing of projects.
 3. `release.yml` then:
    - tags `vX.Y.Z` on the merge commit;
    - publishes the GitHub release from the CHANGELOG entry;
-   Cloudflare Pages deploys the site. Its `cad-agent` project is connected to this repository, like every Valpatel
-   Pages site: on each push to `main` it runs `npm ci && npm run build` (`tools/pages-build.mjs`: it fetches the full
-   history and `origin/main`, which Cloudflare's clone lacks, then runs `tools/build-site.mjs --release`) and publishes
-   `dist` to cad-agent.valpatel.com and cad-agent.gyropup.com. Preview deployments are off, so only `main` publishes.
-   Check `https://cad-agent.valpatel.com/version.json` shows the release. `npm run deploy:site` uploads a build by
-   hand; it is only for when Cloudflare's build is down.
+
+   Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` is connected to this
+   repository like every Valpatel Pages site. A Direct Upload project cannot be switched to Git, so it is created as
+   a new Git-connected project under the same name `cad-agent` after the old one is deleted. That keeps
+   `cad-agent.pages.dev`, the DNS of both custom domains, `wrangler.toml` and `npm run deploy:site` pointing at it.
+   - On each push to `main` it runs `npm ci && npm run build` and publishes `dist` to cad-agent.valpatel.com and
+     cad-agent.gyropup.com. `tools/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
+     which Cloudflare's clone lacks, then runs `tools/build-site.mjs --release`.
+   - Preview deployments are off, so only `main` publishes.
+   - Check that `https://cad-agent.valpatel.com/version.json` shows the release.
+   - `npm run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
+
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

@@ -1,8 +1,8 @@
 name: Release
-# After a release PR merges into main: tag vX.Y.Z with a GitHub release from CHANGELOG.md, then deploy
-# cad-agent.valpatel.com from that commit. The deploy runs in the `production` environment, which only main may use,
-# and needs that environment's secret CLOUDFLARE_API_TOKEN (a Pages-only token, set by the owner with
-# `gh secret set CLOUDFLARE_API_TOKEN --env production`, never as a repository secret) and variable CLOUDFLARE_ACCOUNT_ID.
+# After a release PR merges into main: tag vX.Y.Z with a GitHub release from CHANGELOG.md.
+# The site is not deployed from here. Its Cloudflare Pages project `cad-agent` is connected to this repository and
+# builds and publishes cad-agent.valpatel.com and cad-agent.gyropup.com on every push to main
+# (`npm ci && npm run build`, output `dist`).
 on:
   push:
     branches: [main]
@@ -42,28 +42,3 @@ jobs:
           print(m.group(1).strip() if m else f"Release v{v}. See CHANGELOG.md.")
           PY
           gh release create "v$V" --target "$GITHUB_SHA" --title "v$V" --notes-file notes.md
-
-  site:
-    needs: tag
-    runs-on: ubuntu-24.04
-    environment: production
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
-        with: {fetch-depth: 0, persist-credentials: false}
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1   # v7.1.0
-        with: {node-version: 22, cache: npm}
-      - run: npm ci
-      # The build draws the site's diagrams in headless Chromium (tools/site-diagrams.mjs, #132). If it cannot be
-      # installed, the site still deploys, with a warning, and each reader's browser draws the diagrams as before.
-      - run: npx playwright install --with-deps chromium
-        continue-on-error: true
-      - name: Build and deploy cad-agent.valpatel.com
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::warning::CLOUDFLARE_API_TOKEN secret or CLOUDFLARE_ACCOUNT_ID variable not set: site not deployed"; exit 0
-          fi
-          if [ ! -f tools/build-site.mjs ]; then echo "::warning::no site builder on main yet"; exit 0; fi
-          npm run deploy:site

@@ -133,6 +133,7 @@ my-cad-project/
 | `exports/<part>.step` | assembly coordinates | for CAD review and re-use |
 | `exports/<name>-plates.3mf` | print orientation, turned about z and laid out on build plates | every printed part at its quantity in one Bambu Studio project, one plate per bed; written by `export-3mf`, read back and verified; byte-reproducible for the same Bambu Studio version, or with none installed ([build plates](#build-plates-cadagentmanufacturingplates)) |
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
+| `<name>.3mf`, `<stem>-NN-<group>.3mf` (PrusaSlicer) | print orientation, placed on the bed | PrusaSlicer projects from `cadagent.manufacturing.prusa3mf`: objects of several volumes, each on its own tool, and the wipe tower's place; one 3MF per plate; read back and verified; byte-reproducible ([PrusaSlicer projects](#prusaslicer-projects-cadagentmanufacturingprusa3mf)) |
 
 ### Checked booleans (`cadagent.geometry`)
 
@@ -213,7 +214,7 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
   without them it opens the parts on one plate. The file is read back and deleted unless every copy is where the
   layout put it.
 - **Checked in Bambu Studio 02.08.04.57.** Its command line loads the plates without re-arranging them and slices
-  each plate with its own filament (`tests/test_plates.py` does this wherever Bambu Studio is installed). Its window
+  each plate with its own filament (`tests/manufacturing/test_plates.py` does this wherever Bambu Studio is installed). Its window
   opens the file on its plates, with the printer, filaments and process set and no errors.
 
 <details>
@@ -249,6 +250,66 @@ plates Bambu Studio holds.
   inside one another: tighter nesting (hulls, no-fit polygons) would save plates. The layout says nothing about
   whether a plate prints well (adhesion, warping, how much one failure costs): that is the slicer's and the
   printer's evidence. Per-part supports, brims and process settings are not written; set them in Bambu Studio.
+
+</details>
+
+### PrusaSlicer projects (`cadagent.manufacturing.prusa3mf`)
+
+`export-3mf` writes Bambu Studio files. For PrusaSlicer, a build script calls `cadagent.manufacturing.prusa3mf`:
+
+```python
+from cadagent.manufacturing.prusa3mf import write_project, write_plates
+# one object, two volumes: the body on tool 1, the inlay on tool 3, at the bed centre + (0, 40) mm
+write_project("exports/lid.3mf", [("lid", [(body, "body", 1), (inlay, "inlay", 3)], (0, 40))],
+              bed=(360, 360, 360), wipe_tower=(20, 20))
+# every part at its quantity, packed by the tools it uses, one 3MF per plate: exports/plates/plate-01-t1-t3.3mf, ...
+write_plates("exports/plates", {"lid": [(body, "body", 1), (inlay, "inlay", 3)], "pin": [(pin, "pin", 2)]},
+             bed=(360, 360, 360), quantities={"pin": 4})
+```
+
+```mermaid
+flowchart TD
+    V["parts as volumes<br/>mesh, name, tool"] --> WP["write_project<br/>volumes on their tools"]
+    V --> PL["write_plates<br/>packed by tools"]
+    PL --> WP
+    WP --> F["project 3MF<br/>volumes · wipe tower"]
+    F --> RB["read back<br/>every volume checked"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class WP,PL here
+    class V near
+    class F,RB out
+```
+
+**Limits.** No printer, print or filament settings are written: load them in PrusaSlicer or pass them to its
+command line. Whether the tower clears the parts is the slicer's check, and nothing here says a part prints well.
+
+<details>
+<summary>Objects and volumes, the wipe tower, plates, the read-back and the PrusaSlicer check</summary>
+
+- **Objects and volumes.** An object is `(name, [(mesh, volume name, tool)], (dx, dy[, angle]))`: the meshes (a
+  trimesh, or `(vertices, faces)`) in print orientation and the object's own coordinates, so the volumes keep their
+  places relative to one another. The object's outline is centred on the bed centre plus `(dx, dy)`, its lowest point
+  on z = 0, turned `angle` degrees about z. The file is PrusaSlicer's: one mesh per object, and
+  `Metadata/Slic3r_PE_model.config` with a `firstid`/`lastid` triangle range, name and extruder per volume.
+- **The wipe tower.** PrusaSlicer 2.9 keeps its place in the project
+  (`Metadata/Prusa_Slicer_wipe_tower_information.xml`: `position_x`, `position_y`, `rotation_deg` for the bed), not
+  in the print config, and refuses `wipe_tower_x` as an override. With more than one tool it is written at
+  `wipe_tower` (default `(20, 20)`, the front-left corner, clear of a part centred on the bed); `False` writes none.
+  PrusaSlicer's own default place can collide with a part centred on a large bed (`gcode path conflicts found
+  between WipeTower and <part>`).
+- **Plates.** `write_plates` packs with the [build plates](#build-plates-cadagentmanufacturingplates) MaxRects
+  layout: parts that use different tools (or different `groups`, such as filaments) never share a plate, and on a
+  plate with more than one tool the parts keep the gap clear of the tower's corner area (`wipe_tower_size`, 60 x 60
+  mm by default: an estimate, as PrusaSlicer sizes the tower from the purge volumes). It removes earlier
+  `<stem>-NN-*.3mf` files first and returns each plate's layout and read-back report.
+- **Read-back.** Each file is read back and deleted unless every volume has its source mesh's triangle count and
+  volume (within 0.1 %), is watertight and is on its tool, every object is where it was placed, and the tower is
+  where it was asked. Entries are sorted with a fixed date, so the same objects give the same bytes.
+- **Checked in PrusaSlicer 2.9.4.** Its command line loads the volumes on their tools, puts the wipe tower where the
+  file says and slices (`tests/manufacturing/test_prusa3mf.py` does this wherever PrusaSlicer is installed, natively or from
+  Flathub, with a two-tool printer from PrusaSlicer's defaults).
 
 </details>
 
@@ -508,7 +569,7 @@ skip the work silently.
 
 Modules are grouped by domain, as the [topic tree](areas.yaml) groups the work: `cadagent.<domain>.<module>`, with the
 practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared core at the
-top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/test_package_areas.py` keeps each package and its
+top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/repo/test_package_areas.py` keeps each package and its
 domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
 same module, with a `DeprecationWarning`; so do the old package paths and everything under them
 (`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
@@ -552,7 +613,7 @@ flowchart TD
 path. They stay until a release whose CHANGELOG announces their removal at least one minor release ahead, under
 **Projects must change** (announced in vX.Y.0, removed no earlier than vX.(Y+1).0). The warning then names that
 release. A project that hashes its source folders in evidence receipts can move its imports when it next regenerates
-them. `tests/test_package_layout.py` pins the old paths, so none can go unannounced.
+them. `tests/repo/test_package_layout.py` pins the old paths, so none can go unannounced.
 
 Two published modules became packages and keep their paths: `cadagent.geometry` is still the shared CAD helpers
 (`export_step` and the rest), and `cadagent.review` is still the review workbench (`review_html`), now also the review
@@ -581,6 +642,7 @@ from cadagent.mechanical.connectors import (PLUG_FAMILIES, plug_segments, window
                                             check_ports, draw_ports, cable_spec, cable_bend, bend_reach)
 from cadagent.mechanical.linkages import (sweep_fourbar, sweep_fivebar, sweep_fivebar_tip, fivebar_workspace,
                                           fivebar_reach, Linkage)
+from cadagent.mechanical.clearance import collisions, sweep, swept_envelope, envelope_profile
 from cadagent.package import build_package
 from cadagent.publish.serve import make_server
 from cadagent.simulation.fea import Study, MATERIALS, Material, plane_at, cylinder_at, in_box, near, any_of
@@ -601,6 +663,88 @@ from cadagent.review.gates.wall import check_wall, wall_gate, mesh_thickness, br
 Assembly-level checks: the pairwise relation table (apart, touching, overlapping, contains, with witnesses and a
 content-hash pair cache), the verdict file every gate writes, and the minimum-wall gate. Reference and limits:
 [gates.md](gates.md).
+
+### Range-of-motion clearance (`cadagent.mechanical.clearance`)
+
+`cad-agent motion-trace` checks that rendered pivots sit where the CAD says; this checks that the moving parts do not
+*hit* each other anywhere over their range. Give it the solids placed at each pose, and it relates every pair whose
+bounding boxes meet with the relation gate's exact narrow phase (`relations.relate`, [gates](gates.md)). An
+assembly that declares its joints gets the [motion gate](gates.md) instead, which samples them itself;
+this is for kinematics that live in the build script as a function from pose to placed solids.
+
+```mermaid
+flowchart TD
+    P["each pose: place_fn(params)<br/>→ placed solids"] --> B{"boxes near?<br/>(within travel / 2)"}
+    B -->|"no"| G["clear: gap g<br/>(box or exact)"]
+    B -->|"yes"| R["relations.relate"]
+    R -->|"apart or touching"| G
+    R -->|"overlap or unknown"| H["collision or error:<br/>never a pass"]
+    G --> T{"travel_mm given?"}
+    T -->|"no"| S["clear at<br/>the poses only"]
+    T -->|"yes"| T2{"each step:<br/>(g1 + g2 − travel) / 2 > 0?"}
+    T2 -->|"no"| U["unproven<br/>between poses"]
+    T2 -->|"yes"| OK["clear between<br/>poses too"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,B,R,G,T,T2 here
+    class H,S,U,OK out
+```
+
+```python
+from cadagent.mechanical.clearance import collisions, sweep, swept_envelope
+
+def place(q):                       # the project's own kinematics: {instance: (part, placed cadquery shape)}
+    q1, q2 = q
+    return {"link1": ("link", link1.rotate((0, 0, 0), (0, 0, 1), q1)),
+            "link2": ("link", link2.rotate((0, 0, 0), (0, 0, 1), q1 + q2).translate(tip(q1))),
+            "barrel": ("cyl_barrel", barrel_at(q)), "rod": ("cyl_rod", rod_at(q)),
+            "base": ("base", base)}
+
+poses = {f"q1={a}_q2={b}": (a, b) for i, a in enumerate(range(0, 91, 15))   # snake order: each pose one step
+         for b in (range(-120, 1, 15) if i % 2 == 0 else range(0, -121, -15))}  # from the last (travel_mm needs it)
+report = sweep(poses, place, out_path="exports/clearance-checks.json",
+               tolerance_mm3=2.0, skip={("cyl_rod", "cyl_barrel")})   # the rod is meant to run inside its barrel
+assert report["pass"], [(p, r.get("collisions") or r.get("error"))
+                        for p, r in report["poses"].items() if not r.get("pass")]
+```
+
+<details>
+<summary>The arguments, the between-poses bound, the swept-volume cutter and the limits</summary>
+
+- **`collisions(instances, tolerance_mm3=2.0, skip=None, only=None)`** returns one row per pair that overlaps by more
+  than the tolerance: `{"a", "b", "part_a", "part_b", "volume_mm3"}`. `instances` maps a name to `(part, shape)` or to
+  a bare shape. `skip` is pairs of instance or part names that are meant to overlap, or a callable
+  `skip((name_a, part_a), (name_b, part_b))`. `only(name)` limits the check to pairs with at least one selected
+  instance (the arm against everything, not the track against itself). A pair the relation gate cannot decide
+  (`unknown`: a kernel error, a volume that does not add up, a crossing the boolean missed) is a row with `"error"`:
+  an error is never a pass.
+- **`sweep(poses, place_fn, out_path=None, travel_mm=None, **collisions_args)`** runs `collisions` at every pose. A
+  `place_fn` that raises (an unreachable pose) is that pose's error. The check has a row per pose (its parameters,
+  the pairs it related, its collisions), and a top-level `pass` that is true only when at least one pose was checked
+  and none has a collision or an error. `physical_fit_verified` is always `false`.
+- **Between poses.** Pass `travel_mm`, the most any point of one part moves relative to another between two
+  consecutive poses, in the order given, measured along its path, not the chord (for a rotation step, the step in
+  radians times the largest radius it carries; order the poses so each is one step from the last), and each pair
+  clear at both ends of a step must be proven clear between them: the gap there is at least `(g1 + g2 - travel) / 2`,
+  the bound the assembly gate's `sweep_pair` uses on an insertion path. A step it cannot prove, or a pair placed at
+  only one end of it, is a row in `between_poses` and fails the check; `gap_lower_bound_mm` is the smallest bound
+  over the sweep. Pairs meant to touch cannot be proven clear: `skip` them.
+- **`swept_envelope(pieces, step=0.5, max_slope_deg=45.0, taper_ends=False)`** makes the cutter that clears a
+  neighbour. Describe the moving part's radius along its own axis as pieces `(x0, x1, r0, r1)` (a barrel, then a rod,
+  then an eye), and get a cadquery `Solid` of revolution about +x. Its radius is the largest piece at each x, raised so
+  it never changes faster than `max_slope_deg` from the axis: a step becomes a 45° cone, not a flat shoulder (which
+  prints as a ceiling when the axis is near the neighbour's build direction). `taper_ends=True` closes the ends with cones too. The profile is one polygon revolved once:
+  place one envelope per pose and cut them from the neighbour, rather than fusing many small tools, which is where OCC
+  booleans fail. `envelope_profile` gives the same `(xs, rs)` profile without a CAD kernel.
+- **Limits.** Without `travel_mm` the poses are samples, not a continuous sweep: two parts can pass through each
+  other between two poses and no pose sees it. With it, the bound holds only if the stated travel does. Only the
+  solids passed in are checked: a pin, bolt or hose left out of the model is not. Parts meant to touch on a face
+  pass the tolerance; a part sunk into another by more than the tolerance is a hit unless `skip` names it. CAD
+  clearance does not prove physical fit: tolerances, deflection under load and wear are not modelled.
+  `swept_envelope` samples the profile every `step` mm (and at every piece's ends), so a cone's foot between
+  samples is placed to within a fraction of a step.
+
+</details>
 
 ### Explore and compare designs (`cadagent.simulation.explore`)
 
@@ -663,7 +807,7 @@ form: a 90° turn needs the inside radius plus one diameter, ahead and beside (3
 
 ![An RJ45 plug seated in its jack, and its Cat6 cable leaving the boot and turning at its 25 mm minimum bend radius: turned down, it runs 1.35 mm into the shelf the enclosure stands on; turned up, it clears](img/motion/cable-bend.svg)
 
-*An illustration of the check on the RJ45 port in `tests/test_connectors.py`, in section: the clearances are
+*An illustration of the check on the RJ45 port in `tests/mechanical/test_connectors.py`, in section: the clearances are
 `cable_bend`'s.*
 
 `cable_bend()` takes CadQuery shapes in assembly position, placed through the port's `PanelFrame`, or boxes in the
@@ -953,7 +1097,7 @@ so it is the lower exactly where σn(σ11 + σ22 − σn) > 3τn². That needs �
 smaller, with too little shear between the layers to make up the difference. The layers are then squeezed while the
 plane is compressed harder, or pulled while it is pulled harder.
 
-Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/test_fea_layers.py`
+Hand corners, with S_z = 20, S_s = 20 / √3 and S_xy = 30 MPa and the layer normal z (utilisations; `tests/simulation/test_fea_layers.py`
 checks each, and that the options reproduce a project's own three maximum-stress checks):
 
 | Corner (MPa) | Bond, combined | Bond, max-stress | Bulk, full | Bulk, in-plane |
@@ -966,8 +1110,8 @@ checks each, and that the options reproduce a project's own three maximum-stress
 
 S_z is the row's strength, an allowable below the sheet's Z tensile strength. S_xy is that allowable times the sheet's
 X-Y / Z tensile strength ratio, the lowest over the editions read. So in the layer plane it sits at least as far below
-each sheet, as a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths. `tests/test_fea_materials.py` pins the rule, and
-`tests/test_fea_layers.py` checks the check against hand-computed cases.
+each sheet, as a ratio, as the row's strength does across the layers. The humid PA6-CF rows share one pair, their two strengths. `tests/simulation/test_fea_materials.py` pins the rule, and
+`tests/simulation/test_fea_layers.py` checks the check against hand-computed cases.
 
 </details>
 
@@ -986,7 +1130,7 @@ A record made on one toolkit can be checked on another. `material_changes(old_re
 that differs, with now / recorded. Under forces and torques, deflections scale by the inverse of the E ratio, safety
 factors by the strength ratio and masses by the density ratio. A built-in material's numbers are result-changing. A
 change to any of them needs a `**Projects must change**` fragment in [`changelog.d/`](../changelog.d/README.md), and
-`tests/test_fea_layers.py` pins every row's hash so it cannot slip through.
+`tests/simulation/test_fea_layers.py` pins every row's hash so it cannot slip through.
 
 </details>
 
@@ -1139,10 +1283,10 @@ Turns CAD parts into a simulator model with real mass properties:
 ## Simulation and optimisation (standard practice for anything that carries load or heat)
 
 Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for
-stiffness and strength, pyMOTO for topology optimisation, Bambu Studio for real filament grams, PyVista/VTK for
+stiffness and strength, pyMOTO for topology optimisation, Bambu Studio or PrusaSlicer for real filament grams, PyVista/VTK for
 pictures and animations. The survey that chose them, with licences and sources, is
 [`research/simulation-tools.md`](../research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
-Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio for slicing.
+Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio or PrusaSlicer for slicing.
 
 **Standard practice.** For every design that holds a heat source, carries a load or will be printed in quantity:
 1. **Slice it** (`cad-agent slice`): grams and print time per part, with the profile named. This is the number a
@@ -1297,7 +1441,17 @@ regions, and a panel with no data says why). Colour follows the job: one-hue ram
 (blue), never a rainbow.
 
 ### Real grams (`cadagent.manufacturing.slicer`, `cad-agent slice`)
-Slices each part's 3MF with Bambu Studio's command line (an external AGPL program, run as a subprocess). The system
+Slices each part's 3MF with Bambu Studio's command line, or PrusaSlicer's with `cad.slicer.engine: prusa`
+(`cadagent.manufacturing.slicer_prusa`). Both are external AGPL programs, only ever run as a separate process.
+It writes `exports/slice-report.json`: grams and time per part, the settings used and each 3MF's SHA-256, so a stale
+row is told from a current one. A PrusaSlicer row also keeps what PrusaSlicer's log said, and its `ok` is false when
+PrusaSlicer reports an error or a print stability issue. That is PrusaSlicer's own heuristic: an ok part can still
+print badly, and a slice does not prove a part prints or fits.
+
+<details>
+<summary>Bambu Studio profiles, and the <code>cad.slicer</code> keys</summary>
+
+Bambu Studio's system
 profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles
 can report 0 g or retain generic startup G-code). Missing, cyclic, duplicate, malformed or escaping profile
 dependencies fail explicitly. `flatten(kind, name)` returns the resolved settings; `resolve_profile(kind, name)`
@@ -1305,9 +1459,64 @@ also returns `files`, the relative paths and SHA-256 hashes of the exact consume
 record those dependency hashes and the settings JSON hashes. These identities describe the captured inputs, not
 ongoing filesystem stability or validation of the resulting executable G-code. Inspect actual temperature waits
 and startup order before printing; a filament label or successful slice does not establish physical readiness.
+
 Configure under
-`cad.slicer`: `printer`, `process`, `filament` (`pla`, `petg` or a profile name), `overrides` (process settings) and
-`parts`. Writes `exports/slice-report.json`.
+`cad.slicer`: `engine` (`bambu`, the default, or `prusa`), `printer`, `process`, `filament` (`pla`, `petg` or a
+profile name), `overrides` (settings, named as that slicer names them) and `parts`: a list of the parts to slice
+(default all), or a mapping of part name to `{overrides: {...}}`, that part's own settings on top of
+`cad.slicer.overrides` (tall parts a brim, thin shells fewer perimeters, pin-loaded links denser infill; a part with
+none: `name: {}`). Writes `exports/slice-report.json`; a row records its `part_overrides`, and changing them makes
+it stale. A PrusaSlicer report records `engine: prusa`, and a report made with one slicer is not current for the
+other.
+
+</details>
+
+<details>
+<summary>PrusaSlicer: profiles, overrides, what its log says, and an example</summary>
+
+Runs `prusa-slicer` (on PATH, or the flatpak `com.prusa3d.PrusaSlicer`).
+- **Profiles:** PrusaSlicer's vendor bundles and your own saved presets, from `$CADAGENT_PRUSA_PROFILES` when set,
+  else the first of `~/.config/PrusaSlicer/vendor`, the flatpak's config folder, `/usr/share/PrusaSlicer/profiles`
+  and `/usr/share/prusa-slicer/profiles` that holds any.
+- **Resolution:** PrusaSlicer itself resolves the three presets (`--save`, on a private copy of the profile folder),
+  as its window does. A multi-tool printer such as the XL gets each filament setting once per tool, and a print or
+  filament preset that does not fit the printer is refused with PrusaSlicer's reason.
+- **Overrides:** PrusaSlicer names, one value each (one value applies to every tool). A key PrusaSlicer does not
+  have, such as Bambu's `wall_loops`, is an error.
+- **Defaults:** `Original Prusa MK4S 0.4 nozzle` and `0.20mm SPEED @MK4S 0.4`; `pla` and `petg` mean the MK4S
+  Prusament profiles, so for another printer name its filament profile, e.g. `Prusament PLA @XLIS`.
+- **Records:** G-code is written as text (`binary_gcode = 0`) because grams and time are read from its footer. The
+  slice records the SHA-256 of its `config.ini` and of every profile file read; bundles change when PrusaSlicer
+  updates them.
+- **What PrusaSlicer said:** it runs with `--loglevel 3` and the whole log goes next to the G-code
+  (`build/slicer/<part>/out/slicer.log`). A part that slices but will print badly shows only there, with exit code 0:
+  "Detected print stability issues" (long bridging extrusions, floating bridge anchors, collapsing overhang, low bed
+  adhesion, loose extrusions) or an error such as `gcode path conflicts found between WipeTower and …`. Each report
+  row keeps `warnings`, `errors` (each message once), `stability_issues` (the categories PrusaSlicer names),
+  `benign_log_lines` (a count of lines that say nothing about the print: a multi-tool printer's "SupportSpotsGenerator
+  does not currently handle different materials" and Arachne's "Detected … Voronoi … rotated back and forth"), `log`
+  and `ok`: true only with exit code 0, G-code written and no error or stability issue. Other warnings are listed but
+  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok. The
+  stability check is PrusaSlicer's own heuristic, run with the settings sliced: an ok part can still print badly, and
+  turning supports or a brim on may clear an issue rather than fix the geometry.
+- **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry
+  no Bambu Studio project settings for a PrusaSlicer project.
+
+```yaml
+cad:
+  slicer:
+    engine: prusa                                        # default: bambu
+    printer: Original Prusa XL - 5T Input Shaper 0.4 nozzle
+    process: 0.20mm SPEED @XLIS 0.4
+    filament: Prusament PLA @XLIS                        # or pla / petg (the MK4S variants)
+    overrides: {perimeters: "3", fill_density: "20%"}    # PrusaSlicer names
+    parts:                                               # default: every part, cad.slicer.overrides only
+      tower: {overrides: {brim_width: "10"}}
+      link: {overrides: {perimeters: "4", fill_density: "40%"}}
+      lid: {}
+```
+
+</details>
 
 ### Overhangs and bridges (`cad-agent overhangs`)
 

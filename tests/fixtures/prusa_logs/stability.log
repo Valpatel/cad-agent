@@ -1,0 +1,35 @@
+10 => Processing triangulated mesh
+20 => Generating perimeters
+30 => Preparing infill
+45 => Making infill
+65 => Searching support spots
+69 => Alert if supports needed
+print warning: Detected print stability issues:
+
+overhang_test.stl
+Floating bridge anchors, Low bed adhesion, Loose extrusions, Long bridging extrusions
+
+Consider enabling supports.
+Also consider enabling brim.
+88 => Estimating curled extrusions
+89 => Calculating overhanging perimeters
+88 => Generating skirt and brim
+90 => Exporting G-code to /home/user/project/out/o.gcode
+Slicing result exported to /home/user/project/out/o.gcode
+
+[2026-11-01 15:31:06.322458] [0x00007759b5089ec0] [info]    Starting the slicing process. Resident memory: 61MB; Shared memory: 48MB; Private memory: 12MB; Peak memory usage: 60MB
+[2026-11-01 15:31:06.322656] [0x00007759b5089ec0] [info]    Slicing volumes... Resident memory: 61MB; Shared memory: 48MB; Private memory: 12MB; Peak memory usage: 60MB
+[2026-11-01 15:31:06.618560] [0x00007759b5089ec0] [info]    Generating perimeters... Resident memory: 143MB; Shared memory: 50MB; Private memory: 93MB; Peak memory usage: 142MB
+[2026-11-01 15:31:08.072609] [0x00007759b5089ec0] [info]    Detecting solid surfaces... Resident memory: 187MB; Shared memory: 51MB; Private memory: 137MB; Peak memory usage: 186MB
+[2026-11-01 15:31:08.357138] [0x00007759b5089ec0] [info]    Preparing fill surfaces... Resident memory: 189MB; Shared memory: 51MB; Private memory: 138MB; Peak memory usage: 188MB
+[2026-11-01 15:31:08.358420] [0x00007759b5089ec0] [info]    Discovering vertical shells... Resident memory: 189MB; Shared memory: 51MB; Private memory: 138MB; Peak memory usage: 188MB
+[2026-11-01 15:31:10.111420] [0x00007759b5089ec0] [info]    Processing external surfaces... Resident memory: 203MB; Shared memory: 51MB; Private memory: 152MB; Peak memory usage: 202MB
+[2026-11-01 15:31:10.215221] [0x00007759b5089ec0] [info]    Bridge over infill - Start Resident memory: 205MB; Shared memory: 51MB; Private memory: 154MB; Peak memory usage: 203MB
+[2026-11-01 15:31:10.893258] [0x00007759b5089ec0] [info]    Bridge over infill - Directions and expanded surfaces computed Resident memory: 208MB; Shared memory: 51MB; Private memory: 157MB; Peak memory usage: 207MB
+[2026-11-01 15:31:10.921954] [0x00007759b5089ec0] [info]    Bridge over infill - End Resident memory: 208MB; Shared memory: 51MB; Private memory: 156MB; Peak memory usage: 207MB
+[2026-11-01 15:31:12.011855] [0x00007759b5089ec0] [warning] SupportSpotsGenerator does not currently handle different materials properly, only first will be used
+[2026-11-01 15:31:12.970948] [0x00007759b5089ec0] [warning] SupportSpotsGenerator does not currently handle different materials properly, only first will be used
+[2026-11-01 16:08:13.560659] [0x00007956cf711ec0] [warning] Detected non-planar Voronoi diagram, input polygons will be rotated back and forth.
+[2026-11-01 15:31:15.514521] [0x00007759b5089ec0] [info]    Slicing process finished. Resident memory: 296MB; Shared memory: 52MB; Private memory: 244MB; Peak memory usage: 299MB
+[2026-11-01 15:31:15.514922] [0x00007759b5089ec0] [info]    Exporting G-code... Resident memory: 296MB; Shared memory: 52MB; Private memory: 244MB; Peak memory usage: 299MB
+[2026-11-01 15:31:20.343063] [0x00007759b5089ec0] [info]    Exporting G-code finished Resident memory: 526MB; Shared memory: 53MB; Private memory: 473MB; Peak memory usage: 545MB

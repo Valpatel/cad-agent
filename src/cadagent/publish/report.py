@@ -16,7 +16,7 @@ runs nothing. Features:
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
-The JSON is results schema 1.0 (``cadagent.publish.htmlreport.SCHEMA_VERSION``), the shape ``tests/test_report.py``
+The JSON is results schema 1.0 (``cadagent.publish.htmlreport.SCHEMA_VERSION``), the shape ``tests/publish/test_report.py``
 pins, so a tool that reads the file can rely on it.
 """
 
@@ -287,6 +287,9 @@ def collect(project: CadProject) -> Dict[str, Any]:
     sliced = current_report(project)
     slicer_text = (f"sliced ({sliced['slicer']}): {sliced['total_grams']} g, {sliced['total_hours']} h for "
                    f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else "slicer not run"
+    flagged = sorted(n for n, r in (sliced or {}).get("parts", {}).items() if isinstance(r, dict) and r.get("ok") is False)
+    if flagged:      # PrusaSlicer said these may print badly: the grams stand, the part is not fine
+        slicer_text += f"; NOT OK, flagged by the slicer: {', '.join(flagged)}"
     return {
         "schema_version": SCHEMA_VERSION,
         "title": f"{project.title} · CAD verification",

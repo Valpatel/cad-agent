@@ -27,7 +27,7 @@
 # heading the page does not have, or a missing caption, alt text, `shows` or `on`.
 #
 # Owner (2026-10-31): "CAD is graphical, so our site should be too. Not a wall of text." The browser suite measures each
-# page's longest stretch with nothing to look at (tests/site-walls.mjs, #179).
+# page's longest stretch with nothing to look at (tests/site/site-walls.mjs, #179).
 #
 # The gate bench pictures (docs/img/gates/) come from tools/site-bench-pictures.mjs, which builds the review site with
 # `cad-agent site` from the bench's committed run (tests/fixtures/gate_bench/site_snapshot). The bench as built: six
@@ -37,7 +37,7 @@
 # The review-packet renders (docs/img/packets/) come from tools/site-packet-pictures.py, which runs `cad-agent gates
 # --build` and `cad-agent review-packet` on a copy of the bench, as built and with one seeded defect at a time
 # (tests/fixtures/gate_bench/build.py, SEEDS). docs/img/packets/SOURCE.json records each run's gate verdicts, and
-# tests/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
+# tests/review/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
 
 docs/gates.md:
   hero:
@@ -817,7 +817,7 @@ docs/toolkit.md:
       drawn_by: tools/motion_figures.py
       tool: cadagent.mechanical.connectors
       on: fixture
-      caption: "An RJ45 plug pushed in along its mating axis, the port in tests/test_connectors.py in section. Through a window sized from the jack's bounding box its latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance. The swept volumes match the connector check's."
+      caption: "An RJ45 plug pushed in along its mating axis, the port in tests/mechanical/test_connectors.py in section. Through a window sized from the jack's bounding box its latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance. The swept volumes match the connector check's."
       alt: "An RJ45 plug pushed in along its mating axis through two panel windows: through a window sized from the jack's bounding box the latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance"
     - after: 3d-viewer-cad-agent-view--the-web-kit
       below: Show everything the parts fit around
@@ -873,7 +873,7 @@ docs/toolkit.md:
       drawn_by: tools/motion_figures.py
       tool: cad-agent holes
       on: fixture-2d
-      caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/test_holes.py, in section; the volumes match the hole check's."
+      caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/mechanical/test_holes.py, in section; the volumes match the hole check's."
       alt: "Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear"
 
 research/simulation-tools.md:

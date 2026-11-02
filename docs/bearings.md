@@ -175,7 +175,7 @@ D. E. Brewe, *Journal of Lubrication Technology* 105 (1983) 171–177.
 
 ## Tests that keep it honest
 
-`tests/test_bearings.py` runs the golden vectors in `tests/fixtures/bearing-vectors.json`, typed in from the makers'
+`tests/formulas/test_bearings.py` runs the golden vectors in `tests/fixtures/bearing-vectors.json`, typed in from the makers'
 worked examples: SKF's rope sheave (804 800 h), centrifugal pump (11.52 kN and 17 400 h; a roller over 1 000 000 h)
 and vibrating screen (21 500 h), its a1 and X/Y tables, its oscillation conversion, Menck and Stammler's 9 million
 oscillations, and NSK's 6210 contact (2 170 MPa, 3.92 and 0.39 mm). It checks the Hertz solution against Johnson's

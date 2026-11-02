@@ -21,8 +21,28 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "motion-trace", "release", "snapfit", "inserts", "bearings",
-               "overhangs")
+               "overhangs", "library")
 LOG_TAIL_LINES = 20
+# Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
+# person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
+# anything a step starts), unless the variable is already set: a person's own explicit choice stands. They never change
+# the calling process's environment. The list is the survey in docs/supply-chain.md ("Usage reporting");
+# tests/cli/test_privacy.py fails when a vendored tool names a switch this list does not cover.
+OPT_OUTS = {
+    "DO_NOT_TRACK": ("1", "the Console Do Not Track convention (consoledonottrack.com); text-to-cad's cadgen reads it"),
+    "CADGEN_TELEMETRY": ("0", "text-to-cad's cadgen: its usage analytics, on by default upstream (cadgen/analytics.py)"),
+    "CADGEN_UPDATE_CHECK": ("0", "text-to-cad's cadgen: its check for a newer release, on by default upstream (cadgen/updates.py)"),
+    "KICAD_MCP_TELEMETRY_ENABLED": ("false", "kicad-mcp-pro: OpenTelemetry, off by default; kept off explicitly"),
+    "WRANGLER_SEND_METRICS": ("false", "Cloudflare's wrangler: anonymous usage data, on by default"),
+    "WRANGLER_SEND_ERROR_REPORTS": ("false", "Cloudflare's wrangler: asks to send each error report when unset"),
+}
+
+def opt_out(env: Dict[str, str]) -> List[str]:
+    """Set every usage-reporting opt-out in ``env`` (a child's environment) that is not set yet; return what was set."""
+    added = [k for k in OPT_OUTS if k not in env]
+    for k in added:
+        env[k] = OPT_OUTS[k][0]
+    return added
 
 class _Unusable(Exception):
     """Raised inside a subcommand for an exit-2 condition with a message."""
@@ -60,6 +80,7 @@ def run_step(project: CadProject, step: Step) -> Dict[str, Any]:
         result["reason"] = f"script not found: {script}"
         return result
     env = dict(os.environ, PYTHONUNBUFFERED="1", CAD_AGENT_PROJECT=str(project.root))
+    opt_out(env)
     cmd = [project.python, str(script)]
     log_path = project.exports_dir / step.log if step.log else None
     started = time.monotonic()
@@ -141,17 +162,34 @@ def _export_plates(project: CadProject, parts: List[str]) -> int:
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.manufacturing.slicer import executable, slice_project
+    from cadagent.manufacturing.slicer import engine_executable, engine_of, not_installed, slice_project
 
-    if not executable():
-        raise _Unusable("Bambu Studio is not installed (snap install bambu-studio); nothing was sliced")
-    rep = slice_project(project, getattr(args, "parts", None) or None)
+    engine = engine_of(project)
+    if not engine_executable(engine):
+        raise _Unusable(f"{not_installed(engine)}; nothing was sliced")
+    try:
+        rep = slice_project(project, getattr(args, "parts", None) or None)
+    except (ValueError, KeyError, FileNotFoundError) as exc:   # PrusaSlicer: a profile name or override key it lacks
+        if engine == "bambu":
+            raise
+        raise _Unusable(f"cannot slice: {exc.args[0] if exc.args else exc}") from None
     for name, row in rep["parts"].items():
         if row.get("grams"):
             minutes = f"{row['minutes']:7.1f} min" if row.get("minutes") is not None else "   time not reported"
-            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}")
+            flag = "  NOT OK" if row.get("ok") is False else ""
+            _say(f"  {name:<24} {row['grams']:8.1f} g  {minutes}{flag}")
         else:
             _say(f"  {name:<24} FAILED: {row.get('error')}")
+        # what PrusaSlicer's log said (Bambu Studio rows carry none of these)
+        if row.get("stability_issues"):
+            _say(f"      stability: {', '.join(row['stability_issues'])}")
+        for level in ("errors", "warnings"):
+            for line in row.get(level) or []:
+                if "print stability issues" not in line:      # listed above, by category
+                    _say(f"      {level[:-1]}: {line}")
+    not_ok = [n for n, row in rep["parts"].items() if row.get("ok") is False and row.get("grams")]
+    if not_ok:
+        _say(f"{len(not_ok)} part(s) sliced but not ok (a slicer error or print stability issue): {', '.join(not_ok)}")
     _say(f"{rep['total_grams']} g, {rep['total_hours']} h ({rep['process']}, {rep['filament']}) -> {rep['path']}")
     return 0 if rep["pass"] else 1
 
@@ -881,6 +919,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
     if args.action == "list":
         for row in agentkit.status(home, root, targets):
             _say(f"{row['kind']:5}  {row['name']:24} {row['state']:12} {row['dest']}")
+        for line in agentkit.notice(agentkit.readiness(root)):
+            _say(line)
         return 0
     warning = None if args.copy else agentkit.worktree_warning(root)
     if warning:
@@ -892,6 +932,8 @@ def cmd_agents(args: argparse.Namespace) -> int:
         _err(f"agents: {dest} exists and was not installed by cad-agent; left untouched (move it away and rerun)")
     _say(f"agents: {len(result['done'])} {'planned' if args.dry_run else 'installed'} from {root}"
          + (f", {len(result['conflicts'])} conflicts" if result["conflicts"] else ""))
+    for line in agentkit.notice(agentkit.readiness(root)):
+        _say(line)
     return 1 if result["conflicts"] else 0
 
 def cmd_snapfit(args: argparse.Namespace) -> int:
@@ -1008,6 +1050,45 @@ def cmd_motion_trace(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_library(args: argparse.Namespace) -> int:
+    """``library build``: write the parts library (footprints and STEP bodies) for a KiCad project.
+    ``library audit``: every footprint of a board or library has a 3D model that resolves, or a waiver with its
+    reason (cadagent.library); exit 1 on a finding."""
+    from cadagent.library import audit, parts
+    if args.action == "build":
+        out = Path(args.out)
+        if args.model_dir:
+            model_dir = args.model_dir
+        elif args.project:
+            rel = os.path.relpath(out.resolve() / f"{parts.LIBRARY}.3dshapes", Path(args.project).resolve())
+            model_dir = "${KIPRJMOD}/" + Path(rel).as_posix()
+        else:
+            model_dir = None
+        written = parts.build(out, model_dir=model_dir, keys=args.parts or None, models=not args.no_models,
+                              fuses=args.fuse or ())
+        _say(f"{len(written['footprints'])} footprints in {out / (parts.LIBRARY + '.pretty')}, "
+             f"{len(written['models'])} models in {out / (parts.LIBRARY + '.3dshapes')}")
+        return 0
+    waivers: Dict[str, str] = {}
+    if args.waivers:
+        data = _read_spec(args.waivers)
+        waivers.update(data.get("waivers", data) if isinstance(data, dict) else {})
+    for w in args.waive or []:
+        key, _, reason = w.partition("=")
+        waivers[key] = reason
+    env = dict(e.partition("=")[::2] for e in args.env or [])
+    result = audit.model_audit(args.path, env=env, waivers=waivers)
+    for f in result["findings"]:
+        _say(f"FAIL  {f['check']}: {f['footprint']}: {f['detail']}")
+    for w in result["unused_waivers"]:
+        _say(f"warning: waiver {w!r} matched no footprint without a model")
+    _say(f"{'PASS' if result['pass'] else 'FAIL'}  {result['with_model']} of {result['footprints']} footprints carry "
+         f"a model; {len(result['waived'])} waived; {len(result['findings'])} findings")
+    if args.output:
+        Path(args.output).write_text(json.dumps(result, indent=2) + "\n")
+    return 0 if result["pass"] else 1
+
+
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
     if sub == "motion-trace":
@@ -1039,6 +1120,12 @@ def dispatch(args: argparse.Namespace) -> int:
             return cmd_bearings(args)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             _err(f"bearings: {exc}")
+            return 2
+    if sub == "library":                                   # works on files only: no project needed
+        try:
+            return cmd_library(args)
+        except (OSError, ValueError, KeyError, MissingDependency) as exc:
+            _err(f"library: {exc}")
             return 2
     if sub == "mcmaster":                                  # works on files only: no project needed
         try:
@@ -1124,7 +1211,7 @@ def build_parser() -> argparse.ArgumentParser:
     site_p.add_argument("--port", type=int, default=None, help="Port (default: cad.serve.port, 0 = any free port)")
     site_p.add_argument("--host", default=None, help="Bind address (default: cad.serve.host, 127.0.0.1)")
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
-    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio CLI): grams and print time")
+    slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio or PrusaSlicer CLI): grams and print time")
     slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
@@ -1159,6 +1246,25 @@ def build_parser() -> argparse.ArgumentParser:
     ag_p.add_argument("--home", help="home folder to install into (default: yours)")
     ag_p.add_argument("--copy", action="store_true", help="copy instead of linking (for a checkout that will move)")
     ag_p.add_argument("--dry-run", action="store_true", help="show what would be installed")
+    lib_p = sub.add_parser("library", help="Write the parts library (KiCad footprints and STEP bodies) for a project, "
+                                           "or audit a board for footprints with no 3D model (src/cadagent/library)")
+    lib_actions = lib_p.add_subparsers(dest="action", required=True)
+    lb = lib_actions.add_parser("build", help="write <out>/cad-agent.pretty and <out>/cad-agent.3dshapes")
+    lb.add_argument("out", help="folder to write the library into")
+    lb.add_argument("--project", help="the KiCad project's folder: model paths become ${KIPRJMOD}/<path to out>")
+    lb.add_argument("--model-dir", help="model folder as the footprints should name it (overrides --project)")
+    lb.add_argument("--parts", nargs="+", help="only these parts (default: all; cadagent.library.parts.PARTS)")
+    lb.add_argument("--fuse", nargs="+", type=float, help="also write a MINI blade fuse body per rating (A)")
+    lb.add_argument("--no-models", action="store_true", help="footprints only (no CadQuery needed)")
+    la = lib_actions.add_parser("audit", help="every footprint carries a 3D model that resolves, or a waiver")
+    la.add_argument("path", help="a .kicad_pcb, a .kicad_mod or a .pretty folder")
+    la.add_argument("--waive", action="append", metavar="PATTERN=REASON",
+                    help="a reference or library id pattern that needs no model, and why (e.g. 'TP*=bare test pad')")
+    la.add_argument("--waivers", help="YAML/JSON file: {waivers: {pattern: reason}}")
+    la.add_argument("--env", action="append", metavar="VAR=PATH",
+                    help="a path variable for model paths, e.g. KICAD10_3DMODEL_DIR=... or KIPRJMOD=<project> when "
+                         "auditing a .pretty (default: the board's folder, or the folder holding the .pretty)")
+    la.add_argument("--output", help="write the full result as JSON")
     mc_p = sub.add_parser("mcmaster", help="Download McMaster-Carr STEP + product data per part number and normalise "
                                            "it (one page at a time; skills/mcmaster-parts/SKILL.md)")
     mc_p.add_argument("pns", nargs="+", metavar="PN", help="McMaster-Carr part numbers, e.g. 91290A242")

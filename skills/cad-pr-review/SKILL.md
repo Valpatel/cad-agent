@@ -1,9 +1,13 @@
 ---
 name: cad-pr-review
 description: Use when a pull request in a cad-agent or product repo is ready for review, or when asked to review one. The author gets an independent review from a separate agent (the cad-pr-reviewer subagent, or a fresh Codex session) that did not write the change, answers every comment on the PR, fixes or explains, resolves the threads, and merges only under the repo's rules. Covers code, CAD geometry and simulation evidence.
+metadata:
+  requires: "gh write-access"
 ---
 
 # Pull request review
+
+> **Needs:** `gh` logged in and write access to the repository it works in. `cad-agent agents install` says which of these this computer lacks; without them, do not use it.
 
 An author cannot review their own change: they read what they meant, not what they wrote. Every PR gets a review
 by an agent or person that did not write it, and the review lives on the PR, where anyone can see it later.
@@ -66,6 +70,13 @@ flowchart TD
     checkout (`cad-agent holes --out /tmp/<scratch>/holes.json`). Each
     review-only row is checked by looking at the model and named in the summary. A mistake the index does not list
     is a finding, and it is added to the index.
+- **Structure and sprawl.** Check each new or moved file against the repo's map of where files go (its AGENTS.md or
+  CONTRIBUTING): code in the package for its domain, tests in the folder that mirrors that package, no new top-level
+  folder, no file loose at the top of the package or of `tests/`. Search for what each new helper does: a second copy
+  of an existing one is blocking. A function or two joins the existing module for its topic rather than a new file. A
+  folder the change takes past the repo's clutter limit is split by its growth rule (subfolders named after the
+  domains, each with a README and map, `git mv`, every reference updated), and not before. A misplaced file is a minor
+  finding that names the path it belongs at; a new top-level folder is blocking.
 - Post inline comments on the exact lines (`gh api repos/<o>/<r>/pulls/<n>/comments` with `commit_id`, `path`,
   `line`, `side=RIGHT`), then one summary review (`gh pr review <n> --comment --body ...`) that says plainly whether
   anything is blocking. Its last line is the verdict marker for the head commit you reviewed:

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" width="680" height="400" role="img" aria-label="A bent mounting plate with a clinch nut and a riveted strap, and the distances each must keep" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="arr" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L7 4 L0 7 z" fill="#173d3c"/></marker></defs>
+<rect width="680" height="400" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
+<text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">A two-bend mounting plate: the distances its hardware and rivets keep</text>
+<text x="18" y="50" font-size="12" fill="#526863">One shop's 1.6 mm 5052 (ALU-063) and a 1/8 in (3.2 mm) blind rivet. Not to scale.</text>
+<text x="60" y="84" font-size="12.5" font-weight="700" fill="#173d3c">Side view</text>
+<path d="M60 180 L60 300 L270 300 L270 180 L263 180 L263 293 L67 293 L67 180 Z" fill="#6f8a80" fill-opacity="0.35" stroke="#173d3c" stroke-width="1.4" stroke-linejoin="round"/>
+<line x1="46.0" y1="180.0" x2="46.0" y2="300.0" stroke="#173d3c" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="40.0" y="244.0" font-size="11" fill="#173d3c" text-anchor="end"></text>
+<text x="40" y="172" font-size="11" fill="#173d3c">flange ≥ 7.7</text>
+<text x="165.0" y="336" font-size="11" fill="#173d3c" text-anchor="middle">inside radius R 0.89 mm · K 0.42</text>
+<text x="165.0" y="320" font-size="11" fill="#173d3c" text-anchor="middle">T 1.60 mm · bend allowance 2.45 mm at 90°</text>
+<rect x="171" y="284" width="18" height="9" fill="#bd3a12"/>
+<rect x="175" y="293" width="10" height="7" fill="#bd3a12" fill-opacity="0.6"/>
+<text x="180" y="277" font-size="11" fill="#bd3a12" text-anchor="middle">clinch nut</text>
+<rect x="270" y="190" width="7" height="80" fill="#d8e0d3" stroke="#173d3c"/>
+<rect x="259" y="206" width="26" height="8" rx="3" fill="#bd3a12"/>
+<rect x="259" y="236" width="26" height="8" rx="3" fill="#bd3a12"/>
+<text x="284" y="214" font-size="11" fill="#bd3a12">riveted strap</text>
+<text x="350" y="84" font-size="12.5" font-weight="700" fill="#173d3c">A face between two bends, from above</text>
+<rect x="350" y="110" width="290" height="220" fill="#6f8a80" fill-opacity="0.18" stroke="#173d3c"/>
+<line x1="374" y1="110" x2="374" y2="330" stroke="#173d3c" stroke-dasharray="6 4"/>
+<line x1="616" y1="110" x2="616" y2="330" stroke="#173d3c" stroke-dasharray="6 4"/>
+<text x="378" y="322" font-size="10.5" fill="#526863">bend line</text>
+<circle cx="450" cy="268" r="8" fill="#fffdf5" stroke="#bd3a12" stroke-width="2.4"/>
+<line x1="374.0" y1="268.0" x2="450.0" y2="268.0" stroke="#bd3a12" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="412.0" y="263.0" font-size="11" fill="#bd3a12" text-anchor="middle">≥ 10.8 to bend</text>
+<line x1="450.0" y1="268.0" x2="450.0" y2="330.0" stroke="#bd3a12" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="456.0" y="303.0" font-size="11" fill="#bd3a12" text-anchor="start">≥ 9.7 to edge</text>
+<circle cx="470" cy="144" r="5" fill="#fffdf5" stroke="#173d3c" stroke-width="2"/>
+<circle cx="524" cy="144" r="5" fill="#fffdf5" stroke="#173d3c" stroke-width="2"/>
+<circle cx="578" cy="144" r="5" fill="#fffdf5" stroke="#173d3c" stroke-width="2"/>
+<line x1="470.0" y1="128.0" x2="524.0" y2="128.0" stroke="#173d3c" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="497.0" y="123.0" font-size="11" fill="#173d3c" text-anchor="middle">pitch ≥ 9.5 (3D)</text>
+<line x1="450.0" y1="110.0" x2="450.0" y2="144.0" stroke="#173d3c" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="444.0" y="131.0" font-size="11" fill="#173d3c" text-anchor="end">edge ≥ 6.3 (2D)</text>
+<line x1="450" y1="144" x2="470" y2="144" stroke="#526863" stroke-dasharray="2 2"/>
+<text x="470" y="166" font-size="10.5" fill="#526863">rivets of a lap joint along an edge</text>
+<text x="18" y="366" font-size="11" fill="#526863">Clinch nut: the shop's least distances for this stock (a part's own K or N may be larger); sheet at most HRB 80 for steel nuts.</text>
+<text x="18" y="382" font-size="11" fill="#526863">Rivets: edge ≥ 2D = 6.3 mm (POP, FAA), pitch ≥ 3D = 9.5 mm (FAA). Bend relief 3.0 mm deep at the corners.</text>
+</svg>

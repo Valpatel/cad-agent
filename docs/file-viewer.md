@@ -137,8 +137,8 @@ usable frame. `?view=iso&ui=0` is available for a clean automated capture.
 
 ```sh
 npm run test:webkit-unit
-node tests/webkit-file-viewer-browser.mjs
-PLAYWRIGHT_BROWSER=webkit node tests/webkit-file-viewer-browser.mjs
+node tests/webkit/webkit-file-viewer-browser.mjs
+PLAYWRIGHT_BROWSER=webkit node tests/webkit/webkit-file-viewer-browser.mjs
 ```
 
 The fixtures use an independently specified 10 × 20 × 30 mm box in all three formats,
@@ -149,7 +149,7 @@ bounded worker stalls, import failure recovery, actual projected bounds on 320px
 portrait and short landscape, small wheel deltas, orbit and standard views.
 Screenshots and JSON receipts default to `/tmp/cad-agent-file-viewer`.
 
-`tests/webkit-file-corpus.mjs` runs the exact shipped worker modules through a
+`tests/webkit/webkit-file-corpus.mjs` runs the exact shipped worker modules through a
 small test-only Node adapter, without a GPU. Its input is a JSON object with
 `files:[{path,sha256}]`; it verifies each original's hash before parsing and records
 per-file geometry/bounds/triangles, timing, warnings and failures. Run a large CAD

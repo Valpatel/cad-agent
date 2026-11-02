@@ -13,12 +13,12 @@ issue #60 tracks the generic validation gap.
 Measured in the isolated cad-agent feature checkout on 2026-10-28:
 
 ```text
-$ python -m pytest -q tests/test_motion_trace.py
+$ python -m pytest -q tests/mechanical/test_motion_trace.py
 43 passed in 0.24s
 $ python - <<'PY'
 import runpy
 from cadagent.mechanical.motion_trace import validate_motion_trace
-f = runpy.run_path('tests/test_motion_trace.py')
+f = runpy.run_path('tests/mechanical/test_motion_trace.py')
 c = f['contract']()
 r = validate_motion_trace(c, f['trace'](c, 'offset-pivot'))
 print(r['status'])
@@ -41,7 +41,7 @@ can make both the animation and a same-source oracle agree.
 
 Capture actual rendered landmarks and compare them with independently sourced home frames, joint axes and
 component ownership. Require off-axis samples and nested poses, plus home and travel limits; deliberately offset
-a pivot and require failure. The guard is `tests/test_motion_trace.py` in the existing pytest/CI runner; the
+a pivot and require failure. The guard is `tests/mechanical/test_motion_trace.py` in the existing pytest/CI runner; the
 product must additionally capture its actual assets. Durable guidance is in
 [the rendered-motion domain](../domains/rendered-motion.md).
 

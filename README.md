@@ -1,9 +1,73 @@
+<div align="center">
+
+<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
+
+<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
+
 # cad-agent
 
-[![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+**A workshop where AI agents get better at CAD by learning from everyone else.**
 
-**A workshop where AI agents get better at CAD by learning from everyone else.** While we design real hardware,
+[![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Valpatel/cad-agent?color=f97316)](https://github.com/Valpatel/cad-agent/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab?logo=python&logoColor=white)](#build-with-your-favorite-ai-agent)
+[![Site](https://img.shields.io/website?url=https%3A%2F%2Fcad-agent.valpatel.com&label=site&up_message=live)](https://cad-agent.valpatel.com)
+[![Last commit](https://img.shields.io/github/last-commit/Valpatel/cad-agent/dev)](https://github.com/Valpatel/cad-agent/commits/dev)
+[![Stars](https://img.shields.io/github/stars/Valpatel/cad-agent?style=flat&logo=github)](https://github.com/Valpatel/cad-agent/stargazers)
+<br>
+[![Agents](https://img.shields.io/badge/agents-Claude_Code_·_Codex_·_Copilot_·_Cursor_·_Gemini-8b5cf6)](https://cad-agent.valpatel.com/#agent-guide)
+[![CAD](https://img.shields.io/badge/CAD-CadQuery_·_OpenCASCADE-0ea5e9)](https://github.com/CadQuery/cadquery)
+[![Telemetry](https://img.shields.io/badge/telemetry-none-22c55e)](docs/supply-chain.md#usage-reporting)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-ec4899)](CONTRIBUTING.md)
+
+</div>
+
+## Build with your favorite AI agent
+
+Paste this into any AI coding agent to install cad-agent and its skills, then add what you want made at the end.
+Claude Code, Codex CLI, Copilot CLI, Cursor, Gemini CLI: see the [step-by-step guide for your agent](https://cad-agent.valpatel.com/#agent-guide).
+
+<!-- The block is docs/agent-prompt.txt, verbatim (tests/repo/test_agent_prompt.py); the site's home page shows it too. -->
+```text
+Use cad-agent (github.com/Valpatel/cad-agent, MIT) for what I ask at the end.
+
+1. Install once. Needs git and Python 3.11 or newer (if python3 is older,
+   name a newer one, e.g. python3.12). Windows: .venv\Scripts for .venv/bin.
+   git clone --depth 1 -b main https://github.com/Valpatel/cad-agent "$HOME/cad-agent"
+   python3 -m venv "$HOME/cad-agent/.venv"
+   "$HOME/cad-agent/.venv/bin/pip" install -e "$HOME/cad-agent[cad]"
+   "$HOME/cad-agent/.venv/bin/cad-agent" agents install
+   More extras inside the brackets, comma-separated: fea (strength), sim
+   (airflow, topology, renders), robot (URDF, MuJoCo), explore (search).
+2. Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
+   the page or catalog/<area>.json it points to (any page also as .md),
+   and `cad-agent <command> --help`. Skills: ~/cad-agent/skills/*/SKILL.md.
+3. Build with the kit's tested commands and checks, not formulas from
+   memory. Make it a cad-agent project (cad-agent.yaml, as in
+   ~/cad-agent/docs/toolkit.md) so `cad-agent all` builds, exports and runs
+   every check. Say what each check assumes: CAD and simulation narrow a
+   design down, they do not prove that a printed part fits or holds.
+4. Give back, through GitHub only: cad-agent collects no telemetry. When a
+   tool is missing or wrong, you find a better source or you learn a lesson,
+   write cad-agent-report.md with these headings: Model, Harness, cad-agent
+   commit (git -C "$HOME/cad-agent" rev-parse --short HEAD), Layer (the
+   cad-agent tool, or the upstream it wraps, with its version), Building,
+   Missing or learned, Sources (links), Confidence (low, medium or high).
+   Leave out anything private. Show it to me, and send it only if I say
+   yes: best as a PR into dev from a fork (a test, a source, a lesson or a
+   fix; fill in the template's "Made with"), else as an issue:
+   gh issue create -R Valpatel/cad-agent -t "Agent report: <topic>" -F cad-agent-report.md
+
+What I want:
+```
+
+Your agent sends back what it learns as a pull request or an issue that you approve; cad-agent collects no telemetry.
+By hand: run the four install lines, then `cad-agent all --project <your project>` and see [Extras](#extras).
+
+## What it is
+
+While we design real hardware,
 our agents keep hunting the web for the best published techniques (open-source repos, design guides, datasheets,
 papers, other people's agent skills), try them on the problem in front of them, and condense what works into tested
 tools and short pages the next agent can use straight away. Every source gets its credit.
@@ -16,9 +80,6 @@ design down; they do not prove that a printed part fits or holds. Only testing t
 coupon replaces a data-sheet number for one filament and print direction.
 Browse it at [cad-agent.valpatel.com](https://cad-agent.valpatel.com) (every page also as Markdown, plus `llms.txt`
 and `catalog.json`).
-
-<p align="center"><img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%"><br>
-<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub></p>
 
 <table>
 <tr>
@@ -132,14 +193,9 @@ flowchart TD
 
 The full guide, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
 
-## Quick start
+### Extras
 
-```bash
-git clone https://github.com/Valpatel/cad-agent && cd cad-agent
-pip install -e ".[cad]"                      # add fea, sim, robot, site as needed
-cad-agent all --project path/to/your-project  # build, 3MF, check + report, package
-cad-agent site --serve --project path/to/your-project
-```
+`pip install -e "<checkout>[cad,fea]"` adds the extras you name; the package alone needs only PyYAML and NumPy.
 
 | Extra | Adds |
 |---|---|

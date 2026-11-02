@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Draw the process-profile charts (docs/img/research/process-*.svg) from research/process-profiles.yaml.
+"""Draw the process-profile charts (docs/img/research/process-*.svg) and the sheet-metal diagrams
+(docs/img/sheet-metal/*.svg) from research/process-profiles.yaml (and research/references.yaml, the sources it cites).
 
     python3 tools/process_profile_figures.py            # write the SVGs
     python3 tools/process_profile_figures.py --check    # exit 1 if a committed SVG differs from the data (tests run this)
@@ -22,7 +23,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "research" / "references.yaml"
 OUT = ROOT / "docs" / "img" / "research"
+SHEET_OUT = ROOT / "docs" / "img" / "sheet-metal"
 INK, MUTED, LINE, BG, GREEN, ORANGE = "#173d3c", "#526863", "#d8e0d3", "#fffdf5", "#6f8a80", "#bd3a12"
 FONT = "system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
 
@@ -35,7 +38,11 @@ from cadagent.manufacturing.process import evaluate  # noqa: E402
 # ----------------------------------------------------------------------------- data
 
 def load() -> dict:
-    return yaml.safe_load(DATA.read_text(encoding="utf-8"))
+    """The profiles, with ``sources``: the entries of the reference registry (research/references.yaml, #118) that
+    the rules cite."""
+    data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
+    data["sources"] = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))["sources"]
+    return data
 
 
 def credit(source: dict) -> str:
@@ -178,7 +185,8 @@ def sheet_metal() -> str:
     near = min(shop["rows"], key=lambda r: abs(r[cols.index("T")] - SHEET["T"]) + 10 * (r[1] != "cold-rolled mild steel"))
     groups = []
     for key, title in SHEET_GROUPS:
-        rows = [_row(r, sources, SHEET) for r in data["rules"] if r.get("compare") == key and r.get("status") == "read"]
+        rows = [_row(r, sources, SHEET) for r in data["rules"]
+                if r.get("compare") == key and r.get("status") == "read" and not r.get("shop")]
         if key in SHOP_COLUMNS:
             v = near[cols.index(SHOP_COLUMNS[key])]
             rows.append((f"{credit(sources[shop['source']])} tooling · {near[0]}", v, v, ORANGE, False))
@@ -193,7 +201,7 @@ def sheet_metal() -> str:
                       "Read 2026-10-31.")
 
 
-SHORT = {"E. I. du Pont de Nemours and Company": "DuPont", "Covestro LLC": "Covestro"}   # names too long for a row
+SHORT = {"E. I. du Pont de Nemours and Company": "DuPont", "Covestro LLC": "Covestro", "PennEngineering": "PEM"}   # names too long for a row
 
 
 def _span_row(rule: dict, sources: dict, envs: list[dict], prefix: str = "", per: str | None = None) -> Row:
@@ -226,10 +234,12 @@ def _scale(groups: list[tuple[str, list[Row]]], step: float) -> tuple[float, lis
 
 
 def compared(title: str, subtitle: str, groups: list[tuple[str, str, str | None]], *, envs: list[dict] | None = None,
-             unit: str, step: float, note: str, kinds: dict[str, str] | None = None, per: str | None = None) -> str:
+             unit: str, step: float, note: str, kinds: dict[str, str] | None = None, per: str | None = None,
+             shop: str | None = None) -> str:
     """A chart of the rules that share a compare key: ``groups`` is (heading, compare key, process or None), the
     rules read from the YAML in file order and evaluated in ``envs`` (one or more variable settings). With ``kinds``
-    (compare key -> a word), a group holds every key in it and each row says which ("hole · Xometry")."""
+    (compare key -> a word), a group holds every key in it and each row says which ("hole · Xometry"). A shop's own
+    rules (``shop:``) are left out unless ``shop`` names it, as cadagent.manufacturing.process does."""
     data = load()
     sources = {s["id"]: s for s in data["sources"]}
     envs = envs or [{}]
@@ -238,7 +248,8 @@ def compared(title: str, subtitle: str, groups: list[tuple[str, str, str | None]
         keys = list(kinds) if key == "*" else [key]
         rows = [_span_row(r, sources, envs, f"{kinds[r['compare']]} · " if kinds else "", per)
                 for k in keys for r in data["rules"]
-                if r.get("compare") == k and r.get("status") == "read" and (process is None or r["process"] == process)]
+                if r.get("compare") == k and r.get("status") == "read" and (process is None or r["process"] == process)
+                and (not r.get("shop") or r.get("shop") == shop)]
         if rows:
             out.append((heading, rows))
     vmax, ticks = _scale(out, step)
@@ -372,22 +383,31 @@ def moulding_bosses() -> str:
                     groups, envs=[{"D": 1.0}], unit="× D", step=0.5, note=READ)
 
 
+BEND_COLUMNS = ("sku", "material", "T", "R", "K")
+
+
+def _bend_tables(data: dict) -> list[dict]:
+    return [t for t in data["shop_tables"] if set(BEND_COLUMNS) <= set(t["columns"])]
+
+
 def sheet_shop() -> str:
     data = load()
     sources = {s["id"]: s for s in data["sources"]}
-    shop = data["shop_tables"][0]
-    cols = shop["columns"]
+    tables = _bend_tables(data)
     groups = []
-    for material in dict.fromkeys(r[cols.index("material")] for r in shop["rows"]):
-        rows = [(f"{r[0]} · T {r[cols.index('T')]:.2f} mm · K {r[cols.index('K')]:.2f}", r[cols.index("R")],
-                 r[cols.index("R")], ORANGE, False) for r in shop["rows"] if r[cols.index("material")] == material]
-        groups.append((material[0].upper() + material[1:], rows))
+    for shop in tables:
+        cols = shop["columns"]
+        for material in dict.fromkeys(r[cols.index("material")] for r in shop["rows"]):
+            rows = [(f"{r[0]} · T {r[cols.index('T')]:.2f} mm · K {r[cols.index('K')]:.2f}", r[cols.index("R")],
+                     r[cols.index("R")], ORANGE, False) for r in shop["rows"] if r[cols.index("material")] == material]
+            groups.append((material[0].upper() + material[1:], rows))
     vmax, ticks = _scale(groups, 0.5)
-    who = credit(sources[shop["source"]])
+    who = credit(sources[tables[0]["source"]])
+    dates = sorted({str(t["verified"]) for t in tables})
     return ranges_svg(f"Sheet metal: one shop's inside bend radius and K-factor, by sheet ({who})",
-                      f"{sum(len(r) for _, r in groups)} rows of the shop's own tooling table (shop_tables), not a "
+                      f"{sum(len(r) for _, r in groups)} rows of the shop's own tooling tables (shop_tables), not a "
                       "generic rule: R is not simply T.", groups, vmax, ticks, "R, mm",
-                      "Converted from inches at 25.4 mm; the printed values are in the YAML (as_printed). Read 2026-10-31.")
+                      f"Converted from inches (as_printed in the YAML). Read {' and '.join(dates)}.")
 
 
 CORNER = {"D": 6.0, "depth": 12.0}
@@ -406,6 +426,154 @@ def cnc_walls() -> str:
                     "{n} rules (compare: min-wall, cnc-small-tool). ≥: a floor.", groups, unit="mm", step=0.5, note=READ)
 
 
+# ----------------------------------------------------------------------------- sheet metal joining (#283)
+
+READ_1101 = "Each source's own wording and conditions are in the YAML file and on the page. Read 2026-11-01."
+RIVET = {"D": 3.175, "T": 1.6}          # a 1/8 in blind rivet in 1.6 mm sheet
+
+
+def _limits_table(data: dict) -> dict:
+    return next(t for t in data["shop_tables"] if t["id"] == "sendcutsend-cut-and-hardware-limits")
+
+
+def sheet_hardware() -> str:
+    """The shop's least hardware distances per stock: one bar per material across its thicknesses."""
+    data = load()
+    sources = {s["id"]: s for s in data["sources"]}
+    table = _limits_table(data)
+    cols = table["columns"]
+    groups = []
+    for col, title in (("hw_cl_edge", "Hardware hole centre to a cut edge"),
+                       ("hw_cl_bend", "Hardware hole centre to a bend line"),
+                       ("hw_cl_same", "Hardware hole centre to the next of the same part")):
+        rows = []
+        for material in dict.fromkeys(r[cols.index("material")] for r in table["rows"]):
+            mine = [r for r in table["rows"] if r[cols.index("material")] == material and r[cols.index(col)] is not None]
+            if not mine:
+                continue
+            vals = [r[cols.index(col)] for r in mine]
+            ts = [r[cols.index("T")] for r in mine]
+            rows.append((f"{material} · T {min(ts):.2f}–{max(ts):.2f} mm", min(vals), max(vals), ORANGE, False))
+        groups.append((title, rows))
+    vmax, ticks = _scale(groups, 2)
+    who = credit(sources[table["source"]])
+    return ranges_svg(f"Sheet metal: one shop's least distances for pressed-in hardware ({who})",
+                      f"{len(table['rows'])} stocks it fits hardware to; a bar spans the stock's thicknesses. Each "
+                      "part's catalogue value may be larger.", groups, vmax, ticks, "mm",
+                      f"Its specs file (shop_tables), converted from inches. Read {table['verified']}.")
+
+
+def clinch_hardness() -> str:
+    return compared("Self-clinching fasteners: the hardest sheet each fastener material takes",
+                    "{n} rules (compare: sm-clinch-sheet-hardness). The sheet must also be about 20 HRB softer than "
+                    "the fastener.", [("Fastener material", "sm-clinch-sheet-hardness", None)], unit="HRB", step=10,
+                    note=READ_1101)
+
+
+def rivet_spacing() -> str:
+    return compared("Blind rivets: edge distance and pitch, in rivet diameters, by source",
+                    "{n} rules (compare: sm-rivet-edge, sm-rivet-pitch), divided by the rivet diameter D. "
+                    "≥: a floor; a dot: a nominal value.",
+                    [("Hole centre to the sheet edge", "sm-rivet-edge", None),
+                     ("Centre to centre (pitch)", "sm-rivet-pitch", None)],
+                    envs=[RIVET], unit="× D", step=1, note=READ_1101, per="D")
+
+
+def _dim(x1: float, y1: float, x2: float, y2: float, text: str, colour: str = INK, side: int = -1) -> list[str]:
+    """A dimension line with arrow heads and its value, offset to one side."""
+    out = [f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="{colour}" stroke-width="1.2" '
+           'marker-start="url(#arr)" marker-end="url(#arr)"/>']
+    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+    if abs(y2 - y1) < 1:      # horizontal
+        out.append(f'<text x="{mx:.1f}" y="{my + (14 if side > 0 else -5):.1f}" font-size="11" fill="{colour}" '
+                   f'text-anchor="middle">{escape(text)}</text>')
+    else:                     # vertical
+        out.append(f'<text x="{mx + (6 if side > 0 else -6):.1f}" y="{my + 4:.1f}" font-size="11" fill="{colour}" '
+                   f'text-anchor="{"start" if side > 0 else "end"}">{escape(text)}</text>')
+    return out
+
+
+def bent_plate() -> str:
+    """A bent mounting plate with a clinch nut and a riveted strap, its limits read from the YAML for one stock."""
+    data = load()
+    sku = "ALU-063"
+    bend = next(t for t in _bend_tables(data) if any(r[0] == sku for r in t["rows"]))
+    b = dict(zip(bend["columns"], next(r for r in bend["rows"] if r[0] == sku)))
+    lim_t = _limits_table(data)
+    h = dict(zip(lim_t["columns"], next(r for r in lim_t["rows"] if r[0] == sku)))
+    rules = {r["id"]: r for r in data["rules"]}
+    D = RIVET["D"]
+    edge = evaluate(rules["sm-rivet-edge-pop"]["min"], {"D": D})
+    pitch = evaluate(rules["sm-rivet-pitch-faa"]["min"], {"D": D})
+    hardness = rules["sm-clinch-sheet-hardness-steel-pem"]["max"]
+    ba = evaluate(next(f for f in data["formulas"] if f["id"] == "sm-bend-allowance")["expr"].replace("pi", "3.141592653589793"),
+                  {"R": b["R"], "K": b["K"], "T": b["T"], "A": 90.0})
+    f1 = lambda v: f"{v:.1f}"
+    w, hgt = 680, 400
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {hgt}" width="{w}" height="{hgt}" role="img" '
+           f'aria-label="A bent mounting plate with a clinch nut and a riveted strap, and the distances each must keep" '
+           f'font-family="{FONT}">',
+           f'<defs><marker id="arr" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" '
+           f'orient="auto-start-reverse"><path d="M0 1 L7 4 L0 7 z" fill="{INK}"/></marker></defs>',
+           f'<rect width="{w}" height="{hgt}" rx="14" fill="{BG}" stroke="{LINE}"/>',
+           f'<text x="18" y="30" font-size="15" font-weight="700" fill="{INK}">A two-bend mounting plate: the distances '
+           f'its hardware and rivets keep</text>',
+           f'<text x="18" y="50" font-size="12" fill="{MUTED}">One shop\'s 1.6 mm 5052 ({sku}) and a 1/8 in (3.2 mm) '
+           f'blind rivet. Not to scale.</text>']
+    # --- side view: a channel (base and two flanges), at left
+    x0, y0, base, fl, t = 60, 300, 210, 120, 7
+    out.append(f'<text x="{x0}" y="84" font-size="12.5" font-weight="700" fill="{INK}">Side view</text>')
+    path = (f"M{x0} {y0 - fl} L{x0} {y0} L{x0 + base} {y0} L{x0 + base} {y0 - fl} L{x0 + base - t} {y0 - fl} "
+            f"L{x0 + base - t} {y0 - t} L{x0 + t} {y0 - t} L{x0 + t} {y0 - fl} Z")
+    out.append(f'<path d="{path}" fill="{GREEN}" fill-opacity="0.35" stroke="{INK}" stroke-width="1.4" '
+               'stroke-linejoin="round"/>')
+    out += _dim(x0 - 14, y0 - fl, x0 - 14, y0, "")
+    out.append(f'<text x="{x0 - 20}" y="{y0 - fl - 8}" font-size="11" fill="{INK}">flange ≥ {f1(b["min_flange_after_bend"])}</text>')
+    out.append(f'<text x="{x0 + base / 2}" y="{y0 + 36}" font-size="11" fill="{INK}" text-anchor="middle">'
+               f'inside radius R {b["R"]:.2f} mm · K {b["K"]:.2f}</text>')
+    out.append(f'<text x="{x0 + base / 2}" y="{y0 + 20}" font-size="11" fill="{INK}" text-anchor="middle">'
+               f'T {b["T"]:.2f} mm · bend allowance {ba:.2f} mm at 90°</text>')
+    # a clinch nut in the base, a strap riveted to the right flange
+    nx = x0 + 120
+    out.append(f'<rect x="{nx - 9}" y="{y0 - t - 9}" width="18" height="9" fill="{ORANGE}"/>')
+    out.append(f'<rect x="{nx - 5}" y="{y0 - t}" width="10" height="{t}" fill="{ORANGE}" fill-opacity="0.6"/>')
+    out.append(f'<text x="{nx}" y="{y0 - t - 16}" font-size="11" fill="{ORANGE}" text-anchor="middle">clinch nut</text>')
+    sx = x0 + base
+    out.append(f'<rect x="{sx}" y="{y0 - fl + 10}" width="{t}" height="{fl - 40}" fill="{LINE}" stroke="{INK}"/>')
+    for ry in (y0 - fl + 30, y0 - fl + 60):
+        out.append(f'<rect x="{sx - t - 4}" y="{ry - 4}" width="{2 * t + 12}" height="8" rx="3" fill="{ORANGE}"/>')
+    out.append(f'<text x="{sx + 14}" y="{y0 - fl + 34}" font-size="11" fill="{ORANGE}">riveted strap</text>')
+    # --- plan view of the base, at right
+    px, py, pw, ph = 350, 110, 290, 220
+    out.append(f'<text x="{px}" y="84" font-size="12.5" font-weight="700" fill="{INK}">A face between two bends, from above</text>')
+    out.append(f'<rect x="{px}" y="{py}" width="{pw}" height="{ph}" fill="{GREEN}" fill-opacity="0.18" stroke="{INK}"/>')
+    for bx in (px + 24, px + pw - 24):
+        out.append(f'<line x1="{bx}" y1="{py}" x2="{bx}" y2="{py + ph}" stroke="{INK}" stroke-dasharray="6 4"/>')
+    out.append(f'<text x="{px + 28}" y="{py + ph - 8}" font-size="10.5" fill="{MUTED}">bend line</text>')
+    cx, cy = px + 100, py + ph - 62
+    out.append(f'<circle cx="{cx}" cy="{cy}" r="8" fill="{BG}" stroke="{ORANGE}" stroke-width="2.4"/>')
+    out += _dim(px + 24, cy, cx, cy, f"≥ {f1(h['hw_cl_bend'])} to bend", colour=ORANGE, side=-1)
+    out += _dim(cx, cy, cx, py + ph, f"≥ {f1(h['hw_cl_edge'])} to edge", colour=ORANGE, side=1)
+    for i in range(3):
+        rx = px + 120 + i * 54
+        out.append(f'<circle cx="{rx}" cy="{py + 34}" r="5" fill="{BG}" stroke="{INK}" stroke-width="2"/>')
+    out += _dim(px + 120, py + 18, px + 174, py + 18, f"pitch ≥ {f1(pitch)} (3D)", side=-1)
+    out += _dim(px + 100, py, px + 100, py + 34, f"edge ≥ {f1(edge)} (2D)", side=-1)
+    out.append(f'<line x1="{px + 100}" y1="{py + 34}" x2="{px + 120}" y2="{py + 34}" stroke="{MUTED}" stroke-dasharray="2 2"/>')
+    out.append(f'<text x="{px + 120}" y="{py + 56}" font-size="10.5" fill="{MUTED}">rivets of a lap joint along an edge</text>')
+    notes = [f"Clinch nut: the shop's least distances for this stock (a part's own K or N may be larger); sheet at most "
+             f"HRB {hardness} for steel nuts.",
+             f"Rivets: edge ≥ 2D = {f1(edge)} mm (POP, FAA), pitch ≥ 3D = {f1(pitch)} mm (FAA). Bend relief {f1(b['relief_depth'])} mm deep "
+             f"at the corners."]
+    for i, n in enumerate(notes):
+        out.append(f'<text x="18" y="{hgt - 34 + 16 * i}" font-size="11" fill="{MUTED}">{escape(n)}</text>')
+    out.append("</svg>")
+    return "\n".join(out) + "\n"
+
+
+SHEET_FIGURES = {"bent-plate.svg": bent_plate, "shop-hardware.svg": sheet_hardware,
+                 "clinch-hardness.svg": clinch_hardness, "rivet-spacing.svg": rivet_spacing}
+
 FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_metal, "process-fits.svg": fits,
            "process-holes-pins.svg": holes_pins,
            "process-overhangs.svg": overhangs, "process-escape-holes.svg": escape_holes,
@@ -420,13 +588,13 @@ FIGURES = {"process-min-wall.svg": min_wall, "process-sheet-metal.svg": sheet_me
 
 def main(argv: list[str]) -> int:
     stale = []
-    for name, make in FIGURES.items():
-        text, path = make(), OUT / name
+    for name, make, folder in [(n, m, OUT) for n, m in FIGURES.items()] + [(n, m, SHEET_OUT) for n, m in SHEET_FIGURES.items()]:
+        text, path = make(), folder / name
         if "--check" in argv:
             if not path.exists() or path.read_text(encoding="utf-8") != text:
                 stale.append(name)
         else:
-            OUT.mkdir(parents=True, exist_ok=True)
+            folder.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
     if stale:
         print("out of date with research/process-profiles.yaml (run python3 tools/process_profile_figures.py):",

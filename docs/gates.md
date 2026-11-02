@@ -235,7 +235,7 @@ sphere against a cone wall was ever misread; the planar cases and the other curv
 | two boxes, one tilted 0.05–1°, a corner through the other's face | 0.001–0.08 mm | none | unchanged |
 | ball in a bore, in a spherical cavity, against a torus; crossing rods; a cylinder on a cone | 0.002–0.2 mm | none | unchanged |
 
-The tests (`tests/test_gate_relations.py`) run the cone at three angles and the three planar families with the
+The tests (`tests/review/test_gate_relations.py`) run the cone at three angles and the three planar families with the
 boolean made to miss the crossing as it does on the cone. They also run a ball and a cylinder whose faces are
 split exactly at the plate's face, where the section's only edge has no face pair.
 
@@ -715,7 +715,7 @@ rerun reads only the cache.
 
 ![The gate bench's arm with the flap_hits_frame seed, swept from 0 to 60 degrees in 12 sampled poses: it shares volume with the frame beam from 49.09 degrees, the last clear pose is 43.64 degrees, and the onset is bisected to between 44.89 and 44.91 degrees](img/motion/hinge-sweep.svg)
 
-*The `collision:` check on the gate bench's `flap_hits_frame` seed, in section: the sampled poses, the ones that hit, the last clear pose and the onset bisected between them. An illustration drawn from a 2D model of the bench; `tests/test_motion_figures.py` checks its numbers against the gate's verdict.*
+*The `collision:` check on the gate bench's `flap_hits_frame` seed, in section: the sampled poses, the ones that hit, the last clear pose and the onset bisected between them. An illustration drawn from a 2D model of the bench; `tests/mechanical/test_motion_figures.py` checks its numbers against the gate's verdict.*
 
 **Intended contacts.** A joint's `intended_contacts`, its own `moving`/`fixed` pair (the bearing) and the
 `intended_contacts` argument may touch at any pose: an arm resting on its stop at the range end passes. Shared
@@ -828,7 +828,7 @@ swept box never comes near, the box gap). The step table shows `lo..hi`, one num
 
 *`sweep_pair`, the insertion sweep described above, on three pairs: the swept-box early-out, a blocked insertion
 with its first contact bisected, and the exact samples near an obstacle with the bound between them. An
-illustration of the box world in `tests/test_gate_assembly.py`, seen from the side; the travel, gaps, bound, query
+illustration of the box world in `tests/review/test_gate_assembly.py`, seen from the side; the travel, gaps, bound, query
 counts and first contact are the gate's.*
 
 <details>
@@ -984,12 +984,12 @@ screws are driven is not in the way then; the gate warns that it must come off b
 In the `lid_before_board` seed, the steps are reordered so the lid goes on before the board and the balls; the
 assembly gate finds the board (and the balls) meeting the lid's top 40.6 mm above their seats.
 
-`tests/test_gate_bench.py` runs every gate on the clean bench (no finding allowed) and on every seed (its gate must
+`tests/review/test_gate_bench.py` runs every gate on the clean bench (no finding allowed) and on every seed (its gate must
 fail with a finding that names the seeded part; the wall seed's witnesses must lie on the thinned wall).
 
 The bench is also a project, `tests/fixtures/gate_bench/project/`: `cad-agent.yaml` with `cad.gates`, a `cad/build.py`
 that registers the bench with the seed named in `cad/parameters.json`, the YAML dossier (four sections, a card per
-part, the interfaces, decisions, requirements and the screw-in-insert overlaps, which name the fasteners). `tests/test_gates_cli.py` runs `cad-agent gates --build` on it: the clean bench passes all seven gates
+part, the interfaces, decisions, requirements and the screw-in-insert overlaps, which name the fasteners). `tests/review/test_gates_cli.py` runs `cad-agent gates --build` on it: the clean bench passes all seven gates
 with no finding and every section `gated` (about 10 s with three jobs on a loaded workstation), each geometric
 seed fails its gate through the CLI with a finding naming the seeded part (the other verdicts then read stale in
 `check`), and the decision seed fails the lint. Every gate
@@ -1023,7 +1023,7 @@ strict-xfail cases, and its implementer writes the adapter and removes the mark.
   from beyond that obstacle's box, rather than from outside the whole present set's box (equivalent: nothing
   beyond the obstacle's box can be hit). Parts no step fits are not insertion obstacles (the coverage check fails
   them). Additions: catalogue-key counts per step, the fastener order check and the optional service removal.
-- **Seed harness file**: `tests/test_gate_bench.py` (pytest only collects `test_*.py`), fixture directory
+- **Seed harness file**: `tests/review/test_gate_bench.py` (pytest only collects `test_*.py`), fixture directory
   `gate_bench` (importable name).
 - **`cad-agent gates`**: gates run in worker processes (crash and timeout isolation, `--jobs`); the dossier lint is
   part of the command; gate options live in `cad-agent.yaml` (`cad.gates`), with the declarations in the dossier

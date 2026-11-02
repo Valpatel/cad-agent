@@ -265,3 +265,4 @@ def test_a_pair_placed_at_one_end_of_a_step_only_is_unproven():
     rows = [r for r in report["between_poses"] if r["gaps_mm"] is None]
     assert report["pass"] is False and {(r["a"], r["b"]) for r in rows} == {("block", "probe"), ("probe", "wall")}
     assert all("one end" in r["reason"] for r in rows)
+    assert report["gap_lower_bound_mm"] == 0.0                       # the proven pairs' bound is not the sweep's

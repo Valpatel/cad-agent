@@ -222,6 +222,7 @@ def sweep(poses: Mapping[str, Any], place_fn: Callable[[Any], Mapping[str, Any]]
             for pair in sorted(g1.keys() ^ g2.keys()):                # placed at one end only: nothing proves it
                 between.append({"from": p1, "to": p2, "a": pair[0], "b": pair[1], "gaps_mm": None,
                                 "reason": "the pair is checked at one end of the step only"})
+                bound = 0.0                                          # unproven, so the sweep proves no gap
             for pair in sorted(g1.keys() & g2.keys()):
                 if g1[pair] is None or g2[pair] is None:             # a hit or an error at an end: already counted
                     continue

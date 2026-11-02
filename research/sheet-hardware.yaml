@@ -1,0 +1,485 @@
+# Bought hardware for bent sheet-metal parts: self-clinching (PEM) nuts, studs and standoffs, and blind rivets, with
+# dated prices and where to buy them (#283). The layout is cad-agent's part catalogue
+# (cadagent.simulation.explore.catalogue): one item per orderable part number. cadagent.mechanical.sheet_hardware
+# reads it and joins each item to the part it checks (`part`: a key of cadagent.mechanical.clinch.PARTS or
+# cadagent.mechanical.rivets.RIVETS).
+#
+# Every number is a dated fact read from a public page, cited by `reference` (an id in research/references.yaml) and
+# its URL. No vendor text, table or file is copied. No account was used and nothing was bought.
+#   price_usd        the seller's price for one piece (pack_qty pieces for a pack) at its smallest quantity break
+#   price_checked    the day it was read; prices change without notice, so re-read before a buy
+#   specs.price_usd_1000  the 1000-4999 break (Bossard), specs.stock the stock count shown that day
+#   installed        what a shop charges to press the part in, from its ordering feed (SendCutSend's
+#                    sendcutsend-catalog.json, generated 2026-04-29, read 2026-11-02); whether that includes the
+#                    part is not stated
+#   mass_g           null: not read
+# Only parts the checks know are listed (FH studs in M3-M6; no inch FH rows yet).
+# The table in research/sheet-metal-joining.md §4 and §9 explains which of these are the common, cheap choices.
+
+defaults:
+  pack_qty: 1
+
+items:
+  - id: pem-S-M3-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-M3-1ZI
+    part: S-M3-1
+    price_usd: 0.0845
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M3 x 0.5', material: zinc-plated hardened steel, price_usd_1000: 0.0672, stock: 421261}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-m3-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-m3-1zi-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-CLS-M3-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-M3-1
+    part: CLS-M3-1
+    price_usd: 0.1527
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M3 x 0.5', material: 300-series stainless, price_usd_1000: 0.1215, stock: 186313}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-m3-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-m3-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-S-M4-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-M4-1ZI
+    part: S-M4-1
+    price_usd: 0.0915
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M4 x 0.7', material: zinc-plated hardened steel, price_usd_1000: 0.0728, stock: 410479}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-m4-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-m4-1zi-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-CLS-M4-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-M4-1
+    part: CLS-M4-1
+    price_usd: 0.1932
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M4 x 0.7', material: 300-series stainless, price_usd_1000: 0.1537, stock: 105885}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-m4-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-m4-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-SS-M5-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: SS-M5-1ZI
+    part: SS-M5-1
+    price_usd: 0.1214
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M5 x 0.8', material: zinc-plated hardened steel, price_usd_1000: 0.0966, stock: 27337}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/ss-m5-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/ss-m5-1zi-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-CLSS-M5-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLSS-M5-1
+    part: CLSS-M5-1
+    price_usd: 0.3201
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M5 x 0.8', material: 300-series stainless, price_usd_1000: 0.2546, stock: 11375}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/clss-m5-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/clss-m5-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-S-M6-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-M6-1ZI
+    part: S-M6-1
+    price_usd: 0.2103
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M6 x 1.0', material: zinc-plated hardened steel, price_usd_1000: 0.1673, stock: 75699}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-m6-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-m6-1zi-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-CLS-M6-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-M6-1
+    part: CLS-M6-1
+    price_usd: 0.6802
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M6 x 1.0', material: 300-series stainless, price_usd_1000: 0.5411, stock: 27862}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-m6-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-m6-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-S-440-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-440-1ZI
+    part: S-440-1
+    price_usd: 0.0845
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#4-40', material: zinc-plated hardened steel, price_usd_1000: 0.0672, stock: 155054}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-440-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-440-1zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: S-440-1, price_usd: 0.77, reference: sendcutsend-catalog}
+
+  - id: pem-CLS-440-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-440-1
+    part: CLS-440-1
+    price_usd: 0.1536
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#4-40', material: 300-series stainless, price_usd_1000: 0.1222, stock: 370165}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-440-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-440-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-S-632-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-632-1ZI
+    part: S-632-1
+    price_usd: 0.0847
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#6-32', material: zinc-plated hardened steel, price_usd_1000: 0.0674, stock: 1037941}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-632-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-632-1zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: S-632-1, price_usd: 0.77, reference: sendcutsend-catalog}
+
+  - id: pem-CLS-632-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-632-1
+    part: CLS-632-1
+    price_usd: null
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#6-32', material: 300-series stainless}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-632-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-632-1-by-penn-engineering.html', in_stock: null}]
+    notes: Bossard showed "Request a quote" on 2026-11-02, with no price or stock
+
+  - id: pem-S-832-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-832-1ZI
+    part: S-832-1
+    price_usd: 0.0924
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#8-32', material: zinc-plated hardened steel, price_usd_1000: 0.0735, stock: 218142}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-832-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-832-1zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: S-832-1, price_usd: 0.77, reference: sendcutsend-catalog}
+
+  - id: pem-CLS-832-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-832-1
+    part: CLS-832-1
+    price_usd: 0.2262
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#8-32', material: 300-series stainless, price_usd_1000: 0.1799, stock: 50218}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-832-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-832-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-SS-032-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: SS-032-1ZI
+    part: SS-032-1
+    price_usd: 0.1056
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#10-32', material: zinc-plated hardened steel, price_usd_1000: 0.084, stock: 294688}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/ss-032-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/ss-032-1zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: SS-032-1, price_usd: 0.77, reference: sendcutsend-catalog}
+
+  - id: pem-CLSS-032-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLSS-032-1
+    part: CLSS-032-1
+    price_usd: 0.3461
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '#10-32', material: 300-series stainless, price_usd_1000: 0.2753, stock: 37135}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/clss-032-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/clss-032-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-S-0420-1ZI
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: S-0420-1ZI
+    part: S-0420-1
+    price_usd: 0.2103
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '1/4-20', material: zinc-plated hardened steel, price_usd_1000: 0.1673, stock: 108458}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/s-0420-1zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/s-0420-1zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: S-0420-1, price_usd: 1.13, reference: sendcutsend-catalog}
+
+  - id: pem-CLS-0420-1
+    category: clinch_nut
+    vendor: PennEngineering (PEM)
+    model: CLS-0420-1
+    part: CLS-0420-1
+    price_usd: 0.6829
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: '1/4-20', material: 300-series stainless, price_usd_1000: 0.5432, stock: 6868}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/cls-0420-1-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/cls-0420-1-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-FH-M3-10ZI
+    category: clinch_stud
+    vendor: PennEngineering (PEM)
+    model: FH-M3-10ZI
+    part: FH-M3
+    price_usd: 0.0739
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M3 x 0.5', material: zinc-plated hardened steel, price_usd_1000: 0.0588, stock: 24434}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/fh-m3-10zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m3-10zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: FH-M3-10, price_usd: 0.77, reference: sendcutsend-catalog}
+
+  - id: pem-FH-M4-10ZI
+    category: clinch_stud
+    vendor: PennEngineering (PEM)
+    model: FH-M4-10ZI
+    part: FH-M4
+    price_usd: 0.0821
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M4 x 0.7', material: zinc-plated hardened steel, price_usd_1000: 0.0653, stock: 11343}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/fh-m4-10zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m4-10zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: FH-M4-10, price_usd: 0.77, reference: sendcutsend-catalog}
+
+  - id: pem-FH-M5-10ZI
+    category: clinch_stud
+    vendor: PennEngineering (PEM)
+    model: FH-M5-10ZI
+    part: FH-M5
+    price_usd: 0.1148
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M5 x 0.8', material: zinc-plated hardened steel, price_usd_1000: 0.0914, stock: 9372}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/fh-m5-10zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m5-10zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: FH-M5-10, price_usd: 1.23, reference: sendcutsend-catalog}
+
+  - id: pem-FH-M6-12ZI
+    category: clinch_stud
+    vendor: PennEngineering (PEM)
+    model: FH-M6-12ZI
+    part: FH-M6
+    price_usd: 0.1795
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M6 x 1.0', material: zinc-plated hardened steel, price_usd_1000: 0.1428, stock: 18557}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/fh-m6-12zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/fh-m6-12zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: FH-M6-12, price_usd: 0.91, reference: sendcutsend-catalog}
+
+  - id: pem-SO-M3-6ZI
+    category: clinch_standoff
+    vendor: PennEngineering (PEM)
+    model: SO-M3-6ZI
+    part: SO-M3
+    price_usd: 0.2134
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M3 x 0.5', material: zinc-plated hardened steel, price_usd_1000: 0.1698, stock: 12737}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/so-m3-6zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/so-m3-6zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: SO-M3-6, price_usd: 1.23, reference: sendcutsend-catalog}
+
+  - id: pem-SO-M4-6ZI
+    category: clinch_standoff
+    vendor: PennEngineering (PEM)
+    model: SO-M4-6ZI
+    part: SO-M4
+    price_usd: 0.3722
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M4 x 0.7', material: zinc-plated hardened steel, price_usd_1000: 0.2961, stock: 16033}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/so-m4-6zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/so-m4-6zi-by-penn-engineering.html', in_stock: true}]
+    installed: {shop: sendcutsend, sku: SO-M4-6, price_usd: 1.33, reference: sendcutsend-catalog}
+
+  - id: pem-BSO-M3-6ZI
+    category: clinch_standoff
+    vendor: PennEngineering (PEM)
+    model: BSO-M3-6ZI
+    part: BSO-M3
+    price_usd: 0.506
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M3 x 0.5', material: zinc-plated hardened steel, price_usd_1000: 0.4025, stock: 19801}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/bso-m3-6zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/bso-m3-6zi-by-penn-engineering.html', in_stock: true}]
+
+  - id: pem-BSO-M4-6ZI
+    category: clinch_standoff
+    vendor: PennEngineering (PEM)
+    model: BSO-M4-6ZI
+    part: BSO-M4
+    price_usd: 0.6813
+    price_checked: '2026-11-02'
+    pack_qty: 1
+    mass_g: null
+    specs: {thread: 'M4 x 0.7', material: zinc-plated hardened steel, price_usd_1000: 0.542, stock: 2228}
+    confidence: seller_listing
+    reference: bossard-pem-prices
+    sources: ['https://americas.bossard.com/products/bso-m4-6zi-by-penn-engineering.html']
+    buy: [{seller: Bossard Americas, url: 'https://americas.bossard.com/products/bso-m4-6zi-by-penn-engineering.html', in_stock: true}]
+  # ---------------------------------------------------------------- blind rivets: McMaster-Carr, open end, dome head
+  # Pack prices read 2026-11-01 (mcmaster-blind-rivets); the parts the rivet check lists without a recorded price
+  # (97447A025, 97447A050, 97517A050, 97525A490) are left out until a price is read.
+
+  - id: mcmaster-97447A015
+    category: blind_rivet
+    vendor: McMaster-Carr
+    model: 97447A015
+    part: mcmaster-97447A015
+    price_usd: 10.78
+    price_checked: '2026-11-01'
+    pack_qty: 250
+    mass_g: null
+    specs: {diameter_in: 0.125, grip_in: [0.063, 0.125], body: aluminium, mandrel: aluminium}
+    confidence: seller_listing
+    reference: mcmaster-blind-rivets
+    sources: ['https://www.mcmaster.com/97447A015/']
+    buy: [{seller: McMaster-Carr, url: 'https://www.mcmaster.com/97447A015/', in_stock: null}]
+
+  - id: mcmaster-97447A020
+    category: blind_rivet
+    vendor: McMaster-Carr
+    model: 97447A020
+    part: mcmaster-97447A020
+    price_usd: 10.57
+    price_checked: '2026-11-01'
+    pack_qty: 250
+    mass_g: null
+    specs: {diameter_in: 0.125, grip_in: [0.126, 0.187], body: aluminium, mandrel: aluminium}
+    confidence: seller_listing
+    reference: mcmaster-blind-rivets
+    sources: ['https://www.mcmaster.com/97447A020/']
+    buy: [{seller: McMaster-Carr, url: 'https://www.mcmaster.com/97447A020/', in_stock: null}]
+
+  - id: mcmaster-97517A015
+    category: blind_rivet
+    vendor: McMaster-Carr
+    model: 97517A015
+    part: mcmaster-97517A015
+    price_usd: 11.13
+    price_checked: '2026-11-01'
+    pack_qty: 250
+    mass_g: null
+    specs: {diameter_in: 0.125, grip_in: [0.063, 0.125], body: aluminium, mandrel: steel}
+    confidence: seller_listing
+    reference: mcmaster-blind-rivets
+    sources: ['https://www.mcmaster.com/97517A015/']
+    buy: [{seller: McMaster-Carr, url: 'https://www.mcmaster.com/97517A015/', in_stock: null}]
+
+  - id: mcmaster-97525A415
+    category: blind_rivet
+    vendor: McMaster-Carr
+    model: 97525A415
+    part: mcmaster-97525A415
+    price_usd: 11.54
+    price_checked: '2026-11-01'
+    pack_qty: 100
+    mass_g: null
+    specs: {diameter_in: 0.125, grip_in: [0.063, 0.125], body: stainless, mandrel: stainless}
+    confidence: seller_listing
+    reference: mcmaster-blind-rivets
+    sources: ['https://www.mcmaster.com/97525A415/']
+    buy: [{seller: McMaster-Carr, url: 'https://www.mcmaster.com/97525A415/', in_stock: null}]

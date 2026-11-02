@@ -6,7 +6,8 @@ real slicer numbers.
 Arrows follow the files. `slicer.py` imports `publish/report.py`'s `load_parts` to find the parts it slices, and
 `publish/report.py` and `publish/release.py` import `slicer.py` to read a current slice report; `mesh3mf.py` imports
 nothing from cad-agent. `plates.py` uses `mesh3mf.py`'s 3MF parts, asks `slicer.py` for Bambu Studio's project
-settings, and reads the release's parts and quantities from `publish/release.py`.
+settings, and reads the release's parts and quantities from `publish/release.py`. `prusa3mf.py` uses `mesh3mf.py`'s
+3MF parts and `plates.py`'s layout for PrusaSlicer projects.
 
 ```mermaid
 flowchart TD
@@ -14,6 +15,8 @@ flowchart TD
     M3 -->|"3MF"| SL["slicer.py<br/>Bambu Studio CLI"]
     B -->|"STL"| PL["plates.py<br/>build plates"]
     SL -->|"project settings"| PL
+    PL -->|"layout"| PR["prusa3mf.py<br/>PrusaSlicer project"]
+    PR --> PF
     PL --> PF["exports/<br/>plates 3MF · SVG"]
     SL --> SR["exports/<br/>slice report"]
     SR --> R["publish/report.py<br/>results JSON"]
@@ -21,7 +24,7 @@ flowchart TD
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class M3,SL,PL here
+    class M3,SL,PL,PR here
     class B,R,REL near
     class SR,PF out
 ```
@@ -31,6 +34,7 @@ flowchart TD
 | `mesh3mf.py` | A minimal 3MF writer with an independent read-back check (`cad-agent export-3mf`) |
 | `slicer.py` | Real filament grams and print time from Bambu Studio's command line, run as a separate program (`cad-agent slice`) |
 | `plates.py` | Every printed part at its quantity packed onto build plates (MaxRects), in one Bambu Studio project 3MF with a read-back check and a top-down picture (`cad-agent export-3mf`) |
+| `prusa3mf.py` | PrusaSlicer project 3MFs: objects of several volumes, each on its own tool, the wipe tower's place, and build plates one 3MF per plate, with a read-back check |
 
 Related: [package map](../README.md) · [publish](../publish/README.md) (the print release) ·
 [toolkit: print files](../../../docs/toolkit.md#print-files) ·

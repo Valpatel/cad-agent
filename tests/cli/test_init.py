@@ -55,6 +55,10 @@ def test_init_refuses_a_folder_that_is_not_empty_unless_forced(tmp_path, capsys)
     assert main(["init", str(dest), "--force"]) == 0
     assert (dest / "cad-agent.yaml").read_bytes() == (STARTER / "cad-agent.yaml").read_bytes()
     assert (dest / "notes.txt").read_text() == "mine\n", "--force leaves the other files"
+    fresh = tmp_path / "fresh-repo"
+    (fresh / ".git").mkdir(parents=True)
+    assert main(["init", str(fresh)]) == 0, "a folder holding only .git (git init, gh repo create --clone) is empty"
+    assert (fresh / "cad-agent.yaml").is_file()
     (tmp_path / "a-file").write_text("x")
     assert main(["init", str(tmp_path / "a-file"), "--force"]) == 2
     assert "is a file" in capsys.readouterr().err
@@ -145,3 +149,9 @@ def test_the_starter_passes_cad_agent_all_as_copied(tmp_path, monkeypatch, capsy
     assert json.loads((dest / "exports" / "inserts.json").read_text())["pass"] is True
     assert json.loads((dest / "exports" / "overhangs.json").read_text())["pass"] is True
     assert starter_files(dest) == starter_files(), "a run writes only into the folders init never copies"
+    # a check that cannot run stops the build instead of leaving the last run's file for the report to read
+    build = dest / "cad" / "build.py"
+    build.write_text(build.read_text().replace('MATERIAL = "pla-bambu-basic"', 'MATERIAL = "pla-typo"'))
+    assert main(["all", "--project", str(dest)]) == 1
+    assert "inserts: the check did not run" in (dest / "exports" / "checks.log").read_text()
+    assert not (dest / "exports" / "inserts.json").exists()

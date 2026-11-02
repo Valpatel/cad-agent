@@ -532,12 +532,12 @@ def starter_dir() -> Path:
 
 def init_project(dest: Union[str, Path], force: bool = False) -> List[Path]:
     """Copy the starter project into ``dest`` (made if missing) and return the files written. A folder that holds
-    anything is refused unless ``force``, which writes the starter's files over it and leaves the rest."""
+    anything but ``.git`` is refused unless ``force``, which writes the starter's files over it and leaves the rest."""
     import shutil
     dest = Path(dest)
     if dest.exists() and not dest.is_dir():
         raise FileExistsError(f"{dest} is a file, not a folder")
-    if dest.is_dir() and any(dest.iterdir()) and not force:
+    if dest.is_dir() and any(f.name != ".git" for f in dest.iterdir()) and not force:   # a fresh `git init` is empty
         raise FileExistsError(f"{dest} is not empty: choose a new folder, or pass --force to write the starter's files "
                               "over it")
     source = starter_dir()

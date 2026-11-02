@@ -8,6 +8,7 @@ Change the numbers below, then run `cad-agent all`. The insert's hole and boss c
   insert-joints.json     the screw joints as built, for tools/checks.py
 """
 import json
+import math
 from pathlib import Path
 
 import cadquery as cq
@@ -35,6 +36,11 @@ length, width, height = SIZE_MM
 box_height = height - LID_MM
 inset = boss / 2 + WALL_MM / 2                     # each corner boss reaches halfway into both walls
 corners = [(x * (length / 2 - inset), y * (width / 2 - inset)) for x in (-1, 1) for y in (-1, 1)]
+# the least plastic from a boss's centre to the outside: the walls, or the rounded corner where it reaches the boss
+outside = inset if inset >= CORNER_MM else CORNER_MM - math.hypot(CORNER_MM - inset, CORNER_MM - inset)
+if outside < boss / 2:
+    raise ValueError(f"CORNER_MM {CORNER_MM:g} rounds the corners through the {boss:g} mm insert bosses: keep it "
+                     f"under {(math.sqrt(2) * inset - boss / 2) / (math.sqrt(2) - 1):.1f} mm, or move the bosses in")
 
 
 def rounded(l, w, h, r, z=0.0):
@@ -70,7 +76,7 @@ if __name__ == "__main__":
     (OUT / "geometry-checks.json").write_text(json.dumps(report, indent=1) + "\n")
     joint = {"name": "lid screw", "insert": INSERT, "material": MATERIAL,
              "hole_mm": hole["diameter_mm"], "hole_depth_mm": hole["depth_mm"], "boss_outside_mm": boss,
-             "edge_mm": round(inset - hole["diameter_mm"] / 2, 3),      # the least plastic to the outside face
+             "edge_mm": round(outside - hole["diameter_mm"] / 2, 3),    # the least plastic to the outside
              "head_mm": HEAD_MM, "clearance_mm": clearance, "clamped": {"thickness_mm": LID_MM},
              "screw_depth_mm": SCREW_MM - LID_MM}
     (OUT / "insert-joints.json").write_text(json.dumps({"joints": [joint]}, indent=1) + "\n")

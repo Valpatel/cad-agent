@@ -39,6 +39,8 @@ flowchart TD
 - **A new check:** a script that writes `exports/<name>.json` with a top-level `"pass": true` or `false`, a step that
   runs it, and a `checks:` row that reads it ([the project contract](https://cad-agent.valpatel.com/docs/toolkit#the-project-contract)).
 
-`cad-agent all` also checks every hole for material inside ("Holes clear"). The checks say what CAD can: a printed
+`exports/checks.log` gives the most torque to tighten the screws to (about 0.2 N m here) and the joint's warnings:
+a printed part relaxes and loses some of the clamp, so the joint warns but passes. `cad-agent all` also checks every
+hole for material inside ("Holes clear"). The checks say what CAD can: a printed
 box still needs a test fit, and the insert numbers are a model to test, not a rating
 ([inserts](https://cad-agent.valpatel.com/docs/inserts)).

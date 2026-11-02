@@ -1187,12 +1187,13 @@ def cmd_init(args: argparse.Namespace) -> int:
     import shlex
 
     from cadagent.project import init_project
+    quote = shlex.quote if os.name != "nt" else (lambda s: f'"{s}"' if any(ch in s for ch in ' &()^') else s)
     dest = Path(args.dir)
     files = init_project(dest, force=args.force)
     _say(f"init: the starter box, {len(files)} files, in {dest.resolve()}")
     _say("next:")
     if dest.resolve() != Path.cwd().resolve():
-        _say(f"  cd {shlex.quote(args.dir)}")
+        _say(f"  cd {quote(args.dir)}")
     _say("  cad-agent all          # build, print files, every check, report; then edit cad/build.py (README.md)")
     return 0
 

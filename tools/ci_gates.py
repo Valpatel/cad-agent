@@ -10,9 +10,10 @@ Gates, for PRs into dev and main (CONTRIBUTING.md "Gates"):
 
 - branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ research/ test/ refactor/ release/
   vendor-update/ dependabot/ branches of this repo, or a fork's PR (the outside-contribution checks, #111, apply).
-- review: the latest verdict from a maintainer (MAINTAINERS, with write access) must be pass, on the PR's head commit (a push after the
-  pass needs a new verdict, so everything that reaches dev or main was reviewed as it is). The verdict is the last line
-  of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->`` (or ``verdict=block``).
+- review: the latest verdict from a maintainer (MAINTAINERS, with write access) must be pass, on the PR's head
+  commit (a push after the pass needs a new verdict, so everything that reaches dev or main was reviewed as it is).
+  The verdict is the last line of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->``
+  (or ``verdict=block``).
 - release (main only): the pyproject.toml version is above main's and CHANGELOG.md has ``## vX.Y.Z (YYYY-MM-DD)``.
 
 Why statuses and not job results: the workflow runs on ``pull_request_target``, so the default branch's (dev's) copy of
@@ -55,6 +56,8 @@ MAINTAINERS = frozenset(login.lower() for login in {"mvalancy"})
 def may_review(login: str, permission: str) -> bool:
     """A verdict counts when its author is a maintainer who still has write access."""
     return login.lower() in MAINTAINERS and permission in WRITERS
+
+
 GATED = ("dev", "main")
 
 Result = Tuple[bool, str]
@@ -83,8 +86,8 @@ def marker(body: Optional[str]) -> Optional[Tuple[str, str]]:
     return (m.group(1), m.group(2)) if m else None
 
 
-def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[Tuple[int, str, str, str]]:
-    """(review id, verdict, sha, reviewer) for every live review with a marker by a maintainer (`can_write`), in the
+def verdicts(reviews: Iterable[dict], can_review: Callable[[str], bool]) -> List[Tuple[int, str, str, str]]:
+    """(review id, verdict, sha, reviewer) for every live review with a marker by a maintainer (`can_review`), in the
     order GitHub created them (ids increase; timestamps can tie)."""
     out = []
     for r in reviews:
@@ -92,13 +95,13 @@ def verdicts(reviews: Iterable[dict], can_write: Callable[[str], bool]) -> List[
             continue
         found = marker(r.get("body"))
         login = (r.get("user") or {}).get("login") or ""
-        if found and login and can_write(login):
+        if found and login and can_review(login):
             out.append((int(r["id"]), found[0], found[1], login))
     return sorted(out)
 
 
-def review_gate(reviews: Iterable[dict], head_sha: str, can_write: Callable[[str], bool]) -> Result:
-    marked = verdicts(reviews, can_write)
+def review_gate(reviews: Iterable[dict], head_sha: str, can_review: Callable[[str], bool]) -> Result:
+    marked = verdicts(reviews, can_review)
     if not marked:
         return False, "no review verdict yet: ask a separate reviewer; their summary review ends with the verdict marker"
     _, verdict, sha, who = marked[-1]

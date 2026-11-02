@@ -13,7 +13,7 @@ _spec.loader.exec_module(gates)
 HEAD = "a188011" + "0" * 33
 OLD = "1234567" + "0" * 33
 WRITERS = {"mvalancy", "reviewer-bot"}
-can_write = WRITERS.__contains__
+can_review = WRITERS.__contains__
 _ids = iter(range(1000, 10**6))
 
 
@@ -23,7 +23,7 @@ def review(verdict, sha=HEAD, who="mvalancy", state="COMMENTED", before="Summary
 
 
 def gate(reviews, head=HEAD):
-    return gates.review_gate(reviews, head, can_write)
+    return gates.review_gate(reviews, head, can_review)
 
 
 @pytest.mark.parametrize("base,head,same,ok", [

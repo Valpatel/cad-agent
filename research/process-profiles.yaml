@@ -3283,6 +3283,28 @@ rules:
     source: sendcutsend-bending-service
     status: read
     verified: 2026-11-01
+  - id: sm-bend-angle-min-sendcutsend
+    process: sheet-metal
+    feature: bend-angle
+    shop: sendcutsend
+    quantity: smallest bend angle (from flat)
+    min: 5
+    units: deg
+    applies: SendCutSend air bending; it does not form bends under 5°
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
+  - id: sm-bend-angle-max-hardware-sendcutsend
+    process: sheet-metal
+    feature: bend-angle
+    shop: sendcutsend
+    quantity: largest bend angle (from flat) on a part with hardware
+    max: 90
+    units: deg
+    applies: SendCutSend puts no hardware on parts with acute bends; an acute bend is taken as one past 90° from flat (an included angle under 90°)
+    source: sendcutsend-bending-service
+    status: read
+    verified: 2026-11-01
   - id: sm-feature-to-bend-die-sendcutsend
     process: sheet-metal
     feature: feature-to-bend

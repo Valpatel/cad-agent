@@ -76,8 +76,9 @@ def _strictest(prof: pp.Profile, compare: str, env: Dict[str, float], excludes: 
 def bend(material: str, thickness_mm: float, angle_deg: float = 90.0, *, radius_mm: Optional[float] = None,
          k: Optional[float] = None, shop: bool = True, path: Any = None) -> Dict[str, Any]:
     """One bend in ``material`` (a key of ``process.SHEET_MATERIALS``: ``5052``, ``mild-steel``, ``g90``, ``304`` or
-    ``316``) of ``thickness_mm``, turned ``angle_deg`` from flat (0 < A < 180). Returns the radius, K, bend allowance, outside setback, bend deduction, the shortest flange and the
-    relief depth, each with where it came from."""
+    ``316``) of ``thickness_mm``, turned ``angle_deg`` from flat (0 < A < 180). Returns the radius, K, bend
+    allowance, outside setback, bend deduction, the shortest flange and the relief depth, each with where it came
+    from."""
     t = _num("thickness_mm", thickness_mm)
     a = _num("angle_deg", angle_deg)
     if a >= 180.0:
@@ -168,13 +169,13 @@ def _check(name: str, verdict: str, value: Any, limit: str, rule: str, source: s
 
 def feature_to_bend(material: str, thickness_mm: float, edge_to_tangent_mm: float, angle_deg: float = 90.0, *,
                     radius_mm: Optional[float] = None, shop: bool = True, path: Any = None) -> Dict[str, Any]:
-    """A hole or cut-out near a bend, against every generic hole-to-bend rule (``compare: sm-hole-to-bend``), each on
-    its own datum. ``edge_to_tangent_mm`` is measured on the flat from the feature's nearest edge to the bend's tangent
-    line (where the bend radius starts), the datum Hubs and Davis use. Century Tywood measures to the inside face of the
-    other leg; this takes that as the inside mould line, the inside setback R tan(A/2) further on (R at 90 degrees,
-    where the two are the same), and never more than R, so a bend sharper than 90 degrees earns no extra distance. Where a rule does not state its datum, the tangent
-    is assumed and the result says so: a feature that clears every rule with a stated datum but not one of those gets
-    a warning, not a fail."""
+    """A hole or cut-out near a bend, against every generic hole-to-bend rule (``compare: sm-hole-to-bend``), each on its
+    own datum. ``edge_to_tangent_mm`` is measured on the flat from the feature's nearest edge to the bend's tangent
+    line (where the bend radius starts), the datum Hubs and Davis use. Century Tywood measures to the inside face of
+    the other leg; this takes that as the inside mould line, the inside setback R tan(A/2) further on (R at 90
+    degrees, where the two are the same), and never more than R, so a bend sharper than 90 degrees earns no extra
+    distance. Where a rule does not state its datum, the tangent is assumed and the result says so: a feature that
+    clears every rule with a stated datum but not one of those gets a warning, not a fail."""
     d = _num("edge_to_tangent_mm", edge_to_tangent_mm, positive=False)
     b = bend(material, thickness_mm, angle_deg, radius_mm=radius_mm, shop=shop, path=path)
     t, r, a = b["thickness_mm"], b["radius_mm"]["value"], b["angle_deg"]
@@ -210,7 +211,7 @@ def _shop_rule(rules: Dict[str, Any], key: str, **env: float) -> Optional[Dict[s
     if key not in rules:
         return None
     lim = rules[key].limit(**env)
-    return {"lim": lim, "rule": key, "source": rules[key].source}
+    return {"lim": lim, "rule": key, "source": rules[key].source, "applies": rules[key].applies or ""}
 
 
 def _at_least(name: str, have: float, need: Dict[str, Any], generic: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -237,8 +238,8 @@ def check_bends(material: str, thickness_mm: float, flanges_mm: Sequence[float],
       line) at least the row's depth, else the strictest generic rule, and with ``shop`` named at least the shop's own
       rule as well (its feed and its article can differ);
     - the relief width at least the strictest generic rule;
-    - with ``shop`` named, its own limits: the bend angles it can make (SendCutSend: 5 to 130 degrees, and no
-      ``hardware`` on a part with a bend past 90), the longest flange of a four-sided ``box`` (shorter with
+    - with ``shop`` named, its own limits: the bend angles it can make (its ``sm-bend-angle-*`` rules; SendCutSend:
+      5 to 130 degrees, and at most 90 with ``hardware``), the longest flange of a four-sided ``box`` (shorter with
       ``hardware``), and a channel's base (``channel_base_mm``) at least twice its flange.
 
     A value that clears only a shop's number (its row or its own rule) and not the strictest generic rule warns. The
@@ -261,14 +262,16 @@ def check_bends(material: str, thickness_mm: float, flanges_mm: Sequence[float],
         env = {"T": b["thickness_mm"], "R": b["radius_mm"]["value"]}
         generic = _strictest(prof, "sm-flange-min", env, mat.excludes) if b["stock"] else None
         checks.append(_at_least(f"flange {i + 1}", f, b["min_flange_mm"], generic))
-        sr = _shop_rule(rules, f"sm-bend-angle-max-{shop}")
-        if sr:
-            top = sr["lim"].max
-            v = "pass" if 5.0 - 1e-9 <= a <= top + 1e-9 else "fail"
-            why = f"{shop} bends from 5 to {top:g} degrees (no hems, curls or coining)"
-            if v == "pass" and hardware and a > 90.0 + 1e-9:
-                v, why = "fail", f"{shop} puts no hardware on a part with an acute bend (past 90 degrees)"
-            checks.append(_check(f"angle {i + 1}", v, a, f"5 to {top:g} deg", sr["rule"], sr["source"], why))
+        for key, hw, tag in ((f"sm-bend-angle-max-{shop}", False, ""), (f"sm-bend-angle-min-{shop}", False, " (min)"),
+                             (f"sm-bend-angle-max-hardware-{shop}", True, " (hardware)")):
+            sr = _shop_rule(rules, key)
+            if not sr or (hw and not hardware):
+                continue
+            lim = sr["lim"]
+            ok = (lim.min is None or a + 1e-9 >= lim.min) and (lim.max is None or a <= lim.max + 1e-9)
+            bound = f"at least {lim.min:g} deg" if lim.min is not None else f"at most {lim.max:g} deg"
+            checks.append(_check(f"angle {i + 1}{tag}", "pass" if ok else "fail", a, bound, key, sr["source"],
+                                 sr["applies"]))
     b = bend(material, thickness_mm, angs[0], radius_mm=radius_mm, shop=rows, path=path)
     t, r = b["thickness_mm"], b["radius_mm"]["value"]
     if relief_depth_mm is not None:

@@ -668,7 +668,7 @@ row for the stock (read by default; `shop=False` drops it). The orange box is th
 
 | Planned check | What the sources say | Status |
 |---|---|---|
-| Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first; `check_bends` holds each flange to it |
+| Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first; `check_bends` fails below it and warns below the strictest generic rule |
 | Hole to bend | Six rules, each on its own datum or none (§B4); SendCutSend: half the die width | `feature_to_bend` checks each on its datum; the die width is not in the tables |
 | R ≥ T | Fails SendCutSend's own 5052 radii; unsafe for 6061 and 2024 | `sheet_metal.bend` reads the shop's R |
 | Bend relief | SendCutSend's feed gives a depth per stock | `check_bends`: depth from the row, else the strictest rule; width from the strictest generic rule |

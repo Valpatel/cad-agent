@@ -2731,6 +2731,7 @@ rules:
   - id: sm-k-factor-range-sendcutsend
     process: sheet-metal
     feature: k-factor
+    shop: sendcutsend
     quantity: K-factor across SendCutSend's materials and thicknesses
     min: 0.33
     max: 0.50
@@ -2971,6 +2972,7 @@ rules:
     process: sheet-metal
     feature: relief
     compare: sm-relief-depth
+    shop: sendcutsend
     quantity: minimum relief depth
     min: "T + R + 0.5"
     units: mm
@@ -2996,6 +2998,7 @@ rules:
     process: sheet-metal
     feature: relief
     compare: sm-relief-width
+    shop: sendcutsend
     quantity: minimum relief width
     min: "T/2"
     units: mm
@@ -3028,6 +3031,7 @@ rules:
   - id: sm-corner-relief-gap-sendcutsend
     process: sheet-metal
     feature: relief
+    shop: sendcutsend
     quantity: gap between two flanges meeting at a corner
     min: 0.4
     units: mm
@@ -3197,6 +3201,7 @@ rules:
     process: sheet-metal
     feature: tolerance
     compare: sm-bend-angle-tolerance
+    shop: sendcutsend
     quantity: bend angle tolerance (±)
     value: 1
     units: deg

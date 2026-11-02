@@ -429,7 +429,9 @@ committed chart differs.*
 </details>
 
 The vendored text-to-cad DFM checklist already says to state the convention (tangent, centreline or edge) before
-comparing [ref:text-to-cad]. These sources show why.
+comparing [ref:text-to-cad]. These sources show why. `sheet_metal.feature_to_bend` takes the distance from the
+feature's edge to the tangent line and checks it against each rule on that rule's datum. For Century Tywood it adds the
+inside setback R tan(A/2). A rule that states no datum is read from the tangent and can only warn, never fail.
 
 ## B5. Bend relief and corner relief
 
@@ -647,7 +649,7 @@ generic K table and the strictest generic rule. With #283 the YAML adds four thi
 ```mermaid
 flowchart TD
     Y["process-profiles.yaml<br/>rules + shop_tables"] --> P["manufacturing.process<br/>rules_for · limits"]
-    P --> B["sheet_metal.bend<br/>flat_length"]
+    P --> B["sheet_metal.bend<br/>check_bends"]
     P --> D["the sheet DFM<br/>check"]
     P --> J["clinch and rivet<br/>checks (PR B)"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
@@ -666,10 +668,10 @@ row for the stock (read by default; `shop=False` drops it). The orange box is th
 
 | Planned check | What the sources say | Status |
 |---|---|---|
-| Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first |
-| Hole to bend | Six rules, each on its own datum or none (§B4); SendCutSend: half the die width | Each rule carries its `datum`; a check must state one |
+| Minimum flange | 4T (Protolabs, Davis) is too short on SendCutSend's thin stock (7–9.5T) | `sheet_metal.bend` uses the shop row first; `check_bends` holds each flange to it |
+| Hole to bend | Six rules, each on its own datum or none (§B4); SendCutSend: half the die width | `feature_to_bend` checks each on its datum; the die width is not in the tables |
 | R ≥ T | Fails SendCutSend's own 5052 radii; unsafe for 6061 and 2024 | `sheet_metal.bend` reads the shop's R |
-| Bend relief | SendCutSend's feed gives a depth per stock | In `shop_tables` (`relief_depth`) |
+| Bend relief | SendCutSend's feed gives a depth per stock | `check_bends`: depth from the row, else the strictest rule; width from the strictest generic rule |
 | Clinch hardware near an edge or a bend | PEM: C/L to edge from the outside of the bend radius; SendCutSend: BA/2 + N from the bend centre. On one datum they are the same rule, since the outside of the radius lies BA/2 from the bend centre on the flat | Rules `sm-clinch-*`, both written from the bend centre line; the check is #283's PR B |
 | Rivet edge distance and pitch | 2D edge (POP, FAA, NASA nominal), 1.5D minimum; 3D pitch (FAA), 4D nominal | Rules `sm-rivet-*`; the check is #283's PR B |
 
@@ -715,7 +717,6 @@ Not opened, so not cited (see `unverified` in [`references.yaml`](references.yam
 - SendCutSend's material pages and its min/max charts: their numbers come from the feeds instead.
 
 Next (#283):
-- The clinch and rivet checks with golden vectors (PR B), and `SHEET_MATERIALS` entries for 304, 316 and G90 so
-  `sheet_metal.bend` reads their rows.
+- The clinch and rivet checks with golden vectors (PR B).
 - A parts catalogue and a skill for the bent plate + PEM + rivet pattern (PR C).
 - Re-fetch the SendCutSend feeds before relying on any value here; they change.

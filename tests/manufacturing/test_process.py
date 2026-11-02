@@ -144,7 +144,7 @@ def test_fdm_factors_sit_inside_the_profiles_range():
 
 def test_sheet_metal_profiles_read_the_shop_table():
     sheet = pp.profile("sheet-metal")
-    assert set(sheet.materials) == {"5052", "mild-steel"}
+    assert set(sheet.materials) == {"5052", "mild-steel", "g90", "304", "316"}
     alu, steel = sheet.material("5052"), sheet.material("mild-steel")
     assert len(alu.stocks) == 4 and len(steel.stocks) == 6
     # SendCutSend's specs: ALU-063, 0.063 in 5052, R 0.035 in, K 0.42, flange 0.303 in, relief 0.118 in

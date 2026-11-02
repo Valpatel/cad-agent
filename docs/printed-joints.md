@@ -114,8 +114,10 @@ nominal + allowance + undersize, from [research/process-profiles.yaml](../resear
 
 - **Undersize** 0.25 mm (`fdm-hole-undersize-cnckitchen`, one printer in PLA).
 - **Allowance** by fit: `slide` 0.25 (Xometry's 0.2 to 0.3), `free` 0.3 (Prusa's minimum for moving parts), `insert`
-  0 over the insert maker's hole, so the undersize gives CNC Kitchen's 0.2 to 0.3 mm, and `press` 0: no interference
-  for a press fit in a printed hole is published, so the sweep finds it.
+  -0.05 over the insert maker's hole, so the sweep centres on the hole
+  [`inserts.hole_design`](inserts.md) draws: the maker's hole plus 0.2 mm, the low end of CNC Kitchen's 0.2 to 0.3 mm
+  (its M3 insert held best at 4.2 mm in CAD for a 4.0 mm hole, on the printer that measured the 0.25 mm undersize).
+  `press` 0: no interference for a press fit in a printed hole is published, so the sweep finds it.
 - **Orientation.** A fit with `axis="horizontal"` is exported standing on its edge, its holes in the bed plane, as
   the part's will be.
 - **Wall.** A press fit's grip depends on the plastic round the hole. Give `wall_mm` the part's own wall there, or the

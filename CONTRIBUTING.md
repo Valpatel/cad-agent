@@ -39,8 +39,9 @@ flowchart TD
 | `cad-gates/main/release` | | gate | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
 
-✓ means branch protection requires it. **gate** means `main`'s protection does not require it yet (#112). It still
-has to pass, because `python3 tools/ci_gates.py all` checks it before every merge into `main`.
+✓ means branch protection requires it. **gate** means `main`'s protection does not require it yet (#112), but it must
+still pass before a merge into `main`. `python3 tools/ci_gates.py all` checks the three `cad-gates` rows. It does not
+read the browser runs, so confirm those with `gh pr checks <n>`.
 
 - **The verdict.** It is the last line of the reviewer's summary review: `<!-- cad-review verdict=pass sha=<40-character head sha> -->` (or `verdict=block`). It is written by the `cad-pr-reviewer` subagent, or by a reviewer following the `cad-pr-review` skill, who then re-runs the gates: `gh workflow run gates.yml -R Valpatel/cad-agent -f pr=<n>`.
 - **Who can review.** Only verdicts from a maintainer (`MAINTAINERS` in `tools/ci_gates.py`) who still has write access count, and dismissed reviews never count. A collaborator with write access can push branches and run CI, but their PRs merge only after a maintainer's review. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.

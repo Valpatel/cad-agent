@@ -388,6 +388,12 @@ values: Ftu 31 ksi, Fbru 65 ksi at e/D 2.0.
 | Solid sheet, 31 ksi × 0.375 × 0.063 | 732 lbf |
 | Efficiency, 155 / 732 | 0.21: the rivet shears first |
 
+**The check.** `cadagent.mechanical.rivets.check_joint` runs every rule in this section on a stack, against the
+`sm-rivet-*` rules, and computes the strength per pitch with `cadagent.formulas.lap_joint`. Its rivets are the POP
+and McMaster-Carr parts above, and `rivets_for` finds the ones whose grip covers a stack with its tolerance. Its
+limits: typical or listed rivet strengths, not allowables; rivets in shear only; MIL-HDBK-5J's sheet strengths for
+the named tempers, with annealed AISI 1025 standing in for mild steel.
+
 In thin aluminium the rivet, not the sheet, limits the joint, so more or larger rivets are the lever, not thicker
 sheet. With McMaster-Carr's 120 lbf rating the efficiency falls to 0.16.
 
@@ -451,7 +457,8 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
   sources. SendCutSend's limits are a shop profile, used only when a caller names it.
 - **Next, the checks (#283, PR B):**
   - a clinch-hardware check: sheet hardness, hole, thickness by shank, and distances to edges, bends and other parts;
-  - a rivet-joint check: grip band, hole, edge, pitch, shear, bearing and tear-out, with the vectors above as tests.
+  - a rivet-joint check: grip band, hole, edge, pitch, shear, bearing and tear-out, with the vectors above as tests
+    (`cadagent.mechanical.rivets`, the first of these).
 - **Then the catalogue and skill (#283, PR C):**
   - a parts catalogue of PEM parts and rivets with prices, dates and where to buy;
   - a short skill for the bent-plate, PEM and rivet pattern.

@@ -39,6 +39,10 @@ SOURCES: Dict[str, str] = {
                   "bearings and application-dependent recommendations for use, Wind Energy Science 9 (2024) 777-798, "
                   "doi:10.5194/wes-9-777-2024 (CC BY 4.0)",
     "johnson": "K. L. Johnson, Contact Mechanics, 1st ed., Cambridge University Press, 1985",
+    "mil-hdbk-5j": "US Department of Defense, MIL-HDBK-5J, Metallic Materials and Elements for Aerospace Vehicle "
+                   "Structures, edition 2003-01-31 (superseded by MMPDS)",
+    "abbud-riveted-joints": "L. H. Abbud, Riveted Joints, Mechanical Engineering Design lecture notes, Al-Mustaqbal "
+                            "University College (lecture PDF MUCLecture_2023_1147353)",
     "hamrock-brewe": "B. J. Hamrock and D. E. Brewe, Simplified solution for stresses and deformations, Journal of "
                      "Lubrication Technology, Transactions of the ASME 105 (1983) 171-177",
 }

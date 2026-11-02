@@ -6,3 +6,6 @@
 **New**
 - `tests/repo/test_markdown_images.py`: every local image in every Markdown page must be in git with the exact case,
   non-empty, not a Git LFS pointer, and match its extension's magic bytes.
+  It ignores fenced and inline code and HTML comments, follows reference-style images, unquoted `src=`, every
+  `srcset` entry and percent-encoded paths, and fails an image on a site-rendered page that sits outside `docs/img/`
+  (the only image folder the site copies).

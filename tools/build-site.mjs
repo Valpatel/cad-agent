@@ -458,7 +458,7 @@ const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-lab
 ${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect width="86" height="74" rx="14" fill="${i === 3 ? '#ffe1cc' : '#fffdf5'}" stroke="${i === 3 ? '#bd3a12' : '#173d3c'}"/><text x="43" y="26" text-anchor="middle" font-size="22" font-weight="750" fill="#bd3a12">${i + 1}</text><text x="43" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#173d3c">${esc(t)}</text><text x="43" y="62" text-anchor="middle" font-size="8.5" fill="#526863">${esc(d)}</text></g>${i < 3 ? `<path d="M${96 + i * 98} 47h8" stroke="#bd3a12" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
 <path d="M345 86v18a8 8 0 0 1-8 8H59a8 8 0 0 1-8-8v-14" fill="none" stroke="#bd3a12" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#use-arrow)"/>
 <text x="200" y="128" text-anchor="middle" font-size="10" fill="#526863">the next agent finds what this one learned</text></svg>`;
-const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\. [A-Z][a-z]+(?: [a-z]+)?)/gm, '<b>$1</b>');
+const promptHtml = esc(agentPrompt.replace(/\n$/, '')).replace(/^(\d\.) /gm, '<b>$1</b> ');
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
 <div class="use-head"><p class="eyebrow">Copy this to your agent</p><h2 id="use-title">One paste. <span>Any agent.</span></h2>
 <p>Paste it into Claude Code, Codex, Copilot CLI or any agent with a shell, then add what you want made. It installs cad-agent and its skills, finds the right tool in a few calls, builds with tested checks, and sends back what it learns as a pull request or an issue you approve. cad-agent collects no telemetry.</p>
@@ -471,7 +471,7 @@ const landing = `<div class="wrap"><section class="hero hero-3d">
 <p class="intro">Checks, simulation and cited engineering for the hardware agents design, in tested code.</p></div>
 <figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from its ${heroModel.parts.length} parts"></cad-model>
 <figcaption><span><b>Gyropup</b>, ${heroModel.parts.length} parts in place, exported from its STEP files by <code>cad-agent view</code>: ${heroModel.triangles.toLocaleString('en-US')} triangles in ${kb(heroModel.bytes)}.</span><span><a href="https://gyropup.com">gyropup.com</a> · MIT · drag to turn</span></figcaption></figure>
-<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="#outputs">See what it computes</a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
 </div>
 </section></div>
 ${useCard}

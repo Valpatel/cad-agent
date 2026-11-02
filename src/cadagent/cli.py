@@ -1244,15 +1244,15 @@ def build_parser() -> argparse.ArgumentParser:
     ag_p.add_argument("--dry-run", action="store_true", help="show what would be installed")
     lib_p = sub.add_parser("library", help="Write the parts library (KiCad footprints and STEP bodies) for a project, "
                                            "or audit a board for footprints with no 3D model (src/cadagent/library)")
-    lib_sub = lib_p.add_subparsers(dest="action", required=True)
-    lb = lib_sub.add_parser("build", help="write <out>/cad-agent.pretty and <out>/cad-agent.3dshapes")
+    lib_actions = lib_p.add_subparsers(dest="action", required=True)
+    lb = lib_actions.add_parser("build", help="write <out>/cad-agent.pretty and <out>/cad-agent.3dshapes")
     lb.add_argument("out", help="folder to write the library into")
     lb.add_argument("--project", help="the KiCad project's folder: model paths become ${KIPRJMOD}/<path to out>")
     lb.add_argument("--model-dir", help="model folder as the footprints should name it (overrides --project)")
     lb.add_argument("--parts", nargs="+", help="only these parts (default: all; cadagent.library.parts.PARTS)")
     lb.add_argument("--fuse", nargs="+", type=float, help="also write a MINI blade fuse body per rating (A)")
     lb.add_argument("--no-models", action="store_true", help="footprints only (no CadQuery needed)")
-    la = lib_sub.add_parser("audit", help="every footprint carries a 3D model that resolves, or a waiver")
+    la = lib_actions.add_parser("audit", help="every footprint carries a 3D model that resolves, or a waiver")
     la.add_argument("path", help="a .kicad_pcb, a .kicad_mod or a .pretty folder")
     la.add_argument("--waive", action="append", metavar="PATTERN=REASON",
                     help="a reference or library id pattern that needs no model, and why (e.g. 'TP*=bare test pad')")

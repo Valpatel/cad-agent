@@ -168,6 +168,26 @@ def _require_dict(value: Any, where: str) -> Dict[str, Any]:
         raise CadConfigError(f"{where} must be a mapping, got {type(value).__name__}")
     return value
 
+def _slicer(value: Any) -> Dict[str, Any]:
+    from cadagent.manufacturing.slicer import ENGINES
+    slicer = _require_dict(value, "cad.slicer")
+    if slicer.get("engine", "bambu") not in ENGINES:
+        raise CadConfigError(f"cad.slicer.engine must be one of {', '.join(ENGINES)}, got {slicer['engine']!r}")
+    _require_dict(slicer.get("overrides"), "cad.slicer.overrides")
+    parts = slicer.get("parts")
+    if isinstance(parts, dict):     # part -> {overrides: {...}}: the part's own settings on top of cad.slicer.overrides
+        for name, spec in parts.items():
+            where = f"cad.slicer.parts.{name}"
+            spec = _require_dict(spec, where)
+            unknown = sorted(set(spec) - {"overrides"})
+            if unknown:
+                raise CadConfigError(f"{where}: unknown keys {unknown}; known: ['overrides']")
+            _require_dict(spec.get("overrides"), f"{where}.overrides")
+    elif parts is not None and not (isinstance(parts, list) and all(isinstance(p, str) for p in parts)):
+        raise CadConfigError("cad.slicer.parts must be a list of part names or a mapping of part name to "
+                             f"{{overrides: {{...}}}}, got {type(parts).__name__}")
+    return slicer
+
 def _require_list(value: Any, where: str) -> List[Any]:
     if value is None:
         return []
@@ -283,7 +303,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         site=_require_dict(data.get("site"), "cad.site"),
         view=_require_dict(data.get("view"), "cad.view"),
         holes=_require_dict(data.get("holes"), "cad.holes"),
-        slicer=_require_dict(data.get("slicer"), "cad.slicer"),
+        slicer=_slicer(data.get("slicer")),
         explore=_require_dict(data.get("explore"), "cad.explore"),
         release=_require_dict(data.get("release"), "cad.release"),
         plates=data.get("plates"),

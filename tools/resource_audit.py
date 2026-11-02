@@ -1494,7 +1494,7 @@ def verify_receipt(rep, net, row, top, name, rec):
 
 # -------------------------------------------------------------------------------------------------------------- links
 # The Markdown files tools/build-site.mjs publishes as pages: its SECTIONS, in the same order and with the same patterns.
-# tests/test_resource_audit.py reads build-site.mjs and fails when the two disagree.
+# tests/repo/test_resource_audit.py reads build-site.mjs and fails when the two disagree.
 PUBLISHED = [re.compile(r'^docs/[^/]+\.md$'), re.compile(r'^skills/[^/]+/SKILL\.md$'), re.compile(r'^agents/[^/]+\.md$'),
              re.compile(r'^lessons/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^research/[^/]+\.md$')]
 PUBLISHED_FILES = ('README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md')

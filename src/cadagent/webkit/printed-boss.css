@@ -1,6 +1,6 @@
 /* <cad-printed-boss> (kit/printed-boss.js). Link this in <head>: it reserves the element's full size before the script
    runs (the still image, then the panel's height), so the live figure and controls replace them without moving the
-   page. The panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing
+   page. The panel has a fixed height per layout; tests/site/website-browser.mjs checks the size and that nothing
    overflows. The script sets data-theme (light or dark) from the page's color-scheme; override the colours with the
    --pb-* custom properties. color-scheme is set on the panel, not the element, so the element still reads the page's. */
 cad-printed-boss{--pb-ink:#173d3c;--pb-muted:#526863;--pb-sage:#6f8a80;--pb-mist:#eef1e4;--pb-back:#fffdf5;--pb-peach:#ffe1cc;

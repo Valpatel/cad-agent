@@ -22,12 +22,12 @@ jobs:
       # need it: the WebKit job then tests the drawn pages in WebKit.
       - run: npx playwright install --with-deps chromium ${{ matrix.engine == 'webkit' && 'webkit' || '' }}
       - run: npm run test:webkit-unit
-      - run: node --test tests/website-*.test.mjs
-      - run: node tests/website-browser.mjs
+      - run: node --test tests/site/website-*.test.mjs
+      - run: node tests/site/website-browser.mjs
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
-      - run: node tests/website-catalog-browser.mjs
+      - run: node tests/site/website-catalog-browser.mjs
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}

@@ -57,8 +57,9 @@ it to the across-layer allowables (`cadagent.mechanical.compliant.allowables`).
 
 The FDM materials come from the data sheets that `allowables` already holds, so the numbers live in one place:
 PETG, PLA, ASA, CoPA, PETG-CF and PA6-CF, in 13 entries. Their source ids, such as `bambu-petg-basic-tds`, are the
-reference registry's (#118). Until `research/references.yaml` is on `dev`, those ids do not resolve, and each factor
-cites its sheet's own link.
+reference registry's (#118): `python -m cadagent.review.references bambu-petg-basic-tds` prints the sheet's
+citation. A copy of the data file with no `research/references.yaml` beside it still loads, and each factor then cites
+its sheet's own link.
 
 ## The calculator: sheet-metal bends
 
@@ -88,7 +89,7 @@ sm.flat_length([20, 30, 20], "mild-steel", 1.499)   # a U channel: 70 mm less tw
 The equations: bend allowance `BA = π (R + K T) A / 180` (the profile's formula `sm-bend-allowance`, from
 SolidWorks' K-factor page). Outside setback `OSSB = (R + T) tan(A / 2)`. Bend deduction `BD = 2 OSSB − BA`, the length
 a bend takes off the sum of the legs measured to the outside. The tests check them against vectors worked by hand
-(`tests/test_sheet_metal.py`).
+(`tests/manufacturing/test_sheet_metal.py`).
 
 This calculator gives a bend's numbers; it does not unfold a model. Unfolding a 3D part into its flat pattern is the
 job of build123d's `BuildSheet` and `unfold` (to adopt once released) or FreeCAD's SheetMetal workbench, which take

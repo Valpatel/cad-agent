@@ -1,0 +1,396 @@
+"""Slicer profile flattening (the slicer itself is only run where it is installed)."""
+
+from __future__ import annotations
+
+import json
+import hashlib
+from pathlib import Path
+
+import pytest
+
+from cadagent.manufacturing import slicer
+
+
+@pytest.fixture
+def profile_tree(tmp_path, monkeypatch):
+    root = tmp_path / 'BBL'
+    for kind in ('machine', 'process', 'filament'):
+        (root / kind).mkdir(parents=True)
+    monkeypatch.setattr(slicer, '_PROFILE_ROOTS', [root])
+    return root
+
+
+def write_profile(root, name, *, kind='machine', filename=None, **values):
+    path = root / kind / (filename or name + '.json')
+    path.write_text(json.dumps({'name': name, **values}))
+    return path
+
+
+def test_real_p1s_template_graph_resolves_machine_temperature_commands(profile_tree):
+    fixture = Path(__file__).resolve().parents[1] / 'fixtures/bambu_templates/profiles.json'
+    profiles = json.loads(fixture.read_text())
+    for filename, values in profiles.items():
+        (profile_tree / 'machine' / filename).write_text(json.dumps(values))
+    resolved = slicer.resolve_profile('machine', slicer.PRINTER)
+    start = resolved['settings']['machine_start_gcode']
+    assert 'M190 S[bed_temperature_initial_layer_single]' in start
+    assert 'M109 S{nozzle_temperature_initial_layer[initial_extruder]}' in start
+    assert 'M109 S205' not in start
+    assert resolved['settings']['printer_settings_id'] == slicer.PRINTER
+    assert not {'inherits', 'include'} & resolved['settings'].keys()
+    assert set(resolved['files']) == {'machine/' + name for name in profiles}
+    for name, sha in resolved['files'].items():
+        assert sha == hashlib.sha256((profile_tree / name).read_bytes()).hexdigest()
+
+
+def test_parent_then_ordered_recursive_includes_then_child(profile_tree):
+    write_profile(profile_tree, 'base', common='base', winner='base')
+    write_profile(profile_tree, 'first', inherits='base', winner='first', kept='first')
+    write_profile(profile_tree, 'second', include='base', winner='second')
+    write_profile(profile_tree, 'child', inherits='base', include=['first', 'second', 'first'], common='child')
+    resolved = slicer.resolve_profile('machine', 'child')
+    assert resolved['settings']['winner'] == 'first'  # last include wins; repeated DAG nodes are not cycles
+    assert resolved['settings']['common'] == 'child'
+    assert resolved['settings']['kept'] == 'first'
+    assert len(resolved['files']) == 4
+    write_profile(profile_tree, 'child', inherits='base', include=['first', 'second'])
+    assert slicer.flatten('machine', 'child')['winner'] == 'second'
+
+
+@pytest.mark.parametrize('dependency', ['inherits', 'include'])
+def test_missing_dependency_is_an_error(profile_tree, dependency):
+    write_profile(profile_tree, 'child', **{dependency: 'missing'})
+    with pytest.raises(KeyError, match='missing'):
+        slicer.flatten('machine', 'child')
+
+
+@pytest.mark.parametrize('edges', [
+    [{'inherits': 'a'}], [{'include': 'a'}],
+    [{'inherits': 'b'}, {'include': ['a']}],
+    [{'include': ['b']}, {'inherits': 'a'}],
+])
+def test_parent_include_cycles_fail(profile_tree, edges):
+    for name, edge in zip(('a', 'b'), edges):
+        write_profile(profile_tree, name, **edge)
+    with pytest.raises(ValueError, match='Cyclic.*a'):
+        slicer.flatten('machine', 'a')
+
+
+@pytest.mark.parametrize('include', [None, 1, {}, [''], [3], ['../outside'], ['/outside'], ['a\\b']])
+def test_invalid_includes_fail(profile_tree, include):
+    write_profile(profile_tree, 'child', include=include)
+    with pytest.raises(ValueError, match='Invalid'):
+        slicer.flatten('machine', 'child')
+
+
+@pytest.mark.parametrize('parent', [None, [], 0, '../outside'])
+def test_invalid_parent_fails(profile_tree, parent):
+    write_profile(profile_tree, 'child', inherits=parent)
+    with pytest.raises(ValueError, match='Invalid'):
+        slicer.flatten('machine', 'child')
+
+
+def test_duplicate_profile_names_are_not_selected_by_filesystem_order(profile_tree):
+    write_profile(profile_tree, 'same', filename='one.json')
+    write_profile(profile_tree, 'same', filename='two.json')
+    with pytest.raises(ValueError, match='Duplicate.*same'):
+        slicer.flatten('machine', 'same')
+
+
+@pytest.mark.parametrize('raw', [b'{', b'[]', b'\xff', b'{"name":3}'])
+def test_bad_critical_template_is_not_silently_skipped(profile_tree, raw):
+    write_profile(profile_tree, 'child', include='template')
+    (profile_tree / 'machine/template.json').write_bytes(raw)
+    with pytest.raises(ValueError):
+        slicer.flatten('machine', 'child')
+
+
+def test_nameless_lookup_maps_are_not_profiles(profile_tree):
+    write_profile(profile_tree, 'child')
+    (profile_tree / 'machine/lookup.json').write_text('{"id-to-label": {"1": "child"}}')
+    assert slicer.flatten('machine', 'child')['name'] == 'child'
+
+
+def test_profile_labels_can_contain_slashes_without_becoming_paths(profile_tree):
+    write_profile(profile_tree, 'Support For PA/PET', filename='support.json', kind='filament', filament_density=['1.2'])
+    write_profile(profile_tree, 'child', kind='filament', inherits='Support For PA/PET')
+    assert slicer.flatten('filament', 'child')['filament_density'] == ['1.2']
+
+
+def test_profile_symlink_cannot_escape_root(profile_tree):
+    outside = profile_tree.parent / 'outside.json'
+    outside.write_text('{"name":"outside"}')
+    (profile_tree / 'machine/escape.json').symlink_to(outside)
+    write_profile(profile_tree, 'child', include='outside')
+    with pytest.raises(ValueError, match='escapes root'):
+        slicer.flatten('machine', 'child')
+
+
+def test_dependency_identity_uses_the_parsed_bytes_and_changes_with_template(profile_tree, monkeypatch):
+    included = write_profile(profile_tree, 'template', machine_start_gcode='M109 S275')
+    write_profile(profile_tree, 'child', include='template')
+    first = slicer.resolve_profile('machine', 'child')
+    write_profile(profile_tree, 'template', machine_start_gcode='M109 S280')
+    second = slicer.resolve_profile('machine', 'child')
+    assert first['files']['machine/template.json'] != second['files']['machine/template.json']
+    raw = included.read_bytes()
+    read_bytes = Path.read_bytes
+
+    def captured_read(path):
+        data = read_bytes(path)
+        if path == included:
+            path.write_text('{"name":"template", "machine_start_gcode":"changed after read"}')
+        return data
+
+    monkeypatch.setattr(Path, 'read_bytes', captured_read)
+    captured = slicer.resolve_profile('machine', 'child')
+    assert captured['settings']['machine_start_gcode'] == 'M109 S280'
+    assert captured['files']['machine/template.json'] == hashlib.sha256(raw).hexdigest()
+
+
+def test_installed_p1s_resolves_complete_start_template():
+    try:
+        root = slicer.profile_root()
+    except FileNotFoundError:
+        pytest.skip('Bambu profiles not installed')
+    path = root / 'machine' / (slicer.PRINTER + '.json')
+    if not path.exists():
+        pytest.skip('P1S profile not installed')
+    profile = json.loads(path.read_bytes())
+    if not profile.get('include'):
+        pytest.skip('Installed Bambu version predates included templates')
+    resolved = slicer.resolve_profile('machine', slicer.PRINTER)
+    template_name = slicer.PRINTER + ' template machine_start_gcode'
+    template = root / 'machine' / (template_name + '.json')
+    assert resolved['settings']['machine_start_gcode'] == json.loads(template.read_bytes())['machine_start_gcode']
+    assert 'nozzle_temperature_initial_layer' in resolved['settings']['machine_start_gcode']
+    assert resolved['files']['machine/' + template.name] == hashlib.sha256(template.read_bytes()).hexdigest()
+
+
+def test_slice_consumes_resolved_templates_and_records_sources(profile_tree, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    write_profile(profile_tree, slicer.PRINTER, include='start')
+    start = write_profile(profile_tree, 'start', machine_start_gcode='M109 S[nozzle_temperature_initial_layer]')
+    write_profile(profile_tree, slicer.PROCESS, kind='process', wall_loops='2')
+    write_profile(profile_tree, slicer.FILAMENTS['pla'], kind='filament', nozzle_temperature_initial_layer=['220'])
+    monkeypatch.setattr(slicer, 'executable', lambda: '/fake/BambuStudio')
+    model = tmp_path / 'part.stl'
+    model.write_text('mock model; no slicer is run')
+    work = tmp_path / 'slice'
+    calls = []
+
+    def run(cmd, **kwargs):
+        calls.append(cmd)
+        machine = json.loads((work / 'machine.json').read_text())
+        assert machine['machine_start_gcode'] == 'M109 S[nozzle_temperature_initial_layer]'
+        assert 'include' not in machine
+        assert json.loads((work / 'process.json').read_text())['wall_loops'] == '4'
+        return SimpleNamespace(returncode=0, stdout='', stderr='')
+
+    monkeypatch.setattr(slicer.subprocess, 'run', run)
+    result = slicer.slice_part(model, workdir=work, overrides={'wall_loops': '4'})
+    assert len(calls) == 1
+    assert result['profile_sources']['machine']['machine/start.json'] == hashlib.sha256(start.read_bytes()).hexdigest()
+    assert result['settings_sha256']['machine'] == hashlib.sha256((work / 'machine.json').read_bytes()).hexdigest()
+    assert result['settings_sha256']['process'] == hashlib.sha256((work / 'process.json').read_bytes()).hexdigest()
+    start.unlink()
+    with pytest.raises(KeyError, match='start'):
+        slicer.slice_part(model, workdir=tmp_path / 'missing-template')
+    assert len(calls) == 1  # no subprocess may run with an unresolved template
+    write_profile(profile_tree, 'start', machine_start_gcode='M109 S[nozzle_temperature_initial_layer]')
+
+    def mutate_settings(cmd, **kwargs):
+        (work / 'machine.json').write_text('{"machine_start_gcode":"changed"}')
+        return SimpleNamespace(returncode=0, stdout='', stderr='')
+
+    monkeypatch.setattr(slicer.subprocess, 'run', mutate_settings)
+    with pytest.raises(ValueError, match='settings changed'):
+        slicer.slice_part(model, workdir=work)
+    assert not (work / 'result-summary.json').exists()
+
+
+def test_flatten_merges_the_inheritance_chain(tmp_path, monkeypatch):
+    root = tmp_path / 'BBL'
+    for kind in ('machine', 'process', 'filament'):
+        (root / kind).mkdir(parents=True)
+    (root / 'filament/base.json').write_text(json.dumps({'name': 'fdm_base', 'filament_density': ['1.24'], 'a': 1}))
+    (root / 'filament/mid.json').write_text(json.dumps({'name': 'mid', 'inherits': 'fdm_base', 'a': 2, 'b': 3}))
+    (root / 'filament/top.json').write_text(json.dumps({'name': 'PLA top', 'inherits': 'mid', 'b': 4}))
+    monkeypatch.setattr(slicer, '_PROFILE_ROOTS', [root])
+    d = slicer.flatten('filament', 'PLA top')
+    assert d['filament_density'] == ['1.24'] and d['a'] == 2 and d['b'] == 4
+    assert 'inherits' not in d and d['filament_settings_id'] == ['PLA top'] and d['from'] == 'system'
+    with pytest.raises(KeyError):
+        slicer.flatten('filament', 'missing')
+
+
+@pytest.mark.skipif(slicer.executable() is None, reason='Bambu Studio not installed')
+def test_slices_a_cube(tmp_path):
+    trimesh = pytest.importorskip('trimesh')
+    work = __import__('pathlib').Path.home() / 'snap' / 'bambu-studio' / 'common' / 'cadagent-test'  # the snap cannot read /tmp
+    work.mkdir(parents=True, exist_ok=True)
+    stl = work / 'cube.stl'
+    trimesh.creation.box(extents=(20, 20, 20)).apply_translation((0, 0, 10)).export(str(stl))
+    r = slicer.slice_part(stl, workdir=work / 'out')
+    assert 2.5 < r['grams'] < 6
+
+
+def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):
+    import pathlib
+    from tests.publish.test_report import make_project
+    from cadagent.project import load_project
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/false')
+    monkeypatch.setattr(slicer, 'resolve_profile', lambda kind, name: {'settings': {'name': name}, 'files': {}})
+    model = tmp_path / 'm.3mf'
+    model.write_text('x')
+    work = tmp_path / 'work'
+    work.mkdir()
+    (work / 'mine.txt').write_text('keep')
+    with pytest.raises(FileExistsError):
+        slicer.slice_part(model, workdir=work)
+    assert (work / 'mine.txt').exists()
+    slicer.slice_part(model, workdir=tmp_path / 'w2')      # a crashed slice still leaves the marker...
+    slicer.slice_part(model, workdir=tmp_path / 'w2')      # ...so it can be redone
+    root = make_project(tmp_path / 'proj')
+    project = load_project(root)
+    grams = {'box': 5.0, 'lid': 7.0}
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: {'grams': grams[pathlib.Path(m).stem], 'minutes': 10.0})
+    full = slicer.slice_project(project)
+    assert set(full['parts']) == {'box', 'lid'} and full['total_grams'] == 12.0
+    grams['box'] = 4.0
+    part = slicer.slice_project(project, ['box'])
+    assert set(part['parts']) == {'box', 'lid'} and part['total_grams'] == 11.0
+
+
+def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree, tmp_path, monkeypatch):
+    """Bambu Studio's command line writes one colour, one map entry and a 4 x 4 purge matrix whatever the filament
+    count, and the Cool Plate whatever the printer; the project settings for build plates are sized and set right."""
+    import zipfile
+    from types import SimpleNamespace
+    write_profile(profile_tree, slicer.PRINTER, printer_model='Bambu Lab P1S')
+    write_profile(profile_tree, 'Bambu Lab P1S', type='machine_model', default_bed_type='Textured PEI Plate')
+    write_profile(profile_tree, slicer.PROCESS, kind='process', wall_loops='2')
+    for f in ('pla', 'petg'):
+        write_profile(profile_tree, slicer.FILAMENTS[f], kind='filament')
+    monkeypatch.setattr(slicer, 'executable', lambda: '/fake/BambuStudio')
+    written = {'version': '02.08.04.57', 'printer_model': 'Bambu Lab P1S', 'curr_bed_type': 'Cool Plate',
+               'filament_settings_id': [slicer.FILAMENTS['pla'], slicer.FILAMENTS['petg']],
+               'filament_colour': ['#F2754E'], 'filament_map': ['1'], 'flush_multiplier': ['1'],
+               'flush_volumes_matrix': ['0', '280', '280', '280'] * 4}
+    calls = []
+
+    def run(cmd, **kwargs):
+        calls.append(cmd)
+        out = Path(cmd[cmd.index('--outputdir') + 1])
+        with zipfile.ZipFile(out / 'project.3mf', 'w') as z:
+            z.writestr('Metadata/project_settings.config', json.dumps(written, indent=4, sort_keys=True))
+        return SimpleNamespace(returncode=0, stdout='', stderr='')
+
+    monkeypatch.setattr(slicer.subprocess, 'run', run)
+    work = tmp_path / 'settings'
+    got = json.loads(slicer.project_settings(work, filaments=('pla', 'petg'), overrides={'wall_loops': '3'},
+                                             colours=['#2f7f73']))
+    assert calls[0][calls[0].index('--load-filaments') + 1].count(';') == 1
+    assert json.loads((work / 'process.json').read_text())['wall_loops'] == '3'
+    assert got['curr_bed_type'] == 'Textured PEI Plate'
+    assert got['filament_colour'] == ['#2f7f73', '#00AE42'] and got['filament_map'] == ['1', '1']
+    assert got['flush_volumes_matrix'] == ['0', '280', '280', '0']
+    assert slicer.default_bed_type('Bambu Lab P1S') == 'Textured PEI Plate' and slicer.default_bed_type('X') is None
+    with pytest.raises(RuntimeError, match='not the 3 filaments'):
+        slicer.project_settings(work, filaments=('pla', 'petg', 'pla'))
+    (tmp_path / 'mine').mkdir()
+    (tmp_path / 'mine' / 'notes.txt').write_text('keep')
+    with pytest.raises(FileExistsError):
+        slicer.project_settings(tmp_path / 'mine')
+
+
+def test_engine_defaults_to_bambu_and_rejects_unknown():
+    from types import SimpleNamespace as NS
+    assert slicer.engine_of(NS(slicer={})) == 'bambu'
+    assert slicer.engine_of(NS(slicer={'engine': 'prusa'})) == 'prusa'
+    with pytest.raises(ValueError, match='Unknown cad.slicer.engine'):
+        slicer.engine_of(NS(slicer={'engine': 'cura'}))
+
+
+def test_engine_is_part_of_report_identity():
+    from types import SimpleNamespace as NS
+    bambu = NS(slicer={})
+    old = slicer._settings(bambu)          # Bambu Studio reports carry no engine key, as before engines existed
+    assert 'engine' not in old and slicer.settings_differ(old, bambu) == []
+    prusa = NS(slicer={'engine': 'prusa', 'printer': old['printer'], 'process': old['process'],
+                       'filament': old['filament']})
+    assert slicer.settings_differ(old, prusa) == ['engine']
+    assert slicer._settings(prusa)['engine'] == 'prusa'
+
+
+def test_slice_project_uses_prusa_engine(tmp_path, monkeypatch):
+    import pathlib
+    from tests.publish.test_report import make_project
+    from cadagent.project import load_project
+    from cadagent.manufacturing import slicer_prusa
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'engine': 'prusa', 'filament': 'petg'}
+    seen = []
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.append(kw) or {'grams': 5.0, 'minutes': 10.0})
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['flatpak', 'run', 'com.prusa3d.PrusaSlicer'])
+    rep = slicer.slice_project(project)
+    assert {kw['engine'] for kw in seen} == {'prusa'}
+    assert {kw['printer'] for kw in seen} == {slicer_prusa.PRINTER}
+    assert rep['engine'] == 'prusa' and rep['slicer'] == 'PrusaSlicer (command line)'
+    assert rep['filament'] == slicer_prusa.FILAMENTS['petg']
+    assert rep['slicer_executable'] == 'flatpak run com.prusa3d.PrusaSlicer'
+    assert slicer.current_report(project) is not None
+    project.slicer = {}                                  # back to Bambu: the Prusa report is no longer current
+    assert slicer.current_report(project) is None
+
+
+def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monkeypatch):
+    """cad.slicer.parts.<part>.overrides: tall parts want a brim, thin shells fewer perimeters."""
+    import pathlib
+    from tests.publish.test_report import make_project
+    from cadagent.project import load_project
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'overrides': {'wall_loops': '3', 'brim_width': '0'},
+                      'parts': {'box': {'overrides': {'brim_width': '8'}}, 'lid': None}}
+    seen = {}
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/true')
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.update({pathlib.Path(m).stem: kw['overrides']})
+                        or {'grams': 5.0, 'minutes': 10.0})
+    rep = slicer.slice_project(project)
+    assert seen == {'box': {'wall_loops': '3', 'brim_width': '8'}, 'lid': {'wall_loops': '3', 'brim_width': '0'}}
+    assert rep['parts']['box']['part_overrides'] == {'brim_width': '8'}
+    assert 'part_overrides' not in rep['parts']['lid'] and 'ok' not in rep['parts']['lid']   # Bambu rows as before
+    assert rep['pass'] and slicer.current_report(project) is not None
+    project.slicer['parts']['box']['overrides']['brim_width'] = '10'      # the box's row is stale now
+    assert slicer.current_report(project) is None
+    rep = slicer.slice_project(project, ['lid'])          # re-slicing another part drops the box's stale row
+    assert set(rep['parts']) == {'lid'}
+    project.slicer['parts'] = ['box', 'lid']                               # a list still names the parts
+    assert slicer.part_overrides(project, 'box') == {} and slicer.current_report(project) is None
+
+
+def test_a_prusa_part_that_is_not_ok_fails_the_report(tmp_path, monkeypatch):
+    import pathlib
+    from tests.publish.test_report import make_project
+    from cadagent.project import load_project
+    from cadagent.manufacturing import slicer_prusa
+    project = load_project(make_project(tmp_path / 'proj'))
+    project.slicer = {'engine': 'prusa'}
+    said = {'box': {'ok': True, 'warnings': [], 'errors': [], 'stability_issues': [], 'benign_log_lines': 2},
+            'lid': {'ok': False, 'warnings': ['Detected print stability issues:'], 'errors': [],
+                    'stability_issues': ['Long bridging extrusions'], 'benign_log_lines': 0}}
+
+    def fake(m, **kw):
+        name = pathlib.Path(m).stem
+        return dict(said[name], grams=5.0, minutes=10.0, log=str(kw['workdir'] / 'out' / 'slicer.log'))
+    monkeypatch.setattr(slicer, 'slice_part', fake)
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    rep = slicer.slice_project(project)
+    lid = rep['parts']['lid']
+    assert lid['ok'] is False and lid['stability_issues'] == ['Long bridging extrusions'] and not rep['pass']
+    assert rep['parts']['box']['ok'] is True and rep['parts']['box']['benign_log_lines'] == 2
+    assert lid['log'] == 'build/slicer/lid/out/slicer.log'                # relative to the project
+    from cadagent.publish.report import collect
+    assert 'NOT OK, flagged by the slicer: lid' in collect(project)['footer_meta']['slicer']
+    said['lid'] = said['box']
+    assert slicer.slice_project(project, ['lid'])['pass']                  # re-slicing the part alone clears it

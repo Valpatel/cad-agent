@@ -10,7 +10,7 @@ Public negative controls found an open box shell wrapped as a solid could measur
 
 **Performance evidence.** Bounded independent public probes found full-sphere GK centroid moments cost 3.8–5.7 seconds per refinement, versus 0.0003–0.0007 seconds for mass only. A synthetic-suite attempt was terminated by its exact PID after roughly two minutes; no shared jobs or environments were changed. The fix disables GK moment computation and uses an optional separately refined centroid, omitted when unreliable. Do not call the uncomputed mass-only centroid a witness.
 
-**Reproduce.** `PYTHONPATH=src python -m pytest tests/test_volume_precision.py tests/test_gate_relations.py -q`; `tools/volume_probe.py` holds private Boolean BREPs fixed and emits source/runtime/hash-bound numerical receipts. Private supplier geometry must not enter the repo.
+**Reproduce.** `PYTHONPATH=src python -m pytest tests/review/test_volume_precision.py tests/review/test_gate_relations.py -q`; `tools/volume_probe.py` holds private Boolean BREPs fixed and emits source/runtime/hash-bound numerical receipts. Private supplier geometry must not enter the repo.
 
 **Follow-through.** Independent review at `773477b` caught two downstream omissions: containment support discarded the estimate while subtracting volumes, and its separate cache did not include the measurement policy. A controlled `0.0015 ± 0.002 mm³` pushed-volume estimate passed a 0.001 mm³ threshold. Support now carries summed errors, refuses uncertain decisions without a probe override, and invalidates old policy caches. Regression tests cover both the pushed and already-outside thresholds.
 

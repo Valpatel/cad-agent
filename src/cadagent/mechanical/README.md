@@ -7,8 +7,9 @@ Arrows follow the data. A project's build script imports the modules in the seco
 (`cad-agent mcmaster`, `cad-agent snapfit`, `cad-agent inserts` and `cad-agent bearings` run some of them from
 the command line too), and `mcmaster.py` imports
 `export_step` from the shared [`geometry`](../geometry/README.md) helpers. `holes.py` reads the exported STEP files and
-the parts file (through `publish/report.py`'s `load_parts`). `motion_trace.py` (`cad-agent motion-trace`) stands
-alone.
+the parts file (through `publish/report.py`'s `load_parts`). `clearance.py` takes the build script's placed solids
+at each pose and decides each pair with the relation gate (`review/gates/relations.py`). `motion_trace.py`
+(`cad-agent motion-trace`) stands alone.
 
 ```mermaid
 flowchart TD
@@ -21,12 +22,14 @@ flowchart TD
     H --> HJ["exports/<br/>hole-checks.json"]
     HJ --> R["publish/report.py<br/>results JSON"]
     HJ ~~~ MT["motion_trace.py<br/>renders vs joints"]
+    B -->|"placed solids per pose"| CL["clearance.py<br/>relate per pair"]
+    CL --> CJ["exports/<br/>clearance-checks.json"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class MC,FK,CC,H,MT here
+    class MC,FK,CC,H,MT,CL here
     class G,B,R near
-    class X,HJ out
+    class X,HJ,CJ out
 ```
 
 | Module | What it does |
@@ -43,6 +46,7 @@ flowchart TD
 | [`compliant/`](compliant/README.md) | Compliant features that replace parts: snap fits now, hinges and flexures next |
 | `linkages.py` | Four-bars and five-bars swept over their inputs: joint angles, locks, edges of reach, branch flips; the dyad solver for linkages measured from CAD |
 | `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |
+| `clearance.py` | Range-of-motion collision check: placed parts related pairwise (the relation gate's `relate`) at each sampled pose, proven clear between poses given the travel, and revolved swept-volume cutters with slopes capped at 45° ([toolkit](../../../docs/toolkit.md#range-of-motion-clearance-cadagentmechanicalclearance)) |
 
 Related: [package map](../README.md) · [mcmaster-parts skill](../../../skills/mcmaster-parts/SKILL.md) ·
 [compliant mechanisms](../../../docs/compliant.md) · [common issues](../../../docs/common-issues.md) (the mistakes

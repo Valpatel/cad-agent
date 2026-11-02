@@ -1,6 +1,6 @@
 # McMaster-Carr page fixtures
 
-Hand-written pages for `tests/test_mcmaster.py`, so the tests never fetch McMaster-Carr. Neither page is copied
+Hand-written pages for `tests/mechanical/test_mcmaster.py`, so the tests never fetch McMaster-Carr. Neither page is copied
 from mcmaster.com; each holds only the text the code looks for.
 
 ```mermaid

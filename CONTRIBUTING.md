@@ -78,10 +78,10 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    git worktree add --no-track ../cad-agent-<topic> -b feat/<topic> origin/dev
    cd ../cad-agent-<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
-3. **Commit and push** small, focused changes with tests (`tests/`) as you go, not in one batch at the end. Keep the package generic: anything specific to one
+3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
    `lessons/` folder also gets its line in [`docs/areas.yaml`](docs/areas.yaml), the topic tree ([docs/vision.md](docs/vision.md)):
-   `tests/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
+   `tests/repo/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
    merging `dev` and re-running CI (`dev` does not require branches to be up to date).
 4. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
    cad-agent must change.
@@ -97,6 +97,37 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 7. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
    from it: `pip show -f cad-agent` (or the `direct_url.json` it lists) in each project venv tells you where
    `cadagent` comes from. Reinstall those from the `dev` checkout below, then `git worktree remove ../cad-agent-<topic>`.
+
+## Where files go
+
+Each kind of file has one place. Prefer growing an existing module, page or folder to starting a new one; a new
+folder comes when one gets cluttered (the growth rule in [AGENTS.md](AGENTS.md#repo-structure-and-where-files-go)).
+`tests/repo/test_layout.py` checks the test, `src/` and top-level rules, and says where a misplaced file goes.
+
+| Kind of file | Where it goes |
+|---|---|
+| Code: a check, calculator, generator or reader | The module for its topic in `src/cadagent/<domain>/` ([map](src/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `src/cadagent/` |
+| A closed-form equation | `src/cadagent/formulas/`, with golden vectors in its test |
+| A `cad-agent` command | Its parser and handler in `src/cadagent/cli.py`, its logic in the domain package |
+| A browser component | `src/cadagent/webkit/` |
+| A test of package code | `tests/<domain>/test_<subject>.py`, the folder of the package its main subject lives in ([map](tests/README.md)) |
+| A test of `cli.py` or a module beside it | `tests/cli/` |
+| A Node or browser test of the web kit | `tests/webkit/`: `webkit-<name>.test.mjs` (`node --test`), `webkit-<name>-browser.mjs` (Playwright) |
+| A test of the website or its build | `tests/site/` (`website-*.test.mjs`, `website-*-browser.mjs`) |
+| A test of a repo rule or of the repo's own tooling | `tests/repo/` |
+| A test of a figure generator in `tools/` | The folder of the package it draws (`tools/motion_figures.py` → `tests/mechanical/`) |
+| Test data | `tests/fixtures/<set>/`, made by a script beside it or described in a README |
+| A docs page | `docs/<page>.md` (`docs/<domain>/` once its area has three pages, #145), with its line in `docs/areas.yaml` |
+| A figure on a page | `docs/img/<topic>/`, drawn by a generator in `tools/` that a test runs with `--check` |
+| A survey or sourced data table | `research/` |
+| A lesson from a real project | `lessons/<area>/`, listed in the area's README |
+| A repo script (figures, site build, gates, release) | `tools/` |
+| A website asset | `web/` |
+| An example project | `examples/<name>/`, with a README |
+| A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
+| Vendored upstream code | `vendor/<name>/`, through `tools/vendor_sync.py` |
+| A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
+| A finding or note from agent work | `lessons/<area>/`, not `.agents/` |
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.

@@ -26,7 +26,7 @@ Other agent sessions use and change this repo at the same time, so:
   credentials, and rebuild an accepted change yourself with credit (#111).
 - **Before removing a worktree**, check no project venv still imports `cadagent` from it (see CONTRIBUTING.md).
 - **Keep the map whole.** A new docs or research page, `cad-agent` command, skill or agent gets its line in
-  [`docs/areas.yaml`](docs/areas.yaml); `tests/test_areas.py` fails until it does. Merge `dev` in before merging.
+  [`docs/areas.yaml`](docs/areas.yaml); `tests/repo/test_areas.py` fails until it does. Merge `dev` in before merging.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.

@@ -5,7 +5,7 @@ the Python.
     python3 tools/formula_vectors.py            # write tests/fixtures/formula-vectors.json and webkit/formulas-data.js
     python3 tools/formula_vectors.py --check    # exit 1 if either committed file differs (the tests run this)
 
-The Python is the source: ``tests/webkit-formulas.test.mjs`` runs ``src/cadagent/webkit/formulas.js`` on the same
+The Python is the source: ``tests/webkit/webkit-formulas.test.mjs`` runs ``src/cadagent/webkit/formulas.js`` on the same
 vectors, so the browser can never compute a different number from the one agents get. Stdlib only.
 """
 from __future__ import annotations

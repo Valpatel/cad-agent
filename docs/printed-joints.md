@@ -199,8 +199,8 @@ from 1 and fails below 1. Materials are the keys of `cadagent.mechanical.complia
 
 ## Tests that keep it honest
 
-`tests/test_printed_joints.py` checks each stress against golden vectors worked by hand, the layer resolution
+`tests/mechanical/test_printed_joints.py` checks each stress against golden vectors worked by hand, the layer resolution
 against the FEA layer check on the same tensor, a planted defect per check (an overloaded bearing, a slack rod, a
 threadlocker on a printed thread, a joint that slips) and the case each one lets through, and that the figures here
-are current. `tests/test_fit_coupons.py` keeps the coupon's numbers in step with the process profile, and checks the
+are current. `tests/manufacturing/test_fit_coupons.py` keeps the coupon's numbers in step with the process profile, and checks the
 coupon solid's holes, volume and print files.

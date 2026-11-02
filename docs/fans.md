@@ -102,14 +102,14 @@ formula states its units, limits and source in `fx.catalogue()`, and they are li
 - **So the solver is built**, on the existing `fan_operating_point` (exact roots on each straight segment of the
   curve), with the fan data read from the datasheet's vector chart rather than digitised from a picture.
 - **Tests:**
-  - `tests/test_formulas.py` solves one fan, two in series and two in parallel on a straight-line curve by hand
+  - `tests/formulas/test_formulas.py` solves one fan, two in series and two in parallel on a straight-line curve by hand
     (in a restrictive system, (√17 − 1)/8, 1/2 and (√65 − 1)/16 of the free-air flow), and the crossover where
     series and parallel give the same air.
   - It also finds every operating point the datasheet tabulates, on the datasheet's own system curves, within its
     rounding (5 m³/h, 1 Pa), and checks that the table lies right of the stall peak at every voltage.
-  - `tests/webkit-formulas.test.mjs` runs the port on the golden vectors, including the stall dip with three
+  - `tests/webkit/webkit-formulas.test.mjs` runs the port on the golden vectors, including the stall dip with three
     crossings. They match bit for bit.
-  - `tests/website-browser.mjs` runs the explorer at 360 and 1366 px under the site's security policy, in Chromium
+  - `tests/site/website-browser.mjs` runs the explorer at 360 and 1366 px under the site's security policy, in Chromium
     and WebKit, with the fan vectors run again in each engine.
 
 </details>

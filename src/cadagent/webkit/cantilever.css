@@ -1,6 +1,6 @@
 /* <cad-cantilever> (kit/cantilever.js). Link this in <head>: it reserves the element's full size before the script
    runs (the still image, then the panel's height), so the live figure and controls replace them without moving the
-   page. The panel has a fixed height per layout; tests/website-browser.mjs checks the size and that nothing
+   page. The panel has a fixed height per layout; tests/site/website-browser.mjs checks the size and that nothing
    overflows. Override the colours with the --cc-* custom properties. */
 cad-cantilever{--cc-ink:#173d3c;--cc-muted:#526863;--cc-sage:#6f8a80;--cc-mist:#eef1e4;--cc-cream:#fffdf5;--cc-peach:#ffe1cc;
   --cc-rust:#bd3a12;--cc-panel:388px;display:block;box-sizing:border-box;margin:28px 0;border:1px solid #c9d8ca;

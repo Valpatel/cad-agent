@@ -16,7 +16,7 @@ flowchart TD
 ### Parse the requested original and preserve its identity during recovery
 - **Rule:** A file preview must parse that file's actual bytes, units and component transforms. Do not substitute a companion with a similar name. If a failed replacement leaves an earlier model visible, name the retained file explicitly and keep the requested download clearly identified.
 - **Incident:** On 2026-10-29, real barrel STL/3MF print exports had dimensions about 30 × 35 × 100 mm while the STEP was 100 × 35 × 30 mm. Those different export orientations were real; using a sibling would have hidden the difference. Independent review also identified a potential mismatch between candidate title/download and a retained older mesh during an error.
-- **Check:** `node tests/webkit-file-viewer-browser.mjs` checks known-dimension originals, declared-inch 3MF, translated/reflected instances and `A→failedB→retry` identity. The remote 495-file parser receipt is in `docs/validation/file-viewer-corpus-results.json`; this does not replace browser visual checks.
+- **Check:** `node tests/webkit/webkit-file-viewer-browser.mjs` checks known-dimension originals, declared-inch 3MF, translated/reflected instances and `A→failedB→retry` identity. The remote 495-file parser receipt is in `docs/validation/file-viewer-corpus-results.json`; this does not replace browser visual checks.
 - **Source:** 2026-10-29, PR 63 / issue 62; direct barrel probe and independent actual-parser review. No CAD geometry was changed.
 
 ### Verify bundled parser behavior rather than assuming a newer API

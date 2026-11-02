@@ -21,7 +21,7 @@ from the resolved settings and record every consumed dependency. This order is
 visible in Bambu's
 [PresetBundle.cpp](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/src/libslic3r/PresetBundle.cpp#L4858-L4916).
 
-Regression coverage belongs in `tests/test_slicer.py`, including the actual P1S
+Regression coverage belongs in `tests/manufacturing/test_slicer.py`, including the actual P1S
 template graph, ordered precedence and missing/cyclic/duplicate/mutated inputs.
 Flattening correctness does not establish executable G-code thermal correctness,
 printer compatibility, material conditioning or physical print acceptance. Inspect

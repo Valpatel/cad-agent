@@ -14,7 +14,7 @@ fit with a sweep of holes round the expected CAD size: nominal, plus the fit's a
 profile's undersize, plus or minus ``step_mm``. Print it in the part's filament and orientation, try the real pin,
 bushing, bearing or insert in each hole, write down which one fits, and draw the part's hole at that size.
 
-The numbers are research/process-profiles.yaml's (tests/test_fit_coupons.py keeps them in step):
+The numbers are research/process-profiles.yaml's (tests/manufacturing/test_fit_coupons.py keeps them in step):
 
 * undersize, ``fdm-hole-undersize-cnckitchen``: printed holes came out about 0.25 mm under CAD (one printer, PLA);
 * ``slide``, ``fdm-clearance-sliding-xometry-eu``: 0.2-0.3 mm clearance for a sliding fit (0.25 taken);

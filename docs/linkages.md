@@ -82,7 +82,7 @@ end of travel. Between samples, each event is bisected to 2⁻⁴⁸ of the step
 ![A five-bar leg hanging from its two hips, cranks 100 mm, links 120 mm and ground 80 mm, moves its foot round an elliptical stride inside its reach: its lowest transmission angle is 53.4° and its arms stay 68.8° from in line. Beside it, a map of the two crank angles shaded by transmission angle, with the stride's path; turning both cranks symmetrically from −90° locks at θ1 = −143.1°, where the links stretch into one line](img/linkages/fivebar.svg)
 
 *The five-bar in `tools/linkage_figures.py`, drawn from `sweep_fivebar_tip`, `sweep_fivebar` and `fivebar_workspace`.
-The dash-dot links are the other assembly on the same cranks. `tests/test_linkages.py` checks that the committed SVG
+The dash-dot links are the other assembly on the same cranks. `tests/mechanical/test_linkages.py` checks that the committed SVG
 matches the generator. It also checks the lock against its closed form, cos θ1 = (d − 2b) / 2a.*
 
 ```python
@@ -155,12 +155,12 @@ fails.
 - **So the animator is built**, on the port that the golden vectors tie to the Python. That is why it has no
   dependencies and needs no script beyond the site's own.
 - **Tests:**
-  - `tests/test_formulas.py` checks that every four-bar with links 1 to 6 (and a millimetre copy of each) turns fully
+  - `tests/formulas/test_formulas.py` checks that every four-bar with links 1 to 6 (and a millimetre copy of each) turns fully
     exactly when `grashof` says so, and that `fourbar_angles` closes exactly inside `fourbar_input_limits`.
   - At each limit, both branches meet and μ is 0; 1e-7 rad further out the circle construction finds no position.
-  - `tests/webkit-formulas.test.mjs` runs the port on the golden vectors: both branches every 15°, change points,
+  - `tests/webkit/webkit-formulas.test.mjs` runs the port on the golden vectors: both branches every 15°, change points,
     and every limit with points just either side.
-  - `tests/website-browser.mjs` runs the animator at 360 and 1366 px under the site's security policy, in Chromium
+  - `tests/site/website-browser.mjs` runs the animator at 360 and 1366 px under the site's security policy, in Chromium
     and WebKit, with the same vectors run again in each browser engine.
 
 </details>
@@ -177,12 +177,12 @@ fails.
   Newton-Raphson solver that runs inside FreeCAD. It reports no singularity and no assembly mode.
 - **So the solver is built**, on closed forms. The five-bar is in `cadagent.formulas` (`fivebar_point`,
   `fivebar_inputs`, `fivebar_jacobians`). The four-bar uses the existing `fourbar_angles`.
-- **Tests** (`tests/test_linkages.py`):
+- **Tests** (`tests/mechanical/test_linkages.py`):
   - Norton's Example 4-1 on both assemblies, and Freudenstein's equation at every step.
   - The rocker's ends of travel against the law of cosines, and locks equal to `fourbar_input_limits` to 1e-9.
   - Five-bar direct and inverse kinematics against the closed forms of Gonçalves et al., Eqs. (3)–(15). The
     Jacobians are checked against finite differences, and the workspace edge is checked at √((a + b)² − (d/2)²).
-  - `tests/test_robot.py` settles both loops in MuJoCo, an independent solver.
+  - `tests/simulation/test_robot.py` settles both loops in MuJoCo, an independent solver.
 
 </details>
 

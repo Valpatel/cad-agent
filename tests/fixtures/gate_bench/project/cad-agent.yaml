@@ -1,4 +1,4 @@
-# The gate bench as a project: `cad-agent gates --build` builds it and runs every gate (tests/test_gates_cli.py).
+# The gate bench as a project: `cad-agent gates --build` builds it and runs every gate (tests/review/test_gates_cli.py).
 # cad/parameters.json names a seeded defect ({"seed": null} for the clean bench).
 cad:
   name: gate-bench

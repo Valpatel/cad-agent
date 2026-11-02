@@ -66,7 +66,7 @@ than an area nobody can find.
 
 Areas and topics are judged on their own evidence, and an area is never rated below its most mature topic. A domain
 takes the highest level among its areas. That says how far its best-developed area has got, not the domain as a whole,
-so its hub shows every area's level beside it. `tests/test_areas.py` checks both rules.
+so its hub shows every area's level beside it. `tests/repo/test_areas.py` checks both rules.
 
 ## Confidence on tools and rules
 
@@ -159,7 +159,7 @@ flowchart TD
     `cadagent.review` and so on, with shared helpers such as `cadagent.geometry` at the top. One tool still serves
     many areas (FEA checks a leg frame and a lid alike), so each module has one home, an `api:` line in its own
     domain, and a node that relies on another domain's module names it under `uses:` (thermal's airflow area uses
-    `cadagent.simulation.cfd`). `tests/test_package_areas.py` keeps the code and the tree in step.
+    `cadagent.simulation.cfd`). `tests/repo/test_package_areas.py` keeps the code and the tree in step.
   - `skills/` and `agents/` stay flat, because harnesses install them by name.
   - `lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
     field maps each folder to the node that owns it. Renaming them to taxonomy slugs waits for #145's batches, once

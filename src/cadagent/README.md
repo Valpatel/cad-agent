@@ -47,7 +47,7 @@ flowchart TD
 | `_deps.py`, `_moved.py` | Lazy optional dependencies; old module paths (`cadagent.fea` → `cadagent.simulation.fea`), with a warning, until a release that the CHANGELOG announces a minor release ahead |
 
 New modules go into the package for their domain in [docs/areas.yaml](../../docs/areas.yaml), with a line in that
-domain's `api:` list. `tests/test_package_layout.py` keeps this top level short, and `tests/test_package_areas.py`
+domain's `api:` list. `tests/repo/test_package_layout.py` keeps this top level short, and `tests/repo/test_package_areas.py`
 keeps the packages and the tree in step.
 
 ## Related

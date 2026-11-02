@@ -16,7 +16,7 @@ A figure has three committed files:
 Extraction needs CadQuery and a checkout of the source project; the convergence figure's source is this checkout, and
 recording it needs gmsh and scikit-fem too. The snap-fit figure's source is this checkout's snap-fit calculator, which
 needs nothing beyond the core. Rendering needs only cad-agent's core dependencies,
-so ``--check`` (run by tests/test_readme_anim.py) works anywhere. Every SVG must also pass
+so ``--check`` (run by tests/publish/test_readme_anim.py) works anywhere. Every SVG must also pass
 ``cadagent.publish.anim.svg.problems``: no script or external reference, valid XML, a title and label, a
 reduced-motion still, at most 250 KB.
 """

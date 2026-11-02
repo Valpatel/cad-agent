@@ -26,7 +26,7 @@ renderer that people actually look at, so a pivot error in either shows up.
 ![A shaft that yaws a housing and spins a rotor on it, at each of its ten required poses: renderer A draws every landmark on the CAD's reference and passes; renderer B spins the rotor about a pivot 48 mm off the shaft and fails, its rotor 96 mm off at spin 180 degrees; without the nested pose, yaw -90 with spin 180, A would fail its coverage](img/motion/motion-trace.svg)
 
 *`validate_motion_trace` compares, pose by pose, where a renderer drew each landmark with where the CAD's own joint
-matrices put it. An illustration of the analytic shaft in `tests/test_motion_trace.py`: renderer A is the test's
+matrices put it. An illustration of the analytic shaft in `tests/mechanical/test_motion_trace.py`: renderer A is the test's
 independent renderer, B its offset-pivot defect; the poses, errors and verdicts are the validator's.*
 
 A closed loop, such as a four-bar or a five-bar leg, is declared under `loops` on top of the joint tree. Its inputs are

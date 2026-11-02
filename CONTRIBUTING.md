@@ -115,12 +115,17 @@ such as a new command or check, even one that asks nothing of projects.
    - publishes the GitHub release from the CHANGELOG entry;
 
    Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` (the name in
-   `wrangler.toml` and `npm run deploy:site`) is connected to this repository like every Valpatel Pages site, with
-   the same settings: build command `npm ci && npm run build`, output `dist`, root directory blank.
+   `wrangler.toml` and `npm run deploy:site`) is connected to this repository like every Valpatel Pages site:
+   build command `npm ci && npm run build`, output `dist`, root directory blank. Two settings differ from
+   Cloudflare's defaults and matter here:
+   - **Production branch `main`.** This repository's default branch is `dev`, and the release build accepts HEAD on
+     `origin/dev` too, so a production branch of `dev` would publish every merge into `dev`.
+   - **Preview deployments: None.** A branch build fails the release build's reviewed-commits check, and would put
+     a red Cloudflare check on every PR.
    - On each push to `main` it runs `npm ci && npm run build` and publishes `dist` to cad-agent.valpatel.com and
      cad-agent.gyropup.com. `tools/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
      which Cloudflare's clone lacks, then runs `tools/build-site.mjs --release`.
-   - Preview deployments are off, so only `main` publishes.
+   - With previews off, only `main` publishes.
    - Check that `https://cad-agent.valpatel.com/version.json` shows the release.
    - `npm run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
 

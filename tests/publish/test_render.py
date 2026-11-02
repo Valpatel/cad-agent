@@ -54,3 +54,26 @@ def test_only_filter_reads_only_the_named_variable(tmp_path, monkeypatch):
     assert Renderer(tmp_path, size=(200, 150)).only is None
     assert Renderer(tmp_path, size=(200, 150), only_env="MY_RENDER_ONLY").only == {"b.png", "c.png"}
     assert Renderer(tmp_path, size=(200, 150), only=[], only_env="MY_RENDER_ONLY").only == set()
+
+def test_name_without_extension_gets_png(tmp_path, monkeypatch):
+    """A bare name gets ``.png``; it used to render, then fail in Pillow on the empty suffix (#289)."""
+    stl = cube_stl(tmp_path / "cube.stl")
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    out = Renderer(tmp_path / "out", size=(200, 150)).render("part-base", meshes=[(stl, (1, 0, 0))])
+    assert out == tmp_path / "out" / "part-base.png"
+    assert Image.open(out).format == "PNG"
+    assert not (tmp_path / "out" / "part-base").exists()
+
+def test_only_filter_matches_a_bare_name_either_way(tmp_path, monkeypatch):
+    stl = cube_stl(tmp_path / "cube.stl")
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    assert Renderer(tmp_path, size=(200, 150), only=["a.png"]).render("a", meshes=[(stl, (1, 0, 0))]) is not None
+    assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("b", meshes=[(stl, (1, 0, 0))]) is not None
+    assert Renderer(tmp_path, size=(200, 150), only=["b"]).render("c", meshes=[(stl, (1, 0, 0))]) is None
+
+def test_other_extensions_are_refused_before_rendering(tmp_path, monkeypatch):
+    monkeypatch.delenv("CAD_AGENT_RENDER_ONLY", raising=False)
+    r = Renderer(tmp_path, size=(200, 150))
+    with pytest.raises(ValueError, match="writes PNG"):
+        r.render("part.jpg", meshes=[("never-read.stl", (1, 0, 0))])
+    assert not (tmp_path / "part.jpg").exists()

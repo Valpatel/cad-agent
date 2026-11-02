@@ -176,13 +176,17 @@ class Renderer:
     ) -> Optional[Path]:
         """Render one PNG into ``out_dir``; returns its path, or None when filtered out.
 
+        ``name``: the file name. A name with no extension gets ``.png``; any other extension than ``.png`` is
+        refused before rendering. ``only`` matches the name as written or with ``.png``.
         ``shapes``: ``(shape, color[, offset])``; ``meshes``: ``(stl_path, color[, offset])``.
         ``labels``: ``(code, text, world_point, (text_x, text_y))`` leader callouts.
         ``clip``: one ``(origin, normal)`` plane or a list of them; geometry on the
         side the normal points away from is cut.
         ``fit``: a ``(min, max)`` box to frame instead of everything drawn (parts outside it are cropped).
         """
-        if not self.wanted(name):
+        written = name
+        name = _png_name(name)
+        if not (self.wanted(name) or self.wanted(written)):
             return None
         vtk = self.vtk
         labels = list(labels)
@@ -299,6 +303,15 @@ def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
     from cadagent.review.packet import review_packet as _review_packet
     return _review_packet(section, **kwargs)
 
+
+def _png_name(name: str) -> str:
+    """``name`` with ``.png`` added when it has no extension (#289); a ValueError for any other extension."""
+    suffix = Path(name).suffix
+    if not suffix:
+        return name + ".png"
+    if suffix.lower() != ".png":
+        raise ValueError(f"{name}: Renderer writes PNG; name it {Path(name).stem}.png, or leave the extension off")
+    return name
 
 def _is_plane(clip: Any) -> bool:
     return len(clip) == 2 and all(isinstance(v, (int, float)) for v in clip[0])

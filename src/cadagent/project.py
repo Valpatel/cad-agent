@@ -267,6 +267,16 @@ def _default_python(root: Path) -> str:
     venv = root / ".venv" / "bin" / "python"
     return str(venv) if venv.exists() else sys.executable
 
+def _expand_home(path: str) -> str:
+    """``~``, ``~user``, ``$HOME`` and ``${HOME}`` at the start of ``path`` name a home directory (#288).
+
+    Only the home directory: other ``$VARS`` stay literal, so a config means the same on every machine.
+    """
+    for var in ("${HOME}", "$HOME"):
+        if path == var or path.startswith(var + "/"):
+            return str(Path.home()) + path[len(var):]
+    return os.path.expanduser(path)
+
 def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
     """Build a ``CadProject`` from an already-parsed ``cad:`` mapping."""
     root = Path(root).resolve()
@@ -275,8 +285,9 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         _split_revision_from(str(data["revision_from"]))
     python = data.get("python")
     if python:
-        p = Path(str(python))
-        python = str(p if p.is_absolute() or "/" not in str(python) else root / p)
+        python = _expand_home(str(python))
+        p = Path(python)
+        python = str(p if p.is_absolute() or "/" not in python else root / p)
     package = _require_dict(data.get("package"), "cad.package")
     serve = _require_dict(data.get("serve"), "cad.serve")
     exports_dir = root / str(data.get("exports_dir", "exports"))

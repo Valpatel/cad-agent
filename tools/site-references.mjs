@@ -212,6 +212,16 @@ const FIELDS = {
   vocab: `every coded value is explained in ${DIR}vocab.yaml`,
 };
 
+/** What each entry of index.json's `records` says (the area files carry every field of a record). */
+const RECORD_FIELDS = {
+  id: 'the record id, as [ref:<id>] cites it', title: 'as the source titles itself', url: 'where it is (https), or null; a book has `isbn`',
+  status: FIELDS.status, kind: 'what the source is (vocab.yaml `kind`), `source` for a read source from before schema 2',
+  licence: 'licence class (vocab.yaml `licence_class`), `unrecorded` when none is set', licence_read: 'false: the class is as the survey stated it, the licence text unread',
+  evidence: 'its rung on the evidence ladder',
+  areas: 'the docs/areas.yaml areas it is listed in (`unplaced` when none); its row on the site is /references/<first area>#<id>, '
+    + 'and every field it has is in catalog/references/<area>.json',
+};
+
 /** catalog/references/index.json and one catalog/references/<area>.json per page. */
 export function referenceJson(m, { ORIGIN, revision, built }) {
   const L = labels(m.refs.vocab), files = [];
@@ -240,8 +250,15 @@ export function referenceJson(m, { ORIGIN, revision, built }) {
     areas,
     coverage: { observed: m.refs.coverage.observed ?? null, note: m.refs.coverage.note ?? null,
       rows: m.rows.map(({ id, number, topic, status, placed }) => ({ id, number, topic, status, areas: placed })) },
+    record_fields: RECORD_FIELDS, records: '\0',
   };
-  files.push(['catalog/references/index.json', JSON.stringify(index, null, 2) + '\n']);
+  // Every record in one fetch (an offline mirror needs only this file): one per line, in id order.
+  const brief = [...m.refs.records.values()].sort((a, b) => byText(a.id, b.id)).map(r => '    ' + JSON.stringify({
+    id: r.id, title: r.title ?? null, url: httpUrl(r.url), ...(r.isbn ? { isbn: String(r.isbn) } : {}), status: r.status,
+    kind: kindOf(r), licence: licenceOf(r), licence_read: isObj(r.licence) ? r.licence.read ?? null : null,
+    evidence: evidenceOf(r), areas: m.placed.get(r.id) }));
+  files.push(['catalog/references/index.json', JSON.stringify(index, null, 2)
+    .replace('"\\u0000"', () => `[\n${brief.join(',\n')}\n  ]`) + '\n']);
   for (const slug of m.pages) {
     const a = m.area(slug);
     // One record per line: small to fetch, and still easy to read and diff.

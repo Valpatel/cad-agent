@@ -94,6 +94,14 @@ test('index.json counts every committed record once, and each area file lists ex
     assert.ok(files.includes(`references/${a.slug}.html`) && files.includes(`references/${a.slug}.md`), a.slug);
   }
   assert.deepEqual([...seen].sort(), [...own, ...sources].sort(), 'every record is in some area file, once per area');
+  // The whole base in one fetch (an offline mirror reads only index.json): each record once, with where it is.
+  assert.deepEqual(index.records.map(r => r.id), [...own, ...sources].sort((a, b) => (a < b ? -1 : 1)));
+  for (const r of index.records) {
+    for (const k of Object.keys(index.record_fields)) if (k !== 'url' || !r.isbn) assert.ok(k in r, `${r.id}: no ${k}`);
+    assert.ok(r.url === null || /^https?:\/\//.test(r.url), r.id);
+    assert.ok(LADDER.includes(r.evidence), `${r.id}: evidence ${r.evidence}`);
+    assert.equal(`/references/${r.areas[0]}#${r.id}`, model.home(r.id), 'the first area is where its row is');
+  }
   assert.ok(index.totals.unplaced <= UNPLACED_MAX, `${index.totals.unplaced} records are not placed in an area (at most ${UNPLACED_MAX}): give them docs/areas.yaml slugs`);
   if (index.totals.unplaced < UNPLACED_MAX) console.log(`  ${index.totals.unplaced} unplaced: lower UNPLACED_MAX to it`);
   // A catalogued record is a snippet: its licence unread and nothing standing on it.

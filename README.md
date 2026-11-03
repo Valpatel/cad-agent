@@ -6,9 +6,9 @@
 
 # cad-agent
 
-### Your one stop shop for agentic CAD.
+**Your one stop shop for agentic CAD.**
 
-**Self-improving AI for designing physical things, built with the best open source projects.**
+Self-improving AI for designing physical objects, built with the best open source projects.
 
 Install it into your AI assistant with one line. It helps the AI design real parts, check them for problems before anything is made, and, with your OK, share what it learned as a pull request, so every AI that uses it gets better at building for people.
 

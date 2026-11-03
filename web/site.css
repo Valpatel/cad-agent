@@ -59,7 +59,7 @@ text-decoration:none;min-height:48px;transition:transform .2s,box-shadow .2s;bor
 .hero-copy{min-width:0}.agent-copy{margin-top:28px;max-width:560px}.agent-box{white-space:pre;width:100%;margin:0;padding-right:92px;border:1px solid var(--line-2);border-radius:calc(16px*var(--round));background:var(--soft-2);padding:14px 18px;font:12px/1.75 var(--mono);color:var(--text-1);overflow-x:auto;max-width:560px}
 .agent-box b{color:var(--orange);font-weight:650}
 /* home: "Copy this to your agent" (#278), one card under the hero; the prompt is docs/agent-prompt.txt verbatim */
-.use-band{padding:0 0 56px}.use-card{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:28px 40px;align-items:center;padding:32px;border:1px solid var(--line-2);border-radius:calc(28px*var(--round));background:var(--hud-corners),linear-gradient(160deg,var(--cream),var(--soft-3));box-shadow:0 18px 40px rgb(var(--shadow)/.07)}
+.use-band{padding:0 0 56px}.use-card{position:relative;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:28px 40px;align-items:center;padding:32px;border:1px solid var(--line-2);border-radius:calc(28px*var(--round));background:linear-gradient(160deg,var(--cream),var(--soft-3));box-shadow:0 18px 40px rgb(var(--shadow)/.07)}
 .use-head .eyebrow{margin-bottom:12px}.use-head h2{font-size:clamp(28px,3vw,40px)}.use-lead{margin:14px 0 0;font-size:16px;line-height:1.6;color:var(--ink);font-weight:600}
 .use-note{margin:6px 0 0;font-size:13.5px;line-height:1.65;color:var(--muted)}
 .use-loop{display:block;width:100%;max-width:420px;height:auto;margin:18px 0 4px;font-family:var(--font)}
@@ -94,6 +94,9 @@ box-shadow:inset 0 1px 1px var(--hi),inset 0 0 0 1px var(--frame-line),0 24px 48
 .scene-caption span{display:block;font:10px/1.6 var(--mono);color:var(--sky-ink);margin-top:6px}
 .snap-demo{width:min(86%,440px);margin-top:-10px}
 .stamp{position:absolute;right:13%;top:17%;transform:rotate(9deg);border:1px solid var(--ink);border-radius:calc(16px*var(--round));padding:10px 12px;background:var(--green);font:600 10px/1.6 var(--mono);box-shadow:4px 5px 0 rgb(var(--shadow)/.07)}
+/* panels' corner brackets (dark theme; --hud-corners is none in the light one): a layer over the panel's edge, not
+   part of its background, so no text sits on one */
+.use-card::after,.fits-ours::after,.mission::after,.closing::after,.reel-tile::after,body .cad-diagram[data-theme=dark]::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:var(--hud-corners);pointer-events:none}
 /* the snap demo animation is generated from its geometry: tools/snap-demo.mjs → /web/snap-demo.css */
 /* home: the 3D model leads (kit/model.css draws it; the poster holds its box from the first paint) */
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
@@ -112,7 +115,7 @@ box-shadow:inset 0 1px 1px var(--hi),inset 0 0 0 1px var(--frame-line),0 24px 48
 .reel-band{background:var(--grid-bg),var(--band);color:var(--band-ink);padding:80px 0 90px;border-block:1px solid var(--band-line)}
 .reel-band h2{color:var(--band-ink)}.reel-band h2 span{color:var(--band-hi)}.reel-band .lead>p{color:var(--band-text)}
 .reel{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
-.reel-tile{position:relative;display:flex;flex-direction:column;border-radius:calc(20px*var(--round));background:var(--hud-corners),var(--band-tile);border:1px solid var(--band-line);padding:12px 12px 16px;box-shadow:0 10px 24px rgb(var(--shadow)/.08);transition:transform .2s,border-color .2s}
+.reel-tile{position:relative;display:flex;flex-direction:column;border-radius:calc(20px*var(--round));background:var(--band-tile);border:1px solid var(--band-line);padding:12px 12px 16px;box-shadow:0 10px 24px rgb(var(--shadow)/.08);transition:transform .2s,border-color .2s}
 .reel-tile:hover{border-color:var(--accent)}
 .reel-tile:hover{transform:translateY(-3px)}
 .reel-media{display:block;aspect-ratio:16/10;border-radius:calc(12px*var(--round));overflow:hidden;background:var(--image)}
@@ -136,7 +139,7 @@ box-shadow:inset 0 1px 1px var(--hi),inset 0 0 0 1px var(--frame-line),0 24px 48
 .fits-arrow span{position:relative;font:600 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:22px 0 26px}
 .fits-arrow span::before,.fits-arrow span::after{content:"";position:absolute;left:50%;width:2px;height:18px;background:var(--orange);transform:translateX(-50%)}
 .fits-arrow span::before{top:0}.fits-arrow span::after{bottom:0;height:22px;clip-path:polygon(0 0,100% 0,100% 60%,400% 60%,50% 100%,-300% 60%,0 60%)}
-.fits-ours{border-radius:calc(24px*var(--round));padding:22px;background:var(--hud-corners),var(--peach);border:1px solid var(--peach-line)}
+.fits-ours{position:relative;border-radius:calc(24px*var(--round));padding:22px;background:var(--peach);border:1px solid var(--peach-line)}
 .fits-ours ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .fit-tile{display:flex;flex-direction:column;background:var(--cream);border-radius:calc(18px*var(--round));padding:12px;border:1px solid var(--peach-line)}
 .fit-tile>a{text-decoration:none;display:flex;flex-direction:column;gap:10px}
@@ -205,7 +208,7 @@ details.fold>:not(summary){margin:12px}
 .mission{position:relative;border-radius:calc(24px*var(--round));padding:30px;display:flex;flex-direction:column;align-items:flex-start;min-height:220px;text-decoration:none;
 border:1px solid var(--line-2);box-shadow:inset 0 1px 0 var(--hi),0 12px 24px rgb(var(--shadow)/.05),0 2px 4px rgb(var(--shadow)/.03);transition:transform .2s}
 .mission:hover{transform:translateY(-3px)}
-.mission-orange{background:var(--hud-corners),linear-gradient(155deg,var(--peach),var(--mission-o))}.mission-blue{background:var(--hud-corners),linear-gradient(155deg,var(--mission-b-a),var(--mission-b-b))}.mission-yellow{background:var(--hud-corners),linear-gradient(155deg,var(--mission-y-a),var(--mission-y-b))}
+.mission-orange{background:linear-gradient(155deg,var(--peach),var(--mission-o))}.mission-blue{background:linear-gradient(155deg,var(--mission-b-a),var(--mission-b-b))}.mission-yellow{background:linear-gradient(155deg,var(--mission-y-a),var(--mission-y-b))}
 .mission-orange .mission-tag{color:var(--orange)}.mission-blue .mission-tag{color:var(--link)}.mission-yellow .mission-tag{color:var(--warn)}
 .mission-icon{display:grid;place-items:center;width:52px;height:52px;border:1px solid rgb(var(--shadow)/.22);border-radius:calc(16px*var(--round));font:30px/1 system-ui;background:var(--glyph-bg);transform:rotate(-7deg)}
 .mission-blue .mission-icon{transform:rotate(7deg)}
@@ -229,7 +232,7 @@ border:1px solid var(--line-2);box-shadow:inset 0 1px 0 var(--hi),0 12px 24px rg
 .band-green{background:var(--green-2);border:1px solid var(--green-line);border-radius:calc(24px*var(--round));padding:44px;display:grid;grid-template-columns:1fr 1fr;gap:56px;box-shadow:inset 0 1px 0 var(--hi),0 14px 30px rgb(var(--shadow)/.05)}
 .band-green p,.band-green li{color:var(--text-2);font-size:14px;line-height:1.8}
 .band-green ul{padding-left:18px;margin:12px 0 0}
-.closing{background:var(--hud-corners),var(--closing);border-radius:calc(32px*var(--round));padding:56px 32px;text-align:center;margin-bottom:72px;box-shadow:inset 0 1px 0 var(--hi),0 14px 30px rgb(var(--shadow)/.05)}
+.closing{position:relative;background:var(--closing);border-radius:calc(32px*var(--round));padding:56px 32px;text-align:center;margin-bottom:72px;box-shadow:inset 0 1px 0 var(--hi),0 14px 30px rgb(var(--shadow)/.05)}
 .closing .actions{justify-content:center;margin-top:26px}
 /* catalogue: web/catalog.css (the page) and kit/gallery.css (its behaviour) */
 /* documents */
@@ -279,7 +282,7 @@ cad-gallery{--cad-gallery-muted:var(--faint);--cad-gallery-chip-bg:var(--soft-3)
   :root:not([data-theme=light]) .cad-diagram[data-theme-only=dark]{display:block}}
 :root[data-theme=dark] .cad-diagram[data-theme-only=light]{display:none}:root[data-theme=dark] .cad-diagram[data-theme-only=dark]{display:block}
 /* body: kit/diagrams.css loads after this file, and its rule has the same specificity */
-body .cad-diagram[data-theme=dark]{background:var(--hud-corners),var(--card);border-color:var(--line-2)}
+body .cad-diagram[data-theme=dark]{position:relative;background:var(--card);border-color:var(--line-2)}
 cad-copy{--cad-copy-font:var(--font);--cad-copy-fg:var(--ink);--cad-copy-bg:var(--cream);--cad-copy-border:var(--line-3);--cad-copy-focus:var(--orange);--cad-copy-warn-bg:var(--peach-2);margin:16px 0}
 cad-nav input::placeholder{color:var(--faint);opacity:1}
 .agent-copy cad-copy,.prose cad-copy>pre{margin:0}

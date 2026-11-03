@@ -19,12 +19,14 @@
 .refs-chart svg{display:block;width:100%;height:auto;font-family:var(--font);overflow:visible}
 .refs-chart-label{font-size:12px;fill:var(--ink)}.refs-chart-n{font:600 12px var(--mono);fill:var(--muted)}
 .refs-chart-group{font:650 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;fill:var(--eyebrow)}
-.refs-chart-track{fill:var(--soft-3)}.refs-chart-bar{fill:var(--teal)}.refs-chart-bar.tone-catalogued{fill:var(--line-3)}
-.refs-chart a{cursor:pointer}.refs-chart a:hover .refs-chart-bar,.refs-chart a:focus .refs-chart-bar{fill:var(--orange)}
+/* catalogued (not yet read) bars are outlined, not filled: the two read apart without telling colours apart */
+.refs-chart-track{fill:var(--soft-3)}.refs-chart-bar{fill:var(--teal)}.refs-chart-bar.tone-catalogued{fill:var(--card);stroke:var(--ink);stroke-width:1.5;stroke-dasharray:3 2}
+.refs-chart a{cursor:pointer}.refs-chart a:hover .refs-chart-bar:not(.tone-catalogued),.refs-chart a:focus .refs-chart-bar:not(.tone-catalogued){fill:var(--orange)}
+.refs-chart a:hover .tone-catalogued,.refs-chart a:focus .tone-catalogued{stroke:var(--orange)}
 .refs-chart a:hover .refs-chart-label,.refs-chart-link{text-decoration:underline;text-decoration-color:var(--line-3)}
 .refs-chart a[aria-current] .refs-chart-bar{fill:var(--orange)}
 .refs-key{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px 0 6px;vertical-align:-1px;background:var(--teal)}
-.refs-key.tone-catalogued{background:var(--line-3)}
+.refs-key.tone-catalogued{background:var(--card);border:1.5px dashed var(--ink)}
 .refs-cov-dot{stroke:var(--line-3);stroke-width:1}.refs-cov-word{font:600 10px var(--mono);fill:var(--ink)}
 .cov-implemented{fill:var(--green);background:var(--green)}.cov-partly{fill:var(--yellow);background:var(--yellow)}.cov-missing{fill:var(--peach-2);background:var(--peach-2)}
 /* coverage and wanted cards */
@@ -67,4 +69,6 @@
 .ref-cite{font:12px var(--mono);white-space:nowrap;color:var(--muted)}
 .ref-cite .ref-key{color:var(--link)}.ref-cite .ref-out{margin-left:2px;text-decoration:none;color:var(--teal)}
 .ref-unread{border-bottom:1px dotted var(--line-3)}
+/* the all-areas charts keep a readable size on a phone: they scroll sideways in their own box */
+.refs-chart-wide{overflow-x:auto}.refs-chart-wide svg{min-width:600px}
 @media(max-width:700px){.refs-charts{grid-template-columns:1fr}.refs-filters label{flex:1 1 40%}.refs-table-wrap{max-height:70vh}}

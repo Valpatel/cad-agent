@@ -48,6 +48,7 @@ if (form && table) {
   form.hidden = false;
   apply(false);
   // A link to one record (#<id>) shows it even when the URL also filters it away.
-  const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  let target = null;
+  try { target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch { /* a malformed hash names nothing */ }
   if (target && target.hidden) { form.reset(); for (const c of controls) c.value = ''; apply(); target.scrollIntoView({ block: 'center' }); }
 }

@@ -14,6 +14,7 @@ import YAML from 'yaml';
 import { builtSite } from './built-site.mjs';
 import {
   CORE, DIR, EXPERTS, LADDER, UNPLACED, areaOf, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
+  referenceJson, referenceSite,
 } from '../../tools/site-references.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -47,6 +48,17 @@ test('a shard extends a read source by the registry\'s rule: lists united, the c
   assert.deepEqual(a.evidence, { numbers: 'some' }, 'a field the core lacks is added');
   assert.equal(a.status, 'source');
   assert.equal(r.others.get('b-later').status, 'unverified');
+});
+
+test('a shard record read at source is a source, and aliases of every entry resolve, as in the Python registry', async () => {
+  const r = await fake({ [CORE]: core.replace('unverified:\n  - {id: b-later, title: B}', 'unverified:\n  - {id: b-later, title: B, aliases: [b]}'),
+    [`${DIR}g.yaml`]: 'sources:\n  - {id: c-read, title: C, aliases: [c], evidence: {class: read}}\n  - {id: d-snip, title: D, evidence: {class: snippet-only}}\n  - {id: e-none, title: E, aliases: [a-guide]}\n' });
+  assert.equal(r.records.get('c-read').status, 'source');
+  assert.equal(r.records.get('d-snip').status, 'catalogued');
+  assert.equal(r.records.get('e-none').status, 'catalogued');
+  assert.equal(r.aliases.get('c'), 'c-read');
+  assert.equal(r.aliases.get('b'), 'b-later');
+  assert.equal(r.aliases.has('a-guide'), false, 'an alias never shadows an id');
 });
 
 test('the loader refuses an extension of nothing and a second record with one id', async () => {
@@ -88,7 +100,7 @@ test('index.json counts every committed record once, and each area file lists ex
     for (const r of area.records) {
       seen.add(r.id);
       assert.ok(r.placed.includes(a.slug), `${r.id} is in ${a.slug}.json but not placed there`);
-      assert.match(r.page, new RegExp(`^${ORIGIN}/references/[a-z0-9-]+#${r.id}$`));
+      assert.equal(`/references/${r.placed[0]}#${r.id}`, model.home(r.id), `${r.id}: its row is in its first area`);
       assert.ok(['source', 'catalogued'].includes(r.status), r.id);
     }
     assert.ok(files.includes(`references/${a.slug}.html`) && files.includes(`references/${a.slug}.md`), a.slug);
@@ -181,6 +193,33 @@ test('docs/experts.md is what the generator writes from the committed registry',
   assert.ok(md.includes(`${sources.length} read sources`));
   for (const r of sources.filter(r => /^https:\/\//.test(r.url || '')).slice(0, 50)) assert.ok(md.includes(r.url.replace(/[()\s]/g, encodeURIComponent)), r.id);
   for (const r of [...refs.records.values()].filter(r => r.status === 'catalogued')) assert.ok(!md.includes(r.id), `${r.id} is catalogued, not an expert's source yet`);
+});
+
+test('a hostile record is shown as text: no markup, script URL or broken table gets through', async () => {
+  const evil = '<img src=x onerror=alert(1)>"\'&|*[x](javascript:alert(2))';
+  const yaml = v => JSON.stringify(v);                               // JSON is YAML: the strings arrive as written
+  const fs = {
+    [CORE]: `sources:\n  - {id: z-core, title: ${yaml(evil)}, org: ${yaml(evil)}, authors: [${yaml(evil)}], url: "javascript:alert(3)", areas: [fdm], used_for: [docs/x.md], verified: ${yaml(evil)}}\n`,
+    [`${DIR}g.yaml`]: `sources:\n  - {id: z-cat, title: ${yaml(evil)}, org: ${yaml(evil)}, url: "https://example.com/a|b<c>(d)", summary: ${yaml(evil)}, areas: [fdm], kind: ${yaml(evil)},
+      licence: {class: ${yaml(evil)}, spdx: ${yaml(evil)}, read: false, note: ${yaml(evil)}}, evidence: {class: snippet-only, numbers: claimed},
+      claims: [{text: ${yaml(evil)}, status: ${yaml(evil)}}], process_groups: [${yaml(evil)}], assessment: {role: ${yaml(evil)}, caveat: ${yaml(evil)}}}\n`,
+    [`${DIR}coverage.yaml`]: `rows:\n  - {id: r1, number: '1', topic: ${yaml(evil)}, status: partly, areas: [fdm], gap: ${yaml(evil)}, draft_issue: {title: ${yaml(evil)}, posted: false}}\nwanted:\n  - {group: print, title: ${yaml(evil)}, areas: [fdm], text: ${yaml(evil)}}\n`,
+  };
+  const m = referenceModel(await fake(fs), { domains: [{ slug: 'manufacturing', title: 'Manufacturing', areas: [{ slug: '3d-printing', title: '3D printing', topics: [{ slug: 'fdm' }] }] }] });
+  const s = referenceSite(m, { ORIGIN, revision: 'r', built: 'b', feedbackBox: () => '' });
+  const html = s.pages.map(p => p.body).join('') + linkTags('<p>[ref:z-core] [ref:z-cat]</p>', m);
+  assert.doesNotMatch(html, /<img|onerror=alert\(1\)>|<script/i, 'markup from a record is escaped');
+  assert.doesNotMatch(html, /href="\s*javascript:/i, 'a script URL is never a link');
+  assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;&quot;&#39;&amp;'));
+  for (const [, text] of s.files) JSON.parse(text);
+  for (const p of s.pages) for (const line of p.markdown.split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| Record') && !l.startsWith('|---')))
+    assert.equal(line.replace(/\\\|/g, '').split('|').length, 9, `${p.md}: a record row keeps its 7 cells: ${line}`);
+  // In Markdown an escaped \< or \] is text; an unescaped one would be markup or a link.
+  const live = /(?<!\\)<img|(?<!\\)\]\(javascript:/i;
+  for (const p of s.pages) assert.doesNotMatch(p.markdown, live, p.md);
+  const experts = expertsMarkdown(m, { ORIGIN });
+  assert.doesNotMatch(experts, live);
+  assert.ok(experts.includes('https://example.com/a%7Cb%3Cc%3E%28d%29') === false, 'a catalogued record is not an expert\'s source');
 });
 
 test('charts are drawn as links that filter, with what they show spoken', () => {

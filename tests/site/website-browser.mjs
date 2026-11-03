@@ -1050,12 +1050,6 @@ async function drawnDiagramProblems() {
   return out;
 }
 
-/** The light and dark themes (#305) on the site's main pages, at phone and desktop widths: the page follows the
- * system's preference, and the header's button overrides it, is remembered on the next page and forgets the choice
- * when it matches the system again; in each theme every visible piece of text keeps its contrast against what is
- * behind it (4.5:1, 3:1 for large text), the page shows only the diagrams drawn for its theme, and nothing scrolls
- * sideways. Text on pictures or gradients, inside the kit's own demos and 3D viewers and in the drawings is skipped
- * here: the demos and diagrams have their own checks above. */
 /** A reference area page (#323, tools/site-references.mjs, web/references.js): the filters appear with the script,
  * narrow the table and keep the URL; a chart bar filters; a record linked by its id shows even when the URL filters it
  * away; and the table scrolls in its own box, so a phone never scrolls the page sideways. */
@@ -1087,6 +1081,12 @@ async function refsProblems(page, width, seen) {
   if (await page.$eval(`[id="${id}"]`, r => r.hidden)) seen.push(`#${id} is hidden by the URL's filter`);
 }
 
+/** The light and dark themes (#305) on the site's main pages, at phone and desktop widths: the page follows the
+ * system's preference, and the header's button overrides it, is remembered on the next page and forgets the choice
+ * when it matches the system again; in each theme every visible piece of text keeps its contrast against what is
+ * behind it (4.5:1, 3:1 for large text), the page shows only the diagrams drawn for its theme, and nothing scrolls
+ * sideways. Text on pictures or gradients, inside the kit's own demos and 3D viewers and in the drawings is skipped
+ * here: the demos and diagrams have their own checks above. */
 async function themeProblems() {
   const out = [];
   const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', REFS, '/missing-page'];

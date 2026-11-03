@@ -36,6 +36,8 @@ export const LEVELS = ['unknown', 'low', 'medium', 'high'];
 export const UNPLACED = 'unplaced';
 /** A tag in prose: `[ref:<kebab-case id>]`, not already a link (cadagent.review.references reads the same form). */
 export const TAG = /\[ref:([a-z0-9]+(?:-[a-z0-9]+)*)\](?!\()/g;
+// TAG in Markdown, less `[[ref:x]](url)`, where the tag is already the text of a link.
+const MD_TAG = /(?<!\[)\[ref:([a-z0-9]+(?:-[a-z0-9]+)*)\](?!\()/g;
 const STATUS_ORDER = { implemented: 0, partly: 1, missing: 2 };
 const ROLE_ORDER = ['leader', 'reference', 'lessons', 'context'];
 
@@ -71,10 +73,7 @@ export async function loadReferences({ files, read }) {
   const yaml = async f => YAML.parse(await read(f)) ?? {};
   const core = await yaml(CORE);
   const records = new Map(), aliases = new Map(), others = new Map();
-  for (const s of core.sources || []) {
-    records.set(s.id, { ...s, status: 'source', file: CORE });
-    for (const a of s.aliases || []) aliases.set(a, s.id);
-  }
+  for (const s of core.sources || []) records.set(s.id, { ...s, status: 'source', file: CORE });
   for (const k of ['unverified', 'uncited']) for (const s of core[k] || []) others.set(s.id, { ...s, status: k });
   const has = f => files.includes(f);
   const vocab = has(DIR + 'vocab.yaml') ? await yaml(DIR + 'vocab.yaml') : {};
@@ -89,10 +88,16 @@ export async function loadReferences({ files, read }) {
         records.set(r.id, extend(base, r, f));
       } else {
         if (records.has(r.id)) throw new Error(`${f}: ${r.id} is also in ${records.get(r.id).file}`);
-        records.set(r.id, { ...r, status: 'catalogued', file: f });
+        // A shard record someone has read (evidence `read` or higher) is a source, as in the Python registry.
+        const read = isObj(r.evidence) && LADDER.indexOf(r.evidence.class) >= 1;
+        records.set(r.id, { ...r, status: read ? 'source' : 'catalogued', file: f });
       }
     }
   }
+  // Aliases of every entry, after every id (the registry's order): an alias never shadows an id.
+  for (const e of [...records.values(), ...others.values()])
+    for (const a of Array.isArray(e.aliases) ? e.aliases : [])
+      if (typeof a === 'string' && !aliases.has(a) && !records.has(a) && !others.has(a)) aliases.set(a, e.id);
   return { records, aliases, others, vocab, coverage, shards };
 }
 
@@ -168,6 +173,8 @@ function countBy(list, key, order = []) {
 const kindOf = r => r.kind || 'source';
 const licenceOf = r => (isObj(r.licence) && r.licence.class) || 'unrecorded';
 const groupsOf = r => (Array.isArray(r.process_groups) ? r.process_groups : []);
+/** The files that cite a record: its `used_for`, less `proposed: …` notes (a use not yet made). */
+const citedBy = r => (Array.isArray(r.used_for) ? r.used_for : []).filter(u => typeof u === 'string' && !/^proposed:/i.test(u));
 const roleOf = r => (isObj(r.assessment) && r.assessment.role) || null;
 
 /** The vocabulary's short labels, with plain fallbacks for a word it lacks. */
@@ -198,7 +205,7 @@ function labels(vocab) {
 function recordJson(r, m, ORIGIN) {
   const { file, extended_in, ...data } = r;
   return { ...data, evidence_class: evidenceOf(r), confidence: confidenceOf(r), placed: m.placed.get(r.id),
-    page: ORIGIN + m.home(r.id), source_file: file, ...(extended_in ? { extended_in } : {}) };
+    source_file: file, ...(extended_in ? { extended_in } : {}) };
 }
 
 const FIELDS = {
@@ -208,7 +215,7 @@ const FIELDS = {
   confidence: '#143: {level, estimate, sources}, derived from the evidence; `unknown` when the record has no evidence block',
   licence: '{spdx, class, read, note}: `read: false` means the licence text was not read, only stated by the survey',
   placed: 'the docs/areas.yaml areas the record is listed in (`unplaced` when its areas match none)',
-  page: 'its row on the site, which [ref:<id>] in any page links to',
+  placed_note: 'its row on the site, which [ref:<id>] in any page links to, is /references/<first placed area>#<id>',
   vocab: `every coded value is explained in ${DIR}vocab.yaml`,
 };
 
@@ -352,7 +359,7 @@ function recordRow(r, m, L) {
   const claims = (Array.isArray(r.claims) ? r.claims : []).filter(isObj);
   const text = one([r.title, who, r.summary, r.id, kindOf(r)].join(' ')).toLowerCase();
   const read = r.status === 'source' ? one(typeof r.verified === 'string' ? r.verified : '') : '';
-  const used = Array.isArray(r.used_for) ? r.used_for.filter(u => typeof u === 'string') : [];
+  const used = citedBy(r);
   const numbers = isObj(r.evidence) && r.evidence.numbers === 'claimed' ? `<span class="refs-note">${esc(L.numbers('claimed'))}</span>` : '';
   const lict = isObj(r.licence) ? r.licence : {};
   return `<tr id="${esc(r.id)}" data-kind="${esc(kindOf(r))}" data-evidence="${esc(ev || '')}" data-confidence="${esc(conf.level)}" data-licence="${esc(lic)}" data-process="${esc(groups.join(' '))}" data-role="${esc(role || '')}" data-text="${esc(text)}">`
@@ -439,7 +446,7 @@ function indexBody(m, { feedback }) {
 // ----------------------------------------------------------------------------- Markdown twins and llms.txt
 
 const mdText = s => one(s).replace(/([\\|[\]*_`<>])/g, '\\$1');
-const mdUrl = u => u.replace(/[()\s]/g, c => encodeURIComponent(c));
+const mdUrl = u => u.replace(/[()\s|<>]/g, c => encodeURIComponent(c));
 
 function areaMd(slug, m, ORIGIN) {
   const L = labels(m.refs.vocab), a = m.area(slug), list = m.byArea.get(slug) || [], rows = m.coverageIn.get(slug) || [];
@@ -458,7 +465,15 @@ function areaMd(slug, m, ORIGIN) {
     for (const r of list) {
       const url = httpUrl(r.url), conf = confidenceOf(r), lic = isObj(r.licence) ? r.licence : {};
       const who = one(r.org || (Array.isArray(r.authors) ? r.authors.join(', ') : ''));
-      out.push(`| ${url ? `[${mdText(r.title)}](${mdUrl(url)})` : mdText(r.title)}${who ? ` · ${mdText(who)}` : ''} · \`${r.id}\` | ${L.kind(kindOf(r))} | ${L.evidence(evidenceOf(r))}${isObj(r.evidence) && r.evidence.numbers === 'claimed' ? ' (authors\' claim)' : ''} | ${conf.level}${conf.estimate == null ? '' : ' ' + conf.estimate} | ${mdText(L.licence(licenceOf(r)))}${lic.spdx ? ' ' + mdText(lic.spdx) : ''}${lic.read === false ? ', not read' : ''} | ${groupsOf(r).map(L.group).join(', ')} | ${roleOf(r) ? L.role(roleOf(r)) : ''} |`);
+      const cells = [
+        `${url ? `[${mdText(r.title)}](${mdUrl(url)})` : mdText(r.title)}${who ? ` · ${mdText(who)}` : ''} · \`${r.id}\``,
+        mdText(L.kind(kindOf(r))),
+        mdText(L.evidence(evidenceOf(r))) + (isObj(r.evidence) && r.evidence.numbers === 'claimed' ? ' (authors\' claim)' : ''),
+        mdText(`${conf.level}${conf.estimate == null ? '' : ' ' + conf.estimate}`),
+        mdText(`${L.licence(licenceOf(r))}${lic.spdx ? ' ' + lic.spdx : ''}${lic.read === false ? ', not read' : ''}`),
+        mdText(groupsOf(r).map(L.group).join(', ')), mdText(roleOf(r) ? L.role(roleOf(r)) : ''),
+      ];
+      out.push(`| ${cells.join(' | ')} |`);
     }
     out.push('');
   }
@@ -509,14 +524,14 @@ function cite(id, m) {
     return `<span class="ref-cite">[<a class="ref-key" href="${esc(m.home(key))}" title="${esc(title)}">${esc(id)}</a>`
       + `${url ? `<a class="ref-out" href="${esc(url)}" aria-label="${esc('Open the source: ' + one(r.title))}">↗</a>` : ''}]</span>`;
   }
-  const o = m.refs.others.get(id);
+  const o = m.refs.others.get(id) ?? m.refs.others.get(m.refs.aliases.get(id));
   return o ? `<span class="ref-cite ref-unread" title="${esc(`${o.status}: not yet read`)}">[${esc(id)}]</span>` : null;
 }
 
 /** `[ref:<id>]` in a Markdown twin (outside code spans and fences) as a Markdown link to the record's page: relative
  * to `file`, or absolute (llms-full.txt). */
 export function mdTags(md, file, m, { ORIGIN, absolute = false }) {
-  return md.split(/(```[\s\S]*?```|`[^`\n]*`)/).map((chunk, i) => i % 2 ? chunk : chunk.replace(TAG, (all, id) => {
+  return md.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/).map((chunk, i) => i % 2 ? chunk : chunk.replace(MD_TAG, (all, id) => {
     const home = m.home(id);
     if (!home) return all;
     const [page, hash] = home.slice(1).split('#');
@@ -539,14 +554,14 @@ export function expertsMarkdown(m, { ORIGIN }) {
     (groups.get(key) ?? groups.set(key, []).get(key)).push(r);
   }
   const rows = [...groups].sort((a, b) => b[1].length - a[1].length || byText(a[0].toLowerCase(), b[0].toLowerCase()));
-  const files = new Set(sources.flatMap(r => (Array.isArray(r.used_for) ? r.used_for : []).filter(u => typeof u === 'string')));
+  const files = new Set(sources.flatMap(citedBy));
   const publishers = new Set(catalogued.map(r => one(r.org || '')).filter(Boolean));
   const people = new Set(sources.flatMap(r => (Array.isArray(r.authors) ? r.authors : []).map(one)).filter(Boolean));
   const cell = s => mdText(s);
   const lines = [
-    `<!-- Generated by tools/site-references.mjs from ${CORE} and ${DIR}*.yaml. Do not edit: change a record, then run \`node tools/site-references.mjs --experts\`. -->`,
+    `<!-- Generated by tools/site-references.mjs from ${CORE} and ${DIR}*.yaml. Do not edit: change a record, then run \`node tools/site-references.mjs --experts\` (also to settle a merge conflict here). -->`,
     '# Experts and sources', '',
-    `The people and organisations whose published work cad-agent's rules and checks stand on: ${plural(rows.length, 'publisher')} and ${plural(people.size, 'named author')}, in ${plural(sources.length, 'read source')}. They did the work. cad-agent cites it by name and never copies it, and every rule that uses a source says so with a \`[ref:<id>]\` tag, which the site links to the source.`, '',
+    `The people and organisations whose published work cad-agent's rules and checks stand on: ${plural(rows.length, 'publisher')} and ${plural(people.size, 'named author')}, in ${plural(sources.length, 'read source')}. They did the work. cad-agent cites it by name and never copies it. A rule, check or page that relies on a source names it by id: a \`[ref:<id>]\` tag in text (which the site links to the source), a module's source table, a material's \`source\` or a process rule's \`source\`.`, '',
     '```mermaid', 'flowchart TD',
     `  P["${rows.length} publishers, ${people.size} named authors"] -->|published| S["${sources.length} read sources"]`,
     `  S -->|cited by| U["${files.size} files: rules, checks and pages"]`,
@@ -559,7 +574,7 @@ export function expertsMarkdown(m, { ORIGIN }) {
       const authors = [...new Set(list.flatMap(r => (Array.isArray(r.authors) ? r.authors : []).map(one)).filter(Boolean))];
       const works = list.map(r => { const url = httpUrl(r.url); return url ? `[${cell(r.title)}](${mdUrl(url)})` : `${cell(r.title)}${r.isbn ? ` (ISBN ${cell(r.isbn)})` : ''}`; });
       const areas = [...new Set(list.flatMap(r => m.placed.get(r.id)))].map(a => `[${cell(m.area(a).title)}](${ORIGIN}/references/${a})`);
-      const used = [...new Set(list.flatMap(r => (Array.isArray(r.used_for) ? r.used_for : []).filter(u => typeof u === 'string')))].sort();
+      const used = [...new Set(list.flatMap(citedBy))].sort();
       return `| ${cell(who)} | ${authors.map(cell).join(', ')} | ${works.join('; ')} | ${areas.join(', ')} | ${used.length} file${used.length === 1 ? '' : 's'}: ${used.map(u => `\`${u}\``).join(', ')} |`;
     }), '',
     '## Catalogued, not yet read', '',

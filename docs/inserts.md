@@ -298,9 +298,10 @@ and the failure mode. Pull at 2 mm/min with a reaction plate that clears the bos
 - **The seating force** takes the plastic as an elastic column or cone, with no edge or free face nearer than the cone.
 - **A washer's spread** is a beam per unit length of the support's edge on a bed of springs, the pressure further
   out weighted by its longer ring. The bed is the plastic's whole thickness, backed flat on its far face. A lid under
-  a washer on the insert is backed there by the head, which may be narrower than the washer, so its far side is
-  stiffer than that under the head and softer past it. The model does not size this. The ring's hoop stiffness, which helps, is left out, and so is the boss face under a washer on the insert, so the washer carries the whole clamp to the brass. The
-  free end is not modelled. A washer that yields would dish, and the spread would shrink.
+  a washer on the insert is backed by the head, which may be narrower than the washer. Past the head's edge the lid
+  is softer than the bed assumes, and the model does not size this. The ring's hoop stiffness, which helps, is left
+  out. So is the boss face under a washer on the insert, so the washer carries the whole clamp to the brass. The free
+  end is not modelled. A washer that yields would dish, and the spread would shrink.
 - CAD and closed forms do not prove a joint holds. Print the coupons and measure.
 
 ## Sources and survey

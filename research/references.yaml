@@ -36,6 +36,10 @@
 # Merged on 2026-11-01 from the first sweep (#119, 2026-10-31), the `sources` and `standards` blocks of
 # research/process-profiles.yaml (#162, #163) and the sources cadagent.formulas, .mechanical.inserts,
 # .mechanical.printed_joints and .simulation.fea cite by key.
+#
+# Schema 2 (#323): research/references/*.yaml holds shards of further records in the same id space, with their kind,
+# licence, evidence class and assessment; research/references/vocab.yaml holds their vocabularies. This file stays the
+# core of read, cited sources. research/references/README.md has the fields and the evidence ladder.
 schema: 1
 updated: 2026-11-01
 

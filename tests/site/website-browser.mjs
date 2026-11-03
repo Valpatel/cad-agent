@@ -25,8 +25,10 @@ const base = await new Promise((ok, fail) => {
 });
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
+// A reference area page (#323): the one route with the records' charts, table and filters.
+const REFS = '/references/fasteners-and-hardware';
 const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
-  '/lessons/mechanical/design-rules', '/kit/file-viewer', '/missing-page'];
+  '/lessons/mechanical/design-rules', REFS, '/kit/file-viewer', '/missing-page'];
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
 // The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
 const DIAGRAM_SHIFT = 0.05;
@@ -163,6 +165,7 @@ try {
           const hits = await page.$$eval('.group .card:not([hidden])', cs => cs.map(c => c.dataset.text));
           if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
         }
+        if (route === REFS) await refsProblems(page, width, seen);
         if (route === '/' && width === 1366) {   // the OS tabs switch the install command, with no script (#282)
           const shown = () => page.$$eval('.os-panel', ps => ps.filter(p => getComputedStyle(p).visibility === 'visible').map(p => p.querySelector('pre').textContent.trim()));
           if (!/install\.sh \| sh$/.test((await shown()).join())) seen.push(`the install card opens on ${await shown()}, not macOS / Linux`);
@@ -1052,9 +1055,40 @@ async function drawnDiagramProblems() {
  * behind it (4.5:1, 3:1 for large text), the page shows only the diagrams drawn for its theme, and nothing scrolls
  * sideways. Text on pictures or gradients, inside the kit's own demos and 3D viewers and in the drawings is skipped
  * here: the demos and diagrams have their own checks above. */
+/** A reference area page (#323, tools/site-references.mjs, web/references.js): the filters appear with the script,
+ * narrow the table and keep the URL; a chart bar filters; a record linked by its id shows even when the URL filters it
+ * away; and the table scrolls in its own box, so a phone never scrolls the page sideways. */
+async function refsProblems(page, width, seen) {
+  const shown = () => page.$$eval('.refs-table tbody tr', rs => rs.filter(r => !r.hidden).length);
+  const total = await page.$$eval('.refs-table tbody tr', rs => rs.length);
+  if (!(await page.locator('.refs-filters').isVisible())) return seen.push('the reference filters did not appear');
+  if (await shown() !== total) seen.push(`the table opens on ${await shown()} of ${total} rows`);
+  if (width !== 1366) {
+    const box = await page.$eval('.refs-table-wrap', el => [el.scrollWidth > el.clientWidth, getComputedStyle(el).overflowX]);
+    if (!box[0] || box[1] !== 'auto') seen.push(`at ${width}px the table does not scroll in its own box (${box})`);
+    return;
+  }
+  await page.selectOption('select[data-key="evidence"]', 'read');
+  const read = await shown();
+  if (!(read > 0 && read < total)) seen.push(`filtering on read sources shows ${read} of ${total} rows`);
+  if (!/evidence=read/.test(page.url())) seen.push(`the URL does not keep the filter: ${page.url()}`);
+  if (!new RegExp(`^${read} of ${total} records$`).test(await page.textContent('.refs-count'))) seen.push(`the count says "${await page.textContent('.refs-count')}"`);
+  await page.fill('input[data-key="q"]', 'zzzz-nothing-matches');
+  if (await shown() !== 0) seen.push('a search that matches nothing still shows rows');
+  await page.click('.refs-clear');
+  await page.waitForFunction(n => [...document.querySelectorAll('.refs-table tbody tr')].filter(r => !r.hidden).length === n, total, { timeout: 2000 }).catch(() => seen.push('Clear does not show every row again'));
+  await page.click('.refs-chart a[data-filter="licence"]');
+  const lic = await page.$eval('select[data-key="licence"]', s => s.value);
+  if (!lic || (await shown()) >= total) seen.push(`a chart bar does not filter the table (licence "${lic}")`);
+  // A link to one catalogued record, with a filter that hides it: the record still shows.
+  const id = await page.$eval('.refs-table tbody tr[data-evidence="snippet-only"]', r => r.id);
+  await page.goto(`${page.url().split('?')[0].split('#')[0]}?evidence=read#${id}`, { waitUntil: 'networkidle' });
+  if (await page.$eval(`[id="${id}"]`, r => r.hidden)) seen.push(`#${id} is hidden by the URL's filter`);
+}
+
 async function themeProblems() {
   const out = [];
-  const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', '/missing-page'];
+  const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', REFS, '/missing-page'];
   // Every visible text run's contrast against the colour behind it: the first opaque background up its ancestors,
   // with the translucent ones (and each stop of a gradient) on the way composited over it; skipped where a picture is
   // behind. Colours are resolved by the browser itself (a 1 px canvas), so oklab() and color-mix() read right. Inputs'

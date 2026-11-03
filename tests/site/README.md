@@ -28,12 +28,13 @@ flowchart TD
 | `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |
-| `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them |
+| `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |
 | `website-build.test.mjs` | `tools/build-site.mjs`: what the build makes, links, redirects and headers |
 | `website-catalog-browser.mjs` | The catalogue page in a real browser |
 | `website-catalog.test.mjs` | The catalogue and its JSON files, built from HEAD |
 | `website-diagrams.test.mjs` | `tools/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
+| `website-references.test.mjs` | `tools/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/experts.md` current |
 | `website-pages.test.mjs` | `tools/site-pages.mjs`: outputs placed on pages, section cards, folded reference |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |
 | `website-theme.test.mjs` | The light and dark colour tokens: the same tokens in both, contrast in both, no stray light-only colour, and the theme script and button on every page |

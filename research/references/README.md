@@ -97,6 +97,21 @@ flowchart LR
 `python -m cadagent.review.references --check` runs all of these, and `tests/review/test_references.py` plants one
 mistake of each kind.
 
+## On the site
+
+`tools/site-references.mjs` publishes the records with the site build:
+
+- `/references` charts every area;
+- `/references/<area>` has charts by evidence, confidence, kind, licence and process, a table you can filter, and the
+  coverage rows; each has a `.md` twin;
+- `catalog/references/index.json` and `<area>.json` hold the same records for agents;
+- `[ref:<id>]` in any page links to the record's row and to the source;
+- `docs/experts.md` is generated from the read sources.
+
+After changing a record, run `node tools/site-references.mjs --experts` and commit `docs/experts.md`
+(`tests/site/website-references.test.mjs` fails until it is current). A record whose `areas` match no slug is listed on
+`/references/unplaced`. That count may only fall.
+
 ## Related
 
 - [`research/references.yaml`](../references.yaml): the core registry and its field notes.

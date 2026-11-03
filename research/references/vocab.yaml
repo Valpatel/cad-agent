@@ -121,7 +121,7 @@ evidence_class:
 numbers:
   none: No numbers
   some: Some numbers
-  claimed: Numbers stated, not measured
+  claimed: "Authors' claim: numbers stated, not measured"
   measured: Measured, with a method
   unknown: Unknown
 
@@ -242,6 +242,14 @@ answer:
   sense: Sensing and feedback
   iface: Command interface
   files: Design files shipped
+
+# ---------------------------------------------------------------- coverage (coverage.yaml)
+
+# What cad-agent enforces for a topic, per the map's coverage table.
+coverage_status:
+  implemented: Implemented
+  partly: Partly
+  missing: Missing
 
 # ---------------------------------------------------------------- pointers
 

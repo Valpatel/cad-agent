@@ -26,7 +26,7 @@ def test_committed_coupon_figure_matches_the_cad():
 
 def test_every_figure_is_on_the_page_and_themed():
     page = (ROOT / "docs" / "inserts.md").read_text()
-    for name in ("section", "clamp-paths", "limiters", "calibration", "coupons"):
+    for name in ("section", "clamp-paths", "limiters", "calibration", "coupons", "washers", "fix-ladder"):
         svg = (ROOT / "docs" / "img" / "inserts" / f"{name}.svg").read_text()
         assert f"img/inserts/{name}.svg" in page
         assert "prefers-color-scheme:dark" in svg and "<title" in svg
@@ -44,6 +44,33 @@ def test_the_pages_numbers_are_what_the_module_computes():
     assert f"low {pull['low']:.0f}, mid {pull['mid']:.0f}, high {pull['high']:.0f} N" in page
     bracket = I.check_clamp("M4", "pla-bambu-basic", 6.0, head_mm=7.0, clearance_mm=4.5)
     assert f"at most {bracket['torque']['allowed_nm']:.2f} N m (head bearing)" in page
+    # the fix lines the CLI prints for both, and the Python line's fix
+    for joint in (lid, bracket):
+        o = joint["fixes"]["options"][[x["fix"] for x in joint["fixes"]["options"]].index("washer")]
+        assert (f"fix: {o['what']}: at most {o['allowed_nm']:.2f} N m, {o['preload_n']:.0f} N preload "
+                f"({o['governed_by'].replace('_', ' ')})") in page
+    assert f"'{lid['fixes']['fix']['what'][:30]}...', {lid['fixes']['fix']['allowed_nm']:.2f}" in page
+    # the issue's lid (#292): the ladder's options are in fix-ladder.svg, drawn from the module (--check above); the
+    # prose names the washer's numbers
+    flat = " ".join(page.split())
+    issue = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=8, clamped={"thickness_mm": 3.0})
+    opts = issue["fixes"]["options"]
+    assert opts[0]["why"] == "no listed M3 head bears wider than 5.07 mm"
+    assert [o["named"] for o in opts[3:]] == [False, False] and issue["fixes"]["fix"] is opts[1]
+    ladder = (ROOT / "docs" / "img" / "inserts" / "fix-ladder.svg").read_text()
+    for o in opts[1:3]:
+        assert f"{o['preload_n']:.0f} N, {o['allowed_nm']:.2f} N·m" in ladder
+    wf = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=8, clamped={"thickness_mm": 3.0},
+                       insert_washer="iso7089", head_washer="iso7089")["clamped_on_washer"]
+    ring = issue["torque"]["preload_caps_n"]["clamped_on_insert"] / (I.bearing_strength("pla-bambu-basic") / I.MARGIN)
+    assert f"bears on {wf['area_mm2']:.1f} mm² against the bare ring's {ring * 1e6:.1f} mm²" in flat
+    assert f"Only {wf['washer']['bearing_overhang_mm']:.2f} of its {wf['washer']['overhang_mm']:.2f} mm overhang" in flat
+    m5 = I.check_joint("mcmaster-94459A775", "petg-bambu-basic", boss_outside_mm=15,
+                       clamped={"thickness_mm": 3.8, "tolerance_mm": 0.05, "outside_mm": 20})["fixes"]
+    by = {o["fix"]: o for o in m5["options"]}
+    assert f"from {m5['preload_n']:.0f} N to {by['washer']['preload_n']:.0f} N (ISO 7089)" in flat
+    assert f"{by['large washer']['preload_n']:.0f} N (ISO 7093-1)" in flat
+    assert f"{m5['lasting']['preload_n']:.0f} N at {m5['lasting']['allowed_nm']:.2f} N·m" in flat
     flush = I.check_joint(**m3, clamped={"material": "metal"})
     sunk = I.check_joint(**m3, recess_mm=0.2, clamped={"material": "metal"})
     assert f"**{flush['torque']['allowed_nm']:.2f} N·m**, set by the insert's end face" in page
@@ -73,7 +100,7 @@ def test_the_pages_numbers_are_what_the_module_computes():
         strain = I.bearing_strength(mat) / (I.PRINTED[mat].secant_upper_bound("across") * 1e6)
         assert f"**{strain * 100:.1f} %**" in page
     # the alt text of each figure is its title
-    for name in ("section", "clamp-paths", "limiters", "calibration", "coupons"):
+    for name in ("section", "clamp-paths", "limiters", "calibration", "coupons", "washers", "fix-ladder"):
         svg = (ROOT / "docs" / "img" / "inserts" / f"{name}.svg").read_text()
         title = re.search(r"<title[^>]*>([^<]*)", svg)[1]
         assert f'alt="{title}"' in page, name

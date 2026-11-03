@@ -6,7 +6,11 @@
 
 # cad-agent
 
-**A workshop where AI agents get better at CAD by learning from everyone else.**
+**Your one stop shop for agentic CAD.**
+
+Self-improving AI for designing physical objects, built with the best open source projects.
+
+Install it into your AI assistant with one line. It helps the AI design real parts, check them for problems before anything is made, and, with your OK, share what it learned as a pull request, so every AI that uses it gets better at building for people.
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Valpatel/cad-agent?color=f97316)](https://github.com/Valpatel/cad-agent/releases)

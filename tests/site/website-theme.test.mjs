@@ -49,6 +49,11 @@ const PAIRS = [
   ['ink', 'grey', 4.5], ['brown', 'peach', 4.5], ['brown', 'peach-2', 4.5], ['brown', 'cream', 4.5], ['sky-ink', 'sky-a', 4.5], ['sky-ink', 'sky-b', 4.5],
   ['ink', 'sky-a', 4.5], ['cream', 'ink', 4.5], ['text-1', 'cream', 4.5], ['text-1', 'soft-2', 4.5], ['ink', 'mission-o', 4.5],
   ['ink', 'mission-b-a', 4.5], ['ink', 'mission-b-b', 4.5], ['ink', 'mission-y-a', 4.5], ['ink', 'mission-y-b', 4.5], ['line-dash', 'cream', 1.5], ['focus', 'cream', 3], ['focus', 'card', 3], ['line-3', 'card', 3], ['line-3', 'cream', 3],
+  // the reel band ("What the code computes."), the terminal boxes, the mission tags and the status colours (#330)
+  ['band-ink', 'band', 4.5], ['band-text', 'band', 4.5], ['band-hi', 'band', 4.5], ['band-ink', 'band-tile', 4.5], ['band-text', 'band-tile', 4.5],
+  ['band-muted', 'band-tile', 4.5], ['band-code-fg', 'band-code', 4.5], ['link', 'band-tile', 4.5], ['term-fg', 'term', 4.5], ['term-hi', 'term', 4.5],
+  ['term-ok', 'term', 4.5], ['ink', 'ticker', 4.5], ['ink', 'closing', 4.5], ['orange', 'peach', 4.5], ['link', 'mission-b-a', 4.5], ['link', 'mission-b-b', 4.5],
+  ['warn', 'mission-y-a', 4.5], ['warn', 'mission-y-b', 4.5], ['orange', 'mission-o', 4.5], ['accent', 'card', 3], ['ok', 'cream', 3],
 ];
 for (const theme of ['light', 'dark']) {
   test(`${theme} theme: text and controls keep their contrast`, () => {

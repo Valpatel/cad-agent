@@ -45,6 +45,21 @@ def test_stl_extras_offset_category_hidden_and_skipped(tmp_path):
     assert np.allclose(_read_stl(tmp_path / 'exports/view/board.stl').reshape(-1, 3).min(axis=0), [15, 15, 20])
 
 
+def test_step_bounds_are_the_exact_geometry_not_the_mesh(tmp_path):
+    """A coarse mesh's box is larger than the part; bounds_mm is the part's (every solid in the file)."""
+    cq = pytest.importorskip('cadquery')
+    cq.exporters.export(cq.Workplane().cylinder(10, 20), str(tmp_path / 'can.step'))
+    cq.exporters.export(cq.Workplane().newObject([*cq.Workplane().cylinder(10, 20).vals(),
+                                                 *cq.Workplane().box(4, 4, 4).translate((60, 0, 0)).vals()]),
+                        str(tmp_path / 'two.step'))
+    export_view(project(tmp_path, {'parts': False, 'extra': [{'glob': '*.step'}]}), tolerance=0.8, angular=0.8)
+    parts = {p['name']: p for p in json.loads((tmp_path / 'exports/view/view.json').read_text())['parts']}
+    assert np.allclose(parts['can']['bounds_mm'], [-20, -20, -5, 20, 20, 5], atol=0.01)
+    assert np.allclose(parts['two']['bounds_mm'], [-20, -20, -5, 62, 20, 5], atol=0.01)
+    mesh = _read_stl(tmp_path / 'exports/view/can.stl').reshape(-1, 3)
+    assert (mesh.max(axis=0) <= np.array([20, 20, 5]) + 0.01).all()
+
+
 def test_duplicate_names_rejected_before_writing(tmp_path):
     from cadagent.project import CadConfigError
     tetra(tmp_path / 'a.stl')

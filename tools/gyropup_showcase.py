@@ -39,10 +39,11 @@ sys.path.insert(0, str(ROOT / "src"))
 
 MODELS = ROOT / "web" / "models"
 PICTURES = ROOT / "docs" / "img" / "gyropup"
-# 0.8 mm chord and 0.8 rad (46 degrees) per facet: about 112k triangles and 375 KB for the robot's 33 visible groups,
-# against 232k and 620 KB at 0.3 mm / 0.5 rad. At the home page's size a millimetre is about a pixel, so the coarser
-# chord does not show; most triangles are holes and gear teeth, which any tolerance keeps. The kit's creased normals
-# keep curved faces reading round.
+# 0.8 mm chord and 0.8 rad (46 degrees) per facet, with FINE_PARTS finer: 118,300 triangles and 391,703 bytes for
+# the robot's 33 visible groups (b79896a), against 232k triangles and 620 KB at 0.3 mm / 0.5 rad. That is 17.9 KB
+# under tests/webkit/webkit-model.test.mjs's 400 KiB: an export that grows needs a coarser setting or fewer parts.
+# At the home page's size a millimetre is about a pixel, so the coarser chord does not show; most triangles are holes
+# and gear teeth, which any tolerance keeps. The kit's creased normals keep curved faces reading round.
 TOLERANCE_MM, ANGULAR_RAD = 0.8, 0.8
 # Groups of Gyropup's view (its tools/robot_view.py) left out of the web copy: what sits inside the shell (the frame's
 # inner plates, the compute and power electronics, the bus bars) and the fasteners, bearings and pins (body, legs,
@@ -84,10 +85,17 @@ def model(checkout: Path, revision: str, committed: str) -> dict:
         if missing:
             raise SystemExit(f"WEB_SKIP names groups the view does not have: {missing}")
         manifest["parts"] = [p for p in manifest["parts"] if p["name"] not in WEB_SKIP]
+        missing = sorted(set(FINE_PARTS) - {p["name"] for p in manifest["parts"]})
+        if missing:
+            raise SystemExit(f"FINE_PARTS names groups the view does not have: {missing}")
         import cadquery as cq
         for p in manifest["parts"]:
             if p["name"] in FINE_PARTS:
-                shape = cq.importers.importStep(str(checkout / "exports" / "robot" / f"{p['name']}.step"))
+                # the group's own STEP, as Gyropup's cad.view.extra glob names it; no offset, since that view sets none
+                step = checkout / "exports" / "robot" / f"{p['name']}.step"
+                if not step.is_file():
+                    raise SystemExit(f"{step}: FINE_PARTS expects Gyropup's robot view (tools/robot_view.py) there")
+                shape = cq.importers.importStep(str(step))
                 cq.exporters.export(shape, str(Path(tmp) / p["file"]), tolerance=FINE[0], angularTolerance=FINE[1],
                                     opt={"ascii": False})
         (Path(tmp) / "view.json").write_text(json.dumps(manifest, indent=1) + "\n")

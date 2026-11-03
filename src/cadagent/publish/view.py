@@ -176,11 +176,11 @@ def export_view(project, tolerance: float = 0.1, angular: float = 0.2, out: Opti
             shape = cq.importers.importStep(str(source))
             if offset:
                 shape = shape.translate(cq.Vector(*offset))
-            # the solid's box before meshing: once triangulated, OpenCascade's box grows by the mesh's deflection
-            # (1.4 mm at a 0.8 mm chord), which is the mesh's looseness, not the part's size
-            bb = shape.val().BoundingBox() if hasattr(shape, "val") else shape.BoundingBox()
+            # the box of the exact geometry, every shape in the file: a box read from a triangulation grows by the
+            # mesh's deflection (1.4 mm at a 0.8 mm chord), which is the mesh's looseness, not the part's size
+            from cadagent.review.gates.relations import bounding_box
+            bounds = bounding_box(cq.Compound.makeCompound([v for v in shape.vals() if isinstance(v, cq.Shape)]))
             cq.exporters.export(shape, str(stl), tolerance=tolerance, angularTolerance=angular, opt={"ascii": False})
-            bounds = (bb.xmin, bb.ymin, bb.zmin, bb.xmax, bb.ymax, bb.zmax)
         part = {
             "name": name, "id": project.part_ids.get(name, ""), "file": stl.name,
             "color": color or colour_for(name, i),

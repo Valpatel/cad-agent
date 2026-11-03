@@ -20,6 +20,8 @@ const root = path.resolve(import.meta.dirname, '..');
 const SIZE = 1200;
 const MODELS = ['gyropup'];
 const BANNER = { file: 'docs/img/gyropup.jpg', model: 'gyropup', width: 1600, height: 733, quality: 86 };
+// The card's words are the project's own: Gyropup's README and gyropup.com (two five-bar legs on four RS-04s, the
+// foam-ball turret, its print materials). Change them here when the project changes them.
 const BANNER_HTML = `<!doctype html><meta charset="utf-8"><style>
 @font-face{font-family:Inter;src:url(/kit/vendor/fonts/inter.woff2) format('woff2');font-weight:100 900}
 @font-face{font-family:'JetBrains Mono';src:url(/kit/vendor/fonts/jetbrains-mono.woff2) format('woff2');font-weight:100 800}
@@ -80,7 +82,8 @@ try {
     img.src = url;
     await img.decode();
     await document.fonts.ready;
-    if (![...document.fonts].some(f => f.family === 'Inter' && f.status === 'loaded')) throw new Error('Inter did not load');
+    for (const family of ['Inter', 'JetBrains Mono'])
+      if (![...document.fonts].some(f => f.family.replace(/"/g, '') === family && f.status === 'loaded')) throw new Error(`${family} did not load`);
   }, posters[BANNER.model]);
   const jpg = await card.screenshot({ type: 'jpeg', quality: BANNER.quality });
   await writeFile(path.join(root, BANNER.file), jpg);
@@ -90,7 +93,7 @@ try {
                   model: `web/models/${BANNER.model}.json`, revision: model.source.revision, width: BANNER.width, height: BANNER.height };
   // Spliced into the text tools/gyropup_showcase.py wrote, so its numbers keep Python's spelling (2.0 stays 2.0).
   const text = (await readFile(recordFile, 'utf8')).replace(/,\n "banner": \{[^}]*\}\n\}\n?$/, '\n}\n');
-  if (!text.endsWith('\n}\n')) throw new Error(`${recordFile}: not the layout tools/gyropup_showcase.py writes`);
+  if (!text.endsWith('\n}\n') || 'banner' in JSON.parse(text)) throw new Error(`${recordFile}: not the layout tools/gyropup_showcase.py writes (banner last)`);
   const spliced = text.slice(0, -3) + ',\n "banner": ' + JSON.stringify(banner, null, 1).replace(/\n/g, '\n ') + '\n}\n';
   JSON.parse(spliced);
   await writeFile(recordFile, spliced);

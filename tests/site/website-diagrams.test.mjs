@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { drawDiagrams, forDrawing, unescapeHtml } from '../../tools/site-diagrams.mjs';
+import { drawDiagrams, forDrawing, PALETTES, themePalette, unescapeHtml } from '../../tools/site-diagrams.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-site-diagrams-'));
@@ -131,6 +131,19 @@ test('a gantt chart is drawn without the build day\'s "today" line, and shows it
   assert.equal(forDrawing('---\nconfig:\n  gantt:\n    barHeight: 20\n---\n%% plan\ngantt\n    todayMarker on\n    A :a1, 2026-01-01, 1d\n'),
     '---\nconfig:\n  gantt:\n    barHeight: 20\n---\n%% plan\ngantt\n    todayMarker off\n    A :a1, 2026-01-01, 1d\n');
   for (const other of [FLOW, 'flowchart LR\n    gantt --> B\n']) assert.equal(forDrawing(other), other);
+});
+
+test('the style guide palette is drawn in each theme: tokens for fills and text, the cyan hairline for dark strokes', () => {
+  const src = 'flowchart LR\n    A["#fffdf5 in a label"] --> B\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c,stroke-width:2px\n' +
+    '    style B fill:#ffe1cc,stroke:#bd3a12\n    linkStyle 0 stroke:#173d3c\n    classDef other fill:#123456\n';
+  assert.equal(themePalette(src, 'light'), 'flowchart LR\n    A["#fffdf5 in a label"] --> B\n    classDef here fill:#ffffff,stroke:#1d2350,color:#1d2350,stroke-width:2px\n' +
+    '    style B fill:#ffe4d6,stroke:#b43c0b\n    linkStyle 0 stroke:#173d3c\n    classDef other fill:#123456\n');
+  assert.equal(themePalette(src, 'dark'), 'flowchart LR\n    A["#fffdf5 in a label"] --> B\n    classDef here fill:#0e0e14,stroke:#00d8e8,color:#eef2f8,stroke-width:2px\n' +
+    '    style B fill:#211521,stroke:#ff8a4c\n    linkStyle 0 stroke:#173d3c\n    classDef other fill:#123456\n');
+  // a chart's plot colours in %%{init}, and the two themes name the same palette colours
+  assert.equal(themePalette('%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#bd3a12, #6f8a80"}}}}%%\nxychart-beta\n', 'dark'),
+    '%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#ff8a4c, #98a2b5"}}}}%%\nxychart-beta\n');
+  assert.deepEqual(Object.keys(PALETTES.light).sort(), Object.keys(PALETTES.dark).sort());
 });
 
 test('HTML text comes back as the browser reads it', () => {

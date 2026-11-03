@@ -9,6 +9,9 @@
 # Read it with cadagent.review.references (lookup, citation, check), or from a shell:
 #   python -m cadagent.review.references covestro        # one citation
 #   python -m cadagent.review.references --check         # the registry and every place the code cites it
+#   node tools/site-references.mjs --experts             # after any change here or in research/references/:
+#                                                        # rewrites docs/experts.md (commit it; on a merge conflict
+#                                                        # in it, run this again instead of merging by hand)
 #
 # Fields of a source
 #   id        stable kebab-case key

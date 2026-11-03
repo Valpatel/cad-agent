@@ -20,6 +20,7 @@ import { buildCatalog } from './site-catalog.mjs';            // the catalogue p
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
+import { loadReferences, referenceModel, referenceSite, linkTags, mdTags } from './site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -50,7 +51,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'package.json', 'package-lock.json'];
+  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'tools/site-references.mjs', 'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -167,6 +168,11 @@ for (const [from, to] of moved) {
   if (listed[1] !== to) throw new Error(`${from} moved to ${to}: change its line in tools/site-redirects.txt (it says ${listed[1]})`);
 }
 
+// ----------------------------------------------------------------------------- references
+// The reference registry (research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
+// tags in every page as links to the record (tools/site-references.mjs). Records are not catalogue entries.
+const refModel = referenceModel(await loadReferences({ files: tracked, read }), YAML.parse(await read('docs/areas.yaml')));
+
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('research/landscape.json'));
 const upstreams = YAML.parse(await read('upstreams/registry.yaml')) || [];
@@ -179,7 +185,7 @@ if (commands.length !== parserCount) throw new Error(`read ${commands.length} of
 
 // ----------------------------------------------------------------------------- HTML frame
 const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
-  ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
+  ['/references', 'References'], ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
 const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
 const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="Feedback"><div><p class="feedback-title">Help us improve!</p>
@@ -248,6 +254,8 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
       : `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
+// A Markdown copy with its [ref:<id>] tags as links to the records' pages (relative, or absolute for llms-full.txt).
+const twinMd = (file, md, absolute = false) => mdTags(rewriteMd(file, md, absolute), file, refModel, { ORIGIN, absolute });
 // Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
 // the build and kept from growing by tests/site/website-build.test.mjs.
 // What counts as something to look at in a doc page's sanitized HTML (the sanitizer drops inline <svg>, <video> and
@@ -306,6 +314,7 @@ for (const p of pages) {
     const alt = m.match(/\balt="([^"]*)"/)?.[1];
     return alt ? `<span class="badge">${alt}</span>` : '';
   });
+  html = linkTags(html, refModel);                    // [ref:<id>] → the record's row and the source
   html = html.replace(/<table>/g, '<div class="table-scroll"><table>').replace(/<\/table>/g, '</table></div>');
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
@@ -330,11 +339,11 @@ for (const p of pages) {
   }).join('');
   const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></details></cad-nav>`;
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css'] })]);
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
-  await writeFile(path.join(out, p.file), rewriteMd(p.file, p.src));   // the Markdown twin, same path
+  await writeFile(path.join(out, p.file), twinMd(p.file, p.src));   // the Markdown twin, same path
 }
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
@@ -365,6 +374,19 @@ const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)READM
 await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
   description: `${catalog.items.length} open-source projects, libraries, benchmarks, demos, tools, guides and lessons for agentic CAD, by area of hardware design.`,
   css: ['/kit/gallery.css', '/web/catalog.css'] }));
+
+// The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
+const refSite = referenceSite(refModel, { ORIGIN, revision, built: committed, feedbackBox });
+for (const [f, text] of refSite.files) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
+// They change with the registry and the topic tree: their last commit (null in a draft with either changed).
+const REF_SOURCES = ['research/references.yaml', 'research/references', 'docs/areas.yaml'];
+const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCES) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', ...REF_SOURCES) || committed;
+for (const p of refSite.pages) {
+  await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
+  await writeFile(path.join(out, p.file), frame({ title: p.title, body: p.body, md: '/' + p.md, description: p.description, current: p.url,
+    page: 'references', css: ['/web/references.css'], updated: refsUpdated }));
+  await writeFile(path.join(out, p.md), p.markdown);
+}
 
 // Cards on the landing page.
 const STATUS_NOTE = { ours: 'built here', adopted: 'adopted', trial: 'in trial', candidate: 'candidate', rejected: 'rejected', used: 'used', reference: 'tracked', unverified: 'unverified' };
@@ -575,6 +597,8 @@ ${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}]
 ## Commands
 
 ${commands.map(c => `- \`cad-agent ${c.name}\`: ${c.help}`).join('\n')}
+
+${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
 // The home page's twin: llms.txt, then what the page shows beside it (the reel and where cad-agent fits), in words.
@@ -597,7 +621,7 @@ cad-agent checks, simulates, explains and measures around it (maturity: ${LADDER
 ${homeMd.ours.join('\n')}
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
-  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${p.file}\n\n${rewriteMd(p.file, p.body, true).trim()}\n`).join(''));
+  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${p.file}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule
 // only: security headers on /*, Cache-Control only on /kit/vendor/* (everything else keeps the Pages default, which
 // revalidates). The site's own pages have no inline script; the kit's viewer pages have an import map and a module
@@ -639,7 +663,7 @@ await writeFile(path.join(out, '_headers'), [
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-  ['/', '/catalog', ...pages.map(p => pageURL(p.file))].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
+  ['/', '/catalog', ...pages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, items: catalog.items.length }, null, 2) + '\n');
 // For agents and the tests: which pages still have nothing to look at.

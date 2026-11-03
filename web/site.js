@@ -15,6 +15,8 @@ const gallery = document.querySelector('cad-gallery');
 if (gallery) import('/kit/gallery.js').catch(() => {}).finally(() => {
   if (!gallery.hasAttribute('data-ready')) gallery.setAttribute('data-failed', '');
 });
+// The reference pages' filters (/references/<area>): the table shows every row without it.
+if (document.querySelector('.refs-filters')) import('/web/references.js').catch(() => {});
 // Header gets its rule once the page scrolls.
 const header = document.querySelector('.site-header');
 if (header) { const f = () => header.classList.toggle('scrolled', scrollY > 8); addEventListener('scroll', f, { passive: true }); f(); }

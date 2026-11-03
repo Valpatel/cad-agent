@@ -62,7 +62,9 @@ import yaml
 ROOT = Path(__file__).resolve().parents[3]
 REGISTRY = ROOT / "research" / "references.yaml"
 PROCESS_PROFILES = ROOT / "research" / "process-profiles.yaml"
-VOCAB = "vocab.yaml"                  # in the shard folder; every other *.yaml there is a shard
+VOCAB = "vocab.yaml"                  # in the shard folder: the vocabularies
+COVERAGE = "coverage.yaml"            # in the shard folder: what cad-agent enforces per topic, and the gaps (#323)
+NOT_SHARDS = (VOCAB, COVERAGE)        # every other *.yaml there is a shard
 
 ACCESS = ("free", "free-registration", "paid", "print")
 UNCITED_KINDS = ("general", "judgement", "internal")
@@ -96,7 +98,7 @@ VOCAB_FIELDS = {("kind",): "kind", ("category",): "category", ("licence", "class
                 ("assessment", "assessed", "from"): "assessed_from", ("archive", "kind"): "archive_kind"}
 LIST_FIELDS = {"processes": "process", "process_groups": "process_group", "domains": "domain"}
 VOCABULARIES = tuple(sorted({*VOCAB_FIELDS.values(), *LIST_FIELDS.values(), "claim_status", "answer", "confidence",
-                             "study_only"}))
+                             "study_only", "coverage_status"}))
 CHECK_NAME = re.compile(r"[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+")   # inserts.check_joint
 SHA256 = re.compile(r"[0-9a-f]{64}")
 # What `terms` must say: that the source is cited and not copied or passed on, or that its open licence lets it be
@@ -209,11 +211,13 @@ class Registry:
     their vocabularies (``research/references/vocab.yaml``). One id space covers them all."""
 
     def __init__(self, data: Dict[str, Any], path: Optional[Path] = None, shards: Sequence[Shard] = (),
-                 vocab: Optional[Dict[str, Any]] = None, core_file: str = "research/references.yaml"):
+                 vocab: Optional[Dict[str, Any]] = None, core_file: str = "research/references.yaml",
+                 coverage: Optional[Dict[str, Any]] = None):
         self.data = data
         self.path = path
         self.shards = list(shards)
         self.vocab = vocab
+        self.coverage = coverage
         self.core_file = core_file
         self.entries: Dict[str, Reference] = {}
         self.aliases: Dict[str, str] = {}
@@ -320,6 +324,7 @@ class Registry:
         out += shard_problems(self.shards)
         ctx = _Schema2(self, Path(root))
         out += ctx.vocab_problems()
+        out += ctx.coverage_problems()
         for ref in self.entries.values():
             out += [f"{ref.id}: {p}" for p in _entry_problems(ref, self, root, today)]
         for shard in self.shards:
@@ -440,6 +445,54 @@ class _Schema2:
                 out.append(f"{VOCAB}: process {slug} names no process_group")
         return out
 
+    def coverage_problems(self) -> List[str]:
+        """``coverage.yaml``: the map's coverage rows (topic, status, areas, where, gap, an unposted draft issue) and
+        the sources still wanted per process group."""
+        cov = self.reg.coverage
+        if cov is None:
+            return []
+        where = COVERAGE
+        if not isinstance(cov, dict) or cov.get("schema") != 2 or not isinstance(cov.get("rows"), list):
+            return [f"{where}: needs `schema: 2` and a `rows:` list"]
+        out, seen = [], set()
+        for i, row in enumerate(cov["rows"]):
+            if not isinstance(row, dict):
+                out.append(f"{where}: rows[{i}] is not a mapping")
+                continue
+            rid = row.get("id")
+            if not (isinstance(rid, str) and KEY.fullmatch(rid)) or rid in seen:
+                out.append(f"{where}: rows[{i}] needs a unique kebab-case id, not {rid!r}")
+            seen.add(rid)
+            for name in ("topic", "where", "gap"):
+                if not str(row.get(name) or "").strip():
+                    out.append(f"{where}: {rid}: no {name}")
+            out += [f"{where}: {rid}: {p}" for p in self._in("coverage_status", row.get("status"), "status")]
+            out += [f"{where}: {rid}: {p}" for p in self._areas(row.get("areas"))]
+            draft = row.get("draft_issue")
+            if draft is not None and not (isinstance(draft, dict) and str(draft.get("title") or "").strip()
+                                          and (draft.get("posted") is False or (isinstance(draft.get("posted"), int)
+                                                                                 and not isinstance(draft.get("posted"),
+                                                                                                    bool)))):
+                out.append(f"{where}: {rid}: draft_issue needs a title and `posted: false` (or the issue number)")
+        for i, gap in enumerate(cov.get("wanted") or []):
+            if not isinstance(gap, dict) or not str(gap.get("text") or "").strip():
+                out.append(f"{where}: wanted[{i}] needs text")
+                continue
+            out += [f"{where}: wanted {gap.get('group')}: {p}"
+                    for p in self._in("process_group", gap.get("group"), "group") + self._areas(gap.get("areas"))]
+        return out
+
+    def _areas(self, areas: Any) -> List[str]:
+        if not isinstance(areas, list) or not areas:
+            return ["areas must be a non-empty list of docs/areas.yaml slugs"]
+        out = []
+        for a in areas:
+            if not (isinstance(a, str) and area_of(a, self.tree)):
+                near = difflib.get_close_matches(str(a), list(self.tree["areas"]) + list(self.tree["topics"]), n=1)
+                out.append(f"area {a!r} is not an area or topic slug of docs/areas.yaml"
+                           + (f" (did you mean {near[0]!r}?)" if near else ""))
+        return out
+
     def _in(self, name: str, value: Any, field_name: str) -> List[str]:
         words = self.words(name)
         if isinstance(value, bool):          # YAML 1.1 reads an unquoted yes/no/on/off as a boolean
@@ -498,12 +551,8 @@ class _Schema2:
             areas = d.get("areas") or []
             if not isinstance(areas, list):
                 out.append("areas must be a list")
-            else:
-                for a in areas:
-                    if not (isinstance(a, str) and area_of(a, self.tree)):
-                        near = difflib.get_close_matches(str(a), list(self.tree["areas"]) + list(self.tree["topics"]), n=1)
-                        out.append(f"area {a!r} is not an area or topic slug of docs/areas.yaml"
-                                   + (f" (did you mean {near[0]!r}?)" if near else ""))
+            elif areas:
+                out += self._areas(areas)
         out += self._licence_problems(d)
         out += self._claims_problems(d)
         out += self._assessment_problems(d)
@@ -794,7 +843,7 @@ def load(path: Optional[Path] = None) -> Registry:
     if not path.is_file():
         raise FileNotFoundError(f"{path}: the reference registry is read from a cad-agent checkout "
                                 "(research/references.yaml); pass path= for another copy")
-    folder, shards, vocab = shard_folder(path), [], None
+    folder, shards, vocab, coverage = shard_folder(path), [], None, None
     top = path.parent.parent                       # the checkout root, for repo-relative file names
     rel = lambda p: p.relative_to(top).as_posix() if top in p.parents else p.name   # noqa: E731
     if folder.is_dir():
@@ -803,9 +852,11 @@ def load(path: Optional[Path] = None) -> Registry:
             data = _yaml(raw.decode("utf-8"))
             if f.name == VOCAB:
                 vocab = data if data is not None else {}
+            elif f.name == COVERAGE:
+                coverage = data if data is not None else {}
             else:
                 shards.append(Shard(rel(f), data if data is not None else {}, len(raw)))
-    return Registry(_yaml(path.read_text(encoding="utf-8")) or {}, path, shards, vocab, rel(path))
+    return Registry(_yaml(path.read_text(encoding="utf-8")) or {}, path, shards, vocab, rel(path), coverage)
 
 
 def lookup(key: str, path: Optional[Path] = None) -> Reference:

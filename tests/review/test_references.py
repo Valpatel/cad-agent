@@ -3,6 +3,7 @@ resolves, every file that cites an entry is in its used_for, and no source is ve
 
 The checks run on the real registry and code, and on a planted checkout (tmp_path) with one mistake of each kind, so
 each rule is shown to catch what it is for."""
+import re
 import subprocess
 import textwrap
 from pathlib import Path
@@ -598,3 +599,39 @@ def test_a_stored_confidence_must_equal_the_derived_one(tmp_path):
     typed = {**GUIDE, "confidence": {"level": "high", "estimate": 0.9, "sources": 1}}
     problems = _problems(_planted2(tmp_path / "b", {"guides-inserts": _shard([typed])}))
     assert any("is not the derived {'level': 'low', 'estimate': 0.4, 'sources': 1}" in p for p in problems), problems
+
+
+# ----------------------------------------------------------------------------- the imported map (#323 phase 2)
+
+def test_the_imported_records_are_catalogued_and_project_neutral(registry):
+    """The map's 546 new records and 21 extensions (tools/import_refmap.py) load as one registry with the core. A
+    record leaves `snippet-only` only by being read and promoted by hand, and a record is promoted, never dropped, so
+    the count of shard records only grows. Nothing in the shards names a project of docs/areas.yaml or judges a record
+    against one project's target."""
+    own = [r for s in registry.shards for r in s.records if not r.get("extends")]
+    ext = [r for s in registry.shards for r in s.records if r.get("extends")]
+    assert len(own) >= 546 and len(ext) >= 21
+    for rec in own:
+        if rec["evidence"]["class"] == "snippet-only":
+            assert rec["used_for"] == [] and registry.resolve(rec["id"]).kind == "catalogued", rec["id"]
+        if rec["licence"]["read"] is False:
+            assert rec["reuse"].get("geometry") != "copy", rec["id"]
+    tree = yaml.safe_load((ROOT / "docs" / "areas.yaml").read_text())
+    banned = [k for k in tree["projects"]] + [p["title"].lower() for p in tree["projects"].values()] + [
+        "rs-04", "off-target", "our robot", "our own tests"]
+    hidden = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")    # bidi and zero-width controls
+    banned += ["not wheel-legged", "relevance to the robot", "seed for this map"]
+    for file in [s.file for s in registry.shards] + [f"research/references/{refs.COVERAGE}"]:
+        shard = refs.Shard(file, {})
+        text = (ROOT / shard.file).read_text(encoding="utf-8").lower()
+        assert not [b for b in banned if b in text], shard.file
+        assert not hidden.search(text), f"{shard.file}: a bidi or zero-width control character in imported text"
+
+
+def test_the_coverage_rows_keep_their_drafts_unposted(registry):
+    rows = registry.coverage["rows"]
+    assert len(rows) == 16 and len({r["id"] for r in rows}) == 16
+    drafts = [r["draft_issue"] for r in rows if "draft_issue" in r]
+    assert drafts and all(d["posted"] is False or (isinstance(d["posted"], int) and not isinstance(d["posted"], bool))
+                          for d in drafts)
+    assert {w["group"] for w in registry.coverage["wanted"]} == set(registry.vocab["process_group"])

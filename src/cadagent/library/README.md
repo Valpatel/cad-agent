@@ -49,7 +49,7 @@ flowchart TD
 | `parts.py` | The parts: footprint, body, the datasheet's numbers with the page each comes from, source and licence; `build()` |
 | `footprints.py` | Footprints as data and the `.kicad_mod` writer (KiCad 9 format, stable UUIDs, no pcbnew); the parametric generators |
 | `bodies.py` | CadQuery bodies in KiCad's model frame, their children named for the pads they meet (`pin<n>`, `terminal<n>`, `peg`); coloured STEP |
-| `hardware.py` | Socket and button heads (ISO 4762, 7380-1), nyloc nuts and ring lugs by size, each with its source; `register()` for other families (#283's clinch hardware) |
+| `hardware.py` | Socket and button heads (ISO 4762, 7380-1), their bearing faces and cheese heads' (ISO 14580, 1207), ISO 7089, 7090 and 7093-1 washers, nyloc nuts and ring lugs by size, each with its source; `register()` for other families (#283's clinch hardware) |
 | `audit.py` | `model_audit`: every footprint of a board or library has a model that resolves, or a waiver with its reason. `registration`: a body sits on the board, its pins pass through their pads' holes and its terminals lie over their pads |
 | `sexp.py` | Reads and writes KiCad's S-expression files (standard library only) |
 

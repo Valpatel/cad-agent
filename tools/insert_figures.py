@@ -8,7 +8,8 @@ Nothing is drawn by eye: every section is to scale from the module's own hole an
 every number on a figure is what the module computed. ``section.svg`` is a boss with a heat-set insert (hole, taper,
 overflow pocket, wall, layers); ``clamp-paths.svg`` the three ways a screw's tension reaches the insert; ``limiters.svg``
 a compression limiter proud, flush and short of the plastic it passes through; ``calibration.svg`` the published tests
-against the shear model fitted to them. Static SVG with light and dark colours (``cadagent.publish.anim.svg``'s
+against the shear model fitted to them; ``washers.svg`` the issue's lid with the washers the fix ladder names and the
+pressure under them; ``fix-ladder.svg`` the ladder's options for two joints, as bars (#292). Static SVG with light and dark colours (``cadagent.publish.anim.svg``'s
 theme), so it shows in an ``<img>`` under the site's Content-Security-Policy and on GitHub.
 """
 from __future__ import annotations
@@ -355,9 +356,166 @@ def figure_calibration() -> str:
     return S.document(W, H, title, title, css, body, SERIES)
 
 
+LID = dict(insert=PICK, material=MATERIAL, boss_outside_mm=8, clamped={"thickness_mm": 3.0})   # the issue's lid (#292)
+
+
+def figure_washers() -> str:
+    """The issue's M3 lid with the fix the ladder names (#292), to scale: an ISO 7089 washer under the head and one
+    between the lid and the insert, and under the section the pressure on the lid's underside across its radius:
+    full over the insert's ring, then falling off over the washer's overhang as the beam on the plastic gives it, cut
+    where the washer would bend past its strength; dashed past the cut, the beam's pressure the check does not count.
+    The head's height and outside are ISO 4762's (``hardware.SOCKET_HEAD``), the insert is drawn at its full length,
+    and the bare ring's area and the washer's are what the module computed."""
+    import math
+    from cadagent.library import hardware
+    base = I.check_joint(**LID)
+    fixed = I.check_joint(**LID, insert_washer="iso7089", head_washer="iso7089", fixes=False)
+    ins = I.insert(PICK)
+    wf = fixed["clamped_on_washer"]
+    w = wf["washer"]
+    ring = base["torque"]["preload_caps_n"]["clamped_on_insert"] / (I.bearing_strength(MATERIAL) / I.MARGIN) / 1e-6
+    k = 30.0                                                      # px per mm
+    head = hardware.SOCKET_HEAD["rows"]["M3"]                     # ISO 4762: the head's height k and outside dk
+    W, H, cx = 900, 570, 230.0
+    lid_t, wt, head_h, ins_h = 3.0 * k, w["thickness_mm"] * k, head["k"] * k, ins.length_mm * k
+    R_hole, R_knurl, R_bore = 3.4 / 2 * k, ins.outer_mm / 2 * k, ins.cad_bore_mm / 2 * k
+    R_w, R_head, R_boss = w["outside_mm"] / 2 * k, head["dk"] / 2 * k, 4.0 * k
+    y_head = 30.0
+    y_w1 = y_head + head_h
+    y_lid = y_w1 + wt
+    y_w2 = y_lid + lid_t
+    y_ins = y_w2 + wt
+    body: List[str] = []
+    body.append(rect(cx - R_boss, y_ins, 2 * R_boss, ins_h, "plastic"))                     # the boss round the insert
+    for side in (-1, 1):
+        body.append(poly(knurl(cx + side * R_bore, cx + side * R_knurl, y_ins, y_ins + ins_h, 0.9 * k, side), "brass"))
+        x_in, x_out = (cx - R_w, cx - R_hole) if side < 0 else (cx + R_hole, cx + R_w)
+        l_in, l_out = (cx - R_boss - 20, cx - R_hole) if side < 0 else (cx + R_hole, cx + R_boss + 20)
+        body.append(rect(l_in, y_lid, l_out - l_in, lid_t, "plastic"))                      # the lid
+        body.append(rect(x_in, y_w1, x_out - x_in, wt, "metal"))                           # the washer under the head
+        body.append(rect(x_in, y_w2, x_out - x_in, wt, "metal"))                           # the washer on the insert
+    body.append(rect(cx - R_head, y_head, 2 * R_head, head_h, "screw"))
+    body.append(rect(cx - 1.5 * k, y_head + head_h, 3.0 * k, y_ins + ins_h - y_head - head_h, "screw"))
+    body.append(line(cx, y_head - 12, cx, y_ins + ins_h + 8, "axis"))
+    lx = cx + R_boss + 32
+    body += [text(lx, y_head + head_h / 2 + 4, "socket head (ISO 4762)", "small"),
+             text(lx, y_w1 + 4, f"{w['standard']} washer", "small"),
+             text(lx, y_lid + lid_t / 2 + 4, "3 mm PLA lid", "small"),
+             text(lx, y_w2 + 8, f"{w['standard']} washer", "small"),
+             text(lx, y_ins + ins_h / 2 + 4, "insert, flush", "small")]
+    # the pressure on the lid's underside, right half, to the section's radius scale
+    y0, hp = y_ins + ins_h + 96, 64.0
+    p_mpa = I.bearing_strength(MATERIAL) / I.MARGIN / 1e6
+    beta = 1.0 / w["spread_length_mm"]
+    used = w["bearing_overhang_mm"]
+    pts = [(cx + R_hole, y0)]
+    pts += [(cx + R_hole, y0 - hp), (cx + R_knurl, y0 - hp)]
+    steps = 24
+    for i in range(1, steps + 1):
+        x = used * i / steps
+        f = math.exp(-beta * x) * (math.cos(beta * x) + math.sin(beta * x))
+        pts.append((cx + R_knurl + x * k, y0 - hp * f))
+    pts += [(cx + R_knurl + used * k, y0)]
+    body.append(poly(pts, "good"))
+    rest = [(cx + R_knurl + x * k, y0 - hp * math.exp(-beta * x) * (math.cos(beta * x) + math.sin(beta * x)))
+            for x in [used + (w["overhang_mm"] - used) * i / 8 for i in range(9)]]
+    body += [line(*rest[i], *rest[i + 1], "axis") for i in range(len(rest) - 1)]       # dashed, muted
+    body.append(line(cx + R_hole, y0, cx + R_w + 4, y0, "dim"))
+    body.append(line(cx + R_knurl, y0 - hp - 6, cx + R_knurl, y0 + 6, "dim"))
+    body.append(line(cx + R_w, y0 - 10, cx + R_w, y0 + 6, "dim"))
+    body += [text(cx + R_hole - 8, y0 - hp + 4, f"{p_mpa:.0f} MPa allowed", "small", "end"),
+             text(cx + R_hole - 8, y0 - hp + 22, "over the ring", "small", "end"),
+             text(cx + R_w + 14, y0 - hp + 4, "eases off over the overhang; the check counts it", "small"),
+             text(cx + R_w + 14, y0 - hp + 22, "only to where the washer would bend past "
+                  f"{I.HARDNESS_RM_MPA[200] / I.MARGIN:.0f} MPa", "small"),
+             text(cx + R_w + 14, y0 - hp + 40, "(dashed: the beam's pressure out to its edge)", "small"),
+             text(cx + R_w, y0 + 22, "washer edge", "small", "middle"),
+             text(cx - R_boss - 20, y0 + 50, "the pressure the check counts on the lid's underside, to the section's "
+                  "radius scale", "small")]
+    # the numbers, right
+    tx = 560
+    lines = [("Bare lid on the insert's ring", "big"),
+             (f"{ring:.1f} mm²  →  {base['torque']['preload_caps_n']['clamped_on_insert']:.0f} N, "
+              f"{base['torque']['allowed_nm']:.2f} N·m", ""),
+             ("", ""),
+             (f"{w['standard']} washer between lid and insert", "big"),
+             (f"{wf['area_mm2']:.1f} mm²  →  {fixed['torque']['preload_caps_n']['clamped_on_washer']:.0f} N, "
+              f"{fixed['torque']['allowed_nm']:.2f} N·m", ""),
+             (f"{used:.2f} of its {w['overhang_mm']:.2f} mm overhang bears:", "small"),
+             (f"past that it would bend over {I.HARDNESS_RM_MPA[200] / I.MARGIN:.0f} MPa", "small"),
+             (f"the plastic spreads it over {w['spread_length_mm']:.2f} mm (1 / β)", "small"),
+             ("", ""),
+             ("A head washer too: with the lid off the ring,", "small"),
+             ("the head sets the next limit", "small")]
+    y = 70.0
+    for s_, cls in lines:
+        if s_:
+            body.append(text(tx, y, s_, cls))
+        y += 22 if cls != "small" else 19
+    title = (f"The issue's M3 lid in PLA with ISO 7089 washers under the head and between the lid and the insert: the "
+             f"lid bears on {wf['area_mm2']:.1f} mm² of washer instead of {ring:.1f} mm² of the insert's ring, so its "
+             f"preload cap rises from {base['torque']['preload_caps_n']['clamped_on_insert']:.0f} N to "
+             f"{fixed['torque']['preload_caps_n']['clamped_on_washer']:.0f} N; the pressure is full over the ring and "
+             f"falls off over the washer's overhang, {used:.2f} of {w['overhang_mm']:.2f} mm of which bears")
+    return S.document(W, H, title, title, CSS, body, THEME)
+
+
+def figure_fix_ladder() -> str:
+    """The fix ladder for two joints (#292), each option's allowed preload as a bar, in the ladder's order: named
+    options in the good colour, the rest in the accent colour with why. The issue's M3 lid in PLA, where washers are
+    the fix and the catalogue limiters fail their own rows; an M5 under a 3.8 mm PETG lid, where a proud limiter
+    passes and is the lasting fix."""
+    joints = [("M3 insert, 3 mm PLA lid (the issue)", I.check_joint(**LID)),
+              ("M5 insert, 3.8 mm PETG lid", I.check_joint("mcmaster-94459A775", "petg-bambu-basic",
+                                                           boss_outside_mm=15, clamped={"thickness_mm": 3.8,
+                                                                                        "tolerance_mm": 0.05,
+                                                                                        "outside_mm": 20}))]
+    W, Hrow, x0, x1 = 900, 26.0, 250.0, 700.0
+    css = CSS + f".grid{{stroke:var(--line);stroke-width:{U}}}.base{{fill:var(--muted)}}"
+    body: List[str] = []
+    y = 34.0
+    fmax = max(o.get("preload_n", 0.0) for _, r in joints for o in r["fixes"]["options"]) * 1.05
+    X = lambda F: x0 + F / fmax * (x1 - x0)
+    for label, r in joints:
+        fx_ = r["fixes"]
+        body.append(text(20, y, label, "big"))
+        y += 14
+        rows = [("as it is", fx_["preload_n"], fx_["allowed_nm"], "base", "")]
+        seen = set()
+        for o in fx_["options"]:
+            name = o["fix"] + (f" ({o['set']['limiter_key'].split('-')[1].upper()}, {o['set']['limiter_length_mm']:g} mm)"
+                               if o["fix"] == "limiter" and o.get("set") else "")
+            if name in seen:
+                continue
+            seen.add(name)
+            why = ("the fix" if o is fx_["fix"] else "the lasting fix" if o is fx_["lasting"] else
+                   "named" if o["named"] else o["why"].replace("limiter press fit", "press fit")[:64])
+            rows.append((name, o.get("preload_n"), o.get("allowed_nm"), "good" if o["named"] else "bad", why))
+        for name, F, T, cls, why in rows:
+            body.append(text(x0 - 10, y + Hrow * 0.62, name, "small", "end"))
+            if F:
+                body.append(rect(x0, y + 4, X(F) - x0, Hrow - 8, cls))
+                body.append(text(X(F) + 8, y + Hrow * 0.62, f"{F:.0f} N, {T:.2f} N·m" + (f": {why}" if why else ""),
+                                 "small"))
+            else:
+                body.append(text(x0 + 4, y + Hrow * 0.62, why, "small"))
+            y += Hrow
+        y += 22
+    body.append(line(x0, 40, x0, y - 30, "grid"))
+    body.append(text(x0, y - 8, "allowed preload (bar) and the torque that gives it; green: named, red: not named",
+                     "small"))
+    m3 = joints[0][1]["fixes"]
+    title = (f"The fix ladder in order, larger head, washer, large washer, limiter, each re-checked: on the issue's M3 "
+             f"lid the ISO 7089 washers lift the preload cap from {m3['preload_n']:.0f} N to "
+             f"{m3['fix']['preload_n']:.0f} N at {m3['fix']['allowed_nm']:.2f} N·m and the catalogue limiters fail "
+             "their own rows; on an M5 under a 3.8 mm PETG lid a proud limiter passes and is the lasting fix")
+    return S.document(W, int(y + 4), title, title, css, body, THEME)
+
+
 def main(check: bool = False) -> int:
     figures = {"section.svg": figure_section(), "clamp-paths.svg": figure_clamp_paths(),
-               "limiters.svg": figure_limiters(), "calibration.svg": figure_calibration()}
+               "limiters.svg": figure_limiters(), "calibration.svg": figure_calibration(),
+               "washers.svg": figure_washers(), "fix-ladder.svg": figure_fix_ladder()}
     stale = []
     OUT.mkdir(parents=True, exist_ok=True)
     for name, svg in figures.items():

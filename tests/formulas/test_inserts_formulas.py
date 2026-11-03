@@ -246,3 +246,77 @@ def test_insert_limited_torque_refuses_what_it_cannot_compute(bad):
     args = dict(diameter=3 * MM, pitch=0.5 * MM, path="seat", pull_out=800.0, torque_out=0.5, proof_load=4880.0)
     with pytest.raises(ValueError):
         fx.insert_limited_torque(**{**args, **bad})
+
+
+# ----------------------------------------------------------------------------- the face under a head or washer (#292)
+
+def test_bearing_area_is_the_annulus_outside_the_hole_and_its_chamfer():
+    # an ISO 4762 M3 head (dw 5.07 mm) on a 3.4 mm hole: pi/4 (5.07^2 - 3.4^2) = pi/4 (25.7049 - 11.56) = 11.1094 mm^2
+    assert fx.bearing_area(5.07 * MM, 3.4 * MM) / MM ** 2 == pytest.approx(11.1094, abs=1e-4)
+    # a 0.3 mm chamfer widens the hole to 4.0 mm: pi/4 (25.7049 - 16) = 7.6222 mm^2
+    assert fx.bearing_area(5.07 * MM, 3.4 * MM, 0.3 * MM) / MM ** 2 == pytest.approx(7.6222, abs=1e-4)
+    # a chamfer that reaches the head's edge leaves nothing to bear on
+    assert fx.bearing_area(5.07 * MM, 3.4 * MM, 1.0 * MM) == 0.0
+    for bad in [(0.0, 3.4 * MM), (5.07 * MM, -1.0), (5.07 * MM, 3.4 * MM, -0.1 * MM)]:
+        with pytest.raises(ValueError):
+            fx.bearing_area(*bad)
+
+
+# the issue's M3 joint (#292): an ISO 7089 M3 washer (d2 min 6.64, h min 0.45 mm) on the end of a 4.72 mm insert, under a
+# 3 +/- 0.1 mm PLA lid (E 2160 MPa through its layers) with a 3.4 mm hole, at PLA's 78.06 MPa / 2, the washer's 640 MPa / 2
+W = dict(support_diameter=4.72 * MM, washer_outside=6.64 * MM, washer_thickness=0.45 * MM, hole_diameter=3.4 * MM,
+         plastic_modulus=2160e6, plastic_thickness=2.9 * MM, washer_modulus=207e9, pressure=78.06e6 / 2,
+         washer_strength=640e6 / 2)
+
+
+def _beam(w):
+    """The same beam solved by quadrature, from y = exp(-beta x)(cos beta x + sin beta x), independently of the
+    closed-form integrals."""
+    beta = (w["plastic_modulus"] / w["plastic_thickness"] / (4 * w["washer_modulus"] * w["washer_thickness"] ** 3 / 12)) \
+        ** 0.25
+    f = lambda x: math.exp(-beta * x) * (math.cos(beta * x) + math.sin(beta * x))  # noqa: E731
+
+    def simpson(g, a, n=2000):
+        h = a / n
+        return h / 3 * (g(0) + g(a) + sum((4 if i % 2 else 2) * g(i * h) for i in range(1, n)))
+    return beta, f, simpson
+
+
+def test_washer_bearing_matches_the_beam_by_quadrature():
+    r = fx.washer_bearing(**W)
+    beta, f, simpson = _beam(W)
+    assert r["spread_length"] == pytest.approx(1 / beta, rel=1e-12)
+    assert 1 / beta / MM == pytest.approx(1.705, abs=1e-3)          # the bed's spread, hand-worked
+    a = r["used"]
+    rs = W["support_diameter"] / 2
+    area = math.pi / 4 * (W["support_diameter"] ** 2 - W["hole_diameter"] ** 2) + \
+        2 * math.pi * (rs * simpson(f, a) + simpson(lambda x: x * f(x), a))
+    assert r["area"] == pytest.approx(area, rel=1e-9)
+    # here the washer's bending stops it: at the overhang that bears, the stress at the insert's edge is the
+    # allowed 320 MPa (6 p M / h^2, M the pressure's moment about that edge per unit length of it, the pressure at
+    # radius rs + x on a ring (rs + x) / rs as long)
+    assert r["by"] == "bending" and r["bending_stress"] == pytest.approx(320e6, rel=1e-9)
+    ring = simpson(lambda x: x * f(x) * (rs + x) / rs, a)
+    assert 6 * W["pressure"] * ring / W["washer_thickness"] ** 2 == pytest.approx(320e6, rel=1e-6)
+    # as a strip of unit width the moment would be 1.2 x smaller: the ring's weight matters
+    assert ring / simpson(lambda x: x * f(x), a) == pytest.approx(1.18, abs=0.02)
+    # 0.70 of its 0.96 mm overhang bears: 19.8 mm^2 against the bare insert ring's pi/4 (4.72^2 - 3.4^2) = 8.42 mm^2
+    assert r["overhang"] / MM == pytest.approx(0.96, abs=1e-9) and r["used"] / MM == pytest.approx(0.705, abs=1e-3)
+    assert r["area"] / MM ** 2 == pytest.approx(19.84, abs=0.01)
+    assert r["outside"] == pytest.approx(math.sqrt(4 * r["area"] / math.pi + W["hole_diameter"] ** 2), rel=1e-12)
+
+
+def test_a_stiff_washer_bears_over_its_whole_face_and_a_long_one_lifts_off():
+    # thick and short: the whole annulus, pi/4 (d2^2 - dh^2)
+    stiff = fx.washer_bearing(**{**W, "washer_thickness": 5 * MM, "washer_strength": 1e12})
+    assert stiff["by"] == "washer" and stiff["used"] == stiff["overhang"]
+    assert stiff["area"] == pytest.approx(math.pi / 4 * (6.64 ** 2 - 3.4 ** 2) * MM ** 2, rel=2e-3)
+    # thin and wide on a thin, stiff bed: past 3 pi / (4 beta) the bed would pull, so the washer lifts off there
+    wide = fx.washer_bearing(**{**W, "washer_outside": 40 * MM, "plastic_thickness": 0.5 * MM, "washer_strength": 1e12})
+    beta = 1 / wide["spread_length"]
+    assert wide["by"] == "lift-off" and wide["used"] == pytest.approx(3 * math.pi / (4 * beta), rel=1e-12)
+    # no overhang (a support as wide as the washer, or wider): the washer's own face, pressed flat
+    flat = fx.washer_bearing(**{**W, "support_diameter": 7.0 * MM})
+    assert flat["overhang"] == 0 and flat["area"] == pytest.approx(math.pi / 4 * (6.64 ** 2 - 3.4 ** 2) * MM ** 2)
+    with pytest.raises(ValueError):
+        fx.washer_bearing(**{**W, "hole_diameter": 7.0 * MM})

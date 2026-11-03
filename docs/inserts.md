@@ -86,61 +86,45 @@ check works out, and it changes every limit after it.
 ## Heads, washers and what lifts the clamp
 
 A printed part bears on two faces: under the screw's head, and, on a flush insert, on the insert's end. Either can
-set the torque. The check computes both from cited dimensions in `cadagent.library.hardware`:
+set the torque. The check computes both from cited dimensions in `cadagent.library.hardware`.
 
-- **Heads.** `head` names the head: `socket` (ISO 4762, the default), `button` (ISO 7380-1) or `cheese` (ISO 14580
-  and ISO 1207). Each bears on its least bearing face `dw`. ISO 14580 and ISO 1207 give no `dw`, so their least
-  head outside stands in. That is an upper bound, so the ladder never offers a cheese head as a larger one.
-  `head_mm` still overrides the head. A hole narrower than the fillet under the head (`da`) gets a note to chamfer
-  it.
-- **Washers.** `head_washer` puts a washer under the head. `insert_washer` puts one between the printed part and the
-  insert's end. Each is `iso7089` (plain), `iso7090` (chamfered, M5 and up) or `iso7093` (large), M2 to M6. The
-  check takes each washer's largest hole, least outside and thinnest thickness from the standard's tolerances.
-- **The bearing face.** The face is the annulus outside the hole and its 45° chamfer (`chamfer_mm` under the head,
-  `under_chamfer_mm` on the insert): `formulas.bearing_area`.
-  - A washer's overhang past what presses it (the head, or the insert's end) is a beam on the plastic, which acts as
-    a bed of springs of its modulus over its least thickness (`formulas.washer_bearing`).
-  - The pressure falls off across the overhang.
-  - The overhang stops where it would lift off, or where its bending at the support reaches the washer's tensile
-    strength (200 HV, 640 MPa) over the margin. The bending counts the pressure further out on its longer ring.
-- **Friction.** A head on a washer turns on steel, so a washer lowers the torque for the same preload. Compare the
-  options by their **preload**. The torque is what to set the wrench to.
+<img src="img/inserts/washers.svg" alt="The issue's M3 lid in PLA with ISO 7089 washers under the head and between the lid and the insert: the lid bears on 19.8 mm² of washer instead of 8.4 mm² of the insert's ring, so its preload cap rises from 329 N to 774 N; the pressure is full over the ring and falls off over the washer's overhang, 0.70 of 0.96 mm of which bears" width="900" height="470">
+
+The issue's lid (#292) above: `mcmaster-94459A140` in PLA Basic, `boss_outside_mm: 8`, a 3 mm lid, socket head,
+3.4 mm hole. The washer between the lid and the insert bears on 19.8 mm² against the bare ring's 8.4 mm². Only 0.70
+of its 0.96 mm overhang counts: past that, a 0.45 mm washer would bend over 320 MPa. With the lid off the ring, the
+head sets the next limit, so a second washer goes under it.
+
+- **Heads.** `head` is `socket` (ISO 4762, the default), `button` (ISO 7380-1) or `cheese` (ISO 14580, ISO 1207).
+  Each bears on its least bearing face `dw`. The cheese heads give no `dw`, so their least outside stands in: an
+  upper bound, never offered as a larger head. `head_mm` still overrides. A hole narrower than the fillet under the
+  head (`da`) gets a note to chamfer it.
+- **Washers.** `head_washer` goes under the head, `insert_washer` between the printed part and the insert's end:
+  `iso7089` (plain), `iso7090` (chamfered, M5 and up) or `iso7093` (large), M2 to M6, at the standard's largest
+  hole, least outside and least thickness.
+- **The bearing face** is the annulus outside the hole and its 45° chamfer (`chamfer_mm`, `under_chamfer_mm`):
+  `formulas.bearing_area`. A washer's overhang is a beam on the plastic, a bed of springs of its modulus over its
+  least thickness (`formulas.washer_bearing`). It stops where it would lift off, or where its bending at the support,
+  counting the pressure further out on its longer ring, reaches the washer's strength (200 HV, 640 MPa) over the
+  margin.
+- **Friction.** A head on a washer turns on steel, so a washer lowers the torque for the same preload. Compare
+  options by **preload**; the torque is what to set the wrench to.
 
 When the printed part's bearing sets the torque (`head bearing`, `clamped on insert` or `clamped on washer`), the
-result's `fixes` lists what lifts it, in this order:
+result's `fixes` tries, in order, a larger head, a washer, a large washer, and a compression limiter (at the longest
+standard length no longer than the plastic and the shortest that stands proud of it). Each is the same check run
+again with the option fitted; a washer goes on the face that sets the limit, then on the next if that one then sets
+it. An option is named only if it lifts the preload and fails no row the joint did not already fail, so a limiter
+whose seating force or press fit fails is never named. `fix` is the first named; `lasting` the first named that keeps
+the preload in metal (kept at least 0.9), in practice a limiter.
 
-1. a larger head;
-2. a washer;
-3. a large washer;
-4. a compression limiter, at the longest standard length no longer than the plastic and at the shortest that
-   stands proud of it.
+<img src="img/inserts/fix-ladder.svg" alt="The fix ladder in order, larger head, washer, large washer, limiter, each re-checked: on the issue's M3 lid the ISO 7089 washers lift the preload cap from 329 N to 774 N at 0.30 N·m and the catalogue limiters fail their own rows; on an M5 under a 3.8 mm PETG lid a proud limiter passes and is the lasting fix" width="900" height="422">
 
-Each option is the same check run again with the option fitted. Its torque, preload and governing row are the
-check's own. A washer goes on the face that sets the limit, then on the next face if that one then sets it. An
-option is named only if it lifts the preload and fails no row the joint did not already fail. A limiter whose
-seating force or press fit fails is therefore never named. `fix` is the first option named. `lasting` is the first
-named option that keeps the preload in metal (preload kept at least 0.9), which in practice is a limiter.
-
-The issue's lid (#292): `mcmaster-94459A140` in PLA Basic, `boss_outside_mm: 8`, a 3 mm lid with the socket head
-and a 3.4 mm hole.
-
-| Option | Torque | Preload | Set by | Named |
-|---|---|---|---|---|
-| as it is | 0.20 N·m | 329 N | the lid on the insert's ring | |
-| a larger head | | | | no: none listed bears wider than the socket head's 5.07 mm, and a head would not reach the ring anyway |
-| **ISO 7089 washers, between the lid and the insert and under the head** | **0.30 N·m** | **774 N** | the lid on the washer | **yes: the fix** |
-| ISO 7093-1 large washers, in the same places | 0.40 N·m | 1036 N | the lid on the washer | yes |
-| SPIROL CL6000 or CL8000 M3 limiter, 3 or 4 mm | 0.19 N·m | 492 N | the insert's face | no: seating force and press fit fail |
-
-The washer between the lid and the insert bears on 19.8 mm² against the bare ring's 8.4 mm². Only 0.70 of its
-0.96 mm overhang counts: past that, a 0.45 mm washer would bend over 320 MPa. With the lid off the ring, the head
-sets the next limit, so a second washer goes under it. A catalogue M3 limiter does not help: its 4.15 mm bore lands
-on a thinner brass ring than the lid did, and its seating force and press fit fail in a 3 mm lid.
-
-A limiter is the lasting fix where it fits. Take an M5 insert (`mcmaster-94459A775`) in PETG Basic under a
-3.8 ± 0.05 mm lid. Washers lift the cap from 526 N to 1564 N (ISO 7089) and 1921 N (ISO 7093-1), but the lid stays
-in the clamp and relaxes. A 4 mm CL6000 stands proud of the lid even at its least length, so the head lands on
-metal. It passes every row of its own and keeps the preload: 1240 N at 0.79 N·m, set by the insert's face.
+On the M3 lid a catalogue limiter does not help: its 4.15 mm bore lands on a thinner brass ring than the lid did,
+and its seating force and press fit fail in 3 mm. On the M5 (`mcmaster-94459A775`, PETG Basic, 3.8 ± 0.05 mm lid)
+washers lift the cap from 526 N to 1564 N (ISO 7089) and 1921 N (ISO 7093-1), but the lid stays in the clamp and
+relaxes. A 4 mm CL6000 stands proud of the lid even at its least length, so the head lands on metal: it passes every
+row and keeps the preload, 1240 N at 0.79 N·m, set by the insert's face.
 
 ## Compression limiters
 

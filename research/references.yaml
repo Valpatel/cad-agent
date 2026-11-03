@@ -36,6 +36,10 @@
 # Merged on 2026-11-01 from the first sweep (#119, 2026-10-31), the `sources` and `standards` blocks of
 # research/process-profiles.yaml (#162, #163) and the sources cadagent.formulas, .mechanical.inserts,
 # .mechanical.printed_joints and .simulation.fea cite by key.
+#
+# Schema 2 (#323): research/references/*.yaml holds shards of further records in the same id space, with their kind,
+# licence, evidence class and assessment; research/references/vocab.yaml holds their vocabularies. This file stays the
+# core of read, cited sources. research/references/README.md has the fields and the evidence ladder.
 schema: 1
 updated: 2026-11-01
 
@@ -1638,8 +1642,9 @@ sources:
     isbn: 978-0-07-174247-4
     access: print
     terms: cited by author, title, edition and section; never copied
-    areas: [beams, torsion, plates]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/beams.py, src/cadagent/formulas/torsion.py]
+    areas: [beams, torsion, plates, elastic-foundations]
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/beams.py, src/cadagent/formulas/torsion.py,
+      src/cadagent/formulas/limiters.py]
     verified: >-
       2026-11-01: the edition, authors and ISBN checked against the Open Library record. The registry records
       the edition only: cadagent.formulas names the section and case of each formula it takes, and

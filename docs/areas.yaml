@@ -368,7 +368,7 @@ domains:
         pages: [docs/common-issues.md]
         api: [cadagent.review.evidence, cadagent.review, cadagent.review.references]
         lessons: review
-        issues: [97, 118]
+        issues: [97, 118, 323]
       - slug: supply-chain
         title: Supply chain and resource safety
         scope: What we depend on, vendor and link to - advisories, pins and receipts, drift, licences and links, checked the same way every time.

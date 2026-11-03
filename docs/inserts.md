@@ -36,14 +36,11 @@ WARN  bracket: M4 clamping Bambu PLA Basic; tighten to at most 0.68 N m (head be
       warn: preload kept: the clamped plastic relaxes and takes the preload with it: ...
 ```
 
-The command exits 1 when a joint fails and 2 when the file is wrong. A warning does not fail it. A `fix:` line is
-an option that lifts a limit the printed part's bearing sets ([Heads, washers and what lifts the
-clamp](#heads-washers-and-what-lifts-the-clamp)). The JSON holds every
-row with its value, limit, verdict and reason, the insert's capacities, the torque ceilings and the limits. Its
-top-level `pass` is true unless a joint fails, so a project's `cad: checks` row can read the file as it is:
-`{id: inserts, title: Insert joints, file: exports/inserts.json}` (the row's `pass_key` defaults to `pass`).
-
-From Python:
+It exits 1 when a joint fails, 2 when the file is wrong; a warning does not fail it. A `fix:` line lifts a limit
+the printed part's bearing sets ([below](#heads-washers-and-what-lifts-the-clamp)). The JSON holds every row (value,
+limit, verdict, reason), the capacities, torque ceilings and limits; its top-level `pass` is true unless a joint
+fails, so a project's `cad: checks` row reads it as it is: `{id: inserts, title: Insert joints, file:
+exports/inserts.json}` (`pass_key` defaults to `pass`). From Python:
 
 ```python
 from cadagent.mechanical import inserts

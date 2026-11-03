@@ -61,7 +61,8 @@ RING_LUG = {
 
 # Washers, by thread: d1 the hole (its least), d2 the outside and h the thickness (their largest), as bd_warehouse
 # tabulates them; d1_max the hole's largest (ISO 286 H13 on d1), d2_min the outside's least (ISO 286 h14 on d2), as
-# ISO 7089 and ISO 7093-1 give them, and h_min the thinnest (the standard's thickness tolerance). Steel of hardness class 200 HV, the standards' first grade.
+# ISO 7089 and ISO 7093-1 give them, and h_min the thinnest (the standard's thickness tolerance). Steel of hardness
+# class 200 HV, the standards' first grade.
 _WASHER_NOTE = ('; d1_max, d2_min and h_min from the standard\'s tolerances (d1 to H13, d2 to h14; h to its own +/- '
                 'band); hardness class 200 HV steel')
 PLAIN_WASHER = {

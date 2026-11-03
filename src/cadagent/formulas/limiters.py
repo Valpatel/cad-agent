@@ -91,9 +91,11 @@ def bearing_area(outer_diameter: float, hole_diameter: float, chamfer: float = 0
          returns="dict: area (m^2), outside (the effective outside diameter, m), overhang (the washer past the "
                  "support, m), used (the overhang that bears, m), by ('washer', 'spread', 'lift-off' or 'bending': "
                  "what stops it), spread_length (1 / beta, m) and bending_stress (Pa, at the support's edge)",
-         limits=("the washer's overhang as a beam on a Winkler foundation: the plastic a bed of springs E / t, the "
-                 "support rigid and the washer flat on it; the beam per unit width, so the ring's hoop stiffness, "
-                 "which helps, is left out",
+         limits=("the washer's overhang as a beam on a Winkler foundation: the plastic a bed of springs E / t, "
+                 "backed flat on its far face, the support rigid and the washer flat on it; the beam per unit width, "
+                 "so the ring's hoop stiffness, which helps, is left out",
+                 "a plastic part backed on its far face over less than the washer (a narrower head over a washer on "
+                 "an insert) is softer past that backing than the bed: not sized",
                  "the semi-infinite beam's deflection, cut at the washer's edge: the free end is not modelled; past "
                  "3 pi / (4 beta) the springs would pull, so the washer lifts off there",
                  "the washer's bending as a cantilever from the support's edge under the allowed pressure, the "

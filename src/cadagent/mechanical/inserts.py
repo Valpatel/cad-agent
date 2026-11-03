@@ -789,8 +789,8 @@ def head_bearing_face(thread: str, head: str = "socket") -> Optional[Dict[str, A
 
 def washer(key: str, thread: str) -> Dict[str, Any]:
     """A washer for a thread, from :mod:`cadagent.library.hardware`: its hole, outside and thickness (mm; the largest
-    hole, the least outside and the thinnest, which the checks use), its standard, the tensile strength of its hardness class
-    (ISO 18265's conversion) and its source."""
+    hole, the least outside and the thinnest, which the checks use), its standard, the tensile strength of its
+    hardness class (ISO 18265's conversion) and its source."""
     if key not in WASHERS:
         raise ValueError(f"washer must be one of {list(WASHERS)}, not {key!r}")
     t = hardware.table(hardware.WASHERS[key])

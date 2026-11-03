@@ -90,8 +90,9 @@ set the torque. The check computes both from cited dimensions in `cadagent.libra
 
 - **Heads.** `head` names the head: `socket` (ISO 4762, the default), `button` (ISO 7380-1) or `cheese` (ISO 14580
   and ISO 1207). Each bears on its least bearing face `dw`. ISO 14580 and ISO 1207 give no `dw`, so their least
-  head outside stands in. That is an upper bound, so the ladder never offers a cheese head as a larger one. `head_mm` still overrides it. A hole narrower than the fillet under the head (`da`) gets a
-  note to chamfer it.
+  head outside stands in. That is an upper bound, so the ladder never offers a cheese head as a larger one.
+  `head_mm` still overrides the head. A hole narrower than the fillet under the head (`da`) gets a note to chamfer
+  it.
 - **Washers.** `head_washer` puts a washer under the head. `insert_washer` puts one between the printed part and the
   insert's end. Each is `iso7089` (plain), `iso7090` (chamfered, M5 and up) or `iso7093` (large), M2 to M6. The
   check takes each washer's largest hole, least outside and thinnest thickness from the standard's tolerances.
@@ -296,7 +297,9 @@ and the failure mode. Pull at 2 mm/min with a reaction plate that clears the bos
   moulded polycarbonate's, and PLA, nearer its glass transition, will keep less.
 - **The seating force** takes the plastic as an elastic column or cone, with no edge or free face nearer than the cone.
 - **A washer's spread** is a beam per unit length of the support's edge on a bed of springs, the pressure further
-  out weighted by its longer ring. The ring's hoop stiffness, which helps, is left out, and so is the boss face under a washer on the insert, so the washer carries the whole clamp to the brass. The
+  out weighted by its longer ring. The bed is the plastic's whole thickness, backed flat on its far face. A lid under
+  a washer on the insert is backed there by the head, which may be narrower than the washer, so its far side is
+  stiffer than that under the head and softer past it. The model does not size this. The ring's hoop stiffness, which helps, is left out, and so is the boss face under a washer on the insert, so the washer carries the whole clamp to the brass. The
   free end is not modelled. A washer that yields would dish, and the spread would shrink.
 - CAD and closed forms do not prove a joint holds. Print the coupons and measure.
 

@@ -25,8 +25,9 @@ const base = await new Promise((ok, fail) => {
 });
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
-// A reference area page (#323): the one route with the records' charts, table and filters.
-const REFS = '/references/fasteners-and-hardware';
+// A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
+// theme part's text walk stays short; the walls part measures every reference page).
+const REFS = '/references/laser-cutting';
 const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
   '/lessons/mechanical/design-rules', REFS, '/kit/file-viewer', '/missing-page'];
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.

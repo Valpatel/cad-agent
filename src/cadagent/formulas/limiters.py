@@ -65,6 +65,96 @@ def annulus_stress(load: float, outer_diameter: float, inner_diameter: float) ->
     return load / (math.pi / 4.0 * (outer_diameter ** 2 - inner_diameter ** 2))
 
 
+@formula(units={"outer_diameter": "m (the head's least bearing face dw, or a washer's outside)",
+                "hole_diameter": "m (the hole in the part it bears on)",
+                "chamfer": "m (the leg of a 45 degree chamfer on that hole's edge; 0 for none)"},
+         returns="bearing area, m^2 (0 where the hole and its chamfer reach the outside: nothing bears)",
+         limits=("a flat face in full contact over the annulus; a fillet under a head that is wider than the hole "
+                 "rides on the hole's edge, which this leaves to the caller",),
+         source=cite("shigley", "Section 3-9 (Uniformly Distributed Stresses: the bearing area is the annulus between "
+                                "the face's outside and the hole, here widened by the chamfer)"))
+def bearing_area(outer_diameter: float, hole_diameter: float, chamfer: float = 0.0) -> float:
+    """The area a screw head or washer bears on: the annulus between its outside and the hole, the hole widened by a
+    45 degree chamfer on its edge, A = pi / 4 (D^2 - (dh + 2 c)^2)."""
+    outer = _positive("outer_diameter", outer_diameter)
+    inner = _positive("hole_diameter", hole_diameter, strict=False) + 2.0 * _positive("chamfer", chamfer, strict=False)
+    return max(math.pi / 4.0 * (outer ** 2 - inner ** 2), 0.0)
+
+
+@formula(units={"support_diameter": "m (the rigid face that presses the washer: a head's dw, or an insert's end)",
+                "washer_outside": "m (its least outside, d2 min)", "washer_thickness": "m (its thinnest, h min)",
+                "hole_diameter": "m (the inner edge of the plastic it bears on: the hole and its chamfer)",
+                "plastic_modulus": "Pa (the plastic's, through its thickness)",
+                "plastic_thickness": "m (the plastic under the washer, its least)",
+                "washer_modulus": "Pa", "pressure": "Pa (the pressure allowed on the plastic)",
+                "washer_strength": "Pa (the stress allowed in the washer's bending)"},
+         returns="dict: area (m^2), outside (the effective outside diameter, m), overhang (the washer past the "
+                 "support, m), used (the overhang that bears, m), by ('washer', 'spread', 'lift-off' or 'bending': "
+                 "what stops it), spread_length (1 / beta, m) and bending_stress (Pa, at the support's edge)",
+         limits=("the washer's overhang as a beam on a Winkler foundation: the plastic a bed of springs E / t, the "
+                 "support rigid and the washer flat on it; the beam per unit width, so the ring's hoop stiffness, "
+                 "which helps, is left out",
+                 "the semi-infinite beam's deflection, cut at the washer's edge: the free end is not modelled; past "
+                 "3 pi / (4 beta) the springs would pull, so the washer lifts off there",
+                 "the washer's bending as a cantilever under the allowed pressure; no yielding, no dishing"),
+         source=cite("roark", "Chapter 8, beams on elastic foundations (Hetenyi's semi-infinite beam, held level at its "
+                              "end, y = y0 exp(-beta x)(cos beta x + sin beta x), beta = (k / 4 E I)^(1/4))"))
+def washer_bearing(support_diameter: float, washer_outside: float, washer_thickness: float, hole_diameter: float,
+                   plastic_modulus: float, plastic_thickness: float, washer_modulus: float, pressure: float,
+                   washer_strength: float) -> Dict[str, Any]:
+    """The area a steel washer spreads a screw's clamp over on printed plastic. Under the rigid support (a head, or
+    the end of an insert) the washer presses the plastic flat; past it, the washer's overhang bends, and the pressure
+    under it falls off as on a beam on an elastic foundation. The pressure at the support's edge is the same as under
+    the support, so the overhang counts as the width W = integral of exp(-beta x)(cos beta x + sin beta x) dx over
+    the overhang that bears, at that pressure, and its first moment sets the washer's bending at the support's edge.
+    The overhang that bears is the least of the washer's own, the point where the pressure would turn to tension
+    (3 pi / (4 beta)) and the overhang whose bending reaches ``washer_strength`` at ``pressure``."""
+    ds = _positive("support_diameter", support_diameter)
+    do = _positive("washer_outside", washer_outside)
+    h = _positive("washer_thickness", washer_thickness)
+    dh = _positive("hole_diameter", hole_diameter, strict=False)
+    Ep, tp = _positive("plastic_modulus", plastic_modulus), _positive("plastic_thickness", plastic_thickness)
+    Ew, p = _positive("washer_modulus", washer_modulus), _positive("pressure", pressure)
+    sw = _positive("washer_strength", washer_strength)
+    if dh >= do:
+        raise ValueError(f"the hole ({dh!r}) must be smaller than the washer's outside ({do!r})")
+    ds = min(ds, do)                                     # a support wider than the washer presses only the washer
+    beta = (Ep / tp / (4.0 * Ew * h ** 3 / 12.0)) ** 0.25
+
+    def width(a: float) -> float:                      # integral of f over [0, a]
+        return (1.0 - math.exp(-beta * a) * math.cos(beta * a)) / beta
+
+    def moment(a: float) -> float:                     # integral of x f over [0, a]
+        e = math.exp(-beta * a)
+        return -a * e * math.cos(beta * a) / beta + (1.0 + e * (math.sin(beta * a) - math.cos(beta * a))) / (
+            2.0 * beta ** 2)
+
+    overhang = max((do - ds) / 2.0, 0.0)
+    x0 = min(max((dh - ds) / 2.0, 0.0), overhang)        # a hole wider than the support: no plastic up to it
+
+    def bending(a: float) -> float:                      # at the support's edge, from the pressure on [x0, a]
+        return 6.0 * p * max(moment(a) - moment(x0), 0.0) / h ** 2
+
+    a, by = overhang, "washer"
+    lift = 3.0 * math.pi / (4.0 * beta)
+    if lift < a:
+        a, by = lift, "lift-off"
+    if bending(a) > sw:
+        lo, hi = x0, a                                   # the moment rises with a up to the lift-off point
+        for _ in range(80):
+            mid = (lo + hi) / 2.0
+            lo, hi = (mid, hi) if bending(mid) <= sw else (lo, mid)
+        a, by = lo, "bending"
+    elif by == "washer" and width(a) < 0.9 * a:
+        by = "spread"                                    # all of it bears, but the pressure falls off across it
+    rs = ds / 2.0
+    area = (math.pi / 4.0 * max(ds ** 2 - dh ** 2, 0.0)
+            + 2.0 * math.pi * max(rs * (width(a) - width(x0)) + moment(a) - moment(x0), 0.0))
+    outside = math.sqrt(4.0 * area / math.pi + dh ** 2)
+    return {"area": area, "outside": outside, "overhang": overhang, "used": a, "by": by,
+            "spread_length": 1.0 / beta, "bending_stress": bending(a)}
+
+
 @formula(units={"limiter_length": "m (nominal)", "plastic_thickness": "m (the clamped plastic, nominal)",
                 "limiter_tolerance": "m (+/-)", "plastic_tolerance": "m (+/-)"},
          returns="dict: standout {nominal, low, high} (limiter length minus plastic thickness, m) and state: 'proud' "

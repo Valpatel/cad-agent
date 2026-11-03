@@ -44,6 +44,31 @@ def test_the_pages_numbers_are_what_the_module_computes():
     assert f"low {pull['low']:.0f}, mid {pull['mid']:.0f}, high {pull['high']:.0f} N" in page
     bracket = I.check_clamp("M4", "pla-bambu-basic", 6.0, head_mm=7.0, clearance_mm=4.5)
     assert f"at most {bracket['torque']['allowed_nm']:.2f} N m (head bearing)" in page
+    # the fix lines the CLI prints for both, and the Python line's fix
+    for joint in (lid, bracket):
+        o = joint["fixes"]["options"][[x["fix"] for x in joint["fixes"]["options"]].index("washer")]
+        assert (f"fix: {o['what']}: at most {o['allowed_nm']:.2f} N m, {o['preload_n']:.0f} N preload "
+                f"({o['governed_by'].replace('_', ' ')})") in page
+    assert f"'{lid['fixes']['fix']['what'][:30]}...', {lid['fixes']['fix']['allowed_nm']:.2f}" in page
+    # the issue's lid (#292): each option's torque and preload in the table
+    issue = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=8, clamped={"thickness_mm": 3.0})
+    opts = issue["fixes"]["options"]
+    assert f"| as it is | {issue['torque']['allowed_nm']:.2f} N·m | {issue['fixes']['preload_n']:.0f} N |" in page
+    for o in opts[:3]:
+        cells = f"{o['allowed_nm']:.2f} N·m" + ("** | **" if o["named"] and o is issue["fixes"]["fix"] else " | ") + \
+            f"{o['preload_n']:.0f} N"
+        assert cells in page, cells
+    assert f"| {opts[3]['allowed_nm']:.2f} N·m | {opts[3]['preload_n']:.0f} N | the insert's face |" in page
+    wf = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=8, clamped={"thickness_mm": 3.0},
+                       insert_washer="iso7089", head_washer="iso7089")["clamped_on_washer"]
+    assert f"bears on {wf['area_mm2']:.1f} mm²" in page
+    assert f"Only {wf['washer']['bearing_overhang_mm']:.2f} of its\n{wf['washer']['overhang_mm']:.2f} mm overhang" in page
+    m5 = I.check_joint("mcmaster-94459A775", "petg-bambu-basic", boss_outside_mm=15,
+                       clamped={"thickness_mm": 3.8, "tolerance_mm": 0.05, "outside_mm": 20})["fixes"]
+    by = {o["fix"]: o for o in m5["options"]}
+    assert f"from {m5['preload_n']:.0f} N to {by['washer']['preload_n']:.0f} N (ISO 7089)" in page
+    assert f"{by['large washer']['preload_n']:.0f} N (ISO 7093-1)" in page
+    assert f"{m5['lasting']['preload_n']:.0f} N at {m5['lasting']['allowed_nm']:.2f} N·m" in page
     flush = I.check_joint(**m3, clamped={"material": "metal"})
     sunk = I.check_joint(**m3, recess_mm=0.2, clamped={"material": "metal"})
     assert f"**{flush['torque']['allowed_nm']:.2f} N·m**, set by the insert's end face" in page

@@ -17,6 +17,7 @@ what to print and measure.
 """
 from __future__ import annotations
 
+import inspect
 import math
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -24,6 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from cadagent import formulas as fx
 from cadagent.review.gates.fasteners import COARSE_PITCH_MM          # ISO 261 coarse pitches
 from cadagent._deps import require
+from cadagent.library import hardware
 from cadagent.mechanical.compliant.allowables import PRINTED, STATUS
 from cadagent.mechanical.compliant.snapfit import POISSON_PLASTICS
 
@@ -305,7 +307,10 @@ CAD_ALLOWANCE_MM = (0.2, 0.3)        # added to the maker's hole in CAD for a pr
 #                                      pull-out, pre-seating with slight resistance); the coupon centres there
 STRAIGHT_TAPER_DEG = 1.0             # a straight hole's most included taper (spirol-inserts p. 5)
 CLEARANCE_MM = {"M2": 2.4, "M2.5": 2.9, "M3": 3.4, "M4": 4.5, "M5": 5.5, "M6": 6.6, "M8": 9.0}   # iso273
-HEAD_BEARING_MM = {"M4": 6.53, "M5": 8.03, "M6": 9.38, "M8": 12.33}                            # bossard-head
+# the socket head's least bearing face dw (ISO 4762, cadagent.library.hardware; M4-M8 as bossard-head)
+HEAD_BEARING_MM = {k: r["dw"] for k, r in hardware.table("socket_head_bearing")["rows"].items()}
+# hardness to tensile strength, steel (ISO 18265:2013, Table A.1): a washer's class, for its bending
+HARDNESS_RM_MPA = {200: 640.0, 300: 965.0}
 PROOF_STRENGTH_PA = {"8.8": 580e6, "10.9": 830e6, "12.9": 970e6}                               # bossard-proof
 MARGIN = 2.0                         # kept under each insert and plastic limit (covestro-pmd p. 59)
 
@@ -757,6 +762,100 @@ LIMITS = (
 )
 
 
+# ----------------------------------------------------------------------------- heads and washers on the plastic
+
+HEADS = tuple(hardware.HEADS)          # the heads a joint names: socket (ISO 4762), button (ISO 7380-1), cheese
+WASHERS = tuple(hardware.WASHERS)      # iso7089 (plain), iso7090 (chamfered, from M5), iso7093 (large)
+PLASTIC_CAPS = ("head_bearing", "clamped_on_insert", "clamped_on_washer")   # the printed part's bearing
+FIXES = ("larger head", "washer", "large washer", "limiter")                # tried in this order (#292)
+_BY = {"washer": "all of it bears", "spread": "all of it bears, the pressure falling off across it",
+       "lift-off": "past that it lifts off the plastic", "bending": "past that it would bend over {} MPa"}
+
+
+def head_bearing_face(thread: str, head: str = "socket") -> Optional[Dict[str, Any]]:
+    """A head's bearing face for a thread, from :mod:`cadagent.library.hardware`: {head, standard, dw_mm (the least
+    diameter it bears on), da_mm (the fillet under it, its largest), stands_in (dk min stands in for a dw the
+    standard does not give), source}; None where the table has no row for the thread."""
+    if head not in HEADS:
+        raise ValueError(f"head must be one of {list(HEADS)}, not {head!r}")
+    t = hardware.table(hardware.HEADS[head])
+    r = t["rows"].get(str(thread).upper())
+    if r is None:
+        return None
+    return {"head": head, "standard": t["standard"], "dw_mm": r["dw"], "da_mm": r["da"], "stands_in": t["stands_in"],
+            "source": t["source"]}
+
+
+def washer(key: str, thread: str) -> Dict[str, Any]:
+    """A washer for a thread, from :mod:`cadagent.library.hardware`: its hole, outside and thickness (mm; the least
+    outside and the thinnest, which the checks use), its standard, the tensile strength of its hardness class
+    (ISO 18265's conversion) and its source."""
+    if key not in WASHERS:
+        raise ValueError(f"washer must be one of {list(WASHERS)}, not {key!r}")
+    t = hardware.table(hardware.WASHERS[key])
+    r = t["rows"].get(str(thread).upper())
+    if r is None:
+        raise ValueError(f"{t['standard']} lists no {thread} washer; sizes: {', '.join(t['rows'])}")
+    return {"key": key, "standard": t["standard"], "d1_mm": r["d1"], "d2_mm": r["d2"], "h_mm": r["h"],
+            "d2_min_mm": r["d2_min"], "h_min_mm": r["h_min"], "hardness_hv": t["hardness_hv"],
+            "strength_pa": HARDNESS_RM_MPA[t["hardness_hv"]] * 1e6, "source": t["source"]}
+
+
+def head_label(hb: Dict[str, Any]) -> str:
+    return (f"{hb['standard']} {hb['head']} head" +
+            (" (its dk min: the standard gives no bearing face)" if hb["stands_in"] else ""))
+
+
+def _least_thickness(clamped: Dict[str, Any]) -> Optional[float]:
+    t = clamped.get("thickness_mm")
+    if t is None:
+        return None
+    tol = clamped.get("tolerance_mm")
+    return float(t) - float(tol if tol is not None else PLASTIC_TOL_MM)
+
+
+def _face(support_mm: float, what: str, clear_mm: float, chamfer_mm: float, wsh: Optional[Dict[str, Any]],
+          cmat: str, t_min_mm: Optional[float], margin: float, da_mm: Optional[float] = None) -> Dict[str, Any]:
+    """The printed plastic a rigid face presses (a head, or the end of an insert), straight or through a washer: the
+    bearing area, the effective outside, and a line saying what bears where (#292)."""
+    for nm, v in (("chamfer_mm", chamfer_mm),):
+        if not (isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0):
+            raise ValueError(f"{nm} must be a finite size of at least 0, not {v!r}")
+    inner = clear_mm + 2.0 * chamfer_mm
+    hole = f"a {clear_mm:g} mm hole" + (f" chamfered {chamfer_mm:g} mm ({inner:g} mm across)" if chamfer_mm else "")
+    if wsh is None:
+        area = fx.bearing_area(support_mm * MM, clear_mm * MM, chamfer_mm * MM) / MM ** 2
+        if area <= 0:
+            raise ValueError(f"{hole} is as wide as {what} ({support_mm:g} mm): nothing bears on the plastic")
+        note = ""
+        if da_mm and inner < da_mm - 1e-9:
+            note = (f"; the fillet under the head (up to {da_mm:g} mm) is wider than the hole, so it rides on the "
+                    f"hole's edge: chamfer it to at least {da_mm:g} mm across")
+        return {"area_mm2": area, "outside_mm": support_mm, "inner_mm": inner, "washer": None,
+                "text": f"{what} ({support_mm:g} mm on {hole}: {area:.2f} mm^2){note}"}
+    if t_min_mm is None or t_min_mm <= 0:
+        raise ValueError("a washer on printed plastic needs the clamped part's thickness_mm: how far it spreads the "
+                         "clamp depends on it")
+    inner_w = max(inner, wsh["d1_mm"])
+    strength = bearing_strength(cmat)
+    wb = fx.washer_bearing(support_mm * MM, wsh["d2_min_mm"] * MM, wsh["h_min_mm"] * MM, inner_w * MM,
+                           PRINTED[cmat].secant_upper_bound("across") * 1e6, t_min_mm * MM,
+                           METAL_MODULUS_PA["steel"], strength / margin, wsh["strength_pa"] / margin)
+    area = wb["area"] / MM ** 2
+    if area <= 0:
+        raise ValueError(f"the {wsh['standard']} washer does not reach past {hole}: nothing bears on the plastic")
+    by = _BY[wb["by"]].format(round(wsh["strength_pa"] / margin / 1e6))
+    info = {"key": wsh["key"], "standard": wsh["standard"], "outside_mm": wsh["d2_min_mm"],
+            "thickness_mm": wsh["h_min_mm"], "overhang_mm": wb["overhang"] / MM, "bearing_overhang_mm": wb["used"] / MM,
+            "by": wb["by"], "spread_length_mm": wb["spread_length"] / MM,
+            "bending_mpa": wb["bending_stress"] / 1e6, "source": wsh["source"]}
+    return {"area_mm2": area, "outside_mm": wb["outside"] / MM, "inner_mm": inner_w, "washer": info,
+            "text": (f"an {wsh['standard']} washer ({wsh['d2_min_mm']:g} x {wsh['h_min_mm']:g} mm at its least) on "
+                     f"{what} ({support_mm:g} mm), on {hole}: {wb['used'] / MM:.2f} of its {wb['overhang'] / MM:.2f} "
+                     f"mm overhang bears ({by}; a beam on the plastic, which spreads it {wb['spread_length'] / MM:.2f} "
+                     f"mm), {area:.2f} mm^2, as a {wb['outside'] / MM:.2f} mm face")}
+
+
 def _lame(ratio: float) -> float:
     """Lame's hoop stress at the bore of a thick ring, over the pressure in it: (b^2 + a^2) / (b^2 - a^2), b / a =
     ``ratio`` (Shigley 10th ed., Section 3-14)."""
@@ -785,7 +884,7 @@ def _graded(value: float, limit: float, ceiling: float) -> str:
 
 def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: float, lim: Optional["Limiter"],
                 clamped: Dict[str, Any], cmat: str, preload: Dict[str, float], Fp: float, head: Optional[float],
-                clear: Optional[float], head_area: Optional[float], margin: float,
+                clear: Optional[float], head_area: Optional[Dict[str, Any]], margin: float,
                 limiter_length_mm: Optional[float], limiter_hole_mm: Optional[float],
                 insert: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """The clamped part's rows, for any screw joint: the plastic under the head, the limiter (its length against the
@@ -795,13 +894,13 @@ def _clamp_rows(rows: List[Dict[str, Any]], thread: str, d_mm: float, p_mm: floa
     # the head on the clamped part
     if lim is None and cmat != "metal":
         if head_area:
-            sigma = fx.annulus_stress(preload["high"], head * MM, clear * MM)
+            sigma = preload["high"] / (head_area["area_mm2"] * MM ** 2)
             strength = bearing_strength(cmat)
             v = _graded(sigma, strength / margin * (1 + 1e-9), strength)
             rows.append(_row("head bearing", round(sigma / 1e6, 2), round(strength / margin / 1e6, 2), v,
-                             f"the preload on the plastic under the head or washer (MPa, {head:g} mm on a {clear:g} mm "
-                             f"hole) against its compressive strength / {margin:g} ({BEARING_BASIS[family(cmat)]}); "
-                             "a washer spreads it"))
+                             f"the preload on the plastic under {head_area['text']} (MPa) against its compressive "
+                             f"strength / {margin:g} ({BEARING_BASIS[family(cmat)]})" +
+                             ("" if head_area["washer"] else "; a washer under the head spreads it")))
         else:
             rows.append(_row("head bearing", None, None, "warn",
                              f"not checked: no head bearing diameter for {thread}; give head_mm and clearance_mm"))
@@ -1019,7 +1118,9 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                 clamped: Optional[Dict[str, Any]] = None, limiter_key: Optional[str] = None,
                 limiter_length_mm: Optional[float] = None, limiter_hole_mm: Optional[float] = None,
                 screw_depth_mm: Optional[float] = None, margin: float = MARGIN,
-                name: Optional[str] = None) -> Dict[str, Any]:
+                name: Optional[str] = None, head: str = "socket", head_washer: Optional[str] = None,
+                insert_washer: Optional[str] = None, chamfer_mm: float = 0.0, under_chamfer_mm: float = 0.0,
+                fixes: bool = True) -> Dict[str, Any]:
     """Check one screw joint into a heat-set insert in a printed part, with or without a compression limiter in the
     clamped part. Returns verdict (pass / warn / fail: the worst row), each check's value, limit, verdict and why,
     the insert's capacities, the most to tighten to and the limits. Lengths in mm, forces in N, torques in N m.
@@ -1027,7 +1128,15 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     ``recess_mm`` is how far the insert's end sits below the joint face (negative: proud); with ``installed_from``
     'far side' it is the shoulder of boss in front of it. ``clamped`` describes the part the screw clamps:
     {material (a PRINTED key or 'metal'), thickness_mm, tolerance_mm (+/-), outside_mm (round the hole)}.
-    ``screw_depth_mm`` is how far the screw's tip reaches below the joint face."""
+    ``screw_depth_mm`` is how far the screw's tip reaches below the joint face.
+
+    The head is a ``head`` from the hardware tables (socket, button or cheese: its least bearing face), or
+    ``head_mm`` across. ``head_washer`` puts a washer (iso7089, iso7090 or iso7093) under the head, and
+    ``insert_washer`` one between the clamped part and a flush insert's end; ``chamfer_mm`` and ``under_chamfer_mm``
+    are the 45 degree chamfers on the clamped part's hole, under the head and on the insert. When the printed part's
+    bearing sets the torque, ``fixes`` lists what lifts it, in order (a larger head, a washer, a large washer, a
+    limiter), each with the torque and preload it allows (#292)."""
+    call = dict(locals())
     ins = INSERTS.get(insert) if isinstance(insert, str) else None
     if ins is None:
         raise ValueError(f"insert must be one of {sorted(INSERTS)}, not {insert!r}")
@@ -1047,6 +1156,10 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     cmat = clamped.get("material", material)
     if cmat != "metal":
         family(cmat)
+    hw = washer(head_washer, ins.thread) if head_washer else None
+    iw = washer(insert_washer, ins.thread) if insert_washer else None
+    if iw is not None and limiter_key:
+        raise ValueError("give a limiter or an insert_washer, not both: the limiter already lands on the insert")
     rows: List[Dict[str, Any]] = []
     hd = hole_design(ins, axis, through)
     bd = boss_design(ins)
@@ -1171,13 +1284,18 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     # the clamp path and the torque
     path = fx.insert_clamp_path(recess_mm * MM, PROUD_OK_MM * MM, installed_from)
     hole_c = clearance_mm or CLEARANCE_MM.get(ins.thread)
-    if path["path"] == "through-insert" and hole_c and hole_c >= knurl and limiter_key is None:
+    if path["path"] == "through-insert" and hole_c and hole_c + 2.0 * under_chamfer_mm >= knurl and \
+            limiter_key is None and iw is None:
         path = {"path": "jack-out", "knurl_preload": 1.0,
                 "why": f"the clamped part's hole ({hole_c:g} mm) is as wide as the insert ({knurl:g} mm): the part "
                        "bears on the plastic round the insert, and the screw pulls the insert out (SPIROL)",
                 "instead": "make the clamped part's hole smaller than the insert's face, so it bears on the brass"}
+    if iw is not None and path["path"] != "through-insert":
+        raise ValueError(f"an insert_washer sits between the clamped part and a flush insert's end; this insert's clamp "
+                         f"path is {path['path']}")
     lim = limiter(limiter_key) if limiter_key else None
-    collar = COLLAR_ON_METAL if (lim is not None or cmat == "metal") else COLLAR_ON_PLASTIC
+    # the head turns on steel when it sits on a washer, the clamped metal or a limiter
+    collar = COLLAR_ON_METAL if (lim is not None or cmat == "metal" or hw is not None) else COLLAR_ON_PLASTIC
     Fp = fx.proof_load(d, p, PROOF_STRENGTH_PA[screw_class])
     pull_lo, torque_lo = cap["pull_out"]["low"], cap["torque_out"]["low"]
     # a separating load the knurl can carry at all comes off what the preload may take when it jacks out; one it
@@ -1192,11 +1310,16 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     # limiter's end and its rating or wall. Each becomes a torque ceiling at the least friction (the most preload a
     # torque gives), so the most to tighten to passes every row that the preload loads.
     caps: Dict[str, float] = {"screw": SCREW_SHARE * Fp}
-    head = head_mm or HEAD_BEARING_MM.get(ins.thread)
+    hb = head_bearing_face(ins.thread, head)
+    head = head_mm or (hb["dw_mm"] if hb else None)
     clear = clearance_mm or CLEARANCE_MM.get(ins.thread)
-    head_area = (math.pi / 4.0 * (head ** 2 - clear ** 2) * MM ** 2) if head and clear and head > clear else None
-    if lim is None and cmat != "metal" and head_area:
-        caps["head_bearing"] = bearing_strength(cmat) / margin * head_area
+    t_min = _least_thickness(clamped)
+    head_area = None
+    if lim is None and cmat != "metal" and head and clear:
+        what = "the head or washer given" if head_mm else f"the {head_label(hb)}"
+        head_area = _face(head, what, clear, chamfer_mm, hw, cmat, t_min, margin,
+                          da_mm=None if head_mm else hb["da_mm"])
+        caps["head_bearing"] = bearing_strength(cmat) / margin * head_area["area_mm2"] * MM ** 2
     shoulder = None
     if path["path"] == "seat":
         shoulder = fx.insert_shear_force(knurl * MM, recess_mm * MM, cap["shear_strength_pa"], cap["c"]["low"])
@@ -1208,11 +1331,23 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
              if engaged_len > 0 else 0.0)
     if strip / margin > pull_n:
         caps["insert_thread"] = strip / margin - pull_n
-    face = None
-    if lim is None and path["path"] == "through-insert" and clear and clear < knurl:
+    face, wface = None, None
+    if lim is None and iw is not None:
+        # a washer between the clamped part and the insert: it sits on the brass round its own hole, and the clamped
+        # part bears on the washer, which spreads the clamp past the insert's end (#292)
+        if iw["d1_mm"] >= knurl:
+            raise ValueError(f"the {iw['standard']} washer's hole ({iw['d1_mm']:g} mm) is as wide as the insert")
+        area = fx.bearing_area(knurl * MM, iw["d1_mm"] * MM)
+        face = {"area_mm2": area / MM ** 2, "on": "brass", "load_pass": BRASS_YIELD_PA[0] * area, "under": "washer"}
+        caps["insert_face"] = face["load_pass"]
+        if cmat != "metal":
+            wface = _face(knurl, "the insert's end", clear or ins.diameter_mm, under_chamfer_mm, iw, cmat, t_min,
+                          margin)
+            caps["clamped_on_washer"] = bearing_strength(cmat) / margin * wface["area_mm2"] * MM ** 2
+    elif lim is None and path["path"] == "through-insert" and clear and clear + 2.0 * under_chamfer_mm < knurl:
         # the clamped part bears on the insert's end round its hole; brass is far stiffer than the boss round it, so
         # the ring takes nearly all the clamp, as it does under a limiter
-        area = math.pi / 4.0 * (knurl ** 2 - clear ** 2) * MM ** 2
+        area = fx.bearing_area(knurl * MM, clear * MM, under_chamfer_mm * MM)
         face = {"area_mm2": area / MM ** 2, "on": "brass", "load_pass": BRASS_YIELD_PA[0] * area}
         caps["insert_face"] = face["load_pass"]
         if cmat != "metal":
@@ -1268,11 +1403,21 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
         sigma = preload["high"] / (face["area_mm2"] * MM ** 2)
         v = _graded(sigma, BRASS_YIELD_PA[0] * (1 + 1e-9), BRASS_YIELD_PA[1])
         rows.append(_row("insert face", round(sigma / 1e6, 1), round(BRASS_YIELD_PA[0] / 1e6, 1), v,
-                         f"the preload on the ring of the insert's end round the clamped part's hole "
-                         f"({face['area_mm2']:.2f} mm^2, MPa): brass is far stiffer than the boss round it, so the "
+                         f"the preload on the ring of the insert's end round "
+                         + ("the washer's hole" if iw is not None else "the clamped part's hole") +
+                         f" ({face['area_mm2']:.2f} mm^2, MPa): brass is far stiffer than the boss round it, so the "
                          "ring takes nearly all the clamp. Against brass's yield (124-310 MPa by temper): over it "
                          "the face embeds and the preload falls"))
-        if cmat != "metal":
+        if wface is not None:
+            strength = bearing_strength(cmat)
+            sigma = preload["high"] / (wface["area_mm2"] * MM ** 2)
+            v = _graded(sigma, strength / margin * (1 + 1e-9), strength)
+            rows.append(_row("clamped on washer", round(sigma / 1e6, 1), round(strength / margin / 1e6, 1), v,
+                             f"the printed clamped part bears on {wface['text']} (MPa), against its compressive "
+                             f"strength / {margin:g} ({BEARING_BASIS.get(family(cmat), '')}). The washer is taken to "
+                             "carry the whole clamp to the brass, the boss round the insert left out: the cautious "
+                             "side"))
+        elif cmat != "metal":
             strength = bearing_strength(cmat)
             v = _graded(sigma, strength / margin * (1 + 1e-9), strength)
             rows.append(_row("clamped on insert", round(sigma / 1e6, 1), round(strength / margin / 1e6, 1), v,
@@ -1280,9 +1425,9 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                              f"plastic carries the preload there (MPa), against its compressive strength / {margin:g} "
                              f"({BEARING_BASIS.get(family(cmat), 'its datasheet strength along the layers')}): over "
                              "it the plastic crushes into the ring and the preload falls. A metal washer between the "
-                             "printed part and the insert (not under the head), or a limiter, spreads it. The whole "
-                             "clamp is taken on the ring, the cautious side: once the plastic yields the boss face "
-                             "takes some, which nothing here sizes"))
+                             "printed part and the insert (not under the head) spreads it (insert_washer; the fixes "
+                             "list what each option allows). The whole clamp is taken on the ring, the cautious side: "
+                             "once the plastic yields the boss face takes some, which nothing here sizes"))
     # service loads on the knurl
     knurl_pull = pull_n + (preload["high"] if path["path"] == "jack-out" else 0.0)
     if path["path"] != "seat" and knurl_pull > 0:
@@ -1313,11 +1458,11 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
         rows.append(_row("torque-out", round(turn_nm, 4), round(torque_lo / margin, 4), v,
                          f"a turning load on the insert against its low torque-out {torque_lo:.3g} N m / {margin:g}"))
 
-    kept = _clamp_rows(rows, ins.thread, ins.diameter_mm, ins.pitch_mm, lim, clamped, cmat, preload, Fp, head, clear,
-                       head_area, margin, limiter_length_mm, limiter_hole_mm,
+    kept = _clamp_rows(rows, ins.thread, ins.diameter_mm, ins.pitch_mm, lim, clamped, cmat, preload, Fp,
+                       hw["d2_min_mm"] if hw else head, clear, head_area, margin, limiter_length_mm, limiter_hole_mm,
                        insert={"knurl": knurl, "path": path["path"], "face": face, "material": material})
 
-    return {"verdict": _worst(rows), "name": name or f"{ins.thread} {ins.part} in {material}",
+    result = {"verdict": _worst(rows), "name": name or f"{ins.thread} {ins.part} in {material}",
             "insert": ins.as_dict(), "material": {"key": material, "name": PRINTED[material].name, "family": fam,
                                                   "shear_strength_pa": cap["shear_strength_pa"], "status": STATUS},
             "axis": axis, "clamp": path, "screw_class": screw_class, "proof_load_n": Fp,
@@ -1326,7 +1471,12 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                        "preload_n": preload, "thread_share": lt["thread_share"], "nut_factor": lt["nut_factor"],
                        "friction": {"thread": list(THREAD_FRICTION), "collar": list(collar)}},
             "capacity": cap, "hole": hd, "boss": bd, "limiter": asdict(lim) if lim else None, "preload_kept": kept,
+            "head": {"head": None if head_mm else head_label(hb) if hb else None, "bearing_mm": head,
+                     "on_plastic": head_area, "washer": hw}, "insert_washer": iw, "clamped_on_washer": wface,
             "install": install, "checks": rows, "margin": margin, "limits": list(LIMITS)}
+    result["fixes"] = _fix_ladder(check_joint, call, result, ins.thread, d, clamped.get("thickness_mm")) \
+        if fixes else None
+    return result
 
 
 # steel in steel or aluminium: VDI 2230's friction classes B and C cover the thread and the head alike
@@ -1350,7 +1500,8 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: O
                 head_mm: Optional[float] = None, clearance_mm: Optional[float] = None,
                 limiter_key: Optional[str] = None, limiter: Optional[Dict[str, Any]] = None,
                 limiter_length_mm: Optional[float] = None, limiter_hole_mm: Optional[float] = None,
-                margin: float = MARGIN, name: Optional[str] = None) -> Dict[str, Any]:
+                margin: float = MARGIN, name: Optional[str] = None, head: str = "socket",
+                head_washer: Optional[str] = None, chamfer_mm: float = 0.0, fixes: bool = True) -> Dict[str, Any]:
     """Check printed plastic clamped by a screw that does not thread into it: into tapped metal, a nut, or a metal
     part's own thread. The rows: the most to tighten to (the screw's proof load and, with no limiter, the plastic under
     the head), the head's bearing on the plastic, a limiter's length against the plastic, its seating force, the head
@@ -1360,7 +1511,9 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: O
     the limiter row says so); ``outside_mm`` the plastic round a limiter.
     A limiter is a catalogue key (``limiter_key``) or your own part (``limiter``: own_limiter's arguments, without
     the thread). A limiter that sits below the plastic's face is one shorter than the plastic: give its
-    ``limiter_length_mm``. Lengths in mm, torques in N m."""
+    ``limiter_length_mm``. Lengths in mm, torques in N m. ``head``, ``head_washer`` and ``chamfer_mm`` are
+    check_joint's, and so are the ``fixes`` when the plastic under the head sets the torque."""
+    call = dict(locals())
     d_mm, p_mm = _metric(thread)
     family(material)
     if screw_class not in PROOF_STRENGTH_PA:
@@ -1386,18 +1539,24 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: O
     else:
         lim = None
     d, p = d_mm * MM, p_mm * MM
-    collar = COLLAR_ON_METAL if lim is not None else COLLAR_ON_PLASTIC
+    hw = washer(head_washer, tag) if head_washer else None
+    collar = COLLAR_ON_METAL if (lim is not None or hw is not None) else COLLAR_ON_PLASTIC
     k_lo = fx.nut_factor(d, p, THREAD_FRICTION_METAL[0], collar[0])
     k_hi = fx.nut_factor(d, p, THREAD_FRICTION_METAL[1], collar[1])
     Fp = fx.proof_load(d, p, PROOF_STRENGTH_PA[screw_class])
     # each cap is the most preload one limit passes, and a torque ceiling at the least friction: the screw's clamp
     # load (75 % of its proof load), the plastic under the head, the limiter's rating or wall
     caps: Dict[str, float] = {"screw": SCREW_SHARE * Fp}
-    head = head_mm or HEAD_BEARING_MM.get(tag)
+    hb = head_bearing_face(tag, head)
+    head = head_mm or (hb["dw_mm"] if hb else None)
     clear = clearance_mm or CLEARANCE_MM.get(tag)
-    head_area = (math.pi / 4.0 * (head ** 2 - clear ** 2) * MM ** 2) if head and clear and head > clear else None
-    if lim is None and head_area:
-        caps["head_bearing"] = bearing_strength(material) / margin * head_area
+    head_area = None
+    if lim is None and head and clear:
+        what = "the head or washer given" if head_mm else f"the {head_label(hb)}"
+        t_min = float(thickness_mm) - float(tolerance_mm if tolerance_mm is not None else PLASTIC_TOL_MM)
+        head_area = _face(head, what, clear, chamfer_mm, hw, material, t_min, margin,
+                          da_mm=None if head_mm else hb["da_mm"])
+        caps["head_bearing"] = bearing_strength(material) / margin * head_area["area_mm2"] * MM ** 2
     caps.update(_limiter_caps(lim, d, p, margin))
     ceilings = {k: k_lo * d * F for k, F in caps.items()}
     governed = min(ceilings, key=ceilings.get)
@@ -1415,9 +1574,9 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: O
                       (" (inside the margin)" if v == "warn" else ""))))
     clamped = {"material": material, "thickness_mm": thickness_mm, "tolerance_mm": tolerance_mm,
                "outside_mm": outside_mm}
-    kept = _clamp_rows(rows, tag, d_mm, p_mm, lim, clamped, material, preload, Fp, head, clear, head_area, margin,
-                       limiter_length_mm, limiter_hole_mm)
-    return {"verdict": _worst(rows), "name": name or f"{tag} clamping {thickness_mm:g} mm of {material}",
+    kept = _clamp_rows(rows, tag, d_mm, p_mm, lim, clamped, material, preload, Fp, hw["d2_min_mm"] if hw else head,
+                       clear, head_area, margin, limiter_length_mm, limiter_hole_mm)
+    result = {"verdict": _worst(rows), "name": name or f"{tag} clamping {thickness_mm:g} mm of {material}",
             "thread": tag, "material": {"key": material, "name": PRINTED[material].name, "family": family(material),
                                          "status": STATUS},
             "screw_class": screw_class, "proof_load_n": Fp,
@@ -1425,16 +1584,153 @@ def check_clamp(thread: str, material: str, thickness_mm: float, tolerance_mm: O
                        "preload_caps_n": caps, "preload_n": preload,
                        "nut_factor": {"low": k_lo, "high": k_hi},
                        "friction": {"thread": list(THREAD_FRICTION_METAL), "collar": list(collar)}},
-            "limiter": asdict(lim) if lim else None, "preload_kept": kept, "checks": rows, "margin": margin,
-            "limits": LIMITS}
+            "limiter": asdict(lim) if lim else None, "preload_kept": kept,
+            "head": {"head": None if head_mm else head_label(hb) if hb else None, "bearing_mm": head,
+                     "on_plastic": head_area, "washer": hw},
+            "checks": rows, "margin": margin, "limits": LIMITS}
+    result["fixes"] = _fix_ladder(check_clamp, call, result, tag, d, thickness_mm) if fixes else None
+    return result
+
+
+# ----------------------------------------------------------------------------- what lifts a cap set by the plastic
+
+def _preload_at(r: Dict[str, Any], d: float) -> float:
+    """The most preload the allowed torque gives: at the least nut factor, as every ceiling is taken."""
+    return r["torque"]["allowed_nm"] / (r["torque"]["nut_factor"]["low"] * d)
+
+
+def _fix_ladder(check, call: Dict[str, Any], base: Dict[str, Any], thread: str, d: float,
+                thickness_mm: Optional[float]) -> Optional[Dict[str, Any]]:
+    """When the printed part's bearing sets the torque (the plastic under the head, or a printed part on the insert's
+    end), what lifts it, in order: a larger head, a washer, a large washer, a compression limiter (#292). Each option
+    is the same check run again with it fitted, at the torque it allows, so its limit is the check's own. A washer
+    goes where the plastic sets the limit, under the head or between the part and the insert, and then where the
+    next one does. An option is named only if it lifts the preload and fails no row the joint did not already fail,
+    so a limiter whose seating force or press fit fails is not named. ``fix`` is the first one named."""
+    governed = base["torque"]["governed_by"]
+    if governed not in PLASTIC_CAPS:
+        return None
+    takes = set(inspect.signature(check).parameters)
+    plain = {**call, "torque_nm": None, "fixes": False}
+    ref = base if call.get("torque_nm") is None else check(**plain)
+    F0 = _preload_at(ref, d)
+    failed = {c["check"] for c in ref["checks"] if c["verdict"] == "fail"}
+    options: List[Dict[str, Any]] = []
+
+    def run(fix: str, what: str, changes: Dict[str, Any], add: bool = True) -> Dict[str, Any]:
+        shown = {k: v for k, v in changes.items() if v is not None}
+        try:
+            r = check(**{k: v for k, v in {**plain, **changes}.items() if k in takes})
+        except ValueError as exc:
+            o = {"fix": fix, "what": what, "set": shown, "named": False, "lifts": False,
+                 "why": f"cannot be checked: {exc}"}
+        else:
+            F = _preload_at(r, d)
+            new = [c["check"] for c in r["checks"] if c["verdict"] == "fail" and c["check"] not in failed]
+            lifts = F > F0 * 1.01
+            g = r["torque"]["governed_by"]
+            why = ("" if lifts and not new else
+                   "fails " + ", ".join(new) if new else
+                   f"does not lift it: {g.replace('_', ' ')} still sets {F:.0f} N")
+            o = {"fix": fix, "what": what, "set": shown, "allowed_nm": r["torque"]["allowed_nm"],
+                 "preload_n": F, "gain": F / F0, "governed_by": g, "verdict": r["verdict"],
+                 "preload_kept": (r["preload_kept"] or {}).get("low"), "lifts": lifts, "named": lifts and not new,
+                 "why": why}
+        if add:
+            options.append(o)
+        return o
+
+    def skip(fix: str, why: str) -> None:
+        options.append({"fix": fix, "named": False, "lifts": False, "why": why})
+
+    # a larger head: the listed head with the widest bearing face, if it is wider than this one
+    current = call.get("head_mm") or (head_bearing_face(thread, call.get("head") or "socket") or {}).get("dw_mm")
+    faces = [f for f in (head_bearing_face(thread, h) for h in HEADS) if f]
+    best = max(faces, key=lambda f: f["dw_mm"]) if faces else None
+    if call.get("head_washer"):
+        skip("larger head", "a washer is under the head already: the head bears on it, not on the plastic")
+    elif best and current and best["dw_mm"] > current + 1e-9:
+        run("larger head", f"an {head_label(best)}: a {best['dw_mm']:g} mm bearing face, against {current:g} mm",
+            {"head": best["head"], "head_mm": None})
+    else:
+        skip("larger head", f"no listed {thread} head bears wider than {current or 0:g} mm")
+    # a washer, then a large one, where the plastic sets the limit
+    for fix, key in (("washer", "iso7089"), ("large washer", "iso7093")):
+        table = hardware.table(hardware.WASHERS[key])
+        if thread not in table["rows"]:
+            skip(fix, f"{table['standard']} lists no {thread} washer")
+            continue
+        if thickness_mm is None:
+            skip(fix, "give the clamped part's thickness_mm: how far a washer spreads the clamp depends on it")
+            continue
+        changes: Dict[str, Any] = {slot: key for slot in ("head_washer", "insert_washer") if call.get(slot)}
+        r = ref if not changes else None
+        for _ in range(2):
+            if r is None:
+                try:
+                    r = check(**{k: v for k, v in {**plain, **changes}.items() if k in takes})
+                except ValueError:
+                    break
+            g = r["torque"]["governed_by"]
+            if g == "head_bearing" and "head_washer" not in changes:
+                changes["head_washer"] = key
+            elif g == "clamped_on_insert" and "insert_washer" not in changes and "insert_washer" in takes:
+                changes["insert_washer"] = key
+            else:
+                break
+            r = None
+        if not changes:
+            skip(fix, f"an {table['standard']} washer is fitted already")
+            continue
+        where = [w for w, slot in (("between the part and the insert", "insert_washer"), ("under the head",
+                                                                                         "head_washer"))
+                 if slot in changes]
+        run(fix, f"an {table['standard']} washer " + " and one ".join(where), changes)
+    # a compression limiter, as long as the plastic allows: named only if its own rows pass
+    if thickness_mm is None:
+        skip("limiter", "give the clamped part's thickness_mm: a limiter is cut to it")
+    else:
+        # two lengths: the longest standard one no longer than the plastic (flush, or a little short, so the head
+        # squeezes the plastic before it lands), and the shortest that stands proud of the plastic's thickest even at
+        # its own least length, so the head always lands on metal (the plastic is then loose round it: a warning)
+        given = call["tolerance_mm"] if "tolerance_mm" in call else (call.get("clamped") or {}).get("tolerance_mm")
+        tol = float(given if given is not None else PLASTIC_TOL_MM)
+        for series in ("cl6000", "cl8000"):
+            key = f"spirol-{series}-{str(thread).lower()}"
+            if key not in LIMITERS:
+                continue
+            lim_tol = LIMITERS[key].tolerance_mm
+            flush = [L for L in LIMITER_LENGTHS_MM if L <= float(thickness_mm) + 1e-9]
+            proud = [L for L in LIMITER_LENGTHS_MM if L - lim_tol >= float(thickness_mm) + tol - 1e-9]
+            lengths = sorted({*(flush[-1:]), *(proud[:1])})
+            if not lengths:
+                skip("limiter", f"{key}: no standard length fits the plastic's {thickness_mm:g} mm (SPIROL's are "
+                                f"{LIMITER_LENGTHS_MM[0]:g} to {LIMITER_LENGTHS_MM[-1]:g} mm)")
+                continue
+            tried = [run("limiter", f"a {key} compression limiter, {L:g} mm long" +
+                         (", standing proud of the plastic" if L - lim_tol >= float(thickness_mm) + tol - 1e-9
+                          else ""),
+                         {"limiter_key": key, "limiter_length_mm": L, "limiter": None, "head_washer": None,
+                          "insert_washer": None}, add=False) for L in lengths]
+            best = next((o for o in tried if o["named"]), None)
+            if best is None:
+                best = dict(tried[0], why="; ".join(f"{o['set'].get('limiter_length_mm', 0):g} mm: {o['why']}"
+                                                    for o in tried))
+            options.append(best)
+    named = [o for o in options if o["named"]]
+    # a washer leaves the plastic in the clamp path, where it relaxes; a limiter that passes takes it out
+    lasting = [o for o in named if (o.get("preload_kept") or 0.0) >= PRELOAD_KEPT_PASS]
+    return {"for": governed, "preload_n": F0, "allowed_nm": ref["torque"]["allowed_nm"], "options": options,
+            "fix": named[0] if named else None, "lasting": lasting[0] if lasting else None}
 
 
 CLAMP_KEYS = {"name", "thread", "material", "thickness_mm", "tolerance_mm", "outside_mm", "screw_class", "torque_nm",
-              "head_mm", "clearance_mm", "limiter_key", "limiter", "limiter_length_mm", "limiter_hole_mm", "margin"}
+              "head_mm", "clearance_mm", "limiter_key", "limiter", "limiter_length_mm", "limiter_hole_mm", "margin",
+              "head", "head_washer", "chamfer_mm"}
 SPEC_KEYS = {"name", "insert", "material", "axis", "boss_outside_mm", "edge_mm", "hole_mm", "hole_depth_mm",
              "through", "recess_mm", "installed_from", "screw_class", "torque_nm", "pull_n", "push_n", "turn_nm",
              "head_mm", "clearance_mm", "clamped", "limiter_key", "limiter_length_mm", "limiter_hole_mm",
-             "screw_depth_mm", "margin"}
+             "screw_depth_mm", "margin", "head", "head_washer", "insert_washer", "chamfer_mm", "under_chamfer_mm"}
 
 
 def check_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
@@ -1514,7 +1810,7 @@ def coupon_plan(keys: Optional[Tuple[str, ...]] = None, material: str = "pla-bam
                                 limiter_key=lim["key"] if limited else None,
                                 limiter_length_mm=lim["length_mm"] if limited else None,
                                 limiter_hole_mm=lim["hole_mm"] if limited else None,
-                                head_mm=head, clearance_mm=CLEARANCE_MM.get(ins.thread))
+                                head_mm=head, clearance_mm=CLEARANCE_MM.get(ins.thread), fixes=False)
                 note = ("the limiter stands proud of the plate by design, so the clamp is all metal and the cell "
                         "measures what a limiter keeps against the plastic cell; a catalogue limiter seated into "
                         "printed plastic is what the seating-force row fails" if limited else

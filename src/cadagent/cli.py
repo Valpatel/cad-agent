@@ -1080,6 +1080,15 @@ def cmd_inserts(args: argparse.Namespace) -> int:
                 (" through a limiter" if joint["limiter"] else ""))
         _say(f"{joint['verdict'].upper():4}  {joint['name']}: {what}; tighten to at most "
              f"{torque['allowed_nm']:.2f} N m ({torque['governed_by'].replace('_', ' ')})")
+        fixes = joint.get("fixes")
+        if fixes:
+            # what lifts a limit the printed part's bearing sets, in the kit's order (#292)
+            for o in fixes["options"]:
+                if o["named"]:
+                    _say(f"      fix: {o['what']}: at most {o['allowed_nm']:.2f} N m, {o['preload_n']:.0f} N "
+                         f"preload ({o['governed_by'].replace('_', ' ')})")
+            if fixes["fix"] is None:
+                _say("      no listed fix lifts it: " + "; ".join(f"{o['fix']}: {o['why']}" for o in fixes["options"]))
         for row in joint["checks"]:
             if row["verdict"] != "pass":
                 _say(f"      {row['verdict']}: {row['check']}: {row['detail']}")

@@ -348,6 +348,18 @@ def test_extends_adds_schema2_fields_to_a_core_entry(tmp_path):
     assert "good-guide: research/references/g1.yaml sets title to 'Other title'" in problems
     assert "nowhere: research/references/g1.yaml extends it, but research/references.yaml has no such entry" in problems
     assert "good-guide: extended twice, in research/references/g1.yaml and research/references/g2.yaml" in problems
+    # only a read source takes schema-2 fields: an unverified key is read and moved up first
+    root3 = _planted2(tmp_path / "c", {"g1": _shard([{"id": "lost", "extends": True,
+                                                      "evidence": {"class": "measured"}}])},
+                      )
+    (root3 / "research" / "references.yaml").write_text(yaml.safe_dump({"schema": 1, "sources": [GOOD], "unverified": [
+        {"id": "lost", "title": "Lost", "org": "Maker", "why": "no URL"}]}))
+    problems = _problems(root3)
+    assert any("lost: research/references/g1.yaml extends it, but it is unverified" in p for p in problems), problems
+    assert load(root3 / "research" / "references.yaml").resolve("lost").get("evidence") is None
+    # a field an extension gets wrong is reported once, not once as written and once as merged
+    root4 = _planted2(tmp_path / "d", {"g1": _shard([{**ext, "kind": "blogpost"}])})
+    assert sum("kind 'blogpost'" in p for p in _problems(root4)) == 1
 
 
 def test_a_shard_over_the_limit_is_split_by_topic(tmp_path, monkeypatch):
@@ -376,6 +388,7 @@ def test_a_shard_file_is_checked(tmp_path):
     (GUIDE, {"evidence": {"class": "skimmed"}}, "evidence.class 'skimmed' is not in vocab.yaml `evidence_class`"),
     (GUIDE, {"evidence": {"class": "snippet-only", "numbers": "yes"}}, "evidence.numbers 'yes' is not in vocab.yaml"),
     (GUIDE, {"evidence": {"class": "snippet-only", "authority": "maker"}}, "evidence.authority 'maker'"),
+    (GUIDE, {"evidence": {"class": "snippet-only", "tested": True}}, "evidence.tested is the YAML boolean True"),
     (GUIDE, {"kind": None}, "no kind"),
     (GUIDE, {"evidence": {"numbers": "none"}}, "no evidence.class"),
     (GUIDE, {"areas": []}, "no areas: place the record in docs/areas.yaml"),
@@ -494,6 +507,16 @@ def test_a_read_shard_record_may_be_cited(tmp_path):
 def test_the_ladder_rules(tmp_path, change, message):
     root = _planted2(tmp_path, {"guides-inserts": _shard([{**GUIDE, **change}])})
     assert any(message in p for p in _problems(root)), _problems(root)
+
+
+def test_an_encoded_secondary_source_needs_a_second_record_and_a_primary_one_may_stand_alone(tmp_path):
+    enc = {**GUIDE, "verified": "2026-11-02: read", "checks": ["inserts.check_joint"], "used_for": [],
+           "evidence": {"class": "encoded", "authority": "primary"}}
+    root = _planted2(tmp_path, {"guides-inserts": _shard([enc])})
+    assert not [p for p in _problems(root) if "corroborated_by" in p], _problems(root)
+    root = _planted2(tmp_path / "b", {"guides-inserts": _shard([{**enc, "evidence": {"class": "encoded",
+                                                                                     "authority": "reference"}}])})
+    assert any("evidence class encoded needs a claim corroborated_by another record" in p for p in _problems(root))
 
 
 def test_an_encoded_record_names_what_encodes_it(tmp_path):

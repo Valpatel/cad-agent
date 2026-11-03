@@ -263,6 +263,11 @@ class Registry:
             self._load_problems.append(f"{rid}: {shard.file} extends it, but research/references.yaml has no such "
                                        "entry (drop `extends: true` to make it a record of its own)")
             return
+        if self.entries[rid].kind != "source":
+            self._load_problems.append(f"{rid}: {shard.file} extends it, but it is {self.entries[rid].kind} in "
+                                       "research/references.yaml; only a read source (under `sources:`) takes "
+                                       "schema-2 fields: read it and move it up first")
+            return
         if rid in self._overlays:
             self._duplicates.append(rid)
             self._load_problems.append(f"{rid}: extended twice, in {self._overlays[rid]} and {shard.file}")
@@ -326,7 +331,7 @@ class Registry:
                 out += [f"{ref.id}: {p}" for p in ctx.record_problems(ref.data, ref.file, core=True)]
             if ref.kind in ("source", "catalogued") and isinstance(ref.data.get("evidence"), dict):
                 out += [f"{ref.id}: {p}" for p in ctx.ladder_problems(ref)]
-        return out
+        return list(dict.fromkeys(out))      # an extension's fields are checked as written and as merged: once each
 
 
 def shard_problems(shards: Sequence[Shard]) -> List[str]:
@@ -437,6 +442,8 @@ class _Schema2:
 
     def _in(self, name: str, value: Any, field_name: str) -> List[str]:
         words = self.words(name)
+        if isinstance(value, bool):          # YAML 1.1 reads an unquoted yes/no/on/off as a boolean
+            return [f"{field_name} is the YAML boolean {value}: quote the word (\"yes\", \"no\")"]
         if value in words:
             return []
         near = difflib.get_close_matches(str(value), [str(w) for w in words], n=1)
@@ -611,8 +618,14 @@ class _Schema2:
                            "and promote it first")
             if d.get("rules") or d.get("checks"):
                 out.append("a snippet-only record may not back a rule or a check: read it at source first")
-        if rank >= LADDER.index("verified-at-source") and not _corroborators(ref, self.reg):
-            out.append(f"evidence class {cls} needs a claim corroborated_by another record (the second source)")
+        # verified-at-source means a second source agrees. Above it, a primary source whose examples tests reproduce
+        # may stand alone (#143's medium: "one primary source with reproduced examples"); a secondary one may not.
+        primary = _get(d, ("evidence", "authority")) in PRIMARY
+        if (cls == "verified-at-source" or (rank > LADDER.index("verified-at-source") and not primary)) \
+                and not _corroborators(ref, self.reg):
+            out.append(f"evidence class {cls} needs a claim corroborated_by another record (the second source)"
+                       + ("" if cls == "verified-at-source" else ", or evidence.authority primary or "
+                          "independent-tested"))
         if rank >= LADDER.index("encoded") and not (d.get("rules") or d.get("checks")):
             out.append(f"evidence class {cls} needs `rules` or `checks`: the profile rules or checks that encode it")
         stored = d.get("confidence")

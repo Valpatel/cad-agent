@@ -115,7 +115,7 @@ evidence_class:
   snippet-only: "Seen in a search snippet only. May be listed and linked; never backs a rule, a check or a page's rule line"
   read: "A person or agent opened the source and wrote the dated `verified` note. May be cited by text and by a profile rule"
   verified-at-source: "A second, independent record corroborates the claim (claims[].corroborated_by). May back a check"
-  encoded: "The claim is a profile rule or a check with a golden vector and a planted-defect test (`rules` or `checks` set)"
+  encoded: "The claim is a profile rule or a check with a golden vector and a planted-defect test (`rules` or `checks` set). A secondary source needs a corroborating record first; a primary one may stand alone"
   measured: "A physical result on a real project backs the claim, linked from the record"
 
 numbers:

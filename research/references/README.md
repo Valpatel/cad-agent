@@ -46,7 +46,7 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `rules`, `checks` | The profile rules and cad-agent checks that encode the record |
 | `archive` | A pointer for the offline mirror: `sha256`, `kind`, `fetched`, `redistribute`. Never a path or a host |
 | `summary` | One or two plain sentences, in our words |
-| `extends: true` | The record adds these fields to the core entry with the same id, instead of being a record of its own |
+| `extends: true` | The record adds these fields to the core *read source* with the same id, instead of being a record of its own |
 
 Link health is not kept here. The checker's artifacts and the site JSON hold it, and only evidence-class changes land
 in git.
@@ -69,7 +69,9 @@ flowchart LR
   a check or a `[ref:<id>]` tag outside `research/` may not cite it, and `check()` warns on such a tag in `research/`.
 - **read:** someone opened the source and wrote the dated `verified` note, as every core entry has.
 - **verified-at-source:** an independent record corroborates a claim, named in `claims[].corroborated_by`.
-- **encoded:** a profile rule or a check with tests encodes the claim (`rules` or `checks`).
+- **encoded:** a profile rule or a check with tests encodes the claim (`rules` or `checks`). A secondary source
+  needs a corroborating record first. A primary one (the maker's own, or an independent test) may stand alone, which
+  is #143's "one primary source with reproduced examples".
 - **measured:** a physical result on a real project backs the claim.
 
 ## Rules check() enforces

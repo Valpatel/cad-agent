@@ -34,14 +34,15 @@ FONT = "system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
 # The one evaluator lives in the package, which checks and calculators use too (#99).
 sys.path.insert(0, str(ROOT / "src"))
 from cadagent.manufacturing.process import evaluate  # noqa: E402
+from cadagent.review import references  # noqa: E402
 
 # ----------------------------------------------------------------------------- data
 
 def load() -> dict:
-    """The profiles, with ``sources``: the entries of the reference registry (research/references.yaml, #118) that
-    the rules cite."""
+    """The profiles, with ``sources``: the read entries of the reference registry (research/references.yaml and its
+    schema-2 shards, #118, #323) that the rules cite. A rule may cite only a read record, never a catalogued one."""
     data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
-    data["sources"] = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))["sources"]
+    data["sources"] = [ref.data for ref in references.load(REGISTRY).of_kind("source")]
     return data
 
 

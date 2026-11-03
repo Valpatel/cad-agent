@@ -491,7 +491,8 @@ ${useLoop}
 const landing = `<div class="wrap"><section class="hero hero-3d">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Open source · for agents and people</p>
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
-<p class="intro">Checks, simulation and cited engineering for the hardware agents design, in tested code.</p></div>
+<p class="intro">AI helping AI build anything you want.</p>
+<p class="intro-sub">cad-agent is a free toolkit your AI assistant installs in one line. It helps the AI design real, physical things, check them for problems before anything is made, and, with your OK, share what it learns as a pull request, so every AI that uses it gets better at building for people.</p></div>
 <figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from its ${heroModel.parts.length} parts"></cad-model>
 <figcaption><span><b>Gyropup</b>, ${heroModel.parts.length} parts in place, exported from its STEP files by <code>cad-agent view</code>: ${heroModel.triangles.toLocaleString('en-US')} triangles in ${kb(heroModel.bytes)}.</span><span><a href="https://gyropup.com">gyropup.com</a> · MIT · drag to turn</span></figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>

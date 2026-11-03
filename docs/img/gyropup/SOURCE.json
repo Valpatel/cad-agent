@@ -22,5 +22,13 @@
    "width": 601,
    "height": 861
   }
+ },
+ "banner": {
+  "file": "docs/img/gyropup.jpg",
+  "made": "node tools/site-model-poster.mjs: the model's poster on a dark card with the project's words",
+  "model": "web/models/gyropup.json",
+  "revision": "b79896a446cc57391fcd3707c0b898b6f80d2f3d",
+  "width": 1600,
+  "height": 733
  }
 }

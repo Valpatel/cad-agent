@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.18.1 (2026-11-03)
+
+**Changed**
+- The README hero (`docs/img/hero/gyropup-leg.svg`) is transparent on GitHub's page instead of a panel (cream in the light scheme, dark green in the dark one). Its words get a halo in the page colour (`anim.svg.HALO`: white or `#0d1117`), so they stand out whichever colour scheme the SVG picks. `anim.svg.document(background=False)` makes any figure transparent; the FEA and snap-fit figures keep their panels.
+
+**Fixed**
+- The v0.18.0 entry's M3 clamp figure (2.12 → 0.25 N·m without `head_mm`) is for PLA Basic; the same joint in PETG Basic gets 0.21 N·m. `thread:` clamp results (`check_clamp`) also gain the `fixes` and `head` keys (#292).
+
 ## v0.18.0 (2026-11-03)
 
 **New**

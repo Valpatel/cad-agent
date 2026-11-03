@@ -94,7 +94,8 @@ box-shadow:inset 0 1px 1px var(--hi),inset 0 0 0 1px #749dab55,0 24px 48px rgb(v
 .hero-3d{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);grid-template-areas:"head model" "actions model";align-items:start;gap:0 48px;padding:40px 0 56px}
 .hero-3d .hero-head{grid-area:head;align-self:end;padding-top:24px}.hero-3d .hero-actions{grid-area:actions;min-width:0}
 .hero-3d h1{font-size:clamp(40px,4.4vw,62px)}
-.hero-3d .intro{font-size:20px;line-height:1.45;max-width:30ch;margin:0 0 28px;color:var(--text-1)}
+.hero-3d .intro{font-size:20px;line-height:1.45;max-width:30ch;margin:0 0 10px;color:var(--text-1)}
+.hero-3d .intro-sub{font-size:16px;line-height:1.55;max-width:44ch;margin:0 0 28px;color:var(--text-2)}
 .hero-model{grid-area:model;margin:0;min-width:0}
 .hero-model cad-model{--cad-model-font:var(--font);--cad-model-mono:var(--mono);width:100%;border-radius:32px;
   background:radial-gradient(ellipse at 30% 8%,var(--hi),transparent 58%),linear-gradient(155deg,var(--sky-a),var(--sky-b));

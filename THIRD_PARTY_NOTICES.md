@@ -37,9 +37,9 @@ contributors"), whose full text travels with them in `docs/img/gyropup/LICENSE.t
 
 | Files | From | Revision |
 |---|---|---|
-| `web/models/gyropup.json`, `.bin`, `.webp` (the 3D model and its poster) | every part's STEP in [Valpatel/gyropup](https://github.com/Valpatel/gyropup), exported with `cad-agent view` | `77f6d00` |
+| `web/models/gyropup.json`, `.bin`, `.webp` (the 3D model and its poster) | Gyropup's whole-robot view (`exports/robot/*.step`: P3 body, five-bar legs, turret) in [Valpatel/gyropup](https://github.com/Valpatel/gyropup), exported with `cad-agent view` | `b79896a` |
 | `docs/img/gyropup/wheel-link-fea.webp`, `leg-render.webp` | Gyropup's `exports/leg/fea/wheel_link-E1.png` and `exports/leg/leg-stand-iso.png`, cropped | `77f6d00` |
-| `docs/img/gyropup.jpg` | a Gyropup render | earlier, not recorded |
+| `docs/img/gyropup.jpg` | the model's poster on a card, by `tools/site-model-poster.mjs` (`banner` in `docs/img/gyropup/SOURCE.json`) | `b79896a` |
 
 ## Runtime dependencies and external programs (not vendored)
 

@@ -18,6 +18,11 @@ Gyropup (https://gyropup.com, MIT) is a wheel-legged robot designed with cad-age
   SOURCE.json come from the summary, and the site build fails when the home page's caption does not quote them.
 
 The checkout's revision and the settings are recorded in the model's `source` and in docs/img/gyropup/SOURCE.json.
+The home page's Gyropup card (docs/img/gyropup.jpg) is the model's poster with words, made by tools/site-model-poster.mjs,
+which records it as SOURCE.json's "banner" entry; this script keeps that entry.
+
+Gyropup's `cad-agent view` reads exports/robot/*.step, its whole robot as drawn today (P3 body, five-bar legs, turret),
+written by its tools/robot_view.py. Before that it read the serial-leg robot's exports/asm_*.step (rev 0.1).
 """
 from __future__ import annotations
 
@@ -34,20 +39,25 @@ sys.path.insert(0, str(ROOT / "src"))
 
 MODELS = ROOT / "web" / "models"
 PICTURES = ROOT / "docs" / "img" / "gyropup"
-# 0.3 mm chord and 0.5 rad (29 degrees) per facet: 87k triangles and 312 KB for Gyropup's 58 parts, against 198k and
-# ~690 KB at the viewer's default 0.1 mm / 0.2 rad. The kit's creased normals keep curved faces reading round.
-TOLERANCE_MM, ANGULAR_RAD = 0.3, 0.5
+# 0.8 mm chord and 0.8 rad (46 degrees) per facet, with FINE_PARTS finer: 118,300 triangles and 391,703 bytes for
+# the robot's 33 visible groups (b79896a), against 232k triangles and 620 KB at 0.3 mm / 0.5 rad. That is 17.9 KB
+# under tests/webkit/webkit-model.test.mjs's 400 KiB: an export that grows needs a coarser setting or fewer parts.
+# At the home page's size a millimetre is about a pixel, so the coarser chord does not show; most triangles are holes
+# and gear teeth, which any tolerance keeps. The kit's creased normals keep curved faces reading round.
+TOLERANCE_MM, ANGULAR_RAD = 0.8, 0.8
+# Groups of Gyropup's view (its tools/robot_view.py) left out of the web copy: what sits inside the shell (the frame's
+# inner plates, the compute and power electronics, the bus bars) and the fasteners, bearings and pins (body, legs,
+# turret), which are inside the links or under a pixel here. `cad-agent view` in Gyropup still shows them.
+WEB_SKIP = ("frame_inner", "compute", "electronics", "bus_bars", "hardware", "leg_hardware_l", "leg_hardware_r",
+            "turret_hardware")
+# Big round parts the coarse angle would show as polygons (a tyre in 8 facets): tessellated again at FINE (mm, rad).
+FINE_PARTS = ("tyre_l", "tyre_r", "hub_l", "hub_r", "lidar", "lidar_housing", "turret_hopper")
+FINE = (0.3, 0.2)
 VIEW = {"azimuth": 55, "elevation": 16}       # front three-quarter: the face, the turret's barrel and a whole leg
-# Gyropup's cad-agent.yaml gives its turret and some body parts no colour, so `cad-agent view` cycles its default
-# palette over them (purple, mint, sky blue), which reads as unrelated parts. Here they take greys and the orange
-# accent from Gyropup's own palette (its configured colours are kept), close to the renders on gyropup.com.
-GYROPUP_COLOURS = {
-    "electronics_bay": "#5a5f68", "bumper_ring": "#3b3f46", "pan_base": "#b8bec7", "pan_ring": "#9aa3ad",
-    "pan_pinion": "#d6dbe1", "pan_clamp": "#3b3f46", "tilt_yoke": "#d6dbe1", "cradle": "#c9ced6",
-    "cartridge_body": "#b8bec7", "dial": "#3b3f46", "hopper": "#9cc9e8", "hopper_lid": "#9cc9e8",
-    "hopper_flap": "#e8892b", "barrel": "#e8892b", "flywheel": "#3b3f46", "flywheel_tyre": "#1d2025",
-    "laser_mount": "#3b3f46",
-}
+# Colour overrides by part name, for parts Gyropup's cad-agent.yaml leaves uncoloured (`cad-agent view` would cycle its
+# default palette over them). Its robot view (exports/robot/*.step) colours every group, so none are needed today; the
+# serial-leg view this replaced needed greys for its turret and some body parts.
+GYROPUP_COLOURS: dict = {}
 # name: (source in the Gyropup checkout, pixels to drop from the top first (a title band), the FEA case it shows)
 PICTURE_SOURCES = {
     "wheel-link-fea": ("exports/leg/fea/wheel_link-E1.png", 34, ("wheel_link", "E1")),
@@ -70,12 +80,32 @@ def model(checkout: Path, revision: str, committed: str) -> dict:
         seconds = round(time.monotonic() - start, 1)
         if exported["skipped"]:
             raise SystemExit(f"parts without a STEP: {exported['skipped']}")
+        manifest = json.loads((Path(tmp) / "view.json").read_text())
+        missing = sorted(set(WEB_SKIP) - {p["name"] for p in manifest["parts"]})
+        if missing:
+            raise SystemExit(f"WEB_SKIP names groups the view does not have: {missing}")
+        manifest["parts"] = [p for p in manifest["parts"] if p["name"] not in WEB_SKIP]
+        missing = sorted(set(FINE_PARTS) - {p["name"] for p in manifest["parts"]})
+        if missing:
+            raise SystemExit(f"FINE_PARTS names groups the view does not have: {missing}")
+        import cadquery as cq
+        for p in manifest["parts"]:
+            if p["name"] in FINE_PARTS:
+                # the group's own STEP, as Gyropup's cad.view.extra glob names it; no offset, since that view sets none
+                step = checkout / "exports" / "robot" / f"{p['name']}.step"
+                if not step.is_file():
+                    raise SystemExit(f"{step}: FINE_PARTS expects Gyropup's robot view (tools/robot_view.py) there")
+                shape = cq.importers.importStep(str(step))
+                cq.exporters.export(shape, str(Path(tmp) / p["file"]), tolerance=FINE[0], angularTolerance=FINE[1],
+                                    opt={"ascii": False})
+        (Path(tmp) / "view.json").write_text(json.dumps(manifest, indent=1) + "\n")
         packed = pack_view(Path(tmp) / "view.json", MODELS / "gyropup", title="Gyropup", colors=GYROPUP_COLOURS, view=VIEW, source={
             "project": "Valpatel/gyropup", "url": "https://gyropup.com", "repo": "https://github.com/Valpatel/gyropup",
             "license": "MIT", "revision": revision, "committed": committed,
-            "export": f"cadagent.publish.view.export_view (cad-agent view), tolerance {TOLERANCE_MM} mm, angular {ANGULAR_RAD} rad",
+            "export": f"cadagent.publish.view.export_view (cad-agent view), tolerance {TOLERANCE_MM} mm, angular {ANGULAR_RAD} rad; "
+                      f"{', '.join(FINE_PARTS)} at {FINE[0]} mm, {FINE[1]} rad",
             "pack": "cadagent.publish.view.pack_view", "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>",
-            "recoloured": sorted(GYROPUP_COLOURS),
+            "recoloured": sorted(GYROPUP_COLOURS), "left_out": list(WEB_SKIP),
         })
     print(f"web/models/gyropup: {len(packed['parts'])} parts, {packed['triangles']} triangles, {packed['bytes']} bytes "
           f"(export {seconds} s)")
@@ -100,6 +130,9 @@ def pictures(checkout: Path, revision: str) -> dict:
     PICTURES.mkdir(parents=True, exist_ok=True)
     record = {"project": "Valpatel/gyropup", "license": "MIT", "revision": revision,
               "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>", "pictures": {}}
+    previous = PICTURES / "SOURCE.json"
+    if previous.is_file() and "banner" in (old := json.loads(previous.read_text())):
+        record["banner"] = old["banner"]                 # docs/img/gyropup.jpg's record (tools/site-model-poster.mjs)
     for name, (source, top, case) in PICTURE_SOURCES.items():
         entry = {"source": source}
         if case:

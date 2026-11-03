@@ -140,21 +140,32 @@ const idOf = key => `cad-diagram-s${key.slice(0, 12)}`;
  * `todayMarker off` (Mermaid otherwise draws a "today" line from the build machine's clock, and the cache would keep
  * the first build's day). The reader still sees the source as written. */
 export function forDrawing(source, theme = 'light') {
-  if (theme === 'dark') source = darkPalette(source);
+  source = themePalette(source, theme);
   const [, front = '', body] = source.match(/^(\s*---\n[\s\S]*?\n---[ \t]*\n)?([\s\S]*)$/);
   const type = body.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('%%'))?.split(/\s/)[0];
   if (type !== 'gantt') return source;
   return front + body.replace(/^[ \t]*todayMarker\b.*\n?/gm, '').replace(/^([ \t]*gantt\b.*)$/m, '$1\n    todayMarker off');
 }
 
-/** The site's diagram palette (the style guide's classDefs: tools/build-site.mjs PALETTE and the pages' own) on a dark
- * page: each of its colours in a `classDef` or `style` line, or in a `%%{init}` directive (a chart's plot colours),
- * becomes its dark counterpart, the tokens of web/site.css's dark theme. Other colours are left as written. Only the
+/** The site's diagram palette (the style guide's classDefs: tools/build-site.mjs PALETTE and the pages' own), drawn in
+ * the page's theme: each of its colours in a `classDef` or `style` line, or in a `%%{init}` directive (a chart's plot
+ * colours), becomes its counterpart in web/site.css's tokens for that theme; in the dark theme a stroke takes the HUD's
+ * cyan hairline (STROKES) where the same colour as text stays light. Other colours are left as written. Only the
  * drawing changes; the reader sees the source as written. */
-export const DARK_COLOURS = { '#fffdf5': '#16211f', '#173d3c': '#e2eee8', '#eef1e4': '#1f2e2b', '#6f8a80': '#8fb0a6', '#ffe1cc': '#3d281c',
-  '#bd3a12': '#ff9466', '#d8efbb': '#22361d', '#386248': '#93cf9e' };
-export const darkPalette = source => source.replace(/^([ \t]*(?:classDef\b|style\b|%%\{\s*init\b).*)$/gm,
-  line => line.replace(/#[0-9a-fA-F]{6}\b/g, c => DARK_COLOURS[c.toLowerCase()] ?? c));
+export const PALETTES = {
+  light: { '#fffdf5': '#ffffff', '#173d3c': '#1d2350', '#eef1e4': '#eef6ff', '#6f8a80': '#7d84a3', '#ffe1cc': '#ffe4d6',
+    '#bd3a12': '#b43c0b', '#d8efbb': '#d4f6e6', '#386248': '#0a63a6' },
+  dark: { '#fffdf5': '#0e0e14', '#173d3c': '#eef2f8', '#eef1e4': '#14141f', '#6f8a80': '#98a2b5', '#ffe1cc': '#211521',
+    '#bd3a12': '#ff8a4c', '#d8efbb': '#0b1d1a', '#386248': '#00d8e8' },
+};
+const STROKES = { dark: { '#173d3c': '#00d8e8', '#6f8a80': '#2b8794' } };
+export const DARK_COLOURS = PALETTES.dark;
+export const themePalette = (source, theme = 'light') => {
+  const map = PALETTES[theme] ?? {}, strokes = STROKES[theme] ?? {};
+  return source.replace(/^([ \t]*(?:classDef\b|style\b|%%\{\s*init\b).*)$/gm,
+    line => line.replace(/(stroke\s*:\s*)?(#[0-9a-fA-F]{6})\b/g, (_, stroke = '', c) => stroke + ((stroke && strokes[c.toLowerCase()]) || map[c.toLowerCase()] || c)));
+};
+export const darkPalette = source => themePalette(source, 'dark');
 
 /** One page's HTML with each Mermaid block replaced by its two drawings, from `light` and `dark` (two drawDiagrams
  * results), each marked data-theme-only for the page's CSS to show the one for its theme. A block either drawing lacks

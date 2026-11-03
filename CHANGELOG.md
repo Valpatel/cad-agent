@@ -9,6 +9,50 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.18.0 (2026-11-03)
+
+**New**
+- `cadagent.library.hardware`: ISO 7089, ISO 7090 and ISO 7093-1 washers (from bd_warehouse, with their largest hole, least outside and thinnest thickness from the standards' tolerances), and the heads' bearing faces for ISO 4762, ISO 7380-1, ISO 14580 and ISO 1207, M2 to M6 (#292).
+- `formulas.bearing_area` (the face under a head or washer, its hole widened by a chamfer) and `formulas.washer_bearing` (how far a steel washer spreads a clamp on printed plastic: a beam on an elastic bed, cut where it lifts off or bends too far) (#292).
+- `inserts.check_joint` and `check_clamp` take `head` (socket, button or cheese), `head_washer`, `chamfer_mm` and, into an insert, `insert_washer` and `under_chamfer_mm`. When the printed part's bearing sets the torque, the result's `fixes` lists, in order, a larger head, a washer, a large washer and a limiter, each with the torque and preload it allows. `cad-agent inserts` prints a `fix:` line for each one named. The issue's M3 lid in PLA (0.20 N·m) gets ISO 7089 washers between the lid and the insert and under the head: 0.30 N·m and 775 N of preload, against 329 N (#292).
+- `docs/inserts.md` draws the issue's lid with its washers and the pressure under them, and the fix ladder's options as bars, both from the module (`tools/insert_figures.py`) (#292).
+- The reference registry now holds the Reference Map: 546 new records in 16 shards
+  (`research/references/projects-<domain>.yaml`, `guides-<group>.yaml`), and 21 additions to guides already read in
+  `research/references.yaml` (#323). Every new record is catalogued (`snippet-only`): listed and linked, never cited
+  by a rule, check or page until someone reads it at source. Licences are as the map states them, unread;
+  share-alike, non-commercial and unclear geometry is study-only. Numbers are the authors' claims unless measured.
+- `research/references/coverage.yaml`: the map's snapshot of what cad-agent enforced per topic on 2026-11-02 (16 rows), its gaps, and the issue drafted
+  for each gap, never posted; plus the sources each process group still lacks (#323).
+- `tools/import_refmap.py <data.json>`: the deterministic, idempotent import (`--check` exits 1 when it would change
+  a file). The map's data stays out of the repo (#323).
+- `cadagent.review.references` reads the reference registry's schema-2 shards, `research/references/*.yaml`, beside
+  `research/references.yaml`, as one id space. A schema-2 record says what it is, what its source's licence allows
+  (geometry under share-alike, non-commercial or unclear licences is study-only), how far it has been checked (the
+  evidence ladder from `snippet-only` to `measured`) and, for an open project, an objective assessment. Its
+  vocabularies are data in `research/references/vocab.yaml` (#323).
+- `check()` (and `python -m cadagent.review.references --check`) validates shards: vocabularies, `docs/areas.yaml`
+  slugs, at most 150 records or 150 KB per shard, the ladder's rules, and that a stored `confidence` equals the one
+  `confidence()` derives from the evidence (#143, #323).
+- A rule, a check, a code table or a page may not cite a catalogued (`snippet-only`) record; a `[ref:<id>]` to one in
+  `research/` is a warning (#323).
+
+**Changed**
+- `--check` reads YAML through libyaml when PyYAML has it: about half the time (1.4 s instead of about 3 s on the registry as released) (#323).
+- The home page explains itself to a newcomer. Under "Your one stop shop for agentic CAD", it now says "AI helping AI build
+  anything you want", then what cad-agent is in plain words: a free toolkit an AI assistant installs in one line, which
+  helps it design real things, check them for problems before anything is made, and, with your OK, share what it learns
+  as a pull request. It replaces "Checks, simulation and cited engineering for the hardware agents design, in tested
+  code."
+- The README opens like the home page: "Your one stop shop for agentic CAD", then "Self-improving AI for designing
+  physical objects, built with the best open source projects", then one plain sentence on what it does. It replaces "A
+  workshop where AI agents get better at CAD by learning from everyone else."
+
+**Fixed**
+- `docs/inserts.md` no longer says a limiter spreads a printed lid's load on an M3 insert's ring: the catalogue M3 limiters lower the torque and fail their own seating-force and press-fit rows. A limiter is now named only where every row of its own passes (#292).
+
+**Projects must change**
+- Re-run `cad-agent inserts` on M2, M2.5 and M3 joints without `head_mm`. Their head bearing row used to say "not checked". It now checks against the ISO 4762 socket head and can set a much lower torque: an M3 `thread:` clamp joint (`check_clamp`) without `head_mm` drops from 2.12 N·m on v0.17.0 to 0.25 N·m. Pass the real head (`head_mm`, `head`) or add a washer; the result's `fixes` lists what lifts it. Every insert-joint result gains the `fixes`, `head`, `insert_washer` and `clamped_on_washer` keys (the last two null without a washer), and `fixes=True` is a new keyword (#292).
+
 ## v0.17.0 (2026-11-02)
 
 **New**

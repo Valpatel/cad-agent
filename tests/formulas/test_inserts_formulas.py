@@ -293,13 +293,16 @@ def test_washer_bearing_matches_the_beam_by_quadrature():
         2 * math.pi * (rs * simpson(f, a) + simpson(lambda x: x * f(x), a))
     assert r["area"] == pytest.approx(area, rel=1e-9)
     # here the washer's bending stops it: at the overhang that bears, the stress at the insert's edge is the
-    # allowed 320 MPa (6 p M / h^2, M the pressure's moment about that edge)
+    # allowed 320 MPa (6 p M / h^2, M the pressure's moment about that edge per unit length of it, the pressure at
+    # radius rs + x on a ring (rs + x) / rs as long)
     assert r["by"] == "bending" and r["bending_stress"] == pytest.approx(320e6, rel=1e-9)
-    assert 6 * W["pressure"] * simpson(lambda x: x * f(x), a) / W["washer_thickness"] ** 2 == pytest.approx(320e6,
-                                                                                                         rel=1e-6)
-    # 0.78 of its 0.96 mm overhang bears: 21.0 mm^2 against the bare insert ring's pi/4 (4.72^2 - 3.4^2) = 8.42 mm^2
-    assert r["overhang"] / MM == pytest.approx(0.96, abs=1e-9) and r["used"] / MM == pytest.approx(0.776, abs=1e-3)
-    assert r["area"] / MM ** 2 == pytest.approx(21.03, abs=0.01)
+    ring = simpson(lambda x: x * f(x) * (rs + x) / rs, a)
+    assert 6 * W["pressure"] * ring / W["washer_thickness"] ** 2 == pytest.approx(320e6, rel=1e-6)
+    # as a strip of unit width the moment would be 1.2 x smaller: the ring's weight matters
+    assert ring / simpson(lambda x: x * f(x), a) == pytest.approx(1.18, abs=0.02)
+    # 0.70 of its 0.96 mm overhang bears: 19.8 mm^2 against the bare insert ring's pi/4 (4.72^2 - 3.4^2) = 8.42 mm^2
+    assert r["overhang"] / MM == pytest.approx(0.96, abs=1e-9) and r["used"] / MM == pytest.approx(0.705, abs=1e-3)
+    assert r["area"] / MM ** 2 == pytest.approx(19.84, abs=0.01)
     assert r["outside"] == pytest.approx(math.sqrt(4 * r["area"] / math.pi + W["hole_diameter"] ** 2), rel=1e-12)
 
 

@@ -55,7 +55,8 @@ def test_iso7093_m25_is_left_out_though_bd_warehouse_lists_it():
     assert 'M2.5' not in hardware.table('large_washer')['rows'] and 'starts at M3' in hardware.table('large_washer')['source']
 
 
-# the standards' rows: (d2 min, h min) by thread. d2 is to h14 (ISO 286-1: 0.30 mm over 3-6 mm, 0.36 over 6-10, 0.43
+# the standards' rows: (d2 min, h min) by thread; d1 max is d1 to H13 (ISO 286-1: 0.14 mm over 1-3 mm, 0.18 over 3-6,
+# 0.22 over 6-10), checked below. d2 is to h14 (ISO 286-1: 0.30 mm over 3-6 mm, 0.36 over 6-10, 0.43
 # over 10-18); h to the standard's own band round its nominal (ISO 7089: 0.3 +/- 0.05, 0.5 +/- 0.05, 0.8 +/- 0.1,
 # 1 +/- 0.1, 1.6 +/- 0.2; ISO 7093-1: 0.8 +/- 0.1, 1 +/- 0.1, 1.2 +/- 0.2, 1.6 +/- 0.2)
 LEAST = {'plain_washer': {'M2': (4.7, 0.25), 'M2.5': (5.7, 0.45), 'M3': (6.64, 0.45), 'M4': (8.64, 0.7),
@@ -63,6 +64,7 @@ LEAST = {'plain_washer': {'M2': (4.7, 0.25), 'M2.5': (5.7, 0.45), 'M3': (6.64, 0
          'chamfered_washer': {'M5': (9.64, 0.9), 'M6': (11.57, 1.4)},
          'large_washer': {'M3': (8.64, 0.7), 'M4': (11.57, 0.9), 'M5': (14.57, 1.0), 'M6': (17.57, 1.4)}}
 H14_MM = ((3.0, 6.0, 0.30), (6.0, 10.0, 0.36), (10.0, 18.0, 0.43))
+H13_MM = ((1.0, 3.0, 0.14), (3.0, 6.0, 0.18), (6.0, 10.0, 0.22))         # ISO 286-1, the hole d1
 
 
 @pytest.mark.parametrize('kind', sorted(LEAST))
@@ -72,6 +74,8 @@ def test_washer_least_sizes_are_the_standards_tolerances(kind):
         assert (r['d2_min'], r['h_min']) == (d2_min, h_min), (kind, size)
         tol = next(t for lo, hi, t in H14_MM if lo < r['d2'] <= hi)
         assert r['d2'] - r['d2_min'] == pytest.approx(tol), (kind, size)
+        tol = next(t for lo, hi, t in H13_MM if lo < r['d1'] <= hi)
+        assert r['d1_max'] - r['d1'] == pytest.approx(tol), (kind, size)
         assert 0 < r['h_min'] < r['h']
 
 

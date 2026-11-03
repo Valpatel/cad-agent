@@ -54,7 +54,9 @@ def test_the_pages_numbers_are_what_the_module_computes():
     issue = I.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=8, clamped={"thickness_mm": 3.0})
     opts = issue["fixes"]["options"]
     assert f"| as it is | {issue['torque']['allowed_nm']:.2f} N·m | {issue['fixes']['preload_n']:.0f} N |" in page
-    for o in opts[:3]:
+    assert "| a larger head | | | | no: none listed bears wider than the socket head's 5.07 mm" in page
+    assert opts[0]["why"] == "no listed M3 head bears wider than 5.07 mm"
+    for o in opts[1:3]:
         cells = f"{o['allowed_nm']:.2f} N·m" + ("** | **" if o["named"] and o is issue["fixes"]["fix"] else " | ") + \
             f"{o['preload_n']:.0f} N"
         assert cells in page, cells

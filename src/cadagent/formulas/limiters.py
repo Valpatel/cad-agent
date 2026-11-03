@@ -96,7 +96,8 @@ def bearing_area(outer_diameter: float, hole_diameter: float, chamfer: float = 0
                  "which helps, is left out",
                  "the semi-infinite beam's deflection, cut at the washer's edge: the free end is not modelled; past "
                  "3 pi / (4 beta) the springs would pull, so the washer lifts off there",
-                 "the washer's bending as a cantilever under the allowed pressure; no yielding, no dishing"),
+                 "the washer's bending as a cantilever from the support's edge under the allowed pressure, the "
+                 "pressure further out weighted by its longer ring; no yielding, no dishing"),
          source=cite("roark", "Chapter 8, beams on elastic foundations (Hetenyi's semi-infinite beam, held level at its "
                               "end, y = y0 exp(-beta x)(cos beta x + sin beta x), beta = (k / 4 E I)^(1/4))"))
 def washer_bearing(support_diameter: float, washer_outside: float, washer_thickness: float, hole_diameter: float,
@@ -108,7 +109,9 @@ def washer_bearing(support_diameter: float, washer_outside: float, washer_thickn
     the support, so the overhang counts as the width W = integral of exp(-beta x)(cos beta x + sin beta x) dx over
     the overhang that bears, at that pressure, and its first moment sets the washer's bending at the support's edge.
     The overhang that bears is the least of the washer's own, the point where the pressure would turn to tension
-    (3 pi / (4 beta)) and the overhang whose bending reaches ``washer_strength`` at ``pressure``."""
+    (3 pi / (4 beta)) and the overhang whose bending at the support's edge reaches ``washer_strength`` at
+    ``pressure``: the moment per unit length of that edge, p (integral of x f + integral of x^2 f / rs), the pressure
+    on the wider rings further out included."""
     ds = _positive("support_diameter", support_diameter)
     do = _positive("washer_outside", washer_outside)
     h = _positive("washer_thickness", washer_thickness)
@@ -129,11 +132,20 @@ def washer_bearing(support_diameter: float, washer_outside: float, washer_thickn
         return -a * e * math.cos(beta * a) / beta + (1.0 + e * (math.sin(beta * a) - math.cos(beta * a))) / (
             2.0 * beta ** 2)
 
+    def second(a: float) -> float:                     # integral of x^2 f over [0, a]
+        e, c, s_ = math.exp(-beta * a), math.cos(beta * a), math.sin(beta * a)
+        j = a * e * (s_ - c) / (2.0 * beta) + e * s_ / (2.0 * beta ** 2)      # integral of x exp(-bx) cos(bx)
+        return -a * a * e * c / beta + 2.0 * j / beta
+
     overhang = max((do - ds) / 2.0, 0.0)
     x0 = min(max((dh - ds) / 2.0, 0.0), overhang)        # a hole wider than the support: no plastic up to it
 
+    rs = min(ds, do) / 2.0
+
     def bending(a: float) -> float:                      # at the support's edge, from the pressure on [x0, a]
-        return 6.0 * p * max(moment(a) - moment(x0), 0.0) / h ** 2
+        # per unit length of that edge: the pressure at radius rs + x acts on a ring (rs + x) / rs as long
+        m = moment(a) - moment(x0) + (second(a) - second(x0)) / rs
+        return 6.0 * p * max(m, 0.0) / h ** 2
 
     a, by = overhang, "washer"
     lift = 3.0 * math.pi / (4.0 * beta)
@@ -147,7 +159,6 @@ def washer_bearing(support_diameter: float, washer_outside: float, washer_thickn
         a, by = lo, "bending"
     elif by == "washer" and width(a) < 0.9 * a:
         by = "spread"                                    # all of it bears, but the pressure falls off across it
-    rs = ds / 2.0
     area = (math.pi / 4.0 * max(ds ** 2 - dh ** 2, 0.0)
             + 2.0 * math.pi * max(rs * (width(a) - width(x0)) + moment(a) - moment(x0), 0.0))
     outside = math.sqrt(4.0 * area / math.pi + dh ** 2)

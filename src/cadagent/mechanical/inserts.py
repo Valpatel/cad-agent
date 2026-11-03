@@ -766,6 +766,7 @@ LIMITS = (
 
 HEADS = tuple(hardware.HEADS)          # the heads a joint names: socket (ISO 4762), button (ISO 7380-1), cheese
 WASHERS = tuple(hardware.WASHERS)      # iso7089 (plain), iso7090 (chamfered, from M5), iso7093 (large)
+_WASHER_RANK = {"iso7089": 1, "iso7090": 1, "iso7093": 2}             # by outside, for the same thread
 PLASTIC_CAPS = ("head_bearing", "clamped_on_insert", "clamped_on_washer")   # the printed part's bearing
 FIXES = ("larger head", "washer", "large washer", "limiter")                # tried in this order (#292)
 _BY = {"washer": "all of it bears", "spread": "all of it bears, the pressure falling off across it",
@@ -787,8 +788,8 @@ def head_bearing_face(thread: str, head: str = "socket") -> Optional[Dict[str, A
 
 
 def washer(key: str, thread: str) -> Dict[str, Any]:
-    """A washer for a thread, from :mod:`cadagent.library.hardware`: its hole, outside and thickness (mm; the least
-    outside and the thinnest, which the checks use), its standard, the tensile strength of its hardness class
+    """A washer for a thread, from :mod:`cadagent.library.hardware`: its hole, outside and thickness (mm; the largest
+    hole, the least outside and the thinnest, which the checks use), its standard, the tensile strength of its hardness class
     (ISO 18265's conversion) and its source."""
     if key not in WASHERS:
         raise ValueError(f"washer must be one of {list(WASHERS)}, not {key!r}")
@@ -796,7 +797,8 @@ def washer(key: str, thread: str) -> Dict[str, Any]:
     r = t["rows"].get(str(thread).upper())
     if r is None:
         raise ValueError(f"{t['standard']} lists no {thread} washer; sizes: {', '.join(t['rows'])}")
-    return {"key": key, "standard": t["standard"], "d1_mm": r["d1"], "d2_mm": r["d2"], "h_mm": r["h"],
+    return {"key": key, "standard": t["standard"], "d1_mm": r["d1"], "d1_max_mm": r["d1_max"], "d2_mm": r["d2"],
+            "h_mm": r["h"],
             "d2_min_mm": r["d2_min"], "h_min_mm": r["h_min"], "hardness_hv": t["hardness_hv"],
             "strength_pa": HARDNESS_RM_MPA[t["hardness_hv"]] * 1e6, "source": t["source"]}
 
@@ -836,7 +838,7 @@ def _face(support_mm: float, what: str, clear_mm: float, chamfer_mm: float, wsh:
     if t_min_mm is None or t_min_mm <= 0:
         raise ValueError("a washer on printed plastic needs the clamped part's thickness_mm: how far it spreads the "
                          "clamp depends on it")
-    inner_w = max(inner, wsh["d1_mm"])
+    inner_w = max(inner, wsh["d1_max_mm"])
     strength = bearing_strength(cmat)
     wb = fx.washer_bearing(support_mm * MM, wsh["d2_min_mm"] * MM, wsh["h_min_mm"] * MM, inner_w * MM,
                            PRINTED[cmat].secant_upper_bound("across") * 1e6, t_min_mm * MM,
@@ -849,11 +851,15 @@ def _face(support_mm: float, what: str, clear_mm: float, chamfer_mm: float, wsh:
             "thickness_mm": wsh["h_min_mm"], "overhang_mm": wb["overhang"] / MM, "bearing_overhang_mm": wb["used"] / MM,
             "by": wb["by"], "spread_length_mm": wb["spread_length"] / MM,
             "bending_mpa": wb["bending_stress"] / 1e6, "source": wsh["source"]}
-    return {"area_mm2": area, "outside_mm": wb["outside"] / MM, "inner_mm": inner_w, "washer": info,
-            "text": (f"an {wsh['standard']} washer ({wsh['d2_min_mm']:g} x {wsh['h_min_mm']:g} mm at its least) on "
-                     f"{what} ({support_mm:g} mm), on {hole}: {wb['used'] / MM:.2f} of its {wb['overhang'] / MM:.2f} "
-                     f"mm overhang bears ({by}; a beam on the plastic, which spreads it {wb['spread_length'] / MM:.2f} "
-                     f"mm), {area:.2f} mm^2, as a {wb['outside'] / MM:.2f} mm face")}
+    head = f"an {wsh['standard']} washer ({wsh['d2_min_mm']:g} x {wsh['h_min_mm']:g} mm at its least) on {what}"
+    if wb["overhang"] <= 0:
+        spread = (f"{head} ({support_mm:g} mm, as wide as the washer or wider), on {hole}: only the washer's own "
+                  f"face bears, pressed flat, {area:.2f} mm^2")
+    else:
+        spread = (f"{head} ({support_mm:g} mm), on {hole}: {wb['used'] / MM:.2f} of its {wb['overhang'] / MM:.2f} mm "
+                  f"overhang bears ({by}; a beam on the plastic, which spreads it {wb['spread_length'] / MM:.2f} mm), "
+                  f"{area:.2f} mm^2, as a {wb['outside'] / MM:.2f} mm face")
+    return {"area_mm2": area, "outside_mm": wb["outside"] / MM, "inner_mm": inner_w, "washer": info, "text": spread}
 
 
 def _lame(ratio: float) -> float:
@@ -1335,9 +1341,9 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     if lim is None and iw is not None:
         # a washer between the clamped part and the insert: it sits on the brass round its own hole, and the clamped
         # part bears on the washer, which spreads the clamp past the insert's end (#292)
-        if iw["d1_mm"] >= knurl:
-            raise ValueError(f"the {iw['standard']} washer's hole ({iw['d1_mm']:g} mm) is as wide as the insert")
-        area = fx.bearing_area(knurl * MM, iw["d1_mm"] * MM)
+        if iw["d1_max_mm"] >= knurl:
+            raise ValueError(f"the {iw['standard']} washer's hole ({iw['d1_max_mm']:g} mm) is as wide as the insert")
+        area = fx.bearing_area(knurl * MM, iw["d1_max_mm"] * MM)          # its largest hole: the least ring
         face = {"area_mm2": area / MM ** 2, "on": "brass", "load_pass": BRASS_YIELD_PA[0] * area, "under": "washer"}
         caps["insert_face"] = face["load_pass"]
         if cmat != "metal":
@@ -1643,9 +1649,10 @@ def _fix_ladder(check, call: Dict[str, Any], base: Dict[str, Any], thread: str, 
     def skip(fix: str, why: str) -> None:
         options.append({"fix": fix, "named": False, "lifts": False, "why": why})
 
-    # a larger head: the listed head with the widest bearing face, if it is wider than this one
+    # a larger head: the listed head with the widest bearing face, if it is wider than this one. A head whose standard
+    # gives no bearing face (its dk min stands in, an upper bound) is not compared with one that does
     current = call.get("head_mm") or (head_bearing_face(thread, call.get("head") or "socket") or {}).get("dw_mm")
-    faces = [f for f in (head_bearing_face(thread, h) for h in HEADS) if f]
+    faces = [f for f in (head_bearing_face(thread, h) for h in HEADS) if f and not f["stands_in"]]
     best = max(faces, key=lambda f: f["dw_mm"]) if faces else None
     if call.get("head_washer"):
         skip("larger head", "a washer is under the head already: the head bears on it, not on the plastic")
@@ -1663,7 +1670,10 @@ def _fix_ladder(check, call: Dict[str, Any], base: Dict[str, Any], thread: str, 
         if thickness_mm is None:
             skip(fix, "give the clamped part's thickness_mm: how far a washer spreads the clamp depends on it")
             continue
-        changes: Dict[str, Any] = {slot: key for slot in ("head_washer", "insert_washer") if call.get(slot)}
+        # a washer already fitted stays unless this one is larger (iso7093 over iso7089 or iso7090)
+        changes: Dict[str, Any] = {slot: key for slot in ("head_washer", "insert_washer")
+                                   if call.get(slot) and _WASHER_RANK[call[slot]] < _WASHER_RANK[key]}
+        fitted = {slot for slot in ("head_washer", "insert_washer") if call.get(slot)}
         r = ref if not changes else None
         for _ in range(2):
             if r is None:
@@ -1672,7 +1682,7 @@ def _fix_ladder(check, call: Dict[str, Any], base: Dict[str, Any], thread: str, 
                 except ValueError:
                     break
             g = r["torque"]["governed_by"]
-            if g == "head_bearing" and "head_washer" not in changes:
+            if g == "head_bearing" and "head_washer" not in changes and "head_washer" not in fitted:
                 changes["head_washer"] = key
             elif g == "clamped_on_insert" and "insert_washer" not in changes and "insert_washer" in takes:
                 changes["insert_washer"] = key
@@ -1680,7 +1690,8 @@ def _fix_ladder(check, call: Dict[str, Any], base: Dict[str, Any], thread: str, 
                 break
             r = None
         if not changes:
-            skip(fix, f"an {table['standard']} washer is fitted already")
+            skip(fix, f"an {table['standard']} washer, or a larger one, is fitted already where the plastic sets the "
+                      "limit")
             continue
         where = [w for w, slot in (("between the part and the insert", "insert_washer"), ("under the head",
                                                                                          "head_washer"))

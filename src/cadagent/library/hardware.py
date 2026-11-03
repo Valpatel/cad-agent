@@ -15,8 +15,9 @@ manufacturer model, use the ``mcmaster-parts`` skill (``cad-agent mcmaster``) an
 **Washers and the heads' bearing faces** (#292), for the bearing pressure a screw puts on printed plastic: ISO 7089
 plain, ISO 7090 chamfered and ISO 7093-1 large washers, whose hole ``d1``, outside ``d2`` and thickness ``h`` are the
 columns ``bd_warehouse`` ships in ``plain_washer_parameters.csv`` and ``chamfered_washer_parameters.csv`` (``d1`` its
-least, ``d2`` and ``h`` their largest), checked row by row as the heads are; and the least outside ``d2_min`` and
-thinnest ``h_min``, from the standards' tolerances, which the bearing checks use as the cautious side. The heads'
+least, ``d2`` and ``h`` their largest), checked row by row as the heads are; and the largest hole ``d1_max``, least
+outside ``d2_min`` and thinnest ``h_min``, from the standards' tolerances, which the bearing checks use as the
+cautious side. The heads'
 bearing faces are not in ``bd_warehouse``: ``dw`` is the least diameter a head bears on (ISO 4762's and ISO 7380-1's
 dw min; ISO 14580 and ISO 1207 give none, so their head's least outside dk min stands in) and ``da`` the largest
 diameter of the fillet under the head, each by standard and table. **Adopt or build:** ``bd_warehouse``'s washer
@@ -59,38 +60,38 @@ RING_LUG = {
 }
 
 # Washers, by thread: d1 the hole (its least), d2 the outside and h the thickness (their largest), as bd_warehouse
-# tabulates them; d2_min the outside's least (ISO 286 h14 on d2, as ISO 7089 and ISO 7093-1 give it) and h_min the
-# thinnest (the standard's thickness tolerance). Steel of hardness class 200 HV, the standards' first grade.
-_WASHER_NOTE = ('; d2_min and h_min from the standard\'s tolerances (d2 to h14; h to its own +/- band); hardness class '
-                '200 HV steel')
+# tabulates them; d1_max the hole's largest (ISO 286 H13 on d1), d2_min the outside's least (ISO 286 h14 on d2), as
+# ISO 7089 and ISO 7093-1 give them, and h_min the thinnest (the standard's thickness tolerance). Steel of hardness class 200 HV, the standards' first grade.
+_WASHER_NOTE = ('; d1_max, d2_min and h_min from the standard\'s tolerances (d1 to H13, d2 to h14; h to its own +/- '
+                'band); hardness class 200 HV steel')
 PLAIN_WASHER = {
     'source': 'ISO 7089:2000 (plain washers, normal series, product grade A), Table 1, as tabulated in bd_warehouse '
               'data/plain_washer_parameters.csv (iso7089 columns)' + _WASHER_NOTE,
     'verified': True, 'standard': 'ISO 7089', 'hardness_hv': 200,
-    'rows': {'M2': {'d1': 2.2, 'd2': 5.0, 'h': 0.35, 'd2_min': 4.7, 'h_min': 0.25},
-             'M2.5': {'d1': 2.7, 'd2': 6.0, 'h': 0.55, 'd2_min': 5.7, 'h_min': 0.45},
-             'M3': {'d1': 3.2, 'd2': 7.0, 'h': 0.55, 'd2_min': 6.64, 'h_min': 0.45},
-             'M4': {'d1': 4.3, 'd2': 9.0, 'h': 0.9, 'd2_min': 8.64, 'h_min': 0.7},
-             'M5': {'d1': 5.3, 'd2': 10.0, 'h': 1.1, 'd2_min': 9.64, 'h_min': 0.9},
-             'M6': {'d1': 6.4, 'd2': 12.0, 'h': 1.8, 'd2_min': 11.57, 'h_min': 1.4}},
+    'rows': {'M2': {'d1': 2.2, 'd1_max': 2.34, 'd2': 5.0, 'h': 0.35, 'd2_min': 4.7, 'h_min': 0.25},
+             'M2.5': {'d1': 2.7, 'd1_max': 2.84, 'd2': 6.0, 'h': 0.55, 'd2_min': 5.7, 'h_min': 0.45},
+             'M3': {'d1': 3.2, 'd1_max': 3.38, 'd2': 7.0, 'h': 0.55, 'd2_min': 6.64, 'h_min': 0.45},
+             'M4': {'d1': 4.3, 'd1_max': 4.48, 'd2': 9.0, 'h': 0.9, 'd2_min': 8.64, 'h_min': 0.7},
+             'M5': {'d1': 5.3, 'd1_max': 5.48, 'd2': 10.0, 'h': 1.1, 'd2_min': 9.64, 'h_min': 0.9},
+             'M6': {'d1': 6.4, 'd1_max': 6.62, 'd2': 12.0, 'h': 1.8, 'd2_min': 11.57, 'h_min': 1.4}},
 }
 CHAMFERED_WASHER = {
     'source': 'ISO 7090:2000 (plain washers, chamfered, normal series, product grade A; from 5 mm), Table 1, as '
               'tabulated in bd_warehouse data/chamfered_washer_parameters.csv (iso7090 columns); the flat face, the '
               'one that bears, as ISO 7089\'s' + _WASHER_NOTE,
     'verified': True, 'standard': 'ISO 7090', 'hardness_hv': 200,
-    'rows': {'M5': {'d1': 5.3, 'd2': 10.0, 'h': 1.1, 'd2_min': 9.64, 'h_min': 0.9},
-             'M6': {'d1': 6.4, 'd2': 12.0, 'h': 1.8, 'd2_min': 11.57, 'h_min': 1.4}},
+    'rows': {'M5': {'d1': 5.3, 'd1_max': 5.48, 'd2': 10.0, 'h': 1.1, 'd2_min': 9.64, 'h_min': 0.9},
+             'M6': {'d1': 6.4, 'd1_max': 6.62, 'd2': 12.0, 'h': 1.8, 'd2_min': 11.57, 'h_min': 1.4}},
 }
 LARGE_WASHER = {
     'source': 'ISO 7093-1:2000 (plain washers, large series, product grade A), Table 1, as tabulated in bd_warehouse '
               'data/plain_washer_parameters.csv (iso7093 columns; its M2.5 row is left out: ISO 7093-1 starts at '
               'M3)' + _WASHER_NOTE,
     'verified': True, 'standard': 'ISO 7093-1', 'hardness_hv': 200,
-    'rows': {'M3': {'d1': 3.2, 'd2': 9.0, 'h': 0.9, 'd2_min': 8.64, 'h_min': 0.7},
-             'M4': {'d1': 4.3, 'd2': 12.0, 'h': 1.1, 'd2_min': 11.57, 'h_min': 0.9},
-             'M5': {'d1': 5.3, 'd2': 15.0, 'h': 1.4, 'd2_min': 14.57, 'h_min': 1.0},
-             'M6': {'d1': 6.4, 'd2': 18.0, 'h': 1.8, 'd2_min': 17.57, 'h_min': 1.4}},
+    'rows': {'M3': {'d1': 3.2, 'd1_max': 3.38, 'd2': 9.0, 'h': 0.9, 'd2_min': 8.64, 'h_min': 0.7},
+             'M4': {'d1': 4.3, 'd1_max': 4.48, 'd2': 12.0, 'h': 1.1, 'd2_min': 11.57, 'h_min': 0.9},
+             'M5': {'d1': 5.3, 'd1_max': 5.48, 'd2': 15.0, 'h': 1.4, 'd2_min': 14.57, 'h_min': 1.0},
+             'M6': {'d1': 6.4, 'd1_max': 6.62, 'd2': 18.0, 'h': 1.8, 'd2_min': 17.57, 'h_min': 1.4}},
 }
 # The heads' bearing faces, by thread: dw the least diameter the head bears on, da the fillet under it (its largest).
 SOCKET_HEAD_BEARING = {

@@ -670,20 +670,21 @@ def test_the_issues_m3_lid_names_a_washer_with_its_torque():
     by = {}
     for o in fixes["options"]:
         by.setdefault(o["fix"], o)
-    # a larger head (a cheese head's 5.32 mm against the socket head's 5.07) does not reach the ring
-    assert not by["larger head"]["named"] and "does not lift" in by["larger head"]["why"]
+    # no listed head bears wider than the socket head's 5.07 mm: the button head's dw is 5.00, and the cheese head's
+    # 5.32 is its dk min standing in for a dw its standard does not give, so it is not compared
+    assert not by["larger head"]["named"] and by["larger head"]["why"] == "no listed M3 head bears wider than 5.07 mm"
     # the fix: ISO 7089 washers, between the lid and the insert and then under the head, as each face governs
     w = fixes["fix"]
     assert w is by["washer"] and w["set"] == {"insert_washer": "iso7089", "head_washer": "iso7089"}
     assert w["governed_by"] == "clamped_on_washer" and w["named"]
-    # its limit by hand: PLA's 78.06 MPa / 2 on the washer's bearing face (formulas test: 21.03 mm^2), and the torque
+    # its limit by hand: PLA's 78.06 MPa / 2 on the washer's bearing face (formulas test: 19.84 mm^2), and the torque
     # at the least nut factor with the head now on steel (thread 0.10, collar 0.08)
     face = fx.washer_bearing(4.72 * MM, 6.64 * MM, 0.45 * MM, 3.4 * MM, 2160e6, 2.9 * MM, 207e9, 78.06e6 / 2,
                              640e6 / 2)
     F = 78.06e6 / 2 * face["area"]
-    assert w["preload_n"] == pytest.approx(F, rel=1e-9) and F == pytest.approx(820.9, abs=0.1)
+    assert w["preload_n"] == pytest.approx(F, rel=1e-9) and F == pytest.approx(774.3, abs=0.1)
     assert w["allowed_nm"] == pytest.approx(fx.nut_factor(3 * MM, 0.5 * MM, 0.10, 0.08) * 3 * MM * F, rel=1e-9)
-    assert w["allowed_nm"] == pytest.approx(0.317, abs=1e-3) and w["gain"] == pytest.approx(2.50, abs=0.01)
+    assert w["allowed_nm"] == pytest.approx(0.299, abs=1e-3) and w["gain"] == pytest.approx(2.36, abs=0.01)
     # the large washer lifts it further; the catalogue limiters lift the preload but fail their own rows
     assert by["large washer"]["named"] and by["large washer"]["preload_n"] > w["preload_n"]
     limiters = [o for o in fixes["options"] if o["fix"] == "limiter"]
@@ -700,9 +701,10 @@ def test_the_washer_fix_checked_directly_passes_every_row_it_loads():
     assert "clamped on insert" not in rows and rows["clamped on washer"]["verdict"] == "pass"
     assert "ISO 7089" in rows["clamped on washer"]["detail"] and "washer's hole" in rows["insert face"]["detail"]
     assert r["torque"]["friction"]["collar"] == list(I.COLLAR_ON_METAL)           # the head turns on the washer
-    # the insert's brass now carries the washer round its 3.2 mm hole, not the lid round its 3.4 mm one
+    # the insert's brass now carries the washer round its hole at its largest (3.2 mm to H13: 3.38 mm), not the lid
+    # round its 3.4 mm one
     assert r["torque"]["preload_caps_n"]["insert_face"] == pytest.approx(
-        124e6 * math.pi / 4 * (4.72 ** 2 - 3.2 ** 2) * MM ** 2, rel=1e-9)
+        124e6 * math.pi / 4 * (4.72 ** 2 - 3.38 ** 2) * MM ** 2, rel=1e-9)
     _loaded_rows_pass(r)
     # the lid on the washer still sets it: the ladder's next step swaps both washers for large ones
     assert r["fixes"]["for"] == "clamped_on_washer" and r["fixes"]["fix"]["fix"] == "large washer"
@@ -763,6 +765,31 @@ def test_check_clamp_names_a_larger_head_then_washers():
     assert {o["fix"]: o for o in wide["fixes"]["options"]}["larger head"]["why"].startswith("no listed M4 head")
 
 
+def test_check_clamp_on_m3_names_no_larger_head():
+    # the cheese head's dk min (5.32 mm) is not a bearing face: it is not set against the socket head's dw (5.07)
+    r = I.check_clamp("M3", "pla-bambu-basic", 3.0)
+    opts = {o["fix"]: o for o in r["fixes"]["options"]}
+    assert not opts["larger head"]["named"] and r["fixes"]["fix"] is opts["washer"]
+
+
+def test_a_larger_washer_already_fitted_is_kept():
+    r = I.check_joint(**M3_LID, head_mm=9.0, head_washer="iso7093", insert_washer="iso7093")
+    opts = {o["fix"]: o for o in r["fixes"]["options"]}
+    assert "or a larger one, is fitted already" in opts["washer"]["why"] and "set" not in opts["washer"]
+    assert "fitted already" in opts["large washer"]["why"]
+    # a smaller one is swapped up
+    up = I.check_joint(**M3_LID, insert_washer="iso7089")
+    big = {o["fix"]: o for o in up["fixes"]["options"]}["large washer"]
+    assert big["set"]["insert_washer"] == "iso7093" and big["named"]
+
+
+def test_a_head_wider_than_its_washer_says_only_the_washer_bears():
+    r = I.check_clamp("M3", "pla-bambu-basic", 3.0, head_mm=8.0, head_washer="iso7089")
+    detail = _rows(r)["head bearing"]["detail"]
+    assert "as wide as the washer or wider" in detail and "0.00 of its" not in detail
+    assert r["head"]["on_plastic"]["area_mm2"] == pytest.approx(math.pi / 4 * (6.64 ** 2 - 3.4 ** 2), rel=1e-9)
+
+
 def test_washers_and_heads_are_validated():
     with pytest.raises(ValueError, match="washer must be one of"):
         I.check_joint(**M3_LID, head_washer="din125")
@@ -789,6 +816,6 @@ def test_the_cli_prints_the_fix(tmp_path):
                        env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
     assert r.returncode == 0, r.stdout + r.stderr
     assert "tighten to at most 0.20 N m (clamped on insert)" in r.stdout
-    assert ("fix: an ISO 7089 washer between the part and the insert and one under the head: at most 0.32 N m, "
-            "821 N preload (clamped on washer)") in r.stdout
+    assert ("fix: an ISO 7089 washer between the part and the insert and one under the head: at most 0.30 N m, "
+            "774 N preload (clamped on washer)") in r.stdout
     assert "spirol-cl6000-m3" not in r.stdout                       # a limiter that fails is not named

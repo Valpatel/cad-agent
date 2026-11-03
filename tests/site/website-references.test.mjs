@@ -106,10 +106,15 @@ test('index.json counts every committed record once, and each area file lists ex
     assert.ok(files.includes(`references/${a.slug}.html`) && files.includes(`references/${a.slug}.md`), a.slug);
   }
   assert.deepEqual([...seen].sort(), [...own, ...sources].sort(), 'every record is in some area file, once per area');
-  // The whole base in one fetch (an offline mirror reads only index.json): each record once, with where it is.
-  assert.deepEqual(index.records.map(r => r.id), [...own, ...sources].sort((a, b) => (a < b ? -1 : 1)));
-  for (const r of index.records) {
-    for (const k of Object.keys(index.record_fields)) if (k !== 'url' || !r.isbn) assert.ok(k in r, `${r.id}: no ${k}`);
+  // The whole base in one fetch for a mirror (records.json, linked from the index), and the index itself small.
+  assert.equal(index.records, `${ORIGIN}/catalog/references/records.json`);
+  assert.ok(JSON.stringify(index).length < 40_000, `index.json is ${JSON.stringify(index).length} bytes: an agent reads it first`);
+  const all = await json('catalog/references/records.json');
+  assert.equal(all.schema, 'cad-agent-references/1');
+  assert.equal(all.count, all.records.length);
+  assert.deepEqual(all.records.map(r => r.id), [...own, ...sources].sort((a, b) => (a < b ? -1 : 1)));
+  for (const r of all.records) {
+    for (const k of Object.keys(all.fields)) if (k !== 'url' || !r.isbn) assert.ok(k in r, `${r.id}: no ${k}`);
     assert.ok(r.url === null || /^https?:\/\//.test(r.url), r.id);
     assert.ok(LADDER.includes(r.evidence), `${r.id}: evidence ${r.evidence}`);
     assert.equal(`/references/${r.areas[0]}#${r.id}`, model.home(r.id), 'the first area is where its row is');
@@ -159,11 +164,12 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
 });
 
 test('Markdown twins link [ref:] tags to the records\' pages; code is left alone', () => {
-  const md = `A [ref:pem-handbook] rule.\n\n\`[ref:pem-handbook]\`\n\n\`\`\`\n[ref:pem-handbook]\n\`\`\`\n[ref:pem-handbook](kept)\n`;
+  const md = `A [ref:pem-handbook] rule.\n\n\`[ref:pem-handbook]\`\n\n\`\`\`\n[ref:pem-handbook]\n\`\`\`\n[ref:pem-handbook](kept)\n[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)\n`;
   const page = model.home('pem-handbook').slice(1).split('#')[0];
   const twin = mdTags(md, 'research/x.md', model, { ORIGIN });
   assert.ok(twin.startsWith(`A [ref:pem-handbook](${path.posix.relative('research', page)}.md#pem-handbook) rule.`), twin);
-  assert.ok(twin.includes('`[ref:pem-handbook]`') && twin.includes('```\n[ref:pem-handbook]\n```') && twin.includes('[ref:pem-handbook](kept)'));
+  assert.ok(twin.includes('`[ref:pem-handbook]`') && twin.includes('```\n[ref:pem-handbook]\n```') && twin.includes('[ref:pem-handbook](kept)')
+    && twin.includes('[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)'), 'a tag that is already link text stays as written');
   assert.ok(mdTags(md, 'research/x.md', model, { ORIGIN, absolute: true }).startsWith(`A [ref:pem-handbook](${ORIGIN}/${page}.md#pem-handbook)`));
 });
 
@@ -212,6 +218,7 @@ test('a hostile record is shown as text: no markup, script URL or broken table g
   assert.doesNotMatch(html, /href="\s*javascript:/i, 'a script URL is never a link');
   assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;&quot;&#39;&amp;'));
   for (const [, text] of s.files) JSON.parse(text);
+  assert.ok(s.files.some(([f]) => f === 'catalog/references/records.json'));
   for (const p of s.pages) for (const line of p.markdown.split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| Record') && !l.startsWith('|---')))
     assert.equal(line.replace(/\\\|/g, '').split('|').length, 9, `${p.md}: a record row keeps its 7 cells: ${line}`);
   // In Markdown an escaped \< or \] is text; an unescaped one would be markup or a link.

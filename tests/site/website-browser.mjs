@@ -1077,6 +1077,7 @@ async function refsProblems(page, width, seen) {
   if (!lic || (await shown()) >= total) seen.push(`a chart bar does not filter the table (licence "${lic}")`);
   // A link to one catalogued record, with a filter that hides it: the record still shows.
   const id = await page.$eval('.refs-table tbody tr[data-evidence="snippet-only"]', r => r.id);
+  await page.waitForLoadState('networkidle');      // nothing of this page still loading for the next goto to abort
   await page.goto(`${page.url().split('?')[0].split('#')[0]}?evidence=read#${id}`, { waitUntil: 'networkidle' });
   if (await page.$eval(`[id="${id}"]`, r => r.hidden)) seen.push(`#${id} is hidden by the URL's filter`);
 }

@@ -252,19 +252,24 @@ export function referenceJson(m, { ORIGIN, revision, built }) {
     schema: SCHEMA, built, revision,
     about: 'The reference knowledge base: read sources the rules cite, and records catalogued from a survey (snippet-only: '
       + 'listed and linked, never cited until someone reads them). One file per area; a record is in each of its areas.',
-    fields: FIELDS, ladder: LADDER.map(k => ({ class: k, means: L.evidenceMeans(k) })),
+    fields: { ...FIELDS, records: 'every record in one file (id, url, kind, licence, evidence, areas), for mirrors' }, ladder: LADDER.map(k => ({ class: k, means: L.evidenceMeans(k) })),
     totals: { ...summary(all), unplaced: (m.byArea.get(UNPLACED) || []).length, areas: m.pages.filter(p => p !== UNPLACED).length },
     areas,
     coverage: { observed: m.refs.coverage.observed ?? null, note: m.refs.coverage.note ?? null,
       rows: m.rows.map(({ id, number, topic, status, placed }) => ({ id, number, topic, status, areas: placed })) },
-    record_fields: RECORD_FIELDS, records: '\0',
+    records: `${ORIGIN}/catalog/references/records.json`,
   };
-  // Every record in one fetch (an offline mirror needs only this file): one per line, in id order.
+  files.push(['catalog/references/index.json', JSON.stringify(index, null, 2) + '\n']);
+  // Every record in one fetch, for an offline mirror (val-ark), one per line in id order. Its own file, so the
+  // index an agent reads first stays a few KB.
   const brief = [...m.refs.records.values()].sort((a, b) => byText(a.id, b.id)).map(r => '    ' + JSON.stringify({
     id: r.id, title: r.title ?? null, url: httpUrl(r.url), ...(r.isbn ? { isbn: String(r.isbn) } : {}), status: r.status,
     kind: kindOf(r), licence: licenceOf(r), licence_read: isObj(r.licence) ? r.licence.read ?? null : null,
     evidence: evidenceOf(r), areas: m.placed.get(r.id) }));
-  files.push(['catalog/references/index.json', JSON.stringify(index, null, 2)
+  files.push(['catalog/references/records.json', JSON.stringify({ schema: SCHEMA, built, revision,
+    about: 'Every record of the reference knowledge base, one per line: enough to mirror each source (its url or isbn) and '
+      + 'to know what it is. Every field of a record is in catalog/references/<area>.json of its first area.',
+    index: `${ORIGIN}/catalog/references/index.json`, fields: RECORD_FIELDS, count: brief.length, records: '\0' }, null, 2)
     .replace('"\\u0000"', () => `[\n${brief.join(',\n')}\n  ]`) + '\n']);
   for (const slug of m.pages) {
     const a = m.area(slug);
@@ -297,9 +302,12 @@ export function barChart({ title, note = '', rows, filter = null, wide = false }
     return href ? `<a href="${esc(href)}"${filter ? ` data-filter="${esc(filter)}" data-value="${esc(r.value)}"` : ''}>${body}</a>` : `<g>${body}</g>`;
   }).join('');
   const spoken = `${title}: ${rows.map(r => `${r.label} ${r.n}`).join(', ')}`;
-  return `<figure class="refs-chart${wide ? ' refs-chart-wide' : ''}" data-visual><figcaption><b>${esc(title)}</b>${note ? ` <span>${esc(note)}</span>` : ''}</figcaption>`
+  return `<figure class="refs-chart${wide ? ' refs-chart-wide' : ''}" data-visual${wide ? ` ${SCROLLS(title)}` : ''}><figcaption><b>${esc(title)}</b>${note ? ` <span>${esc(note)}</span>` : ''}</figcaption>`
     + `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(spoken)}">${rowsSvg}</svg></figure>`;
 }
+
+/** A wide chart scrolls sideways on a phone (web/references.css): reachable by keyboard, and named. */
+const SCROLLS = name => `tabindex="0" role="region" aria-label="${esc(name)}"`;
 
 /** Stacked rows (index page): per area, read sources and catalogued records, grouped under their domain. */
 function areaChart(m) {
@@ -328,7 +336,7 @@ function areaChart(m) {
       y += ROW;
     }
   }
-  return `<figure class="refs-chart refs-chart-wide" data-visual><figcaption><b>Records by area</b> <span><i class="refs-key tone-read"></i>read sources <i class="refs-key tone-catalogued"></i>catalogued, not yet read</span></figcaption>`
+  return `<figure class="refs-chart refs-chart-wide" data-visual ${SCROLLS('Records by area')}><figcaption><b>Records by area</b> <span><i class="refs-key tone-read"></i>read sources <i class="refs-key tone-catalogued"></i>catalogued, not yet read</span></figcaption>`
     + `<svg viewBox="0 0 ${W} ${y + 4}" width="${W}" height="${y + 4}" role="img" aria-label="${esc('Records by area: ' + spoken.join('; '))}">${out}</svg></figure>`;
 }
 
@@ -344,7 +352,7 @@ function coverageChart(m) {
     return at ? `<a href="/references/${esc(at)}#coverage">${body}</a>` : `<g>${body}</g>`;
   }).join('');
   const H = 8 + rows.length * ROW;
-  return `<figure class="refs-chart refs-chart-wide" data-visual><figcaption><b>What cad-agent checks, by topic</b> <span>the map's coverage table, as observed ${esc(m.refs.coverage.observed || '')}</span></figcaption>`
+  return `<figure class="refs-chart refs-chart-wide" data-visual ${SCROLLS('What cad-agent checks, by topic')}><figcaption><b>What cad-agent checks, by topic</b> <span>the map's coverage table, as observed ${esc(m.refs.coverage.observed || '')}</span></figcaption>`
     + `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc('Coverage: ' + rows.map(r => `${r.topic} ${r.status}`).join('; '))}">${out}</svg></figure>`;
 }
 
@@ -428,7 +436,7 @@ function indexBody(m, { feedback }) {
   const all = [...m.refs.records.values()], read = all.filter(r => r.status === 'source').length;
   const unplaced = (m.byArea.get(UNPLACED) || []).length, wanted = Array.isArray(m.refs.coverage.wanted) ? m.refs.coverage.wanted : [];
   const L = labels(m.refs.vocab);
-  return `<div class="refs-page"><p class="crumbs"><a href="/catalog">Catalogue</a> · <a href="/references.md">Markdown</a> · <a href="/catalog/references/index.json">JSON</a> · <a href="/docs/experts">Experts</a></p>`
+  return `<div class="refs-page"><p class="crumbs"><a href="/catalog">Catalogue</a> · <a href="/references.md">Markdown</a> · <a href="/catalog/references/index.json">JSON</a> · <a href="/catalog/references/records.json">All records (JSON)</a> · <a href="/docs/experts">Experts</a></p>`
     + `<header class="refs-head"><p class="eyebrow">Reference knowledge base</p><h1>References</h1>`
     + `<p class="refs-lede">${plural(all.length, 'record')} in ${plural(m.pages.filter(p => p !== UNPLACED).length, 'area')}: ${plural(read, 'read source')} that the rules and checks cite, and ${plural(all.length - read, 'record')} catalogued from the Reference Map (open projects and design guides), not yet read. Open an area for its charts and a table you can filter.</p>`
     + `<p class="refs-caveat">A catalogued record is a search snippet: listed and linked, never cited until someone reads the source. Its numbers are the authors' claims and its licence is as the map states it.</p></header>`
@@ -483,7 +491,7 @@ function areaMd(slug, m, ORIGIN) {
 function indexMd(m, ORIGIN) {
   const all = [...m.refs.records.values()], read = all.filter(r => r.status === 'source').length, L = labels(m.refs.vocab);
   return [`# References`, '', `${plural(all.length, 'record')}: ${plural(read, 'read source')} that the rules and checks cite, and ${plural(all.length - read, 'record')} catalogued from the Reference Map, not yet read (snippet-only: listed and linked, never cited).`, '',
-    `Counts per area as JSON: ${ORIGIN}/catalog/references/index.json`, '', '## Areas', '',
+    `Counts per area as JSON: ${ORIGIN}/catalog/references/index.json; every record in brief, for a mirror: ${ORIGIN}/catalog/references/records.json`, '', '## Areas', '',
     ...m.pages.map(slug => { const list = m.byArea.get(slug) || []; const r = list.filter(x => x.status === 'source').length; return `- [${m.area(slug).title}](references/${slug}.md): ${list.length} (${r} read, ${list.length - r} catalogued)`; }),
     '', ...(m.rows.length ? ['## Coverage', '', ...m.rows.map(row => `- ${mdText(row.topic)}: ${L.coverage(row.status)}`), ''] : [])].join('\n');
 }
@@ -492,7 +500,7 @@ function indexMd(m, ORIGIN) {
 export function llmsSection(m, ORIGIN) {
   const all = [...m.refs.records.values()], read = all.filter(r => r.status === 'source').length;
   return ['## References', '',
-    `The reference knowledge base: ${all.length} records, ${read} read sources that rules and checks cite and ${all.length - read} catalogued from a survey (snippet-only: listed and linked, never cited until read). Counts per area: ${ORIGIN}/catalog/references/index.json; one area's records: ${ORIGIN}/catalog/references/<area>.json. \`[ref:<id>]\` in any page links to its record. The people and organisations behind the read sources: ${ORIGIN}/docs/experts.md`, '',
+    `The reference knowledge base: ${all.length} records, ${read} read sources that rules and checks cite and ${all.length - read} catalogued from a survey (snippet-only: listed and linked, never cited until read). Counts per area: ${ORIGIN}/catalog/references/index.json; one area's records: ${ORIGIN}/catalog/references/<area>.json; every record in brief (for a mirror): ${ORIGIN}/catalog/references/records.json. \`[ref:<id>]\` in any page links to its record. The people and organisations behind the read sources: ${ORIGIN}/docs/experts.md`, '',
     ...m.pages.map(slug => {
       const list = m.byArea.get(slug) || [], r = list.filter(x => x.status === 'source').length;
       return `- [${m.area(slug).title}](${ORIGIN}/references/${slug}.md): ${plural(list.length, 'record')} (${r} read, ${list.length - r} catalogued); ${ORIGIN}/catalog/references/${slug}.json`;
@@ -531,7 +539,8 @@ function cite(id, m) {
 /** `[ref:<id>]` in a Markdown twin (outside code spans and fences) as a Markdown link to the record's page: relative
  * to `file`, or absolute (llms-full.txt). */
 export function mdTags(md, file, m, { ORIGIN, absolute = false }) {
-  return md.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)/).map((chunk, i) => i % 2 ? chunk : chunk.replace(MD_TAG, (all, id) => {
+  // Code fences, code spans and links whose text holds a tag ([see [ref:x]](url)) are left as written.
+  return md.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^[\]\n]*\])*\]\([^)\s]*\))/).map((chunk, i) => i % 2 ? chunk : chunk.replace(MD_TAG, (all, id) => {
     const home = m.home(id);
     if (!home) return all;
     const [page, hash] = home.slice(1).split('#');

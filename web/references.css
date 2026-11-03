@@ -69,6 +69,5 @@
 .ref-cite{font:12px var(--mono);white-space:nowrap;color:var(--muted)}
 .ref-cite .ref-key{color:var(--link)}.ref-cite .ref-out{margin-left:2px;text-decoration:none;color:var(--teal)}
 .ref-unread{border-bottom:1px dotted var(--line-3)}
-/* the all-areas charts keep a readable size on a phone: they scroll sideways in their own box */
-.refs-chart-wide{overflow-x:auto}.refs-chart-wide svg{min-width:600px}
-@media(max-width:700px){.refs-charts{grid-template-columns:1fr}.refs-filters label{flex:1 1 40%}.refs-table-wrap{max-height:70vh}}
+/* on a phone the all-areas charts keep a readable size and scroll sideways in their own box */
+@media(max-width:700px){.refs-chart-wide{overflow-x:auto}.refs-chart-wide svg{min-width:600px}.refs-charts{grid-template-columns:1fr}.refs-filters label{flex:1 1 40%}.refs-table-wrap{max-height:70vh}}

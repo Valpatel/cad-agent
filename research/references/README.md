@@ -24,7 +24,19 @@ flowchart TD
 | File | What it holds |
 |---|---|
 | `vocab.yaml` | The fixed vocabularies every schema-2 field is checked against: kinds, licence and reuse classes, the evidence ladder, confidence levels, processes, project domains and the objective assessment questions. |
-| `<group>-<slug>.yaml` | A shard: `schema: 2` and a `sources:` list of at most 150 records (150 KB). None yet: the import (#323 phase 2) adds them. |
+| `projects-<domain>.yaml` | Open projects from the Reference Map, one shard per project domain (`vocab.yaml` `domain`): drive 39, drone 30, esc 56, general 6, legged 67, motor 31, pantilt 21, turret 38, wheel 78. |
+| `guides-<group>.yaml` | Manufacturing and design guides, one shard per process group of the guide's first process: cnc 41, general 23, inserts 17, mould 30, pcb 13, print 37, sheet 40. Of these, 21 records are `extends: true` additions to guides already read in `research/references.yaml`. |
+| `coverage.yaml` | The map's coverage table: what cad-agent enforced per topic (16 rows), where, its gaps, and the issue drafted for each gap, never posted (`posted: false`). `wanted` lists the sources each process group still lacks. |
+
+Every shard is at most 150 records and 150 KB. The shards and `coverage.yaml` come from the Reference Map, through
+[`tools/import_refmap.py`](../../tools/import_refmap.py), which takes the map's `data.json` by path. The data file
+stays out of the repo. The import is deterministic, and its rules are in the tool's docstring:
+
+- every new record is `snippet-only`, and every licence is unread;
+- numbers are the authors' claims unless measured;
+- the map's per-project verdicts stay out, and only its project-neutral `role` comes in.
+
+Two guides that `research/references.yaml` lists as `unverified` were left there.
 
 ## A record
 
@@ -41,7 +53,7 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `evidence` | `class` (the ladder below), `numbers`, `tested`, `authority` |
 | `claims` | The rules a source states: `text`, `status` (unconfirmed, corroborated, conflicting, encoded), `evidence`, `corroborated_by` (ids of other records) |
 | `confidence` | Optional, and only as `confidence()` derives it (#143); check() rejects a typed value that differs |
-| `assessment` | For a project, objective answers only: `built`, `supply`, `cost`, `make`, `docs`, `activity`, `role`, `cad`, `answers`, `caveat`, `assessed`. `role` (leader, reference, lessons, context) names no project |
+| `assessment` | For a project, objective answers only: `built`, `supply`, `cost`, `make`, `docs`, `activity`, `role`, `cad`, `answers`, `caveat`, `assessed`. `role` (leader, reference, lessons, context) names no project. It was scored while surveying for one kind of build (a printed two-wheeled, legged balancing robot), so it is not a quality grade (`vocab.yaml` says more) |
 | `projects` | Optional join: a `docs/areas.yaml` project key mapped to that project's mechanism slugs |
 | `rules`, `checks` | The profile rules and cad-agent checks that encode the record |
 | `archive` | A pointer for the offline mirror: `sha256`, `kind`, `fetched`, `redistribute`. Never a path or a host |

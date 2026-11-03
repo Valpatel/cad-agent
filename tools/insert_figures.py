@@ -363,9 +363,11 @@ def figure_washers() -> str:
     """The issue's M3 lid with the fix the ladder names (#292), to scale: an ISO 7089 washer under the head and one
     between the lid and the insert, and under the section the pressure on the lid's underside across its radius:
     full over the insert's ring, then falling off over the washer's overhang as the beam on the plastic gives it, cut
-    where the washer would bend past its strength. The bare ring's area and the washer's are what the module
-    computed."""
+    where the washer would bend past its strength; dashed past the cut, the beam's pressure the check does not count.
+    The head's height and outside are ISO 4762's (``hardware.SOCKET_HEAD``), the insert is drawn at its full length,
+    and the bare ring's area and the washer's are what the module computed."""
     import math
+    from cadagent.library import hardware
     base = I.check_joint(**LID)
     fixed = I.check_joint(**LID, insert_washer="iso7089", head_washer="iso7089", fixes=False)
     ins = I.insert(PICK)
@@ -373,11 +375,12 @@ def figure_washers() -> str:
     w = wf["washer"]
     ring = base["torque"]["preload_caps_n"]["clamped_on_insert"] / (I.bearing_strength(MATERIAL) / I.MARGIN) / 1e-6
     k = 30.0                                                      # px per mm
-    W, H, cx = 900, 470, 230.0
-    lid_t, wt, head_h, ins_h = 3.0 * k, w["thickness_mm"] * k, 2.2 * k, 2.4 * k
+    head = hardware.SOCKET_HEAD["rows"]["M3"]                     # ISO 4762: the head's height k and outside dk
+    W, H, cx = 900, 570, 230.0
+    lid_t, wt, head_h, ins_h = 3.0 * k, w["thickness_mm"] * k, head["k"] * k, ins.length_mm * k
     R_hole, R_knurl, R_bore = 3.4 / 2 * k, ins.outer_mm / 2 * k, ins.cad_bore_mm / 2 * k
-    R_w, R_head, R_boss = w["outside_mm"] / 2 * k, fixed["head"]["bearing_mm"] / 2 * k, 4.0 * k
-    y_head = 40.0
+    R_w, R_head, R_boss = w["outside_mm"] / 2 * k, head["dk"] / 2 * k, 4.0 * k
+    y_head = 30.0
     y_w1 = y_head + head_h
     y_lid = y_w1 + wt
     y_w2 = y_lid + lid_t
@@ -401,7 +404,7 @@ def figure_washers() -> str:
              text(lx, y_w2 + 8, f"{w['standard']} washer", "small"),
              text(lx, y_ins + ins_h / 2 + 4, "insert, flush", "small")]
     # the pressure on the lid's underside, right half, to the section's radius scale
-    y0, hp = y_ins + ins_h + 100, 64.0
+    y0, hp = y_ins + ins_h + 96, 64.0
     p_mpa = I.bearing_strength(MATERIAL) / I.MARGIN / 1e6
     beta = 1.0 / w["spread_length_mm"]
     used = w["bearing_overhang_mm"]
@@ -414,16 +417,21 @@ def figure_washers() -> str:
         pts.append((cx + R_knurl + x * k, y0 - hp * f))
     pts += [(cx + R_knurl + used * k, y0)]
     body.append(poly(pts, "good"))
+    rest = [(cx + R_knurl + x * k, y0 - hp * math.exp(-beta * x) * (math.cos(beta * x) + math.sin(beta * x)))
+            for x in [used + (w["overhang_mm"] - used) * i / 8 for i in range(9)]]
+    body += [line(*rest[i], *rest[i + 1], "axis") for i in range(len(rest) - 1)]       # dashed, muted
     body.append(line(cx + R_hole, y0, cx + R_w + 4, y0, "dim"))
     body.append(line(cx + R_knurl, y0 - hp - 6, cx + R_knurl, y0 + 6, "dim"))
     body.append(line(cx + R_w, y0 - 10, cx + R_w, y0 + 6, "dim"))
     body += [text(cx + R_hole - 8, y0 - hp + 4, f"{p_mpa:.0f} MPa allowed", "small", "end"),
              text(cx + R_hole - 8, y0 - hp + 22, "over the ring", "small", "end"),
-             text(cx + R_knurl + used * k + 10, y0 - 22, "eases off over the overhang,", "small"),
-             text(cx + R_knurl + used * k + 10, y0 - 4, f"cut where the washer would bend past {I.HARDNESS_RM_MPA[200] / I.MARGIN:.0f} MPa",
-                  "small"),
+             text(cx + R_w + 14, y0 - hp + 4, "eases off over the overhang; the check counts it", "small"),
+             text(cx + R_w + 14, y0 - hp + 22, "only to where the washer would bend past "
+                  f"{I.HARDNESS_RM_MPA[200] / I.MARGIN:.0f} MPa", "small"),
+             text(cx + R_w + 14, y0 - hp + 40, "(dashed: the beam's pressure out to its edge)", "small"),
              text(cx + R_w, y0 + 22, "washer edge", "small", "middle"),
-             text(cx - R_boss - 20, y0 + 50, "pressure on the lid's underside, to the section's radius scale", "small")]
+             text(cx - R_boss - 20, y0 + 50, "the pressure the check counts on the lid's underside, to the section's "
+                  "radius scale", "small")]
     # the numbers, right
     tx = 560
     lines = [("Bare lid on the insert's ring", "big"),
@@ -475,13 +483,13 @@ def figure_fix_ladder() -> str:
         rows = [("as it is", fx_["preload_n"], fx_["allowed_nm"], "base", "")]
         seen = set()
         for o in fx_["options"]:
-            name = o["fix"] + (f" ({o['set']['limiter_key'].split('-')[1].upper()})" if o["fix"] == "limiter" and
-                                o.get("set") else "")
+            name = o["fix"] + (f" ({o['set']['limiter_key'].split('-')[1].upper()}, {o['set']['limiter_length_mm']:g} mm)"
+                               if o["fix"] == "limiter" and o.get("set") else "")
             if name in seen:
                 continue
             seen.add(name)
             why = ("the fix" if o is fx_["fix"] else "the lasting fix" if o is fx_["lasting"] else
-                   "named" if o["named"] else o["why"].split(";")[0][:58])
+                   "named" if o["named"] else o["why"].replace("limiter press fit", "press fit")[:64])
             rows.append((name, o.get("preload_n"), o.get("allowed_nm"), "good" if o["named"] else "bad", why))
         for name, F, T, cls, why in rows:
             body.append(text(x0 - 10, y + Hrow * 0.62, name, "small", "end"))

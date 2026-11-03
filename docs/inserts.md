@@ -85,7 +85,7 @@ check works out, and it changes every limit after it.
 A printed part bears on two faces: under the screw's head, and, on a flush insert, on the insert's end. Either can
 set the torque. The check computes both from cited dimensions in `cadagent.library.hardware`.
 
-<img src="img/inserts/washers.svg" alt="The issue's M3 lid in PLA with ISO 7089 washers under the head and between the lid and the insert: the lid bears on 19.8 mm² of washer instead of 8.4 mm² of the insert's ring, so its preload cap rises from 329 N to 774 N; the pressure is full over the ring and falls off over the washer's overhang, 0.70 of 0.96 mm of which bears" width="900" height="470">
+<img src="img/inserts/washers.svg" alt="The issue's M3 lid in PLA with ISO 7089 washers under the head and between the lid and the insert: the lid bears on 19.8 mm² of washer instead of 8.4 mm² of the insert's ring, so its preload cap rises from 329 N to 774 N; the pressure is full over the ring and falls off over the washer's overhang, 0.70 of 0.96 mm of which bears" width="900" height="570">
 
 The issue's lid (#292) above: `mcmaster-94459A140` in PLA Basic, `boss_outside_mm: 8`, a 3 mm lid, socket head,
 3.4 mm hole. The washer between the lid and the insert bears on 19.8 mm² against the bare ring's 8.4 mm². Only 0.70

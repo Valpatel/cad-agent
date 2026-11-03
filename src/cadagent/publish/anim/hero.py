@@ -758,7 +758,7 @@ FILLS = {"frame": "fill", "link": "linkf", "metal": "metal", "dark": "dark", "ty
 # (light, dark) colours the hero adds to the shared theme. Stress bands run cold to hot, as FEA plots do.
 HERO_COLOURS = {
     "linkf": ("#fbe3ad", "#5a4518"), "stop": ("#e38f72", "#8c3a24"), "scan": ("#2f7d5b", "#5cc8a0"),
-    "tyreedge": ("#8c9a96", "#7f8e8a"),
+    "tyreedge": ("#8c9a96", "#7f8e8a"), "halo": S.HALO,
 }
 STRESS = ["#2c6fbb", "#1f9fd0", "#22c0b4", "#8bd88f", "#e9e46a", "#f5b744", "#ef7d2d", "#d8401f", "#a8170f"]
 
@@ -920,7 +920,7 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         css.append(f".cl{{opacity:0}}.cl path{{fill:none;stroke:var(--accent);stroke-width:{1.5 * U};"
                    f"stroke-linecap:round}}.cl .gap{{stroke-width:{3 * U}}}"
                    f".cl text{{font-size:{14 * U}px;font-weight:700;fill:var(--accent);paint-order:stroke;"
-                   f"stroke:var(--bg);stroke-width:{4 * U}px}}")
+                   f"stroke:var(--halo);stroke-width:{4 * U}px}}")
         n_poses = len(scene["linkage"]["trace"]) - 1
         tc = m0 + (m1 - m0) * closest["pose"] / n_poses
         tl.opacity(".cl", [(0, 0), (tc - 0.3, 0), (tc - 0.1, 1), (tc + 0.6, 1), (tc + 0.8, 0), (P, 0)])
@@ -987,6 +987,10 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
         group += f'<path transform="translate({col + 2 * U} {130 * U})" class="tgp w" d="{tg["d"]}"/>'
     body.append(f'<g class="wm">{group}</g>')
     css.append(".wmp{fill:var(--ink)}.tgp{fill:var(--muted)}")
+    # the figure is transparent on GitHub's page: every word gets a halo in the page colour, so it stands out on
+    # white or near-black whichever colour scheme the SVG picks
+    css.append(f".wmp,.tgp,.cap,.rl,.rd,.lgt,.cr{{paint-order:stroke;stroke:var(--halo);stroke-linejoin:round}}"
+               f".wmp{{stroke-width:{2.5 * U}px}}.tgp,.rl{{stroke-width:{2 * U}px}}.cap,.rd,.lgt,.cr{{stroke-width:{1.5 * U}px}}")
     w0, w1 = ph.words
     tl.add(".wm", [(0, 0), (w0, 0), (w1, 1), (ph.fade[0], 1), (ph.fade[1], 0), (P, 0)],
            lambda v: f"opacity:{n_(v, 2)};transform:translateY({n_((1 - v) * 14 * U, 0)}px)", "ease-out")
@@ -997,7 +1001,8 @@ def render(scene: Mapping[str, Any], present: Mapping[str, Any]) -> str:
     # narrow (a phone): only the drawing, the wordmark and the check names, larger
     css.append("@media (max-width:520px){.w{visibility:hidden}" + "".join(narrow).replace("}", ";transform:scale(1.8)}")
                + "}")
-    return S.document(W, H, present["label"], present["description"], "".join(css) + tl.stylesheet(), body, theme)
+    return S.document(W, H, present["label"], present["description"], "".join(css) + tl.stylesheet(), body, theme,
+                      background=False)
 
 
 # what each check row says, with the scene's numbers; a spec's ``present.checks`` may replace any of them

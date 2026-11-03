@@ -3,9 +3,10 @@ document wrapper and the rules a figure must pass to be embedded as an ``<img>``
 
 Figures animate with CSS only: no script and no SMIL. Under ``prefers-reduced-motion`` every animation stops, and
 each element shows its own style, so the base style of every animated element is the figure's final frame. Colours
-are CSS custom properties with a light and a dark set, chosen by ``prefers-color-scheme`` inside the SVG, and the
-figure paints its own background. A mismatch between GitHub's theme and the browser's is therefore never
-unreadable.
+are CSS custom properties with a light and a dark set, chosen by ``prefers-color-scheme`` inside the SVG. A figure
+paints its own background, so a mismatch between GitHub's theme and the browser's is never unreadable; a figure
+that sits on the page instead (``background=False``, the README hero) gives its text a halo in the page colour of its
+scheme (``HALO``), which keeps it readable on GitHub's white or near-black page whichever scheme the SVG picks.
 
 Coordinates are written in *units* of ``1 / UNITS_PER_PX`` CSS pixels and rounded to whole units, so path data is
 short integers. Paths are relative after their first point. Deltas are taken between rounded points, so rounding
@@ -273,19 +274,24 @@ THEME = Theme(
 )
 
 
+# GitHub's page colours (light, dark): the halo a transparent figure's text is outlined in, so it reads on the page
+HALO = ("#ffffff", "#0d1117")
+
+
 # ----------------------------------------------------------------------------------------------------- document
 
 def document(width_px: int, height_px: int, title: str, description: str, css: str, body: Sequence[str],
-             theme: Theme = THEME) -> str:
+             theme: Theme = THEME, background: bool = True) -> str:
     """The SVG: sized at its natural width in CSS pixels, a viewBox in units, labelled for assistive technology
-    (``role="img"``, ``aria-label``, ``<title>`` and ``<desc>``), with the theme's colours and its own background."""
+    (``role="img"``, ``aria-label``, ``<title>`` and ``<desc>``), with the theme's colours and, unless
+    ``background`` is false, its own background (a transparent figure shows the page behind it)."""
     w, h = width_px * UNITS_PER_PX, height_px * UNITS_PER_PX
     return "".join([
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{width_px}" height="{height_px}" '
         f'role="img" aria-label="{attr(title)}" font-family="{attr(FONT)}">',
         f"<title>{escape(title)}</title><desc>{escape(description)}</desc>",
         f"<style>{theme.css()}{css}</style>",
-        f'<rect width="{w}" height="{h}" rx="{12 * UNITS_PER_PX}" style="fill:var(--bg)"/>',
+        *([f'<rect width="{w}" height="{h}" rx="{12 * UNITS_PER_PX}" style="fill:var(--bg)"/>'] if background else []),
         *body, "</svg>\n"])
 
 

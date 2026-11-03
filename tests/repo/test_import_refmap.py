@@ -174,6 +174,18 @@ def test_a_guide_already_read_extends_its_core_entry(checkout):
         "No second source checked. As the map saw it: Numbers not read in the snippet.")}]
 
 
+@pytest.mark.parametrize("evidence, joined", [
+    ("Two tests differ by", "Two tests differ by [cut off in the map]. As the map saw it: Snippet only."),
+    ("Two tests agree.", "Two tests agree. As the map saw it: Snippet only."),
+])
+def test_evidence_the_map_cut_off_is_marked_before_its_note(monkeypatch, evidence, joined):
+    monkeypatch.setattr(imp, "NEUTRAL", {})
+    g = {"url": "https://example.com/g", "gist": "G.", "ptype": "guide", "proc": [], "rule": "R", "note": "Snippet only.",
+         "numbers": next(iter(imp.NUMBERS)), "tested": False, "authority": "vendor",
+         "chk": {"status": "conflicting", "evidence": evidence}}
+    assert imp.guide_fields(0, g, {"process": {}}, notes=False)["claims"][0]["evidence"] == joined
+
+
 def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
     root, data = checkout
     _run(root, data)

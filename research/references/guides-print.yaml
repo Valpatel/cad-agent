@@ -1446,7 +1446,7 @@ sources:
   - text: M3 pull-out 181 kg Ruthex vs 39 kg cheap insert in 4.5 mm hole; torque-out about 3.5 Nm
     status: conflicting
     evidence: 'Embedded Computing test: M3 pull-out ~120 kg for all three methods, torque-out 3 Nm; CNC Kitchen''s own other
-      page 118-120 kg. CNC Kitchen 181/39 kg and 3.5 Nm differ by As the map saw it: Figures via search summary of snippet;
-      hole table not seen'
+      page 118-120 kg. CNC Kitchen 181/39 kg and 3.5 Nm differ by [cut off in the map]. As the map saw it: Figures via search
+      summary of snippet; hole table not seen'
   summary: Pull-out and torque-out tests of M3 heat-set inserts in printed holes of several diameters; knurl pattern and hole
     size drive results.

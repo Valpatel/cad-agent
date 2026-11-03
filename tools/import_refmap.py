@@ -317,7 +317,9 @@ def guide_fields(j: int, g: Dict[str, Any], vocab: Dict[str, Any], notes: bool =
         claim = {"text": g["rule"], "status": chk.get("status", "unconfirmed")}
         claim["evidence"] = chk.get("evidence") or "No second source checked."
         if not notes and g.get("note"):        # on a read source, the map's snippet note describes this claim only
-            claim["evidence"] = f"{claim['evidence']} As the map saw it: {g['note']}"
+            head = claim["evidence"].rstrip()
+            head += "" if head.endswith((".", "!", "?", ")")) else " [cut off in the map]."
+            claim["evidence"] = f"{head} As the map saw it: {g['note']}"
         claims.append(claim)
     summary = g["gist"] + (f" Note: {g['note']}" if notes and g.get("note") else "")
     out: Dict[str, Any] = {"kind": GUIDE_KINDS.get(g["ptype"], "guide"), "category": "manufacturing-guides",

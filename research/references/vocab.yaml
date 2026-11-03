@@ -195,7 +195,10 @@ activity:
   archived: Archived
   unknown: Unknown
 
-# A project-neutral verdict on the record's place in its class; it names no project (owner, #323, 2026-11-02).
+# The map's verdict on the record's place in its class, kept project-neutral: it names no project (owner, #323,
+# 2026-11-02). Its limits: the map's authors scored it while surveying for one kind of build, a printed two-wheeled,
+# legged balancing robot, so classes far from that (drones, arms, blasters) lean to `context` for that reason alone.
+# It is not a quality grade. Read it with the record's `caveat` and evidence, and judge a record for your own build.
 role:
   leader: "Leader: best known or best evidenced in its class"
   reference: "Reference: solid, study closely"

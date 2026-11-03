@@ -89,69 +89,80 @@ SPDX = re.compile(r"^(MIT|Apache-2\.0|BSD-[23]-Clause|GPL-[23]\.0|AGPL-3\.0|LGPL
                   r"CERN-OHL-[SWP]-2\.0|Unlicense)$")
 # Guides whose licence the core registry already states (its `terms`); the map gives none for guides.
 LICENCE_OVERRIDES = {
-    "https://github.com/shaise/FreeCAD_SheetMetal": ("LGPL-2.1-only", "share-alike",
-                                                     "LGPL-2.1, as research/references.yaml states; text not read"),
+    "https://github.com/shaise/FreeCAD_SheetMetal": (None, "share-alike", "LGPL-2.1 (only or later not stated), as "
+                                                                        "research/references.yaml states; text not read"),
     "https://github.com/shaise/FreeCAD_FastenersWB": ("GPL-2.0-or-later", "share-alike",
                                                       "GPL-2.0-or-later, as research/references.yaml states; text "
                                                       "not read")}
-# Text the map wrote for one project, made project-neutral: verdicts against that project's target ("off-target for a
-# balancing robot") or its chosen motor ("far below RS-04"). Facts about what a project uses stay. Keyed by (table,
-# row, field): (the map's text, ours). A key whose text no longer matches stops the import, so a changed row is looked
-# at again.
+# Text the map wrote against one project's target, made project-neutral: verdicts such as "off-target for a balancing
+# robot", "far below" one project's chosen motor, "not wheel-legged" or "relevance to the robot". Facts about what a
+# project uses stay. Keyed by (table, row, field): (the first 16 hex digits of the sha256 of the map's text, our text).
+# The map's own wording is not kept here; a key whose text no longer hashes the same stops the import, so a changed row
+# is looked at again.
 NEUTRAL: Dict[Tuple[str, str, str], Tuple[str, str]] = {
-    ("D", "115", "note"): ("Includes a torque test stand (Arduino and Python); no results published. Reusable for our "
-                           "own tests.",
+    ("D", "0", "note"): ("74bd9025be70f4c4",
+                         "Printed remote weapon station: 4 worm-gear axes on NEMA17, printed azimuth bearing, "
+                         "separate camera gimbal. STEP folder and design handbook."),
+    ("D", "115", "note"): ("f7bf16a07129c3ab",
                            "Includes a torque test stand (Arduino and Python); no results published. The stand is "
                            "reusable for other actuator tests."),
-    ("D", "158", "note"): ("Python SDK for RobStride actuators, relevant to our RS-04. Software only.",
+    ("D", "158", "note"): ("22502faed7641917",
                            "Python SDK for RobStride actuators. Software only."),
-    ("S", "39", "caveat"): ("No speed or flight numbers in README; NonCommercial licence; drone is off-target.",
-                             "No speed or flight numbers in README; NonCommercial licence."),
-    ("S", "41", "caveat"): ("Drone frame; off-target for a wheel-legged robot.",
-                             "Drone frame."),
-    ("S", "42", "caveat"): ("Carbon frame and 12s parts; off-target, and cost is only implied.",
-                             "Carbon frame and 12s parts; cost is only implied."),
-    ("S", "52", "caveat"): ("Racing quad frame; off-target for a balancing robot.",
-                             "Racing quad frame."),
-    ("S", "53", "caveat"): ("Giant racing frame; off-target.",
-                             "Giant racing frame."),
-    ("S", "54", "caveat"): ("Micro racing frame; off-target.",
-                             "Micro racing frame."),
-    ("S", "55", "caveat"): ("Weights are estimates; micro drone frame; off-target.",
-                             "Weights are estimates; micro drone frame."),
-    ("S", "56", "caveat"): ("Off-target drone frame; carbon plates are the main structure, prints are accessories only.",
-                             "Drone frame; carbon plates are the main structure, prints are accessories only."),
-    ("S", "71", "caveat"): ("Spring dart blaster, off-target for a balancing robot; CC BY-NC-SA licence.",
-                             "Spring dart blaster; CC BY-NC-SA licence."),
-    ("S", "135", "caveat"): ("Belt module is lower torque than RS-04; README itself gives no numbers.",
-                             "Belt module; README itself gives no torque numbers."),
-    ("S", "158", "caveat"): ("Software only, last pushed July 2024; no mention of RS-04 specifically.",
-                             "Software only, last pushed July 2024."),
-    ("S", "204", "caveat"): ("Hobby servos are far weaker than RS-04; useful for BOM and assembly style, not actuation.",
-                             "Hobby servos; useful for BOM and assembly style, not for high-torque actuation."),
-    ("S", "206", "caveat"): ("Desktop arm, off-target for balancing; README gives no accuracy or payload numbers.",
-                             "Desktop arm; README gives no accuracy or payload numbers."),
-    ("S", "215", "caveat"): ("Unitree A1 and DJI 3508 actuators with serial or CAN links, not an RS-04 class design.",
-                             "Unitree A1 and DJI 3508 actuators with serial or CAN links."),
-    ("S", "268", "caveat"): ("Actuators are 2.5 N.m rated class, far below RS-04; no measured torque or gait data.",
-                             "Actuators are 2.5 N.m rated class; no measured torque or gait data."),
-    ("S", "322", "caveat"): ("Licence is CC BY-NC-SA; CLN17 handles only 4.5A peak, far below an RS-04.",
-                             "Licence is CC BY-NC-SA; CLN17 handles only 4.5 A peak."),
-    ("S", "325", "caveat"): ("Tiny low-voltage board (2-5.5 V, 2 A); far below RS-04 power class.",
-                             "Tiny low-voltage board (2-5.5 V, 2 A)."),
-    ("S", "351", "caveat"): ("README missing; off-target to drivers; only our note describes it.",
-                             "README missing; listed with drivers but does not fit that category; only the summary describes it."),
-    ("S", "40", "caveat"): ("Frame is carbon cut, not printed; drone-specific and far from our robot.",
+    ("S", "39", "caveat"): ("b33a6313cafcafae",
+                            "No speed or flight numbers in README; NonCommercial licence."),
+    ("S", "40", "caveat"): ("a0568b14401a13d5",
                             "Frame is carbon cut, not printed; drone-specific."),
-    ("S", "222", "caveat"): ("Balances only for a few seconds; servo legs and stepper wheels, not Gyropup class.",
+    ("S", "41", "caveat"): ("a07cda91463257a2",
+                            "Drone frame."),
+    ("S", "42", "caveat"): ("12a78649b2883a06",
+                            "Carbon frame and 12s parts; cost is only implied."),
+    ("S", "52", "caveat"): ("9c9e8f1ec99d272c",
+                            "Racing quad frame."),
+    ("S", "53", "caveat"): ("46e7026fa80687a4",
+                            "Giant racing frame."),
+    ("S", "54", "caveat"): ("6d08733b73fb8b4f",
+                            "Micro racing frame."),
+    ("S", "55", "caveat"): ("cbe415a6e01cea06",
+                            "Weights are estimates; micro drone frame."),
+    ("S", "56", "caveat"): ("96691165149406d1",
+                            "Drone frame; carbon plates are the main structure, prints are accessories only."),
+    ("S", "71", "caveat"): ("421fb7e29f217022",
+                            "Spring dart blaster; CC BY-NC-SA licence."),
+    ("S", "135", "caveat"): ("a62aa2f839fea9da",
+                             "Belt module; README itself gives no torque numbers."),
+    ("S", "158", "caveat"): ("1bd9f4d217966c8b",
+                             "Software only, last pushed July 2024."),
+    ("S", "165", "caveat"): ("b0adad1ddc3531c4",
+                             "Quadruped; no validation against hardware stated."),
+    ("S", "204", "caveat"): ("28e8e688468005f7",
+                             "Hobby servos; useful for BOM and assembly style, not for high-torque actuation."),
+    ("S", "206", "caveat"): ("a19708e5a07a0ddd",
+                             "Desktop arm; README gives no accuracy or payload numbers."),
+    ("S", "207", "caveat"): ("e7f9d135caf2c4d8",
+                             "ROS1 launch only, a humanoid without wheels, no licence file match and no arm."),
+    ("S", "215", "caveat"): ("3c6fb2be265e9a1b",
+                             "Unitree A1 and DJI 3508 actuators with serial or CAN links."),
+    ("S", "222", "caveat"): ("8787edf998905417",
                              "Balances only for a few seconds; servo legs and stepper wheels."),
-    ("S", "244", "caveat"): ("Hobby servos and L298N are far from Gyropup's actuators; no balance results or numbers "
-                             "given.",
+    ("S", "225", "caveat"): ("309fce4cde9b11e8",
+                             "Ballbot with omniwheels; MATLAB code is the main content and the hardware is heavy."),
+    ("S", "244", "caveat"): ("eefb91f6de64dcb1",
                              "Hobby servos and L298N drivers; no balance results or numbers given."),
-    ("S", "305", "caveat"): ("Arm for education, off-target for Gyropup; README gives no payload or accuracy numbers.",
+    ("S", "268", "caveat"): ("be1f18c066ae123a",
+                             "Actuators are 2.5 N.m rated class; no measured torque or gait data."),
+    ("S", "305", "caveat"): ("25338b04aa7be4a2",
                              "Arm for education; README gives no payload or accuracy numbers."),
-    ("S", "335", "caveat"): ("Not FOC; Hall-sensor 6-step with no tests, so it contradicts our foc topic.",
+    ("S", "322", "caveat"): ("a341fda8408b6331",
+                             "Licence is CC BY-NC-SA; CLN17 handles only 4.5 A peak."),
+    ("S", "325", "caveat"): ("fac4b34ab29ee21d",
+                             "Tiny low-voltage board (2-5.5 V, 2 A)."),
+    ("S", "335", "caveat"): ("a0aa79312adc681b",
                              "Not FOC; Hall-sensor 6-step with no tests, though the map tagged it FOC."),
+    ("S", "351", "caveat"): ("4a4fc45d5f3f4cdd",
+                             "README missing; listed with drivers but does not fit that category; only the summary "
+                             "describes it."),
+    ("PG", "136", "note"): ("7e1e804e3e6c2015",
+                            "PDF is gated; PolyJet moulds."),
 }
 OUR_NOTE = re.compile(r"\bour note\b")          # the map's one-line note is the record's summary here
 
@@ -195,11 +206,15 @@ def lclass(text: str) -> str:
     return "open"
 
 
+def text_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
 def neutral(table: str, row: str, field: str, text: str) -> str:
     key = (table, row, field)
     if key in NEUTRAL:
         theirs, ours = NEUTRAL[key]
-        if text != theirs:
+        if text_hash(text) != theirs:
             raise SystemExit(f"{table}[{row}].{field} changed in the map since its project-neutral rewrite: "
                              f"{text!r}; review NEUTRAL in tools/import_refmap.py")
         text = ours
@@ -278,8 +293,12 @@ def project_record(i: int, row: List[str], data: Dict[str, Any], vocab: Dict[str
     return rec
 
 
-def guide_fields(g: Dict[str, Any], vocab: Dict[str, Any]) -> Dict[str, Any]:
-    """The schema-2 fields of one guide, without its id (shared by a new record and an extension)."""
+def guide_fields(j: int, g: Dict[str, Any], vocab: Dict[str, Any], notes: bool = True) -> Dict[str, Any]:
+    """The schema-2 fields of guide ``j``, without its id (shared by a new record and an extension). The map's note says
+    how its snippet looked; ``notes=False`` (a source the core registry has read) keeps it only in the evidence of the
+    map's claim, never in the record's summary, where it would contradict the reading."""
+    g = {k: neutral("PG", str(j), k, v) if isinstance(v, str) and k in ("gist", "rule", "note") else v
+         for k, v in g.items()}
     procs = [p for p in g["proc"] if p in vocab["process"]]
     groups = []
     for p in procs:
@@ -297,8 +316,10 @@ def guide_fields(g: Dict[str, Any], vocab: Dict[str, Any]) -> Dict[str, Any]:
         chk = g.get("chk") or {}
         claim = {"text": g["rule"], "status": chk.get("status", "unconfirmed")}
         claim["evidence"] = chk.get("evidence") or "No second source checked."
+        if not notes and g.get("note"):        # on a read source, the map's snippet note describes this claim only
+            claim["evidence"] = f"{claim['evidence']} As the map saw it: {g['note']}"
         claims.append(claim)
-    summary = g["gist"] + (f" Note: {g['note']}" if g.get("note") else "")
+    summary = g["gist"] + (f" Note: {g['note']}" if notes and g.get("note") else "")
     out: Dict[str, Any] = {"kind": GUIDE_KINDS.get(g["ptype"], "guide"), "category": "manufacturing-guides",
                            "licence": {"spdx": spdx, "class": cls, "read": False, "note": note},
                            "reuse": {"text": "cite-only", "geometry": "none"}, "areas": areas or ["design-process"],
@@ -311,8 +332,8 @@ def guide_fields(g: Dict[str, Any], vocab: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
-def guide_record(g: Dict[str, Any], vocab: Dict[str, Any], ids: Ids) -> Dict[str, Any]:
-    fields = guide_fields(g, vocab)
+def guide_record(j: int, g: Dict[str, Any], vocab: Dict[str, Any], ids: Ids) -> Dict[str, Any]:
+    fields = guide_fields(j, g, vocab)
     publisher = slug(g["publisher"].split(" (")[0])        # "Hubs (Protolabs Network)" -> hubs
     base = slug(g["title"])
     base = base if base.startswith(publisher) else slug(f"{publisher} {g['title']}")
@@ -322,12 +343,13 @@ def guide_record(g: Dict[str, Any], vocab: Dict[str, Any], ids: Ids) -> Dict[str
     return {**head, **fields, "used_for": []}
 
 
-def extension(core_id: str, g: Optional[Dict[str, Any]], d_row: Optional[Tuple[int, List[str]]],
+def extension(core_id: str, g: Optional[Tuple[int, Dict[str, Any]]], d_row: Optional[Tuple[int, List[str]]],
               data: Dict[str, Any], vocab: Dict[str, Any]) -> Dict[str, Any]:
-    """An ``extends: true`` record adding the map's fields to a core read source (guide and/or project row)."""
+    """An ``extends: true`` record adding the map's fields to a core read source (guide and/or project row). The
+    map's snippet notes are left out: the core entry was read, and its ``verified`` note says what was."""
     rec: Dict[str, Any] = {"id": core_id, "extends": True}
     if g is not None:
-        fields = guide_fields(g, vocab)
+        fields = guide_fields(g[0], g[1], vocab, notes=False)
         fields["evidence"].pop("class")          # the core entry was read: its class stays `read`
         rec.update(fields)
     if d_row is not None:
@@ -337,8 +359,8 @@ def extension(core_id: str, g: Optional[Dict[str, Any]], d_row: Optional[Tuple[i
         rec["domains"] = [row[3]]
         if g is None:                            # a guide's process areas place it better than a project domain
             rec["areas"] = list(DOMAIN_AREAS[row[3]])
-        note = neutral("D", str(i), "note", row[7])
-        rec["summary"] = f"{rec['summary']} {note}" if rec.get("summary") else note
+        if "summary" not in rec:
+            rec["summary"] = neutral("D", str(i), "note", row[7])
         if "evidence" not in rec:
             rec["evidence"] = {"numbers": NUMBERS[row[6]]}
     return rec
@@ -356,16 +378,16 @@ def build(data: Dict[str, Any], core: refs.Registry, vocab: Dict[str, Any]) -> D
     shards: Dict[str, List[Dict[str, Any]]] = {}
     report: Dict[str, Any] = {"extended": [], "left-unverified": [], "projects": 0, "guides": 0}
     pending: Dict[str, Dict[str, Any]] = {}            # core id -> its extension's parts
-    for g in data["PG"]:
+    for j, g in enumerate(data["PG"]):
         ref = by_url.get(norm_url(g["url"]))
         if ref is not None:
             if ref.kind == "unverified":
                 report["left-unverified"].append((g["url"], ref.id))
                 continue
             pending.setdefault(ref.id, {"g": None, "d": None})
-            pending[ref.id]["g"] = g
+            pending[ref.id]["g"] = (j, g)
             continue
-        rec = guide_record(g, vocab, ids)
+        rec = guide_record(j, g, vocab, ids)
         shards.setdefault(f"guides-{rec['process_groups'][0]}", []).append(rec)
         report["guides"] += 1
     for i, row in enumerate(data["D"]):
@@ -477,14 +499,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     folder = refs.shard_folder(args.root / "research" / "references.yaml")
     vocab = yaml.safe_load((folder / refs.VOCAB).read_text(encoding="utf-8"))
     full = refs.load(args.root / "research" / "references.yaml")
-    owned = {f.name for f in folder.glob("*.yaml") if f.name != refs.VOCAB}      # shards and coverage.yaml
+    # the files an earlier import wrote: they carry its first line. A hand-written shard never does, so it is kept, read
+    # as part of the registry the import deduplicates against, and never rewritten or reported as stale.
+    owned = {f.name for f in folder.glob("*.yaml")
+             if f.name != refs.VOCAB and f.read_text(encoding="utf-8").startswith(GENERATED.split("{")[0])}
     # the core alone: shards this tool wrote before are replaced, not merged with themselves
     core = refs.Registry(full.data, full.path, [s for s in full.shards if Path(s.file).name not in owned], vocab,
                          full.core_file)
     result = build(data, core, vocab)
     files = render(result, hashlib.sha256(raw).hexdigest())
     changed = [n for n, text in files.items() if not (folder / n).is_file() or (folder / n).read_text("utf-8") != text]
-    stale = sorted(owned - set(files) - {"README.md"})
+    stale = sorted(owned - set(files))
     rep = result["report"]
     print(f"{rep['projects']} projects and {rep['guides']} guides as catalogued records, {len(rep['extended'])} "
           f"extensions of read sources, in {len(result['shards'])} shards; {len(result['coverage']['rows'])} coverage "
@@ -498,7 +523,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     for n in changed:
         (folder / n).write_text(files[n], encoding="utf-8")
     for n in stale:
-        print(f"not written by this import, left in place: research/references/{n}")
+        print(f"written by an earlier import but not by this one, left in place: research/references/{n}")
     print(f"wrote {len(changed)} files")
     return 0
 

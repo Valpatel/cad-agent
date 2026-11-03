@@ -37,7 +37,7 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Printed remote weapon station: 4 worm-gear axes on NEMA17, printed azimuth bearing, separate camera gimbal. STEP
-    folder and design handbook. The seed for this map.'
+    folder and design handbook.'
   assessment:
     built: built
     supply: commodity

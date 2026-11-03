@@ -2068,7 +2068,7 @@ sources:
       act: three omniwheel motors; cost not stated
       ctrl: 'Yes: MATLAB, Simulink, firmware and ROS repos, MIT'
       limit: Quaternion model deemed unnecessary for the operating envelope
-    caveat: Ballbot with omniwheels, not wheel-legged; MATLAB code is the main content and the hardware is heavy.
+    caveat: Ballbot with omniwheels; MATLAB code is the main content and the hardware is heavy.
     assessed:
       date: '2026-11-02'
       from: readme

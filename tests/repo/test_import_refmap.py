@@ -9,6 +9,7 @@ file's unposted drafts, project-neutral rewrites, determinism and idempotence.""
 import copy
 import importlib.util
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -52,7 +53,8 @@ DATA = {
          "chk": {"status": "corroborated", "evidence": "A second maker's table agrees."}, "grp": ["mould"]},
         {"title": "Boss Guide", "url": "https://www.maker.example.org/boss-guide", "publisher": "Maker",
          "ptype": "service", "proc": ["injection"], "authority": "primary", "numbers": "some", "tested": "unknown",
-         "cost": "no", "fit": "medium", "gist": "Boss rules.", "rule": "Boss OD 2 d", "note": "", "grp": ["mould"]},
+         "cost": "no", "fit": "medium", "gist": "Boss rules.", "rule": "Boss OD 2 d",
+         "note": "Numbers not read in the snippet.", "grp": ["mould"]},
         {"title": "Gated", "url": "https://vendor.example.org/gated", "publisher": "Vendor", "ptype": "service",
          "proc": ["sheet"], "authority": "primary", "numbers": "unknown", "tested": "no", "cost": "no", "fit": "low",
          "gist": "Gated guide.", "rule": "", "note": "Title only.", "grp": ["sheet"]},
@@ -66,7 +68,9 @@ DATA = {
 
 
 @pytest.fixture()
-def checkout(tmp_path):
+def checkout(tmp_path, monkeypatch):
+    # the real map's rewrites are keyed by its rows; the fixture's rows are other text, so they start with none
+    monkeypatch.setattr(imp, "NEUTRAL", {})
     (tmp_path / "research" / "references").mkdir(parents=True)
     (tmp_path / "docs").mkdir()
     shutil.copy(ROOT / "docs" / "areas.yaml", tmp_path / "docs" / "areas.yaml")
@@ -165,6 +169,9 @@ def test_a_guide_already_read_extends_its_core_entry(checkout):
     assert ref.evidence_class == "read" and ref["used_for"] == ["docs/page.md"]      # the core's reading stands
     assert ref["areas"] == ["moulding", "moulded-part-design"] and ref["claims"][0]["status"] == "unconfirmed"
     assert ref["title"] == "Boss Guide" and ref["verified"].startswith("2026-11-01")
+    assert ref["summary"] == "Boss rules."          # the snippet's note would contradict the core's reading
+    assert ref["claims"] == [{"text": "Boss OD 2 d", "status": "unconfirmed", "evidence": (
+        "No second source checked. As the map saw it: Numbers not read in the snippet.")}]
 
 
 def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
@@ -181,7 +188,7 @@ def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
                               "areas": ["mould-design", "mould-making"], "text": "No gate sizing guide."}]
     reg = refs.load(root / "research" / "references.yaml")
     assert reg.coverage == cov
-    cov["rows"][0]["draft_issue"]["posted"] = "yes"
+    cov["rows"][0]["draft_issue"]["posted"] = True           # a boolean is an int in Python: still not an issue number
     cov["rows"][0]["status"] = "done"
     (root / "research" / "references" / "coverage.yaml").write_text(yaml.safe_dump(cov))
     problems = "\n".join(refs.load(root / "research" / "references.yaml").problems(root))
@@ -205,9 +212,13 @@ def test_the_import_is_deterministic_and_idempotent(checkout, capsys):
 
 def test_a_changed_row_under_a_neutral_rewrite_stops_the_import(checkout, monkeypatch):
     root, data = checkout
-    monkeypatch.setitem(imp.NEUTRAL, ("S", "0", "caveat"), ("No measured balance numbers.", "No numbers."))
+    monkeypatch.setitem(imp.NEUTRAL, ("S", "0", "caveat"), (imp.text_hash("No measured balance numbers."),
+                                                             "No numbers."))
+    monkeypatch.setitem(imp.NEUTRAL, ("PG", "0", "gist"), (imp.text_hash("Snap-fit strain limits."),
+                                                            "Strain limits for snap fits."))
     _run(root, data)
     assert _records(root)["someone-wheel-bot"][1]["assessment"]["caveat"] == "No numbers."
+    assert _records(root)["shop-snap-guide"][1]["summary"].startswith("Strain limits for snap fits.")
     changed = copy.deepcopy(DATA)
     changed["S"]["0"]["caveat"] = "No measured numbers, unlike some other robot."
     data.write_text(json.dumps(changed))
@@ -215,12 +226,27 @@ def test_a_changed_row_under_a_neutral_rewrite_stops_the_import(checkout, monkey
         _run(root, data)
 
 
-def test_every_neutral_rewrite_names_no_project():
+def test_every_neutral_rewrite_names_no_project_and_keeps_none_of_the_maps_wording():
     tree = yaml.safe_load((ROOT / "docs" / "areas.yaml").read_text())
     names = [k for k in tree["projects"]] + [p["title"].lower() for p in tree["projects"].values()]
-    for (_, _, _), (_, ours) in imp.NEUTRAL.items():
+    for (_, _, _), (digest, ours) in imp.NEUTRAL.items():
         assert not any(n in ours.lower() for n in names) and "rs-04" not in ours.lower()
-        assert "off-target" not in ours and "our " not in ours
+        assert "off-target" not in ours and "our " not in ours and "relevance" not in ours
+        assert re.fullmatch(r"[0-9a-f]{16}", digest)              # a hash of the map's text, not the text
+    source = (ROOT / "tools" / "import_refmap.py").read_text().lower()
+    assert not any(n in source for n in names) and "rs-04" not in source
+
+
+def test_a_hand_written_shard_is_never_the_imports(checkout, capsys):
+    root, data = checkout
+    _run(root, data)
+    mine = root / "research" / "references" / "guides-mould.yaml"
+    hand = root / "research" / "references" / "hand-picked.yaml"
+    hand.write_text(yaml.safe_dump({"schema": 2, "sources": []}))
+    mine.write_text(mine.read_text())
+    capsys.readouterr()
+    assert _run(root, data, "--check") == 0 and "hand-picked" not in capsys.readouterr().out
+    assert _run(root, data) == 0 and hand.read_text() == yaml.safe_dump({"schema": 2, "sources": []})
 
 
 @pytest.mark.parametrize("licence,cls", [("MIT", "open"), ("GPL-3.0", "copyleft"), ("CERN-OHL-S-2.0", "copyleft"),

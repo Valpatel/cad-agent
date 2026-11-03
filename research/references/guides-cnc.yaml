@@ -1409,9 +1409,9 @@ sources:
   - text: Standard minimum wall 0.794 mm metals, 1.5 mm plastics.
     status: corroborated
     evidence: 'Wevolver, Richconn say metals 0.8 mm (0.794 mm/0.031 in), plastics 1.5 mm; some mirror Xometry''s number. Outliers:
-      RapidDirect 0.15 mm plastics.'
-  summary: 'Xometry CAD tips; snippets show min wall and corner radius figures across Xometry pages. Note: Wall figure seen
-    on Xometry-branded pages, not confirmed on this exact URL'
+      RapidDirect 0.15 mm plastics. As the map saw it: Wall figure seen on Xometry-branded pages, not confirmed on this exact
+      URL'
+  summary: Xometry CAD tips; snippets show min wall and corner radius figures across Xometry pages.
 - id: xometry-cnc-corner-radii
   extends: true
   kind: guide
@@ -1438,8 +1438,7 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Explains non-standard inside radius can help because the end mill needs clearance to turn in the corner. Note:
-    Snippet only'
+  summary: Explains non-standard inside radius can help because the end mill needs clearance to turn in the corner.
 - id: protolabs-cnc-milling
   extends: true
   kind: guide
@@ -1469,9 +1468,8 @@ sources:
   claims:
   - text: Walls thinner than 0.020 in (0.5 mm) typically do not survive machining.
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Protolabs milling limits page; snippets show min wall and standard tolerance of automated factory. Note: Detail
-    table not seen in snippet'
+    evidence: 'No second source checked. As the map saw it: Detail table not seen in snippet'
+  summary: Protolabs milling limits page; snippets show min wall and standard tolerance of automated factory.
 - id: protolabs-cnc-turning
   extends: true
   kind: guide
@@ -1501,8 +1499,8 @@ sources:
   claims:
   - text: Max OD groove depth 0.95 in (24.1 mm); min groove width 0.019 in.
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Turning limits: groove width/depth, minimum diameter and length, ID grooves unsupported. Note: Limits are Protolabs-specific'
+    evidence: 'No second source checked. As the map saw it: Limits are Protolabs-specific'
+  summary: 'Turning limits: groove width/depth, minimum diameter and length, ID grooves unsupported.'
 - id: hubs-cnc-design
   extends: true
   kind: guide
@@ -1533,6 +1531,6 @@ sources:
   - text: Min wall 0.8 mm metals, 1.5 mm plastics (feasible 0.5 and 1.0 mm).
     status: corroborated
     evidence: 'Richconn, Wevolver/Xometry-style guides: metals 0.8 mm (0.794), plastics 1.5 mm; Core77 feasible 1.0 mm plastics,
-      0.5 mm metals. Matches stated feasible values.'
-  summary: 'Hubs recommended and feasible limits for walls, holes and threads, per search summary. Note: Hole and thread numbers
-    came from companion tips article summary'
+      0.5 mm metals. Matches stated feasible values. As the map saw it: Hole and thread numbers came from companion tips article
+      summary'
+  summary: Hubs recommended and feasible limits for walls, holes and threads, per search summary.

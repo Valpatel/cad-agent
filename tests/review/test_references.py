@@ -620,7 +620,9 @@ def test_the_imported_records_are_catalogued_and_project_neutral(registry):
     banned = [k for k in tree["projects"]] + [p["title"].lower() for p in tree["projects"].values()] + [
         "rs-04", "off-target", "our robot", "our own tests"]
     hidden = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")    # bidi and zero-width controls
-    for shard in registry.shards:
+    banned += ["not wheel-legged", "relevance to the robot", "seed for this map"]
+    for file in [s.file for s in registry.shards] + [f"research/references/{refs.COVERAGE}"]:
+        shard = refs.Shard(file, {})
         text = (ROOT / shard.file).read_text(encoding="utf-8").lower()
         assert not [b for b in banned if b in text], shard.file
         assert not hidden.search(text), f"{shard.file}: a bidi or zero-width control character in imported text"
@@ -630,5 +632,6 @@ def test_the_coverage_rows_keep_their_drafts_unposted(registry):
     rows = registry.coverage["rows"]
     assert len(rows) == 16 and len({r["id"] for r in rows}) == 16
     drafts = [r["draft_issue"] for r in rows if "draft_issue" in r]
-    assert drafts and all(d["posted"] is False or isinstance(d["posted"], int) for d in drafts)
+    assert drafts and all(d["posted"] is False or (isinstance(d["posted"], int) and not isinstance(d["posted"], bool))
+                          for d in drafts)
     assert {w["group"] for w in registry.coverage["wanted"]} == set(registry.vocab["process_group"])

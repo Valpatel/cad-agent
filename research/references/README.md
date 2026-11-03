@@ -53,7 +53,7 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `evidence` | `class` (the ladder below), `numbers`, `tested`, `authority` |
 | `claims` | The rules a source states: `text`, `status` (unconfirmed, corroborated, conflicting, encoded), `evidence`, `corroborated_by` (ids of other records) |
 | `confidence` | Optional, and only as `confidence()` derives it (#143); check() rejects a typed value that differs |
-| `assessment` | For a project, objective answers only: `built`, `supply`, `cost`, `make`, `docs`, `activity`, `role`, `cad`, `answers`, `caveat`, `assessed`. `role` (leader, reference, lessons, context) names no project |
+| `assessment` | For a project, objective answers only: `built`, `supply`, `cost`, `make`, `docs`, `activity`, `role`, `cad`, `answers`, `caveat`, `assessed`. `role` (leader, reference, lessons, context) names no project. It was scored while surveying for one kind of build (a printed two-wheeled, legged balancing robot), so it is not a quality grade (`vocab.yaml` says more) |
 | `projects` | Optional join: a `docs/areas.yaml` project key mapped to that project's mechanism slugs |
 | `rules`, `checks` | The profile rules and cad-agent checks that encode the record |
 | `archive` | A pointer for the offline mirror: `sha256`, `kind`, `fetched`, `redistribute`. Never a path or a host |

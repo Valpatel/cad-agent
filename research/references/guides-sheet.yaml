@@ -1270,7 +1270,7 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Guide to bend reliefs in sheet metal; only title seen in results. Note: Title-level read only.'
+  summary: Guide to bend reliefs in sheet metal; only title seen in results.
 - id: sendcutsend-bend-deformation
   extends: true
   kind: guide
@@ -1298,7 +1298,7 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Guideline page on avoiding deformation of features near bends; title only seen. Note: Title-level read only.'
+  summary: Guideline page on avoiding deformation of features near bends; title only seen.
 - id: sendcutsend-pem-guide
   extends: true
   kind: guide
@@ -1330,7 +1330,7 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Blog guide to PEM hardware inserts in sheet metal; title only seen in results. Note: Title-level read only.'
+  summary: Blog guide to PEM hardware inserts in sheet metal; title only seen in results.
 - id: sendcutsend-tab-slot
   extends: true
   kind: guide
@@ -1360,8 +1360,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Tab and slot design for self-fixturing sheet metal; related post warns thin material flexes and powder coat tightens
-    fits. Note: Warning came from related SendCutSend tab/slot posts.'
+  summary: Tab and slot design for self-fixturing sheet metal; related post warns thin material flexes and powder coat tightens
+    fits.
 - id: protolabs-sheet-metal-tolerances
   extends: true
   kind: guide
@@ -1389,7 +1389,7 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'One-page PDF of sheet metal tolerances; contents not shown. Note: Title-level read only.'
+  summary: One-page PDF of sheet metal tolerances; contents not shown.
 - id: fictiv-tabs-slots
   extends: true
   kind: guide
@@ -1419,8 +1419,7 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Tab and slot joint self-locates, no jigs; pairs with welding, rivets or bolts for retention. Note: Numbers not
-    shown from Fictiv itself.'
+  summary: Tab and slot joint self-locates, no jigs; pairs with welding, rivets or bolts for retention.
 - id: davis-2001-fabricator-design-tips
   extends: true
   kind: guide
@@ -1448,17 +1447,16 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Title covers bend relief, small holes, hole distortion near bends and minimum flange width; no text seen. Note:
-    Title-level read only.'
+  summary: Title covers bend relief, small holes, hole distortion near bends and minimum flange width; no text seen.
 - id: freecad-sheetmetal
   extends: true
   kind: guide
   category: manufacturing-guides
   licence:
-    spdx: LGPL-2.1-only
+    spdx: null
     class: share-alike
     read: false
-    note: LGPL-2.1, as research/references.yaml states; text not read
+    note: LGPL-2.1 (only or later not stated), as research/references.yaml states; text not read
   reuse:
     text: cite-only
     geometry: none
@@ -1477,4 +1475,4 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'FreeCAD sheet metal workbench: bends and unfolding to flat pattern. Note: LGPL-2.1, 350 stars, last push 2026-11-01'
+  summary: 'FreeCAD sheet metal workbench: bends and unfolding to flat pattern.'

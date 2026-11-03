@@ -1308,9 +1308,9 @@ sources:
   claims:
   - text: 'Form 4: min supported wall 0.2 mm, clearance 0.4 mm, min hole 0.5 mm, drain hole 0.75 mm (via mirror).'
     status: unconfirmed
-    evidence: No second source checked.
+    evidence: 'No second source checked. As the map saw it: Resin only; numbers seen via a mirror PDF snippet, not the page.'
   summary: 'Resin printer design specs: supported/unsupported wall, clearance, hole, drain hole and overhang limits for Form
-    4. Note: Resin only; numbers seen via a mirror PDF snippet, not the page.'
+    4.'
 - id: formlabs-form2-design-specs
   extends: true
   kind: guide
@@ -1340,9 +1340,8 @@ sources:
   claims:
   - text: 'Form 2: min supported wall 0.4 mm, min hole 0.8 mm, clearance at least 0.5 mm or parts may fuse.'
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Per-printer design specification tables for resin models; Form 2 era values and later generations. Note: Resin
-    only; values differ by printer generation.'
+    evidence: 'No second source checked. As the map saw it: Resin only; values differ by printer generation.'
+  summary: Per-printer design specification tables for resin models; Form 2 era values and later generations.
 - id: cnckitchen-heat-set-hole-size
   extends: true
   kind: guide
@@ -1375,9 +1374,8 @@ sources:
   claims:
   - text: Size the hole so the insert just pre-seats; oversize holes lower pull-out strength.
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Tensile-tester pull-out tests of heat-set inserts at several hole diameters; compares printed to drilled holes.
-    Note: Pull-out values not visible in snippet. Hole diameter against pull-out. Numbers not read.'
+    evidence: 'No second source checked. As the map saw it: Pull-out values not visible in snippet.'
+  summary: Tensile-tester pull-out tests of heat-set inserts at several hole diameters; compares printed to drilled holes.
   domains:
   - general
 - id: cnckitchen-heat-set-tips
@@ -1413,9 +1411,8 @@ sources:
   - text: Blind hole about 1 mm deeper than insert length, normally no chamfer at hole edge.
     status: corroborated
     evidence: 'EPFL Make: at least 1 mm extra depth; DigiKey FreeCAD tutorial: insert length +1.2 mm. Chamfer conflicts: EPFL
-      0.3-0.5 mm, others 0.5-1.0 mm.'
-  summary: 'Practical heat-set insert advice for printed parts: blind hole depth and chamfer. Note: Advice relayed by search
-    summary; EPFL disagrees on chamfer.'
+      0.3-0.5 mm, others 0.5-1.0 mm. As the map saw it: Advice relayed by search summary; EPFL disagrees on chamfer.'
+  summary: 'Practical heat-set insert advice for printed parts: blind hole depth and chamfer.'
 - id: cnck-2019
   extends: true
   kind: guide
@@ -1449,6 +1446,7 @@ sources:
   - text: M3 pull-out 181 kg Ruthex vs 39 kg cheap insert in 4.5 mm hole; torque-out about 3.5 Nm
     status: conflicting
     evidence: 'Embedded Computing test: M3 pull-out ~120 kg for all three methods, torque-out 3 Nm; CNC Kitchen''s own other
-      page 118-120 kg. CNC Kitchen 181/39 kg and 3.5 Nm differ by'
-  summary: 'Pull-out and torque-out tests of M3 heat-set inserts in printed holes of several diameters; knurl pattern and
-    hole size drive results. Note: Figures via search summary of snippet; hole table not seen'
+      page 118-120 kg. CNC Kitchen 181/39 kg and 3.5 Nm differ by As the map saw it: Figures via search summary of snippet;
+      hole table not seen'
+  summary: Pull-out and torque-out tests of M3 heat-set inserts in printed holes of several diameters; knurl pattern and hole
+    size drive results.

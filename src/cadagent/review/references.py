@@ -470,7 +470,9 @@ class _Schema2:
             out += [f"{where}: {rid}: {p}" for p in self._areas(row.get("areas"))]
             draft = row.get("draft_issue")
             if draft is not None and not (isinstance(draft, dict) and str(draft.get("title") or "").strip()
-                                          and (draft.get("posted") is False or isinstance(draft.get("posted"), int))):
+                                          and (draft.get("posted") is False or (isinstance(draft.get("posted"), int)
+                                                                                 and not isinstance(draft.get("posted"),
+                                                                                                    bool)))):
                 out.append(f"{where}: {rid}: draft_issue needs a title and `posted: false` (or the issue number)")
         for i, gap in enumerate(cov.get("wanted") or []):
             if not isinstance(gap, dict) or not str(gap.get("text") or "").strip():

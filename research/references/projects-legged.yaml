@@ -740,7 +740,7 @@ sources:
     answers:
       engine: MuJoCo; from robot_properties_solo URDF and SRDF
       real: unknown
-    caveat: Quadruped, not wheel-legged; no validation against hardware stated.
+    caveat: Quadruped; no validation against hardware stated.
     assessed:
       date: '2026-11-02'
       from: readme
@@ -1059,7 +1059,7 @@ sources:
     answers:
       engine: URDF for ROS/RViz, from Berkeley Humanoid design; no MuJoCo
       real: unknown; README does not say
-    caveat: ROS1 launch only, humanoid not wheeled, no licence file match and no arm; low relevance.
+    caveat: ROS1 launch only, a humanoid without wheels, no licence file match and no arm.
     assessed:
       date: '2026-11-02'
       from: readme

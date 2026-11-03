@@ -821,7 +821,7 @@ sources:
     estimate: 0.4
     sources: 1
   summary: 'Covers printed mould design, file prep and assembly; PolyJet moulds cannot withstand extreme pressure so easy-flow
-    polymers recommended. Note: PDF is gated; PolyJet moulds, limited relevance to the robot.'
+    polymers recommended. Note: PDF is gated; PolyJet moulds.'
   used_for: []
 - id: xometry-overmolding-xometry-capability-page
   kind: guide
@@ -1130,9 +1130,8 @@ sources:
   - text: Rib-to-wall thickness ratio of 40 to 60 percent of adjacent surfaces
     status: corroborated
     evidence: 'Xometry: ribs no more than 60% of nominal wall (40% for glossy); RJC Mold rib guide: 40-60%. Protolabs-style
-      range matches.'
-  summary: 'Boss design advice: tie bosses to walls with ribs rather than thick solid sections; rib-to-wall ratio 40-60%.
-    Note: Relevant to boss and insert design.'
+      range matches. As the map saw it: Relevant to boss and insert design.'
+  summary: 'Boss design advice: tie bosses to walls with ribs rather than thick solid sections; rib-to-wall ratio 40-60%.'
 - id: protolabs-living-hinge
   extends: true
   kind: guide
@@ -1159,5 +1158,5 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Living hinges break the uniform-wall rule; flow restriction causes a pressure drop beyond the hinge, so gate placement
-    matters. Note: Dimension values came from other sources, not this snippet.'
+  summary: Living hinges break the uniform-wall rule; flow restriction causes a pressure drop beyond the hinge, so gate placement
+    matters.

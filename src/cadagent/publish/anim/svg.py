@@ -1,8 +1,10 @@
 """The parts every animated README figure shares: numbers, compact paths, a CSS keyframe timeline, themes, the
 document wrapper and the rules a figure must pass to be embedded as an ``<img>`` on GitHub.
 
-Figures animate with CSS only: no script and no SMIL. Under ``prefers-reduced-motion`` every animation stops, and
-each element shows its own style, so the base style of every animated element is the figure's final frame. Colours
+Figures animate with CSS only: no script and no SMIL. Every animation loops (``Timeline``: one period that every
+element shares), so a reader who scrolls to a figure late still sees it play. Under ``prefers-reduced-motion`` every
+animation stops, and each element shows its own style, so the base style of every animated element is the figure's
+final frame. Colours
 are CSS custom properties with a light and a dark set, chosen by ``prefers-color-scheme`` inside the SVG. A figure
 paints its own background, so a mismatch between GitHub's theme and the browser's is never unreadable; a figure
 that sits on the page instead (``background=False``, the README hero) gives its text a halo in the page colour of its
@@ -344,4 +346,31 @@ def problems(svg: str, budget: Optional[int] = None) -> List[str]:
         out.append("no prefers-reduced-motion rule in a <style> that stops every animation")
     if "@keyframes" not in css:
         out.append("no CSS animation")
+    for once in timed(css + ";" + inline):
+        out.append(f"an animation that plays once and stops ({once}): every timed animation must loop")
+    return out
+
+
+def _split(text: str) -> List[str]:
+    """``text`` split on commas outside parentheses (``steps(1,end)`` is one item)."""
+    out, depth, cur = [], 0, ""
+    for c in text:
+        depth += (c == "(") - (c == ")")
+        if c == "," and depth == 0:
+            out.append(cur)
+            cur = ""
+        else:
+            cur += c
+    return [x.strip() for x in out + [cur] if x.strip()]
+
+
+def timed(css: str) -> List[str]:
+    """The animations in ``css`` (rules or ``style`` attributes) that do not repeat forever: a figure that played
+    once would sit on its last frame for anyone who scrolls to it late. ``animation:none`` (reduced motion) is not
+    an animation."""
+    out = []
+    for m in re.finditer(r"animation(?:-iteration-count)?\s*:\s*([^;}\"]+)", css):
+        for item in _split(m.group(1).replace("!important", "")):
+            if item != "none" and "infinite" not in item.split():
+                out.append(item)
     return out

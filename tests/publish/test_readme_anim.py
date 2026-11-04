@@ -240,6 +240,12 @@ def test_timed_finds_animations_that_stop():
     assert svg.timed(".a{animation:a 2s infinite,b 1s 2s}") == ["b 1s 2s"]
     assert svg.timed(".a{animation-name:a;animation-duration:2s}") == ["a"]               # longhands only
     assert svg.timed(".p circle{animation:14s linear infinite}#p1{animation-name:k0}") == []   # count from a rule
+    assert svg.timed(".a{animation:x 2s infinite}.b{animation-name:y;animation-duration:2s}") == ["y"]
+    assert svg.timed(".a{animation:x 2s infinite}.a.b{animation-iteration-count:1}") == ["iteration count 1"]
+    assert svg.timed(".c{animation-iteration-count:3}") == ["iteration count 3"]
+    assert svg.timed(".a{-webkit-animation:a 2s}") == ["a 2s"]
+    assert svg.timed(".a{/* x */animation:a 2s}") == ["a 2s"]
+    assert svg.timed("{animation-name:z}", ".p{animation:14s infinite}") == []          # a style attribute
     assert svg.timed(".a{animation:a 2s;animation-iteration-count:infinite}") == []       # the longhand wins
     assert svg.timed(".a{animation:a 2s infinite;animation-iteration-count:3}") == ["a 2s infinite (iteration count 3)"]
     assert svg.timed(".a{ANIMATION:a 2s}") == ["a 2s"]                                    # any case

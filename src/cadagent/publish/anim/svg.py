@@ -347,7 +347,7 @@ def problems(svg: str, budget: Optional[int] = None) -> List[str]:
     if "@keyframes" not in css:
         out.append("no CSS animation")
     styles = [el.get("style", "") for el in root.iter() if el.get("style")]
-    for once in timed(css) + [x for st in styles for x in timed("{" + st + "}")]:
+    for once in timed(css) + [x for st in styles for x in timed("{" + st + "}", css)]:
         out.append(f"an animation that plays once and stops ({once}): every timed animation must loop")
     return out
 
@@ -365,32 +365,40 @@ def _split(text: str) -> List[str]:
     return [x.strip() for x in out + [cur] if x.strip()]
 
 
-def timed(css: str) -> List[str]:
+def timed(css: str, stylesheet: str = "") -> List[str]:
     """The animations in ``css`` that do not repeat forever: a figure that played once would sit on its last frame
     for anyone who scrolls to it late. Each ``{...}`` declaration block (a rule, or a ``style`` attribute wrapped in
-    braces) is read on its own: the ``animation`` shorthand, then the ``animation-name`` and
-    ``animation-iteration-count`` longhands in the order written. A block that only names animations takes its count
-    from another rule (``.pts circle{animation:14s linear infinite}`` with ``#p1{animation-name:k0}``); without a
-    cascade to follow, it passes when some rule in ``css`` sets an endless count, and is reported otherwise.
-    ``animation:none`` (reduced motion) is not an animation. Property names are matched in any case."""
+    braces) is read on its own, comments removed: the ``animation`` shorthand (``-webkit-`` too), then the
+    ``animation-name`` and ``animation-iteration-count`` longhands in the order written. A count other than
+    ``infinite`` is always reported. A block whose only animation property is ``animation-name`` takes its count from
+    another rule (``.pts circle{animation:14s linear infinite}`` with ``#p1{animation-name:k0}``); without a cascade
+    to follow, it passes when some rule in ``css`` or ``stylesheet`` (the figure's ``<style>``, for a ``style``
+    attribute) sets an endless count, and is reported otherwise. ``animation:none`` (reduced motion) is not an
+    animation. Property names are matched in any case."""
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    endless = re.search(r"animation(-iteration-count)?\s*:[^;}]*\binfinite\b",
+                        css + re.sub(r"/\*.*?\*/", "", stylesheet, flags=re.S), re.I) is not None
     out = []
-    endless = re.search(r"animation(-iteration-count)?\s*:[^;}]*\binfinite\b", css, re.I) is not None
     for block in re.findall(r"\{([^{}]*)\}", css) or [css]:
-        names, counts, shown = [], [], []
+        names, counts, shown, props = [], [], [], set()
         for decl in block.split(";"):
             prop, _, value = decl.partition(":")
-            prop, value = prop.strip().lower(), value.replace("!important", "").strip()
+            prop = re.sub(r"^-webkit-", "", prop.strip().lower())
+            value = value.replace("!important", "").strip()
+            if prop.startswith("animation"):
+                props.add(prop)
             if prop == "animation":
-                items = _split(value)
-                names = items
-                shown = items
-                counts = ["infinite" if "infinite" in i.lower().split() else "1" for i in items]
+                names = shown = _split(value)
+                counts = ["infinite" if "infinite" in x.lower().split() else "1" for x in names]
             elif prop == "animation-name":
-                names, shown = _split(value), _split(value)
+                names = shown = _split(value)
             elif prop == "animation-iteration-count":
                 counts = [c.lower() for c in _split(value)]
-        if names and not counts and endless:
-            continue                                  # the count comes from another rule that loops
+        if not names and counts:                      # a count alone: it must be endless
+            out += [f"iteration count {c}" for c in counts if c != "infinite"]
+            continue
+        if props == {"animation-name"} and endless:
+            continue                                  # only names: the count comes from a rule that loops
         for i, name in enumerate(names):
             count = counts[i % len(counts)] if counts else "1"
             if name.lower() != "none" and count != "infinite":

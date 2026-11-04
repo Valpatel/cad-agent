@@ -158,6 +158,9 @@ MUTATIONS = [
     ("an animation that plays once", lambda t: t.replace(" infinite", "", 1), "plays once"),
     ("an inline animation that plays once", lambda t: t.replace('<g class="m', '<g style="animation:z 2s both" class="m', 1),
      "plays once"),
+    ("a play-once inline animation before an endless one", lambda t: t.replace(
+        '<g class="m', '<g style="animation:z 2s both" class="m', 1).replace(
+        '<path class="tr"', '<path style="animation:y 2s infinite" class="tr"', 1), "plays once"),
     ("SMIL", lambda t: _insert(t, '<animate attributeName="opacity" dur="1s"/>'), "SMIL"),
     ("prefixed SMIL", lambda t: _insert(t, '<s:animate xmlns:s="http://www.w3.org/2000/svg" attributeName="x"/>'),
      "SMIL"),
@@ -235,7 +238,12 @@ def test_timed_finds_animations_that_stop():
     assert svg.timed("@media (prefers-reduced-motion:reduce){*{animation:none!important}}") == []
     assert svg.timed(".a{animation:a 2s ease both}") == ["a 2s ease both"]
     assert svg.timed(".a{animation:a 2s infinite,b 1s 2s}") == ["b 1s 2s"]
-    assert svg.timed(".a{animation-iteration-count:3}") == ["3"]
+    assert svg.timed(".a{animation-name:a;animation-duration:2s}") == ["a"]               # longhands only
+    assert svg.timed(".p circle{animation:14s linear infinite}#p1{animation-name:k0}") == []   # count from a rule
+    assert svg.timed(".a{animation:a 2s;animation-iteration-count:infinite}") == []       # the longhand wins
+    assert svg.timed(".a{animation:a 2s infinite;animation-iteration-count:3}") == ["a 2s infinite (iteration count 3)"]
+    assert svg.timed(".a{ANIMATION:a 2s}") == ["a 2s"]                                    # any case
+    assert svg.timed(".a{animation:a 2s both}.b{animation:b 2s infinite}") == ["a 2s both"]   # block by block
 
 
 def test_two_animations_on_one_element_are_one_rule():

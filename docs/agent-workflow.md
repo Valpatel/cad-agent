@@ -23,7 +23,7 @@ The scripts are [`web/install.sh`](../web/install.sh) and [`web/install.ps1`](..
    Python 3.12 of its own that uv manages, and runs the checkout's code, so the skills and the code stay in step;
 4. run `cad-agent agents install` (below), which says which skills this computer can't use yet.
 
-Options: `sh -s -- --extras fea,sim` (see [Extras](../README.md#extras)), `--ref v0.14.0` for a release tag, `--dir`
+Options: `sh -s -- --extras fea,sim` (see [Extras](#extras)), `--ref v0.14.0` for a release tag, `--dir`
 for another folder and `--uninstall`, which removes the command and the skills and keeps the checkout. In
 PowerShell set `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`, `$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL=1`
 first. They turn usage reporting off for everything they start; cad-agent itself sends nothing.
@@ -53,6 +53,22 @@ python3 -m venv ~/cad-agent/.venv
 ```
 
 `cad-agent update` works for this install too (it reinstalls with pip).
+
+### Extras
+
+`pip install -e "<checkout>[cad,fea]"` adds the extras you name; the package alone needs only PyYAML and NumPy.
+
+| Extra | Adds |
+|---|---|
+| `cad` | CadQuery, trimesh, VTK: building, checking and rendering parts |
+| `fea` | gmsh, scikit-fem, PyPardiso: stiffness and strength |
+| `sim` | PyVista, pyMOTO, manifold3d: airflow cases, topology optimisation, pictures and videos (OpenFOAM and Bambu Studio run as separate programs) |
+| `robot` | MuJoCo, for robot export |
+| `site` | Markdown, for the review site |
+| `explore` | optuna, for the NSGA-II and TPE searches of `cad-agent optimise` (random and grid need nothing) |
+
+The package runs on Python 3.10 or newer; the `cad` and `sim` extras need 3.11 or newer, because every Pillow release
+for 3.10 has critical advisories and CadQuery 2.8 needs 3.11.
 
 ### The skills
 

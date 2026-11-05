@@ -429,3 +429,14 @@ def test_the_hero_is_the_first_thing_in_the_readme():
     # shows as a literal "# cad-agent" and the badges as raw links.
     assert "\n\n# cad-agent\n\n" in readme
     assert re.search(r"\n\n\[!\[CI\]", readme)
+
+
+def test_repository_route_figure_is_current_and_safe():
+    """A navigation figure has path targets instead of CAD measurements; keep its generated SVG and still safe."""
+    spec = importlib.util.spec_from_file_location("repository_map", ROOT / "tools/anim/repository_map.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    text = tool.build()  # also checks that each declared destination exists
+    assert text == tool.OUT.read_text(), "run PYTHONPATH=src python3 tools/anim/repository_map.py"
+    assert svg.problems(text) == []
+    assert svg.REDUCED_MOTION in text

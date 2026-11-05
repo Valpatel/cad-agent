@@ -428,3 +428,14 @@ test('no project is singled out: no Gyropup flag, badge, filter, boost or field 
   assert.doesNotMatch(show('web/catalog.css'), /gyro/i);
   for (const d of areas.domains) for (const n of [d, ...d.areas, ...d.areas.flatMap(a => a.topics || [])]) assert.ok(!(n.priority || []).includes('gyropup'), `docs/areas.yaml ${n.slug}: priority gyropup`);
 });
+
+
+test('folder maps retain distinct catalogue IDs alongside the existing root README', () => {
+  const root = catalog.items.find(i => i.kind === 'guide' && i.markdown === `${ORIGIN}/README.md`);
+  const docs = catalog.items.find(i => i.kind === 'guide' && i.markdown === `${ORIGIN}/docs/README.md`);
+  const research = catalog.items.find(i => i.kind === 'research' && i.markdown === `${ORIGIN}/research/README.md`);
+  assert.equal(root.id, 'guide-index', 'published root links stay stable');
+  assert.equal(docs.id, 'guide-docs-index');
+  assert.equal(research.id, 'research-index');
+  assert.equal(new Set([root.id, docs.id, research.id]).size, 3);
+});

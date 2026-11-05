@@ -112,10 +112,19 @@ def problems(page: str, text: str, files: set[str], read=lambda p: (ROOT / p).re
     return found
 
 
+def markdown_pages(files):
+    metadata = {"vendor/README.md", "vendor/upstreams/README.md", "vendor/THIRD_PARTY_NOTICES.md"}
+    return sorted(f for f in files if f.endswith(".md") and (not f.startswith("vendor/") or f in metadata))
+
+
+def test_repository_metadata_stays_in_the_image_audit():
+    metadata = {"vendor/README.md", "vendor/upstreams/README.md", "vendor/THIRD_PARTY_NOTICES.md"}
+    assert set(markdown_pages(metadata | {"vendor/imported/README.md", "vendor/upstreams/registry.yaml"})) == metadata
+
+
 def test_every_markdown_image_exists_and_is_an_image():
     files = tracked()
-    metadata = {"vendor/README.md", "vendor/upstreams/README.md", "vendor/THIRD_PARTY_NOTICES.md"}
-    pages = sorted(f for f in files if f.endswith(".md") and (not f.startswith("vendor/") or f in metadata))
+    pages = markdown_pages(files)
     assert "README.md" in pages
     bad = [p for page in pages for p in problems(page, (ROOT / page).read_text(encoding="utf-8", errors="replace"), files)]
     assert not bad, "broken images:\n" + "\n".join(bad)

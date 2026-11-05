@@ -443,6 +443,13 @@ def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
     assert ("vendor-notices", "vendor:tool") in checks(run(root), "medium")
 
 
+def test_dated_report_uses_its_recorded_registry_location(tmp_path):
+    r = run(checkout(tmp_path))
+    assert f"catalog.json, {ra.REGISTRY}, research/landscape.json" in ra.to_markdown(r)
+    r["sources"]["offline"] = r["sources"]["offline"].replace(ra.REGISTRY, "upstreams/registry.yaml")
+    assert "catalog.json, upstreams/registry.yaml, research/landscape.json" in ra.to_markdown(r)
+
+
 # ------------------------------------------------------------------------------------------------------------- issue
 def report_with(*fs):
     return {"as_of": "2026-10-31", "revision": "f" * 40, "mode": "online", "limits": ["x"], "sources": {},

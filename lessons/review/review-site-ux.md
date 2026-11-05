@@ -3,6 +3,8 @@
 The user reviewed the work almost entirely through a locally served preview page. Each request below came from
 something they could not see or could not act on.
 
+The theme-transition lesson also records a later browser-gate incident (2026-11-05, #347).
+
 ```mermaid
 flowchart TD
     U["one review URL<br/>that stays stable"] --> P["progress section<br/>during long work"]
@@ -17,6 +19,27 @@ flowchart TD
     class U near
     class Q,Cl out
 ```
+
+### Check contrast during theme changes, not only at their endpoints
+- **Rule:** Switch text and background colours together when changing a page theme. Two accessible endpoint
+  palettes can pass through unreadable intermediate colours when both interpolate.
+- **Check:** The existing website browser harness samples copy-button colour transitions at 0, 25, 50, 75 and
+  100 percent and keeps its 4.5:1 contrast threshold for normal text. Border animation can remain.
+<details><summary>Incident and source</summary>
+
+- **Incident:** On 2026-11-05, #346's WebKit gate reported a catalogue “Copy call” label at 1.59:1 after a theme
+  change. A focused Chromium probe of dev `04704a41` using the existing site CSS and copy component reproduced
+  foreground `rgb(166, 170, 190)` on background `rgb(95, 93, 94)` during the 150 ms transition. A fixed wall-clock
+  wait is not a guarantee that a busy browser has advanced its animation frames.
+- **Cause and correction:** The component transitions both `color` and `background`. The site's override now
+  transitions only the border; the browser check inspects intermediate colours as well as settled themes.
+- **Source:** [issue #347](https://github.com/Valpatel/cad-agent/issues/347), `web/site.css`, and
+  `tests/site/website-browser.mjs` (`themeProblems`). Probe: load both site stylesheets and `kit/copy.js`, set
+  `data-theme="light"` under system dark, then read the button's computed colours and animation time.
+- **Limits:** This checks the website's copy controls. Other components and consumer styles need their own
+  foreground/background contrast checks; neither this incident nor a passing endpoint check proves them.
+
+</details>
 
 ### Keep a progress section during long work
 - **Rule:** During multi-hour work, keep a progress section at the top of the review page with three lists: done,

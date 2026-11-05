@@ -1163,7 +1163,25 @@ async function themeProblems() {
         await page.goto(base + route, { waitUntil: 'load' });
         await settled(page);
         if (how === 'button') {
-          await page.click('.theme-toggle');
+          // Sample any copy-button colour transitions, not only their endpoints. A wall-clock wait can miss
+          // unreadable intermediate colours, and busy runners may not have advanced their animation frames yet.
+          await page.evaluate(() => {
+            document.querySelector('.theme-toggle').click();
+            window.__copyThemeTransitions = [...document.querySelectorAll('.cad-copy-btn')]
+              .flatMap(el => el.getAnimations())
+              .filter(a => ['color', 'background-color'].includes(a.transitionProperty));
+            window.__copyThemeTransitions.forEach(a => a.pause());
+          });
+          for (const fraction of [0, .25, .5, .75, 1]) {
+            await page.evaluate(f => window.__copyThemeTransitions.forEach(a => {
+              a.currentTime = Number(a.effect.getTiming().duration) * f;
+            }), fraction);
+            for (const l of await lowContrast(page, '.cad-copy-btn')) out.push(`${where}: low contrast during theme change (${fraction}): ${l}`);
+          }
+          await page.evaluate(() => {
+            window.__copyThemeTransitions.forEach(a => a.finish());
+            delete window.__copyThemeTransitions;
+          });
           await page.waitForTimeout(400);                 // past the copy buttons' 0.15 s colour transition
         }
         const st = await state(page);

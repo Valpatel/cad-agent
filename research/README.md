@@ -29,6 +29,8 @@ flowchart TD
 | Supply chain | [Dated report](security-report.md), [machine report](security-report.json), [accepted findings](security-accepted.yaml); regenerate rather than hand-edit reports |
 | Benchmarks | [Gate timing script](bench/gate_timing.py); timings describe its selected cases and environment |
 
+`cad-agent rules <feature>` serves scoped rule cards; `cad-agent choose joining --load N` starts a joining decision. [Profiles and card limits](process-profiles.md) explain the inputs, source confidence and gaps; the cards are generated from the rule data, not copied into this map.
+
 `python -m cadagent.review.references --check` checks registry consistency and citation/evidence rules. It does not verify every source claim or prove a physical result. The [existing evaluation paths and limits](../lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) distinguish deterministic regression checks from the planned model-comparison framework.
 
 [Home](../README.md) · [Guides](../docs/README.md) · [Skills](../skills/README.md) · [Lessons](../lessons/README.md)

@@ -284,6 +284,8 @@ cad-gallery{--cad-gallery-muted:var(--faint);--cad-gallery-chip-bg:var(--soft-3)
 /* body: kit/diagrams.css loads after this file, and its rule has the same specificity */
 body .cad-diagram[data-theme=dark]{position:relative;background:var(--card);border-color:var(--line-2)}
 cad-copy{--cad-copy-font:var(--font);--cad-copy-fg:var(--ink);--cad-copy-bg:var(--cream);--cad-copy-border:var(--line-3);--cad-copy-focus:var(--orange);--cad-copy-warn-bg:var(--peach-2);margin:16px 0}
+/* Text and its background switch together: interpolating light and dark colours crosses unreadable mid-tones. */
+cad-copy>.cad-copy-btn{transition:border-color .15s}
 cad-nav input::placeholder{color:var(--faint);opacity:1}
 .agent-copy cad-copy,.prose cad-copy>pre{margin:0}
 .feedback{display:flex;gap:18px 28px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:48px 0 8px;padding:20px 24px;border:1px solid var(--line-2);border-radius:calc(16px*var(--round));background:var(--soft-2)}

@@ -14,8 +14,8 @@ flowchart TD
 
 | File | Lessons on |
 |---|---|
-| [verification-and-evidence.md](verification-and-evidence.md) | Checks that caught bugs, false positives, honest claims, stale outputs |
-| [review-site-ux.md](review-site-ux.md) | What the user wanted to see on the review site, and why (with a later CAN-project wheel-zoom follow-up, 2026-10-27) |
+| [verification-and-evidence.md](verification-and-evidence.md) | Checks that caught bugs, false positives, honest claims, stale outputs; kernel-dependent shallow-crossing regressions and forced fallback checks (#318) |
+| [review-site-ux.md](review-site-ux.md) | Review-site navigation and evidence; wheel zoom (2026-10-27); copy labels losing contrast during theme changes (2026-11-05) |
 | [original-file-viewer.md](original-file-viewer.md) | Original-file identity, parser units and frames, cancellable loading, dependency and wheel evidence |
 
 Each lesson follows the [lesson format](../README.md#lesson-format): a rule, the incident, a check and its source. Back to [all lessons](../README.md).

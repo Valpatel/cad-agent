@@ -261,21 +261,41 @@ def test_a_ball_tangent_to_the_cavity_requires_valid_boolean_results(where):
 
 
 @needs_cad
-def test_a_shallow_crossing_the_boolean_misses_is_caught_by_the_contact_probe():
+@pytest.mark.parametrize("force_boolean_miss", [False, True], ids=["native-kernel", "forced-boolean-miss"])
+def test_a_shallow_crossing_fails_with_depth_even_if_the_boolean_misses(monkeypatch, force_boolean_miss):
     """A ball pushed 0.03-0.07 mm through the cone wall: OCCT's Common/Cut read 0 mm3 outside at some
-    positions (seen at this one). The relation's own crossing probe (#46) or, behind it, the gate's surface probe
-    has to catch it, with the depth."""
+    positions, but other builds measure the crossing (#318). Both must fail with the geometric depth.
+    Injecting a false contained relation separately guarantees that the real contact probe is exercised."""
+    if force_boolean_miss:
+        from cadagent.review.gates import containment as con
+        from cadagent.review.gates.relations import Relation
+        original = con.relate_pair
+
+        def missed(asm, a, b, *args, **kwargs):
+            if a == "ball#0" and b == "cone":
+                return Relation(a, b, "contains", contained="a_in_b", a_outside_b_mm3=0.0, wall_mm=0.0)
+            return original(asm, a, b, *args, **kwargs)
+
+        monkeypatch.setattr(con, "relate_pair", missed)
     z, phi = 30.0, 0.3
     rho = cone_rho_tangent(z)
     for dz in (0.05, 0.12):                           # down by dz = dz * SIN into the wall
         c = (rho * math.cos(phi), rho * math.sin(phi), z - dz)
         v = containment_gate(cone_assembly([c]), [CONE], support="off")
         f = by_id(v)["contains:cone:ball#0:inside"]
-        assert f["status"] == "fail", f
+        assert v["pass"] is False and f["status"] == "fail", f
         assert f["evidence"]["depth_mm"] == pytest.approx(dz * SIN, abs=0.004)
-        assert f["evidence"]["kernel_missed_crossing"] is True and f["evidence"]["outside_mm3"] is None
+        evidence = f["evidence"]
+        if force_boolean_miss or evidence.get("kernel_missed_crossing"):
+            assert evidence["kernel_missed_crossing"] is True and evidence["outside_mm3"] is None
+        else:
+            assert evidence["relation"]["state"] == "overlapping"
+            assert evidence["outside_mm3"] > 0
     off = containment_gate(cone_assembly([c]), [CONE], support="off", probe=False)
     assert off["limits"]["contact_probe"] is False
+    if force_boolean_miss:
+        # The injected miss must expose the regression when the fallback is disabled.
+        assert by_id(off)["contains:cone:ball#0:inside"]["status"] == "pass"
 
 
 @needs_cad

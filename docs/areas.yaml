@@ -160,9 +160,10 @@ domains:
     scope: Turning a design into a part, process by process.
     maturity: tooling
     pages: [docs/process-checks.md, research/process-profiles.md]
-    api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm]
-    uses: [cadagent.mechanical.compliant.allowables]
-    issues: [99]
+    cli: [rules, choose]
+    api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm, cadagent.manufacturing.cards]
+    uses: [cadagent.mechanical.compliant.allowables, cadagent.mechanical.inserts, cadagent.review.references]
+    issues: [99, 323]
     areas:
       - slug: 3d-printing
         title: 3D printing

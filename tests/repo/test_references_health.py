@@ -387,3 +387,29 @@ def test_retry_after_parses_numbers_and_dates():
     now = dt.datetime(2026, 11, 9, 12, 0, tzinfo=dt.timezone.utc)
     assert ra.retry_after("5") == 5 and ra.retry_after(None) is None and ra.retry_after("soon") is None
     assert ra.retry_after("Mon, 09 Nov 2026 12:00:30 GMT", now) == 30
+
+
+def test_the_weekly_jobs_keep_tokens_apart_and_only_they_go_online():
+    """references reads only; the issue job runs the stdlib alone; the PR job runs no Python and applies only shard
+    edits; lychee is pinned and paced; and CI's own jobs never run the online check."""
+    yaml = pytest.importorskip("yaml")
+    wf = yaml.safe_load((ROOT / ".github/workflows/supply-chain.yml").read_text())
+    jobs = wf["jobs"]
+    ref, issue, pr = jobs["references"], jobs["references-issue"], jobs["references-pr"]
+    assert wf["permissions"] == {} and "default_branch" in ref["if"]
+    assert ref["permissions"] == {"contents": "read", "actions": "read"}
+    assert issue["permissions"] == {"contents": "read", "issues": "write"} and issue["needs"] == "references"
+    assert pr["permissions"] == {"contents": "write", "pull-requests": "write"} and pr["needs"] == "references"
+    assert ref["steps"][0]["with"] == {"ref": "dev", "persist-credentials": False}
+    lychee = next(s for s in ref["steps"] if "lychee-action" in s.get("uses", ""))
+    assert ra.re.fullmatch(r"lycheeverse/lychee-action@[0-9a-f]{40}", lychee["uses"])
+    assert "--host-request-interval 1s" in lychee["with"]["args"] and "--host-concurrency 1" in lychee["with"]["args"]
+    runs = "\n".join(s.get("run", "") for s in ref["steps"])
+    assert "references --online" in runs and "references_health_apply.py" in runs and "--state" in runs
+    assert not any("pip" in s.get("run", "") or "setup-python" in s.get("uses", "") for s in issue["steps"] + pr["steps"])
+    assert not any("python" in s.get("run", "") for s in pr["steps"])
+    pr_run = "\n".join(s.get("run", "") for s in pr["steps"])
+    assert "git apply --numstat" in pr_run and r"^research/references/[a-z0-9-]+\.yaml$" in pr_run and "--base dev" in pr_run
+    for other in (".github/workflows/ci.yml", ".github/workflows/gates.yml", ".github/workflows/webkit.yml",
+                  ".github/workflows/release.yml"):
+        assert "references --online" not in (ROOT / other).read_text() and "lychee" not in (ROOT / other).read_text()

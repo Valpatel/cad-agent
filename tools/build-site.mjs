@@ -20,7 +20,7 @@ import { buildCatalog } from './site-catalog.mjs';            // the catalogue p
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
-import { loadReferences, referenceModel, referenceSite, linkTags, mdTags } from './site-references.mjs';   // /references (#323)
+import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -376,7 +376,11 @@ await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body
   css: ['/kit/gallery.css', '/web/catalog.css'] }));
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
-const refSite = referenceSite(refModel, { ORIGIN, revision, built: committed, feedbackBox });
+// CAD_AGENT_REFERENCES_HEALTH: the weekly link check's JSON (its references-health artifact), to show each record's
+// link health in catalog/references/*.json. Health is not kept in git (#323), so a build without it shows none.
+const refHealth = process.env.CAD_AGENT_REFERENCES_HEALTH
+  ? healthOf(JSON.parse(await readFile(process.env.CAD_AGENT_REFERENCES_HEALTH, 'utf8'))) : null;
+const refSite = referenceSite(refModel, { ORIGIN, revision, built: committed, feedbackBox, health: refHealth });
 for (const [f, text] of refSite.files) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
 // They change with the registry and the topic tree: their last commit (null in a draft with either changed).
 const REF_SOURCES = ['research/references.yaml', 'research/references', 'docs/areas.yaml'];

@@ -2,8 +2,11 @@
 __pycache__/
 *.pyc
 .venv/
+# Keep legacy locations ignored: existing checkouts may still hold private transcripts there.
 mining/raw/
 mining/out/private/
+tools/mining/raw/
+tools/mining/out/private/
 *.egg-info/
 build/
 .cadagent-cache/

@@ -47,4 +47,4 @@ from HEAD into a temporary folder, unless `CAD_AGENT_SITE` names a folder alread
 once per job. A folder built from another commit, or a `--worktree` draft, is refused; leave the variable unset to
 build afresh.
 
-Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)
+Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

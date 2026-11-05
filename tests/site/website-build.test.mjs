@@ -674,3 +674,47 @@ test('every page names its cad-agent.valpatel.com address as canonical, and the 
   assert.ok(checked.includes('index.html') && checked.includes('catalog.html') && checked.includes('kit/viewer.html') && checked.length > 40,
     `checked ${checked.length} pages`);
 });
+
+test('the moved contributor source keeps its public URLs, identity and real provenance', async () => {
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  const policy = catalog.items.find(i => i.id === 'guide-contributing');
+  assert.equal(policy.url, 'https://cad-agent.valpatel.com/CONTRIBUTING');
+  assert.equal(policy.markdown, 'https://cad-agent.valpatel.com/CONTRIBUTING.md');
+  assert.equal(policy.source, 'https://github.com/Valpatel/cad-agent/blob/dev/.github/CONTRIBUTING.md');
+  const html = await readFile(path.join(out, 'CONTRIBUTING.html'), 'utf8');
+  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/\.github\/CONTRIBUTING\.md"/);
+  assert.match(html, /href="\/docs\/agent-workflow/);
+  assert.ok((await ids('CONTRIBUTING.html')).has('gates'), 'inbound fragments keep their existing target');
+  assert.match(await readFile(path.join(out, 'README.html'), 'utf8'), /href="\/CONTRIBUTING"/);
+  const twin = await readFile(path.join(out, 'CONTRIBUTING.md'), 'utf8');
+  assert.match(twin, /\]\(docs\/agent-workflow\.md/);
+  assert.doesNotMatch(twin, /\]\(\.\.\/docs\/agent-workflow\.md/, 'links resolve from the source but emit relative to the public twin');
+  assert.ok(!files.includes('.github/CONTRIBUTING.html') && !files.includes('.github/SECURITY.html'));
+  for (const file of ['llms.txt', 'sitemap.xml']) {
+    const body = await readFile(path.join(out, file), 'utf8');
+    assert.match(body, /https:\/\/cad-agent\.valpatel\.com\/CONTRIBUTING/);
+    assert.doesNotMatch(body, /https:\/\/cad-agent\.valpatel\.com\/\.github\/CONTRIBUTING/);
+  }
+});
+
+test('a real draft reads the moved source and never substitutes an untracked stale root policy', async () => {
+  const wt = path.join(tmp, 'wt-policy');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    await writeFile(path.join(wt, '.github/CONTRIBUTING.md'), '# Current policy\n\nMOVED_SOURCE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'CONTRIBUTING.md'), '# Stale root policy\n\nSTALE_ROOT_SENTINEL.\n');
+    const draft = path.join(tmp, 'draft-policy');
+    const run = () => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    run();
+    const page = await readFile(path.join(draft, 'CONTRIBUTING.html'), 'utf8');
+    assert.match(page, /MOVED_SOURCE_SENTINEL/);
+    assert.doesNotMatch(page, /STALE_ROOT_SENTINEL/);
+    assert.match(page, /href="\/docs\/toolkit#commands"/);
+    assert.match(await readFile(path.join(draft, 'CONTRIBUTING.md'), 'utf8'), /\]\(docs\/toolkit\.md#commands\)/);
+    await rm(path.join(wt, '.github/CONTRIBUTING.md'));
+    assert.throws(run, error => /ENOENT/.test(String(error.stderr)) && /\.github\/CONTRIBUTING\.md/.test(String(error.stderr)),
+      'missing real source must fail even while the stale root file still exists');
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
+});

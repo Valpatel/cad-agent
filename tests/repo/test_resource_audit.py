@@ -891,19 +891,58 @@ def test_issue_text_mentions_nobody():
 
 
 # ------------------------------------------------------------------------------------------ the page and the figure
+def _site_selection(files):
+    """Run the builder's dependency-free selector, not a regex extracted from its implementation text."""
+    import shutil
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node is an optional local site tool; mandatory Node CI also tests this selector")
+    script = ("const {selectPages, publicPath} = await import(process.argv[1]); "
+              "let input=''; for await (const chunk of process.stdin) input += chunk; "
+              "console.log(JSON.stringify(selectPages(JSON.parse(input)).map(p => "
+              "({file:p.file, section:p.section.id, public:publicPath(p.file)}))));")
+    return subprocess.run([node, "--input-type=module", "-e", script,
+                           (ROOT / "tools/site/publication.mjs").as_uri()],
+                          input=json.dumps(files), capture_output=True, text=True)
+
+
+def _tracked_pages(root):
+    # No .strip() or whitespace split: spaces, tabs and newlines are legal filename bytes.
+    raw = subprocess.run(["git", "-C", str(root), "ls-files", "-z"], capture_output=True, check=True).stdout
+    return [p for p in raw.decode().split("\0") if p]
+
+
 def test_published_pages_match_the_site_build():
-    """published() must pick the same Markdown files as tools/build-site.mjs's SECTIONS (both are read from the source)."""
-    import re
-    src = (ROOT / "tools/build-site.mjs").read_text()
-    block = src[src.index("const SECTIONS = ["):src.index("];", src.index("const SECTIONS = ["))]
-    patterns = [re.compile(p.replace("\\/", "/")) for p in re.findall(r"/(\^.*?\$)/\.test\(f\)", block)]
-    files = set(re.findall(r"f === '([^']+)'", block))
-    assert len(patterns) == len(ra.PUBLISHED) and files == set(ra.PUBLISHED_FILES)
-    assert [p.pattern for p in patterns] == [p.pattern for p in ra.PUBLISHED]
-    tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True, text=True).stdout.split()
-    for f in tracked:
-        want = (f in files or any(p.match(f) for p in patterns)) and not re.search(r"(?:^|/)(?:AGENTS|CLAUDE)\.md$", f)
-        assert ra.published(f, report=True) == want, f
+    """Compare the audit predicate with real builder selection over the current tracked sources."""
+    files = _tracked_pages(ROOT)
+    result = _site_selection(files)
+    assert result.returncode == 0, result.stderr
+    selected = json.loads(result.stdout)
+    assert {p["file"] for p in selected} == {f for f in files if ra.published(f, report=True)}
+    policy = next(p for p in selected if p["file"] == ".github/CONTRIBUTING.md")
+    assert policy == {"file": ".github/CONTRIBUTING.md", "section": "docs", "public": "CONTRIBUTING.md"}
+    assert not any(p["file"] in ("CONTRIBUTING.md", "SECURITY.md", ".github/SECURITY.md") for p in selected)
+
+
+def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path):
+    """A stale old file cannot stand in for a missing mandatory source; whitespace paths stay whole."""
+    subprocess.run(["git", "-C", str(tmp_path), "-c", "init.templateDir=", "init", "-q"], check=True)
+    expected = {"README.md", ".github/CONTRIBUTING.md", "docs/space name.md", "docs/tab\tname.md"}
+    extra = {"CONTRIBUTING.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "research/data.json"}
+    for name in expected | extra:
+        write(tmp_path, name, "# candidate\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "--all"], check=True)
+    files = _tracked_pages(tmp_path)
+    assert set(files) == expected | extra
+    result = _site_selection(files)
+    assert result.returncode == 0, result.stderr
+    assert {p["file"] for p in json.loads(result.stdout)} == expected
+    assert {f for f in files if ra.published(f, report=True)} == expected
+    (tmp_path / ".github/CONTRIBUTING.md").unlink()
+    subprocess.run(["git", "-C", str(tmp_path), "add", "--all"], check=True)
+    missing = _site_selection(_tracked_pages(tmp_path))
+    assert missing.returncode != 0
+    assert "required published source .github/CONTRIBUTING.md is missing" in missing.stderr
 
 
 def test_figure_is_deterministic_and_says_what_it_leaves_out(tmp_path):

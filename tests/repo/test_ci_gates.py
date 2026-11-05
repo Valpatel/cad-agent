@@ -1,5 +1,6 @@
 """The merge gates in tools/ci_gates.py: branch flow, review verdicts, release versions."""
 import importlib.util
+import base64
 import json
 import subprocess
 from pathlib import Path
@@ -12,6 +13,9 @@ _spec.loader.exec_module(gates)
 
 HEAD = "a188011" + "0" * 33
 OLD = "1234567" + "0" * 33
+MAIN = "b" * 40
+PUBLISHED = "## v0.4.2 (2026-10-31)\n\n**Fixed**\n- Shipped fix.\n\n## v0.4.1 (2026-10-30)\n\n- Earlier fix.\n"
+LOG = "# Changelog\n\n## Unreleased\n\n" + PUBLISHED
 WRITERS = {"mvalancy", "reviewer-bot"}
 can_review = WRITERS.__contains__
 _ids = iter(range(1000, 10**6))
@@ -130,12 +134,16 @@ def test_cli_version(capsys, monkeypatch):
 
 class FakeGitHub:
     """Stands in for `gh`: answers the PR, reviews, permission and PR-list calls, and records status posts."""
-    def __init__(self, prs, reviews=(), fail=(), store=lambda d: d):
+    def __init__(self, prs, reviews=(), fail=(), store=lambda d: d, main_log=LOG, head_log=LOG):
         self.prs, self.reviews, self.fail, self.posts, self.posts_full = prs, list(reviews), set(fail), [], []
         self.store = store                  # what GitHub might do to a description when it stores it
+        self.main_log, self.head_log, self.calls = main_log, head_log, []
 
     def __call__(self, *args):
         path = next(a for a in args if a.startswith("repos/"))
+        self.calls.append(path)
+        if path in self.fail:
+            raise subprocess.CalledProcessError(1, "gh")
         if "-X" in args:
             fields = dict(a.split("=", 1) for a in args if "=" in a and not a.startswith("repos/"))
             self.posts.append((path.rsplit("/", 1)[1], fields["context"], fields["state"]))
@@ -150,6 +158,12 @@ class FakeGitHub:
             return json.dumps({"statuses": [{"context": c, "state": st, "description": d} for c, (st, d) in latest.items()]})
         if path.endswith("/reviews"):
             return "\n".join(json.dumps(r) for r in self.reviews)
+        if path.endswith("/commits/main"):
+            return MAIN
+        if "/contents/CHANGELOG.md?ref=" in path:
+            raw = (self.main_log if path.endswith(MAIN) else self.head_log).encode("utf-8")
+            return json.dumps({"type": "file", "encoding": "base64", "size": len(raw),
+                               "content": base64.b64encode(raw).decode("ascii")})
         if "/collaborators/" in path:
             return json.dumps({"permission": "admin" if "/mvalancy/" in path else "read"})
         if "pulls?state=open" in path:
@@ -179,6 +193,113 @@ def test_a_failing_gate_is_a_failure_status_not_an_error(monkeypatch):
     assert gates.run("o/r", 5, do_post=True) == 0
     assert {(c, s) for _, c, s in fake.posts[2:]} == {("cad-gates/dev/branch-flow", "failure"), ("cad-gates/dev/review", "failure")}
     assert gates.run("o/r", 5, do_post=False) == 1                           # the pre-merge check exits 1
+
+
+@pytest.mark.parametrize("changed", [
+    LOG.replace("Shipped fix.", "A change that never shipped."),
+    LOG.replace("2026-10-31", "2026-11-01"),
+    LOG.replace("v0.4.2", "v0.4.3"),
+    LOG.replace("- Shipped fix.", "- Shipped fix. \t"),
+    "# Changelog\n\n## Unreleased\n",
+    LOG + "\n## v0.3.0 (2026-10-29)\n\n- Added underneath published history.\n",
+    LOG.replace("## v0.4.1", "## Appendix\n\nExtra section.\n\n## v0.4.1"),
+    LOG.replace("## v0.4.1", "## v0.4.15 (2026-10-30)\n\n- Inserted.\n\n## v0.4.1"),
+    LOG.replace("v0.4.1 (2026-10-30)", "v0.4.2 (2026-10-30)"),
+    LOG.replace("v0.4.2 (2026-10-31)", "v0.4.2 (2026-13-31)"),
+    LOG.replace("v0.4.2 (2026-10-31)", "v0.4.2 (2026-10)"),
+], ids=["body", "date", "version", "meaningful-whitespace", "deleted", "appended", "extra-heading",
+        "inserted-release", "duplicate-version", "impossible-date", "malformed-date"])
+def test_historical_changes_fail_the_existing_gate_despite_a_valid_review(monkeypatch, changed):
+    fake = FakeGitHub({5: pr(5)}, [review("pass")], head_log=changed)
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.main(["all", "--repo", "o/r", "--pr", "5"]) == 1
+    assert gates.run("o/r", 5, do_post=True) == 0
+    assert fake.posts[-2:] == [(HEAD, "cad-gates/dev/branch-flow", "failure"),
+                              (HEAD, "cad-gates/dev/review", "success")]
+    assert fake.calls.count(f"repos/o/r/contents/CHANGELOG.md?ref={MAIN}") == 2
+    assert fake.calls.count(f"repos/o/r/contents/CHANGELOG.md?ref={HEAD}") == 2
+
+
+def test_released_entries_cannot_be_reordered(monkeypatch):
+    latest, earlier = PUBLISHED.split("## v0.4.1", 1)
+    changed = "# Changelog\n\n## Unreleased\n\n## v0.4.1" + earlier + "\n" + latest
+    fake = FakeGitHub({5: pr(5)}, [review("pass")], head_log=changed)
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.main(["all", "--repo", "o/r", "--pr", "5"]) == 1
+
+
+def test_unreleased_and_real_cut_release_output_preserve_history(monkeypatch):
+    spec = importlib.util.spec_from_file_location("cut_release", Path(__file__).parents[2] / "tools/cut_release.py")
+    cutter = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cutter)
+    fragment = ("changelog.d/123-fix.md", "**Fixed**\n- A newly shipped fix.\n")
+    _, released, version = cutter.cut(PY.format("0.4.2"), LOG, bump="patch", date="2026-11-01",
+                                      fragments=[fragment])
+    assert version == "0.4.3"
+    for candidate in (LOG, LOG.replace("## Unreleased", "## Unreleased\n\n**Fixed**\n- Pending fix."), released):
+        fake = FakeGitHub({5: pr(5)}, [review("pass")], head_log=candidate)
+        monkeypatch.setattr(gates, "_gh", fake)
+        assert gates.main(["all", "--repo", "o/r", "--pr", "5"]) == 0
+
+
+def test_fork_changelog_uses_its_own_repository_at_the_reviewed_sha(monkeypatch):
+    fork = pr(5)
+    fork["head"]["repo"]["full_name"] = "contributor/fork"
+    fake = FakeGitHub({5: fork}, [review("pass")])
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.run("o/r", 5, do_post=False) == 0
+    assert f"repos/contributor/fork/contents/CHANGELOG.md?ref={HEAD}" in fake.calls
+    assert f"repos/o/r/contents/CHANGELOG.md?ref={HEAD}" not in fake.calls
+
+
+@pytest.mark.parametrize("baseline", ["", "# Changelog\n\n## Unreleased\n", LOG.replace("2026-10-31", "yesterday"),
+                                      LOG + "\n## Appendix\nNo dated history here.\n"])
+def test_an_empty_or_malformed_baseline_cannot_pass_vacuously(monkeypatch, baseline):
+    fake = FakeGitHub({5: pr(5)}, [review("pass")], main_log=baseline)
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.run("o/r", 5, do_post=False) == 1
+
+
+@pytest.mark.parametrize("response", [
+    {"type": "symlink", "encoding": "base64", "size": 0, "content": ""},
+    {"type": "file", "encoding": "none", "size": 2**21, "content": ""},
+    {"type": "file", "encoding": "base64", "size": 2**21, "content": ""},
+    {"type": "file", "encoding": "base64", "size": 1, "content": "?"},
+    {"type": "file", "encoding": "base64", "size": 1, "content": "/w=="},
+    {"type": "file", "encoding": "base64", "size": 2, "content": "YQ=="},
+], ids=["not-a-file", "unsupported-encoding", "oversized", "invalid-base64", "invalid-utf8", "truncated"])
+def test_unreadable_history_supersedes_an_old_green_with_pending(monkeypatch, response):
+    fake = FakeGitHub({5: pr(5)}, [review("pass")])
+    monkeypatch.setattr(gates, "_gh", fake)
+    assert gates.run("o/r", 5, do_post=True) == 0
+    def broken(*args):
+        if f"repos/o/r/contents/CHANGELOG.md?ref={HEAD}" in args:
+            return json.dumps(response)
+        return fake(*args)
+    monkeypatch.setattr(gates, "_gh", broken)
+    with pytest.raises(ValueError):
+        gates.run("o/r", 5, do_post=True)
+    assert fake.posts[-2:] == [(HEAD, "cad-gates/dev/branch-flow", "pending"),
+                              (HEAD, "cad-gates/dev/review", "pending")]
+
+
+def test_missing_history_and_unresolved_main_sha_fail_closed(monkeypatch):
+    fake = FakeGitHub({5: pr(5)}, [review("pass")], fail={f"repos/o/r/contents/CHANGELOG.md?ref={HEAD}"})
+    monkeypatch.setattr(gates, "_gh", fake)
+    with pytest.raises(subprocess.CalledProcessError):
+        gates.run("o/r", 5, do_post=True)
+    assert [state for _, _, state in fake.posts] == ["pending", "pending"]
+    def missing_sha(*args):
+        return "main" if "repos/o/r/commits/main" in args else fake(*args)
+    monkeypatch.setattr(gates, "_gh", missing_sha)
+    with pytest.raises(ValueError, match="full commit SHA"):
+        gates.run("o/r", 5, do_post=False)
+
+
+def test_only_blank_section_separators_may_change():
+    separated = LOG.replace("\n\n## v0.4.1", "\n \t\n\n\n## v0.4.1") + "\n\t \n"
+    assert gates.changelog_history(separated, LOG)[0]
+    assert not gates.changelog_history(LOG.replace("- Earlier fix.", "  - Earlier fix."), LOG)[0]
 
 
 def test_a_crash_leaves_the_statuses_pending(monkeypatch):
@@ -327,3 +448,38 @@ def test_the_release_fetch_stays_shallow_in_a_shallow_checkout(origin_with_a_pr,
     assert _git(ci, "rev-list", "--count", "origin/main") == "1"
     assert _git(ci, "rev-list", "--count", "origin/pr-head") == "1"
     assert _git(ci, "rev-parse", "origin/pr-head") == _git(origin_with_a_pr, "rev-parse", "refs/pull/7/head")
+
+
+@pytest.mark.parametrize("rewrite_history", [False, True], ids=["new-release", "rewritten-history"])
+def test_main_release_gate_uses_one_fetched_baseline_and_rejects_historical_edits(
+        origin_with_a_pr, tmp_path, monkeypatch, rewrite_history):
+    origin = origin_with_a_pr
+    (origin / "CHANGELOG.md").write_text(LOG)
+    (origin / "pyproject.toml").write_text(PY.format("0.4.2"))
+    _git(origin, "add", "CHANGELOG.md", "pyproject.toml")
+    _git(origin, "commit", "-qm", "Released baseline")
+    baseline = _git(origin, "rev-parse", "HEAD")
+    _git(origin, "checkout", "-qb", "dev")
+    new_log = LOG.replace("## Unreleased", "## Unreleased\n\n## v0.4.3 (2026-11-01)\n\n- New fix.")
+    if rewrite_history:
+        new_log = new_log.replace("Shipped fix.", "This never shipped.")
+    (origin / "CHANGELOG.md").write_text(new_log)
+    (origin / "pyproject.toml").write_text(PY.format("0.4.3"))
+    _git(origin, "commit", "-qam", "Release candidate")
+    head = _git(origin, "rev-parse", "HEAD")
+    _git(origin, "update-ref", "refs/pull/7/head", head)
+    checkout = tmp_path / "checkout"
+    _git(tmp_path, "clone", "-q", f"file://{origin}", str(checkout))
+    monkeypatch.chdir(checkout)
+    fake = FakeGitHub({7: pr(7, base="main", ref="dev", sha=head)}, [review("pass", sha=head)])
+    monkeypatch.setattr(gates, "_gh", fake)
+    reads, real_show = [], gates._git_show
+    def record_show(rev_path):
+        reads.append(rev_path)
+        return real_show(rev_path)
+    monkeypatch.setattr(gates, "_git_show", record_show)
+    _, results = gates.evaluate("o/r", 7)
+    assert results["review"][0] and results["release"][0]
+    assert results["branch-flow"][0] is not rewrite_history
+    assert f"{baseline}:CHANGELOG.md" in reads and f"{baseline}:pyproject.toml" in reads
+    assert not any(path.startswith("origin/main:") for path in reads)

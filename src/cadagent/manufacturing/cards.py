@@ -50,6 +50,7 @@ printer, or a test, governs.
 from __future__ import annotations
 
 import json
+import math
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -626,8 +627,8 @@ def choose(decision: str, path: Any = None, **given: Any) -> Dict[str, Any]:
     and the rule cards it relies on. ``given`` holds the inputs (``load=200, cycles=50, material="petg"``); a missing
     one takes its default, and a missing required one is refused. When the row reached ``needs`` a fact that is not
     computed here (``None``), the result is **not decided** (``decided`` false, ``choice`` None) and ``missing`` says
-    why, rather than a choice made without the check. Raises CardError for an unknown decision or input, and for a
-    table that is not cited."""
+    why, rather than a choice made without the check. Numeric inputs must be finite and nonnegative. Raises
+    CardError for an unknown decision or invalid input, and for a table that is not cited."""
     tables = decisions(path)
     if decision not in tables:
         raise CardError(f"no decision {decision!r}; there are {', '.join(tables) or 'none'}")
@@ -649,8 +650,9 @@ def choose(decision: str, path: Any = None, **given: Any) -> Dict[str, Any]:
         if "choices" in spec and v not in spec["choices"]:
             raise CardError(f"{decision}: {k} {v!r} is not covered; the table covers {', '.join(spec['choices'])}")
         if "units" in spec and v is not None:
-            if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
-                raise CardError(f"{decision}: {k} must be a number of at least 0, not {v!r}")
+            if (isinstance(v, bool) or not isinstance(v, (int, float))
+                    or (isinstance(v, float) and not math.isfinite(v)) or v < 0):
+                raise CardError(f"{decision}: {k} must be a finite number of at least 0, not {v!r}")
         env[k] = v
     if env.get("process") and env.get("material") is not None:
         material_family(env["process"], env["material"])            # refuse an unknown material early

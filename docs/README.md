@@ -26,6 +26,7 @@ flowchart TD
 | Understand an animated result | [Rendered motion](rendered-motion.md), [figure provenance](animated-figures.md), [image inputs](img/) |
 | Find source-backed practice | [Research map](../research/README.md), [experts](experts.md), [skills](../skills/README.md) |
 | Improve the system | [Evidence loop](../README.md#how-it-improves-itself), [vision and evaluation limits](vision.md), [contributor workflow](../CONTRIBUTING.md) |
+| Maintain upstream dependencies | [Weekly update procedure](weekly-upstream-update.md), [supply-chain guidance](supply-chain.md) |
 | Work on the site | [Style guide](style-guide.md), [web kit](toolkit.md), [page configuration](pages.yaml), [catalogue configuration](catalog.yaml) |
 
 [Home](../README.md) · [Tests](../tests/README.md) · [Lessons](../lessons/README.md) · [Recovery snapshot](../lessons/process/2026-11-05-recovery-audit.md)

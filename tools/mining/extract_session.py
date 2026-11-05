@@ -3,7 +3,7 @@
 Keeps only what people said: user prompts (including messages sent mid-turn) and the assistant's prose replies.
 Drops tool calls, tool output, thinking, attachments and request metadata. Personal data is scrubbed before writing.
 
-    python mining/extract_session.py <session.jsonl> <out.md>
+    python tools/mining/extract_session.py <session.jsonl> <out.md>
 """
 import json,re,sys
 from pathlib import Path

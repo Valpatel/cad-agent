@@ -75,14 +75,16 @@ its failures says where the file goes.
 | `research/` | Surveys and sourced data tables (landscape, process profiles, security reports). |
 | `lessons/<area>/` | Lessons learned on real projects, by area ([map](lessons/README.md)). |
 | `examples/<name>/` | Example projects the docs and tests run. |
-| `tools/` | The repo's own scripts: figure generators, the site build, the gates, releases, audits. |
+| `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
 | `web/` | The website's own static files (CSS, icons, the landing model). |
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
 | `vendor/`, `upstreams/` | Vendored upstream code in its own layout; the registry of upstreams we track. |
-| `mining/` | The script that condenses session transcripts for lesson mining. |
+
 | `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |
 | `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `lessons/`. The links, and the move of today's `.agents/` notes into `lessons/`, come in a follow-up PR. |
 | `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](CONTRIBUTING.md#gates)). |
+
+✓ **Keep the root compact.** `tests/repo/test_layout.py` caps tracked root entries (files and folders together); its budget only shrinks as maintenance files move to their owning hierarchy.
 
 ✓ **Never add a top-level folder.** A new kind of folder is the owner's call, in a PR of its own.
 

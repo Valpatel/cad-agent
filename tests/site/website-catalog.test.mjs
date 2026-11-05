@@ -431,9 +431,9 @@ test('no project is singled out: no Gyropup flag, badge, filter, boost or field 
 
 
 test('folder maps retain distinct catalogue IDs alongside the existing root README', () => {
-  const root = catalog.items.find(i => i.markdown === `${ORIGIN}/README.md`);
-  const docs = catalog.items.find(i => i.markdown === `${ORIGIN}/docs/README.md`);
-  const research = catalog.items.find(i => i.markdown === `${ORIGIN}/research/README.md`);
+  const root = catalog.items.find(i => i.kind === 'guide' && i.markdown === `${ORIGIN}/README.md`);
+  const docs = catalog.items.find(i => i.kind === 'guide' && i.markdown === `${ORIGIN}/docs/README.md`);
+  const research = catalog.items.find(i => i.kind === 'research' && i.markdown === `${ORIGIN}/research/README.md`);
   assert.equal(root.id, 'guide-index', 'published root links stay stable');
   assert.equal(docs.id, 'guide-docs-index');
   assert.equal(research.id, 'research-index');

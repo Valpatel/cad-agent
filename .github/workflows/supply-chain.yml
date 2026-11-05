@@ -121,7 +121,7 @@ jobs:
             --max-retries 1 --include-fragments --exclude-all-private
             --exclude '^https?://([a-z0-9-]+\.)*example\.(com|org|net)'
             --exclude-path research/security-report.md
-            'README.md' '.github/CONTRIBUTING.md' 'THIRD_PARTY_NOTICES.md' 'docs/*.md' 'research/*.md' 'lessons/**/*.md'
+            'README.md' '.github/CONTRIBUTING.md' 'vendor/THIRD_PARTY_NOTICES.md' 'docs/*.md' 'research/*.md' 'lessons/**/*.md'
             'skills/*/SKILL.md' 'agents/*.md'
           format: json
           output: build/lychee.json

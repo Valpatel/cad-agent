@@ -6,7 +6,7 @@
  *   OpenSCAD, KiCad, FreeCAD, a mesh tool, a slicer, a solver...) as the main glyph in its own colour, the one number
  *   that matters as large type (GitHub stars, or a benchmark's size or venue), licence and status as labelled tags, and
  *   a band naming what it makes or where it runs (its processes or clients, else its areas). All of it from
- *   upstreams/registry.yaml and research/landscape.json;
+ *   vendor/upstreams/registry.yaml and research/landscape.json;
  * - charts we draw from our own tools' results (docs/catalog.yaml), e.g. the trade-off cad-agent compare plots;
  * - our pages: the page's outline as bars, one per section, as long as its text, marked when the section has a
  *   picture, diagram or code; lessons draw one tile per lesson;

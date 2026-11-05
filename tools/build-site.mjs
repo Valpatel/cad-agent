@@ -167,7 +167,7 @@ const refModel = referenceModel(await loadReferences({ files: tracked, read }), 
 
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('research/landscape.json'));
-const upstreams = YAML.parse(await read('upstreams/registry.yaml')) || [];
+const upstreams = YAML.parse(await read('vendor/upstreams/registry.yaml')) || [];
 const cli = await read('src/cadagent/cli.py');
 const parserCount = (cli.match(/sub\.add_parser\(/g) || []).length;
 const commands = [...cli.matchAll(/sub\.add_parser\("([a-z0-9-]+)",[^)]*?help="((?:[^"\\]|\\.)*)"(?:\s*\n?\s*"((?:[^"\\]|\\.)*)")?/g)]
@@ -470,7 +470,7 @@ const fitsTile = async (t, i) => {
 const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
 const makeChip = (m, i) => {
   const u = m.upstream && upstreamByName.get(m.upstream);
-  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in upstreams/registry.yaml`);
+  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in vendor/upstreams/registry.yaml`);
   return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
 };
 const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)

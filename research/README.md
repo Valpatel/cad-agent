@@ -20,7 +20,7 @@ flowchart TD
 | Evidence | Files and use |
 |---|---|
 | Reference registry | [Core sources](references.yaml), [shards, evidence ladder and promotion procedure](references/README.md); one id space, not one confidence level |
-| Tools to adopt or wrap | [Landscape](landscape.md) and [data](landscape.json), [agent toolkits](agent-toolkits-2026-10.md), [upstream registry](../upstreams/registry.yaml) |
+| Tools to adopt or wrap | [Landscape](landscape.md) and [data](landscape.json), [agent toolkits](agent-toolkits-2026-10.md), [upstream registry](../vendor/upstreams/registry.yaml) |
 | Process rules | [Profiles and limits](process-profiles.md), [rule data](process-profiles.yaml); unread rules cannot drive checks |
 | Compliant mechanisms | [Survey](compliant-mechanisms.md) → [snap-fit method](../docs/compliant.md) |
 | Simulation | [Tools](simulation-tools.md), [FEA/process survey](fea-and-process-tools.md) → [toolkit](../docs/toolkit.md) |

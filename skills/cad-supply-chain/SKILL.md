@@ -30,7 +30,7 @@ flowchart TD
 |---|---|
 | add a Python or npm dependency, or raise or drop a pin | `rows --online` before you push; paste the rows into the PR |
 | vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt: the npm tarball, its integrity and each file's SHA-256 (`three/SOURCE.json`), or `"npm": false` and each file's URL when it is not from npm (`fonts/SOURCE.json`) |
-| add a catalogue entry (`upstreams/registry.yaml`, `research/landscape.json`) or a link in a published page | `rows --online` |
+| add a catalogue entry (`vendor/upstreams/registry.yaml`, `research/landscape.json`) or a link in a published page | `rows --online` |
 | recommend a tool, skill, plugin or MCP server to someone | `report --online` and read its row; check it is not installed from a registry |
 | act on the weekly "Supply-chain report" issue | `report --online` to confirm, then fix in a PR |
 | act on the weekly "Reference health" issue or its bot PR | `references --online --state <the last artifact's JSON>` to confirm; fix a link in a PR, or accept a false soft-404 by fingerprint |
@@ -109,7 +109,7 @@ which should come from `rows --online`.
 - no high or critical advisory without a fix and a plan;
 - the repository is not archived, deleted or moved without an explanation;
 - a licence we can use: MIT, BSD or Apache-2.0 to incorporate; GPL and AGPL as external programs only; no licence or
-  non-commercial means ideas only (the policy in `upstreams/registry.yaml`);
+  non-commercial means ideas only (the policy in `vendor/upstreams/registry.yaml`);
 - a Scorecard below 4, or none, means you read its code and maintenance yourself and say so in the PR;
 - for each new dependency, a "can we drop it?" note in the PR: what it does that the standard library or an existing
   dependency cannot, and which extra it lives in. Fewer dependencies is the goal.
@@ -141,7 +141,7 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 </details>
 
 Use visible statuses on the site (`unmaintained`, `moved`, `under review`, `gone`): the catalogue shows the `status`
-of an `upstreams/registry.yaml` entry or a `research/landscape.json` library as its badge (other entries: say it in
+of a `vendor/upstreams/registry.yaml` entry or a `research/landscape.json` library as its badge (other entries: say it in
 their notes). A flagged entry stays listed with its status until a person decides to drop it.
 
 ## Accepting a finding

@@ -79,7 +79,7 @@ def export_tree(url, sha, dest: Path, exclude):
 
 def cmd_import(a):
     m = manifest(); e = entry(m, a.name)
-    notices = ROOT / 'THIRD_PARTY_NOTICES.md'
+    notices = ROOT / 'vendor' / 'THIRD_PARTY_NOTICES.md'
     if notices.exists():                      # a notices file `notices` would refuse stops the import before it starts
         notices_text(notices.read_text(), m['projects'])
     sha = a.sha or remote_head(e['url'])
@@ -151,7 +151,7 @@ def notices_text(text, projects):
 
 
 def cmd_notices(_):
-    path = ROOT / 'THIRD_PARTY_NOTICES.md'
+    path = ROOT / 'vendor' / 'THIRD_PARTY_NOTICES.md'
     projects = manifest()['projects']
     text = notices_text(path.read_text(), projects) if path.exists() else '\n'.join(NOTICES_HEAD + vendored_table(projects)) + '\n'
     path.write_text(text)

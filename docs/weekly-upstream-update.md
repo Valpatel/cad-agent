@@ -24,6 +24,6 @@ flowchart TD
 5. If the evidence supports adoption, run `python tools/vendor_sync.py accept <name>`, commit the report and registry changes, and obtain independent review plus required CI. Merge through `dev`; releases reach `main` through the release PR and gates. An `accept` command records the reviewed security fingerprint baseline; it does not merge the update.
 6. Record the outcome in the normal CHANGELOG fragment and the issue. Offer generally useful patch fixes upstream only when authorised to contact others.
 
-The earlier root-level procedure incorrectly described merging directly to `main`; this page follows the current [branch and gate rules](../.github/CONTRIBUTING.md#gates). The registry lives at [upstreams/registry.yaml](../upstreams/registry.yaml); the source tool's docstring states what import and accept actually change.
+The earlier root-level procedure incorrectly described merging directly to `main`; this page follows the current [branch and gate rules](../.github/CONTRIBUTING.md#gates). The registry lives at [vendor/upstreams/registry.yaml](../vendor/upstreams/registry.yaml); the source tool's docstring states what import and accept actually change.
 
 [Guides](README.md) · [Tools](../tools/README.md) · [Supply chain](supply-chain.md) · [Repository](../README.md)

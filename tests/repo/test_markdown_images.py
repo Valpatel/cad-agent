@@ -38,7 +38,7 @@ MAGIC = {
 # The site (tools/build-site.mjs) renders these pages and copies only images under docs/img/, so an image elsewhere
 # would show on GitHub and break on cad-agent.valpatel.com.
 SITE_PAGE = re.compile(
-    r"^(?:docs/[^/]+\.md|README\.md|\.github/CONTRIBUTING\.md|THIRD_PARTY_NOTICES\.md|skills/[^/]+/SKILL\.md|agents/[^/]+\.md"
+    r"^(?:docs/[^/]+\.md|README\.md|\.github/CONTRIBUTING\.md|vendor/THIRD_PARTY_NOTICES\.md|skills/[^/]+/SKILL\.md|agents/[^/]+\.md"
     r"|lessons/(?:[a-z0-9-]+/)?[^/]+\.md|research/[^/]+\.md)$"
 )
 
@@ -114,7 +114,8 @@ def problems(page: str, text: str, files: set[str], read=lambda p: (ROOT / p).re
 
 def test_every_markdown_image_exists_and_is_an_image():
     files = tracked()
-    pages = sorted(f for f in files if f.endswith(".md") and not f.startswith("vendor/"))
+    metadata = {"vendor/README.md", "vendor/upstreams/README.md", "vendor/THIRD_PARTY_NOTICES.md"}
+    pages = sorted(f for f in files if f.endswith(".md") and (not f.startswith("vendor/") or f in metadata))
     assert "README.md" in pages
     bad = [p for page in pages for p in problems(page, (ROOT / page).read_text(encoding="utf-8", errors="replace"), files)]
     assert not bad, "broken images:\n" + "\n".join(bad)
@@ -136,6 +137,7 @@ def test_every_markdown_image_exists_and_is_an_image():
         ("docs/a.md", "![x](<img/my gone.png>)", {}, "not in git"),
         ("docs/a.md", '<source srcset="img/p.png 1x, img/gone.png 2x">', {"docs/img/p.png": b"\x89PNG\r\n\x1a\n"}, "gone.png"),
         ("README.md", "![x](examples/p.png)", {"examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
+        ("vendor/THIRD_PARTY_NOTICES.md", "![x](../examples/p.png)", {"examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
     ],
 )
 def test_each_rule_catches_its_break(page, text, data, expect):

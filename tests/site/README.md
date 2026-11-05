@@ -11,7 +11,7 @@ flowchart TD
     U["website-*.test.mjs"] -->|"imports"| T["tools/build-site.mjs<br/>tools/site-*.mjs"]
     B["website-*-browser.mjs<br/>site-*.mjs"] -->|"serves"| D["dist/<br/>the built site"]
     T --> D
-    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["research/<br/>upstreams/"]
+    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["research/<br/>vendor/upstreams/"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c

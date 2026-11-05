@@ -70,7 +70,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site-catalog.mjs` builds from the
-   repo), the [landscape survey](../research/landscape.md), [`upstreams/registry.yaml`](../upstreams/registry.yaml), the
+   repo), the [landscape survey](../research/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
    skills in [`skills/`](../skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.

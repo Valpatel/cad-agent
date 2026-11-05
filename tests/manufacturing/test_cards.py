@@ -311,6 +311,21 @@ def test_choose_refuses_what_it_does_not_cover():
         cards.choose("joining", load=-1)
 
 
+@pytest.mark.parametrize("field", ["load", "cycles", "qty"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_choose_refuses_nonfinite_numeric_inputs(field, value):
+    values = {**ROWS["repeated"], field: value}
+    with pytest.raises(cards.CardError, match=rf"{field} must be a finite number"):
+        cards.choose("joining", **values)
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf"])
+def test_nonfinite_cli_load_is_an_error_not_a_decision_or_json(value, capsys):
+    code, out, err = _run(["choose", "joining", f"--load={value}", "--material", "petg", "--json"], capsys)
+    assert code == 2 and not out
+    assert "load must be a finite number" in err
+
+
 # ----------------------------------------------------------------------------- planted defects
 
 def _catalogued(reg):
@@ -386,10 +401,12 @@ def test_the_commands_exit_2_with_a_reason(capsys):
 
 
 def test_json_is_the_same_card(capsys):
+    # Python otherwise accepts NaN and Infinity extensions that strict JSON consumers refuse.
+    strict = lambda text: json.loads(text, parse_constant=lambda token: pytest.fail(f"nonstandard JSON: {token}"))
     code, out, _ = _run(["rules", "insert-hole", "--process", "fdm", "--material", "petg-cf", "--json"], capsys)
     assert code == 0
-    got = json.loads(out)
+    got = strict(out)
     assert [ln["rule"] for ln in got["lines"]] == \
         [ln["rule"] for ln in cards.card("insert-hole", process="fdm", material="petg-cf")["lines"]]
     code, out, _ = _run(SAMPLES["choose-joining-fdm-petg-200n-50"] + ["--json"], capsys)
-    assert json.loads(out)["choice"] == "heat-set-insert"
+    assert code == 0 and strict(out)["choice"] == "heat-set-insert"

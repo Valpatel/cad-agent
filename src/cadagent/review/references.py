@@ -655,6 +655,14 @@ class _Schema2:
         if cls not in LADDER:
             return out                                 # reported by record_problems as a vocabulary problem
         rank = LADDER.index(cls)
+        lowered = _get(d, ("evidence", "lowered"))
+        if lowered is not None:          # written by tools/references_health_apply.py when a link stays dead (#323)
+            if not isinstance(lowered, dict) or lowered.get("from") not in LADDER or _date(lowered.get("date")) is None \
+                    or not str(lowered.get("why") or "").strip():
+                out.append("evidence.lowered needs from (a ladder rung), date (ISO) and why")
+            elif LADDER.index(lowered["from"]) <= rank:
+                out.append(f"evidence.lowered.from {lowered['from']} is not above the class {cls}: drop `lowered` when "
+                           "a record is promoted again")
         if ref.file == self.reg.core_file and rank == 0 and ref.kind == "source":
             out.append("a core entry is read (it has a dated `verified` note); a snippet-only record goes in a shard")
         if rank >= LADDER.index("read") and not _date(d.get("verified")):

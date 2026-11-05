@@ -215,11 +215,13 @@ def test_the_import_is_deterministic_and_idempotent(checkout, capsys):
     assert _run(root, data, "--check") == 0
     assert first == {p.name: p.read_bytes() for p in (root / "research" / "references").glob("*.yaml")}
     shard = root / "research" / "references" / "projects-wheel.yaml"
-    shard.write_text(shard.read_text().replace("role: reference", "role: leader"))
+    changed = copy.deepcopy(DATA)
+    changed["S"]["0"]["role"] = "leader"                                    # the map changes an untouched record
+    data.write_text(json.dumps(changed))
     capsys.readouterr()
     assert _run(root, data, "--check") == 1
     assert "would change: research/references/projects-wheel.yaml" in capsys.readouterr().out
-    assert shard.read_text() != first["projects-wheel.yaml"].decode()         # --check writes nothing
+    assert shard.read_bytes() == first["projects-wheel.yaml"]                 # --check writes nothing
 
 
 def test_a_changed_row_under_a_neutral_rewrite_stops_the_import(checkout, monkeypatch):
@@ -274,3 +276,89 @@ def test_ids_are_unique_and_kebab_case():
     assert [ids("taken"), ids("taken"), ids("new")] == ["taken-2", "taken-3", "new"]
     assert imp.slug("Ball-Balancing-Robot: v2 & more!") == "ball-balancing-robot-v2-and-more"
     assert len(imp.slug("word " * 40)) <= 60 and imp.norm_url("https://www.X.org/a/") == imp.norm_url("http://x.org/a")
+
+
+def _edit(root, shard, rid, fn):
+    """Edit one record the way a tool does (load, change, dump in the importer's layout)."""
+    f = root / "research" / "references" / shard
+    text = f.read_text()
+    head = text.split("\nsources:\n", 1)[0] + "\nsources:\n"
+    out = []
+    for i, seg in imp.records_as_written(text):
+        if i == rid:
+            rec = yaml.safe_load(seg)[0]
+            fn(rec)
+            seg = imp.dump([rec])
+        out.append(seg)
+    f.write_text(head + "".join(out))
+
+
+def _unconfirm(rec):                        # tools/references_health_apply.py: the corroborating page changed
+    rec["claims"][0]["status"] = "unconfirmed"
+    rec["claims"][0]["evidence"] += " 2026-11-16: the page of x changed; read it again."
+
+
+def _move(rec):                             # tools/references_health_apply.py: a permanent move
+    rec["mirrors"] = [rec["url"]]
+    rec["url"] = "https://shop.example.org/new-snap-guide.pdf"
+
+
+# Each edit, by a person or a tool, on a record the map makes; the map then changes that record's row.
+EDITS = {
+    "promotion": lambda r: r["evidence"].update({"class": "read"}),
+    "summary fixed by hand, no verified": lambda r: r.update({"summary": "Snap-fit strain limits, fixed by hand."}),
+    "claim withdrawn by the link check": _unconfirm,
+    "url moved by the link check": _move,
+}
+
+
+@pytest.mark.parametrize("what", list(EDITS))
+def test_a_reimport_keeps_every_edit_and_still_applies_the_map(checkout, capsys, what):
+    """#343 review: the import owns its shards but never undoes an edit, by a person or a tool. An edited record, a
+    hand-added one and a comment survive a second import byte for byte; a change in the map to a record nobody
+    touched still lands."""
+    root, data = checkout
+    _run(root, data)
+    mould = root / "research" / "references" / "guides-mould.yaml"
+    _edit(root, "guides-mould.yaml", "shop-snap-guide", EDITS[what])
+    hand = ("# a person's note under the last record\n- id: hand-added-record   # written by a person\n"
+            "  title: A Guide Read By Hand\n  summary: kept exactly, comment and all.\n")
+    mould.write_text(mould.read_text() + hand)
+    before = mould.read_text()
+    capsys.readouterr()
+    assert _run(root, data, "--check") == 0
+    changed = copy.deepcopy(DATA)
+    changed["PG"][0]["gist"] = "Snap-fit strain limits, revised."         # the edited record's row
+    changed["PG"][0]["chk"]["evidence"] = "A third maker's table agrees."
+    changed["D"][2][7] = "Gearbox generator, now with a test rig."        # a record nobody touched
+    data.write_text(json.dumps(changed))
+    assert _run(root, data) == 0
+    out = capsys.readouterr().out
+    kept = next(line for line in out.splitlines() if line.startswith("kept as written"))
+    assert "shop-snap-guide" in kept and "other-tiny-gearbox" not in kept
+    assert "not in the map, kept as written: hand-added-record" in out
+    after = mould.read_text()
+    assert after.split("sources:\n", 1)[1] == before.split("sources:\n", 1)[1]        # every record, byte for byte
+    assert "revised" not in after and "third maker" not in after
+    assert _records(root)["other-tiny-gearbox"][1]["summary"].startswith("Gearbox generator, now with a test rig.")
+    assert _run(root, data, "--check") == 0
+
+
+def test_every_written_record_carries_the_digest_of_its_text(checkout):
+    root, data = checkout
+    _run(root, data)
+    for f in (root / "research" / "references").glob("*.yaml"):
+        if f.name not in refs.NOT_SHARDS:
+            for rid, text in imp.records_as_written(f.read_text()):
+                assert not imp.touched(text, None), rid
+                assert imp.touched(text.replace("\n", "\n  # a comment\n", 1), None), rid
+    reg = refs.load(root / "research" / "references.yaml")
+    assert not reg.problems(root), reg.problems(root)
+
+
+def test_a_record_with_no_digest_is_the_maps_only_while_it_is_exactly_the_maps():
+    rec = {"id": "x", "summary": "As the map has it.", "used_for": []}
+    text = imp.dump([rec])
+    assert not imp.touched(text, rec)
+    assert imp.touched(text, {**rec, "summary": "The map changed."})
+    assert imp.touched(imp.dump([{**rec, "confidence": {"level": "low"}, "summary": "edited"}]), rec)

@@ -819,3 +819,100 @@ def test_the_cli_prints_the_fix(tmp_path):
     assert ("fix: an ISO 7089 washer between the part and the insert and one under the head: at most 0.30 N m, "
             "774 N preload (clamped on washer)") in r.stdout
     assert "spirol-cl6000-m3" not in r.stdout                       # a limiter that fails is not named
+
+
+# ----------------------------------------------------------------------------- the printed hole, by filament and nozzle
+# (#323 phase 7). Golden vectors from the sources' numbers; each planted defect is a joint drawn with the old,
+# filament-blind hole or a boss too thin for the nozzle, which the check must catch.
+M3 = "mcmaster-94459A140"                    # McMaster's M3 x 5.7: the maker's hole 4.0 mm, CNC Kitchen's own size
+
+
+def test_filler_increase_is_spirol_s_two_steps_interpolated():
+    # SPIROL's white paper: +0.08 mm at 15 % filler or more, +0.15 mm at 35 % or more, interpolate between
+    for pct, add in ((0, 0.0), (14.9, 0.0), (15, 0.08), (25, 0.115), (35, 0.15), (60, 0.15)):
+        assert I.filler_increase(pct) == pytest.approx(add, abs=1e-12), pct
+    for bad in (-1, 101, "20", True):
+        with pytest.raises(ValueError):
+            I.filler_increase(bad)
+
+
+def test_the_hole_numbers_come_from_the_process_profile():
+    import yaml
+    rules = {r["id"]: r for r in yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text())["rules"]}
+    filler = rules["fdm-insert-hole-filler-spirol"]
+    assert (filler["min"], filler["max"]) == (0.08, 0.15)
+    assert rules["fdm-hole-undersize-cnckitchen-2019"]["value"] == 0.1
+    assert I.perimeter_counts(I.insert(M3)) == {"lulzbot": rules["fdm-insert-wall-perimeters-lulzbot"]["min"],
+                                                 "spirol": 3, "padt": [4, 6], "governs": "spirol", "least": 3}
+
+
+def test_printed_hole_with_no_inputs_is_cnc_kitchen_s_4_2_mm():
+    h = I.printed_hole(I.insert(M3))
+    assert h["cad_mm"] == 4.2 and h["cad_band_mm"] == [4.2, 4.3]          # CNC Kitchen 2026: 4.0 + 0.2 to 0.3
+    assert h["target_mm"] == pytest.approx(3.95) and h["undersize_mm"] == 0.25
+    assert h["undersize_published_mm"] == [0.1, 0.25]                       # 2019 and 2026: the range is kept
+    assert I.hole_design(I.insert(M3))["diameter_mm"] == 4.2 and "printed" not in I.hole_design(I.insert(M3))
+
+
+def test_a_coupon_s_undersize_governs():
+    h = I.printed_hole(I.insert(M3), "pla-bambu-basic", undersize_mm=0.1)   # CNC Kitchen 2019's printer
+    assert h["cad_mm"] == 4.05 and h["cad_band_mm"] == [4.05, 4.15] and "coupon" in h["undersize_basis"]
+
+
+def test_a_filled_filament_grows_the_hole_and_an_unknown_content_widens_the_band():
+    known = I.printed_hole(I.insert(M3), "pa6-cf20-polymaker-dry", filler_pct=30)
+    assert known["cad_mm"] == 4.333 and known["cad_band_mm"] == [4.333, 4.433]   # 4.0 + 0.1325 + 0.2 to 0.3
+    unknown = I.printed_hole(I.insert(M3), "pa6-cf20-polymaker-dry")
+    assert unknown["filled"] and unknown["cad_mm"] == 4.2 and unknown["cad_band_mm"] == [4.2, 4.45]
+    assert I.printed_hole(I.insert(M3), "pla-bambu-basic")["cad_band_mm"] == [4.2, 4.3]
+
+
+def test_the_nozzle_sets_a_floor_and_the_mesh_its_circle():
+    # a wide track in a hole with no measured undersize: the RepRap arc balance is the floor
+    h = I.printed_hole(I.insert(M3), "pla-bambu-basic", line_mm=0.8, undersize_mm=0.0)
+    assert h["undersize_mm"] == pytest.approx(math.sqrt(3.95 ** 2 + 0.8 ** 2) - 3.95, abs=1e-4)     # 0.0802
+    assert "arc floor" in h["undersize_basis"]
+    # exact, not one step: the drawn hole prints, by the same balance, at the 3.95 mm wanted
+    assert fx.arc_printed_diameter(h["cad_mm"] * 1e-3, 0.8e-3) / 1e-3 == pytest.approx(3.95, abs=1e-3)
+    assert I.printed_hole(I.insert(M3), line_mm=0.42)["cad_mm"] == 4.2    # under the 0.25 mm: it does not bind
+    coarse = I.printed_hole(I.insert(M3), facets=12)
+    assert coarse["cad_mm"] == pytest.approx(4.2 / math.cos(math.pi / 12), abs=1e-3)   # 4.348: flats on 4.2
+    assert coarse["facet_mm"] == pytest.approx(4.2 * (1 - math.cos(math.pi / 12)), abs=1e-4)
+    assert coarse["polyhole"] == {"facets": 8, "diameter": pytest.approx(3.95 / math.cos(math.pi / 8), abs=1e-4)}
+    assert any("EPFL" in w for w in I.printed_hole(I.insert(M3), "petg-bambu-basic")["why"])
+
+
+def test_planted_defect_a_filled_joint_drawn_with_the_unfilled_hole():
+    common = dict(boss_outside_mm=9.5, clamped={"material": "metal"})
+    rows = lambda r: {c["check"]: c for c in r["checks"]}                    # noqa: E731
+    bad = rows(I.check_joint(M3, "pa6-cf20-polymaker-dry", hole_mm=4.2, filler_pct=30, **common))
+    assert bad["hole diameter"]["verdict"] == "warn" and bad["hole diameter"]["limit"] == [4.333, 4.433]
+    good = rows(I.check_joint(M3, "pa6-cf20-polymaker-dry", filler_pct=30, **common))
+    assert good["hole diameter"]["verdict"] == "pass" and good["printed hole"]["verdict"] == "pass"
+    unknown = rows(I.check_joint(M3, "pa6-cf20-polymaker-dry", **common))
+    assert unknown["printed hole"]["verdict"] == "warn" and "coupon" in unknown["printed hole"]["detail"]
+    # the hole coupon in this filament settles it as well as the content does (#343 review)
+    coupon = rows(I.check_joint(M3, "pa6-cf20-polymaker-dry", undersize_mm=0.15, **common))
+    assert coupon["printed hole"]["verdict"] == "pass" and "your coupon" in coupon["printed hole"]["detail"]
+
+
+def test_planted_defect_a_coarse_mesh_drawn_at_the_round_hole():
+    rows = {c["check"]: c for c in I.check_joint(M3, "pla-bambu-basic", hole_mm=4.2, facets=12, boss_outside_mm=9.5,
+                                                 clamped={"material": "metal"})["checks"]}
+    assert rows["hole diameter"]["verdict"] == "warn"
+
+
+def test_planted_defect_a_boss_too_thin_for_the_nozzle():
+    def perimeters(outside, line):
+        r = I.check_joint(M3, "pla-bambu-basic", boss_outside_mm=outside, line_mm=line, clamped={"material": "metal"})
+        return next(c for c in r["checks"] if c["check"] == "boss perimeters")
+    thin = perimeters(7.2, 0.8)              # (7.2 - 4.2) / 2 = 1.5 mm: one whole 0.8 mm line, SPIROL asks three
+    assert thin["verdict"] == "warn" and thin["value"] == 1 and thin["limit"] == 3
+    ok = perimeters(9.5, 0.42)               # 2.65 mm: six whole 0.42 mm lines
+    assert ok["verdict"] == "pass" and ok["value"] == 6 and "gap fill" in ok["detail"]
+    assert I.boss_design(I.insert(M3), 0.42)["solid_outside_mm"] == pytest.approx(4.2 + 2 * 7 * 0.42, abs=1e-9)
+
+
+def test_defaults_add_no_rows_so_existing_results_stand():
+    r = I.check_joint(M3, "pla-bambu-basic", boss_outside_mm=9.5, clamped={"material": "metal"})
+    assert not {"printed hole", "boss perimeters"} & {c["check"] for c in r["checks"]}

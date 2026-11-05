@@ -29,9 +29,12 @@ export const SCHEMA = 'cad-agent-references/1';
 export const CORE = 'research/references.yaml';
 export const DIR = 'research/references/';
 export const EXPERTS = 'docs/experts.md';
-const NOT_SHARDS = new Set(['vocab.yaml', 'coverage.yaml']);
+/** The files in DIR that hold no records: cadagent.review.references NOT_SHARDS (a test pins the two together). */
+export const NOT_SHARDS = new Set(['vocab.yaml', 'coverage.yaml']);
 /** The evidence ladder, lowest first (research/references/vocab.yaml `evidence_class`), and the confidence levels. */
 export const LADDER = ['snippet-only', 'read', 'verified-at-source', 'encoded', 'measured'];
+/** A shard record someone has read at source (`read` or higher) is a source; below, catalogued (references.is_read). */
+export const isRead = r => Boolean(isObj(r) && isObj(r.evidence) && LADDER.indexOf(r.evidence.class) >= 1);
 export const LEVELS = ['unknown', 'low', 'medium', 'high'];
 export const UNPLACED = 'unplaced';
 /** A tag in prose: `[ref:<kebab-case id>]`, not already a link (cadagent.review.references reads the same form). */
@@ -88,9 +91,7 @@ export async function loadReferences({ files, read }) {
         records.set(r.id, extend(base, r, f));
       } else {
         if (records.has(r.id)) throw new Error(`${f}: ${r.id} is also in ${records.get(r.id).file}`);
-        // A shard record someone has read (evidence `read` or higher) is a source, as in the Python registry.
-        const read = isObj(r.evidence) && LADDER.indexOf(r.evidence.class) >= 1;
-        records.set(r.id, { ...r, status: read ? 'source' : 'catalogued', file: f });
+        records.set(r.id, { ...r, status: isRead(r) ? 'source' : 'catalogued', file: f });
       }
     }
   }

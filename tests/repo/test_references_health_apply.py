@@ -160,9 +160,10 @@ def test_other_moves_are_listed_not_applied(root, final, permanent, why):
 
 def test_a_changed_page_unconfirms_the_claims_it_alone_corroborates(root):
     head, doc = shard(root)
-    x, z = recs(doc)[0], recs(doc)[1]
+    # catalogued records: the shard's promoted ones (#323 sweeps) are not this rule's case
+    x, z, w = [r for r in recs(doc) if r["evidence"].get("class") == "snippet-only"][:3]
     z["claims"] = [{"text": "Hole 4.0 mm for M3", "status": "corroborated", "evidence": "x agrees", "corroborated_by": [x["id"]]},
-                   {"text": "Depth 2 d", "status": "corroborated", "corroborated_by": [x["id"], recs(doc)[2]["id"]]}]
+                   {"text": "Depth 2 d", "status": "corroborated", "corroborated_by": [x["id"], w["id"]]}]
     save(root, head, doc)
     h = health(**{x["id"]: entry(x["url"], "ok", 1, changed_on="2026-11-16", sha256="a" * 64)})
     files, p = apply(root, h)

@@ -215,3 +215,76 @@ def insert_limited_torque(diameter: float, pitch: float, path: str, pull_out: fl
     return {"torque": T, "governed_by": governed, "ceilings": ceilings,
             "preload": {"low": T / (k["high"] * d), "high": T / (k["low"] * d)},
             "thread_share": share, "nut_factor": k, "path": path, "margin": margin}
+
+
+# ----------------------------------------------------------------------------- the printed hole (#323 phase 7)
+# Why a printed hole comes out small, in the two effects that have a closed form. Neither is the whole story: Nophead
+# found corner cutting the larger effect on his machines, and it has none, so cadagent.mechanical.inserts.printed_hole
+# takes a measured undersize and uses these as a floor and as a correction for the STL's facets.
+_PRINTED = ("a fused-filament hole; the slicer lays the outer perimeter's centre line half a track inside the outline, "
+            "as it does for a straight wall")
+
+
+def _facets(n: Any) -> int:
+    if not (isinstance(n, int) and not isinstance(n, bool) and n >= 3):
+        raise ValueError(f"facets must be a whole number of at least 3, not {n!r}")
+    return n
+
+
+@formula(units={"diameter": "m (the circle in CAD)", "facets": "count (the polygon's sides in the exported mesh)"},
+         returns="diameter across the flats of the polygon whose corners lie on the circle, m: the hole the mesh "
+                 "holds",
+         limits=("a regular polygon with its vertices on the circle, as CAD exports a cylinder to STL; a mesh that "
+                 "puts the flats on the circle has no faceting error",),
+         source=cite("nophead-polyholes", "the faceting formula: the polygon's sides lie inside the circle and shrink "
+                     "it by cos(pi / n); 10 vertices leave 5 %, 22 leave 1 %"))
+def facet_diameter(diameter: float, facets: int) -> float:
+    """The hole a faceted mesh holds: d cos(pi / n) across the flats, for an n-sided polygon on the circle."""
+    return _positive("diameter", diameter) * math.cos(math.pi / _facets(facets))
+
+
+@formula(units={"diameter": "m (the hole wanted)"},
+         returns="dict: facets (n = max(round(2 d / mm), 3), rounded half up as OpenSCAD's round) and diameter (the "
+                 "circle to draw it on, d / cos(pi / n), m), so the polygon's flats touch the hole wanted",
+         limits=("Nophead's rule from drill-gauged prints of 1 to 10.5 mm holes on two of his machines (0.375 mm "
+                 "filament from a 0.4 mm nozzle, 0.6 mm from a 0.5 mm nozzle); with no more than 2 d vertices the "
+                 "rounded corners clear the circle. Not tested with heat-set inserts",),
+         source=cite("nophead-polyholes", "the polyhole formula: twice the hole size in mm vertices, the radius divided "
+                     "by cos(pi / n)"))
+def polyhole(diameter: float) -> Dict[str, Any]:
+    """Nophead's polyhole: draw a hole of d mm as a polygon of max(round(2 d), 3) sides on a circle of d / cos(pi/n),
+    so its flats land on the hole and its few corners are far enough out that rounding them does not shrink it."""
+    d = _positive("diameter", diameter)
+    n = max(int(math.floor(2.0 * d / 1e-3 + 0.5)), 3)       # OpenSCAD's round: half away from zero, d > 0
+    return {"facets": n, "diameter": d / math.cos(math.pi / n)}
+
+
+@formula(units={"radius": "m (of the hole)", "track": "m (the extruded track's width)"},
+         returns="radius the track's centre line must follow, m, so the plastic on the inside of the arc is what a "
+                 "straight track of the same length would put there",
+         limits=("the area balance of a track bent round an arc; Nophead found it under-predicts the shrink he "
+                 "measured (corner cutting adds to it)", _PRINTED),
+         source=cite("reprap-arc-compensation", "the arc compensation formula: pi r t = pi (r^2 - R^2), so "
+                     "r = (t + sqrt(t^2 + 4 R^2)) / 2"))
+def arc_path_radius(radius: float, track: float) -> float:
+    """The compensated path radius for a hole of radius R printed with a track t wide: r = (t + sqrt(t^2 + 4 R^2)) / 2,
+    a little more than the R + t / 2 a straight wall takes."""
+    R, t = _positive("radius", radius), _positive("track", track)
+    return (t + math.sqrt(t * t + 4.0 * R * R)) / 2.0
+
+
+@formula(units={"diameter": "m (of the hole in CAD)", "track": "m (the extruded track's width)"},
+         returns="diameter the hole comes out at when its path is offset half a track, as for a straight wall, m: "
+                 "sqrt(D^2 - t^2)",
+         limits=("the same area balance solved the other way: a path at R + t / 2 leaves an edge at sqrt(R^2 - t^2 / "
+                 "4); a floor on the shrink, not a prediction of it (corner cutting, shrinkage and the mesh add to "
+                 "it)", _PRINTED),
+         source=cite("reprap-arc-compensation", "the arc compensation formula solved for the hole a path at "
+                     "R + t / 2 leaves: pi (R + t / 2) t = pi ((R + t / 2)^2 - Re^2)"))
+def arc_printed_diameter(diameter: float, track: float) -> float:
+    """The hole an uncompensated arc leaves: the path at R + t / 2 puts more plastic inside the arc than a straight
+    track would, and the edge closes to sqrt(D^2 - t^2)."""
+    D, t = _positive("diameter", diameter), _positive("track", track)
+    if t >= D:
+        raise ValueError(f"track must be narrower than the hole: {track!r} against {diameter!r}")
+    return math.sqrt(D * D - t * t)

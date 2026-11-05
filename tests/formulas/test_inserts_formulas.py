@@ -320,3 +320,61 @@ def test_a_stiff_washer_bears_over_its_whole_face_and_a_long_one_lifts_off():
     assert flat["overhang"] == 0 and flat["area"] == pytest.approx(math.pi / 4 * (6.64 ** 2 - 3.4 ** 2) * MM ** 2)
     with pytest.raises(ValueError):
         fx.washer_bearing(**{**W, "hole_diameter": 7.0 * MM})
+
+
+# ----------------------------------------------------------------------------- the printed hole (#323 phase 7)
+# Golden vectors from the sources' own numbers: Nophead's Polyholes (2011) and the RepRap wiki's Arc Compensation table.
+
+# The wiki's table for a 0.5 mm track, R -> r in mm, printed to two decimals (read 2026-11-04).
+ARC_TABLE_T05 = [(1, 1.28), (1.5, 1.77), (2, 2.27), (2.5, 2.76), (3, 3.26), (3.5, 3.76), (4, 4.26), (4.5, 4.76),
+                 (5, 5.26), (5.5, 5.76), (6, 6.26), (6.5, 6.75), (7, 7.25), (7.5, 7.75), (8, 8.25), (8.5, 8.75),
+                 (9, 9.25), (9.5, 9.75), (10, 10.25)]
+
+
+def test_facet_diameter_reproduces_nophead_s_faceting_error():
+    # "You need 10 vertices to reduce the error to 5% and 22 for 1%"
+    assert 1 - fx.facet_diameter(1.0, 10) == pytest.approx(0.0489, abs=1e-4)          # about 5 %
+    assert 1 - fx.facet_diameter(1.0, 22) == pytest.approx(0.0102, abs=1e-4)          # about 1 %
+    assert fx.facet_diameter(4.2 * MM, 4) == pytest.approx(4.2 * MM * math.sqrt(0.5), rel=1e-12)   # a square's flats
+    for bad in [(4 * MM, 2), (4 * MM, 3.0), (4 * MM, True), (0.0, 12)]:
+        with pytest.raises(ValueError):
+            fx.facet_diameter(*bad)
+
+
+def test_polyhole_takes_twice_the_size_in_mm_and_puts_the_flats_on_the_hole():
+    assert fx.polyhole(1 * MM) == {"facets": 3, "diameter": pytest.approx(2 * MM, rel=1e-12)}   # 1 / cos 60
+    four = fx.polyhole(4 * MM)
+    assert four["facets"] == 8 and four["diameter"] == pytest.approx(4.32957 * MM, rel=1e-5)
+    assert fx.polyhole(10.5 * MM)["facets"] == 21
+    for d in (1.0, 2.5, 4.0, 6.0, 10.5):
+        p = fx.polyhole(d * MM)
+        assert fx.facet_diameter(p["diameter"], p["facets"]) == pytest.approx(d * MM, rel=1e-12)
+
+
+def test_planted_defect_polyhole_rounds_halves_up_as_openscad_does():
+    # 3.25 mm -> 2 d = 6.5: OpenSCAD's round() gives 7. Python's round() (to even) would give 6, a planted defect the
+    # golden vector catches.
+    assert fx.polyhole(3.25 * MM)["facets"] == 7
+    assert round(6.5) == 6                                  # what a port with Python's round would have drawn
+
+
+def test_arc_path_radius_reproduces_the_wiki_s_table():
+    for R, r in ARC_TABLE_T05:
+        assert fx.arc_path_radius(R * MM, 0.5 * MM) / MM == pytest.approx(r, abs=0.005), R
+
+
+def test_planted_defect_the_straight_wall_offset_misses_the_table():
+    # r = R + t / 2 is right for a straight wall; at R = 1 mm it gives 1.25, where the table says 1.28
+    assert abs((1 + 0.25) - ARC_TABLE_T05[0][1]) > 0.02
+    assert abs(fx.arc_path_radius(1 * MM, 0.5 * MM) / MM - ARC_TABLE_T05[0][1]) <= 0.005
+
+
+def test_arc_printed_diameter_is_the_same_balance_solved_the_other_way():
+    # a path at R + t / 2 leaves an edge Re for which the compensated path is that same R + t / 2
+    for D, t in ((4.2, 0.45), (3.46, 0.8), (8.0, 0.6)):
+        De = fx.arc_printed_diameter(D * MM, t * MM)
+        assert fx.arc_path_radius(De / 2, t * MM) == pytest.approx(D * MM / 2 + t * MM / 2, rel=1e-12)
+        assert De == pytest.approx(math.sqrt(D * D - t * t) * MM, rel=1e-12)
+    assert 4.2 - fx.arc_printed_diameter(4.2 * MM, 0.45 * MM) / MM == pytest.approx(0.0242, abs=1e-4)
+    with pytest.raises(ValueError):
+        fx.arc_printed_diameter(0.4 * MM, 0.45 * MM)

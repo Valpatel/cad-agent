@@ -82,10 +82,12 @@ do not have to recall it, in one call and about 2 KB:
   costs, and the function or gate that enforces it. `--why <rule>` expands one rule to its sources.
 - `cad-agent choose joining --load N --cycles N --material M --process P` makes the joining call from a cited
   decision table. It gives the choice, the reasons, the runner-up and when that would win, and the cards to design to.
+  `--load` is required. If the card says "not decided", give what it names as missing, or size the joint yourself
+  from a test or a cited source and record that as a decision.
 
-Draw the MUST lines exactly. Use a guideline's wiggle room to make the part cheaper or simpler unless a function
-needs it tight. Where a card prints `?` or `gap:`, no source covers that point, so record your own call as a
-decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded
+Hold the MUST lines on their non-negotiable side; a MUST line's wiggle says which side, if any, is free. Use a
+guideline's wiggle room to make the part cheaper or simpler unless a function needs it tight. Where a card prints `?`
+or `gap:`, no source covers that point, so record your own call as a decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded
 rules.
 
 ### 3. Declare the geometry facts in the build script

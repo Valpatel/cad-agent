@@ -22,11 +22,18 @@ flowchart TD
 
 Reviewed `dev` at `04704a41` and released `main` at `3a4ec137` (v0.20.0), on 2026-11-05 UTC. This is a recovery snapshot, not a live dashboard. It inspected all 36 open issues, all 50 local remote-tracking refs present after fetch, all 26 local branches and all 9 pre-existing worktrees. The new recovery worktree is separate. No branch, stash, worktree or issue was deleted or closed.
 
+<details>
+<summary>PR/worktree evidence and uninspected jobs</summary>
+
 PR [#346](https://github.com/Valpatel/cad-agent/pull/346), `feat/rule-cards`, was the only open PR at inventory time. Head `c534d039`: core 3.10/3.12, full, supply-chain and Chromium passed; WebKit failed. Its review discussion and exact-head recheck must be reconciled before merge. The last #323 checkpoint names an earlier head and cannot establish the current head’s readiness.
 
 The main checkout was clean at `80379910`, 1,247 commits behind its remote. All pre-existing worktrees were clean when read; this is not proof nobody is using them. One historical stash remains. Local integration merges are not on remotes; preserve them and their owning sessions rather than publishing them without context. Running remote jobs were **not inspected**: re-check any referenced job before restarting it. No physical tests were run by this audit.
 
-## Live server branches (2026-11-05T22:21:30Z)
+
+</details>
+
+<details>
+<summary>Live server branches (2026-11-05T22:21:30Z) — seven exact heads</summary>
 
 `git ls-remote --heads origin` returned **7 live server heads** below. This is separate from the **50 local remote-tracking refs** in the earlier table: those include historical refs for branches already removed from the server. They were preserved locally. Their presence is not evidence of 50 open branches, and this audit identifies no historical server branch that still needs deletion. The live set also includes new branches created by the current parallel cleanup; no earlier live-head count is inferred.
 
@@ -41,6 +48,9 @@ The main checkout was clean at `80379910`, 1,247 commits behind its remote. All 
 | `test/portable-containment-crossing` | `a6b615504d638e7fbe5925904c756b3781cc4f89` | Parallel containment portability fix; separate owner, preserve. |
 
 The self-branch head is the commit returned by the command before this audit update; the table is a dated observation, not a promise to stay current. Fetch live state again before a branch action.
+
+
+</details>
 
 ## Resume order
 
@@ -205,12 +215,18 @@ The separate recovery checkout initially points to `04704a41`. No removal is aut
 
 ## Evidence that can improve the toolkit today
 
+<details>
+<summary>What each existing harness demonstrates, and what remains unproven</summary>
+
 | Existing path | What it demonstrates | What it does not demonstrate |
 |---|---|---|
 | `python -m cadagent.review.references --check`; `tests/review/test_references.py` | Registry/citation/evidence-ladder consistency and planted bad records | A source’s physical truth or every link’s current health |
 | `tests/review/test_gate_bench.py` and the gate tests | Declared seeded defects and controls under the installed kernel | All design mistakes or physical qualification |
 | `tools/quickstart_eval.py grade --work DIR`; `tests/repo/test_agent_prompt.py` | Transcript/file checks and recorded tool/token/time metrics for one run | Repeated model comparisons, causal tooling benefit, a container sandbox or a measured printed part |
 | `docs/areas.yaml`; `tests/repo/test_areas.py` | Every declared page/command/skill/agent has a topic home | Human navigation quality or measured fetch budgets |
+
+
+</details>
 
 A useful improvement records the failed case, reproduces it, changes the tested engineering code, adds a short method/skill with source and applicability limits, and plants the case in the existing harness. Update the owning issue with the exact head and evidence. This closes the learning loop without promoting a simulation into a physical measurement.
 

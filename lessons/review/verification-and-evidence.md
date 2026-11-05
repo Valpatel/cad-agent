@@ -17,6 +17,26 @@ flowchart TD
     class Cl out
 ```
 
+### Test the geometric result and plant the fallback failure separately
+- **Rule:** A geometry regression must reject the known crossing with the correct depth regardless of which
+  detection path finds it. To test recovery from a kernel miss, inject that miss and exercise the real fallback.
+- **Check:** Run `python -m pytest -q tests/review/test_gate_containment.py -k shallow_crossing`. Both native-kernel
+  and forced-boolean-miss cases must reject the crossing. Disabling the contact probe must expose the injected miss.
+<details><summary>Incident and source</summary>
+
+- **Incident:** ARM fleet runs repeatedly failed the shallow-crossing test even though the containment gate found
+  the crossing. The test required `kernel_missed_crossing`, but some OCCT builds directly measured positive outside
+  volume instead ([issue #318](https://github.com/Valpatel/cad-agent/issues/318)).
+- **Cause and correction:** An observed kernel limitation became a universal assertion. Keep the analytic depth
+  (`dz * SIN`, tolerance 0.004 mm) and failure checks; accept measured positive outside volume or an explicit
+  missed-crossing finding. A second case injects a false contained relation and uses the real surface probe.
+- **Evidence:** On 2026-11-05, fleet job 152 on cpu-b at `7fbc3ffe` ran the command above with the CAD extra:
+  `2 passed, 28 deselected in 5.37s`. No production geometry or tolerance changed.
+- **Limits:** The injected case validates the gate's surface-probe fallback, not every OCCT failure or the lower
+  relation layer's separate crossing probe. It does not establish physical fit.
+
+</details>
+
 ### Collision-check everything and investigate every hit
 - **Rule:** Check plastic against plastic, plastic against the vendor board, and plastic against the modelled hardware.
   Treat every non-zero overlap as a finding until it is explained, however small it is.

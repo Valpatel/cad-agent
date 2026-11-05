@@ -242,16 +242,27 @@ def _code(name):
         return getattr(importlib.import_module(module), attr)
 
 
-def test_applied_by_names_code_that_reads_the_rule(data):
-    """`applied_by` (#323) says what enforces a rule, so a rule card can name it: each name exists and its module
-    reads the rule by id, and every rule the inserts code reads names what applies it."""
+def _reads(obj, rule_id):
+    """True when the code reads the rule by id: a function in its own body, a module anywhere in its source."""
     import inspect
+    return f'"{rule_id}"' in inspect.getsource(obj)
+
+
+def test_applied_by_names_code_that_reads_the_rule(data):
+    """`applied_by` (#323) says what enforces a rule, so a rule card can name it: each name exists and reads the rule
+    by id (a function in its own body), and every rule the inserts code reads names what applies it."""
     for r in data["rules"]:
         for name in r.get("applied_by") or []:
-            obj = _code(name)
-            assert callable(obj) or inspect.ismodule(obj), f"{r['id']}: {name} is neither a function nor a module"
-            assert r["id"] in Path(inspect.getsourcefile(obj)).read_text(encoding="utf-8"), \
-                f"{r['id']}: {name} does not read it"
+            assert _reads(_code(name), r["id"]), f"{r['id']}: {name} does not read it"
     inserts = (ROOT / "src" / "cadagent" / "mechanical" / "inserts.py").read_text(encoding="utf-8")
     bare = [r["id"] for r in data["rules"] if f'"{r["id"]}"' in inserts and not r.get("applied_by")]
     assert not bare, f"rules cadagent.mechanical.inserts reads with no applied_by: {bare}"
+
+
+def test_planted_defect_an_applied_by_that_only_shares_a_module():
+    """hole_design takes its default offset from a constant, not from the profile line, though its module reads it:
+    naming it in applied_by would be a false claim, and the check refuses it."""
+    from cadagent.mechanical import inserts
+    assert not _reads(inserts.hole_design, "fdm-insert-hole-cad-offset-cnckitchen")
+    assert _reads(inserts.printed_hole, "fdm-insert-hole-cad-offset-cnckitchen")
+    assert _reads(inserts, "fdm-insert-hole-cad-offset-cnckitchen")

@@ -86,7 +86,7 @@ CATALOGUED_TAG_OK = ("research/",)
 FIELDS = ("id", "extends", "kind", "category", "title", "authors", "org", "year", "url", "isbn", "mirrors", "access",
           "terms", "licence", "reuse", "areas", "processes", "process_groups", "domains", "evidence", "confidence",
           "verified", "archive", "used_for", "rules", "checks", "claims", "summary", "assessment", "projects",
-          "aliases", "upstream")
+          "aliases", "upstream", "imported")
 # value field -> the vocab.yaml vocabulary it is drawn from
 VOCAB_FIELDS = {("kind",): "kind", ("category",): "category", ("licence", "class"): "licence_class",
                 ("reuse", "text"): "reuse_text", ("reuse", "geometry"): "reuse_geometry",
@@ -525,6 +525,9 @@ class _Schema2:
             if extra:
                 out.append(f"unknown fields {extra} in {file} (a typo drops a fact; the fields are listed in "
                            "research/references/README.md)")
+        if "imported" in d and not (isinstance(d["imported"], str) and re.fullmatch(r"[0-9a-f]{16}", d["imported"])):
+            out.append("imported is the importer's 16-hex digest of the record as it wrote it (tools/import_refmap.py); "
+                       "never type one")
         if "health" in d:
             out.append("`health` is not kept in git: raw link health lives in the checker's artifacts and the site "
                        "JSON, and only evidence-class changes land here (#323)")

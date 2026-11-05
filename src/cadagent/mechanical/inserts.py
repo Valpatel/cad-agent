@@ -350,26 +350,12 @@ FILLER_STEPS_PCT = (15.0, 35.0)       # filler content where SPIROL's two hole i
 NOZZLE_LINE_MM = 0.42                 # boss_design's default line width, the floor's default too
 
 
-@lru_cache(maxsize=1)
-def _hole_rules() -> Dict[str, Any]:
-    """The profile rules the printed hole takes its numbers from, by name (``verified_rule`` refuses a ``u`` row)."""
+@lru_cache(maxsize=None)
+def _rule(rule_id: str) -> Any:
+    """An FDM profile rule (``research/process-profiles.yaml``), read by id where it applies, so the rule's
+    ``applied_by`` names that function (``verified_rule`` refuses a ``u`` row)."""
     from cadagent.manufacturing.process import profile
-    fdm = profile("fdm")
-    ids = {"offset": "fdm-insert-hole-cad-offset-cnckitchen", "undersize": "fdm-hole-undersize-cnckitchen",
-           "undersize_2019": "fdm-hole-undersize-cnckitchen-2019", "filler": "fdm-insert-hole-filler-spirol",
-           "perimeters": "fdm-insert-wall-perimeters-lulzbot", "contours": "fdm-insert-contours-padt"}
-    return {k: fdm.verified_rule(v).limit() for k, v in ids.items()}
-
-
-@lru_cache(maxsize=1)
-def _hole_formulas() -> Dict[str, Any]:
-    """The profile rules whose number is an expression, evaluated where they apply: the arc floor
-    (``sqrt(D*D + track*track)``), the faceted circle (``D / cos(pi / facets)``) and SPIROL's perimeters (``D``)."""
-    from cadagent.manufacturing.process import profile
-    fdm = profile("fdm")
-    ids = {"arc": "fdm-hole-arc-floor-reprap", "facets": "fdm-hole-facets-nophead",
-           "perimeters_spirol": "fdm-insert-wall-perimeters-spirol"}
-    return {k: fdm.verified_rule(v) for k, v in ids.items()}
+    return profile("fdm").verified_rule(rule_id)
 
 
 def filler_increase(filler_pct: float) -> float:
@@ -377,7 +363,7 @@ def filler_increase(filler_pct: float) -> float:
     0.15 mm at 35 % and over, straight between (its white paper says to interpolate)."""
     if not (isinstance(filler_pct, (int, float)) and not isinstance(filler_pct, bool) and 0 <= filler_pct <= 100):
         raise ValueError(f"filler_pct must be a percentage from 0 to 100, not {filler_pct!r}")
-    rule = _hole_rules()["filler"]
+    rule = _rule("fdm-insert-hole-filler-spirol").limit()
     lo_pct, hi_pct = FILLER_STEPS_PCT
     if filler_pct < lo_pct:
         return 0.0
@@ -409,9 +395,10 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
 
     With no inputs it is the maker's hole plus 0.2 mm, :func:`hole_design`'s default. ``cad_band_mm`` is CNC Kitchen's
     0.2 to 0.3 mm offset moved by the same filler, coupon and facets."""
-    rules = _hole_rules()
+    off = _rule("fdm-insert-hole-cad-offset-cnckitchen").limit()
+    under_ref = _rule("fdm-hole-undersize-cnckitchen").limit().value
+    filler_max = _rule("fdm-insert-hole-filler-spirol").limit().max
     maker = ins.hole_mm
-    off, under_ref = rules["offset"], rules["undersize"].value
     preseat = off.min - under_ref                   # the hole wanted as printed, against the maker's: -0.05 mm
     why: List[str] = []
     sources = ["cnck-2026"]
@@ -423,9 +410,9 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
         why.append(f"{filler_pct:g} % filler: SPIROL grows the hole {add:.3f} mm (0.08 at 15 %, 0.15 at 35 %)")
         sources.append("spirol-hole")
     elif material in FILLED:
-        add, f_band = 0.0, (0.0, rules["filler"].max)
+        add, f_band = 0.0, (0.0, filler_max)
         why.append(f"{material} is fibre-filled and its sheet gives no content: SPIROL's increase is 0 to "
-                   f"{rules['filler'].max:g} mm, so the band widens by that and the hole takes the low end (a hole "
+                   f"{filler_max:g} mm, so the band widens by that and the hole takes the low end (a hole "
                    "too large loses pull-out fast, one too small only seats harder); the coupon decides")
         sources.append("spirol-hole")
     else:
@@ -443,7 +430,7 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
         raise ValueError(f"line_mm must be a line width between 0.1 and 2 mm, not {line_mm!r}")
     target = maker + add + preseat
     # the least hole D a track t wide can print at `target`: sqrt(D^2 - t^2) = target, so D = sqrt(target^2 + t^2)
-    drawn = _hole_formulas()["arc"].limit(D=target, track=line).min
+    drawn = _rule("fdm-hole-arc-floor-reprap").limit(D=target, track=line).min
     floor = drawn - target
     cad = target + under
     if floor > under:
@@ -461,7 +448,7 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
     if facets is not None:
         if not (isinstance(facets, int) and not isinstance(facets, bool) and facets >= 3):
             raise ValueError(f"facets must be a whole number of at least 3, not {facets!r}")
-        scale = _hole_formulas()["facets"].limit(D=1.0, facets=facets).value
+        scale = _rule("fdm-hole-facets-nophead").limit(D=1.0, facets=facets).value
         facet = cad - fx.facet_diameter(cad * MM, facets) / MM
         cad, lo, hi = cad * scale, lo * scale, hi * scale
         why.append(f"on a mesh of {facets} sides the flats fall {facet:.3f} mm inside the circle (Nophead): the "
@@ -474,7 +461,7 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
     return {"insert": ins.key, "material": material, "maker_mm": maker, "filled": filled,
             "filler_pct": filler_pct, "filler_mm": round(add, 4), "filler_band_mm": [round(v, 4) for v in f_band],
             "target_mm": round(target, 4), "undersize_mm": round(under, 4), "undersize_basis": basis,
-            "undersize_published_mm": [rules["undersize_2019"].value, under_ref], "line_mm": line,
+            "undersize_published_mm": [_rule("fdm-hole-undersize-cnckitchen-2019").limit().value, under_ref], "line_mm": line,
             "arc_floor_mm": round(floor, 4), "facets": facets,
             "facet_mm": None if facet is None else round(facet, 4),
             "polyhole": {k: (round(v / MM, 4) if k == "diameter" else v)
@@ -544,11 +531,11 @@ def perimeter_counts(ins: Insert) -> Dict[str, Any]:
     """How many perimeters each source asks round an insert's hole: LulzBot two or more, SPIROL at least the metric
     size, Stratasys's Insight four to six (PADT). SPIROL's count governs: only it has pull-out tests against wall
     loops (its 3D-printing paper, Figures 8 and 9)."""
-    r = _hole_rules()
-    spirol = math.ceil(_hole_formulas()["perimeters_spirol"].limit(D=float(ins.thread[1:])).min - 1e-9)
-    return {"lulzbot": int(r["perimeters"].min), "spirol": spirol, "padt": [int(r["contours"].min),
-                                                                             int(r["contours"].max)],
-            "governs": "spirol", "least": max(int(r["perimeters"].min), spirol)}
+    lulzbot = int(_rule("fdm-insert-wall-perimeters-lulzbot").limit().min)
+    padt = _rule("fdm-insert-contours-padt").limit()
+    spirol = math.ceil(_rule("fdm-insert-wall-perimeters-spirol").limit(D=float(ins.thread[1:])).min - 1e-9)
+    return {"lulzbot": lulzbot, "spirol": spirol, "padt": [int(padt.min), int(padt.max)], "governs": "spirol",
+            "least": max(lulzbot, spirol)}
 
 
 def boss_design(ins: Insert, line_mm: float = 0.42) -> Dict[str, Any]:

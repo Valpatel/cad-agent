@@ -35,10 +35,11 @@ stays out of the repo. The import is deterministic, and its rules are in the too
 - every new record is `snippet-only`, and every licence is unread;
 - numbers are the authors' claims unless measured;
 - the map's per-project verdicts stay out, and only its project-neutral `role` comes in;
-- a re-import never undoes a person's work. A record whose evidence class is `read` or higher, or that has a dated
-  `verified` note or `evidence.lowered`, is kept byte for byte, and so is a record the map does not make (added by
-  hand, or since dropped: it is reported, never deleted). Every other record is rewritten from the map, so `--check`
-  passes after a sweep, and a later map change to an unread record still lands.
+- a re-import never undoes an edit. Each record it writes ends with `imported`, a digest of its text; a record whose
+  text no longer matches it (any edit: a promotion, a fixed summary, the link check's withdrawn claim or moved url, a
+  comment) is kept byte for byte, and so is a record the map does not make (added by hand, or since dropped: it is
+  reported, never deleted). Records nobody touched are rewritten from the map, so `--check` passes after a sweep and
+  a later map change to them still lands.
 
 Two guides that `research/references.yaml` lists as `unverified` were left there.
 
@@ -62,6 +63,7 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `rules`, `checks` | The profile rules and cad-agent checks that encode the record |
 | `archive` | A pointer for the offline mirror: `sha256`, `kind`, `fetched`, `redistribute`. Never a path or a host |
 | `summary` | One or two plain sentences, in our words |
+| `imported` | Written by `tools/import_refmap.py`: a digest of the record's text as it wrote it. Edit the record freely and leave this line; a record whose text no longer matches it is yours, and a re-import keeps it as written |
 | `extends: true` | The record adds these fields to the core *read source* with the same id, instead of being a record of its own |
 
 Link health is not kept here. The checker's artifacts and the site JSON hold it, and only evidence-class changes land

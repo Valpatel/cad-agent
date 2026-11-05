@@ -13,6 +13,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
 import { builtSite } from './built-site.mjs';
+import { reducedHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -434,6 +435,7 @@ try {
       const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
       if (turning) problems.push('reduced motion: the 3D model turns by itself');
       await reduced.close();
+      problems.push(...await reducedHeroProblems(browser, base));
       return problems;
     }],
     ['diagram widths', async () => {

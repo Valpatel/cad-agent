@@ -82,43 +82,18 @@ and `catalog.json`).
 
 ## How it improves itself
 
-```mermaid
-flowchart TD
-    W["🛠️ <b>Real work</b><br/>a robot, an enclosure,<br/>a board"]
-    G["🧩 <b>A gap</b><br/>a failed print, a review<br/>finding, a slow step"]
-    S["🔎 <b>Search</b><br/>repos · guides · datasheets<br/>papers · agent skills"]
-    T["🧪 <b>Test</b><br/>against their own examples,<br/>then on our parts"]
-    K["📚 <b>Keep + credit</b><br/>a tested tool, a check,<br/>a living page, a lesson"]
-    W --> G --> S --> T --> K --> W
-    T -. "didn't hold up" .-> S
-    classDef work fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef find fill:#d8efbb,stroke:#386248,color:#173d3c
-    classDef keep fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class W,G work
-    class S,T find
-    class K keep
-```
+<img src="docs/img/hero/repository-map.svg" alt="Learning loop: read and cite research, evaluate examples and controls, encode methods in code and skills, keep failed cases in tests and lessons" width="100%">
 
-1. **Work on something real.** Most tools here started from a real project's need ([Gyropup](https://gyropup.com),
-   the [J501 enclosure](https://github.com/mvalancy/j501-agx-orin), the
-   [AGX Thor CAN breakout](https://github.com/mvalancy/pcb-agx-thor-can-breakout)).
-2. **Look before building.** When a gap shows up, the agent first surveys what others have published and records
-   what it found and why it adopted, borrowed from or passed on each one ([`research/`](research/),
-   [`upstreams/registry.yaml`](upstreams/registry.yaml), [`research/landscape.json`](research/landscape.json)).
-3. **Test it on our problem.** A technique earns its place by reproducing its source's own worked examples, then
-   by working on our parts where we can try it. Results are recorded, including the ones that failed. Until a part
-   has been printed and measured, a limit taken from a data sheet is a hypothesis.
-4. **Condense it.** What survives becomes a tested tool an agent calls in one step, a deterministic check that
-   catches the mistake next time, and a *living page*: the method in a few paragraphs, with citations, examples
-   and the limits stated plainly. Tests fail if the page and the tool drift apart.
-5. **Credit it.** Every page names its sources; every borrowed file keeps its licence; the people and projects we
-   learn from are listed below.
+| Step | Open this |
+|---|---|
+| **Find evidence** | [Research map](research/README.md): existing tools, read sources, applicability and confidence |
+| **Evaluate it** | [Worked examples and seeded defects](tests/README.md), [quickstart grader](tools/quickstart_eval.py); [what those checks establish](lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) |
+| **Condense it** | [Engineering code](src/cadagent/README.md), [short skills](skills/README.md) and [guides](docs/README.md) with sources and limits |
+| **Keep the failure** | [Lessons](lessons/README.md), a regression case in the owning test harness, and an [independently reviewed PR](CONTRIBUTING.md) |
 
-Example: [snap fits](docs/compliant.md) condense the Covestro (Bayer) snap-fit guide, DuPont's design guide and the
-data sheets of 11 filaments (13 entries: two have dry and wet values) into `cad-agent snapfit`, tested against the
-guide's worked examples and sized by print direction; no printed coupon has been measured yet. The same loop turned
-review findings from real builds into the [pitfall checks](docs/common-issues.md), like a rib that ran into a
-counterbore.
+Example: [snap fits](docs/compliant.md) turn the Covestro/Bayer guide’s worked examples into a calculator and regression tests. The material allowables cite data sheets; no printed coupon has been measured yet. A passing simulation is evidence about the model’s assumptions. Physical fit and strength need physical tests.
+
+[The vision](docs/vision.md) distinguishes the implemented checks from the planned repeated, cross-model evaluation framework. [The recovery audit](lessons/process/2026-11-05-recovery-audit.md) records the 2026-11-05 backlog and branch dispositions.
 
 ## What's here today
 
@@ -163,26 +138,15 @@ flowchart TD
     class D,V,S,P g
 ```
 
-| | Module | What it gives you |
-|---|---|---|
-| ✏️ | `connectors` | Port windows derived from the modelled mating plug, then a sweep check that the plug really goes in |
-| ✏️ | `mcmaster` | The manufacturer's STEP and specs for a McMaster-Carr part number, normalised for assembly |
-| ✏️ | `robot` | Mass properties from CAD, links and joints, URDF and MuJoCo export, meshes kept under budget |
-| ✏️ | `dossier` | The design dossier: requirements, sections, part spec cards, interfaces and decisions with the alternatives rejected, in YAML with `file:line` errors; build-script declarations of parts, cavities, joints, fasteners and assembly steps, exported for the gates; a lint and a per-section status (draft to signed off, voided when the geometry changes) from `cad-agent dossier` ([guide](docs/dossier.md)) |
-| ✏️ | `gates` | Integrity gates on the assembly: floating parts and unrealised interfaces, items outside their cavity, fastener seat, engagement, tip and tool reach, motion-range collisions, assembly order and access, minimum walls. `cad-agent gates` runs them in parallel processes, writes verdicts bound to the geometry they checked, and `check` fails on a failing or stale one ([guide](docs/gates.md)) |
-| ✏️ | `explore` | Part catalogues with prices and sources, designs that pick a part per slot, the project's own evaluator, Pareto ranking of the trade-offs, one-part swaps and a search over parts and parameters ([guide](docs/explore.md)) |
-| 🧪 | `fea` | gmsh + scikit-fem linear elasticity with printed-material allowables, checked against textbook cases |
-| 🧪 | `compliant` | Snap-fit sizing and checks (cantilever, torsion, annular) by the Covestro/Bayer method, tested against the guide's worked examples; allowable strain for moulded resins and, by print direction, for 11 filaments from their data sheets (13 entries: two have dry and wet values) ([guide](docs/compliant.md)) |
-| 🧪 | `cfd` | Conjugate heat transfer cases for OpenFOAM written from CAD: fans, fin blocks, heat sources |
-| 🧪 | `heatsink` | Plate-fin correlations, fan operating point and porous-block coefficients for CFD |
-| 🧪 | `topopt` | pyMOTO topology optimisation (SIMP, MMA, overhang filter) to cut filament where it does no work |
-| 🧪 | `slicer` | Bambu Studio's command line for real filament grams and print time |
-| 🖼️ | `render`, `simviz` | Off-screen renders, stress and flow pictures, MP4 animations; a review packet per dossier section (solid, x-ray, cuts through cavities, joints and screws, exploded along the assembly steps, joint range ends, gate findings at their witness points) with the measurements first and the render checklist, from `cad-agent review-packet` ([guide](docs/review-packet.md)) |
-| 🖼️ | `report`, `simreport` | Results JSON and standalone HTML reports that name their limits |
-| 🖼️ | `site`, `view`, webkit | A local review site with progress, decisions, docs and a 3D viewer, all under one top bar |
-| 📦 | `mesh3mf`, `package` | 3MF writing with an independent read-back, and a hashed review zip |
+| Task | Start here |
+|---|---|
+| Build, assemble and source | [Toolkit](docs/toolkit.md), [dossier](docs/dossier.md), [parts skill](skills/mcmaster-parts/SKILL.md) |
+| Check geometry and mechanisms | [Integrity gates](docs/gates.md), [snap fits](docs/compliant.md), [bearings](docs/bearings.md), [linkages](docs/linkages.md) |
+| Predict loads, heat and printability | [Simulation and manufacturing tools](docs/toolkit.md), [material and process sources](research/README.md) |
+| Review and export | [Review packets](docs/review-packet.md), [PCB evidence](docs/pcb.md), [3MF and hashed packages](docs/toolkit.md) |
+| Compare designs | [Exploration and Pareto trade-offs](docs/explore.md) |
 
-The full guide, the `cad-agent.yaml` format and every command are in [`docs/toolkit.md`](docs/toolkit.md).
+Every command and the `cad-agent.yaml` format are in [the toolkit guide](docs/toolkit.md). Browse by topic in [the guides map](docs/README.md).
 
 ### Extras
 
@@ -266,11 +230,11 @@ releases go from `dev` to `main` by PR ([#112](https://github.com/Valpatel/cad-a
 |---|---|
 | [`src/cadagent/`](src/cadagent/) | The toolkit, with its web kit in `webkit/` |
 | [`tests/`](tests/) | The test suite, which also runs in CI |
-| [`docs/`](docs/) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, [`explore.md`](docs/explore.md), design exploration, and [`dossier.md`](docs/dossier.md), the design dossier |
+| [`docs/`](docs/README.md) | [`toolkit.md`](docs/toolkit.md), the guide to the toolkit, [`explore.md`](docs/explore.md), design exploration, and [`dossier.md`](docs/dossier.md), the design dossier |
 | [`examples/`](examples/) | Worked examples: [`explore-two-wheel`](examples/explore-two-wheel/) compares robot configurations |
-| [`skills/`](skills/), [`agents/`](agents/) | Agent skills and subagents for Claude Code and Codex: work tracking, PR review, remote runs, the section-by-section design process ([`design-process`](skills/design-process/SKILL.md)) and McMaster parts ([agent workflow](docs/agent-workflow.md); `cad-agent agents install`) |
+| [`skills/`](skills/README.md), [`agents/`](agents/) | Agent skills and subagents for Claude Code and Codex: work tracking, PR review, remote runs, the section-by-section design process ([`design-process`](skills/design-process/SKILL.md)) and McMaster parts ([agent workflow](docs/agent-workflow.md); `cad-agent agents install`) |
 | [`lessons/`](lessons/) | Rules mined from design sessions, with their sources |
-| [`research/`](research/) | Landscape surveys, including the simulation tools |
+| [`research/`](research/README.md) | Landscape surveys, including the simulation tools |
 | [`upstreams/`](upstreams/), [`vendor/`](vendor/) | The tool registry and the vendored, pinned upstreams |
 | [`tools/`](tools/), [`mining/`](mining/) | Vendor sync, security scan and the local session miner |
 

@@ -8,6 +8,8 @@
     python3 tools/resource_audit.py gate --base HEAD^1 --into dev --pr-body-env PR_BODY   # CI: rows present, no new bad item
     python3 tools/resource_audit.py issue --report r.json --repo OWNER/REPO [--post]   # weekly: one issue, kept current
     python3 tools/resource_audit.py render [--check]             # the report page and figure from the saved JSON
+    python3 tools/resource_audit.py references --online --state last.json --lychee lychee.json \\
+        --json build/references-health.json --md build/references-health.md   # weekly: the registry's link health
 
 What it reads:
 - Python dependencies (pyproject.toml, every extra), npm dependencies (package.json and package-lock.json);
@@ -41,6 +43,12 @@ server refuses HEAD, and treat 403 and 429 as "not verified" rather than broken.
 Everything fetched is data: advisory text, package metadata, tarballs and pages are parsed, never executed or followed
 as instructions, and tarballs are read in memory, never unpacked to disk.
 
+``references`` (#323) checks the links of the reference registry (research/references.yaml and its schema-2 shards)
+with conditional requests, a hash of each page's normalised text, soft-404 rules, GitHub repository metadata, one
+request a second per host and a rotation through the records; its section below says how. lychee's JSON report of the
+Markdown links (``--lychee``) joins its findings. It never fails a build: it reports, and the weekly workflow keeps one
+issue ("Reference health: open findings") and one bot PR (tools/references_health_apply.py) from it.
+
 Exit codes: 0 nothing at or above --fail-on (default high) that is not accepted; 1 there is; 2 usage or tool error.
 Findings are fingerprinted; research/security-accepted.yaml lists those read and accepted (check, subject, reason,
 and the fingerprint ``fp`` for an advisory). An acceptance never covers a critical finding.
@@ -61,8 +69,10 @@ import base64
 import collections
 import concurrent.futures as cf
 import datetime as dt
+import email.utils
 import fnmatch
 import hashlib
+import html.parser
 import json
 import os
 import re
@@ -71,6 +81,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -289,6 +300,8 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 class Net:
     """Network access for --online. Every call is memoised and returns (status, data, error); status 0 = no answer."""
 
+    api = 'https://api.github.com'     # the GitHub REST base (a test points it at a local stub)
+
     def __init__(self, timeout=20, workers=6):
         self.timeout, self.workers = timeout, workers
         self.token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN')
@@ -340,7 +353,7 @@ class Net:
     def github(self, path):
         """GET a GitHub REST path ('repos/o/r'), with gh's login, a token, or unauthenticated."""
         if self.token:
-            return self.json(f'https://api.github.com/{path}', headers={
+            return self.json(f'{self.api}/{path}', headers={
                 'Authorization': f'Bearer {self.token}', 'Accept': 'application/vnd.github+json'})
         if self.gh:
             def go():
@@ -358,7 +371,7 @@ class Net:
                 except ValueError:
                     return int(m.group(1)), None, 'answer is not JSON'
             return self._memo(('gh', path), go)
-        return self.json(f'https://api.github.com/{path}', headers={'Accept': 'application/vnd.github+json'})
+        return self.json(f'{self.api}/{path}', headers={'Accept': 'application/vnd.github+json'})
 
     def graphql(self, query):
         if self.token:
@@ -1691,6 +1704,635 @@ def judge_link(rep, row, chain, err):
                 'Link a page that stays on HTTPS, or say so.')
 
 
+# ------------------------------------------------------------------------------------------------- reference health
+# `references` (#323 phase 4): the health of every registry record's link (research/references.yaml and the schema-2
+# shards in research/references/). Deterministic, no AI. What it adds over the link checks above:
+#
+# - conditional requests: the ETag and Last-Modified of the last check go out as If-None-Match / If-Modified-Since, so
+#   an unchanged page answers 304 and costs no body;
+# - content drift: a page's *normalised* text (HTML to visible text, without script, style, nav, header and footer;
+#   whitespace collapsed) is hashed, so a changed page is seen even when it still answers 200. A PDF is hashed by its
+#   size and first 64 KB;
+# - soft-404s: a page that answers 200 but is not the page any more (redirected to the site's root or a search page,
+#   "not found" in its title or first heading, or under 2 KB after a redirect). Each reason is its own finding, so an
+#   acceptance in research/security-accepted.yaml silences a false positive;
+# - GitHub repositories through the REST API: gone, renamed, archived, disabled, last push, licence, default-branch head;
+# - politeness: one worker per host, at most one request per second to any host (redirect hops included), at most
+#   HEALTH_WORKERS hosts at once, Retry-After honoured; a host that answers 401 or 403 is "blocked" and left alone for
+#   BLOCKED_DAYS, never retried in a loop;
+# - rotation: at most --limit records a run, the longest unchecked first, so the registry can grow without the run
+#   growing.
+#
+# Health is not kept in git (#323, Q5): each run reads the last run's JSON (--state, the weekly workflow's artifact)
+# and writes the next. Only evidence-class changes reach the shards, through tools/references_health_apply.py's weekly
+# bot PR. Findings are derived from the whole state, not only this run's checks, so a record the rotation skipped keeps
+# its findings.
+HEALTH_SCHEMA = 'cad-agent-references-health/1'
+HEALTH_STATUSES = ('ok', 'moved', 'changed', 'blocked', 'gone', 'unreachable')
+HEALTH_LIMIT = 400             # records checked per run, the longest unchecked first
+HOST_INTERVAL = 1.0            # seconds between two requests to one host
+HEALTH_WORKERS = 8             # hosts checked at once
+RETRY_AFTER_MAX = 60           # the longest Retry-After waited for in a run; a longer one defers the host to the next run
+BLOCKED_DAYS = 30              # a host that answered 401/403 is left alone this long
+BODY_LIMIT = 4 << 20           # bytes of a page read and hashed
+PDF_HEAD = 64 << 10            # a PDF is hashed by its size and its first 64 KB
+TINY = 2048                    # a body under this after a redirect is a soft-404
+PERMANENT = (301, 308)
+NOT_FOUND = re.compile(r"\b(?:404|not found|page (?:does not|doesn't|cannot be|could not be|can't be) (?:exist|found)"
+                       r"|no longer (?:available|exists)|page (?:is )?(?:missing|unavailable)|nothing (?:was )?found)\b", re.I)
+SEARCHY = re.compile(r'(?:^|/)(?:search|404|not-?found|error)(?:[/.?]|$)|[?&](?:s|q|query|search)=', re.I)
+REPO_PAGE = re.compile(r'^https://(?:www\.)?github\.com/[^/]+/[^/#?]+?(?:\.git)?/?(?:[#?].*)?$')
+API_HOST = 'api.github.com'
+HEALTH_LIMITS = [
+    'Health is a link\'s state, not the source\'s truth: a page that answers 200 and keeps its text can still be wrong.',
+    'Soft-404s are found by rules (redirect to the root or a search page, "not found" in the title or first heading, '
+    'a tiny page after a redirect); a missing page dressed as a normal one passes. Accept a false positive by fingerprint.',
+    'Content drift is a hash of the visible text: a page that changes its date line or adverts on every load reads as '
+    '"changed". Only a record with claims shows it as a finding.',
+    'A blocked host (401 or 403 to this script) is not checked for 30 days; its records keep their last state.',
+    'Each run checks at most the --limit records checked longest ago; the rest keep their last state, with its date.',
+    'GitHub repositories are checked through the API at repository level; a file inside a live repository is fetched '
+    'as a page. Markdown links in the published pages are lychee\'s, listed under their own heading.',
+]
+
+
+class Pacer:
+    """At most one request per `interval` seconds to each host, across threads; `defer` pushes a host's next slot out
+    (Retry-After). Slots are reserved under the lock, so two threads never send to one host at once."""
+
+    def __init__(self, interval=HOST_INTERVAL, clock=time.monotonic, sleep=time.sleep):
+        self.interval, self.clock, self.sleep = interval, clock, sleep
+        self._next, self._lock, self.log = {}, threading.Lock(), []
+
+    def wait(self, h):
+        with self._lock:
+            now = self.clock()
+            at = max(now, self._next.get(h, float('-inf')))
+            self._next[h] = at + self.interval
+            self.log.append((h, at))
+        if at > now:
+            self.sleep(at - now)
+
+    def defer(self, h, seconds):
+        with self._lock:
+            self._next[h] = max(self._next.get(h, float('-inf')), self.clock() + seconds)
+
+
+def retry_after(value, now=None):
+    """Seconds a Retry-After header asks for (a number or an HTTP date), or None when it says nothing usable."""
+    if value is None:
+        return None
+    value = str(value).strip()
+    if value.isdigit():
+        return int(value)
+    try:
+        when = email.utils.parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if when is None:
+        return None
+    now = now or dt.datetime.now(dt.timezone.utc)
+    return max(0, int((when - now).total_seconds()))
+
+
+class _Text(html.parser.HTMLParser):
+    """The visible text of a page: no script, style, nav, header, footer or the like; its title and first h1 apart."""
+    SKIP = {'script', 'style', 'nav', 'header', 'footer', 'noscript', 'template', 'svg', 'iframe', 'head'}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.skip, self.parts, self.title, self.h1, self.inside, self.h1_done = 0, [], [], [], None, False
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'title':
+            self.inside = 'title'
+        elif tag in self.SKIP:
+            self.skip += 1
+        elif tag == 'h1' and not self.h1_done and not self.skip:
+            self.inside = 'h1'
+
+    def handle_endtag(self, tag):
+        if tag == 'title' and self.inside == 'title':
+            self.inside = None
+        elif tag in self.SKIP and self.skip:
+            self.skip -= 1
+        elif tag == 'h1' and self.inside == 'h1':
+            self.inside, self.h1_done = None, True
+
+    def handle_data(self, data):
+        if self.inside == 'title':
+            self.title.append(data)
+        elif not self.skip:
+            if self.inside == 'h1':
+                self.h1.append(data)
+            self.parts.append(data)
+
+
+def squash(text):
+    return ' '.join(str(text).split())
+
+
+def page_text(body, content_type=''):
+    """(kind, title, first h1, normalised text) of a body; kind is html, pdf or text. A PDF has no text here."""
+    ct = (content_type or '').lower()
+    if body[:5] == b'%PDF-' or 'application/pdf' in ct:
+        return 'pdf', '', '', None
+    m = re.search(r'charset=([\w-]+)', ct)
+    try:
+        text = body.decode(m.group(1) if m else 'utf-8', 'replace')
+    except LookupError:
+        text = body.decode('utf-8', 'replace')
+    if 'html' in ct or re.match(r'\s*<(?:!doctype html|html|head|body)', text[:512], re.I):
+        p = _Text()
+        try:
+            p.feed(text)
+            p.close()
+        except Exception:      # noqa: BLE001 - html.parser is lenient; a page it cannot read is hashed as text
+            return 'text', '', '', squash(text)
+        return 'html', squash(''.join(p.title)), squash(''.join(p.h1)), squash(' '.join(p.parts))
+    return 'text', '', '', squash(text)
+
+
+def content_hash(body, content_type=''):
+    """(kind, sha256, title, h1) of a body: the normalised text's hash, or a PDF's size and first 64 KB."""
+    kind, title, h1, text = page_text(body, content_type)
+    if kind == 'pdf':
+        return kind, hashlib.sha256(b'%d:' % len(body) + body[:PDF_HEAD]).hexdigest(), title, h1
+    return kind, hashlib.sha256(text.encode('utf-8')).hexdigest(), title, h1
+
+
+def fetch_page(net, url, pacer, prev=None):
+    """GET url, following redirects by hand and pacing every hop: dict(chain=[(status, url)], body, headers, error).
+
+    The last check's ETag and Last-Modified go out as If-None-Match / If-Modified-Since, so an unchanged page answers
+    304 with no body. A 429 or 503 with a Retry-After up to RETRY_AFTER_MAX is waited for and tried once more."""
+    opener = urllib.request.build_opener(_NoRedirect)
+    cond = {}
+    if prev and prev.get('etag'):
+        cond['If-None-Match'] = prev['etag']
+    if prev and prev.get('last_modified'):
+        cond['If-Modified-Since'] = prev['last_modified']
+    chain, cur, retried = [], url, False
+    for _ in range(10):
+        h = host(cur)
+        pacer.wait(h)
+        net.calls[h] += 1
+        req = urllib.request.Request(cur, headers={'User-Agent': UA, 'Accept': 'text/html,application/pdf;q=0.9,*/*;q=0.8',
+                                                   **cond})
+        body = None
+        try:
+            with opener.open(req, timeout=net.timeout) as r:
+                status, hdrs, body = r.status, r.headers, r.read(BODY_LIMIT)
+        except urllib.error.HTTPError as e:
+            status, hdrs = e.code, e.headers
+            e.close()
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            return dict(chain=chain, body=None, headers={}, error=str(getattr(e, 'reason', e))[:200] or type(e).__name__)
+        if status in (429, 503) and not retried:
+            wait = retry_after(hdrs.get('Retry-After') if hdrs else None)
+            if wait is not None and wait <= RETRY_AFTER_MAX:
+                pacer.defer(h, wait)
+                retried = True
+                continue
+        chain.append((status, cur))
+        loc = hdrs.get('Location') if hdrs else None
+        if 300 <= status < 400 and status != 304 and loc:
+            cur = urllib.parse.urljoin(cur, loc)
+            continue
+        keep = {k.lower(): hdrs.get(k) for k in ('ETag', 'Last-Modified', 'Content-Type', 'Retry-After')
+                if hdrs and hdrs.get(k)}
+        return dict(chain=chain, body=body, headers=keep, error='')
+    return dict(chain=chain, body=None, headers={}, error='too many redirects')
+
+
+def _same_page(a, b):
+    """Two URLs for the same page: the fragment and a trailing slash do not count."""
+    sa, sb = urllib.parse.urlsplit(a), urllib.parse.urlsplit(b)
+    return (sa.scheme, (sa.hostname or '').lower(), sa.path.rstrip('/'), sa.query) == \
+           (sb.scheme, (sb.hostname or '').lower(), sb.path.rstrip('/'), sb.query)
+
+
+def soft_404(url, chain, title, h1, size):
+    """The reasons a page that answered 2xx is probably not the page any more: root, search, title, tiny."""
+    reasons = []
+    redirected = len(chain) > 1
+    final = chain[-1][1]
+    a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(final)
+    if redirected and b.path in ('', '/') and not b.query and a.path not in ('', '/'):
+        reasons.append('root')
+    if redirected and SEARCHY.search(b.path + ('?' + b.query if b.query else '')) and \
+            not SEARCHY.search(a.path + ('?' + a.query if a.query else '')):
+        reasons.append('search')
+    if NOT_FOUND.search(title or '') or NOT_FOUND.search(h1 or ''):
+        reasons.append('title')
+    if redirected and size is not None and size < TINY:
+        reasons.append('tiny')
+    return reasons
+
+
+def page_health(url, res, prev, as_of):
+    """One record's health from a fetch: status (HEALTH_STATUSES), the redirect chain, validators and content hash."""
+    prev = prev or {}
+    chain = res['chain']
+    out = dict(url=url, checked=as_of.isoformat(), http=[s for s, _ in chain] or None)
+    for k in ('changed_on',):
+        if prev.get(k):
+            out[k] = prev[k]
+    if res['error']:
+        out['error'] = res['error']
+    if not chain:
+        return dict(out, status='unreachable')
+    code, final = chain[-1]
+    if final != url:
+        out['final_url'] = final
+    hops = [s for s, _ in chain[:-1]]
+    if final != url and not _same_page(url, final) and any(s in PERMANENT for s in hops):
+        out['permanent'] = all(s in PERMANENT for s in hops)
+    hdr = res['headers']
+    if code in (404, 410):
+        return dict(out, status='gone')
+    if code in (401, 403, 429):
+        return dict(out, status='blocked', blocked_host=host(final))
+    if code == 304:
+        for k in ('etag', 'last_modified', 'sha256', 'bytes', 'kind'):
+            if prev.get(k) is not None:
+                out[k] = prev[k]
+        status = 'ok'
+    elif 200 <= code < 300:
+        body = res['body'] or b''
+        kind, sha, title, h1 = content_hash(body, hdr.get('content-type'))
+        out.update(kind=kind, sha256=sha, bytes=len(body))
+        if len(body) >= BODY_LIMIT:
+            out['truncated'] = True
+        if hdr.get('etag'):
+            out['etag'] = hdr['etag']
+        if hdr.get('last-modified'):
+            out['last_modified'] = hdr['last-modified']
+        reasons = soft_404(url, chain, title, h1, len(body))
+        if reasons:
+            out['soft404'] = reasons
+            out['title'] = title[:120] or None
+            return dict(out, status='gone')
+        status = 'ok'
+        if prev.get('sha256') and prev['sha256'] != sha:
+            status, out['changed_on'] = 'changed', as_of.isoformat()
+    else:
+        return dict(out, status='unreachable')
+    return dict(out, status='moved' if 'permanent' in out else status)
+
+
+def repo_health(net, url, slug, prev, as_of, pacer):
+    """A GitHub repository's health from the REST API: one call for the repository, one for its default-branch head."""
+    out = dict(url=url, checked=as_of.isoformat())
+    pacer.wait(API_HOST)
+    st = repo_status(net, slug)
+    if st['state'] == 'gone':
+        return dict(out, status='gone', http=[st.get('http')], github=dict(state='gone'))
+    if st['state'] != 'ok':
+        return dict(out, status='unreachable', error=st.get('error', '')[:200], github=dict(state='unverified'))
+    name = st.get('full_name') or slug
+    head = None
+    if st.get('default_branch'):
+        pacer.wait(API_HOST)
+        code, data, _ = net.github(f"repos/{name}/git/ref/heads/{urllib.parse.quote(st['default_branch'], safe='')}")
+        if code == 200 and isinstance(data, dict):
+            head = (data.get('object') or {}).get('sha')
+    out['github'] = dict(full_name=name, archived=st['archived'], disabled=st['disabled'], licence=st['licence'],
+                         pushed=st['pushed'] or None, default_branch=st.get('default_branch'), head=head)
+    if st['disabled']:
+        return dict(out, status='gone')
+    if name.lower() != slug.lower():
+        rest = re.sub(r'^https?://(?:www\.)?github\.com/[^/]+/[^/#?]+', '', url)
+        out.update(final_url=f'https://github.com/{name}{rest}', permanent=True)
+        return dict(out, status='moved')
+    return dict(out, status='ok')
+
+
+def health_streak(prev, entry):
+    """How many checks in a row gave this status (and, when moved, this final URL), and since when."""
+    key = entry['status'] + (f">{entry.get('final_url')}" if entry['status'] == 'moved' else '')
+    p = (prev or {}).get('streak') or {}
+    if p.get('key') == key:
+        return dict(p, runs=int(p.get('runs') or 0) + 1)
+    return dict(key=key, status=entry['status'], since=entry['checked'], runs=1)
+
+
+def task_host(rec):
+    """The host a record's first request goes to (the GitHub API for a repository page)."""
+    return API_HOST if github_repo(rec['url']) else host(rec['url'])
+
+
+def check_one(net, rec, prev, as_of, pacer):
+    url, slug = rec['url'], github_repo(rec['url'])
+    if slug:
+        entry = repo_health(net, url, slug, prev, as_of, pacer)
+        if REPO_PAGE.match(url) or entry['status'] != 'ok':
+            return entry
+        page = page_health(url, fetch_page(net, url, pacer, prev), prev, as_of)   # a file or folder inside the repository
+        page['github'] = entry['github']
+        return page
+    return page_health(url, fetch_page(net, url, pacer, prev), prev, as_of)
+
+
+def last_check(state, rec):
+    """The last check of a record, if it was of the link the record has now (a changed link starts afresh)."""
+    e = (state.get('records') or {}).get(rec['id'])
+    return e if e and e.get('url') == rec['url'] else None
+
+
+def select_records(records, state, as_of, limit):
+    """Rotation: the records to check this run (never checked, then the longest unchecked; by id on a tie), leaving out
+    records whose host (or the host their last check was refused by) is still blocked. Returns (todo, held ids)."""
+    hosts = state.get('hosts') or {}
+    today = as_of.isoformat()
+
+    def blocked(h):
+        return bool(h) and (hosts.get(h) or {}).get('blocked_until', '') > today
+    held = {r['id'] for r in records if blocked(task_host(r)) or blocked((last_check(state, r) or {}).get('blocked_host'))}
+    order = sorted((r for r in records if r['id'] not in held),
+                   key=lambda r: ((last_check(state, r) or {}).get('checked') or '', r['id']))
+    return order[:max(0, limit)], held
+
+
+def check_references(net, records, state, as_of, limit=HEALTH_LIMIT, pacer=None, workers=HEALTH_WORKERS):
+    """Check up to `limit` records (rotation) and fold the answers into `state` (the last run's JSON, changed in place).
+
+    One worker per host, at most `workers` hosts at once, every request paced by `pacer`. A host that answers 401/403 is
+    blocked for BLOCKED_DAYS; one that answers 429 (after one Retry-After) is left for the rest of this run."""
+    pacer = pacer or Pacer()
+    prev = state.setdefault('records', {})
+    hosts = state.setdefault('hosts', {})
+    todo, held = select_records(records, state, as_of, limit)
+    groups = collections.OrderedDict()
+    for r in todo:
+        groups.setdefault(task_host(r), []).append(r)
+    deferred = set()
+
+    def run(items):
+        out = {}
+        for r in items:
+            if task_host(r) in deferred:
+                break
+            entry = check_one(net, r, last_check(state, r), as_of, pacer)
+            out[r['id']] = entry
+            if entry['status'] == 'blocked' and (entry.get('http') or [0])[-1] == 429:
+                deferred.add(task_host(r))
+        return out
+    results = {}
+    with cf.ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        for out in ex.map(run, groups.values()):
+            results.update(out)
+    urls = {r['id']: r for r in todo}
+    for rid in sorted(results):
+        entry = results[rid]
+        entry['streak'] = health_streak(last_check(state, urls[rid]), entry)
+        prev[rid] = entry
+        if entry['status'] == 'blocked' and (entry.get('http') or [0])[-1] in (401, 403):
+            h = entry.get('blocked_host') or host(entry['url'])
+            hosts[h] = dict(blocked_until=(as_of + dt.timedelta(days=BLOCKED_DAYS)).isoformat(), since=as_of.isoformat(),
+                            http=entry['http'][-1])
+    for h in [h for h, v in hosts.items() if (v.get('blocked_until') or '') <= as_of.isoformat()]:
+        del hosts[h]                                   # its 30 days are over: check it again
+    state['checked'] = sorted(results)
+    state['held'] = sorted(held)
+    state['deferred'] = sorted(deferred)
+    return state
+
+
+def registry_records(root):
+    """Every registry record with a link: [{id, url, file, kind, evidence, activity, spdx, claims}], in id order."""
+    if str(ROOT / 'src') not in sys.path:
+        sys.path.insert(0, str(ROOT / 'src'))
+    from cadagent.review import references as refs    # the registry's own loader: one schema, one source of truth
+    reg = refs.load(Path(root) / 'research' / 'references.yaml')
+    out = []
+    for ref in sorted(reg.entries.values(), key=lambda r: r.id):
+        url = ref.get('url')
+        if ref.kind == 'uncited' or not isinstance(url, str) or not url.startswith(('https://', 'http://')):
+            continue
+        h = host(url)
+        if not h or IGNORED_HOSTS.match(h) or h in OUR_HOSTS:
+            continue
+        lic = ref.get('licence') if isinstance(ref.get('licence'), dict) else {}
+        out.append(dict(id=ref.id, url=url, file=ref.file, kind=ref.kind, evidence=ref.evidence_class,
+                        activity=(ref.get('assessment') or {}).get('activity') if isinstance(ref.get('assessment'), dict) else None,
+                        spdx=lic.get('spdx'), claims=bool(ref.get('claims'))))
+    return out
+
+
+def lychee_errors(path, root):
+    """lychee's JSON report (--format json) as [(file, url, status code or None, text)], file relative to root."""
+    data = json.loads(Path(path).read_text(encoding='utf-8'))
+    out = []
+    for src, items in sorted((data.get('error_map') or data.get('fail_map') or {}).items()):
+        f = str(src)
+        if os.path.isabs(f):
+            try:
+                f = os.path.relpath(f, root)
+            except ValueError:
+                pass
+        f = f[2:] if f.startswith('./') else f
+        for it in items or []:
+            st = it.get('status') if isinstance(it, dict) else None
+            code = st.get('code') if isinstance(st, dict) else None
+            text = (st.get('text') if isinstance(st, dict) else st) or ''
+            if code is None:
+                m = re.match(r'\D*(\d{3})\b', str(text))
+                code = int(m.group(1)) if m else None
+            out.append((f, str(it.get('url') if isinstance(it, dict) else it), code, squash(text)[:160]))
+    return out
+
+
+def soft404_finding(rid, reason):
+    return dict(check='ref-soft-404', subject=f'ref:{rid}', severity='medium',
+                fp=hashlib.sha256(f'ref-soft-404|ref:{rid}|{reason}'.encode()).hexdigest()[:16])
+
+
+def open_soft404(rid, entry, accepted):
+    """The soft-404 reasons of a record that no acceptance covers (all covered: the page is fine as it is)."""
+    return [x for x in entry.get('soft404') or [] if not accepted_reason(accepted or [], soft404_finding(rid, x))]
+
+
+def effective_status(rid, entry, accepted):
+    """A record's status once accepted soft-404s are set aside: an accepted soft-404 is an ok (or moved) page."""
+    if entry.get('soft404') and not open_soft404(rid, entry, accepted):
+        return 'moved' if entry.get('final_url') and entry.get('permanent') else 'ok'
+    return entry.get('status')
+
+
+def health_findings(rep, records, state, accepted, lychee=None):
+    """Findings from the whole state (a record the rotation skipped keeps its last findings), plus lychee's."""
+    prev = state.get('records') or {}
+    for r in records:
+        e = prev.get(r['id'])
+        if not e:
+            continue
+        sid, url = f"ref:{r['id']}", r['url']
+        where = f"{r['file']}; checked {e.get('checked')}" + (f"; HTTP {' -> '.join(map(str, e['http']))}" if e.get('http') else '')
+        st, streak = e.get('status'), e.get('streak') or {}
+        runs = f" ({streak.get('runs')} checks since {streak.get('since')})" if (streak.get('runs') or 0) > 1 else ''
+        cited = r['kind'] == 'source'
+        if e.get('url') and e['url'] != url:
+            continue                     # the record's link changed since: the old answer says nothing about the new one
+        if st == 'gone' and not e.get('soft404'):
+            rep.add('ref-gone', 'high' if cited else 'medium', sid, f"{r['id']}: {url} is gone{runs}", where,
+                    'Link a live copy (an archive.org snapshot, said so) or a successor, or drop the link. A shard record '
+                    'above snippet-only falls one evidence class after two checks (the weekly bot PR).')
+        for reason in e.get('soft404') or [] if st == 'gone' else []:     # an accepted one is kept, marked accepted
+            rep.add('ref-soft-404', 'medium', sid, f"{r['id']}: looks like a missing page ({reason}){runs}",
+                    where + (f"; now {e.get('final_url')}" if e.get('final_url') else '') + (f"; title {e.get('title')!r}" if e.get('title') else ''),
+                    'Open it: if the page is fine, accept this finding by its fingerprint; else treat it as gone.', key=reason)
+        if st == 'unreachable':
+            if (streak.get('runs') or 0) >= 2:
+                rep.add('ref-unreachable', 'low', sid, f"{r['id']}: {host(url)} did not answer{runs}", f"{where}; {e.get('error', '')}",
+                        'Check by hand; a link that stays unreachable is treated as gone.')
+            else:
+                rep.add('ref-unverified', 'info', sid, f"{r['id']}: {host(url)} did not answer", f"{where}; {e.get('error', '')}",
+                        'Run again later.')
+        if st == 'blocked':
+            rep.add('ref-blocked', 'info', sid, f"{r['id']}: {e.get('blocked_host') or host(url)} refuses scripts (HTTP {(e.get('http') or ['?'])[-1]})",
+                    where, 'Not checked for 30 days. Check by hand when it matters.')
+        final = e.get('final_url')
+        if final and st in ('moved', 'ok', 'changed', 'gone'):
+            a, b = site(host(url)), site(host(final))
+            if a != b and a not in RESOLVERS and host(url) not in RESOLVERS:
+                rep.add('ref-redirect-domain', 'medium', sid, f"{r['id']}: {host(url)} now sends readers to {host(final)}",
+                        f'{where}; now {final}', 'Check the new site is the same owner and the same document; link it '
+                        'directly or drop the link.', key=b)
+            elif st == 'moved':
+                bot = e.get('permanent') and final.startswith('https://')
+                rep.add('ref-moved', 'low', sid, f"{r['id']}: moved to {final}{runs}", where,
+                        'The weekly bot PR updates the link after two checks (the old one goes to mirrors).' if bot else
+                        'Update the link by hand (the redirect is not permanent or leaves HTTPS).', key=final)
+            if url.startswith('https://') and final.startswith('http://'):
+                rep.add('ref-https-downgrade', 'medium', sid, f"{r['id']}: redirects from HTTPS to plain HTTP", f'{where}; now {final}',
+                        'Link a page that stays on HTTPS, or say so.')
+        if st == 'changed' and r.get('claims'):
+            rep.add('ref-changed', 'info', sid, f"{r['id']}: the page changed on {e.get('changed_on')}", where,
+                    'Re-read the claims it backs; a claim corroborated by this record alone goes back to unconfirmed '
+                    'in the weekly bot PR.', key=str(e.get('sha256'))[:16])
+        gh = e.get('github') or {}
+        if gh.get('archived') and r.get('activity') not in (None, 'archived'):
+            rep.add('ref-repo-archived', 'low', sid, f"{r['id']}: {gh.get('full_name')} is archived; the record says "
+                    f"activity {r.get('activity')}", f"{where}; last push {gh.get('pushed')}",
+                    'Set assessment.activity to archived when the record is next edited.')
+        if gh.get('pushed') and (days_since(rep.as_of, gh['pushed']) or 0) > STALE_PUSH_DAYS and not gh.get('archived'):
+            rep.add('ref-repo-stale', 'info', sid, f"{r['id']}: no push for over a year", f"last push {gh['pushed']}",
+                    'Check it is still maintained.')
+        rec, now = str(r.get('spdx') or ''), gh.get('licence')
+        if rec and now and now not in ('NOASSERTION', 'NONE') and not same_licence(rec, now):
+            rep.add('ref-licence-changed', 'medium', sid, f"{r['id']}: the licence is now {now}; the record says {rec}",
+                    f"{where}; GitHub licence detection", 'Read the licence text; update licence and reuse.', key=now)
+    for f, url, code, text in lychee or []:
+        sid = f'link:{url}'
+        if code in (404, 410):
+            rep.add('md-link-dead', 'medium', sid, f'{url} is gone (HTTP {code})', f'{f}; lychee: {text}',
+                    'Fix or drop the link in the page (an archive.org snapshot, said so, is fine).', key=f)
+        elif re.search(r'fragment|anchor', text, re.I):
+            rep.add('md-link-anchor', 'low', sid, f'{url}: the anchor is not on the page', f'{f}; lychee: {text}',
+                    'Point the link at a heading that exists.', key=f)
+        elif url.startswith('file:') or not re.match(r'https?://', url):
+            rep.add('md-link-dead', 'medium', sid, f'{url}: no such file', f'{f}; lychee: {text}',
+                    'Fix the path (it is relative to the page).', key=f)
+        else:
+            rep.add('md-link-unverified', 'info', sid, f'{url} did not answer cleanly' + (f' (HTTP {code})' if code else ''),
+                    f'{f}; lychee: {text}', 'Many sites refuse scripts; check by hand.', key=f)
+
+
+def health_report(root, records, state, as_of, accepted, mode, lychee=None, limit=HEALTH_LIMIT):
+    """The JSON a run writes: the whole state (next run's --state), its findings, and counts for the page and issue."""
+    rep = Report(root, as_of, mode == 'online')
+    health_findings(rep, records, state, accepted, lychee)
+    for f in rep.findings:
+        why = accepted_reason(accepted or [], f)
+        if why:
+            f['accepted'] = why
+    findings = sorted(rep.findings, key=lambda f: (RANK[f['severity']], f['check'], f['subject'], f['fp']))
+    known = {r['id']: r for r in records}
+    recs = {rid: dict(e, file=known[rid]['file'], effective=effective_status(rid, e, accepted))
+            for rid, e in sorted((state.get('records') or {}).items()) if rid in known}
+    counts = collections.Counter(e['effective'] for e in recs.values())
+    sev = collections.Counter(f['severity'] for f in findings if not f.get('accepted'))
+    hosts = collections.Counter(task_host(r) for r in records)
+    return {
+        'schema': HEALTH_SCHEMA, 'as_of': as_of.isoformat(), 'mode': mode, 'revision': git(root, 'rev-parse', 'HEAD'),
+        'dirty': dirty(root), 'limit': limit, 'interval': HOST_INTERVAL,
+        'unverified': sorted(rep.unverified),
+        'summary': {s: sev.get(s, 0) for s in SEVERITIES} | {
+            'accepted': sum(1 for f in findings if f.get('accepted')), 'records': len(records),
+            'checked_ever': len(recs), 'checked_now': len(state.get('checked') or []),
+            'never_checked': len(records) - len(recs), 'status': {s: counts.get(s, 0) for s in HEALTH_STATUSES}},
+        'checked': state.get('checked') or [], 'held': state.get('held') or [], 'deferred': state.get('deferred') or [],
+        'hosts': {h: dict(v, records=hosts.get(h, 0)) for h, v in sorted((state.get('hosts') or {}).items())},
+        'lychee': None if lychee is None else {'errors': len(lychee)},
+        'limits': HEALTH_LIMITS, 'findings': findings, 'records': recs,
+    }
+
+
+def health_markdown(r, limit=None):
+    """The health report as one page (and the rolling issue's body): counts, then findings by status and host."""
+    s = r['summary']
+    st = ', '.join(f'{n} {k}' for k, n in s['status'].items() if n) or 'none checked yet'
+    open_ = [f for f in r['findings'] if not f.get('accepted') and RANK[f['severity']] <= RANK['low']]
+    out = ['# Reference health', '',
+           f"The links of the reference registry, checked on {r['as_of']} at revision {revision_label(r)} by "
+           f"`tools/resource_audit.py references` ({r['mode']}). {s['records']} records with a link; "
+           f"{s['checked_now']} checked this run (at most {r['limit']}, longest unchecked first), {s['never_checked']} never "
+           f"checked yet. Status: {st}. Health is not kept in git: the weekly workflow's artifact holds it, and only "
+           'evidence-class changes reach the registry, through a weekly bot PR.', '']
+    out += fold('<strong>Limits.</strong> What these checks can and cannot see', [f'- {x}' for x in r['limits']])
+    out += ['## Findings', '']
+    if not open_:
+        out += ['No open findings at low or above.', '']
+    groups = collections.OrderedDict()
+    for f in sorted(open_, key=lambda f: (RANK[f['severity']], f['check'], host_of_subject(r, f), f['subject'])):
+        groups.setdefault(f['check'], []).append(f)
+    for check, fs in groups.items():
+        lines = ['| Severity | Host | Record or link | Finding | Evidence | Action |', '|---|---|---|---|---|---|']
+        for f in fs:
+            lines.append(f"| {f['severity']} | {cell(host_of_subject(r, f))} | `{cell(f['subject'])}` | {inert(f['title'])} | "
+                         f"{inert(f['evidence'][:240])} | {inert(f['action'])} |")
+        hosts_ = collections.Counter(host_of_subject(r, f) for f in fs)
+        top = ', '.join(f'{h} {n}' for h, n in hosts_.most_common(4))
+        out += [f'### {check} ({len(fs)})', ''] + (lines + [''] if len(fs) <= 10 else fold(f'{len(fs)} findings; most on {top}', lines))
+    blocked = {h: v for h, v in (r.get('hosts') or {}).items() if v.get('blocked_until')}
+    if blocked:
+        out += ['## Blocked hosts', '', 'These answered 401 or 403 to the checker and are left alone until the date shown.', '',
+                '| Host | Records | Since | Until |', '|---|---|---|---|']
+        out += [f"| {cell(h)} | {v.get('records', 0)} | {v.get('since')} | {v.get('blocked_until')} |" for h, v in blocked.items()]
+        many = [h for h, v in blocked.items() if v.get('records', 0) > 10]
+        out += [''] + [f'- {h} holds {blocked[h]["records"]} records: should the offline mirror (#323 phase 5) keep '
+                       'copies of them?' for h in many] + ['']
+    accepted = [f for f in r['findings'] if f.get('accepted')]
+    if accepted:
+        out += [f'### Accepted ({len(accepted)})', ''] + fold(f'{len(accepted)} read and accepted in <code>{ACCEPTED}</code>',
+                                                               findings_table(accepted))
+    text = '\n'.join(out) + '\n'
+    if limit and len(text) > limit:
+        text = text[:limit].rsplit('\n', 1)[0] + '\n\n(cut to fit; the full report is the workflow\'s artifact)\n'
+    return text
+
+
+def host_of_subject(r, f):
+    sub = f['subject']
+    if sub.startswith('ref:'):
+        e = (r.get('records') or {}).get(sub[4:]) or {}
+        return host(e.get('url') or '') or '?'
+    return host(sub.split(':', 1)[1]) if ':' in sub else '?'
+
+
+def load_state(path):
+    """The last run's JSON (its records and hosts), or an empty state. A file of another schema is refused."""
+    if not path or not Path(path).is_file():
+        return {'records': {}, 'hosts': {}}
+    data = json.loads(Path(path).read_text(encoding='utf-8'))
+    if data.get('schema') != HEALTH_SCHEMA:
+        raise SystemExit(f'{path}: not a {HEALTH_SCHEMA} report')
+    recs = {rid: {k: v for k, v in e.items() if k not in ('file', 'effective')} for rid, e in (data.get('records') or {}).items()}
+    hosts = {h: {k: v for k, v in e.items() if k != 'records'} for h, e in (data.get('hosts') or {}).items()}
+    return {'records': recs, 'hosts': hosts}
+
+
 # ------------------------------------------------------------------------------------------------------------- skills
 REGISTRY_ACTION = ('Standing rule: never install skills or plugins from registries. Vendor a pinned commit '
                    '(tools/vendor_sync.py) or point at a reviewed release by commit, and say so.')
@@ -2398,7 +3040,7 @@ def plan_issue(r, issues, repo, title, authors=BOTS):
 
 
 def issue_body(r, tags, carried):
-    body = to_markdown(r, inventory=False, limit=60000)
+    body = health_markdown(r, limit=60000) if r.get('schema') == HEALTH_SCHEMA else to_markdown(r, inventory=False, limit=60000)
     if carried:
         body += (f"\n{len(carried)} finding(s) from an earlier report could not be re-checked this time (a service or "
                  'site did not answer), so they stay open until a run can check them.\n')
@@ -2421,6 +3063,33 @@ def cmd_issue(a):
                 print(res.stderr.strip()[:300], file=sys.stderr)
                 return 2
             print(res.stdout.strip())
+    return 0
+
+
+def cmd_references(a):
+    """Check (with --online) up to --limit records' links, fold the answers into the last run's state, and write the
+    next state with its findings (JSON) and the page (Markdown). Offline it only re-derives findings from --state."""
+    root = Path(a.root)
+    as_of = dt.date.fromisoformat(a.as_of) if a.as_of else dt.datetime.now(dt.timezone.utc).date()
+    accepted = load_accepted(a.accepted or root / ACCEPTED)
+    records = registry_records(root)
+    state = load_state(a.state)
+    if a.online:
+        net = Net()
+        check_references(net, records, state, as_of, a.limit, Pacer(a.interval), a.workers)
+        print(f'references: checked {len(state["checked"])} of {len(records)} records; requests by host: '
+              + ', '.join(f'{h} {n}' for h, n in net.calls.most_common(8)))
+    lychee = lychee_errors(a.lychee, root) if a.lychee and Path(a.lychee).is_file() else None
+    r = health_report(root, records, state, as_of, accepted, 'online' if a.online else 'offline', lychee, a.limit)
+    if a.json:
+        Path(a.json).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.json).write_text(json.dumps(r, indent=1, ensure_ascii=False, sort_keys=False) + '\n', encoding='utf-8')
+    if a.md:
+        Path(a.md).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.md).write_text(health_markdown(r), encoding='utf-8')
+    s = r['summary']
+    print(f"reference health {r['as_of']}: " + ', '.join(f'{n} {k}' for k, n in s['status'].items() if n)
+          + f"; findings: " + ', '.join(f'{s[k]} {k}' for k in SEVERITIES if s[k]) + f" ({s['accepted']} accepted)")
     return 0
 
 
@@ -2466,9 +3135,24 @@ def main(argv=None):
     p.add_argument('--md', default=str(ROOT / REPORT_MD))
     p.add_argument('--svg', default=str(ROOT / 'docs/img/supply-chain/findings.svg'))
     p.add_argument('--check', action='store_true', help='exit 1 if a file is not what the report gives')
+    p = sub.add_parser('references', help='the reference registry\'s link health (weekly workflow; #323)')
+    p.add_argument('--root', default=str(ROOT), help='the checkout whose registry to check (default: this one)')
+    p.add_argument('--online', action='store_true', help='check links (without it, re-derive findings from --state)')
+    p.add_argument('--state', help='the last run\'s JSON: validators, hashes, streaks, blocked hosts (none: start afresh)')
+    p.add_argument('--lychee', help='lychee\'s JSON report of the Markdown links, to add to the findings')
+    p.add_argument('--limit', type=int, default=HEALTH_LIMIT, help='records checked this run, longest unchecked first')
+    p.add_argument('--interval', type=float, default=HOST_INTERVAL, help='seconds between requests to one host (at least 1)')
+    p.add_argument('--workers', type=int, default=HEALTH_WORKERS, help='hosts checked at once')
+    p.add_argument('--accepted', help=f'accepted findings (default {ACCEPTED})')
+    p.add_argument('--as-of', help='the date of the run (YYYY-MM-DD; default today, UTC)')
+    p.add_argument('--json')
+    p.add_argument('--md')
     a = ap.parse_args(argv)
+    if a.cmd == 'references' and a.interval < HOST_INTERVAL:
+        ap.error(f'--interval is at least {HOST_INTERVAL} s: one request a second per host at most')
     try:
-        return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue, 'render': cmd_render}[a.cmd](a)
+        return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue, 'render': cmd_render,
+                'references': cmd_references}[a.cmd](a)
     except (OSError, ValueError, KeyError) as e:
         print(f'resource_audit: {type(e).__name__}: {e}', file=sys.stderr)
         return 2

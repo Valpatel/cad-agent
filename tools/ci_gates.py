@@ -10,6 +10,7 @@ Gates, for PRs into dev and main (CONTRIBUTING.md "Gates"):
 
 - branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ research/ test/ refactor/ release/
   vendor-update/ dependabot/ branches of this repo, or a fork's PR (the outside-contribution checks, #111, apply).
+  Both preserve the dated CHANGELOG entries already published on main; new changes go in changelog.d/.
 - review: the latest verdict from a maintainer (MAINTAINERS, with write access) must be pass, on the PR's head
   commit (a push after the pass needs a new verdict, so everything that reaches dev or main was reviewed as it is).
   The verdict is the last line of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->``
@@ -33,6 +34,7 @@ change, since GitHub keeps at most 1000 per commit and name), or a push. Just be
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import json
 import os
@@ -136,6 +138,46 @@ def release_gate(head_pyproject: str, main_pyproject: str, changelog: str) -> Re
     return True, f"release v{v} (main is {'.'.join(map(str, main))})"
 
 
+def changelog_history(head_log: str, main_log: str) -> Result:
+    """Released sections are an unchanged suffix. New entries belong above them, in Unreleased or a new release.
+
+    Only blank separator lines at a section's end are ignored. Body whitespace, dates and order are evidence of
+    what shipped, including relative links that were correct at release time; they must not be rewritten later.
+    """
+    def sections(log: str):
+        headers = list(re.finditer(r"^##[ \t]+([^\r\n]+)", log, re.M))
+        found, versions = [], set()
+        for i, header in enumerate(headers):
+            title = header.group(1).strip()
+            release = re.fullmatch(r"v([0-9]+(?:\.[0-9]+)*) \((\d{4}-\d{2}-\d{2})\)", title)
+            if title.startswith("v") and not release:
+                raise ValueError(f"malformed release heading {title!r}")
+            if release:
+                version, date = release.groups()
+                dt.date.fromisoformat(date)
+                if version in versions:
+                    raise ValueError(f"duplicate release v{version}")
+                versions.add(version)
+            end = headers[i + 1].start() if i + 1 < len(headers) else len(log)
+            block = log[header.start():end].splitlines(keepends=True)
+            while block and not block[-1].strip():
+                block.pop()
+            found.append((release.group(1) if release else None, "".join(block).rstrip("\r\n")))
+        return found
+
+    try:
+        main, head = sections(main_log), sections(head_log)
+    except ValueError as exc:
+        return False, f"CHANGELOG.md: {exc}"
+    first = next((i for i, (version, _) in enumerate(main) if version is not None), None)
+    if first is None or any(version is None for version, _ in main[first:]):
+        return False, "main's CHANGELOG.md has no valid dated release history"
+    published = main[first:]
+    if len(head) < len(published) or head[-len(published):] != published:
+        return False, "CHANGELOG.md changes released history on main; put changes in changelog.d/ instead"
+    return True, "released CHANGELOG entries unchanged"
+
+
 # ------------------------------------------------------------------------------------------------- GitHub plumbing
 def _gh(*args: str) -> str:
     return subprocess.run(["gh", *args], check=True, capture_output=True, text=True).stdout
@@ -143,6 +185,22 @@ def _gh(*args: str) -> str:
 
 def _git_show(rev_path: str) -> str:
     return subprocess.run(["git", "show", rev_path], check=True, capture_output=True, text=True).stdout
+
+
+def _changelog_at(repo: str, sha: str) -> str:
+    """Read one immutable file as data. Unsupported API responses fail closed, never as empty history."""
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise ValueError("CHANGELOG read requires a full commit SHA")
+    data = json.loads(_gh("api", f"repos/{repo}/contents/CHANGELOG.md?ref={sha}"))
+    if not isinstance(data, dict) or data.get("type") != "file" or data.get("encoding") != "base64":
+        raise ValueError("CHANGELOG API response is not a base64-encoded file")
+    size = data.get("size")
+    if type(size) is not int or not 0 <= size <= 1024 * 1024 or not isinstance(data.get("content"), str):
+        raise ValueError("CHANGELOG API response is missing content or exceeds 1 MiB")
+    raw = base64.b64decode("".join(data["content"].splitlines()), validate=True)
+    if len(raw) != size:
+        raise ValueError("CHANGELOG API content length does not match its size")
+    return raw.decode("utf-8")
 
 
 def release_fetch(number: int) -> List[str]:
@@ -192,12 +250,26 @@ def evaluate(repo: str, number: int, pr: Optional[dict] = None) -> Tuple[dict, D
     if base == "main":
         # The PR's files are read as data from its head commit (fetched, never checked out or run).
         subprocess.run(release_fetch(number), check=True)
+        main_sha = subprocess.run(["git", "rev-parse", "origin/main"], check=True, capture_output=True,
+                                  text=True).stdout.strip()
         try:
             log = _git_show(f"{head['sha']}:CHANGELOG.md")
         except subprocess.CalledProcessError:
             log = ""
+        main_log = _git_show(f"{main_sha}:CHANGELOG.md")
         results["release"] = release_gate(_git_show(f"{head['sha']}:pyproject.toml"),
-                                          _git_show("origin/main:pyproject.toml"), log)
+                                          _git_show(f"{main_sha}:pyproject.toml"), log)
+    elif base == "dev":
+        main_sha = _gh("api", f"repos/{repo}/commits/main", "--jq", ".sha").strip()
+        main_log = _changelog_at(repo, main_sha)
+        head_repo = (head.get("repo") or {}).get("full_name")
+        if not head_repo:
+            raise ValueError("PR head repository is unavailable; cannot verify released CHANGELOG history")
+        log = _changelog_at(head_repo, head["sha"])
+    if base in GATED:
+        history = changelog_history(log, main_log)
+        if not history[0] and results["branch-flow"][0]:
+            results["branch-flow"] = history
     return pr, results
 
 

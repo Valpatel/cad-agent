@@ -16,7 +16,7 @@ flowchart TD
 
 | File | Lessons on |
 |---|---|
-| [verify-from-source.md](verify-from-source.md) | Confirm board facts from schematics, photos and models, not from assumptions |
+| [verify-from-source.md](verify-from-source.md) | Confirm board facts from schematics, photos and models; preserve published release claims during file moves |
 | [user-intent-and-requirements.md](user-intent-and-requirements.md) | How the requirements evolved, and the user's corrections |
 | [agent-process.md](agent-process.md) | Mid-turn messages, status, consent, prior art, scope, delegation, killing processes safely, single-part tests |
 

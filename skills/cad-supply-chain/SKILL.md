@@ -33,6 +33,7 @@ flowchart TD
 | add a catalogue entry (`upstreams/registry.yaml`, `research/landscape.json`) or a link in a published page | `rows --online` |
 | recommend a tool, skill, plugin or MCP server to someone | `report --online` and read its row; check it is not installed from a registry |
 | act on the weekly "Supply-chain report" issue | `report --online` to confirm, then fix in a PR |
+| act on the weekly "Reference health" issue or its bot PR | `references --online --state <the last artifact's JSON>` to confirm; fix a link in a PR, or accept a false soft-404 by fingerprint |
 
 ```bash
 python3 tools/resource_audit.py report                       # offline: what CI enforces (seconds, no network)

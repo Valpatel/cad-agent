@@ -13,8 +13,8 @@ import path from 'node:path';
 import YAML from 'yaml';
 import { builtSite } from './built-site.mjs';
 import {
-  CORE, DIR, EXPERTS, LADDER, UNPLACED, areaOf, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
-  referenceJson, referenceSite,
+  CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
+  referenceJson, referenceSite, healthOf,
 } from '../../tools/site-references.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -68,6 +68,18 @@ test('the loader refuses an extension of nothing and a second record with one id
   assert.deepEqual(r.shards, [], 'vocab, coverage and files in subfolders are not shards');
 });
 
+test('which files are shards, and which records are read, are the Python registry\'s rules', async () => {
+  // cadagent.review.references owns both; the site's copies are pinned to its source text.
+  const py = await readFile(path.join(root, 'src/cadagent/review/references.py'), 'utf8');
+  const name = k => py.match(new RegExp(`^${k} = "([^"]+)"`, 'm'))[1];
+  assert.deepEqual([...NOT_SHARDS].sort(), py.match(/^NOT_SHARDS = \(([^)]*)\)/m)[1].split(',').map(s => name(s.trim())).sort());
+  assert.deepEqual(LADDER, [...py.match(/^LADDER = \(([^)]*)\)/m)[1].matchAll(/"([^"]+)"/g)].map(m => m[1]));
+  assert.match(py, /return isinstance\(ev, dict\) and ev\.get\("class"\) in LADDER\[1:\]/);
+  for (const [r, read] of [[{ evidence: { class: 'read' } }, true], [{ evidence: { class: 'snippet-only' } }, false],
+    [{ evidence: { class: 'measured' } }, true], [{ evidence: {} }, false], [{}, false], [null, false]])
+    assert.equal(isRead(r), read, JSON.stringify(r));
+});
+
 test('areas place a record as cadagent.review.references area_of does', () => {
   const tree = areaTree({ domains: [{ slug: 'd', title: 'D', areas: [{ slug: 'fasteners', title: 'F', topics: [{ slug: 'inserts' }] }] }] });
   assert.equal(areaOf('fasteners', tree), 'fasteners');
@@ -82,15 +94,20 @@ test('areas place a record as cadagent.review.references area_of does', () => {
 
 test('index.json counts every committed record once, and each area file lists exactly its records', async () => {
   // Counted from the YAML here, not through the module under test.
-  const own = [];
-  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !/\/(vocab|coverage)\.yaml$/.test(f)))
-    for (const r of YAML.parse(await show(f)).sources) if (!r.extends) own.push(r.id);
+  // A shard record read at source (#323's sweeps) is a source; one still snippet-only is catalogued.
+  const own = [], ownRead = [];
+  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
+    for (const r of YAML.parse(await show(f)).sources) {
+      if (r.extends) continue;
+      own.push(r.id);
+      if (isRead(r)) ownRead.push(r.id);
+    }
   const sources = YAML.parse(await show(CORE)).sources.map(s => s.id);
   const index = await json('catalog/references/index.json');
   assert.equal(index.schema, 'cad-agent-references/1');
   assert.equal(index.totals.records, own.length + sources.length);
-  assert.equal(index.totals.catalogued, own.length);
-  assert.equal(index.totals.sources, sources.length);
+  assert.equal(index.totals.catalogued, own.length - ownRead.length);
+  assert.equal(index.totals.sources, sources.length + ownRead.length);
   assert.deepEqual(Object.keys(index.totals.by_evidence), LADDER.filter(k => index.totals.by_evidence[k] !== undefined));
   const seen = new Set();
   for (const a of index.areas) {
@@ -227,6 +244,27 @@ test('a hostile record is shown as text: no markup, script URL or broken table g
   const experts = expertsMarkdown(m, { ORIGIN });
   assert.doesNotMatch(experts, live);
   assert.ok(experts.includes('https://example.com/a%7Cb%3Cc%3E%28d%29') === false, 'a catalogued record is not an expert\'s source');
+});
+
+test('link health joins the JSON only from a health report, never from git (#323 Q5)', () => {
+  const [first, second] = [...model.refs.records.values()];
+  const report = { schema: 'cad-agent-references-health/1', as_of: '2026-11-09', revision: 'abc',
+    summary: { status: { ok: 1, gone: 1 } },
+    records: { [first.id]: { status: 'gone', effective: 'ok', checked: '2026-11-09', soft404: ['title'] },
+      [second.id]: { status: 'moved', effective: 'moved', checked: '2026-11-02', final_url: 'https://example.org/new' } } };
+  const plain = new Map(referenceJson(model, { ORIGIN, revision: 'r', built: 'b' }));
+  const withHealth = new Map(referenceJson(model, { ORIGIN, revision: 'r', built: 'b', health: healthOf(report) }));
+  assert.ok(!plain.get('catalog/references/records.json').includes('"health"'), 'no report: no health anywhere');
+  assert.equal(JSON.parse(plain.get('catalog/references/index.json')).health, undefined);
+  const index = JSON.parse(withHealth.get('catalog/references/index.json'));
+  assert.deepEqual(index.health, { as_of: '2026-11-09', revision: 'abc', status: { ok: 1, gone: 1 } });
+  const brief = JSON.parse(withHealth.get('catalog/references/records.json')).records;
+  assert.equal(brief.find(r => r.id === first.id).health, 'ok', 'the effective status: an accepted soft-404 is ok');
+  const area = model.placed.get(second.id)[0];
+  const rec = JSON.parse(withHealth.get(`catalog/references/${area}.json`)).records.find(r => r.id === second.id);
+  assert.deepEqual(rec.health, { status: 'moved', checked: '2026-11-02', final_url: 'https://example.org/new' });
+  assert.equal(healthOf(null), null);
+  assert.throws(() => healthOf({ schema: 'cad-agent-supply-chain/1' }), /not a cad-agent-references-health/);
 });
 
 test('charts are drawn as links that filter, with what they show spoken', () => {

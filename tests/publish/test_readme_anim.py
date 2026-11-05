@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from cadagent.publish.anim import raster, svg
+from cadagent.publish.anim import hero, raster, svg
 from cadagent.mechanical.linkages import Linkage, circles, ellipse_path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -155,6 +155,12 @@ MUTATIONS = [
     ("no title", lambda t: re.sub(r"<title>[^<]*</title>", "<title> </title>", t, count=1), "<title>"),
     ("no reduced motion", lambda t: t.replace(svg.REDUCED_MOTION, ""), "prefers-reduced-motion"),
     ("no animation", lambda t: t.replace("@keyframes", "@media print"), "no CSS animation"),
+    ("an animation that plays once", lambda t: t.replace(" infinite", "", 1), "plays once"),
+    ("an inline animation that plays once", lambda t: t.replace('<g class="m', '<g style="animation:z 2s both" class="m', 1),
+     "plays once"),
+    ("a play-once inline animation before an endless one", lambda t: t.replace(
+        '<g class="m', '<g style="animation:z 2s both" class="m', 1).replace(
+        '<path class="tr"', '<path style="animation:y 2s infinite" class="tr"', 1), "plays once"),
     ("SMIL", lambda t: _insert(t, '<animate attributeName="opacity" dur="1s"/>'), "SMIL"),
     ("prefixed SMIL", lambda t: _insert(t, '<s:animate xmlns:s="http://www.w3.org/2000/svg" attributeName="x"/>'),
      "SMIL"),
@@ -204,6 +210,46 @@ def test_arc_points_follow_the_svg_arc():
     big = svg.arc_points((0, 0), (2, 0), 2, 2, 0, True, True, 8)        # the large arc of a radius-2 circle,
     assert [math.dist(p, (1, -math.sqrt(3))) for p in big] == pytest.approx([2] * 9)   # centred above the chord
     assert big[4] == pytest.approx((1, -math.sqrt(3) - 2))
+
+
+def test_every_animated_figure_loops_and_stills_under_reduced_motion():
+    """Every animated SVG in docs/img (the README hero and every docs figure, whichever tool drew it) repeats forever,
+    so a reader who scrolls to it late still sees it play, and has the reduced-motion rule that stops it on its
+    finished frame."""
+    figures = [p for p in sorted((ROOT / "docs" / "img").rglob("*.svg"))
+               if "@keyframes" in p.read_text(encoding="utf-8")]
+    assert any(p.name == "gyropup-leg.svg" for p in figures)
+    for p in figures:
+        text = p.read_text(encoding="utf-8")
+        assert svg.timed(text) == [], p
+        assert svg.REDUCED_MOTION in text, p
+
+
+def test_the_hero_holds_its_finished_frame_before_the_loop_restarts():
+    """The wordmark and every check are up for 3 to 5 s before everything fades and the loop restarts."""
+    ph = hero.Phases
+    done = max(ph.draw[1], ph.fills[1], ph.assemble[1], ph.scan[1], ph.fea[1], ph.motion[1], ph.words[1])
+    assert 3.0 <= ph.fade[0] - done <= 5.0
+    assert ph.fade[1] == ph.period
+
+
+def test_timed_finds_animations_that_stop():
+    assert svg.timed(".a{animation:a 2s steps(1,end) infinite,b 2s linear infinite}") == []
+    assert svg.timed("@media (prefers-reduced-motion:reduce){*{animation:none!important}}") == []
+    assert svg.timed(".a{animation:a 2s ease both}") == ["a 2s ease both"]
+    assert svg.timed(".a{animation:a 2s infinite,b 1s 2s}") == ["b 1s 2s"]
+    assert svg.timed(".a{animation-name:a;animation-duration:2s}") == ["a"]               # longhands only
+    assert svg.timed(".p circle{animation:14s linear infinite}#p1{animation-name:k0}") == []   # count from a rule
+    assert svg.timed(".a{animation:x 2s infinite}.b{animation-name:y;animation-duration:2s}") == ["y"]
+    assert svg.timed(".a{animation:x 2s infinite}.a.b{animation-iteration-count:1}") == ["iteration count 1"]
+    assert svg.timed(".c{animation-iteration-count:3}") == ["iteration count 3"]
+    assert svg.timed(".a{-webkit-animation:a 2s}") == ["a 2s"]
+    assert svg.timed(".a{/* x */animation:a 2s}") == ["a 2s"]
+    assert svg.timed("{animation-name:z}", ".p{animation:14s infinite}") == []          # a style attribute
+    assert svg.timed(".a{animation:a 2s;animation-iteration-count:infinite}") == []       # the longhand wins
+    assert svg.timed(".a{animation:a 2s infinite;animation-iteration-count:3}") == ["a 2s infinite (iteration count 3)"]
+    assert svg.timed(".a{ANIMATION:a 2s}") == ["a 2s"]                                    # any case
+    assert svg.timed(".a{animation:a 2s both}.b{animation:b 2s infinite}") == ["a 2s both"]   # block by block
 
 
 def test_two_animations_on_one_element_are_one_rule():

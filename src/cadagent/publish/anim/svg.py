@@ -1,12 +1,14 @@
 """The parts every animated README figure shares: numbers, compact paths, a CSS keyframe timeline, themes, the
 document wrapper and the rules a figure must pass to be embedded as an ``<img>`` on GitHub.
 
-Figures animate with CSS only: no script and no SMIL. Under ``prefers-reduced-motion`` every animation stops, and
-each element shows its own style, so the base style of every animated element is the figure's final frame. Colours
-are CSS custom properties with a light and a dark set, chosen by ``prefers-color-scheme`` inside the SVG. A figure
-paints its own background, so a mismatch between GitHub's theme and the browser's is never unreadable; a figure
-that sits on the page instead (``background=False``, the README hero) gives its text a halo in the page colour of its
-scheme (``HALO``), which keeps it readable on GitHub's white or near-black page whichever scheme the SVG picks.
+Figures animate with CSS only: no script and no SMIL. Every animation loops (``Timeline``: one period that every
+element shares), so a reader who scrolls to a figure late still sees it play. Under ``prefers-reduced-motion`` every
+animation stops, and each element shows its own style, so the base style of every animated element is the figure's
+final frame. Colours are CSS custom properties with a light and a dark set, chosen by ``prefers-color-scheme`` inside
+the SVG. A figure paints its own background, so a mismatch between GitHub's theme and the browser's is never
+unreadable; a figure that sits on the page instead (``background=False``, the README hero) gives its text a halo in
+the page colour of its scheme (``HALO``), which keeps it readable on GitHub's white or near-black page whichever
+scheme the SVG picks.
 
 Coordinates are written in *units* of ``1 / UNITS_PER_PX`` CSS pixels and rounded to whole units, so path data is
 short integers. Paths are relative after their first point. Deltas are taken between rounded points, so rounding
@@ -344,4 +346,61 @@ def problems(svg: str, budget: Optional[int] = None) -> List[str]:
         out.append("no prefers-reduced-motion rule in a <style> that stops every animation")
     if "@keyframes" not in css:
         out.append("no CSS animation")
+    styles = [el.get("style", "") for el in root.iter() if el.get("style")]
+    for once in timed(css) + [x for st in styles for x in timed("{" + st + "}", css)]:
+        out.append(f"an animation that plays once and stops ({once}): every timed animation must loop")
+    return out
+
+
+def _split(text: str) -> List[str]:
+    """``text`` split on commas outside parentheses (``steps(1,end)`` is one item)."""
+    out, depth, cur = [], 0, ""
+    for c in text:
+        depth += (c == "(") - (c == ")")
+        if c == "," and depth == 0:
+            out.append(cur)
+            cur = ""
+        else:
+            cur += c
+    return [x.strip() for x in out + [cur] if x.strip()]
+
+
+def timed(css: str, stylesheet: str = "") -> List[str]:
+    """The animations in ``css`` that do not repeat forever: a figure that played once would sit on its last frame
+    for anyone who scrolls to it late. Each ``{...}`` declaration block (a rule, or a ``style`` attribute wrapped in
+    braces) is read on its own, comments removed: the ``animation`` shorthand (``-webkit-`` too), then the
+    ``animation-name`` and ``animation-iteration-count`` longhands in the order written. A count other than
+    ``infinite`` is always reported. A block whose only animation property is ``animation-name`` takes its count from
+    another rule (``.pts circle{animation:14s linear infinite}`` with ``#p1{animation-name:k0}``); without a cascade
+    to follow, it passes when some rule in ``css`` or ``stylesheet`` (the figure's ``<style>``, for a ``style``
+    attribute) sets an endless count, and is reported otherwise. ``animation:none`` (reduced motion) is not an
+    animation. Property names are matched in any case."""
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    endless = re.search(r"animation(-iteration-count)?\s*:[^;}]*\binfinite\b",
+                        css + re.sub(r"/\*.*?\*/", "", stylesheet, flags=re.S), re.I) is not None
+    out = []
+    for block in re.findall(r"\{([^{}]*)\}", css) or [css]:
+        names, counts, shown, props = [], [], [], set()
+        for decl in block.split(";"):
+            prop, _, value = decl.partition(":")
+            prop = re.sub(r"^-webkit-", "", prop.strip().lower())
+            value = value.replace("!important", "").strip()
+            if prop.startswith("animation"):
+                props.add(prop)
+            if prop == "animation":
+                names = shown = _split(value)
+                counts = ["infinite" if "infinite" in x.lower().split() else "1" for x in names]
+            elif prop == "animation-name":
+                names = shown = _split(value)
+            elif prop == "animation-iteration-count":
+                counts = [c.lower() for c in _split(value)]
+        if not names and counts:                      # a count alone: it must be endless
+            out += [f"iteration count {c}" for c in counts if c != "infinite"]
+            continue
+        if props == {"animation-name"} and endless:
+            continue                                  # only names: the count comes from a rule that loops
+        for i, name in enumerate(names):
+            count = counts[i % len(counts)] if counts else "1"
+            if name.lower() != "none" and count != "infinite":
+                out.append(shown[i] if count == "1" else f"{shown[i]} (iteration count {count})")
     return out

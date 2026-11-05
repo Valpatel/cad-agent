@@ -25,8 +25,9 @@ from cadagent.formulas.bearings import (CLEARANCES, DEEP_GROOVE_TABLE, RELIABILI
 from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilever_shape, cantilever_strain_profile,
                                      cantilever_taper_factor, cantilever_thickness_profile, cantilever_tip_deflection,
                                      rect_second_moment, snap_arm, snap_deflection_force, snap_root_strain)
-from cadagent.formulas.inserts import (insert_clamp_path, insert_displaced_volume, insert_limited_torque,
-                                       insert_shear_force, insert_shear_torque, overflow_volume)
+from cadagent.formulas.inserts import (arc_path_radius, arc_printed_diameter, facet_diameter, insert_clamp_path,
+                                       insert_displaced_volume, insert_limited_torque, insert_shear_force,
+                                       insert_shear_torque, overflow_volume, polyhole)
 from cadagent.formulas.limiters import (PRELOAD_SHARE, annulus_stress, bearing_area, frustum_stiffness,
                                         limiter_plastic_load, limiter_stack, preload_retained,
                                         preload_retained_limited, press_fit_force, press_fit_pressure, proof_load,

@@ -1937,7 +1937,7 @@ sources:
     access: free
     terms: cited and summarised, never copied; values read off its charts are cited as such
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [src/cadagent/mechanical/inserts.py, research/process-profiles.yaml]
     verified: >-
       2026-11-01: the 5-page PDF opened (edition 04/26). Read for cadagent.mechanical.inserts (#230): pp. 2-5
       and Figures 8-12, whose bar values were read off the charts at 300 dpi.

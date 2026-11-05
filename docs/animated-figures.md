@@ -134,7 +134,7 @@ flowchart TD
 `cadagent.publish.anim.svg.problems()` lists what makes an SVG unsafe or unfit to embed. Each rule has a test that breaks it.
 
 <details>
-<summary>The embed rules: size, XML, no scripts or outside references, accessibility, CSS only, reduced motion</summary>
+<summary>The embed rules: size, XML, no scripts or outside references, accessibility, CSS only, a loop, reduced motion</summary>
 
 - at most 250 KB;
 - well-formed XML;
@@ -143,6 +143,8 @@ flowchart TD
 - no `href`, `src`, `url()` or `@import` pointing outside the document;
 - `role="img"` with an `aria-label`, and a `<title>`;
 - CSS animation only, no SMIL;
+- every animation repeats (`infinite`), so a reader who scrolls to the figure late still sees it play. The hero
+  holds its finished frame (wordmark and every check) for about 4 s before it fades and starts again;
 - a `prefers-reduced-motion` rule that stops every animation. The still it leaves is the final frame (the snap fit's
   is the top of the lead, where the strain peaks).
 

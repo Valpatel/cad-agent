@@ -28,9 +28,20 @@ What the import says, and what it does not:
 * text written for one project is rewritten project-neutral by ``NEUTRAL`` below (cad-agent is general purpose), and
   a re-import fails if the map's text under a rewrite changed.
 
-The tool is deterministic and idempotent: the same data gives the same bytes. ``--check`` exits 1 when the files on
-disk differ from what the import would write. After promotions start (records read at source and edited by hand),
-a re-import would undo them: run ``--check`` first and merge by hand.
+The import reconciles, so it is the one source of truth for what the map says and never undoes a person's work.
+Each record it writes ends with ``imported:``, a digest of the record's own text. In a shard it wrote, it keeps a
+record **as written, byte for byte**, when either:
+
+* someone has worked on it (``touched``): its text no longer matches its digest, so any edit counts, by a person or a
+  tool (a promotion, a summary fixed by hand, ``tools/references_health_apply.py`` withdrawing a claim or moving a
+  url, a comment added under it). A record with no digest counts as worked on unless it is exactly what the map makes;
+* the map does not make it: a record added by hand, or one the map has since dropped. It is kept and reported, never
+  deleted; delete a dropped one by hand.
+
+Every other record is rewritten from the map, so a later change to a record nobody has touched still applies. A kept
+record stays in the shard it is in, where the import would put it. The tool is deterministic and idempotent: the same
+data and shards give the same bytes. ``--check`` exits 1 when the files on disk differ from what the import would
+write.
 
     python3 tools/import_refmap.py path/to/data.json            # write the shards
     python3 tools/import_refmap.py path/to/data.json --check    # exit 1 if they would change
@@ -368,8 +379,36 @@ def extension(core_id: str, g: Optional[Tuple[int, Dict[str, Any]]], d_row: Opti
     return rec
 
 
-def build(data: Dict[str, Any], core: refs.Registry, vocab: Dict[str, Any]) -> Dict[str, Any]:
-    """The shards (name -> list of records), the coverage file and a report, from the map's data."""
+STAMP = "imported"                       # the last key of a record the import wrote: the digest of its text
+_STAMP_LINE = re.compile(rf"(?m)^  {STAMP}: .*\n")
+
+
+def text_digest(text: str) -> str:
+    """The digest of a record's text, its ``imported`` line left out (16 hex digits)."""
+    return hashlib.sha256(_STAMP_LINE.sub("", text).encode("utf-8")).hexdigest()[:16]
+
+
+def stamped(rec: Dict[str, Any]) -> str:
+    """A record as the import writes it: its text, ending with the digest of that text."""
+    body = {k: v for k, v in rec.items() if k != STAMP}
+    return dump([{**body, STAMP: text_digest(dump([body]))}])
+
+
+def touched(text: str, made: Dict[str, Any]) -> bool:
+    """True when the record written as ``text`` was worked on since the import wrote it: its text no longer matches
+    its digest. Without a digest (a shard from before digests, or a hand-made line), it was worked on unless it is
+    exactly what the map makes (``made``, the record without its derived confidence)."""
+    rec = yaml.safe_load(text)[0]
+    if STAMP in rec:
+        return text_digest(text) != str(rec[STAMP])
+    return {k: v for k, v in rec.items() if k != "confidence"} != made
+
+
+def build(data: Dict[str, Any], core: refs.Registry, vocab: Dict[str, Any],
+          existing: Optional[Dict[str, Tuple[str, str]]] = None) -> Dict[str, Any]:
+    """The shards (name -> list of records), the coverage file and a report, from the map's data. ``existing`` is
+    every record in the shards an earlier import wrote (id -> (shard name, its text)): the touched ones and those the
+    map does not make are kept in their shard (``result["kept"]``) instead of the map's version."""
     global CATEGORY_CODES
     CATEGORY_CODES = {v["code"]: k for k, v in vocab["category"].items()}
     by_url: Dict[str, refs.Reference] = {}
@@ -410,12 +449,29 @@ def build(data: Dict[str, Any], core: refs.Registry, vocab: Dict[str, Any]) -> D
         name = f"guides-{group}" if parts["g"] is not None else f"projects-{parts['d'][1][3]}"
         shards.setdefault(name, []).append(rec)
         report["extended"].append(core_id)
-    # derived confidence, from the registry as it will load
+    # reconcile with the shards on disk: a kept record replaces the map's, in the shard it is in
+    existing = existing or {}
+    made = {r["id"]: r for recs in shards.values() for r in recs}
+    kept = {i: name for i, (name, text) in existing.items() if i not in made or touched(text, made[i])}
+    as_kept = {i: yaml.safe_load(existing[i][1])[0] for i in kept}
+    merged: Dict[str, List[Dict[str, Any]]] = {}
+    for name, recs in shards.items():
+        merged[name] = [as_kept[r["id"]] if r["id"] in kept else r for r in recs
+                        if kept.get(r["id"], name) == name]
+    for i, name in kept.items():              # added by hand, dropped by the map, or placed elsewhere by it
+        if not any(r["id"] == i for r in merged.get(name, [])):
+            merged.setdefault(name, []).append(as_kept[i])
+    shards = merged
+    report["kept"] = sorted(i for i in kept if i in made)
+    report["not-in-map"] = sorted(i for i in kept if i not in made)
+    # derived confidence, from the registry as it will load; a kept record keeps its own
     reg = refs.Registry(core.data, core.path, [refs.Shard(f"research/references/{n}.yaml", {"schema": 2,
                                                                                          "sources": recs})
                                                for n, recs in shards.items()], vocab, core.core_file)
     for recs in shards.values():
         for rec in recs:
+            if rec["id"] in kept:
+                continue
             ref = reg.resolve(rec["id"])
             if isinstance(ref.get("evidence"), dict):
                 _insert_after(rec, "evidence", "confidence", refs.confidence(ref, reg))
@@ -424,7 +480,8 @@ def build(data: Dict[str, Any], core: refs.Registry, vocab: Dict[str, Any]) -> D
         kind, key = name.split("-", 1)
         text, words = SHARD_TITLES[kind]
         titles[name] = text.format(vocab[words][key])
-    return {"shards": dict(sorted(shards.items())), "titles": titles, "coverage": coverage(data), "report": report}
+    return {"shards": dict(sorted(shards.items())), "titles": titles, "coverage": coverage(data), "report": report,
+            "kept": kept}
 
 
 def _insert_after(rec: Dict[str, Any], after: str, key: str, value: Any) -> None:
@@ -474,18 +531,32 @@ def dump(data: Any) -> str:
 
 GENERATED = "# Generated by tools/import_refmap.py from the Reference Map's data.json (sha256 {digest}).\n"
 SHARD_HEAD = ("# Every new record here is catalogued: snippet-only until someone reads the source and promotes it\n"
-              "# (research/references/README.md). Licences are as the map states them, not read. Edit records by\n"
-              "# hand when you read a source; a re-import would undo that (run the tool with --check first).\n")
+              "# (research/references/README.md). Licences are as the map states them, not read. A re-import keeps\n"
+              "# as written every record edited since (its text no longer matches `imported`), and every one the map\n"
+              "# does not make.\n")
+ITEM = re.compile(r"(?m)^(?=- )")         # a record starts a line in a dumped shard; its text never does
+
+
+def records_as_written(text: str) -> List[Tuple[str, str]]:
+    """A shard's records as (id, exact text), in file order."""
+    body = text.split("\nsources:\n", 1)[1]
+    parts = [p for p in ITEM.split(body) if p]
+    recs = yaml.safe_load(body) or []
+    if len(parts) != len(recs):
+        raise SystemExit("a shard's records could not be told apart; keep each record starting `- ` at the line start")
+    return [(r["id"], t) for r, t in zip(recs, parts)]
 COVERAGE_HEAD = "# The map's coverage rows and the sources it still wants. Its drafted issues were never posted.\n"
 
 
-def render(result: Dict[str, Any], digest: str) -> Dict[str, str]:
-    """File name -> text, for every file the import owns."""
+def render(result: Dict[str, Any], digest: str, written: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """File name -> text, for every file the import owns. A kept record is its text in ``written`` (id -> text)."""
     first = GENERATED.format(digest=digest[:16])
     out = {}
     for name, recs in result["shards"].items():
-        doc = {"schema": 2, "title": result["titles"][name], "sources": recs}
-        out[f"{name}.yaml"] = first + SHARD_HEAD + dump(doc)
+        doc = dump({"schema": 2, "title": result["titles"][name], "sources": recs})
+        head = doc.split("\nsources:\n", 1)[0] + "\nsources:\n"
+        body = "".join(written[r["id"]] if r["id"] in result["kept"] else stamped(r) for r in recs)
+        out[f"{name}.yaml"] = first + SHARD_HEAD + head + body
     out[refs.COVERAGE] = first + COVERAGE_HEAD + dump(result["coverage"])
     return out
 
@@ -508,8 +579,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     # the core alone: shards this tool wrote before are replaced, not merged with themselves
     core = refs.Registry(full.data, full.path, [s for s in full.shards if Path(s.file).name not in owned], vocab,
                          full.core_file)
-    result = build(data, core, vocab)
-    files = render(result, hashlib.sha256(raw).hexdigest())
+    existing, written = {}, {}
+    for name in sorted(owned - set(refs.NOT_SHARDS)):
+        text = (folder / name).read_text(encoding="utf-8")
+        for rid, rec_text in records_as_written(text):
+            existing[rid] = (name[:-len(".yaml")], rec_text)
+            written[rid] = rec_text
+    result = build(data, core, vocab, existing)
+    files = render(result, hashlib.sha256(raw).hexdigest(), written)
     changed = [n for n, text in files.items() if not (folder / n).is_file() or (folder / n).read_text("utf-8") != text]
     stale = sorted(owned - set(files))
     rep = result["report"]
@@ -518,6 +595,10 @@ def main(argv: Optional[List[str]] = None) -> int:
           f"rows")
     for url, rid in rep["left-unverified"]:
         print(f"left as unverified in research/references.yaml: {rid} ({url})")
+    if rep["kept"]:
+        print(f"kept as written ({len(rep['kept'])} edited since the import): {', '.join(rep['kept'])}")
+    for rid in rep["not-in-map"]:
+        print(f"not in the map, kept as written: {rid} (added by hand, or dropped by the map: delete it by hand)")
     if args.check:
         for n in changed + stale:
             print(f"would change: research/references/{n}")

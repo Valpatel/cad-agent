@@ -86,7 +86,7 @@ CATALOGUED_TAG_OK = ("research/",)
 FIELDS = ("id", "extends", "kind", "category", "title", "authors", "org", "year", "url", "isbn", "mirrors", "access",
           "terms", "licence", "reuse", "areas", "processes", "process_groups", "domains", "evidence", "confidence",
           "verified", "archive", "used_for", "rules", "checks", "claims", "summary", "assessment", "projects",
-          "aliases", "upstream")
+          "aliases", "upstream", "imported")
 # value field -> the vocab.yaml vocabulary it is drawn from
 VOCAB_FIELDS = {("kind",): "kind", ("category",): "category", ("licence", "class"): "licence_class",
                 ("reuse", "text"): "reuse_text", ("reuse", "geometry"): "reuse_geometry",
@@ -119,6 +119,12 @@ def _yaml(text: str) -> Any:
     """``yaml.safe_load``, through libyaml when it is built in (the registry is read on every check)."""
     return yaml.load(text, Loader=_LOADER)  # noqa: S506 - a safe loader, never yaml.Loader
 
+
+def is_read(record: Any) -> bool:
+    """A shard record someone has read at source (evidence class ``read`` or higher): a source a rule may cite. Below
+    that it is catalogued. The one statement of the rule; the importer, the profiles and the site follow it."""
+    ev = record.get("evidence") if isinstance(record, dict) else None
+    return isinstance(ev, dict) and ev.get("class") in LADDER[1:]
 
 @dataclass(frozen=True)
 class Reference:
@@ -246,8 +252,7 @@ class Registry:
                     self._duplicates.append(rid)
                     self._load_problems.append(f"{rid}: in {shard.file} and in {self.entries[rid].file}; one id, one "
                                                "record (to add fields to a core entry, write `extends: true`)")
-                cls = (item.get("evidence") or {}).get("class") if isinstance(item.get("evidence"), dict) else None
-                kind = "source" if cls in LADDER[1:] else "catalogued"
+                kind = "source" if is_read(item) else "catalogued"
                 self.entries[rid] = Reference(rid, kind, item, shard.file)
         # aliases after every id, so an alias that names an entry is caught wherever either is written
         for ref in self.entries.values():
@@ -520,6 +525,9 @@ class _Schema2:
             if extra:
                 out.append(f"unknown fields {extra} in {file} (a typo drops a fact; the fields are listed in "
                            "research/references/README.md)")
+        if "imported" in d and not (isinstance(d["imported"], str) and re.fullmatch(r"[0-9a-f]{16}", d["imported"])):
+            out.append("imported is the importer's 16-hex digest of the record as it wrote it (tools/import_refmap.py); "
+                       "never type one")
         if "health" in d:
             out.append("`health` is not kept in git: raw link health lives in the checker's artifacts and the site "
                        "JSON, and only evidence-class changes land here (#323)")
@@ -655,6 +663,14 @@ class _Schema2:
         if cls not in LADDER:
             return out                                 # reported by record_problems as a vocabulary problem
         rank = LADDER.index(cls)
+        lowered = _get(d, ("evidence", "lowered"))
+        if lowered is not None:          # written by tools/references_health_apply.py when a link stays dead (#323)
+            if not isinstance(lowered, dict) or lowered.get("from") not in LADDER or _date(lowered.get("date")) is None \
+                    or not str(lowered.get("why") or "").strip():
+                out.append("evidence.lowered needs from (a ladder rung), date (ISO) and why")
+            elif LADDER.index(lowered["from"]) <= rank:
+                out.append(f"evidence.lowered.from {lowered['from']} is not above the class {cls}: drop `lowered` when "
+                           "a record is promoted again")
         if ref.file == self.reg.core_file and rank == 0 and ref.kind == "source":
             out.append("a core entry is read (it has a dated `verified` note); a snippet-only record goes in a shard")
         if rank >= LADDER.index("read") and not _date(d.get("verified")):

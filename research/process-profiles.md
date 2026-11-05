@@ -123,6 +123,13 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 | Add to the insert hole in CAD | 0.2–0.3 mm (M3 in PLA: 4.2 mm kept about 90 % of the best pull-out) | Small inserts; size so the insert pre-seats with slight resistance | Stefan Hermann, [CNC Kitchen][cnckitchen-heat-set-hole-size] |
 | Blind insert hole depth | insert length + about 1 mm; straight, not tapered, normally no chamfer | Through holes no longer than the insert | Stefan Hermann, [CNC Kitchen][cnckitchen-heat-set-tips] |
 | Iron temperature | printing temperature + 10–20 °C; melt 90 % in, press the rest | Resin parts: glue into a stepped hole instead | Stefan Hermann, [CNC Kitchen][cnckitchen-heat-set-tips] |
+| Printed hole undersize, another printer | 0.1 mm (2026's test: 0.25 mm) | One Original Prusa in Prusament; the range is kept, the 2026 value taken, a coupon governs | Stefan Hermann, [CNC Kitchen][cnck-2019] |
+| Insert hole in a filled plastic | +0.08 mm at 15 % filler, +0.15 mm at 35 % and over, interpolated | Glass or mineral filler, moulded; fibre-filled filaments by extension | Christie Jones, [SPIROL][spirol-how-to-design-the-proper-hole-for-heat-ultrasonic] |
+| Perimeters round an insert | ≥ 2, the wall a whole number of extrusion widths | SPIROL asks the metric size (it governs) | [LulzBot][lulzbot-tips-and-tricks-heat-set-inserts] |
+| Contours round an insert hole | 4–6 | Stratasys Insight | [PADT][padt-adding-inserts-to-3d-printed-parts-hardware-tips] |
+| Perimeters round an insert, with tests | ≥ the metric size (M3: 3, M6: 6) | Printed pull-out tests against wall loops; governs the two rows above | K. Ionkin, [SPIROL][spirol-3dp] |
+| Least hole to draw for a track width t | √(D² + t²), a floor | The arc balance; real tracks shrink a hole more | [RepRap wiki][reprap-arc-compensation] |
+| Circle for a meshed hole of n sides | D / cos(π/n), so the flats land on D | 5 % small at 10 sides, 1 % at 22 | nophead, [HydraRaptor][nophead-polyholes] |
 
 <img src="../docs/img/fasteners/screw-boss-explorer.svg" alt="The screw-boss explorer before its controls load: a DELTA PT 30 screw in a 6 mm PLA boss printed upright with 6 mm of thread, tightened to 0.30 N·m; the thread strips at 767 N, so tighten to at most 0.31 N·m" width="640">
 
@@ -863,6 +870,13 @@ YAML under `standards`)
 [xometry-fdm-mini-guide]: https://www.xometry.com/resources/3d-printing/mini-guide-fdm-3d-printing/
 [cnckitchen-heat-set-tips]: https://cnckitchen.com/blog/tips-and-tricks-for-heat-set-inserts
 [cnckitchen-heat-set-hole-size]: https://cnckitchen.com/blog/are-our-heat-set-insert-datasheets-wrong
+[cnck-2019]: https://www.cnckitchen.com/blog/threaded-inserts-for-3d-prints-cheap-vs-expensive
+[spirol-how-to-design-the-proper-hole-for-heat-ultrasonic]: https://www.spirol.com/resources/white-papers/how-to-design-the-proper-hole-for-heat-ultrasonic-inserts/
+[lulzbot-tips-and-tricks-heat-set-inserts]: https://lulzbot.com/learn/tips-and-tricks-heat-set-inserts
+[padt-adding-inserts-to-3d-printed-parts-hardware-tips]: https://www.padtinc.com/2019/08/06/adding-inserts-to-3d-printed-parts-hardware-tips-plus-one-click-design-in-grabcad-print-advanced-fdm/
+[spirol-3dp]: https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf
+[reprap-arc-compensation]: https://reprap.org/wiki/ArcCompensation
+[nophead-polyholes]: https://hydraraptor.blogspot.com/2011/02/polyholes.html
 [klahn-2016-am-snapfit]: https://publikationen.bibliothek.kit.edu/1000142464
 [hubs-sla-design]: https://www.hubs.com/knowledge-base/how-design-parts-sla-3d-printing/
 [hubs-sls-design]: https://www.hubs.com/knowledge-base/how-design-parts-sls-3d-printing/

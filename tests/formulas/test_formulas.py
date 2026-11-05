@@ -54,6 +54,8 @@ def test_sources_are_cited_by_edition_not_quoted():
         elif key in ("covestro-screws", "covestro-joining", "bulten", "spirol-inserts", "skf-2018",
                      "nsk-e728", "mil-hdbk-5j"):                                   # a dated edition
             assert re.search(r"\b20\d\d-\d\d(-\d\d)?\b", ref), key
+        elif key in ("nophead-polyholes", "reprap-arc-compensation"):          # web pages: posted or last edited
+            assert re.search(r"\b20\d\d-\d\d-\d\d\b", ref), key
         elif key == "abbud-riveted-joints":                                    # lecture notes: the institution
             assert re.search(r"lecture notes, .*University", ref), key
         elif key != "covestro":

@@ -10,7 +10,7 @@ that quietly changed, or a catalogue link whose repository was deleted and re-re
 everyone who follows us. [`tools/resource_audit.py`](../../tools/resource_audit.py) checks all of it the same way
 every time; this skill says when to run it, how to read it and what to do with what it finds. The
 [supply-chain page](../../docs/supply-chain.md) shows where it runs, and the
-[latest report](../../research/security-report.md) what it found. It complements [SECURITY.md](../../SECURITY.md)
+[latest report](../../research/security-report.md) what it found. It complements [SECURITY.md](../../.github/SECURITY.md)
 (vendored-code rules) and the red-flag scan in `tools/security_scan.py`, which reads the code itself; this report
 reads what surrounds it.
 

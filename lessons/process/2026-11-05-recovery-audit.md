@@ -236,7 +236,7 @@ The separate recovery checkout initially points to `04704a41`. No removal is aut
 
 A useful improvement records the failed case, reproduces it, changes the tested engineering code, adds a short method/skill with source and applicability limits, and plants the case in the existing harness. Update the owning issue with the exact head and evidence. This closes the learning loop without promoting a simulation into a physical measurement.
 
-Back to [process lessons](README.md), [the vision](../../docs/vision.md) and [contributing](../../CONTRIBUTING.md).
+Back to [process lessons](README.md), [the vision](../../docs/vision.md) and [contributing](../../.github/CONTRIBUTING.md).
 
 ### Give a new folder index a distinct catalogue identity
 - **Rule:** preserve published root-page IDs and include enough path context to distinguish a new folder map.

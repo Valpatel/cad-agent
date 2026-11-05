@@ -2,6 +2,7 @@
  * folded (#179). */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { publicPath, selectPages } from '../../tools/site/publication.mjs';
 import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from '../../tools/site-pages.mjs';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
@@ -131,4 +132,13 @@ test('long tables and code blocks fold, with a summary of what is inside; short 
   assert.match(fold(code(40)), /<summary><span class="fold-kind">Code<\/span> 40 lines<\/summary>/);
   const diagram = '<pre><code class="language-mermaid">' + 'a\n'.repeat(40) + '</code></pre>';
   assert.equal(fold(diagram), diagram, 'a diagram source is a picture, not reference text');
+});
+
+
+test('the real source selector keeps moved policy identity and rejects a stale replacement', () => {
+  const source = '.github/CONTRIBUTING.md';
+  const files = [source, 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];
+  assert.deepEqual(selectPages(files).map(p => p.file), [source, 'docs/a b.md', 'docs/a\tb.md']);
+  assert.equal(publicPath(source), 'CONTRIBUTING.md');
+  assert.throws(() => selectPages(files.filter(f => f !== source)), /required published source \.github\/CONTRIBUTING\.md is missing/);
 });

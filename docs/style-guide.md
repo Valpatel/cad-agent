@@ -25,7 +25,7 @@ flowchart TD
 - **Vendored trees** (`vendor/<name>/`, `src/cadagent/webkit/vendor/<name>/`) keep their upstream layout. One README at
   the vendor root covers them, with credits and licences.
 - **Skill folders** (`skills/<name>/`) have `SKILL.md` instead; the `skills/` README lists them.
-- `.github/` is documented in [CONTRIBUTING.md](../CONTRIBUTING.md).
+- `.github/` is documented in [CONTRIBUTING.md](../.github/CONTRIBUTING.md).
 
 ## Shape of a README
 

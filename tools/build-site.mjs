@@ -20,6 +20,7 @@ import { buildCatalog } from './site-catalog.mjs';            // the catalogue p
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
+import { SECTIONS, publicPath, selectPages } from './site/publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
@@ -51,7 +52,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'tools/site-references.mjs', 'package.json', 'package-lock.json'];
+  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'tools/site-references.mjs', 'tools/site/publication.mjs', 'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -115,20 +116,11 @@ const firstPara = md => {
   return clip(plain(para.join(' ')));
 };
 
-const SECTIONS = [
-  { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === 'CONTRIBUTING.md' || f === 'THIRD_PARTY_NOTICES.md' },
-  { id: 'skills', title: 'Skills', match: f => /^skills\/[^/]+\/SKILL\.md$/.test(f) },
-  { id: 'agents', title: 'Subagents', match: f => /^agents\/[^/]+\.md$/.test(f) },
-  { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/(?:[a-z0-9-]+\/)?[^/]+\.md$/.test(f) },   // lessons/<area>/
-  { id: 'research', title: 'Research', match: f => /^research\/[^/]+\.md$/.test(f) },
-];
 const pages = [];
 // A file that moved keeps a one-line stub at its old path (`<!-- moved-to: new/path.md -->`), so links into the repo
 // keep working on GitHub; the site serves a permanent redirect instead of a page.
 const moved = [];
-for (const file of tracked) {
-  const section = SECTIONS.find(s => s.match(file));
-  if (!section || /(?:^|\/)(?:AGENTS|CLAUDE)\.md$/.test(file)) continue;
+for (const { file, section } of selectPages(tracked)) {
   const src = await read(file);
   const to = src.match(/^<!--\s*moved-to:\s*(\S+?\.md)\s*-->/)?.[1];
   if (to) {
@@ -141,8 +133,8 @@ for (const file of tracked) {
   const title = meta.name || body.match(/^#\s+(.+)$/m)?.[1] || file;
   pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
 }
-const pageURL = f => '/' + f.replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
-const pageFile = f => f.replace(/\.md$/, '.html');
+const pageURL = f => '/' + publicPath(f).replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
+const pageFile = f => publicPath(f).replace(/\.md$/, '.html');
 const pageFiles = new Set(pages.map(p => p.file));
 // Permanent redirects (tools/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
 const redirects = (await read('tools/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
@@ -240,18 +232,22 @@ const folderPage = resolved => {
   const readme = resolved.replace(/\/?$/, '/README.md');
   return !resolved.endsWith('.md') && pageFiles.has(readme) ? readme : null;
 };
-// Relative links in a Markdown copy: published pages and images stay relative (their .md twin or file is at the same
-// path); anything else (source files, tests) points at GitHub. absolute=true makes every link absolute (llms-full.txt).
+// Resolve links from the real source location, then write them relative to the public Markdown location.
+// A moved policy is sourced under .github/ but keeps its original public URL and Markdown twin.
 const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
   chunk.replace(/(\]\()([^)\s#][^)\s]*)((?:\s+"[^"]*")?\))/g, (all, open, url, close) => {
     if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return all;
     const [pathname, ...hash] = url.split('#');
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(file), pathname));
     const folder = folderPage(resolved);
-    if (folder) return `${open}${absolute ? `${ORIGIN}/${folder}` : pathname.replace(/\/?$/, '/README.md')}${hash.length ? '#' + hash.join('#') : ''}${close}`;
-    const published = pageFiles.has(resolved) || (/^docs\/img\//.test(resolved) && tracked.includes(resolved));
-    const target = published ? (absolute ? `${ORIGIN}/${resolved}` : url.split('#')[0])
-      : `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
+    const destination = folder || resolved;
+    const published = pageFiles.has(destination) || (/^docs\/img\//.test(destination) && tracked.includes(destination));
+    let target;
+    if (published) {
+      const publicFile = publicPath(destination);
+      target = absolute ? `${ORIGIN}/${publicFile}` : pathname.startsWith('/') ? '/' + publicFile
+        : path.posix.relative(path.posix.dirname(publicPath(file)), publicFile) || path.posix.basename(publicFile);
+    } else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
 // A Markdown copy with its [ref:<id>] tags as links to the records' pages (relative, or absolute for llms-full.txt).
@@ -319,7 +315,7 @@ for (const p of pages) {
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
   html = await placeVisuals(p.file, fold(html));
-  const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(p.file)}">Markdown</a></p>`;
+  const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(publicPath(p.file))}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
   // Long pages: the kit's <cad-nav> on the left (every page, grouped, with this page's outline under it) and, on very
@@ -339,11 +335,11 @@ for (const p of pages) {
   }).join('');
   const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></details></cad-nav>`;
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + p.file, description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
-  await writeFile(path.join(out, p.file), twinMd(p.file, p.src));   // the Markdown twin, same path
+  await writeFile(path.join(out, publicPath(p.file)), twinMd(p.file, p.src));   // the Markdown twin, same path
 }
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
@@ -363,7 +359,7 @@ for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i
 // Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site-catalog.mjs).
 const SNAP = snapDemo();                 // geometry-driven animation: tools/snap-demo.mjs
 const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
-  ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, safeUrl,
+  ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, publicPath, safeUrl,
   areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
   snap: SNAP, cliUpdated: lastChange('src/cadagent/cli.py'), draft: WORKTREE,
 });
@@ -596,7 +592,7 @@ ${agentGuide}
 - [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
 - [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified
 
-${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}](${ORIGIN}/${p.file}): ${p.summary.replace(/\s+/g, ' ').slice(0, 200)}`).join('\n')}`).join('\n\n')}
+${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}](${ORIGIN}/${publicPath(p.file)}): ${p.summary.replace(/\s+/g, ' ').slice(0, 200)}`).join('\n')}`).join('\n\n')}
 
 ## Commands
 
@@ -625,7 +621,7 @@ cad-agent checks, simulates, explains and measures around it (maturity: ${LADDER
 ${homeMd.ours.join('\n')}
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
-  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${p.file}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));
+  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule
 // only: security headers on /*, Cache-Control only on /kit/vendor/* (everything else keeps the Pages default, which
 // revalidates). The site's own pages have no inline script; the kit's viewer pages have an import map and a module

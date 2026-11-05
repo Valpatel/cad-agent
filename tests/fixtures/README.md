@@ -28,4 +28,4 @@ flowchart TD
 | `mcmaster/` | Hand-written McMaster-Carr pages, so the tests never fetch the site ([README](mcmaster/README.md)) |
 | `model/` | The packed two-part model both model decoders are held to; rebuild with `make_fixture.py` |
 
-Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)
+Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

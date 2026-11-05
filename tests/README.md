@@ -65,5 +65,5 @@ node --test tests/webkit/*.test.mjs tests/site/website-*.test.mjs
 npm run test:site && npm run test:part-table && npm run test:file-viewer && npm run test:diagrams
 ```
 
-Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../CONTRIBUTING.md#where-files-go) ·
+Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·
 [package map](../src/cadagent/README.md) · [style guide](../docs/style-guide.md)

@@ -1506,11 +1506,11 @@ def verify_receipt(rep, net, row, top, name, rec):
 
 
 # -------------------------------------------------------------------------------------------------------------- links
-# The Markdown files tools/build-site.mjs publishes as pages: its SECTIONS, in the same order and with the same patterns.
-# tests/repo/test_resource_audit.py reads build-site.mjs and fails when the two disagree.
+# The real source paths selected by tools/site/publication.mjs. A moved source is not its public URL.
+# tests/repo/test_resource_audit.py compares selector behavior on real and planted git inventories.
 PUBLISHED = [re.compile(r'^docs/[^/]+\.md$'), re.compile(r'^skills/[^/]+/SKILL\.md$'), re.compile(r'^agents/[^/]+\.md$'),
              re.compile(r'^lessons/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^research/[^/]+\.md$')]
-PUBLISHED_FILES = ('README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md')
+PUBLISHED_FILES = ('README.md', '.github/CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md')
 
 
 def published(f, report=False):

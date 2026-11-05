@@ -7,7 +7,7 @@ trays, SATA cable routing and a review website. No other session histories were 
 
 ## How they were mined
 
-- **Input:** a scrubbed, chronological transcript produced by `mining/extract_session.py`. It keeps only the prose of
+- **Input:** a scrubbed, chronological transcript produced by [`tools/mining/extract_session.py`](../tools/mining/extract_session.py). It keeps only the prose of
   user messages, mid-turn user messages and assistant replies. Tool calls and tool output are left out. Personal data
   (addresses, paths, hostnames) is replaced with placeholders such as `<ip>` and `<scratch>`.
 - **Gaps in the transcript:**

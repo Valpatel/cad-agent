@@ -347,7 +347,7 @@ domains:
         title: Agent process and workflow
         scope: How agents work here, in parallel - issues, worktrees, reviews and long runs.
         maturity: tooling
-        pages: [docs/agent-workflow.md, research/agent-toolkits-2026-10.md]
+        pages: [docs/agent-workflow.md, docs/weekly-upstream-update.md, research/agent-toolkits-2026-10.md]
         cli: [agents, update]
         skills: [cad-work-tracking, cad-pr-review, cad-remote-runs]
         agents: [cad-pr-reviewer, cad-resume]

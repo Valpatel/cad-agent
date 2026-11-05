@@ -234,6 +234,12 @@ Back to [process lessons](README.md), [the vision](../../docs/vision.md) and [co
 
 ### Give a new folder index a distinct catalogue identity
 - **Rule:** preserve published root-page IDs and include enough path context to distinguish a new folder map.
-- **Incident:** on 2026-11-05, the first build after adding `docs/README.md` failed: `Error: catalogue: two entries have the id guide-index`. The catalogue removed the `docs/` prefix and reduced both it and root `README.md` to `index`.
 - **Check:** `tests/site/website-catalog.test.mjs` now requires root `guide-index`, docs `guide-docs-index` and research `research-index`; the real site build must succeed. `npm run build:site` produced the failure under Node 22.23.4. A page map is navigation evidence, not physical validation.
+
+<details>
+<summary>Build incident and source</summary>
+
+- **Incident:** on 2026-11-05, the first build after adding `docs/README.md` failed: `Error: catalogue: two entries have the id guide-index`. The catalogue removed the `docs/` prefix and reduced both it and root `README.md` to `index`.
 - **Source:** 2026-11-05 UTC, PR #348, `tools/site-catalog.mjs` `pageItemId` and the recorded local build output; no secrets or machine paths retained.
+
+</details>

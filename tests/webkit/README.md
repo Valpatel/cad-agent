@@ -43,4 +43,4 @@ flowchart TD
 
 Run: `node --test tests/webkit/*.test.mjs` and `npm run test:part-table`, `test:file-viewer`, `test:diagrams`.
 
-Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)
+Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

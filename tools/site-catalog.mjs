@@ -143,6 +143,7 @@ const AREA_FIELDS = {
 
 export async function buildCatalog(ctx) {
   const { ORIGIN, REPO, pageURL, tracked } = ctx;
+  const publicPath = ctx.publicPath || (file => file);
   const LEVELS = levelsOf(ctx.areas);
   const has = new Set(tracked);
   const files = new Map();
@@ -164,7 +165,7 @@ export async function buildCatalog(ctx) {
   for (const n of nodes.values()) if (n.lessons) put('lessons', n.lessons, n.slug);
   for (const v of ctx.areas.cross_cutting?.pages || []) put('pages', v, 'cross-cutting');
   // Pages about the whole repository (README, CONTRIBUTING, licence notices, the lessons index) are cross-cutting too.
-  for (const f of ['README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md', 'lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
+  for (const f of ['README.md', '.github/CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md', 'lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
   /** Area and domain slugs for a list of node slugs (a topic counts for its area), with maturity and domains. */
   const place = (slugs, where) => {
     const areas = [], domains = [];
@@ -258,7 +259,8 @@ export async function buildCatalog(ctx) {
   const kindOfSection = { docs: 'guide', lessons: 'lesson', research: 'research', skills: 'skill', agents: 'agent' };
   const pageItemId = (p, kind) => {
     // The root README already owns guide-index. A docs folder map needs its own stable id.
-    const rest = (p.file === 'docs/README.md' ? 'docs/README.md' : p.file.replace(/^(docs|lessons|research|skills|agents)\//, '')).replace(/\/SKILL\.md$|\.md$/, '').replace(/(^|\/)README$/, '$1index');
+    const file = publicPath(p.file);
+    const rest = (file === 'docs/README.md' ? 'docs/README.md' : file.replace(/^(docs|lessons|research|skills|agents)\//, '')).replace(/\/SKILL\.md$|\.md$/, '').replace(/(^|\/)README$/, '$1index');
     return `${kind}-${slugify(rest)}`;
   };
   const items = [];
@@ -271,7 +273,7 @@ export async function buildCatalog(ctx) {
       ...(skill ? placed.skills.get(skill) || [] : []), ...(agent ? placed.agents.get(agent) || [] : [])];
     const where = place(slugs, p.file);
     const it = { type: p.section === 'docs' ? 'doc' : p.section.replace(/s$/, ''), status: 'ours', name: p.title, summary: p.summary,
-      url: ORIGIN + pageURL(p.file), markdown: `${ORIGIN}/${p.file}`, source: `${REPO}/blob/dev/${p.file}`,
+      url: ORIGIN + pageURL(p.file), markdown: `${ORIGIN}/${publicPath(p.file)}`, source: `${REPO}/blob/dev/${p.file}`,
       id: pageItemId(p, kind), kind, ...where, what: oneLine(p.summary), notes: null, license: 'MIT', updated: p.updated?.slice(0, 10) || null,
       page: p };
     const figs = figuresOf(p);

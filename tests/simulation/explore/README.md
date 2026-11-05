@@ -33,4 +33,4 @@ flowchart TD
 
 Run: `pytest tests/simulation/explore` (with `PYTHONPATH=src`).
 
-Related: [parent](../README.md) · [tests](../../README.md) · [where files go](../../../CONTRIBUTING.md#where-files-go)
+Related: [parent](../README.md) · [tests](../../README.md) · [where files go](../../../.github/CONTRIBUTING.md#where-files-go)

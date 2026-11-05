@@ -43,7 +43,7 @@ TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all t
 # adds them.
 TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "research",
             "skills", "src", "tests", "tools", "upstreams", "vendor", "web"}
-ROOT_ENTRY_LIMIT = 28  # 30 before #145: transcript mining and the weekly procedure now live under tools/docs.
+ROOT_ENTRY_LIMIT = 26  # #145: maintenance under tools/docs; contributor and security policies under .github.
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else
 PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the top of src/cadagent/: may only shrink
 

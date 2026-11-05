@@ -65,6 +65,25 @@ The online checks gate nothing. The job that reads third-party answers holds no 
 write issues reads only the report. A service that does not answer is reported as "not verified", and the issue keeps
 its earlier findings open as "not re-checked" rather than counting them as fixed.
 
+### The reference health run
+
+```mermaid
+flowchart TD
+    W["weekly schedule"] --> R["references job, read-only:<br/>lychee + resource_audit.py references<br/>from last week's state"]
+    R -->|"state, page, patch:<br/>one artifact"| I["issue job: one issue,<br/>Reference health: open findings"]
+    R -->|"evidence changes only"| P["PR job: one bot PR<br/>into dev, shards only"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class R here
+    class W near
+    class I,P out
+```
+
+The same workflow checks the reference registry's links on `dev` (#323): at most one request a second per host and
+400 records a run, starting from last week's artifact, since link health is not kept in git. The bot PR's rules are in
+[research/references/README.md](../research/references/README.md).
+
 ## Run it
 
 ```bash
@@ -74,6 +93,7 @@ python3 tools/resource_audit.py gate --base origin/dev --into dev --pr-body-file
 python3 tools/resource_audit.py report --online --json research/security-report.json \
     --md research/security-report.md --svg docs/img/supply-chain/findings.svg   # refresh the committed report
 python3 tools/resource_audit.py render                                # re-draw the page and figure from its JSON
+python3 tools/resource_audit.py references --online --limit 20 --state last.json --json next.json   # reference links
 ```
 
 Run the refresh from a checkout with nothing uncommitted: the report records the revision it read and says so when

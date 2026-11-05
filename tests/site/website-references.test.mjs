@@ -14,7 +14,7 @@ import YAML from 'yaml';
 import { builtSite } from './built-site.mjs';
 import {
   CORE, DIR, EXPERTS, LADDER, UNPLACED, areaOf, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
-  referenceJson, referenceSite,
+  referenceJson, referenceSite, healthOf,
 } from '../../tools/site-references.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -232,6 +232,27 @@ test('a hostile record is shown as text: no markup, script URL or broken table g
   const experts = expertsMarkdown(m, { ORIGIN });
   assert.doesNotMatch(experts, live);
   assert.ok(experts.includes('https://example.com/a%7Cb%3Cc%3E%28d%29') === false, 'a catalogued record is not an expert\'s source');
+});
+
+test('link health joins the JSON only from a health report, never from git (#323 Q5)', () => {
+  const [first, second] = [...model.refs.records.values()];
+  const report = { schema: 'cad-agent-references-health/1', as_of: '2026-11-09', revision: 'abc',
+    summary: { status: { ok: 1, gone: 1 } },
+    records: { [first.id]: { status: 'gone', effective: 'ok', checked: '2026-11-09', soft404: ['title'] },
+      [second.id]: { status: 'moved', effective: 'moved', checked: '2026-11-02', final_url: 'https://example.org/new' } } };
+  const plain = new Map(referenceJson(model, { ORIGIN, revision: 'r', built: 'b' }));
+  const withHealth = new Map(referenceJson(model, { ORIGIN, revision: 'r', built: 'b', health: healthOf(report) }));
+  assert.ok(!plain.get('catalog/references/records.json').includes('"health"'), 'no report: no health anywhere');
+  assert.equal(JSON.parse(plain.get('catalog/references/index.json')).health, undefined);
+  const index = JSON.parse(withHealth.get('catalog/references/index.json'));
+  assert.deepEqual(index.health, { as_of: '2026-11-09', revision: 'abc', status: { ok: 1, gone: 1 } });
+  const brief = JSON.parse(withHealth.get('catalog/references/records.json')).records;
+  assert.equal(brief.find(r => r.id === first.id).health, 'ok', 'the effective status: an accepted soft-404 is ok');
+  const area = model.placed.get(second.id)[0];
+  const rec = JSON.parse(withHealth.get(`catalog/references/${area}.json`)).records.find(r => r.id === second.id);
+  assert.deepEqual(rec.health, { status: 'moved', checked: '2026-11-02', final_url: 'https://example.org/new' });
+  assert.equal(healthOf(null), null);
+  assert.throws(() => healthOf({ schema: 'cad-agent-supply-chain/1' }), /not a cad-agent-references-health/);
 });
 
 test('charts are drawn as links that filter, with what they show spoken', () => {

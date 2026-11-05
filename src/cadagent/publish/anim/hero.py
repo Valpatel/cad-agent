@@ -764,8 +764,10 @@ STRESS = ["#2c6fbb", "#1f9fd0", "#22c0b4", "#8bd88f", "#e9e46a", "#f5b744", "#ef
 
 
 class Phases:
-    """The loop's timeline in seconds."""
-    period = 10.5
+    """The loop's timeline in seconds. The finished frame (the wordmark and every check) holds from the end of
+    ``words`` until ``fade``, about 4 s, so a reader who reaches the figure late still reads it before the loop
+    restarts."""
+    period = 13.2
     draw = (0.25, 2.3)           # edges draw in, solid by solid in painter's order; each takes ``stroke``
     stroke = 0.9
     fills = (1.4, 2.4)
@@ -774,7 +776,7 @@ class Phases:
     fea = (4.5, 5.8)
     motion = (5.9, 8.3)
     words = (8.1, 8.7)
-    fade = (10.1, 10.5)          # everything out, before the loop restarts
+    fade = (12.8, 13.2)          # everything out, before the loop restarts
 
 
 def _fmt(v: float, d: int = 1) -> str:

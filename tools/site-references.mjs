@@ -201,11 +201,25 @@ function labels(vocab) {
 
 // ----------------------------------------------------------------------------- JSON for agents
 
-/** A record as the area files carry it: the registry's fields as written, plus where it is shown. */
-function recordJson(r, m, ORIGIN) {
+/** A record as the area files carry it: the registry's fields as written, plus where it is shown, and its link's
+ * health when the build was given a health report. */
+function recordJson(r, m, ORIGIN, health) {
   const { file, extended_in, ...data } = r;
   return { ...data, evidence_class: evidenceOf(r), confidence: confidenceOf(r), placed: m.placed.get(r.id),
-    source_file: file, ...(extended_in ? { extended_in } : {}) };
+    source_file: file, ...(extended_in ? { extended_in } : {}), ...(health?.has(r.id) ? { health: health.get(r.id) } : {}) };
+}
+
+export const HEALTH_SCHEMA = 'cad-agent-references-health/1';
+
+/** The weekly link check's report (`tools/resource_audit.py references`, the workflow's references-health artifact;
+ * #323 Q5: health is not kept in git) as id -> {status, checked, final_url?}, plus its date and counts. The status is
+ * the effective one (an accepted soft-404 is ok). Null without a report; a report of another schema is an error. */
+export function healthOf(report) {
+  if (!report) return null;
+  if (report.schema !== HEALTH_SCHEMA) throw new Error(`not a ${HEALTH_SCHEMA} report`);
+  const byId = new Map(Object.entries(report.records || {}).sort(([a], [b]) => byText(a, b)).map(([id, e]) =>
+    [id, { status: e.effective || e.status, checked: e.checked, ...(e.final_url ? { final_url: e.final_url } : {}) }]));
+  return { byId, as_of: report.as_of, revision: report.revision, status: report.summary?.status || {} };
 }
 
 const FIELDS = {
@@ -230,8 +244,8 @@ const RECORD_FIELDS = {
 };
 
 /** catalog/references/index.json and one catalog/references/<area>.json per page. */
-export function referenceJson(m, { ORIGIN, revision, built }) {
-  const L = labels(m.refs.vocab), files = [];
+export function referenceJson(m, { ORIGIN, revision, built, health = null }) {
+  const L = labels(m.refs.vocab), files = [], H = health?.byId;
   const all = [...m.refs.records.values()];
   const summary = list => ({
     records: list.length,
@@ -252,12 +266,14 @@ export function referenceJson(m, { ORIGIN, revision, built }) {
     schema: SCHEMA, built, revision,
     about: 'The reference knowledge base: read sources the rules cite, and records catalogued from a survey (snippet-only: '
       + 'listed and linked, never cited until someone reads them). One file per area; a record is in each of its areas.',
-    fields: { ...FIELDS, records: 'every record in one file (id, url, kind, licence, evidence, areas), for mirrors' }, ladder: LADDER.map(k => ({ class: k, means: L.evidenceMeans(k) })),
+    fields: { ...FIELDS, records: 'every record in one file (id, url, kind, licence, evidence, areas), for mirrors',
+      ...(health ? { health: 'the link as the weekly check last saw it: {status (ok, moved, changed, blocked, gone, unreachable), checked, final_url}; not kept in git' } : {}) }, ladder: LADDER.map(k => ({ class: k, means: L.evidenceMeans(k) })),
     totals: { ...summary(all), unplaced: (m.byArea.get(UNPLACED) || []).length, areas: m.pages.filter(p => p !== UNPLACED).length },
     areas,
     coverage: { observed: m.refs.coverage.observed ?? null, note: m.refs.coverage.note ?? null,
       rows: m.rows.map(({ id, number, topic, status, placed }) => ({ id, number, topic, status, areas: placed })) },
     records: `${ORIGIN}/catalog/references/records.json`,
+    ...(health ? { health: { as_of: health.as_of, revision: health.revision, status: health.status } } : {}),
   };
   files.push(['catalog/references/index.json', JSON.stringify(index, null, 2) + '\n']);
   // Every record in one fetch, for an offline mirror (val-ark), one per line in id order. Its own file, so the
@@ -265,7 +281,7 @@ export function referenceJson(m, { ORIGIN, revision, built }) {
   const brief = [...m.refs.records.values()].sort((a, b) => byText(a.id, b.id)).map(r => '    ' + JSON.stringify({
     id: r.id, title: r.title ?? null, url: httpUrl(r.url), ...(r.isbn ? { isbn: String(r.isbn) } : {}), status: r.status,
     kind: kindOf(r), licence: licenceOf(r), licence_read: isObj(r.licence) ? r.licence.read ?? null : null,
-    evidence: evidenceOf(r), areas: m.placed.get(r.id) }));
+    evidence: evidenceOf(r), areas: m.placed.get(r.id), ...(H?.has(r.id) ? { health: H.get(r.id).status } : {}) }));
   files.push(['catalog/references/records.json', JSON.stringify({ schema: SCHEMA, built, revision,
     about: 'Every record of the reference knowledge base, one per line: enough to mirror each source (its url or isbn) and '
       + 'to know what it is. Every field of a record is in catalog/references/<area>.json of its first area.',
@@ -274,7 +290,7 @@ export function referenceJson(m, { ORIGIN, revision, built }) {
   for (const slug of m.pages) {
     const a = m.area(slug);
     // One record per line: small to fetch, and still easy to read and diff.
-    const records = (m.byArea.get(slug) || []).map(r => '    ' + JSON.stringify(recordJson(r, m, ORIGIN)));
+    const records = (m.byArea.get(slug) || []).map(r => '    ' + JSON.stringify(recordJson(r, m, ORIGIN, H)));
     files.push([`catalog/references/${slug}.json`, JSON.stringify({
       schema: SCHEMA, built, revision, area: { slug, title: a.title, domain: a.domain, scope: a.scope }, fields: FIELDS,
       index: `${ORIGIN}/catalog/references/index.json`, count: records.length,
@@ -595,7 +611,7 @@ export function expertsMarkdown(m, { ORIGIN }) {
 
 /** What tools/build-site.mjs writes: the pages (bodies for its frame), their twins, the JSON files, the llms.txt
  * section and the sitemap's URLs. `feedbackBox(title, url)` is the build's feedback box. */
-export function referenceSite(m, { ORIGIN, revision, built, feedbackBox }) {
+export function referenceSite(m, { ORIGIN, revision, built, feedbackBox, health = null }) {
   const pages = [{ file: 'references.html', md: 'references.md', url: '/references', title: 'References',
     description: `The reference knowledge base: ${m.refs.records.size} sources and catalogued records by area of hardware design, with their evidence, confidence and licence.`,
     body: indexBody(m, { feedback: feedbackBox('References', '/references') }), markdown: indexMd(m, ORIGIN) }];
@@ -605,7 +621,7 @@ export function referenceSite(m, { ORIGIN, revision, built, feedbackBox }) {
       description: `${(m.byArea.get(slug) || []).length} references for ${a.title.toLowerCase()}: evidence, confidence, licence and process, with a table you can filter.`,
       body: areaBody(slug, m, { feedback: feedbackBox(`${a.title} references`, url) }), markdown: areaMd(slug, m, ORIGIN) });
   }
-  return { pages, files: referenceJson(m, { ORIGIN, revision, built }), llms: llmsSection(m, ORIGIN), urls: pages.map(p => p.url) };
+  return { pages, files: referenceJson(m, { ORIGIN, revision, built, health }), llms: llmsSection(m, ORIGIN), urls: pages.map(p => p.url) };
 }
 
 // ----------------------------------------------------------------------------- command line

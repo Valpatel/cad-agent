@@ -50,7 +50,7 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `reuse` | `text: cite-only`; `geometry`: copy, adapt-with-attribution, study-only or none. Share-alike, non-commercial, unclear and proprietary sources are study-only: study, never copy files, cite in the decision |
 | `areas` | Slugs of [`docs/areas.yaml`](../../docs/areas.yaml): an area, a topic, or `area/topic` |
 | `processes`, `process_groups`, `domains`, `category` | From `vocab.yaml` |
-| `evidence` | `class` (the ladder below), `numbers`, `tested`, `authority` |
+| `evidence` | `class` (the ladder below), `numbers`, `tested`, `authority`; and `lowered` (`from`, `date`, `why`) when the weekly link check lowered the class because the link stayed dead (drop it when the record is promoted again) |
 | `claims` | The rules a source states: `text`, `status` (unconfirmed, corroborated, conflicting, encoded), `evidence`, `corroborated_by` (ids of other records) |
 | `confidence` | Optional, and only as `confidence()` derives it (#143); check() rejects a typed value that differs |
 | `assessment` | For a project, objective answers only: `built`, `supply`, `cost`, `make`, `docs`, `activity`, `role`, `cad`, `answers`, `caveat`, `assessed`. `role` (leader, reference, lessons, context) names no project. It was scored while surveying for one kind of build (a printed two-wheeled, legged balancing robot), so it is not a quality grade (`vocab.yaml` says more) |
@@ -61,7 +61,15 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `extends: true` | The record adds these fields to the core *read source* with the same id, instead of being a record of its own |
 
 Link health is not kept here. The checker's artifacts and the site JSON hold it, and only evidence-class changes land
-in git.
+in git. Every Monday `python3 tools/resource_audit.py references` checks up to 400 records' links (the longest
+unchecked first, one request a second per host) and keeps one issue, "Reference health: open findings", up to date.
+`tools/references_health_apply.py` then opens one bot PR with the changes its rules allow:
+
+- a link gone or unreachable on two checks in a row lowers the record one rung (`evidence.lowered` says why);
+- a permanent move on the same site updates `url` and keeps the old link in `mirrors`;
+- a changed page sends a claim it alone corroborates back to `unconfirmed`.
+
+Core entries, cited records and anything the rules do not cover are listed in the PR for a person.
 
 ## The evidence ladder
 

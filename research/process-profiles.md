@@ -746,6 +746,13 @@ flowchart TD
 - **Planned sheet-metal checks S1–S8** (`research/fea-and-process-tools.md` §5): every check should name its datum and
   its source, and read a shop table first. See #118's comment on S1 and S5.
 - **Pitfall checks (#97)** can cite a rule id from the YAML in their report rows, which gives the credit by name.
+- **Rule and decision cards (#323 phase 7b).** `cad-agent rules <feature>` serves a feature's rules from this file in
+  about 2 KB: each with its numbers, when it applies and when not, whether it is non-negotiable or a guideline with
+  wiggle room, what holding it tighter costs, its confidence and what code applies it. `cad-agent choose joining`
+  evaluates the `decisions` table here. Its reasons cite the joining guides of [Covestro][covestro-joining], its
+  [thread-cutting screw note][covestro-screws] and [snap-fit guide][covestro-snapfit], [SPIROL's insert
+  guide][spirol-inserts], and the insert and fastener sources above. The rules stay in the YAML; the cards are
+  generated from it, so nothing is copied here.
 
 ## 10. Sources
 
@@ -878,6 +885,10 @@ YAML under `standards`)
 [reprap-arc-compensation]: https://reprap.org/wiki/ArcCompensation
 [nophead-polyholes]: https://hydraraptor.blogspot.com/2011/02/polyholes.html
 [klahn-2016-am-snapfit]: https://publikationen.bibliothek.kit.edu/1000142464
+[covestro-joining]: https://solutions.covestro.com/-/media/covestro/solution-center/brands/downloads/imported/1557214197.pdf
+[covestro-screws]: https://solutions.covestro.com/-/media/covestro/solution-center/whitepapers/self-tapping-screws-for-thermoplastics.pdf
+[covestro-snapfit]: https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf
+[spirol-inserts]: https://www.spirol.com/assets/files/ins-threaded-inserts-design-guide-us.pdf
 [hubs-sla-design]: https://www.hubs.com/knowledge-base/how-design-parts-sla-3d-printing/
 [hubs-sls-design]: https://www.hubs.com/knowledge-base/how-design-parts-sls-3d-printing/
 [hp-mjf-5200-properties]: https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf

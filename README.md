@@ -52,7 +52,7 @@ it as a pull request or an issue only if you say yes. By hand, extras and uninst
 | I want to… | Open this |
 |---|---|
 | Make and check something | [Guides](docs/README.md): CAD, assemblies, mechanisms, PCBs, manufacturing and simulation |
-| Find a technique or source | [Research](research/README.md): surveys, reference evidence and scoped rules |
+| Find a technique or source | [Research](research/README.md): surveys, rule cards, decisions and sources |
 | Give an agent a repeatable method | [Skills](skills/README.md): design, hardware, motion and review workflows |
 | Inspect the implementation and evidence | [Code](src/cadagent/README.md), [tests](tests/README.md) and [lessons](lessons/README.md) |
 

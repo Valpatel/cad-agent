@@ -10,7 +10,8 @@ nothing from cad-agent. `plates.py` uses `mesh3mf.py`'s 3MF parts, asks `slicer.
 settings, and reads the release's parts and quantities from `publish/release.py`. `prusa3mf.py` uses `mesh3mf.py`'s
 3MF parts and `plates.py`'s layout for PrusaSlicer projects. `process.py` loads the cited rules of
 `research/process-profiles.yaml` and the filaments' data sheets from `mechanical/compliant/allowables.py`; `dfm.py`,
-`sheet_metal.py` and `fit_coupons.py` read their numbers from it.
+`sheet_metal.py` and `fit_coupons.py` read their numbers from it. `cards.py` serves its rules as rule cards and its
+decision tables as decision cards (`cad-agent rules`, `cad-agent choose`), with the registry's evidence.
 
 ```mermaid
 flowchart TD
@@ -27,12 +28,13 @@ flowchart TD
     SR --> REL["publish/release.py<br/>print release"]
     Y["research/<br/>process-profiles.yaml"] --> PR["process.py<br/>typed profiles"]
     PR --> DF["dfm.py · sheet_metal.py<br/>fit_coupons.py"]
+    PR --> CA["cards.py<br/>rule and decision cards"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class M3,SL,SP,PL,P3,PR here
     class B,R,REL,Y near
-    class SR,PF,DF out
+    class SR,PF,DF,CA out
 ```
 
 | Module | What it does |
@@ -40,6 +42,7 @@ flowchart TD
 | `mesh3mf.py` | A minimal 3MF writer with an independent read-back check (`cad-agent export-3mf`) |
 | `slicer.py` | Real filament grams and print time from Bambu Studio's command line, run as a separate program (`cad-agent slice`) |
 | `slicer_prusa.py` | The same from PrusaSlicer's command line (`cad.slicer.engine: prusa`): vendor-bundle and user presets, grams and time from the G-code, and the warnings, errors and print stability issues from its log |
+| `cards.py` | Rule cards (`cad-agent rules <feature>`) and decision cards (`cad-agent choose joining`) from the profile file and the reference registry: each rule's numbers, when it applies, how strict it is, its cost, confidence and enforcing function, in about 2 KB; uncited rules are refused |
 | `fit_coupons.py` | A printable coupon per fit (pin, bushing, bearing, insert), holes swept round nominal + allowance + the process profile's undersize, with a measurement sheet: the first print calibrates the fits ([printed joints](../../../docs/printed-joints.md#fit-coupons-let-the-first-print-calibrate-the-fits)) |
 | `gcode.py` | The longest bridge and overhang-perimeter extrusions in sliced G-code (PrusaSlicer, Bambu Studio, OrcaSlicer), with height and position: where a "long bridging extrusions" warning points. Pure Python, imports nothing from cad-agent |
 | `process.py` | The process profiles as typed values: rules, limits, tolerances, FDM layer factors by filament, a shop's bend table; each value with its rule id and source id, unverified rows marked `(u)` ([process checks](../../../docs/process-checks.md)) |

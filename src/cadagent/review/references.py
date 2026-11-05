@@ -1018,6 +1018,11 @@ def check(root: Path = ROOT, registry: Optional[Registry] = None,
             warnings.append(f"{c.where}: cites {c.key!r}, an unverified entry ({ref.get('why')})")
         if ref.kind != "uncited" and not lists(ref.get("used_for") or [], c.path):
             problems.append(f"{c.where}: cites {c.key!r}; add {c.path} to used_for of {ref.id}")
+    pp = root / "research" / "process-profiles.yaml"
+    if pp.is_file() and found is None and re.search(r"^(cards|decisions):", pp.read_text(encoding="utf-8"), re.M):
+        # the rule and decision cards (#323 phase 7b): their when-fields and tables cite only read records
+        from cadagent.manufacturing.cards import problems as card_problems
+        problems += [f"research/process-profiles.yaml: {p}" for p in card_problems(pp, reg)]
     return problems, sorted(set(warnings))
 
 

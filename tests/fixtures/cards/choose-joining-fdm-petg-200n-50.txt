@@ -4,8 +4,8 @@ because:
 - 50 assemblies: self-tapping screws are a one-off method, not for repeated disassembly [ref:hubs-3dp-threaded-fasteners]; parts disassembled regularly take metal inserts [ref:covestro-joining]
 - M3 x 5.7 insert (McMaster-Carr 94459A140): pull-out 493 N low band in petg-bambu-hf, the weakest petg sheet, over margin 2 = 246 N >= 200 N (model confidence low)
   computed by: cadagent.mechanical.inserts.capacity
-runner-up: through-bolt and nut; wins when: a nut can sit on the far side; embedded nuts also give metal threads that take repeated assembly [ref:hubs-3dp-threaded-fasteners]
-gap: thread-cutting screws allow 'a few' re-assemblies [ref:covestro-screws] and no registry source puts a number on it; this table takes an insert from the second assembly, the cautious reading
+runner-up: thread-forming screw into the plastic; wins when: the joint is re-assembled only a few times, each time with the screw put back by hand into its own thread [ref:covestro-screws]
+gap: no registry source puts a number on 'a few' re-assemblies [ref:covestro-screws]; this table takes an insert from the second assembly, the cautious reading
 unused: qty: no registry source ties the joining choice to quantity; SPIROL only suggests installation machines for volume production [ref:spirol-3dp]
 cards: cad-agent rules insert-hole --process fdm --material petg; cad-agent rules insert-boss --process fdm --material petg; cad-agent rules insert-install --process fdm --material petg
-runner-up cards: cad-agent rules thread --process fdm --material petg; cad-agent inserts
+runner-up cards: cad-agent rules thread --process fdm --material petg

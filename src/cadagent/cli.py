@@ -1103,7 +1103,7 @@ def cmd_rules(args: argparse.Namespace) -> int:
     from cadagent.manufacturing import cards
     if args.why:
         w = cards.why(args.why)
-        print(cards.as_json(w) if args.json else cards.render_why(w))
+        print(cards.as_json(cards.why_json(w)) if args.json else cards.render_why(w))
         return 0
     if not args.feature:
         names = cards.card_names()
@@ -1416,7 +1416,8 @@ def build_parser() -> argparse.ArgumentParser:
     ch_p.add_argument("decision", help="the decision (joining)")
     ch_p.add_argument("--process", help="the part's process (fdm, sls, mjf, injection-moulding, sla, sheet-metal)")
     ch_p.add_argument("--material", help="the part's material (an fdm family or filament, a sheet alloy)")
-    ch_p.add_argument("--load", type=float, help="service load on one joint along its axis, N (0: holds parts closed only)")
+    ch_p.add_argument("--load", type=float, help="service load on one joint along its axis, N; required, since no load "
+                                                "is safe to assume (0: it only holds parts closed)")
     ch_p.add_argument("--cycles", type=int, help="times the joint is assembled over its life (1: once)")
     ch_p.add_argument("--qty", type=int, help="parts made")
     ch_p.add_argument("--json", action="store_true", help="print the decision as JSON")

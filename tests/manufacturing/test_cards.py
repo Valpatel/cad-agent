@@ -24,7 +24,7 @@ SAMPLES = {
     "rules-why-cad-offset": ["rules", "--why", "fdm-insert-hole-cad-offset-cnckitchen"],
     "choose-joining-fdm-petg-200n-50": ["choose", "joining", "--load", "200", "--cycles", "50", "--material", "petg",
                                          "--process", "fdm"],
-    "choose-joining-sheet-5052": ["choose", "joining", "--process", "sheet-metal", "--material", "5052"],
+    "choose-joining-sheet-5052": ["choose", "joining", "--process", "sheet-metal", "--material", "5052", "--load", "100"],
 }
 # one input set per row of the joining table, so every branch is exercised
 ROWS = {
@@ -132,15 +132,27 @@ def test_a_card_over_budget_names_what_it_left_out():
 
 def test_every_decision_and_why_fits_the_byte_budget():
     grid = itertools.product(["fdm", "sls", "mjf", "injection-moulding", "sla", "sheet-metal"],
-                             [0, 50, 200, 5000], [1, 2, 50])
-    for process, load, cycles in grid:
-        material = {"fdm": "petg", "sheet-metal": "304"}.get(process)
+                             [0, 50, 200, 5000], [1, 2, 50], [True, False])
+    for process, load, cycles, with_material in grid:
+        material = {"fdm": "petg", "sheet-metal": "304"}.get(process) if with_material else None
         c = cards.choose("joining", process=process, material=material, load=load, cycles=cycles)
-        assert len(cards.render_choice(c).encode()) <= cards.CARD_BYTES, (process, load, cycles)
-        assert len(cards.as_json(c).encode()) <= cards.JSON_BYTES, (process, load, cycles)
+        assert len(cards.render_choice(c).encode()) <= cards.CARD_BYTES, (process, load, cycles, material)
+        assert len(cards.as_json(c).encode()) <= cards.JSON_BYTES, (process, load, cycles, material)
     for r in pp.load().rules():
         if r.verified and not r.shop:
-            assert len(cards.render_why(cards.why(r.id)).encode()) <= cards.CARD_BYTES, r.id
+            w = cards.why(r.id)
+            assert len(cards.render_why(w).encode()) <= cards.CARD_BYTES, r.id
+            assert len(cards.as_json(cards.why_json(w)).encode()) <= cards.JSON_BYTES, r.id
+
+
+def test_why_json_drops_claims_then_sources_and_names_them():
+    w = cards.why("fdm-insert-hole-m3-nominal-cnckitchen")
+    full = cards.why_json(w, budget=10 ** 6)
+    assert full["more"] == [] and full["sources"] == w["sources"]
+    small = cards.why_json(w, budget=1800)
+    assert len(cards.as_json(small).encode()) <= 1800
+    assert small["more"] and small["sources"][0]["id"] == w["sources"][0]["id"], "the rule's own source stays"
+    assert small["rule"] == w["rule"] and small["numbers"] == w["numbers"]
 
 
 # ----------------------------------------------------------------------------- citations and applied_by
@@ -182,9 +194,9 @@ def test_every_applied_by_on_a_card_resolves():
 @pytest.mark.parametrize("row", sorted(ROWS))
 def test_each_row_of_the_joining_table_is_reached(row):
     c = cards.choose("joining", **ROWS[row])
-    assert c["row"] == row
+    assert c["row"] == row and c["decided"] and not c["missing"]
     assert c["because"] and c["runner_up"] != c["choice"] and c["wins_when"]
-    assert c["cards"] and all(x.startswith("cad-agent ") for x in c["cards"])
+    assert (c["cards"] or c["cards_empty"]) and all(x.startswith("cad-agent ") for x in c["cards"])
 
 
 def test_the_rows_cover_the_table_and_every_option():
@@ -196,9 +208,12 @@ def test_the_rows_cover_the_table_and_every_option():
 
 def test_the_sample_decision_names_the_insert_and_its_margin():
     c = cards.choose("joining", process="fdm", material="petg", load=200, cycles=50)
-    assert (c["choice"], c["runner_up"]) == ("heat-set-insert", "through-bolt-nut")
-    assert c["detail"]["insert_insert"] == "mcmaster-94459A140", "M3 x 5.7: the M3 x 4.3 holds under 200 N at margin 2"
-    assert c["detail"]["insert_allowed_n"] >= 200
+    assert (c["choice"], c["runner_up"]) == ("heat-set-insert", "thread-forming-screw"), \
+        "a few re-assemblies: the screw put back into its own thread is the sourced runner-up"
+    ins = c["detail"]["insert_fits"]
+    assert ins["insert"] == "mcmaster-94459A140", "M3 x 5.7: the M3 x 4.3 holds under 200 N at margin 2"
+    assert ins["allowed_n"] >= 200 and "fits" not in ins
+    assert c["schema"] == cards.DECISION_SCHEMA and set(c["detail"]) <= set(c["facts"])
     assert any("a few" in g and "no registry source puts a number" in g for g in c["gaps"])
     assert "qty" in c["unused"], "an input no row reads says so"
 
@@ -209,7 +224,80 @@ def test_the_insert_fact_is_none_where_no_model_is():
     heavy = cards.insert_for_load("fdm", "pla", 5000)
     assert heavy["fits"] is False and heavy["insert"] == "mcmaster-94459A778"
     c = cards.choose("joining", process="sls", load=100, cycles=4)
-    assert c["row"] == "repeated" and any("calibrated on FDM" in g for g in c["gaps"])
+    assert not c["decided"] and c["choice"] is None and "calibrated on FDM" in c["missing"]["insert_fits"]
+
+
+# the review of #346: with a load and no capacity model, the table used to pick a screw or an insert unchecked
+@pytest.mark.parametrize("kw, row, says", [
+    (dict(process="fdm", load=5000, cycles=1), "once", "--material"),
+    (dict(process="fdm", load=50, cycles=1), "once", "--material"),
+    (dict(process="fdm", load=200, cycles=50), "repeated", "--material"),
+    (dict(process="sls", load=5000, cycles=1), "once", "no capacity model for sls"),
+    (dict(process="mjf", load=50, cycles=1), "once", "no capacity model for mjf"),
+    (dict(process="injection-moulding", load=5000, cycles=10), "repeated", "no capacity model for injection-moulding"),
+])
+def test_a_load_with_no_capacity_model_is_not_decided(kw, row, says, capsys):
+    c = cards.choose("joining", **kw)
+    assert (c["decided"], c["choice"], c["row"]) == (False, None, row)
+    assert says in c["missing"]["insert_fits"]
+    text = cards.render_choice(c)
+    assert "choice: not decided" in text and says in text and "screw" not in text and "insert (" not in text
+    argv = ["choose", "joining"] + [x for k, v in kw.items() for x in (f"--{k}", str(v))]
+    code, out, err = _run(argv, capsys)
+    assert code == 0 and "not decided" in out and not err
+    assert json.loads(_run(argv + ["--json"], capsys)[1])["decided"] is False
+
+
+def test_with_a_material_the_same_load_is_checked():
+    assert cards.choose("joining", process="fdm", material="petg", load=5000, cycles=1)["choice"] == "through-bolt-nut"
+    assert cards.choose("joining", process="fdm", material="petg", load=5000, cycles=50)["choice"] == "through-bolt-nut"
+
+
+def test_the_screw_row_says_its_own_capacity_is_unchecked():
+    c = cards.choose("joining", **ROWS["once"])
+    assert c["choice"] == "thread-forming-screw"
+    gap = next(g for g in c["gaps"] if "screw's own pull-out is not computed" in g)
+    assert "no margin" in gap and "[ref:embedded-inserts]" in gap
+    assert f"{c['detail']['insert_fits']['allowed_n']} N allowed" in gap
+
+
+def test_the_load_is_required_not_assumed(capsys):
+    with pytest.raises(cards.CardError, match="needs load"):
+        cards.choose("joining", process="fdm", material="petg")
+    code, out, err = _run(["choose", "joining"], capsys)
+    assert code == 2 and "needs load (--load" in err and not out
+    assert cards.choose("joining", process="fdm", load=0)["choice"] == "snap-clip", "an explicit 0 holds closed only"
+
+
+def test_resin_takes_a_glued_insert_and_says_where_no_rule_is():
+    c = cards.choose("joining", **ROWS["resin"])
+    assert c["choice"] == "glued-insert" and "glued" in c["choice_name"] and "heat-set" not in c["choice_name"]
+    assert "insert-install" not in c["cards_empty"] + c["cards"], "the iron-set card is not a resin card"
+    assert c["cards"] == [] and c["cards_empty"] == ["insert-hole", "insert-boss"]
+    assert "insert-hole, insert-boss: no verified rule for sla yet" in cards.render_choice(c)
+    for kw in ROWS.values():                 # every command a card prints returns a card with rules
+        c = cards.choose("joining", **kw)
+        for cmd in c["cards"] + c["runner_up_cards"]:
+            parts = cmd.split()
+            if parts[1] == "rules":
+                p = parts[parts.index("--process") + 1]
+                m = parts[parts.index("--material") + 1] if "--material" in parts else None
+                assert cards.card(parts[2], process=p, material=m)["lines"], cmd
+
+
+def test_a_not_computed_gap_shows_only_where_a_row_reads_the_fact():
+    sheet = cards.choose("joining", **ROWS["sheet"])
+    assert not any("not computed" in g for g in sheet["gaps"])
+    clip = cards.choose("joining", process="fdm", load=0, cycles=1)
+    assert clip["row"] == "clip-once" and not any("not computed" in g for g in clip["gaps"])
+    assert sheet["facts"]["insert_fits"] is None and "insert_fits" in sheet["detail"], "the JSON still carries it"
+
+
+def test_the_folded_reasons_have_no_broken_words():
+    for kw in ROWS.values():
+        c = cards.choose("joining", **kw)
+        for text in c["because"] + c["gaps"] + [c["wins_when"]]:
+            assert "- " not in text.replace(" - ", " "), text
 
 
 def test_choose_refuses_what_it_does_not_cover():
@@ -274,10 +362,15 @@ def test_planted_defect_a_malformed_table_is_reported():
                         "because": ["x [ref:covestro-joining]"], "runner_up": "pem", "wins_when": "unstated"})
     dec["options"]["rivet"] = {"name": "blind rivet", "cards": ["no-such-card"]}
     dec["rows"][0]["if"] = {"process": ["cnc"]}
+    dec["rows"][0]["needs"] = ["insert_capacity"]
+    dec["rows"][1]["gap"] = "see {insert_why} and {torque}"
+    dec["inputs"]["load"]["default"] = 0
     problems = cards.decision_problems(dec, cards.registry(), list(cards.card_names()), [])
     for want in ("only the last row may have no `if`", "the last row has no `if`", "choose 'glue' is not an option",
                  "option rivet links card 'no-such-card'", "option rivet is never chosen",
-                 "process must be a list of", "rule 'sm-clinch-hardness-margin-pem' is not a rule id"):
+                 "process must be a list of", "rule 'sm-clinch-hardness-margin-pem' is not a rule id",
+                 "needs 'insert_capacity', which is not a fact", "fills {insert_why}, which is not",
+                 "fills {torque}, which is not", "input load is required and has a default"):
         assert any(want in p for p in problems), want
 
 

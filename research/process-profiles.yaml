@@ -5258,7 +5258,8 @@ decisions:
     inputs:
       process: {choices: [fdm, sls, mjf, injection-moulding, sla, sheet-metal], default: fdm}
       material: {help: "the part's material: an fdm family or filament key, or a sheet alloy"}
-      load: {units: N, default: 0, help: service load on one joint along its axis (pull-out); 0 holds parts closed only}
+      load: {units: N, required: true, help: "service load on one joint along its axis (pull-out); 0 if it only holds
+          parts closed (no default: assuming 0 would choose a clip)"}
       cycles: {units: count, default: 1, help: times the joint is assembled over its life (1 is once)}
       qty: {units: count, default: 1, help: parts made}
     facts:
@@ -5272,6 +5273,7 @@ decisions:
         volume production [ref:spirol-3dp]
     options:
       heat-set-insert: {name: heat-set insert, cards: [insert-hole, insert-boss, insert-install]}
+      glued-insert: {name: "threaded insert, glued in (CA or epoxy) or pressed in cold", cards: [insert-hole, insert-boss]}
       thread-forming-screw: {name: thread-forming screw into the plastic, cards: [thread]}
       through-bolt-nut: {name: through-bolt and nut, cards: [thread], check: inserts}
       pem: {name: PEM self-clinching nut or stud, cards: [clinch-hardware]}
@@ -5281,15 +5283,19 @@ decisions:
         if: {process: [sheet-metal]}
         choose: pem
         because:
-          - a clinched thread holds in sheet softer than the fastener by about 20 HRB, in a hole +0.08/-0 mm,
-            with the press reaching both faces [ref:pem-handbook]
+          - the sheet flows into the clinched part's undercut and locks it [ref:pem-handbook], so the thread is fixed
+            in the sheet, where a through-bolt needs a loose nut held on the far side
+          - "check: the sheet softer than the fastener by about 20 HRB, the hole +0.08/-0 mm, the press reaching both
+            faces [ref:pem-handbook]"
         rules: [sm-clinch-hardness-margin-pem, sm-clinch-hole-tolerance-pem, sm-clinch-sheet-min-pem]
         runner_up: through-bolt-nut
         wins_when: unstated
-        gap: no registry source ranks a PEM against a loose nut and bolt in sheet; the runner-up is listed, not ranked
+        gap: no registry source ranks a PEM against a loose nut and bolt in sheet; the runner-up is listed, not ranked.
+          The load is not checked here; cadagent.mechanical.clinch.check_placement compares push-out, torque and
+          pull-through loads with PEM's ratings
       - id: resin
         if: {process: [sla]}
-        choose: heat-set-insert
+        choose: glued-insert
         because:
           - in resin the insert is glued in with CA glue or epoxy
             [ref:formlabs-inserts]; thermosets take inserts cold, pressed
@@ -5297,7 +5303,8 @@ decisions:
           - brittle resins may crack with self-tapping screws [ref:formlabs-inserts]
         runner_up: through-bolt-nut
         wins_when: unstated
-        gap: no registry source compares a glued insert with a through-bolt in resin
+        gap: no registry source compares a glued insert with a through-bolt in resin, nor gives a glued insert's
+          pull-out, so the load is not checked here
       - id: clip-once
         if: {load: {max: 0}, cycles: {max: 1}}
         choose: snap-clip
@@ -5322,7 +5329,7 @@ decisions:
         if: {insert_fits: false}
         choose: through-bolt-nut
         because:
-          - "{insert_why}"
+          - "{insert_fits.why}"
           - washers under both the head and the nut spread the load on the plastic [ref:covestro-joining]
         by: [cadagent.mechanical.inserts.capacity]
         runner_up: heat-set-insert
@@ -5330,28 +5337,33 @@ decisions:
         gap: the bolt's bearing on the plastic is not checked here; run `cad-agent inserts` (check_clamp) on the joint
       - id: repeated
         if: {cycles: {min: 2}}
+        needs: [insert_fits]
         choose: heat-set-insert
         because:
           - "{cycles} assemblies: self-tapping screws are a one-off method, not for repeated disassembly
             [ref:hubs-3dp-threaded-fasteners]; parts disassembled regularly take metal inserts [ref:covestro-joining]"
-          - "{insert_why}"
+          - "{insert_fits.why}"
         by: [cadagent.mechanical.inserts.capacity]
-        runner_up: through-bolt-nut
-        wins_when: a nut can sit on the far side; embedded nuts also give metal threads that take repeated assembly
-          [ref:hubs-3dp-threaded-fasteners]
-        gap: thread-cutting screws allow 'a few' re-assemblies [ref:covestro-screws] and no registry source puts a
-          number on it; this table takes an insert from the second assembly, the cautious reading
+        runner_up: thread-forming-screw
+        wins_when: the joint is re-assembled only a few times, each time with the screw put back by hand into its own
+          thread [ref:covestro-screws]
+        gap: no registry source puts a number on 'a few' re-assemblies [ref:covestro-screws]; this table takes an
+          insert from the second assembly, the cautious reading
       - id: once
+        needs: [insert_fits]
         choose: thread-forming-screw
         because:
-          - assembled once, a self-tapping screw is the quick one-off method [ref:hubs-3dp-threaded-fasteners]; thread-
-            cutting screws suit one-time assembly [ref:covestro-screws]
+          - assembled once, a self-tapping screw is the quick one-off method [ref:hubs-3dp-threaded-fasteners];
+            thread-cutting screws suit one-time assembly [ref:covestro-screws]
           - an M3 screw driven straight into a print pulled out about as hard as a heat-set insert (about 120 kg)
             [ref:embedded-inserts]
         rules: [fdm-self-tap-engagement-hubs, fdm-thread-wall-min-hubs]
         runner_up: heat-set-insert
         wins_when: the joint will be re-assembled, or must take torque; the insert was best in torque-out (3 N m)
           [ref:embedded-inserts]
+        gap: "the screw's own pull-out is not computed: the insert's capacity ({insert_fits.allowed_n} N allowed) stands in, on
+          one M3 test where screw and insert pulled out alike at about 120 kg, with no margin [ref:embedded-inserts];
+          test the screw in your material"
 
 shop_tables:
   - id: sendcutsend-5052-and-mild-steel

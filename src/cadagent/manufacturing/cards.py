@@ -27,13 +27,17 @@ Where no source says when, how strict or what it costs, the file says ``unstated
 whose ``if`` holds wins and the last has no ``if``. The format, so later decisions (process, tolerance allocation,
 simplification) reuse it:
 
-* ``inputs``: name -> ``{choices: [...]}`` or ``{units, default, help}`` (numbers);
+* ``inputs``: name -> ``{choices: [...]}`` or ``{units, default, help}`` (numbers); ``required: true`` instead of a
+  default when no value is safe to assume (the load: assuming 0 would choose a clip);
 * ``facts``: values computed by an encoded function (``by``, from the inputs named in ``from``), such as whether an
-  insert carries the load; a fact may be ``None`` (not computable here), which no condition matches;
+  insert carries the load; a fact may be ``None`` (not computable here), which no condition matches. Its other fields
+  fill text as ``{fact.field}`` (``{insert_fits.why}``) and appear in the JSON as ``detail[fact]``;
 * ``unused``: an input no row reads, and why (a gap in the sources, said in the output);
 * ``options``: id -> ``{name, cards, check}``: the rule cards each relies on, and the ``cad-agent`` command that sizes it;
-* ``rows``: ``{id, if, choose, because, rules, by, runner_up, wins_when, gap}``. ``if`` maps an input to a list of
-  values or ``{min, max}`` (inclusive), or a fact to true or false. Every ``because`` line carries ``[ref:<id>]`` tags
+* ``rows``: ``{id, if, needs, choose, because, rules, by, runner_up, wins_when, gap}``. ``if`` maps an input to a list
+  of values or ``{min, max}`` (inclusive), or a fact to true or false. ``needs`` lists the facts the row's choice
+  relies on: when the row is reached and one of them is None, the card answers **not decided** and says what is
+  missing, rather than choose unchecked. Every ``because`` line carries ``[ref:<id>]`` tags
   or fills a computed fact with the row's ``by`` naming the function; ``wins_when`` is cited, names a ``cad-agent``
   command or a computed fact, or is ``unstated`` with a ``gap``.
 
@@ -60,7 +64,8 @@ STRICTNESS = ("non-negotiable", "guideline", "unstated")
 UNSTATED = "unstated"
 WHEN_FIELDS = ("when", "not_when", "wiggle", "cost")
 from cadagent.review.references import TAG as REF   # the registry's one tag pattern
-FACT = re.compile(r"\{([a-z_]+)\}")
+FACT = re.compile(r"\{([a-z_]+(?:\.[a-z_]+)?)\}")     # {input}, {fact} or {fact.field}
+DECISION_SCHEMA = "cadagent.decision-card/1"
 COMMAND = re.compile(r"`cad-agent [a-z][a-z0-9-]*")
 _RANK = {"non-negotiable": 0, "guideline": 2, "unstated": 3, "": 3}
 
@@ -377,6 +382,28 @@ def why(rule_id: str, path: Any = None, budget: int = CARD_BYTES) -> Dict[str, A
     return out
 
 
+def why_json(w: Mapping[str, Any], budget: int = JSON_BYTES) -> Dict[str, Any]:
+    """:func:`why` for ``--json``, within ``budget`` bytes: claims, then whole sources, are dropped from the end (the
+    rule's own source last) and named under ``more``."""
+    out = json.loads(as_json(w))
+    out["more"] = []
+    while len(as_json(out).encode()) > budget:
+        srcs = out["sources"]
+        last = srcs[-1] if srcs else None
+        if last is None:
+            break
+        if last["claims"]:
+            last["claims"].pop()
+            if not out["more"] or out["more"][-1] != f"{last['id']} claims":
+                out["more"].append(f"{last['id']} claims")
+        elif len(srcs) > 1:
+            gone = srcs.pop()["id"]
+            out["more"] = [m for m in out["more"] if m != f"{gone} claims"] + [gone]
+        else:
+            break
+    return out
+
+
 def render_why(w: Mapping[str, Any], budget: int = CARD_BYTES) -> str:
     head = [render_line(w), f"  applies: {w['applies']}", f"  read {w['verified']}" +
             (f"; note: {w['note']}" if w["note"] else "")]
@@ -407,7 +434,8 @@ def insert_for_load(process: str, material: Optional[str], load: float) -> Dict[
     material), so no condition matches it and the card says why."""
     if process != "fdm" or material is None:
         why = ("no material given: give --material for the insert's capacity" if process == "fdm" else
-               f"the insert capacity model is calibrated on FDM prints only, not {process}")
+               f"no capacity model for {process}: the insert model is calibrated on FDM prints only; size the joint "
+               f"from a test or a cited source for {process} and record it as a decision")
         return {"fits": None, "why": why}
     from cadagent.mechanical import inserts
     fam = material_family("fdm", material)
@@ -450,6 +478,16 @@ def decision_problems(dec: Mapping[str, Any], reg, card_list: Sequence[str], rul
             why = _read_problem(key, reg)
             if why:
                 out.append(f"{did}: {where} cites {why}")
+
+    for name, spec in inputs.items():
+        if spec.get("required") and "default" in spec:
+            out.append(f"{did}: input {name} is required and has a default; give one or the other")
+
+    def names_ok(text: str, where: str) -> None:
+        for n in FACT.findall(text):
+            head, _, field = n.partition(".")
+            if not (head in facts if field else (n in inputs or n in facts)):
+                out.append(f"{did}: {where} fills {{{n}}}, which is not an input, a fact or a fact's field")
 
     for name, f in facts.items():
         by = str(f.get("by", ""))
@@ -497,6 +535,7 @@ def decision_problems(dec: Mapping[str, Any], reg, card_list: Sequence[str], rul
         for j, b in enumerate(because):
             b = str(b)
             facts_named = FACT.findall(b)
+            names_ok(b, f"{rid}.because[{j}]")
             if not REF.search(b) and not (facts_named and row.get("by")):
                 out.append(f"{did}: {rid}: because[{j}] is uncited: give a [ref:<id>] or fill a computed fact with "
                            "`by` naming the function")
@@ -510,6 +549,9 @@ def decision_problems(dec: Mapping[str, Any], reg, card_list: Sequence[str], rul
             out.append(f"{did}: {rid}: wins_when is uncited: give a [ref:<id>], a `cad-agent` command or `by`")
         cited(wins, f"{rid}.wins_when")
         cited(str(row.get("gap") or ""), f"{rid}.gap")
+        names_ok(wins, f"{rid}.wins_when")
+        names_ok(str(row.get("gap") or ""), f"{rid}.gap")
+        out += [f"{did}: {rid}: needs {k!r}, which is not a fact" for k in row.get("needs") or [] if k not in facts]
         for rule in row.get("rules") or []:
             if rule not in rule_ids:
                 out.append(f"{did}: {rid}: rule {rule!r} is not a rule id")
@@ -555,10 +597,37 @@ def _holds(cond: Any, value: Any) -> bool:
     return value is not None and cond.get("min", value) <= value <= cond.get("max", value)
 
 
+def _reads(row: Mapping[str, Any], facts: Mapping[str, Any]) -> set:
+    """The facts a row reads: in its ``if``, its ``needs`` or the text it fills."""
+    texts = [str(t) for t in (row.get("because") or [])] + [str(row.get("wins_when") or ""), str(row.get("gap") or "")]
+    named = {n.partition(".")[0] for t in texts for n in FACT.findall(t)}
+    return {k for k in set(_conds(row)) | set(row.get("needs") or []) | named if k in facts}
+
+
+def _option_cards(options: Mapping[str, Any], oid: str, env: Mapping[str, Any], path: Any) -> Tuple[List[str], List[str]]:
+    """The ``cad-agent`` commands an option relies on, and the names of its cards that hold no verified rule for the
+    process and material (so the card says so rather than send an agent to an empty card)."""
+    flags = " ".join(f"--{k} {env[k]}" for k in ("process", "material") if env.get(k) is not None)
+    run, empty = [], []
+    procs = pp.load(path).profiles
+    for c in options[oid].get("cards") or []:
+        proc = env.get("process")
+        has = proc in procs if proc else True
+        if has:
+            has = bool(card(c, process=proc, material=env.get("material"), path=path)["lines"])
+        (run if has else empty).append(f"cad-agent rules {c} {flags}".strip() if has else c)
+    if options[oid].get("check"):
+        run.append(f"cad-agent {options[oid]['check']}")
+    return run, empty
+
+
 def choose(decision: str, path: Any = None, **given: Any) -> Dict[str, Any]:
     """Evaluate a decision table: the choice, the deciding reasons, the runner-up and when it would win, the gaps,
     and the rule cards it relies on. ``given`` holds the inputs (``load=200, cycles=50, material="petg"``); a missing
-    one takes its default. Raises CardError for an unknown decision or input, and for a table that is not cited."""
+    one takes its default, and a missing required one is refused. When the row reached ``needs`` a fact that is not
+    computed here (``None``), the result is **not decided** (``decided`` false, ``choice`` None) and ``missing`` says
+    why, rather than a choice made without the check. Raises CardError for an unknown decision or input, and for a
+    table that is not cited."""
     tables = decisions(path)
     if decision not in tables:
         raise CardError(f"no decision {decision!r}; there are {', '.join(tables) or 'none'}")
@@ -574,6 +643,9 @@ def choose(decision: str, path: Any = None, **given: Any) -> Dict[str, Any]:
     for k, spec in inputs.items():
         v = given.get(k)
         v = spec.get("default") if v is None else v
+        if v is None and spec.get("required"):
+            raise CardError(f"{decision} needs {k} (--{k}"
+                            + (f", {spec['units']}" if spec.get("units") else "") + f"): {spec.get('help', '')}")
         if "choices" in spec and v not in spec["choices"]:
             raise CardError(f"{decision}: {k} {v!r} is not covered; the table covers {', '.join(spec['choices'])}")
         if "units" in spec and v is not None:
@@ -582,49 +654,66 @@ def choose(decision: str, path: Any = None, **given: Any) -> Dict[str, Any]:
         env[k] = v
     if env.get("process") and env.get("material") is not None:
         material_family(env["process"], env["material"])            # refuse an unknown material early
+    facts = dec.get("facts") or {}
     computed: Dict[str, Any] = {}
-    detail: Dict[str, Any] = {}             # each fact's other fields, as <fact prefix>_<field> for the text
-    for name, f in (dec.get("facts") or {}).items():
+    detail: Dict[str, Dict[str, Any]] = {}     # each fact's other fields, keyed by the full fact name
+    for name, f in facts.items():
         res = FACTS[f["by"].rsplit(".", 1)[-1]](**{i: env[i] for i in f.get("from") or []})
         computed[name] = res["fits"] if isinstance(res, dict) and "fits" in res else res
         if isinstance(res, dict):
-            detail.update({f"{name.split('_')[0]}_{k}": v for k, v in res.items() if k != "fits"})
-    values = {**env, **detail, **computed}
-    row = next(r for r in dec["rows"] if all(_holds(c, values.get(k)) for k, c in _conds(r).items()))
-    fill = lambda s: FACT.sub(lambda m: _num(values[m.group(1)]) if m.group(1) in values else m.group(0), str(s))  # noqa: E731
+            detail[name] = {k: v for k, v in res.items() if k != "fits"}
+    values = {**env, **computed, **{f"{n}.{k}": v for n, d in detail.items() for k, v in d.items()}}
+    rows = dec["rows"]
+    at = next(i for i, r in enumerate(rows) if all(_holds(c, values.get(k)) for k, c in _conds(r).items()))
+    row = rows[at]
+    fill = lambda s: " ".join(FACT.sub(lambda m: _num(values[m.group(1)]) if m.group(1) in values else m.group(0),  # noqa: E731
+                                       str(s)).split())
+    missing = {k: fill(detail.get(k, {}).get("why") or "not computed here")
+               for k in row.get("needs") or [] if computed.get(k) is None}
+    read = set().union(*(_reads(r, facts) for r in rows[:at + 1]))
+    gaps = [fill(row["gap"])] if row.get("gap") and not missing else []
+    gaps += [f"{name} not computed: " + fill(detail.get(name, {}).get("why") or "")
+             for name in computed if computed[name] is None and name in read and name not in missing]
+    out: Dict[str, Any] = {"schema": DECISION_SCHEMA, "decision": decision, "inputs": env, "facts": computed,
+                           "detail": detail, "row": row["id"], "decided": not missing, "missing": missing,
+                           "gaps": gaps, "unused": {k: fill(v) for k, v in (dec.get("unused") or {}).items()}}
+    if missing:
+        return dict(out, choice=None, choice_name=None)
     options = dec["options"]
-    gaps = [fill(row["gap"])] if row.get("gap") else []
-    gaps += [f"{name} not computed: {values.get(name.split('_')[0] + '_why')}" for name in computed
-             if computed[name] is None]
-    flags = " ".join(f"--{k} {env[k]}" for k in ("process", "material") if env.get(k) is not None)
-
-    def cards_of(oid: str) -> List[str]:
-        return [f"cad-agent rules {c} {flags}".strip() for c in options[oid].get("cards") or []] + \
-            ([f"cad-agent {options[oid]['check']}"] if options[oid].get("check") else [])
-    return {"decision": decision, "inputs": env, "facts": computed, "detail": detail, "row": row["id"],
-            "choice": row["choose"], "choice_name": options[row["choose"]]["name"],
-            "because": [" ".join(fill(b).split()) for b in row["because"]], "rules": list(row.get("rules") or []),
-            "by": list(row.get("by") or []), "runner_up": row["runner_up"],
-            "runner_up_name": options[row["runner_up"]]["name"], "wins_when": " ".join(fill(row["wins_when"]).split()),
-            "gaps": [" ".join(g.split()) for g in gaps],
-            "unused": {k: " ".join(str(v).split()) for k, v in (dec.get("unused") or {}).items()},
-            "cards": cards_of(row["choose"]), "runner_up_cards": cards_of(row["runner_up"])}
+    cards_run, cards_empty = _option_cards(options, row["choose"], env, path)
+    ru_run, ru_empty = _option_cards(options, row["runner_up"], env, path)
+    return dict(out, choice=row["choose"], choice_name=options[row["choose"]]["name"],
+                because=[fill(b) for b in row["because"]], rules=list(row.get("rules") or []),
+                by=list(row.get("by") or []), runner_up=row["runner_up"],
+                runner_up_name=options[row["runner_up"]]["name"], wins_when=fill(row["wins_when"]),
+                cards=cards_run, cards_empty=cards_empty, runner_up_cards=ru_run, runner_up_cards_empty=ru_empty)
 
 
 def render_choice(c: Mapping[str, Any], budget: int = CARD_BYTES) -> str:
     """The decision card as text, within ``budget`` bytes."""
     inp = ", ".join(f"{k} {v}" for k, v in c["inputs"].items() if v is not None)
-    head = [f"choose {c['decision']} | {inp}", f"choice: {c['choice_name']} (row {c['row']})", "because:"]
-    body = [(f"because {i}", f"- {b}") for i, b in enumerate(c["because"])]
-    if c["rules"]:
-        body.append(("rules", "  rules: " + ", ".join(c["rules"])))
-    if c["by"]:
-        body.append(("by", "  computed by: " + ", ".join(c["by"])))
-    body.append(("runner-up", f"runner-up: {c['runner_up_name']}; wins when: {_q(c['wins_when'])}"))
+    head = [f"choose {c['decision']} | {inp}"]
+    proc = c["inputs"].get("process")
+    if not c["decided"]:
+        head.append(f"choice: not decided (row {c['row']} needs {', '.join(c['missing'])}, which is not computed "
+                    "here; the table does not choose without that check)")
+        body = [(f"missing {k}", f"missing: {k}: {why}") for k, why in c["missing"].items()]
+    else:
+        head += [f"choice: {c['choice_name']} (row {c['row']})", "because:"]
+        body = [(f"because {i}", f"- {b}") for i, b in enumerate(c["because"])]
+        if c["rules"]:
+            body.append(("rules", "  rules: " + ", ".join(c["rules"])))
+        if c["by"]:
+            body.append(("by", "  computed by: " + ", ".join(c["by"])))
+        body.append(("runner-up", f"runner-up: {c['runner_up_name']}; wins when: {_q(c['wins_when'])}"))
     body += [(f"gap {i}", f"gap: {g}") for i, g in enumerate(c["gaps"])]
     body += [(f"unused {k}", f"unused: {k}: {v}") for k, v in c["unused"].items()]
-    body.append(("cards", "cards: " + "; ".join(c["cards"])))
-    body.append(("runner-up cards", "runner-up cards: " + "; ".join(c["runner_up_cards"])))
+    if c["decided"]:
+        for key, label in (("cards", "cards"), ("runner_up_cards", "runner-up cards")):
+            parts = list(c[key])
+            if c[key + "_empty"]:
+                parts.append(", ".join(c[key + "_empty"]) + f": no verified rule for {proc} yet")
+            body.append((label, f"{label}: " + ("; ".join(parts) or "none")))
     return _fit(head, body, budget, "+{n} more (--json has them): {ids}")[0]
 
 

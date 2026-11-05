@@ -629,7 +629,8 @@ rules:
     when: heat-setting into a printed thermoplastic
     not_when: a resin (SLA) part takes the insert glued in [ref:formlabs-inserts]
     strictness: guideline
-    wiggle: 10-20 degC; SPIROL heats to the plastic's heat-deflection temperature + 65 degC [ref:spirol-3dp]
+    wiggle: 10-20 degC; SPIROL heats to the plastic's heat-deflection temperature + 150 degF, which it prints as
+      65 degC; as a rise 150 degF is 83 K [ref:spirol-3dp]
     cost: unstated
   - id: fdm-hole-undersize-cnckitchen-2019
     process: fdm
@@ -784,7 +785,7 @@ rules:
     when: an FDM part that takes a heat-set insert
     not_when: unstated
     strictness: guideline
-    wiggle: less infill holds proportionally less (linear in infill)
+    wiggle: "less infill holds less (SPIROL: linear in infill)"
     cost: unstated
 
   - id: fdm-emboss-text-xometry-eu

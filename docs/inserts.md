@@ -62,6 +62,25 @@ inserts.coupon_plan()                                             # what to prin
 use it when you give `line_mm`, `filler_pct`, `undersize_mm` (from a hole coupon) or `facets`, and on their own for a
 fibre-filled filament. With none of these, the hole is the maker's plus 0.2 mm, as before.
 
+```mermaid
+flowchart TD
+    M["the maker's hole"] --> F["+ filler:<br/>0.08 mm at 15 %,<br/>0.15 mm at 35 %"]
+    F --> S["- 0.05 mm<br/>to pre-seat"]
+    S --> A["the hole<br/>as printed"]
+    A --> U{"undersize"}
+    U -->|"your coupon"| C["its undersize"]
+    U -->|"no coupon"| K["0.25 mm<br/>(CNC Kitchen 2026)"]
+    C --> N["at least the<br/>nozzle's arc floor"]
+    K --> N
+    N --> G{"facets?"}
+    G -->|"no"| H["the CAD hole"]
+    G -->|"yes"| P["÷ cos(π/n):<br/>the flats on the hole"]
+    P --> H
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class H out
+```
+
 ```python
 inserts.printed_hole(inserts.insert("mcmaster-94459A140"))                        # 4.20 mm, band 4.20-4.30
 inserts.printed_hole(inserts.insert("mcmaster-94459A140"), "pa6-cf20-polymaker-dry", filler_pct=30)   # 4.33 mm
@@ -69,7 +88,10 @@ inserts.printed_hole(inserts.insert("mcmaster-94459A140"), undersize_mm=0.1)    
 inserts.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=7.2, line_mm=0.8)   # 1 perimeter: warn
 ```
 
-Each number and where it comes from. Where the sources disagree, the range is kept and the one that governs is named.
+Where the sources disagree, the range is kept and the one that governs is named.
+
+<details>
+<summary>Each number and where it comes from</summary>
 
 - **As printed, the hole is the maker's less 0.05 mm,** so the insert pre-seats with slight resistance. CNC Kitchen's
   4.2 mm CAD hole printed 0.25 mm small, landing just under its 4.0 mm data-sheet hole. Drilled M3 holes lost most
@@ -100,6 +122,8 @@ Each number and where it comes from. Where the sources disagree, the range is ke
   `check_joint` with `line_mm` counts the whole perimeters that fit.
 - **No chamfer, by default.** CNC Kitchen asks none for its inserts [ref:cnckitchen-heat-set-tips]. EPFL's wiki asks
   0.3 to 0.5 mm, and LulzBot asks a chamfer for the melt. The check draws none and leaves the choice to you.
+
+</details>
 
 ## Where the clamp goes
 

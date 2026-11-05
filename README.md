@@ -79,7 +79,7 @@ The [toolkit reference](docs/toolkit.md) names every command, dependency and lim
 
 ## Extras
 
-The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Python 3.11+. [Choose optional dependencies and manual installation](docs/agent-workflow.md#extras); platform limits are stated in the [FEA guide](docs/toolkit.md#fea).
+The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Python 3.11+. [Choose optional dependencies and manual installation](docs/agent-workflow.md#extras); platform limits are stated in the [FEA guide](docs/toolkit.md).
 
 ## Contribute
 

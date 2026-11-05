@@ -199,3 +199,9 @@ The separate recovery checkout initially points to `04704a41`. No removal is aut
 A useful improvement records the failed case, reproduces it, changes the tested engineering code, adds a short method/skill with source and applicability limits, and plants the case in the existing harness. Update the owning issue with the exact head and evidence. This closes the learning loop without promoting a simulation into a physical measurement.
 
 Back to [process lessons](README.md), [the vision](../../docs/vision.md) and [contributing](../../CONTRIBUTING.md).
+
+### Give a new folder index a distinct catalogue identity
+- **Rule:** preserve published root-page IDs and include enough path context to distinguish a new folder map.
+- **Incident:** on 2026-11-05, the first build after adding `docs/README.md` failed: `Error: catalogue: two entries have the id guide-index`. The catalogue removed the `docs/` prefix and reduced both it and root `README.md` to `index`.
+- **Check:** `tests/site/website-catalog.test.mjs` now requires root `guide-index`, docs `guide-docs-index` and research `research-index`; the real site build must succeed. `npm run build:site` produced the failure under Node 22.23.4. A page map is navigation evidence, not physical validation.
+- **Source:** 2026-11-05 UTC, PR #348, `tools/site-catalog.mjs` `pageItemId` and the recorded local build output; no secrets or machine paths retained.

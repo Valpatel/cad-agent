@@ -31,6 +31,10 @@ SOURCES: Dict[str, str] = {
     "bulten": "Bulten AB, DELTA PT: a superior thread-former for plastics, brochure version 250422 (2025-04-22), made "
               "under licence from EJOT",
     "spirol-inserts": "SPIROL International, Inserts for Plastics Design Guide, edition 05/26 (2026-05)",
+    "nophead-polyholes": "nophead, Polyholes, HydraRaptor blog, 2011-02-05",
+    "reprap-arc-compensation": "RepRap project, Arc Compensation, RepRap wiki, last edited 2015-07-19 "
+                               "(RepRapHostSoftware programmers' documentation; the formula nophead's Polyholes "
+                               "credits to Adrian)",
     "iso76": "ISO 76:2006, Rolling bearings - Static load ratings",
     "skf-2018": "SKF Group, Rolling bearings, PUB BU/P1 17000/1 EN, edition 2018-10 (it applies ISO 281 and ISO 76 "
                 "and prints the makers' tables)",

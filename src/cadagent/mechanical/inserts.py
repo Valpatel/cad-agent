@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import inspect
 import math
+from functools import lru_cache
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -285,6 +286,20 @@ SRC = {
                     "1.2 % strain and 40 degC kept 0.75 of its stress after a month, 0.67 after a year and 0.59 "
                     "after six)",
     "brass": "Smiths Metal Centres, C36000 brass datasheet (2023): yield 124-310 MPa by temper (typical values)",
+    # the printed hole by material and nozzle (#323 phase 7: each read at source on 2026-11-04)
+    "spirol-hole": "SPIROL International (C. Jones), How to Design the Proper Hole for Heat / Ultrasonic Inserts "
+                   "(white paper, read 2026-11-04; it carries no date): the maker's hole grows 0.08 mm at 15 % glass or mineral filler and 0.15 mm at 35 %, "
+                   "interpolated between; larger holes lose performance, smaller ones stress and crack the plastic",
+    "lulzbot-inserts": "LulzBot, Tips and Tricks: Heat-Set Inserts (2017-04-17): the wall round the insert a "
+                       "multiple of the extrusion width, so it prints as solid perimeters; two or more perimeters",
+    "padt-inserts": "PADT, Adding Inserts to 3D Printed Parts (2019-08-06): Stratasys Insight's four to six contours "
+                    "round each insert hole",
+    "epfl-inserts": "EPFL MAKE wiki, How to use threaded inserts (modified 2026-09-04): PETG can shrink slightly "
+                    "after printing, so ream the hole with a drill where the insert will not start",
+    "nophead-polyholes": "nophead, Polyholes (HydraRaptor, 2011-02-05): a mesh's facets shrink a hole by cos(pi/n); "
+                         "arc shrinkage and corner cutting shrink it more",
+    "reprap-arc-compensation": "RepRap wiki, Arc Compensation (last edited 2015-07-19): a track bent round a hole puts more plastic inside "
+                               "the arc than a straight one, r = (t + sqrt(t^2 + 4 R^2)) / 2",
 }
 
 
@@ -323,14 +338,162 @@ def _knurl(ins: Insert) -> Tuple[float, str]:
                          "hole, smaller than the knurl (the capacity comes out low, the boss rule a floor)")
 
 
+# ----------------------------------------------------------------------------- the printed hole, by filament and nozzle
+# (#323 phase 7). Each number is a rule of research/process-profiles.yaml, read when first needed (so the module imports
+# without the checkout's data), or a formula of cadagent.formulas. Where sources disagree the range is kept and one
+# governs: a coupon printed on your printer, in your filament, governs every default below.
+
+# Fibre-filled filaments in the datasheet table. Both makers' sheets say "carbon fiber reinforced" and neither states
+# how much (read 2026-11-04), so the content is None: unknown, which printed_hole treats as a range, not a guess.
+FILLED = {"petg-cf-bambu": None, "pa6-cf20-polymaker-dry": None, "pa6-cf20-polymaker-wet": None}
+FILLER_STEPS_PCT = (15.0, 35.0)       # filler content where SPIROL's two hole increases start (spirol-hole)
+NOZZLE_LINE_MM = 0.42                 # boss_design's default line width, the floor's default too
+
+
+@lru_cache(maxsize=1)
+def _hole_rules() -> Dict[str, Any]:
+    """The profile rules the printed hole takes its numbers from, by name (``verified_rule`` refuses a ``u`` row)."""
+    from cadagent.manufacturing.process import profile
+    fdm = profile("fdm")
+    ids = {"offset": "fdm-insert-hole-cad-offset-cnckitchen", "undersize": "fdm-hole-undersize-cnckitchen",
+           "undersize_2019": "fdm-hole-undersize-cnckitchen-2019", "filler": "fdm-insert-hole-filler-spirol",
+           "perimeters": "fdm-insert-wall-perimeters-lulzbot", "contours": "fdm-insert-contours-padt"}
+    return {k: fdm.verified_rule(v).limit() for k, v in ids.items()}
+
+
+def filler_increase(filler_pct: float) -> float:
+    """How much SPIROL grows the maker's hole for a filled plastic, mm: none under 15 % filler, 0.08 mm at 15 %,
+    0.15 mm at 35 % and over, straight between (its white paper says to interpolate)."""
+    if not (isinstance(filler_pct, (int, float)) and not isinstance(filler_pct, bool) and 0 <= filler_pct <= 100):
+        raise ValueError(f"filler_pct must be a percentage from 0 to 100, not {filler_pct!r}")
+    rule = _hole_rules()["filler"]
+    lo_pct, hi_pct = FILLER_STEPS_PCT
+    if filler_pct < lo_pct:
+        return 0.0
+    if filler_pct >= hi_pct:
+        return rule.max
+    return rule.min + (filler_pct - lo_pct) / (hi_pct - lo_pct) * (rule.max - rule.min)
+
+
+def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[float] = None,
+                 filler_pct: Optional[float] = None, undersize_mm: Optional[float] = None,
+                 facets: Optional[int] = None) -> Dict[str, Any]:
+    """The insert's hole in CAD for a given filament and nozzle, with the band it may sit in and why. Lengths in mm.
+
+    * **The hole wanted, as printed:** the maker's hole, plus SPIROL's increase for a filled plastic, less what lets
+      the insert pre-seat with slight resistance (CNC Kitchen's 4.2 mm CAD hole printed 0.25 mm small, so it sat
+      0.05 mm under the maker's 4.0 mm: :data:`cadagent.manufacturing.fit_coupons.ALLOWANCE_MM` ``insert``).
+      ``filler_pct`` gives the filler content; a fibre-filled filament whose sheet does not say (:data:`FILLED`)
+      takes no increase and the band takes SPIROL's whole 0 to 0.15 mm: a hole too large loses pull-out fast (CNC
+      Kitchen) while one too small only seats harder, so the low end is drawn and the coupon decides.
+    * **Plus the printed hole's undersize:** ``undersize_mm`` from a coupon on your printer in this filament governs.
+      Without one, CNC Kitchen's 0.25 mm (2026, the measurement behind the 4.2 mm hole and its pull-out tests) is
+      taken; its 0.1 mm of 2019, on another printer, is the other end of the published range and is reported.
+    * **Never less than the nozzle forces:** a track ``line_mm`` wide bent round the hole leaves it at least
+      sqrt(D^2 - t^2) (the RepRap wiki's arc compensation, :func:`cadagent.formulas.arc_printed_diameter`). Nophead
+      found the real shrink larger, so this is a floor that only binds for a wide track in a small hole, or under a
+      coupon measured with a narrower one.
+    * **On a mesh of ``facets`` sides** the circle is drawn at d / cos(pi / n), so the flats land on the hole
+      (Nophead's faceting error, :func:`cadagent.formulas.facet_diameter`).
+
+    With no inputs it is the maker's hole plus 0.2 mm, :func:`hole_design`'s default. ``cad_band_mm`` is CNC Kitchen's
+    0.2 to 0.3 mm offset moved by the same filler, coupon and facets."""
+    rules = _hole_rules()
+    maker = ins.hole_mm
+    off, under_ref = rules["offset"], rules["undersize"].value
+    preseat = off.min - under_ref                   # the hole wanted as printed, against the maker's: -0.05 mm
+    why: List[str] = []
+    sources = ["cnck-2026"]
+    fam = family(material) if material is not None else None
+    filled = filler_pct is not None or (material in FILLED)
+    if filler_pct is not None:
+        add = filler_increase(filler_pct)
+        f_band = (add, add)
+        why.append(f"{filler_pct:g} % filler: SPIROL grows the hole {add:.3f} mm (0.08 at 15 %, 0.15 at 35 %)")
+        sources.append("spirol-hole")
+    elif material in FILLED:
+        add, f_band = 0.0, (0.0, rules["filler"].max)
+        why.append(f"{material} is fibre-filled and its sheet gives no content: SPIROL's increase is 0 to "
+                   f"{rules['filler'].max:g} mm, so the band widens by that and the hole takes the low end (a hole "
+                   "too large loses pull-out fast, one too small only seats harder); the coupon decides")
+        sources.append("spirol-hole")
+    else:
+        add, f_band = 0.0, (0.0, 0.0)
+    if undersize_mm is not None:
+        if not (isinstance(undersize_mm, (int, float)) and not isinstance(undersize_mm, bool)
+                and 0.0 <= undersize_mm <= 1.0):
+            raise ValueError(f"undersize_mm must be from 0 to 1 mm, not {undersize_mm!r}")
+        under, basis = float(undersize_mm), "your coupon (it governs)"
+    else:
+        under, basis = under_ref, "CNC Kitchen 2026 (no coupon given)"
+        sources.append("cnck-2019")
+    line = NOZZLE_LINE_MM if line_mm is None else line_mm
+    if not (isinstance(line, (int, float)) and not isinstance(line, bool) and 0.1 <= line <= 2.0):
+        raise ValueError(f"line_mm must be a line width between 0.1 and 2 mm, not {line_mm!r}")
+    target = maker + add + preseat
+    cad = target + under
+    floor = cad - fx.arc_printed_diameter(cad * MM, line * MM) / MM
+    if floor > under:
+        why.append(f"a {line:g} mm track shrinks a {cad:.2f} mm hole at least {floor:.3f} mm (RepRap arc "
+                   f"compensation), more than the {under:g} mm undersize: the floor is taken")
+        under, basis = floor, f"the arc floor for a {line:g} mm track"
+        cad = target + under
+    sources.append("reprap-arc-compensation")
+    why.insert(0, f"the maker's hole {maker:g} mm, as printed {target:.3f} mm so the insert pre-seats with slight "
+                  f"resistance, plus a {under:.3f} mm undersize ({basis}; published 0.1 to 0.25 mm, CNC Kitchen 2019 "
+                  "and 2026)")
+    shift = under - under_ref
+    lo, hi = maker + f_band[0] + off.min + shift, maker + f_band[1] + off.max + shift
+    facet = None
+    if facets is not None:
+        scale = 1.0 / math.cos(math.pi / int(facets)) if isinstance(facets, int) and not isinstance(facets, bool) \
+            and facets >= 3 else None
+        if scale is None:
+            raise ValueError(f"facets must be a whole number of at least 3, not {facets!r}")
+        facet = cad - fx.facet_diameter(cad * MM, facets) / MM
+        cad, lo, hi = cad * scale, lo * scale, hi * scale
+        why.append(f"on a mesh of {facets} sides the flats fall {facet:.3f} mm inside the circle (Nophead): the "
+                   f"circle is drawn at {cad:.3f} mm so they land on the hole")
+        sources.append("nophead-polyholes")
+    if fam == "petg":
+        why.append("PETG can shrink a little after printing (EPFL): if the insert will not start, open the hole with "
+                   "a drill")
+        sources.append("epfl-inserts")
+    return {"insert": ins.key, "material": material, "maker_mm": maker, "filled": filled,
+            "filler_pct": filler_pct, "filler_mm": round(add, 4), "filler_band_mm": [round(v, 4) for v in f_band],
+            "target_mm": round(target, 4), "undersize_mm": round(under, 4), "undersize_basis": basis,
+            "undersize_published_mm": [rules["undersize_2019"].value, under_ref], "line_mm": line,
+            "arc_floor_mm": round(floor, 4), "facets": facets,
+            "facet_mm": None if facet is None else round(facet, 4),
+            "polyhole": {k: (round(v / MM, 4) if k == "diameter" else v)
+                         for k, v in fx.polyhole(target * MM).items()},
+            "cad_mm": round(cad, 3), "cad_band_mm": [round(lo, 3), round(hi, 3)], "why": why,
+            "sources": sources}
+
+
 def hole_design(ins: Insert, axis: str = "upright", through: bool = False,
-                allowance_mm: float = CAD_ALLOWANCE_MM[0]) -> Dict[str, Any]:
+                allowance_mm: float = CAD_ALLOWANCE_MM[0], material: Optional[str] = None,
+                line_mm: Optional[float] = None, filler_pct: Optional[float] = None,
+                undersize_mm: Optional[float] = None, facets: Optional[int] = None) -> Dict[str, Any]:
     """The hole to print for an insert: its CAD diameter (the maker's hole plus the printed-hole allowance), straight,
-    and deep enough for the melt; the plastic the insert pushes aside and the pocket below it. Lengths in mm."""
+    and deep enough for the melt; the plastic the insert pushes aside and the pocket below it. Lengths in mm.
+
+    Give the filament (``material``), the slicer's ``line_mm``, a ``filler_pct``, a coupon's ``undersize_mm`` or the
+    mesh's ``facets`` and the diameter comes from :func:`printed_hole` instead (its whole answer under ``printed``);
+    with none of them it is the maker's hole plus ``allowance_mm``, as before."""
     if axis not in AXES:
         raise ValueError(f"axis must be one of {AXES}, not {axis!r}")
     if not (isinstance(allowance_mm, (int, float)) and 0.0 <= allowance_mm <= 1.0):
         raise ValueError(f"allowance_mm must be between 0 and 1 mm, not {allowance_mm!r}")
+    asked = {k: v for k, v in (("material", material), ("line_mm", line_mm), ("filler_pct", filler_pct),
+                               ("undersize_mm", undersize_mm), ("facets", facets)) if v is not None}
+    printed = None
+    if asked:
+        if allowance_mm != CAD_ALLOWANCE_MM[0]:
+            raise ValueError("give allowance_mm or the printed hole's inputs (material, line_mm, filler_pct, "
+                             "undersize_mm, facets), not both: printed_hole works the allowance out")
+        printed = printed_hole(ins, **asked)
+        allowance_mm = round(printed["cad_mm"] - ins.hole_mm, 4)
     maker = ins.hole_mm
     L, p = ins.length_mm, ins.pitch_mm
     rules = {"maker's least material thickness": ins.min_material_mm, "L + 1 mm (ruthex, CNC Kitchen)": L + 1.0,
@@ -342,8 +505,9 @@ def hole_design(ins: Insert, axis: str = "upright", through: bool = False,
         "diameter_mm": round(maker + allowance_mm, 3), "allowance_mm": allowance_mm, "taper_deg": 0.0,
         "taper_max_deg": STRAIGHT_TAPER_DEG, "chamfer": "none", "depth_mm": round(depth, 3),
         "depth_rules_mm": {k: round(v, 3) for k, v in rules.items()},
-        "why": [f"the maker's hole is {maker:g} mm; a printed hole comes out about 0.25 mm small, so CAD takes "
-                f"{allowance_mm:g} mm more (CNC Kitchen 2026: 0.2-0.3 mm for small inserts)",
+        "why": [(f"the maker's hole is {maker:g} mm; a printed hole comes out about 0.25 mm small, so CAD takes "
+                 f"{allowance_mm:g} mm more (CNC Kitchen 2026: 0.2-0.3 mm for small inserts)") if printed is None else
+                f"{printed['cad_mm']:g} mm in CAD, for this filament and nozzle: " + "; ".join(printed["why"]),
                 "straight, not tapered, and no chamfer (CNC Kitchen tips; SPIROL: a straight hole tapers at most "
                 "1 degree included)",
                 ("a through hole needs no extra depth (CNC Kitchen tips)" if through else
@@ -359,7 +523,20 @@ def hole_design(ins: Insert, axis: str = "upright", through: bool = False,
         pocket = fx.overflow_volume(maker * MM, depth * MM, L * MM) if not through else 0.0
         out["displaced_mm3"] = round(displaced / MM ** 3, 3)
         out["overflow_mm3"] = round(pocket / MM ** 3, 3)
+    if printed is not None:
+        out["printed"] = printed
     return out
+
+
+def perimeter_counts(ins: Insert) -> Dict[str, Any]:
+    """How many perimeters each source asks round an insert's hole: LulzBot two or more, SPIROL at least the metric
+    size, Stratasys's Insight four to six (PADT). SPIROL's count governs: only it has pull-out tests against wall
+    loops (its 3D-printing paper, Figures 8 and 9)."""
+    r = _hole_rules()
+    spirol = math.ceil(float(ins.thread[1:]))
+    return {"lulzbot": int(r["perimeters"].min), "spirol": spirol, "padt": [int(r["contours"].min),
+                                                                             int(r["contours"].max)],
+            "governs": "spirol", "least": max(int(r["perimeters"].min), spirol)}
 
 
 def boss_design(ins: Insert, line_mm: float = 0.42) -> Dict[str, Any]:
@@ -375,14 +552,24 @@ def boss_design(ins: Insert, line_mm: float = 0.42) -> Dict[str, Any]:
     full = max(least, BOSS_FULL * knurl)
     size = float(ins.thread[1:])
     loops = max(math.ceil((full - ins.hole_mm) / 2.0 / line_mm - 1e-9), math.ceil(size))
+    counts = perimeter_counts(ins)
+    cad_hole = ins.hole_mm + CAD_ALLOWANCE_MM[0]
+    solid = max(math.ceil((full - cad_hole) / 2.0 / line_mm - 1e-9), counts["least"])
     return {"insert": ins.key, "least_outside_mm": round(least, 3), "outside_mm": round(full, 3),
             "least_wall_mm": wall, "wall_mm": round((full - ins.hole_mm) / 2.0, 3), "perimeters": loops,
             "line_mm": line_mm, "knurl_mm": knurl, "knurl_basis": basis,
+            # the same perimeters as whole extrusion widths round the CAD hole, so none is left to infill (LulzBot)
+            "solid_outside_mm": round(cad_hole + 2.0 * solid * line_mm, 3), "solid_perimeters": solid,
+            "perimeter_counts": counts,
             "why": [f"wall at least {wall:g} mm round the hole (CNC Kitchen poster; ruthex)",
                     f"outside at least {BOSS_FLOOR:g} x the knurl diameter, full performance from {BOSS_FULL:g} x "
                     "(SPIROL's 3D-printing paper; PEM: boss 2 x the insert diameter)",
                     f"print the boss solid: {loops} perimeters out to its outside, at least as many as the metric "
                     "size (SPIROL); pull-out rose about 2.5 x from 30 % to 70 % infill (Kastner 2023)",
+                    f"as {solid} whole {line_mm:g} mm extrusion widths round the {cad_hole:g} mm CAD hole that is "
+                    f"{cad_hole + 2.0 * solid * line_mm:.2f} mm outside, so no gap is left to infill (LulzBot); the "
+                    f"published counts run from {counts['lulzbot']} (LulzBot) to {counts['padt'][1]} (Stratasys, "
+                    "PADT), and SPIROL's metric size governs (its are the tests)",
                     "no maker gives an edge distance: keep at least the wall to any free face"]}
 
 
@@ -1126,7 +1313,8 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                 screw_depth_mm: Optional[float] = None, margin: float = MARGIN,
                 name: Optional[str] = None, head: str = "socket", head_washer: Optional[str] = None,
                 insert_washer: Optional[str] = None, chamfer_mm: float = 0.0, under_chamfer_mm: float = 0.0,
-                fixes: bool = True) -> Dict[str, Any]:
+                fixes: bool = True, line_mm: Optional[float] = None, filler_pct: Optional[float] = None,
+                undersize_mm: Optional[float] = None, facets: Optional[int] = None) -> Dict[str, Any]:
     """Check one screw joint into a heat-set insert in a printed part, with or without a compression limiter in the
     clamped part. Returns verdict (pass / warn / fail: the worst row), each check's value, limit, verdict and why,
     the insert's capacities, the most to tighten to and the limits. Lengths in mm, forces in N, torques in N m.
@@ -1141,7 +1329,12 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     ``insert_washer`` one between the clamped part and a flush insert's end; ``chamfer_mm`` and ``under_chamfer_mm``
     are the 45 degree chamfers on the clamped part's hole, under the head and on the insert. When the printed part's
     bearing sets the torque, ``fixes`` lists what lifts it, in order (a larger head, a washer, a large washer, a
-    limiter), each with the torque and preload it allows (#292)."""
+    limiter), each with the torque and preload it allows (#292).
+
+    The hole follows the filament and the nozzle (:func:`printed_hole`, #323) when the filament is fibre-filled or
+    any of ``line_mm`` (the slicer's line width), ``filler_pct``, ``undersize_mm`` (a hole coupon's) or ``facets``
+    (the mesh's sides round the hole) is given: its band moves with them and a ``printed hole`` row says why;
+    ``line_mm`` also counts the boss's whole perimeters (a ``boss perimeters`` row)."""
     call = dict(locals())
     ins = INSERTS.get(insert) if isinstance(insert, str) else None
     if ins is None:
@@ -1167,8 +1360,12 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     if iw is not None and limiter_key:
         raise ValueError("give a limiter or an insert_washer, not both: the limiter already lands on the insert")
     rows: List[Dict[str, Any]] = []
-    hd = hole_design(ins, axis, through)
-    bd = boss_design(ins)
+    printed_in = {k: v for k, v in (("line_mm", line_mm), ("filler_pct", filler_pct), ("undersize_mm", undersize_mm),
+                                    ("facets", facets)) if v is not None}
+    printed = printed_hole(ins, material, **printed_in) if printed_in or material in FILLED else None
+    hd = hole_design(ins, axis, through) if printed is None else \
+        hole_design(ins, axis, through, material=material, **printed_in)
+    bd = boss_design(ins) if line_mm is None else boss_design(ins, line_mm)
     cap = capacity(ins, material, axis)
     d, p = ins.diameter_mm * MM, ins.pitch_mm * MM
 
@@ -1176,16 +1373,27 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     cad_hole = hd["diameter_mm"] if hole_mm is None else float(hole_mm)
     knurl, _ = _knurl(ins)
     lo, hi = ins.hole_mm + CAD_ALLOWANCE_MM[0], ins.hole_mm + CAD_ALLOWANCE_MM[1]
+    if printed is not None:
+        lo, hi = printed["cad_band_mm"]
     # the knurl's crests bound the hole only where they were read (otherwise ``knurl`` is the maker's hole)
     v = ("pass" if lo - 1e-9 <= cad_hole <= hi + 1e-9 else
          "fail" if ins.outer_mm and cad_hole >= ins.outer_mm else "warn")
     rows.append(_row("hole diameter", round(cad_hole, 3), [round(lo, 3), round(hi, 3)], v,
-                     "in CAD; the maker's hole plus 0.2-0.3 mm prints to size (CNC Kitchen 2026)" if v == "pass" else
+                     ("in CAD; the maker's hole plus 0.2-0.3 mm prints to size (CNC Kitchen 2026)" if printed is None
+                      else "in CAD; the band for this filament and nozzle (the printed hole row)") if v == "pass" else
                      ("no smaller than the knurl's crests will grip" if v == "fail" else
-                      (f"under the maker's {ins.hole_mm:g} mm plus 0.2: a printed hole comes out about 0.25 mm small "
-                       "(CNC Kitchen 2026), so the insert has more plastic to push aside and may not seat" if
+                      ((f"under the maker's {ins.hole_mm:g} mm plus 0.2: a printed hole comes out about 0.25 mm "
+                        "small (CNC Kitchen 2026), so the insert has more plastic to push aside and may not seat"
+                        if printed is None else
+                        "under the band for this filament and nozzle (the printed hole row): the insert has more "
+                        "plastic to push aside and may not seat") if
                        cad_hole < lo else "larger: the knurl bites less; drilled true to size, CNC Kitchen's M3 lost "
                                           "most of its strength between 4.1 and 4.2 mm"))))
+    if printed is not None:
+        unknown = printed["filled"] and filler_pct is None
+        rows.append(_row("printed hole", printed["cad_mm"], printed["cad_band_mm"], "warn" if unknown else "pass",
+                         "; ".join(printed["why"]) + ("; print the hole coupon in this filament before trusting the "
+                                                      "band" if unknown else "")))
     install = install_notes(material)
     if installed_from == "far side":
         # the insert goes in from the far face and is pressed onto the shoulder in front of it: the pocket from the
@@ -1276,6 +1484,21 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
     else:
         rows.append(_row("boss wall", None, bd["least_wall_mm"], "warn",
                          "not given: say boss_outside_mm (or edge_mm, the least plastic to a free face)"))
+    if line_mm is not None and walls:
+        counts = bd["perimeter_counts"]
+        whole = math.floor(wall / line_mm + 1e-9)
+        spare = wall - whole * line_mm
+        v = "pass" if whole >= counts["least"] else "warn"
+        rows.append(_row("boss perimeters", whole, counts["least"], v,
+                         (f"{whole} whole {line_mm:g} mm perimeters round the hole, at least the "
+                          f"{counts['least']} SPIROL's tests ask (the metric size; LulzBot two, Stratasys four to six)"
+                          if v == "pass" else
+                          f"only {whole} whole {line_mm:g} mm perimeters fit round the hole, under the "
+                          f"{counts['least']} SPIROL's tests ask (the metric size; LulzBot two or more): one loop at "
+                          "15 % infill held about a quarter of eleven (SPIROL, Figure 8). Widen the boss or print "
+                          "with a narrower line")
+                         + (f"; {spare:.2f} mm left over goes to gap fill or infill: a wall of whole extrusion widths "
+                            f"({bd['solid_outside_mm']:g} mm outside) prints solid (LulzBot)" if spare > 1e-6 else "")))
     if axis == "lying":
         rows.append(_row("insert axis", axis, "upright", "warn",
                          "lying in the layer plane: no published number; Kastner 2023 found inserts along Z stronger "
@@ -1741,7 +1964,8 @@ CLAMP_KEYS = {"name", "thread", "material", "thickness_mm", "tolerance_mm", "out
 SPEC_KEYS = {"name", "insert", "material", "axis", "boss_outside_mm", "edge_mm", "hole_mm", "hole_depth_mm",
              "through", "recess_mm", "installed_from", "screw_class", "torque_nm", "pull_n", "push_n", "turn_nm",
              "head_mm", "clearance_mm", "clamped", "limiter_key", "limiter_length_mm", "limiter_hole_mm",
-             "screw_depth_mm", "margin", "head", "head_washer", "insert_washer", "chamfer_mm", "under_chamfer_mm"}
+             "screw_depth_mm", "margin", "head", "head_washer", "insert_washer", "chamfer_mm", "under_chamfer_mm",
+             "line_mm", "filler_pct", "undersize_mm", "facets"}
 
 
 def check_spec(spec: Dict[str, Any]) -> Dict[str, Any]:

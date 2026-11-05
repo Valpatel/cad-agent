@@ -13,6 +13,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from cadagent.review.references import load as load_registry
+
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "research" / "process-profiles.yaml"
 REGISTRY = ROOT / "research" / "references.yaml"
@@ -37,7 +39,9 @@ def data():
     """The profiles, with ``sources``: the registry entries this file or its page relies on (their ``used_for``)."""
     data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
     registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
-    data["registry"] = {s["id"]: s for s in registry["sources"]}
+    # every record in the one id space, the shards' too (#323): a rule may cite a read shard record
+    reg = load_registry()
+    data["registry"] = {ref.id: ref.data for kind in ("source", "catalogued") for ref in reg.of_kind(kind)}
     data["sources"] = [s for s in registry["sources"]
                        if {"research/process-profiles.yaml", "research/process-profiles.md"} & set(s["used_for"])]
     return data

@@ -14,5 +14,11 @@
   the perimeters round an insert (LulzBot, PADT), each with the source that governs where they differ.
 
 **Changed**
+- `tools/import_refmap.py` reconciles instead of overwriting. A re-import keeps every record someone has read,
+  verified or lowered, and every record the map does not make, byte for byte. It still applies the map's changes
+  to the rest, so `--check` passes after a promotion sweep.
+- `research/process-profiles.yaml` rules may name what applies them (`applied_by`, checked by the tests), and
+  expressions may use `sqrt()` and `cos()`. The insert hole's arc floor, facets and SPIROL perimeter rules are
+  profile lines that `printed_hole` and `perimeter_counts` evaluate.
 - `check_joint` on a fibre-filled filament (PETG-CF, PA6-CF20) now warns until you give `filler_pct` or print the
   hole coupon, because neither data sheet states the fibre content. Its hole band widens by SPIROL's 0 to 0.15 mm.

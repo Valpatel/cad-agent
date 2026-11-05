@@ -120,6 +120,12 @@ def _yaml(text: str) -> Any:
     return yaml.load(text, Loader=_LOADER)  # noqa: S506 - a safe loader, never yaml.Loader
 
 
+def is_read(record: Any) -> bool:
+    """A shard record someone has read at source (evidence class ``read`` or higher): a source a rule may cite. Below
+    that it is catalogued. The one statement of the rule; the importer, the profiles and the site follow it."""
+    ev = record.get("evidence") if isinstance(record, dict) else None
+    return isinstance(ev, dict) and ev.get("class") in LADDER[1:]
+
 @dataclass(frozen=True)
 class Reference:
     """One registry entry. ``kind`` is ``source``, ``catalogued``, ``unverified`` or ``uncited``; ``data`` is the entry
@@ -246,8 +252,7 @@ class Registry:
                     self._duplicates.append(rid)
                     self._load_problems.append(f"{rid}: in {shard.file} and in {self.entries[rid].file}; one id, one "
                                                "record (to add fields to a core entry, write `extends: true`)")
-                cls = (item.get("evidence") or {}).get("class") if isinstance(item.get("evidence"), dict) else None
-                kind = "source" if cls in LADDER[1:] else "catalogued"
+                kind = "source" if is_read(item) else "catalogued"
                 self.entries[rid] = Reference(rid, kind, item, shard.file)
         # aliases after every id, so an alias that names an entry is caught wherever either is written
         for ref in self.entries.values():

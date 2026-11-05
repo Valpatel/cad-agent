@@ -108,10 +108,11 @@ Where the sources disagree, the range is kept and the one that governs is named.
   taken, because it is the measurement behind the pull-out tests. **Your coupon governs:** pass its undersize and the
   whole band moves with it. Hole sizes vary with material and tools [ref:e-z-lok-brochure-2026], and PETG can shrink a
   little after printing [ref:epfl-make-how-to-use-threaded-inserts-epfl-makerspace-wiki].
-- **The nozzle sets a floor.** A track t wide, bent round a hole of diameter D, leaves it at least √(D² − t²). This
-  is the RepRap wiki's arc balance [ref:reprap-arc-compensation], and the tests reproduce its table. Nophead found the
-  real shrink larger [ref:nophead-polyholes], so the floor binds only for a wide track in a small hole, or under a
-  coupon printed with a narrower one.
+- **The nozzle sets a floor.** A track t wide, bent round a hole of diameter D, leaves it at least √(D² − t²), so
+  a hole wanted at d is drawn at least √(d² + t²). This is the RepRap wiki's arc balance
+  [ref:reprap-arc-compensation], and the tests reproduce its table. Nophead found the real shrink larger
+  [ref:nophead-polyholes], so the floor binds only for a wide track in a small hole, or under a coupon printed with
+  a narrower one.
 - **A coarse mesh shrinks the hole by cos(π/n).** Given `facets`, the circle is drawn at d / cos(π/n), so the flats
   land on the hole [ref:nophead-polyholes]. Nophead's polyhole, max(round(2 d), 3) sides, is reported beside it. It is
   untested with inserts, so the round hole governs.

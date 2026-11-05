@@ -274,3 +274,42 @@ def test_ids_are_unique_and_kebab_case():
     assert [ids("taken"), ids("taken"), ids("new")] == ["taken-2", "taken-3", "new"]
     assert imp.slug("Ball-Balancing-Robot: v2 & more!") == "ball-balancing-robot-v2-and-more"
     assert len(imp.slug("word " * 40)) <= 60 and imp.norm_url("https://www.X.org/a/") == imp.norm_url("http://x.org/a")
+
+
+def test_a_reimport_keeps_promotions_and_hand_records_and_still_applies_the_map(checkout, capsys):
+    """#343 review: the import owns its shards but never undoes a person's work. A promoted record and one added by
+    hand survive a second import byte for byte; a change in the map to a record nobody has read still lands."""
+    root, data = checkout
+    _run(root, data)
+    folder = root / "research" / "references"
+    mould = folder / "guides-mould.yaml"
+    text = mould.read_text()
+    promoted = text.replace("    class: snippet-only\n", "    class: read\n", 1)
+    assert promoted != text
+    hand = ("- id: hand-added-record   # written by a person\n  title: A Guide Read By Hand\n"
+            "  summary: kept exactly, comment and all.\n")
+    mould.write_text(promoted + hand)
+    before = mould.read_text()
+    capsys.readouterr()
+    assert _run(root, data, "--check") == 0
+    changed = copy.deepcopy(DATA)
+    changed["PG"][0]["gist"] = "Snap-fit strain limits, revised."         # the promoted record's row
+    changed["D"][2][7] = "Gearbox generator, now with a test rig."        # a record nobody has read
+    data.write_text(json.dumps(changed))
+    assert _run(root, data) == 0
+    out = capsys.readouterr().out
+    assert "kept as written (1 read, verified or lowered): shop-snap-guide" in out
+    assert "not in the map, kept as written: hand-added-record" in out
+    after = mould.read_text()
+    assert after.split("sources:\n", 1)[1] == before.split("sources:\n", 1)[1]        # every record, byte for byte
+    assert "revised" not in after
+    assert _records(root)["other-tiny-gearbox"][1]["summary"].startswith("Gearbox generator, now with a test rig.")
+    assert _run(root, data, "--check") == 0
+
+
+@pytest.mark.parametrize("rec, kept", [
+    ({"evidence": {"class": "snippet-only"}}, False), ({"extends": True, "evidence": {"numbers": "some"}}, False),
+    ({"evidence": {"class": "read"}}, True), ({"evidence": {"class": "snippet-only"}, "verified": "2026-11-04"}, True),
+    ({"evidence": {"class": "snippet-only", "lowered": {"from": "read"}}}, True)])
+def test_what_counts_as_worked_on(rec, kept):
+    assert imp.curated(rec) is kept

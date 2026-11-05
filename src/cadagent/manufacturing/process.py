@@ -69,11 +69,12 @@ _BIN = {ast.Add: lambda a, b: a + b, ast.Sub: lambda a, b: a - b, ast.Mult: lamb
 _CMP = {ast.Lt: lambda a, b: a < b, ast.LtE: lambda a, b: a <= b, ast.Gt: lambda a, b: a > b,
         ast.GtE: lambda a, b: a >= b}
 _FUN = {"min": min, "max": max}
+_FUN1 = {"sqrt": math.sqrt, "cos": math.cos}          # one argument each (#323: the hole rules)
 
 
 def evaluate(expr: Any, env: Mapping[str, float]) -> float:
     """A rule's min/max/value as a number. Numbers pass through; a string may use the names in ``env``, numbers,
-    + - * / ( ), unary minus, min(), max(), pi, and one ``a if <comparison> else b`` (not nested, not two). Anything
+    + - * / ( ), unary minus, min(), max(), sqrt(), cos() (radians), pi, and one ``a if <comparison> else b`` (not nested, not two). Anything
     else raises ValueError, as does dividing by zero, so a typo in the data file fails the tests instead of being
     skipped and a caller needs to catch only ValueError."""
     if isinstance(expr, bool):
@@ -98,6 +99,12 @@ def evaluate(expr: Any, env: Mapping[str, float]) -> float:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _FUN and node.args \
                 and not node.keywords:
             return _FUN[node.func.id](ev(a) for a in node.args)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _FUN1 \
+                and len(node.args) == 1 and not node.keywords:
+            arg = ev(node.args[0])
+            if node.func.id == "sqrt" and arg < 0:
+                raise ValueError(f"{expr!r}: sqrt of {arg:g} at {dict(env)}")
+            return _FUN1[node.func.id](arg)
         if isinstance(node, ast.IfExp) and isinstance(node.test, ast.Compare) and len(node.test.ops) == 1 \
                 and type(node.test.ops[0]) in _CMP:
             test = _CMP[type(node.test.ops[0])](ev(node.test.left), ev(node.test.comparators[0]))
@@ -121,7 +128,7 @@ def names_in(expr: Any) -> Tuple[str, ...]:
     if isinstance(expr, (int, float)):
         return ()
     return tuple(sorted({n.id for n in ast.walk(ast.parse(str(expr), mode="eval"))
-                         if isinstance(n, ast.Name) and n.id not in _FUN and n.id != "pi"}))
+                         if isinstance(n, ast.Name) and n.id not in _FUN and n.id not in _FUN1 and n.id != "pi"}))
 
 
 # ----------------------------------------------------------------------------- typed values
@@ -221,6 +228,7 @@ class Rule:
     datum: str = ""
     note: str = ""
     shop: str = ""           # a shop id of ``shops`` for that shop's own rule; "" for a generic one
+    applied_by: Tuple[str, ...] = ()     # the functions or gates that apply it (``cadagent.mechanical.inserts.printed_hole``)
 
     @property
     def verified(self) -> bool:
@@ -506,7 +514,8 @@ def _source(s: Mapping[str, Any]) -> Source:
 def _rule(r: Mapping[str, Any]) -> Rule:
     return Rule(r["id"], r["process"], r["feature"], r["quantity"], r["units"], r["applies"], r["source"], r["status"],
                 str(r["verified"]), r.get("min"), r.get("max"), r.get("value"), bool(r.get("window", False)),
-                r.get("compare", ""), r.get("variant", ""), r.get("datum", ""), r.get("note", ""), r.get("shop", ""))
+                r.get("compare", ""), r.get("variant", ""), r.get("datum", ""), r.get("note", ""), r.get("shop", ""),
+                tuple(r.get("applied_by") or ()))
 
 
 def _shops(data: Mapping[str, Any], rules: List[Rule]) -> Dict[str, Shop]:
@@ -565,9 +574,6 @@ def data_path(path: Any = None) -> Path:
     return p
 
 
-SHARD_DATA = ("vocab.yaml", "coverage.yaml")      # files in the shard folder that hold no records
-
-
 @lru_cache(maxsize=8)
 def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles:
     import yaml
@@ -583,15 +589,16 @@ def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles
         for s in entries:
             if isinstance(s, dict) and "id" in s:
                 sources.setdefault(s["id"], _source(s))
-    # and the schema-2 shards beside it (#323): a record read at source (evidence class above snippet-only) may back
-    # a rule; a catalogued one stays unresolved, so a rule that cites it fails the tests
+    # and the schema-2 shards beside it (#323): a record read at source may back a rule; a catalogued one stays
+    # unresolved, so a rule that cites it fails the tests. Which files are shards, and which records are read, is
+    # the registry's to say.
+    from cadagent.review.references import NOT_SHARDS, is_read
     for shard in sorted(path.parent.glob(f"{REGISTRY.stem}/*.yaml")):
-        if shard.name in SHARD_DATA:
+        if shard.name in NOT_SHARDS:
             continue
         doc = yaml.safe_load(shard.read_text(encoding="utf-8"))
         for s in (doc.get("sources") if isinstance(doc, dict) else None) or []:
-            cls = (s.get("evidence") or {}).get("class") if isinstance(s, dict) else None
-            if isinstance(s, dict) and "id" in s and not s.get("extends") and cls not in (None, "snippet-only"):
+            if is_read(s) and "id" in s and not s.get("extends"):
                 sources.setdefault(s["id"], _source(s))
     datasets = {f"dataset:{d['id']}": Source(f"dataset:{d['id']}", d["what"], d.get("cites", ""), (), None,
                                              d.get("where", "")) for d in data.get("datasets", [])}

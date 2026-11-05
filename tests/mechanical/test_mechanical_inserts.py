@@ -870,8 +870,10 @@ def test_a_filled_filament_grows_the_hole_and_an_unknown_content_widens_the_band
 def test_the_nozzle_sets_a_floor_and_the_mesh_its_circle():
     # a wide track in a hole with no measured undersize: the RepRap arc balance is the floor
     h = I.printed_hole(I.insert(M3), "pla-bambu-basic", line_mm=0.8, undersize_mm=0.0)
-    assert h["undersize_mm"] == pytest.approx(3.95 - math.sqrt(3.95 ** 2 - 0.8 ** 2), abs=1e-4)
+    assert h["undersize_mm"] == pytest.approx(math.sqrt(3.95 ** 2 + 0.8 ** 2) - 3.95, abs=1e-4)     # 0.0802
     assert "arc floor" in h["undersize_basis"]
+    # exact, not one step: the drawn hole prints, by the same balance, at the 3.95 mm wanted
+    assert fx.arc_printed_diameter(h["cad_mm"] * 1e-3, 0.8e-3) / 1e-3 == pytest.approx(3.95, abs=1e-3)
     assert I.printed_hole(I.insert(M3), line_mm=0.42)["cad_mm"] == 4.2    # under the 0.25 mm: it does not bind
     coarse = I.printed_hole(I.insert(M3), facets=12)
     assert coarse["cad_mm"] == pytest.approx(4.2 / math.cos(math.pi / 12), abs=1e-3)   # 4.348: flats on 4.2
@@ -889,6 +891,9 @@ def test_planted_defect_a_filled_joint_drawn_with_the_unfilled_hole():
     assert good["hole diameter"]["verdict"] == "pass" and good["printed hole"]["verdict"] == "pass"
     unknown = rows(I.check_joint(M3, "pa6-cf20-polymaker-dry", **common))
     assert unknown["printed hole"]["verdict"] == "warn" and "coupon" in unknown["printed hole"]["detail"]
+    # the hole coupon in this filament settles it as well as the content does (#343 review)
+    coupon = rows(I.check_joint(M3, "pa6-cf20-polymaker-dry", undersize_mm=0.15, **common))
+    assert coupon["printed hole"]["verdict"] == "pass" and "your coupon" in coupon["printed hole"]["detail"]
 
 
 def test_planted_defect_a_coarse_mesh_drawn_at_the_round_hole():

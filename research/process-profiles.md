@@ -127,6 +127,9 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 | Insert hole in a filled plastic | +0.08 mm at 15 % filler, +0.15 mm at 35 % and over, interpolated | Glass or mineral filler, moulded; fibre-filled filaments by extension | Christie Jones, [SPIROL][spirol-how-to-design-the-proper-hole-for-heat-ultrasonic] |
 | Perimeters round an insert | ≥ 2, the wall a whole number of extrusion widths | SPIROL asks the metric size (it governs) | [LulzBot][lulzbot-tips-and-tricks-heat-set-inserts] |
 | Contours round an insert hole | 4–6 | Stratasys Insight | [PADT][padt-adding-inserts-to-3d-printed-parts-hardware-tips] |
+| Perimeters round an insert, with tests | ≥ the metric size (M3: 3, M6: 6) | Printed pull-out tests against wall loops; governs the two rows above | K. Ionkin, [SPIROL][spirol-3dp] |
+| Least hole to draw for a track width t | √(D² + t²), a floor | The arc balance; real tracks shrink a hole more | [RepRap wiki][reprap-arc-compensation] |
+| Circle for a meshed hole of n sides | D / cos(π/n), so the flats land on D | 5 % small at 10 sides, 1 % at 22 | nophead, [HydraRaptor][nophead-polyholes] |
 
 <img src="../docs/img/fasteners/screw-boss-explorer.svg" alt="The screw-boss explorer before its controls load: a DELTA PT 30 screw in a 6 mm PLA boss printed upright with 6 mm of thread, tightened to 0.30 N·m; the thread strips at 767 N, so tighten to at most 0.31 N·m" width="640">
 
@@ -871,6 +874,9 @@ YAML under `standards`)
 [spirol-how-to-design-the-proper-hole-for-heat-ultrasonic]: https://www.spirol.com/resources/white-papers/how-to-design-the-proper-hole-for-heat-ultrasonic-inserts/
 [lulzbot-tips-and-tricks-heat-set-inserts]: https://lulzbot.com/learn/tips-and-tricks-heat-set-inserts
 [padt-adding-inserts-to-3d-printed-parts-hardware-tips]: https://www.padtinc.com/2019/08/06/adding-inserts-to-3d-printed-parts-hardware-tips-plus-one-click-design-in-grabcad-print-advanced-fdm/
+[spirol-3dp]: https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf
+[reprap-arc-compensation]: https://reprap.org/wiki/ArcCompensation
+[nophead-polyholes]: https://hydraraptor.blogspot.com/2011/02/polyholes.html
 [klahn-2016-am-snapfit]: https://publikationen.bibliothek.kit.edu/1000142464
 [hubs-sla-design]: https://www.hubs.com/knowledge-base/how-design-parts-sla-3d-printing/
 [hubs-sls-design]: https://www.hubs.com/knowledge-base/how-design-parts-sls-3d-printing/

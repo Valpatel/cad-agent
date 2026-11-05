@@ -361,6 +361,17 @@ def _hole_rules() -> Dict[str, Any]:
     return {k: fdm.verified_rule(v).limit() for k, v in ids.items()}
 
 
+@lru_cache(maxsize=1)
+def _hole_formulas() -> Dict[str, Any]:
+    """The profile rules whose number is an expression, evaluated where they apply: the arc floor
+    (``sqrt(D*D + track*track)``), the faceted circle (``D / cos(pi / facets)``) and SPIROL's perimeters (``D``)."""
+    from cadagent.manufacturing.process import profile
+    fdm = profile("fdm")
+    ids = {"arc": "fdm-hole-arc-floor-reprap", "facets": "fdm-hole-facets-nophead",
+           "perimeters_spirol": "fdm-insert-wall-perimeters-spirol"}
+    return {k: fdm.verified_rule(v) for k, v in ids.items()}
+
+
 def filler_increase(filler_pct: float) -> float:
     """How much SPIROL grows the maker's hole for a filled plastic, mm: none under 15 % filler, 0.08 mm at 15 %,
     0.15 mm at 35 % and over, straight between (its white paper says to interpolate)."""
@@ -431,13 +442,15 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
     if not (isinstance(line, (int, float)) and not isinstance(line, bool) and 0.1 <= line <= 2.0):
         raise ValueError(f"line_mm must be a line width between 0.1 and 2 mm, not {line_mm!r}")
     target = maker + add + preseat
+    # the least hole D a track t wide can print at `target`: sqrt(D^2 - t^2) = target, so D = sqrt(target^2 + t^2)
+    drawn = _hole_formulas()["arc"].limit(D=target, track=line).min
+    floor = drawn - target
     cad = target + under
-    floor = cad - fx.arc_printed_diameter(cad * MM, line * MM) / MM
     if floor > under:
-        why.append(f"a {line:g} mm track shrinks a {cad:.2f} mm hole at least {floor:.3f} mm (RepRap arc "
+        why.append(f"a {line:g} mm track shrinks a {drawn:.3f} mm hole at least {floor:.3f} mm (RepRap arc "
                    f"compensation), more than the {under:g} mm undersize: the floor is taken")
         under, basis = floor, f"the arc floor for a {line:g} mm track"
-        cad = target + under
+        cad = drawn
     sources.append("reprap-arc-compensation")
     why.insert(0, f"the maker's hole {maker:g} mm, as printed {target:.3f} mm so the insert pre-seats with slight "
                   f"resistance, plus a {under:.3f} mm undersize ({basis}; published 0.1 to 0.25 mm, CNC Kitchen 2019 "
@@ -446,10 +459,9 @@ def printed_hole(ins: Insert, material: Optional[str] = None, line_mm: Optional[
     lo, hi = maker + f_band[0] + off.min + shift, maker + f_band[1] + off.max + shift
     facet = None
     if facets is not None:
-        scale = 1.0 / math.cos(math.pi / int(facets)) if isinstance(facets, int) and not isinstance(facets, bool) \
-            and facets >= 3 else None
-        if scale is None:
+        if not (isinstance(facets, int) and not isinstance(facets, bool) and facets >= 3):
             raise ValueError(f"facets must be a whole number of at least 3, not {facets!r}")
+        scale = _hole_formulas()["facets"].limit(D=1.0, facets=facets).value
         facet = cad - fx.facet_diameter(cad * MM, facets) / MM
         cad, lo, hi = cad * scale, lo * scale, hi * scale
         why.append(f"on a mesh of {facets} sides the flats fall {facet:.3f} mm inside the circle (Nophead): the "
@@ -533,7 +545,7 @@ def perimeter_counts(ins: Insert) -> Dict[str, Any]:
     size, Stratasys's Insight four to six (PADT). SPIROL's count governs: only it has pull-out tests against wall
     loops (its 3D-printing paper, Figures 8 and 9)."""
     r = _hole_rules()
-    spirol = math.ceil(float(ins.thread[1:]))
+    spirol = math.ceil(_hole_formulas()["perimeters_spirol"].limit(D=float(ins.thread[1:])).min - 1e-9)
     return {"lulzbot": int(r["perimeters"].min), "spirol": spirol, "padt": [int(r["contours"].min),
                                                                              int(r["contours"].max)],
             "governs": "spirol", "least": max(int(r["perimeters"].min), spirol)}
@@ -1390,7 +1402,7 @@ def check_joint(insert: str, material: str, axis: str = "upright", boss_outside_
                        cad_hole < lo else "larger: the knurl bites less; drilled true to size, CNC Kitchen's M3 lost "
                                           "most of its strength between 4.1 and 4.2 mm"))))
     if printed is not None:
-        unknown = printed["filled"] and filler_pct is None
+        unknown = printed["filled"] and filler_pct is None and undersize_mm is None     # a coupon settles it too
         rows.append(_row("printed hole", printed["cad_mm"], printed["cad_band_mm"], "warn" if unknown else "pass",
                          "; ".join(printed["why"]) + ("; print the hole coupon in this filament before trusting the "
                                                       "band" if unknown else "")))

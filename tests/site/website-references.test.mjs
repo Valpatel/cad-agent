@@ -13,7 +13,7 @@ import path from 'node:path';
 import YAML from 'yaml';
 import { builtSite } from './built-site.mjs';
 import {
-  CORE, DIR, EXPERTS, LADDER, UNPLACED, areaOf, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
+  CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
   referenceJson, referenceSite, healthOf,
 } from '../../tools/site-references.mjs';
 
@@ -68,6 +68,18 @@ test('the loader refuses an extension of nothing and a second record with one id
   assert.deepEqual(r.shards, [], 'vocab, coverage and files in subfolders are not shards');
 });
 
+test('which files are shards, and which records are read, are the Python registry\'s rules', async () => {
+  // cadagent.review.references owns both; the site's copies are pinned to its source text.
+  const py = await readFile(path.join(root, 'src/cadagent/review/references.py'), 'utf8');
+  const name = k => py.match(new RegExp(`^${k} = "([^"]+)"`, 'm'))[1];
+  assert.deepEqual([...NOT_SHARDS].sort(), py.match(/^NOT_SHARDS = \(([^)]*)\)/m)[1].split(',').map(s => name(s.trim())).sort());
+  assert.deepEqual(LADDER, [...py.match(/^LADDER = \(([^)]*)\)/m)[1].matchAll(/"([^"]+)"/g)].map(m => m[1]));
+  assert.match(py, /return isinstance\(ev, dict\) and ev\.get\("class"\) in LADDER\[1:\]/);
+  for (const [r, read] of [[{ evidence: { class: 'read' } }, true], [{ evidence: { class: 'snippet-only' } }, false],
+    [{ evidence: { class: 'measured' } }, true], [{ evidence: {} }, false], [{}, false], [null, false]])
+    assert.equal(isRead(r), read, JSON.stringify(r));
+});
+
 test('areas place a record as cadagent.review.references area_of does', () => {
   const tree = areaTree({ domains: [{ slug: 'd', title: 'D', areas: [{ slug: 'fasteners', title: 'F', topics: [{ slug: 'inserts' }] }] }] });
   assert.equal(areaOf('fasteners', tree), 'fasteners');
@@ -84,11 +96,11 @@ test('index.json counts every committed record once, and each area file lists ex
   // Counted from the YAML here, not through the module under test.
   // A shard record read at source (#323's sweeps) is a source; one still snippet-only is catalogued.
   const own = [], ownRead = [];
-  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !/\/(vocab|coverage)\.yaml$/.test(f)))
+  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
     for (const r of YAML.parse(await show(f)).sources) {
       if (r.extends) continue;
       own.push(r.id);
-      if (r.evidence?.class && r.evidence.class !== 'snippet-only') ownRead.push(r.id);
+      if (isRead(r)) ownRead.push(r.id);
     }
   const sources = YAML.parse(await show(CORE)).sources.map(s => s.id);
   const index = await json('catalog/references/index.json');

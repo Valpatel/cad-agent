@@ -49,7 +49,7 @@ def test_every_value_has_a_source_that_resolves(profiles):
 
 def test_every_rule_evaluates_with_its_variables(profiles):
     env = dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5,
-               texture=0.05, area=36.0, die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2)
+               texture=0.05, area=36.0, die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2, track=0.42, facets=12)
     for r in profiles.rules():
         lim = r.limit(**{k: env[k] for k in r.variables})
         assert lim.rule == r.id and lim.source == r.source and lim.verified == r.verified
@@ -235,3 +235,13 @@ def test_a_rule_naming_an_unlisted_shop_is_refused(tmp_path):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(pp.ProfileDataError, match="nowhere"):
         pp.load(path)
+
+
+def test_sqrt_and_cos_take_one_argument_and_refuse_a_negative_root():
+    """The hole rules (#323): the arc floor and the faceted circle, evaluated from the data file."""
+    assert pp.evaluate("sqrt(D*D + track*track)", {"D": 3.0, "track": 4.0}) == 5.0
+    assert pp.evaluate("D / cos(pi / facets)", {"D": 1.0, "facets": 3}) == pytest.approx(2.0)
+    assert pp.names_in("sqrt(D*D + track*track)") == ("D", "track")
+    for bad in ("sqrt(D - 5)", "sqrt(D, D)", "cos()"):
+        with pytest.raises(ValueError):
+            pp.evaluate(bad, {"D": 1.0})

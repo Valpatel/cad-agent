@@ -40,6 +40,9 @@
 #              `verified`; u: not verified (never enforce)
 #   verified   ISO date the value was read
 #   note       optional: caveats, and where sources disagree
+#   applied_by optional: the functions, modules or gates that apply the rule, as dotted names
+#              (cadagent.mechanical.inserts.printed_hole); each reads the rule by its id, which the tests check, so a
+#              rule card can say what enforces it
 #
 # Shops (`shops`): a named supplier whose own rules (`shop:` on a rule) and tables (`shop:` on a shop table) form a
 # profile a project can select. Its tables are by stock SKU, lengths converted from its inches at 25.4 mm.
@@ -68,6 +71,8 @@ variables:
   depth: depth of the pocket, cavity or hole (mm)
   width: width of the pocket, cavity or slot (mm)
   H: height of a rib or boss (mm)
+  track: width of one extruded track, the line width (mm)
+  facets: sides of the polygon a meshed circle is drawn with (count)
   nozzle: FDM nozzle diameter (mm)
   rib: base thickness of the rib (mm)
   texture: depth of the mould texture (mm)
@@ -308,6 +313,7 @@ rules:
     source: cnckitchen-heat-set-hole-size
     status: read
     verified: 2026-10-31
+    applied_by: [cadagent.mechanical.inserts.printed_hole, cadagent.manufacturing.fit_coupons]
 
   - id: fdm-elephant-foot-compensation-prusa
     process: fdm
@@ -528,6 +534,8 @@ rules:
     source: cnckitchen-heat-set-hole-size
     status: read
     verified: 2026-10-31
+    applied_by: [cadagent.mechanical.inserts.printed_hole, cadagent.mechanical.inserts.hole_design,
+      cadagent.manufacturing.fit_coupons]
   - id: fdm-insert-blind-depth-cnckitchen
     process: fdm
     feature: insert
@@ -564,6 +572,7 @@ rules:
     note: CNC Kitchen measured 0.1 mm in 2019 and 0.25 mm in 2026 (fdm-hole-undersize-cnckitchen) on two printers and
       filaments. The range is kept; the insert hole takes 2026's, the one its pull-out tests sized, and a coupon on
       your printer and filament governs both
+    applied_by: [cadagent.mechanical.inserts.printed_hole]
   - id: fdm-insert-hole-filler-spirol
     process: fdm
     feature: insert
@@ -577,6 +586,7 @@ rules:
     source: spirol-how-to-design-the-proper-hole-for-heat-ultrasonic
     status: read
     verified: 2026-11-04
+    applied_by: [cadagent.mechanical.inserts.printed_hole, cadagent.mechanical.inserts.filler_increase]
   - id: fdm-insert-wall-perimeters-lulzbot
     process: fdm
     feature: insert
@@ -590,6 +600,7 @@ rules:
     note: Sources differ on the count. LulzBot asks two or more, SPIROL at least the metric size (M3 three, M6 six,
       the only count with pull-out tests behind it, so it governs) and Stratasys's slicer four to six
       (fdm-insert-contours-padt)
+    applied_by: [cadagent.mechanical.inserts.perimeter_counts, cadagent.mechanical.inserts.check_joint]
   - id: fdm-insert-contours-padt
     process: fdm
     feature: insert
@@ -601,6 +612,44 @@ rules:
     source: padt-adding-inserts-to-3d-printed-parts-hardware-tips
     status: read
     verified: 2026-11-04
+    applied_by: [cadagent.mechanical.inserts.perimeter_counts, cadagent.mechanical.inserts.check_joint]
+
+  - id: fdm-hole-arc-floor-reprap
+    process: fdm
+    feature: hole
+    quantity: least diameter to draw a hole that should print at D with tracks `track` wide
+    min: "sqrt(D*D + track*track)"
+    units: mm
+    applies: the RepRap arc balance (a track bent round a hole, pi r t = pi (r^2 - R^2)) solved for the drawn hole. A
+      floor; Nophead found real tracks shrink a hole more, so it binds only for a wide track in a small hole
+    source: reprap-arc-compensation
+    status: read
+    verified: 2026-11-04
+    applied_by: [cadagent.mechanical.inserts.printed_hole]
+  - id: fdm-hole-facets-nophead
+    process: fdm
+    feature: hole
+    quantity: diameter to draw a circle of `facets` sides so its flats land on a hole of D
+    value: "D / cos(pi / facets)"
+    units: mm
+    applies: any meshed hole (STL export, OpenSCAD $fn); the flats sit D (1 - cos(pi/n)) inside the circle, 5 % at 10
+      sides and 1 % at 22. Nophead's polyhole, max(round(2 D), 3) sides, is reported beside it, untested with inserts
+    source: nophead-polyholes
+    status: read
+    verified: 2026-11-04
+    applied_by: [cadagent.mechanical.inserts.printed_hole]
+  - id: fdm-insert-wall-perimeters-spirol
+    process: fdm
+    feature: insert
+    quantity: perimeters round a heat-set insert's hole, at least its metric size (D, whole perimeters)
+    min: "D"
+    units: count
+    applies: SPIROL's printed pull-out tests against wall loops (Figures 8 and 9, M3 and M6). It governs LulzBot's two
+      or more and Stratasys's four to six, which have no tests behind them
+    source: spirol-3dp
+    status: read
+    verified: 2026-11-04
+    applied_by: [cadagent.mechanical.inserts.perimeter_counts, cadagent.mechanical.inserts.check_joint]
 
   - id: fdm-emboss-text-xometry-eu
     process: fdm

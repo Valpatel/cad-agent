@@ -21,9 +21,9 @@ REGISTRY = ROOT / "research" / "references.yaml"
 PAGE = ROOT / "research" / "process-profiles.md"
 # Sample values for every variable, so each expression can be evaluated; two sets catch thickness-stepped rules.
 ENVS = [dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5, texture=0.05, area=36.0,
-             die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2),
+             die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2, track=0.42, facets=12),
         dict(T=0.6, R=0.4, wall=1.2, D=3.0, L=150.0, depth=3.0, width=2.0, H=3.0, nozzle=0.25, rib=0.6, texture=0.0, area=4.0,
-             die=12.0, BA=1.1, E=4.8, hole=4.2, grip=1.2)]
+             die=12.0, BA=1.1, E=4.8, hole=4.2, grip=1.2, track=0.8, facets=3)]
 SHEET_PAGES = [ROOT / "research" / n for n in ("sheet-metal.md", "sheet-metal-joining.md", "sheet-metal-guides.md")]
 
 
@@ -205,7 +205,7 @@ def test_every_variable_a_rule_uses_is_listed_and_sampled(data):
     for r in data["rules"]:
         for k in ("min", "max", "value"):
             if isinstance(r.get(k), str):
-                names |= set(re.findall(r"[A-Za-z_]+", r[k])) - {"min", "max", "if", "else"}
+                names |= set(re.findall(r"[A-Za-z_]+", r[k])) - {"min", "max", "if", "else", "pi", "sqrt", "cos"}
     assert names <= set(data["variables"]), sorted(names - set(data["variables"]))
     assert all(names <= set(env) for env in ENVS), sorted(names - set(ENVS[0]))
 
@@ -231,3 +231,27 @@ def test_the_sheet_metal_pages_show_their_diagrams():
     text = "".join(p.read_text(encoding="utf-8") for p in SHEET_PAGES if p.exists())
     for name in _figures().SHEET_FIGURES:
         assert f"docs/img/sheet-metal/{name}" in text, f"{name} is on none of the sheet-metal pages"
+
+
+def _code(name):
+    """A dotted name's object: a module, or a function in one."""
+    try:
+        return importlib.import_module(name)
+    except ModuleNotFoundError:
+        module, attr = name.rsplit(".", 1)
+        return getattr(importlib.import_module(module), attr)
+
+
+def test_applied_by_names_code_that_reads_the_rule(data):
+    """`applied_by` (#323) says what enforces a rule, so a rule card can name it: each name exists and its module
+    reads the rule by id, and every rule the inserts code reads names what applies it."""
+    import inspect
+    for r in data["rules"]:
+        for name in r.get("applied_by") or []:
+            obj = _code(name)
+            assert callable(obj) or inspect.ismodule(obj), f"{r['id']}: {name} is neither a function nor a module"
+            assert r["id"] in Path(inspect.getsourcefile(obj)).read_text(encoding="utf-8"), \
+                f"{r['id']}: {name} does not read it"
+    inserts = (ROOT / "src" / "cadagent" / "mechanical" / "inserts.py").read_text(encoding="utf-8")
+    bare = [r["id"] for r in data["rules"] if f'"{r["id"]}"' in inserts and not r.get("applied_by")]
+    assert not bare, f"rules cadagent.mechanical.inserts reads with no applied_by: {bare}"

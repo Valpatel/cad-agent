@@ -34,7 +34,11 @@ stays out of the repo. The import is deterministic, and its rules are in the too
 
 - every new record is `snippet-only`, and every licence is unread;
 - numbers are the authors' claims unless measured;
-- the map's per-project verdicts stay out, and only its project-neutral `role` comes in.
+- the map's per-project verdicts stay out, and only its project-neutral `role` comes in;
+- a re-import never undoes a person's work. A record whose evidence class is `read` or higher, or that has a dated
+  `verified` note or `evidence.lowered`, is kept byte for byte, and so is a record the map does not make (added by
+  hand, or since dropped: it is reported, never deleted). Every other record is rewritten from the map, so `--check`
+  passes after a sweep, and a later map change to an unread record still lands.
 
 Two guides that `research/references.yaml` lists as `unverified` were left there.
 
@@ -113,7 +117,9 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
    - `verified-at-source` when a claim is corroborated;
    - `encoded` when a profile rule (`rules`) and a tested check (`checks`) carry it.
 
-   Fix `year`, `authors`, `kind` and `summary` from the page.
+   Fix `year`, `authors`, `kind` and `summary` from the page: no snippet-era note stays. Edit the record where it
+   is; the importer keeps it from now on (see above). A source the map lacks goes in the group's shard as a new
+   record, read, with its `verified` note.
 6. **Leave the rest as they are.** A record you could not read stays `snippet-only`. Name it and the reason (403,
    429, `robots.txt`, a bot check, a script-only page, a moved page) in the PR body, not in the shard. Raw link health
    stays out of git (#323 Q5).
@@ -125,8 +131,12 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
    record's `used_for`.
 9. **Settle the derived fields.** Rewrite each touched record's `confidence` from `confidence()`. Run
    `python -m cadagent.review.references --check` (no problems, and the catalogued count only falls),
-   `node tools/site-references.mjs --experts`, and the topic's tests.
+   `node tools/site-references.mjs --experts`, `python3 tools/import_refmap.py <data.json> --check` (it must pass:
+   the import keeps every promoted record), and the topic's tests.
 10. **Report** the counts promoted and left, each source you could not read, and its reason.
+11. **Distil each confirmed rule into `research/process-profiles.yaml`:** one line, cited by its `source` (what a
+    page cites as `[ref:<id>]`), with `applied_by` naming the function or gate that applies it, so `cad-agent rules`
+    can serve it. The tests check that each `applied_by` reads the rule by id.
 
 ## Rules check() enforces
 

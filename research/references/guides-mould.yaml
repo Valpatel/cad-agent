@@ -1042,7 +1042,7 @@ sources:
   - mould
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: unknown
     tested: 'no'
     authority: primary
@@ -1050,6 +1050,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the page; read it whole: heat staking and ultrasonic insertion into moulded parts, the inputs
+    Protolabs needs. No numbers.'
   summary: 'Explains ultrasonic vibration and heat-staking insertion of threaded inserts into molded plastic parts. Note:
     Injection-molded focus; no figures in snippet'
   used_for: []
@@ -1059,7 +1061,7 @@ sources:
   title: Screw boss design injection molding
   authors: []
   org: RapidDirect
-  year: null
+  year: 2023
   url: https://www.rapiddirect.com/blog/screw-boss-design-injection-molding/
   access: free
   terms: cited and summarised, never copied
@@ -1081,19 +1083,24 @@ sources:
   - mould
   - inserts
   evidence:
-    class: snippet-only
+    class: verified-at-source
     numbers: claimed
     tested: 'no'
     authority: aggregator
   confidence:
-    level: low
-    estimate: 0.4
-    sources: 1
+    level: medium
+    estimate: 0.7
+    sources: 2
+  verified: '2026-11-04: opened the article (2023-05-19, updated 2025-03-10); read the boss rules: wall about 60 % of the
+    nominal wall, height under 3 x the outside diameter, bosses at least 2 x the wall apart. The snippet''s 80 % pilot and
+    200 % boss are not on the page.'
   claims:
-  - text: Pilot ~80% of thread dia; boss OD ~200%; boss wall <=60% of nominal wall
+  - text: Boss wall about 60 % of the nominal wall (sink); boss height under 3 x its outside diameter; bosses at least 2 x
+      the nominal wall apart
     status: corroborated
-    evidence: 'Screwerk: pilot 80% of thread, boss OD 200%; Plastite guide: boss wall under 60% of nominal; Protolabs 60-70%.
-      Boss OD vs wall ratios agree broadly.'
+    evidence: '2026-11-04: read on the page. Protolabs gives 40-60 % for the wall'
+    corroborated_by:
+    - protolabs-im-bosses
   summary: 'Boss rules of thumb: pilot hole, boss OD, height, wall ratio, draft, spacing. Note: Numbers appeared across several
     boss-guide snippets'
   used_for: []
@@ -1122,15 +1129,17 @@ sources:
     numbers: some
     tested: 'no'
     authority: primary
+    class: verified-at-source
   confidence:
-    level: low
-    estimate: 0.4
-    sources: 1
+    level: medium
+    estimate: 0.7
+    sources: 2
   claims:
-  - text: Rib-to-wall thickness ratio of 40 to 60 percent of adjacent surfaces
+  - text: A boss's wall 40 to 60 percent of the wall it rises from; ribs or gussets rather than a thicker wall
     status: corroborated
-    evidence: 'Xometry: ribs no more than 60% of nominal wall (40% for glossy); RJC Mold rib guide: 40-60%. Protolabs-style
-      range matches. As the map saw it: Relevant to boss and insert design.'
+    evidence: '2026-11-04: read on the page. RapidDirect gives about 60 percent of the nominal wall'
+    corroborated_by:
+    - rapiddirect-screw-boss-design-injection-molding
   summary: 'Boss design advice: tie bosses to walls with ribs rather than thick solid sections; rib-to-wall ratio 40-60%.'
 - id: protolabs-living-hinge
   extends: true

@@ -199,7 +199,7 @@ sources:
   - sheet
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: unknown
     tested: 'no'
     authority: primary
@@ -207,7 +207,10 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Locating features for weldments; title implies time saving, no detail seen. Note: Title-level read only.'
+  verified: '2026-11-04: opened the article; read it whole: a five-part 3/8 in steel weldment located by tabs and slots, each
+    slot as wide as the plate.'
+  summary: 'Tabs and slots that locate laser-cut weldment parts without fixtures: each slot as wide as the plate thickness,
+    the tab short of the far face where it must not show.'
   used_for: []
 - id: sendcutsend-do-i-need-to-compensate-for-kerf-in-my-design
   kind: guide
@@ -888,7 +891,7 @@ sources:
   - sheet
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: reference
@@ -896,10 +899,12 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the article; read the weld types, the bending-first rule and the tab-and-slot and coating
+    allowances.'
   claims:
-  - text: Tab width 3-5x sheet thickness; clearance 0.1-0.15 mm per side
+  - text: Tab width 3 to 5 x the sheet thickness, 0.1-0.15 mm clearance per side; 0.05-0.1 mm per side for powder coat
     status: unconfirmed
-    evidence: No second source checked.
+    evidence: '2026-11-04: read on the page. No second source checked.'
   summary: 'Welded sheet parts guidance; tab width 3x to 5x thickness with 0.1 to 0.15 mm clearance. Note: Vendor blog.'
   used_for: []
 - id: pcbway-hardware-installation-design-guidelines
@@ -930,7 +935,7 @@ sources:
   - sheet
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: reference
@@ -938,11 +943,11 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the article; read the edge (C >= 1.5 Dh) and bend clearance rules.'
   claims:
-  - text: Hole center to bend tangent line >= 2t + R + 3mm
+  - text: Hole centre to bend tangent at least R + t + a margin, or 2t + R + 3 mm
     status: conflicting
-    evidence: 'Fabcon-type guides: hole-to-bend 2T+R for holes under 25 mm, 4T+R for slots; others 3T or 3.5T; PCBWay adds
-      3 mm. Values differ by feature.'
+    evidence: '2026-11-04: read on the page. SendCutSend''s per-part catalogue distances differ (the map''s note)'
   summary: 'Hardware installation guide; hole centre to bend tangent at least 2t + R + 3 mm. Note: Conservative third-party
     cross-check.'
   used_for: []
@@ -1117,7 +1122,7 @@ sources:
   - sheet
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'yes'
     authority: primary
@@ -1125,11 +1130,12 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the bulletin PDF on the third-party host the record links; read the nut types, the sheet hardness
+    limits and the hole tables. Not compared with pemnet.com''s copy (it answers scripts with a bot check).'
   claims:
-  - text: Type CLA aluminum nuts for sheet HRB 50 or less; hole tol +0.003/-0.000 in
+  - text: CLA aluminium nuts for steel or aluminium sheet HRB 50 / HB 82 or less; hole +.003/-.000 in
     status: unconfirmed
-    evidence: Only PEM catalogue pages and PEM distributors (Zygology, Appian) state HRB 50 and +.003/-.000 in; metric parts
-      list +0.08 mm. No independent publisher.
+    evidence: '2026-11-04: read in the PDF. No second source checked.'
   summary: 'PEM bulletin: installation, hole tolerances, edge distances, hardness limits for self-clinching nuts; tables garbled
     in extract. Note: Third-party host of PEM PDF; verify against pemnet.com'
   used_for: []

@@ -56,6 +56,51 @@ inserts.check_clamp("M10", "pa6-cf20-polymaker-wet", 40.0, head_mm=20.0, clearan
 inserts.coupon_plan()                                             # what to print and measure
 ```
 
+## The hole, by filament and nozzle
+
+`inserts.printed_hole` sizes the hole for the filament and the nozzle you print with. `hole_design` and `check_joint`
+use it when you give `line_mm`, `filler_pct`, `undersize_mm` (from a hole coupon) or `facets`, and on their own for a
+fibre-filled filament. With none of these, the hole is the maker's plus 0.2 mm, as before.
+
+```python
+inserts.printed_hole(inserts.insert("mcmaster-94459A140"))                        # 4.20 mm, band 4.20-4.30
+inserts.printed_hole(inserts.insert("mcmaster-94459A140"), "pa6-cf20-polymaker-dry", filler_pct=30)   # 4.33 mm
+inserts.printed_hole(inserts.insert("mcmaster-94459A140"), undersize_mm=0.1)     # your coupon: 4.05 mm
+inserts.check_joint("mcmaster-94459A140", "pla-bambu-basic", boss_outside_mm=7.2, line_mm=0.8)   # 1 perimeter: warn
+```
+
+Each number and where it comes from. Where the sources disagree, the range is kept and the one that governs is named.
+
+- **As printed, the hole is the maker's less 0.05 mm,** so the insert pre-seats with slight resistance. CNC Kitchen's
+  4.2 mm CAD hole printed 0.25 mm small, landing just under its 4.0 mm data-sheet hole. Drilled M3 holes lost most
+  of their pull-out between 4.1 and 4.2 mm [ref:cnckitchen-heat-set-hole-size]. SPIROL agrees: a larger hole loses
+  performance, and a smaller one stresses the plastic [ref:spirol-how-to-design-the-proper-hole-for-heat-ultrasonic].
+- **Filled plastics take a larger hole:** +0.08 mm at 15 % glass or mineral filler, +0.15 mm at 35 % and over,
+  interpolated between [ref:spirol-how-to-design-the-proper-hole-for-heat-ultrasonic]. SPIROL wrote this for moulded
+  parts. A fibre-filled filament takes it by extension, because its fibres do not melt either. Neither data sheet in the
+  table states its carbon-fibre content, so for those filaments the band widens by the whole 0 to 0.15 mm and the hole
+  takes the low end. A hole too large loses pull-out fast, while one too small only seats harder. The check warns until
+  you give `filler_pct` or print the coupon.
+- **The printed hole's undersize** was 0.25 mm on CNC Kitchen's printer in 2026
+  [ref:cnckitchen-heat-set-hole-size] and 0.1 mm on another in 2019 [ref:cnck-2019]. The range is kept and 0.25 mm is
+  taken, because it is the measurement behind the pull-out tests. **Your coupon governs:** pass its undersize and the
+  whole band moves with it. Hole sizes vary with material and tools [ref:e-z-lok-brochure-2026], and PETG can shrink a
+  little after printing [ref:epfl-make-how-to-use-threaded-inserts-epfl-makerspace-wiki].
+- **The nozzle sets a floor.** A track t wide, bent round a hole of diameter D, leaves it at least √(D² − t²). This
+  is the RepRap wiki's arc balance [ref:reprap-arc-compensation], and the tests reproduce its table. Nophead found the
+  real shrink larger [ref:nophead-polyholes], so the floor binds only for a wide track in a small hole, or under a
+  coupon printed with a narrower one.
+- **A coarse mesh shrinks the hole by cos(π/n).** Given `facets`, the circle is drawn at d / cos(π/n), so the flats
+  land on the hole [ref:nophead-polyholes]. Nophead's polyhole, max(round(2 d), 3) sides, is reported beside it. It is
+  untested with inserts, so the round hole governs.
+- **The boss is whole perimeters of your line width.** Make the wall a multiple of the extrusion width, so it prints
+  solid, with two or more perimeters [ref:lulzbot-tips-and-tricks-heat-set-inserts]. Stratasys's slicer sets four to
+  six contours [ref:padt-adding-inserts-to-3d-printed-parts-hardware-tips]. SPIROL's at-least-the-metric-size governs,
+  because only it has pull-out tests against wall loops. `boss_design` gives the solid outside for the line width, and
+  `check_joint` with `line_mm` counts the whole perimeters that fit.
+- **No chamfer, by default.** CNC Kitchen asks none for its inserts [ref:cnckitchen-heat-set-tips]. EPFL's wiki asks
+  0.3 to 0.5 mm, and LulzBot asks a chamfer for the melt. The check draws none and leaves the choice to you.
+
 ## Where the clamp goes
 
 The insert's height against the joint face decides what carries the screw's clamp. This is the first thing the
@@ -187,10 +232,12 @@ the layers, from the maker's data sheet, and c is fitted to published tests.
 
 | Row | Pass | Warn | Fail |
 |---|---|---|---|
-| hole diameter | the maker's hole +0.2 to +0.3 mm in CAD (CNC Kitchen) | outside that | at or over the knurl |
+| hole diameter | the maker's hole +0.2 to +0.3 mm in CAD (CNC Kitchen), or the printed hole's band | outside that | at or over the knurl |
 | hole depth | the deepest of the makers' rules (SPIROL: the insert plus two pitches; CNC Kitchen and ruthex: +1 mm; McMaster's least material thickness); from the far face, for a far-side insert, no deeper than the insert, so it lands on the shoulder | short of it; for a far-side insert, deeper | no deeper than the insert |
 | melt volume | the plastic the insert displaces fits the pocket below it | it does not | |
 | screw tip | above the floor and inside the insert | past the insert's end | at or past the floor |
+| printed hole (#323) | the hole for the filament and nozzle; given `filler_pct`, or an unfilled filament | a fibre-filled filament whose filler content is unknown: print the coupon | |
+| boss perimeters (with `line_mm`) | at least SPIROL's metric size in whole line widths (LulzBot: two; Stratasys: four to six) | fewer | |
 | boss wall | 2 × the knurl (the makers' full performance; the tests behind the low end used about 1.5 ×) | the makers' least wall to 2 × | under the least wall or 1.5 × the knurl |
 | insert axis | along the build direction | in the layer plane: no published number | |
 | calibration, calibration size | a family with printed tests, an insert no larger than the fitted ones | no printed test in the family, or a larger insert | |
@@ -304,6 +351,8 @@ Threaded Insert for Your 3D Printed Assembly* (04/26), pp. 2 to 5; CNC Kitchen's
 the iron's temperature; McMaster-Carr's 94459A pages, read 2026-11-01. McMaster's M2.5 and M6 rows and the 93365A
 family could not be read (a login was asked), so nothing is given for them.
 
+**The printed hole (#323, read 2026-11-04).** The registry's threaded-insert sweep read 41 guides at the source. The hole rule above rests on SPIROL's *How to Design the Proper Hole for Heat / Ultrasonic Inserts*, CNC Kitchen's 2019 and 2026 tests, LulzBot's *Tips and Tricks: Heat-Set Inserts* (2017), PADT's *Adding Inserts to 3D Printed Parts* (2019), the EPFL MAKE wiki, Nophead's *Polyholes* (2011) and the RepRap wiki's *Arc Compensation*. Each record says what was read, and when.
+
 **Tests.** K. László, B. F. Szivós and V. Nemes, *Engineering Proceedings* 157 (2026) 40; CNC Kitchen, 2019-12-07,
 2020-05-30 and 2026-03-28; SPIROL's printed M6 tests (its 3D-printing paper, Figures 8 to 12, read off the charts);
 SPIROL's INS 19 table and PEM's IUT table, both in the guides above; T. Kastner et al.
@@ -338,5 +387,6 @@ fits), Section 5-5 (shear yield), Table A-5 (metals' moduli); ISO 68-1 (thread s
 `tests/formulas/test_inserts_formulas.py` checks each relation against a hand evaluation or a closed form it must reach.
 `tests/mechanical/test_mechanical_inserts.py` reproduces the published tests from the calibration, checks the makers' hole and
 boss rules, each row's verdicts on built cases, the CLI's exit codes, and the coupons' CAD volumes.
+The printed hole's tests check SPIROL's filler steps, CNC Kitchen's 4.2 mm, the RepRap table and Nophead's faceting numbers as golden vectors. They also plant three defects the check must catch: a filled joint drawn with the unfilled hole, a coarse mesh drawn at the round hole, and a boss too thin for the nozzle.
 `tests/library/test_hardware.py` holds the washer and head rows to bd_warehouse's files and the standards' rows.
 `tests/mechanical/test_insert_figures.py` redraws every figure on this page from the module and fails if one has gone stale.

@@ -86,6 +86,40 @@ flowchart LR
   is #143's "one primary source with reproduced examples".
 - **measured:** a physical result on a real project backs the claim.
 
+## A promotion sweep
+
+One process group (or one area) per PR. The first, threaded inserts (#323 phase 7), is the pattern.
+
+1. **List the records.** Take every non-project record whose `processes`, `process_groups` or `areas` name the group,
+   core entries included, and save the list with each record's `url` and claims.
+2. **Fetch at the source.** Use the real page or PDF, never the snippet. Make at most 1 request a second per host,
+   honour `robots.txt`, and give up on a 403 or 429 after one later retry. Keep the downloads in a scratch folder
+   outside the repo, and never commit or mirror them.
+3. **Read each one.** For every claim, find its words on the page. If they are not there, rewrite the claim to what
+   the page says, and record in `evidence` what the snippet had wrong.
+4. **Look for a second source.** A claim is `corroborated` only by another read record from a different publisher,
+   named in `corroborated_by`. A retelling of the same test does not count. Where sources disagree, mark the claim
+   `conflicting` and name the other source in `evidence`, not in `corroborated_by`.
+5. **Promote.** Write a dated `verified` note that says what was read. Then set `evidence.class`:
+   - `read` once the page is read;
+   - `verified-at-source` when a claim is corroborated;
+   - `encoded` when a profile rule (`rules`) and a tested check (`checks`) carry it.
+
+   Fix `year`, `authors`, `kind` and `summary` from the page.
+6. **Leave the rest as they are.** A record you could not read stays `snippet-only`. Name it and the reason (403,
+   429, `robots.txt`, a bot check, a script-only page, a moved page) in the PR body, not in the shard. Raw link health
+   stays out of git (#323 Q5).
+7. **Encode what governs.** Put each number in `research/process-profiles.yaml`, with `note` saying which source
+   governs where they differ. The code reads the number with `verified_rule`. Add golden vectors taken from the
+   source's own table and a planted-defect test that the check must catch. Never average two sources silently: keep the
+   range and name the governing one.
+8. **Cite in the page.** Add a `[ref:<id>]` beside each number in the topic's `docs/` page, and add that page to the
+   record's `used_for`.
+9. **Settle the derived fields.** Rewrite each touched record's `confidence` from `confidence()`. Run
+   `python -m cadagent.review.references --check` (no problems, and the catalogued count only falls),
+   `node tools/site-references.mjs --experts`, and the topic's tests.
+10. **Report** the counts promoted and left, each source you could not read, and its reason.
+
 ## Rules check() enforces
 
 - One id across the core file and every shard. An id in two files is a problem, unless the shard's record says

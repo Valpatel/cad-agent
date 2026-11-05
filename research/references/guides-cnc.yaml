@@ -279,7 +279,7 @@ sources:
   - cnc
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -287,11 +287,12 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the page (it redirects to the en-gb services page); read the thread tables: UNC and UNF from
+    #2-56 to 1/2-13, metric coarse and fine from M2 to M12, with their depths.'
   claims:
-  - text: 'Milled threads UNC/UNF #2 to 1/2 in, metric M2 to M12.'
+  - text: 'Threads offered UNC/UNF #2 to 1/2 in and metric M2 to M12'
     status: unconfirmed
-    evidence: 'Only a Protolabs Spanish page states #2-1/2 in and M2-M12; Misumi meviy lists different, own sizes. No independent
-      confirmation.'
+    evidence: '2026-11-04: the page''s tables run that range. No second source checked.'
   summary: 'Thread size ranges, model nominal diameter not threads, coil inserts offered; depth tables exist. Note: Depth
     table values not visible in snippet'
   used_for: []

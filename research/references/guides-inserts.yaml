@@ -33,16 +33,18 @@ sources:
   - inserts
   - general
   evidence:
-    class: snippet-only
+    class: read
     numbers: none
-    tested: unknown
+    tested: 'no'
     authority: aggregator
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Marketing article saying recent testing shows insert specifications may not tell the whole story. Note: No hole
-    sizes or values appeared.'
+  verified: '2026-11-04: opened the article (2026-09-04; the old ?p= link now redirects to its slug); read it whole. It retells
+    CNC Kitchen''s tests and gives no numbers of its own.'
+  summary: 'Retells CNC Kitchen''s insert tests: oversized holes lose pull-out, undersized ones are hard to install and may
+    crack; size the hole for your insert and material and test it. No numbers.'
   used_for: []
 - id: stanley-engineered-fastening-pop-rivet-design-guidelines
   kind: guide
@@ -109,7 +111,7 @@ sources:
   process_groups:
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: reference
@@ -117,6 +119,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the article (updated 2023-04-12, first 2016-02-03); read its hole-size advice: follow the
+    rivet maker''s hole closely for strength, pull-up and hole fill.'
   summary: 'Rivet manufacturers recommend specific hole sizes; follow closely for strength and hole fill. Note: Edge distance
     3 diameters came from a different how-to.'
   used_for: []
@@ -148,27 +152,38 @@ sources:
   - inserts
   - mould
   evidence:
-    class: snippet-only
-    numbers: unknown
-    tested: unknown
+    class: read
+    numbers: none
+    tested: 'no'
     authority: reference
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Compares heat, ultrasonic and press-fit installation of brass inserts; only the title was seen. Note: Title only;
-    content unseen.'
+  verified: '2026-11-04: opened the article (by the founder of a heat-staking maker); read it whole: heat, ultrasonic and
+    press-fit installation, the material notes and the boss and hole figure.'
+  claims:
+  - text: Hole sized to the insert's lead diameter, with a lead-in chamfer; glass and mineral fillers do not melt and raise
+      the cracking risk
+    status: conflicting
+    evidence: '2026-11-04: read on the page. CNC Kitchen asks no chamfer for printed parts. Its filler warning agrees with
+      SPIROL''s larger hole for filled plastics'
+  summary: 'Compares heat, ultrasonic and press-fit installation of brass inserts in moulded plastic: heat takes the widest
+    range of resins, ultrasonic is fastest, press-fit weakest and riskiest in filled resins.'
   used_for: []
 - id: spirol-how-to-design-the-proper-hole-for-heat-ultrasonic
   kind: guide
   category: manufacturing-guides
   title: How to Design the Proper Hole for Heat/Ultrasonic Inserts (SPIROL white paper)
-  authors: []
+  authors:
+  - Christie Jones
   org: SPIROL
   year: null
   url: https://www.spirol.com/resources/white-papers/how-to-design-the-proper-hole-for-heat-ultrasonic-inserts/
   access: free
   terms: cited and summarised, never copied
+  aliases:
+  - spirol-hole
   licence:
     spdx: null
     class: proprietary
@@ -189,22 +204,47 @@ sources:
   - inserts
   - mould
   evidence:
-    class: snippet-only
+    class: encoded
     numbers: claimed
     tested: unknown
     authority: primary
   confidence:
-    level: low
-    estimate: 0.4
-    sources: 1
+    level: high
+    estimate: 0.9
+    sources: 3
+  verified: '2026-11-04: opened the white paper page; read it whole: straight and tapered holes (taper at most 1 degree included,
+    tapered 8 degrees), depth L + 2 pitches, counterbores, the filler increase, the boss 2-3 x the insert and the mating part''s
+    hole.'
   claims:
-  - text: Boss OD or wall about 2-3x insert diameter, multiplier decreasing as insert grows
-    status: conflicting
-    evidence: 'Sovol-type guide: boss OD 1.5-2x insert OD; another ~2x; Albany County datasheet M8 boss 15.0 vs insert 11.1
-      mm (~1.35x). SPIROL says 2-3x.'
+  - text: Boss diameter 2 to 3 x the insert's, the multiplier falling as the insert grows
+    status: corroborated
+    evidence: '2026-11-04: read on the page. Stratasys Direct''s MJF guide gives 2-3 x the insert diameter'
+    corroborated_by:
+    - stratasys-direct-mjf-design-guide
+  - text: Grow the recommended hole 0.08 mm (0.003 in) at 15 % glass or mineral filler or more, 0.15 mm (0.006 in) at 35 %
+      or more, interpolated between
+    status: encoded
+    evidence: '2026-11-04: read on the page. One source (the maker''s); Plastics Technology agrees fillers change the hole
+      and the process. Encoded as fdm-insert-hole-filler-spirol and inserts.filler_increase, by extension to fibre-filled
+      filaments'
+  - text: Larger holes decrease performance; smaller ones stress and crack the plastic and are hard to install
+    status: corroborated
+    evidence: '2026-11-04: read on the page. CNC Kitchen''s pull-out tests agree'
+    corroborated_by:
+    - cnckitchen-heat-set-hole-size
   summary: 'Insert hole and boss design for heat-set inserts; boss diameter sized as a multiple of insert diameter. Note:
     Rule quoted in search summary from supplier documents.'
-  used_for: []
+  rules:
+  - fdm-insert-hole-filler-spirol
+  checks:
+  - inserts.check_joint
+  - inserts.filler_increase
+  - inserts.printed_hole
+  used_for:
+  - docs/inserts.md
+  - research/process-profiles.md
+  - research/process-profiles.yaml
+  - src/cadagent/mechanical/inserts.py
 - id: spirol-compression-limiter-design-guide
   kind: guide
   category: manufacturing-guides
@@ -233,7 +273,7 @@ sources:
   - inserts
   - mould
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: primary
@@ -241,12 +281,15 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the PDF (UK edition, 10/25); read the design rules: the limiter slightly shorter than the
+    host, bolt load 25-75 % of proof, 3-5 % compression a safe limit and 5-7 % safe for most plastics, and the size tables.'
   claims:
-  - text: Tighten bolt to about 75% proof load; 3-5% compression guideline for thermoplastics
+  - text: Bolt load 25 to 75 % of proof (at most 75 %); 3-5 % compression a safe limit, 5-7 % safe for most plastics
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Guide to compression limiters in bolted plastic joints; limiter slightly shorter than host, preload target, creep
-    relief. Note: Details via search summary; PDF not read'
+    evidence: '2026-11-04: read in the PDF. The same rules as SPIROL''s 04/21 edition (spirol-cl-2021), the same publisher,
+      so not a second source'
+  summary: 'Compression limiters in bolted plastic joints: the limiter slightly shorter than the host, the bolt at 25-75 %
+    of its proof load, 3-5 % compression a safe limit; size tables.'
   used_for: []
 - id: ejot-delta-pt-flyer
   kind: guide
@@ -360,14 +403,22 @@ sources:
   process_groups:
   - inserts
   evidence:
-    class: snippet-only
+    class: verified-at-source
     numbers: claimed
     tested: unknown
     authority: primary
   confidence:
-    level: low
-    estimate: 0.4
-    sources: 1
+    level: medium
+    estimate: 0.7
+    sources: 2
+  verified: '2026-11-04: opened the PDF; read the contents and the insert tables (press-in, ultrasonic and heat-stake, threaded
+    inserts for metal), each with its hole size and the footnote on it.'
+  claims:
+  - text: 'Hole size requirements vary with material and tools: test the application'
+    status: corroborated
+    evidence: '2026-11-04: the footnote under the plastic-insert tables. CNC Kitchen says the same of printed holes'
+    corroborated_by:
+    - cnckitchen-heat-set-hole-size
   summary: 'Brochure with required hole sizes per insert for press-in, sonic and metal threaded inserts. Note: Tables not
     visible in snippet'
   used_for: []
@@ -399,7 +450,7 @@ sources:
   - inserts
   - cnc
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: reference
@@ -407,10 +458,12 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the PDF; read the install steps per insert type (drill, STI tap, install, break the tang)
+    and the seating depth.'
   claims:
-  - text: Seat coil 1/4 to 1/2 turn below surface; STI tap required
+  - text: Seat the coil 1/4 to 1/2 turn below the surface; an STI tap, not a standard tap
     status: unconfirmed
-    evidence: No second source checked.
+    evidence: '2026-11-04: read in the PDF. No second source checked.'
   summary: 'Helical coil install steps: drill, STI tap, wind, break tang, seat below surface. Note: Distributor guide'
   used_for: []
 - id: mcmaster-carr-how-to-install-key-locking-inserts
@@ -477,7 +530,7 @@ sources:
   process_groups:
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: reference
@@ -485,10 +538,13 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the article; read the nut-factor method, T = K D F / 12 (ft-lb, in, lb), how K is found by
+    test, PTFE coatings and the ASME PCC-1 (2019) Target Torque Index it shows.'
   claims:
-  - text: T = K x D x P; K typically 0.1-0.25 (DuPont figure)
+  - text: T = K D F / 12 (T in ft-lb, D in in, F in lb); K is found by test, and PTFE-coated bolts take a lower K
     status: unconfirmed
-    evidence: No second source checked.
+    evidence: '2026-11-04: read on the page. The snippet''s ''K typically 0.1-0.25 (DuPont figure)'' is not in the page''s
+      text'
   summary: 'Explains T = K x D x P nut-factor relation for bolt preload. Note: Snippet via summary'
   used_for: []
 - id: henkel-loctite-design-guide-bonding-plastics
@@ -516,7 +572,7 @@ sources:
   process_groups:
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'yes'
     authority: primary
@@ -524,6 +580,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the PDF (Volume 5, 11/2008); read its contents and how to use the guide and its adhesive shear-strength
+    tables, one chapter per plastic.'
   summary: 'Loctite plastics bonding guide: surface treatment, joint design, process cost versus strength, data for many plastics.
     Note: Content described by summary; PDF not opened'
   used_for: []
@@ -634,7 +692,7 @@ sources:
   process_groups:
   - inserts
   evidence:
-    class: snippet-only
+    class: read
     numbers: none
     tested: unknown
     authority: reference
@@ -642,6 +700,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
+  verified: '2026-11-04: opened the repository; read the README: a tension-only bolted joint calculator (separation, yield
+    and fatigue factors of safety, joint diagrams) with Cornwell''s stiffness fits. Licence file not read.'
   summary: 'Bolted joint calculator. Note: MIT, 4 stars, last push 2022-11-27; stale'
   used_for: []
 - id: freecad-fasteners-wb

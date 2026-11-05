@@ -47,7 +47,7 @@
 # Standards that govern the same ground (ISO 2768-1, ISO 20457, DIN 16742, ISO/ASTM 52910 and 52911-2) are in the
 # registry too, as paid documents cited by number and title only; no rule here takes a value from them.
 schema: 1
-updated: 2026-11-01
+updated: 2026-11-04
 
 units:
   mm: millimetres
@@ -550,6 +550,57 @@ rules:
     source: cnckitchen-heat-set-tips
     status: read
     verified: 2026-10-31
+  - id: fdm-hole-undersize-cnckitchen-2019
+    process: fdm
+    feature: hole
+    quantity: how much smaller a printed hole came out than designed
+    value: 0.1
+    units: mm
+    applies: one measurement (an Original Prusa, Prusament, strips of 4-5 mm holes in 0.1 mm steps gauged with drill
+      bits); STL triangulation and the filament's shrinkage are among the causes
+    source: cnck-2019
+    status: read
+    verified: 2026-11-04
+    note: CNC Kitchen measured 0.1 mm in 2019 and 0.25 mm in 2026 (fdm-hole-undersize-cnckitchen) on two printers and
+      filaments. The range is kept; the insert hole takes 2026's, the one its pull-out tests sized, and a coupon on
+      your printer and filament governs both
+  - id: fdm-insert-hole-filler-spirol
+    process: fdm
+    feature: insert
+    quantity: increase of the maker's insert hole for a glass- or mineral-filled plastic
+    min: 0.08
+    max: 0.15
+    units: mm
+    applies: SPIROL, heat or ultrasonic inserts; 0.08 mm at 15 % filler or more, 0.15 mm at 35 % or more, interpolated
+      between, none under 15 %. Written for moulded plastics; a fibre-filled filament takes it by extension, and its
+      coupon governs
+    source: spirol-how-to-design-the-proper-hole-for-heat-ultrasonic
+    status: read
+    verified: 2026-11-04
+  - id: fdm-insert-wall-perimeters-lulzbot
+    process: fdm
+    feature: insert
+    quantity: perimeters round a heat-set insert's hole, the wall a whole number of extrusion widths
+    min: 2
+    units: count
+    applies: LulzBot; more perimeters hold more
+    source: lulzbot-tips-and-tricks-heat-set-inserts
+    status: read
+    verified: 2026-11-04
+    note: Sources differ on the count. LulzBot asks two or more, SPIROL at least the metric size (M3 three, M6 six,
+      the only count with pull-out tests behind it, so it governs) and Stratasys's slicer four to six
+      (fdm-insert-contours-padt)
+  - id: fdm-insert-contours-padt
+    process: fdm
+    feature: insert
+    quantity: contours (perimeters) round each insert hole, Stratasys Insight's recommendation
+    min: 4
+    max: 6
+    units: count
+    applies: Stratasys FDM, as PADT reports it; GrabCAD Print sizes the hole and sets the contours itself
+    source: padt-adding-inserts-to-3d-printed-parts-hardware-tips
+    status: read
+    verified: 2026-11-04
 
   - id: fdm-emboss-text-xometry-eu
     process: fdm

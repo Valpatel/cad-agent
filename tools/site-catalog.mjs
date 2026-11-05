@@ -257,7 +257,8 @@ export async function buildCatalog(ctx) {
   };
   const kindOfSection = { docs: 'guide', lessons: 'lesson', research: 'research', skills: 'skill', agents: 'agent' };
   const pageItemId = (p, kind) => {
-    const rest = p.file.replace(/^(docs|lessons|research|skills|agents)\//, '').replace(/\/SKILL\.md$|\.md$/, '').replace(/(^|\/)README$/, '$1index');
+    // The root README already owns guide-index. A docs folder map needs its own stable id.
+    const rest = (p.file === 'docs/README.md' ? 'docs/README.md' : p.file.replace(/^(docs|lessons|research|skills|agents)\//, '')).replace(/\/SKILL\.md$|\.md$/, '').replace(/(^|\/)README$/, '$1index');
     return `${kind}-${slugify(rest)}`;
   };
   const items = [];

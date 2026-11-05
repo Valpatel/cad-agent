@@ -107,7 +107,10 @@ try {
         const res = await page.goto(base + route, { waitUntil: 'networkidle' });
         if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
         else if (res.status() !== 200) seen.push(`status ${res.status()}`);
-        if (route === '/README') await page.waitForSelector('.cad-diagram[data-state=ready] svg', { timeout: 15000 }).catch(() => seen.push('mermaid did not render'));
+        if (route === '/README') await page.waitForFunction(() => {
+          const map = document.querySelector('img[src="/docs/img/hero/repository-map.svg"]');
+          return map?.complete && map.naturalWidth > 0;
+        }, null, { timeout: 15000 }).catch(() => seen.push('repository learning map did not load'));
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
         if (overflow > 0) seen.push(`scrolls sideways by ${overflow}px`);
         if (!route.startsWith('/kit/')) {

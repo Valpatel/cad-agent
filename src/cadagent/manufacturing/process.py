@@ -565,6 +565,9 @@ def data_path(path: Any = None) -> Path:
     return p
 
 
+SHARD_DATA = ("vocab.yaml", "coverage.yaml")      # files in the shard folder that hold no records
+
+
 @lru_cache(maxsize=8)
 def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles:
     import yaml
@@ -579,6 +582,16 @@ def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles
             if isinstance(reg, dict) else []
         for s in entries:
             if isinstance(s, dict) and "id" in s:
+                sources.setdefault(s["id"], _source(s))
+    # and the schema-2 shards beside it (#323): a record read at source (evidence class above snippet-only) may back
+    # a rule; a catalogued one stays unresolved, so a rule that cites it fails the tests
+    for shard in sorted(path.parent.glob(f"{REGISTRY.stem}/*.yaml")):
+        if shard.name in SHARD_DATA:
+            continue
+        doc = yaml.safe_load(shard.read_text(encoding="utf-8"))
+        for s in (doc.get("sources") if isinstance(doc, dict) else None) or []:
+            cls = (s.get("evidence") or {}).get("class") if isinstance(s, dict) else None
+            if isinstance(s, dict) and "id" in s and not s.get("extends") and cls not in (None, "snippet-only"):
                 sources.setdefault(s["id"], _source(s))
     datasets = {f"dataset:{d['id']}": Source(f"dataset:{d['id']}", d["what"], d.get("cites", ""), (), None,
                                              d.get("where", "")) for d in data.get("datasets", [])}
@@ -605,10 +618,11 @@ def _load(path: Path, mtime: float, registry_mtime: Optional[float]) -> Profiles
 
 
 def load(path: Any = None) -> Profiles:
-    """Every process profile from the data file (cached until it or the registry beside it changes)."""
+    """Every process profile from the data file (cached until it, the registry beside it or the registry's shards change)."""
     p = data_path(path).resolve()
     reg = p.parent / REGISTRY.name
-    return _load(p, p.stat().st_mtime, reg.stat().st_mtime if reg.is_file() else None)
+    shards = [f.stat().st_mtime for f in p.parent.glob(f"{REGISTRY.stem}/*.yaml")]
+    return _load(p, p.stat().st_mtime, max([reg.stat().st_mtime] + shards) if reg.is_file() else None)
 
 
 def profile(process: str, path: Any = None) -> Profile:

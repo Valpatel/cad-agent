@@ -1088,6 +1088,7 @@ sources:
   summary: 'University makerspace guide to heat-set inserts in printed parts, with chamfer and hole undersize advice. Note:
     Snippet only'
   used_for:
+  - docs/inserts.md
   - src/cadagent/mechanical/inserts.py
 - id: formlabs-3d-printing-threads-and-adding-threaded-inserts-to
   kind: guide

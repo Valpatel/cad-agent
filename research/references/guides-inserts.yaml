@@ -421,7 +421,8 @@ sources:
     - cnckitchen-heat-set-hole-size
   summary: 'Brochure with required hole sizes per insert for press-in, sonic and metal threaded inserts. Note: Tables not
     visible in snippet'
-  used_for: []
+  used_for:
+  - docs/inserts.md
 - id: albany-county-fasteners-helicoil-install-guide-albany-county
   kind: guide
   category: manufacturing-guides

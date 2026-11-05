@@ -82,15 +82,20 @@ test('areas place a record as cadagent.review.references area_of does', () => {
 
 test('index.json counts every committed record once, and each area file lists exactly its records', async () => {
   // Counted from the YAML here, not through the module under test.
-  const own = [];
+  // A shard record read at source (#323's sweeps) is a source; one still snippet-only is catalogued.
+  const own = [], ownRead = [];
   for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !/\/(vocab|coverage)\.yaml$/.test(f)))
-    for (const r of YAML.parse(await show(f)).sources) if (!r.extends) own.push(r.id);
+    for (const r of YAML.parse(await show(f)).sources) {
+      if (r.extends) continue;
+      own.push(r.id);
+      if (r.evidence?.class && r.evidence.class !== 'snippet-only') ownRead.push(r.id);
+    }
   const sources = YAML.parse(await show(CORE)).sources.map(s => s.id);
   const index = await json('catalog/references/index.json');
   assert.equal(index.schema, 'cad-agent-references/1');
   assert.equal(index.totals.records, own.length + sources.length);
-  assert.equal(index.totals.catalogued, own.length);
-  assert.equal(index.totals.sources, sources.length);
+  assert.equal(index.totals.catalogued, own.length - ownRead.length);
+  assert.equal(index.totals.sources, sources.length + ownRead.length);
   assert.deepEqual(Object.keys(index.totals.by_evidence), LADDER.filter(k => index.totals.by_evidence[k] !== undefined));
   const seen = new Set();
   for (const a of index.areas) {

@@ -130,6 +130,15 @@ def material_family(process: str, material: Optional[str]) -> Optional[str]:
     return material
 
 
+def _known(process: str, material: Optional[str]) -> bool:
+    """True when ``material`` is None or names a material of ``process`` (any name, for a process with no table)."""
+    try:
+        material_family(process, material)
+        return True
+    except CardError:
+        return False
+
+
 # ----------------------------------------------------------------------------- citations
 
 def _read_problem(key: str, reg) -> Optional[str]:
@@ -249,6 +258,11 @@ def card(name: str, process: Optional[str] = None, material: Optional[str] = Non
     profiles = pp.load(path)
     if process is not None and process not in profiles.profiles:
         raise CardError(f"no process {process!r}; there are {', '.join(profiles.profiles)}")
+    if material is not None:
+        if process is not None:
+            material_family(process, material)              # an unknown material is refused, not ignored
+        elif not any(_known(p, material) for p in ("fdm", "sheet-metal")):
+            material_family("fdm", material)
     reg = registry(path)
     datasets = [d["id"] for d in data(path).get("datasets") or []]
     picked, unverified, other = [], [], []
@@ -258,7 +272,10 @@ def card(name: str, process: Optional[str] = None, material: Optional[str] = Non
         if not r.verified:
             unverified.append(r.id)
             continue
-        fam = material_family(r.process, material)
+        fam = material_family(r.process, material) if _known(r.process, material) else "?"
+        if material is not None and r.process in ("fdm", "sheet-metal") and fam == "?":
+            other.append(r.id)                              # a rule of a process this material is not made in
+            continue
         if fam is not None and r.materials and fam not in r.materials:
             other.append(r.id)
             continue

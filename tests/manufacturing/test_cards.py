@@ -91,6 +91,10 @@ def test_material_leaves_out_the_rules_for_other_materials():
     assert cards.material_family("fdm", "pa6-cf20-polymaker-dry") == "pa-cf"
     with pytest.raises(cards.CardError, match="not known"):
         cards.card("insert-hole", process="fdm", material="unobtainium")
+    sheet = cards.card("hole", material="5052")         # no process: an alloy leaves out the printed holes
+    assert "fdm" not in {ln["process"] for ln in sheet["lines"]} and "sheet-metal" in {ln["process"] for ln in sheet["lines"]}
+    with pytest.raises(cards.CardError, match="not known"):
+        cards.card("hole", material="unobtainium")
 
 
 def test_expressions_are_shown_as_written():

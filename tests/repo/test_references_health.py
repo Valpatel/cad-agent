@@ -40,7 +40,11 @@ class Site:
             "/chain2": lambda h: (301, {"Location": "/ok"}, b""),
             "/temp": lambda h: (302, {"Location": "/new"}, b""),
             "/to-root": lambda h: (301, {"Location": "/"}, b""),
-            "/": lambda h: (200, {}, page(title="Welcome")),
+            "/": lambda h: (304, {"ETag": '"home"'}, b"") if h.headers.get("If-None-Match") == '"home"'
+                 else (200, {"ETag": '"home"'}, page(title="Welcome")),
+            "/notfound-etag": lambda h: (304, {"ETag": '"nf"'}, b"") if h.headers.get("If-None-Match") == '"nf"'
+                              else (200, {"ETag": '"nf"'}, page(title="Page not found", h1="Oops")),
+            "/maintenance": lambda h: (503, {"Retry-After": "7200"}, b""),
             "/to-search": lambda h: (302, {"Location": "/search?q=inserts"}, b""),
             "/search": lambda h: (200, {}, page(title="Search")),
             "/soft": lambda h: (200, {}, page(title="Page not found", h1="Oops")),
@@ -88,6 +92,7 @@ class _Handler(BaseHTTPRequestHandler):
 
 class GitHubStub(BaseHTTPRequestHandler):
     """repos/o/live (fine), repos/o/old (renamed to o/new), repos/o/gone (404), repos/o/arch (archived, Apache-2.0)."""
+    LIMITED = "o/limited"             # answers 403 "API rate limit exceeded", as GitHub does
     REPOS = {
         "o/live": dict(full_name="o/live", archived=False, pushed_at="2026-10-01T00:00:00Z", license={"spdx_id": "MIT"}),
         "o/old": dict(full_name="o/new", archived=False, pushed_at="2026-10-01T00:00:00Z", license={"spdx_id": "MIT"}),
@@ -99,7 +104,9 @@ class GitHubStub(BaseHTTPRequestHandler):
         assert self.headers.get("Authorization") == "Bearer test-token"
         parts = self.path.strip("/").split("/")
         body, status = None, 404
-        if parts[0] == "repos" and len(parts) == 3:
+        if parts[0] == "repos" and len(parts) == 3 and f"{parts[1]}/{parts[2]}" == self.LIMITED:
+            status, body = 403, {"message": "API rate limit exceeded"}
+        elif parts[0] == "repos" and len(parts) == 3:
             r = self.REPOS.get(f"{parts[1]}/{parts[2]}")
             if r:
                 status, body = 200, dict(r, private=False, disabled=False, default_branch="main", stargazers_count=1)
@@ -175,7 +182,7 @@ def run(servers, records, state, as_of=DAY1, limit=100, pacer=None):
 
 
 def test_statuses_from_the_fixture_server(servers, site):
-    rs = recs(site, "/ok", "/gone", "/old", "/chain", "/temp", "/forbidden", "/flaky", "/doc.pdf")
+    rs = recs(site, "/ok", "/gone", "/old", "/chain", "/temp", "/flaky", "/doc.pdf")
     st = run(servers, rs, {})["records"]
     by = {r["url"].rsplit("/", 1)[1]: st[r["id"]] for r in rs}
     assert by["ok"]["status"] == "ok" and by["ok"]["etag"] == '"v1"' and len(by["ok"]["sha256"]) == 64
@@ -184,8 +191,7 @@ def test_statuses_from_the_fixture_server(servers, site):
     # a 302 then a 301: moved, but not permanently (the bot PR leaves it to a person)
     assert by["chain"]["status"] == "moved" and by["chain"]["permanent"] is False and by["chain"]["http"] == [302, 301, 200]
     assert by["temp"]["status"] == "ok" and by["temp"]["final_url"].endswith("/new")      # temporary only: not moved
-    assert by["forbidden"]["status"] == "blocked"
-    assert by["flaky"]["status"] == "unreachable" and by["flaky"]["http"] == [503]
+    assert by["flaky"]["status"] == "unknown" and by["flaky"]["http"] == [503]     # the server's trouble: not counted
     assert by["doc.pdf"]["kind"] == "pdf" and by["doc.pdf"]["bytes"] == 5009
 
 
@@ -268,12 +274,14 @@ def test_403_blocks_the_host_for_30_days_and_is_not_retried(servers, site):
     state = run(servers, rs, {}, DAY1)
     assert state["hosts"]["127.0.0.1"]["blocked_until"] == (DAY1 + dt.timedelta(days=30)).isoformat()
     hits = dict(site.site.hits)
-    assert hits["/forbidden"] == 1 and hits["/forbidden2"] == 1     # one 403 each, no retry loop
+    assert hits == {"/forbidden": 1}                               # one 403, no retry; the host is left alone this run too
+    assert state["deferred"] == ["127.0.0.1"] and rs[1]["id"] not in state["records"]
     state = run(servers, rs, state, DAY2)
     assert site.site.hits == hits and state["checked"] == [] and sorted(state["held"]) == sorted(r["id"] for r in rs)
     assert state["records"][rs[0]["id"]]["checked"] == DAY1.isoformat()    # kept, with its date
     state = run(servers, rs, state, DAY1 + dt.timedelta(days=31))
-    assert site.site.hits["/forbidden"] == 2                       # 30 days on: checked again
+    assert sum(site.site.hits.values()) == 2                       # 30 days on: checked again (the never-checked one first)
+    assert state["records"][rs[1]["id"]]["status"] == "blocked"
 
 
 def test_rotation_checks_the_longest_unchecked_first(servers, site):
@@ -302,8 +310,14 @@ def test_github_repositories_through_the_api_stub(servers, site):
     assert ("ref-repo-stale", "ref:gh-o-arch") not in checks       # archived says it already
 
 
+def refused():
+    """A record whose host refuses the connection (nothing listens on port 1): unreachable."""
+    return dict(id="refused", url="http://127.0.0.1:1/x", file="research/references/x.yaml", kind="catalogued",
+                evidence="snippet-only", activity=None, spdx=None, claims=False)
+
+
 def test_streaks_and_fingerprints_are_stable(servers, site):
-    rs = recs(site, "/gone", "/flaky", "/soft")
+    rs = recs(site, "/gone", "/soft") + [refused()]
     s1 = run(servers, rs, {}, DAY1)
     r1 = ra.health_report(ROOT, rs, s1, DAY1, [], "online")
     s2 = run(servers, rs, json.loads(json.dumps(s1)), DAY2)
@@ -413,3 +427,112 @@ def test_the_weekly_jobs_keep_tokens_apart_and_only_they_go_online():
     for other in (".github/workflows/ci.yml", ".github/workflows/gates.yml", ".github/workflows/webkit.yml",
                   ".github/workflows/release.yml"):
         assert "references --online" not in (ROOT / other).read_text() and "lychee" not in (ROOT / other).read_text()
+
+
+def test_a_304_keeps_a_soft_404_and_never_makes_it_a_move(servers, site):
+    """A dead deep link that 301s to the home page, whose ETag then gives 304, stays gone (root) and is never `moved`;
+    a "not found" page with an ETag stays gone on its 304 too, so its streak grows."""
+    rs = recs(site, "/to-root", "/notfound-etag")
+    for day in (DAY1, DAY2, DAY3):
+        state = run(servers, rs, {} if day == DAY1 else state, day)
+        root, nf = (state["records"][r["id"]] for r in rs)
+        assert root["status"] == "gone" and root["soft404"] == ["root"], (day, root)
+        assert nf["status"] == "gone" and nf["soft404"] == ["title"] and nf["title"] == "Page not found", (day, nf)
+    assert root["http"] == [301, 304] and nf["http"] == [304]
+    assert root["streak"]["runs"] == 3 and nf["streak"]["runs"] == 3 and nf["down_runs"] == 3
+
+
+def test_a_long_503_is_unknown_and_defers_the_host(servers, site):
+    rs = recs(site, "/maintenance", "/ok", "/new")
+    rs[0]["id"] = "a-first"
+    state = run(servers, rs, {})
+    e = state["records"]["a-first"]
+    assert e["status"] == "unknown" and e["http"] == [503] and "down_since" not in e
+    assert state["deferred"] == ["127.0.0.1"] and len(state["records"]) == 1 and state["hosts"] == {}
+
+
+def test_a_github_api_failure_is_unknown_not_unreachable(servers, site):
+    rs = recs(site, gh=[("o/limited", None)])
+    e = run(servers, rs, {})["records"]["gh-o-limited"]
+    assert e["status"] == "unknown" and e["github"] == {"state": "unverified"} and "down_runs" not in e
+
+
+def test_an_outage_is_counted_from_the_last_good_check():
+    """gone, gone, blocked, unknown, unreachable: one outage since the first gone (blocked and unknown neither end nor
+    extend it); an ok check ends it."""
+    prev = None
+    for day, status in enumerate(["ok", "gone", "gone", "blocked", "unknown", "unreachable"], start=1):
+        e = ra.down_track(prev, dict(status=status, checked=f"2026-11-{day:02d}"))
+        prev = e
+    assert prev["down_since"] == "2026-11-02" and prev["down_runs"] == 3
+    assert "down_since" not in ra.down_track(prev, dict(status="ok", checked="2026-11-07"))
+
+
+def _pr_guard():
+    """The PR job's patch guard, as the workflow runs it: from `# guard:` to `# end guard`."""
+    yaml = pytest.importorskip("yaml")
+    run_ = "\n".join(s.get("run", "") for s in yaml.safe_load(
+        (ROOT / ".github/workflows/supply-chain.yml").read_text())["jobs"]["references-pr"]["steps"])
+    lines = run_.splitlines()
+    a = next(i for i, ln in enumerate(lines) if ln.strip().startswith("# guard:"))
+    b = next(i for i, ln in enumerate(lines) if ln.strip() == "# end guard")
+    import textwrap
+    return textwrap.dedent("\n".join(lines[a:b]))
+
+
+@pytest.mark.parametrize("probe, ok", [("edit", True), ("rename", False), ("symlink", False), ("create", False),
+                                       ("delete", False), ("mode", False), ("outside", False)])
+def test_the_pr_job_applies_only_in_place_shard_edits(tmp_path, probe, ok):
+    import shutil
+    import subprocess
+    if not shutil.which("git") or not shutil.which("bash"):
+        pytest.skip("needs git and bash")
+    repo = tmp_path / "r"
+    sh = lambda *a: subprocess.run(a, cwd=repo, check=True, capture_output=True, text=True).stdout   # noqa: E731
+    repo.mkdir()
+    sh("git", "init", "-q")
+    (repo / "research/references").mkdir(parents=True)
+    (repo / "research/references/a.yaml").write_text("schema: 2\nsources: []\n")
+    (repo / "tools").mkdir()
+    (repo / "tools/ci_gates.py").write_text("print('gate')\n")
+    (repo / "top.txt").write_text("secret-ish\n")
+    sh("git", "add", "-A")
+    sh("git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base")
+    shard, gate = repo / "research/references/a.yaml", repo / "tools/ci_gates.py"
+    if probe == "edit":
+        shard.write_text("schema: 2\nsources: [x]\n")
+    elif probe == "rename":
+        sh("git", "mv", "tools/ci_gates.py", "research/references/b.yaml")
+    elif probe == "symlink":
+        shard.unlink()
+        shard.symlink_to("../../top.txt")
+    elif probe == "create":
+        (repo / "research/references/new.yaml").write_text("schema: 2\n")
+        sh("git", "add", "-N", "research/references/new.yaml")
+    elif probe == "delete":
+        shard.unlink()
+    elif probe == "mode":
+        shard.chmod(0o755)
+    elif probe == "outside":
+        gate.write_text("print('owned')\n")
+    patch = tmp_path / "p.patch"
+    patch.write_text(sh("git", "diff", "-M", "HEAD", "--binary"))
+    sh("git", "reset", "-q", "--hard")
+    sh("git", "clean", "-qfd")
+    res = subprocess.run(["bash", "-ec", f'patch="{patch}"\n' + _pr_guard() + "\necho GUARD-PASSED"], cwd=repo,
+                         capture_output=True, text=True)
+    assert ("GUARD-PASSED" in res.stdout) is ok, (probe, res.stdout, res.stderr)
+    if not ok:
+        assert res.returncode == 1 and "::error::" in res.stdout
+        assert sh("git", "status", "--porcelain") == ""              # refused before anything was applied
+
+
+def test_the_state_comes_only_from_the_weekly_runs_and_stale_bot_prs_close_anyway():
+    yaml = pytest.importorskip("yaml")
+    jobs = yaml.safe_load((ROOT / ".github/workflows/supply-chain.yml").read_text())["jobs"]
+    state = next(s for s in jobs["references"]["steps"] if s.get("name") == "The last run's state")
+    assert '--branch "$DEFAULT"' in state["run"] and '.event == "schedule"' in state["run"]
+    assert state["env"]["DEFAULT"] == "${{ github.event.repository.default_branch }}"
+    pr_run = "\n".join(s.get("run", "") for s in jobs["references-pr"]["steps"])
+    assert "exit 0" not in pr_run                                   # no early exit before the clean-up loop
+    assert pr_run.index("git ls-remote --heads origin") > pr_run.index("No evidence changes this week")

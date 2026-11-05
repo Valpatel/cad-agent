@@ -1728,7 +1728,9 @@ def judge_link(rep, row, chain, err):
 # bot PR. Findings are derived from the whole state, not only this run's checks, so a record the rotation skipped keeps
 # its findings.
 HEALTH_SCHEMA = 'cad-agent-references-health/1'
-HEALTH_STATUSES = ('ok', 'moved', 'changed', 'blocked', 'gone', 'unreachable')
+HEALTH_STATUSES = ('ok', 'moved', 'changed', 'blocked', 'gone', 'unreachable', 'unknown')
+DOWN = ('gone', 'unreachable')          # what counts toward lowering a record (two checks in a row)
+NEUTRAL = ('blocked', 'unknown')        # the checker saw nothing: neither ends nor extends an outage
 HEALTH_LIMIT = 400             # records checked per run, the longest unchecked first
 HOST_INTERVAL = 1.0            # seconds between two requests to one host
 HEALTH_WORKERS = 8             # hosts checked at once
@@ -1872,7 +1874,7 @@ def fetch_page(net, url, pacer, prev=None):
         cond['If-None-Match'] = prev['etag']
     if prev and prev.get('last_modified'):
         cond['If-Modified-Since'] = prev['last_modified']
-    chain, cur, retried = [], url, False
+    chain, cur, retried, defer = [], url, False, False
     for _ in range(10):
         h = host(cur)
         pacer.wait(h)
@@ -1888,12 +1890,13 @@ def fetch_page(net, url, pacer, prev=None):
             e.close()
         except (urllib.error.URLError, OSError, ValueError) as e:
             return dict(chain=chain, body=None, headers={}, error=str(getattr(e, 'reason', e))[:200] or type(e).__name__)
-        if status in (429, 503) and not retried:
+        if status in (429, 503):
             wait = retry_after(hdrs.get('Retry-After') if hdrs else None)
-            if wait is not None and wait <= RETRY_AFTER_MAX:
+            if wait is not None and wait <= RETRY_AFTER_MAX and not retried:
                 pacer.defer(h, wait)
                 retried = True
                 continue
+            defer = defer or (wait is not None and wait > RETRY_AFTER_MAX)     # come back next run, not this one
         chain.append((status, cur))
         loc = hdrs.get('Location') if hdrs else None
         if 300 <= status < 400 and status != 304 and loc:
@@ -1901,8 +1904,8 @@ def fetch_page(net, url, pacer, prev=None):
             continue
         keep = {k.lower(): hdrs.get(k) for k in ('ETag', 'Last-Modified', 'Content-Type', 'Retry-After')
                 if hdrs and hdrs.get(k)}
-        return dict(chain=chain, body=body, headers=keep, error='')
-    return dict(chain=chain, body=None, headers={}, error='too many redirects')
+        return dict(chain=chain, body=body, headers=keep, error='', defer=defer)
+    return dict(chain=chain, body=None, headers={}, error='too many redirects', defer=defer)
 
 
 def _same_page(a, b):
@@ -1951,12 +1954,26 @@ def page_health(url, res, prev, as_of):
     hdr = res['headers']
     if code in (404, 410):
         return dict(out, status='gone')
+    if res.get('defer'):
+        out['defer_host'] = host(final)
     if code in (401, 403, 429):
         return dict(out, status='blocked', blocked_host=host(final))
+    if code >= 500:
+        return dict(out, status='unknown')     # the server's own trouble (maintenance, overload): not evidence of a dead link
     if code == 304:
         for k in ('etag', 'last_modified', 'sha256', 'bytes', 'kind'):
             if prev.get(k) is not None:
                 out[k] = prev[k]
+        # Unchanged since the last 200: its content verdicts (title, tiny) still hold if it is the same page, and the
+        # chain verdicts (root, search) are judged on this run's chain. A 304 never turns a soft-404 into a move.
+        same = prev.get('final_url') == out.get('final_url')
+        reasons = soft_404(url, chain, None, None, None)
+        reasons += [x for x in prev.get('soft404') or [] if same and x in ('title', 'tiny') and x not in reasons]
+        if reasons:
+            out['soft404'] = reasons
+            if same and prev.get('title'):
+                out['title'] = prev['title']
+            return dict(out, status='gone')
         status = 'ok'
     elif 200 <= code < 300:
         body = res['body'] or b''
@@ -1988,8 +2005,8 @@ def repo_health(net, url, slug, prev, as_of, pacer):
     st = repo_status(net, slug)
     if st['state'] == 'gone':
         return dict(out, status='gone', http=[st.get('http')], github=dict(state='gone'))
-    if st['state'] != 'ok':
-        return dict(out, status='unreachable', error=st.get('error', '')[:200], github=dict(state='unverified'))
+    if st['state'] != 'ok':        # rate limit, 5xx, no answer: the checker's trouble, not the repository's
+        return dict(out, status='unknown', error=st.get('error', '')[:200], github=dict(state='unverified'))
     name = st.get('full_name') or slug
     head = None
     if st.get('default_branch'):
@@ -2015,6 +2032,18 @@ def health_streak(prev, entry):
     if p.get('key') == key:
         return dict(p, runs=int(p.get('runs') or 0) + 1)
     return dict(key=key, status=entry['status'], since=entry['checked'], runs=1)
+
+
+def down_track(prev, entry):
+    """An outage: `down_since` is the first gone or unreachable check after the last ok, moved or changed one, and
+    `down_runs` counts the gone or unreachable checks since. A blocked or unknown check neither ends nor extends it."""
+    p, st = prev or {}, entry['status']
+    if st in DOWN:
+        entry['down_since'] = p.get('down_since') or entry['checked']
+        entry['down_runs'] = int(p.get('down_runs') or 0) + 1 if p.get('down_since') else 1
+    elif st in NEUTRAL and p.get('down_since'):
+        entry['down_since'], entry['down_runs'] = p['down_since'], p.get('down_runs') or 1
+    return entry
 
 
 def task_host(rec):
@@ -2058,7 +2087,8 @@ def check_references(net, records, state, as_of, limit=HEALTH_LIMIT, pacer=None,
     """Check up to `limit` records (rotation) and fold the answers into `state` (the last run's JSON, changed in place).
 
     One worker per host, at most `workers` hosts at once, every request paced by `pacer`. A host that answers 401/403 is
-    blocked for BLOCKED_DAYS; one that answers 429 (after one Retry-After) is left for the rest of this run."""
+    blocked for BLOCKED_DAYS. A host that refuses (401, 403, 429) or asks for a wait over RETRY_AFTER_MAX is left alone for
+    the rest of this run: its other records keep their last state."""
     pacer = pacer or Pacer()
     prev = state.setdefault('records', {})
     hosts = state.setdefault('hosts', {})
@@ -2072,11 +2102,12 @@ def check_references(net, records, state, as_of, limit=HEALTH_LIMIT, pacer=None,
         out = {}
         for r in items:
             if task_host(r) in deferred:
-                break
+                continue
             entry = check_one(net, r, last_check(state, r), as_of, pacer)
             out[r['id']] = entry
-            if entry['status'] == 'blocked' and (entry.get('http') or [0])[-1] == 429:
-                deferred.add(task_host(r))
+            for h in (entry.get('blocked_host'), entry.get('defer_host')):
+                if h:
+                    deferred.add(h)
         return out
     results = {}
     with cf.ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
@@ -2086,6 +2117,7 @@ def check_references(net, records, state, as_of, limit=HEALTH_LIMIT, pacer=None,
     for rid in sorted(results):
         entry = results[rid]
         entry['streak'] = health_streak(last_check(state, urls[rid]), entry)
+        down_track(last_check(state, urls[rid]), entry)
         prev[rid] = entry
         if entry['status'] == 'blocked' and (entry.get('http') or [0])[-1] in (401, 403):
             h = entry.get('blocked_host') or host(entry['url'])
@@ -2182,8 +2214,11 @@ def health_findings(rep, records, state, accepted, lychee=None):
             rep.add('ref-soft-404', 'medium', sid, f"{r['id']}: looks like a missing page ({reason}){runs}",
                     where + (f"; now {e.get('final_url')}" if e.get('final_url') else '') + (f"; title {e.get('title')!r}" if e.get('title') else ''),
                     'Open it: if the page is fine, accept this finding by its fingerprint; else treat it as gone.', key=reason)
+        if st == 'unknown':
+            rep.add('ref-unverified', 'info', sid, f"{r['id']}: no usable answer this time", f"{where}; {e.get('error', '')}",
+                    'Run again later; it does not count toward lowering the record.')
         if st == 'unreachable':
-            if (streak.get('runs') or 0) >= 2:
+            if (e.get('down_runs') or 0) >= 2:
                 rep.add('ref-unreachable', 'low', sid, f"{r['id']}: {host(url)} did not answer{runs}", f"{where}; {e.get('error', '')}",
                         'Check by hand; a link that stays unreachable is treated as gone.')
             else:

@@ -95,13 +95,19 @@ jobs:
         with: {python-version: '3.12'}
       - run: pip install pyyaml
       - name: The last run's state
+        # Only this repository's own weekly runs seed the state (their streaks drive the bot's edits): scheduled or
+        # dispatched runs of the default branch's copy of this workflow, which check out dev. A run of any other branch's
+        # copy is never read.
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          DEFAULT: ${{ github.event.repository.default_branch }}
         run: |
           mkdir -p build/last
-          for id in $(gh run list -R "$REPO" --workflow supply-chain.yml --limit 12 --json databaseId,status \
-                        -q '.[] | select(.status == "completed") | .databaseId'); do
+          for id in $(gh run list -R "$REPO" --workflow supply-chain.yml --branch "$DEFAULT" --limit 20 \
+                        --json databaseId,status,event,headBranch \
+                        -q '.[] | select(.status == "completed" and .headBranch == "'"$DEFAULT"'"
+                                      and (.event == "schedule" or .event == "workflow_dispatch")) | .databaseId'); do
             if gh run download "$id" -R "$REPO" -n references-health -D build/last 2>/dev/null; then
               echo "state from run $id"; break
             fi
@@ -185,23 +191,37 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           patch=build/references-health.patch
-          if [ ! -s "$patch" ]; then echo "No evidence changes this week."; exit 0; fi
-          bad=$(git apply --numstat "$patch" | cut -f3 | grep -Ev '^research/references/[a-z0-9-]+\.yaml$' || true)
-          if [ -n "$bad" ]; then echo "::error::the patch touches files outside the shards: $bad"; exit 1; fi
-          git apply "$patch"
-          day=$(date -u +%F)
-          branch="bot/references-health-$day-$GITHUB_RUN_ID"
-          git switch -c "$branch"
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            commit -qam "Reference health: evidence changes from the checks of $day (#323)"
-          git push -q origin "$branch"
-          if url=$(gh pr create -R "$REPO" --base dev --head "$branch" --body-file build/references-health-pr.md \
-                     --title "Reference health: evidence changes ($day)"); then
-            echo "opened $url"; note="Superseded by $url: the edits are worked out again from dev each week."
+          branch=
+          note="No evidence changes this week: its conditions cleared, or dev has them already."
+          if [ -s "$patch" ]; then
+            # guard: the bot only ever edits existing shards in place. --summary prints nothing for that and a line for
+            # every rename, copy, create, delete or mode change (a symlink included); --numstat names every path.
+            if [ -n "$(git apply --summary "$patch")" ]; then
+              echo "::error::the patch renames, creates, deletes or changes the mode of a file"; exit 1
+            fi
+            bad=$(git apply --numstat "$patch" | cut -f3 | grep -Ev '^research/references/[a-z0-9-]+\.yaml$' || true)
+            if [ -n "$bad" ]; then echo "::error::the patch touches files outside the shards: $bad"; exit 1; fi
+            git apply "$patch"
+            bad=$(git status --porcelain --untracked-files=all | grep -Ev '^ M research/references/[a-z0-9-]+\.yaml$' || true)
+            if [ -n "$bad" ]; then echo "::error::after the patch, more than shard edits: $bad"; exit 1; fi
+            # end guard
+            day=$(date -u +%F)
+            branch="bot/references-health-$day-$GITHUB_RUN_ID"
+            git switch -c "$branch"
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -qam "Reference health: evidence changes from the checks of $day (#323)"
+            git push -q origin "$branch"
+            if url=$(gh pr create -R "$REPO" --base dev --head "$branch" --body-file build/references-health-pr.md \
+                       --title "Reference health: evidence changes ($day)"); then
+              echo "opened $url"; note="Superseded by $url: the edits are worked out again from dev each week."
+            else
+              echo "::warning::Actions may not open PRs in this repository; the edits are on branch $branch"
+              note="Superseded by branch $branch."
+            fi
           else
-            echo "::warning::Actions may not open PRs in this repository; the edits are on branch $branch"
-            note="Superseded by branch $branch."
+            echo "$note"
           fi
+          # last week's bot PR and branch go, with or without a patch this week
           for old in $(git ls-remote --heads origin 'refs/heads/bot/references-health-*' | cut -f2 | sed 's#refs/heads/##'); do
             [ "$old" = "$branch" ] && continue
             for n in $(gh pr list -R "$REPO" --state open --head "$old" --json number -q '.[].number'); do

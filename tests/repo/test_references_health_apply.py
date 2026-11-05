@@ -55,7 +55,9 @@ def promote(root, i=0, **extra):
 
 
 def entry(url, status, runs, since="2026-11-09", **kw):
-    return dict(url=url, checked=AS_OF.isoformat(), status=status, streak=dict(key=status, status=status, since=since, runs=runs), **kw)
+    down = dict(down_since=since, down_runs=runs) if status in ra.DOWN else {}
+    return dict(url=url, checked=AS_OF.isoformat(), status=status, streak=dict(key=status, status=status, since=since, runs=runs),
+                **{**down, **kw})
 
 
 def health(**records):
@@ -79,7 +81,7 @@ def test_a_dead_link_lowers_the_class_once_per_outage(root):
     assert list(files) == [SHARD] and [r[0] for r in p.rows] == [rid]
     ev = record(root, rid).get("evidence")
     assert ev["class"] == "snippet-only" and ev["lowered"]["from"] == "read" and ev["lowered"]["date"] == AS_OF.isoformat()
-    assert "gone on 2 checks in a row since 2026-11-09 (HTTP 404)" == ev["lowered"]["why"]
+    assert "gone: gone or unreachable on 2 checks in a row since 2026-11-09 (HTTP 404)" == ev["lowered"]["why"]
     assert not [x for x in refs.load(root / "research/references.yaml").problems(root=root) if x.startswith(rid)]
     # the next week, still gone: already lowered for this outage
     files, p = apply(root, health(**{rid: entry(url, "gone", 3, http=[404])}))
@@ -136,7 +138,7 @@ def test_a_permanent_same_site_move_updates_the_link(root):
     head, doc = shard(root)
     r = recs(doc)[0]
     rid, old = r["id"], r["url"]
-    new = old.rstrip("/") + "-moved"
+    new = f"https://{ra.host(old)}/blog/heat-set-inserts-moved"
     files, p = apply(root, health(**{rid: entry(old, "moved", 2, final_url=new, permanent=True)}))
     got = record(root, rid)
     assert got["url"] == new and got["mirrors"] == [old] and p.rows[0][1].startswith("url -> ")
@@ -207,3 +209,39 @@ def test_the_cli_writes_the_body_and_mentions_nobody(root, tmp_path):
     text = body.read_text()
     assert f"`{rid}`" in text and "evidence.class read -> snippet-only" in text and SHARD in text
     assert record(root, rid).get("evidence")["class"] == "snippet-only"
+
+
+def test_once_per_outage_is_counted_from_the_last_good_check(root):
+    """The streak restarted (a blocked or unreachable check in between), but the outage did not: no second rung."""
+    rid, url = promote(root)
+    apply(root, health(**{rid: entry(url, "gone", 2, since="2026-11-02")}))
+    assert record(root, rid).get("evidence")["class"] == "snippet-only"
+    head, doc = shard(root)
+    r = next(r for r in recs(doc) if r["id"] == rid)
+    r["evidence"]["class"], r["evidence"]["lowered"]["from"] = "read", "verified-at-source"    # as if it had fallen from v-a-s
+    r["evidence"]["lowered"]["date"] = "2026-11-16"
+    save(root, head, doc)
+    e = entry(url, "gone", 2, since="2026-11-30", down_since="2026-11-02", down_runs=5)   # new streak, same outage
+    assert apply(root, health(**{rid: e}))[0] == {}
+    e = entry(url, "gone", 2, since="2026-11-30", down_since="2026-11-30", down_runs=2)   # a new outage after an ok check
+    assert apply(root, health(**{rid: e}))[1].rows
+
+
+@pytest.mark.parametrize("path", ["/", "", "/search?q=x"])
+def test_a_move_to_a_home_or_search_page_is_never_applied(root, path):
+    _, doc = shard(root)
+    r = recs(doc)[0]
+    final = f"https://{ra.host(r['url'])}{path}"
+    files, p = apply(root, health(**{r["id"]: entry(r["url"], "moved", 2, final_url=final, permanent=True)}))
+    assert files == {} and "home or search page" in dict(p.notes)[r["id"]]
+
+
+def test_a_claim_re_read_after_the_change_is_left_alone(root):
+    head, doc = shard(root)
+    x, z = recs(doc)[0], recs(doc)[1]
+    z["claims"] = [{"text": "Hole 4.0 mm", "status": "corroborated", "evidence": "re-read, still agrees",
+                    "corroborated_by": [x["id"]]}]
+    z["verified"] = "2026-11-17: re-read both pages"           # a person's date, after the change
+    save(root, head, doc)
+    h = health(**{x["id"]: entry(x["url"], "ok", 1, changed_on="2026-11-16")})
+    assert apply(root, h)[0] == {}

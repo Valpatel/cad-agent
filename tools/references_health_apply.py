@@ -49,7 +49,7 @@ def _tool(name):
 
 ra = _tool("resource_audit")           # the health report's own rules (effective status, sites, acceptances)
 ir = _tool("import_refmap")            # the shards' writer, so an edit changes only the lines it means to
-DOWN = ("gone", "unreachable")
+DOWN = ra.DOWN
 CORE = "research/references.yaml"
 
 
@@ -94,8 +94,9 @@ def plan(health: Dict[str, Any], reg: refs.Registry, accepted: List[Dict[str, An
         status = ra.effective_status(rid, e, accepted)
         runs, since = int(streak.get("runs") or 0), str(streak.get("since") or "")
         core = ref.file == CORE
-        if status in DOWN and streak.get("status") in DOWN and runs >= 2:
-            why = (f"{status} on {runs} checks in a row since {since}"
+        down_runs, down_since = int(e.get("down_runs") or 0), str(e.get("down_since") or "")
+        if status in DOWN and down_runs >= 2 and down_since:
+            why = (f"{status}: gone or unreachable on {down_runs} checks in a row since {down_since}"
                    + (f" (HTTP {' -> '.join(map(str, e['http']))})" if e.get("http") else "")
                    + (f" ({', '.join(e['soft404'])})" if e.get("soft404") else ""))
             cls = ref.evidence_class
@@ -104,7 +105,7 @@ def plan(health: Dict[str, Any], reg: refs.Registry, accepted: List[Dict[str, An
                 p.note(rid, f"{why}: a cited core entry; link a live copy (an archive.org snapshot, said so) or a successor")
             elif cls not in refs.LADDER or not isinstance(ref.get("evidence"), dict):
                 p.note(rid, f"{why}: no evidence class to lower")
-            elif isinstance(lowered, dict) and str(lowered.get("date") or "") >= since:
+            elif isinstance(lowered, dict) and str(lowered.get("date") or "") >= down_since:
                 pass                                   # lowered already for this outage
             elif refs.LADDER.index(cls) == 0:
                 pass                                   # snippet-only: no rung to fall (the issue lists it)
@@ -122,7 +123,10 @@ def plan(health: Dict[str, Any], reg: refs.Registry, accepted: List[Dict[str, An
             why = f"moved on {runs} checks in a row since {since}"
             old = ref.get("url")
             same_site = ra.site(ra.host(old)) == ra.site(ra.host(final)) and ra.host(old) not in ra.RESOLVERS
-            if not (e.get("permanent") and final.startswith("https://") and same_site and not any(c.isspace() for c in final)):
+            fin = ra.urllib.parse.urlsplit(final)
+            if fin.path in ("", "/") or ra.SEARCHY.search(fin.path + ("?" + fin.query if fin.query else "")):
+                p.note(rid, f"{why} to {final}, a home or search page: the page is probably gone; check by hand")
+            elif not (e.get("permanent") and final.startswith("https://") and same_site and not any(c.isspace() for c in final)):
                 p.note(rid, f"{why} to {final}, but not by permanent redirects to https on the same site: check by hand")
             elif final in urls and urls[final] != rid:
                 p.note(rid, f"{why} to {final}, which is already the link of {urls[final]}: merge the two by hand")
@@ -147,8 +151,8 @@ def plan(health: Dict[str, Any], reg: refs.Registry, accepted: List[Dict[str, An
             if len(by) != 1 or by[0] not in changed or by[0] == ref.id:
                 continue
             mark = f"{changed[by[0]]}: the page of {by[0]} changed; re-read it before corroborating again"
-            if mark in str(claim.get("evidence") or ""):
-                continue
+            if mark in str(claim.get("evidence") or "") or str(ref.get("verified") or "")[:10] >= changed[by[0]]:
+                continue                               # done already, or the record was read again since the change
             if ref.file == CORE:
                 p.note(ref.id, f"claim {i} rests on {by[0]}, whose page changed on {changed[by[0]]}: re-read it")
                 continue

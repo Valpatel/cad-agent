@@ -6,6 +6,18 @@
 - **Check:** use the dated inventory below; fetch again before acting. A branch contained in `dev` is evidence of integration, not permission to delete another author’s branch.
 - **Source:** 2026-11-05 UTC: `gh issue list --state open --limit 200 --json number,title,body,comments`, `gh pr list --state all --limit 500`, `git fetch origin`, `git for-each-ref`, `git merge-base --is-ancestor`, `git worktree list --porcelain`, and read-only `git status --porcelain` in each checkout. No credentials, machine names or absolute paths are recorded.
 
+The arrows show how this recovery chooses a next step; they are not automatic completion signals.
+
+```mermaid
+flowchart TD
+    I["GitHub issues + PRs"] --> G["git refs + worktrees"]
+    G --> C["exact-head checks"]
+    C --> D["dated dispositions"]
+    D --> N["resume one scoped PR"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    class I,G,C,D,N here
+```
+
 ## Snapshot and limits
 
 Reviewed `dev` at `04704a41` and released `main` at `3a4ec137` (v0.20.0), on 2026-11-05 UTC. This is a recovery snapshot, not a live dashboard. It inspected all 36 open issues, all 50 remote-tracking refs present after fetch, all 26 local branches and all 9 pre-existing worktrees. The new recovery worktree is separate. No branch, stash, worktree or issue was deleted or closed.

@@ -25,6 +25,7 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
+| `site-motion.mjs` | Helper: rendered reduced-motion hero still and a hidden-drawing negative control |
 | `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |

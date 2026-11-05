@@ -54,12 +54,18 @@ The self-branch head is the commit returned by the command before this audit upd
 
 ## Resume order
 
+<details>
+<summary>Order: finish #346, land navigation, reduce root clutter, fix narrow regressions</summary>
+
 1. Finish #346’s browser failure and independent exact-head review; retain the open #323 claim’s scope.
 2. Land the entry-map/evidence-routing batch under #139 and #113 after independent review.
 3. Reduce tracked root entries from the baseline **30**: move `mining/` into `tools/mining/` and the weekly procedure into docs (**28**). Assess `upstreams/` into `vendor/upstreams/` and release fragments into an existing hierarchy as separate consumer-aware changes (potential **26**); keep plugin-discovered `skills/` and `agents/` intact.
 4. Fix the narrow OCCT assertion (#318), then evaluate dependency portability (#285) and source-backed regression gaps. Avoid new large CAD features during cleanup.
 
 Root moves must update the layout allowlist, imports/path literals, audit/catalogue/build/release consumers, docs, ignore rules and relevant tests. A historical report stays a dated report; do not rewrite old measurements to pretend they were run at new paths. `docs/` domain moves additionally need build discovery and permanent published redirects (#145).
+
+
+</details>
 
 <details>
 <summary>Every open issue: disposition at the snapshot</summary>

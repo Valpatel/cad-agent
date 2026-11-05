@@ -21,7 +21,7 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
-               "overhangs", "library", "init")
+               "overhangs", "library", "init", "rules", "choose")
 LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
 # person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
@@ -1097,6 +1097,34 @@ def cmd_inserts(args: argparse.Namespace) -> int:
     return 0 if result["verdict"] != "fail" else 1
 
 
+def cmd_rules(args: argparse.Namespace) -> int:
+    """Print a rule card (cadagent.manufacturing.cards): a feature's cited rules, when each applies, how strict it is
+    and what applies it, in about 2 KB; ``--why`` expands one rule to its sources; no feature lists the cards."""
+    from cadagent.manufacturing import cards
+    if args.why:
+        w = cards.why(args.why)
+        print(cards.as_json(w) if args.json else cards.render_why(w))
+        return 0
+    if not args.feature:
+        names = cards.card_names()
+        print(cards.as_json(names) if args.json else
+              "cards (cad-agent rules <card> [--process P --material M]): " + ", ".join(names))
+        return 0
+    c = cards.card(args.feature, process=args.process, material=args.material)
+    print(cards.as_json(cards.card_json(c)) if args.json else cards.render_card(c))
+    return 0
+
+
+def cmd_choose(args: argparse.Namespace) -> int:
+    """Print a decision card (cadagent.manufacturing.cards): the choice a cited decision table makes, why, the
+    runner-up and when it wins, the gaps in the sources, and the rule cards to design to."""
+    from cadagent.manufacturing import cards
+    given = {k: getattr(args, k) for k in ("process", "material", "load", "cycles", "qty") if getattr(args, k) is not None}
+    c = cards.choose(args.decision, **given)
+    print(cards.as_json(c) if args.json else cards.render_choice(c))
+    return 0
+
+
 def _read_spec(path: str) -> Any:
     text = Path(path).read_text()
     if str(path).endswith((".yaml", ".yml")):
@@ -1251,6 +1279,14 @@ def dispatch(args: argparse.Namespace) -> int:
         except (OSError, ValueError, KeyError, TypeError) as exc:
             _err(f"bearings: {exc}")
             return 2
+    if sub in ("rules", "choose"):                         # reads the kit's cited data only: no project needed
+        from cadagent.manufacturing.cards import CardError
+        from cadagent.manufacturing.process import ProfileDataError
+        try:
+            return cmd_rules(args) if sub == "rules" else cmd_choose(args)
+        except (CardError, ProfileDataError, OSError) as exc:
+            _err(f"{sub}: {exc}")
+            return 2
     if sub == "library":                                   # works on files only: no project needed
         try:
             return cmd_library(args)
@@ -1368,6 +1404,22 @@ def build_parser() -> argparse.ArgumentParser:
                                           "YAML/JSON file (docs/inserts.md)")
     in_p.add_argument("spec", help="file with a 'joints' list")
     in_p.add_argument("--output", help="write the full result as JSON")
+    ru_p = sub.add_parser("rules", help="Print the rule card for a design feature: each cited rule with its numbers, "
+                                        "when it applies, how strict it is and what enforces it, in about 2 KB")
+    ru_p.add_argument("feature", nargs="?", help="a feature or card (insert-hole, printed-hole, wall, ...); none lists them")
+    ru_p.add_argument("--process", help="keep one process's rules (fdm, sheet-metal, ...)")
+    ru_p.add_argument("--material", help="leave out rules for other materials (an fdm family or filament, a sheet alloy)")
+    ru_p.add_argument("--why", metavar="RULE", help="expand one rule to its sources")
+    ru_p.add_argument("--json", action="store_true", help="print the card as JSON, within the same budget")
+    ch_p = sub.add_parser("choose", help="Make a design judgement call from a cited decision table: the choice, why, "
+                                         "the runner-up and when it wins, and the rule cards to design to")
+    ch_p.add_argument("decision", help="the decision (joining)")
+    ch_p.add_argument("--process", help="the part's process (fdm, sls, mjf, injection-moulding, sla, sheet-metal)")
+    ch_p.add_argument("--material", help="the part's material (an fdm family or filament, a sheet alloy)")
+    ch_p.add_argument("--load", type=float, help="service load on one joint along its axis, N (0: holds parts closed only)")
+    ch_p.add_argument("--cycles", type=int, help="times the joint is assembled over its life (1: once)")
+    ch_p.add_argument("--qty", type=int, help="parts made")
+    ch_p.add_argument("--json", action="store_true", help="print the decision as JSON")
     be_p = sub.add_parser("bearings", help="Check rolling bearings declared in a YAML/JSON file: life, static safety, "
                                            "axial load and speed, turning or oscillating (docs/bearings.md)")
     be_p.add_argument("spec", help="file with a 'bearings' list")

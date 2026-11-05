@@ -1,0 +1,10 @@
+- fdm-insert-hole-cad-offset-cnckitchen: amount added to the nominal insert hole in CAD so it prints to size: 0.2-0.3 mm | guide conf high [ref:cnck-2026]
+  when a printed hole for a small insert; not: a hole drilled after printing takes the maker's hole -> fdm-insert-hole-m3-nominal-cnckitchen
+  0.2-0.3 mm; each printer and filament shrinks holes differently, so your coupon governs; cost: test prints until it is right [ref:spirol-3dp], or drill [ref:hubs-3dp-threaded-fasteners]; by inserts.printed_hole, manufacturing.fit_coupons
+  applies: small inserts; size so the insert pre-seats with slight resistance (M3 in PLA on one printer, 4.2 mm in CAD kept about 90 % of the highest pull-out force)
+  read 2026-10-31
+[ref:cnckitchen-heat-set-hole-size] encoded, conf high: Stefan Hermann, Are Our Heat-Set Insert Datasheets Wrong?, CNC Kitchen, 2026: https://cnckitchen.com/blog/are-our-heat-set-insert-datasheets-wrong
+  claim: Size the hole so the insert just pre-seats with slight resistance; oversize holes lose pull-out fast (drilled M3: the big drop between 4.1 and 4.2 mm) (encoded)
+  claim: Printed holes came out about 0.25 mm under CAD (CORE One L, PolySonic PLA); add 0.2-0.3 mm in CAD for small inserts; every printer and material shrinks holes differently (conflicting)
+[ref:spirol-3dp] read, conf unknown: K. Ionkin, How to Select a Threaded Insert for Your 3D Printed Assembly, SPIROL International Corporation, 2026: https://www.spirol.com/assets/files/inserts-for-3d-printed-assemblies-us.pdf
+[ref:hubs-3dp-threaded-fasteners] read, conf unknown: Protolabs Network (formerly Hubs), How do you assemble 3D-printed parts? Practical tips on threads & screws for 3D printing, n.d.: https://www.hubs.com/knowledge-base/how-assemble-3d-printed-parts-threaded-fasteners/

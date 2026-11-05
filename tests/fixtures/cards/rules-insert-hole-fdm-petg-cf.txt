@@ -1,0 +1,13 @@
+rules insert-hole: the hole a heat-set insert goes in (draw it with printed-hole) | fdm | petg-cf | 4 rules (MUST: non-negotiable; guide: has wiggle room; ?: no source says)
+- fdm-insert-hole-m3-nominal-cnckitchen: nominal (as-built) hole diameter for CNC Kitchen's M3 heat-set insert: 4 mm | MUST conf high [ref:cnck-2026]
+  when a CNC Kitchen M3 insert in a hole drilled to size, or as a printed hole comes out; not: another maker's insert takes its maker's hole [ref:epfl-inserts] -> fdm-insert-hole-cad-offset-cnckitchen
+  small side only; pull-out falls sharply above 4.1-4.2 mm, and too small cracks the plastic [ref:spirol-hole]; cost: drilling is a step after printing and may cut the printed walls [ref:spirol-3dp]
+- fdm-insert-blind-depth-cnckitchen: extra depth of a blind insert hole beyond the insert's length: 1 mm | MUST conf medium [ref:cnck-tips]
+  when a blind hole; not: a through hole need be no longer than the insert
+  deeper than the insert so it never bottoms [ref:covestro-joining]; by how much is free, two thread pitches at SPIROL [ref:spirol-inserts]; ? cost
+- fdm-insert-hole-cad-offset-cnckitchen: amount added to the nominal insert hole in CAD so it prints to size: 0.2-0.3 mm | guide conf high [ref:cnck-2026]
+  when a printed hole for a small insert; not: a hole drilled after printing takes the maker's hole -> fdm-insert-hole-m3-nominal-cnckitchen
+  0.2-0.3 mm; each printer and filament shrinks holes differently, so your coupon governs; cost: test prints until it is right [ref:spirol-3dp], or drill [ref:hubs-3dp-threaded-fasteners]; by inserts.printed_hole, manufacturing.fit_coupons
+- fdm-insert-hole-filler-spirol: increase of the maker's insert hole for a glass- or mineral-filled plastic: 0.08-0.15 mm | guide conf high [ref:spirol-hole]
+  when glass- or mineral-filled plastic, 15 % filler or more; a fibre filament by extension; not: under 15 % filler, no increase
+  interpolate between 15 and 35 %; a filament's coupon governs; by inserts.printed_hole, inserts.filler_increase; ? cost

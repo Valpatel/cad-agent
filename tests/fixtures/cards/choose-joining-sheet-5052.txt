@@ -1,0 +1,11 @@
+choose joining | process sheet-metal, material 5052, load 0, cycles 1, qty 1
+choice: PEM self-clinching nut or stud (row sheet)
+because:
+- a clinched thread holds in sheet softer than the fastener by about 20 HRB, in a hole +0.08/-0 mm, with the press reaching both faces [ref:pem-handbook]
+  rules: sm-clinch-hardness-margin-pem, sm-clinch-hole-tolerance-pem, sm-clinch-sheet-min-pem
+runner-up: through-bolt and nut; wins when: ?
+gap: no registry source ranks a PEM against a loose nut and bolt in sheet; the runner-up is listed, not ranked
+gap: insert_fits not computed: the insert capacity model is calibrated on FDM prints only, not sheet-metal
+unused: qty: no registry source ties the joining choice to quantity; SPIROL only suggests installation machines for volume production [ref:spirol-3dp]
+cards: cad-agent rules clinch-hardware --process sheet-metal --material 5052
+runner-up cards: cad-agent rules thread --process sheet-metal --material 5052; cad-agent inserts

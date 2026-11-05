@@ -73,6 +73,21 @@ Add the rest when it is known, not before: `material` with `wall_mm` when the pr
 the joint is chosen, `contains` when the part holds something, `loads` when the analysis is set up, `checks` naming
 the gates and checks that verify it. Leave `status:` out: it is computed. The lint asks for what is missing.
 
+**Before you draw a feature, get its card and design to it.** The cards hold the referenced design practice, so you
+do not have to recall it, in one call and about 2 KB:
+
+- `cad-agent rules <feature> --process P --material M` (for example `insert-hole`, `printed-hole`, `thread` or
+  `wall`; run `cad-agent rules` alone for the list) gives each cited rule with its numbers. It also says when the
+  rule applies and when not, whether it is non-negotiable (MUST) or a guideline with wiggle room, what tightening it
+  costs, and the function or gate that enforces it. `--why <rule>` expands one rule to its sources.
+- `cad-agent choose joining --load N --cycles N --material M --process P` makes the joining call from a cited
+  decision table. It gives the choice, the reasons, the runner-up and when that would win, and the cards to design to.
+
+Draw the MUST lines exactly. Use a guideline's wiggle room to make the part cheaper or simpler unless a function
+needs it tight. Where a card prints `?` or `gap:`, no source covers that point, so record your own call as a
+decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded
+rules.
+
 ### 3. Declare the geometry facts in the build script
 
 Only the code knows which solid is the cavity, where an axis is, where each screw sits:

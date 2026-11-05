@@ -16,7 +16,9 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
    and `cad-agent <command> --help`. Skills: ~/cad-agent/skills/*/SKILL.md.
 3. Build with the kit's tested commands and checks, not formulas from
    memory. Start with `cad-agent init my-part` and change it; then
-   `cad-agent all` builds, exports and runs every check. Say what each
+   `cad-agent all` builds, exports and runs every check. Before drawing a
+   feature, run `cad-agent rules <feature>` (or `cad-agent choose joining`)
+   and design to the card. Say what each
    check assumes: CAD and simulation narrow a design down, they do not
    prove that a printed part fits or holds.
 4. Give back, through GitHub only: cad-agent collects no telemetry. When a

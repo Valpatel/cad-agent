@@ -273,11 +273,11 @@ def card(name: str, process: Optional[str] = None, material: Optional[str] = Non
             "other_materials_left_out": other}
 
 
-def _ids(ids: Sequence[str]) -> str:
-    """Left-out ids for a closing line, at most :data:`MORE_IDS` bytes of them, then how many others."""
+def _ids(ids: Sequence[str], limit: int = MORE_IDS) -> str:
+    """Left-out ids for a closing line, at most ``limit`` bytes of them, then how many others."""
     out: List[str] = []
     for i, k in enumerate(ids):
-        if len(", ".join(out + [k]).encode()) > MORE_IDS:
+        if len(", ".join(out + [k]).encode()) > limit:
             return ", ".join(out) + f" and {len(ids) - i} others"
         out.append(k)
     return ", ".join(out)
@@ -287,18 +287,19 @@ def _fit(head: List[str], body: List[Tuple[str, str]], budget: int, more: str) -
     """``head`` and as many ``body`` blocks (id, text) as fit ``budget`` bytes, then one line naming the rest; and
     how many blocks were kept."""
     out, size = list(head), sum(len(h.encode()) + 1 for h in head)
+    limit = max(0, min(MORE_IDS, budget - size - len(more.format(n=999, ids=" and 999 others").encode()) - 1))
     left = list(body)
     while left:
         text = left[0][1]
         rest = [i for i, _ in left[1:]]
-        reserve = len(more.format(n=len(rest), ids=_ids(rest)).encode()) + 1 if rest else 0
+        reserve = len(more.format(n=len(rest), ids=_ids(rest, limit)).encode()) + 1 if rest else 0
         if size + len(text.encode()) + 1 + reserve > budget:
             break
         out.append(text)
         size += len(text.encode()) + 1
         left.pop(0)
     if left:
-        out.append(more.format(n=len(left), ids=_ids([i for i, _ in left])))
+        out.append(more.format(n=len(left), ids=_ids([i for i, _ in left], limit)))
     return "\n".join(out), len(body) - len(left)
 
 

@@ -124,6 +124,9 @@ def test_rules_that_compare_share_their_units(data):
 def test_every_source_is_used(data):
     used = {r["source"] for r in data["rules"]} | {f["source"] for f in data["formulas"]} | \
         {t["source"] for t in data["shop_tables"]}
+    # and the [ref:<id>] tags of the rules' when-fields and the decision tables (#323 phase 7b), by id
+    reg = load_registry()
+    used |= {reg.resolve(k).id for k in re.findall(r"\[ref:([a-z0-9-]+)\]", DATA.read_text(encoding="utf-8"))}
     # A source the page cites for prose only (its used_for leaves out this file) need not back a rule.
     unused = [s["id"] for s in data["sources"] if s["id"] not in used and "research/process-profiles.yaml" in s["used_for"]]
     missing = sorted(i for i in used if not i.startswith("dataset:")

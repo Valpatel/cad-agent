@@ -61,6 +61,7 @@ sources:
     areas: [snap-fits, moulding, materials]
     aliases: [covestro, covestro-friction]
     used_for:
+      - research/process-profiles.yaml
       - src/cadagent/mechanical/compliant/snapfit.py
       - tests/mechanical/test_snapfit.py
       - docs/compliant.md
@@ -540,6 +541,10 @@ sources:
     verified: >-
       2026-10-31: opened the page; read the wall-around-a-thread rule, inserts, embedded nuts (0.2 mm offset),
       self-tapping pilot holes (75–80 % engagement), tapping, and printed threads (avoid below M5 in FDM).
+      2026-11-05: read its comparison table for the joining decision (#323 phase 7b): inserts give strong
+      metal-on-metal threads but need extra parts and installing; self-tapping screws are a one-off method, not
+      for repeated disassembly; inserts and embedded nuts ease repeated assembly; drilling a pilot after printing
+      is more accurate than printing it; small test prints save time and material.
 
   - id: prusa-modeling-for-3dp
     title: Modeling with 3D printing in mind
@@ -1866,8 +1871,12 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [fasteners, screw-bosses, moulding]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
-    verified: "2026-11-01: the 4-page PDF opened; it is COV00073610, edition 2016-04, as cadagent.formulas cites it."
+    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py, research/process-profiles.yaml]
+    verified: >-
+      2026-11-01: the 4-page PDF opened; it is COV00073610, edition 2016-04, as cadagent.formulas cites it.
+      2026-11-05: read p. 2 for the joining decision (#323 phase 7b): thread-cutting screws suit one-time assembly
+      or joints taken apart and re-assembled a few times, and repeated assembly needs the screw put back by hand
+      into its own thread.
 
   - id: covestro-joining
     title: "Engineering Polymers: Joining Techniques - A Design Guide"
@@ -1878,10 +1887,14 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [fasteners, screw-bosses, moulding]
-    used_for: [src/cadagent/formulas/_registry.py]
+    used_for: [src/cadagent/formulas/_registry.py, research/process-profiles.yaml]
     verified: >-
       2026-11-01: the 38-page PDF opened. It prints no date; its file metadata says 2015-10-30, the date
-      cadagent.formulas cites it by.
+      cadagent.formulas cites it by. 2026-11-05: read for the joining decision (#323 phase 7b): snap fits are
+      simple and economical, may eliminate metal fasteners and allow easy disassembly, suit most plastics for
+      one-time assembly, and take a lower strain for repeated assembly; a part disassembled regularly takes metal
+      inserts; washers under both the head and the nut; the insert's hole deeper than the insert so it does not
+      bottom; thread-cutting screws re-installed carefully in repeated assembly.
 
   - id: bulten
     title: "DELTA PT: a superior thread-former for plastics (brochure version 250422)"
@@ -1921,6 +1934,7 @@ sources:
     terms: cited and summarised, never copied
     areas: [inserts, fdm, moulding]
     used_for:
+      - research/process-profiles.yaml
       - src/cadagent/formulas/_registry.py
       - src/cadagent/formulas/inserts.py
       - src/cadagent/mechanical/inserts.py
@@ -1940,7 +1954,10 @@ sources:
     used_for: [src/cadagent/mechanical/inserts.py, research/process-profiles.yaml]
     verified: >-
       2026-11-01: the 5-page PDF opened (edition 04/26). Read for cadagent.mechanical.inserts (#230): pp. 2-5
-      and Figures 8-12, whose bar values were read off the charts at 300 dpi.
+      and Figures 8-12, whose bar values were read off the charts at 300 dpi. 2026-11-05: re-read pp. 1-2 and 5
+      (#323 phase 7b): inserts give reusable threads; heat or ultrasonic inserts for the highest performance in
+      thermoplastics, press-in ones cold in thermosets; drilling reduces hole variation but may cut the printed
+      walls; performance rises linearly with infill, so design above 50 %; installation machines for volume.
 
   - id: spirol-cl-2021
     title: Compression Limiters Design Guide (edition 04/21)

@@ -229,6 +229,16 @@ class Rule:
     note: str = ""
     shop: str = ""           # a shop id of ``shops`` for that shop's own rule; "" for a generic one
     applied_by: Tuple[str, ...] = ()     # the functions or gates that apply it (``cadagent.mechanical.inserts.printed_hole``)
+    # when to use it (#323 phase 7b, served by ``cad-agent rules``): each "" where the file does not say, and
+    # ``"unstated"`` where no source says (the card flags it)
+    when: str = ""           # the conditions it holds under; the card falls back to ``applies``
+    not_when: str = ""       # when it does not hold, and what to use instead
+    instead: Tuple[str, ...] = ()        # the rule ids or cards to use instead
+    strictness: str = ""     # non-negotiable, guideline or unstated
+    wiggle: str = ""         # how far it may move, and which way
+    cost: str = ""           # what holding it tighter costs
+    materials: Tuple[str, ...] = ()      # the material families it is for; () for any
+    cards: Tuple[str, ...] = ()          # the rule cards it belongs to besides its feature's
 
     @property
     def verified(self) -> bool:
@@ -515,7 +525,9 @@ def _rule(r: Mapping[str, Any]) -> Rule:
     return Rule(r["id"], r["process"], r["feature"], r["quantity"], r["units"], r["applies"], r["source"], r["status"],
                 str(r["verified"]), r.get("min"), r.get("max"), r.get("value"), bool(r.get("window", False)),
                 r.get("compare", ""), r.get("variant", ""), r.get("datum", ""), r.get("note", ""), r.get("shop", ""),
-                tuple(r.get("applied_by") or ()))
+                tuple(r.get("applied_by") or ()), *(" ".join(str(r.get(k) or "").split()) for k in ("when", "not_when")),
+                tuple(r.get("instead") or ()), *(" ".join(str(r.get(k) or "").split()) for k in ("strictness", "wiggle", "cost")),
+                tuple(r.get("materials") or ()), tuple(r.get("cards") or ()))
 
 
 def _shops(data: Mapping[str, Any], rules: List[Rule]) -> Dict[str, Shop]:

@@ -886,7 +886,10 @@ sources:
     - cnck-2020
   summary: 'A retelling of CNC Kitchen''s 2020 M3 test: a direct screw, a heat-set insert and a Helicoil all pulled out at
     about 120 kg; the heat-set insert was best in torque-out, at 3 N m.'
-  used_for: []
+  used_for:
+  - research/process-profiles.yaml
+  aliases:
+  - embedded-inserts
 - id: printables-heat-inserts-and-3d-printing-a-guide
   kind: guide
   category: manufacturing-guides
@@ -1112,6 +1115,7 @@ sources:
     insert) and wall, a 0.3-0.5 mm chamfer to guide the insert, and a drill if PETG has shrunk the hole.'
   used_for:
   - docs/inserts.md
+  - research/process-profiles.yaml
   - src/cadagent/mechanical/inserts.py
 - id: formlabs-3d-printing-threads-and-adding-threaded-inserts-to
   kind: guide
@@ -1161,7 +1165,10 @@ sources:
     - cnckitchen-heat-set-tips
   summary: 'Formlabs on threads and inserts in resin (SLA) parts: heat-set inserts go in with CA glue or epoxy, the boss at
     the insert''s widest diameter; brittle resins may crack with self-tapping screws.'
-  used_for: []
+  used_for:
+  - research/process-profiles.yaml
+  aliases:
+  - formlabs-inserts
 - id: scc-iso-astm-52900-2021-additive-manufacturing-vocabulary
   kind: standard
   category: manufacturing-guides

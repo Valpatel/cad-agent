@@ -44,6 +44,24 @@
 #              (cadagent.mechanical.inserts.printed_hole). Each reads the rule by its id: a function in its own
 #              body, a module at import. The tests check it, so a rule card can say what enforces it
 #
+# When to apply it (#323 phase 7b): `applies` grows into these, which `cad-agent rules <feature>` serves as one line
+# per rule. Each is optional; its text is the rule's `source` unless it carries its own [ref:<id>] tags, which must be
+# read records. Where no source says, write `unstated`: the card flags it and nothing is guessed.
+#   when       the conditions it holds under (load, cycles, temperature, quantity, material, process); the card
+#              falls back to `applies`
+#   not_when   when it does not hold, and what to use instead
+#   instead    optional: the rule ids or cards (of `cards`) to use then
+#   strictness non-negotiable (a failure, a safety issue or a fit that will not assemble), guideline, or unstated
+#   wiggle     how far it may move and which way (for a non-negotiable rule, the side that is free)
+#   cost       what holding it tighter costs, so loose and cheap is the default unless a function needs tight
+#   materials  optional: the material families it is for (fdm: those of cadagent.manufacturing.process.FDM_MATERIALS)
+#   cards      optional: cards of `cards` it belongs to, besides its feature's own
+#
+# Cards (`cards`): named rule cards that gather rules across features (insert-hole takes the insert hole rules and the
+# printed-hole rules its function reads). Decisions (`decisions`): the judgement calls as small decision tables that
+# `cad-agent choose <decision>` evaluates (cadagent.manufacturing.cards documents the format); each row's reasons are
+# cited, and where no source covers a branch its `gap` says so.
+#
 # Shops (`shops`): a named supplier whose own rules (`shop:` on a rule) and tables (`shop:` on a shop table) form a
 # profile a project can select. Its tables are by stock SKU, lengths converted from its inches at 25.4 mm.
 #
@@ -314,6 +332,12 @@ rules:
     status: read
     verified: 2026-10-31
     applied_by: [cadagent.mechanical.inserts.printed_hole, cadagent.manufacturing.fit_coupons]
+    cards: [printed-hole]
+    when: a printed hole, no coupon measured on your printer and filament
+    not_when: a coupon's measured undersize governs
+    strictness: guideline
+    wiggle: published 0.1 (2019) to 0.25 mm (2026)
+    cost: a test coupon per printer and filament
 
   - id: fdm-elephant-foot-compensation-prusa
     process: fdm
@@ -382,6 +406,7 @@ rules:
     source: hubs-snapfit-3dp
     status: read
     verified: 2026-10-31
+    cards: [snap-clip]
   - id: fdm-clearance-moving-prusa
     process: fdm
     feature: clearance
@@ -479,6 +504,12 @@ rules:
     source: hubs-3dp-threaded-fasteners
     status: read
     verified: 2026-10-31
+    when: a thread printed in FDM
+    not_when: below M5 use an insert, a tapped hole or a self-tapping screw
+    instead: [insert-hole, fdm-self-tap-engagement-hubs]
+    strictness: guideline
+    wiggle: unstated
+    cost: unstated
   - id: fdm-thread-wall-min-hubs
     process: fdm
     feature: thread
@@ -489,6 +520,11 @@ rules:
     source: hubs-3dp-threaded-fasteners
     status: read
     verified: 2026-10-31
+    when: the wall round a threaded hole or an insert in a print
+    not_when: unstated
+    strictness: guideline
+    wiggle: a rule of thumb; too thin bulges and distorts, and in FDM may delaminate or crack
+    cost: unstated
   - id: fdm-nut-pocket-clearance-hubs
     process: fdm
     feature: thread
@@ -499,6 +535,11 @@ rules:
     source: hubs-3dp-threaded-fasteners
     status: read
     verified: 2026-10-31
+    when: a nut embedded in a printed pocket, for a loose fit
+    not_when: nuts above M12 may need more
+    strictness: guideline
+    wiggle: a starting point, iterated for the printer
+    cost: small test prints, which save time and material against reprinting the part
   - id: fdm-self-tap-engagement-hubs
     process: fdm
     feature: thread
@@ -510,6 +551,12 @@ rules:
     source: hubs-3dp-threaded-fasteners
     status: read
     verified: 2026-10-31
+    when: a self-tapping screw whose maker gives no pilot size; one-off assembly
+    not_when: parts taken apart often take an insert or an embedded nut
+    instead: [insert-hole]
+    strictness: guideline
+    wiggle: 75-80 % is a start; the screw maker's pilot governs
+    cost: unstated
 
   - id: fdm-insert-hole-m3-nominal-cnckitchen
     process: fdm
@@ -522,6 +569,13 @@ rules:
     source: cnckitchen-heat-set-hole-size
     status: read
     verified: 2026-10-31
+    cards: [insert-hole]
+    when: a CNC Kitchen M3 insert in a hole drilled to size, or as a printed hole comes out
+    not_when: another maker's insert takes its maker's hole [ref:epfl-inserts]
+    instead: [fdm-insert-hole-cad-offset-cnckitchen]
+    strictness: non-negotiable
+    wiggle: small side only; pull-out falls sharply above 4.1-4.2 mm, and too small cracks the plastic [ref:spirol-hole]
+    cost: drilling is a step after printing and may cut the printed walls [ref:spirol-3dp]
   - id: fdm-insert-hole-cad-offset-cnckitchen
     process: fdm
     feature: insert
@@ -535,6 +589,13 @@ rules:
     status: read
     verified: 2026-10-31
     applied_by: [cadagent.mechanical.inserts.printed_hole, cadagent.manufacturing.fit_coupons]
+    cards: [insert-hole]
+    when: a printed hole for a small insert
+    not_when: a hole drilled after printing takes the maker's hole
+    instead: [fdm-insert-hole-m3-nominal-cnckitchen]
+    strictness: guideline
+    wiggle: 0.2-0.3 mm; each printer and filament shrinks holes differently, so your coupon governs
+    cost: test prints until it is right [ref:spirol-3dp], or drill [ref:hubs-3dp-threaded-fasteners]
   - id: fdm-insert-blind-depth-cnckitchen
     process: fdm
     feature: insert
@@ -546,6 +607,13 @@ rules:
     source: cnckitchen-heat-set-tips
     status: read
     verified: 2026-10-31
+    cards: [insert-hole]
+    when: a blind hole
+    not_when: a through hole need be no longer than the insert
+    strictness: non-negotiable
+    wiggle: deeper than the insert so it never bottoms [ref:covestro-joining]; by how much is free, two thread pitches at
+      SPIROL [ref:spirol-inserts]
+    cost: unstated
   - id: fdm-insert-iron-temp-cnckitchen
     process: fdm
     feature: insert
@@ -557,6 +625,13 @@ rules:
     source: cnckitchen-heat-set-tips
     status: read
     verified: 2026-10-31
+    cards: [insert-install]
+    when: heat-setting into a printed thermoplastic
+    not_when: a resin (SLA) part takes the insert glued in [ref:formlabs-inserts]
+    strictness: guideline
+    wiggle: 10-20 degC; SPIROL heats to the plastic's heat-deflection temperature + 150 degF, which it prints as
+      65 degC; as a rise 150 degF is 83 K [ref:spirol-3dp]
+    cost: unstated
   - id: fdm-hole-undersize-cnckitchen-2019
     process: fdm
     feature: hole
@@ -572,6 +647,13 @@ rules:
       filaments. The range is kept; the insert hole takes 2026's, the one its pull-out tests sized, and a coupon on
       your printer and filament governs both
     applied_by: [cadagent.mechanical.inserts.printed_hole]
+    cards: [printed-hole]
+    when: the low end of the published undersize, reported beside 2026's
+    not_when: a coupon's measured undersize governs
+    instead: [fdm-hole-undersize-cnckitchen]
+    strictness: guideline
+    wiggle: 2026's 0.25 mm, on another printer and filament, is the high end
+    cost: unstated
   - id: fdm-insert-hole-filler-spirol
     process: fdm
     feature: insert
@@ -586,6 +668,13 @@ rules:
     status: read
     verified: 2026-11-04
     applied_by: [cadagent.mechanical.inserts.printed_hole, cadagent.mechanical.inserts.filler_increase]
+    cards: [insert-hole]
+    materials: [petg-cf, pa-cf]
+    when: glass- or mineral-filled plastic, 15 % filler or more; a fibre filament by extension
+    not_when: under 15 % filler, no increase
+    strictness: guideline
+    wiggle: interpolate between 15 and 35 %; a filament's coupon governs
+    cost: unstated
   - id: fdm-insert-wall-perimeters-lulzbot
     process: fdm
     feature: insert
@@ -600,6 +689,13 @@ rules:
       the only count with pull-out tests behind it, so it governs) and Stratasys's slicer four to six
       (fdm-insert-contours-padt)
     applied_by: [cadagent.mechanical.inserts.perimeter_counts]
+    cards: [insert-boss]
+    when: LulzBot's floor, with no tested count to hand
+    not_when: SPIROL's tested count governs
+    instead: [fdm-insert-wall-perimeters-spirol]
+    strictness: guideline
+    wiggle: more perimeters hold more
+    cost: unstated
   - id: fdm-insert-contours-padt
     process: fdm
     feature: insert
@@ -612,6 +708,13 @@ rules:
     status: read
     verified: 2026-11-04
     applied_by: [cadagent.mechanical.inserts.perimeter_counts]
+    cards: [insert-boss]
+    when: Stratasys FDM through GrabCAD Print, which sets the contours itself
+    not_when: other slicers take SPIROL's tested count
+    instead: [fdm-insert-wall-perimeters-spirol]
+    strictness: guideline
+    wiggle: unstated
+    cost: unstated
 
   - id: fdm-hole-arc-floor-reprap
     process: fdm
@@ -625,6 +728,12 @@ rules:
     status: read
     verified: 2026-11-04
     applied_by: [cadagent.mechanical.inserts.printed_hole]
+    cards: [printed-hole]
+    when: a wide track in a small hole
+    not_when: elsewhere the measured undersize is larger and governs
+    strictness: unstated
+    wiggle: a floor, not a size; real tracks shrink a hole more [ref:nophead-polyholes]
+    cost: unstated
   - id: fdm-hole-facets-nophead
     process: fdm
     feature: hole
@@ -637,6 +746,12 @@ rules:
     status: read
     verified: 2026-11-04
     applied_by: [cadagent.mechanical.inserts.printed_hole]
+    cards: [printed-hole]
+    when: a hole exported as a mesh (STL, OpenSCAD $fn)
+    not_when: unstated
+    strictness: unstated
+    wiggle: the flats sit 5 % inside at 10 sides, 1 % at 22
+    cost: unstated
   - id: fdm-insert-wall-perimeters-spirol
     process: fdm
     feature: insert
@@ -649,6 +764,29 @@ rules:
     status: read
     verified: 2026-11-04
     applied_by: [cadagent.mechanical.inserts.perimeter_counts]
+    cards: [insert-boss]
+    when: a printed boss round a heat-set insert
+    not_when: unstated
+    strictness: guideline
+    wiggle: fewer loops hold less (pull-out and torque-out); boss at least 1.5 x the knurl, full performance from 2 x
+    cost: unstated
+  - id: fdm-insert-infill-min-spirol
+    process: fdm
+    feature: insert
+    quantity: infill density round a heat-set insert, for its optimal performance
+    min: 50
+    units: percent
+    applies: SPIROL's FDM tests; performance rises linearly with infill, and its figures were tested at 55 % infill
+      and 5 wall loops
+    source: spirol-3dp
+    status: read
+    verified: 2026-11-05
+    cards: [insert-boss]
+    when: an FDM part that takes a heat-set insert
+    not_when: unstated
+    strictness: guideline
+    wiggle: "less infill holds less (SPIROL: linear in infill)"
+    cost: unstated
 
   - id: fdm-emboss-text-xometry-eu
     process: fdm
@@ -785,6 +923,7 @@ rules:
     source: hubs-snapfit-3dp
     status: read
     verified: 2026-10-31
+    cards: [snap-clip]
   - id: sla-emboss-min-hubs
     process: sla
     feature: text
@@ -2225,6 +2364,7 @@ rules:
     source: hubs-snapfit-3dp
     status: read
     verified: 2026-10-31
+    cards: [snap-clip]
   - id: mjf-clearance-snap-hubs
     process: mjf
     feature: clearance
@@ -2236,6 +2376,7 @@ rules:
     source: hubs-snapfit-3dp
     status: read
     verified: 2026-10-31
+    cards: [snap-clip]
   - id: mjf-tolerance-hubs
     process: mjf
     feature: tolerance
@@ -5098,6 +5239,132 @@ rules:
 
 # One shop's tooling, read from its published specs. Lengths in mm (converted from the JSON's inches, 3 decimals);
 # the inch values are in `as_printed`. Re-fetch before relying on them: the file changes.
+# ================================================================== cards and decisions (#323 phase 7b)
+# A card is a feature's rules (`cad-agent rules <feature>`), or one of these, which gather rules across features by
+# their `cards:` field. Each name here is only a title; the lines come from the rules.
+cards:
+  insert-hole: the hole a heat-set insert goes in (draw it with printed-hole)
+  printed-hole: drawing a hole so it prints to size (undersize, track and mesh)
+  insert-boss: the printed boss round a heat-set insert
+  insert-install: setting a heat-set insert with an iron
+  snap-clip: printed snap and clip clearances
+
+# Decision tables: cadagent.manufacturing.cards evaluates them, rows in order, the first whose `if` holds wins, and
+# the last row has no `if`. Each reason carries [ref:<id>] tags (read records) or names what computes it (`by`);
+# a branch no source covers says so in `gap`. Text in braces is filled from the inputs and the computed facts.
+decisions:
+  - id: joining
+    question: how to join two parts with a thread, a fastener or a feature
+    inputs:
+      process: {choices: [fdm, sls, mjf, injection-moulding, sla, sheet-metal], default: fdm}
+      material: {help: "the part's material: an fdm family or filament key, or a sheet alloy"}
+      load: {units: N, required: true, help: "service load on one joint along its axis (pull-out); 0 if it only holds
+          parts closed (no default: assuming 0 would choose a clip)"}
+      cycles: {units: count, default: 1, help: times the joint is assembled over its life (1 is once)}
+      qty: {units: count, default: 1, help: parts made}
+    facts:
+      insert_fits:
+        by: cadagent.manufacturing.cards.insert_for_load
+        from: [process, material, load]
+        help: the smallest catalogued heat-set insert whose low pull-out, over the kit's margin, carries the load in
+          the weakest data sheet of the material's family (fdm only; none elsewhere, where no calibrated model is)
+    unused:
+      qty: no registry source ties the joining choice to quantity; SPIROL only suggests installation machines for
+        volume production [ref:spirol-3dp]
+    options:
+      heat-set-insert: {name: heat-set insert, cards: [insert-hole, insert-boss, insert-install]}
+      glued-insert: {name: "threaded insert, glued in (CA or epoxy) or pressed in cold", cards: [insert-hole, insert-boss]}
+      thread-forming-screw: {name: thread-forming screw into the plastic, cards: [thread]}
+      through-bolt-nut: {name: through-bolt and nut, cards: [thread], check: inserts}
+      pem: {name: PEM self-clinching nut or stud, cards: [clinch-hardware]}
+      snap-clip: {name: snap or compliant clip, cards: [snap-clip], check: snapfit}
+    rows:
+      - id: sheet
+        if: {process: [sheet-metal]}
+        choose: pem
+        because:
+          - the sheet flows into the clinched part's undercut and locks it [ref:pem-handbook], so the thread is fixed
+            in the sheet, where a through-bolt needs a loose nut held on the far side
+          - "check: the sheet softer than the fastener by about 20 HRB, the hole +0.08/-0 mm, the press reaching both
+            faces [ref:pem-handbook]"
+        rules: [sm-clinch-hardness-margin-pem, sm-clinch-hole-tolerance-pem, sm-clinch-sheet-min-pem]
+        runner_up: through-bolt-nut
+        wins_when: unstated
+        gap: no registry source ranks a PEM against a loose nut and bolt in sheet; the runner-up is listed, not ranked.
+          The load is not checked here; cadagent.mechanical.clinch.check_placement compares push-out, torque and
+          pull-through loads with PEM's ratings
+      - id: resin
+        if: {process: [sla]}
+        choose: glued-insert
+        because:
+          - in resin the insert is glued in with CA glue or epoxy
+            [ref:formlabs-inserts]; thermosets take inserts cold, pressed
+            in [ref:spirol-3dp]
+          - brittle resins may crack with self-tapping screws [ref:formlabs-inserts]
+        runner_up: through-bolt-nut
+        wins_when: unstated
+        gap: no registry source compares a glued insert with a through-bolt in resin, nor gives a glued insert's
+          pull-out, so the load is not checked here
+      - id: clip-once
+        if: {load: {max: 0}, cycles: {max: 1}}
+        choose: snap-clip
+        because:
+          - a clip is designed into the parts, simple and economical, and may eliminate metal fasteners
+            [ref:covestro-joining]
+          - most plastics take a snap fit, particularly for one-time assembly [ref:covestro-joining]
+        runner_up: thread-forming-screw
+        wins_when: the joint must carry a load the clip cannot; size the clip with `cad-agent snapfit` first
+        gap: no registry source gives a load a clip cannot take in general; it depends on the clip's geometry
+      - id: clip-repeated
+        if: {load: {max: 0}, cycles: {min: 2}}
+        choose: snap-clip
+        because:
+          - a clip allows easy disassembly [ref:covestro-joining]; for repeated assembly design it to a lower strain,
+            60 % of the one-time allowable [ref:covestro-snapfit]
+        runner_up: heat-set-insert
+        wins_when: the joint must carry a load the clip cannot; parts disassembled regularly take metal inserts
+          [ref:covestro-joining]
+        gap: no registry source gives a load a clip cannot take in general; it depends on the clip's geometry
+      - id: too-heavy
+        if: {insert_fits: false}
+        choose: through-bolt-nut
+        because:
+          - "{insert_fits.why}"
+          - washers under both the head and the nut spread the load on the plastic [ref:covestro-joining]
+        by: [cadagent.mechanical.inserts.capacity]
+        runner_up: heat-set-insert
+        wins_when: the load splits over several inserts, each within its capacity
+        gap: the bolt's bearing on the plastic is not checked here; run `cad-agent inserts` (check_clamp) on the joint
+      - id: repeated
+        if: {cycles: {min: 2}}
+        needs: [insert_fits]
+        choose: heat-set-insert
+        because:
+          - "{cycles} assemblies: self-tapping screws are a one-off method, not for repeated disassembly
+            [ref:hubs-3dp-threaded-fasteners]; parts disassembled regularly take metal inserts [ref:covestro-joining]"
+          - "{insert_fits.why}"
+        by: [cadagent.mechanical.inserts.capacity]
+        runner_up: thread-forming-screw
+        wins_when: the joint is re-assembled only a few times, each time with the screw put back by hand into its own
+          thread [ref:covestro-screws]
+        gap: no registry source puts a number on 'a few' re-assemblies [ref:covestro-screws]; this table takes an
+          insert from the second assembly, the cautious reading
+      - id: once
+        needs: [insert_fits]
+        choose: thread-forming-screw
+        because:
+          - assembled once, a self-tapping screw is the quick one-off method [ref:hubs-3dp-threaded-fasteners];
+            thread-cutting screws suit one-time assembly [ref:covestro-screws]
+          - an M3 screw driven straight into a print pulled out about as hard as a heat-set insert (about 120 kg)
+            [ref:embedded-inserts]
+        rules: [fdm-self-tap-engagement-hubs, fdm-thread-wall-min-hubs]
+        runner_up: heat-set-insert
+        wins_when: the joint will be re-assembled, or must take torque; the insert was best in torque-out (3 N m)
+          [ref:embedded-inserts]
+        gap: "the screw's own pull-out is not computed: the insert's capacity ({insert_fits.allowed_n} N allowed) stands in, on
+          one M3 test where screw and insert pulled out alike at about 120 kg, with no margin [ref:embedded-inserts];
+          test the screw in your material"
+
 shop_tables:
   - id: sendcutsend-5052-and-mild-steel
     shop: sendcutsend

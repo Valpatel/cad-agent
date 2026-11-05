@@ -65,15 +65,24 @@ The online checks gate nothing. The job that reads third-party answers holds no 
 write issues reads only the report. A service that does not answer is reported as "not verified", and the issue keeps
 its earlier findings open as "not re-checked" rather than counting them as fixed.
 
-The same workflow checks the reference registry's links (#323): `resource_audit.py references` on `dev`, and lychee
-for every link in the published Markdown. It sends conditional requests, hashes each page's visible text, finds
-soft-404s by rule and reads GitHub repository metadata. It sends at most one request a second to any host, leaves a
-host that refuses scripts (401 or 403) alone for 30 days, and checks at most 400 records a run, the longest unchecked
-first. Each run starts from the last run's artifact, because link health is not kept in git. One issue, "Reference
-health: open findings", lists what it found, grouped by host. A separate job, the only one that may push, opens one
-bot PR with the evidence changes `tools/references_health_apply.py` allows. Those are a lowered evidence class after
-two dead checks, a permanent same-site move, and a claim unconfirmed when its only corroborating page changed. The
-rules are in [research/references/README.md](../research/references/README.md).
+### The reference health run
+
+```mermaid
+flowchart TD
+    W["weekly schedule"] --> R["references job, read-only:<br/>lychee + resource_audit.py references<br/>from last week's state"]
+    R -->|"state, page, patch:<br/>one artifact"| I["issue job: one issue,<br/>Reference health: open findings"]
+    R -->|"evidence changes only"| P["PR job: one bot PR<br/>into dev, shards only"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class R here
+    class W near
+    class I,P out
+```
+
+The same workflow checks the reference registry's links on `dev` (#323): at most one request a second per host and
+400 records a run, starting from last week's artifact, since link health is not kept in git. The bot PR's rules are in
+[research/references/README.md](../research/references/README.md).
 
 ## Run it
 

@@ -14,6 +14,7 @@ import json
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,7 +53,7 @@ def test_the_paste_in_line_is_short_and_points_at_llms_txt():
     assert len(PASTE.split()) == 8 and GUIDE.startswith("\n"), "one line, then a blank line"
 
 
-def test_commands_are_public_and_name_real_commands():
+def test_commands_are_public_and_name_real_commands(tmp_path, monkeypatch):
     qe = _eval()
     cmds = qe.commands(BLOCK)
     assert cmds == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], "the README's command, nothing else"
@@ -64,6 +65,30 @@ def test_commands_are_public_and_name_real_commands():
     assert named and named <= names, f"the block names commands that do not exist: {named - names}"
     for url in re.findall(r"(?:https?://)?[\w.-]+\.(?:com|org|net|dev)[\w/.<>-]*", BLOCK):
         assert re.match(r"(?:https://)?(github\.com/Valpatel/cad-agent|cad-agent\.valpatel\.com)\b", url), url
+
+    # Exercise the evaluator's actual --local selection, not only the directly tested installer path. Appending
+    # the real script's --help reaches its option parser without downloading, cloning or installing anything.
+    # Stop before a second install or the separate CAD/network smoke checks: this proves dispatch, not full setup.
+    run = qe._run
+    calls = []
+    work = tmp_path / "local evaluation"
+
+    class LocalInstallerReached(Exception):
+        pass
+
+    def local_help(cmd, env, cwd, timeout=1800):
+        assert not calls, "stop after the first local installer dispatch"
+        calls.append(cmd)
+        assert cwd == work / "home" and ROOT not in cwd.parents
+        result = run(cmd + " --help", env, cwd, timeout=10)
+        assert result["exit"] == 0, result
+        assert any(line.startswith("cad-agent: install or update cad-agent:") for line in result["said"]), result
+        raise LocalInstallerReached
+
+    monkeypatch.setattr(qe, "_run", local_help)
+    with pytest.raises(LocalInstallerReached):
+        qe.main(["install", "--work", str(work), "--local", "--ref", "main"])
+    assert len(calls) == 1 and not (work / "home" / "cad-agent").exists()
 
 
 def test_report_fields_match_the_form_the_pr_template_and_the_grader():

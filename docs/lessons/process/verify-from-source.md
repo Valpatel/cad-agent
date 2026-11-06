@@ -145,6 +145,26 @@ flowchart TD
 
 </details>
 
+### Exercise moved files through each entry point
+- **Rule:** After a file move, run each caller's actual selection path. A direct test of the destination does not
+  prove a wrapper, evaluator or alternate mode can find it.
+
+<details>
+<summary>2026-11-06 local quickstart dispatch evidence and limits</summary>
+
+- **Incident:** At `a73198a7`, `tools/quickstart_eval.py install --local` still selected `web/install.sh` after
+  the installer moved into `tools/site/assets/`. Executing that selected command with the real script's safe
+  `--help` option exited 2: `cannot open .../web/install.sh: No such file` ([#378](https://github.com/Valpatel/cad-agent/issues/378)).
+- **Cause:** Direct installer tests used the correct new path; the evaluator's separate local branch was not
+  exercised by the existing public-command check.
+- **Corrective check:** That existing check now enters the evaluator's actual CLI and local dispatch from outside
+  the checkout, then executes the selected installer with `--help`. The immutable old-path implementation fails
+  this check; the corrected path reaches the real option parser. The temporary home has no installed checkout.
+- **Limits:** This proves dispatch, not downloads, real uv installation, repeat updates, authenticated agent runs,
+  Windows execution or physical CAD quality. Those retain their separate acceptance evidence under #282.
+
+</details>
+
 ### Follow the credential store selected by the actual CLI
 - **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx wrangler whoami` so its
   normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path

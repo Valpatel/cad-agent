@@ -5,7 +5,7 @@
 <details>
 <summary>From Gyropup’s real CAD and results</summary>
 
-<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/figures/readme_anim.py"><code>tools/figures/readme_anim.py</code></a>.</sub>
+<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
 
 </details>
 

@@ -1,7 +1,7 @@
 # Third-party notices
 
-Code under `vendor/` is copied from the projects below at the pinned commit. Each directory keeps its
-upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `vendor/patches/`.
+Code under `software/vendor/` is copied from the projects below at the pinned commit. Each directory keeps its
+upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `software/vendor/patches/`.
 
 ```mermaid
 flowchart TD
@@ -60,7 +60,7 @@ The simulation modules and the site build use these at run time. None of their c
 
 ## Web kit (copied into project sites and published on cad-agent.valpatel.com)
 
-`src/cadagent/webkit/vendor/` holds these files unchanged unless noted; each keeps its licence text beside it, and
+`software/cadagent/webkit/vendor/` holds these files unchanged unless noted; each keeps its licence text beside it, and
 `cad-agent site` copies the licence files with the code.
 
 | Project | Licence | Version | Licence file in the kit |
@@ -86,7 +86,7 @@ described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/i
 - DuPont, *General Design Principles – Module I*: permissible strains (Table 10.06).
 - Bambu Lab and Polymaker technical data sheets: printed-filament properties by print direction.
 
-**Code we vendor, pinned and security-reviewed** ([`vendor/`](./), [`SECURITY.md`](../../.github/SECURITY.md)):
+**Code we vendor, pinned and security-reviewed** ([`software/vendor/`](./), [`SECURITY.md`](../../.github/SECURITY.md)):
 [text-to-cad](https://github.com/earthtojake/text-to-cad) by Thompson Labs LLC (MIT),
 [kicad-happy](https://github.com/aklofas/kicad-happy) by Andrew Klofas (MIT),
 [kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) by Osman Aslan (MIT),

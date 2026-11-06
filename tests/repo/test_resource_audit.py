@@ -70,6 +70,9 @@ def checkout(root: Path):
                                  "```bash\ncurl http://localhost:8000/ && uvx --from cadgen==0.7.26 cadgen mcp\n```\n")
     write(root, ".github/dependabot.yml", "version: 2\nupdates:\n  - package-ecosystem: npm\n  - package-ecosystem: pip\n"
                                           "  - package-ecosystem: github-actions\n")
+    for source in ra._PAGE_ALIASES:
+        if source.startswith(('.agents/skills/', '.agents/agents/')):
+            write(root, source, "# Current instruction\n")
     return root
 
 
@@ -1080,7 +1083,8 @@ def test_weekly_link_audit_selects_current_published_files():
     options, remaining = parser.parse_known_args(shlex.split(step["with"]["args"]))
     inventory = set(_tracked_pages(ROOT))
     actual = {p for pattern in remaining for p in glob.glob(pattern, root_dir=ROOT, recursive=True)
-              if p in inventory and p.endswith(".md")} - set(options.exclude_path)
+              if p in inventory and p.endswith(".md")
+              and not any(p == excluded or p.startswith(excluded.rstrip("/") + "/") for excluded in options.exclude_path)}
     assert actual == {p for p in inventory if ra.published(p)}, "weekly link inputs drifted from actual publication sources"
 
 
@@ -1142,3 +1146,33 @@ def test_committed_report_is_clean_and_dated():
     text = (ROOT / "docs/research/security-report.json").read_text() + (ROOT / "docs/research/security-report.md").read_text()
     home = str(Path.home())          # whichever machine runs it: no account name is written down here
     assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)
+
+
+def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_substitution(tmp_path):
+    root = checkout(tmp_path)
+    expected = {
+        "skill:cad-motion-validation", "skill:cad-pr-review", "skill:cad-remote-runs", "skill:cad-supply-chain",
+        "skill:cad-work-tracking", "skill:design-process", "skill:mcmaster-parts", "skill:sheet-metal-hardware",
+        "agent:cad-pr-reviewer", "agent:cad-resume",
+    }
+    def own():
+        rep = ra.Report(root, AS_OF, False)
+        ra.check_skills(rep)
+        return rep, {row["id"]: row for row in rep.inventory["skills"] if row["source"] == "this repository"}
+    rep, rows = own()
+    assert set(rows) == expected
+    assert all(row["file"].startswith(".agents/") for row in rows.values())
+    for row in rows.values():
+        write(root, row["file"].removeprefix(".agents/"), "# Stale copy\n")
+    assert set(own()[1]) == expected
+    missing = root / ".agents/skills/design-process/SKILL.md"
+    missing.unlink()
+    rep, rows = own()
+    assert set(rows) == expected - {"skill:design-process"}
+    findings = [f for f in rep.findings if f["check"] == "skill-missing"]
+    assert len(findings) == 1 and findings[0]["severity"] == "high"
+    assert findings[0]["subject"] == "doc:.agents/skills/design-process/SKILL.md"
+    # The real checkout must never pass with an empty or partial own-kit inventory either.
+    actual = ra.Report(ROOT, AS_OF, False)
+    ra.check_skills(actual)
+    assert {row["id"] for row in actual.inventory["skills"] if row["source"] == "this repository"} == expected

@@ -2477,11 +2477,16 @@ def unpinned_runner(tool, args):
 
 def check_skills(rep, net=None):
     files = tracked(rep.root)
-    ours = [f for f in files if re.match(r'^skills/[^/]+/SKILL\.md$', f)] + [f for f in files if re.match(r'^agents/[^/]+\.md$', f)]
+    ours = [f for f in files if re.match(r'^\.agents/skills/[^/]+/SKILL\.md$', f)] + [f for f in files if re.match(r'^\.agents/agents/[^/]+\.md$', f)]
+    required = {f for f in _PAGE_ALIASES if f.startswith(('.agents/skills/', '.agents/agents/'))}
+    for file in sorted(required - {f for f in ours if (rep.root / f).is_file()}):
+        rep.add('skill-missing', 'high', f'doc:{file}', f'required current agent-kit source {file} is missing', file,
+                'Restore the canonical source; a stale root skills/ or agents/ copy is not a current input.')
+    ours = [f for f in ours if (rep.root / f).is_file()]
     rev = (git(rep.root, 'rev-parse', '--short=12', 'HEAD') or 'working tree')
     for f in ours:
-        kind = 'skill' if f.startswith('skills/') else 'agent'
-        name = f.split('/')[1] if kind == 'skill' else Path(f).stem
+        kind = 'skill' if f.startswith('.agents/skills/') else 'agent'
+        name = f.split('/')[2] if kind == 'skill' else Path(f).stem
         rep.item('skills', id=f'{kind}:{name}', name=name, kind=kind, source='this repository', file=f, version=rev)
     man = json.loads(read_text(rep.root / 'software' / 'vendor' / 'manifest.json') or '{"projects": []}')
     for e in man.get('projects') or []:
@@ -2489,7 +2494,7 @@ def check_skills(rep, net=None):
         if n:
             rep.item('skills', id=f"vendored-skills:{e['name']}", name=e['name'], kind=f'{n} vendored skills',
                      source=e.get('url'), file=f"software/vendor/{e['name']}/", version=(e.get('sha') or '')[:12])
-    scan = [f for f in files if f.endswith('.md') and (published(f) or f.startswith(('skills/', 'agents/')))]
+    scan = [f for f in files if f.endswith('.md') and (published(f) or f.startswith(('.agents/skills/', '.agents/agents/')))]
     for f in scan:
         text = read_text(rep.root / f) or ''
         spans = code_spans(text)

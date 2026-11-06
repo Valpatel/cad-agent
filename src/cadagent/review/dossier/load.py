@@ -1,6 +1,6 @@
 """Load a design dossier from YAML, with the file and line of every item, and resolve its ids.
 
-Layout (``docs/dossier.md``)::
+Layout (``docs/practice/dossier.md``)::
 
     dossier/project.yaml          title, requirements, sections (paths or inline), interfaces, decisions, assembly, gates
     dossier/sections/<id>.yaml    one section and its part cards; ``parts: [parts/x.yaml]`` loads a card in place

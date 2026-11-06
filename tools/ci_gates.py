@@ -8,7 +8,7 @@
 
 Gates, for PRs into dev and main (CONTRIBUTING.md "Gates"):
 
-- branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ research/ test/ refactor/ release/
+- branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ docs/research/ test/ refactor/ release/
   vendor-update/ dependabot/ branches of this repo, or a fork's PR (the outside-contribution checks, #111, apply).
   Both preserve the dated CHANGELOG entries already published on main; new changes go in changelog.d/.
 - review: the latest verdict from a maintainer (MAINTAINERS, with write access) must be pass, on the PR's head
@@ -75,7 +75,7 @@ def branch_flow(base: str, head_ref: str, same_repo: bool) -> Result:
             return True, "fork PR into dev: the outside-contribution checks apply"
         if FEATURE_BRANCH.match(head_ref):
             return True, f"{head_ref} -> dev"
-        return False, (f"branch {head_ref!r} cannot merge into dev: branch off dev as feat/ fix/ ci/ docs/ research/ "
+        return False, (f"branch {head_ref!r} cannot merge into dev: branch off dev as feat/ fix/ ci/ docs/ docs/research/ "
                        "test/ refactor/ release/ (git branch -m)")
     return True, f"PR into {base!r}: no branch rule"
 

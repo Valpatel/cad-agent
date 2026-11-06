@@ -11,7 +11,7 @@ flowchart TD
     U["website-*.test.mjs"] -->|"imports"| T["tools/build-site.mjs<br/>tools/site-*.mjs"]
     B["website-*-browser.mjs<br/>site-*.mjs"] -->|"serves"| D["dist/<br/>the built site"]
     T --> D
-    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["research/<br/>vendor/upstreams/"]
+    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["docs/research/<br/>vendor/upstreams/"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -35,7 +35,7 @@ flowchart TD
 | `website-catalog.test.mjs` | The catalogue and its JSON files, built from HEAD |
 | `website-diagrams.test.mjs` | `tools/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
-| `website-references.test.mjs` | `tools/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/experts.md` current |
+| `website-references.test.mjs` | `tools/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/practice/experts.md` current |
 | `website-pages.test.mjs` | `tools/site-pages.mjs`: outputs placed on pages, section cards, folded reference |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |
 | `website-theme.test.mjs` | The light and dark colour tokens: the same tokens in both, contrast in both, no stray light-only colour, and the theme script and button on every page |

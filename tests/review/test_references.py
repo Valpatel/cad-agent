@@ -1,4 +1,4 @@
-"""The reference registry, research/references.yaml (#118): every entry is well formed, every id the code cites
+"""The reference registry, docs/research/references.yaml (#118): every entry is well formed, every id the code cites
 resolves, every file that cites an entry is in its used_for, and no source is vendored.
 
 The checks run on the real registry and code, and on a planted checkout (tmp_path) with one mistake of each kind, so
@@ -56,7 +56,7 @@ def test_the_scan_finds_every_key_the_modules_define():
     want = set(SOURCES) | set(inserts.sources()) | set(printed_joints.sources()) | \
         {m.source for m in MATERIALS.values() if m.source} | {source for _, source in FDM_MATERIALS.values()}
     assert not want - found, f"keys the scan misses: {sorted(want - found)}"
-    pp = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text(encoding="utf-8"))
+    pp = yaml.safe_load((ROOT / "docs" / "research" / "process-profiles.yaml").read_text(encoding="utf-8"))
     assert {r["source"] for r in pp["rules"] if not r["source"].startswith("dataset:")} <= found
 
 
@@ -67,7 +67,7 @@ def test_no_pdf_is_kept_in_the_repo():
                              check=True).stdout.split()
     except (OSError, subprocess.CalledProcessError):
         pytest.skip("not a git checkout")
-    assert not out, f"PDFs in the repo: {out}; cite the source in research/references.yaml instead"
+    assert not out, f"PDFs in the repo: {out}; cite the source in docs/research/references.yaml instead"
 
 
 def test_paid_and_print_sources_are_cited_not_copied(registry):
@@ -125,9 +125,8 @@ GOOD = {"id": "good-guide", "title": "A Guide", "authors": [], "org": "Maker", "
 
 
 def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
-    (tmp_path / "research").mkdir()
+    (tmp_path / "docs" / "research").mkdir(parents=True)
     (tmp_path / "src" / "cadagent").mkdir(parents=True)
-    (tmp_path / "docs").mkdir()
     (tmp_path / "src" / "cadagent" / "mod.py").write_text(textwrap.dedent('''
         SRC = {"good-guide": "Maker, A Guide, p. 2", "gone": "nowhere"}
         x = cite("good-guide", "p. 3")
@@ -138,10 +137,10 @@ def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
                                                "[ref:<id>].\n")
     (tmp_path / "README.md").write_text("Top level: [ref:good-guide].\n")
     (tmp_path / "CHANGELOG.md").write_text("Released notes quote a tag as text: [ref:not-scanned].\n")
-    (tmp_path / "research" / "process-profiles.yaml").write_text(yaml.safe_dump({
+    (tmp_path / "docs" / "research" / "process-profiles.yaml").write_text(yaml.safe_dump({
         "rules": [{"id": "fdm-wall-maker", "source": "good-guide"}, {"id": "fdm-x", "source": "dataset:tds"}],
         "datasets": [{"id": "tds", "cites": "prose, not an id"}]}))
-    (tmp_path / "research" / "references.yaml").write_text(yaml.safe_dump(
+    (tmp_path / "docs" / "research" / "references.yaml").write_text(yaml.safe_dump(
         {"schema": 1, "sources": list(sources), "unverified": list(unverified), "uncited": list(uncited)}))
     return tmp_path
 
@@ -154,7 +153,7 @@ def test_the_scan_reads_each_way_of_citing(tmp_path):
                      ("good-guide", "src/cadagent/mod.py", "row"),
                      ("good-guide", "docs/page.md", "tag"), ("elsewhere", "docs/page.md", "tag"),
                      ("good-guide", "README.md", "tag"),
-                     ("good-guide", "research/process-profiles.yaml", "process-profile")}
+                     ("good-guide", "docs/research/process-profiles.yaml", "process-profile")}
 
 
 def test_check_reports_unknown_keys_and_missing_used_for(tmp_path):
@@ -163,13 +162,13 @@ def test_check_reports_unknown_keys_and_missing_used_for(tmp_path):
     assert any("cites 'gone'" in p for p in problems) and any("cites 'elsewhere'" in p for p in problems)
     assert any("add docs/page.md to used_for of good-guide" in p for p in problems)
     assert any("add README.md to used_for of good-guide" in p for p in problems)
-    assert any("add research/process-profiles.yaml to used_for" in p for p in problems)
+    assert any("add docs/research/process-profiles.yaml to used_for" in p for p in problems)
     assert not any("src/cadagent/mod.py to used_for" in p for p in problems) and not warnings
 
 
 def test_check_warns_on_code_citing_an_unverified_entry(tmp_path):
     root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent/mod.py", "docs/page.md", "README.md#top",
-                                                     "research/process-profiles.yaml"]}],
+                                                     "docs/research/process-profiles.yaml"]}],
                     unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL recorded",
                                  "used_for": ["src/cadagent/mod.py"]}],
                     uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
@@ -201,7 +200,7 @@ def test_each_malformed_entry_is_reported(tmp_path, change, message):
     if "year" in change and change["year"] is None:
         entry["year"] = None
     root = _planted(tmp_path, [entry])
-    problems = load(root / "research" / "references.yaml").problems(root)
+    problems = load(root / "docs" / "research" / "references.yaml").problems(root)
     assert any(message in p for p in problems), problems
     assert not Registry({"schema": 1, "sources": [GOOD]}).problems(root)
 
@@ -210,7 +209,7 @@ def test_uncited_and_unverified_entries_are_checked_too(tmp_path):
     root = _planted(tmp_path, [GOOD], unverified=[{"id": "lost", "title": "Lost", "org": "Maker"}],
                     uncited=[{"id": "mine", "kind": "hunch", "note": ""},
                              {"id": "inner", "kind": "internal", "note": "a module", "cites": ["lost"]}])
-    problems = "\n".join(load(root / "research" / "references.yaml").problems(root))
+    problems = "\n".join(load(root / "docs" / "research" / "references.yaml").problems(root))
     assert "lost: an unverified entry needs `why`" in problems
     assert "mine: kind 'hunch'" in problems and "mine: no note" in problems
     assert "inner: cites 'lost', which is not a read source" in problems
@@ -219,7 +218,7 @@ def test_uncited_and_unverified_entries_are_checked_too(tmp_path):
 
 def test_used_for_may_name_a_folder_or_an_anchor(tmp_path):
     root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent", "docs/page.md#rules", "README.md",
-                                                     "research/process-profiles.yaml"]}],
+                                                     "docs/research/process-profiles.yaml"]}],
                     unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL", "used_for": ["src/"]}],
                     uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
     problems, _ = check(root)
@@ -229,7 +228,7 @@ def test_used_for_may_name_a_folder_or_an_anchor(tmp_path):
 
 
 def test_a_malformed_tag_is_reported_not_skipped(tmp_path):
-    root = _planted(tmp_path, [{**GOOD, "used_for": ["src", "docs", "README.md", "research"]}],
+    root = _planted(tmp_path, [{**GOOD, "used_for": ["src", "docs", "README.md", "docs/research"]}],
                     unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL", "used_for": ["src"]}],
                     uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
     (root / "docs" / "bad.md").write_text("[ref:Covestro] [ref: good-guide] [ref:a, b] [ref:a_b] [ref:<key>]\n")
@@ -282,29 +281,29 @@ def _planted2(tmp_path: Path, shards, sources=(GOOD,), vocab=True) -> Path:
     tmp_path.mkdir(parents=True, exist_ok=True)
     root = _planted(tmp_path, list(sources))
     (root / "docs" / "areas.yaml").write_text(yaml.safe_dump(TREE))
-    folder = root / "research" / "references"
+    folder = root / "docs" / "research" / "references"
     folder.mkdir()
     if vocab:
-        (folder / "vocab.yaml").write_text((ROOT / "research" / "references" / "vocab.yaml").read_text())
+        (folder / "vocab.yaml").write_text((ROOT / "docs" / "research" / "references" / "vocab.yaml").read_text())
     for name, data in shards.items():
         (folder / f"{name}.yaml").write_text(yaml.safe_dump(data, sort_keys=False))
     return root
 
 
 def _problems(root: Path):
-    return load(root / "research" / "references.yaml").problems(root)
+    return load(root / "docs" / "research" / "references.yaml").problems(root)
 
 
 def test_the_loader_merges_the_core_file_and_every_shard(tmp_path):
     root = _planted2(tmp_path, {"guides-inserts": _shard([GUIDE]), "projects-legged": _shard([PROJECT])})
-    reg = load(root / "research" / "references.yaml")
-    assert [s.file for s in reg.shards] == ["research/references/guides-inserts.yaml",
-                                            "research/references/projects-legged.yaml"]
+    reg = load(root / "docs" / "research" / "references.yaml")
+    assert [s.file for s in reg.shards] == ["docs/research/references/guides-inserts.yaml",
+                                            "docs/research/references/projects-legged.yaml"]
     assert set(reg.entries) == {"good-guide", "maker-insert-guide", "demo-walker"}
-    assert reg.resolve("good-guide").file == "research/references.yaml"
+    assert reg.resolve("good-guide").file == "docs/research/references.yaml"
     guide = reg.resolve("maker-insert-guide")
     assert (guide.kind, guide.file, guide.evidence_class) == (
-        "catalogued", "research/references/guides-inserts.yaml", "snippet-only")
+        "catalogued", "docs/research/references/guides-inserts.yaml", "snippet-only")
     assert guide.citation() == "Maker, Insert guide, n.d.: https://example.org/inserts (snippet-only)"
     assert reg.resolve("good-guide").evidence_class == "read"        # a core source: its `verified` note is the read
     assert {r.id for r in reg.of_kind("catalogued")} == {"maker-insert-guide", "demo-walker"}
@@ -316,7 +315,7 @@ def test_the_loader_merges_the_core_file_and_every_shard(tmp_path):
 def test_the_real_registry_loads_its_shard_folder():
     reg = load()
     assert reg.vocab and reg.vocab["schema"] == 2 and tuple(reg.vocab["evidence_class"]) == refs.LADDER
-    assert all(s.file.startswith("research/references/") for s in reg.shards)
+    assert all(s.file.startswith("docs/research/references/") for s in reg.shards)
     for shard in reg.shards:
         assert len(shard.records) <= refs.SHARD_LIMIT and shard.size <= refs.SHARD_BYTES, shard.file
 
@@ -326,8 +325,8 @@ def test_an_id_in_two_files_is_reported(tmp_path):
                                 "guides-c": _shard([{**GUIDE, "id": "good-guide"}])})
     problems = "\n".join(_problems(root))
     assert "maker-insert-guide: the id or alias is used twice" in problems
-    assert "maker-insert-guide: in research/references/guides-b.yaml and in research/references/guides-a.yaml" in problems
-    assert "good-guide: in research/references/guides-c.yaml and in research/references.yaml" in problems
+    assert "maker-insert-guide: in docs/research/references/guides-b.yaml and in docs/research/references/guides-a.yaml" in problems
+    assert "good-guide: in docs/research/references/guides-c.yaml and in docs/research/references.yaml" in problems
     assert "write `extends: true`" in problems
 
 
@@ -336,9 +335,9 @@ def test_extends_adds_schema2_fields_to_a_core_entry(tmp_path):
            "areas": ["threaded-inserts"], "evidence": {"numbers": "claimed", "authority": "primary"},
            "claims": [{"text": "wall 1.2 mm", "status": "unconfirmed"}]}
     root = _planted2(tmp_path, {"guides-inserts": _shard([ext])})
-    reg = load(root / "research" / "references.yaml")
+    reg = load(root / "docs" / "research" / "references.yaml")
     ref = reg.resolve("good-guide")
-    assert ref.file == "research/references.yaml" and ref.kind == "source" and ref.evidence_class == "read"
+    assert ref.file == "docs/research/references.yaml" and ref.kind == "source" and ref.evidence_class == "read"
     assert ref["used_for"] == ["src/cadagent/mod.py", "docs/page.md"]          # united, the core's order first
     assert ref["areas"] == ["fdm", "threaded-inserts"] and ref["kind"] == "guide" and ref["claims"]
     assert not _problems(root), _problems(root)
@@ -346,18 +345,18 @@ def test_extends_adds_schema2_fields_to_a_core_entry(tmp_path):
     root2 = _planted2(tmp_path / "b", {"g1": _shard([{**ext, "title": "Other title"},
                                                      {**ext, "id": "nowhere"}]), "g2": _shard([ext])})
     problems = "\n".join(_problems(root2))
-    assert "good-guide: research/references/g1.yaml sets title to 'Other title'" in problems
-    assert "nowhere: research/references/g1.yaml extends it, but research/references.yaml has no such entry" in problems
-    assert "good-guide: extended twice, in research/references/g1.yaml and research/references/g2.yaml" in problems
+    assert "good-guide: docs/research/references/g1.yaml sets title to 'Other title'" in problems
+    assert "nowhere: docs/research/references/g1.yaml extends it, but docs/research/references.yaml has no such entry" in problems
+    assert "good-guide: extended twice, in docs/research/references/g1.yaml and docs/research/references/g2.yaml" in problems
     # only a read source takes schema-2 fields: an unverified key is read and moved up first
     root3 = _planted2(tmp_path / "c", {"g1": _shard([{"id": "lost", "extends": True,
                                                       "evidence": {"class": "measured"}}])},
                       )
-    (root3 / "research" / "references.yaml").write_text(yaml.safe_dump({"schema": 1, "sources": [GOOD], "unverified": [
+    (root3 / "docs" / "research" / "references.yaml").write_text(yaml.safe_dump({"schema": 1, "sources": [GOOD], "unverified": [
         {"id": "lost", "title": "Lost", "org": "Maker", "why": "no URL"}]}))
     problems = _problems(root3)
-    assert any("lost: research/references/g1.yaml extends it, but it is unverified" in p for p in problems), problems
-    assert load(root3 / "research" / "references.yaml").resolve("lost").get("evidence") is None
+    assert any("lost: docs/research/references/g1.yaml extends it, but it is unverified" in p for p in problems), problems
+    assert load(root3 / "docs" / "research" / "references.yaml").resolve("lost").get("evidence") is None
     # a field an extension gets wrong is reported once, not once as written and once as merged
     root4 = _planted2(tmp_path / "d", {"g1": _shard([{**ext, "kind": "blogpost"}])})
     assert sum("kind 'blogpost'" in p for p in _problems(root4)) == 1
@@ -367,7 +366,7 @@ def test_a_shard_over_the_limit_is_split_by_topic(tmp_path, monkeypatch):
     many = [{**GUIDE, "id": f"guide-{i}"} for i in range(refs.SHARD_LIMIT + 1)]
     root = _planted2(tmp_path, {"guides-inserts": _shard(many), "guides-ok": _shard([GUIDE])})
     over = [p for p in _problems(root) if "over the shard limit" in p]
-    assert len(over) == 1 and over[0].startswith(f"research/references/guides-inserts.yaml: {refs.SHARD_LIMIT + 1} "
+    assert len(over) == 1 and over[0].startswith(f"docs/research/references/guides-inserts.yaml: {refs.SHARD_LIMIT + 1} "
                                                  "records") and "split by topic slug" in over[0]
     monkeypatch.setattr(refs, "SHARD_BYTES", 500)          # the byte limit, on a shard under the record limit
     assert any("guides-ok.yaml: 1 records" in p and "split by topic slug" in p for p in _problems(root))
@@ -443,14 +442,14 @@ def test_open_geometry_may_be_copied_once_the_licence_is_read(tmp_path):
 def test_the_vocabulary_file_is_checked(tmp_path):
     assert not [p for p in load().problems(ROOT) if "vocab.yaml" in p]
     root = _planted2(tmp_path, {"guides-inserts": _shard([GUIDE])}, vocab=False)
-    assert any("research/references/vocab.yaml is missing" in p for p in _problems(root))
-    vocab = yaml.safe_load((ROOT / "research" / "references" / "vocab.yaml").read_text())
+    assert any("docs/research/references/vocab.yaml is missing" in p for p in _problems(root))
+    vocab = yaml.safe_load((ROOT / "docs" / "research" / "references" / "vocab.yaml").read_text())
     ladder = dict(reversed(list(vocab["evidence_class"].items())))
     del vocab["role"]
     vocab["confidence"]["high"]["estimate"] = 0.95
     vocab["study_only"] = ["copyleft"]
     vocab["process"]["fdm"]["group"] = "printing"
-    (root / "research" / "references" / "vocab.yaml").write_text(yaml.safe_dump({**vocab, "evidence_class": ladder}))
+    (root / "docs" / "research" / "references" / "vocab.yaml").write_text(yaml.safe_dump({**vocab, "evidence_class": ladder}))
     problems = "\n".join(_problems(root))
     for message in ("no `role` vocabulary", "but the code's ladder is", "confidence levels and estimates must be",
                     "study_only must list licence classes", "process fdm names no process_group"):
@@ -460,7 +459,7 @@ def test_the_vocabulary_file_is_checked(tmp_path):
 def test_the_vocabularies_name_no_project():
     """cad-agent stays general purpose: the vocabularies are objective and name no project (the `projects` join of a
     record is keyed by docs/areas.yaml, never by vocab.yaml), and the map's per-project `learn` notes are not kept."""
-    text = (ROOT / "research" / "references" / "vocab.yaml").read_text().lower()
+    text = (ROOT / "docs" / "research" / "references" / "vocab.yaml").read_text().lower()
     tree = yaml.safe_load((ROOT / "docs" / "areas.yaml").read_text())
     for key, project in tree["projects"].items():
         assert key not in text and project["title"].lower() not in text, key
@@ -472,27 +471,27 @@ def test_the_vocabularies_name_no_project():
 
 def test_a_catalogued_record_backs_no_rule_check_or_page(tmp_path):
     root = _planted2(tmp_path, {"guides-inserts": _shard([GUIDE])},
-                     sources=[{**GOOD, "used_for": ["src", "docs", "README.md", "research"]}])
+                     sources=[{**GOOD, "used_for": ["src", "docs", "README.md", "docs/research"]}])
     (root / "src" / "cadagent" / "uses.py").write_text('SRC = {"maker-insert-guide": "p. 1"}\n')
     (root / "docs" / "rule.md").write_text("Insert holes are 4.0 mm [ref:maker-insert-guide].\n")
-    (root / "research" / "survey.md").write_text("Also seen: [ref:maker-insert-guide].\n")
-    pp = yaml.safe_load((root / "research" / "process-profiles.yaml").read_text())
+    (root / "docs" / "research" / "survey.md").write_text("Also seen: [ref:maker-insert-guide].\n")
+    pp = yaml.safe_load((root / "docs" / "research" / "process-profiles.yaml").read_text())
     pp["rules"].append({"id": "insert-hole", "source": "maker-insert-guide"})
-    (root / "research" / "process-profiles.yaml").write_text(yaml.safe_dump(pp))
+    (root / "docs" / "research" / "process-profiles.yaml").write_text(yaml.safe_dump(pp))
     problems, warnings = check(root)
     bad = sorted(p.split(":", 1)[0] for p in problems if "a snippet-only record: a rule, check or page" in p)
-    assert bad == ["docs/rule.md", "research/process-profiles.yaml", "src/cadagent/uses.py"], problems
+    assert set(bad) == {"docs/rule.md", "docs/research/process-profiles.yaml", "src/cadagent/uses.py"} and len(bad) == 3, problems
     assert [w for w in warnings if "maker-insert-guide" in w] == [
-        "research/survey.md:1: cites 'maker-insert-guide', a snippet-only record (listed, not read)"]
+        "docs/research/survey.md:1: cites 'maker-insert-guide', a snippet-only record (listed, not read)"]
 
 
 def test_a_read_shard_record_may_be_cited(tmp_path):
     read = {**GUIDE, "evidence": {**GUIDE["evidence"], "class": "read"}, "used_for": ["docs/rule.md"],
             "verified": "2026-11-02: opened the page; read the M3 row of the hole table"}
     root = _planted2(tmp_path, {"guides-inserts": _shard([read])},
-                     sources=[{**GOOD, "used_for": ["src", "docs", "README.md", "research"]}])
+                     sources=[{**GOOD, "used_for": ["src", "docs", "README.md", "docs/research"]}])
     (root / "docs" / "rule.md").write_text("Insert holes are 4.0 mm [ref:maker-insert-guide].\n")
-    reg = load(root / "research" / "references.yaml")
+    reg = load(root / "docs" / "research" / "references.yaml")
     assert reg.resolve("maker-insert-guide").kind == "source"
     problems, _ = check(root)
     assert not [p for p in problems if "maker-insert-guide" in p], problems
@@ -502,7 +501,7 @@ def test_a_read_shard_record_may_be_cited(tmp_path):
     ({"evidence": {"class": "read"}}, "evidence class read needs `verified`"),
     ({"evidence": {"class": "verified-at-source"}, "verified": "2026-11-02: read"},
      "evidence class verified-at-source needs a claim corroborated_by another record"),
-    ({"used_for": ["src/cadagent/mod.py"]}, "a snippet-only record backs nothing outside research/"),
+    ({"used_for": ["src/cadagent/mod.py"]}, "a snippet-only record backs nothing outside docs/research/"),
     ({"checks": ["inserts.check_joint"]}, "a snippet-only record may not back a rule or a check"),
 ])
 def test_the_ladder_rules(tmp_path, change, message):
@@ -538,8 +537,8 @@ def test_a_core_entry_is_never_snippet_only(tmp_path):
 
 def _conf_registry(main, *others):
     return Registry({"schema": 1, "sources": [GOOD]},
-                    shards=[refs.Shard("research/references/s.yaml", _shard([main, *others]))],
-                    vocab=yaml.safe_load((ROOT / "research" / "references" / "vocab.yaml").read_text()))
+                    shards=[refs.Shard("docs/research/references/s.yaml", _shard([main, *others]))],
+                    vocab=yaml.safe_load((ROOT / "docs" / "research" / "references" / "vocab.yaml").read_text()))
 
 
 def _rec(rid, cls, org="Maker", authority="primary", by=(), status="corroborated"):
@@ -621,7 +620,7 @@ def test_the_imported_records_are_catalogued_and_project_neutral(registry):
         "rs-04", "off-target", "our robot", "our own tests"]
     hidden = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")    # bidi and zero-width controls
     banned += ["not wheel-legged", "relevance to the robot", "seed for this map"]
-    for file in [s.file for s in registry.shards] + [f"research/references/{refs.COVERAGE}"]:
+    for file in [s.file for s in registry.shards] + [f"docs/research/references/{refs.COVERAGE}"]:
         shard = refs.Shard(file, {})
         text = (ROOT / shard.file).read_text(encoding="utf-8").lower()
         assert not [b for b in banned if b in text], shard.file

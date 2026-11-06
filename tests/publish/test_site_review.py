@@ -241,7 +241,7 @@ def test_review_record_stale_badge_and_review_packet(bench):
                         "1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082")
     (packet / "iso.png").write_bytes(png)
     (packet / "section-cut.png").write_bytes(png)
-    _dump(packet / "manifest.json", {      # the shape of cad-agent.review-packet/1 (docs/review-packet.md, T10)
+    _dump(packet / "manifest.json", {      # the shape of cad-agent.review-packet/1 (docs/practice/review-packet.md, T10)
         "schema": "cad-agent.review-packet/1", "section": {"id": "S-arm"},
         "parts": {"arm": {"sha256": "f" * 64}, "pin": {"sha256": st["parts"]["pin"]["sha256"]}},
         "views": [{"id": "solid-iso", "kind": "solid", "file": "iso.png", "caption": "S-arm iso", "sha256": "abc123"},

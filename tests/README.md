@@ -66,4 +66,4 @@ npm run test:site && npm run test:part-table && npm run test:file-viewer && npm 
 ```
 
 Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·
-[package map](../src/cadagent/README.md) · [style guide](../docs/style-guide.md)
+[package map](../src/cadagent/README.md) · [style guide](../docs/practice/style-guide.md)

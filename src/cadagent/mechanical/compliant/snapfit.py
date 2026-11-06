@@ -511,7 +511,7 @@ def _friction_basis(spec: Dict[str, Any], friction: Optional[float]) -> Optional
 
 
 def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
-    """One cantilever snap from a declaration (see docs/compliant.md for the fields). Inputs are range-checked (a
+    """One cantilever snap from a declaration (see docs/mechanical/compliant.md for the fields). Inputs are range-checked (a
     ValueError names the snap and field). The process must be stated; a layered part needs its orientation (and,
     unless it is a datasheet filament, a sourced ``process_factor``); a missing one is a failing row, so layer lines
     are never forgotten."""

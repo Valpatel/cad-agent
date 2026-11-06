@@ -3,7 +3,7 @@
 // - the built pages, JSON, llms.txt and Markdown twins against the committed records;
 // - [ref:<id>] links;
 // - that no record becomes a catalogue entry or reaches llms-full.txt;
-// - docs/experts.md is the generator's output.
+// - docs/practice/experts.md is the generator's output.
 // The pages in a real browser (filters, both themes, walls of text): tests/site/website-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -173,7 +173,7 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
   const unread = [...refs.others.keys()][0];
   assert.match(linkTags(`<p>[ref:${unread}]</p>`, model), /class="ref-cite ref-unread"/);
   // In the site: a page that cites leaves no bare tag of a known record, and loads the style for its links.
-  const page = await text('research/sheet-metal-joining.html');
+  const page = await text('docs/research/sheet-metal-joining.html');
   assert.match(page, /class="ref-cite"/);
   assert.match(page, /<link rel="stylesheet" href="\/web\/references\.css">/);
   const bare = [...page.replace(/<(code|pre)\b[\s\S]*?<\/\1>/g, '').matchAll(/\[ref:([a-z0-9-]+)\](?!<)/g)].map(m => m[1]).filter(k => model.home(k));
@@ -183,11 +183,11 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
 test('Markdown twins link [ref:] tags to the records\' pages; code is left alone', () => {
   const md = `A [ref:pem-handbook] rule.\n\n\`[ref:pem-handbook]\`\n\n\`\`\`\n[ref:pem-handbook]\n\`\`\`\n[ref:pem-handbook](kept)\n[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)\n`;
   const page = model.home('pem-handbook').slice(1).split('#')[0];
-  const twin = mdTags(md, 'research/x.md', model, { ORIGIN });
+  const twin = mdTags(md, 'docs/research/x.md', model, { ORIGIN });
   assert.ok(twin.startsWith(`A [ref:pem-handbook](${path.posix.relative('research', page)}.md#pem-handbook) rule.`), twin);
   assert.ok(twin.includes('`[ref:pem-handbook]`') && twin.includes('```\n[ref:pem-handbook]\n```') && twin.includes('[ref:pem-handbook](kept)')
     && twin.includes('[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)'), 'a tag that is already link text stays as written');
-  assert.ok(mdTags(md, 'research/x.md', model, { ORIGIN, absolute: true }).startsWith(`A [ref:pem-handbook](${ORIGIN}/${page}.md#pem-handbook)`));
+  assert.ok(mdTags(md, 'docs/research/x.md', model, { ORIGIN, absolute: true }).startsWith(`A [ref:pem-handbook](${ORIGIN}/${page}.md#pem-handbook)`));
 });
 
 test('records are not catalogue entries, and llms.txt has one line per area and no record', async () => {
@@ -209,8 +209,8 @@ test('records are not catalogue entries, and llms.txt has one line per area and 
   for (const slug of model.pages) assert.ok(sitemap.includes(`<loc>${ORIGIN}/references/${slug}</loc>`), slug);
 });
 
-test('docs/experts.md is what the generator writes from the committed registry', async () => {
-  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site-references.mjs --experts and commit docs/experts.md');
+test('docs/practice/experts.md is what the generator writes from the committed registry', async () => {
+  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site-references.mjs --experts and commit docs/practice/experts.md');
   const md = expertsMarkdown(model, { ORIGIN });
   const sources = [...refs.records.values()].filter(r => r.status === 'source');
   assert.ok(md.includes(`${sources.length} read sources`));

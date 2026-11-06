@@ -187,9 +187,11 @@ def test_every_command_skill_and_agent_is_placed(tree):
 
 
 def published_pages():
-    """docs/ and research/ Markdown pages, except folder READMEs and moved-page stubs."""
-    for folder in ("docs", "research"):
+    """docs/ and docs/research/ Markdown pages, except folder READMEs and moved-page stubs."""
+    for folder in ("docs",):
         for p in sorted((ROOT / folder).rglob("*.md")):
+            if p.is_relative_to(ROOT / "docs/lessons") or p.is_relative_to(ROOT / "docs/examples"):
+                continue
             if p.name.lower() == "readme.md":
                 continue
             if p.read_text(encoding="utf-8").lstrip().startswith("<!-- moved-to:"):
@@ -203,11 +205,11 @@ def test_every_docs_and_research_page_is_placed(tree):
 
 
 def test_every_lesson_area_folder_is_claimed(tree):
-    """Lessons are grouped by area folders (#133). Before that lands, lessons/ is flat and the names are only checked
+    """Lessons are grouped by area folders (#133). Before that lands, docs/lessons/ is flat and the names are only checked
     for form; after, every folder is claimed by exactly one node and every claim is a folder."""
     claims = [n["lessons"] for _, n in nodes(tree) if "lessons" in n]
     assert len(claims) == len(set(claims)), "each lesson area is claimed by one node"
     assert all(SLUG.match(c) for c in claims)
-    folders = sorted(p.name for p in (ROOT / "lessons").iterdir() if p.is_dir())
+    folders = sorted(p.name for p in (ROOT / "docs" / "lessons").iterdir() if p.is_dir())
     if folders:
         assert sorted(claims) == folders, f"lesson folders {folders} and claims {sorted(claims)} differ"

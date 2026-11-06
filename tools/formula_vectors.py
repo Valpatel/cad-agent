@@ -73,7 +73,7 @@ def cases():
     mm = 1e-3
     arms = [(19 * mm, 3.28 * mm, 9.5 * mm, 2.4 * mm, 1815e6, 0.04, 2),      # Covestro Example I (PC, tapered)
             (12 * mm, 3.28 * mm, 9.5 * mm, 2.4 * mm, 1815e6, 0.04, 2),      # the same hook on a 12 mm arm
-            (14 * mm, 1.6 * mm, 6 * mm, 0.5 * mm, 2703e6, 0.012, 1),        # docs/compliant.md's lid latch
+            (14 * mm, 1.6 * mm, 6 * mm, 0.5 * mm, 2703e6, 0.012, 1),        # docs/mechanical/compliant.md's lid latch
             (40 * mm, 0.6 * mm, 2 * mm, 0.1 * mm, 724e6, 0.02, 1),
             (5 * mm, 4 * mm, 20 * mm, 5 * mm, 8637e6, 0.008, 3)]            # far outside small deflection
     for length, thickness, width, deflection, modulus, allowable, design in arms:

@@ -3,7 +3,7 @@
 
     python3 tools/resource_audit.py report                       # offline checks only (default; what CI runs)
     python3 tools/resource_audit.py report --online \\
-        --json research/security-report.json --md research/security-report.md
+        --json docs/research/security-report.json --md docs/research/security-report.md
     python3 tools/resource_audit.py rows --base origin/dev        # report rows for what this branch adds (for the PR)
     python3 tools/resource_audit.py gate --base HEAD^1 --into dev --pr-body-env PR_BODY   # CI: rows present, no new bad item
     python3 tools/resource_audit.py issue --report r.json --repo OWNER/REPO [--post]   # weekly: one issue, kept current
@@ -17,7 +17,7 @@ What it reads:
   file-viewer-sources.json and each folder's SOURCE.json, which name the npm package, its integrity, the path of each
   file in the package, the SHA-256 of each file and the libraries a file bundles) and the notice files
   (THIRD_PARTY_NOTICES.md and the kit's own);
-- the external links the site publishes: catalog.json's sources (vendor/upstreams/registry.yaml, research/landscape.json),
+- the external links the site publishes: catalog.json's sources (vendor/upstreams/registry.yaml, docs/research/landscape.json),
   and the links in every published Markdown page;
 - the skills and agents we ship or point to, and install advice in published pages (no installing from registries).
 
@@ -43,14 +43,14 @@ server refuses HEAD, and treat 403 and 429 as "not verified" rather than broken.
 Everything fetched is data: advisory text, package metadata, tarballs and pages are parsed, never executed or followed
 as instructions, and tarballs are read in memory, never unpacked to disk.
 
-``references`` (#323) checks the links of the reference registry (research/references.yaml and its schema-2 shards)
+``references`` (#323) checks the links of the reference registry (docs/research/references.yaml and its schema-2 shards)
 with conditional requests, a hash of each page's normalised text, soft-404 rules, GitHub repository metadata, one
 request a second per host and a rotation through the records; its section below says how. lychee's JSON report of the
 Markdown links (``--lychee``) joins its findings. It never fails a build: it reports, and the weekly workflow keeps one
 issue ("Reference health: open findings") and one bot PR (tools/references_health_apply.py) from it.
 
 Exit codes: 0 nothing at or above --fail-on (default high) that is not accepted; 1 there is; 2 usage or tool error.
-Findings are fingerprinted; research/security-accepted.yaml lists those read and accepted (check, subject, reason,
+Findings are fingerprinted; docs/research/security-accepted.yaml lists those read and accepted (check, subject, reason,
 and the fingerprint ``fp`` for an advisory). An acceptance never covers a critical finding.
 
 ``gate`` judges what a change adds only where new items enter: a PR or push into dev (``--into dev``). A dev -> main
@@ -92,8 +92,8 @@ SCHEMA = 'cad-agent-supply-chain/1'
 SEVERITIES = ('critical', 'high', 'medium', 'low', 'info')
 RANK = {s: i for i, s in enumerate(SEVERITIES)}
 SECTIONS = ('python', 'npm', 'vendored', 'webkit', 'links', 'skills', 'repo')
-REPORT_MD = 'research/security-report.md'
-ACCEPTED = 'research/security-accepted.yaml'
+REPORT_MD = 'docs/research/security-report.md'
+ACCEPTED = 'docs/research/security-accepted.yaml'
 OUR_REPOS = {'valpatel/cad-agent'}
 OUR_MARKETPLACES = {'valpatel'}   # the plugin marketplace name our own repository publishes
 CHANGE_BRANCHES = ('dev',)       # where new items enter: gate checks what a change adds only for these (see gate)
@@ -972,7 +972,7 @@ def repo_findings(rep, subject, slug, st, recorded_licence=None, context='catalo
     url = f'https://github.com/{slug}'
     if st['state'] == 'gone':
         rep.add('repo-gone', 'high', subject, f'{slug} no longer exists (or is private)', f'GitHub answers {st["http"]} for {url}',
-                'Mark the entry "moved" or "gone" (status in vendor/upstreams/registry.yaml or a note in research/landscape.json) and '
+                'Mark the entry "moved" or "gone" (status in vendor/upstreams/registry.yaml or a note in docs/research/landscape.json) and '
                 'remove the link: anyone can register the freed name.')
         return
     if st['state'] != 'ok':
@@ -1034,6 +1034,7 @@ def find_licence_file(d: Path):
 
 
 REGISTRY = 'vendor/upstreams/registry.yaml'
+LANDSCAPE = 'docs/research/landscape.json'
 # Repository-owned metadata, not imported code. Unknown files beside these still need a vendor record.
 VENDOR_METADATA = frozenset(('vendor/README.md', 'vendor/THIRD_PARTY_NOTICES.md',
                              'vendor/upstreams/README.md', REGISTRY))
@@ -1530,16 +1531,41 @@ def verify_receipt(rep, net, row, top, name, rec):
 # -------------------------------------------------------------------------------------------------------------- links
 # The real source paths selected by tools/site/publication.mjs. A moved source is not its public URL.
 # tests/repo/test_resource_audit.py compares selector behavior on real and planted git inventories.
-PUBLISHED = [re.compile(r'^docs/[^/]+\.md$'), re.compile(r'^skills/[^/]+/SKILL\.md$'), re.compile(r'^agents/[^/]+\.md$'),
-             re.compile(r'^lessons/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^research/[^/]+\.md$')]
-PUBLISHED_FILES = ('README.md', '.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md')
+PUBLISHED = [re.compile(r'^docs/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^skills/[^/]+/SKILL\.md$'), re.compile(r'^agents/[^/]+\.md$'),
+             re.compile(r'^lessons/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^research/(?:[a-z0-9-]+/)?[^/]+\.md$')]
+PUBLISHED_FILES = ('README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md')
+_PAGE_SPEC = json.loads((ROOT / 'tools/site/page-sources.json').read_text(encoding='utf-8'))
+if _PAGE_SPEC.get('schema') != 1 or not _PAGE_SPEC.get('files') or not _PAGE_SPEC.get('roots'):
+    raise ValueError('page source contract needs schema 1, roots and files')
+_PAGE_ALIASES = {r['source']: r['public'] for r in _PAGE_SPEC['files']}
+if len(_PAGE_ALIASES) != len(_PAGE_SPEC['files']) or len(set(_PAGE_ALIASES.values())) != len(_PAGE_ALIASES):
+    raise ValueError('duplicate page source or public identity')
+_PAGE_ROOTS = _PAGE_SPEC['roots']
+_PAGE_EXCLUDED = set(_PAGE_SPEC.get('unpublished') or [])
+for i, row in enumerate(_PAGE_ROOTS):
+    for before in _PAGE_ROOTS[:i]:
+        if any(row[k] == before[k] or row[k].startswith(before[k] + '/') or before[k].startswith(row[k] + '/')
+               for k in ('source', 'public')):
+            raise ValueError('ambiguous page source roots')
+
+
+def public_page_path(f):
+    if f in _PAGE_ALIASES:
+        return _PAGE_ALIASES[f]
+    for row in _PAGE_ROOTS:
+        if f.startswith(row['source'] + '/'):
+            return row['public'] + f[len(row['source']):]
+    return f
 
 
 def published(f, report=False):
-    """Is f a page tools/build-site.mjs publishes? The report page is left out unless asked for (its URLs are findings)."""
-    if re.search(r'(?:^|/)(?:AGENTS|CLAUDE)\.md$', f) or (f == REPORT_MD and not report):
+    """The site's actual current sources; public URLs never substitute for missing relocated files."""
+    if f in _PAGE_EXCLUDED or re.search(r'(?:^|/)(?:AGENTS|CLAUDE)\.md$', f) or (f == REPORT_MD and not report):
         return False
-    return f in PUBLISHED_FILES or any(rx.match(f) for rx in PUBLISHED)
+    if any(f.startswith(r['public'] + '/') for r in _PAGE_ROOTS) or f in ('CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md'):
+        return False
+    public = public_page_path(f)
+    return public in PUBLISHED_FILES or any(rx.match(public) for rx in PUBLISHED)
 
 
 FENCE = re.compile(r'^(```|~~~)[^\n]*\n.*?^\1[ \t]*$', re.M | re.S)
@@ -1589,21 +1615,21 @@ def site(h):
 
 def catalogue_entries(root, catalog=None):
     """The external entries the site's catalog.json publishes, read from the same sources tools/build-site.mjs reads."""
-    land = json.loads(read_text(root / 'research' / 'landscape.json') or '{}')
+    land = json.loads((root / LANDSCAPE).read_text(encoding='utf-8'))
     ups = load_yaml((root / REGISTRY).read_text(encoding='utf-8')) or []
     out = []
     for u in ups:
         out.append(dict(source=REGISTRY, name=u.get('name'), url=u.get('url'), licence=u.get('license'),
                         last_push=str(u.get('last_push') or '') or None, status=u.get('status')))
     for p in land.get('projects') or []:
-        out.append(dict(source='research/landscape.json projects', name=p.get('name'), url=p.get('url'),
+        out.append(dict(source='docs/research/landscape.json projects', name=p.get('name'), url=p.get('url'),
                         licence=p.get('license_spdx') or p.get('license'), last_push=p.get('last_push')))
     for lib in land.get('libraries') or []:
-        out.append(dict(source='research/landscape.json libraries', name=lib.get('name'),
+        out.append(dict(source='docs/research/landscape.json libraries', name=lib.get('name'),
                         url=lib.get('url') or f"https://github.com/{lib.get('name')}", licence=lib.get('license_spdx'),
                         last_push=lib.get('last_push'), status=lib.get('status')))
     for b in land.get('benchmarks') or []:
-        out.append(dict(source='research/landscape.json benchmarks', name=b.get('name'), url=b.get('url'),
+        out.append(dict(source='docs/research/landscape.json benchmarks', name=b.get('name'), url=b.get('url'),
                         licence=b.get('license_spdx') or b.get('license') or b.get('data_license')))
     if catalog:
         for i in json.loads(Path(catalog).read_text()).get('items') or []:
@@ -1727,8 +1753,8 @@ def judge_link(rep, row, chain, err):
 
 
 # ------------------------------------------------------------------------------------------------- reference health
-# `references` (#323 phase 4): the health of every registry record's link (research/references.yaml and the schema-2
-# shards in research/references/). Deterministic, no AI. What it adds over the link checks above:
+# `references` (#323 phase 4): the health of every registry record's link (docs/research/references.yaml and the schema-2
+# shards in docs/research/references/). Deterministic, no AI. What it adds over the link checks above:
 #
 # - conditional requests: the ETag and Last-Modified of the last check go out as If-None-Match / If-Modified-Since, so
 #   an unchanged page answers 304 and costs no body;
@@ -1737,7 +1763,7 @@ def judge_link(rep, row, chain, err):
 #   size and first 64 KB;
 # - soft-404s: a page that answers 200 but is not the page any more (redirected to the site's root or a search page,
 #   "not found" in its title or first heading, or under 2 KB after a redirect). Each reason is its own finding, so an
-#   acceptance in research/security-accepted.yaml silences a false positive;
+#   acceptance in docs/research/security-accepted.yaml silences a false positive;
 # - GitHub repositories through the REST API: gone, renamed, archived, disabled, last push, licence, default-branch head;
 # - politeness: one worker per host, at most one request per second to any host (redirect hops included), at most
 #   HEALTH_WORKERS hosts at once, Retry-After honoured; a host that answers 401 or 403 is "blocked" and left alone for
@@ -2158,7 +2184,7 @@ def registry_records(root):
     if str(ROOT / 'src') not in sys.path:
         sys.path.insert(0, str(ROOT / 'src'))
     from cadagent.review import references as refs    # the registry's own loader: one schema, one source of truth
-    reg = refs.load(Path(root) / 'research' / 'references.yaml')
+    reg = refs.load(Path(root) / 'docs' / 'research' / 'references.yaml')
     out = []
     for ref in sorted(reg.entries.values(), key=lambda r: r.id):
         url = ref.get('url')
@@ -2536,8 +2562,9 @@ def check_repo(rep, net, repo=None):
 # -------------------------------------------------------------------------------------------------------------- build
 def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, npm_audit=True, added_files=(), accepted=None):
     rep = Report(root, as_of or dt.datetime.now(dt.timezone.utc).date(), bool(net))
+    rep.extra['accepted_source'] = ACCEPTED
     rep.sources.setdefault('offline', 'pyproject.toml, package.json, package-lock.json, vendor/manifest.json, kit hash records, '
-                           'vendor/THIRD_PARTY_NOTICES.md, vendor/upstreams/registry.yaml, research/landscape.json, published Markdown')
+                           'vendor/THIRD_PARTY_NOTICES.md, vendor/upstreams/registry.yaml, docs/research/landscape.json, published Markdown')
     check_python(rep, net, installed)
     check_npm(rep, net, npm_audit)
     check_vendored(rep, net)
@@ -2553,7 +2580,7 @@ def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, 
 
 
 def load_accepted(path):
-    """research/security-accepted.yaml: [{check, subject, reason, accepted, fp?}]. An acceptance without fp covers every
+    """docs/research/security-accepted.yaml: [{check, subject, reason, accepted, fp?}]. An acceptance without fp covers every
     finding of that check on that subject, so the checks in FP_REQUIRED must name the fingerprint: otherwise accepting one
     moderate advisory would hide every later one on the same package, and an install script read at one version would
     cover the next version's script too."""
@@ -2631,8 +2658,8 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
     out = ['# Supply-chain and resource report', '',
            f"What cad-agent depends on, vendors and links to, checked on {r['as_of']} at revision {revision_label(r)} "
            f"({r['mode']} checks). Findings: {counts}. Generated by `tools/resource_audit.py`; how to read it and what blocks "
-           "a merge are in the [cad-supply-chain skill](../skills/cad-supply-chain/SKILL.md) and on the "
-           "[supply-chain page](../docs/supply-chain.md).", '']
+           "a merge are in the [cad-supply-chain skill](../../skills/cad-supply-chain/SKILL.md) and on the "
+           "[supply-chain page](../practice/supply-chain.md).", '']
     if figure:
         out += [f'![Open findings by area and severity, from this report: {counts}]({figure})', '']
     elif any(s[k] for k in SEVERITIES):
@@ -2653,7 +2680,8 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
             out += [f'### {sev.capitalize()} ({len(fs)})', ''] + fold(f'{len(fs)} {sev}: {what}' +
                                                                      (' …' if len(checks_) > 6 else ''), findings_table(fs))
     if accepted:
-        out += [f'### Accepted ({len(accepted)})', ''] + fold(f'{len(accepted)} read and accepted in <code>{ACCEPTED}</code>',
+        accepted_source = (r.get('extra') or {}).get('accepted_source', 'research/security-accepted.yaml')
+        out += [f'### Accepted ({len(accepted)})', ''] + fold(f'{len(accepted)} read and accepted in <code>{accepted_source}</code>',
                                                                findings_table(accepted))
     if inventory:
         inv, ex = r['inventory'], r.get('extra') or {}
@@ -2709,8 +2737,10 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
         # Render a dated report's recorded source location, not today's checkout layout.
         registry = next((p for p in r.get('sources', {}).get('offline', '').split(', ')
                          if p.endswith('upstreams/registry.yaml')), REGISTRY)
+        landscape = next((p for p in r.get('sources', {}).get('offline', '').split(', ')
+                          if p.endswith('research/landscape.json')), 'docs/research/landscape.json')
         body += ['', '### Links we send people to', '',
-                f"{len(cat)} catalogue links (catalog.json, {registry}, research/landscape.json) and "
+                f"{len(cat)} catalogue links (catalog.json, {registry}, {landscape}) and "
                 f"{len(inv['links']) - len(cat)} more in published pages; {sum(1 for l in inv['links'] if l['id'] in flagged)} have "
                 'findings above.', '', '### Skills and agents', '', '| Item | Kind | Source | Version |', '|---|---|---|---|']
         for k in inv['skills']:
@@ -2839,6 +2869,8 @@ class GitTree:
             if path == REGISTRY:
                 # Old commits predate the move. Only historical comparisons may use the previous location.
                 return self.read('upstreams/registry.yaml') or '[]'
+            if path == LANDSCAPE:
+                return self.read('research/landscape.json') or '{}'
             return None
 
 
@@ -2865,10 +2897,10 @@ def item_ids(tree):
     ids |= {f'vendor:{name}' for f in tree.files if (name := vendor_project(f))}
     ids |= {f"webkit:{f[len(KIT) + 1:].split('/')[0]}" for f in tree.files if f.startswith(KIT + '/') and f[len(KIT) + 1:].count('/')}
     with tempfile.TemporaryDirectory() as td:          # the catalogue's sources, laid out as a tiny checkout
-        for p in ('research/landscape.json', REGISTRY):
+        for p in (LANDSCAPE, REGISTRY):
             t = tree.read(p)
-            if p == REGISTRY and t is None:
-                raise FileNotFoundError(f'required current registry {REGISTRY} is missing')
+            if t is None:
+                raise FileNotFoundError(f'required current catalogue source {p} is missing')
             if t is not None:
                 (Path(td) / p).parent.mkdir(parents=True, exist_ok=True)
                 (Path(td) / p).write_text(t, encoding='utf-8')
@@ -3195,7 +3227,7 @@ def main(argv=None):
     p.add_argument('--author', action='append', help='also accept a tracking issue opened by this login')
     p.add_argument('--post', action='store_true', help='make the changes (default: print what would be done)')
     p = sub.add_parser('render', help='write the report page and its figure from a saved report (no network)')
-    p.add_argument('--report', default=str(ROOT / 'research/security-report.json'))
+    p.add_argument('--report', default=str(ROOT / 'docs/research/security-report.json'))
     p.add_argument('--md', default=str(ROOT / REPORT_MD))
     p.add_argument('--svg', default=str(ROOT / 'docs/img/supply-chain/findings.svg'))
     p.add_argument('--check', action='store_true', help='exit 1 if a file is not what the report gives')

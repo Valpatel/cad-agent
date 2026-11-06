@@ -1,5 +1,5 @@
 {
- "source": "examples/explore-two-wheel",
+ "source": "docs/examples/explore-two-wheel",
  "generated_by": "tools/explore_charts.py (run it with --check to compare)",
  "compare": {
   "command": "cad-agent compare",

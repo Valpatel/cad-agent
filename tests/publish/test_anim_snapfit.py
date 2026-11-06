@@ -263,7 +263,7 @@ def test_the_loop_is_in_step_with_the_calculator(scene):
 def test_the_drawn_edge_stays_on_the_drawn_hook(scene):
     """The drawing turns the hook with the tip, which the closed form does not: the edge meets the lead where the
     calculator says at contact, moves in all the way up the drawn lead face, and reaches its top after 1.95 mm of
-    travel against the calculator's 2.25 mm, as docs/compliant.md says."""
+    travel against the calculator's 2.25 mm, as docs/mechanical/compliant.md says."""
     a, sh, c = scene["arm"], scene["shape"], scene["drawing"]["clearance_mm"]
     t = math.tan(math.radians(a["lead_deg"]))
     lead = scene["snaps"][0]["engagement"]["lead_travel_mm"]
@@ -279,7 +279,7 @@ def test_the_drawn_edge_stays_on_the_drawn_hook(scene):
 
 def test_the_hooks_turn_and_its_push_are_recorded_and_stated(scene):
     """The closed form keeps the lead at 30°; the drawn hook turns with the tip, atan(y * 1.5 / L) for a uniform arm.
-    The scene records the turn and the guide's push on the turned face, and docs/compliant.md states both: the
+    The scene records the turn and the guide's push on the turned face, and docs/mechanical/compliant.md states both: the
     closed form under-states the push near the top of the lead."""
     a, copa, petg_cf = scene["arm"], *scene["snaps"]
     tip = math.degrees(math.atan(a["undercut_mm"] * 1.5 / a["length_mm"]))

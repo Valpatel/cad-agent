@@ -221,7 +221,7 @@ flowchart TD
 Nothing here exists yet: no `evals/` folder and no runner. This is the plan #142 builds from.
 
 - **Survey first.** Before building a runner, #142 will survey existing evaluation harnesses and CAD benchmarks (some
-  are already listed in `research/landscape.json`) and record adopt-vs-build, as for any new capability.
+  are already listed in `docs/research/landscape.json`) and record adopt-vs-build, as for any new capability.
 - **Jobs** will live at `evals/jobs/<domain>/<area>/<job>/`: the task as the user would write it, input files, a time
   and token budget, and a reference solution that passes.
 - **Graders** will be code, not opinions. They measure geometry, read `cad-agent` check results, or compare numbers
@@ -275,10 +275,10 @@ flowchart TD
     domain, and a node that relies on another domain's module names it under `uses:` (thermal's airflow area uses
     `cadagent.simulation.cfd`). `tests/repo/test_package_areas.py` keeps the code and the tree in step.
   - `skills/` and `agents/` stay flat, because harnesses install them by name.
-  - `lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
+  - `docs/lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
     field maps each folder to the node that owns it. Renaming them to taxonomy slugs waits for #145's batches, once
     the taxonomy has settled.
-  - `docs/` and `research/` gain domain folders once an area has a few pages (#145).
+  - `docs/` and `docs/research/` gain domain folders once an area has a few pages (#145).
   - `evals/jobs/` is laid out by domain and area from the start.
 - **The taxonomy ties them together.** Each node lists its pages, commands, modules (its own under `api:`, other
   domains' under `uses:`), skills, lessons and issues, and the site generates one hub per area. Browsing by topic
@@ -300,7 +300,7 @@ The owner asked for a starting screen with only necessary files and a visible RE
 
 | Batch | Owning location | Root count after batch | Contracts to preserve |
 |---|---|---|---|
-| Transcript mining and weekly procedure | `tools/mining/`, `docs/weekly-upstream-update.md` | 28 | CLI examples, private-input ignore paths, provenance and topic map |
+| Transcript mining and weekly procedure | `tools/mining/`, `docs/practice/weekly-upstream-update.md` | 28 | CLI examples, private-input ignore paths, provenance and topic map |
 | Contributor and security policies | `.github/CONTRIBUTING.md`, `.github/SECURITY.md` | 26 | GitHub discovery, relative links, stable public routes and real source provenance |
 | Upstream registry and notices | `vendor/upstreams/`, `vendor/THIRD_PARTY_NOTICES.md` | 24 | Dependency identities, unknown-code detection, notice generation, catalogue and dated report evidence |
 | Guides, research, lessons and examples | Domain guides under `docs/`; research data in `docs/research/`, lessons in `docs/lessons/`, examples in `docs/examples/` | 21 | Package data defaults, citations and scans, catalogue IDs/kinds, public URLs, relative links, checkout and wheel starter behavior |
@@ -321,10 +321,10 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    in CONTRIBUTING.md, AGENTS.md and the PR template). When two open PRs cross, the one that merges second adds it,
    after merging dev and re-running its CI, because dev does not require branches to be up to date.
 2. **After #123, #124 and #133:** the site generates the area hubs and `areas.json` (#141).
-3. **Before the first move:** `tools/build-site.mjs` publishes only top-level `docs/` and `research/` pages today. Its
+3. **Before the first move:** `tools/build-site.mjs` publishes only top-level `docs/` and `docs/research/` pages today. Its
    docs and research sections must be widened by one domain level, as #133 widened the lessons section, or a moved
    page would get no site page and its redirect would point at nothing.
-4. **Then, batch by batch:** `docs/` and `research/` pages move into domain folders when their area has three or more
+4. **Then, batch by batch:** `docs/` and `docs/research/` pages move into domain folders when their area has three or more
    pages, or when a page is being edited anyway. Each move follows the #133 pattern:
    - a `<!-- moved-to: … -->` stub at the old path, kept for one minor release;
    - a line in the site's permanent redirect list, kept for good;

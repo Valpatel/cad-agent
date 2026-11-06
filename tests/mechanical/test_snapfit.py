@@ -128,7 +128,7 @@ from cadagent.mechanical.compliant import allowables as al
 
 
 @pytest.mark.parametrize("name, along, across", [
-    # research/compliant-mechanisms.md section 6, single joining, to its rounding
+    # docs/research/compliant-mechanisms.md section 6, single joining, to its rounding
     ("pla-polymaker", 0.011, 0.009), ("pla-bambu-basic", 0.0095, 0.0095), ("pla-bambu-matte", 0.0107, 0.0092),
     ("petg-polymaker", 0.017, 0.016), ("petg-bambu-basic", 0.0128, 0.0096), ("petg-bambu-hf", 0.013, 0.010),
     ("petg-cf-bambu", 0.0100, 0.0100), ("asa-polymaker", 0.013, 0.008), ("asa-bambu", 0.0106, 0.0102),
@@ -193,7 +193,7 @@ def test_printed_snap_without_orientation_fails_and_assumes_across():
 
 
 def test_docs_page_example_runs_and_table_matches_the_code():
-    # docs/compliant.md is a living page: its YAML example and printed-allowables table are checked here
+    # docs/mechanical/compliant.md is a living page: its YAML example and printed-allowables table are checked here
     import re
     from pathlib import Path
     import yaml

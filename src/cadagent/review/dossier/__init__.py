@@ -1,5 +1,5 @@
 """The design dossier: requirements, sections, part spec cards, interfaces, decisions and assembly steps, declared
-beside the CAD so the gates and the review site can check them (``docs/dossier.md``)."""
+beside the CAD so the gates and the review site can check them (``docs/practice/dossier.md``)."""
 
 from .load import DossierError, dump_yaml, load_dossier, load_project_dossier
 from .model import (
@@ -13,7 +13,7 @@ __all__ = [
     "Where", "dump_yaml", "load_dossier", "load_project_dossier",
 ]
 
-# the build-script registry (docs/dossier.md "Declaring geometry in the build script")
+# the build-script registry (docs/practice/dossier.md "Declaring geometry in the build script")
 from .registry import (  # noqa: E402
     HASH_RECIPE, REGISTRY, Axis, BuildResult, Registry, RegistryError, assembly, brep_sha256, build, build_module,
     cavity, current_registry, fastener, join, joint, load_geometry, part, project_root, shape_sha256, use_registry,

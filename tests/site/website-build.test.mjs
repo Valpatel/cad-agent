@@ -125,9 +125,9 @@ test('the home page, llms.txt and the README give one install command and one li
 
 test('pages say when they were last updated and how to give feedback', async () => {
   const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
-  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'lessons/process/verify-from-source.md').trim();
+  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'docs/lessons/process/verify-from-source.md').trim();
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay}">`));
-  const lesson = await readFile(path.join(out, 'lessons/process/verify-from-source.html'), 'utf8');
+  const lesson = await readFile(path.join(out, 'docs/lessons/process/verify-from-source.html'), 'utf8');
   assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay}">`), 'a page shows its own last change');
   const fb = lesson.match(/<aside class="feedback"[\s\S]*?<\/aside>/)?.[0];
   assert.ok(fb, 'doc pages end with the feedback box');
@@ -180,7 +180,7 @@ test('pages have one h1 and heading ids follow GitHub anchors', async () => {
       if (/[’'&]/.test(inner) || /&#39;|&amp;|&quot;/.test(inner)) assert.doesNotMatch(id, /\d{2}/.test(inner) ? /^$/ : /39/, `${f}: ${id}`);
     }
   }
-  assert.ok((await ids('lessons/process/README.html')).has('lessons--process'), 'runs of spaces are not merged');
+  assert.ok((await ids('docs/lessons/process/README.html')).has('lessons--process'), 'runs of spaces are not merged');
 });
 
 test('Markdown twins and llms-full.txt carry working links', async () => {
@@ -458,19 +458,19 @@ test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {
 });
 
 test('a link to a folder opens its README page', async () => {
-  const index = await readFile(path.join(out, 'lessons/README.html'), 'utf8');
+  const index = await readFile(path.join(out, 'docs/lessons/README.html'), 'utf8');
   for (const area of ['process', 'mechanical', 'wiring', 'electronics', 'simulation', 'review']) {
     assert.match(index, new RegExp(`href="/lessons/${area}/README"`), area);
     assert.doesNotMatch(index, new RegExp(`href="https://github.com/[^"]*/tree/dev/lessons/${area}/?"`), area);
   }
-  assert.match(await readFile(path.join(out, 'lessons/README.md'), 'utf8'), /\]\(process\/README\.md\)/, 'the Markdown twin too');
+  assert.match(await readFile(path.join(out, 'docs/lessons/README.md'), 'utf8'), /\]\(process\/README\.md\)/, 'the Markdown twin too');
 });
 
 test('every lesson page has a diagram, and the home page counts lessons, not pages', async () => {
   const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
   assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
   for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /<figure class="cad-diagram"|class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
-  const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'lessons/*/*.md', ':!lessons/*/README.md').split('\n').filter(Boolean).length;
+  const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'docs/lessons/*/*.md', ':!docs/lessons/*/README.md').split('\n').filter(Boolean).length;
   assert.ok(rules > 50);
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
 });
@@ -480,7 +480,7 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
   const commit = msg => execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', 'commit', '-qam', msg], { cwd: wt });
   const buildWt = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--out', dir], { cwd: root, stdio: 'pipe' });
-  const stub = 'lessons/03-mechanical-design-rules.md';
+  const stub = 'docs/lessons/03-mechanical-design-rules.md';
   try {
     // v0.6.0 deletes the stubs: the site keeps every 301.
     execFileSync('git', ['rm', '-q', ...git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean)
@@ -503,23 +503,23 @@ test('redirects outlive the stubs, and a stub must point at a published page tha
     const list = path.join(wt, 'tools/site-redirects.txt');
     const original = await readFile(list, 'utf8');
     for (const [line, why] of [
-      [`${stub} lessons/README.md`, 'is listed twice'],
-      ['/lessons/gone.md lessons/README.md', 'without a leading slash'],
-      ['lessons/gone lessons/README.md', 'without a leading slash'],
-      ['web/site.css lessons/README.md', 'without a leading slash'],
-      ['lessons/*.md lessons/README.md', 'without a leading slash'],          // a Pages splat: every lesson would loop
-      ['lessons/:name.md lessons/README.md', 'without a leading slash'],      // a Pages placeholder
-      ['lessons/../gone.md lessons/README.md', 'without a leading slash'],
-      ['lessons//gone.md lessons/README.md', 'without a leading slash'],
-      ['lessons/./gone.md lessons/README.md', 'without a leading slash'],
-      ['docs/toolkit.md lessons/README.md', 'is still a file in the repo'],
+      [`${stub} docs/lessons/README.md`, 'is listed twice'],
+      ['/lessons/gone.md docs/lessons/README.md', 'without a leading slash'],
+      ['docs/lessons/gone docs/lessons/README.md', 'without a leading slash'],
+      ['web/site.css docs/lessons/README.md', 'without a leading slash'],
+      ['docs/lessons/*.md docs/lessons/README.md', 'without a leading slash'],          // a Pages splat: every lesson would loop
+      ['docs/lessons/:name.md docs/lessons/README.md', 'without a leading slash'],      // a Pages placeholder
+      ['docs/lessons/../gone.md docs/lessons/README.md', 'without a leading slash'],
+      ['docs/lessons//gone.md docs/lessons/README.md', 'without a leading slash'],
+      ['docs/lessons/./gone.md docs/lessons/README.md', 'without a leading slash'],
+      ['docs/toolkit.md docs/lessons/README.md', 'is still a file in the repo'],
     ]) {
       await writeFile(list, original + line + '\n');
       commit(`bad line ${line}`);
       assert.throws(() => buildWt(path.join(tmp, 'bad-line')), e => String(e.stderr).includes(why), line);
       execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
     }
-    await writeFile(list, original.replace(`${stub} lessons/mechanical/design-rules.md`, `${stub} lessons/README.md`));
+    await writeFile(list, original.replace(`${stub} docs/lessons/mechanical/design-rules.md`, `${stub} docs/lessons/README.md`));
     commit('stub listed elsewhere');
     assert.throws(() => buildWt(path.join(tmp, 'bad3')), e => String(e.stderr).includes('change its line'));
     execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
@@ -608,7 +608,7 @@ test('every diagram arrives drawn, with its source, and the Markdown twins keep 
     figures += figs.length;
   }
   assert.ok(figures >= 120, `${figures} drawings`);
-  assert.match(await readFile(path.join(out, 'docs/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
+  assert.match(await readFile(path.join(out, 'docs/practice/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
 });
 
 test('two builds with empty diagram caches draw every page byte for byte the same', async () => {

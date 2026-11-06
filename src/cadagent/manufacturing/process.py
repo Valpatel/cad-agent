@@ -1,4 +1,4 @@
-"""Manufacturing-process profiles: the cited design rules of research/process-profiles.yaml as typed values (#99).
+"""Manufacturing-process profiles: the cited design rules of docs/research/process-profiles.yaml as typed values (#99).
 
     from cadagent.manufacturing import process
     fdm = process.profile("fdm")
@@ -20,12 +20,12 @@ never passes or fails a part on it. :meth:`Profile.verified_rule` refuses one, f
 
 **Where the data comes from.**
 
-* Rules, formulas and the shop table: ``research/process-profiles.yaml`` at the root of the cad-agent checkout this
+* Rules, formulas and the shop table: ``docs/research/process-profiles.yaml`` at the root of the cad-agent checkout this
   package runs from (an editable install or ``PYTHONPATH=src``), or the file named by ``CADAGENT_PROCESS_PROFILES``, or
   the ``path`` given to :func:`load`. A wheel without the checkout has no data: :func:`load` says so.
 * FDM materials: the maker's data sheets that :mod:`cadagent.mechanical.compliant.allowables` holds, one entry per
   filament with every edition read. Their source ids (``bambu-petg-basic-tds`` and so on) are the reference registry's
-  (#118), and so are the rules' sources: ``research/references.yaml`` beside the data file holds every one. A data
+  (#118), and so are the rules' sources: ``docs/research/references.yaml`` beside the data file holds every one. A data
   file with no registry beside it (a copy elsewhere) still loads, but its ids do not resolve, so
   :attr:`Source.resolved` is False and each factor keeps the sheet's own link as its citation.
 * Sheet metal: the shop's table (``shop_tables``) for 5052 aluminium and cold-rolled mild steel, and the generic rules.
@@ -52,8 +52,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[3]
-DATA = ROOT / "research" / "process-profiles.yaml"
-REGISTRY = ROOT / "research" / "references.yaml"     # the reference registry (#118): every source id resolves there
+DATA = ROOT / "docs" / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "docs" / "research" / "references.yaml"     # the reference registry (#118): every source id resolves there
 ENV = "CADAGENT_PROCESS_PROFILES"
 UNVERIFIED = "(u)"
 
@@ -136,7 +136,7 @@ def names_in(expr: Any) -> Tuple[str, ...]:
 @dataclass(frozen=True)
 class Source:
     """Who a value comes from. ``resolved`` is False for an id this checkout cannot look up (no
-    research/references.yaml beside the data file, or an id it lacks); ``url`` is then the citation the value itself
+    docs/research/references.yaml beside the data file, or an id it lacks); ``url`` is then the citation the value itself
     carries."""
     id: str
     title: str = ""
@@ -581,7 +581,7 @@ def _sheet_materials(data: Mapping[str, Any]) -> Dict[str, SheetMaterial]:
 def data_path(path: Any = None) -> Path:
     p = Path(path) if path is not None else Path(os.environ[ENV]) if os.environ.get(ENV) else DATA
     if not p.is_file():
-        raise ProfileDataError(f"no process-profile data at {p}: it is research/process-profiles.yaml in a cad-agent "
+        raise ProfileDataError(f"no process-profile data at {p}: it is docs/research/process-profiles.yaml in a cad-agent "
                                f"checkout; run from one (an editable install) or set {ENV} to the file")
     return p
 

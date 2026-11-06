@@ -108,7 +108,7 @@ def bars_svg(title: str, rows: list[tuple[str, list[tuple[float, str] | None]]],
 
 
 def anisotropy() -> str:
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
     rows, unsheeted = [], []
     for cells in table(md, "## 5. FDM anisotropy"):
         where = f"compliant-mechanisms.md §5, {cells[0]}"
@@ -119,7 +119,7 @@ def anisotropy() -> str:
         elif any(values):                                # a row with no ratio at all (no Z data) has nothing to draw
             rows.append((label, values))
     marks = "".join(v[1] for _, vs in rows for v in vs if v)
-    note = "Manufacturers' data sheets, 100 % infill (research/compliant-mechanisms.md §5)." + \
+    note = "Manufacturers' data sheets, 100 % infill (docs/research/compliant-mechanisms.md §5)." + \
         (" ≥: a lower bound." if marks else "") + \
         (f" Not drawn (no data sheet): {', '.join(unsheeted)}." if unsheeted else "")
     return bars_svg("Pulled across the layers: what is left of the in-plane value (Z ÷ XY)", rows,
@@ -128,7 +128,7 @@ def anisotropy() -> str:
 
 
 def stars(top: int = 12) -> str:
-    md = (ROOT / "research" / "landscape.md").read_text(encoding="utf-8")
+    md = (ROOT / "docs" / "research" / "landscape.md").read_text(encoding="utf-8")
     verified = re.search(r"verified (\d{4}-\d{2}-\d{2})", md).group(1)
     rows = []
     for cells in table(md, "## 1. Capability matrix"):
@@ -143,7 +143,7 @@ def stars(top: int = 12) -> str:
     vmax = (int(rows[0][1][0][0]) // 5000 + 1) * 5000
     return bars_svg(f"GitHub stars, the {len(rows)} most-starred projects in the capability matrix", rows,
                     [("stars", GREEN)], vmax, [i * vmax / 5 for i in range(6)], lambda v: f"{v:,.0f}",
-                    f"Read from the matrix rows (research/landscape.md §1), verified {verified}. Stars measure attention, not fitness.")
+                    f"Read from the matrix rows (docs/research/agent-workflow/landscape.md §1), verified {verified}. Stars measure attention, not fitness.")
 
 
 def percent(cell: str, where: str) -> tuple[float, str] | tuple[float, str, float]:
@@ -163,7 +163,7 @@ def per_cent(v: float) -> str:
 
 def moulded_strain() -> str:
     """§3: the moulded resins' allowable strain from the two guides that were read, used once and used often."""
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
     rows = []
     for anchor, guide in (("**Bayer Table 2**", "Bayer"), ("**DuPont Table 10.06**", "DuPont")):
         for cells in table(md, anchor):
@@ -173,13 +173,13 @@ def moulded_strain() -> str:
     vmax = 5 * math.ceil(top / 5)
     return bars_svg("Moulded resins: the strain a snap arm may take, used once and used often", rows,
                     [("used once", GREEN), ("used often", ORANGE)], vmax, [i * 5 for i in range(vmax // 5 + 1)],
-                    per_cent, "Bayer Table 2 (the first six rows) and DuPont Table 10.06 (research/compliant-mechanisms.md §3). "
+                    per_cent, "Bayer Table 2 (the first six rows) and DuPont Table 10.06 (docs/research/compliant-mechanisms.md §3). "
                     "Pale: the top of a range.")
 
 
 def printed_strain() -> str:
     """§6: the derived allowable strain for one assembly, along the layers (XY) and across them (Z), per data sheet."""
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text(encoding="utf-8")
     rows, skipped = [], []
     for cells in table(md, "## 6. Printed allowable strain"):
         name, _, detail = cells[0].partition(" (")
@@ -208,7 +208,7 @@ def celsius(cell: str, where: str) -> tuple[float, str]:
 
 def thermal_limits() -> str:
     """§6: the printed materials' glass transition and heat deflection temperatures against the module's TTP limit."""
-    md = (ROOT / "research" / "simulation-tools.md").read_text(encoding="utf-8")
+    md = (ROOT / "docs" / "research" / "simulation-tools.md").read_text(encoding="utf-8")
     ttp = re.search(r"\*\*TTP \(datasheet\):\*\* operating range −25 to \*\*([0-9]+) °C max\*\*", md)
     if not ttp:
         raise ValueError("simulation-tools.md §6: the TTP's maximum is not where the chart reads it")
@@ -220,7 +220,7 @@ def thermal_limits() -> str:
     return bars_svg("Printed materials soften below the module's thermal plate limit", rows,
                     [("glass transition (DSC)", GREEN), ("HDT at 0.45 MPa", ORANGE), ("HDT at 1.8 MPa", INK)],
                     100.0, [0, 20, 40, 60, 80, 100], lambda v: f"{v:g} °C",
-                    "Bambu data sheets (research/simulation-tools.md §6). The plate is not the air at a wall: "
+                    "Bambu data sheets (docs/research/simulation-tools.md §6). The plate is not the air at a wall: "
                     "a wall's own temperature decides.", mark=(limit, f"TTP max {limit:g} °C"))
 
 

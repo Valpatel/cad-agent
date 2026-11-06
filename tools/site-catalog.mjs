@@ -3,7 +3,7 @@
  * field without a new schema value (CATALOG_FIELDS.removed says which), so a reader that checks for /2 still runs. Built by
  * tools/build-site.mjs from committed files only:
  * - our commands (cli.py), pages (docs, lessons, research, skills, agents) and demos and tool pictures (docs/catalog.yaml);
- * - outside projects (vendor/upstreams/registry.yaml), libraries and benchmarks (research/landscape.json);
+ * - outside projects (vendor/upstreams/registry.yaml), libraries and benchmarks (docs/research/landscape.json);
  * - the topic tree (docs/areas.yaml), which places pages, commands, skills, agents and lesson folders in areas. Outside
  *   entries take an `areas:` list of their own; until they have one they are listed as not yet placed.
  * Agents first: an agent reads catalog/index.json (areas with counts and links), then one area file, then the entry.
@@ -165,7 +165,7 @@ export async function buildCatalog(ctx) {
   for (const n of nodes.values()) if (n.lessons) put('lessons', n.lessons, n.slug);
   for (const v of ctx.areas.cross_cutting?.pages || []) put('pages', v, 'cross-cutting');
   // Pages about the whole repository (README, CONTRIBUTING, licence notices, the lessons index) are cross-cutting too.
-  for (const f of ['README.md', '.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
+  for (const f of ['README.md', '.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'docs/lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
   /** Area and domain slugs for a list of node slugs (a topic counts for its area), with maturity and domains. */
   const place = (slugs, where) => {
     const areas = [], domains = [];
@@ -267,7 +267,7 @@ export async function buildCatalog(ctx) {
   const pageItems = new Map();
   for (const p of ctx.pages) {
     const kind = kindOfSection[p.section];
-    const lessonFolder = p.file.match(/^lessons\/([^/]+)\//)?.[1];
+    const lessonFolder = publicPath(p.file).match(/^lessons\/([^/]+)\//)?.[1];
     const skill = p.file.match(/^skills\/([^/]+)\/SKILL\.md$/)?.[1], agent = p.file.match(/^agents\/([^/]+)\.md$/)?.[1];
     const slugs = [...(placed.pages.get(p.file) || []), ...(lessonFolder ? placed.lessons.get(lessonFolder) || [] : []),
       ...(skill ? placed.skills.get(skill) || [] : []), ...(agent ? placed.agents.get(agent) || [] : [])];
@@ -383,14 +383,14 @@ export async function buildCatalog(ctx) {
   }
   // A library is 'used' only when landscape.json says so (a real dependency); otherwise it is tracked for reference.
   for (const l of ctx.landscape.libraries) {
-    const where = place(l.areas || [], `research/landscape.json library ${l.name}`);
+    const where = place(l.areas || [], `docs/research/landscape.json library ${l.name}`);
     const what = plainText(l.what || l.use || l.role) || null, notes = [l.notes, l.license_note].filter(Boolean).map(plainText).join(' ') || null;
     items.push({ type: 'library', status: l.status || 'reference', name: l.name, url: l.url || `https://github.com/${l.name}`,
       license: l.license_spdx, stars: l.stars, last_push: l.last_push, summary: l.use || l.role || l.notes || '', id: `library-${slugify(l.name)}`, kind: 'library',
       ...where, what, notes, updated: l.last_push || l.released || null, raw: l });
   }
   for (const b of ctx.landscape.benchmarks) {
-    const where = place(b.areas || [], `research/landscape.json benchmark ${b.name}`);
+    const where = place(b.areas || [], `docs/research/landscape.json benchmark ${b.name}`);
     const unverified = b.status === 'unverified';
     const what = plainText(b.what || [b.tasks, b.size, b.venue || b.paper].filter(Boolean).join(' · ')) || null;
     const notes = [b.notes, b.ground_truth && `Ground truth: ${b.ground_truth}.`, b.data_license && `Data licence: ${b.data_license}.`,
@@ -446,7 +446,7 @@ export async function buildCatalog(ctx) {
   // Our pages take the first of their figures that no demo, tool or earlier page shows (README and the main guides
   // first), else a cover drawn from their outline.
   const PAGE_ORDER = ['guide', 'research', 'lesson', 'skill', 'agent'];
-  const BOOST = new Set(['README.md', 'docs/toolkit.md', 'docs/compliant.md', 'docs/common-issues.md', 'research/landscape.md', 'lessons/README.md']);
+  const BOOST = new Set(['README.md', 'docs/toolkit.md', 'docs/mechanical/compliant.md', 'docs/practice/common-issues.md', 'docs/research/agent-workflow/landscape.md', 'docs/lessons/README.md']);
   const pagesFirst = items.filter(it => it.page && !it.cover)
     .sort((a, b) => (BOOST.has(b.page.file) - BOOST.has(a.page.file)) || PAGE_ORDER.indexOf(a.kind) - PAGE_ORDER.indexOf(b.kind));
   for (const it of pagesFirst) {

@@ -9,8 +9,8 @@ cad-agent depends on, vendors and links to many projects we do not control. A co
 that quietly changed, or a catalogue link whose repository was deleted and re-registered by someone else can hurt
 everyone who follows us. [`tools/resource_audit.py`](../../tools/resource_audit.py) checks all of it the same way
 every time; this skill says when to run it, how to read it and what to do with what it finds. The
-[supply-chain page](../../docs/supply-chain.md) shows where it runs, and the
-[latest report](../../research/security-report.md) what it found. It complements [SECURITY.md](../../.github/SECURITY.md)
+[supply-chain page](../../docs/practice/supply-chain.md) shows where it runs, and the
+[latest report](../../docs/research/security-report.md) what it found. It complements [SECURITY.md](../../.github/SECURITY.md)
 (vendored-code rules) and the red-flag scan in `tools/security_scan.py`, which reads the code itself; this report
 reads what surrounds it.
 
@@ -30,7 +30,7 @@ flowchart TD
 |---|---|
 | add a Python or npm dependency, or raise or drop a pin | `rows --online` before you push; paste the rows into the PR |
 | vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt: the npm tarball, its integrity and each file's SHA-256 (`three/SOURCE.json`), or `"npm": false` and each file's URL when it is not from npm (`fonts/SOURCE.json`) |
-| add a catalogue entry (`vendor/upstreams/registry.yaml`, `research/landscape.json`) or a link in a published page | `rows --online` |
+| add a catalogue entry (`vendor/upstreams/registry.yaml`, `docs/research/landscape.json`) or a link in a published page | `rows --online` |
 | recommend a tool, skill, plugin or MCP server to someone | `report --online` and read its row; check it is not installed from a registry |
 | act on the weekly "Supply-chain report" issue | `report --online` to confirm, then fix in a PR |
 | act on the weekly "Reference health" issue or its bot PR | `references --online --state <the last artifact's JSON>` to confirm; fix a link in a PR, or accept a false soft-404 by fingerprint |
@@ -39,7 +39,7 @@ flowchart TD
 python3 tools/resource_audit.py report                       # offline: what CI enforces (seconds, no network)
 python3 tools/resource_audit.py rows --base origin/dev --online   # rows for what your branch adds
 python3 tools/resource_audit.py report --online \
-    --json research/security-report.json --md research/security-report.md \
+    --json docs/research/security-report.json --md docs/research/security-report.md \
     --svg docs/img/supply-chain/findings.svg                 # refresh the committed report, from a clean checkout
 ```
 
@@ -62,7 +62,7 @@ findings at low or above.*
 Every finding has a **severity**, a **subject** (the item: `pypi:pillow`, `npm:marked`, `vendor:text-to-cad`,
 `webkit:mermaid`, `url:https://…`, `doc:<file>`, `repo:<owner/repo>`), the **evidence**, the **suggested action**
 and a fingerprint **fp** (the check, the subject and a stable key), so the weekly issue only changes when the findings
-do. The JSON (`research/security-report.json`) holds the full inventory: every dependency with its range, newest
+do. The JSON (`docs/research/security-report.json`) holds the full inventory: every dependency with its range, newest
 release, licence and advisory counts, and the transitive Python packages deps.dev resolves; every vendored project
 with its pin, licence, drift against upstream and Scorecard; every web kit folder with its packages, the libraries its
 files bundle and whether its files match the npm package its receipt names; every link with where it is used.
@@ -96,8 +96,8 @@ flowchart TD
     G -->|"high or critical anywhere,<br/>medium on what is added,<br/>a missing row"| X["the job fails"]
 ```
 
-The job is not a required check (making it one is the owner's call, on the [supply-chain page](../../docs/supply-chain.md#making-it-required-owner)).
-It runs the PR's own copy of `tools/resource_audit.py`, `research/security-accepted.yaml` and `ci.yml`, so a PR can
+The job is not a required check (making it one is the owner's call, on the [supply-chain page](../../docs/practice/supply-chain.md#making-it-required-owner)).
+It runs the PR's own copy of `tools/resource_audit.py`, `docs/research/security-accepted.yaml` and `ci.yml`, so a PR can
 change them and pass: it is an honesty check, not a security boundary. **Reviewers read every change to those three
 files**, and above all an acceptance added in the same PR as the finding it hides.
 
@@ -129,7 +129,7 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 | advisory on a library bundled inside a vendored file | Take the first release of the bundling library that bundles a fixed one, and say in its receipt's `bundled` note whether the affected code is reachable. |
 | `vendor-drift`, `webkit-hash`, `webkit-drift` | Someone changed vendored code. Find out who and why; restore it, or record the change (a patch in `vendor/patches/`; in a web kit receipt, `patched` with the upstream file's SHA-256 and what changed, as `three/SOURCE.json` does for OrbitControls) and re-run the scan. |
 | `webkit-receipt-integrity` | The registry serves different bytes for that version than when we vendored it. Stop and tell the owner; do not re-vendor from it. |
-| `repo-archived`, `repo-stale` | Keep the entry and show it: set `status: unmaintained` (or a note in `research/landscape.json`). Never remove it silently. |
+| `repo-archived`, `repo-stale` | Keep the entry and show it: set `status: unmaintained` (or a note in `docs/research/landscape.json`). Never remove it silently. |
 | `repo-moved` | Check the new owner is who you expect, then update the URL. The old name can be registered by someone else. |
 | `repo-gone`, `link-dead` | Mark the entry `moved` or `gone` with a note and remove the link, or link an archived copy marked as such. |
 | `link-redirect-domain`, `link-not-https` | Check the destination is the same organisation; link it directly over HTTPS, or drop it. |
@@ -141,13 +141,13 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 </details>
 
 Use visible statuses on the site (`unmaintained`, `moved`, `under review`, `gone`): the catalogue shows the `status`
-of a `vendor/upstreams/registry.yaml` entry or a `research/landscape.json` library as its badge (other entries: say it in
+of a `vendor/upstreams/registry.yaml` entry or a `docs/research/landscape.json` library as its badge (other entries: say it in
 their notes). A flagged entry stays listed with its status until a person decides to drop it.
 
 ## Accepting a finding
 
 Some findings are understood and fine (an install script that runs only on macOS for an optional test dependency).
-Record them in `research/security-accepted.yaml`, reviewed in a PR like any change:
+Record them in `docs/research/security-accepted.yaml`, reviewed in a PR like any change:
 
 ```mermaid
 flowchart TD

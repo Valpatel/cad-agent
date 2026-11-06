@@ -28,7 +28,7 @@ flowchart TD
 | `test_plates.py` | Build plates: packing rules, the Bambu Studio project 3MF, byte stability |
 | `test_process.py` | `cadagent.manufacturing.process`: every profile loads, every value has a source that resolves |
 | `test_process_figures.py` | The process-checks figures are drawn by `tools/process_figures.py` from the modules |
-| `test_process_profiles.py` | `research/process-profiles.yaml`: every rule sourced, with units, in step with its page |
+| `test_process_profiles.py` | `docs/research/process-profiles.yaml`: every rule sourced, with units, in step with its page |
 | `test_prusa3mf.py` | PrusaSlicer project 3MFs: volumes on their tools, the wipe tower, plates, byte stability |
 | `test_sheet_metal.py` | `cadagent.manufacturing.sheet_metal`: bend allowance and deduction, K and the flange |
 | `test_slicer.py` | Slicer profile flattening (the slicer runs only where it is installed) |

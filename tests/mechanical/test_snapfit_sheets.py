@@ -181,7 +181,7 @@ def test_a_material_needs_a_sheet():
 
 
 def _research_rows(heading):
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text()
     lines = md[md.index(heading):].splitlines()
     first = next(i for i, line in enumerate(lines) if line.startswith("|"))
     rows = lines[first + 2:next(i for i in range(first, len(lines)) if not lines[i].startswith("|"))]
@@ -194,10 +194,10 @@ def _pair(cell):
 
 @pytest.mark.parametrize("key", sorted(SHEETS))
 def test_research_table_has_each_current_sheet(key):
-    # research/compliant-mechanisms.md section 5 has a row for every current edition and for every sheet that is a
+    # docs/research/compliant-mechanisms.md section 5 has a row for every current edition and for every sheet that is a
     # formulation of its own (both PETG Basic filaments); the other earlier editions are in its "Earlier editions"
     # paragraph, each value that differs from the current sheet under that filament's name
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text()
     rows = _research_rows("## 5. FDM anisotropy")
     earlier = md[md.index("**Earlier editions.**"):].split("\n\n")[0].replace("\n", " ").split(";")
     current, *older = al.PRINTED[key].sheets

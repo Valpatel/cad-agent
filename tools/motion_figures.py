@@ -841,7 +841,7 @@ def subassembly_svg() -> str:
 
 # ----------------------------------------------------------------------------- 5. explore: the search's trials
 
-EXAMPLE = ROOT / "examples" / "explore-two-wheel"
+EXAMPLE = ROOT / "docs" / "examples" / "explore-two-wheel"
 
 
 def search_numbers() -> dict:
@@ -892,7 +892,7 @@ def search_svg() -> str:
     end = 12.9
     feasible = {r["trial"] for r in unique if r["evaluation"].get("verdict") in ("ok", "warn")}
     body = [text(20, 28, "Search: the worked example's trials arriving, and the Pareto front they form", 15, INK, weight="700"),
-            text(20, 46, f"examples/explore-two-wheel, cad-agent optimise: {len(recs)} {h['sampler']} trials, seed "
+            text(20, 46, f"docs/examples/explore-two-wheel, cad-agent optimise: {len(recs)} {h['sampler']} trials, seed "
                          f"{h['seed']}; illustrative parts and prices", 11, MUTED),
             ntext(20, 40, f"Search: {len(recs)} trials", 28, weight="700"),
             ntext(x0 + 8, y1 + 26, "↑ mass", fill=MUTED), ntext(x1, y0 + 34, "cost →", fill=MUTED, anchor="end")]

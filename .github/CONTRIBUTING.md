@@ -9,7 +9,7 @@ goes through a branch, a pull request, CI and a review.
 |---|---|---|
 | `main` | Released toolkit, tagged `vX.Y.Z`. | Only by merging a release PR from `dev`. |
 | `dev` | Integration, and the repository's default branch. Everything here passed CI and review. | Only by merging a reviewed PR. |
-| `feat/<topic>`, `fix/<topic>`, `ci/<topic>`, `docs/<topic>`, `research/<topic>`, `test/<topic>`, `refactor/<topic>`, `release/vX.Y.Z`, `vendor-update/<name>-<sha>`, `dependabot/…` | One piece of work, branched from `dev`. | Its author, in its own worktree. |
+| `feat/<topic>`, `fix/<topic>`, `ci/<topic>`, `docs/<topic>`, `docs/research/<topic>`, `test/<topic>`, `refactor/<topic>`, `release/vX.Y.Z`, `vendor-update/<name>-<sha>`, `dependabot/…` | One piece of work, branched from `dev`. | Its author, in its own worktree. |
 
 `main` and `dev` are protected: no direct pushes (admins included), no force pushes, the required checks below must
 pass and every review conversation must be resolved. Agents may merge into both, through the gates.
@@ -34,7 +34,7 @@ flowchart TD
 |---|---|---|---|
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
 | `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
-| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
+| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ docs/research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
 | `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a maintainer is pass, on the PR's head commit |
 | `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](../CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
@@ -63,14 +63,14 @@ with `gh pr checks <n>`.
 - **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
 ## Workflow
-Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workflow.md](../docs/agent-workflow.md)) and
+Agents: install the workflow kit (`cad-agent agents install`, [docs/practice/agent-workflow.md](../docs/practice/agent-workflow.md)) and
 follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes #<issue>`, and pushes as you go.
 
 0. **Issue.** Find or open the GitHub issue the change belongs to, with a checklist of done / next / how to resume.
 1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site-catalog.mjs` builds from the
-   repo), the [landscape survey](../research/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
+   repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
    skills in [`skills/`](../skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
@@ -82,7 +82,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    ```
 3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
-   `lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):
+   `docs/lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):
    `tests/repo/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
    merging `dev` and re-running CI (`dev` does not require branches to be up to date).
 4. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
@@ -121,15 +121,15 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | Test data | `tests/fixtures/<set>/`, made by a script beside it or described in a README |
 | A docs page | `docs/<page>.md` (`docs/<domain>/` once its area has three pages, #145), with its line in `docs/areas.yaml` |
 | A figure on a page | `docs/img/<topic>/`, drawn by a generator in `tools/` that a test runs with `--check` |
-| A survey or sourced data table | `research/` |
-| A lesson from a real project | `lessons/<area>/`, listed in the area's README |
+| A survey or sourced data table | `docs/research/` |
+| A lesson from a real project | `docs/lessons/<area>/`, listed in the area's README |
 | A repo script (figures, site build, gates, release) | `tools/` |
 | A website asset | `web/` |
-| An example project | `examples/<name>/`, with a README |
+| An example project | `docs/examples/<name>/`, with a README |
 | A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
 | Vendored upstream code | `vendor/<name>/`, through `tools/vendor_sync.py` |
 | A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
-| A finding or note from agent work | `lessons/<area>/`, not `.agents/` |
+| A finding or note from agent work | `docs/lessons/<area>/`, not `.agents/` |
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.

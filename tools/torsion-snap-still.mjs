@@ -12,7 +12,7 @@ import path from 'node:path';
 import { readState, compute, drawTorsionSnap, summary, pct } from '../src/cadagent/webkit/torsion-snap.js';
 
 const root = path.resolve(import.meta.dirname, '..');
-export const PAGES = ['docs/compliant.md'];
+export const PAGES = ['docs/mechanical/compliant.md'];
 export const STILL = 'docs/img/compliant/torsion-snap-explorer.svg';
 
 /** The element on a page (a line that starts with it, not a mention in the text): its attributes, as the browser

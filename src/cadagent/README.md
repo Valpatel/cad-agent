@@ -54,4 +54,4 @@ keeps the packages and the tree in step.
 ## Related
 
 [Repository README](../../README.md) · [Toolkit reference](../../docs/toolkit.md) · [Tests](../../tests) ·
-[Style guide](../../docs/style-guide.md) · [Topic tree](../../docs/areas.yaml)
+[Style guide](../../docs/practice/style-guide.md) · [Topic tree](../../docs/areas.yaml)

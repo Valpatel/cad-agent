@@ -25,9 +25,9 @@ flowchart TD
     class Rv,Rp out
 ```
 
-References: [`docs/dossier.md`](../../docs/dossier.md) (the YAML and the build-script declarations),
-[`docs/gates.md`](../../docs/gates.md) (what each gate measures), [`docs/review-packet.md`](../../docs/review-packet.md)
-(the packet and the checklist), [`docs/design-process-plan.md`](../../docs/design-process-plan.md) §5 (why).
+References: [`docs/practice/dossier.md`](../../docs/practice/dossier.md) (the YAML and the build-script declarations),
+[`docs/practice/gates.md`](../../docs/practice/gates.md) (what each gate measures), [`docs/practice/review-packet.md`](../../docs/practice/review-packet.md)
+(the packet and the checklist), [`docs/practice/design-process-plan.md`](../../docs/practice/design-process-plan.md) §5 (why).
 
 ## Before you start
 
@@ -131,7 +131,7 @@ Fix in this order, rerunning after each group (a fix early in the list often cle
 
 Then the standard part checks, which every project runs whether or not it has a dossier: `cad-agent holes` (every
 hole in every part clear of material: build features first and cut holes last) and the rest of `cad-agent all`. Walk
-[docs/common-issues.md](../../docs/common-issues.md) for the issues no check covers yet.
+[docs/practice/common-issues.md](../../docs/practice/common-issues.md) for the issues no check covers yet.
 
 Never lower a threshold or widen a tolerance to pass. A finding that is not a defect becomes an explained
 exclusion: `gates.free_parts` (a loose item), `gates.intended_overlaps` (a heat-set insert, a press fit, a screw's
@@ -163,7 +163,7 @@ what you find and go back to step 4; do not hand over a section you would not si
 
 Do not set `reviewed` or `signed_off` yourself, and never write a reviewer record: the lint refuses records by a
 part's builder or a named author, but it cannot tell who wrote a file, so this rule is yours to keep. Write the
-reviewer's bundle and hand it to an agent or person that did not build or write the section (plan §5.3, `docs/dossier.md` "The reviewer pass"):
+reviewer's bundle and hand it to an agent or person that did not build or write the section (plan §5.3, `docs/practice/dossier.md` "The reviewer pass"):
 
 ```bash
 cad-agent review-section S3     # exports/review-bundle/S3/: PROMPT.md, the section YAML, gates.json, status.json,

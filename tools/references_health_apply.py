@@ -2,7 +2,7 @@
 """Turn a reference health report into the weekly bot PR's edits (#323 phase 4).
 
 `tools/resource_audit.py references` writes the registry's link health to a CI artifact (never to git: #323, Q5).
-This tool reads that JSON and writes into the schema-2 shards (research/references/*.yaml) only the changes that are
+This tool reads that JSON and writes into the schema-2 shards (docs/research/references/*.yaml) only the changes that are
 evidence, each by a fixed rule:
 
 * **gone or unreachable on two checks in a row** (an accepted soft-404 does not count): the record's
@@ -16,7 +16,7 @@ evidence, each by a fixed rule:
 
 A stored ``confidence`` is re-derived after the edits (``confidence()``), and an edit that would add a problem to
 ``python -m cadagent.review.references --check``, or leave a cited record below ``read``, is left out and listed for a
-person instead. Entries of the hand-written core file (research/references.yaml) are never edited here: they are
+person instead. Entries of the hand-written core file (docs/research/references.yaml) are never edited here: they are
 listed. Nothing here fetches anything; the same report and checkout give the same edits.
 
     python3 tools/references_health_apply.py --health build/references-health.json                 # print the plan
@@ -50,7 +50,7 @@ def _tool(name):
 ra = _tool("resource_audit")           # the health report's own rules (effective status, sites, acceptances)
 ir = _tool("import_refmap")            # the shards' writer, so an edit changes only the lines it means to
 DOWN = ra.DOWN
-CORE = "research/references.yaml"
+CORE = "docs/research/references.yaml"
 
 
 def split_head(text: str) -> Tuple[str, str]:
@@ -200,7 +200,7 @@ def validate(root: Path, files: Dict[str, str]) -> Tuple[refs.Registry, List[str
         tmp = Path(td)
         (tmp / CORE).parent.mkdir(parents=True)
         shutil.copy2(root / CORE, tmp / CORE)
-        shutil.copytree(root / "research" / "references", tmp / "research" / "references")
+        shutil.copytree(root / "docs" / "research" / "references", tmp / "docs" / "research" / "references")
         for rel, text in files.items():
             (tmp / rel).write_text(text, encoding="utf-8")
         reg = refs.load(tmp / CORE)
@@ -289,7 +289,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--health", required=True, help="the JSON `resource_audit.py references` wrote")
     ap.add_argument("--root", type=Path, default=ROOT, help="the checkout to edit (default: this one)")
-    ap.add_argument("--accepted", help="accepted findings (default research/security-accepted.yaml)")
+    ap.add_argument("--accepted", help="accepted findings (default docs/research/security-accepted.yaml)")
     ap.add_argument("--as-of", help="the date written into evidence.lowered (default: the report's date)")
     ap.add_argument("--write", action="store_true", help="write the edited shards (default: print the plan)")
     ap.add_argument("--body", help="write the PR description here")

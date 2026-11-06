@@ -7,7 +7,7 @@ safety, axial load and speed, turning or swinging, under one load or a duty cycl
                   static=[{"name": "fall", "radial_n": 3485, "motion": "infrequent", "certainty": "low"}])
     # verdict pass / warn / fail, each check's value, limit, verdict and why, the life, the limits
 
-``cad-agent bearings bearings.yaml`` runs the same check on a file of bearings (docs/bearings.md).
+``cad-agent bearings bearings.yaml`` runs the same check on a file of bearings (docs/mechanical/bearings.md).
 
 **What is data and what is model.** The ratings and speeds are the makers' (each row names its page and the date it
 was read). The life is ISO 281's basic rating life and the static safety ISO 76's, as SKF's catalogue applies them

@@ -1,7 +1,7 @@
 # cadagent.mechanical.compliant
 
 Compliant features that replace separate parts: snap fits now, living hinges and flexures next. The method, the
-materials and the limits are on the [snap fits and compliant features](../../../../docs/compliant.md) page.
+materials and the limits are on the [snap fits and compliant features](../../../../docs/mechanical/compliant.md) page.
 
 Arrows follow the data. A project declares its snaps in a file, and `cad-agent snapfit` checks each one with
 `snapfit.py`, which takes printed filaments' allowables from `allowables.py`. `figures.py` draws a checked snap still.
@@ -36,5 +36,5 @@ flowchart TD
 Allowables from the data sheets Polymaker PolyMide CoPA V5.4 and Bambu Lab PETG-CF V3.0. Printed snaps need a test
 print.*
 
-Related: [mechanical](../README.md) · [snap fits and compliant features](../../../../docs/compliant.md) ·
-[research note](../../../../research/compliant-mechanisms.md) · [animated figures](../../../../docs/animated-figures.md)
+Related: [mechanical](../README.md) · [snap fits and compliant features](../../../../docs/mechanical/compliant.md) ·
+[research note](../../../../docs/research/compliant-mechanisms.md) · [animated figures](../../../../docs/practice/animated-figures.md)

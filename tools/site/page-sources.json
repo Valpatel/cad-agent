@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "roots": [
+    {
+      "source": "docs/research",
+      "public": "research"
+    },
+    {
+      "source": "docs/lessons",
+      "public": "lessons"
+    }
+  ],
+  "files": [
+    {
+      "source": ".github/CONTRIBUTING.md",
+      "public": "CONTRIBUTING.md"
+    },
+    {
+      "source": "docs/lessons/README.md",
+      "public": "lessons/README.md"
+    },
+    {
+      "source": "docs/lessons/electronics/README.md",
+      "public": "lessons/electronics/README.md"
+    },
+    {
+      "source": "docs/lessons/electronics/pcb-evidence-and-review.md",
+      "public": "lessons/electronics/pcb-evidence-and-review.md"
+    },
+    {
+      "source": "docs/lessons/mechanical/README.md",
+      "public": "lessons/mechanical/README.md"
+    },
+    {
+      "source": "docs/lessons/mechanical/design-rules.md",
+      "public": "lessons/mechanical/design-rules.md"
+    },
+    {
+      "source": "docs/lessons/mechanical/enclosure-features.md",
+      "public": "lessons/mechanical/enclosure-features.md"
+    },
+    {
+      "source": "docs/lessons/mechanical/fasteners-and-assembly-access.md",
+      "public": "lessons/mechanical/fasteners-and-assembly-access.md"
+    },
+    {
+      "source": "docs/lessons/mechanical/printing-without-supports.md",
+      "public": "lessons/mechanical/printing-without-supports.md"
+    },
+    {
+      "source": "docs/lessons/process/2026-11-05-recovery-audit.md",
+      "public": "lessons/process/2026-11-05-recovery-audit.md"
+    },
+    {
+      "source": "docs/lessons/process/README.md",
+      "public": "lessons/process/README.md"
+    },
+    {
+      "source": "docs/lessons/process/agent-process.md",
+      "public": "lessons/process/agent-process.md"
+    },
+    {
+      "source": "docs/lessons/process/user-intent-and-requirements.md",
+      "public": "lessons/process/user-intent-and-requirements.md"
+    },
+    {
+      "source": "docs/lessons/process/verify-from-source.md",
+      "public": "lessons/process/verify-from-source.md"
+    },
+    {
+      "source": "docs/lessons/review/README.md",
+      "public": "lessons/review/README.md"
+    },
+    {
+      "source": "docs/lessons/review/original-file-viewer.md",
+      "public": "lessons/review/original-file-viewer.md"
+    },
+    {
+      "source": "docs/lessons/review/review-site-ux.md",
+      "public": "lessons/review/review-site-ux.md"
+    },
+    {
+      "source": "docs/lessons/review/verification-and-evidence.md",
+      "public": "lessons/review/verification-and-evidence.md"
+    },
+    {
+      "source": "docs/lessons/simulation/README.md",
+      "public": "lessons/simulation/README.md"
+    },
+    {
+      "source": "docs/lessons/simulation/meshes.md",
+      "public": "lessons/simulation/meshes.md"
+    },
+    {
+      "source": "docs/lessons/simulation/simulation-and-material.md",
+      "public": "lessons/simulation/simulation-and-material.md"
+    },
+    {
+      "source": "docs/lessons/wiring/README.md",
+      "public": "lessons/wiring/README.md"
+    },
+    {
+      "source": "docs/lessons/wiring/cables-connectors-and-routing.md",
+      "public": "lessons/wiring/cables-connectors-and-routing.md"
+    },
+    {
+      "source": "docs/mechanical/bearings.md",
+      "public": "docs/bearings.md"
+    },
+    {
+      "source": "docs/mechanical/compliant.md",
+      "public": "docs/compliant.md"
+    },
+    {
+      "source": "docs/mechanical/inserts.md",
+      "public": "docs/inserts.md"
+    },
+    {
+      "source": "docs/mechanical/linkages.md",
+      "public": "docs/linkages.md"
+    },
+    {
+      "source": "docs/mechanical/printed-joints.md",
+      "public": "docs/printed-joints.md"
+    },
+    {
+      "source": "docs/mechanical/rendered-motion.md",
+      "public": "docs/rendered-motion.md"
+    },
+    {
+      "source": "docs/mechanical/screw-bosses.md",
+      "public": "docs/screw-bosses.md"
+    },
+    {
+      "source": "docs/mechanical/subassembly-insertion.md",
+      "public": "docs/subassembly-insertion.md"
+    },
+    {
+      "source": "docs/practice/agent-workflow.md",
+      "public": "docs/agent-workflow.md"
+    },
+    {
+      "source": "docs/practice/animated-figures.md",
+      "public": "docs/animated-figures.md"
+    },
+    {
+      "source": "docs/practice/common-issues.md",
+      "public": "docs/common-issues.md"
+    },
+    {
+      "source": "docs/practice/design-process-plan.md",
+      "public": "docs/design-process-plan.md"
+    },
+    {
+      "source": "docs/practice/dossier.md",
+      "public": "docs/dossier.md"
+    },
+    {
+      "source": "docs/practice/experts.md",
+      "public": "docs/experts.md"
+    },
+    {
+      "source": "docs/practice/file-viewer.md",
+      "public": "docs/file-viewer.md"
+    },
+    {
+      "source": "docs/practice/gates.md",
+      "public": "docs/gates.md"
+    },
+    {
+      "source": "docs/practice/review-packet.md",
+      "public": "docs/review-packet.md"
+    },
+    {
+      "source": "docs/practice/style-guide.md",
+      "public": "docs/style-guide.md"
+    },
+    {
+      "source": "docs/practice/supply-chain.md",
+      "public": "docs/supply-chain.md"
+    },
+    {
+      "source": "docs/practice/volume-precision.md",
+      "public": "docs/volume-precision.md"
+    },
+    {
+      "source": "docs/practice/web-diagrams.md",
+      "public": "docs/web-diagrams.md"
+    },
+    {
+      "source": "docs/practice/web-parts.md",
+      "public": "docs/web-parts.md"
+    },
+    {
+      "source": "docs/practice/weekly-upstream-update.md",
+      "public": "docs/weekly-upstream-update.md"
+    },
+    {
+      "source": "docs/research/README.md",
+      "public": "research/README.md"
+    },
+    {
+      "source": "docs/research/agent-workflow/agent-toolkits-2026-10.md",
+      "public": "research/agent-toolkits-2026-10.md"
+    },
+    {
+      "source": "docs/research/agent-workflow/design-workflows.md",
+      "public": "research/design-workflows.md"
+    },
+    {
+      "source": "docs/research/agent-workflow/landscape.md",
+      "public": "research/landscape.md"
+    },
+    {
+      "source": "docs/research/compliant-mechanisms.md",
+      "public": "research/compliant-mechanisms.md"
+    },
+    {
+      "source": "docs/research/fea-and-process-tools.md",
+      "public": "research/fea-and-process-tools.md"
+    },
+    {
+      "source": "docs/research/manufacturing/process-profiles.md",
+      "public": "research/process-profiles.md"
+    },
+    {
+      "source": "docs/research/manufacturing/sheet-metal-guides.md",
+      "public": "research/sheet-metal-guides.md"
+    },
+    {
+      "source": "docs/research/manufacturing/sheet-metal-joining.md",
+      "public": "research/sheet-metal-joining.md"
+    },
+    {
+      "source": "docs/research/manufacturing/sheet-metal.md",
+      "public": "research/sheet-metal.md"
+    },
+    {
+      "source": "docs/research/security-report.md",
+      "public": "research/security-report.md"
+    },
+    {
+      "source": "docs/research/simulation-tools.md",
+      "public": "research/simulation-tools.md"
+    },
+    {
+      "source": "vendor/THIRD_PARTY_NOTICES.md",
+      "public": "THIRD_PARTY_NOTICES.md"
+    }
+  ],
+  "unpublished": [
+    "docs/research/references/README.md",
+    "docs/research/bench/README.md"
+  ]
+}

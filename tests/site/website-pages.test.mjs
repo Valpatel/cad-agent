@@ -2,7 +2,7 @@
  * folded (#179). */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { publicPath, selectPages } from '../../tools/site/publication.mjs';
+import { createPublication, pageSection, publicPath, requiredSources, selectPages, sourceSpec } from '../../tools/site/publication.mjs';
 import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from '../../tools/site-pages.mjs';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
@@ -135,13 +135,34 @@ test('long tables and code blocks fold, with a summary of what is inside; short 
 });
 
 
-test('the real source selector keeps moved policy identity and rejects a stale replacement', () => {
-  const source = '.github/CONTRIBUTING.md';
-  const notices = 'vendor/THIRD_PARTY_NOTICES.md';
-  const files = [source, notices, 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];
-  assert.deepEqual(selectPages(files).map(p => p.file), [source, notices, 'docs/a b.md', 'docs/a\tb.md']);
-  assert.equal(publicPath(source), 'CONTRIBUTING.md');
-  assert.equal(publicPath(notices), 'THIRD_PARTY_NOTICES.md');
-  assert.throws(() => selectPages(files.filter(f => f !== source)), /required published source \.github\/CONTRIBUTING\.md is missing/);
-  assert.throws(() => selectPages(files.filter(f => f !== notices)), /required published source vendor\/THIRD_PARTY_NOTICES\.md is missing/);
+test('the real source selector keeps moved identities and rejects missing current sources', () => {
+  const extras = ['THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];
+  const files = [...requiredSources, ...extras];
+  assert.deepEqual(selectPages(files).map(p => p.file), [...requiredSources, 'docs/a b.md', 'docs/a\tb.md']);
+  const cases = [
+    ['.github/CONTRIBUTING.md', 'CONTRIBUTING.md', 'docs'],
+    ['vendor/THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md', 'docs'],
+    ['docs/mechanical/compliant.md', 'docs/compliant.md', 'docs'],
+    ['docs/research/manufacturing/process-profiles.md', 'research/process-profiles.md', 'research'],
+    ['docs/lessons/process/verify-from-source.md', 'lessons/process/verify-from-source.md', 'lessons'],
+  ];
+  for (const [source, identity, section] of cases) {
+    assert.equal(publicPath(source), identity);
+    assert.equal(pageSection(source).id, section);
+    assert.throws(() => selectPages(files.filter(f => f !== source)), error => error.message.includes(`required published source ${source} is missing`));
+  }
+  assert.equal(pageSection('research/process-profiles.md'), null, 'a stale old root is not a source');
+  assert.equal(pageSection('docs/research/references/README.md'), null, 'reference maintenance procedures remain source-only');
+});
+
+test('source aliases fail on duplicate public pages and ambiguous or incomplete metadata', () => {
+  assert.throws(() => selectPages([...requiredSources, 'docs/compliant.md']), /duplicate public page docs\/compliant\.md/);
+  const bad = mutate => { const spec = structuredClone(sourceSpec); mutate(spec); return () => createPublication(spec); };
+  assert.throws(bad(spec => spec.files.push({ source: 'docs/other.md', public: 'docs/compliant.md' })), /duplicate page source or public identity/);
+  assert.throws(bad(spec => spec.roots.push({ source: 'docs/research/nested', public: 'other' })), /ambiguous page source roots/);
+  assert.throws(bad(spec => spec.roots = []), /needs schema 1, roots and files/);
+  assert.throws(bad(spec => spec.unpublished.push('docs/mechanical/compliant.md')), /contradictory unpublished source/);
+  const spec = structuredClone(sourceSpec);
+  spec.roots.push({ source: 'docs/absent', public: 'absent' });
+  assert.throws(() => createPublication(spec).selectPages(requiredSources), /required published root docs\/absent is missing/);
 });

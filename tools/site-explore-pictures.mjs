@@ -2,7 +2,7 @@
  *
  *   node tools/site-explore-pictures.mjs        # needs Python with cadagent importable from src/ (no CAD kernel)
  *
- * The worked example (examples/explore-two-wheel/) compares four two-wheel-legged robot designs built from a small
+ * The worked example (docs/examples/explore-two-wheel/) compares four two-wheel-legged robot designs built from a small
  * catalogue of made-up parts. This copies it to a temporary folder and runs, there, exactly what its README runs:
  * `cad-agent catalogue`, `cad-agent compare --swaps` and `cad-agent optimise` (60 seeded random trials). Then it writes
  * crops of the two pages into docs/img/explore/:
@@ -27,7 +27,7 @@ import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(root, 'docs/img/explore');
-const EXAMPLE = 'examples/explore-two-wheel';
+const EXAMPLE = 'docs/examples/explore-two-wheel';
 const CROP_WIDTH = 1100;
 const epoch = execFileSync('git', ['log', '-1', '--format=%ct', '--', EXAMPLE], { cwd: root, encoding: 'utf8' }).trim();
 if (!/^\d+$/.test(epoch)) throw new Error(`${EXAMPLE} has no commit to date the pages from`);

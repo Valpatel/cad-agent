@@ -8,7 +8,7 @@ description: Use when designing a bent sheet-metal part with threaded hardware o
 A flat part with one or two bends and a few pressed-in nuts or studs makes a stiff, cheap mounting plate. Riveting
 two such parts together makes a box that one bend cannot. Each step below is a check with cited rules. Run them in
 order, because each one fixes a number the next one needs. The background is in
-[the joining research](../../research/sheet-metal-joining.md) and [the sheet-metal research](../../research/sheet-metal.md).
+[the joining research](../../docs/research/manufacturing/sheet-metal-joining.md) and [the sheet-metal research](../../docs/research/manufacturing/sheet-metal.md).
 
 ```mermaid
 flowchart TD

@@ -111,5 +111,5 @@ is imported, but only by the optional `fea` extra.
 
 **Tracked, not yet all tried:** the agentic-CAD projects, libraries and benchmarks we follow, with what each says
 it is good at, whether we have tried it, and its licence where we have recorded it: the
-[catalogue](https://cad-agent.valpatel.com/catalog) and the [landscape survey](../research/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+[catalogue](https://cad-agent.valpatel.com/catalog) and the [landscape survey](../docs/research/agent-workflow/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 

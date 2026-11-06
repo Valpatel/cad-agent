@@ -53,7 +53,7 @@ def test_peak_shear_strain_is_the_stress_over_g_and_the_thin_strip_limit():
 
 
 def test_a_flat_bar_still_shears_its_layers_at_three_quarters_of_the_peak():
-    # docs/compliant.md: lying flat, the bar's short sides (the layers' edges) shear at 74 to 100 % of the peak, so the
+    # docs/mechanical/compliant.md: lying flat, the bar's short sides (the layers' edges) shear at 74 to 100 % of the peak, so the
     # check takes the allowable across the layers. The series: 1 for a square, 0.795 at 2:1, 0.7425 for a thin strip.
     # (the short-side series alternates and falls as 1 / n^2, so 2000 terms leave it within 1e-7)
     ratios = {a: _series(a, terms=2000)[1] / _series(a, terms=2000)[0] for a in (1, 2, 10, 50)}

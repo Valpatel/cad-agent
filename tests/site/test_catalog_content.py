@@ -1,5 +1,5 @@
 """Catalogue content for outside entries (#106): every upstream in vendor/upstreams/registry.yaml and every library and
-benchmark in research/landscape.json has a plain one-line `what` (what the project is and does, from its own README or
+benchmark in docs/research/landscape.json has a plain one-line `what` (what the project is and does, from its own README or
 site) and `areas` placing it in the topic tree of docs/areas.yaml. Our assessment stays in `notes`, `status` and
 `policy`; `what` is the line the catalogue shows first, so it must not just repeat the notes."""
 from __future__ import annotations
@@ -20,7 +20,7 @@ NO_AREA: dict[str, str] = {}
 
 @pytest.fixture(scope="module")
 def landscape():
-    return json.loads((ROOT / "research" / "landscape.json").read_text(encoding="utf-8"))
+    return json.loads((ROOT / "docs" / "research" / "landscape.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")

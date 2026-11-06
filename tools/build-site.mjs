@@ -20,7 +20,7 @@ import { buildCatalog } from './site-catalog.mjs';            // the catalogue p
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
-import { SECTIONS, publicPath, selectPages } from './site/publication.mjs';
+import { SECTIONS, createPublication } from './site/publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
@@ -52,7 +52,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'tools/site-references.mjs', 'tools/site/publication.mjs', 'package.json', 'package-lock.json'];
+  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'tools/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'package.json', 'package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -68,6 +68,7 @@ const isoDay = iso => iso.slice(0, 10);                 // the commit's own cale
 const day = iso => new Date(`${isoDay(iso)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const readBuf = p => WORKTREE ? readFile(path.join(root, p)) : Promise.resolve(gitRaw('show', `HEAD:${p}`));
 const read = async p => (await readBuf(p)).toString('utf8');
+const { publicPath, selectPages } = createPublication(JSON.parse(await read('tools/site/page-sources.json')));
 const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recursive: true }); await writeFile(dest, await readBuf(f)); };
 
 await rm(out, { recursive: true, force: true });
@@ -145,7 +146,7 @@ for (const [from, to] of redirects) {
   // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
   if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
   seenFrom.add(from);
-  // Pages reads * as a splat and :name as a placeholder, so `lessons/*.md` would redirect every lesson page, the
+  // Pages reads * as a splat and :name as a placeholder, so `docs/lessons/*.md` would redirect every lesson page, the
   // target included, into a loop; the preview server matches exact paths and would never show it. Plain paths only.
   if (!/^[\w-][\w.\/-]*\.md$/.test(from) || path.posix.normalize(from) !== from)
     throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash ` +
@@ -161,12 +162,12 @@ for (const [from, to] of moved) {
 }
 
 // ----------------------------------------------------------------------------- references
-// The reference registry (research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
+// The reference registry (docs/research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
 // tags in every page as links to the record (tools/site-references.mjs). Records are not catalogue entries.
 const refModel = referenceModel(await loadReferences({ files: tracked, read }), YAML.parse(await read('docs/areas.yaml')));
 
 // ----------------------------------------------------------------------------- catalogue
-const landscape = JSON.parse(await read('research/landscape.json'));
+const landscape = JSON.parse(await read('docs/research/landscape.json'));
 const upstreams = YAML.parse(await read('vendor/upstreams/registry.yaml')) || [];
 const cli = await read('src/cadagent/cli.py');
 const parserCount = (cli.match(/sub\.add_parser\(/g) || []).length;
@@ -227,7 +228,7 @@ const withPalette = src => {
   const missing = [...used].filter(c => !new RegExp(`^\\s*classDef\\s+${c}\\b`, 'm').test(src));
   return missing.length ? src.replace(/\n?$/, '\n') + missing.map(c => `    classDef ${c} ${PALETTE[c]}`).join('\n') : src;
 };
-// A link to a folder whose README is a page goes to that page (lessons/process/ → lessons/process/README).
+// A link to a folder whose README is a page goes to that page (docs/lessons/process/ → docs/lessons/process/README).
 const folderPage = resolved => {
   const readme = resolved.replace(/\/?$/, '/README.md');
   return !resolved.endsWith('.md') && pageFiles.has(readme) ? readme : null;
@@ -364,7 +365,7 @@ const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildC
   snap: SNAP, cliUpdated: lastChange('src/cadagent/cli.py'), draft: WORKTREE,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
-// Each ### entry in a lesson file is one lesson (lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
+// Each ### entry in a lesson file is one lesson (docs/lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
 const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
   .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
 await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
@@ -379,7 +380,7 @@ const refHealth = process.env.CAD_AGENT_REFERENCES_HEALTH
 const refSite = referenceSite(refModel, { ORIGIN, revision, built: committed, feedbackBox, health: refHealth });
 for (const [f, text] of refSite.files) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
 // They change with the registry and the topic tree: their last commit (null in a draft with either changed).
-const REF_SOURCES = ['research/references.yaml', 'research/references', 'docs/areas.yaml'];
+const REF_SOURCES = ['docs/research/references.yaml', 'docs/research/references', 'docs/areas.yaml'];
 const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCES) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', ...REF_SOURCES) || committed;
 for (const p of refSite.pages) {
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
@@ -496,7 +497,7 @@ ${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect
 // The card's heading is the README's too (tests/site/website-build.test.mjs).
 const USE_HEADING = 'Build with your favorite AI agent';
 // Where the skills work. Names only, in plain text badges: no product marks, and no endorsement implied. They read
-// ~/.claude/skills or ~/.agents/skills, where the installer puts them (cadagent/agentkit.py, docs/agent-workflow.md).
+// ~/.claude/skills or ~/.agents/skills, where the installer puts them (cadagent/agentkit.py, docs/practice/agent-workflow.md).
 const AGENTS = [['Claude Code', 'CC'], ['Codex CLI', 'Cx'], ['Copilot CLI', 'Co'], ['Cursor', 'Cu'], ['Gemini CLI', 'Ge'], ['opencode', 'oc']];
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
 <div class="use-head"><p class="eyebrow">One line to install</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
@@ -588,9 +589,9 @@ ${agentGuide}
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
 - [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
-- [Agent workflow](${ORIGIN}/docs/agent-workflow.md): skills, subagents, work claims and crash-safe work
-- [Common issues](${ORIGIN}/docs/common-issues.md): recurring CAD mistakes and the checks that catch them
-- [Landscape](${ORIGIN}/research/landscape.md): the agentic-CAD tools we track, verified
+- [Agent workflow](${ORIGIN}/docs/practice/agent-workflow.md): skills, subagents, work claims and crash-safe work
+- [Common issues](${ORIGIN}/docs/practice/common-issues.md): recurring CAD mistakes and the checks that catch them
+- [Landscape](${ORIGIN}/docs/research/agent-workflow/landscape.md): the agentic-CAD tools we track, verified
 
 ${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}](${ORIGIN}/${publicPath(p.file)}): ${p.summary.replace(/\s+/g, ' ').slice(0, 200)}`).join('\n')}`).join('\n\n')}
 

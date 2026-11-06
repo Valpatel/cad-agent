@@ -13,9 +13,9 @@ def test_committed_charts_match_their_tables():
 
 
 def test_charts_are_embedded_where_their_tables_are():
-    assert "docs/img/research/fdm-anisotropy.svg" in (ROOT / "research" / "compliant-mechanisms.md").read_text()
-    assert "docs/img/research/landscape-stars.svg" in (ROOT / "research" / "landscape.md").read_text()
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
+    assert "docs/img/research/fdm-anisotropy.svg" in (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text()
+    assert "docs/img/research/landscape-stars.svg" in (ROOT / "docs" / "research" / "landscape.md").read_text()
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text()
     assert md.index("## 3. Allowable") < md.index("docs/img/research/moulded-strain.svg") < md.index("**Bayer Table 2**")
     assert md.index("## 6. Printed") < md.index("docs/img/research/printed-strain.svg") < md.index("| Material (TDS) |")
 
@@ -30,7 +30,7 @@ def test_every_row_with_ratios_is_drawn():
     assert "≥" not in svg                                    # TPU's two lower bounds give no ratio, not a bound
     assert svg.count(">not known</text>") == 1               # TPU's strain
     assert "PolyFlex TPU95" not in svg                       # no Z data: not drawn
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text()
     section = md[md.index("## 5. FDM anisotropy"):]
     lines = section.splitlines()
     first = next(i for i, line in enumerate(lines) if line.startswith("|"))
@@ -84,7 +84,7 @@ def test_strain_charts_draw_every_row_and_ranges_as_ranges():
 
 
 def test_thermal_chart_draws_the_table_against_the_modules_limit():
-    md = (ROOT / "research" / "simulation-tools.md").read_text()
+    md = (ROOT / "docs" / "research" / "simulation-tools.md").read_text()
     assert md.index("## 6. Thermal") < md.index("docs/img/research/thermal-limits.svg") < md.index("**Jetson AGX Orin")
     svg = (ROOT / "docs" / "img" / "research" / "thermal-limits.svg").read_text()
     assert svg.count('text-anchor="end">PLA Basic<') == svg.count('text-anchor="end">PETG HF<') == 1

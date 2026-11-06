@@ -11,7 +11,7 @@ import yaml
 from cadagent.review.dossier import DossierError, dump_yaml, load_dossier, load_project_dossier
 from cadagent.project import load_project
 
-# The part spec card example from docs/design-process-plan.md §3.2, verbatim.
+# The part spec card example from docs/practice/design-process-plan.md §3.2, verbatim.
 HOPPER = textwrap.dedent("""\
     # dossier/sections/hopper.yaml  (one file per section; parts are nested, or `parts: [file.yaml]` to split)
     id: S3

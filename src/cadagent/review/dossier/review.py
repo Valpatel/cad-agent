@@ -1,4 +1,4 @@
-"""The reviewer pass and its hash-bound sign-off (plan ``docs/design-process-plan.md`` §5.3, task T11).
+"""The reviewer pass and its hash-bound sign-off (plan ``docs/practice/design-process-plan.md`` §5.3, task T11).
 
 A section is reviewed by an agent or person that did not build it. This module gives that reviewer everything in
 one place and checks what comes back:
@@ -493,7 +493,7 @@ def _load(project: Any, section: str) -> _Project:
     from .load import DossierError, load_project_dossier
 
     if not getattr(project, "dossier", None):
-        raise ReviewError("no dossier: add `dossier: dossier/project.yaml` to the cad: section (docs/dossier.md)")
+        raise ReviewError("no dossier: add `dossier: dossier/project.yaml` to the cad: section (docs/practice/dossier.md)")
     try:
         dossier = load_project_dossier(project, strict=False)
     except DossierError as exc:

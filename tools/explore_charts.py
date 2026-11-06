@@ -4,7 +4,7 @@
     PYTHONPATH=src python3 tools/explore_charts.py            # write docs/img/explore/two-wheel-charts.json
     PYTHONPATH=src python3 tools/explore_charts.py --check    # exit 1 if the committed file differs (tests run this)
 
-It copies the worked example (examples/explore-two-wheel) to a scratch folder and runs ``cad-agent compare --json``
+It copies the worked example (docs/examples/explore-two-wheel) to a scratch folder and runs ``cad-agent compare --json``
 there: the four designs, as the comparison page ranks them.
 
 Nothing is typed by hand: each point is a design with its cost and mass, whether it meets the constraints,
@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXAMPLE = ROOT / "examples" / "explore-two-wheel"
+EXAMPLE = ROOT / "docs" / "examples" / "explore-two-wheel"
 OUT = ROOT / "docs" / "img" / "explore" / "two-wheel-charts.json"
 X, Y = "cost_usd", "mass_kg"
 
@@ -70,7 +70,7 @@ def build() -> dict:
         shutil.copytree(EXAMPLE, work, ignore=shutil.ignore_patterns("exports", "site", "__pycache__"))
         compare = json.loads(run(work, "compare", "--json"))
     return {
-        "source": "examples/explore-two-wheel",
+        "source": "docs/examples/explore-two-wheel",
         "generated_by": "tools/explore_charts.py (run it with --check to compare)",
         "compare": chart(compare, "cad-agent compare", f"{len(compare['designs'])} designs"),
     }

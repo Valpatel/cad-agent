@@ -1,5 +1,5 @@
 """The design dossier's data model: requirements, sections, part spec cards, interfaces, decisions, assembly steps
-and the gate configuration (``docs/dossier.md``; plan ``docs/design-process-plan.md`` §3).
+and the gate configuration (``docs/practice/dossier.md``; plan ``docs/practice/design-process-plan.md`` §3).
 
 Plain dataclasses, no kernel. ``cadagent.review.dossier.load`` builds them from YAML with file and line for every item;
 ``to_dict()`` writes them back in the same shape (fields left at their default are omitted), so a hand-written card

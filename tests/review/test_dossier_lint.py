@@ -205,7 +205,7 @@ CASES = {
     "verdict-stale": (lambda f, ev: ev.gates.update(wall=_verdict("wall", geometry={**base_geometry(), "joints": {
                           "J": {"kind": "fixed"}}})),
                       lambda f, ev: ev.gates.update(wall=_verdict("wall"))),
-    # the registry join (docs/dossier.md "Joining cards and geometry"), reported by the lint
+    # the registry join (docs/practice/dossier.md "Joining cards and geometry"), reported by the lint
     "card-without-shape": (lambda f, ev: ev.geometry["parts"].pop("lid"), lambda f, ev: None),
     "shape-without-card": (lambda f, ev: ev.geometry["parts"].update(extra={"section": "S1", "sha256": "f" * 64,
                                                                              "declared_at": "cad/build.py:30"}),

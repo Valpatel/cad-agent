@@ -169,9 +169,9 @@ class FakeClock:
 
 
 def recs(srv, *paths, gh=()):
-    out = [dict(id=f"r{p.strip('/').replace('/', '-').replace('.', '-') or 'root'}", url=base(srv) + p, file="research/references/x.yaml",
+    out = [dict(id=f"r{p.strip('/').replace('/', '-').replace('.', '-') or 'root'}", url=base(srv) + p, file="docs/research/references/x.yaml",
                 kind="catalogued", evidence="snippet-only", activity=None, spdx=None, claims=False) for p in paths]
-    out += [dict(id=f"gh-{s.replace('/', '-')}", url=f"https://github.com/{s}", file="research/references/p.yaml",
+    out += [dict(id=f"gh-{s.replace('/', '-')}", url=f"https://github.com/{s}", file="docs/research/references/p.yaml",
                  kind="catalogued", evidence="snippet-only", activity="active", spdx=lic, claims=False) for s, lic in gh]
     return out
 
@@ -312,7 +312,7 @@ def test_github_repositories_through_the_api_stub(servers, site):
 
 def refused():
     """A record whose host refuses the connection (nothing listens on port 1): unreachable."""
-    return dict(id="refused", url="http://127.0.0.1:1/x", file="research/references/x.yaml", kind="catalogued",
+    return dict(id="refused", url="http://127.0.0.1:1/x", file="docs/research/references/x.yaml", kind="catalogued",
                 evidence="snippet-only", activity=None, spdx=None, claims=False)
 
 
@@ -423,7 +423,7 @@ def test_the_weekly_jobs_keep_tokens_apart_and_only_they_go_online():
     assert not any("pip" in s.get("run", "") or "setup-python" in s.get("uses", "") for s in issue["steps"] + pr["steps"])
     assert not any("python" in s.get("run", "") for s in pr["steps"])
     pr_run = "\n".join(s.get("run", "") for s in pr["steps"])
-    assert "git apply --numstat" in pr_run and r"^research/references/[a-z0-9-]+\.yaml$" in pr_run and "--base dev" in pr_run
+    assert "git apply --numstat" in pr_run and r"^docs/research/references/[a-z0-9-]+\.yaml$" in pr_run and "--base dev" in pr_run
     for other in (".github/workflows/ci.yml", ".github/workflows/gates.yml", ".github/workflows/webkit.yml",
                   ".github/workflows/release.yml"):
         assert "references --online" not in (ROOT / other).read_text() and "lychee" not in (ROOT / other).read_text()
@@ -491,24 +491,24 @@ def test_the_pr_job_applies_only_in_place_shard_edits(tmp_path, probe, ok):
     sh = lambda *a: subprocess.run(a, cwd=repo, check=True, capture_output=True, text=True).stdout   # noqa: E731
     repo.mkdir()
     sh("git", "init", "-q")
-    (repo / "research/references").mkdir(parents=True)
-    (repo / "research/references/a.yaml").write_text("schema: 2\nsources: []\n")
+    (repo / "docs/research/references").mkdir(parents=True)
+    (repo / "docs/research/references/a.yaml").write_text("schema: 2\nsources: []\n")
     (repo / "tools").mkdir()
     (repo / "tools/ci_gates.py").write_text("print('gate')\n")
     (repo / "top.txt").write_text("secret-ish\n")
     sh("git", "add", "-A")
     sh("git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base")
-    shard, gate = repo / "research/references/a.yaml", repo / "tools/ci_gates.py"
+    shard, gate = repo / "docs/research/references/a.yaml", repo / "tools/ci_gates.py"
     if probe == "edit":
         shard.write_text("schema: 2\nsources: [x]\n")
     elif probe == "rename":
-        sh("git", "mv", "tools/ci_gates.py", "research/references/b.yaml")
+        sh("git", "mv", "tools/ci_gates.py", "docs/research/references/b.yaml")
     elif probe == "symlink":
         shard.unlink()
         shard.symlink_to("../../top.txt")
     elif probe == "create":
-        (repo / "research/references/new.yaml").write_text("schema: 2\n")
-        sh("git", "add", "-N", "research/references/new.yaml")
+        (repo / "docs/research/references/new.yaml").write_text("schema: 2\n")
+        sh("git", "add", "-N", "docs/research/references/new.yaml")
     elif probe == "delete":
         shard.unlink()
     elif probe == "mode":

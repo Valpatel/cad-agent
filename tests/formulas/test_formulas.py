@@ -808,7 +808,7 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
     from cadagent.mechanical.compliant.allowables import PRINTED
     page = (ROOT / "docs" / "compliant.md").read_text()
     tag = re.search(r"<cad-cantilever\b([^>]*)>([\s\S]*?)</cad-cantilever>", page)
-    assert tag, "docs/compliant.md has no <cad-cantilever> demo"
+    assert tag, "docs/mechanical/compliant.md has no <cad-cantilever> demo"
     attrs = dict(re.findall(r'(\w+)="([^"]*)"', tag.group(1)))
     m = PRINTED[attrs["material"]]
     args = [float(attrs[k]) * MM for k in ("length", "thickness", "width", "deflection")]
@@ -824,7 +824,7 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
 
 
 def test_the_fourbar_demo_and_its_pages_say_what_the_python_computes():
-    # docs/linkages.md and docs/formulas.md show <cad-fourbar>: its attributes, run through cadagent.formulas, give the
+    # docs/mechanical/linkages.md and docs/formulas.md show <cad-fourbar>: its attributes, run through cadagent.formulas, give the
     # class and the lowest transmission angle the still's alt text quotes (tools/fourbar-still.mjs checks the same from
     # the browser side), and the page's worked numbers (the limits of the linkages it suggests) are the Python's.
     def deg(rad):

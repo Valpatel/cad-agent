@@ -1,9 +1,17 @@
-"""`cad-agent init` (#291): it copies the starter box (examples/starter-box), refuses a folder that is not empty, works
+"""`cad-agent init` (#291): it copies the starter box (docs/examples/starter-box), refuses a folder that is not empty, works
 from a wheel's copy too, and what it writes passes `cad-agent all` as it stands."""
 from __future__ import annotations
 
 import json
+import hashlib
+import os
 import re
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+import venv
 from pathlib import Path
 
 import pytest
@@ -12,7 +20,7 @@ from cadagent import project
 from cadagent.cli import main
 
 ROOT = Path(__file__).resolve().parents[2]
-STARTER = ROOT / "examples" / "starter-box"
+STARTER = ROOT / "docs" / "examples" / "starter-box"
 OUTPUTS = set(project.STARTER_OUTPUTS)
 
 
@@ -81,8 +89,8 @@ def test_init_never_copies_a_runs_outputs(tmp_path, monkeypatch):
         assert out in ignored, f"the starter's .gitignore leaves {out} out of the user's repo"
 
 
-def test_a_wheel_installs_every_file_of_the_starter():
-    """pyproject.toml's data-files list is the starter's files, so a wheel's `cad-agent init` copies all of them."""
+def test_wheel_data_declarations_cover_the_starter():
+    """Fast declaration parity. Actual wheel installation is exercised once in full CI by --wheel-smoke below."""
     tomllib = pytest.importorskip("tomllib")
     data = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["setuptools"]["data-files"]
     listed = set()
@@ -90,34 +98,67 @@ def test_a_wheel_installs_every_file_of_the_starter():
         assert into.startswith("share/cad-agent/starter-box"), into
         sub = into[len("share/cad-agent/starter-box"):].strip("/")
         for f in files:
-            assert f.startswith("examples/starter-box/"), f
-            rel = f[len("examples/starter-box/"):]
+            assert f.startswith("docs/examples/starter-box/"), f
+            rel = f[len("docs/examples/starter-box/"):]
             assert Path(rel).parent.as_posix() == (sub or "."), f"{f} is installed into {into}"
             listed.add(rel)
     assert listed == starter_files(), "list each starter file in pyproject.toml's [tool.setuptools.data-files]"
 
 
-def test_a_wheel_install_finds_the_starter_under_share(tmp_path, monkeypatch):
-    """No checkout beside the package: the copy the wheel put under <prefix>/share/cad-agent/, found through the
-    distribution's file list (any install scheme)."""
-    site = tmp_path / "venv" / "lib" / "python3" / "site-packages"
-    share = tmp_path / "venv" / "share" / "cad-agent" / "starter-box"
-    project.init_project(share)
-    monkeypatch.setattr(project, "__file__", str(site / "cadagent" / "project.py"))
+def _wheel_smoke(tmp_path):
+    """Mandatory full-CI smoke: consume a real committed wheel with its disposable build checkout removed."""
+    tmp_path = Path(tmp_path).resolve()
+    source, wheels, outside, env_dir = (tmp_path / name for name in ("source", "wheels", "outside", "venv"))
+    source.mkdir(); wheels.mkdir(); outside.mkdir()
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
 
-    class Dist:
-        files = [Path("cadagent/project.py"), Path("../../../share/cad-agent/starter-box/cad-agent.yaml")]
+    def run(args, *, cwd=outside, check=True):
+        result = subprocess.run([str(a) for a in args], cwd=cwd, env=env, capture_output=True, text=True, timeout=180)
+        if check and result.returncode:
+            raise AssertionError(f"{args[0]} exited {result.returncode}\n{result.stdout}\n{result.stderr}")
+        return result
 
-        def locate_file(self, f):
-            return site / f
-
-    from importlib import metadata
-    monkeypatch.setattr(metadata, "distribution", lambda name: Dist())
-    assert project.starter_dir() == share.resolve()
-    Dist.files = Dist.files[:1]
-    with pytest.raises(FileNotFoundError, match="not installed with this cad-agent"):
-        project.starter_dir()
-    assert main(["init", str(tmp_path / "x")]) == 2
+    archive = tmp_path / "source.tar"
+    run(["git", "archive", "--format=tar", "--output", archive, "HEAD"], cwd=ROOT)
+    with tarfile.open(archive) as package:
+        package.extractall(source, filter="data")
+    # Expectations and wheel input come from the same immutable archive, never from a dirty working tree.
+    committed_starter = source / STARTER.relative_to(ROOT)
+    expected = {p.relative_to(committed_starter).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in committed_starter.rglob("*") if p.is_file()}
+    assert expected and "cad-agent.yaml" in expected
+    run([sys.executable, "-m", "pip", "wheel", "--disable-pip-version-check", "--no-deps", "--wheel-dir", wheels, source])
+    built = list(wheels.glob("cad_agent-*.whl"))
+    assert len(built) == 1, f"expected one cad-agent wheel, found {built}"
+    shutil.rmtree(source)
+    assert not source.exists()
+    venv.EnvBuilder(with_pip=True).create(env_dir)
+    python, cli = env_dir / "bin/python", env_dir / "bin/cad-agent"
+    run([python, "-I", "-m", "pip", "install", "--disable-pip-version-check", built[0]])
+    target = outside / "copied"
+    run([cli, "init", target])
+    probe = '''import json
+from pathlib import Path
+from importlib import metadata
+import cadagent
+from cadagent import project
+dist = metadata.distribution("cad-agent")
+records = [p for p in dist.files or () if p.as_posix().endswith("share/cad-agent/starter-box/cad-agent.yaml")]
+assert len(records) == 1
+print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": str(Path(project.__file__).resolve()),
+ "distribution": str(Path(dist.locate_file("")).resolve()), "declared_config": str(Path(dist.locate_file(records[0])).resolve()),
+ "starter": str(project.starter_dir().resolve())}))'''
+    paths = json.loads(run([python, "-I", "-c", probe]).stdout)
+    assert all(Path(p).is_relative_to(env_dir) for p in paths.values()), paths
+    actual = {p.relative_to(target).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in target.rglob("*") if p.is_file()}
+    assert actual == expected, "installed wheel starter files differ from committed source bytes"
+    Path(paths["declared_config"]).unlink()
+    rejected = outside / "missing-starter"
+    bad = run([cli, "init", rejected], check=False)
+    assert bad.returncode == 2 and "the starter project (starter-box) is not installed with this cad-agent" in bad.stderr, (bad.stdout, bad.stderr)
+    assert not rejected.exists(), "missing installed data must not copy a checkout fallback"
+    print("real wheel starter PASS: isolated imports, committed bytes and missing-installed-data rejection")
 
 
 def test_a_project_command_without_a_project_points_at_init(tmp_path, monkeypatch, capsys):
@@ -155,3 +196,10 @@ def test_the_starter_passes_cad_agent_all_as_copied(tmp_path, monkeypatch, capsy
     assert main(["all", "--project", str(dest)]) == 1
     assert "inserts: the check did not run" in (dest / "exports" / "checks.log").read_text()
     assert not (dest / "exports" / "inserts.json").exists()
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] != ["--wheel-smoke"]:
+        raise SystemExit("internal validation entry: --wheel-smoke")
+    with tempfile.TemporaryDirectory(prefix="cad-agent-wheel-") as folder:
+        _wheel_smoke(folder)

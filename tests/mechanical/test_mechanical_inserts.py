@@ -396,7 +396,7 @@ def test_every_insert_and_material_checks_without_error():
 def test_cad_allowance_matches_the_process_profile():
     """inserts and fit_coupons take the printed insert hole's allowance from the same row (#290)."""
     import yaml
-    rules = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text())["rules"]
+    rules = yaml.safe_load((ROOT / "docs" / "research" / "process-profiles.yaml").read_text())["rules"]
     row = next(r for r in rules if r["id"] == "fdm-insert-hole-cad-offset-cnckitchen")
     assert I.CAD_ALLOWANCE_MM == (row["min"], row["max"])
 
@@ -838,7 +838,7 @@ def test_filler_increase_is_spirol_s_two_steps_interpolated():
 
 def test_the_hole_numbers_come_from_the_process_profile():
     import yaml
-    rules = {r["id"]: r for r in yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text())["rules"]}
+    rules = {r["id"]: r for r in yaml.safe_load((ROOT / "docs" / "research" / "process-profiles.yaml").read_text())["rules"]}
     filler = rules["fdm-insert-hole-filler-spirol"]
     assert (filler["min"], filler["max"]) == (0.08, 0.15)
     assert rules["fdm-hole-undersize-cnckitchen-2019"]["value"] == 0.1

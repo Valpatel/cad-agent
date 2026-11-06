@@ -26,7 +26,7 @@ LOG_TAIL_LINES = 20
 # Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
 # person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
 # anything a step starts), unless the variable is already set: a person's own explicit choice stands. They never change
-# the calling process's environment. The list is the survey in docs/supply-chain.md ("Usage reporting");
+# the calling process's environment. The list is the survey in docs/practice/supply-chain.md ("Usage reporting");
 # tests/cli/test_privacy.py fails when a vendored tool names a switch this list does not cover.
 OPT_OUTS = {
     "DO_NOT_TRACK": ("1", "the Console Do Not Track convention (consoledonottrack.com); text-to-cad's cadgen reads it"),
@@ -347,13 +347,13 @@ def cmd_pcb_check(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
     """Lint the design dossier, compute every item's status and write exports/dossier-status.json and
-    exports/gates/dossier-lint.json (docs/dossier.md "Lint and status")."""
+    exports/gates/dossier-lint.json (docs/practice/dossier.md "Lint and status")."""
     from cadagent.review.dossier.lint import STATUSES, lint_project, write_outputs
 
     minimum = None if getattr(args, "min_status", "gated") == "none" else getattr(args, "min_status", "gated")
     result = lint_project(project, min_section_status=minimum)
     if result is None:
-        raise _Unusable("no dossier: add `dossier: dossier/project.yaml` to the cad: section (docs/dossier.md)")
+        raise _Unusable("no dossier: add `dossier: dossier/project.yaml` to the cad: section (docs/practice/dossier.md)")
     if not getattr(args, "no_write", False):
         status_path, verdict_path = write_outputs(result, project.exports_dir)
     if getattr(args, "json", False):
@@ -377,7 +377,7 @@ def cmd_dossier(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
     """Render each section's review packet: exports/review/<section>/*.png and manifest.json
-    (docs/review-packet.md)."""
+    (docs/practice/review-packet.md)."""
     from cadagent.review.packet import PacketError, plan_project_packet, project_sections, review_packet
 
     try:
@@ -403,7 +403,7 @@ def cmd_review_packet(project: CadProject, args: argparse.Namespace) -> int:
 
 def cmd_review_section(project: CadProject, args: argparse.Namespace) -> int:
     """The reviewer pass (plan §5.3, T11): write the reviewer's prompt bundle for a section, or check and submit a
-    filled-in reviewer record (docs/dossier.md "The reviewer pass")."""
+    filled-in reviewer record (docs/practice/dossier.md "The reviewer pass")."""
     from cadagent.review.dossier.review import ReviewError, submit_record, write_bundle
 
     record = args.submit or args.check
@@ -468,12 +468,12 @@ def _packet_summary(manifest: Dict[str, Any], listed: bool) -> None:
 
 def cmd_gates(project: CadProject, args: argparse.Namespace) -> int:
     """Run every integrity gate that applies, each in a process of its own, then the dossier lint; write
-    exports/gates/<gate>.json and .md (docs/gates.md "Running the gates")."""
+    exports/gates/<gate>.json and .md (docs/practice/gates.md "Running the gates")."""
     from cadagent.review.gates.run import GatesConfigError, enabled, run_gates
 
     if not enabled(project):
         raise _Unusable("no dossier: or gates: key in the cad: section; the gates read the dossier geometry "
-                        "(docs/gates.md \"Running the gates\")")
+                        "(docs/practice/gates.md \"Running the gates\")")
     dry = getattr(args, "dry_run", False)
     if getattr(args, "jobs", None) is not None and args.jobs < 1:
         raise _Unusable("--jobs must be 1 or more")
@@ -976,7 +976,7 @@ def cmd_update(args: argparse.Namespace) -> int:
     root = agentkit.kit_root(args.dir) if args.dir else running
     if root is None:
         _err("update: this cad-agent was not installed from a checkout: reinstall with the one-line installer "
-             "(docs/agent-workflow.md#install), or pass --dir <checkout>")
+             "(docs/practice/agent-workflow.md#install), or pass --dir <checkout>")
         return 2
     asked = [e for e in (args.extras or "").replace(" ", "").split(",") if e]
     # Before the pull (a newer pyproject.toml may list packages not installed yet), plus those of an unfinished reinstall.
@@ -1219,7 +1219,7 @@ def cmd_library(args: argparse.Namespace) -> int:
 
 
 def cmd_init(args: argparse.Namespace) -> int:
-    """Copy the starter project (examples/starter-box: a box and lid on four M3 heat-set inserts) into a folder, and
+    """Copy the starter project (docs/examples/starter-box: a box and lid on four M3 heat-set inserts) into a folder, and
     say what to run next."""
     import shlex
 
@@ -1387,7 +1387,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("all", parents=[common], help="build, export-3mf, holes, gates and the dossier lint (when configured), "
                                                  "check + report, package")
     init_p = sub.add_parser("init", help="Start a project: copy the starter box (a box and lid on four M3 heat-set "
-                                         "inserts, examples/starter-box) into DIR, ready for `cad-agent all`")
+                                         "inserts, docs/examples/starter-box) into DIR, ready for `cad-agent all`")
     init_p.add_argument("dir", nargs="?", default=".", metavar="DIR", help="folder to make (default: this one)")
     init_p.add_argument("--force", action="store_true", help="write the starter's files into a folder that is not "
                                                             "empty (files of the same name are replaced)")
@@ -1397,11 +1397,11 @@ def build_parser() -> argparse.ArgumentParser:
     mt_p.add_argument("--poses-only", action="store_true", help="Emit required capture angles instead of validating")
     mt_p.add_argument("--output", type=Path, help="Write JSON to a file (default: stdout)")
     mt_p.add_argument("--tolerance-mm", type=float, default=.01, help="Landmark error limit in mm (default: 0.01)")
-    sf_p = sub.add_parser("snapfit", help="Size and check snap fits declared in a YAML/JSON file (docs/compliant.md)")
+    sf_p = sub.add_parser("snapfit", help="Size and check snap fits declared in a YAML/JSON file (docs/mechanical/compliant.md)")
     sf_p.add_argument("spec", help="file with a 'snaps' list")
     sf_p.add_argument("--output", help="write the full result as JSON")
     in_p = sub.add_parser("inserts", help="Check heat-set insert and compression-limiter joints declared in a "
-                                          "YAML/JSON file (docs/inserts.md)")
+                                          "YAML/JSON file (docs/mechanical/inserts.md)")
     in_p.add_argument("spec", help="file with a 'joints' list")
     in_p.add_argument("--output", help="write the full result as JSON")
     ru_p = sub.add_parser("rules", help="Print the rule card for a design feature: each cited rule with its numbers, "
@@ -1422,12 +1422,12 @@ def build_parser() -> argparse.ArgumentParser:
     ch_p.add_argument("--qty", type=int, help="parts made")
     ch_p.add_argument("--json", action="store_true", help="print the decision as JSON")
     be_p = sub.add_parser("bearings", help="Check rolling bearings declared in a YAML/JSON file: life, static safety, "
-                                           "axial load and speed, turning or oscillating (docs/bearings.md)")
+                                           "axial load and speed, turning or oscillating (docs/mechanical/bearings.md)")
     be_p.add_argument("spec", help="file with a 'bearings' list")
     be_p.add_argument("--output", help="write the full result as JSON")
     ag_p = sub.add_parser("agents", help="Install the skills and subagents for Claude Code (~/.claude) and the other "
                                          "agents (~/.agents/skills), list what is installed, or remove it "
-                                         "(docs/agent-workflow.md)")
+                                         "(docs/practice/agent-workflow.md)")
     ag_p.add_argument("action", choices=("install", "list", "uninstall"))
     ag_p.add_argument("--target", choices=("all", "claude", "agents", "codex"), default="all",
                       help="agents: ~/.agents/skills, which Codex, Copilot CLI, Cursor, Gemini CLI and opencode read "
@@ -1439,7 +1439,7 @@ def build_parser() -> argparse.ArgumentParser:
     ag_p.add_argument("--dry-run", action="store_true", help="show what would be installed")
     up_p = sub.add_parser("update", help="Update cad-agent like re-running the installer: pull main (or --ref), "
                                          "reinstall if the dependencies changed, relink the skills, show the "
-                                         "changelog and what a project here must re-run (docs/agent-workflow.md)")
+                                         "changelog and what a project here must re-run (docs/practice/agent-workflow.md)")
     up_p.add_argument("--ref", help="a release tag (or branch) to move to instead of the newest main, e.g. v0.14.0")
     up_p.add_argument("--extras", help="extras to add, comma-separated (fea, sim, robot, explore, site); "
                                        "installed ones are kept")

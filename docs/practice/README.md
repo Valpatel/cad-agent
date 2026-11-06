@@ -1,0 +1,24 @@
+# Design and review practice
+
+Follow the workflow from a requirement to an inspectable result. A passing software check records its assumptions; it does not prove physical fit or strength.
+
+```mermaid
+flowchart LR
+    B["brief + sources"] --> D["dossier"]
+    D --> C["checks + evidence"]
+    C --> R["independent review"]
+    R --> L["canonical lesson<br/>regression feedback"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class D,C,R here
+    class B,L near
+```
+
+| Task | Start here |
+|---|---|
+| Set up and design | [Agent workflow](agent-workflow.md), [design process](design-process-plan.md), [experts](experts.md) |
+| Review a result | [Dossier](dossier.md), [integrity gates](gates.md), [review packet](review-packet.md), [common issues](common-issues.md) |
+| Publish readable evidence | [Style guide](style-guide.md), [animated figures](animated-figures.md), [web parts](web-parts.md), [file viewer](file-viewer.md) |
+| Maintain the system | [Supply chain](supply-chain.md), [weekly updates](weekly-upstream-update.md), [process lessons](../lessons/process/README.md) |
+
+[All guides](../README.md) · [Skills](../../skills/README.md)

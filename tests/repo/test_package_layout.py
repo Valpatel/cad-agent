@@ -267,7 +267,7 @@ def test_an_old_package_path_warns_at_the_importing_line(form, tmp_path):
 
 
 # python -m through an old path, and the same through the new one: (old, new, exit status). The gate worker was
-# `python -m cadagent.gates.run` in v0.4's docs/gates.md; with no arguments it prints its usage line.
+# `python -m cadagent.gates.run` in v0.4's docs/practice/gates.md; with no arguments it prints its usage line.
 PYTHON_M = [("cadagent.gates.run", "cadagent.review.gates.run", 2),
             ("cadagent.dotsvg", "cadagent.publish.dotsvg", 0),
             ("cadagent.gates", "cadagent.review.gates", 1)]

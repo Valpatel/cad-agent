@@ -34,7 +34,7 @@ flowchart TD
 |---|---|---|---|
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
 | `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
-| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ docs/research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
+| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
 | `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a maintainer is pass, on the PR's head commit |
 | `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](../CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
@@ -162,10 +162,10 @@ such as a new command or check, even one that asks nothing of projects.
 
    Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` (the name in
    `tools/site/wrangler.toml` and `npm --prefix tools/site run deploy:site`) is connected to this repository like every Valpatel Pages site:
-   output `dist`, root directory blank. The 2026-11-06 readback still uses the released root-package command
-   `npm ci && npm run build`. The nested-package command is `npm --prefix tools/site ci && npm --prefix tools/site run build`;
-   its reviewed external transition and readback are tracked in [#362](https://github.com/Valpatel/cad-agent/issues/362).
-   Moving repository files does not update that setting. Two settings differ from
+   build command `npm --prefix tools/site ci && npm --prefix tools/site run build`, output `dist`, root directory blank.
+   The steady command was read back on 2026-11-06 UTC after the actual v0.22.0 deployment passed
+   [publication checks](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6677025539).
+   Repository moves and external settings are separate changes. Two settings differ from
    Cloudflare's defaults and matter here:
    - **Production branch `main`.** This repository's default branch is `dev`, and the release build accepts HEAD on
      `origin/dev` too, so a production branch of `dev` would publish every merge into `dev`.
@@ -178,10 +178,21 @@ such as a new command or check, even one that asks nothing of projects.
    - Check that `https://cad-agent.valpatel.com/version.json` shows the release.
    - `npm --prefix tools/site run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
 
-   **Runtime readback, 2026-11-06 UTC:** both deployment environments use build image v3 with no `NODE_VERSION`
-   override. The successful v0.21.0 production log detects Node 22.23.4 and npm 10.9.9.
-   [Cloudflare documents](https://developers.cloudflare.com/pages/configuration/build-image/#limitations) that v3 does
-   not select Node from package.json engines, so moving that metadata does not change the observed selection.
-   CI and the installed-wheel check explicitly use Node 22; a future runtime pin is a separate policy decision.
+   <details>
+   <summary>Runtime and diagram evidence, 2026-11-06 UTC</summary>
+
+   Both environments retain build image v3 without a `NODE_VERSION` override. The v0.21.0 production log explicitly
+   reports Node 22.23.4/npm 10.9.9. After the root npm metadata moved, v0.22.0's detector lists only pip/Python;
+   its successful npm/Node entry does not itself reveal the new binary version.
+   [Cloudflare documents](https://developers.cloudflare.com/pages/configuration/build-image/#limitations) that v3
+   does not select Node from package.json engines. CI and the installed-wheel check explicitly use Node 22;
+   a runtime pin remains a separate policy decision.
+
+   Actual v0.22.0 production drew all 264 themed SVGs in Chrome 156. Raw SVGs were checked on three public routes;
+   JavaScript-disabled /docs/gates views showed the correct figures at 390/1366 px in both themes. Browserless fleet
+   job 199 instead exercised the documented client fallback: it proved entry/history/root-output behavior, not
+   prerendered publication. Keep those receipt scopes distinct.
+
+   </details>
 
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

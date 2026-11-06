@@ -23,7 +23,8 @@ def shell_commands(source: str):
     """Command words in documented shell examples, without executing them.
 
     Quotes, escapes, comments, assignments and command separators are supported. This is not a shell interpreter:
-    substitutions, functions and control-flow syntax are outside this command-name existence check.
+    substitutions, functions and control-flow syntax are outside this command-name existence check. Flags and
+    visibly nonliteral subcommand placeholders are not validated as names.
     """
     at_command, needs_subcommand = True, False
     start, quote, i = None, None, 0
@@ -55,7 +56,8 @@ def shell_commands(source: str):
                 raw = source[start:i]
                 word, = shlex.split(raw, comments=False)
                 if needs_subcommand:
-                    if re.fullmatch(r"[a-z][a-z0-9-]*", word):
+                    nonliteral = word.startswith(("<", "[", "{")) or any(c in word for c in "$`") or word == "..."
+                    if word and not word.startswith("-") and not nonliteral:
                         yield word
                     needs_subcommand = False
                 elif at_command and not re.match(r"[A-Za-z_]\w*=", raw):
@@ -92,7 +94,8 @@ def skill_commands(text: str):
                 r"^(?: {4}|\t)\s*(?:cad-agent\b|[A-Za-z_]\w*=)", line):
             block.append(line)
         else:
-            yield from re.findall(r"`cad-agent ([a-z][a-z0-9-]*)", line)
+            for example in re.findall(r"`(cad-agent(?:[ \t][^`\n]*)?)`", line):
+                yield from shell_commands(example)
     if not fence or language in ("sh", "bash", "shell"):
         yield from shell_commands("".join(block))
 
@@ -170,6 +173,16 @@ def test_missing_commands_fail_through_the_real_skill_check(tmp_path, text):
         test_skill_commands_gates_and_names_exist(path)
 
 
+@pytest.mark.parametrize("name", ["gates_typo", "GATES"])
+@pytest.mark.parametrize("fenced", [False, True], ids=["inline", "fenced"])
+def test_literal_subcommand_spelling_is_not_truncated_or_normalised(tmp_path, name, fenced):
+    path = tmp_path / "SKILL.md"
+    command = f"cad-agent {name}"
+    path.write_text(f"```bash\n{command}\n```\n" if fenced else f"Use `{command}`.\n")
+    with pytest.raises(AssertionError, match=re.escape(f"`{command}` is not a command")):
+        test_skill_commands_gates_and_names_exist(path)
+
+
 @pytest.mark.parametrize("text", [
     "Use `cad-agent gates --build`.",
     "```bash\ncad-agent gates --build # cad-agent not-a-real-command\n```\n",
@@ -184,6 +197,13 @@ def test_missing_commands_fail_through_the_real_skill_check(tmp_path, text):
     "```bash\ncad-agent review-section S3\n```\n",  # now implemented: no future-announcement text needed
 ])
 def test_valid_shell_examples_remain_accepted_by_the_real_skill_check(tmp_path, text):
+    path = tmp_path / "SKILL.md"
+    path.write_text(text)
+    test_skill_commands_gates_and_names_exist(path)
+
+
+@pytest.mark.parametrize("text", ["Use `cad-agent <command>`.", "```sh\ncad-agent $COMMAND\n```\n"])
+def test_nonliteral_subcommand_examples_are_explicitly_outside_name_validation(tmp_path, text):
     path = tmp_path / "SKILL.md"
     path.write_text(text)
     test_skill_commands_gates_and_names_exist(path)

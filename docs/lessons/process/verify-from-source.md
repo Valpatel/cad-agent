@@ -129,6 +129,22 @@ flowchart TD
   qualification or untested platforms. Job 181 was a failed diagnostic, not a passing full-suite receipt.
   [Commands, receipts and recovery instructions](https://github.com/Valpatel/cad-agent/issues/362).
 
+<details>
+<summary>Deployment evidence is specific to its environment (2026-11-06 UTC)</summary>
+
+- **Evidence:** Fleet job 199 at reviewed dev `f52795ee` passed the actual nested npm release entry in 13 seconds,
+  including full-history checks and repository-root dist output. Without a build browser, its 132 diagrams used
+  the existing client fallback. The actual Pages v0.21.0 log instead drew 254 themed SVGs in Chrome 156; v0.22.0
+  drew 264. Raw public HTML and JavaScript-disabled phone/desktop checks in both themes confirmed visible SVGs.
+- **Rule:** Record what the actual command and environment establish. A browserless entry-point pass does not
+  establish prerendered publication. Verify the deployed revision, its own build log, emitted SVGs and script-free
+  behavior before replacing a transitional deployment command or declaring publication complete.
+- **Limits:** These are software build/publication controls, not physical evidence. The production detector stopped
+  listing Node after root package metadata moved; a successful entry is not an observed binary-version report.
+  [Actual production and steady readback](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6677025539).
+
+</details>
+
 ### Follow the credential store selected by the actual CLI
 - **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx wrangler whoami` so its
   normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path
@@ -158,14 +174,17 @@ flowchart TD
 - **Cause:** The old collector required a backtick immediately before `cad-agent`, leaving real shell examples
   unchecked. Expanding collection also exposed an old unconditional future-announcement condition for
   `review-section`, which is already implemented in the CLI. That exception now applies only if the name is absent.
+  A later control found lowercase/hyphen matching truncated `gates_typo` and ignored `GATES`; whole literal tokens
+  must remain case-sensitive for the registry comparison.
 - **Corrective check:** Existing skill validation now recognizes actual command positions, preserving quoted
   strings, comments, assignments and continuations. Paired controls call the real validator: missing inline,
   fenced, indented, chained and assignment-prefixed commands fail; valid flags/help/version and quoted echo/printf
   data pass. Both implemented and genuinely absent announced-command cases are checked. Shipped skill bytes stay
-  unchanged. Restoring the old collector makes five missing-command controls fail; scanning all shell text with a
+  unchanged. Restoring the old collector makes nine missing-command controls fail; scanning all shell text with a
   naive command regex makes five legitimate-example controls fail instead.
 - **Limits:** This checks command-name existence, not argument validity, execution success, complete shell grammar
-  (substitutions, functions and control flow), or a universal per-lesson enforcement ratchet. The separate gate/API
+  (substitutions, functions and control flow), or a universal per-lesson enforcement ratchet. Flags and visibly
+  nonliteral command placeholders remain outside name validation. The separate gate/API
   reference checks retain their existing behavior. It establishes no physical CAD qualification.
 
 </details>

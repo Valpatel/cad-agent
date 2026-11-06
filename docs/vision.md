@@ -72,7 +72,7 @@ flowchart TD
   cluttered. The new folder gets a README map; source moves preserve public addresses or declare their redirects
   and checkout compatibility window ([migration path](#migration-path)).
   - The maintainer agents make these moves as part of the work; a contributor is never asked to reorganise.
-  - The ratchet in `tests/repo/test_layout.py` makes clutter visible and blocks new growth (#276).
+  - `tests/repo/test_layout.py` caps root entries and blocks new over-limit folders; existing clutter exceptions warn (#276).
 - **The site follows the repo.**
   - Nothing on cad-agent.valpatel.com is edited by hand. It is generated from committed files, and Cloudflare builds
     it from `main` (#266).

@@ -325,19 +325,19 @@ def _text(path: Path) -> str:
 
 def _kit_link(dest: Path) -> bool:
     """A link this module made: it points at <kit>/skills/<name> or <kit>/agents/<name>.md of a cad-agent checkout
-    (this one or an older one). A dangling link counts if its target path still has that shape inside a folder named
-    like a cad-agent checkout (a removed worktree). Links to anything else are the user's."""
+    (this one or an older one). A live kit is recognized independently of its directory name, even when a move
+    removed the old target. A removed worktree retains the cad-agent-name fallback. Other links are the user's."""
     target = Path(os.path.normpath(dest.parent / os.readlink(dest)))
     if target.parent.name not in ("skills", "agents"):
         return False
     owner = target.parent.parent
     kit = owner.parent if owner.name == ".agents" else owner
-    if target.exists():
-        source = (kit / "src/cadagent").is_dir() or (kit / "software/cadagent").is_dir()
-        assets = ((kit / KIT_SKILLS).is_dir() and (kit / KIT_AGENTS).is_dir()) or \
-                 ((kit / "skills").is_dir() and (kit / "agents").is_dir())
-        return source and assets
-    return "cad-agent" in kit.name
+    source = (kit / "src/cadagent").is_dir() or (kit / "software/cadagent").is_dir()
+    assets = ((kit / KIT_SKILLS).is_dir() and (kit / KIT_AGENTS).is_dir()) or \
+             ((kit / "skills").is_dir() and (kit / "agents").is_dir())
+    if source and assets:  # A move can remove the target inside a still-live, arbitrarily named checkout.
+        return True
+    return not target.exists() and "cad-agent" in kit.name
 
 
 def _ours(dest: Path) -> bool:

@@ -135,6 +135,52 @@ def test_links_into_a_removed_cad_agent_worktree_are_replaced(tmp_path):
         assert link.resolve() == (root / '.agents/skills/alpha').resolve()
 
 
+@pytest.mark.parametrize("name", ["cad-agent-kit", "toolkit", "tool kit"])
+@pytest.mark.parametrize("source", ["src/cadagent", "software/cadagent"])
+@pytest.mark.parametrize("assets", ["", ".agents/"])
+@pytest.mark.parametrize("dangling", [False, True])
+def test_live_kit_links_do_not_depend_on_checkout_name(tmp_path, name, source, assets, dangling):
+    root, home = kit(tmp_path), tmp_path / 'home'
+    previous = tmp_path / 'previous' / name
+    (previous / source).mkdir(parents=True)
+    for folder in ('skills', 'agents'):
+        (previous / assets / folder).mkdir(parents=True)
+    old = previous / assets / 'skills/alpha'
+    if not dangling:
+        old.mkdir()
+        (old / 'SKILL.md').write_text('owned old instructions\n')
+    link = home / '.claude/skills/alpha'
+    link.parent.mkdir(parents=True)
+    link.symlink_to(old)
+    assert agentkit._kit_link(link), (name, source, assets, dangling)
+    assert main(['agents', 'install', '--source', str(root), '--home', str(home), '--target', 'claude']) == 0
+    assert link.resolve() == root / '.agents/skills/alpha'
+
+
+@pytest.mark.parametrize("part", ["source-only", "assets-only", "neither"])
+@pytest.mark.parametrize("dangling", [False, True])
+def test_non_kit_links_with_similar_paths_remain_foreign(tmp_path, part, dangling):
+    root, home = kit(tmp_path), tmp_path / 'home'
+    foreign = tmp_path / 'tool kit'
+    if part == 'source-only':
+        (foreign / 'software/cadagent').mkdir(parents=True)
+    if part == 'assets-only':
+        (foreign / '.agents/skills').mkdir(parents=True)
+        (foreign / '.agents/agents').mkdir()
+    old = foreign / '.agents/skills/alpha'
+    if not dangling:
+        old.mkdir(parents=True, exist_ok=True)
+        (old / 'SKILL.md').write_text('foreign instructions\n')
+    link = home / '.claude/skills/alpha'
+    link.parent.mkdir(parents=True)
+    link.symlink_to(old)
+    assert not agentkit._kit_link(link)
+    assert main(['agents', 'install', '--source', str(root), '--home', str(home), '--target', 'claude']) == 1
+    assert link.readlink() == old
+    if not dangling:
+        assert (old / 'SKILL.md').read_text() == 'foreign instructions\n'
+
+
 def test_destinations_inside_the_kit_or_shared_codex_folder_refused(tmp_path):
     root, home = kit(tmp_path), tmp_path / 'home'
     (home / '.agents').mkdir(parents=True)

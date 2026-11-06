@@ -190,7 +190,7 @@ def published_pages():
     """docs/ and docs/research/ Markdown pages, except folder READMEs and moved-page stubs."""
     for folder in ("docs",):
         for p in sorted((ROOT / folder).rglob("*.md")):
-            if p.is_relative_to(ROOT / "docs/lessons") or p.is_relative_to(ROOT / "docs/examples"):
+            if p.is_relative_to(ROOT / "docs/lessons") or p.is_relative_to(ROOT / "docs/examples") or p.is_relative_to(ROOT / "docs/changelog.d"):
                 continue
             if p.name.lower() == "readme.md":
                 continue
@@ -213,3 +213,12 @@ def test_every_lesson_area_folder_is_claimed(tree):
     folders = sorted(p.name for p in (ROOT / "docs" / "lessons").iterdir() if p.is_dir())
     if folders:
         assert sorted(claims) == folders, f"lesson folders {folders} and claims {sorted(claims)} differ"
+
+
+def test_release_fragments_are_not_pages_but_new_guides_still_need_placement(tmp_path, monkeypatch):
+    monkeypatch.setattr(__import__(__name__, fromlist=["ROOT"]), "ROOT", tmp_path)
+    for name in ("docs/changelog.d/9-note.md", "docs/mechanical/new-guide.md"):
+        file = tmp_path / name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text("# A new document\n")
+    assert set(published_pages()) == {"docs/mechanical/new-guide.md"}

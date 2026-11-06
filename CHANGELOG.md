@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.22.2 (2026-11-06)
+
+**Fixed**
+- The vision describes the implemented layout checks and their named clutter exceptions, and requires timestamped deployment or readback evidence when measuring publication latency; the reproducible build timestamp alone is the commit time (#145).
+- The local quickstart evaluator follows the installer into `tools/site/assets/`; its existing command check now exercises the actual local dispatch and rejects the removed root path (#378).
+- Stable vendored website asset URLs now require revalidation between releases; the existing emitted-header check covers every vendor asset and preserves the source/checksum mismatch lesson.
+- The design-process skill now routes snap-fit lids and covers to the existing sourced calculator, its declaration example and model limits. The guide example is checked through the actual CLI/JSON interface with orientation faults; the research survey now distinguishes the implemented snap subset from the remaining compliant-mechanism work (#94).
+
 ## v0.22.1 (2026-11-06)
 
 **Changed**

@@ -45,7 +45,7 @@ test('schema 2 keeps every schema-1 field, with the same meaning', () => {
     if (i.markdown) assert.ok(i.markdown.startsWith(ORIGIN) && existsSync(local(i.markdown)), `${i.id}: markdown ${i.markdown}`);
   }
   // Every entry schema 1 listed is still there under the same type and name (the demos are new).
-  const upstreams = YAML.parse(execFileSync('git', ['show', 'HEAD:upstreams/registry.yaml'], { cwd: root }).toString());
+  const upstreams = YAML.parse(execFileSync('git', ['show', 'HEAD:vendor/upstreams/registry.yaml'], { cwd: root }).toString());
   for (const u of upstreams) assert.ok(catalog.items.some(i => i.type === 'upstream' && i.name === u.name), u.name);
   const commands = catalog.items.filter(i => i.type === 'tool').length;
   assert.equal(commands, catalog.items.filter(i => i.kind === 'tool').length);
@@ -68,7 +68,7 @@ test('schema 2 lost gyropup in v0.10.0 but kept its schema value: fields.removed
 test('schema-1 fields keep their schema-1 values: summary, licence (null stays null), tool urls', () => {
   // Schema 1's builder, as it was (tools/build-site.mjs before catalogue v2), run over today's data.
   const landscape = JSON.parse(show('research/landscape.json'));
-  const upstreams = YAML.parse(show('upstreams/registry.yaml'));
+  const upstreams = YAML.parse(show('vendor/upstreams/registry.yaml'));
   const notes = new Map(landscape.projects.map(p => [p.name, p.notes || '']));
   const want = [
     ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, url: u.url, summary: notes.get(u.name) || u.what || u.policy,
@@ -294,7 +294,7 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
     const bad = n => `"><img src=x onerror=alert(${n})><script>alert(${n})</script>`;
     const entry = { name: `evil/${bad(1)}`, what: bad(2), areas: ['3d-printing'], url: 'https://github.com/evil/evil', license: bad(3),
       status: 'candidate', policy: bad(4), last_push: bad(5), stars: bad(6) };
-    const registry = path.join(wt, 'upstreams/registry.yaml');
+    const registry = path.join(wt, 'vendor/upstreams/registry.yaml');
     await writeFile(registry, `${await readFile(registry, 'utf8')}\n${YAML.stringify([entry])}`);
     execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root, stdio: 'pipe' });
     const html = await readFile(path.join(draft, 'catalog.html'), 'utf8');
@@ -427,4 +427,15 @@ test('no project is singled out: no Gyropup flag, badge, filter, boost or field 
   for (const hook of ['class="gyro"', 'pill-gyropup', 'name="gyropup"', 'data-gyropup', 'Needed for Gyropup', 'needed for Gyropup']) assert.ok(!page.includes(hook), `the page still has ${hook}`);
   assert.doesNotMatch(show('web/catalog.css'), /gyro/i);
   for (const d of areas.domains) for (const n of [d, ...d.areas, ...d.areas.flatMap(a => a.topics || [])]) assert.ok(!(n.priority || []).includes('gyropup'), `docs/areas.yaml ${n.slug}: priority gyropup`);
+});
+
+
+test('folder maps retain distinct catalogue IDs alongside the existing root README', () => {
+  const root = catalog.items.find(i => i.kind === 'guide' && i.markdown === `${ORIGIN}/README.md`);
+  const docs = catalog.items.find(i => i.kind === 'guide' && i.markdown === `${ORIGIN}/docs/README.md`);
+  const research = catalog.items.find(i => i.kind === 'research' && i.markdown === `${ORIGIN}/research/README.md`);
+  assert.equal(root.id, 'guide-index', 'published root links stay stable');
+  assert.equal(docs.id, 'guide-docs-index');
+  assert.equal(research.id, 'research-index');
+  assert.equal(new Set([root.id, docs.id, research.id]).size, 3);
 });

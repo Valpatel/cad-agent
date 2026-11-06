@@ -33,4 +33,4 @@ flowchart TD
 
 Run: `pytest tests/cli` (with `PYTHONPATH=src`).
 
-Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)
+Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

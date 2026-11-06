@@ -3,6 +3,8 @@
 The user reviewed the work almost entirely through a locally served preview page. Each request below came from
 something they could not see or could not act on.
 
+The theme-transition and SVG-media lessons also record later browser-gate/validation incidents (2026-11-05, #347 and #122).
+
 ```mermaid
 flowchart TD
     U["one review URL<br/>that stays stable"] --> P["progress section<br/>during long work"]
@@ -17,6 +19,50 @@ flowchart TD
     class U near
     class Q,Cl out
 ```
+
+### Check contrast during theme changes, not only at their endpoints
+- **Rule:** Switch text and background colours together when changing a page theme. Two accessible endpoint
+  palettes can pass through unreadable intermediate colours when both interpolate.
+- **Check:** The existing website browser harness samples copy-button colour transitions at 0, 25, 50, 75 and
+  100 percent and keeps its 4.5:1 contrast threshold for normal text. Border animation can remain.
+<details><summary>Incident and source</summary>
+
+- **Incident:** On 2026-11-05, #346's WebKit gate reported a catalogue “Copy call” label at 1.59:1 after a theme
+  change. A focused Chromium probe of dev `04704a41` using the existing site CSS and copy component reproduced
+  foreground `rgb(166, 170, 190)` on background `rgb(95, 93, 94)` during the 150 ms transition. A fixed wall-clock
+  wait is not a guarantee that a busy browser has advanced its animation frames.
+- **Cause and correction:** The component transitions both `color` and `background`. The site's override now
+  transitions only the border; the browser check inspects intermediate colours as well as settled themes.
+- **Source:** [issue #347](https://github.com/Valpatel/cad-agent/issues/347), `web/site.css`, and
+  `tests/site/website-browser.mjs` (`themeProblems`). Probe: load both site stylesheets and `kit/copy.js`, set
+  `data-theme="light"` under system dark, then read the button's computed colours and animation time.
+- **Limits:** This checks the website's copy controls. Other components and consumer styles need their own
+  foreground/background contrast checks; neither this incident nor a passing endpoint check proves them.
+
+</details>
+
+### Verify the SVG still itself, not only its parent's reduced-motion preference
+- **Rule:** A parent page's media query and animation list do not establish the state of an SVG loaded through an image. Inspect the rendered SVG document and its visible drawing, fills and marks.
+- **Check:** `tests/site/site-motion.mjs` loads the actual hero as an SVG document with reduced motion, checks zero animations, visible assembled geometry and check marks, then rejects a hidden-drawing control that retains the valid media rule and zero animations. The existing browser suite calls this check; normal-motion tests keep their existing launch options.
+
+<details>
+<summary>2026-11-05 incident, command/output evidence and limits</summary>
+
+- **Incident:** A phone screenshot of the README under Playwright's page-level `reducedMotion: 'reduce'` showed faint outline fragments. After 6.6 seconds the embedded image had advanced to the normal assembled frame, although the parent media query remained true. That was initially mistaken for a generator fallback defect.
+- **Evidence:** Chrome 151.0.7922.71, Playwright 1.56.1, viewport 360×900. Loading the same SVG as a document under reduced motion returned:
+
+  ```text
+  reduced:true, animations:0, drawing:true,
+  fills:57, visibleFills:57, marks:3, visibleMarks:3, exploded:0
+  ```
+
+  Launching Chromium with `args: ['--force-prefers-reduced-motion']` and a reduced-motion context produced the assembled embedded still, with identical image PNG bytes at the start and after 6.6 seconds, `matchMedia=true` and zero horizontal overflow. The generator and its geometry were unchanged.
+- **Control:** A routed copy adds only `@media(prefers-reduced-motion:reduce){.draw{opacity:0!important}}`. It still reports `reduced:true, animations:0`, but `drawing:false, visibleFills:0`; the new rendered-state check rejects it. Merely counting animations would accept this blank result.
+- **Reproduce:** Serve a built site with `node tools/preview-site.mjs --dir <built-site> --port <port>`. In a Node/Playwright session import `reducedHeroProblems` from `tests/site/site-motion.mjs`, launch the installed browser and call it with that browser and the preview URL. The normal browser suite runs the same function. The browser-wide flag above is for the separate embedded-image validation only.
+- **Limits:** This establishes an emulation limitation in the observed configuration, not a generator bug or a guarantee about every engine/OS. A screenshot near the draw-in start is not evidence of a missing final still. Checks displayed in the figure are CAD/simulation evidence, not physical qualification.
+- **Source:** 2026-11-05, #122; `docs/img/hero/gyropup-leg.svg` (SHA-256 `7f7eecd02551a1fa67a8e229526c8423cd15194968e7956715ea2949fee57358`), `src/cadagent/publish/anim/hero.py`, the real/control browser output above and fleet 162's unchanged generated hero.
+
+</details>
 
 ### Keep a progress section during long work
 - **Rule:** During multi-hour work, keep a progress section at the top of the review page with three lists: done,

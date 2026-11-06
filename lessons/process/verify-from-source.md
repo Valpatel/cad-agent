@@ -98,3 +98,13 @@ flowchart TD
 - **Check:** Every connector or switch used for a cut-out records its STEP product name or refdes and the
   solid/shell index in `parameters.json`. A test fails if a cut-out's basis names only a size.
 - **Source:** 2026-10-25 (session record; `cad/parameters.json` `service_buttons.basis`).
+
+### Preserve published release claims when moving files
+- **Rule:** Dated CHANGELOG entries describe shipped commits. Keep their text, links and order intact; record a move
+  or correction in a new fragment. Compare with `main` at one fixed commit, and fail closed if it cannot be read.
+- **Evidence:** On 2026-11-05, `pytest -q tests/repo/test_ci_gates.py -k historical_changes_fail` against the old
+  evaluator from `7ac3f5c1` failed all 11 new expectations: a valid review still allowed historical edits. The updated
+  evaluator rejects those edits; the actual `cut_release.py` output remains accepted.
+- **Cause and check:** The old branch gate checked branch names only. Existing gate tests now exercise the real
+  evaluator with changed dates, text, order and unreadable API data. This protects release claims, not the accuracy of
+  the engineering claims themselves. [Tracking and settings evidence](https://github.com/Valpatel/cad-agent/issues/112).

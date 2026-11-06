@@ -142,3 +142,9 @@ flowchart TD
   counted, and the final one is the run whose outputs are reported. A part cache (#250) keeps the full run short.
 - **Source:** Cat 323 session 2026-11-01T19:54, 20:31, 21:17, 21:18, 22:36; the project's `cad/assembly.py`
   (`exports/.partcache/<source hash>/`).
+
+### Publish live validation as comments while CI is in flight
+- **Rule:** settle a PR description before the final push, then post live validation updates as comments while checks run. Before treating a cancelled run as a test failure, inspect its event and concurrency group.
+- **Incident:** on 2026-11-05, PR #350 had CI runs at 22:16, 22:17 and 22:20 UTC cancelled at the same head `a6b61550` when its description was edited to report validation. The CI workflow listens to PR `edited` events and cancels a superseded run for the same ref. The browser workflow has a separate queue and lacked equivalent automatic cancellation.
+- **Check:** inspect `.github/workflows/ci.yml` events and concurrency, then `gh run list --branch <branch> --json headSha,status,conclusion,event,createdAt`. Record a test failure only from its completed check output. Cancel only an owned branch's superseded runs after confirming a newer head exists; preserve its current run and other authors' runs.
+- **Source:** 2026-11-05 integration audit in PR #350; coordinating agent's same-head run timestamps and `.github/workflows/ci.yml`. This explains cancellation in this workflow configuration; it does not prove that a rerun will pass or justify bypassing any required gate.

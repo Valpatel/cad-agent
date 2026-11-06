@@ -11,7 +11,7 @@ flowchart TD
     U["website-*.test.mjs"] -->|"imports"| T["tools/build-site.mjs<br/>tools/site-*.mjs"]
     B["website-*-browser.mjs<br/>site-*.mjs"] -->|"serves"| D["dist/<br/>the built site"]
     T --> D
-    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["research/<br/>upstreams/"]
+    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["research/<br/>vendor/upstreams/"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
@@ -25,6 +25,7 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
+| `site-motion.mjs` | Helper: rendered reduced-motion hero still and a hidden-drawing negative control |
 | `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |
@@ -47,4 +48,4 @@ from HEAD into a temporary folder, unless `CAD_AGENT_SITE` names a folder alread
 once per job. A folder built from another commit, or a `--worktree` draft, is refused; leave the variable unset to
 build afresh.
 
-Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)
+Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

@@ -23,7 +23,7 @@ HAND_KEPT = ["## Showcase on the site (Gyropup)", "## Runtime dependencies and e
 def repo(tmp_path, monkeypatch):
     """A copy of the real notices and manifest, with the script pointed at it."""
     (tmp_path / "vendor").mkdir()
-    shutil.copy(ROOT / "THIRD_PARTY_NOTICES.md", tmp_path / "THIRD_PARTY_NOTICES.md")
+    shutil.copy(ROOT / "vendor/THIRD_PARTY_NOTICES.md", tmp_path / "vendor/THIRD_PARTY_NOTICES.md")
     shutil.copy(ROOT / "vendor" / "manifest.json", tmp_path / "vendor" / "manifest.json")
     monkeypatch.setattr(vendor_sync, "ROOT", tmp_path)
     monkeypatch.setattr(vendor_sync, "MAN", tmp_path / "vendor" / "manifest.json")
@@ -32,14 +32,24 @@ def repo(tmp_path, monkeypatch):
 
 def test_committed_notices_match_the_manifest():
     """Regenerating from the committed manifest changes nothing: the table is in sync and every other line stays."""
-    text = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
+    text = (ROOT / "vendor/THIRD_PARTY_NOTICES.md").read_text()
     projects = json.loads((ROOT / "vendor" / "manifest.json").read_text())["projects"]
     assert vendor_sync.notices_text(text, projects) == text
 
 
+def test_notice_updates_ignore_a_stale_root_copy(repo):
+    stale = repo / "THIRD_PARTY_NOTICES.md"
+    stale.write_text("stale root file: no vendored table\n")
+    moved = repo / "vendor/THIRD_PARTY_NOTICES.md"
+    before = moved.read_text()
+    vendor_sync.cmd_notices(None)
+    assert moved.read_text() == before
+    assert stale.read_text() == "stale root file: no vendored table\n"
+
+
 def test_notices_after_an_import_keep_every_hand_kept_section(repo):
     """What `import` does: the manifest gets a new pin, then `notices` runs. Only that project's row changes."""
-    before = (repo / "THIRD_PARTY_NOTICES.md").read_text()
+    before = (repo / "vendor/THIRD_PARTY_NOTICES.md").read_text()
     man = json.loads((repo / "vendor" / "manifest.json").read_text())
     e = man["projects"][1]
     old_row = next(line for line in before.splitlines() if line.startswith(f"| {e['name']} |"))
@@ -47,7 +57,7 @@ def test_notices_after_an_import_keep_every_hand_kept_section(repo):
     (repo / "vendor" / "manifest.json").write_text(json.dumps(man, indent=2) + "\n")
 
     vendor_sync.cmd_notices(None)
-    after = (repo / "THIRD_PARTY_NOTICES.md").read_text()
+    after = (repo / "vendor/THIRD_PARTY_NOTICES.md").read_text()
     new_row = f"| {e['name']} | {e['license']} | {e['url']} | `{'ab' * 6}` | 2026-11-01 |"
     assert after == before.replace(old_row, new_row)
     for heading in HAND_KEPT:
@@ -61,7 +71,7 @@ def test_notices_follow_the_manifest_when_a_project_is_added_or_removed(repo):
     (repo / "vendor" / "manifest.json").write_text(json.dumps(man, indent=2) + "\n")
 
     vendor_sync.cmd_notices(None)
-    lines = (repo / "THIRD_PARTY_NOTICES.md").read_text().splitlines()
+    lines = (repo / "vendor/THIRD_PARTY_NOTICES.md").read_text().splitlines()
     head = lines.index(vendor_sync.TABLE_HEAD)
     table = lines[head:head + 2 + len(man["projects"])]
     assert table[-1] == "| new-lib | MIT | https://example.org/new-lib | `-` | - |"
@@ -74,7 +84,7 @@ def test_notices_follow_the_manifest_when_a_project_is_added_or_removed(repo):
 @pytest.mark.parametrize("damage", ["drop", "twice"])
 def test_notices_refuse_a_file_without_exactly_one_vendored_table(repo, damage):
     """No table header, or two, is a file someone rewrote by hand: stop and change nothing rather than guess."""
-    path = repo / "THIRD_PARTY_NOTICES.md"
+    path = repo / "vendor/THIRD_PARTY_NOTICES.md"
     text = path.read_text()
     text = (text.replace(vendor_sync.TABLE_HEAD, "| Project | Licence |") if damage == "drop"
             else text + "\n" + vendor_sync.TABLE_HEAD + "\n|---|---|---|---|---|\n")
@@ -86,9 +96,10 @@ def test_notices_refuse_a_file_without_exactly_one_vendored_table(repo, damage):
 
 def test_import_refuses_a_damaged_notices_file_before_it_changes_anything(repo, monkeypatch):
     """`import` checks the notices file first, so a file `notices` would refuse cannot stop an import half done."""
-    path = repo / "THIRD_PARTY_NOTICES.md"
+    path = repo / "vendor/THIRD_PARTY_NOTICES.md"
     path.write_text(path.read_text().replace(vendor_sync.TABLE_HEAD, "| Project | Licence |"))
     manifest = (repo / "vendor" / "manifest.json").read_text()
+    before = {p.relative_to(repo).as_posix(): p.read_bytes() for p in repo.rglob('*') if p.is_file()}
 
     def went_ahead(*args, **kwargs):
         raise AssertionError("the import went ahead")
@@ -99,12 +110,12 @@ def test_import_refuses_a_damaged_notices_file_before_it_changes_anything(repo, 
     with pytest.raises(SystemExit, match="expected one vendored table"):
         vendor_sync.cmd_import(argparse.Namespace(name=name, sha="ab" * 20, initial=False))
     assert (repo / "vendor" / "manifest.json").read_text() == manifest
-    assert sorted(p.name for p in (repo / "vendor").iterdir()) == ["manifest.json"]
+    assert {p.relative_to(repo).as_posix(): p.read_bytes() for p in repo.rglob('*') if p.is_file()} == before
 
 
 def test_notices_start_a_missing_file_with_the_header_and_table(repo):
-    (repo / "THIRD_PARTY_NOTICES.md").unlink()
+    (repo / "vendor/THIRD_PARTY_NOTICES.md").unlink()
     vendor_sync.cmd_notices(None)
-    text = (repo / "THIRD_PARTY_NOTICES.md").read_text()
+    text = (repo / "vendor/THIRD_PARTY_NOTICES.md").read_text()
     assert text.startswith("# Third-party notices\n")
     assert vendor_sync.TABLE_HEAD in text and text.endswith(" |\n")

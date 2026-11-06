@@ -1,0 +1,11 @@
+choose joining | process sheet-metal, material 5052, load 100.0, cycles 1, qty 1
+choice: PEM self-clinching nut or stud (row sheet)
+because:
+- the sheet flows into the clinched part's undercut and locks it [ref:pem-handbook], so the thread is fixed in the sheet, where a through-bolt needs a loose nut held on the far side
+- check: the sheet softer than the fastener by about 20 HRB, the hole +0.08/-0 mm, the press reaching both faces [ref:pem-handbook]
+  rules: sm-clinch-hardness-margin-pem, sm-clinch-hole-tolerance-pem, sm-clinch-sheet-min-pem
+runner-up: through-bolt and nut; wins when: ?
+gap: no registry source ranks a PEM against a loose nut and bolt in sheet; the runner-up is listed, not ranked. The load is not checked here; cadagent.mechanical.clinch.check_placement compares push-out, torque and pull-through loads with PEM's ratings
+unused: qty: no registry source ties the joining choice to quantity; SPIROL only suggests installation machines for volume production [ref:spirol-3dp]
+cards: cad-agent rules clinch-hardware --process sheet-metal --material 5052
+runner-up cards: cad-agent inserts; thread: no verified rule for sheet-metal yet

@@ -20,6 +20,7 @@ flowchart TD
 | File or folder | What it is |
 |---|---|
 | `bambu_templates/` | A reduced Bambu Studio P1S profile graph, for `manufacturing/test_slicer.py` ([README](bambu_templates/README.md)) |
+| `cards/` | Golden `cad-agent rules` and `choose` output for `manufacturing/test_cards.py`; rewrite with `CADAGENT_UPDATE_GOLDEN=1` and read the diff |
 | `cfd_runs/` | Recorded-format CFD runs, synthetic numbers in OpenFOAM's layout; rebuild with `python tests/fixtures/cfd_runs/build.py` |
 | `file-viewer/` | A generated STEP block for the original-file viewer suites ([README](file-viewer/README.md)) |
 | `formula-vectors.json` | Golden vectors from `cadagent.formulas`, which the browser port must match; written by `tools/formula_vectors.py` |
@@ -27,4 +28,4 @@ flowchart TD
 | `mcmaster/` | Hand-written McMaster-Carr pages, so the tests never fetch the site ([README](mcmaster/README.md)) |
 | `model/` | The packed two-part model both model decoders are held to; rebuild with `make_fixture.py` |
 
-Related: [tests](../README.md) · [where files go](../../CONTRIBUTING.md#where-files-go)
+Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

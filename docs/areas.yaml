@@ -41,7 +41,7 @@ projects:
   thor-can-breakout: {title: AGX Thor CAN breakout, url: "https://github.com/mvalancy/pcb-agx-thor-can-breakout"}
 
 cross_cutting:
-  pages: [docs/vision.md, docs/toolkit.md, docs/formulas.md, research/landscape.md]
+  pages: [docs/README.md, research/README.md, docs/vision.md, docs/toolkit.md, docs/formulas.md, research/landscape.md]
   api: [cadagent.geometry, cadagent.project, cadagent.links, cadagent.formulas, cadagent.library]
   issues: [106, 113, 139, 287]
 
@@ -160,9 +160,10 @@ domains:
     scope: Turning a design into a part, process by process.
     maturity: tooling
     pages: [docs/process-checks.md, research/process-profiles.md]
-    api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm]
-    uses: [cadagent.mechanical.compliant.allowables]
-    issues: [99]
+    cli: [rules, choose]
+    api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm, cadagent.manufacturing.cards]
+    uses: [cadagent.mechanical.compliant.allowables, cadagent.mechanical.inserts, cadagent.review.references]
+    issues: [99, 323]
     areas:
       - slug: 3d-printing
         title: 3D printing
@@ -346,7 +347,7 @@ domains:
         title: Agent process and workflow
         scope: How agents work here, in parallel - issues, worktrees, reviews and long runs.
         maturity: tooling
-        pages: [docs/agent-workflow.md, research/agent-toolkits-2026-10.md]
+        pages: [docs/agent-workflow.md, docs/weekly-upstream-update.md, research/agent-toolkits-2026-10.md]
         cli: [agents, update]
         skills: [cad-work-tracking, cad-pr-review, cad-remote-runs]
         agents: [cad-pr-reviewer, cad-resume]

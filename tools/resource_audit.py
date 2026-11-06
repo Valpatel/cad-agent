@@ -17,7 +17,7 @@ What it reads:
   file-viewer-sources.json and each folder's SOURCE.json, which name the npm package, its integrity, the path of each
   file in the package, the SHA-256 of each file and the libraries a file bundles) and the notice files
   (THIRD_PARTY_NOTICES.md and the kit's own);
-- the external links the site publishes: catalog.json's sources (upstreams/registry.yaml, research/landscape.json),
+- the external links the site publishes: catalog.json's sources (vendor/upstreams/registry.yaml, research/landscape.json),
   and the links in every published Markdown page;
 - the skills and agents we ship or point to, and install advice in published pages (no installing from registries).
 
@@ -694,7 +694,7 @@ def check_python(rep, net, installed=False):
     if text is None:
         return
     groups, pkgs, bad = python_packages(text)
-    notices = (read_text(rep.root / 'THIRD_PARTY_NOTICES.md') or '').lower()
+    notices = (read_text(rep.root / 'vendor' / 'THIRD_PARTY_NOTICES.md') or '').lower()
     for group, raw in bad:
         rep.add('py-unparsed', 'low', f'pypi:{raw}', 'a requirement this report cannot read', f'{group}: {raw!r}',
                 'Write it as name[extras]>=version; markers after ";".')
@@ -972,7 +972,7 @@ def repo_findings(rep, subject, slug, st, recorded_licence=None, context='catalo
     url = f'https://github.com/{slug}'
     if st['state'] == 'gone':
         rep.add('repo-gone', 'high', subject, f'{slug} no longer exists (or is private)', f'GitHub answers {st["http"]} for {url}',
-                'Mark the entry "moved" or "gone" (status in upstreams/registry.yaml or a note in research/landscape.json) and '
+                'Mark the entry "moved" or "gone" (status in vendor/upstreams/registry.yaml or a note in research/landscape.json) and '
                 'remove the link: anyone can register the freed name.')
         return
     if st['state'] != 'ok':
@@ -1033,12 +1033,30 @@ def find_licence_file(d: Path):
     return None
 
 
+REGISTRY = 'vendor/upstreams/registry.yaml'
+# Repository-owned metadata, not imported code. Unknown files beside these still need a vendor record.
+VENDOR_METADATA = frozenset(('vendor/README.md', 'vendor/THIRD_PARTY_NOTICES.md',
+                             'vendor/upstreams/README.md', REGISTRY))
+VENDOR_SUPPORT_DIRS = ('baselines', 'patches', 'reports')
+
+
+def owned_vendor_metadata(path):
+    return path in VENDOR_METADATA
+
+
+def vendor_project(path):
+    parts = path.split('/')
+    if len(parts) >= 3 and parts[0] == 'vendor' and parts[1] not in VENDOR_SUPPORT_DIRS and not owned_vendor_metadata(path):
+        return parts[1]
+    return None
+
+
 def check_vendored(rep, net):
     man_text = read_text(rep.root / 'vendor' / 'manifest.json')
     if man_text is None:
         return
     man = json.loads(man_text)
-    notices = notice_rows(read_text(rep.root / 'THIRD_PARTY_NOTICES.md'))
+    notices = notice_rows(read_text(rep.root / 'vendor' / 'THIRD_PARTY_NOTICES.md'))
     names = set()
     for e in man.get('projects') or []:
         name, sha, url = e['name'], e.get('sha') or '', e.get('url') or ''
@@ -1088,7 +1106,11 @@ def check_vendored(rep, net):
                     f"notices: {n['licence']}, {n['url']}, {n['sha']}; manifest: {e.get('license')}, {url}, {sha[:12]}",
                     'Make the notices match the manifest.')
     for d in sorted((rep.root / 'vendor').iterdir()):
-        if d.is_dir() and d.name not in names and d.name not in ('baselines', 'patches', 'reports'):
+        if d.is_dir() and d.name not in names and d.name not in VENDOR_SUPPORT_DIRS:
+            # Inspect the filesystem, including untracked/hidden entries. Never exempt a whole metadata subtree.
+            entries = list(d.rglob('*'))
+            if entries and all(p.is_file() and owned_vendor_metadata(p.relative_to(rep.root).as_posix()) for p in entries):
+                continue
             rep.add('vendor-unrecorded', 'high', f'vendor:{d.name}', f'vendor/{d.name} is not in vendor/manifest.json',
                     f'vendor/{d.name}/', 'Every vendored tree needs a pinned manifest entry, a scan report and a baseline (SECURITY.md).')
     if not net:
@@ -1327,7 +1349,7 @@ def check_webkit(rep, net, added_files=()):
     for rel in sorted(set(hashes) - set(files)):
         rep.add('webkit-hash-missing', 'high', f"webkit:{rel.split('/')[0]}", f'{KIT}/{rel} is recorded but missing',
                 'listed in a hash record', 'Restore it or remove it from the record.', key=rel)
-    notices = read_text(rep.root / 'THIRD_PARTY_NOTICES.md') or ''
+    notices = read_text(rep.root / 'vendor' / 'THIRD_PARTY_NOTICES.md') or ''
     kit_section = notices.split('## Web kit', 1)[-1] if '## Web kit' in notices else ''
     for lic in sorted(set(re.findall(r'`([^`]+)`', kit_section))):
         if '/' in lic and not lic.startswith(('src/', 'vendor/')) and not (kit / lic.rstrip('/')).exists():
@@ -1506,11 +1528,11 @@ def verify_receipt(rep, net, row, top, name, rec):
 
 
 # -------------------------------------------------------------------------------------------------------------- links
-# The Markdown files tools/build-site.mjs publishes as pages: its SECTIONS, in the same order and with the same patterns.
-# tests/repo/test_resource_audit.py reads build-site.mjs and fails when the two disagree.
+# The real source paths selected by tools/site/publication.mjs. A moved source is not its public URL.
+# tests/repo/test_resource_audit.py compares selector behavior on real and planted git inventories.
 PUBLISHED = [re.compile(r'^docs/[^/]+\.md$'), re.compile(r'^skills/[^/]+/SKILL\.md$'), re.compile(r'^agents/[^/]+\.md$'),
              re.compile(r'^lessons/(?:[a-z0-9-]+/)?[^/]+\.md$'), re.compile(r'^research/[^/]+\.md$')]
-PUBLISHED_FILES = ('README.md', 'CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md')
+PUBLISHED_FILES = ('README.md', '.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md')
 
 
 def published(f, report=False):
@@ -1568,10 +1590,10 @@ def site(h):
 def catalogue_entries(root, catalog=None):
     """The external entries the site's catalog.json publishes, read from the same sources tools/build-site.mjs reads."""
     land = json.loads(read_text(root / 'research' / 'landscape.json') or '{}')
-    ups = load_yaml(read_text(root / 'upstreams' / 'registry.yaml') or '[]') or []
+    ups = load_yaml((root / REGISTRY).read_text(encoding='utf-8')) or []
     out = []
     for u in ups:
-        out.append(dict(source='upstreams/registry.yaml', name=u.get('name'), url=u.get('url'), licence=u.get('license'),
+        out.append(dict(source=REGISTRY, name=u.get('name'), url=u.get('url'), licence=u.get('license'),
                         last_push=str(u.get('last_push') or '') or None, status=u.get('status')))
     for p in land.get('projects') or []:
         out.append(dict(source='research/landscape.json projects', name=p.get('name'), url=p.get('url'),
@@ -2515,7 +2537,7 @@ def check_repo(rep, net, repo=None):
 def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, npm_audit=True, added_files=(), accepted=None):
     rep = Report(root, as_of or dt.datetime.now(dt.timezone.utc).date(), bool(net))
     rep.sources.setdefault('offline', 'pyproject.toml, package.json, package-lock.json, vendor/manifest.json, kit hash records, '
-                           'THIRD_PARTY_NOTICES.md, upstreams/registry.yaml, research/landscape.json, published Markdown')
+                           'vendor/THIRD_PARTY_NOTICES.md, vendor/upstreams/registry.yaml, research/landscape.json, published Markdown')
     check_python(rep, net, installed)
     check_npm(rep, net, npm_audit)
     check_vendored(rep, net)
@@ -2684,8 +2706,11 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
                        f"{w['hashed']} | {match} | {', '.join(f'{k} {v}' for k, v in sorted((w.get('latest') or {}).items()))} | "
                        f"{len(set(w.get('advisories') or []))} |")
         cat = [l for l in inv['links'] if l['kind'] == 'catalogue']
+        # Render a dated report's recorded source location, not today's checkout layout.
+        registry = next((p for p in r.get('sources', {}).get('offline', '').split(', ')
+                         if p.endswith('upstreams/registry.yaml')), REGISTRY)
         body += ['', '### Links we send people to', '',
-                f"{len(cat)} catalogue links (catalog.json, upstreams/registry.yaml, research/landscape.json) and "
+                f"{len(cat)} catalogue links (catalog.json, {registry}, research/landscape.json) and "
                 f"{len(inv['links']) - len(cat)} more in published pages; {sum(1 for l in inv['links'] if l['id'] in flagged)} have "
                 'findings above.', '', '### Skills and agents', '', '| Item | Kind | Source | Version |', '|---|---|---|---|']
         for k in inv['skills']:
@@ -2811,6 +2836,9 @@ class GitTree:
             return subprocess.run(['git', '-C', str(self.root), 'show', f'{self.ref}:{path}'], capture_output=True,
                                   check=True).stdout.decode('utf-8', 'replace')
         except subprocess.CalledProcessError:
+            if path == REGISTRY:
+                # Old commits predate the move. Only historical comparisons may use the previous location.
+                return self.read('upstreams/registry.yaml') or '[]'
             return None
 
 
@@ -2834,12 +2862,13 @@ def item_ids(tree):
     man = tree.read('vendor/manifest.json')
     if man:
         ids |= {f"vendor:{e['name']}" for e in json.loads(man).get('projects') or []}
-    ids |= {f"vendor:{f.split('/')[1]}" for f in tree.files if f.startswith('vendor/') and f.count('/') >= 2
-            and f.split('/')[1] not in ('baselines', 'patches', 'reports')}
+    ids |= {f'vendor:{name}' for f in tree.files if (name := vendor_project(f))}
     ids |= {f"webkit:{f[len(KIT) + 1:].split('/')[0]}" for f in tree.files if f.startswith(KIT + '/') and f[len(KIT) + 1:].count('/')}
     with tempfile.TemporaryDirectory() as td:          # the catalogue's sources, laid out as a tiny checkout
-        for p in ('research/landscape.json', 'upstreams/registry.yaml'):
+        for p in ('research/landscape.json', REGISTRY):
             t = tree.read(p)
+            if p == REGISTRY and t is None:
+                raise FileNotFoundError(f'required current registry {REGISTRY} is missing')
             if t is not None:
                 (Path(td) / p).parent.mkdir(parents=True, exist_ok=True)
                 (Path(td) / p).write_text(t, encoding='utf-8')
@@ -2858,8 +2887,8 @@ def added_items(root, base):
     for f in new_files:
         if f.startswith(KIT + '/') and f[len(KIT) + 1:].count('/'):
             ids.add(f"webkit:{f[len(KIT) + 1:].split('/')[0]}")
-        elif f.startswith('vendor/') and f.count('/') >= 2 and f.split('/')[1] not in ('baselines', 'patches', 'reports'):
-            ids.add(f"vendor:{f.split('/')[1]}")
+        elif name := vendor_project(f):
+            ids.add(f'vendor:{name}')
     return sorted(ids), new_files
 
 

@@ -294,6 +294,27 @@ flowchart TD
 
 The hubs give the topic-first view without those costs.
 
+## Root consolidation (2026-11-05)
+
+The owner asked for a starting screen with only necessary files and a visible README. The measured baseline is **30 tracked root entries** (files and folders together). The next target is **15**, reached in coherent reviewed batches; it is a plan, not completed work. `tests/repo/test_layout.py` ratchets the allowed count down with each batch. Ignored local files are not part of this measure.
+
+| Batch | Owning location | Root count after batch | Consumers to preserve |
+|---|---|---|---|
+| Transcript mining and weekly procedure | `tools/mining/`, `docs/weekly-upstream-update.md` | 28 | CLI example, old and new private-input ignore paths, lessons provenance links, topic map |
+| Contributor and security policies | `.github/CONTRIBUTING.md`, `.github/SECURITY.md` | 26 | GitHub policy discovery, all relative links, site publication and gate references |
+| Upstream registry and notices | `vendor/upstreams/`, `vendor/THIRD_PARTY_NOTICES.md` | 24 | Vendor sync, supply-chain audit, catalogue/data consumers, license links; dated reports keep historical meaning |
+| Release notes and fragments | `docs/releases/CHANGELOG.md`, `docs/releases/changes/` | 22 | Release cutting and gates, installer/update notes, tests, published routes and contributor workflow |
+| Site source assets | `tools/site/assets/` | 21 | Site build/copy paths, installers, browser tests, licensing and Cloudflare build |
+| Research and lessons | Inside `docs/`, grouped by the existing domain/topic tree | 19 | Reference loaders and citations, source scans, catalogue placement, figures, permanent site redirects and regression fixtures |
+| Worked examples | `docs/examples/` | 18 | Starter lookup, wheel data-files, documentation, integration tests and regeneration commands |
+| Site build and hosting configuration | `tools/site/` beside its Node modules | 15 | ESM dependency resolution, npm commands, provenance, CI caches/working directories, Dependabot, audit history, Cloudflare build root/command/output and explicit Wrangler configuration |
+
+The remaining root entries would be `.agents`, `.github`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `agents`, `docs`, `pyproject.toml`, `skills`, `src`, `tests`, `tools` and `vendor`. These have current package, harness, legal or navigation roles. Keep harness-discovered `skills/` and `agents/` stable. A move must remove the old tracked root entry; a wrapper that leaves it behind does not meet the count goal.
+
+Root npm manifests and `wrangler.toml` are current build/deploy defaults, rather than Python runtime anchors. Their move needs the Node site modules under the same package hierarchy (ESM resolves dependencies upward from an importing module) and a verified Cloudflare build contract. Changing only the manifest path would break that contract. No hosting setting changes are implied by this plan. Registry/notices have no package runtime reader in the current source; their live audit/site consumers use the moved paths, while historical comparisons preserve old dependency identities.
+
+Before each move, list every current path consumer, update it in the same PR, and run its existing integration checks. Published pages need permanent redirects; unpublished maintenance files can move without a root stub. Never move another session's private inputs or worktree. Domain migrations also replace hard-coded top-level docs/research discovery before moving a page, so a clean hierarchy cannot silently remove it from the site.
+
 ## Migration path
 
 Existing content moves in small batches, never in one big reorganisation (#145):

@@ -73,3 +73,43 @@ The simulation modules and the site build use these at run time. None of their c
 | occt-import-js (Open CASCADE Technology compiled to WebAssembly) | LGPL-2.1 with the OCCT exception | 0.0.23 | `occt-import-js/` (four licence files; sources in `occt-import-js/source`) |
 | Inter | SIL Open Font License 1.1 | 4.001, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-Inter.txt` |
 | JetBrains Mono | SIL Open Font License 1.1 | 2.211, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-JetBrainsMono.txt` |
+
+## Methods, foundations and acknowledgements
+
+
+The people and projects whose work this stands on. If we use or learned from your work and you are missing or
+described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/issues/new?template=feedback.yml).
+
+**Methods and data we condensed (cited, never redistributed):**
+- Covestro (formerly Bayer MaterialScience), *Snap-Fit Joints for Plastics – A Design Guide*: the cantilever,
+  torsion and annular snap-fit method.
+- DuPont, *General Design Principles – Module I*: permissible strains (Table 10.06).
+- Bambu Lab and Polymaker technical data sheets: printed-filament properties by print direction.
+
+**Code we vendor, pinned and security-reviewed** ([`vendor/`](./), [`SECURITY.md`](../.github/SECURITY.md)):
+[text-to-cad](https://github.com/earthtojake/text-to-cad) by Thompson Labs LLC (MIT),
+[kicad-happy](https://github.com/aklofas/kicad-happy) by Andrew Klofas (MIT),
+[kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) by Osman Aslan (MIT),
+[build123d-mcp](https://github.com/pzfreo/build123d-mcp) by Paul Fremantle (Apache-2.0),
+[agentcad](https://github.com/jdilla1277/agentcad) by James Dillard (Apache-2.0) and
+[bd_warehouse](https://github.com/gumyr/bd_warehouse) by Roger Maitland (Apache-2.0).
+
+**Libraries and programs we run on:** [CadQuery](https://github.com/CadQuery/cadquery) on
+[Open CASCADE](https://occt3d.com/open-cascade-technology/) (shapes from [build123d](https://github.com/gumyr/build123d) work too),
+[trimesh](https://github.com/mikedh/trimesh), [manifold3d](https://github.com/elalish/manifold),
+[gmsh](https://gmsh.info/), [scikit-fem](https://github.com/kinnala/scikit-fem),
+[pyMOTO](https://github.com/aatmdelissen/pyMOTO), [PyVista](https://github.com/pyvista/pyvista) and
+[VTK](https://vtk.org/), [OpenFOAM](https://www.openfoam.com/), [MuJoCo](https://github.com/google-deepmind/mujoco),
+[Optuna](https://github.com/optuna/optuna), [Bambu Studio](https://github.com/bambulab/BambuStudio); in the browser
+[three.js](https://github.com/mrdoob/three.js), [Mermaid](https://github.com/mermaid-js/mermaid),
+[occt-import-js](https://github.com/kovacsv/occt-import-js) by Viktor Kovács, [fflate](https://github.com/101arrowz/fflate),
+[linkedom](https://github.com/WebReflection/linkedom), and the [Inter](https://rsms.me/inter/) (Rasmus Andersson) and
+[JetBrains Mono](https://www.jetbrains.com/lp/mono/) (JetBrains) typefaces, both SIL OFL. Board checks read reports
+from [KiCad](https://www.kicad.org/)'s `kicad-cli`. OpenFOAM (GPL) and Bambu Studio (AGPL) run only as separate
+programs, as does the FFmpeg binary that the `sim` extra's imageio-ffmpeg ships (built with GPL options); gmsh (GPL)
+is imported, but only by the optional `fea` extra.
+
+**Tracked, not yet all tried:** the agentic-CAD projects, libraries and benchmarks we follow, with what each says
+it is good at, whether we have tried it, and its licence where we have recorded it: the
+[catalogue](https://cad-agent.valpatel.com/catalog) and the [landscape survey](../research/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+

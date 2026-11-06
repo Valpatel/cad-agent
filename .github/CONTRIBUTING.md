@@ -33,15 +33,17 @@ flowchart TD
 | Required check | `dev` | `main` | What it asks |
 |---|---|---|---|
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
-| `browser (chromium)`, `browser (webkit)` | ✓ | gate | Web kit and website suites in two browser engines |
-| `cad-gates/<base>/branch-flow` | ✓ | gate | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
-| `cad-gates/<base>/review` | ✓ | gate | The latest verdict from a maintainer is pass, on the PR's head commit |
-| `cad-gates/main/release` | | gate | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](CHANGELOG.md) |
+| `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
+| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
+| `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a maintainer is pass, on the PR's head commit |
+| `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](../CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
 
-✓ means branch protection requires it. **gate** means `main`'s protection does not require it yet (#112), but it must
-still pass before a merge into `main`. `python3 tools/ci_gates.py all` checks the three `cad-gates` rows. It does not
-read the browser runs, so confirm those with `gh pr checks <n>`.
+✓ means branch protection requires it. On 2026-11-05, `main` was verified to require all eight checks above (the three
+Python checks, two browser checks and three `cad-gates/main/…` checks), bound to GitHub Actions, with up-to-date
+branches required (`strict=true`; [#112 settings evidence](https://github.com/Valpatel/cad-agent/issues/112#issuecomment-6671694150)).
+`python3 tools/ci_gates.py all` checks the three `cad-gates` rows. It does not read the browser runs, so confirm those
+with `gh pr checks <n>`.
 
 - **The verdict.** It is the last line of the reviewer's summary review: `<!-- cad-review verdict=pass sha=<40-character head sha> -->` (or `verdict=block`). It is written by the `cad-pr-reviewer` subagent, or by a reviewer following the `cad-pr-review` skill, who then re-runs the gates: `gh workflow run gates.yml -R Valpatel/cad-agent -f pr=<n>`.
 - **Who can review.** Only verdicts from a maintainer (`MAINTAINERS` in `tools/ci_gates.py`) who still has write access count, and dismissed reviews never count. A collaborator with write access can push branches and run CI, but their PRs merge only after a maintainer's review. All our agents work through one account, so GitHub cannot tell author from reviewer: an author never writes a verdict on its own PR.
@@ -50,26 +52,26 @@ read the browser runs, so confirm those with `gh pr checks <n>`.
   - they can push as often as they like, and CI runs without approval;
   - **they cannot merge.** The repository ruleset "Only maintainers merge into dev and main" lets only the admin role
     update those branches. A maintainer reviews the PR (the verdict marker; only a maintainer's verdict counts) and
-    merges it with `gh pr merge --admin`, the ruleset's bypass. On `dev`, the required checks still apply to admins
-    (enforce admins is on). `main` requires fewer checks today (#112), so run `tools/ci_gates.py all` before every
-    merge.
+    merges it with `gh pr merge --admin`, the ruleset's bypass. The required checks still apply to admins
+    (enforce admins is on). Run `tools/ci_gates.py all` before every merge; `main` also requires the release gate
+    and up-to-date branches.
   - Outside contributors without write access open PRs from forks (#111).
-- **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses. Anyone with write access can, even through a workflow of their own, so the trust boundary is the maintainer list in `tools/ci_gates.py` and the merge ruleset, not write access. Fork workflows wait for approval: a maintainer approves a run only after reading every changed workflow and script, and agents never approve one on their own (the intake skill, #120, will make that read systematic).
+- **How the gates run.** `gates.yml` runs on `pull_request_target`: the default branch's (`dev`'s) copy of the workflow and of [`tools/ci_gates.py`](../tools/ci_gates.py) decides, so a PR cannot pass the gates by editing them, and PRs into `main` (which come from `dev`) are judged by the same copy. The PR is only read as data, never checked out or run. Results are commit statuses named after the base, so a PR into `dev` cannot supply `main`'s checks. A fork's own workflows run with a read-only token, so they cannot post statuses. Anyone with write access can, even through a workflow of their own, so the trust boundary is the maintainer list in `tools/ci_gates.py` and the merge ruleset, not write access. Fork workflows wait for approval: a maintainer approves a run only after reading every changed workflow and script, and agents never approve one on their own (the intake skill, #120, will make that read systematic).
 - **When they run.** On every push to the PR, when the reviewer re-runs them after a verdict, and every 15 minutes for all open PRs (a review cannot trigger them). A run for one PR posts `pending` first, so a crash leaves the PR blocked rather than green. The sweep posts only statuses that change: GitHub keeps at most 1000 statuses per commit and name, and refuses new ones after that.
 - **Just before merging**, run `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>` from an up-to-date `dev` checkout. It reads the reviews live and must exit 0, so a block posted since the last run stops the merge.
 - **GitHub settings the gates need** (owner): the `cad-gates/…` checks required on `dev` and `main` with GitHub Actions as their source; an Actions event policy for `.github/workflows/gates.yml` that allows all three of its events, `pull_request_target`, `schedule` and `workflow_dispatch` (GitHub disables `pull_request_target` by default in public repos from 2026-12-02, and a policy lists allowed events, so one left out stops the sweep or the re-run).
 - **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
 ## Workflow
-Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workflow.md](docs/agent-workflow.md)) and
+Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workflow.md](../docs/agent-workflow.md)) and
 follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes #<issue>`, and pushes as you go.
 
 0. **Issue.** Find or open the GitHub issue the change belongs to, with a checklist of done / next / how to resume.
 1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site-catalog.mjs` builds from the
-   repo), the [landscape survey](research/landscape.md), [`upstreams/registry.yaml`](upstreams/registry.yaml), the
-   skills in [`skills/`](skills/), and the open-source libraries and agent skills outside them. Under "Considered
+   repo), the [landscape survey](../research/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
+   skills in [`skills/`](../skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
 2. **Worktree from `dev`.** Never edit a checkout another session may be using:
@@ -80,7 +82,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    ```
 3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
-   `lessons/` folder also gets its line in [`docs/areas.yaml`](docs/areas.yaml), the topic tree ([docs/vision.md](docs/vision.md)):
+   `lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):
    `tests/repo/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
    merging `dev` and re-running CI (`dev` does not require branches to be up to date).
 4. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
@@ -89,7 +91,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    features must skip cleanly) and `full` on 3.12 (CAD, FEA, robot and site extras, imported loudly before the tests;
    the `cad` and `sim` extras need 3.11 or newer);
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
-   [supply-chain report](skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
+   [supply-chain report](../skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
    entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".
 6. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
@@ -101,16 +103,16 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 ## Where files go
 
 Each kind of file has one place. Prefer growing an existing module, page or folder to starting a new one; a new
-folder comes when one gets cluttered (the growth rule in [AGENTS.md](AGENTS.md#repo-structure-and-where-files-go)).
+folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.md#repo-structure-and-where-files-go)).
 `tests/repo/test_layout.py` checks the test, `src/` and top-level rules, and says where a misplaced file goes.
 
 | Kind of file | Where it goes |
 |---|---|
-| Code: a check, calculator, generator or reader | The module for its topic in `src/cadagent/<domain>/` ([map](src/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `src/cadagent/` |
+| Code: a check, calculator, generator or reader | The module for its topic in `src/cadagent/<domain>/` ([map](../src/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `src/cadagent/` |
 | A closed-form equation | `src/cadagent/formulas/`, with golden vectors in its test |
 | A `cad-agent` command | Its parser and handler in `src/cadagent/cli.py`, its logic in the domain package |
 | A browser component | `src/cadagent/webkit/` |
-| A test of package code | `tests/<domain>/test_<subject>.py`, the folder of the package its main subject lives in ([map](tests/README.md)) |
+| A test of package code | `tests/<domain>/test_<subject>.py`, the folder of the package its main subject lives in ([map](../tests/README.md)) |
 | A test of `cli.py` or a module beside it | `tests/cli/` |
 | A Node or browser test of the web kit | `tests/webkit/`: `webkit-<name>.test.mjs` (`node --test`), `webkit-<name>-browser.mjs` (Playwright) |
 | A test of the website or its build | `tests/site/` (`website-*.test.mjs`, `website-*-browser.mjs`) |
@@ -147,7 +149,7 @@ such as a new command or check, even one that asks nothing of projects.
 1. On a `release/vX.Y.Z` branch from `dev`:
    - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
    - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, folds the
-     fragments in [`changelog.d/`](changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
+     fragments in [`changelog.d/`](../changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
      them, dates the entry as `## vX.Y.Z (YYYY-MM-DD)`, opens a new empty `## Unreleased`, and checks the result
      against CI's release gate;
    - check that the entry covers every PR merged since the last release, with what projects must change.

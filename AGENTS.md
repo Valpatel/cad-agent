@@ -1,6 +1,6 @@
 # Rules for AI agents working in this repo
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Follow the agent workflow kit ([docs/agent-workflow.md](docs/agent-workflow.md);
+Read [CONTRIBUTING.md](.github/CONTRIBUTING.md). Follow the agent workflow kit ([docs/agent-workflow.md](docs/agent-workflow.md);
 install it with `cad-agent agents install`): the `cad-work-tracking`, `cad-pr-review` and `cad-remote-runs` skills and the
 `cad-pr-reviewer` and `cad-resume` subagents. Assume the session can end at any time: every piece of work has a
 GitHub issue, is pushed in clean commits as it goes and has an early draft PR, so another computer can pick it up.
@@ -13,15 +13,15 @@ Other agent sessions use and change this repo at the same time, so:
   Do not edit or commit in another session's worktree, the `dev` worktree or the main checkout's working tree.
 - **Open a PR into `dev`** (`gh pr create --base dev`), fill in the template, and wait for CI. Ask for a review by a
   separate agent or the user; answer every review comment on the PR, then resolve it. Merge when every required
-  check passes: CI, the browser suites and the [gates](CONTRIBUTING.md#gates) (`cad-gates/<base>/branch-flow`,
+  check passes: CI, the browser suites and the [gates](.github/CONTRIBUTING.md#gates) (`cad-gates/<base>/branch-flow`,
   `cad-gates/<base>/review` with an independent reviewer's pass verdict, and `cad-gates/main/release` for `dev` →
   `main`), and `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>`, run from an up-to-date `dev`
   checkout, exits 0 just before you merge (it reads the reviews live). Never write a review verdict on your own PR, and never merge around a failing gate.
 - **Ship to `main` as part of the loop.** Every merged change adds its CHANGELOG lines as a fragment in
   [`changelog.d/`](changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
   has user-visible work that `main` lacks, cut a release with `tools/cut_release.py` and merge it through the release
-  gates ([CONTRIBUTING.md](CONTRIBUTING.md#releases)); `main` should never be more than a day behind `dev`.
-- **Who changes what: three tiers.** See [CONTRIBUTING.md](CONTRIBUTING.md#gates) and #111.
+  gates ([CONTRIBUTING.md](.github/CONTRIBUTING.md#releases)); `main` should never be more than a day behind `dev`.
+- **Who changes what: three tiers.** See [CONTRIBUTING.md](.github/CONTRIBUTING.md#gates) and #111.
   1. **Maintainer agents** (the project's own account) branch, review each other independently, and merge under the
      gates. A ruleset lets only the admin role update `dev` and `main`, so merges are `gh pr merge --admin` after
      `tools/ci_gates.py all` passes. On `dev` the required checks still apply to admins.
@@ -57,6 +57,9 @@ Other agent sessions use and change this repo at the same time, so:
 - **Put each file where the map says** ([Repo structure and where files go](#repo-structure-and-where-files-go)):
   code in `src/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
+- **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
+  joining` and design to the card ([skills/design-process](skills/design-process/SKILL.md)); never copy rules into
+  Markdown, since they live in `research/process-profiles.yaml`.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.
 
@@ -64,7 +67,7 @@ Other agent sessions use and change this repo at the same time, so:
 
 Every file has one home, set by what kind of file it is and the domain it serves (the domains of
 [`docs/areas.yaml`](docs/areas.yaml)). The fuller table, with examples, is in
-[CONTRIBUTING.md](CONTRIBUTING.md#where-files-go). `tests/repo/test_layout.py` enforces the rules marked ✓, and each of
+[CONTRIBUTING.md](.github/CONTRIBUTING.md#where-files-go). `tests/repo/test_layout.py` enforces the rules marked ✓, and each of
 its failures says where the file goes.
 
 | Folder | What belongs there |
@@ -75,14 +78,15 @@ its failures says where the file goes.
 | `research/` | Surveys and sourced data tables (landscape, process profiles, security reports). |
 | `lessons/<area>/` | Lessons learned on real projects, by area ([map](lessons/README.md)). |
 | `examples/<name>/` | Example projects the docs and tests run. |
-| `tools/` | The repo's own scripts: figure generators, the site build, the gates, releases, audits. |
+| `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
 | `web/` | The website's own static files (CSS, icons, the landing model). |
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
-| `vendor/`, `upstreams/` | Vendored upstream code in its own layout; the registry of upstreams we track. |
-| `mining/` | The script that condenses session transcripts for lesson mining. |
+| `vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](vendor/README.md)). |
 | `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |
 | `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `lessons/`. The links, and the move of today's `.agents/` notes into `lessons/`, come in a follow-up PR. |
-| `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](CONTRIBUTING.md#gates)). |
+| `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](.github/CONTRIBUTING.md#gates)). |
+
+✓ **Keep the root compact.** `tests/repo/test_layout.py` caps tracked root entries (files and folders together); its budget only shrinks as maintenance files move to their owning hierarchy.
 
 ✓ **Never add a top-level folder.** A new kind of folder is the owner's call, in a PR of its own.
 

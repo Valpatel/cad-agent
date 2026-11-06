@@ -13,6 +13,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from '@playwright/test';
 import { builtSite } from './built-site.mjs';
+import { reducedHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -107,7 +108,10 @@ try {
         const res = await page.goto(base + route, { waitUntil: 'networkidle' });
         if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
         else if (res.status() !== 200) seen.push(`status ${res.status()}`);
-        if (route === '/README') await page.waitForSelector('.cad-diagram[data-state=ready] svg', { timeout: 15000 }).catch(() => seen.push('mermaid did not render'));
+        if (route === '/README') await page.waitForFunction(() => {
+          const map = document.querySelector('img[src="/docs/img/hero/repository-map.svg"]');
+          return map?.complete && map.naturalWidth > 0;
+        }, null, { timeout: 15000 }).catch(() => seen.push('repository learning map did not load'));
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
         if (overflow > 0) seen.push(`scrolls sideways by ${overflow}px`);
         if (!route.startsWith('/kit/')) {
@@ -431,6 +435,7 @@ try {
       const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
       if (turning) problems.push('reduced motion: the 3D model turns by itself');
       await reduced.close();
+      problems.push(...await reducedHeroProblems(browser, base));
       return problems;
     }],
     ['diagram widths', async () => {
@@ -1163,7 +1168,25 @@ async function themeProblems() {
         await page.goto(base + route, { waitUntil: 'load' });
         await settled(page);
         if (how === 'button') {
-          await page.click('.theme-toggle');
+          // Sample any copy-button colour transitions, not only their endpoints. A wall-clock wait can miss
+          // unreadable intermediate colours, and busy runners may not have advanced their animation frames yet.
+          await page.evaluate(() => {
+            document.querySelector('.theme-toggle').click();
+            window.__copyThemeTransitions = [...document.querySelectorAll('.cad-copy-btn')]
+              .flatMap(el => el.getAnimations())
+              .filter(a => ['color', 'background-color'].includes(a.transitionProperty));
+            window.__copyThemeTransitions.forEach(a => a.pause());
+          });
+          for (const fraction of [0, .25, .5, .75, 1]) {
+            await page.evaluate(f => window.__copyThemeTransitions.forEach(a => {
+              a.currentTime = Number(a.effect.getTiming().duration) * f;
+            }), fraction);
+            for (const l of await lowContrast(page, '.cad-copy-btn')) out.push(`${where}: low contrast during theme change (${fraction}): ${l}`);
+          }
+          await page.evaluate(() => {
+            window.__copyThemeTransitions.forEach(a => a.finish());
+            delete window.__copyThemeTransitions;
+          });
           await page.waitForTimeout(400);                 // past the copy buttons' 0.15 s colour transition
         }
         const st = await state(page);

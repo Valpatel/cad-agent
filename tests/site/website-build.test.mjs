@@ -3,7 +3,7 @@ import test from 'node:test';
 import YAML from 'yaml';
 import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -673,4 +673,89 @@ test('every page names its cad-agent.valpatel.com address as canonical, and the 
   }
   assert.ok(checked.includes('index.html') && checked.includes('catalog.html') && checked.includes('kit/viewer.html') && checked.length > 40,
     `checked ${checked.length} pages`);
+});
+
+test('the moved contributor source keeps its public URLs, identity and real provenance', async () => {
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  const policy = catalog.items.find(i => i.id === 'guide-contributing');
+  assert.equal(policy.url, 'https://cad-agent.valpatel.com/CONTRIBUTING');
+  assert.equal(policy.markdown, 'https://cad-agent.valpatel.com/CONTRIBUTING.md');
+  assert.equal(policy.source, 'https://github.com/Valpatel/cad-agent/blob/dev/.github/CONTRIBUTING.md');
+  const html = await readFile(path.join(out, 'CONTRIBUTING.html'), 'utf8');
+  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/\.github\/CONTRIBUTING\.md"/);
+  assert.match(html, /href="\/docs\/agent-workflow/);
+  assert.ok((await ids('CONTRIBUTING.html')).has('gates'), 'inbound fragments keep their existing target');
+  assert.match(await readFile(path.join(out, 'README.html'), 'utf8'), /href="\/CONTRIBUTING"/);
+  const twin = await readFile(path.join(out, 'CONTRIBUTING.md'), 'utf8');
+  assert.match(twin, /\]\(docs\/agent-workflow\.md/);
+  assert.doesNotMatch(twin, /\]\(\.\.\/docs\/agent-workflow\.md/, 'links resolve from the source but emit relative to the public twin');
+  assert.ok(!files.includes('.github/CONTRIBUTING.html') && !files.includes('.github/SECURITY.html'));
+  for (const file of ['llms.txt', 'sitemap.xml']) {
+    const body = await readFile(path.join(out, file), 'utf8');
+    assert.match(body, /https:\/\/cad-agent\.valpatel\.com\/CONTRIBUTING/);
+    assert.doesNotMatch(body, /https:\/\/cad-agent\.valpatel\.com\/\.github\/CONTRIBUTING/);
+  }
+});
+
+test('the moved notices keep public URLs, catalogue identity, links and real provenance', async () => {
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  const notice = catalog.items.find(i => i.id === 'guide-third-party-notices');
+  assert.equal(notice.url, 'https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES');
+  assert.equal(notice.markdown, 'https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES.md');
+  assert.equal(notice.source, 'https://github.com/Valpatel/cad-agent/blob/dev/vendor/THIRD_PARTY_NOTICES.md');
+  const html = await readFile(path.join(out, 'THIRD_PARTY_NOTICES.html'), 'utf8');
+  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/vendor\/THIRD_PARTY_NOTICES\.md"/);
+  assert.match(html, /href="\/research\/landscape"/);
+  assert.ok((await ids('THIRD_PARTY_NOTICES.html')).has('third-party-notices'));
+  assert.match(await readFile(path.join(out, 'README.html'), 'utf8'), /href="\/THIRD_PARTY_NOTICES"/);
+  const twin = await readFile(path.join(out, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+  assert.match(twin, /\]\(research\/landscape\.md\)/);
+  assert.doesNotMatch(twin, /\]\(\.\.\/research\/landscape\.md\)/);
+  assert.ok(!files.includes('vendor/THIRD_PARTY_NOTICES.html'));
+  for (const file of ['llms.txt', 'sitemap.xml']) {
+    const body = await readFile(path.join(out, file), 'utf8');
+    assert.match(body, /https:\/\/cad-agent\.valpatel\.com\/THIRD_PARTY_NOTICES/);
+    assert.doesNotMatch(body, /https:\/\/cad-agent\.valpatel\.com\/vendor\/THIRD_PARTY_NOTICES/);
+  }
+});
+
+test('a real draft consumes moved sources and cannot substitute stale root files when they are missing', async () => {
+  const wt = path.join(tmp, 'wt-policy');
+  execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  try {
+    await writeFile(path.join(wt, '.github/CONTRIBUTING.md'), '# Current policy\n\nMOVED_SOURCE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'CONTRIBUTING.md'), '# Stale root policy\n\nSTALE_ROOT_SENTINEL.\n');
+    await writeFile(path.join(wt, 'vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'THIRD_PARTY_NOTICES.md'), '# Stale root notices\n\nSTALE_NOTICE_SENTINEL.\n');
+    const registry = path.join(wt, 'vendor/upstreams/registry.yaml');
+    const upstreams = YAML.parse(await readFile(registry, 'utf8'));
+    upstreams[0].what = 'REGISTRY_SOURCE_SENTINEL';
+    await writeFile(registry, YAML.stringify(upstreams));
+    await mkdir(path.join(wt, 'upstreams'), { recursive: true });
+    await writeFile(path.join(wt, 'upstreams', 'registry.yaml'), '[]\n');
+    const draft = path.join(tmp, 'draft-policy');
+    const run = () => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    run();
+    const page = await readFile(path.join(draft, 'CONTRIBUTING.html'), 'utf8');
+    assert.match(page, /MOVED_SOURCE_SENTINEL/);
+    assert.doesNotMatch(page, /STALE_ROOT_SENTINEL/);
+    assert.match(page, /href="\/docs\/toolkit#commands"/);
+    assert.match(await readFile(path.join(draft, 'CONTRIBUTING.md'), 'utf8'), /\]\(docs\/toolkit\.md#commands\)/);
+    const notice = await readFile(path.join(draft, 'THIRD_PARTY_NOTICES.html'), 'utf8');
+    assert.match(notice, /MOVED_NOTICE_SENTINEL/);
+    assert.doesNotMatch(notice, /STALE_NOTICE_SENTINEL/);
+    assert.match(notice, /href="\/docs\/toolkit#commands"/);
+    assert.match(await readFile(path.join(draft, 'THIRD_PARTY_NOTICES.md'), 'utf8'), /\]\(docs\/toolkit\.md#commands\)/);
+    const catalog = JSON.parse(await readFile(path.join(draft, 'catalog.json'), 'utf8'));
+    assert.equal(catalog.items.find(i => i.name === upstreams[0].name).what, 'REGISTRY_SOURCE_SENTINEL');
+    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml']) {
+      const current = await readFile(path.join(wt, source));
+      await rm(path.join(wt, source));
+      assert.throws(run, error => String(error.stderr).includes('ENOENT') && String(error.stderr).includes(source),
+        `${source}: missing real source must fail even while the stale root file still exists`);
+      await writeFile(path.join(wt, source), current);
+    }
+  } finally {
+    execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+  }
 });

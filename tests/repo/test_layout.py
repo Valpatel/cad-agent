@@ -41,8 +41,9 @@ AREAS = {
 TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all that may sit directly in tests/
 # .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that
 # adds them.
-TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "mining", "research",
-            "skills", "src", "tests", "tools", "upstreams", "vendor", "web"}
+TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "research",
+            "skills", "src", "tests", "tools", "vendor", "web"}
+ROOT_ENTRY_LIMIT = 24  # #145/#358: registry metadata and notices join their vendor owner.
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else
 PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the top of src/cadagent/: may only shrink
 
@@ -50,7 +51,7 @@ PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the t
 # into subfolders named after the domains. Vendored trees keep their upstream layout; fixtures and the figure folders
 # under docs/img/ hold one tool's output each, so splitting them would scatter it.
 CLUTTER_LIMIT = 20
-NOT_COUNTED = re.compile(r"^(vendor|upstreams)/|/vendor/|^tests/fixtures/|^docs/img/")
+NOT_COUNTED = re.compile(r"^vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
 OVER_LIMIT = {
@@ -216,6 +217,28 @@ def top_dir_problems(files: list[str]):
                    f"'Repo structure and where files go'). A new kind of folder is the owner's call, in its own PR "
                    f"that adds it to TOP_DIRS in tests/repo/test_layout.py.")
     return out
+
+
+
+def root_entry_problems(files: list[str]):
+    """Count tracked first-level names, so nested moves reduce the GitHub landing screen's clutter."""
+    entries = {p.split("/")[0] for p in files}
+    if len(entries) > ROOT_ENTRY_LIMIT:
+        return [f"repo root holds {len(entries)} tracked entries (limit {ROOT_ENTRY_LIMIT}): move maintenance files "
+                "into their owning docs/tools/vendor hierarchy; do not raise ROOT_ENTRY_LIMIT"]
+    return []
+
+
+def test_tracked_root_stays_within_its_shrinking_budget(tracked):
+    assert not root_entry_problems(tracked), "\n".join(root_entry_problems(tracked))
+
+
+def test_root_budget_counts_both_files_and_folders_and_ignores_nesting():
+    files = [f"file-{i}.md" for i in range(ROOT_ENTRY_LIMIT - 1)] + ["docs/README.md", "docs/guide.md"]
+    assert root_entry_problems(files) == []
+    assert root_entry_problems(files + ["new-root-file.md"])
+    assert root_entry_problems(files + ["new-folder/a.py"])
+    assert root_entry_problems(files + ["docs/more/deeper.md"]) == []
 
 
 def src_problems(files: list[str]):

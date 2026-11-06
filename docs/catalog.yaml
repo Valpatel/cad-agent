@@ -1,5 +1,5 @@
 # The catalogue's demos and the pictures of our commands: cad-agent.valpatel.com/catalog, /catalog.json and
-# /catalog/index.json are built from this file, docs/areas.yaml, upstreams/registry.yaml, research/landscape.json,
+# /catalog/index.json are built from this file, docs/areas.yaml, vendor/upstreams/registry.yaml, research/landscape.json,
 # cli.py and the site's own pages (tools/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
 # drawn by the build from data; the catalogue never shows an outside image (licences, and the site's CSP).
 #

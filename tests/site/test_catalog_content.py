@@ -1,4 +1,4 @@
-"""Catalogue content for outside entries (#106): every upstream in upstreams/registry.yaml and every library and
+"""Catalogue content for outside entries (#106): every upstream in vendor/upstreams/registry.yaml and every library and
 benchmark in research/landscape.json has a plain one-line `what` (what the project is and does, from its own README or
 site) and `areas` placing it in the topic tree of docs/areas.yaml. Our assessment stays in `notes`, `status` and
 `policy`; `what` is the line the catalogue shows first, so it must not just repeat the notes."""
@@ -26,7 +26,7 @@ def landscape():
 @pytest.fixture(scope="module")
 def entries(landscape):
     """(kind, entry, notes) for every outside entry the catalogue shows. An upstream's notes live in landscape.json."""
-    upstreams = yaml.safe_load((ROOT / "upstreams" / "registry.yaml").read_text(encoding="utf-8"))
+    upstreams = yaml.safe_load((ROOT / "vendor" / "upstreams" / "registry.yaml").read_text(encoding="utf-8"))
     notes = {p["name"]: p.get("notes", "") for p in landscape["projects"]}
     out = [("upstream", u, notes.get(u["name"], "")) for u in upstreams]
     out += [("library", lib, lib.get("notes", "")) for lib in landscape["libraries"]]
@@ -45,7 +45,7 @@ def test_every_landscape_project_is_a_registry_upstream(entries, landscape):
     """The catalogue reads `what` for projects from the registry, so a landscape project missing there has none."""
     upstreams = {e["name"] for kind, e, _ in entries if kind == "upstream"}
     missing = [p["name"] for p in landscape["projects"] if p["name"] not in upstreams]
-    assert not missing, f"landscape projects not in upstreams/registry.yaml: {missing}"
+    assert not missing, f"landscape projects not in vendor/upstreams/registry.yaml: {missing}"
 
 
 def test_every_entry_has_a_plain_one_line_what(entries):

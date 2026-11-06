@@ -192,14 +192,39 @@ def test_printed_snap_without_orientation_fails_and_assumes_across():
         _printed_snap(orientation="along", process="sla")
 
 
-def test_docs_page_example_runs_and_table_matches_the_code():
-    # docs/mechanical/compliant.md is a living page: its YAML example and printed-allowables table are checked here
+def test_docs_page_example_runs_and_table_matches_the_code(tmp_path):
+    # The skill routes here: consume the actual guide example through the advertised CLI/JSON interface.
+    import copy
+    import json
     import re
     from pathlib import Path
     import yaml
+    from cadagent.cli import main
     doc = (Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text()
-    result = sf.check_spec(yaml.safe_load(re.search(r"```yaml\n(.*?)```", doc, re.S).group(1)))
-    assert result["pass"] and [s["name"] for s in result["snaps"]] == ["lid-latch", "example-I"]
+    example = yaml.safe_load(re.search(r"```yaml\n(.*?)```", doc, re.S).group(1))
+    for change, expected_exit in [("documented", 0), ("across", 1), ("missing", 1)]:
+        spec = copy.deepcopy(example)
+        if change == "across":
+            spec["snaps"][0]["orientation"] = "across"
+        elif change == "missing":
+            del spec["snaps"][0]["orientation"]
+        source, output = tmp_path / f"{change}.yaml", tmp_path / f"{change}.json"
+        source.write_text(yaml.safe_dump(spec))
+        assert main(["snapfit", str(source), "--output", str(output)]) == expected_exit
+        result = json.loads(output.read_text())  # distinct outputs cannot reuse a previous case's report
+        assert result["pass"] is (expected_exit == 0)
+        assert result["method"] and result["limits"]
+        assert [s["name"] for s in result["snaps"]] == ["lid-latch", "example-I"]
+        lid, guide = result["snaps"]
+        assert guide["pass"]  # changing the printed arm must not invalidate the moulded guide example
+        assert lid["material"]["source"] and lid["limits"]
+        failed = {row["check"] for row in lid["rows"] if not row["pass"]}
+        if change == "documented":
+            assert not failed
+        elif change == "across":
+            assert failed == {"root strain"}
+        else:
+            assert failed == {"print orientation", "root strain"}
     rows = re.findall(r"`([a-z0-9-]+)` \| ([\d.]+) % \| ([\d.]+) %", doc)
     assert {name for name, _, _ in rows} == set(al.PRINTED)
     for name, along, across in rows:

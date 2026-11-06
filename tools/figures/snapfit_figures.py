@@ -4,7 +4,7 @@ from pathlib import Path
 
 from cadagent.mechanical.compliant import figures, snapfit as sf
 
-OUT = Path(__file__).resolve().parents[1] / "docs" / "img" / "compliant"
+OUT = Path(__file__).resolve().parents[2] / "docs" / "img" / "compliant"
 
 
 def main() -> None:

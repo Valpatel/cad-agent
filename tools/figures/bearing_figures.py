@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Draw docs/img/bearings/*.svg from cadagent.formulas.bearings and cadagent.mechanical.bearings.
 
-    python3 tools/bearing_figures.py            # write the SVGs
-    python3 tools/bearing_figures.py --check    # exit 1 if a committed SVG differs (tests/formulas/test_bearings.py runs this)
+    python3 tools/figures/bearing_figures.py            # write the SVGs
+    python3 tools/figures/bearing_figures.py --check    # exit 1 if a committed SVG differs (tests/formulas/test_bearings.py runs this)
 
 Pure Python, so the page shows exactly what the code computes on the catalogue bearings and the worked example below.
 Colours: the categorical slots and the steps of the site's chart palette, each line labelled at its end, so no
@@ -17,7 +17,7 @@ from xml.sax.saxutils import escape
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from cadagent import formulas as fx                     # noqa: E402  (this checkout's package)
@@ -291,7 +291,7 @@ def main(argv=None) -> int:
             OUT.mkdir(parents=True, exist_ok=True)
             path.write_text(svg)
     if stale:
-        print("out of date (run python3 tools/bearing_figures.py):", ", ".join(stale))
+        print("out of date (run python3 tools/figures/bearing_figures.py):", ", ".join(stale))
         return 1
     return 0
 

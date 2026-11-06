@@ -240,9 +240,9 @@ def test_guide_figures_regenerate_from_their_real_checkout_root(tmp_path):
 
     root = Path(__file__).resolve().parents[2]
     checkout = tmp_path / "checkout"
-    script = checkout / "tools" / "snapfit_figures.py"
+    script = checkout / "tools" / "figures" / "snapfit_figures.py"
     script.parent.mkdir(parents=True)
-    shutil.copyfile(root / "tools" / "snapfit_figures.py", script)
+    shutil.copyfile(root / "tools" / "figures" / "snapfit_figures.py", script)
     spec = importlib.util.spec_from_file_location("snapfit_guide_figures", script)
     generator = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(generator)  # normal repository-test imports provide cadagent; no root override

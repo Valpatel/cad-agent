@@ -367,6 +367,6 @@ def test_the_docs_example_says_what_the_check_computes():
 
 
 def test_figures_are_current():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "bearing_figures.py"), "--check"], capture_output=True,
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "figures" / "bearing_figures.py"), "--check"], capture_output=True,
                        text=True)
     assert r.returncode == 0, r.stdout + r.stderr

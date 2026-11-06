@@ -83,7 +83,7 @@ reel:
     href: docs/mechanical/compliant.md
   - img: docs/img/research/process-sheet-metal.svg
     on: sources
-    tool: tools/process_profile_figures.py
+    tool: tools/figures/process_profile_figures.py
     title: One rule, many sources
     caption: The same sheet-metal rule from different sources, evaluated at 1.5 mm, beside one shop's real tooling.
     alt: The same sheet-metal rule from several sources evaluated at 1.5 mm thickness and radius

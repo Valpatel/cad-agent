@@ -12,7 +12,7 @@ ENV = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
 
 
 def test_committed_diagrams_match_the_module():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "insert_figures.py"), "--check"], capture_output=True,
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "figures" / "insert_figures.py"), "--check"], capture_output=True,
                        text=True, env=ENV)
     assert r.returncode == 0, r.stdout + r.stderr
 

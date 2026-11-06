@@ -81,7 +81,7 @@ end of travel. Between samples, each event is bisected to 2⁻⁴⁸ of the step
 
 ![A five-bar leg hanging from its two hips, cranks 100 mm, links 120 mm and ground 80 mm, moves its foot round an elliptical stride inside its reach: its lowest transmission angle is 53.4° and its arms stay 68.8° from in line. Beside it, a map of the two crank angles shaded by transmission angle, with the stride's path; turning both cranks symmetrically from −90° locks at θ1 = −143.1°, where the links stretch into one line](../img/linkages/fivebar.svg)
 
-*The five-bar in `tools/linkage_figures.py`, drawn from `sweep_fivebar_tip`, `sweep_fivebar` and `fivebar_workspace`.
+*The five-bar in `tools/figures/linkage_figures.py`, drawn from `sweep_fivebar_tip`, `sweep_fivebar` and `fivebar_workspace`.
 The dash-dot links are the other assembly on the same cranks. `tests/mechanical/test_linkages.py` checks that the committed SVG
 matches the generator. It also checks the lock against its closed form, cos θ1 = (d − 2b) / 2a.*
 

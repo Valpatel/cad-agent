@@ -7,7 +7,7 @@ The checks come first and the price second, so a part is only ever ranked once i
 
 ![Price of one piece for 25 PEM clinch parts and 4 McMaster-Carr rivets, on a log scale: zinc-plated steel S nuts and FH studs cost about $0.07 to $0.21 loose, stainless CLS and CLSS nuts $0.15 to $0.68, standoffs $0.21 to $0.68, rivets $0.04 to $0.12 each; SendCutSend's price to press a part in is $0.77 to $1.33](img/process/sheet-hardware-prices.svg)
 
-*Drawn by `tools/process_figures.py` from `cadagent.mechanical.sheet_hardware` on `docs/research/sheet-hardware.yaml`. A test
+*Drawn by `tools/figures/process_figures.py` from `cadagent.mechanical.sheet_hardware` on `docs/research/sheet-hardware.yaml`. A test
 redraws it and fails if the committed chart differs. The prices are as read on the dates in the footer.*
 
 ## The pattern, step by step
@@ -97,7 +97,7 @@ clinch parts from a distributor are pressed in first. Rivets come from a distrib
 - **The test:** `tests/mechanical/test_sheet_hardware.py` loads the catalogue and fails on a part the checks do not
   know, a price with no date, or a source that is not cited.
 - **To refresh:** re-read the part pages one at a time and update `price_usd`, `price_checked` and `specs` for each
-  item. Then redraw the chart with `python3 tools/process_figures.py`.
+  item. Then redraw the chart with `python3 tools/figures/process_figures.py`.
 
 </details>
 

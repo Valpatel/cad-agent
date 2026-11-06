@@ -57,7 +57,7 @@ def test_unknown_family_is_an_error():
 
 # A Cat6 patch cord, from Belden's data sheet (CAT6+ UTP PVC patch cord, technical data rev 0.202, 2025-02-07):
 # nominal diameter 6.1 mm, "Min Bend Radius (Overall Cable): 25 mm". The shelf the enclosure stands on: its top is the
-# wall slab's bottom (v = -20), 29.75 mm below the cable's axis. tools/motion_figures.py draws this port.
+# wall slab's bottom (v = -20), 29.75 mm below the cable's axis. tools/figures/motion_figures.py draws this port.
 CAT6 = {"od": 6.1, "min_bend_radius": {"mm": 25.0},
         "basis": "Belden CAT6+ UTP PVC patch cord, technical data rev 0.202 (2025-02-07): nominal diameter 6.1 mm, "
                  "min bend radius (overall cable) 25 mm"}

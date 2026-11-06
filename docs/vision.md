@@ -104,9 +104,9 @@ flowchart TD
 |---|---|---|
 | Calls, tokens and peak context to reach the right tool | the evaluation runner's discovery jobs | planned (#142) |
 | Pass rate with cad-agent against without it, per model and harness | standard jobs, `kit` against `bare` | planned (#142) |
-| Time from a contribution to the live site | PR merge time and `version.json` | measurable now |
+| Time from a contribution to the live site | PR merge time and timestamped deployment/readback evidence matching `version.json.revision` | manually measurable |
 | Outside contributors whose work landed with their name on it | git authorship | measurable now |
-| Flat folders over the clutter threshold | the layout ratchet | in review (#276) |
+| Flat folders over the clutter threshold | the layout ratchet | enforced now; named clutter exceptions warn (#276) |
 | Rules with a confidence level and a source | the reference registry | in progress (#118, #143) |
 
 ### What exists today, and what is planned
@@ -114,7 +114,7 @@ flowchart TD
 | | |
 |---|---|
 | **Exists** | the tested toolkit grouped by domain, and the topic tree with its check; the agent workflow kit (skills and subagents above); the review and release gates; changelog fragments; a generated site with Markdown twins, `llms.txt`, `llms-full.txt`, `version.json` and `visuals.json` |
-| **Planned** | area hubs (#141); the evaluation runner and standard jobs (#142); confidence levels on every tool and rule (#143); the tests layout by domain and its ratchet (#276); skills for triaging and integrating contributions |
+| **Planned** | area hubs (#141); the evaluation runner and standard jobs (#142); confidence levels on every tool and rule (#143); skills for triaging and integrating contributions |
 
 ## How the structure serves the loop
 

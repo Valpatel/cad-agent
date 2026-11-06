@@ -81,7 +81,7 @@ def test_every_switch_a_vendored_tool_names_is_covered():
 
 
 def test_scripts_that_run_wrangler_keep_its_metrics_off():
-    scripts = json.loads((ROOT / "package.json").read_text())["scripts"]
+    scripts = json.loads((ROOT / "tools/site/package.json").read_text())["scripts"]
     for name, line in scripts.items():
         if "wrangler" in line:
             before = line.split("wrangler")[0]

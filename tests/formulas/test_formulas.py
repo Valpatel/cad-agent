@@ -750,7 +750,7 @@ def test_no_system_through_the_origin_crosses_the_datasheet_fans_twice():
 
 def test_the_fan_curve_explorer_and_its_pages_say_what_the_python_computes():
     # docs/fans.md and docs/formulas.md show <cad-fan-curve>: its attributes, run through cadagent.formulas and the
-    # datasheet fan, give the operating point the still's alt text quotes (tools/fan-curve-still.mjs checks the same
+    # datasheet fan, give the operating point the still's alt text quotes (tools/site/figures/fan-curve-still.mjs checks the same
     # from the browser side), and the page's worked numbers are the Python's.
     from cadagent.thermal.fans import FANS
     ref = 100 / 3600
@@ -805,7 +805,7 @@ def test_docs_page_lists_every_formula_and_its_source():
 
 def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
     # The page's <cad-cantilever> attributes, run through cadagent.formulas, give the root strain its still's alt text
-    # quotes (tools/cantilever-still.mjs checks the same from the browser side), and the page's claim that the arm
+    # quotes (tools/site/figures/cantilever-still.mjs checks the same from the browser side), and the page's claim that the arm
     # passes flat and fails upright holds.
     from cadagent.mechanical.compliant.allowables import PRINTED
     page_file = ROOT / "docs" / "mechanical" / "compliant.md"
@@ -828,7 +828,7 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
 
 def test_the_fourbar_demo_and_its_pages_say_what_the_python_computes():
     # docs/mechanical/linkages.md and docs/formulas.md show <cad-fourbar>: its attributes, run through cadagent.formulas, give the
-    # class and the lowest transmission angle the still's alt text quotes (tools/fourbar-still.mjs checks the same from
+    # class and the lowest transmission angle the still's alt text quotes (tools/site/figures/fourbar-still.mjs checks the same from
     # the browser side), and the page's worked numbers (the limits of the linkages it suggests) are the Python's.
     def deg(rad):
         return f"{round(math.degrees(rad), 1):g}°"

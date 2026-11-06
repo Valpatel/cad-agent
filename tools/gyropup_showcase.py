@@ -3,7 +3,7 @@
 
     python3 tools/gyropup_showcase.py --gyropup <checkout of Valpatel/gyropup>   # web/models/gyropup.{json,bin}
                                                                                # + docs/img/gyropup/*.webp
-    node tools/site-model-poster.mjs                                           # then the model's still poster
+    node tools/site/figures/site-model-poster.mjs                                           # then the model's still poster
 
 Gyropup (https://gyropup.com, MIT) is a wheel-legged robot designed with cad-agent. Use a clean checkout of its
 `origin/main` (a worktree or a clone), never a working tree someone is editing.
@@ -18,7 +18,7 @@ Gyropup (https://gyropup.com, MIT) is a wheel-legged robot designed with cad-age
   SOURCE.json come from the summary, and the site build fails when the home page's caption does not quote them.
 
 The checkout's revision and the settings are recorded in the model's `source` and in docs/img/gyropup/SOURCE.json.
-The home page's Gyropup card (docs/img/gyropup.jpg) is the model's poster with words, made by tools/site-model-poster.mjs,
+The home page's Gyropup card (docs/img/gyropup.jpg) is the model's poster with words, made by tools/site/figures/site-model-poster.mjs,
 which records it as SOURCE.json's "banner" entry; this script keeps that entry.
 
 Gyropup's `cad-agent view` reads exports/robot/*.step, its whole robot as drawn today (P3 body, five-bar legs, turret),
@@ -37,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-MODELS = ROOT / "web" / "models"
+MODELS = ROOT / "tools" / "site" / "assets" / "models"
 PICTURES = ROOT / "docs" / "img" / "gyropup"
 # 0.8 mm chord and 0.8 rad (46 degrees) per facet, with FINE_PARTS finer: 118,300 triangles and 391,703 bytes for
 # the robot's 33 visible groups (b79896a), against 232k triangles and 620 KB at 0.3 mm / 0.5 rad. That is 17.9 KB
@@ -132,7 +132,7 @@ def pictures(checkout: Path, revision: str) -> dict:
               "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>", "pictures": {}}
     previous = PICTURES / "SOURCE.json"
     if previous.is_file() and "banner" in (old := json.loads(previous.read_text())):
-        record["banner"] = old["banner"]                 # docs/img/gyropup.jpg's record (tools/site-model-poster.mjs)
+        record["banner"] = old["banner"]                 # docs/img/gyropup.jpg's record (tools/site/figures/site-model-poster.mjs)
     for name, (source, top, case) in PICTURE_SOURCES.items():
         entry = {"source": source}
         if case:

@@ -1,6 +1,6 @@
 /** Serve dist/ the way Cloudflare Pages does, for local preview and the site tests.
  *
- *   node tools/preview-site.mjs [--dir dist] [--port 8781] [--host 127.0.0.1]
+ *   node tools/site/preview-site.mjs [--dir dist] [--port 8781] [--host 127.0.0.1]
  *
  * Pretty URLs (/docs/toolkit serves docs/toolkit.html; /x.html redirects to /x), 404.html with status 404, and the
  * response headers from dist/_headers (so the Content-Security-Policy is exercised before a deploy) and the redirects in
@@ -12,7 +12,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const arg = (name, dflt) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : dflt; };
-const dir = path.resolve(arg('--dir', path.join(import.meta.dirname, '..', 'dist')));
+const dir = path.resolve(arg('--dir', path.join(import.meta.dirname, '../..', 'dist')));
 const port = Number(arg('--port', 8781)), host = arg('--host', '127.0.0.1');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',

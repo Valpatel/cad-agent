@@ -1,6 +1,6 @@
 // <cad-fan-curve> (src/cadagent/webkit/fan-curve.js) without a browser: every setting of its controls gives a point on
 // both curves, the stall warning agrees with the per-fan flow, the chart stays inside its figure, and the still on the
-// pages is what the component draws for their attributes (tools/fan-curve-still.mjs --check).
+// pages is what the component draws for their attributes (tools/site/figures/fan-curve-still.mjs --check).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -73,6 +73,6 @@ test('attributes are read safely: unknown values fall back, numbers clamp to the
 });
 
 test('the fan-curve still on its pages is what the component draws for the pages\' attributes', () => {
-  const out = execFileSync(process.execPath, ['tools/fan-curve-still.mjs', '--check'], { cwd: root }).toString();
+  const out = execFileSync(process.execPath, ['tools/site/figures/fan-curve-still.mjs', '--check'], { cwd: root }).toString();
   assert.match(out, /current/);
 });

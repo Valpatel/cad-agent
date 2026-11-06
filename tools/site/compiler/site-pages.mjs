@@ -4,7 +4,7 @@
  * The owner, 2026-10-31: "CAD is graphical, so our site should be too. Not a wall of text." Pictures are placed by the
  * site build, never written into the Markdown, so the .md twins and llms.txt stay exactly as written and GitHub shows
  * the page as before. Every placed picture says what it is: a real output of a tool, or a diagram (a drawing of
- * something real), which tool made it and what it was computed on. Used by tools/build-site.mjs; tested in
+ * something real), which tool made it and what it was computed on. Used by tools/site/build-site.mjs; tested in
  * tests/site/website-pages.test.mjs.
  *
  * The template, top to bottom:

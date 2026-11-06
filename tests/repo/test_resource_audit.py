@@ -41,8 +41,8 @@ def checkout(root: Path):
     write(root, "pyproject.toml", '[project]\nname = "x"\ndependencies = ["pyyaml>=6.0", "numpy>=1.24"]  # core\n'
                                   '[project.optional-dependencies]\ncad = [\n    "cadquery[ocp]>=2.4",  # the kernel\n'
                                   '    "pillow>=10.0",\n]\ndev = ["pytest"]\n')
-    write(root, "package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
-    write(root, "package-lock.json", lock(good_pkg("marked", "16.4.1")))
+    write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
+    write(root, "tools/site/package-lock.json", lock(good_pkg("marked", "16.4.1")))
     write(root, "vendor/manifest.json", json.dumps({"projects": [
         {"name": "tool", "url": "https://github.com/someone/tool", "license": "MIT", "sha": SHA, "imported": "2026-10-24",
          "report": "vendor/reports/tool.md", "exclude": [".github"]}]}))
@@ -136,12 +136,12 @@ def test_clean_checkout_has_nothing_above_info(tmp_path):
 def test_offline_checks_find_planted_problems(tmp_path):
     root = checkout(tmp_path)
     write(root, "pyproject.toml", '[project]\ndependencies = ["pyyaml"]\n')
-    write(root, "package-lock.json", lock({
+    write(root, "tools/site/package-lock.json", lock({
         **good_pkg("marked", "16.4.1"),
         **good_pkg("evil", "1.0.0", resolved="http://mirror.invalid/evil.tgz"),
         **good_pkg("fsevents", "2.3.2", hasInstallScript=True, os=["darwin"], optional=True),
         "node_modules/nohash": {"version": "1.0.0", "resolved": "https://registry.npmjs.org/nohash/-/nohash-1.0.0.tgz"}}))
-    write(root, "package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
+    write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
     man = json.loads((root / "vendor/manifest.json").read_text())
     man["projects"][0].update(sha="abc123", license="Apache-2.0")
     write(root, "vendor/manifest.json", json.dumps(man))
@@ -168,7 +168,7 @@ def test_an_install_script_finding_is_per_version(tmp_path):
     """An acceptance names a fingerprint; a new version of the package (a new script to read) must get a new one."""
     def fp(version):
         root = checkout(tmp_path / version)
-        write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"),
+        write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"),
                                                **good_pkg("fsevents", version, hasInstallScript=True, os=["darwin"], optional=True)}))
         return next(f["fp"] for f in run(root)["findings"] if f["check"] == "npm-install-script")
     assert fp("2.3.2") == fp("2.3.2") != fp("2.3.3")
@@ -318,7 +318,7 @@ def test_patched_files_are_not_drift(tmp_path):
 
 def test_malicious_package_is_critical_and_moved_or_gone_repos(tmp_path):
     root = checkout(tmp_path)
-    write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
+    write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
     write(root, "vendor/upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
                                            "- name: a/gone\n  url: https://github.com/a/gone\n  license: MIT\n")
 

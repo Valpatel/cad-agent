@@ -1,4 +1,4 @@
-# The home page's pictures and its "where cad-agent fits" diagram (tools/build-site.mjs reads this; the build fails on a
+# The home page's pictures and its "where cad-agent fits" diagram (tools/site/build-site.mjs reads this; the build fails on a
 # missing picture, a link to a page that is not published or a maturity that is not on the ladder in docs/areas.yaml).
 #
 # Rules (the owner, 2026-10-31): every picture is a real output of our tools or a drawing of something real, with the

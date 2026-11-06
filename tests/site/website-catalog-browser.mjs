@@ -13,13 +13,13 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-catalog-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
 const dir = site.dir;
-const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
+const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
   server.on('exit', c => fail(new Error(`preview server exited ${c}`)));

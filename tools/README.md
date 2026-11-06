@@ -20,8 +20,8 @@ flowchart TD
 | Work | Entry point |
 |---|---|
 | Source selection and stable public paths | [site/](site/README.md) |
-| Site build and preview | [build-site.mjs](build-site.mjs), [preview-site.mjs](preview-site.mjs), [pages-build.mjs](pages-build.mjs); `npm run build:site` |
-| Catalogue and references | [site-catalog.mjs](site-catalog.mjs), [site-references.mjs](site-references.mjs), [reference importer](import_refmap.py) |
+| Site build and preview | [build-site.mjs](site/build-site.mjs), [preview-site.mjs](site/preview-site.mjs), [pages-build.mjs](site/pages-build.mjs); `npm run build:site` |
+| Catalogue and references | [site-catalog.mjs](site/build/site-catalog.mjs), [site-references.mjs](site/build/site-references.mjs), [reference importer](import_refmap.py) |
 | Animated figures | [anim/](anim/), [readme_anim.py](readme_anim.py), [motion_figures.py](motion_figures.py); generators support `--check` |
 | Transcript mining | [mining/](mining/README.md); private transcripts → reviewed, sourced lessons |
 | Supply-chain maintenance | [resource_audit.py](resource_audit.py), [vendor_sync.py](vendor_sync.py), [weekly procedure](../docs/practice/weekly-upstream-update.md) |

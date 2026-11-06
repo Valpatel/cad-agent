@@ -10,7 +10,7 @@ there: the four designs, as the comparison page ranks them.
 Nothing is typed by hand: each point is a design with its cost and mass, whether it meets the constraints,
 whether it is on the Pareto front (over all the objectives in cad-agent.yaml: cost, mass and runtime, so a point on
 the front can look dominated on a cost and mass chart), and which totals are only lower bounds (``≥``: a part without
-a price or a mass). tools/site-catalog.mjs draws the covers from this file (catalog-art.mjs ``chartCover``).
+a price or a mass). tools/site/compiler/site-catalog.mjs draws the covers from this file (catalog-art.mjs ``chartCover``).
 
 The tools run as ``python -m cadagent.cli``, the same entry point as the ``cad-agent`` command, so this script needs
 only cadagent's core dependencies (numpy, pyyaml).

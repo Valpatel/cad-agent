@@ -67,7 +67,7 @@ export function createPublication(spec) {
 export function validateRedirects(redirects, { tracked, pageFiles, moved, publicPath }) {
   const stubFiles = new Set(moved.map(([from]) => publicPath(from))), seenFrom = new Set();
   for (const [from, to] of redirects) {
-    const at = `tools/site-redirects.txt: ${from}`;
+    const at = `tools/site/compiler/site-redirects.txt: ${from}`;
     // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
     if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
     seenFrom.add(from);
@@ -84,8 +84,8 @@ export function validateRedirects(redirects, { tracked, pageFiles, moved, public
     if (!pageFiles.has(to)) throw new Error(`${from} says it moved to ${to}, which is not a published page`);
     const identity = publicPath(from);
     const listed = redirects.find(([f]) => f === identity);
-    if (!listed) throw new Error(`${from} moved to ${to}: add "${identity} ${to}" to tools/site-redirects.txt`);
-    if (listed[1] !== to) throw new Error(`${from} moved to ${to}: change its line in tools/site-redirects.txt (it says ${listed[1]})`);
+    if (!listed) throw new Error(`${from} moved to ${to}: add "${identity} ${to}" to tools/site/compiler/site-redirects.txt`);
+    if (listed[1] !== to) throw new Error(`${from} moved to ${to}: change its line in tools/site/compiler/site-redirects.txt (it says ${listed[1]})`);
   }
 }
 

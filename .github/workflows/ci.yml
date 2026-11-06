@@ -44,6 +44,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
         with: {python-version: '3.12', cache: pip}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1   # v7.1.0
+        with:
+          node-version: 22
+      - name: Verify Node version for the installed SDK consumer
+        run: node --version && node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
       # A mirror can hang: each try is time-boxed, and three tries fit inside the step's limit.
       - name: System libraries for the gmsh, VTK and MuJoCo wheels
         timeout-minutes: 14   # worst case 3 x (90 + 90 + 10 + 60) s = 12.5 min

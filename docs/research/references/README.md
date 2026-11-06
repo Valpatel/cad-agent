@@ -133,7 +133,7 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
    record's `used_for`.
 9. **Settle the derived fields.** Rewrite each touched record's `confidence` from `confidence()`. Run
    `python -m cadagent.review.references --check` (no problems, and the catalogued count only falls),
-   `node tools/site-references.mjs --experts`, `python3 tools/import_refmap.py <data.json> --check` (it must pass:
+   `node tools/site/compiler/site-references.mjs --experts`, `python3 tools/import_refmap.py <data.json> --check` (it must pass:
    the import keeps every promoted record), and the topic's tests.
 10. **Report** the counts promoted and left, each source you could not read, and its reason.
 11. **Distil each confirmed rule into `docs/research/process-profiles.yaml`:** one line, cited by its `source` (what a
@@ -153,7 +153,7 @@ mistake of each kind.
 
 ## On the site
 
-`tools/site-references.mjs` publishes the records with the site build:
+`tools/site/compiler/site-references.mjs` publishes the records with the site build:
 
 - `/references` charts every area;
 - `/references/<area>` has charts by evidence, confidence, kind, licence and process, a table you can filter, and the
@@ -162,7 +162,7 @@ mistake of each kind.
 - `[ref:<id>]` in any page links to the record's row and to the source;
 - `docs/practice/experts.md` is generated from the read sources.
 
-After changing a record, run `node tools/site-references.mjs --experts` and commit `docs/practice/experts.md`
+After changing a record, run `node tools/site/compiler/site-references.mjs --experts` and commit `docs/practice/experts.md`
 (`tests/site/website-references.test.mjs` fails until it is current). A record whose `areas` match no slug is listed on
 `/references/unplaced`. That count may only fall.
 

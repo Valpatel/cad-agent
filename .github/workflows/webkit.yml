@@ -21,11 +21,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: tools/site/package-lock.json
       - run: npm ci
-      # The site build draws its diagrams in headless Chromium (tools/site-diagrams.mjs, #132), so both engines' jobs
+        working-directory: tools/site
+      # The site build draws its diagrams in headless Chromium (tools/site/compiler/site-diagrams.mjs, #132), so both engines' jobs
       # need it: the WebKit job then tests the drawn pages in WebKit.
       - run: npx playwright install --with-deps chromium ${{ matrix.engine == 'webkit' && 'webkit' || '' }}
-      # The site's Mermaid diagrams as earlier runs drew them (tools/site-diagrams.mjs: .cache/site-diagrams/, one file per
+        working-directory: tools/site
+      # The site's Mermaid diagrams as earlier runs drew them (tools/site/compiler/site-diagrams.mjs: .cache/site-diagrams/, one file per
       # drawing, named by a hash of its source, theme, Mermaid, the kit, the font and the drawing code, so a changed
       # diagram is drawn again and a stale one never used). The key adds what that hash leaves out: the browser that draws
       # and the font packages `--with-deps` installs for it (both follow Playwright's version, in package-lock.json), and
@@ -33,7 +36,7 @@ jobs:
       # so a change to them starts an empty cache instead of carrying every old drawing along.
       - name: Key the diagram cache
         id: diagrams
-        run: echo "key=site-diagrams-$ImageOS-$ImageVersion-${{ hashFiles('package-lock.json', 'tools/site-diagrams.mjs', 'web/site.css', 'src/cadagent/webkit/diagrams.*', 'src/cadagent/webkit/vendor/mermaid/**', 'src/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
+        run: echo "key=site-diagrams-$ImageOS-$ImageVersion-${{ hashFiles('tools/site/package-lock.json', 'tools/site/compiler/site-diagrams.mjs', 'tools/site/assets/site.css', 'src/cadagent/webkit/diagrams.*', 'src/cadagent/webkit/vendor/mermaid/**', 'src/cadagent/webkit/vendor/fonts/**') }}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
         with:
           path: .cache/site-diagrams
@@ -44,7 +47,7 @@ jobs:
         id: site
         run: |
           set -o pipefail
-          node tools/build-site.mjs --out "$RUNNER_TEMP/site" | tee "$RUNNER_TEMP/site.log"
+          node tools/site/build-site.mjs --out "$RUNNER_TEMP/site" | tee "$RUNNER_TEMP/site.log"
           echo "CAD_AGENT_SITE=$RUNNER_TEMP/site" >> "$GITHUB_ENV"
           grep -q ', 0 drawn' "$RUNNER_TEMP/site.log" || echo "drew=true" >> "$GITHUB_OUTPUT"
       # Saved only when this build drew something the cache lacked, and before the tests below add their own drawings.
@@ -54,6 +57,7 @@ jobs:
           path: .cache/site-diagrams
           key: ${{ steps.diagrams.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.engine }}
       - run: npm run test:webkit-unit
+        working-directory: tools/site
       # The build's own tests do not depend on the engine (their diagrams are drawn in Chromium either way), so they run
       # once, in the Chromium job.
       - run: node --test tests/site/website-*.test.mjs
@@ -67,10 +71,12 @@ jobs:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:part-table
+        working-directory: tools/site
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:file-viewer
+        working-directory: tools/site
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
@@ -79,6 +85,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -e ".[site]"
       - run: npm run test:diagrams
+        working-directory: tools/site
         env:
           PLAYWRIGHT_CHANNEL: chromium
           PLAYWRIGHT_BROWSER: ${{ matrix.engine }}

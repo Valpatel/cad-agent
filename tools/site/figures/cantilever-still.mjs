@@ -1,16 +1,16 @@
 /** Draw the still that <cad-cantilever> shows before its script loads, from the same code the live figure uses.
  *
- *   node tools/cantilever-still.mjs            # write docs/img/compliant/cantilever-explorer.svg
- *   node tools/cantilever-still.mjs --check    # exit 1 if the committed still or its alt text is out of date
+ *   node tools/site/figures/cantilever-still.mjs            # write docs/img/compliant/cantilever-explorer.svg
+ *   node tools/site/figures/cantilever-still.mjs --check    # exit 1 if the committed still or its alt text is out of date
  *
  * The state is read from the <cad-cantilever> attributes in docs/mechanical/compliant.md, so the page, the still and the live
  * demo always start from the same arm; the alt text must quote the computed root strain.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawCantilever, summary } from '../src/cadagent/webkit/cantilever.js';
+import { readState, compute, drawCantilever, summary } from '../../../src/cadagent/webkit/cantilever.js';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 const PAGE = 'docs/mechanical/compliant.md', STILL = 'docs/img/compliant/cantilever-explorer.svg';
 
 export function still(md = readFileSync(path.join(root, PAGE), 'utf8')) {
@@ -31,7 +31,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { svg, problems } = still();
   const file = path.join(root, STILL);
   if (process.argv.includes('--check')) {
-    if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) problems.push(`${STILL} is out of date: run node tools/cantilever-still.mjs`);
+    if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) problems.push(`${STILL} is out of date: run node tools/site/figures/cantilever-still.mjs`);
     if (problems.length) { console.error(problems.join('\n')); process.exit(1); }
     console.log(`${STILL} is current`);
   } else {

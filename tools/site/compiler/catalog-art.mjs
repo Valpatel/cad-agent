@@ -1,4 +1,4 @@
-/** Catalogue covers drawn from data (tools/site-catalog.mjs): never an outside image, never a fake screenshot.
+/** Catalogue covers drawn from data (tools/site/compiler/site-catalog.mjs): never an outside image, never a fake screenshot.
  *
  * Every glyph is a line drawing in a 100 x 100 box (stroke only; class "a" is the accent colour), one per area of
  * docs/areas.yaml plus a few for the buckets and kinds. Covers are 400 x 300 SVG files:

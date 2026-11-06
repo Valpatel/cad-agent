@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { reducedHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
@@ -19,7 +19,7 @@ import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScri
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-website-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
 const dir = site.dir;
-const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
+const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
   server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
@@ -1001,7 +1001,7 @@ async function explorerProblems(x) {
   return out;
 }
 
-/** Diagrams drawn by the build (#132, tools/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top
+/** Diagrams drawn by the build (#132, tools/site/compiler/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top
  * moved the page twice as it loaded (0.58 on /lessons/process/agent-process at 360 px, 0.10 on /docs/style-guide at
  * 1366 px); Google calls a page good under 0.1. On the pages below, at phone and desktop widths: the layout shift while
  * the page loads stays under DIAGRAM_SHIFT (Chrome; WebKit does not report shifts), the diagrams show with script off,
@@ -1063,7 +1063,7 @@ async function drawnDiagramProblems() {
   return out;
 }
 
-/** A reference area page (#323, tools/site-references.mjs, web/references.js): the filters appear with the script,
+/** A reference area page (#323, tools/site/compiler/site-references.mjs, web/references.js): the filters appear with the script,
  * narrow the table and keep the URL; a chart bar filters; a record linked by its id shows even when the URL filters it
  * away; and the table scrolls in its own box, so a phone never scrolls the page sideways. */
 async function refsProblems(page, width, seen) {

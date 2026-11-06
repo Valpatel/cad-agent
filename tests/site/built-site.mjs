@@ -25,6 +25,6 @@ export async function builtSite(prefix, { stdio = 'pipe' } = {}) {
   }
   const tmp = await mkdtemp(path.join(os.tmpdir(), prefix));
   const dir = path.join(tmp, 'site');
-  const log = String(execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root, stdio: ['ignore', stdio, 'inherit'] }) ?? '');
+  const log = String(execFileSync(process.execPath, ['tools/site/build-site.mjs', '--out', dir], { cwd: root, stdio: ['ignore', stdio, 'inherit'] }) ?? '');
   return { dir, log, done: () => rm(tmp, { recursive: true, force: true }) };
 }

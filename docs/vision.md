@@ -321,7 +321,7 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    in CONTRIBUTING.md, AGENTS.md and the PR template). When two open PRs cross, the one that merges second adds it,
    after merging dev and re-running its CI, because dev does not require branches to be up to date.
 2. **After #123, #124 and #133:** the site generates the area hubs and `areas.json` (#141).
-3. **Before the first move:** `tools/build-site.mjs` publishes only top-level `docs/` and `docs/research/` pages today. Its
+3. **Before the first move:** `tools/site/build-site.mjs` publishes only top-level `docs/` and `docs/research/` pages today. Its
    docs and research sections must be widened by one domain level, as #133 widened the lessons section, or a moved
    page would get no site page and its redirect would point at nothing.
 4. **Then, batch by batch:** `docs/` and `docs/research/` pages move into domain folders when their area has three or more

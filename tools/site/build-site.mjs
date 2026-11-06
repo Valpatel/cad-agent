@@ -5,7 +5,7 @@
  * Only committed files are published: every source is read from HEAD with `git show`, never from the working tree,
  * so an untracked or uncommitted file cannot reach the site. `--worktree` builds a local draft from tracked files as
  * they are on disk (the footer then says so); `--release` refuses a dirty tree.
- * Diagrams are drawn here, in headless Chromium (tools/site-diagrams.mjs); `--client-diagrams`, or a machine with no
+ * Diagrams are drawn here, in headless Chromium (tools/site/compiler/site-diagrams.mjs); `--client-diagrams`, or a machine with no
  * browser, leaves them to the reader's browser, as before (#132).
  */
 import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
@@ -15,17 +15,17 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
-import { snapDemo } from './snap-demo.mjs';
-import { buildCatalog } from './site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
-import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
-import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
-import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
-import { SECTIONS, createPublication, validateRedirects } from './site/publication.mjs';
-import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './site-references.mjs';   // /references (#323)
+import { snapDemo } from './compiler/snap-demo.mjs';
+import { buildCatalog } from './compiler/site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
+import { sanitize, safeUrl, rewriteUrls, imageSize } from './compiler/site-html.mjs';   // allowlist sanitizer for rendered Markdown
+import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
+import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
+import { SECTIONS, createPublication, validateRedirects } from './publication.mjs';
+import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
-const root = path.resolve(rootArg > 0 ? process.argv[rootArg + 1] : path.join(import.meta.dirname, '..'));
+const root = path.resolve(rootArg > 0 ? process.argv[rootArg + 1] : path.join(import.meta.dirname, '../..'));
 const outArg = process.argv.indexOf('--out');
 const out = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(root, 'dist');
 // The site's one address. It is also served at cad-agent.gyropup.com, a second custom domain on the same Pages project.
@@ -51,9 +51,9 @@ const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
-const TOOLS = ['tools/build-site.mjs', 'tools/site-html.mjs', 'tools/snap-demo.mjs', 'tools/site-catalog.mjs', 'tools/catalog-art.mjs',
-  'tools/site-diagrams.mjs', 'tools/site-pages.mjs', 'tools/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'package.json', 'package-lock.json'];
-const toolsHere = path.join(import.meta.dirname, '..');
+const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/catalog-art.mjs',
+  'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
+const toolsHere = path.join(import.meta.dirname, '../..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
   return !committedCopy.equals(readFileSync(path.join(toolsHere, t)));
@@ -73,11 +73,13 @@ const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recur
 
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
-for (const f of tracked.filter(f => f.startsWith('web/'))) await copyTracked(f, path.join(out, f));
+const ASSETS = 'tools/site/assets';
+for (const f of tracked.filter(f => f.startsWith(ASSETS + '/') && f !== ASSETS + '/README.md'))
+  await copyTracked(f, path.join(out, 'web', f.slice(ASSETS.length + 1)));
 // Browsers ask for /favicon.ico on pages without an icon link (llms.txt, the .md twins).
-if (tracked.includes('web/favicon.ico')) await copyTracked('web/favicon.ico', path.join(out, 'favicon.ico'));
+if (tracked.includes(ASSETS + '/favicon.ico')) await copyTracked(ASSETS + '/favicon.ico', path.join(out, 'favicon.ico'));
 // The one-line installers (#282), at the short URLs the README and the home page give.
-for (const f of ['install.sh', 'install.ps1']) await copyTracked(`web/${f}`, path.join(out, f));
+for (const f of ['install.sh', 'install.ps1']) await copyTracked(`${ASSETS}/${f}`, path.join(out, f));
 // The shared web kit (3D viewer, part tables, diagrams) is published as /kit/, the same files projects copy.
 for (const f of tracked.filter(f => f.startsWith('src/cadagent/webkit/'))) {
   await copyTracked(f, path.join(out, 'kit', f.slice('src/cadagent/webkit/'.length)));
@@ -137,14 +139,14 @@ for (const { file, section } of selectPages(tracked)) {
 const pageURL = f => '/' + publicPath(f).replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
 const pageFile = f => publicPath(f).replace(/\.md$/, '.html');
 const pageFiles = new Set(pages.map(p => p.file));
-// Permanent redirects (tools/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
-const redirects = (await read('tools/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
+// Permanent redirects (tools/site/compiler/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
+const redirects = (await read('tools/site/compiler/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
   .map(l => l.split(/\s+/));
 validateRedirects(redirects, { tracked, pageFiles, moved, publicPath });
 
 // ----------------------------------------------------------------------------- references
 // The reference registry (docs/research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
-// tags in every page as links to the record (tools/site-references.mjs). Records are not catalogue entries.
+// tags in every page as links to the record (tools/site/compiler/site-references.mjs). Records are not catalogue entries.
 const refModel = referenceModel(await loadReferences({ files: tracked, read }), YAML.parse(await read('docs/areas.yaml')));
 
 // ----------------------------------------------------------------------------- catalogue
@@ -241,7 +243,7 @@ const twinMd = (file, md, absolute = false) => mdTags(rewriteMd(file, md, absolu
 const VISUAL = /<img\b|class="language-mermaid"|<pre class="mermaid"/g;
 const visuals = new Map();
 const docPages = [];                         // [path in out, HTML]: written once their diagrams are drawn, below
-// Visual-first pages (#179): real outputs placed from docs/pages.yaml, long reference parts folded (tools/site-pages.mjs).
+// Visual-first pages (#179): real outputs placed from docs/pages.yaml, long reference parts folded (tools/site/compiler/site-pages.mjs).
 const placeVisuals = pagePlacer({ spec: YAML.parse(await read('docs/pages.yaml')) || {}, pageFiles, tracked,
   commandNames: new Set(commands.map(c => c.name)), readBuf, pageURL });
 for (const p of pages) {
@@ -328,7 +330,7 @@ placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // ba
 // web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by
 // kit/diagrams.js in the reader's browser, in the page's theme.
 const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
-  kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`web/${f}`), theme, client: CLIENT_DIAGRAMS,
+  kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`${ASSETS}/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
 });
 const drawnLight = await drawIn('light'), drawnDark = await drawIn('dark'), leftBlocks = new Set();
@@ -338,8 +340,8 @@ const diagrams = { stats: { ...drawnLight.stats, cached: drawnLight.stats.cached
 // Images referenced by docs.
 for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
 
-// Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site-catalog.mjs).
-const SNAP = snapDemo();                 // geometry-driven animation: tools/snap-demo.mjs
+// Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site/compiler/site-catalog.mjs).
+const SNAP = snapDemo();                 // geometry-driven animation: tools/site/compiler/snap-demo.mjs
 const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
   ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, publicPath, safeUrl,
   areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
@@ -397,7 +399,7 @@ const homeImg = async (src, at, attrs = '') => {
   return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
 };
 // What each output was computed on, said on its tile (#182 review: not every picture is a real part): ON, from
-// tools/site-pages.mjs, which the doc pages' figures use too.
+// tools/site/compiler/site-pages.mjs, which the doc pages' figures use too.
 // A tool on a tile is a cad-agent command, a cadagent module or a script under tools/, and it must exist.
 const commandNames = new Set(commands.map(c => c.name));
 const realTool = (tool, at) => {
@@ -429,7 +431,7 @@ for (const [i, r] of home.reel.entries()) {
 <p class="reel-tool"><code>${esc(realTool(r.tool, at))}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p><p class="reel-credit">On ${ON[r.on]}</p>
 <span class="visually-hidden">${esc(r.alt)}</span></li>`);
 }
-// The snap-fit demo is drawn from its geometry in this build (tools/snap-demo.mjs), so it joins the reel inline.
+// The snap-fit demo is drawn from its geometry in this build (tools/site/compiler/snap-demo.mjs), so it joins the reel inline.
 reel.splice(3, 0, `<li class="reel-tile reel-snap"><a class="reel-media" href="/docs/compliant" tabindex="-1" aria-hidden="true">${SNAP.svg}</a>
 <p class="reel-tool"><code>cad-agent snapfit</code></p><h3><a href="/docs/compliant">One part, no screws</a></h3><p>A cantilever snap fit animated from its own geometry: contact and root strain computed against the material and the print's layer direction.</p><p class="reel-credit">Drawn by this site's build from the snap-fit geometry</p></li>`);
 const fitsTile = async (t, i) => {
@@ -457,10 +459,10 @@ const makeChip = (m, i) => {
 };
 const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)
   .reduce((n, l) => n + Number(l.split(':').pop()), 0);
-// The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site-model-poster.mjs).
-const heroModel = JSON.parse(await read('web/models/gyropup.json'));
-const poster = imageSize(await readBuf('web/models/gyropup.webp'), 'gyropup.webp');
-if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site-model-poster.mjs');
+// The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
+const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
+const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
+if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site/figures/site-model-poster.mjs');
 const kb = n => `${Math.round(n / 1024)} KB`;
 // "Copy this to your agent" (#278, #282): one command per platform (web/install.sh, web/install.ps1, served at /install.sh
 // and /install.ps1), or one line to paste into an agent. docs/agent-prompt.txt holds that line first, then what an

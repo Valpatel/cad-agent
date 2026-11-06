@@ -36,7 +36,7 @@ flowchart TD
 | [`repo/`](repo/README.md) | The repository's own rules and tooling: the topic tree, where files go, skills, the gates, releases, the supply-chain audit |
 | [`review/`](review/README.md) | `cadagent.review`: the dossier, the integrity gates, review packets, evidence hashes |
 | [`simulation/`](simulation/README.md) | `cadagent.simulation`: FEA, CFD, topology optimisation, robot export; design exploration in `simulation/explore/` |
-| [`site/`](site/README.md) | cad-agent's own website and its build (`tools/build-site.mjs`, `tools/site-*.mjs`) |
+| [`site/`](site/README.md) | cad-agent's own website and its build (`tools/site/build-site.mjs`, `tools/site-*.mjs`) |
 | [`thermal/`](thermal/README.md) | `cadagent.thermal`: heat sinks |
 | [`webkit/`](webkit/README.md) | `cadagent.webkit` in Node (`*.test.mjs`) and in real browsers (`*-browser.mjs`) |
 | [`fixtures/`](fixtures/README.md) | Data any test may read: the gate bench, recorded CFD runs, the formula vectors, McMaster pages, slicer templates, viewer files |

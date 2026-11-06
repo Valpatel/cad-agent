@@ -147,7 +147,7 @@ export function forDrawing(source, theme = 'light') {
   return front + body.replace(/^[ \t]*todayMarker\b.*\n?/gm, '').replace(/^([ \t]*gantt\b.*)$/m, '$1\n    todayMarker off');
 }
 
-/** The site's diagram palette (the style guide's classDefs: tools/build-site.mjs PALETTE and the pages' own), drawn in
+/** The site's diagram palette (the style guide's classDefs: tools/site/build-site.mjs PALETTE and the pages' own), drawn in
  * the page's theme: each of its colours in a `classDef` or `style` line, or in a `%%{init}` directive (a chart's plot
  * colours), becomes its counterpart in web/site.css's tokens for that theme; in the dark theme a stroke takes the HUD's
  * cyan hairline (STROKES) where the same colour as text stays light. Other colours are left as written. Only the

@@ -1,6 +1,6 @@
 /** Pictures of the pages `cad-agent compare` and `cad-agent optimise` write for the worked example, for the docs (#122):
  *
- *   node tools/site-explore-pictures.mjs        # needs Python with cadagent importable from src/ (no CAD kernel)
+ *   node tools/site/figures/site-explore-pictures.mjs        # needs Python with cadagent importable from src/ (no CAD kernel)
  *
  * The worked example (docs/examples/explore-two-wheel/) compares four two-wheel-legged robot designs built from a small
  * catalogue of made-up parts. This copies it to a temporary folder and runs, there, exactly what its README runs:
@@ -25,7 +25,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 const OUT = path.join(root, 'docs/img/explore');
 const EXAMPLE = 'docs/examples/explore-two-wheel';
 const CROP_WIDTH = 1100;

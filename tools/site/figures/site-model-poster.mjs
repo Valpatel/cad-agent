@@ -1,6 +1,6 @@
 /** Render each site model's still poster with the kit's own <cad-model> in headless Chrome: web/models/<name>.webp.
  *
- *   node tools/site-model-poster.mjs            # after tools/gyropup_showcase.py rewrites web/models/gyropup.json
+ *   node tools/site/figures/site-model-poster.mjs            # after tools/gyropup_showcase.py rewrites web/models/gyropup.json
  *
  * The poster is the element's first frame (its snapshot(), the model's own opening view), so the 3D view replaces it
  * without a jump. Square, 1200 px, WebP with transparency (the page's background shows through, as under the 3D
@@ -16,7 +16,7 @@ import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 const SIZE = 1200;
 const MODELS = ['gyropup'];
 const BANNER = { file: 'docs/img/gyropup.jpg', model: 'gyropup', width: 1600, height: 733, quality: 86 };
@@ -40,11 +40,11 @@ img{position:absolute;left:700px;top:-10px;width:760px;height:760px}
 <p class="tag">DESIGNED · SIMULATED · CHECKED WITH CAD-AGENT</p></div><img alt="">`;
 const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-poster-'));
 await symlink(path.join(root, 'src/cadagent/webkit'), path.join(dir, 'kit'));
-await symlink(path.join(root, 'web'), path.join(dir, 'web'));
+await symlink(path.join(root, 'tools/site/assets'), path.join(dir, 'web'));
 await writeFile(path.join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/kit/model.css">' +
   '<script type="module" src="/kit/model.js"></script><body style="margin:0"></body>');
 await writeFile(path.join(dir, 'banner.html'), BANNER_HTML);
-const server = spawn(process.execPath, [path.join(root, 'tools/preview-site.mjs'), '--dir', dir, '--port', '0']);
+const server = spawn(process.execPath, [path.join(root, 'tools/site/preview-site.mjs'), '--dir', dir, '--port', '0']);
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome' });
 try {
   const base = await new Promise((ok, fail) => {
@@ -70,7 +70,7 @@ try {
     }, { name, size: SIZE });
     const bytes = Buffer.from(url.split(',')[1], 'base64');
     if (bytes.toString('latin1', 8, 12) !== 'WEBP') throw new Error(`${name}: the browser did not encode WebP`);
-    await writeFile(path.join(root, 'web/models', `${name}.webp`), bytes);
+    await writeFile(path.join(root, 'tools/site/assets/models', `${name}.webp`), bytes);
     console.log(`web/models/${name}.webp: ${SIZE}x${SIZE}, ${bytes.length} bytes`);
     posters[name] = url;
   }
@@ -87,9 +87,9 @@ try {
   }, posters[BANNER.model]);
   const jpg = await card.screenshot({ type: 'jpeg', quality: BANNER.quality });
   await writeFile(path.join(root, BANNER.file), jpg);
-  const model = JSON.parse(await readFile(path.join(root, 'web/models', `${BANNER.model}.json`), 'utf8'));
+  const model = JSON.parse(await readFile(path.join(root, 'tools/site/assets/models', `${BANNER.model}.json`), 'utf8'));
   const recordFile = path.join(root, 'docs/img/gyropup/SOURCE.json');
-  const banner = { file: BANNER.file, made: 'node tools/site-model-poster.mjs: the model\'s poster on a dark card with the project\'s words',
+  const banner = { file: BANNER.file, made: 'node tools/site/figures/site-model-poster.mjs: the model\'s poster on a dark card with the project\'s words',
                   model: `web/models/${BANNER.model}.json`, revision: model.source.revision, width: BANNER.width, height: BANNER.height };
   // Spliced into the text tools/gyropup_showcase.py wrote, so its numbers keep Python's spelling (2.0 stays 2.0).
   const text = (await readFile(recordFile, 'utf8')).replace(/,\n "banner": \{[^}]*\}\n\}\n?$/, '\n}\n');

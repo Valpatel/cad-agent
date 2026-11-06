@@ -143,3 +143,29 @@ flowchart TD
 - **Limits:** This establishes that read-only Pages project and deployment-log access worked at that time. It does
   not establish write or DNS permissions, and credential-path precedence may change in another Wrangler version.
   [Sanitized readback and run receipts](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6675614833).
+
+### Check documented commands in the forms people actually use
+- **Rule:** A reference check must consume the actual inline and shell examples, with an invalid example proving it
+  rejects each supported form. Passing the current documentation alone does not establish that the checker works.
+
+<details>
+<summary>2026-11-06 evidence, corrective check and limits</summary>
+
+- **Evidence:** Running the actual `test_skill_commands_gates_and_names_exist` from commit `f52795ee` on temporary
+  examples rejected inline `cad-agent not-a-real-command`, but accepted that same missing command in a fenced bash
+  block, an indented example, after `&&`, and after a `CAD_AGENT_ACTOR=reviewer` assignment. No shell example was
+  executed. [Dated reconciliation and control](https://github.com/Valpatel/cad-agent/issues/180#issuecomment-6676051312).
+- **Cause:** The old collector required a backtick immediately before `cad-agent`, leaving real shell examples
+  unchecked. Expanding collection also exposed an old unconditional future-announcement condition for
+  `review-section`, which is already implemented in the CLI. That exception now applies only if the name is absent.
+- **Corrective check:** Existing skill validation now recognizes actual command positions, preserving quoted
+  strings, comments, assignments and continuations. Paired controls call the real validator: missing inline,
+  fenced, indented, chained and assignment-prefixed commands fail; valid flags/help/version and quoted echo/printf
+  data pass. Both implemented and genuinely absent announced-command cases are checked. Shipped skill bytes stay
+  unchanged. Restoring the old collector makes five missing-command controls fail; scanning all shell text with a
+  naive command regex makes five legitimate-example controls fail instead.
+- **Limits:** This checks command-name existence, not argument validity, execution success, complete shell grammar
+  (substitutions, functions and control flow), or a universal per-lesson enforcement ratchet. The separate gate/API
+  reference checks retain their existing behavior. It establishes no physical CAD qualification.
+
+</details>

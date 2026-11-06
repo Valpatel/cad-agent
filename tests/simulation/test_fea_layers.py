@@ -458,7 +458,7 @@ def test_the_weighted_percentile_with_equal_weights_is_numpys(q):
 
 # constants_hash of every built-in row. A change here is a change to a built-in material's numbers, which changes the
 # results of every study that uses the row, so a pin that fails here needs a **Projects must change** fragment in
-# changelog.d/ (which rows, which numbers, by how much) before it is updated. It also pins the hash recipe, so a record
+# docs/changelog.d/ (which rows, which numbers, by how much) before it is updated. It also pins the hash recipe, so a record
 # made on one toolkit stays comparable with one made on another.
 HASHES = {
     'pla': '2c78726c6d49d34f',
@@ -479,7 +479,7 @@ def test_built_in_material_numbers_are_pinned():
     got = {k: material_record(m)['constants_hash'] for k, m in MATERIALS.items()}
     changed = sorted(k for k in set(got) | set(HASHES) if got.get(k) != HASHES.get(k))
     assert not changed, (f'built-in material numbers changed for {changed}: that changes the results of every study '
-                         'that uses them. Add a **Projects must change** fragment to changelog.d/ (which rows, which '
+                         'that uses them. Add a **Projects must change** fragment to docs/changelog.d/ (which rows, which '
                          'numbers, how much deflections, safety factors or masses move), then update HASHES')
 
 

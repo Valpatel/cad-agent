@@ -10,7 +10,7 @@ Gates, for PRs into dev and main (CONTRIBUTING.md "Gates"):
 
 - branch-flow: main takes this repo's dev only; dev takes feat/ fix/ ci/ docs/ research/ test/ refactor/ release/
   vendor-update/ dependabot/ branches of this repo, or a fork's PR (the outside-contribution checks, #111, apply).
-  Both preserve the dated CHANGELOG entries already published on main; new changes go in changelog.d/.
+  Both preserve the dated CHANGELOG entries already published on main; new changes go in docs/changelog.d/.
 - review: the latest verdict from a maintainer (MAINTAINERS, with write access) must be pass, on the PR's head
   commit (a push after the pass needs a new verdict, so everything that reaches dev or main was reviewed as it is).
   The verdict is the last line of a review: ``<!-- cad-review verdict=pass sha=<40-character head commit> -->``
@@ -174,7 +174,7 @@ def changelog_history(head_log: str, main_log: str) -> Result:
         return False, "main's CHANGELOG.md has no valid dated release history"
     published = main[first:]
     if len(head) < len(published) or head[-len(published):] != published:
-        return False, "CHANGELOG.md changes released history on main; put changes in changelog.d/ instead"
+        return False, "CHANGELOG.md changes released history on main; put changes in docs/changelog.d/ instead"
     return True, "released CHANGELOG entries unchanged"
 
 

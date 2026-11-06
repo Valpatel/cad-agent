@@ -41,9 +41,9 @@ AREAS = {
 TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all that may sit directly in tests/
 # .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that
 # adds them.
-TOP_DIRS = {".agents", ".claude-plugin", ".github", "changelog.d", "docs",
+TOP_DIRS = {".agents", ".claude-plugin", ".github", "docs",
             "software", "tests", "tools"}
-ROOT_ENTRY_LIMIT = 15  # #145/#362: site manifests, configuration and assets join their tools owner.
+ROOT_ENTRY_LIMIT = 14  # #145/#362: site manifests, configuration and assets join their tools owner.
 SRC_FILES = {"README.md", "cadagent", "vendor"}                                                  # software/ holds the toolkit, dependencies and owner map
 PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the top of software/cadagent/: may only shrink
 

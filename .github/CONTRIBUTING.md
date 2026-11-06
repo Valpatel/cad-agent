@@ -126,7 +126,7 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | A repo script (figures, site build, gates, release) | `tools/` |
 | A website asset | `tools/site/assets/` |
 | An example project | `docs/examples/<name>/`, with a README |
-| A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
+| A CHANGELOG entry | `docs/changelog.d/<issue>-<slug>.md` |
 | Vendored upstream code | `software/vendor/<name>/`, through `tools/vendor_sync.py` |
 | A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
 | A finding or note from agent work | `docs/lessons/<area>/`, not `.agents/` |
@@ -149,7 +149,7 @@ such as a new command or check, even one that asks nothing of projects.
 1. On a `release/vX.Y.Z` branch from `dev`:
    - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
    - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, folds the
-     fragments in [`changelog.d/`](../changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
+     fragments in [`docs/changelog.d/`](../docs/changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
      them, dates the entry as `## vX.Y.Z (YYYY-MM-DD)`, opens a new empty `## Unreleased`, and checks the result
      against CI's release gate;
    - check that the entry covers every PR merged since the last release, with what projects must change.

@@ -31,3 +31,5 @@ flowchart TD
 | Work on the site | [Style guide](practice/style-guide.md), [web kit](toolkit.md), [page configuration](pages.yaml), [catalogue configuration](catalog.yaml) |
 
 [Home](../README.md) · [Tests](../tests/README.md) · [Lessons](lessons/README.md) · [Recovery snapshot](lessons/process/2026-11-05-recovery-audit.md)
+
+Release notes awaiting the next version live in [changelog fragments](changelog.d/README.md); released history stays in the root [CHANGELOG](../CHANGELOG.md).

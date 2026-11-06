@@ -18,7 +18,7 @@ Other agent sessions use and change this repo at the same time, so:
   `main`), and `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>`, run from an up-to-date `dev`
   checkout, exits 0 just before you merge (it reads the reviews live). Never write a review verdict on your own PR, and never merge around a failing gate.
 - **Ship to `main` as part of the loop.** Every merged change adds its CHANGELOG lines as a fragment in
-  [`changelog.d/`](changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
+  [`docs/changelog.d/`](docs/changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
   has user-visible work that `main` lacks, cut a release with `tools/cut_release.py` and merge it through the release
   gates ([CONTRIBUTING.md](.github/CONTRIBUTING.md#releases)); `main` should never be more than a day behind `dev`.
 - **Who changes what: three tiers.** See [CONTRIBUTING.md](.github/CONTRIBUTING.md#gates) and #111.
@@ -81,7 +81,7 @@ its failures says where the file goes.
 | `docs/examples/<name>/` | Example projects the docs and tests run. |
 | `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
 | `tools/site/assets/` | The website's own static files (CSS, icons, the landing model). |
-| `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
+| `docs/changelog.d/` | One CHANGELOG fragment per PR ([how](docs/changelog.d/README.md)). |
 | `software/vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](software/vendor/README.md)). |
 | `.agents/skills/<name>/`, `.agents/agents/<name>.md` | Canonical skills and independent-role prompts: edit these copies, which `cad-agent agents install` ships. The repository remains the plugin root; `.claude-plugin/plugin.json` names these components. |
 | `.agents/` | The agent-kit owner and its existing operational notes; [map](.agents/README.md). Notes are not skills or published pages. New shared findings still belong in `docs/lessons/`. |

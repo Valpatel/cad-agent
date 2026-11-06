@@ -1135,7 +1135,7 @@ each sheet, as a ratio, as the row's strength does across the layers. The humid 
 A record made on one toolkit can be checked on another. `material_changes(old_result, new_result)` lists each constant
 that differs, with now / recorded. Under forces and torques, deflections scale by the inverse of the E ratio, safety
 factors by the strength ratio and masses by the density ratio. A built-in material's numbers are result-changing. A
-change to any of them needs a `**Projects must change**` fragment in [`changelog.d/`](../changelog.d/README.md), and
+change to any of them needs a `**Projects must change**` fragment in [`docs/changelog.d/`](../docs/changelog.d/README.md), and
 `tests/simulation/test_fea_layers.py` pins every row's hash so it cannot slip through.
 
 </details>

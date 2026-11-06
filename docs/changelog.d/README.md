@@ -6,7 +6,7 @@ CHANGELOG.md do, and every conflict fix means a new review.
 
 ```mermaid
 flowchart TD
-    P["a PR into dev<br/>adds 175-cfd-steady.md"] --> D["changelog.d/<br/>one file per change"]
+    P["a PR into dev<br/>adds 175-cfd-steady.md"] --> D["docs/changelog.d/<br/>one file per change"]
     D --> C["tools/cut_release.py<br/>on a release/ branch"]
     C --> L["CHANGELOG.md<br/>## vX.Y.Z (date)"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

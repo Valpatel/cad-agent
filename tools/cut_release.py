@@ -9,7 +9,7 @@ gate CI runs (`release_gate` in tools/ci_gates.py). It prints the git and gh ste
     python3 tools/cut_release.py --patch                 # 0.5.0 -> 0.5.1: fixes, docs and the site only
     python3 tools/cut_release.py --version 1.0.0 --date 2026-11-01 --dry-run
 
-Each PR adds its CHANGELOG lines as a fragment, `changelog.d/<issue>-<slug>.md`: bullets under `**New**`, `**Changed**`,
+Each PR adds its CHANGELOG lines as a fragment, `docs/changelog.d/<issue>-<slug>.md`: bullets under `**New**`, `**Changed**`,
 `**Fixed**` or `**Projects must change**`. Fragments never conflict, where PRs editing CHANGELOG.md side by side do.
 The script folds every fragment into the `## Unreleased` entry (an older `## vX.Y.Z (unreleased)` heading is accepted
 too), each bullet under its section, deletes the fragments, renames the heading to `## vX.Y.Z (YYYY-MM-DD)` and opens
@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import importlib.util
+import json
 import pathlib
 import re
 import subprocess
@@ -34,7 +35,7 @@ _NOT_A_CHANGE = re.compile(r"<!--.*?-->|^[ \t]*(?:#{3,6}[^\n]*|\*\*[^*\n]+\*\*:?
 PROJECT_VERSION = re.compile(r'^(version\s*=\s*")([0-9]+(?:\.[0-9]+)*)("\s*)$', re.M)
 
 
-FRAGMENTS = "changelog.d"
+FRAGMENTS = "docs/changelog.d"
 SECTIONS = ("New", "Changed", "Fixed", "Projects must change")
 _SECTION = re.compile(r"^\*\*(?P<name>[^*\n]+?):?\*\*:?[ \t]*$", re.M)
 # A section opened by a paragraph, "**Projects must change:** write STEP files ...": the form the CHANGELOG used up to
@@ -126,7 +127,9 @@ def fold_fragments(changelog: str, fragments: Sequence[Tuple[str, str]]) -> str:
 def fragment_files(root: pathlib.Path) -> List[pathlib.Path]:
     """The fragments in root/changelog.d, sorted by name; its README is not one."""
     folder = root / FRAGMENTS
-    return sorted(p for p in folder.glob("*.md") if p.name.lower() != "readme.md") if folder.is_dir() else []
+    if not folder.is_dir():
+        raise FileNotFoundError(f"required current fragment directory {FRAGMENTS} is missing")
+    return sorted(p for p in folder.glob("*.md") if p.name.lower() != "readme.md")
 
 
 def _gates():
@@ -220,6 +223,18 @@ def main(argv=None) -> int:
                                       bump=args.bump, version=args.version, date=args.date,
                                       fragments=[(f"{FRAGMENTS}/{p.name}", p.read_text(encoding="utf-8"))
                                                  for p in frags])
+        plugin_path = args.root / ".claude-plugin/plugin.json"
+        plugin_text = None
+        if plugin_path.exists():
+            plugin = json.loads(plugin_path.read_text(encoding="utf-8"))
+            current_version = ".".join(map(str, _gates().parse_version(py_path.read_text(encoding="utf-8"))))
+            if plugin.get("version") != current_version:
+                raise ValueError("native plugin version must match pyproject.toml before cutting a release")
+            # Keep all native component declarations and permissions byte-for-byte; only its version value changes.
+            plugin_text, count = re.subn(r'("version"\s*:\s*")[^"]*(")',
+                                        lambda m: m[1] + version + m[2], plugin_path.read_text(encoding="utf-8"))
+            if count != 1:
+                raise ValueError("native plugin needs exactly one version field")
     except (OSError, ValueError) as exc:
         print(f"cut_release: {exc}", file=sys.stderr)
         return 1
@@ -229,6 +244,8 @@ def main(argv=None) -> int:
         return 0
     py_path.write_text(new_py, encoding="utf-8")
     cl_path.write_text(new_cl, encoding="utf-8")
+    if plugin_text is not None:
+        plugin_path.write_text(plugin_text, encoding="utf-8")
     for p in frags:
         p.unlink()
     branch = subprocess.run(["git", "-C", str(args.root), "branch", "--show-current"],

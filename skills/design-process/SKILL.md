@@ -90,6 +90,16 @@ guideline's wiggle room to make the part cheaper or simpler unless a function ne
 or `gap:`, no source covers that point, so record your own call as a decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded
 rules.
 
+**For a cantilever snap-fit lid or cover**, start from the [checked declaration example](../../docs/mechanical/compliant.md#declaring-snaps)
+and its sourced material data. Declare the process, bending direction relative to layers and repeated service;
+include the required mating/retention limits and the inputs needed to calculate them. Run
+`cad-agent snapfit snaps.yaml --output snap-checks.json` and keep the JSON with the part's decision. Inspect failed
+rows, warnings, material derivation and model limits: exit 1 means a check failed; exit 2 means the input could not
+be checked. This is a standalone calculation; the dossier gates and `cad-agent all` do not automatically run it.
+Record the computed verdict as model evidence. Large deflection, contact, creep and fatigue need another method;
+print a coupon and measure it before claiming physical fit or retention. Living hinges and flexures remain outside
+this snap workflow. Use the guide for the schema and equations rather than copying allowable strains into the card.
+
 ### 3. Declare the geometry facts in the build script
 
 Only the code knows which solid is the cavity, where an axis is, where each screw sits:

@@ -72,7 +72,7 @@ flowchart TD
   cluttered. The new folder gets a README map; source moves preserve public addresses or declare their redirects
   and checkout compatibility window ([migration path](#migration-path)).
   - The maintainer agents make these moves as part of the work; a contributor is never asked to reorganise.
-  - A ratchet check that makes clutter visible is in review (#276).
+  - The ratchet in `tests/repo/test_layout.py` makes clutter visible and blocks new growth (#276).
 - **The site follows the repo.**
   - Nothing on cad-agent.valpatel.com is edited by hand. It is generated from committed files, and Cloudflare builds
     it from `main` (#266).
@@ -297,9 +297,9 @@ The hubs give the topic-first view without those costs.
 
 ## Root consolidation (2026-11-05)
 
-The owner asked for a starting screen with only necessary files and a visible README. The measured baseline is **30 tracked root entries** (files and folders together). The next planned result is **about 17 meaningful entries**, with actual counts ratcheted in `tests/repo/test_layout.py` as reviewed moves land. Ignored local files are outside this measure. Counts in the remaining plan are not completed work; [the consolidation issue](https://github.com/Valpatel/cad-agent/issues/362) records current evidence and integration status.
+The owner asked for a starting screen with only necessary files and a visible README. The 2026-11-05 baseline was **30 tracked root entries** (files and folders together); the reviewed batches below reached **17** in v0.22.0. `tests/repo/test_layout.py` caps that count. Ignored local files are outside this measure. The [publication receipt](https://github.com/Valpatel/cad-agent/issues/368#issuecomment-6677045510) records the released revision and public checks; the [consolidation issue](https://github.com/Valpatel/cad-agent/issues/362) retains each batch's evidence.
 
-| Batch | Owning location | Root count after batch | Contracts to preserve |
+| Batch | Owning location | Root count after batch | Contracts checked |
 |---|---|---|---|
 | Transcript mining and weekly procedure | `tools/mining/`, `docs/practice/weekly-upstream-update.md` | 28 | CLI examples, private-input ignore paths, provenance and topic map |
 | Contributor and security policies | `.github/CONTRIBUTING.md`, `.github/SECURITY.md` | 26 | GitHub discovery, relative links, stable public routes and real source provenance |

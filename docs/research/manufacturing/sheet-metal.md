@@ -11,7 +11,7 @@ in [`process-profiles.yaml`](../process-profiles.yaml): the generic rules, and S
 
 <img src="../../img/sheet-metal/bent-plate.svg" alt="Side view of a channel bent from 1.6 mm 5052 with a clinch nut and a riveted strap, and a plan view of the face between the bends showing the hardware hole 10.8 mm from the bend line and 9.7 mm from the edge, and rivets 6.3 mm from the edge and 9.5 mm apart" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from [`process-profiles.yaml`](../process-profiles.yaml): SendCutSend's
+*Diagram drawn by `tools/figures/process_profile_figures.py` from [`process-profiles.yaml`](../process-profiles.yaml): SendCutSend's
 tables for 1.6 mm 5052 (ALU-063) and the rivet rules for a 1/8 in rivet. A test redraws it and fails if the committed
 file differs.*
 
@@ -93,7 +93,7 @@ with cutting and hardware limits.
 
 <img src="../../img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052, mild steel, 304, 316 and G90 stock it bends, with the K-factor in each label: from 0.61 to 4.75 mm, not simply the thickness" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the SendCutSend tooling tables in
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the SendCutSend tooling tables in
 [`process-profiles.yaml`](../process-profiles.yaml) (`shop_tables`). A test redraws it and fails if the committed chart
 differs.*
 
@@ -191,7 +191,7 @@ example prints two different flat lengths, 17.612 and 17.765 in, for the same pa
 
 <img src="../../img/sheet-metal/shop-hardware.svg" alt="Range chart of SendCutSend's least distances for pressed-in hardware by sheet family: hole centre to a cut edge 7.2 to 11.2 mm, to a bend line 10.4 to 14 mm, and to the next part of the same kind 10.3 to 17.5 mm" width="680">
 
-  *Drawn by `tools/process_profile_figures.py` from SendCutSend's `sendcutsend-cut-and-hardware-limits` table in
+  *Drawn by `tools/figures/process_profile_figures.py` from SendCutSend's `sendcutsend-cut-and-hardware-limits` table in
   [`process-profiles.yaml`](../process-profiles.yaml): the per-stock minimums of its specs feed, across 27 stocks.*
 
 - **Tapping** [ref:sendcutsend-tapping]:
@@ -380,7 +380,7 @@ at 0.250 in [derived]. No generic rule fits every shop; the die decides.
 
 <img src="../../img/research/process-sheet-metal.svg" alt="The same sheet-metal rule from different sources, evaluated at 1.5 mm thickness and radius, with one shop's real tooling" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal `compare` rules in
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the sheet-metal `compare` rules in
 [`process-profiles.yaml`](../process-profiles.yaml), with SendCutSend's tooling table in orange. A test redraws it and
 fails if the committed chart differs.*
 
@@ -407,7 +407,7 @@ fails if the committed chart differs.*
 
 <img src="../../img/research/process-sheet-holes.svg" alt="Range chart of sheet-metal bend radius, smallest hole, hole to edge, hole to hole and hem return at 1.5 mm thickness, by source" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in
 [`process-profiles.yaml`](../process-profiles.yaml), at a sheet thickness of 1.5 mm. A test redraws it and fails if the
 committed chart differs.*
 
@@ -529,7 +529,7 @@ One finding from the first sweep stays here: "a stainless nut is fine in stainle
 
 <img src="../../img/sheet-metal/clinch-hardness.svg" alt="Range chart of the hardest sheet each PEM fastener material takes: aluminium parts up to HRB 50, 300-series stainless up to HRB 70, hardened steel up to HRB 80, hardened stainless 88 to 92" width="680">
 
-*Drawn by `tools/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
+*Drawn by `tools/figures/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
 [`process-profiles.yaml`](../process-profiles.yaml).*
 
 ## B8. Tabs, slots and notches

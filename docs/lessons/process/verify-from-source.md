@@ -130,6 +130,29 @@ flowchart TD
   [Commands, receipts and recovery instructions](https://github.com/Valpatel/cad-agent/issues/362).
 
 <details>
+<summary>Preflight the control inputs before long work (2026-11-06 UTC)</summary>
+
+- **Rule:** Before dependency setup or a long run, verify every candidate and comparison commit with
+  `git cat-file -e <sha>^{commit}`; fetch the required history explicitly when absent. Inspect the exact input at
+  that commit, assert the selected record exists, and match the intended consumer's specific failure. Freeze and
+  review that command before submission. An unexpected setup exit is not the intended negative result.
+- **Evidence:** Fleet 203 at `d8c4e363` completed npm/browser setup, then exited 128 on `fatal: invalid reference`
+  while creating the prior-source worktree. No builder ran. Fleet 204 explicitly fetched history and checked
+  `2c3aa608` before setup, then exercised the real old-anchor rejection and corrected build
+  ([receipts](https://github.com/Valpatel/cad-agent/pull/377#issuecomment-6678058928)).
+  Fleet 208 at `cc8288b5` passed 294 focused checks, then its recipe asserted a bearing `drawn_by` record absent
+  from `docs/pages.yaml`. It stopped before any builder; the corrected control selects the actual motion record
+  ([recipe correction](https://github.com/Valpatel/cad-agent/pull/383#issuecomment-6680283261)).
+- **Cause and check:** Both recipes assumed a control input instead of verifying it first. Require commit and
+  record availability before costly work, preserve the failed attempt, and reuse completed unchanged checks when
+  retrying only unfinished stages. For a moved tool, put the stale old file beside the actual planted metadata and
+  require the real consumer to reject it for the intended reason, not because a fixture input is missing.
+- **Limits:** These are validation-recipe preconditions, not a new fleet harness or proof that the corrected run
+  passed. A completed test slice does not turn an overall failed run into a pass; final-head coverage remains separate.
+
+</details>
+
+<details>
 <summary>Deployment evidence is specific to its environment (2026-11-06 UTC)</summary>
 
 - **Evidence:** Fleet job 199 at reviewed dev `f52795ee` passed the actual nested npm release entry in 13 seconds,

@@ -45,7 +45,7 @@ flowchart TD
 ## Adding a test
 
 - **Which folder:** the package of the code under test (`cadagent.review.gates` → `review/`). For a test of a
-  `tools/` script, the package whose output the script draws or checks (`tools/motion_figures.py` → `mechanical/`),
+  `tools/` script, the package whose output the script draws or checks (`tools/figures/motion_figures.py` → `mechanical/`),
   or `repo/` for the repo's own tooling and `site/` for the site build. A new folder is a new package or area: add it
   to `AREAS` in `repo/test_layout.py` and to this table, with its README and `__init__.py`.
 - **Paths:** a test file is two folders below the repo root: `ROOT = Path(__file__).resolve().parents[2]`, and the

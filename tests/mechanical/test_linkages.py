@@ -6,7 +6,7 @@ cadagent.mechanical.linkages, against published closed forms written out here an
   tangent of the half angle), not two circles.
 * The four-bar against Norton's Example 4-1, the toggle positions by the law of cosines, and Freudenstein's equation.
 * The Jacobians against finite differences of the solved positions, so a determinant means what it says.
-* The docs figure (tools/linkage_figures.py) against its generator and the closed-form lock it quotes.
+* The docs figure (tools/figures/linkage_figures.py) against its generator and the closed-form lock it quotes.
 """
 from __future__ import annotations
 
@@ -444,7 +444,7 @@ def test_the_old_import_path_still_works():
 
 def _figures():
     import importlib.util
-    spec = importlib.util.spec_from_file_location("linkage_figures", ROOT / "tools" / "linkage_figures.py")
+    spec = importlib.util.spec_from_file_location("linkage_figures", ROOT / "tools" / "figures" / "linkage_figures.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -453,7 +453,7 @@ def _figures():
 def test_the_committed_figure_matches_its_generator_and_is_safe_to_embed():
     from cadagent.publish.anim import svg as S
     lf = _figures()
-    assert lf.main(["--check"]) == 0, "run PYTHONPATH=src python3 tools/linkage_figures.py"
+    assert lf.main(["--check"]) == 0, "run PYTHONPATH=src python3 tools/figures/linkage_figures.py"
     content = (ROOT / "docs" / "img" / "linkages" / "fivebar.svg").read_text(encoding="utf-8")
     assert S.problems(content) == []
 

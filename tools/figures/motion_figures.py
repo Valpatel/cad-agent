@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the animated concept figures (docs/img/motion/*.svg) from the code and fixtures they illustrate.
 
-    PYTHONPATH=src python3 tools/motion_figures.py            # write the SVGs
-    PYTHONPATH=src python3 tools/motion_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
+    PYTHONPATH=src python3 tools/figures/motion_figures.py            # write the SVGs
+    PYTHONPATH=src python3 tools/figures/motion_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
 
 Nothing is keyframed by eye. Each figure draws one fixture or worked example from this repo:
 
@@ -35,7 +35,7 @@ import tempfile
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 OUT = ROOT / "docs" / "img" / "motion"
@@ -1684,7 +1684,7 @@ def main(argv: list) -> int:
             OUT.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")
     if stale:
-        print("out of date with their sources (run PYTHONPATH=src python3 tools/motion_figures.py):", ", ".join(stale))
+        print("out of date with their sources (run PYTHONPATH=src python3 tools/figures/motion_figures.py):", ", ".join(stale))
         return 1
     return 0
 

@@ -124,15 +124,17 @@ def test_the_hero_states_its_checks_from_the_scene(tool, built):
 
 
 def _readme_hero_provenance(readme, tool):
-    m = re.search(r'<img src="([^"]+)" alt="([^"]+)"', readme)
+    examples = re.findall(r"<details>.*?</details>", readme, re.S)
+    example = next(block for block in examples if "Gyropup" in block)
+    m = re.search(r'<img src="([^"]+)" alt="([^"]+)"', example)
     assert m and "Gyropup" in m.group(2)
     assert (ROOT / m.group(1)).resolve() == tool.FIGURES["hero"][-1].resolve(), "wrong hero output"
-    credit = re.search(r'Made by <a href="([^"]+)"><code>([^<]+)</code></a>', readme)
+    credit = re.search(r'Made by <a href="([^"]+)"><code>([^<]+)</code></a>', example)
     assert credit and credit.group(1) == credit.group(2), "producer href and label differ"
     producer = ROOT / credit.group(1)
     assert producer.is_file(), "credited producer is missing"
     assert producer.resolve() == Path(tool.__file__).resolve(), "credit does not name the actual hero producer"
-    assert "github.com/Valpatel/gyropup" in readme
+    assert "github.com/Valpatel/gyropup" in example
 
 
 def test_the_readme_embeds_the_hero(tool):
@@ -441,7 +443,10 @@ def test_the_hero_is_the_first_thing_in_the_readme():
     # The animation opens the README, above the title and the copy-to-your-agent prompt, so a later
     # section can't push it down the page again.
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    hero = readme.find('<img src="docs/img/hero/gyropup-leg.svg"')
+    spec = importlib.util.spec_from_file_location("repository_map", ROOT / "tools/anim/repository_map.py")
+    workshop = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(workshop)
+    hero = readme.find(f'<img src="{workshop.OUT.relative_to(ROOT).as_posix()}"')
     assert 0 <= hero < readme.find("# cad-agent") < readme.find("## ")
     assert not readme[:hero].strip("\n").replace('<div align="center">', "").strip()
     # GitHub only renders Markdown inside the centring div when blank lines surround it; without them the title

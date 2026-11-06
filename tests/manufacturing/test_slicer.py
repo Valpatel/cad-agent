@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import hashlib
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -227,12 +228,64 @@ def test_flatten_merges_the_inheritance_chain(tmp_path, monkeypatch):
 @pytest.mark.skipif(slicer.executable() is None, reason='Bambu Studio not installed')
 def test_slices_a_cube(tmp_path):
     trimesh = pytest.importorskip('trimesh')
-    work = __import__('pathlib').Path.home() / 'snap' / 'bambu-studio' / 'common' / 'cadagent-test'  # the snap cannot read /tmp
-    work.mkdir(parents=True, exist_ok=True)
-    stl = work / 'cube.stl'
-    trimesh.creation.box(extents=(20, 20, 20)).apply_translation((0, 0, 10)).export(str(stl))
-    r = slicer.slice_part(stl, workdir=work / 'out')
-    assert 2.5 < r['grams'] < 6
+    common = Path.home() / 'snap' / 'bambu-studio' / 'common'  # the snap cannot read /tmp or hidden folders
+    common.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix=f'cadagent-test-{tmp_path.name}-', dir=common) as directory:
+        work = Path(directory)
+        stl = work / 'cube.stl'
+        trimesh.creation.box(extents=(20, 20, 20)).apply_translation((0, 0, 10)).export(str(stl))
+        r = slicer.slice_part(stl, workdir=work / 'out')
+        assert r['exit_code'] == 0, f"slicer exited {r['exit_code']}: {r}"
+        assert 2.5 < r['grams'] < 6
+
+
+@pytest.mark.parametrize('outcome', ['success', 'nonzero', 'exception'])
+def test_cube_smoke_uses_fresh_snap_workspaces(tmp_path, monkeypatch, outcome):
+    """Exercise the real smoke-test body and slicer parser without an installed Bambu process."""
+    from types import SimpleNamespace
+    pytest.importorskip('trimesh')
+    home = tmp_path / 'home'
+    monkeypatch.setenv('HOME', str(home))
+    common = home / 'snap' / 'bambu-studio' / 'common'
+    legacy = common / 'cadagent-test'
+    legacy.mkdir(parents=True)
+    prior = legacy / 'prior-run.txt'
+    prior.write_text('preserve this unrelated prior workspace')
+    real_slice = slicer.slice_part
+    workspaces = []
+
+    def slice_current_cube(model, *, workdir):
+        work = Path(model).parent
+        assert work.parent == common and not work.name.startswith('.')
+        assert work != legacy and work not in workspaces
+        assert Path(model).is_file() and not Path(workdir).exists()
+        assert Path(workdir).resolve().is_relative_to(work.resolve())
+        workspaces.append(work)
+        return real_slice(model, workdir=workdir)
+
+    def external_command(cmd, **kwargs):
+        if outcome == 'exception':
+            raise RuntimeError('controlled slicer failure')
+        out = Path(cmd[cmd.index('--outputdir') + 1])
+        (out / 'result.json').write_text(json.dumps({
+            'sliced_plates': [{'filaments': [{'total_used_g': 3.5}], 'total_predication': 60}],
+        }))
+        return SimpleNamespace(returncode=7 if outcome == 'nonzero' else 0, stdout='', stderr='')
+
+    monkeypatch.setattr(slicer, 'executable', lambda: '/controlled/BambuStudio')
+    monkeypatch.setattr(slicer, 'resolve_profile', lambda kind, name: {'settings': {'name': name}, 'files': {}})
+    monkeypatch.setattr(slicer, 'slice_part', slice_current_cube)
+    monkeypatch.setattr(slicer.subprocess, 'run', external_command)
+    for index in range(2):
+        if outcome == 'success':
+            test_slices_a_cube(tmp_path / f'invocation-{index}')
+        else:
+            error, message = (AssertionError, 'slicer exited 7') if outcome == 'nonzero' else (RuntimeError, 'controlled slicer failure')
+            with pytest.raises(error, match=message):
+                test_slices_a_cube(tmp_path / f'invocation-{index}')
+        assert not workspaces[-1].exists()
+        assert prior.read_text() == 'preserve this unrelated prior workspace'
+    assert len(workspaces) == 2
 
 
 def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):

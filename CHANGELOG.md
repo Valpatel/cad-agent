@@ -9,6 +9,15 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.23.1 (2026-11-06)
+
+**Changed**
+- The existing design-process skill routes laser-cut/bent-sheet joints to the sheet-metal-hardware workflow. Its canonical Python example now runs through the existing hardware consumer, including WARN/FAIL, unpriced costs and real bad-input/no-op controls (#283).
+- Lead the README and guide index with a compact conceptual learning workshop; retain the original Gyropup artwork and actual producer credit together as a real example, and keep technical file wiring in a named disclosure (#396).
+
+**Fixed**
+- The cube slicer smoke test uses an independent Snap-readable workspace, cleans it after failures and rejects nonzero slicer exits (#84).
+
 ## v0.23.0 (2026-11-06)
 
 **Changed**

@@ -109,6 +109,13 @@ the generated JSON; it does not run this standalone calculator. Use its torque c
 rating, and follow the guide's coupon plan before claiming physical strength or retained preload. Keep equations,
 source tables and model limits in the guide instead of duplicating them in the card.
 
+**For laser-cut or bent-sheet parts with clinch hardware or riveted seams**, follow the existing
+[sheet-metal-hardware workflow](../sheet-metal-hardware/SKILL.md). Its six-step example connects the shop's bend
+limits, feature datums, hardware selection, placement/joint checks and dated costs. Inspect each PASS/WARN/FAIL and
+retain unpriced items rather than inventing a price. The guide states the strength and process limits; test a sample
+before claiming physical fit or load capacity. Keep its equations and source tables there instead of copying them
+into the feature card.
+
 ### 3. Declare the geometry facts in the build script
 
 Only the code knows which solid is the cavity, where an axis is, where each screw sits:

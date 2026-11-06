@@ -1,13 +1,8 @@
 <div align="center">
 
-<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
+<img src="docs/img/hero/repository-map.svg" alt="A conceptual learning workshop: study sources, try methods, test assumptions, review evidence and learn reusable skills" width="640">
 
-<details>
-<summary>From Gyropup’s real CAD and results</summary>
-
-<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
-
-</details>
+A conceptual learning loop. Virtual checks and real measurements keep their own evidence.
 
 # cad-agent
 
@@ -31,6 +26,9 @@ macOS and Linux:
 curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
 ```
 
+<details>
+<summary>Windows, agent setup and installation details</summary>
+
 Windows, in PowerShell:
 
 ```powershell
@@ -52,6 +50,8 @@ cad-agent collects no telemetry. When your agent finds a gap or learns a lesson,
 it as a pull request or an issue only if you say yes. By hand, extras and uninstall:
 [Install](docs/practice/agent-workflow.md#install).
 
+</details>
+
 ## Find your next step
 
 | I want to… | Open this |
@@ -63,9 +63,8 @@ it as a pull request or an issue only if you say yes. By hand, extras and uninst
 
 Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start an agent from [llms.txt](https://cad-agent.valpatel.com/llms.txt). The [topic tree](docs/areas.yaml) gives each capability one discoverable home.
 
-## How it improves itself
-
-<img src="docs/img/hero/repository-map.svg" alt="Learning loop: read and cite research, evaluate examples and controls, encode methods in code and skills, keep failed cases in tests and lessons" width="100%">
+<details>
+<summary id="how-it-improves-itself">How it improves itself — sources, checks and evidence limits</summary>
 
 A real design exposes a gap. We search existing work, reproduce its examples, encode what survives in engineering code, and keep the failed case as a regression test. Sources keep their credit; short guides and skills tell the next agent when to apply the method.
 
@@ -73,7 +72,10 @@ For example, [snap-fit calculations](docs/mechanical/compliant.md) reproduce the
 
 [Existing checks and their limits](docs/lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) · [Vision and planned model evaluations](docs/vision.md)
 
-## What works today
+</details>
+
+<details>
+<summary id="what-works-today">What works today — with a real Gyropup CAD example</summary>
 
 - Parametric parts, bought-hardware models, assemblies and project builds.
 - Geometry, fastener, motion, snap-fit and manufacturing checks with recorded evidence.
@@ -82,12 +84,24 @@ For example, [snap-fit calculations](docs/mechanical/compliant.md) reproduce the
 
 The [toolkit reference](docs/toolkit.md) names every command, dependency and limit. Real projects include [Gyropup](https://github.com/Valpatel/gyropup), the [J501 enclosure](https://github.com/mvalancy/j501-agx-orin) and the [Thor CAN breakout](https://github.com/mvalancy/pcb-agx-thor-can-breakout). Product-specific designs stay in their own repos.
 
-## Extras
+<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
+
+<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
+
+</details>
+
+<details>
+<summary id="extras">Extras — optional dependencies and platform limits</summary>
 
 The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Python 3.11+. [Choose optional dependencies and manual installation](docs/practice/agent-workflow.md#extras); platform limits are stated in the [FEA guide](docs/toolkit.md).
 
-## Contribute
+</details>
+
+<details>
+<summary id="contribute">Contribute — sources, reproducers and independent review</summary>
 
 Send a minimal reproducer, a source or a better technique. Changes get tests and an independent review before release. [Contributing](.github/CONTRIBUTING.md) explains the process; the [dated recovery audit](docs/lessons/process/2026-11-05-recovery-audit.md) records paused work and what remains.
+
+</details>
 
 MIT. [Licence](LICENSE) · [Credits and third-party notices](software/vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)

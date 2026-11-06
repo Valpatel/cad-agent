@@ -45,3 +45,11 @@ On 2026-11-06, independent release review of #391 at `2f380b52b006203931e06f6a46
 **Cause:** preserving dated release notes and reproducing the release producer do not validate the current introduction's links. The producer intentionally carries that introduction through unchanged.
 
 **Rule:** separate current navigation from dated evidence when checking a move. Resolve the current links against the actual tracked tree; keep released notes byte-identical unless a separately reviewed correction requires otherwise. This repair changes only the introduction's fragment-guide label and destination. It does not claim a new link checker, broader publication coverage, or any change to historical release behavior.
+
+## Execute the canonical technique, not only its underlying APIs
+
+On 2026-11-06, the #283 routing audit found an existing six-step Python example in `sheet-metal-hardware`, but no design-process route and no consumer executing that canonical block. A disposable edit changed only its clinch selector's sheet to `unlisted-sheet`: the original `pytest -q tests/mechanical/test_sheet_hardware.py` still passed all 14 tests, while executing the actual block raised `ValueError: unknown sheet`. The source was restored in `finally`; no catalogue or solver data changed.
+
+The refined existing test module executes that trusted, committed block through its real APIs and inspects the returned step results. It retains the source-derived numbers, WARN/FAIL distinctions, unpriced rivet, dated price and model limits. Changed geometry produces WARN and FAIL; an unknown sheet rejects, and the same consumer rejects missing steps, a no-op price call/output and a forced PASS on the warning case. The existing API/data checks remain in place.
+
+**Rule:** routing to an existing technique should make its canonical example a real consumer of the current implementation. Do not substitute another copy of its inputs or assert only that API names exist. Use real bad inputs and no-op results to check that the consumer cannot pass empty. This is a deterministic model/example check, not evidence of physical fit, joint capacity, current supplier prices or every possible user design. The test executes only the repository's reviewed example, not arbitrary external Markdown.

@@ -12,12 +12,29 @@ from cadagent.manufacturing import process as pp
 from cadagent.mechanical.compliant.allowables import PRINTED
 
 ROOT = Path(__file__).resolve().parents[2]
-RAW = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text(encoding="utf-8"))
+RAW = yaml.safe_load((ROOT / "docs" / "research" / "process-profiles.yaml").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
 def profiles():
     return pp.load()
+
+
+def test_default_data_uses_the_moved_source_and_never_a_stale_old_copy(tmp_path, monkeypatch):
+    content = pp.DATA.read_bytes()
+    current, stale = tmp_path / "docs/research/process-profiles.yaml", tmp_path / "research/process-profiles.yaml"
+    for path in (current, stale):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+    monkeypatch.setattr(pp, "ROOT", tmp_path)
+    monkeypatch.setattr(pp, "DATA", current)
+    monkeypatch.delenv(pp.ENV, raising=False)
+    monkeypatch.chdir(tmp_path)
+    assert pp.load().path == current
+    current.unlink()
+    with pytest.raises(pp.ProfileDataError, match="no process-profile data") as error:
+        pp.load()
+    assert str(current) in str(error.value) and stale.exists()
 
 
 def test_every_process_loads_with_its_rules(profiles):
@@ -176,10 +193,10 @@ def test_an_unknown_process_material_or_rule_is_refused():
 
 
 def test_registry_ids_resolve_once_the_registry_is_beside_the_data(tmp_path):
-    """The ids resolve through the research/references.yaml (#118) beside the data file: a copy with none beside it
+    """The ids resolve through the docs/research/references.yaml (#118) beside the data file: a copy with none beside it
     loads but resolves nothing, and a registry put beside it is read with no code change."""
     data = tmp_path / "process-profiles.yaml"
-    data.write_text((ROOT / "research" / "process-profiles.yaml").read_text(encoding="utf-8"), encoding="utf-8")
+    data.write_text((ROOT / "docs" / "research" / "process-profiles.yaml").read_text(encoding="utf-8"), encoding="utf-8")
     assert not pp.load(data)["fdm"].source("bambu-petg-basic-tds").resolved
     (tmp_path / "references.yaml").write_text(yaml.safe_dump({"sources": [
         {"id": "bambu-petg-basic-tds", "title": "PETG Basic Technical Data Sheet", "org": "Bambu Lab",

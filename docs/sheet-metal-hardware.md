@@ -7,7 +7,7 @@ The checks come first and the price second, so a part is only ever ranked once i
 
 ![Price of one piece for 25 PEM clinch parts and 4 McMaster-Carr rivets, on a log scale: zinc-plated steel S nuts and FH studs cost about $0.07 to $0.21 loose, stainless CLS and CLSS nuts $0.15 to $0.68, standoffs $0.21 to $0.68, rivets $0.04 to $0.12 each; SendCutSend's price to press a part in is $0.77 to $1.33](img/process/sheet-hardware-prices.svg)
 
-*Drawn by `tools/process_figures.py` from `cadagent.mechanical.sheet_hardware` on `research/sheet-hardware.yaml`. A test
+*Drawn by `tools/process_figures.py` from `cadagent.mechanical.sheet_hardware` on `docs/research/sheet-hardware.yaml`. A test
 redraws it and fails if the committed chart differs. The prices are as read on the dates in the footer.*
 
 ## The pattern, step by step
@@ -53,7 +53,7 @@ sh.cost({"S-632-1": 8, "mcmaster-97447A015": 24})   # $1.71 in pieces, $11.46 in
 | A seam between two aluminium parts | 1/8 in aluminium rivet | $0.04 | not offered |
 | Where it must not rust | stainless CLS or CLSS nut | $0.15–0.68 | not in the feed |
 
-*From `research/sheet-hardware.yaml`. Loose prices are Bossard Americas' prices for 1–249 pieces
+*From `docs/research/sheet-hardware.yaml`. Loose prices are Bossard Americas' prices for 1–249 pieces
 ([ref:bossard-pem-prices], read 2026-11-02). Rivet prices are McMaster-Carr's pack prices divided by the pack quantity
 ([ref:mcmaster-blind-rivets], read 2026-11-01). The pressed-in prices come from SendCutSend's ordering feed
 ([ref:sendcutsend-catalog]), which does not say whether its price includes the part.*
@@ -92,8 +92,8 @@ clinch parts from a distributor are pressed in first. Rivets come from a distrib
 <details>
 <summary>The data, the test that guards it, and how to refresh it</summary>
 
-- **The data:** one item per orderable part number in `research/sheet-hardware.yaml`. Each item carries its price,
-  the day it was read, its seller's page, its source in `research/references.yaml` and the part the checks know it as.
+- **The data:** one item per orderable part number in `docs/research/sheet-hardware.yaml`. Each item carries its price,
+  the day it was read, its seller's page, its source in `docs/research/references.yaml` and the part the checks know it as.
 - **The test:** `tests/mechanical/test_sheet_hardware.py` loads the catalogue and fails on a part the checks do not
   know, a price with no date, or a source that is not cited.
 - **To refresh:** re-read the part pages one at a time and update `price_usd`, `price_checked` and `specs` for each

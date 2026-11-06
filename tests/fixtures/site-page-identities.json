@@ -1,0 +1,481 @@
+{
+  "source_revision": "e4556ea043288afc074bdf2c20a6bfb10047a1aa",
+  "fleet_job": 171,
+  "purpose": "Existing public page identities before the knowledge-source move; actual prior build output, not derived from new path code.",
+  "pages": [
+    {
+      "id": "agent-cad-pr-reviewer",
+      "kind": "agent",
+      "url": "https://cad-agent.valpatel.com/agents/cad-pr-reviewer",
+      "markdown": "https://cad-agent.valpatel.com/agents/cad-pr-reviewer.md"
+    },
+    {
+      "id": "agent-cad-resume",
+      "kind": "agent",
+      "url": "https://cad-agent.valpatel.com/agents/cad-resume",
+      "markdown": "https://cad-agent.valpatel.com/agents/cad-resume.md"
+    },
+    {
+      "id": "guide-agent-workflow",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/agent-workflow",
+      "markdown": "https://cad-agent.valpatel.com/docs/agent-workflow.md"
+    },
+    {
+      "id": "guide-animated-figures",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/animated-figures",
+      "markdown": "https://cad-agent.valpatel.com/docs/animated-figures.md"
+    },
+    {
+      "id": "guide-bearings",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/bearings",
+      "markdown": "https://cad-agent.valpatel.com/docs/bearings.md"
+    },
+    {
+      "id": "guide-common-issues",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/common-issues",
+      "markdown": "https://cad-agent.valpatel.com/docs/common-issues.md"
+    },
+    {
+      "id": "guide-compliant",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/compliant",
+      "markdown": "https://cad-agent.valpatel.com/docs/compliant.md"
+    },
+    {
+      "id": "guide-contributing",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/CONTRIBUTING",
+      "markdown": "https://cad-agent.valpatel.com/CONTRIBUTING.md"
+    },
+    {
+      "id": "guide-design-process-plan",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/design-process-plan",
+      "markdown": "https://cad-agent.valpatel.com/docs/design-process-plan.md"
+    },
+    {
+      "id": "guide-docs-index",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/README",
+      "markdown": "https://cad-agent.valpatel.com/docs/README.md"
+    },
+    {
+      "id": "guide-dossier",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/dossier",
+      "markdown": "https://cad-agent.valpatel.com/docs/dossier.md"
+    },
+    {
+      "id": "guide-experts",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/experts",
+      "markdown": "https://cad-agent.valpatel.com/docs/experts.md"
+    },
+    {
+      "id": "guide-explore",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/explore",
+      "markdown": "https://cad-agent.valpatel.com/docs/explore.md"
+    },
+    {
+      "id": "guide-fans",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/fans",
+      "markdown": "https://cad-agent.valpatel.com/docs/fans.md"
+    },
+    {
+      "id": "guide-file-viewer",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/file-viewer",
+      "markdown": "https://cad-agent.valpatel.com/docs/file-viewer.md"
+    },
+    {
+      "id": "guide-formulas",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/formulas",
+      "markdown": "https://cad-agent.valpatel.com/docs/formulas.md"
+    },
+    {
+      "id": "guide-gates",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/gates",
+      "markdown": "https://cad-agent.valpatel.com/docs/gates.md"
+    },
+    {
+      "id": "guide-index",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/README",
+      "markdown": "https://cad-agent.valpatel.com/README.md"
+    },
+    {
+      "id": "guide-inserts",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/inserts",
+      "markdown": "https://cad-agent.valpatel.com/docs/inserts.md"
+    },
+    {
+      "id": "guide-linkages",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/linkages",
+      "markdown": "https://cad-agent.valpatel.com/docs/linkages.md"
+    },
+    {
+      "id": "guide-pcb",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/pcb",
+      "markdown": "https://cad-agent.valpatel.com/docs/pcb.md"
+    },
+    {
+      "id": "guide-printed-joints",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/printed-joints",
+      "markdown": "https://cad-agent.valpatel.com/docs/printed-joints.md"
+    },
+    {
+      "id": "guide-process-checks",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/process-checks",
+      "markdown": "https://cad-agent.valpatel.com/docs/process-checks.md"
+    },
+    {
+      "id": "guide-rendered-motion",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/rendered-motion",
+      "markdown": "https://cad-agent.valpatel.com/docs/rendered-motion.md"
+    },
+    {
+      "id": "guide-review-packet",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/review-packet",
+      "markdown": "https://cad-agent.valpatel.com/docs/review-packet.md"
+    },
+    {
+      "id": "guide-screw-bosses",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/screw-bosses",
+      "markdown": "https://cad-agent.valpatel.com/docs/screw-bosses.md"
+    },
+    {
+      "id": "guide-sheet-metal-hardware",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/sheet-metal-hardware",
+      "markdown": "https://cad-agent.valpatel.com/docs/sheet-metal-hardware.md"
+    },
+    {
+      "id": "guide-style-guide",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/style-guide",
+      "markdown": "https://cad-agent.valpatel.com/docs/style-guide.md"
+    },
+    {
+      "id": "guide-subassembly-insertion",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/subassembly-insertion",
+      "markdown": "https://cad-agent.valpatel.com/docs/subassembly-insertion.md"
+    },
+    {
+      "id": "guide-supply-chain",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/supply-chain",
+      "markdown": "https://cad-agent.valpatel.com/docs/supply-chain.md"
+    },
+    {
+      "id": "guide-third-party-notices",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES",
+      "markdown": "https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "id": "guide-toolkit",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/toolkit",
+      "markdown": "https://cad-agent.valpatel.com/docs/toolkit.md"
+    },
+    {
+      "id": "guide-vision",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/vision",
+      "markdown": "https://cad-agent.valpatel.com/docs/vision.md"
+    },
+    {
+      "id": "guide-volume-precision",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/volume-precision",
+      "markdown": "https://cad-agent.valpatel.com/docs/volume-precision.md"
+    },
+    {
+      "id": "guide-web-diagrams",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/web-diagrams",
+      "markdown": "https://cad-agent.valpatel.com/docs/web-diagrams.md"
+    },
+    {
+      "id": "guide-web-parts",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/web-parts",
+      "markdown": "https://cad-agent.valpatel.com/docs/web-parts.md"
+    },
+    {
+      "id": "guide-weekly-upstream-update",
+      "kind": "guide",
+      "url": "https://cad-agent.valpatel.com/docs/weekly-upstream-update",
+      "markdown": "https://cad-agent.valpatel.com/docs/weekly-upstream-update.md"
+    },
+    {
+      "id": "lesson-electronics-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/electronics/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/electronics/README.md"
+    },
+    {
+      "id": "lesson-electronics-pcb-evidence-and-review",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/electronics/pcb-evidence-and-review",
+      "markdown": "https://cad-agent.valpatel.com/lessons/electronics/pcb-evidence-and-review.md"
+    },
+    {
+      "id": "lesson-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/README.md"
+    },
+    {
+      "id": "lesson-mechanical-design-rules",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/mechanical/design-rules",
+      "markdown": "https://cad-agent.valpatel.com/lessons/mechanical/design-rules.md"
+    },
+    {
+      "id": "lesson-mechanical-enclosure-features",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/mechanical/enclosure-features",
+      "markdown": "https://cad-agent.valpatel.com/lessons/mechanical/enclosure-features.md"
+    },
+    {
+      "id": "lesson-mechanical-fasteners-and-assembly-access",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/mechanical/fasteners-and-assembly-access",
+      "markdown": "https://cad-agent.valpatel.com/lessons/mechanical/fasteners-and-assembly-access.md"
+    },
+    {
+      "id": "lesson-mechanical-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/mechanical/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/mechanical/README.md"
+    },
+    {
+      "id": "lesson-mechanical-printing-without-supports",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/mechanical/printing-without-supports",
+      "markdown": "https://cad-agent.valpatel.com/lessons/mechanical/printing-without-supports.md"
+    },
+    {
+      "id": "lesson-process-2026-11-05-recovery-audit",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/process/2026-11-05-recovery-audit",
+      "markdown": "https://cad-agent.valpatel.com/lessons/process/2026-11-05-recovery-audit.md"
+    },
+    {
+      "id": "lesson-process-agent-process",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/process/agent-process",
+      "markdown": "https://cad-agent.valpatel.com/lessons/process/agent-process.md"
+    },
+    {
+      "id": "lesson-process-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/process/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/process/README.md"
+    },
+    {
+      "id": "lesson-process-user-intent-and-requirements",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/process/user-intent-and-requirements",
+      "markdown": "https://cad-agent.valpatel.com/lessons/process/user-intent-and-requirements.md"
+    },
+    {
+      "id": "lesson-process-verify-from-source",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/process/verify-from-source",
+      "markdown": "https://cad-agent.valpatel.com/lessons/process/verify-from-source.md"
+    },
+    {
+      "id": "lesson-review-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/review/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/review/README.md"
+    },
+    {
+      "id": "lesson-review-original-file-viewer",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/review/original-file-viewer",
+      "markdown": "https://cad-agent.valpatel.com/lessons/review/original-file-viewer.md"
+    },
+    {
+      "id": "lesson-review-review-site-ux",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/review/review-site-ux",
+      "markdown": "https://cad-agent.valpatel.com/lessons/review/review-site-ux.md"
+    },
+    {
+      "id": "lesson-review-verification-and-evidence",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/review/verification-and-evidence",
+      "markdown": "https://cad-agent.valpatel.com/lessons/review/verification-and-evidence.md"
+    },
+    {
+      "id": "lesson-simulation-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/simulation/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/simulation/README.md"
+    },
+    {
+      "id": "lesson-simulation-meshes",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/simulation/meshes",
+      "markdown": "https://cad-agent.valpatel.com/lessons/simulation/meshes.md"
+    },
+    {
+      "id": "lesson-simulation-simulation-and-material",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/simulation/simulation-and-material",
+      "markdown": "https://cad-agent.valpatel.com/lessons/simulation/simulation-and-material.md"
+    },
+    {
+      "id": "lesson-wiring-cables-connectors-and-routing",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/wiring/cables-connectors-and-routing",
+      "markdown": "https://cad-agent.valpatel.com/lessons/wiring/cables-connectors-and-routing.md"
+    },
+    {
+      "id": "lesson-wiring-index",
+      "kind": "lesson",
+      "url": "https://cad-agent.valpatel.com/lessons/wiring/README",
+      "markdown": "https://cad-agent.valpatel.com/lessons/wiring/README.md"
+    },
+    {
+      "id": "research-agent-toolkits-2026-10",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/agent-toolkits-2026-10",
+      "markdown": "https://cad-agent.valpatel.com/research/agent-toolkits-2026-10.md"
+    },
+    {
+      "id": "research-compliant-mechanisms",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/compliant-mechanisms",
+      "markdown": "https://cad-agent.valpatel.com/research/compliant-mechanisms.md"
+    },
+    {
+      "id": "research-design-workflows",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/design-workflows",
+      "markdown": "https://cad-agent.valpatel.com/research/design-workflows.md"
+    },
+    {
+      "id": "research-fea-and-process-tools",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/fea-and-process-tools",
+      "markdown": "https://cad-agent.valpatel.com/research/fea-and-process-tools.md"
+    },
+    {
+      "id": "research-index",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/README",
+      "markdown": "https://cad-agent.valpatel.com/research/README.md"
+    },
+    {
+      "id": "research-landscape",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/landscape",
+      "markdown": "https://cad-agent.valpatel.com/research/landscape.md"
+    },
+    {
+      "id": "research-process-profiles",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/process-profiles",
+      "markdown": "https://cad-agent.valpatel.com/research/process-profiles.md"
+    },
+    {
+      "id": "research-security-report",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/security-report",
+      "markdown": "https://cad-agent.valpatel.com/research/security-report.md"
+    },
+    {
+      "id": "research-sheet-metal",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/sheet-metal",
+      "markdown": "https://cad-agent.valpatel.com/research/sheet-metal.md"
+    },
+    {
+      "id": "research-sheet-metal-guides",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/sheet-metal-guides",
+      "markdown": "https://cad-agent.valpatel.com/research/sheet-metal-guides.md"
+    },
+    {
+      "id": "research-sheet-metal-joining",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/sheet-metal-joining",
+      "markdown": "https://cad-agent.valpatel.com/research/sheet-metal-joining.md"
+    },
+    {
+      "id": "research-simulation-tools",
+      "kind": "research",
+      "url": "https://cad-agent.valpatel.com/research/simulation-tools",
+      "markdown": "https://cad-agent.valpatel.com/research/simulation-tools.md"
+    },
+    {
+      "id": "skill-cad-motion-validation",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/cad-motion-validation/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/cad-motion-validation/SKILL.md"
+    },
+    {
+      "id": "skill-cad-pr-review",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/cad-pr-review/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/cad-pr-review/SKILL.md"
+    },
+    {
+      "id": "skill-cad-remote-runs",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/cad-remote-runs/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/cad-remote-runs/SKILL.md"
+    },
+    {
+      "id": "skill-cad-supply-chain",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/cad-supply-chain/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/cad-supply-chain/SKILL.md"
+    },
+    {
+      "id": "skill-cad-work-tracking",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/cad-work-tracking/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/cad-work-tracking/SKILL.md"
+    },
+    {
+      "id": "skill-design-process",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/design-process/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/design-process/SKILL.md"
+    },
+    {
+      "id": "skill-mcmaster-parts",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/mcmaster-parts/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/mcmaster-parts/SKILL.md"
+    },
+    {
+      "id": "skill-sheet-metal-hardware",
+      "kind": "skill",
+      "url": "https://cad-agent.valpatel.com/skills/sheet-metal-hardware/SKILL",
+      "markdown": "https://cad-agent.valpatel.com/skills/sheet-metal-hardware/SKILL.md"
+    }
+  ]
+}

@@ -47,5 +47,5 @@ resolves it (`result['mesh']['peak']`) and checks it on a finer mesh (`converge(
 Linear-elastic FEA: a converged peak does not prove that the part holds.*
 
 Related: [package map](../README.md) · [thermal](../thermal/README.md) (heat sinks) ·
-[simulation tools research](../../../research/simulation-tools.md) ·
-[lesson: simulation and material](../../../lessons/simulation/simulation-and-material.md)
+[simulation tools research](../../../docs/research/simulation-tools.md) ·
+[lesson: simulation and material](../../../docs/lessons/simulation/simulation-and-material.md)

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit } from '../site/npm-context.mjs';
 import { serveWebkit } from './webkit-server.mjs';
 const html = `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/part-table.css"><style>body{margin:16px;background:#fffaf2;color:#243f3a;font-family:system-ui}main{max-width:900px;margin:auto}table{min-width:640px}h1{font-size:24px}</style><main><h1>Fixture parts</h1><div id="progress"></div><div class="cad-table-scroll"><table id="parts"><caption>Assembly parts</caption><thead><tr><th data-sort="text">Part</th><th data-sort="number">Quantity</th><th data-sort="number">Cost</th></tr></thead><tbody>
 <tr data-part-key="a" data-part-label="Bolt 10"><td>Bolt 10</td><td data-sort-value="2">2 pieces</td><td data-sort-value="10">$10.00</td></tr>

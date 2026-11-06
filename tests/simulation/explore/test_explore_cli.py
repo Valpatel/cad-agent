@@ -13,7 +13,7 @@ from cadagent.cli import main
 from .explore_fixtures import BRACKET, restore_sys_path, write_bracket, write_enclosure  # noqa: F401 (a fixture)
 
 pytestmark = pytest.mark.usefixtures("restore_sys_path")
-EXAMPLE = Path(__file__).resolve().parents[3] / "examples" / "explore-two-wheel"
+EXAMPLE = Path(__file__).resolve().parents[3] / "docs" / "examples" / "explore-two-wheel"
 
 
 @pytest.fixture

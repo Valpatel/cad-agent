@@ -2,12 +2,27 @@
 
 Every release of cad-agent: what projects using it gain and what they must change. Each PR adds its lines as a
 fragment in [`changelog.d/`](changelog.d/README.md). Releasing is part of the development loop
-([CONTRIBUTING.md](CONTRIBUTING.md#releases)): `tools/cut_release.py` folds the fragments into `## Unreleased` and
+([CONTRIBUTING.md](.github/CONTRIBUTING.md#releases)): `tools/cut_release.py` folds the fragments into `## Unreleased` and
 dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check requires. Merging the release PR
 (`dev` → `main`) tags the release, and Cloudflare Pages builds and deploys the site from `main` by itself. Releases up to v0.4.2
 are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
+
+## v0.22.0 (2026-11-06)
+
+**Changed**
+- Group mechanical and practice guides by domain, and move research, lessons and examples under `docs/`. Public documentation URLs and catalogue IDs remain stable; runtime source readers and installed-starter inputs follow their actual files. Retire the numbered lesson stubs after their announced v0.6.0 window while keeping permanent redirects.
+- Validate a real wheel starter installation outside its removed build source in full CI, including a missing-installed-data control.
+- Correct physical-path labels in the repository maps and extend the existing CI lesson with measured provisioning, exact-attempt log attribution and current-source receipt limits.
+- Co-locate website entry scripts, compiler helpers, figure producers, assets and npm/Wrangler configuration under tools/site; retain explicit SDK module scope when the root npm package moves.
+
+**Fixed**
+- Website navigation keeps the wordmark, Catalogue, GitHub and theme control separated at narrow phone and tablet widths. The browser guard now checks visible text around responsive breakpoints, including cases with no page overflow (#104).
+
+**Projects must change**
+- Repository scripts or explicit overrides pointing to the toolkit's former `research/`, `lessons/` or `examples/` files must use their new `docs/` locations. Explicit independent profile copies keep their existing API behavior.
+- Developer npm commands use npm --prefix tools/site; repository-relative site script and asset paths follow their new owners. Public page, asset and installer addresses retain their existing contract.
 
 ## v0.21.0 (2026-11-06)
 

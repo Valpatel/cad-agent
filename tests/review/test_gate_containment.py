@@ -1,6 +1,6 @@
 """Containment gate (T5): contents inside their container's registered cavity, per pose.
 
-The plan's tests (docs/design-process-plan.md §4.3): 40 balls in a cone pass; one moved 5 mm
+The plan's tests (docs/practice/design-process-plan.md §4.3): 40 balls in a cone pass; one moved 5 mm
 through the wall fails with the right volume outside; a ball tangent to the wall passes; a
 declaration with no registered cavity is a lint finding; a mesh-only item takes the sample-only
 path. Plus: a ball 0.5 mm through a curved wall, against a Monte Carlo estimate of its volume

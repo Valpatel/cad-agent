@@ -1,21 +1,21 @@
-// The reference knowledge base on the site (#323 phase 3; tools/site-references.mjs). Checks:
+// The reference knowledge base on the site (#323 phase 3; tools/site/compiler/site-references.mjs). Checks:
 // - the loader against the registry's own rules;
 // - the built pages, JSON, llms.txt and Markdown twins against the committed records;
 // - [ref:<id>] links;
 // - that no record becomes a catalogue entry or reaches llms-full.txt;
-// - docs/experts.md is the generator's output.
+// - docs/practice/experts.md is the generator's output.
 // The pages in a real browser (filters, both themes, walls of text): tests/site/website-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import YAML from 'yaml';
+import { YAML } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import {
   CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
   referenceJson, referenceSite, healthOf,
-} from '../../tools/site-references.mjs';
+} from '../../tools/site/compiler/site-references.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const ORIGIN = 'https://cad-agent.valpatel.com';
@@ -63,7 +63,7 @@ test('a shard record read at source is a source, and aliases of every entry reso
 
 test('the loader refuses an extension of nothing and a second record with one id', async () => {
   await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: b-later, extends: true}\n' }), /extends no read source/);
-  await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: a-guide, title: Again}\n' }), /also in research\/references\.yaml/);
+  await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: a-guide, title: Again}\n' }), /also in docs\/research\/references\.yaml/);
   const r = await fake({ [CORE]: core, [`${DIR}vocab.yaml`]: 'kind: {}\n', [`${DIR}coverage.yaml`]: 'rows: []\n', [`${DIR}sub/x.yaml`]: 'sources: [{id: z}]\n' });
   assert.deepEqual(r.shards, [], 'vocab, coverage and files in subfolders are not shards');
 });
@@ -96,7 +96,7 @@ test('index.json counts every committed record once, and each area file lists ex
   // Counted from the YAML here, not through the module under test.
   // A shard record read at source (#323's sweeps) is a source; one still snippet-only is catalogued.
   const own = [], ownRead = [];
-  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
+  for (const f of tracked.filter(f => /^docs\/research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
     for (const r of YAML.parse(await show(f)).sources) {
       if (r.extends) continue;
       own.push(r.id);
@@ -209,8 +209,8 @@ test('records are not catalogue entries, and llms.txt has one line per area and 
   for (const slug of model.pages) assert.ok(sitemap.includes(`<loc>${ORIGIN}/references/${slug}</loc>`), slug);
 });
 
-test('docs/experts.md is what the generator writes from the committed registry', async () => {
-  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site-references.mjs --experts and commit docs/experts.md');
+test('docs/practice/experts.md is what the generator writes from the committed registry', async () => {
+  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site/compiler/site-references.mjs --experts and commit docs/practice/experts.md');
   const md = expertsMarkdown(model, { ORIGIN });
   const sources = [...refs.records.values()].filter(r => r.status === 'source');
   assert.ok(md.includes(`${sources.length} read sources`));
@@ -275,9 +275,9 @@ test('charts are drawn as links that filter, with what they show spoken', () => 
 });
 
 test('the reference pages\' stylesheet sets colours only through the site\'s tokens', async () => {
-  const css = (await show('web/references.css')).replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = (await show('tools/site/assets/references.css')).replace(/\/\*[\s\S]*?\*\//g, '');
   assert.deepEqual(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi) || [], [], 'use var(--token) from web/site.css, so both themes apply');
-  const tokens = new Set([...(await show('web/site.css')).matchAll(/--([\w-]+):/g)].map(m => m[1]));
+  const tokens = new Set([...(await show('tools/site/assets/site.css')).matchAll(/--([\w-]+):/g)].map(m => m[1]));
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
   assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
 });

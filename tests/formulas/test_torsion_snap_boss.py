@@ -53,7 +53,7 @@ def test_peak_shear_strain_is_the_stress_over_g_and_the_thin_strip_limit():
 
 
 def test_a_flat_bar_still_shears_its_layers_at_three_quarters_of_the_peak():
-    # docs/compliant.md: lying flat, the bar's short sides (the layers' edges) shear at 74 to 100 % of the peak, so the
+    # docs/mechanical/compliant.md: lying flat, the bar's short sides (the layers' edges) shear at 74 to 100 % of the peak, so the
     # check takes the allowable across the layers. The series: 1 for a square, 0.795 at 2:1, 0.7425 for a thin strip.
     # (the short-side series alternates and falls as 1 / n^2, so 2000 terms leave it within 1e-7)
     ratios = {a: _series(a, terms=2000)[1] / _series(a, terms=2000)[0] for a in (1, 2, 10, 50)}
@@ -61,7 +61,7 @@ def test_a_flat_bar_still_shears_its_layers_at_three_quarters_of_the_peak():
     assert ratios[2] == pytest.approx(0.795, abs=5e-4)
     assert ratios[10] == pytest.approx(0.7425, abs=5e-4) and ratios[50] == pytest.approx(ratios[10], abs=1e-6)
     assert all(0.74 < r <= 1 + 1e-9 for r in ratios.values())
-    assert "74 to 100 %" in (ROOT / "docs" / "compliant.md").read_text()
+    assert "74 to 100 %" in (ROOT / "docs" / "mechanical" / "compliant.md").read_text()
 
 
 def test_torsion_snap_bar_from_first_principles():
@@ -113,7 +113,7 @@ def test_the_trapeze_effect_and_when_the_closed_form_stops_holding():
     assert r["edge_axial_strain"] == pytest.approx(rate * rate * (b * b / 4 - b * b / 12) / 2, rel=1e-12)
     # the compliant page's example: 41 % more torque and 0.37 % along the edges, flagged
     assert not r["small_twist"] and round(100 * r["trapeze_ratio"]) == 41 and f"{100 * r['edge_axial_strain']:.2f}" == "0.37"
-    page = (ROOT / "docs" / "compliant.md").read_text()
+    page = (ROOT / "docs" / "mechanical" / "compliant.md").read_text()
     assert "at 30° gains 41 %, with 0.37 % strain along its edges" in page
     # either way round the section, and the page's default bar is far inside the closed form's reach
     assert fx.torsion_snap_bar(L, t, b, theta, E, 0.02, 10 * MM)["trapeze_ratio"] == r["trapeze_ratio"]
@@ -346,7 +346,7 @@ def test_formulas_page_lists_the_new_sources():
 
 def _demo(page, tag):
     """The explorer on a page: its attributes and its still's alt text (tools/*-still.mjs check the JS side)."""
-    found = re.search(rf"^<{tag}\b([^>]*)>([\s\S]*?)</{tag}>", (ROOT / "docs" / page).read_text(), re.M)
+    found = re.search(rf"^<{tag}\b([^>]*)>([\s\S]*?)</{tag}>", (ROOT / "docs" / "mechanical" / page).read_text(), re.M)
     assert found, f"no <{tag}> on docs/{page}"
     return dict(re.findall(r'([a-z-]+)="([^"]*)"', found.group(1))), re.search(r'alt="([^"]*)"', found.group(2)).group(1)
 
@@ -360,7 +360,7 @@ def test_the_torsion_explorer_on_the_snap_page_quotes_the_python():
     assert f"peak shear strain {100 * r['shear_strain']:.2f} %" in alt
     assert f"{100 * r['ratio']:.0f} % of the {100 * r['allowable_shear_strain']:.2f} % allowed across the layers" in alt
     assert ("a pass" if r["passes"] else "a fail") in alt and f"{r['force']:.2f} N at the lever" in alt
-    text = (ROOT / "docs" / "compliant.md").read_text()
+    text = (ROOT / "docs" / "mechanical" / "compliant.md").read_text()
     assert f"uses {100 * r['ratio']:.0f} % of its allowable, and it fails past {math.degrees(r['permissible_twist']):.1f}°" in text
 
 
@@ -373,7 +373,7 @@ def test_the_boss_explorer_on_its_page_quotes_the_python():
     assert r["drive_torque"] is None and "makes no clamp" in alt
     measured = bosses.printed_boss(attrs["material"], attrs["size"], float(attrs["outside"]), float(attrs["engagement"]),
                                    float(attrs["torque"]), attrs["axis"], drive_torque_nm=0.2)
-    text = (ROOT / "docs" / "screw-bosses.md").read_text()
+    text = (ROOT / "docs" / "mechanical" / "screw-bosses.md").read_text()
     assert f"measured: {measured['preload']['low']:.0f} to {measured['preload']['high']:.0f} N" in text
     assert f"at most {r['torque_ceiling']:.2f} N·m" in alt and f"below {r['drive_torque_limit']:.2f} N·m" in alt
     assert f"hoop stress {r['hoop_stress'] / 1e6:.2f} MPa, {100 * r['hoop_ratio']:.0f} %" in alt

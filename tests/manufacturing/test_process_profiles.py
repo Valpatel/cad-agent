@@ -1,7 +1,7 @@
-"""research/process-profiles.yaml: every rule is sourced, has units and a value that evaluates, every source it cites
+"""docs/research/process-profiles.yaml: every rule is sourced, has units and a value that evaluates, every source it cites
 is credited with an https link, and the page and charts stay in step with the data (#99, #118).
 
-The sources themselves are entries of the reference registry, research/references.yaml (#163 moved them there);
+The sources themselves are entries of the reference registry, docs/research/references.yaml (#163 moved them there);
 tests/review/test_references.py checks the registry's fields. Here: the entries this file and its page use."""
 import datetime as dt
 import importlib.util
@@ -14,17 +14,18 @@ import pytest
 import yaml
 
 from cadagent.review.references import load as load_registry
+from tests.repo.test_markdown_images import image_refs, resolve
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "research" / "process-profiles.yaml"
-REGISTRY = ROOT / "research" / "references.yaml"
-PAGE = ROOT / "research" / "process-profiles.md"
+DATA = ROOT / "docs" / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "docs" / "research" / "references.yaml"
+PAGE = ROOT / "docs" / "research" / "manufacturing" / "process-profiles.md"
 # Sample values for every variable, so each expression can be evaluated; two sets catch thickness-stepped rules.
 ENVS = [dict(T=1.5, R=1.5, wall=2.5, D=4.0, L=50.0, depth=12.0, width=6.0, H=8.0, nozzle=0.4, rib=1.5, texture=0.05, area=36.0,
              die=16.0, BA=2.5, E=6.9, hole=5.4, grip=3.2, track=0.42, facets=12),
         dict(T=0.6, R=0.4, wall=1.2, D=3.0, L=150.0, depth=3.0, width=2.0, H=3.0, nozzle=0.25, rib=0.6, texture=0.0, area=4.0,
              die=12.0, BA=1.1, E=4.8, hole=4.2, grip=1.2, track=0.8, facets=3)]
-SHEET_PAGES = [ROOT / "research" / n for n in ("sheet-metal.md", "sheet-metal-joining.md", "sheet-metal-guides.md")]
+SHEET_PAGES = [ROOT / "docs" / "research" / "manufacturing" / n for n in ("sheet-metal.md", "sheet-metal-joining.md", "sheet-metal-guides.md")]
 
 
 def _figures():
@@ -43,7 +44,7 @@ def data():
     reg = load_registry()
     data["registry"] = {ref.id: ref.data for kind in ("source", "catalogued") for ref in reg.of_kind(kind)}
     data["sources"] = [s for s in registry["sources"]
-                       if {"research/process-profiles.yaml", "research/process-profiles.md"} & set(s["used_for"])]
+                       if {"docs/research/process-profiles.yaml", "docs/research/manufacturing/process-profiles.md"} & set(s["used_for"])]
     return data
 
 
@@ -56,7 +57,7 @@ def test_the_file_parses_with_the_expected_sections(data):
     for key in ("units", "variables", "processes", "datasets", "formulas", "rules", "shop_tables"):
         assert data[key], key
     assert "standards" not in data and "sources" not in yaml.safe_load(DATA.read_text(encoding="utf-8")), \
-        "sources and standards live in research/references.yaml"
+        "sources and standards live in docs/research/references.yaml"
     assert len(data["rules"]) >= 100 and len(data["sources"]) >= 20
 
 
@@ -128,9 +129,9 @@ def test_every_source_is_used(data):
     reg = load_registry()
     used |= {reg.resolve(k).id for k in re.findall(r"\[ref:([a-z0-9-]+)\]", DATA.read_text(encoding="utf-8"))}
     # A source the page cites for prose only (its used_for leaves out this file) need not back a rule.
-    unused = [s["id"] for s in data["sources"] if s["id"] not in used and "research/process-profiles.yaml" in s["used_for"]]
+    unused = [s["id"] for s in data["sources"] if s["id"] not in used and "docs/research/process-profiles.yaml" in s["used_for"]]
     missing = sorted(i for i in used if not i.startswith("dataset:")
-                     and "research/process-profiles.yaml" not in data["registry"][i]["used_for"])
+                     and "docs/research/process-profiles.yaml" not in data["registry"][i]["used_for"])
     assert not missing, f"registry entries cited here without this file in their used_for: {missing}"
     assert not unused, f"sources no rule cites: {unused}"
 
@@ -194,10 +195,11 @@ def test_committed_charts_match_the_data():
 
 def test_the_page_shows_the_charts_and_links_every_source(data):
     page = PAGE.read_text(encoding="utf-8")
+    images = {resolve(PAGE.relative_to(ROOT).as_posix(), url) for url in image_refs(page)}
     for name in _figures().FIGURES:
-        assert f"docs/img/research/{name}" in page, f"{name} is not on the page"
+        assert f"docs/img/research/{name}" in images, f"{name} is not on the page"
     missing = [s["id"] for s in data["sources"] if s["url"] not in page]
-    assert not missing, f"sources not linked from research/process-profiles.md: {missing}"
+    assert not missing, f"sources not linked from docs/research/manufacturing/process-profiles.md: {missing}"
     named = [a for s in data["sources"] for a in s["authors"] if a not in page]
     assert not named, f"people the page does not name: {named}"
 
@@ -231,9 +233,10 @@ def test_shop_rules_and_tables_name_a_listed_shop(data):
 
 
 def test_the_sheet_metal_pages_show_their_diagrams():
-    text = "".join(p.read_text(encoding="utf-8") for p in SHEET_PAGES if p.exists())
+    images = {resolve(p.relative_to(ROOT).as_posix(), url) for p in SHEET_PAGES
+              for url in image_refs(p.read_text(encoding="utf-8"))}
     for name in _figures().SHEET_FIGURES:
-        assert f"docs/img/sheet-metal/{name}" in text, f"{name} is on none of the sheet-metal pages"
+        assert f"docs/img/sheet-metal/{name}" in images, f"{name} is on none of the sheet-metal pages"
 
 
 def _code(name):

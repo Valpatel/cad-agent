@@ -17,10 +17,10 @@ from cadagent.publish.anim import svg
 OUT = ROOT / "docs/img/hero/repository-map.svg"
 # Paths are checked before drawing so the map cannot quietly point at removed capabilities.
 STEPS = (
-    ("Sources", "research/", "read + cite", "research/references/README.md"),
+    ("Sources", "docs/research/", "read + cite", "docs/research/references/README.md"),
     ("Evaluate", "tests/", "examples + controls", "tests/review/test_gate_bench.py"),
     ("Methods", "src/ + skills/", "encode + explain", "skills/design-process/SKILL.md"),
-    ("Regress", "tests/ + lessons/", "keep the failed case", "lessons/process/README.md"),
+    ("Regress", "tests/ + docs/lessons/", "keep the failed case", "docs/lessons/process/README.md"),
 )
 
 

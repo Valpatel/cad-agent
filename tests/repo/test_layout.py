@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 AREAS = {
     "cli": "cli.py and the modules beside it at the top of the package (project, links, package, agentkit, _deps, "
            "the version)",
-    "site": "cad-agent's own website and its build (tools/build-site.mjs and the site-*.mjs tools, the catalogue)",
+    "site": "cad-agent's own website and its build (tools/site/build-site.mjs and the site-*.mjs tools, the catalogue)",
     "repo": "the repository's own rules and tooling: the topic tree, this layout, private names, skills, the merge "
             "gates, releases, the supply-chain audit, vendored files",
     "fixtures": "shared test data, used by tests in any folder",
@@ -41,9 +41,9 @@ AREAS = {
 TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all that may sit directly in tests/
 # .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that
 # adds them.
-TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "research",
-            "skills", "src", "tests", "tools", "vendor", "web"}
-ROOT_ENTRY_LIMIT = 24  # #145/#358: registry metadata and notices join their vendor owner.
+TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs",
+            "skills", "src", "tests", "tools", "vendor"}
+ROOT_ENTRY_LIMIT = 17  # #145/#362: site manifests, configuration and assets join their tools owner.
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else
 PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the top of src/cadagent/: may only shrink
 
@@ -55,8 +55,7 @@ NOT_COUNTED = re.compile(r"^vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
 OVER_LIMIT = {
-    "docs": "#145 moves pages into docs/<domain>/ as each area reaches three pages",
-    "tools": "figure generators and site build tools side by side; split into tools/<domain>/ and tools/site/",
+    "tools": "remaining Python figure generators; site tooling now has its own hierarchy",
     "src/cadagent/webkit": "browser modules served as one folder (pyproject package-data webkit/*); a split moves "
                            "their URLs",
 }
@@ -203,7 +202,7 @@ def folder_problems(files: list[str]):
                        f"not exist; name it after one (as tests/review/gates/ would mirror src/cadagent/review/gates/)")
         for need in ("README.md", "__init__.py"):
             if f"{d}/{need}" not in files:
-                why = ("a README with a Mermaid map (docs/style-guide.md)" if need == "README.md"
+                why = ("a README with a Mermaid map (docs/practice/style-guide.md)" if need == "README.md"
                        else "an empty __init__.py, so two folders may hold test files of the same name")
                 out.append(f"{d}/: add {d}/{need}: {why}")
     return out
@@ -402,9 +401,9 @@ def test_a_new_file_at_the_top_of_src_is_refused(files):
 
 
 def test_a_folder_over_the_limit_is_told_to_split_and_the_list_only_shrinks(files):
-    crowd = [f"lessons/printing/note-{i}.md" for i in range(CLUTTER_LIMIT + 1)]
+    crowd = [f"docs/lessons/printing/note-{i}.md" for i in range(CLUTTER_LIMIT + 1)]
     got = clutter_problems(_plant(crowd, files))
-    assert len(got) == 1 and got[0].startswith(f"lessons/printing/ holds {CLUTTER_LIMIT + 1} files"), got
+    assert len(got) == 1 and got[0].startswith(f"docs/lessons/printing/ holds {CLUTTER_LIMIT + 1} files"), got
     assert "only shrinks" in got[0]
     assert clutter_problems(_plant(crowd[:CLUTTER_LIMIT], files)) == []
     thinned = [f for f in files if not f.startswith("tools/") or f.count("/") > 1]

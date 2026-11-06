@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _rule(rule_id):
-    data = yaml.safe_load((ROOT / "research" / "process-profiles.yaml").read_text())
+    data = yaml.safe_load((ROOT / "docs" / "research" / "process-profiles.yaml").read_text())
     return next(r for r in data["rules"] if r["id"] == rule_id)
 
 

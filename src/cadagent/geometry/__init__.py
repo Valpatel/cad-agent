@@ -69,7 +69,7 @@ def _shape(shape: Any, what: str) -> Any:
 
 def _measured(shape: Any) -> Tuple[float, float]:
     """``(volume mm^3, estimated error mm^3)`` of a solid, by the relation gate's adaptive integration
-    (``cadagent.review.gates.relations``, docs/volume-precision.md), which also runs that gate's strict validation:
+    (``cadagent.review.gates.relations``, docs/practice/volume-precision.md), which also runs that gate's strict validation:
     an open, inverted or free-faced shape raises ``ValueError``. ``Shape.Volume()``'s default overload can mismeasure
     curved, trimmed faces (by 14 mm^3 on one screw), enough to fail a good boolean's volume bound or pass a bad one."""
     from cadagent.review.gates.relations import _measure_volume   # lazy: the gate imports nothing from here

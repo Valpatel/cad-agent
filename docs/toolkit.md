@@ -2,9 +2,9 @@
 
 cad-agent is a toolkit for agents doing hardware design, in the six domains of the [topic tree](vision.md):
 mechanical design, manufacturing, thermal, simulation and validation, electrical design, and practice (how agents
-work, design process, review and evidence, publishing, evaluation). It is made of [subagents and skills](agent-workflow.md), the references behind every rule
-(cited on each page), code, calculators such as the [snap-fit calculator](compliant.md),
-[lessons learned](../lessons/README.md) and a [catalogue of outside tools](https://cad-agent.valpatel.com/catalog).
+work, design process, review and evidence, publishing, evaluation). It is made of [subagents and skills](practice/agent-workflow.md), the references behind every rule
+(cited on each page), code, calculators such as the [snap-fit calculator](mechanical/compliant.md),
+[lessons learned](lessons/README.md) and a [catalogue of outside tools](https://cad-agent.valpatel.com/catalog).
 This page is the reference for its code: the `cad-agent` command and the Python package `cadagent`.
 
 [`docs/areas.yaml`](areas.yaml) lists each area's commands and APIs, at the maturity that area has reached; several
@@ -22,7 +22,7 @@ shared geometry screens, the renderer, link validation, the report, packaging an
 
 ```bash
 pip install -e ".[cad]"          # in the cad-agent checkout; or install it into the project's own venv
-cad-agent init my-box            # a project to start from: the starter box (examples/starter-box)
+cad-agent init my-box            # a project to start from: the starter box (docs/examples/starter-box)
 cd my-box
 cad-agent all                    # build -> export-3mf -> check + report -> package
 cad-agent check                  # re-collect results; exit 1 if anything fails
@@ -56,7 +56,7 @@ flowchart TD
 
 ## The project contract
 
-`cad-agent init DIR` copies the smallest project that keeps it: [`examples/starter-box`](../examples/starter-box/README.md),
+`cad-agent init DIR` copies the smallest project that keeps it: [`docs/examples/starter-box`](examples/starter-box/README.md),
 a box and lid on four M3 heat-set inserts with the insert and overhang checks wired in.
 
 ```
@@ -178,7 +178,7 @@ boom = robust_cut(robust_union(*plates), *pin_holes, report=notes)
   within the bounds the inputs set (a union between its largest input and their sum; a cut between the base less
   the tools and the base). Validity and volume are the relation gate's: `isValid()` and its stricter checks (open,
   inverted or free-faced shapes fail), and its adaptive integration, since the default volume can be off by several
-  mm³ on curved, trimmed faces ([volume precision](volume-precision.md)). An invalid input is refused, not fused.
+  mm³ on curved, trimmed faces ([volume precision](practice/volume-precision.md)). An invalid input is refused, not fused.
 - **The report:** pass `report=[]` to get one dict per fallback and per nudge; each is also logged as a warning on
   `cadagent.geometry`. The nudges are `CUT_NUDGES_MM`, or pass `nudges=`. A nudge moves that cut by its length (0.01 mm on an
   axis, 0.017 mm on the default diagonal), so check it does not touch a fit that matters.
@@ -540,7 +540,7 @@ after that every step runs, and the exit code says whether anything failed.*
 
 | Command | Does | Exit code |
 |---------|------|-----------|
-| `cad-agent init [DIR] [--force]` | copies the starter project ([`examples/starter-box`](../examples/starter-box/README.md): a box and lid on four M3 heat-set inserts, `cad-agent.yaml`, `cad/build.py`, `tools/checks.py`) into `DIR` (default: here) and prints the next commands; from a wheel, the copy installed under `<prefix>/share/cad-agent/` | 2 if `DIR` is not empty (`--force` writes the starter's files over it) |
+| `cad-agent init [DIR] [--force]` | copies the starter project ([`docs/examples/starter-box`](examples/starter-box/README.md): a box and lid on four M3 heat-set inserts, `cad-agent.yaml`, `cad/build.py`, `tools/checks.py`) into `DIR` (default: here) and prints the next commands; from a wheel, the copy installed under `<prefix>/share/cad-agent/` | 2 if `DIR` is not empty (`--force` writes the starter's files over it) |
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
 | `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
@@ -550,14 +550,14 @@ after that every step runs, and the exit code says whether anything failed.*
 | `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
 | `cad-agent release [--out DIR] [--no-zip] [--revision TEXT] [--date D]` | the print release: `release/<name>-rev<revision>/index.html` (parts with thumbnails, print settings, slicer mass and time, STEP/STL/3MF links; assembly pages; hardware; source) and a reproducible zip next to it ([below](#the-print-release-cad-agent-release)) | 2 on a bad config (a path outside the project), a missing part file or a foreign `--out` folder |
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
-| `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](dossier.md#on-the-review-site)) | |
+| `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](practice/dossier.md#on-the-review-site)) | |
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts from STEP or STL, list categories) | |
 | `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
-| `cad-agent dossier [--json] [--no-write] [--min-status S]` | lints the design dossier (`cad: dossier:`) against the build's geometry record, the gate verdicts, the configured checks and the reviewer records; writes each section's and part's status to `exports/dossier-status.json` and the lint verdict to `exports/gates/dossier-lint.json` ([dossier.md](dossier.md#lint-and-status)) | 1 on a lint error or a section below `--min-status` (default `gated`) |
-| `cad-agent review-packet [SECTION ...] [--list] [--view V ...] [--size WxH] [--explode F] [--context C]` | renders each dossier section's review packet into `exports/review/<section>/` with `manifest.json` (`cad-agent.review-packet/1`): the gate measurements and findings first, captioned views with content hashes, the render checklist ([review-packet.md](review-packet.md)); `--list` plans without rendering | 2 on an unknown section or with no geometry record |
-| `cad-agent review-section SECTION [--bundle-dir DIR] [--since REV]` | writes the reviewer's prompt bundle into `exports/review-bundle/<section>/` (`cad-agent.review-bundle/1`): the section YAML, the gate verdicts for its parts, the packet manifest and images, the checklist, the diff since the last sign-off and a record template ([dossier.md](dossier.md#the-reviewer-pass)) | 1 while a sign-off would be refused (stale packet, section below `gated`, open decision, unknown builder); 2 on an unknown section or with no build |
+| `cad-agent dossier [--json] [--no-write] [--min-status S]` | lints the design dossier (`cad: dossier:`) against the build's geometry record, the gate verdicts, the configured checks and the reviewer records; writes each section's and part's status to `exports/dossier-status.json` and the lint verdict to `exports/gates/dossier-lint.json` ([dossier.md](practice/dossier.md#lint-and-status)) | 1 on a lint error or a section below `--min-status` (default `gated`) |
+| `cad-agent review-packet [SECTION ...] [--list] [--view V ...] [--size WxH] [--explode F] [--context C]` | renders each dossier section's review packet into `exports/review/<section>/` with `manifest.json` (`cad-agent.review-packet/1`): the gate measurements and findings first, captioned views with content hashes, the render checklist ([review-packet.md](practice/review-packet.md)); `--list` plans without rendering | 2 on an unknown section or with no geometry record |
+| `cad-agent review-section SECTION [--bundle-dir DIR] [--since REV]` | writes the reviewer's prompt bundle into `exports/review-bundle/<section>/` (`cad-agent.review-bundle/1`): the section YAML, the gate verdicts for its parts, the packet manifest and images, the checklist, the diff since the last sign-off and a record template ([dossier.md](practice/dossier.md#the-reviewer-pass)) | 1 while a sign-off would be refused (stale packet, section below `gated`, open decision, unknown builder); 2 on an unknown section or with no build |
 | `cad-agent review-section SECTION --submit RECORD` / `--check RECORD` | checks a filled-in reviewer record against the current build (hashes current, the reviewer, `CAD_AGENT_ACTOR`, is not the section's builder or author, every question, decision and requirement answered; for a sign-off: packet current, no open decision) and writes `dossier/reviews/<section>-<date>.json` (`--check` writes nothing) | 1 when the record is refused |
-| `cad-agent gates [--only G ...] [--skip G ...] [--jobs N] [--no-cache] [--build] [--dry-run]` | runs every integrity gate that applies to the dossier geometry, each in its own process, then the dossier lint; writes `exports/gates/<gate>.json` and `.md`, bound to their inputs (config `cad: gates:`, [gates.md](gates.md#running-the-gates-cad-agent-gates)) | 1 if a gate (or its build) fails; 2 without a `dossier:`/`gates:` key, on a bad config, or with no geometry record and no build |
+| `cad-agent gates [--only G ...] [--skip G ...] [--jobs N] [--no-cache] [--build] [--dry-run]` | runs every integrity gate that applies to the dossier geometry, each in its own process, then the dossier lint; writes `exports/gates/<gate>.json` and `.md`, bound to their inputs (config `cad: gates:`, [gates.md](practice/gates.md#running-the-gates-cad-agent-gates)) | 1 if a gate (or its build) fails; 2 without a `dossier:`/`gates:` key, on a bad config, or with no geometry record and no build |
 | `cad-agent all` | build, export-3mf, holes, gates and the dossier lint (when `cad: dossier:` or `cad: gates:` is set), check + report, package | 1 if anything failed |
 | `cad-agent catalogue [--json] [--errors-only]` | checks the part catalogue and every design against it (config `cad: explore:`, [explore.md](explore.md)) | 1 on an error |
 | `cad-agent compare [DESIGN ...] [--swaps] [--workers N] [--json] [--open]` | evaluates the designs with the project's evaluator, ranks them (Pareto fronts over the objectives) and writes `comparison.json`, `compare.html` and site design cards; `--swaps` tries every one-part swap | 1 if a design could not be evaluated |
@@ -668,14 +668,14 @@ from cadagent.review.gates.wall import check_wall, wall_gate, mesh_thickness, br
 
 Assembly-level checks: the pairwise relation table (apart, touching, overlapping, contains, with witnesses and a
 content-hash pair cache), the verdict file every gate writes, and the minimum-wall gate. Reference and limits:
-[gates.md](gates.md).
+[gates.md](practice/gates.md).
 
 ### Range-of-motion clearance (`cadagent.mechanical.clearance`)
 
 `cad-agent motion-trace` checks that rendered pivots sit where the CAD says; this checks that the moving parts do not
 *hit* each other anywhere over their range. Give it the solids placed at each pose, and it relates every pair whose
-bounding boxes meet with the relation gate's exact narrow phase (`relations.relate`, [gates](gates.md)). An
-assembly that declares its joints gets the [motion gate](gates.md) instead, which samples them itself;
+bounding boxes meet with the relation gate's exact narrow phase (`relations.relate`, [gates](practice/gates.md)). An
+assembly that declares its joints gets the [motion gate](practice/gates.md) instead, which samples them itself;
 this is for kinematics that live in the build script as a function from pose to placed solids.
 
 ```mermaid
@@ -760,7 +760,7 @@ function or any command speaking JSON) give every design its metrics and checks.
 designs into Pareto fronts over the configured objectives, tries one-part swaps, and writes a standalone page and
 design cards for the site; `cad-agent optimise` searches parts and parameters (optuna's NSGA-II with the `explore`
 extra). The physics stays in the project. The full guide is [explore.md](explore.md); a worked example is
-[`examples/explore-two-wheel`](../examples/explore-two-wheel/).
+[`docs/examples/explore-two-wheel`](examples/explore-two-wheel/).
 
 ### Mating connectors (`cadagent.mechanical.connectors`): standard practice for every port
 
@@ -948,7 +948,7 @@ modulus does not bound a print's shear stiffness between layers either, which ma
 two humid PA6-CF rows take the modulus ratio of a water-saturated print (0.28–0.29 of dry). That is a judgement for
 the cautious end: no sheet gives a print conditioned in room air, where moulded PA6 keeps 0.31–0.58 of its dry
 modulus (unfilled to 30 % glass), so in room air these rows may be up to about 2x too soft, and a force at a given
-travel reads low ([research](../research/compliant-mechanisms.md), section 5). Under
+travel reads low ([research](research/compliant-mechanisms.md), section 5). Under
 forces and torques the stress does not depend on E, so only deflection and stiffness change with it. The metals
 (`al6061`, `al7075`, `steel`) use design minimums from MIL-HDBK-5J, not typical values (#157); `cf_tube` is typical.
 
@@ -1282,7 +1282,7 @@ Turns CAD parts into a simulator model with real mass properties:
   site and a floor. A tree cannot hold a closed loop, such as a four-bar or a five-bar leg. Cut it at one pin and
   pass that pin to `write_mjcf` as a `LoopClosure`: MuJoCo holds it with an equality constraint. Build the model in a
   pose where the loop closes (give `other_anchor` and it is checked). URDF has no way to close the loop, so keep it
-  in the controller. `cadagent.mechanical.linkages` solves the loop's poses ([Linkages](linkages.md)).
+  in the controller. `cadagent.mechanical.linkages` solves the loop's poses ([Linkages](mechanical/linkages.md)).
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
 
@@ -1291,7 +1291,7 @@ Turns CAD parts into a simulator model with real mass properties:
 Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for
 stiffness and strength, pyMOTO for topology optimisation, Bambu Studio or PrusaSlicer for real filament grams, PyVista/VTK for
 pictures and animations. The survey that chose them, with licences and sources, is
-[`research/simulation-tools.md`](../research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
+[`docs/research/simulation-tools.md`](research/simulation-tools.md). Install: `pip install -e ".[cad,fea,sim]"`, plus
 Docker (OpenFOAM runs in the official `opencfd/openfoam-default` image) and Bambu Studio or PrusaSlicer for slicing.
 
 **Standard practice.** For every design that holds a heat source, carries a load or will be printed in quantity:
@@ -1753,4 +1753,4 @@ Limits:
 - A block from one side that covers half the hole or more over its full depth leaves too little wall to count as a
   hole; it reads as a slot end. Look at blocked holes in a section view.
 - Concentric openings under 30 mm that are not holes fail: a small fan guard's rings, or a recess around a post. List
-  them as exceptions. [common-issues.md](common-issues.md) lists this check with the other recurring review findings.
+  them as exceptions. [common-issues.md](practice/common-issues.md) lists this check with the other recurring review findings.

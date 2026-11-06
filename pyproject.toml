@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cad-agent"
-version = "0.21.0"
+version = "0.22.0"
 description = "Agent toolkit for mechanical and electrical design: CAD checks, simulation, manufacturing files and review reports"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-# Floors (#151): no lower release with a known advisory (research/security-report.md), and each one tested: CI runs the
+# Floors (#151): no lower release with a known advisory (docs/research/security-report.md), and each one tested: CI runs the
 # core suite at numpy 1.22.0, pyyaml 6.0 and pytest 9.0.3, and the site tests at markdown 3.8.1. vtk 9.5.2 is the lowest
 # VTK that cadquery-ocp 7.9.3 (cadquery 2.8) pins; cadquery 2.6 and 2.7 pin vtk 9.3.1, which has three advisories.
 # Python: the package and its core suite run on 3.10, but the cad and sim extras need 3.11 or newer. Every pillow that
@@ -43,14 +43,14 @@ where = ["src"]
 [tool.setuptools.package-data]
 cadagent = ["webkit/*", "webkit/vendor/**/*"]
 
-# `cad-agent init`'s starter, for a wheel install: examples/starter-box installed under <prefix>/share/cad-agent/. A
-# checkout's own examples/starter-box comes first (cadagent.project.starter_dir); tests/cli/test_init.py keeps this list
+# `cad-agent init`'s starter, for a wheel install: docs/examples/starter-box installed under <prefix>/share/cad-agent/. A
+# checkout's own docs/examples/starter-box comes first (cadagent.project.starter_dir); tests/cli/test_init.py keeps this list
 # the starter's files.
 [tool.setuptools.data-files]
-"share/cad-agent/starter-box" = ["examples/starter-box/.gitignore", "examples/starter-box/README.md",
-                                 "examples/starter-box/cad-agent.yaml"]
-"share/cad-agent/starter-box/cad" = ["examples/starter-box/cad/build.py"]
-"share/cad-agent/starter-box/tools" = ["examples/starter-box/tools/checks.py"]
+"share/cad-agent/starter-box" = ["docs/examples/starter-box/.gitignore", "docs/examples/starter-box/README.md",
+                                 "docs/examples/starter-box/cad-agent.yaml"]
+"share/cad-agent/starter-box/cad" = ["docs/examples/starter-box/cad/build.py"]
+"share/cad-agent/starter-box/tools" = ["docs/examples/starter-box/tools/checks.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

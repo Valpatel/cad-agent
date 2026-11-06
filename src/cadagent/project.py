@@ -14,8 +14,8 @@ names any other YAML file there that has a ``cad:`` section. Example (see
         - {name: clearances, run: tools/check_clearances.py, needs: [build]}
       checks:
         - {id: clearances, title: Clearances, file: exports/clearances.json}
-      dossier: dossier/project.yaml       # optional: the design dossier (docs/dossier.md)
-      gates: {jobs: 2}                    # optional: how `cad-agent gates` runs (docs/gates.md "Running the gates")
+      dossier: dossier/project.yaml       # optional: the design dossier (docs/practice/dossier.md)
+      gates: {jobs: 2}                    # optional: how `cad-agent gates` runs (docs/practice/gates.md "Running the gates")
 
 Only ``cad:`` is read: other top-level sections are ignored, so the file can carry
 other tools' settings too. Unknown keys inside ``cad:`` are kept in ``CadProject.unknown_keys``
@@ -512,10 +512,10 @@ STARTER_OUTPUTS = ("build", "exports", "preview", "site", "docs", "__pycache__",
 
 
 def starter_dir() -> Path:
-    """The starter project ``cad-agent init`` copies: ``examples/starter-box`` in the checkout this package runs from
+    """The starter project ``cad-agent init`` copies: ``docs/examples/starter-box`` in the checkout this package runs from
     (the installer's editable install), else the copy a wheel installs as data (pyproject.toml's ``data-files``)."""
     here = Path(__file__).resolve().parent
-    found = [here.parents[1] / "examples" / STARTER]
+    found = [here.parents[1] / "docs" / "examples" / STARTER]
     try:
         from importlib import metadata
         dist = metadata.distribution("cad-agent")
@@ -527,7 +527,7 @@ def starter_dir() -> Path:
         if (folder / CONFIG_NAME).is_file():
             return folder
     raise FileNotFoundError(f"the starter project ({STARTER}) is not installed with this cad-agent: reinstall it "
-                            "with the one-line installer (docs/agent-workflow.md#install)")
+                            "with the one-line installer (docs/practice/agent-workflow.md#install)")
 
 
 def init_project(dest: Union[str, Path], force: bool = False) -> List[Path]:

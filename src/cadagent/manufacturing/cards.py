@@ -13,7 +13,7 @@ The goal is an experienced engineer beside a junior one: the rule, its numbers, 
 **costs**, how far the evidence goes, what code enforces it, and the source.
 
 **One source of truth.** Nothing here is hand-written copy. A rule card is generated from
-``research/process-profiles.yaml`` (the rule, its numbers, ``applies`` and the ``when``/``not_when``/``strictness``/
+``docs/research/process-profiles.yaml`` (the rule, its numbers, ``applies`` and the ``when``/``not_when``/``strictness``/
 ``wiggle``/``cost`` fields, :class:`cadagent.manufacturing.process.Rule`), the reference registry
 (:mod:`cadagent.review.references`: the source's evidence class gives the confidence, and every ``[ref:<id>]`` must be
 a read record) and the encoded functions (the rule's ``applied_by``). A card is a profile feature (``hole``, ``insert``,

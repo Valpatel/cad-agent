@@ -71,12 +71,11 @@ DATA = {
 def checkout(tmp_path, monkeypatch):
     # the real map's rewrites are keyed by its rows; the fixture's rows are other text, so they start with none
     monkeypatch.setattr(imp, "NEUTRAL", {})
-    (tmp_path / "research" / "references").mkdir(parents=True)
-    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "research" / "references").mkdir(parents=True)
     shutil.copy(ROOT / "docs" / "areas.yaml", tmp_path / "docs" / "areas.yaml")
-    shutil.copy(ROOT / "research" / "references" / "vocab.yaml", tmp_path / "research" / "references" / "vocab.yaml")
+    shutil.copy(ROOT / "docs" / "research" / "references" / "vocab.yaml", tmp_path / "docs" / "research" / "references" / "vocab.yaml")
     (tmp_path / "docs" / "page.md").write_text("A boss rule.\n")
-    (tmp_path / "research" / "references.yaml").write_text(yaml.safe_dump(CORE, sort_keys=False))
+    (tmp_path / "docs" / "research" / "references.yaml").write_text(yaml.safe_dump(CORE, sort_keys=False))
     data = tmp_path / "data.json"
     data.write_text(json.dumps(DATA))
     return tmp_path, data
@@ -88,7 +87,7 @@ def _run(root, data, *extra):
 
 def _records(root):
     out = {}
-    for f in sorted((root / "research" / "references").glob("*.yaml")):
+    for f in sorted((root / "docs" / "research" / "references").glob("*.yaml")):
         if f.name not in refs.NOT_SHARDS:
             for rec in yaml.safe_load(f.read_text())["sources"]:
                 out[rec["id"]] = (f.name, rec)
@@ -100,11 +99,11 @@ def test_the_import_writes_shards_that_check_accepts(checkout, capsys):
     assert _run(root, data) == 0
     out = capsys.readouterr().out
     assert "3 projects and 1 guides as catalogued records, 1 extensions of read sources, in 3 shards" in out
-    assert "left as unverified in research/references.yaml: gated-guide" in out
-    names = sorted(p.name for p in (root / "research" / "references").glob("*.yaml"))
+    assert "left as unverified in docs/research/references.yaml: gated-guide" in out
+    names = sorted(p.name for p in (root / "docs" / "research" / "references").glob("*.yaml"))
     assert names == ["coverage.yaml", "guides-mould.yaml", "projects-drive.yaml", "projects-wheel.yaml",
                      "vocab.yaml"]
-    reg = refs.load(root / "research" / "references.yaml")
+    reg = refs.load(root / "docs" / "research" / "references.yaml")
     assert not reg.problems(root), reg.problems(root)
     assert len(reg.of_kind("catalogued")) == 4 and reg.resolve("maker-boss-guide").kind == "source"
 
@@ -153,7 +152,7 @@ def test_a_project_keeps_the_objective_assessment_and_no_verdict_for_one_project
         "assessed": {"date": "2026-11-02", "from": "readme"}}
     assert wheel["areas"] == ["wheels-and-driving"] and wheel["domains"] == ["wheel"]
     assert wheel["process_groups"] == ["print", "pcb"]
-    text = "".join(p.read_text() for p in (root / "research" / "references").glob("*.yaml") if p.name != "vocab.yaml")
+    text = "".join(p.read_text() for p in (root / "docs" / "research" / "references").glob("*.yaml") if p.name != "vocab.yaml")
     assert "One specific thing" not in text and "\n  fit:" not in text and "    fit:" not in text   # learn, "fit for us"
     assert "learn" not in text and "\n  projects:" not in text and "    projects:" not in text
     gearbox = _records(root)["other-tiny-gearbox"][1]
@@ -165,7 +164,7 @@ def test_a_guide_already_read_extends_its_core_entry(checkout):
     _run(root, data)
     name, ext = _records(root)["maker-boss-guide"]
     assert name == "guides-mould.yaml" and ext["extends"] is True and "class" not in ext["evidence"]
-    ref = refs.load(root / "research" / "references.yaml").resolve("maker-boss-guide")
+    ref = refs.load(root / "docs" / "research" / "references.yaml").resolve("maker-boss-guide")
     assert ref.evidence_class == "read" and ref["used_for"] == ["docs/page.md"]      # the core's reading stands
     assert ref["areas"] == ["moulding", "moulded-part-design"] and ref["claims"][0]["status"] == "unconfirmed"
     assert ref["title"] == "Boss Guide" and ref["verified"].startswith("2026-11-01")
@@ -189,7 +188,7 @@ def test_evidence_the_map_cut_off_is_marked_before_its_note(monkeypatch, evidenc
 def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
     root, data = checkout
     _run(root, data)
-    cov = yaml.safe_load((root / "research" / "references" / "coverage.yaml").read_text())
+    cov = yaml.safe_load((root / "docs" / "research" / "references" / "coverage.yaml").read_text())
     assert cov["rows"] == [{"id": "ca-1-heat-set-insert-hole", "number": "1", "topic": "Heat-set insert hole",
                             "status": "implemented", "areas": ["threaded-inserts"],
                             "where": "src/cadagent/mechanical/inserts.py", "defaults": "maker hole + 0.2",
@@ -198,29 +197,29 @@ def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
                                             "posted": False}}]
     assert cov["wanted"] == [{"group": "mould", "title": "Moulding and casting",
                               "areas": ["mould-design", "mould-making"], "text": "No gate sizing guide."}]
-    reg = refs.load(root / "research" / "references.yaml")
+    reg = refs.load(root / "docs" / "research" / "references.yaml")
     assert reg.coverage == cov
     cov["rows"][0]["draft_issue"]["posted"] = True           # a boolean is an int in Python: still not an issue number
     cov["rows"][0]["status"] = "done"
-    (root / "research" / "references" / "coverage.yaml").write_text(yaml.safe_dump(cov))
-    problems = "\n".join(refs.load(root / "research" / "references.yaml").problems(root))
+    (root / "docs" / "research" / "references" / "coverage.yaml").write_text(yaml.safe_dump(cov))
+    problems = "\n".join(refs.load(root / "docs" / "research" / "references.yaml").problems(root))
     assert "draft_issue needs a title and `posted: false`" in problems and "status 'done'" in problems
 
 
 def test_the_import_is_deterministic_and_idempotent(checkout, capsys):
     root, data = checkout
     _run(root, data)
-    first = {p.name: p.read_bytes() for p in (root / "research" / "references").glob("*.yaml")}
+    first = {p.name: p.read_bytes() for p in (root / "docs" / "research" / "references").glob("*.yaml")}
     assert _run(root, data) == 0 and "wrote 0 files" in capsys.readouterr().out
     assert _run(root, data, "--check") == 0
-    assert first == {p.name: p.read_bytes() for p in (root / "research" / "references").glob("*.yaml")}
-    shard = root / "research" / "references" / "projects-wheel.yaml"
+    assert first == {p.name: p.read_bytes() for p in (root / "docs" / "research" / "references").glob("*.yaml")}
+    shard = root / "docs" / "research" / "references" / "projects-wheel.yaml"
     changed = copy.deepcopy(DATA)
     changed["S"]["0"]["role"] = "leader"                                    # the map changes an untouched record
     data.write_text(json.dumps(changed))
     capsys.readouterr()
     assert _run(root, data, "--check") == 1
-    assert "would change: research/references/projects-wheel.yaml" in capsys.readouterr().out
+    assert "would change: docs/research/references/projects-wheel.yaml" in capsys.readouterr().out
     assert shard.read_bytes() == first["projects-wheel.yaml"]                 # --check writes nothing
 
 
@@ -254,8 +253,8 @@ def test_every_neutral_rewrite_names_no_project_and_keeps_none_of_the_maps_wordi
 def test_a_hand_written_shard_is_never_the_imports(checkout, capsys):
     root, data = checkout
     _run(root, data)
-    mine = root / "research" / "references" / "guides-mould.yaml"
-    hand = root / "research" / "references" / "hand-picked.yaml"
+    mine = root / "docs" / "research" / "references" / "guides-mould.yaml"
+    hand = root / "docs" / "research" / "references" / "hand-picked.yaml"
     hand.write_text(yaml.safe_dump({"schema": 2, "sources": []}))
     mine.write_text(mine.read_text())
     capsys.readouterr()
@@ -280,7 +279,7 @@ def test_ids_are_unique_and_kebab_case():
 
 def _edit(root, shard, rid, fn):
     """Edit one record the way a tool does (load, change, dump in the importer's layout)."""
-    f = root / "research" / "references" / shard
+    f = root / "docs" / "research" / "references" / shard
     text = f.read_text()
     head = text.split("\nsources:\n", 1)[0] + "\nsources:\n"
     out = []
@@ -319,7 +318,7 @@ def test_a_reimport_keeps_every_edit_and_still_applies_the_map(checkout, capsys,
     touched still lands."""
     root, data = checkout
     _run(root, data)
-    mould = root / "research" / "references" / "guides-mould.yaml"
+    mould = root / "docs" / "research" / "references" / "guides-mould.yaml"
     _edit(root, "guides-mould.yaml", "shop-snap-guide", EDITS[what])
     hand = ("# a person's note under the last record\n- id: hand-added-record   # written by a person\n"
             "  title: A Guide Read By Hand\n  summary: kept exactly, comment and all.\n")
@@ -347,12 +346,12 @@ def test_a_reimport_keeps_every_edit_and_still_applies_the_map(checkout, capsys,
 def test_every_written_record_carries_the_digest_of_its_text(checkout):
     root, data = checkout
     _run(root, data)
-    for f in (root / "research" / "references").glob("*.yaml"):
+    for f in (root / "docs" / "research" / "references").glob("*.yaml"):
         if f.name not in refs.NOT_SHARDS:
             for rid, text in imp.records_as_written(f.read_text()):
                 assert not imp.touched(text, None), rid
                 assert imp.touched(text.replace("\n", "\n  # a comment\n", 1), None), rid
-    reg = refs.load(root / "research" / "references.yaml")
+    reg = refs.load(root / "docs" / "research" / "references.yaml")
     assert not reg.problems(root), reg.problems(root)
 
 

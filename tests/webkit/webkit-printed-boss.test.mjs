@@ -1,7 +1,7 @@
 // <cad-printed-boss> (src/cadagent/webkit/printed-boss.js) without a browser: the demo passes the filament's strengths
 // and the friction band to the port as cadagent.mechanical.bosses does, its verdict names every failing check, the
 // figure stays inside its box, and the still on docs/screw-bosses is what the component draws for the page's
-// attributes (tools/printed-boss-still.mjs --check).
+// attributes (tools/site/figures/printed-boss-still.mjs --check).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -76,6 +76,6 @@ test('attributes are read safely: unknown values fall back, numbers clamp, the b
 });
 
 test('the screw-boss still on docs/screw-bosses is what the component draws for the page\'s attributes', () => {
-  const out = execFileSync(process.execPath, ['tools/printed-boss-still.mjs', '--check'], { cwd: root }).toString();
+  const out = execFileSync(process.execPath, ['tools/site/figures/printed-boss-still.mjs', '--check'], { cwd: root }).toString();
   assert.match(out, /current/);
 });

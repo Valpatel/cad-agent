@@ -1,6 +1,6 @@
 // Build cad-agent.valpatel.com into a temporary folder from HEAD and check what would be published.
 import test from 'node:test';
-import YAML from 'yaml';
+import { YAML } from './npm-context.mjs';
 import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -8,13 +8,14 @@ import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { parseHeaders } from '../../tools/preview-site.mjs';
+import { parseHeaders } from '../../tools/site/preview-site.mjs';
+import { createPublication } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const execFileAsync = promisify(execFile);
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-website-'));
-const build = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--out', dir], { cwd: root }).toString();
+const build = dir => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--out', dir], { cwd: root }).toString();
 const site = await builtSite('cad-agent-website-a-');            // CAD_AGENT_SITE, or a fresh build of HEAD
 const out = site.dir, buildLog = site.log;
 test.after(() => Promise.all([rm(tmp, { recursive: true, force: true }), site.done()]));
@@ -23,6 +24,7 @@ const files = (await readdir(out, { recursive: true, withFileTypes: true })).fil
   .map(e => path.relative(out, path.join(e.parentPath, e.name)).split(path.sep).join('/'));
 const html = files.filter(f => f.endsWith('.html'));
 const git = (...a) => execFileSync('git', a, { cwd: root }).toString();
+const { publicPath } = createPublication(JSON.parse(git('show', 'HEAD:tools/site/page-sources.json')));
 // Cloudflare Pages resolution: /x serves x.html, /dir/ serves dir/index.html, files as they are.
 const resolve = url => {
   const p = decodeURIComponent(url.split('#')[0].split('?')[0]).replace(/^\//, '');
@@ -33,10 +35,12 @@ const idsIn = text => new Set([...text.matchAll(/<[a-z][^>]*>/gi)].flatMap(([tag
 const ids = async f => idsIn(await readFile(path.join(out, f), 'utf8'));
 
 test('only committed files are published, byte for byte', async () => {
-  const webTracked = git('ls-tree', '-r', '--name-only', 'HEAD', 'web/').split('\n').filter(Boolean);
+  const prefix = 'tools/site/assets/';
+  const sources = git('ls-tree', '-r', '-z', '--name-only', 'HEAD', prefix).split('\0').filter(f => f && f !== prefix + 'README.md');
+  const assets = new Map(sources.map(f => ['web/' + f.slice(prefix.length), f]));
   const webOut = files.filter(f => f.startsWith('web/') && f !== 'web/snap-demo.css');
-  assert.deepEqual(webOut.sort(), webTracked.sort());
-  for (const f of webTracked) assert.ok((await readFile(path.join(out, f))).equals(execFileSync('git', ['show', `HEAD:${f}`], { cwd: root })), f);
+  assert.deepEqual(webOut.sort(), [...assets.keys()].sort());
+  for (const [publicFile, source] of assets) assert.ok((await readFile(path.join(out, publicFile))).equals(execFileSync('git', ['show', `HEAD:${source}`], { cwd: root })), publicFile);
 });
 
 // Plant a page over a real one in a scratch worktree. The real page's figures (docs/pages.yaml) would look for its
@@ -54,13 +58,13 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
   const wt = path.join(tmp, 'wt');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
   try {
-    await writeFile(path.join(wt, 'web/site.css'), 'body{display:none}\n');
+    await writeFile(path.join(wt, 'tools/site/assets/site.css'), 'body{display:none}\n');
     await writeFile(path.join(wt, 'docs/planted.md'), '# Planted\n\nnot committed\n');
     await plant(wt, 'docs/toolkit.md', '# Toolkit\n\nlocal edit <scr<script>x</script>ipt>window.__x=1</script>\n');
-    const run = (...a) => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, ...a], { cwd: root }).toString();
+    const run = (...a) => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, ...a], { cwd: root }).toString();
     const clean = path.join(tmp, 'clean'), draft = path.join(tmp, 'draft');
     run('--out', clean);
-    assert.equal(await readFile(path.join(clean, 'web/site.css'), 'utf8'), git('show', 'HEAD:web/site.css'));
+    assert.equal(await readFile(path.join(clean, 'web/site.css'), 'utf8'), git('show', 'HEAD:tools/site/assets/site.css'));
     assert.ok(!existsSync(path.join(clean, 'docs/planted.html')), 'an untracked page was published');
     assert.doesNotMatch(await readFile(path.join(clean, 'docs/toolkit.html'), 'utf8'), /local edit/);
     // Drawn by the reader's browser: this stylesheet would redraw every diagram (it is in their cache key) to no purpose.
@@ -69,8 +73,15 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
     assert.match(toolkit, /local edit/);
     assert.match(toolkit, /\+ local changes/);
     assert.match(toolkit, /This page has uncommitted changes/);
+    assert.equal(await readFile(path.join(draft, 'web/site.css'), 'utf8'), 'body{display:none}\n');
     assert.doesNotMatch(toolkit, /<script>|window\.__x=1<\/script>/, 'a nested script survived the sanitizer');
     assert.throws(() => run('--release', '--out', path.join(tmp, 'rel')), /clean working tree/);
+    await mkdir(path.join(wt, 'web'), { recursive: true });
+    await writeFile(path.join(wt, 'web/site.css'), 'STALE_ROOT_ASSET');
+    await rm(path.join(wt, 'tools/site/assets/site.css'));
+    assert.throws(() => run('--worktree', '--client-diagrams', '--out', draft), error =>
+      String(error.stderr).includes('ENOENT') && String(error.stderr).includes('tools/site/assets/site.css'),
+    'a stale web/site.css must not hide a missing current stylesheet');
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
@@ -119,13 +130,13 @@ test('the home page, llms.txt and the README give one install command and one li
     assert.ok(text.indexOf('## Install and work with it') < text.indexOf('## Start here'), `${f}: installing comes first`);
   }
   for (const f of ['install.sh', 'install.ps1']) {
-    assert.equal(await readFile(path.join(out, f), 'utf8'), git('show', `HEAD:web/${f}`), `/${f} is web/${f}`);
+    assert.equal(await readFile(path.join(out, f), 'utf8'), git('show', `HEAD:tools/site/assets/${f}`), `/${f} is web/${f}`);
   }
 });
 
 test('pages say when they were last updated and how to give feedback', async () => {
   const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
-  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'lessons/process/verify-from-source.md').trim();
+  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'docs/lessons/process/verify-from-source.md').trim();
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay}">`));
   const lesson = await readFile(path.join(out, 'lessons/process/verify-from-source.html'), 'utf8');
   assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay}">`), 'a page shows its own last change');
@@ -136,7 +147,7 @@ test('pages say when they were last updated and how to give feedback', async () 
   assert.equal(u.origin + u.pathname, 'https://github.com/Valpatel/cad-agent/issues/new');
   assert.equal(u.searchParams.get('template'), 'feedback.yml');
   assert.equal(u.searchParams.get('page'), 'https://cad-agent.valpatel.com/lessons/process/verify-from-source');
-  assert.match(fb, /edit\/dev\/lessons\/process\/verify-from-source\.md/);
+  assert.match(fb, /edit\/dev\/docs\/lessons\/process\/verify-from-source\.md/);
   const form = await readFile(path.join(root, '.github/ISSUE_TEMPLATE/feedback.yml'), 'utf8');
   assert.match(form, /id: page\b/, 'the issue form has the field the link fills in');
 });
@@ -183,16 +194,17 @@ test('pages have one h1 and heading ids follow GitHub anchors', async () => {
   assert.ok((await ids('lessons/process/README.html')).has('lessons--process'), 'runs of spaces are not merged');
 });
 
-test('Markdown twins and llms-full.txt carry working links', async () => {
+test('Markdown twins and both agent indexes carry working links', async () => {
   const full = await readFile(path.join(out, 'llms-full.txt'), 'utf8');
   const relative = [...full.replace(/```[\s\S]*?```/g, '').matchAll(/\]\(([^)\s]+)/g)].map(m => m[1]).filter(u => !/^(?:[a-z]+:|#)/i.test(u));
   assert.deepEqual(relative, [], 'llms-full.txt is one file: its links must be absolute');
   const broken = [];
-  for (const f of files.filter(f => f.endsWith('.md') && f !== 'index.md')) {
+  for (const f of [...files.filter(f => f.endsWith('.md')), 'llms.txt', 'llms-full.txt']) {
     const md = (await readFile(path.join(out, f), 'utf8')).replace(/```[\s\S]*?```/g, '');
     for (const [, url] of md.matchAll(/\]\(([^)\s#]+)(?:#[^)\s]*)?(?:\s+"[^"]*")?\)/g)) {
-      if (/^(?:[a-z]+:|\/\/)/i.test(url)) continue;
-      if (!files.includes(path.posix.normalize(path.posix.join(path.posix.dirname(f), url)))) broken.push(`${f} → ${url}`);
+      const target = new URL(url, `https://cad-agent.valpatel.com/${f}`);
+      if (target.origin !== 'https://cad-agent.valpatel.com') continue;
+      if (!resolve(target.pathname)) broken.push(`${f} → ${url}`);
     }
   }
   assert.deepEqual(broken, []);
@@ -331,7 +343,7 @@ test('an image keeps the size its author gave, and its tag survives any alt text
     await plant(wt, 'docs/toolkit.md', `# Toolkit\n\n<img src="${fig}" alt="costs US$'s and $& and $$" width="300">\n\n` +
       `<img src="${fig}" alt="half" width="50%">\n\n<img src="${fig}" alt="short" height="100">\n\nAfter the images.\n`);
     const draft = path.join(tmp, 'draft-img');
-    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
+    execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
     const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
     const tag = alt => page.match(new RegExp(`<img\\b[^>]*alt="${alt}"[^>]*>`))?.[0] || '';
     assert.match(tag("costs US\\$'s and \\$&amp;? and \\$\\$"), new RegExp(`width="300" height="${Math.round(300 * H / W)}"`), 'a pixel width stays; the height follows');
@@ -392,8 +404,8 @@ test('docs/pages.yaml places real outputs on the site page only; the Markdown tw
   const spec = YAML.parse(git('show', 'HEAD:docs/pages.yaml'));
   assert.ok(Object.keys(spec).length, 'docs/pages.yaml places something');
   for (const [file, page] of Object.entries(spec)) {
-    const html = await readFile(path.join(out, file.replace(/\.md$/, '.html')), 'utf8');
-    const twin = await readFile(path.join(out, file), 'utf8');
+    const html = await readFile(path.join(out, publicPath(file).replace(/\.md$/, '.html')), 'utf8');
+    const twin = await readFile(path.join(out, publicPath(file)), 'utf8');
     for (const v of [...(page.hero ? [page.hero] : []), ...(page.band || []), ...(page.figures || [])]) {
       assert.ok(html.includes(`<img src="/${v.img}" width=`), `${file}: ${v.img} on the page, sized`);
       // the caption, after what the picture is: a real output of its tool, or a diagram and the script that drew it
@@ -428,23 +440,23 @@ test('a catalogue demo opens at the section that shows it, not at a copy under t
   assert.match(catalog.items.find(i => i.name === 'Connector window').url, /\/docs\/common-issues#bought-parts-sources-and-assumptions$/);
 });
 
-test('a moved page leaves a stub on GitHub and a 301 on the site', async () => {
-  const stubs = git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean).map(l => l.replace(/^HEAD:/, ''));
-  assert.ok(stubs.length >= 12, 'the twelve numbered lessons are stubs');
+test('permanent numbered-lesson redirects survive retirement of their source stubs', async () => {
+  const legacy = git('show', 'HEAD:tools/site/compiler/site-redirects.txt').split('\n').filter(l => /^lessons\/\d{2}-/.test(l)).map(l => l.split(/\s+/)[0]);
+  assert.equal(legacy.length, 12, 'the twelve original numbered lesson routes stay supported');
   const redirects = new Map((await readFile(path.join(out, '_redirects'), 'utf8')).trim().split('\n').map(l => l.split(' ')).map(([f, ...r]) => [f, r]));
   const catalog = await readFile(path.join(out, 'catalog.json'), 'utf8');
-  for (const stub of stubs) {
-    const from = '/' + stub.replace(/\.md$/, '');
-    assert.ok(!files.includes(stub.replace(/\.md$/, '.html')) && !files.includes(stub), `${stub} is not published`);
-    assert.ok(!catalog.includes(`"${stub.replace(/\.md$/, '')}"`) && !catalog.includes(from + '"'), `${stub} is not catalogued`);
+  for (const old of legacy) {
+    const from = '/' + old.replace(/\.md$/, '');
+    assert.ok(!files.includes(old.replace(/\.md$/, '.html')) && !files.includes(old), `${old} is not published`);
+    assert.ok(!catalog.includes(from + '"'), `${old} is not catalogued`);
     const [to, code] = redirects.get(from) || [];
     assert.equal(code, '301', from);
     assert.ok(resolve(to)?.endsWith('.html'), `${from} → ${to}, a page`);
-    assert.deepEqual(redirects.get('/' + stub), [to + '.md', '301'], 'its Markdown twin moves too');
+    assert.deepEqual(redirects.get('/' + old), [to + '.md', '301'], 'its Markdown twin moves too');
     assert.ok(files.includes(to.slice(1) + '.md'));
   }
   // The preview server answers the way Pages does, keeping the query.
-  const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', out, '--port', '0'], { cwd: root });
+  const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', out, '--port', '0'], { cwd: root });
   try {
     const base = await new Promise((ok, fail) => {
       server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
@@ -470,63 +482,48 @@ test('every lesson page has a diagram, and the home page counts lessons, not pag
   const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
   assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
   for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /<figure class="cad-diagram"|class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
-  const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'lessons/*/*.md', ':!lessons/*/README.md').split('\n').filter(Boolean).length;
+  const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'docs/lessons/*/*.md', ':!docs/lessons/*/README.md').split('\n').filter(Boolean).length;
   assert.ok(rules > 50);
   assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
 });
 
-test('redirects outlive the stubs, and a stub must point at a published page that is listed', async () => {
+test('a moved source stub uses public redirect identity and every invalid target or rule fails', async () => {
   const wt = path.join(tmp, 'wt-redirects');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
-  const commit = msg => execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', 'commit', '-qam', msg], { cwd: wt });
-  const buildWt = dir => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--out', dir], { cwd: root, stdio: 'pipe' });
-  const stub = 'lessons/03-mechanical-design-rules.md';
+  const base = git('rev-parse', 'HEAD').trim();
+  const commit = msg => {
+    execFileSync('git', ['add', '--all'], { cwd: wt });
+    execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.invalid', 'commit', '-qm', msg], { cwd: wt });
+  };
+  const reset = () => execFileSync('git', ['checkout', '-q', base], { cwd: wt });
+  const buildWt = dir => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--client-diagrams', '--out', dir], { cwd: root, stdio: 'pipe' });
+  const stub = 'docs/lessons/03-mechanical-design-rules.md', from = 'lessons/03-mechanical-design-rules.md';
+  const list = path.join(wt, 'tools/site/compiler/site-redirects.txt');
+  const original = await readFile(list, 'utf8');
+  const plantStub = async target => writeFile(path.join(wt, stub), `<!-- moved-to: ${target} -->\n# Moved\n`);
   try {
-    // v0.6.0 deletes the stubs: the site keeps every 301.
-    execFileSync('git', ['rm', '-q', ...git('grep', '-l', '-e', '^<!-- moved-to:', 'HEAD', '--', '*.md').split('\n').filter(Boolean)
-      .map(l => l.replace(/^HEAD:/, ''))], { cwd: wt });
-    commit('drop the stubs');
-    const after = path.join(tmp, 'no-stubs');
-    buildWt(after);
-    assert.equal(await readFile(path.join(after, '_redirects'), 'utf8'), await readFile(path.join(out, '_redirects'), 'utf8'));
-    execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
-    // A stub that points at a file the site does not publish, or at another stub, fails the build.
-    for (const [target, why] of [['../CLAUDE.md', 'not a published page'], ['04-fasteners-and-assembly-access.md', 'not a published page']]) {
-      await writeFile(path.join(wt, stub), `<!-- moved-to: ${target} -->\n# Moved\n`);
-      commit(`stub to ${target}`);
-      assert.throws(() => buildWt(path.join(tmp, 'bad')), e => String(e.stderr).includes(why), target);
-      execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
+    await plantStub('mechanical/design-rules.md');
+    commit('valid source stub under its new physical root');
+    const valid = path.join(tmp, 'valid-stub');
+    buildWt(valid);
+    assert.equal(await readFile(path.join(valid, '_redirects'), 'utf8'), await readFile(path.join(out, '_redirects'), 'utf8'));
+    reset();
+    for (const target of ['../../CLAUDE.md', '04-fasteners-and-assembly-access.md']) {
+      await writeFile(path.join(wt, 'docs/lessons/04-fasteners-and-assembly-access.md'), '<!-- moved-to: mechanical/fasteners-and-assembly-access.md -->\n# Moved\n');
+      await plantStub(target);
+      commit(`invalid stub target ${target}`);
+      assert.throws(() => buildWt(path.join(tmp, 'bad-target')), e => String(e.stderr).includes('not a published page'), target);
+      reset();
     }
-    // Bad lines in the list fail the build: a source listed twice (Pages keeps the first, the preview server the last),
-    // a leading slash, a source that is not a .md path or not a plain path (a splat, a placeholder, `..`, `//`, `./`),
-    // a file that is still in the repo, and a stub listed elsewhere.
-    const list = path.join(wt, 'tools/site-redirects.txt');
-    const original = await readFile(list, 'utf8');
-    for (const [line, why] of [
-      [`${stub} lessons/README.md`, 'is listed twice'],
-      ['/lessons/gone.md lessons/README.md', 'without a leading slash'],
-      ['lessons/gone lessons/README.md', 'without a leading slash'],
-      ['web/site.css lessons/README.md', 'without a leading slash'],
-      ['lessons/*.md lessons/README.md', 'without a leading slash'],          // a Pages splat: every lesson would loop
-      ['lessons/:name.md lessons/README.md', 'without a leading slash'],      // a Pages placeholder
-      ['lessons/../gone.md lessons/README.md', 'without a leading slash'],
-      ['lessons//gone.md lessons/README.md', 'without a leading slash'],
-      ['lessons/./gone.md lessons/README.md', 'without a leading slash'],
-      ['docs/toolkit.md lessons/README.md', 'is still a file in the repo'],
-    ]) {
-      await writeFile(list, original + line + '\n');
-      commit(`bad line ${line}`);
-      assert.throws(() => buildWt(path.join(tmp, 'bad-line')), e => String(e.stderr).includes(why), line);
-      execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
-    }
-    await writeFile(list, original.replace(`${stub} lessons/mechanical/design-rules.md`, `${stub} lessons/README.md`));
-    commit('stub listed elsewhere');
-    assert.throws(() => buildWt(path.join(tmp, 'bad3')), e => String(e.stderr).includes('change its line'));
-    execFileSync('git', ['checkout', '-q', 'HEAD~1'], { cwd: wt });
-    // A stub missing from tools/site-redirects.txt fails the build too.
-    await writeFile(list, original.split('\n').filter(l => !l.startsWith(stub)).join('\n'));
-    commit('unlisted stub');
-    assert.throws(() => buildWt(path.join(tmp, 'bad2')), e => String(e.stderr).includes('add "' + stub));
+    await plantStub('mechanical/design-rules.md');
+    await writeFile(list, original.replace(`${from} docs/lessons/mechanical/design-rules.md`, `${from} docs/lessons/README.md`));
+    commit('stub listed with the wrong target');
+    assert.throws(() => buildWt(path.join(tmp, 'wrong-target')), e => String(e.stderr).includes('change its line'));
+    reset();
+    await plantStub('mechanical/design-rules.md');
+    await writeFile(list, original.split('\n').filter(l => !l.startsWith(from)).join('\n'));
+    commit('unlisted source stub');
+    assert.throws(() => buildWt(path.join(tmp, 'unlisted')), e => String(e.stderr).includes('add "' + from));
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
@@ -565,7 +562,7 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
       '```mermaid\nflowchart TD\n    A[a]:::here --> B[b]\n```\n\n' +
       '````markdown\n```mermaid\nflowchart TD\n    Q[quoted]\n    class Q out\n```\n````\n');
     const draft = path.join(tmp, 'draft-palette');
-    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
+    execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root });
     const page = await readFile(path.join(draft, 'docs/toolkit.html'), 'utf8');
     const diagram = page.match(/<pre class="cad-diagram-source">([\s\S]*?)<\/pre>|<code class="language-mermaid">([\s\S]*?)<\/code>/)?.slice(1).join('') || '';
     assert.match(diagram, /classDef here fill:#fffdf5/, ':::here shorthand gets the palette');
@@ -578,11 +575,11 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
   }
 });
 
-// Diagrams are drawn by the build (#132, tools/site-diagrams.mjs): each Mermaid block arrives as a finished figure, so
+// Diagrams are drawn by the build (#132, tools/site/compiler/site-diagrams.mjs): each Mermaid block arrives as a finished figure, so
 // nothing moves while the page loads and it shows without script. Its source stays in the figure and in the twin.
 test('every diagram arrives drawn, with its source, and the Markdown twins keep their fences', async () => {
   assert.match(buildLog, /Diagrams: \d+ \(Mermaid 11\.\d+\.\d+\)/);
-  assert.doesNotMatch(buildLog, /left to the reader's browser/, 'the build drew no diagrams: install a browser (npx playwright install chromium)');
+  assert.doesNotMatch(buildLog, /left to the reader's browser/, 'the build drew no diagrams: install a browser (npm --prefix tools/site exec --no -- playwright install chromium)');
   let figures = 0;
   for (const f of html.filter(f => !f.startsWith('kit/'))) {
     const page = await readFile(path.join(out, f), 'utf8');
@@ -616,7 +613,7 @@ test('two builds with empty diagram caches draw every page byte for byte the sam
     .filter(e => e.isFile() && e.name.endsWith('.html')).map(async e => [path.relative(dir, path.join(e.parentPath, e.name)), await readFile(path.join(e.parentPath, e.name))])));
   const [a, b] = ['det-a', 'det-b'].map(n => path.join(tmp, n));
   // Two builds at once, each in its own browser with its own empty cache: as independent as one after the other.
-  for (const { stdout } of await Promise.all([a, b].map(d => execFileAsync(process.execPath, ['tools/build-site.mjs', '--out', d],
+  for (const { stdout } of await Promise.all([a, b].map(d => execFileAsync(process.execPath, ['tools/site/build-site.mjs', '--out', d],
     { cwd: root, env: { ...process.env, CAD_AGENT_DIAGRAM_CACHE: `${d}-cache` }, maxBuffer: 64 << 20 }))))
     assert.match(stdout, /0 from the cache, \d+ drawn in /, stdout);
   const [pa, pb] = [await pages(a), await pages(b)];
@@ -628,7 +625,7 @@ test('two builds with empty diagram caches draw every page byte for byte the sam
 
 test('with --client-diagrams (as on a machine with no browser) the blocks stay for the reader\'s browser, and the build passes', async () => {
   const draft = path.join(tmp, 'client-diagrams');
-  const log = execFileSync(process.execPath, ['tools/build-site.mjs', '--client-diagrams', '--out', draft], { cwd: root }).toString();
+  const log = execFileSync(process.execPath, ['tools/site/build-site.mjs', '--client-diagrams', '--out', draft], { cwd: root }).toString();
   assert.match(log, /left to the reader's browser/);
   const page = await readFile(path.join(draft, 'docs/style-guide.html'), 'utf8');
   assert.equal((page.match(/<pre><code class="language-mermaid">/g) || []).length, 3);
@@ -733,8 +730,17 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     await writeFile(registry, YAML.stringify(upstreams));
     await mkdir(path.join(wt, 'upstreams'), { recursive: true });
     await writeFile(path.join(wt, 'upstreams', 'registry.yaml'), '[]\n');
+    const guide = 'docs/practice/weekly-upstream-update.md';
+    await plant(wt, guide, '# Weekly upstream update\n\nMOVED_GUIDE_SENTINEL.\n\n[Commands](../toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'docs/weekly-upstream-update.md'), '# Stale guide\n\nSTALE_GUIDE_SENTINEL.\n');
+    const landscapeSource = 'docs/research/landscape.json';
+    const landscape = JSON.parse(await readFile(path.join(wt, landscapeSource), 'utf8'));
+    landscape.libraries[0].what = 'RESEARCH_SOURCE_SENTINEL';
+    await writeFile(path.join(wt, landscapeSource), JSON.stringify(landscape));
+    await mkdir(path.join(wt, 'research'), { recursive: true });
+    await writeFile(path.join(wt, 'research/landscape.json'), '{"projects":[],"libraries":[],"benchmarks":[]}\n');
     const draft = path.join(tmp, 'draft-policy');
-    const run = () => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const run = () => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     run();
     const page = await readFile(path.join(draft, 'CONTRIBUTING.html'), 'utf8');
     assert.match(page, /MOVED_SOURCE_SENTINEL/);
@@ -748,7 +754,13 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     assert.match(await readFile(path.join(draft, 'THIRD_PARTY_NOTICES.md'), 'utf8'), /\]\(docs\/toolkit\.md#commands\)/);
     const catalog = JSON.parse(await readFile(path.join(draft, 'catalog.json'), 'utf8'));
     assert.equal(catalog.items.find(i => i.name === upstreams[0].name).what, 'REGISTRY_SOURCE_SENTINEL');
-    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml']) {
+    assert.equal(catalog.items.find(i => i.kind === 'library' && i.name === landscape.libraries[0].name).what, 'RESEARCH_SOURCE_SENTINEL');
+    const movedGuide = await readFile(path.join(draft, 'docs/weekly-upstream-update.html'), 'utf8');
+    assert.match(movedGuide, /MOVED_GUIDE_SENTINEL/);
+    assert.doesNotMatch(movedGuide, /STALE_GUIDE_SENTINEL/);
+    assert.match(movedGuide, /href="\/docs\/toolkit#commands"/);
+    assert.match(await readFile(path.join(draft, 'docs/weekly-upstream-update.md'), 'utf8'), /\]\(toolkit\.md#commands\)/);
+    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml', guide, landscapeSource]) {
       const current = await readFile(path.join(wt, source));
       await rm(path.join(wt, source));
       assert.throws(run, error => String(error.stderr).includes('ENOENT') && String(error.stderr).includes(source),

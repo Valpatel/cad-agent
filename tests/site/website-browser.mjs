@@ -1,7 +1,7 @@
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
- * the catalogue link, a hero animation that is not running (or still running under reduced motion), a catalogue
+ * the catalogue link or with overlapping visible controls, a hero animation that is not running (or still running under reduced motion), a catalogue
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
  * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, a wall of text: a stretch
  * of a page with nothing to look at longer than one and a half screens (tests/site/site-walls.mjs, #179), and diagrams that
@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { reducedHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
@@ -19,7 +19,7 @@ import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScri
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-website-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
 const dir = site.dir;
-const server = spawn(process.execPath, ['tools/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
+const server = spawn(process.execPath, ['tools/site/preview-site.mjs', '--dir', dir, '--port', '0'], { cwd: root });
 const base = await new Promise((ok, fail) => {
   server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
   server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
@@ -74,6 +74,7 @@ try {
   // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, below), and their
   // problems are listed in this order whatever finishes first.
   const parts = [
+    ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
@@ -440,22 +441,29 @@ try {
     }],
     ['diagram widths', async () => {
       const problems = [];
-      // Every page with a diagram, at the narrowest desktop width: each rendered diagram fits its column (#122).
+      // Every diagram fits at the narrowest desktop width. The five concise hierarchy overviews also fit a phone:
+      // document overflow alone misses a clipped branch inside the diagram's own horizontal scroller.
+      const OVERVIEWS = new Set(['/docs/mechanical/README', '/docs/practice/README', '/docs/examples/README',
+        '/research/agent-workflow/README', '/research/manufacturing/README']);
+      for (const route of OVERVIEWS) if (!diagramPages.some(([r]) => r === route))
+        problems.push(`${route}: the overview diagram is not published`);
       // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
       const KNOWN_WIDE = new Map();
       // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
-      const SCROLLBAR = 17;
+      for (const width of [1100, 360]) {
+      const SCROLLBAR = width === 1100 ? 17 : 0;
       // In both themes: each block is drawn twice (#305), and the page shows the drawing for its theme.
       for (const colorScheme of ['light', 'dark']) {
-      const wide = await browser.newPage({ viewport: { width: 1100, height: 900 }, colorScheme });
+      const wide = await browser.newPage({ viewport: { width, height: 900 }, colorScheme });
       for (const [route, sources] of diagramPages.sort()) {
+        if (width === 360 && !OVERVIEWS.has(route)) continue;
         await wide.goto(base + route);
         await settled(wide);
         await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
           [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
-          sources, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
+          sources, { timeout: 20000 }).catch(() => problems.push(`${width}px ${route}: diagrams did not finish rendering`));
         const drawn = await wide.$$eval('.cad-diagram', fs => fs.filter(f => f.dataset.state === 'ready' && f.querySelector('svg')).length);
-        if (drawn !== sources) problems.push(`1100px ${route}: ${drawn} of ${sources} diagrams rendered`);
+        if (drawn !== sources) problems.push(`${width}px ${route}: ${drawn} of ${sources} diagrams rendered`);
         // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
         // show how much spare there is).
         // A view without a drawing failed to render; the count above reports it.
@@ -464,9 +472,10 @@ try {
           return { w: Math.ceil(v.querySelector('svg').getBoundingClientRect().width), room };
         }))).filter(d => d.w > d.room - SCROLLBAR + 1);
         if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
-        for (const d of over) problems.push(`1100px ${colorScheme} ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
+        for (const d of over) problems.push(`${width}px ${colorScheme} ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
       }
       await wide.close();
+      }
       }
       return problems;
     }],
@@ -644,6 +653,90 @@ try {
   await browser.close();
   server.kill();
   await site.done();
+}
+
+/** Measure the text and images as well as each control's box. Flex shrinking used to leave the wordmark's text
+ * outside its box, overlapping Catalogue while the document reported zero overflow (#104). Check both sides of
+ * old and current responsive boundaries, not only the conventional 360 px phone used by the route checks. */
+async function headerProblems() {
+  const problems = [];
+  const widths = [320, 340, 359, 360, 361, 379, 380, 381, 390, 409, 410, 411, 429, 430, 431,
+    459, 479, 480, 481, 600, 759, 760, 761, 800, 850, 900, 999, 1000, 1001, 1049, 1050, 1051, 1366];
+  for (const colorScheme of ['light', 'dark']) {
+    const page = await browser.newPage({ viewport: { width: 390, height: 850 }, colorScheme });
+    try {
+      await page.goto(base + '/catalog');
+      await page.evaluate(() => document.fonts.ready);
+      const measure = () => page.evaluate(() => {
+        const out = [];
+        const shown = el => {
+          if (!el || !el.getBoundingClientRect().width || !el.getBoundingClientRect().height) return false;
+          if (getComputedStyle(el).visibility !== 'visible') return false;
+          for (let ancestor = el; ancestor; ancestor = ancestor.parentElement) {
+            if (Number(getComputedStyle(ancestor).opacity) === 0) return false;
+          }
+          return true;
+        };
+        for (const selector of ['.wordmark', 'nav a[href="/catalog"]', 'nav .pill-link', '.theme-toggle']) {
+          if (!shown(document.querySelector('.site-header ' + selector))) out.push(`missing visible ${selector}`);
+        }
+        const controls = [...document.querySelectorAll('.site-header .wordmark,.site-header nav a,.site-header button')].filter(shown);
+        const boxes = controls.map(el => {
+          const rects = [el.getBoundingClientRect()];
+          // Buttons contain an intentionally clipped screen-reader label; their visible SVG has its own box.
+          if (el.tagName !== 'BUTTON') {
+            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+            while (walker.nextNode()) if (walker.currentNode.textContent.trim()) {
+              const range = document.createRange();
+              range.selectNodeContents(walker.currentNode);
+              rects.push(...range.getClientRects());
+            }
+          }
+          for (const image of [...el.querySelectorAll('img,svg')].filter(shown)) {
+            rects.push(image.getBoundingClientRect());
+            if (image.tagName === 'IMG' && (!image.complete || !image.naturalWidth)) out.push('wordmark image did not load');
+          }
+          return { label: el.getAttribute('aria-label') || el.textContent.trim(),
+            left: Math.min(...rects.map(r => r.left)), right: Math.max(...rects.map(r => r.right)),
+            top: Math.min(...rects.map(r => r.top)), bottom: Math.max(...rects.map(r => r.bottom)) };
+        });
+        for (const box of boxes) if (box.left < 0 || box.right > innerWidth) out.push(`${box.label} extends outside the viewport`);
+        for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i], b = boxes[j];
+          const verticalOverlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
+          if (verticalOverlap > 1 && gap < 4) out.push(`${a.label} / ${b.label}: visible gap ${gap.toFixed(2)}px (need 4px)`);
+        }
+        return out;
+      });
+      for (const width of widths) {
+        await page.setViewportSize({ width, height: 850 });
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const found = await measure();
+        problems.push(...found.map(p => `header ${width}px ${colorScheme}: ${p}`));
+      }
+      // A hidden header keeps all its geometry: prove that geometry alone cannot satisfy the visible-control guard.
+      for (const [property, value] of [['visibility', 'hidden'], ['opacity', '0']]) {
+        const previous = await page.locator('.site-header').evaluate((el, [property, value]) => {
+          const old = [el.style.getPropertyValue(property), el.style.getPropertyPriority(property)];
+          el.style.setProperty(property, value, 'important');
+          return old;
+        }, [property, value]);
+        try {
+          const hidden = await measure();
+          if (hidden.filter(p => p.startsWith('missing visible ')).length !== 4) {
+            problems.push(`header ${colorScheme}: ${property} control accepted invisible navigation`);
+          }
+        } finally {
+          await page.locator('.site-header').evaluate((el, [property, value, priority]) => {
+            if (value) el.style.setProperty(property, value, priority);
+            else el.style.removeProperty(property);
+          }, [property, ...previous]);
+        }
+      }
+    } finally { await page.close(); }
+  }
+  return problems;
 }
 
 /** Run `parts` ([name, async () => problems]) LANES at a time, in the order given, and return their problems in that
@@ -993,7 +1086,7 @@ async function explorerProblems(x) {
   return out;
 }
 
-/** Diagrams drawn by the build (#132, tools/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top
+/** Diagrams drawn by the build (#132, tools/site/compiler/site-diagrams.mjs). Drawn in the reader's browser, a diagram near the top
  * moved the page twice as it loaded (0.58 on /lessons/process/agent-process at 360 px, 0.10 on /docs/style-guide at
  * 1366 px); Google calls a page good under 0.1. On the pages below, at phone and desktop widths: the layout shift while
  * the page loads stays under DIAGRAM_SHIFT (Chrome; WebKit does not report shifts), the diagrams show with script off,
@@ -1055,7 +1148,7 @@ async function drawnDiagramProblems() {
   return out;
 }
 
-/** A reference area page (#323, tools/site-references.mjs, web/references.js): the filters appear with the script,
+/** A reference area page (#323, tools/site/compiler/site-references.mjs, web/references.js): the filters appear with the script,
  * narrow the table and keep the URL; a chart bar filters; a record linked by its id shows even when the URL filters it
  * away; and the table scrolls in its own box, so a phone never scrolls the page sideways. */
 async function refsProblems(page, width, seen) {

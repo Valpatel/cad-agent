@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Draw the process-profile charts (docs/img/research/process-*.svg) and the sheet-metal diagrams
-(docs/img/sheet-metal/*.svg) from research/process-profiles.yaml (and research/references.yaml, the sources it cites).
+(docs/img/sheet-metal/*.svg) from docs/research/process-profiles.yaml (and docs/research/references.yaml, the sources it cites).
 
     python3 tools/process_profile_figures.py            # write the SVGs
     python3 tools/process_profile_figures.py --check    # exit 1 if a committed SVG differs from the data (tests run this)
@@ -22,8 +22,8 @@ from xml.sax.saxutils import escape
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "research" / "process-profiles.yaml"
-REGISTRY = ROOT / "research" / "references.yaml"
+DATA = ROOT / "docs" / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "docs" / "research" / "references.yaml"
 OUT = ROOT / "docs" / "img" / "research"
 SHEET_OUT = ROOT / "docs" / "img" / "sheet-metal"
 INK, MUTED, LINE, BG, GREEN, ORANGE = "#173d3c", "#526863", "#d8e0d3", "#fffdf5", "#6f8a80", "#bd3a12"
@@ -39,7 +39,7 @@ from cadagent.review import references  # noqa: E402
 # ----------------------------------------------------------------------------- data
 
 def load() -> dict:
-    """The profiles, with ``sources``: the read entries of the reference registry (research/references.yaml and its
+    """The profiles, with ``sources``: the read entries of the reference registry (docs/research/references.yaml and its
     schema-2 shards, #118, #323) that the rules cite. A rule may cite only a read record, never a catalogued one."""
     data = yaml.safe_load(DATA.read_text(encoding="utf-8"))
     data["sources"] = [ref.data for ref in references.load(REGISTRY).of_kind("source")]
@@ -196,7 +196,7 @@ def sheet_metal() -> str:
     ticks = [float(i) for i in range(0, int(vmax) + 1, 2)]
     t_near, r_near = near[cols.index("T")], near[cols.index("R")]
     return ranges_svg(f"Sheet metal: the same rule from different sources, at T = {SHEET['T']} mm, R = {SHEET['R']} mm",
-                      "Generic rules evaluated from research/process-profiles.yaml; orange is one shop's real tooling.",
+                      "Generic rules evaluated from docs/research/process-profiles.yaml; orange is one shop's real tooling.",
                       groups, vmax, ticks, "mm",
                       f"Shop row: SendCutSend's specs file, {near[1]} {near[0]} (T {t_near:.2f}, R {r_near:.2f} mm). "
                       "Read 2026-10-31.")
@@ -332,7 +332,7 @@ def sheet_holes() -> str:
               ("Hole to the edge", "sm-hole-to-edge", None), ("Hole to hole", "sm-hole-spacing", None),
               ("Hem return", "sm-hem-return", None)]
     return compared(f"Sheet metal: holes, edges, bends and hems at T = {SHEET['T']} mm",
-                    "{n} rules evaluated from research/process-profiles.yaml at T = 1.5 mm. ≥: a floor; "
+                    "{n} rules evaluated from docs/research/process-profiles.yaml at T = 1.5 mm. ≥: a floor; "
                     "a bar: it varies with the alloy.", groups, envs=[env], unit="mm", step=2, note=READ)
 
 
@@ -598,7 +598,7 @@ def main(argv: list[str]) -> int:
             folder.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
     if stale:
-        print("out of date with research/process-profiles.yaml (run python3 tools/process_profile_figures.py):",
+        print("out of date with docs/research/process-profiles.yaml (run python3 tools/process_profile_figures.py):",
               ", ".join(stale))
         return 1
     return 0

@@ -452,7 +452,7 @@ class Registry:
     # -- the migration path
     def add_build_items(self, parts: Mapping[str, Any], items: Optional[Mapping[str, Any]] = None,
                         where: str = "") -> None:
-        """Register ``print_parts()`` shapes and a ``dossier_items()`` mapping (docs/dossier.md). A part registered
+        """Register ``print_parts()`` shapes and a ``dossier_items()`` mapping (docs/practice/dossier.md). A part registered
         in code (a decorator) keeps its declaration; a ``print_parts()`` entry from an earlier call is replaced, so
         calling this again with new shapes records the new shapes."""
         items = dict(items or {})

@@ -41,8 +41,8 @@ def checkout(root: Path):
     write(root, "pyproject.toml", '[project]\nname = "x"\ndependencies = ["pyyaml>=6.0", "numpy>=1.24"]  # core\n'
                                   '[project.optional-dependencies]\ncad = [\n    "cadquery[ocp]>=2.4",  # the kernel\n'
                                   '    "pillow>=10.0",\n]\ndev = ["pytest"]\n')
-    write(root, "package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
-    write(root, "package-lock.json", lock(good_pkg("marked", "16.4.1")))
+    write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
+    write(root, "tools/site/package-lock.json", lock(good_pkg("marked", "16.4.1")))
     write(root, "vendor/manifest.json", json.dumps({"projects": [
         {"name": "tool", "url": "https://github.com/someone/tool", "license": "MIT", "sha": SHA, "imported": "2026-10-24",
          "report": "vendor/reports/tool.md", "exclude": [".github"]}]}))
@@ -64,7 +64,7 @@ def checkout(root: Path):
     write(root, f"{ra.KIT}/file-viewer-sources.json", "{}")
     write(root, "vendor/upstreams/registry.yaml", "- name: someone/tool\n  url: https://github.com/someone/tool\n  license: MIT\n"
                                            "  last_push: 2026-10-01\n  status: trial\n")
-    write(root, "research/landscape.json", json.dumps({"projects": [], "libraries": [
+    write(root, "docs/research/landscape.json", json.dumps({"projects": [], "libraries": [
         {"name": "gumyr/build123d", "license_spdx": "Apache-2.0", "last_push": "2026-10-23"}], "benchmarks": []}))
     write(root, "docs/guide.md", "# Guide\n\nSee [the docs](https://docs.someone.dev/x) and https://example.com/demo.\n\n"
                                  "```bash\ncurl http://localhost:8000/ && uvx --from cadgen==0.7.26 cadgen mcp\n```\n")
@@ -136,12 +136,12 @@ def test_clean_checkout_has_nothing_above_info(tmp_path):
 def test_offline_checks_find_planted_problems(tmp_path):
     root = checkout(tmp_path)
     write(root, "pyproject.toml", '[project]\ndependencies = ["pyyaml"]\n')
-    write(root, "package-lock.json", lock({
+    write(root, "tools/site/package-lock.json", lock({
         **good_pkg("marked", "16.4.1"),
         **good_pkg("evil", "1.0.0", resolved="http://mirror.invalid/evil.tgz"),
         **good_pkg("fsevents", "2.3.2", hasInstallScript=True, os=["darwin"], optional=True),
         "node_modules/nohash": {"version": "1.0.0", "resolved": "https://registry.npmjs.org/nohash/-/nohash-1.0.0.tgz"}}))
-    write(root, "package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
+    write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
     man = json.loads((root / "vendor/manifest.json").read_text())
     man["projects"][0].update(sha="abc123", license="Apache-2.0")
     write(root, "vendor/manifest.json", json.dumps(man))
@@ -168,7 +168,7 @@ def test_an_install_script_finding_is_per_version(tmp_path):
     """An acceptance names a fingerprint; a new version of the package (a new script to read) must get a new one."""
     def fp(version):
         root = checkout(tmp_path / version)
-        write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"),
+        write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"),
                                                **good_pkg("fsevents", version, hasInstallScript=True, os=["darwin"], optional=True)}))
         return next(f["fp"] for f in run(root)["findings"] if f["check"] == "npm-install-script")
     assert fp("2.3.2") == fp("2.3.2") != fp("2.3.3")
@@ -318,7 +318,7 @@ def test_patched_files_are_not_drift(tmp_path):
 
 def test_malicious_package_is_critical_and_moved_or_gone_repos(tmp_path):
     root = checkout(tmp_path)
-    write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
+    write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
     write(root, "vendor/upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
                                            "- name: a/gone\n  url: https://github.com/a/gone\n  license: MIT\n")
 
@@ -437,17 +437,76 @@ def test_registry_reads_prefer_moved_source_and_only_history_can_fall_back(repo_
         ra.item_ids(ra.WorkTree(root))
 
 
+def test_landscape_move_keeps_historical_identity_but_cannot_hide_a_missing_current_source(repo_with_base):
+    root = repo_with_base
+    (root / "research").mkdir()
+    git(root, "mv", ra.LANDSCAPE, "research/landscape.json")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy landscape path")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    git(root, "mv", "research/landscape.json", ra.LANDSCAPE)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    write(root, "research/landscape.json", '{"projects":[{"name":"stale/old","url":"https://github.com/stale/old"}]}')
+    assert "url:https://github.com/stale/old" not in ra.item_ids(ra.WorkTree(root))
+    (root / ra.LANDSCAPE).unlink()
+    with pytest.raises(FileNotFoundError, match="landscape"):
+        ra.catalogue_entries(root)
+    with pytest.raises(FileNotFoundError, match="landscape"):
+        ra.item_ids(ra.WorkTree(root))
+
+
 def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
     root = checkout(tmp_path)
     (root / "vendor/THIRD_PARTY_NOTICES.md").rename(root / "THIRD_PARTY_NOTICES.md")
     assert ("vendor-notices", "vendor:tool") in checks(run(root), "medium")
 
 
+def test_npm_move_keeps_historical_ids_and_live_reads_reject_stale_roots(repo_with_base):
+    root = repo_with_base
+    for current in (ra.NPM_PACKAGE, ra.NPM_LOCK):
+        git(root, "mv", current, Path(current).name)
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy npm ownership")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    assert "npm:marked" in before
+    for current in (ra.NPM_PACKAGE, ra.NPM_LOCK):
+        git(root, "mv", Path(current).name, current)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    write(root, "package.json", '{"devDependencies":{"stale":"1.0.0"}}')
+    write(root, "package-lock.json", lock(good_pkg("stale", "1.0.0")))
+    git(root, "add", "--all")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "current and stale npm inputs")
+    for tree in (ra.WorkTree(root), ra.GitTree(root, "HEAD")):
+        assert ra.item_ids(tree) == before
+    assert {p["name"] for p in run(root)["inventory"]["npm"]} == {"marked"}
+    (root / ra.NPM_LOCK).unlink()
+    assert ("npm-no-lockfile", "npm:package-lock.json") in checks(run(root), "high")
+    with pytest.raises(FileNotFoundError, match="current npm lockfile"):
+        ra.item_ids(ra.WorkTree(root))
+    (root / ra.NPM_PACKAGE).unlink()
+    with pytest.raises(FileNotFoundError, match="current npm manifest"):
+        run(root)
+
+
+def test_npm_audit_executes_in_the_current_package_context(tmp_path, monkeypatch):
+    root = checkout(tmp_path / "checkout with spaces")
+    npm = tmp_path / "fake-npm"
+    npm.write_text('#!/bin/sh\nprintf "%s\\n" "$PWD" "$@" > audit-invocation.txt\n'
+                   'printf \'{"vulnerabilities":{}}\\n\'\n')
+    npm.chmod(0o755)
+    monkeypatch.setattr(ra.shutil, "which", lambda name: str(npm) if name == "npm" else None)
+    rep = ra.Report(root, AS_OF, False)
+    assert ra.run_npm_audit(rep) == {}
+    assert (root / ra.NPM_DIR / "audit-invocation.txt").read_text().splitlines() == [
+        str(root / ra.NPM_DIR), "audit", "--package-lock-only", "--json"]
+    assert rep.sources["npm-audit"] == "npm audit --package-lock-only"
+
+
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):
     r = run(checkout(tmp_path))
-    assert f"catalog.json, {ra.REGISTRY}, research/landscape.json" in ra.to_markdown(r)
+    assert f"catalog.json, {ra.REGISTRY}, docs/research/landscape.json" in ra.to_markdown(r)
     r["sources"]["offline"] = r["sources"]["offline"].replace(ra.REGISTRY, "upstreams/registry.yaml")
-    assert "catalog.json, upstreams/registry.yaml, research/landscape.json" in ra.to_markdown(r)
+    assert "catalog.json, upstreams/registry.yaml, docs/research/landscape.json" in ra.to_markdown(r)
 
 
 # ------------------------------------------------------------------------------------------------------------- issue
@@ -982,12 +1041,30 @@ def test_published_pages_match_the_site_build():
     assert not any(p["file"] == "THIRD_PARTY_NOTICES.md" for p in selected)
 
 
+def test_weekly_link_audit_selects_current_published_files():
+    """Exercise configured file globs on the real tracked inventory, including nested owners and exclusions."""
+    import argparse
+    import glob
+    import shlex
+    import yaml
+    workflow = yaml.safe_load((ROOT / ".github/workflows/supply-chain.yml").read_text())
+    step = next(s for s in workflow["jobs"]["references"]["steps"] if "lycheeverse/lychee-action" in s.get("uses", ""))
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--exclude-path", action="append", default=[])
+    options, remaining = parser.parse_known_args(shlex.split(step["with"]["args"]))
+    inventory = set(_tracked_pages(ROOT))
+    actual = {p for pattern in remaining for p in glob.glob(pattern, root_dir=ROOT, recursive=True)
+              if p in inventory and p.endswith(".md")} - set(options.exclude_path)
+    assert actual == {p for p in inventory if ra.published(p)}, "weekly link inputs drifted from actual publication sources"
+
+
 @pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md"])
 def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path, source):
     """A stale old file cannot stand in for a missing mandatory source; whitespace paths stay whole."""
     subprocess.run(["git", "-C", str(tmp_path), "-c", "init.templateDir=", "init", "-q"], check=True)
-    expected = {"README.md", ".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md", "docs/space name.md", "docs/tab\tname.md"}
-    extra = {"CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "research/data.json"}
+    sources = json.loads((ROOT / "tools/site/page-sources.json").read_text())["files"]
+    expected = {r["source"] for r in sources} | {"README.md", "docs/space name.md", "docs/tab\tname.md"}
+    extra = {"CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "docs/research/data.json"}
     for name in expected | extra:
         write(tmp_path, name, "# candidate\n")
     subprocess.run(["git", "-C", str(tmp_path), "add", "--all"], check=True)
@@ -1017,7 +1094,7 @@ def test_figure_is_deterministic_and_says_what_it_leaves_out(tmp_path):
 
 
 def test_committed_page_and_figure_match_committed_report():
-    """research/security-report.md and docs/img/supply-chain/findings.svg are rendered from research/security-report.json,
+    """docs/research/security-report.md and docs/img/supply-chain/findings.svg are rendered from docs/research/security-report.json,
     so neither can disagree with it."""
     assert ra.main(["render", "--check"]) == 0
 
@@ -1034,8 +1111,8 @@ def test_the_page_folds_all_but_critical_and_high(tmp_path):
 
 def test_committed_report_is_clean_and_dated():
     """The committed report came from a committed tree (no uncommitted changes) and has no private details."""
-    r = json.loads((ROOT / "research/security-report.json").read_text())
+    r = json.loads((ROOT / "docs/research/security-report.json").read_text())
     assert r["schema"] == ra.SCHEMA and r["dirty"] is False and r["mode"] == "online"
-    text = (ROOT / "research/security-report.json").read_text() + (ROOT / "research/security-report.md").read_text()
+    text = (ROOT / "docs/research/security-report.json").read_text() + (ROOT / "docs/research/security-report.md").read_text()
     home = str(Path.home())          # whichever machine runs it: no account name is written down here
     assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)

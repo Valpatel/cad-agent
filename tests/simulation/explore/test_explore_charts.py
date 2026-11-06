@@ -1,6 +1,6 @@
 """The catalogue's compare cover (docs/img/explore/two-wheel-charts.json) matches the tool's output.
 
-tools/explore_charts.py runs ``cad-agent compare`` on examples/explore-two-wheel; these tests run it with ``--check``
+tools/explore_charts.py runs ``cad-agent compare`` on docs/examples/explore-two-wheel; these tests run it with ``--check``
 and check that what the cover draws is what the tool said.
 """
 import json

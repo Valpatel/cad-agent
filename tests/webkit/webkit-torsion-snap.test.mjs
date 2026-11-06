@@ -1,6 +1,6 @@
 // <cad-torsion-snap> (src/cadagent/webkit/torsion-snap.js) without a browser: every bar it can show gives the port's
 // numbers, the strain scales as Saint-Venant says, the figure stays inside its box, and the still on docs/compliant is
-// what the component draws for the page's attributes (tools/torsion-snap-still.mjs --check).
+// what the component draws for the page's attributes (tools/site/figures/torsion-snap-still.mjs --check).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -86,6 +86,6 @@ test('attributes are read safely: unknown values fall back, numbers clamp to the
 });
 
 test('the torsion-snap still on docs/compliant is what the component draws for the page\'s attributes', () => {
-  const out = execFileSync(process.execPath, ['tools/torsion-snap-still.mjs', '--check'], { cwd: root }).toString();
+  const out = execFileSync(process.execPath, ['tools/site/figures/torsion-snap-still.mjs', '--check'], { cwd: root }).toString();
   assert.match(out, /current/);
 });

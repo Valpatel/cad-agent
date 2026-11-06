@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
-import {chromium,webkit} from '@playwright/test';
+import {chromium,webkit} from '../site/npm-context.mjs';
 import {serveWebkit} from './webkit-server.mjs';
 import {checkFileThemes} from './webkit-file-theme-browser.mjs';
 import {zipSync,strToU8} from '../../src/cadagent/webkit/vendor/file-parsers/fflate.module.js';

@@ -8,8 +8,8 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import YAML from 'yaml';
-import { TINT } from '../../tools/catalog-art.mjs';
+import { YAML } from './npm-context.mjs';
+import { TINT } from '../../tools/site/compiler/catalog-art.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -30,6 +30,18 @@ const areaSlugs = areas.domains.flatMap(d => d.areas.map(a => a.slug));
 const BUCKETS = ['cross-cutting', 'unplaced'];
 const show = f => execFileSync('git', ['show', `HEAD:${f}`], { cwd: root }).toString();
 const OUTSIDE = ['project', 'library', 'benchmark'];
+
+test('every previously published page retains its public identity after source consolidation', async () => {
+  const baseline = JSON.parse(await readFile(path.join(root, 'tests/fixtures/site-page-identities.json'), 'utf8'));
+  assert.ok(baseline.pages.some(p => p.id === 'guide-index') && baseline.pages.some(p => p.id === 'research-index')
+    && baseline.pages.some(p => p.id === 'lesson-index'), 'the recorded identity fixture covers all knowledge kinds');
+  assert.equal(new Set(baseline.pages.map(p => p.id)).size, baseline.pages.length);
+  for (const expected of baseline.pages) {
+    const actual = catalog.items.find(i => i.id === expected.id);
+    assert.ok(actual, `${expected.id} disappeared`);
+    for (const key of ['kind', 'url', 'markdown']) assert.equal(actual[key], expected[key], `${expected.id}: ${key}`);
+  }
+});
 
 test('schema 2 keeps every schema-1 field, with the same meaning', () => {
   assert.equal(catalog.schema, 'cad-agent-catalog/2');
@@ -66,8 +78,8 @@ test('schema 2 lost gyropup in v0.10.0 but kept its schema value: fields.removed
 });
 
 test('schema-1 fields keep their schema-1 values: summary, licence (null stays null), tool urls', () => {
-  // Schema 1's builder, as it was (tools/build-site.mjs before catalogue v2), run over today's data.
-  const landscape = JSON.parse(show('research/landscape.json'));
+  // Schema 1's builder, as it was (tools/site/build-site.mjs before catalogue v2), run over today's data.
+  const landscape = JSON.parse(show('docs/research/landscape.json'));
   const upstreams = YAML.parse(show('vendor/upstreams/registry.yaml'));
   const notes = new Map(landscape.projects.map(p => [p.name, p.notes || '']));
   const want = [
@@ -114,7 +126,7 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
 });
 
 test("an outside entry's licence note reaches its card, benchmarks included", () => {
-  const landscape = JSON.parse(show('research/landscape.json'));
+  const landscape = JSON.parse(show('docs/research/landscape.json'));
   const noted = [...landscape.projects.map(p => ['upstream', p]), ...landscape.libraries.map(l => ['library', l]),
     ...landscape.benchmarks.map(b => ['benchmark', b])].filter(([, e]) => e.license_note);
   assert.ok(noted.some(([type]) => type === 'benchmark'), 'a benchmark with a licence note to check');
@@ -296,7 +308,7 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
       status: 'candidate', policy: bad(4), last_push: bad(5), stars: bad(6) };
     const registry = path.join(wt, 'vendor/upstreams/registry.yaml');
     await writeFile(registry, `${await readFile(registry, 'utf8')}\n${YAML.stringify([entry])}`);
-    execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root, stdio: 'pipe' });
+    execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root, stdio: 'pipe' });
     const html = await readFile(path.join(draft, 'catalog.html'), 'utf8');
     const got = JSON.parse(await readFile(path.join(draft, 'catalog.json'), 'utf8')).items.find(i => i.type === 'upstream' && i.name === entry.name);
     assert.ok(got, 'the entry is in catalog.json');
@@ -351,13 +363,13 @@ const luminance = hex => {
 const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
 
 test('every domain and bucket has a tone: the covers\' tints, and an ink that shows on white and on both tints', () => {
-  const css = show('web/catalog.css');
+  const css = show('tools/site/assets/catalog.css');
   const tones = Object.fromEntries([...css.matchAll(/\[data-tone=([\w-]+)\]\{([^}]*)\}/g)].map(([, slug, body]) =>
     [slug, Object.fromEntries([...body.matchAll(/--([\w-]+):(#[0-9a-f]{6})/g)].map(([, k, v]) => [k === 'tone-ink' ? 'tone' : k, v]))]));
   for (const slug of [...domainSlugs, ...BUCKETS]) {
     const t = tones[slug];
     assert.ok(t?.tone && t['tint-a'] && t['tint-b'], `web/catalog.css: [data-tone=${slug}] needs --tint-a, --tint-b and --tone-ink (a new domain in docs/areas.yaml needs a tone)`);
-    assert.deepEqual([t['tint-a'], t['tint-b']], TINT[slug], `${slug}: the rail's tints and the covers' (TINT in tools/catalog-art.mjs) differ`);
+    assert.deepEqual([t['tint-a'], t['tint-b']], TINT[slug], `${slug}: the rail's tints and the covers' (TINT in tools/site/compiler/catalog-art.mjs) differ`);
     // The ink is a UI graphic (the hover bar, the glyph, the arrow): 3:1 against everything it sits on. In the dark theme
     // the tone and tints are mixed from it (checked in the browser: tests/site/website-catalog-browser.mjs).
     for (const bg of ['#ffffff', t['tint-a'], t['tint-b']]) assert.ok(contrast(t.tone, bg) >= 3, `${slug}: --tone ${t.tone} on ${bg} is ${contrast(t.tone, bg).toFixed(2)}:1 (3 needed)`);
@@ -369,7 +381,7 @@ test('every domain and bucket has a tone: the covers\' tints, and an ink that sh
 });
 
 test('the area rail: hover effects only where a pointer hovers, and each domain\'s first row reads "All" with its name for screen readers', () => {
-  const css = show('web/catalog.css');
+  const css = show('tools/site/assets/catalog.css');
   // A :hover rule outside @media(hover:hover) sticks on a touch screen after a tap. Each block is matched whole (one
   // level of nested braces), so a one-line block cannot swallow the rules after it.
   const hoverBlocks = [...css.matchAll(/@media\(hover:hover\)\{(?:[^{}]|\{[^{}]*\})*\}/g)].map(m => m[0]);
@@ -379,7 +391,7 @@ test('the area rail: hover effects only where a pointer hovers, and each domain\
   assert.equal(stray, undefined, `a rail :hover rule outside @media(hover:hover): ${stray}`);
   // Its muted names stay readable on the panels, in both themes (the colour is a token of web/site.css).
   const token = css.match(/\.area-link\[data-maturity=idea\] \.area-name[^{]*\{color:var\(--([\w-]+)\)/)?.[1];
-  const site = show('web/site.css'), set = block => Object.fromEntries([...block.matchAll(/--([\w-]+):(#[0-9a-f]{3,8})/g)].map(m => [m[1], m[2]]));
+  const site = show('tools/site/assets/site.css'), set = block => Object.fromEntries([...block.matchAll(/--([\w-]+):(#[0-9a-f]{3,8})/g)].map(m => [m[1], m[2]]));
   const [light, dark] = [site.match(/:root\{(--cream[^}]*)\}/)[1], site.match(/:root\[data-theme=dark\]\{([^}]*)\}/)[1]].map(set);
   for (const [name, t] of [['light', light], ['dark', dark]]) {
     const hex6 = c => c.length === 4 ? '#' + [...c.slice(1)].map(x => x + x).join('') : c;
@@ -425,7 +437,7 @@ test('no project is singled out: no Gyropup flag, badge, filter, boost or field 
     assert.deepEqual(a.priority.filter(p => p !== 'demo'), [], `index.json ${a.slug}: priority ${a.priority}`);
   }
   for (const hook of ['class="gyro"', 'pill-gyropup', 'name="gyropup"', 'data-gyropup', 'Needed for Gyropup', 'needed for Gyropup']) assert.ok(!page.includes(hook), `the page still has ${hook}`);
-  assert.doesNotMatch(show('web/catalog.css'), /gyro/i);
+  assert.doesNotMatch(show('tools/site/assets/catalog.css'), /gyro/i);
   for (const d of areas.domains) for (const n of [d, ...d.areas, ...d.areas.flatMap(a => a.topics || [])]) assert.ok(!(n.priority || []).includes('gyropup'), `docs/areas.yaml ${n.slug}: priority gyropup`);
 });
 

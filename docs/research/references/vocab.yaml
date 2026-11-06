@@ -1,0 +1,264 @@
+# Fixed vocabularies of the reference registry, schema 2 (#323).
+#
+# Every schema-2 field that takes one of a fixed set of values is checked against this file by
+# cadagent.review.references (`python -m cadagent.review.references --check`). Each vocabulary maps a value to its label
+# (or to a small table); the order here is the order pages show them in. The record fields are described in
+# docs/research/references/README.md.
+#
+# Most of these come from the Reference Map the owner built on 2026-11-02 (its VL, LN, CN, PMAP/PNAME, PR, DOMS, CATS,
+# AUL and CQL tables), kept as data rather than buried in code. Changing a value here changes what check() accepts:
+# rename a value only in a PR that rewrites every record using it.
+schema: 2
+
+# ---------------------------------------------------------------- what a record is
+
+kind:
+  project: Open project (repository or build log)
+  guide: Design or manufacturing guide
+  standard: Standard
+  datasheet: Data sheet
+  paper: Paper or thesis
+  article: Article or blog post
+  vendor-table: Vendor table or feed
+  forum-thread: Forum thread
+  video: Video or talk
+  patent: Patent
+
+# The map's card categories. `code` is the map's own letter, kept so a re-import can be traced back.
+category:
+  robots: {code: R, title: Full robots, scope: Complete robots and turrets with a design to study.}
+  assemblies: {code: A, title: Assemblies, scope: "Blasters, pan/tilt heads and trackers: a working sub-system with its own parts."}
+  mechanisms: {code: M, title: Mechanisms, scope: "Gear drives, printed bearings and reducers."}
+  components: {code: C, title: Components, scope: "Libraries, generators and small parts: bearings, gears, snap-fits, tensioners."}
+  motors-and-drivers: {code: E, title: "Motors, actuators, drivers", scope: "Actuators with open CAD, motor and winding projects, FOC driver boards and open ESC designs."}
+  simulation-and-control: {code: S, title: Simulation and control, scope: Models and controllers with no hardware to build.}
+  design-guides: {code: G, title: Design guides and lessons, scope: "Papers, articles and test reports."}
+  manufacturing-guides: {code: P, title: Manufacturing guides, scope: "Design guides from the people who run each process, mapped to the process they cover."}
+
+# The map's project domains (DOMS).
+domain:
+  turret: Turret / blaster
+  wheel: Wheel-legged / balancing
+  legged: Legged / humanoid
+  drone: Drone / flyer
+  pantilt: Pan/tilt / tracker
+  drive: Gears / bearings
+  motor: Motors / drivers
+  esc: ESC / FOC drivers
+  general: General
+
+# Processes (PMAP and PNAME): each belongs to one process group.
+process:
+  fdm: {title: FDM, group: print}
+  sla: {title: Resin, group: print}
+  sls: {title: SLS, group: print}
+  mjf: {title: MJF, group: print}
+  metal-am: {title: Metal AM, group: print}
+  sheet: {title: Sheet metal, group: sheet}
+  laser: {title: Laser, group: sheet}
+  waterjet: {title: Waterjet, group: sheet}
+  bending: {title: Bending, group: sheet}
+  cnc-mill: {title: Milling, group: cnc}
+  cnc-turn: {title: Turning, group: cnc}
+  injection: {title: Injection, group: mould}
+  casting: {title: Casting, group: mould}
+  urethane: {title: Urethane, group: mould}
+  snap-fit: {title: Snap-fit, group: mould}
+  inserts: {title: Inserts, group: inserts}
+  fasteners: {title: Fasteners, group: inserts}
+  joining: {title: Joining, group: inserts}
+  pcb: {title: PCB, group: pcb}
+  general: {title: General, group: general}
+
+# Process groups (PR): how guides are sharded, and what a project needs to be made.
+process_group:
+  print: 3D printing
+  sheet: Sheet metal and laser
+  cnc: CNC machining
+  mould: Moulding and casting
+  inserts: Inserts and fasteners
+  pcb: PCB and electronics
+  winding: Motor winding
+  general: General DFM
+
+# ---------------------------------------------------------------- licence and reuse
+
+# Of the SOURCE (LN, plus proprietary for vendor pages). `map` is the map's own key for the class.
+licence_class:
+  open: {title: open, map: open}
+  share-alike: {title: share-alike, map: copyleft}
+  non-commercial: {title: non-commercial, map: nc}
+  unclear: {title: licence unclear, map: unclear}
+  proprietary: {title: proprietary, map: null}
+
+reuse_text:
+  cite-only: Cited and summarised in our own words, never copied
+
+reuse_geometry:
+  copy: Files may be copied, with the licence kept
+  adapt-with-attribution: Files may be adapted, credited
+  study-only: Study only, never copy files, cite in the decision
+  none: No geometry to reuse
+
+# Licence classes whose geometry is study-only or none, whatever else a record says (the owner's rule, #323 section 8).
+study_only:
+  - share-alike
+  - non-commercial
+  - unclear
+  - proprietary
+
+# ---------------------------------------------------------------- evidence
+
+# The promotion ladder, lowest first. The order matters: cadagent.review.references reads it as a ladder, and its
+# own copy of the order must match this one.
+evidence_class:
+  snippet-only: "Seen in a search snippet only. May be listed and linked; never backs a rule, a check or a page's rule line"
+  read: "A person or agent opened the source and wrote the dated `verified` note. May be cited by text and by a profile rule"
+  verified-at-source: "A second, independent record corroborates the claim (claims[].corroborated_by). May back a check"
+  encoded: "The claim is a profile rule or a check with a golden vector and a planted-defect test (`rules` or `checks` set). A secondary source needs a corroborating record first; a primary one may stand alone"
+  measured: "A physical result on a real project backs the claim, linked from the record"
+
+numbers:
+  none: No numbers
+  some: Some numbers
+  claimed: "Authors' claim: numbers stated, not measured"
+  measured: Measured, with a method
+  unknown: Unknown
+
+tested:
+  "yes": Test data
+  "no": No test data
+  unknown: Unknown
+
+# Who wrote it (AUL).
+authority:
+  independent-tested: Independent, tested
+  primary: From the maker
+  reference: Secondary reference
+  aggregator: Aggregator, low trust
+
+claim_status:
+  unconfirmed: Rule seen, no second source found
+  corroborated: Rule seen, a second source agrees
+  conflicting: Rule seen, sources conflict
+  encoded: Encoded as a rule or check with tests
+
+# #143's levels. cadagent.review.references.confidence() derives them; the estimate is the level's, not a measurement.
+confidence:
+  high: {estimate: 0.9, means: "Two or more independent verified-at-source (or better) records agree, and tests reproduce their examples"}
+  medium: {estimate: 0.7, means: "One read primary source with reproduced examples, or several agreeing sources"}
+  low: {estimate: 0.4, means: "A single source, a search snippet, or untested judgement"}
+  unknown: {estimate: null, means: Not yet assessed}
+
+# ---------------------------------------------------------------- the objective assessment of a project (S)
+
+built:
+  concept: Concept only
+  built: Built
+  works: Works
+  replicated: Replicated
+  product: Product
+  unknown: Unknown
+
+supply:
+  commodity: Easy parts
+  specialty: Specialty
+  scarce: Scarce
+  unknown: Unknown
+
+cost:
+  under100: Under $100
+  100to500: $100 to 500
+  500to2000: $500 to 2k
+  over2000: Over $2k
+  unknown: Not stated
+
+make:
+  print: Printed
+  print+cut: Print + cut
+  machined: Machined
+  needs-pcb-or-winding: PCB / winding
+  buy-and-assemble: Buy + assemble
+  unknown: Unknown
+
+docs:
+  none: None
+  basic: README only
+  guide: Build guide
+  full: Full docs
+  unknown: Unknown
+
+activity:
+  active: Active
+  slow: Slow
+  dormant: Dormant
+  archived: Archived
+  unknown: Unknown
+
+# The map's verdict on the record's place in its class, kept project-neutral: it names no project (owner, #323,
+# 2026-11-02). Its limits: the map's authors scored it while surveying for one kind of build, a printed two-wheeled,
+# legged balancing robot, so classes far from that (drones, arms, blasters) lean to `context` for that reason alone.
+# It is not a quality grade. Read it with the record's `caveat` and evidence, and judge a record for your own build.
+role:
+  leader: "Leader: best known or best evidenced in its class"
+  reference: "Reference: solid, study closely"
+  lessons: "Lessons: a few things to take"
+  context: "Context: weak or off target"
+
+cad_seen:
+  V: CAD seen
+  F: Folder only
+  N: No CAD
+  U: Unverified
+
+assessed_from:
+  readme: The project's README
+  note-only: Our one-line note only (no usable README)
+  cad: The CAD files
+  snippet: A search snippet
+  measured: A measurement
+
+# The per-category questions (CQL): keys of assessment.answers.
+answer:
+  size: Size and payload
+  act: Actuators
+  ctrl: Open control or sim
+  limit: Stated limits
+  ammo: Ammo and speed
+  feed: Feed and jams
+  safe: Safety features
+  load: Payload and speed
+  drive: Drive and backlash
+  cable: Bearing and cables
+  perf: Ratio, torque, efficiency
+  life: Backlash and lifetime
+  print: Print material
+  param: Parametric, formats
+  valid: Validated
+  meas: Measured
+  therm: Thermal limits
+  elec: Driver and encoder
+  engine: Engine and model
+  real: Validated on hardware
+  rating: Voltage and current rating
+  stage: Controller, gate driver, FETs
+  sense: Sensing and feedback
+  iface: Command interface
+  files: Design files shipped
+
+# ---------------------------------------------------------------- coverage (coverage.yaml)
+
+# What cad-agent enforces for a topic, per the map's coverage table.
+coverage_status:
+  implemented: Implemented
+  partly: Partly
+  missing: Missing
+
+# ---------------------------------------------------------------- pointers
+
+# archive: a content hash the offline mirror resolves; never a path or a host.
+archive_kind:
+  html: Single-file HTML
+  pdf: PDF
+  git-bundle: Git bundle
+  warc: WARC

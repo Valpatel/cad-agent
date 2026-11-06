@@ -7,7 +7,7 @@ flange and relief, each with the rule or shop row it came from (#99).
     sm.flat_length([20, 30, 20], "mild-steel", 1.519, angles=[90, 90], shop=False)   # a U channel, generic rules
     sm.bend("5052", 2.0, radius_mm=2.0)            # no shop row: the generic K table and the strictest generic flange
 
-**Order of the numbers** (research/process-profiles.yaml asks a check to read the chosen shop's table before any generic
+**Order of the numbers** (docs/research/process-profiles.yaml asks a check to read the chosen shop's table before any generic
 rule):
 
 1. a value the caller gives (``radius_mm``, ``k``);

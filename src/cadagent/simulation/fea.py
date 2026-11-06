@@ -66,7 +66,7 @@ class Material:
     strength_mpa: float          # the strength the safety factor uses (yield for metals; weak-direction for prints)
     density_g_cm3: float
     note: str = ''               # printed parts: the sheet and edition, and what E and the strength are taken from
-    source: str = ''             # the data sheet the numbers come from: its id in research/references.yaml (#118)
+    source: str = ''             # the data sheet the numbers come from: its id in docs/research/references.yaml (#118)
     direction: str = ''          # printed parts: the print direction of E ('Z': across the layers; 'X-Y': in the
                                  # layer plane); '' for an isotropic material. Change `note` with it.
     layer_strengths_mpa: Optional[Tuple[float, float]] = None
@@ -144,7 +144,7 @@ def _isotropic_basis(mat: Material) -> str:
 # preliminary sheet of 2026-08) and 0.58 with 30 % glass (Ultramid B3EG6 SI, 5650 / 9700 MPa); a filled print
 # plausibly sits between. Taking the saturated printed ratios for modulus and strength alike is a judgement for the
 # cautious end: in room air these rows may be up to about 2x too soft, which is cautious for deflection, but a force or
-# stress worked out at a given travel reads low. research/compliant-mechanisms.md section 5 has the links.
+# stress worked out at a given travel reads low. docs/research/compliant-mechanisms.md section 5 has the links.
 _HUMID_E = {'X-Y': 2508.1 / 8636.5, 'Z': 1056.1 / 3759.5}       # 0.290, 0.281
 _HUMID_S = {'X-Y': 54.7 / 109.3, 'Z': 25.5 / 54.0}              # 0.500, 0.472
 _PRINT = 0.8   # x0.8 for a print's voids and seams: a knock-down the original table applied to these rows only

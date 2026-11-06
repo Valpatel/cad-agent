@@ -30,7 +30,7 @@ OUT = ROOT / "docs" / "img" / "bearings"
 KNEE = dict(oscillation={"amplitude_deg": 30, "cycles_per_min": 60},
             duty=[{"name": "stance", "radial_n": 900, "share": 0.6}, {"name": "swing", "radial_n": 150, "share": 0.4}],
             required_hours=2000, static=[{"name": "power cut", "radial_n": 3485}])
-KNEE_GEOMETRY = {"balls": 7, "ball_mm": 5.953}            # assumed, not SKF's: see docs/bearings.md
+KNEE_GEOMETRY = {"balls": 7, "ball_mm": 5.953}            # assumed, not SKF's: see docs/mechanical/bearings.md
 LIFE_BEARINGS = ("skf-61804", "skf-6201", "skf-6301", "skf-nu-202-ecp")
 STYLE = ("<style>text{font:13px system-ui,sans-serif;fill:#1d1d1b}.muted{fill:#5c5b56;font-size:11px}"
          ".axis{stroke:#9b9a93;stroke-width:1;fill:none}.grid{stroke:#e2e1dc;stroke-width:1}"
@@ -228,8 +228,8 @@ def knee_figure() -> str:
 
 
 def page_example() -> dict:
-    """The spec in docs/bearings.md's "Check a bearing" section, read from the page so the figure shows its output."""
-    text = (ROOT / "docs" / "bearings.md").read_text()
+    """The spec in docs/mechanical/bearings.md's "Check a bearing" section, read from the page so the figure shows its output."""
+    text = (ROOT / "docs" / "mechanical" / "bearings.md").read_text()
     return yaml.safe_load(text.split("```yaml\n", 1)[1].split("```", 1)[0])
 
 

@@ -1,4 +1,4 @@
-"""Connectivity and floating-parts gate (plan ``docs/design-process-plan.md`` §4.2, task T4).
+"""Connectivity and floating-parts gate (plan ``docs/practice/design-process-plan.md`` §4.2, task T4).
 
 It answers: does every part hang on something, and is every declared connection really there?
 

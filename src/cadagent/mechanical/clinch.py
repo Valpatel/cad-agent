@@ -6,7 +6,7 @@ check of a part's placement against PEM's published rules (#283).
     # verdict pass / warn / fail, each check with its value, limit, rule and source
     parts_for("M3", "5052-h32", 1.6)              # the listed parts that clinch into 1.6 mm 5052, nuts first
 
-**What is checked**, each against the rule it names (the ``sm-clinch-*`` rules of ``research/process-profiles.yaml``
+**What is checked**, each against the rule it names (the ``sm-clinch-*`` rules of ``docs/research/process-profiles.yaml``
 and the part's own row from PEM's bulletins):
 
 - the sheet's hardness: at most the hardest sheet the part's material takes (PEM handbook HB-6), with a warning when
@@ -43,7 +43,7 @@ from cadagent.manufacturing import process as pp
 
 IN, LBF, INLBF = 25.4, 4.4482216152605, 0.112984829      # mm per inch, N per lbf, N m per in lbf
 
-# Registry ids (research/references.yaml) of the sources this module reads its numbers from.
+# Registry ids (docs/research/references.yaml) of the sources this module reads its numbers from.
 SRC = {
     "pem-handbook": "PennEngineering, The Self-Clinching Fastener Handbook (2025): HB-4 hardness margin, HB-6 sheet "
                     "hardness, HB-9 hole and punch side, HB-12 edge, bend and spacing rules",
@@ -181,7 +181,7 @@ def _sheet(key: str) -> Sheet:
 def parts_for(thread: str, sheet: str, thickness_mm: float, kind: Optional[str] = None) -> List[Dict[str, Any]]:
     """The listed parts for ``thread`` (``M3`` or PEM's inch code such as ``440`` or ``032``) that clinch into ``sheet``
     of ``thickness_mm``: thick enough, and the sheet's typical hardness at most the part material's limit. Nuts first,
-    steel before stainless (the cheaper and more stocked part, research/sheet-metal-joining.md §4)."""
+    steel before stainless (the cheaper and more stocked part, docs/research/manufacturing/sheet-metal-joining.md §4)."""
     s, t = _sheet(sheet), _num("thickness_mm", thickness_mm)
     if kind is not None and kind not in ("nut", "stud", "standoff"):
         raise ValueError(f"kind is nut, stud or standoff, not {kind!r}")

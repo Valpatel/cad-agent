@@ -128,7 +128,7 @@ from cadagent.mechanical.compliant import allowables as al
 
 
 @pytest.mark.parametrize("name, along, across", [
-    # research/compliant-mechanisms.md section 6, single joining, to its rounding
+    # docs/research/compliant-mechanisms.md section 6, single joining, to its rounding
     ("pla-polymaker", 0.011, 0.009), ("pla-bambu-basic", 0.0095, 0.0095), ("pla-bambu-matte", 0.0107, 0.0092),
     ("petg-polymaker", 0.017, 0.016), ("petg-bambu-basic", 0.0128, 0.0096), ("petg-bambu-hf", 0.013, 0.010),
     ("petg-cf-bambu", 0.0100, 0.0100), ("asa-polymaker", 0.013, 0.008), ("asa-bambu", 0.0106, 0.0102),
@@ -193,11 +193,11 @@ def test_printed_snap_without_orientation_fails_and_assumes_across():
 
 
 def test_docs_page_example_runs_and_table_matches_the_code():
-    # docs/compliant.md is a living page: its YAML example and printed-allowables table are checked here
+    # docs/mechanical/compliant.md is a living page: its YAML example and printed-allowables table are checked here
     import re
     from pathlib import Path
     import yaml
-    doc = (Path(__file__).resolve().parents[2] / "docs" / "compliant.md").read_text()
+    doc = (Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text()
     result = sf.check_spec(yaml.safe_load(re.search(r"```yaml\n(.*?)```", doc, re.S).group(1)))
     assert result["pass"] and [s["name"] for s in result["snaps"]] == ["lid-latch", "example-I"]
     rows = re.findall(r"`([a-z0-9-]+)` \| ([\d.]+) % \| ([\d.]+) %", doc)
@@ -316,7 +316,7 @@ def test_bad_yaml_is_exit_2(tmp_path):
 def test_docs_ranges_match_the_datasheets():
     # the living page's stated across/along ranges for PLA, PETG, ASA and CoPA come from the PRINTED rows
     from pathlib import Path
-    doc = (Path(__file__).resolve().parents[2] / "docs" / "compliant.md").read_text()
+    doc = (Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text()
     rows = [v.sheets[0] for k, v in al.PRINTED.items() if not k.startswith("pa6-cf")]     # the current editions
     strength = [s.uts_mpa[1] / s.uts_mpa[0] for s in rows]
     elong = [s.break_pct[1] / s.break_pct[0] for s in rows]
@@ -327,7 +327,7 @@ def test_docs_ranges_match_the_datasheets():
 
 def test_docs_direction_costs_match_the_code():
     from pathlib import Path
-    doc = " ".join((Path(__file__).resolve().parents[2] / "docs" / "compliant.md").read_text().split())
+    doc = " ".join((Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text().split())
     ratio = {k: v.allowable("across") / v.allowable("along") for k, v in al.PRINTED.items()}
     pct = lambda keys: sorted(round(ratio[k] * 100) for k in keys)
     pla_petg = pct(k for k in ratio if k.startswith(("pla", "petg")))

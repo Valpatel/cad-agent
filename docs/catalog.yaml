@@ -1,6 +1,6 @@
 # The catalogue's demos and the pictures of our commands: cad-agent.valpatel.com/catalog, /catalog.json and
-# /catalog/index.json are built from this file, docs/areas.yaml, vendor/upstreams/registry.yaml, research/landscape.json,
-# cli.py and the site's own pages (tools/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
+# /catalog/index.json are built from this file, docs/areas.yaml, vendor/upstreams/registry.yaml, docs/research/landscape.json,
+# cli.py and the site's own pages (tools/site/compiler/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
 # drawn by the build from data; the catalogue never shows an outside image (licences, and the site's CSP).
 #
 # demos: the "Play with it" strip and the Demos tab, in this order (a wide screen shows the first four in the strip). An entry appears once every file it names exists
@@ -8,7 +8,7 @@
 #     id      stable slug (the catalogue entry is demo-<id>)
 #     title   what people see; what: one plain line
 #     mode    interactive (you drive it), animated (it plays) or render (a still result from our tools)
-#     cover   a figure in docs/img, or snap-demo (the landing page's animation, computed by tools/snap-demo.mjs)
+#     cover   a figure in docs/img, or snap-demo (the landing page's animation, computed by tools/site/compiler/snap-demo.mjs)
 #     url     where it lives: a page (docs/x.md, with an optional #anchor that must exist). Without one: the page that
 #             shows the cover, at the heading above it
 #     still   animated covers: the moment the still frame shows, as a fraction of the loop (default 0.5)
@@ -36,7 +36,7 @@ demos:
     what: Size a cantilever snap arm and watch it bend, coloured by strain, with pass or fail for the print direction.
     mode: interactive
     cover: docs/img/compliant/cantilever-explorer.svg
-    url: docs/compliant.md#try-it-the-snap-arm-explorer
+    url: docs/mechanical/compliant.md#try-it-the-snap-arm-explorer
     areas: [compliant-mechanisms]
     tools: [snapfit]
   - id: fourbar-animator
@@ -44,14 +44,14 @@ demos:
     what: Set four link lengths and watch the crank turn or lock, both assemblies and the transmission angle against 40°.
     mode: interactive
     cover: docs/img/formulas/fourbar-animator.svg
-    url: docs/linkages.md#try-it-the-four-bar-animator
+    url: docs/mechanical/linkages.md#try-it-the-four-bar-animator
     areas: [linkages]
   - id: fivebar-sweep
     title: Five-bar leg sweep
     what: A five-bar leg's foot driven round a stride, on its map of crank angles with the lock a symmetric sweep runs into.
     mode: animated
     cover: docs/img/linkages/fivebar.svg
-    url: docs/linkages.md#sweeping-a-closed-loop-four-bars-and-five-bars
+    url: docs/mechanical/linkages.md#sweeping-a-closed-loop-four-bars-and-five-bars
     still: 0.3
     areas: [linkages]
   - id: fan-curve-explorer
@@ -66,14 +66,14 @@ demos:
     what: Twist a printed bar with a lever and see its shear strain against the filament's allowable, and the force.
     mode: interactive
     cover: docs/img/compliant/torsion-snap-explorer.svg
-    url: docs/compliant.md#try-it-the-torsion-snap-explorer
+    url: docs/mechanical/compliant.md#try-it-the-torsion-snap-explorer
     areas: [compliant-mechanisms]
   - id: screw-boss-explorer
     title: Screw-boss explorer
     what: A thread-forming screw in a printed boss, its clamp, where the thread strips, and the torque window.
     mode: interactive
     cover: docs/img/fasteners/screw-boss-explorer.svg
-    url: docs/screw-bosses.md#try-it-the-screw-boss-explorer
+    url: docs/mechanical/screw-bosses.md#try-it-the-screw-boss-explorer
     areas: [fasteners-and-hardware]
   - id: fea-lid
     title: FEA of a ribbed lid
@@ -87,7 +87,7 @@ demos:
     what: The hook rides up the catch's lead-in, drops in behind it and holds when pulled back, computed from the outlines.
     mode: animated
     cover: snap-demo
-    url: docs/compliant.md
+    url: docs/mechanical/compliant.md
     still: 0.56
     areas: [compliant-mechanisms]
     tools: [snapfit]
@@ -103,8 +103,8 @@ demos:
     what: A gate arm swept through its range; the first pose that hits the frame is bisected to a hundredth of a degree.
     mode: animated
     cover: docs/img/motion/hinge-sweep.svg
-    # pinned: docs/pages.yaml shows this figure on other pages too (the plan, the band of docs/gates.md)
-    url: docs/gates.md#motion-range-interference-cadagentreviewgatesmotion
+    # pinned: docs/pages.yaml shows this figure on other pages too (the plan, the band of docs/practice/gates.md)
+    url: docs/practice/gates.md#motion-range-interference-cadagentreviewgatesmotion
     still: 0.62
     areas: [mechanisms, design-process]
     tools: [gates]
@@ -135,7 +135,7 @@ demos:
     what: A preassembled module checked on its bench, then inserted into its parent as one body and withdrawn.
     mode: animated
     cover: docs/img/motion/module-insertion.svg
-    url: docs/subassembly-insertion.md#rigid-subassembly-insertion     # pinned, as hinge-sweep
+    url: docs/mechanical/subassembly-insertion.md#rigid-subassembly-insertion     # pinned, as hinge-sweep
     areas: [fasteners-and-hardware]
     tools: [gates]
   - id: connector-window
@@ -157,7 +157,7 @@ demos:
     what: What a renderer drew at every required pose, checked against the CAD; one that spins a rotor about the wrong pivot fails.
     mode: animated
     cover: docs/img/motion/motion-trace.svg
-    url: docs/rendered-motion.md
+    url: docs/mechanical/rendered-motion.md
     still: 0.56
     tools: [motion-trace]
   - id: insertion-sweep
@@ -165,22 +165,22 @@ demos:
     what: A part moved in along a straight line; clear on its swept box, sampled near an obstacle with a bound between samples, or blocked and its contact bisected.
     mode: animated
     cover: docs/img/motion/insertion-sweep.svg
-    url: docs/gates.md#assembly-sequence-access-cadagentreviewgatesassembly
+    url: docs/practice/gates.md#assembly-sequence-access-cadagentreviewgatesassembly
     still: 0.9
     tools: [gates]
 
 tools:
-  snapfit: {page: docs/compliant.md, figures: [docs/img/compliant/example-1.svg]}
+  snapfit: {page: docs/mechanical/compliant.md, figures: [docs/img/compliant/example-1.svg]}
   # inserts: where the screw's clamp goes, the first thing the joint check works out
-  inserts: {page: docs/inserts.md, figures: [docs/img/inserts/clamp-paths.svg, docs/img/inserts/section.svg]}
+  inserts: {page: docs/mechanical/inserts.md, figures: [docs/img/inserts/clamp-paths.svg, docs/img/inserts/section.svg]}
   # bearings: the life against load it rests on, then a knee checked
-  bearings: {page: docs/bearings.md, figures: [docs/img/bearings/life-load.svg, docs/img/bearings/knee.svg]}
+  bearings: {page: docs/mechanical/bearings.md, figures: [docs/img/bearings/life-load.svg, docs/img/bearings/knee.svg]}
   # holes, gates and optimise: the verdicts their demos build up to (the hole check's fail and pass, the module's
   # bench, fit and withdrawal results, the search's front).
   holes: {page: docs/toolkit.md#holes-clear, figures: [docs/img/motion/rib-in-counterbore.svg], still: 0.8}
-  gates: {page: docs/gates.md, figures: [docs/img/motion/module-insertion.svg], still: 0.85}
+  gates: {page: docs/practice/gates.md, figures: [docs/img/motion/module-insertion.svg], still: 0.85}
   optimise: {page: docs/explore.md, figures: [docs/img/motion/search-front.svg], still: 0.9}
-  # compare: what `cad-agent compare --json` printed for examples/explore-two-wheel (tools/explore_charts.py writes
+  # compare: what `cad-agent compare --json` printed for docs/examples/explore-two-wheel (tools/explore_charts.py writes
   # the JSON; tests run it with --check).
   compare: {page: docs/explore.md, chart: "docs/img/explore/two-wheel-charts.json#compare"}
   catalogue: {page: docs/explore.md}
@@ -188,9 +188,9 @@ tools:
   slice: {page: docs/toolkit.md#real-grams-cadagentmanufacturingslicer-cad-agent-slice}
   release: {page: docs/toolkit.md#the-print-release-cad-agent-release}
   pcb-check: {page: docs/pcb.md}
-  motion-trace: {page: docs/rendered-motion.md}
-  dossier: {page: docs/dossier.md}
-  review-packet: {page: docs/review-packet.md}
-  review-section: {page: docs/review-packet.md}
-  agents: {page: docs/agent-workflow.md}
+  motion-trace: {page: docs/mechanical/rendered-motion.md}
+  dossier: {page: docs/practice/dossier.md}
+  review-packet: {page: docs/practice/review-packet.md}
+  review-section: {page: docs/practice/review-packet.md}
+  agents: {page: docs/practice/agent-workflow.md}
   mcmaster: {page: skills/mcmaster-parts/SKILL.md}

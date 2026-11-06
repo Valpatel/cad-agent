@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
-import {chromium,webkit} from '@playwright/test';
+import {chromium,webkit} from '../site/npm-context.mjs';
 import {serveWebkit} from './webkit-server.mjs';
 const diagram='flowchart LR\nA[Design] --> B[Build] --> C[Test]';
 const html=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/diagrams.css"><style>body{margin:16px;font:16px system-ui;background:${theme==='dark'?'#10141b':'#fffaf2'};color:${theme==='dark'?'white':'#263e35'}}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Design evidence</h1><pre><code class="language-mermaid">${diagram}</code></pre><pre class="mermaid">sequenceDiagram\nDesigner->>Robot: Test safely\nRobot-->>Designer: Results</pre><div id="dynamic"></div></main><script type="module">import {observeDiagrams} from '/kit/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;

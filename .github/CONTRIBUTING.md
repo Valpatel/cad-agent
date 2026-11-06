@@ -34,7 +34,7 @@ flowchart TD
 |---|---|---|---|
 | `core (3.10)`, `core (3.12)`, `full` | ✓ | ✓ | The test suite with required dependencies only, and with every extra |
 | `browser (chromium)`, `browser (webkit)` | ✓ | ✓ | Web kit and website suites in two browser engines |
-| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
+| `cad-gates/<base>/branch-flow` | ✓ | ✓ | `dev` takes `feat/ fix/ ci/ docs/ docs/research/ test/ refactor/ release/ vendor-update/ dependabot/` branches (forks: the outside-contribution checks); `main` takes `dev` only |
 | `cad-gates/<base>/review` | ✓ | ✓ | The latest verdict from a maintainer is pass, on the PR's head commit |
 | `cad-gates/main/release` | | ✓ | `pyproject.toml` version above `main`'s, and a dated `## vX.Y.Z (YYYY-MM-DD)` entry in [CHANGELOG.md](../CHANGELOG.md) |
 | Conversations resolved | ✓ | ✓ | Every review thread answered and resolved |
@@ -63,14 +63,14 @@ with `gh pr checks <n>`.
 - **Pins.** Workflow actions are pinned by commit SHA, and Dependabot proposes updates weekly.
 
 ## Workflow
-Agents: install the workflow kit (`cad-agent agents install`, [docs/agent-workflow.md](../docs/agent-workflow.md)) and
+Agents: install the workflow kit (`cad-agent agents install`, [docs/practice/agent-workflow.md](../docs/practice/agent-workflow.md)) and
 follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes #<issue>`, and pushes as you go.
 
 0. **Issue.** Find or open the GitHub issue the change belongs to, with a checklist of done / next / how to resume.
 1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
-   ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site-catalog.mjs` builds from the
-   repo), the [landscape survey](../research/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
+   ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site/compiler/site-catalog.mjs` builds from the
+   repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
    skills in [`skills/`](../skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
@@ -82,7 +82,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    ```
 3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
-   `lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):
+   `docs/lessons/` folder also gets its line in [`docs/areas.yaml`](../docs/areas.yaml), the topic tree ([docs/vision.md](../docs/vision.md)):
    `tests/repo/test_areas.py` fails until it does. When two open PRs cross, the one that merges second adds the line, after
    merging `dev` and re-running CI (`dev` does not require branches to be up to date).
 4. **Open a PR into `dev`** early, as a draft if it is unfinished (`gh pr create --draft --base dev`), with `Closes #<issue>`; fill in the template, including what projects using
@@ -121,15 +121,15 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | Test data | `tests/fixtures/<set>/`, made by a script beside it or described in a README |
 | A docs page | `docs/<page>.md` (`docs/<domain>/` once its area has three pages, #145), with its line in `docs/areas.yaml` |
 | A figure on a page | `docs/img/<topic>/`, drawn by a generator in `tools/` that a test runs with `--check` |
-| A survey or sourced data table | `research/` |
-| A lesson from a real project | `lessons/<area>/`, listed in the area's README |
+| A survey or sourced data table | `docs/research/` |
+| A lesson from a real project | `docs/lessons/<area>/`, listed in the area's README |
 | A repo script (figures, site build, gates, release) | `tools/` |
-| A website asset | `web/` |
-| An example project | `examples/<name>/`, with a README |
+| A website asset | `tools/site/assets/` |
+| An example project | `docs/examples/<name>/`, with a README |
 | A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
 | Vendored upstream code | `vendor/<name>/`, through `tools/vendor_sync.py` |
 | A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
-| A finding or note from agent work | `lessons/<area>/`, not `.agents/` |
+| A finding or note from agent work | `docs/lessons/<area>/`, not `.agents/` |
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.
@@ -161,18 +161,27 @@ such as a new command or check, even one that asks nothing of projects.
    - publishes the GitHub release from the CHANGELOG entry;
 
    Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` (the name in
-   `wrangler.toml` and `npm run deploy:site`) is connected to this repository like every Valpatel Pages site:
-   build command `npm ci && npm run build`, output `dist`, root directory blank. Two settings differ from
+   `tools/site/wrangler.toml` and `npm --prefix tools/site run deploy:site`) is connected to this repository like every Valpatel Pages site:
+   output `dist`, root directory blank. The 2026-11-06 readback still uses the released root-package command
+   `npm ci && npm run build`. The nested-package command is `npm --prefix tools/site ci && npm --prefix tools/site run build`;
+   its reviewed external transition and readback are tracked in [#362](https://github.com/Valpatel/cad-agent/issues/362).
+   Moving repository files does not update that setting. Two settings differ from
    Cloudflare's defaults and matter here:
    - **Production branch `main`.** This repository's default branch is `dev`, and the release build accepts HEAD on
      `origin/dev` too, so a production branch of `dev` would publish every merge into `dev`.
    - **Preview deployments: None.** A branch build fails the release build's reviewed-commits check, and would put
      a red Cloudflare check on every PR.
-   - On each push to `main` it runs `npm ci && npm run build` and publishes `dist` to cad-agent.valpatel.com and
-     cad-agent.gyropup.com. `tools/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
-     which Cloudflare's clone lacks, then runs `tools/build-site.mjs --release`.
+   - On each push to `main` the configured build publishes `dist` to cad-agent.valpatel.com and
+     cad-agent.gyropup.com. `tools/site/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
+     which Cloudflare's clone lacks, then runs `tools/site/build-site.mjs --release`.
    - With previews off, only `main` publishes.
    - Check that `https://cad-agent.valpatel.com/version.json` shows the release.
-   - `npm run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
+   - `npm --prefix tools/site run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
+
+   **Runtime readback, 2026-11-06 UTC:** both deployment environments use build image v3 with no `NODE_VERSION`
+   override. The successful v0.21.0 production log detects Node 22.23.4 and npm 10.9.9.
+   [Cloudflare documents](https://developers.cloudflare.com/pages/configuration/build-image/#limitations) that v3 does
+   not select Node from package.json engines, so moving that metadata does not change the observed selection.
+   CI and the installed-wheel check explicitly use Node 22; a future runtime pin is a separate policy decision.
 
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

@@ -485,7 +485,7 @@ def run_sequence(world: SequenceWorld, steps: Iterable[Any], fasteners: Any = No
     ``fasteners``: ``{name: FastenerSpec | mapping}`` or a list of specs. ``service``: True checks every part's
     removal from the finished assembly, a list of part names checks those (warnings). ``subassemblies`` maps
     module names to exact ``members`` and internal ``steps``; ``service_after`` lists explicitly assumed-removed
-    parent keys for conditional module withdrawal. See ``docs/subassembly-insertion.md``."""
+    parent keys for conditional module withdrawal. See ``docs/mechanical/subassembly-insertion.md``."""
     if subassemblies is not None or service_after is not None:
         from cadagent.review.gates.subassembly import run_subassemblies
         return run_subassemblies(world, steps, fasteners, tools=tools, options=options, tol=tol,

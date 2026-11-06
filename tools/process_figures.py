@@ -10,7 +10,7 @@ Each figure is computed by the module it shows, on worked examples, never typed 
 * layer-factors.svg: ``cadagent.manufacturing.process`` FDM materials, across-the-layers factors from the data sheets;
 * sheet-flange.svg: ``cadagent.manufacturing.sheet_metal.bend`` per stock in the shop's table, the shop's shortest
   flange against the generic rules at the shop's own radius;
-* sheet-hardware-prices.svg: ``cadagent.mechanical.sheet_hardware`` per priced part in research/sheet-hardware.yaml,
+* sheet-hardware-prices.svg: ``cadagent.mechanical.sheet_hardware`` per priced part in docs/research/sheet-hardware.yaml,
   the price of one piece loose, at 1000 and pressed in by a shop (for docs/sheet-metal-hardware.md).
 
 Stdlib only besides cad-agent; the SVGs carry their own light background so they read the same on the site and on
@@ -102,7 +102,7 @@ def dfm_wall() -> str:
     _legend(out, h - 28, [(COLOUR["pass"], "meets the rule"), (COLOUR["warn"], "inside its range"),
                           (COLOUR["fail"], "below it")])
     out.append(f'<text x="{PAD}" y="{h - 8}" font-size="10.5" fill="{MUTED}">A bar: one limit somewhere in the range '
-               'by the source\'s own conditions. Rules are research/process-profiles.yaml\'s, by id.</text>')
+               'by the source\'s own conditions. Rules are docs/research/process-profiles.yaml\'s, by id.</text>')
     out.append("</svg>")
     return "\n".join(out) + "\n"
 
@@ -188,7 +188,7 @@ def sheet_hardware_prices() -> str:
     plot_w = W - 200 - PAD - 20
     x = lambda v: 200 + plot_w * (math.log10(min(max(v, lo), hi)) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
     out = _frame("Clinch parts and rivets: price of one piece",
-                 "cadagent.mechanical.sheet_hardware on research/sheet-hardware.yaml; log scale, US dollars", h)
+                 "cadagent.mechanical.sheet_hardware on docs/research/sheet-hardware.yaml; log scale, US dollars", h)
     bottom = top + row_h * len(items)
     _axis(out, x, [0.03, 0.1, 0.3, 1, 3], top - 8, bottom, "USD each")
     for n, it in enumerate(items):

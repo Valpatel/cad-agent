@@ -189,7 +189,7 @@ def geometry_identity(shape: Any, rel_tol: float = IDENTITY_TOLERANCE) -> Dict[s
     seen (a change of a small moment below a thousandth of ``rel_tol`` times the largest one included). So a match
     says "not told apart by mass properties", never "the same shape": it can explain a platform's hash mismatch, but
     never sign off geometry. The default integration can be off by more than the tolerance on some freeform solids
-    (docs/volume-precision.md); the same geometry gives the same error on any platform, which is all an identity
+    (docs/practice/volume-precision.md); the same geometry gives the same error on any platform, which is all an identity
     needs, but two constructions with different faces may not match (a miss, the safe side). Needs OCP and a solid
     with a positive volume (ValueError otherwise).
     """

@@ -17,15 +17,15 @@ _spec.loader.exec_module(app)
 ra, ir, refs = app.ra, app.ir, app.refs
 
 AS_OF = dt.date(2026, 11, 16)
-SHARD = "research/references/guides-inserts.yaml"
+SHARD = "docs/research/references/guides-inserts.yaml"
 
 
 @pytest.fixture
 def root(tmp_path):
-    for rel in ("research/references.yaml", "docs/areas.yaml", "research/process-profiles.yaml"):
+    for rel in ("docs/research/references.yaml", "docs/areas.yaml", "docs/research/process-profiles.yaml"):
         (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, tmp_path / rel)
-    shutil.copytree(ROOT / "research/references", tmp_path / "research/references")
+    shutil.copytree(ROOT / "docs/research/references", tmp_path / "docs/research/references")
     return tmp_path
 
 
@@ -72,7 +72,7 @@ def apply(root, h, accepted=(), cited=()):
 
 
 def record(root, rid):
-    return refs.load(root / "research/references.yaml").entries[rid]
+    return refs.load(root / "docs/research/references.yaml").entries[rid]
 
 
 def test_a_dead_link_lowers_the_class_once_per_outage(root):
@@ -82,7 +82,7 @@ def test_a_dead_link_lowers_the_class_once_per_outage(root):
     ev = record(root, rid).get("evidence")
     assert ev["class"] == "snippet-only" and ev["lowered"]["from"] == "read" and ev["lowered"]["date"] == AS_OF.isoformat()
     assert "gone: gone or unreachable on 2 checks in a row since 2026-11-09 (HTTP 404)" == ev["lowered"]["why"]
-    assert not [x for x in refs.load(root / "research/references.yaml").problems(root=root) if x.startswith(rid)]
+    assert not [x for x in refs.load(root / "docs/research/references.yaml").problems(root=root) if x.startswith(rid)]
     # the next week, still gone: already lowered for this outage
     files, p = apply(root, health(**{rid: entry(url, "gone", 3, http=[404])}))
     assert files == {} and p.rows == []
@@ -117,8 +117,8 @@ def test_snippet_only_core_and_cited_records_are_left_for_a_person(root):
     _, doc = shard(root)
     snip = recs(doc)[1]
     rid, url = promote(root)
-    core = next(r for r in refs.load(root / "research/references.yaml").entries.values()
-                if r.file == "research/references.yaml" and r.kind == "source" and r.get("url"))
+    core = next(r for r in refs.load(root / "docs/research/references.yaml").entries.values()
+                if r.file == "docs/research/references.yaml" and r.kind == "source" and r.get("url"))
     h = health(**{rid: entry(url, "gone", 2), snip["id"]: entry(snip["url"], "gone", 2),
                   core.id: entry(core["url"], "gone", 2)})
     files, p = apply(root, h, cited={rid})
@@ -128,8 +128,8 @@ def test_snippet_only_core_and_cited_records_are_left_for_a_person(root):
 
 
 def test_an_edit_that_would_fail_the_registry_check_is_left_out(root):
-    # read -> snippet-only with used_for outside research/ breaks the ladder rule: the bot must not write it
-    rid, url = promote(root, used_for=["docs/inserts.md"])
+    # read -> snippet-only with used_for outside docs/research/ breaks the ladder rule: the bot must not write it
+    rid, url = promote(root, used_for=["docs/mechanical/inserts.md"])
     files, p = apply(root, health(**{rid: entry(url, "gone", 2)}))
     assert files == {} and p.rows == [] and "left out" in dict(p.notes)[rid]
 
@@ -186,7 +186,7 @@ def test_a_hand_styled_shard_is_left_alone(root):
 
 
 def test_every_real_shard_is_editable():
-    for f in sorted((ROOT / "research/references").glob("*.yaml")):
+    for f in sorted((ROOT / "docs/research/references").glob("*.yaml")):
         if f.name not in refs.NOT_SHARDS:
             assert app.editable(f.read_text()), f.name
 
@@ -197,7 +197,7 @@ def test_lowered_is_validated(root):
     r = next(r for r in recs(doc) if r["id"] == rid)
     r["evidence"]["lowered"] = {"from": "snippet-only", "date": "2026-11-16", "why": "x"}
     save(root, head, doc)
-    probs = [x for x in refs.load(root / "research/references.yaml").problems(root=root) if x.startswith(rid)]
+    probs = [x for x in refs.load(root / "docs/research/references.yaml").problems(root=root) if x.startswith(rid)]
     assert any("lowered.from snippet-only is not above" in x for x in probs)
 
 

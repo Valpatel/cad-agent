@@ -3,13 +3,13 @@
 #
 # Every node: slug, title, scope (one line), maturity, and optionally:
 #   priority  demo (makes a good video or interactive demo)
-#   pages     repo-relative Markdown pages (docs/, research/)       cli      `cad-agent` subcommands
+#   pages     repo-relative Markdown pages (docs/, docs/research/)       cli      `cad-agent` subcommands
 #   api       cadagent modules (today's import paths)                skills   skills/<name>/SKILL.md
 #   uses      another domain's cadagent modules the node relies on (never one of its own `api`)
-#   agents    agents/<name>.md                                       lessons  a lessons/ folder this node owns (#133)
+#   agents    agents/<name>.md                                       lessons  a docs/lessons/ folder this node owns (#133)
 #   issues    open cad-agent issues or pull requests                 projects keys of `projects` below
 # A list may name the same item under several nodes. tests/repo/test_areas.py checks that every item exists, that every
-# docs/ and research/ page, command, skill and agent is placed somewhere, and that every lessons/ folder is claimed.
+# docs/ and docs/research/ page, command, skill and agent is placed somewhere, and that every docs/lessons/ folder is claimed.
 #
 # Keep the map whole: a PR that adds a docs or research page, a `cad-agent` command, a skill or an agent adds its line
 # here. When two open PRs cross, the one that merges second adds it, after merging dev and re-running its CI (dev does
@@ -41,7 +41,7 @@ projects:
   thor-can-breakout: {title: AGX Thor CAN breakout, url: "https://github.com/mvalancy/pcb-agx-thor-can-breakout"}
 
 cross_cutting:
-  pages: [docs/README.md, research/README.md, docs/vision.md, docs/toolkit.md, docs/formulas.md, research/landscape.md]
+  pages: [docs/README.md, docs/research/README.md, docs/examples/README.md, docs/vision.md, docs/toolkit.md, docs/formulas.md, docs/research/agent-workflow/landscape.md]
   api: [cadagent.geometry, cadagent.project, cadagent.links, cadagent.formulas, cadagent.library]
   issues: [106, 113, 139, 287]
 
@@ -50,30 +50,31 @@ domains:
     title: Mechanical design
     scope: Parts and assemblies that move, hold, enclose and fasten.
     maturity: tooling
+    pages: [docs/mechanical/README.md]
     lessons: mechanical
     areas:
       - slug: cad-modelling
         title: CAD modelling and kernels
         scope: Code-CAD kernels and libraries, parametric modelling, and CAD-program bridges for agents (MCP servers).
         maturity: tooling
-        pages: [docs/toolkit.md, research/landscape.md]
+        pages: [docs/toolkit.md, docs/research/agent-workflow/landscape.md]
         api: [cadagent.geometry]
       - slug: mechanisms
         title: Mechanisms
         scope: Joints, linkages, motor mounts and the motion between parts.
         maturity: tooling
         priority: [demo]
-        pages: [docs/rendered-motion.md]
+        pages: [docs/mechanical/rendered-motion.md]
         cli: [motion-trace]
         api: [cadagent.mechanical.motion_trace]
         skills: [cad-motion-validation]
         projects: [gyropup]
         topics:
           - {slug: motor-mounts, title: Motor mounts, scope: "Bolt circles, pilots and load paths for bought actuators and motors.", maturity: idea, issues: [144]}
-          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
+          - {slug: linkages, title: Linkages, scope: "Four- and five-bar position, workspace and transmission angle.", maturity: tooling, priority: [demo], pages: [docs/mechanical/linkages.md], api: [cadagent.mechanical.linkages], issues: [187]}
           - {slug: range-of-motion, title: Range-of-motion clearance, scope: "Moving parts that do not hit each other at any sampled pose, and swept-volume cutters that clear them.", maturity: tooling, pages: [docs/toolkit.md], api: [cadagent.mechanical.clearance], issues: [251]}
-          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: tooling, pages: [docs/printed-joints.md], api: [cadagent.mechanical.printed_joints], uses: [cadagent.simulation.fea], issues: [97]}
-          - {slug: rolling-bearings, title: Rolling bearings, scope: "Ball and roller bearings: ISO 281 life turning or oscillating, duty cycles, ISO 76 static safety, axial load and speed limits.", maturity: tooling, pages: [docs/bearings.md], cli: [bearings], api: [cadagent.mechanical.bearings], issues: [180]}
+          - {slug: joints-and-bearings, title: Joints and bearings, scope: "Pivots, bearing seats, shafts and their fits.", maturity: tooling, pages: [docs/mechanical/printed-joints.md], api: [cadagent.mechanical.printed_joints], uses: [cadagent.simulation.fea], issues: [97]}
+          - {slug: rolling-bearings, title: Rolling bearings, scope: "Ball and roller bearings: ISO 281 life turning or oscillating, duty cycles, ISO 76 static safety, axial load and speed limits.", maturity: tooling, pages: [docs/mechanical/bearings.md], cli: [bearings], api: [cadagent.mechanical.bearings], issues: [180]}
       - slug: housings-and-enclosures
         title: Housings and enclosures
         scope: Shells, lids, bosses, ribs, port windows and markings around electronics and mechanisms.
@@ -89,7 +90,7 @@ domains:
         scope: One-piece parts that flex instead of sliding or screwing.
         maturity: tooling
         priority: [demo]
-        pages: [docs/compliant.md, research/compliant-mechanisms.md]
+        pages: [docs/mechanical/compliant.md, docs/research/compliant-mechanisms.md]
         cli: [snapfit]
         api: [cadagent.mechanical.compliant]
         issues: [94, 95, 137]
@@ -124,17 +125,17 @@ domains:
         title: Fasteners, bought hardware and assembly
         scope: Screws, inserts and other bought parts, and getting them in and out.
         maturity: tooling
-        pages: [docs/subassembly-insertion.md]
+        pages: [docs/mechanical/subassembly-insertion.md]
         cli: [holes, mcmaster]
         api: [cadagent.mechanical.fasteners, cadagent.mechanical.holes, cadagent.mechanical.mcmaster]
         skills: [mcmaster-parts]
         issues: [46]
         topics:
           - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling}
-          - {slug: screw-bosses, title: Screw bosses, scope: "Thread-forming screws in printed bosses: clamp, stripping, torque window, wall.", maturity: tooling, priority: [demo], pages: [docs/screw-bosses.md], api: [cadagent.mechanical.bosses], issues: [161]}
-          - {slug: threaded-inserts, title: Threaded inserts and limiters, scope: "Heat-set inserts and compression limiters in printed parts: hole, boss, load path, pull-out, torque, preload.", maturity: tooling, pages: [docs/inserts.md], cli: [inserts], api: [cadagent.mechanical.inserts], issues: [230]}
-          - {slug: clinch-fasteners, title: Clinch fasteners, scope: "PEM-type nuts, studs and standoffs pressed into sheet: the cited parts, hardness, thickness, hole, edge, bend, spacing and load.", maturity: tooling, pages: [research/sheet-metal-joining.md], api: [cadagent.mechanical.clinch], issues: [283]}
-          - {slug: riveted-joints, title: Riveted joints, scope: "Blind rivets joining sheet parts: the listed rivets, grip, hole, edge, pitch, metals and strength per pitch.", maturity: tooling, pages: [research/sheet-metal-joining.md], api: [cadagent.mechanical.rivets], issues: [283]}
+          - {slug: screw-bosses, title: Screw bosses, scope: "Thread-forming screws in printed bosses: clamp, stripping, torque window, wall.", maturity: tooling, priority: [demo], pages: [docs/mechanical/screw-bosses.md], api: [cadagent.mechanical.bosses], issues: [161]}
+          - {slug: threaded-inserts, title: Threaded inserts and limiters, scope: "Heat-set inserts and compression limiters in printed parts: hole, boss, load path, pull-out, torque, preload.", maturity: tooling, pages: [docs/mechanical/inserts.md], cli: [inserts], api: [cadagent.mechanical.inserts], issues: [230]}
+          - {slug: clinch-fasteners, title: Clinch fasteners, scope: "PEM-type nuts, studs and standoffs pressed into sheet: the cited parts, hardness, thickness, hole, edge, bend, spacing and load.", maturity: tooling, pages: [docs/research/manufacturing/sheet-metal-joining.md], api: [cadagent.mechanical.clinch], issues: [283]}
+          - {slug: riveted-joints, title: Riveted joints, scope: "Blind rivets joining sheet parts: the listed rivets, grip, hole, edge, pitch, metals and strength per pitch.", maturity: tooling, pages: [docs/research/manufacturing/sheet-metal-joining.md], api: [cadagent.mechanical.rivets], issues: [283]}
           - {slug: sheet-hardware, title: Sheet hardware catalogue, scope: "Dated prices and sellers for the clinch parts and rivets the checks know, and the cheapest that fits.", maturity: tooling, pages: [docs/sheet-metal-hardware.md], api: [cadagent.mechanical.sheet_hardware], uses: [cadagent.simulation.explore.catalogue, cadagent.manufacturing.sheet_metal], skills: [sheet-metal-hardware], issues: [283]}
           - {slug: bought-parts, title: Bought parts, scope: "Real catalogue parts with their manufacturer models.", maturity: tooling}
           - {slug: assembly-access, title: Assembly access, scope: "Tool reach, insertion paths and subassembly order.", maturity: tooling}
@@ -149,7 +150,7 @@ domains:
         title: Mould design
         scope: Parts designed for moulding, and the moulds themselves.
         maturity: idea
-        pages: [research/process-profiles.md]
+        pages: [docs/research/manufacturing/process-profiles.md]
         issues: [99]
         topics:
           - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}
@@ -159,7 +160,7 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
-    pages: [docs/process-checks.md, research/process-profiles.md]
+    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md]
     cli: [rules, choose]
     api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm, cadagent.manufacturing.cards]
     uses: [cadagent.mechanical.compliant.allowables, cadagent.mechanical.inserts, cadagent.review.references]
@@ -196,16 +197,16 @@ domains:
         maturity: tooling
         pages:
           - docs/process-checks.md
-          - research/fea-and-process-tools.md
-          - research/sheet-metal-guides.md
-          - research/sheet-metal.md
-          - research/sheet-metal-joining.md
+          - docs/research/fea-and-process-tools.md
+          - docs/research/manufacturing/sheet-metal-guides.md
+          - docs/research/manufacturing/sheet-metal.md
+          - docs/research/manufacturing/sheet-metal-joining.md
           - docs/sheet-metal-hardware.md
         api: [cadagent.manufacturing.sheet_metal]
         issues: [99, 118, 119, 283]
         topics:
-          - {slug: clinch-hardware, title: Clinch hardware, scope: "PEM-type nuts, studs and standoffs pressed into sheet.", maturity: surveyed, pages: [research/sheet-metal-joining.md], uses: [cadagent.mechanical.clinch], issues: [283]}
-          - {slug: blind-rivets, title: Blind rivets, scope: "Joining bent parts from one side: grip, edge, pitch, strength.", maturity: surveyed, pages: [research/sheet-metal-joining.md], uses: [cadagent.mechanical.rivets], issues: [283]}
+          - {slug: clinch-hardware, title: Clinch hardware, scope: "PEM-type nuts, studs and standoffs pressed into sheet.", maturity: surveyed, pages: [docs/research/manufacturing/sheet-metal-joining.md], uses: [cadagent.mechanical.clinch], issues: [283]}
+          - {slug: blind-rivets, title: Blind rivets, scope: "Joining bent parts from one side: grip, edge, pitch, strength.", maturity: surveyed, pages: [docs/research/manufacturing/sheet-metal-joining.md], uses: [cadagent.mechanical.rivets], issues: [283]}
       - slug: mould-making
         title: Mould making
         scope: Short-run moulds made in the shop.
@@ -245,14 +246,14 @@ domains:
     scope: Predicting how designs behave, and checking the predictions.
     maturity: tooling
     lessons: simulation
-    pages: [research/simulation-tools.md]
+    pages: [docs/research/simulation-tools.md]
     areas:
       - slug: structural-fea
         title: Structural FEA
         scope: Stiffness and strength of printed and machined parts.
         maturity: tooling
         priority: [demo]
-        pages: [research/fea-and-process-tools.md]
+        pages: [docs/research/fea-and-process-tools.md]
         api: [cadagent.simulation.fea]
         issues: [125]
         projects: [j501-enclosure, gyropup]
@@ -342,12 +343,13 @@ domains:
     title: Practice
     scope: How agents and people work here, cutting across every domain.
     maturity: tooling
+    pages: [docs/practice/README.md, docs/research/agent-workflow/README.md]
     areas:
       - slug: agent-workflow
         title: Agent process and workflow
         scope: How agents work here, in parallel - issues, worktrees, reviews and long runs.
         maturity: tooling
-        pages: [docs/agent-workflow.md, docs/weekly-upstream-update.md, research/agent-toolkits-2026-10.md]
+        pages: [docs/practice/agent-workflow.md, docs/practice/weekly-upstream-update.md, docs/research/agent-workflow/agent-toolkits-2026-10.md]
         cli: [agents, update]
         skills: [cad-work-tracking, cad-pr-review, cad-remote-runs]
         agents: [cad-pr-reviewer, cad-resume]
@@ -357,7 +359,7 @@ domains:
         title: Design process
         scope: Requirements and the dossier that holds them, integrity gates and section reviews, through to release.
         maturity: tooling
-        pages: [docs/design-process-plan.md, docs/dossier.md, docs/gates.md, docs/review-packet.md, docs/volume-precision.md, research/design-workflows.md]
+        pages: [docs/practice/design-process-plan.md, docs/practice/dossier.md, docs/practice/gates.md, docs/practice/review-packet.md, docs/practice/volume-precision.md, docs/research/agent-workflow/design-workflows.md]
         cli: [init, build, check, report, all, dossier, gates, review-packet, review-section]
         api: [cadagent.review.gates, cadagent.review.dossier, cadagent.review.packet]
         skills: [design-process]
@@ -366,7 +368,7 @@ domains:
         title: Review and evidence
         scope: Pitfalls, checks and the evidence a reviewer needs.
         maturity: tooling
-        pages: [docs/common-issues.md, docs/experts.md]
+        pages: [docs/practice/common-issues.md, docs/practice/experts.md]
         api: [cadagent.review.evidence, cadagent.review, cadagent.review.references]
         lessons: review
         issues: [97, 118, 323]
@@ -374,14 +376,14 @@ domains:
         title: Supply chain and resource safety
         scope: What we depend on, vendor and link to - advisories, pins and receipts, drift, licences and links, checked the same way every time.
         maturity: tooling
-        pages: [docs/supply-chain.md, research/security-report.md]
+        pages: [docs/practice/supply-chain.md, docs/research/security-report.md]
         skills: [cad-supply-chain]
         issues: [117, 151, 153, 154]
       - slug: publishing
         title: Publishing
         scope: Review sites, viewers, releases and this site.
         maturity: tooling
-        pages: [docs/file-viewer.md, docs/style-guide.md, docs/web-diagrams.md, docs/web-parts.md, docs/animated-figures.md]
+        pages: [docs/practice/file-viewer.md, docs/practice/style-guide.md, docs/practice/web-diagrams.md, docs/practice/web-parts.md, docs/practice/animated-figures.md]
         cli: [package, release, serve, site, view, webkit]
         api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
               cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,

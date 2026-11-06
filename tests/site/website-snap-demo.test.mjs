@@ -1,8 +1,8 @@
 // The landing page's snap-fit animation must show a real engagement: contact on the way in, a hook that drops in
-// behind the catch, and a retaining face that holds when the part is pulled back. tools/snap-demo.mjs computes it.
+// behind the catch, and a retaining face that holds when the part is pulled back. tools/site/compiler/snap-demo.mjs computes it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ARM, RIB, PARTS, ARC_DEG, UNDERCUT_DEG, clear, liftAt, lockMoment, pullStop, snapOffset, timeline, snapDemo } from '../../tools/snap-demo.mjs';
+import { ARM, RIB, PARTS, ARC_DEG, UNDERCUT_DEG, clear, liftAt, lockMoment, pullStop, snapOffset, timeline, snapDemo } from '../../tools/site/compiler/snap-demo.mjs';
 
 const hookTipY = Math.max(...ARM.map(p => p[1]));
 const ribTopY = Math.min(...RIB.map(p => p[1]));

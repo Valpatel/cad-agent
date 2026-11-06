@@ -3,9 +3,33 @@ checks know, and the choice and cost follow the prices as read (#283)."""
 from __future__ import annotations
 
 import pytest
+import subprocess
+import sys
+from pathlib import Path
 
 from cadagent.mechanical import clinch, rivets
 from cadagent.mechanical import sheet_hardware as sh
+
+
+def test_fresh_default_reader_requires_the_moved_catalogue_despite_a_stale_copy(tmp_path):
+    content = sh.DATA.read_bytes()
+    current, stale = tmp_path / "docs/research/sheet-hardware.yaml", tmp_path / "research/sheet-hardware.yaml"
+    for path in (current, stale):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+    # Separate processes test first-read behavior without depending on the catalogue cache's implementation.
+    code = '''import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from cadagent.mechanical import sheet_hardware as sh
+sh.ROOT = Path(sys.argv[2]); sh.DATA = sh.ROOT / "docs/research/sheet-hardware.yaml"
+print(len(sh.load()))'''
+    command = [sys.executable, "-c", code, str(Path(__file__).resolve().parents[2] / "src"), str(tmp_path)]
+    good = subprocess.run(command, cwd=tmp_path, capture_output=True, text=True)
+    assert good.returncode == 0 and int(good.stdout.strip()) == len(sh.load()), good.stderr
+    current.unlink()
+    bad = subprocess.run(command, cwd=tmp_path, capture_output=True, text=True)
+    assert bad.returncode != 0 and str(current) in bad.stderr and stale.exists()
 
 
 def test_the_catalogue_loads_and_every_item_is_a_checked_part():

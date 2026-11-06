@@ -110,7 +110,7 @@ commit or evidence.
   in the repo (parameters with a note, or a doc) and in the issue, with the date.
 - Run configurations and results: the command line belongs in the issue; result files belong in the repo if the
   project tracks them, otherwise attached to the issue or the release.
-- Lessons: the repo's `lessons/` (cad-agent) or the product's notes folder, not only an agent's memory file.
+- Lessons: the repo's `docs/lessons/` (cad-agent) or the product's notes folder, not only an agent's memory file.
 
 Large or licensed inputs (vendor CAD, datasheets) stay out of git; the repo records where they come from and how to
 fetch them (a sources list plus a fetch script) so a reformatted machine can rebuild.

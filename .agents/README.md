@@ -19,4 +19,6 @@ flowchart TD
 - [Operational symptom index](SYMPTOM-INDEX.md): the existing domains, inbox and playbooks remain preserved. They are not discovered as skills or published as site pages.
 - [Workflow guide](../docs/practice/agent-workflow.md) and [shared lessons](../docs/lessons/README.md): installation behavior, evidence and the feedback loop.
 
+Record new operational incidents in `inbox/YYYY-MM-DD-<lesson>.md` with dated command/output evidence, cause, corrective rule and limits, and add the symptom pointer. Preserve the existing domain/playbook records. Curate reusable toolkit or project guidance into its existing [shared lesson](../docs/lessons/README.md), linking the incident rather than duplicating explanations.
+
 The repository remains the plugin root so relative guide resources stay inside a copied plugin cache. Project-local and user-installed skills may coexist; use the named source when a harness presents duplicate names.

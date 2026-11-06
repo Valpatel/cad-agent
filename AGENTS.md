@@ -84,7 +84,7 @@ its failures says where the file goes.
 | `docs/changelog.d/` | One CHANGELOG fragment per PR ([how](docs/changelog.d/README.md)). |
 | `software/vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](software/vendor/README.md)). |
 | `.agents/skills/<name>/`, `.agents/agents/<name>.md` | Canonical skills and independent-role prompts: edit these copies, which `cad-agent agents install` ships. The repository remains the plugin root; `.claude-plugin/plugin.json` names these components. |
-| `.agents/` | The agent-kit owner and its existing operational notes; [map](.agents/README.md). Notes are not skills or published pages. New shared findings still belong in `docs/lessons/`. |
+| `.agents/` | The agent-kit owner and its existing operational notes; [map](.agents/README.md). Operational evidence starts in its inbox and symptom index; reusable toolkit/project guidance is curated into `docs/lessons/`. Notes are not skills or published pages. |
 | `.claude-plugin/` | Native plugin metadata pointing at the canonical kit assets, with no hooks or duplicate instructions. |
 | `.claude/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through those links. |
 | `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](.github/CONTRIBUTING.md#gates)). |

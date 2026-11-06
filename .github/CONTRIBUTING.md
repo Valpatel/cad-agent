@@ -104,7 +104,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 
 Each kind of file has one place. Prefer growing an existing module, page or folder to starting a new one; a new
 folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.md#repo-structure-and-where-files-go)).
-`tests/repo/test_layout.py` checks the test, `src/` and top-level rules, and says where a misplaced file goes.
+`tests/repo/test_layout.py` checks the test, `software/` and top-level rules, and says where a misplaced file goes.
 
 | Kind of file | Where it goes |
 |---|---|
@@ -128,8 +128,9 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | An example project | `docs/examples/<name>/`, with a README |
 | A CHANGELOG entry | `docs/changelog.d/<issue>-<slug>.md` |
 | Vendored upstream code | `software/vendor/<name>/`, through `tools/vendor_sync.py` |
-| A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
-| A finding or note from agent work | `docs/lessons/<area>/`, not `.agents/` |
+| A skill or a subagent | `.agents/skills/<name>/SKILL.md`, `.agents/agents/<name>.md`: the canonical copies to edit. `.claude/` and `.codex/` hold only wiring; the native plugin manifest points at the same canonical files |
+| Operational incident evidence | `.agents/inbox/YYYY-MM-DD-<lesson>.md`, linked from `.agents/SYMPTOM-INDEX.md`; preserve dated commands, controls, cause and limits |
+| Reusable toolkit or project guidance | Curate into the existing `docs/lessons/<area>/` lesson and its index; keep one canonical explanation rather than duplicate prose |
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.

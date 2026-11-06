@@ -12,7 +12,7 @@ Built from plain files the project already keeps, configured under ``cad: site:`
                                          #   source: {kind: user|research|agent, quote, ref}, alternatives: [..]}]
       designs: exports/designs.json      # {"designs": [{name, file, summary, verdict, link,
                                          #   metrics: [{label, value, unit, estimate, level}], checks: {ok, warn, fail}}]}
-      pages: [README.md, "docs/*.md", "docs/research/*.md"]
+      pages: [README.md, "docs/*.md", "research/*.md"]
       links: [{title: Designer, href: designer/}]
 
 Every source is optional; a missing file shows as an empty section, never an error. ``cad-agent site`` writes

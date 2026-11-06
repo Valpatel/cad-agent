@@ -9,7 +9,7 @@ goes through a branch, a pull request, CI and a review.
 |---|---|---|
 | `main` | Released toolkit, tagged `vX.Y.Z`. | Only by merging a release PR from `dev`. |
 | `dev` | Integration, and the repository's default branch. Everything here passed CI and review. | Only by merging a reviewed PR. |
-| `feat/<topic>`, `fix/<topic>`, `ci/<topic>`, `docs/<topic>`, `docs/research/<topic>`, `test/<topic>`, `refactor/<topic>`, `release/vX.Y.Z`, `vendor-update/<name>-<sha>`, `dependabot/…` | One piece of work, branched from `dev`. | Its author, in its own worktree. |
+| `feat/<topic>`, `fix/<topic>`, `ci/<topic>`, `docs/<topic>`, `research/<topic>`, `test/<topic>`, `refactor/<topic>`, `release/vX.Y.Z`, `vendor-update/<name>-<sha>`, `dependabot/…` | One piece of work, branched from `dev`. | Its author, in its own worktree. |
 
 `main` and `dev` are protected: no direct pushes (admins included), no force pushes, the required checks below must
 pass and every review conversation must be resolved. Agents may merge into both, through the gates.

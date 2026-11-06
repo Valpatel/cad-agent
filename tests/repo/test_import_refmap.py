@@ -72,7 +72,6 @@ def checkout(tmp_path, monkeypatch):
     # the real map's rewrites are keyed by its rows; the fixture's rows are other text, so they start with none
     monkeypatch.setattr(imp, "NEUTRAL", {})
     (tmp_path / "docs" / "research" / "references").mkdir(parents=True)
-    (tmp_path / "docs").mkdir()
     shutil.copy(ROOT / "docs" / "areas.yaml", tmp_path / "docs" / "areas.yaml")
     shutil.copy(ROOT / "docs" / "research" / "references" / "vocab.yaml", tmp_path / "docs" / "research" / "references" / "vocab.yaml")
     (tmp_path / "docs" / "page.md").write_text("A boss rule.\n")

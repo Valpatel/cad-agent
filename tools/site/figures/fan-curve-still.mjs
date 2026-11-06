@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawFanCurve, summary, m3h, pa } from '../../../src/cadagent/webkit/fan-curve.js';
+import { readState, compute, drawFanCurve, summary, m3h, pa } from '../../../software/cadagent/webkit/fan-curve.js';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 export const PAGES = ['docs/fans.md', 'docs/formulas.md'];

@@ -1,6 +1,6 @@
 # tests/electrical
 
-Tests for [`src/cadagent/electrical/`](../../src/cadagent/electrical/README.md): PCB evidence and routed-board
+Tests for [`software/cadagent/electrical/`](../../software/cadagent/electrical/README.md): PCB evidence and routed-board
 measurements.
 
 Arrows: what a test imports, runs or reads.
@@ -23,6 +23,6 @@ flowchart TD
 | `test_pcb.py` | `cadagent.electrical.pcb`: board evidence fails closed on missing, stale or incomplete reports |
 | `test_pcb_routing.py` | `cadagent.electrical.pcb_routing`: trunk lengths, layer crossings and differential pairs |
 
-Run: `pytest tests/electrical` (with `PYTHONPATH=src`).
+Run: `pytest tests/electrical` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

@@ -142,7 +142,7 @@ CAD models.
 <img src="../../img/sheet-metal/clinch-hardness.svg" alt="Range chart of the hardest sheet each PEM fastener material takes: aluminium parts up to HRB 50, 300-series stainless up to HRB 70, hardened steel up to HRB 80, hardened stainless 88 to 92" width="680">
 
 *One rule the PEM bulletins alone supply: the hardest sheet each fastener material takes. Drawn by
-`tools/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
+`tools/figures/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
 [`process-profiles.yaml`](../process-profiles.yaml); [`sheet-metal-joining.md`](sheet-metal-joining.md) reads it.*
 
 ## 3. Blind rivets
@@ -172,7 +172,7 @@ critical structure.
 <img src="../../img/sheet-metal/rivet-spacing.svg" alt="Range chart of rivet edge distance and pitch in rivet diameters by source: edge distance at least 2 D from POP, the FAA and MIL-HDBK-5J, 2 D nominal and 1.5 D minimum from NASA; pitch at least 3 D for a single row (FAA) and 4 D for a double row (FAA) and nominal (NASA)" width="680">
 
 *Where the rivet guides agree and where they do not: edge distance and pitch in rivet diameters. Drawn by
-`tools/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch` rules in
+`tools/figures/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch` rules in
 [`process-profiles.yaml`](../process-profiles.yaml).*
 
 ## 4. Joint strength, tolerance and corrosion references

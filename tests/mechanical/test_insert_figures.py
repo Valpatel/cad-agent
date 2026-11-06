@@ -8,11 +8,11 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-ENV = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+ENV = {**os.environ, "PYTHONPATH": str(ROOT / "software")}
 
 
 def test_committed_diagrams_match_the_module():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "insert_figures.py"), "--check"], capture_output=True,
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "figures" / "insert_figures.py"), "--check"], capture_output=True,
                        text=True, env=ENV)
     assert r.returncode == 0, r.stdout + r.stderr
 
@@ -32,9 +32,33 @@ def test_every_figure_is_on_the_page_and_themed():
         assert "prefers-color-scheme:dark" in svg and "<title" in svg
 
 
-def test_the_pages_numbers_are_what_the_module_computes():
+def test_the_pages_numbers_are_what_the_module_computes(tmp_path):
+    import copy
+    import json
+    import yaml
+    from cadagent.cli import main
     from cadagent.mechanical import inserts as I
     page = (ROOT / "docs" / "mechanical" / "inserts.md").read_text()
+    # The skill routes here: check the actual declaration, not only separately reconstructed numbers below.
+    example = yaml.safe_load(re.search(r"```yaml\n# joints.yaml\n(.*?)```", page, re.S).group(1))
+    for case, expected_exit in (("documented", 0), ("thin-boss", 1)):
+        spec = copy.deepcopy(example)
+        if case == "thin-boss":
+            spec["joints"][0]["boss_outside_mm"] = 6.0
+        source, output = tmp_path / f"{case}.yaml", tmp_path / f"{case}.json"
+        source.write_text(yaml.safe_dump(spec))
+        assert not output.exists()  # Each case must write a fresh report, not reuse the previous case's JSON.
+        assert main(["inserts", str(source), "--output", str(output)]) == expected_exit
+        result = json.loads(output.read_text())
+        assert result["pass"] is (expected_exit == 0)
+        assert result["verdict"] == ("warn" if expected_exit == 0 else "fail")
+        assert [joint["name"] for joint in result["joints"]] == ["lid", "bracket"]
+        lid, bracket = result["joints"]
+        assert bracket["verdict"] == "warn"  # Changing the insert's boss must not fail the separate clamp.
+        assert lid["limits"] and bracket["limits"]
+        rows = {row["check"]: row for row in lid["checks"]}
+        assert rows["boss wall"]["verdict"] == ("pass" if expected_exit == 0 else "fail")
+        assert lid["verdict"] == ("warn" if expected_exit == 0 else "fail")
     m3 = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", boss_outside_mm=9.5)
     lid = I.check_joint(**m3, head_mm=7.0, clearance_mm=3.4, clamped={"thickness_mm": 4.0})
     assert f"at most {lid['torque']['allowed_nm']:.2f} N m ({lid['torque']['governed_by'].replace('_', ' ')})" in page

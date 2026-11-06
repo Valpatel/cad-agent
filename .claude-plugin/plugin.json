@@ -1,0 +1,11 @@
+{
+  "name": "cad-agent",
+  "version": "0.23.0",
+  "description": "Mechanical design workflows and independent review agents",
+  "license": "MIT",
+  "skills": ["./.agents/skills/"],
+  "agents": [
+    "./.agents/agents/cad-pr-reviewer.md",
+    "./.agents/agents/cad-resume.md"
+  ]
+}

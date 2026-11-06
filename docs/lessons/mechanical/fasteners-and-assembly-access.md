@@ -1,7 +1,7 @@
 # Fasteners and assembly access
 
 Bought hardware (screws, nuts, washers, inserts, pins, bearings, standoffs, rod ends) is chosen and placed with
-[`skills/mcmaster-parts`](../../../skills/mcmaster-parts/SKILL.md): a real McMaster-Carr part number, its STEP model
+[`skills/mcmaster-parts`](../../../.agents/skills/mcmaster-parts/SKILL.md): a real McMaster-Carr part number, its STEP model
 normalised into a known frame, and its specification table in the hardware catalogue, never an envelope.
 
 ```mermaid

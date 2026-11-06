@@ -113,7 +113,7 @@ The explorer runs the browser port of `screw_boss`, which is tested against the 
 - Relations: Shigley's *Mechanical Engineering Design*, 10th ed., Section 8-2 (thread statics), Eq. 8-27 (torque and
   clamp), Section 3-14 (thick-walled cylinders), Section 5-4 (maximum shear stress); ISO 68-1 (thread profile).
 - Filament strengths: the makers' data sheets, edition by edition, in
-  [`allowables.py`](../../src/cadagent/mechanical/compliant/allowables.py) (see [Snap fits](compliant.md)).
+  [`allowables.py`](../../software/cadagent/mechanical/compliant/allowables.py) (see [Snap fits](compliant.md)).
 - **Survey (2026-11-01).** No open-source calculator for pull-out or stripping of thread-forming screws in plastic was
   found. The closest are resin makers' calculators for moulded bosses (SABIC's on UL Prospector, closed), and OpenSCAD
   thread libraries, which make geometry, not checks. So the closed forms are built here, each tested on golden vectors.

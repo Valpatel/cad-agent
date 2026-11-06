@@ -121,9 +121,9 @@ def test_every_named_page_skill_agent_and_project_exists(tree):
     for page in placed(tree, "pages"):
         assert page.endswith(".md") and (ROOT / page).is_file(), f"{page} does not exist"
     for skill in placed(tree, "skills"):
-        assert (ROOT / "skills" / skill / "SKILL.md").is_file(), f"skill {skill} does not exist"
+        assert (ROOT / ".agents" / "skills" / skill / "SKILL.md").is_file(), f"skill {skill} does not exist"
     for agent in placed(tree, "agents"):
-        assert (ROOT / "agents" / f"{agent}.md").is_file(), f"agent {agent} does not exist"
+        assert (ROOT / ".agents" / "agents" / f"{agent}.md").is_file(), f"agent {agent} does not exist"
     for key in placed(tree, "projects"):
         assert key in tree["projects"], f"project {key} is not in `projects`"
     for p in tree["projects"].values():
@@ -178,10 +178,10 @@ def test_every_command_skill_and_agent_is_placed(tree):
     from cadagent.cli import SUBCOMMANDS
     missing = sorted(set(SUBCOMMANDS) - set(placed(tree, "cli")))
     assert not missing, f"add these `cad-agent` commands to a node's cli: in docs/areas.yaml: {missing}"
-    skills = sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md"))
+    skills = sorted(p.parent.name for p in (ROOT / ".agents" / "skills").glob("*/SKILL.md"))
     missing = sorted(set(skills) - set(placed(tree, "skills")))
     assert not missing, f"add these skills to a node's skills: in docs/areas.yaml: {missing}"
-    agents = sorted(p.stem for p in (ROOT / "agents").glob("*.md") if p.stem.lower() != "readme")
+    agents = sorted(p.stem for p in (ROOT / ".agents" / "agents").glob("*.md") if p.stem.lower() != "readme")
     missing = sorted(set(agents) - set(placed(tree, "agents")))
     assert not missing, f"add these agents to a node's agents: in docs/areas.yaml: {missing}"
 
@@ -190,7 +190,7 @@ def published_pages():
     """docs/ and docs/research/ Markdown pages, except folder READMEs and moved-page stubs."""
     for folder in ("docs",):
         for p in sorted((ROOT / folder).rglob("*.md")):
-            if p.is_relative_to(ROOT / "docs/lessons") or p.is_relative_to(ROOT / "docs/examples"):
+            if p.is_relative_to(ROOT / "docs/lessons") or p.is_relative_to(ROOT / "docs/examples") or p.is_relative_to(ROOT / "docs/changelog.d"):
                 continue
             if p.name.lower() == "readme.md":
                 continue
@@ -213,3 +213,12 @@ def test_every_lesson_area_folder_is_claimed(tree):
     folders = sorted(p.name for p in (ROOT / "docs" / "lessons").iterdir() if p.is_dir())
     if folders:
         assert sorted(claims) == folders, f"lesson folders {folders} and claims {sorted(claims)} differ"
+
+
+def test_release_fragments_are_not_pages_but_new_guides_still_need_placement(tmp_path, monkeypatch):
+    monkeypatch.setattr(__import__(__name__, fromlist=["ROOT"]), "ROOT", tmp_path)
+    for name in ("docs/changelog.d/9-note.md", "docs/mechanical/new-guide.md"):
+        file = tmp_path / name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text("# A new document\n")
+    assert set(published_pages()) == {"docs/mechanical/new-guide.md"}

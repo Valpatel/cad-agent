@@ -17,7 +17,7 @@ it. **A rule from a design guide says a part is likely to be made well. It does 
 
 ![A 0.9 mm FDM wall checked against five sources: Prusa's 0.45 mm and Protolabs Network's 0.8 mm pass, Xometry Europe's 0.75-1.0 mm range warns, Xometry Europe's three nozzle widths (1.2 mm) and Xometry US's 1.2-1.5 mm fail; the verdict is warn](img/process/dfm-wall.svg)
 
-*Drawn by `tools/process_figures.py` from `cadagent.manufacturing.dfm.check` on a worked example: a 0.9 mm FDM wall,
+*Drawn by `tools/figures/process_figures.py` from `cadagent.manufacturing.dfm.check` on a worked example: a 0.9 mm FDM wall,
 0.4 mm nozzle. Each row is one rule from the profile, coloured by its verdict.*
 
 Sources disagree. Prusa prints a 0.45 mm wall from a single 0.4 mm extrusion, while Xometry's industrial machines ask
@@ -44,7 +44,7 @@ it never passes or fails a part on it. `Profile.verified_rule()` refuses one, fo
 
 ![Across-the-layers over in-plane ratios for 13 filaments: tensile strength keeps 0.40 to 0.89 of its in-plane value, while strain to failure keeps 0.10 to 0.61 for PLA, PETG, ASA and CoPA, and 0.90 to 0.96 for carbon-filled PA6](img/process/layer-factors.svg)
 
-*Drawn by `tools/process_figures.py` from `cadagent.manufacturing.process`. These are Z / XY ratios from each
+*Drawn by `tools/figures/process_figures.py` from `cadagent.manufacturing.process`. These are Z / XY ratios from each
 filament's data sheet, taking the edition with the lower ratio. The values come from data sheets, not from coupons
 printed here.*
 
@@ -65,7 +65,7 @@ its sheet's own link.
 
 ![For each stock in SendCutSend's table (four 5052 sheets, six mild steel), the shop's shortest flange against the span of the generic rules 2T + R, 4T and 3.5 (T + R) at the shop's radius; K and the 90-degree bend deduction are listed per stock](img/process/sheet-flange.svg)
 
-*Drawn by `tools/process_figures.py` from `cadagent.manufacturing.sheet_metal.bend` for every stock in the shop's
+*Drawn by `tools/figures/process_figures.py` from `cadagent.manufacturing.sheet_metal.bend` for every stock in the shop's
 table (`sendcutsend-specs`, read 2026-10-31). The generic rules are evaluated at the shop's own radius.*
 
 `sheet_metal.bend` reads the numbers in the order the profile asks:
@@ -131,4 +131,4 @@ Limits, stated in every report:
 ## Related
 
 [Process profiles: the sources](research/manufacturing/process-profiles.md) · [Printed joints and fit coupons](mechanical/printed-joints.md) ·
-[FDM anisotropy data](research/compliant-mechanisms.md) · [Manufacturing package](../src/cadagent/manufacturing/README.md)
+[FDM anisotropy data](research/compliant-mechanisms.md) · [Manufacturing package](../software/cadagent/manufacturing/README.md)

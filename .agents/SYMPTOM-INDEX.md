@@ -3,11 +3,16 @@
 | Symptom | Guidance |
 | --- | --- |
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
-| Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/rendered-motion.md) |
+| Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |
 | Old file imports overwrite newer progress or change state after controls are disposed | [Part checklist ownership](domains/web-part-state.md), [reproduced import incident](inbox/2026-10-29-import-ownership-must-survive-file-decoding.md) |
 | Python CI restarts or cancels at the same head after a PR description edit | [Review publication procedure](playbooks/review-publication.md), [observed workflow trigger](inbox/2026-10-29-pr-description-edits-restart-ci.md) |
-| Mermaid source appears on a document, or newly inserted diagrams never render | [Mermaid fences need rendered evidence](inbox/2026-10-29-markdown-fences-need-rendered-evidence.md), [shared diagram API](../docs/web-diagrams.md) |
+| Mermaid source appears on a document, or newly inserted diagrams never render | [Mermaid fences need rendered evidence](inbox/2026-10-29-markdown-fences-need-rendered-evidence.md), [shared diagram API](../docs/practice/web-diagrams.md) |
 | A preassembled board/carrier must enter as one module, but flattening its steps invents tool access or insertion order | [Separate internal and parent assembly scopes](domains/assembly-scopes.md) |
 | Service is enabled but a requested module member has no service check or finding | [Resolve service targets before changing scope](inbox/2026-10-29-preassembly-needs-its-own-obstacle-scope.md#service-requests-must-survive-a-change-of-assembly-scope) |
-| Cut volume exceeds its input, curved volumes disagree, or a precise-looking invalid solid passes | [Validate solids and aggregate integration errors](inbox/2026-10-29-volume-precision-needs-valid-solids-and-aggregate-errors.md), [volume diagnostic](../docs/volume-precision.md) |
+| Cut volume exceeds its input, curved volumes disagree, or a precise-looking invalid solid passes | [Validate solids and aggregate integration errors](inbox/2026-10-29-volume-precision-needs-valid-solids-and-aggregate-errors.md), [volume diagnostic](../docs/practice/volume-precision.md) |
 | A named PA6-CF profile slices successfully but startup still waits at a generic temperature | [Resolve included slicer templates](inbox/2026-10-31-resolve-included-slicer-templates.md), `tests/manufacturing/test_slicer.py` |
+| Skills initialize successfully but copied guide links fail, or repository and global names appear twice | [Discovery names and resource containment](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md) |
+| A precheck exits nonzero but a later state-changing command still runs | [Failed prechecks must stop mutations](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md) |
+| A moved-source check selects no package files, or a child imports another editable checkout | [Nonempty source selection and import origin](inbox/2026-11-06-source-selection-must-not-pass-empty.md) |
+| A publication check accepts a changed catalogue ID or a wrong origin with the same path | [Complete public identities and preserved served namespaces](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-the-complete-publication-identity) |
+| A release preserves historical notes but its current introduction still links to a moved directory | [Check current navigation outside released history](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-current-navigation-outside-released-history) |

@@ -1,4 +1,4 @@
-// <cad-printed-boss> (src/cadagent/webkit/printed-boss.js) without a browser: the demo passes the filament's strengths
+// <cad-printed-boss> (software/cadagent/webkit/printed-boss.js) without a browser: the demo passes the filament's strengths
 // and the friction band to the port as cadagent.mechanical.bosses does, its verdict names every failing check, the
 // figure stays inside its box, and the still on docs/screw-bosses is what the component draws for the page's
 // attributes (tools/site/figures/printed-boss-still.mjs --check).
@@ -7,9 +7,9 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { readState, compute, summary, verdict, drawPrintedBoss, spread, minOutside, screwOf, CONTROLS, DEFAULTS, VIEW, PALETTES,
-  AXES } from '../../src/cadagent/webkit/printed-boss.js';
-import { screwBoss } from '../../src/cadagent/webkit/formulas.js';
-import { MATERIALS, SCREWS } from '../../src/cadagent/webkit/formulas-data.js';
+  AXES } from '../../software/cadagent/webkit/printed-boss.js';
+import { screwBoss } from '../../software/cadagent/webkit/formulas.js';
+import { MATERIALS, SCREWS } from '../../software/cadagent/webkit/formulas-data.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 

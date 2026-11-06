@@ -258,7 +258,7 @@ Recommendation: **one taxonomy, kind folders that share its slugs, and generated
 flowchart TD
     T["docs/areas.yaml<br/>domain → area → topic"] --> H["site: a hub page<br/>per area, generated"]
     T --> K["kind folders use<br/>the same slugs"]
-    K --> C["src/cadagent<br/>by domain (#121)"]
+    K --> C["software/cadagent<br/>by domain (#121)"]
     K --> L["lessons by area;<br/>docs, research<br/>by domain"]
     K --> E["evals/jobs<br/>by area"]
     class T here
@@ -270,7 +270,7 @@ flowchart TD
 ```
 
 - **The kind folders keep their jobs:**
-  - `src/cadagent` is grouped by domain, as the tree is (#121): `cadagent.mechanical`, `cadagent.simulation`,
+  - `software/cadagent` is grouped by domain, as the tree is (#121): `cadagent.mechanical`, `cadagent.simulation`,
     `cadagent.review` and so on, with shared helpers such as `cadagent.geometry` at the top. One tool still serves
     many areas (FEA checks a leg frame and a lid alike), so each module has one home, an `api:` line in its own
     domain, and a node that relies on another domain's module names it under `uses:` (thermal's airflow area uses
@@ -303,11 +303,11 @@ The owner asked for a starting screen with only necessary files and a visible RE
 |---|---|---|---|
 | Transcript mining and weekly procedure | `tools/mining/`, `docs/practice/weekly-upstream-update.md` | 28 | CLI examples, private-input ignore paths, provenance and topic map |
 | Contributor and security policies | `.github/CONTRIBUTING.md`, `.github/SECURITY.md` | 26 | GitHub discovery, relative links, stable public routes and real source provenance |
-| Upstream registry and notices | `vendor/upstreams/`, `vendor/THIRD_PARTY_NOTICES.md` | 24 | Dependency identities, unknown-code detection, notice generation, catalogue and dated report evidence |
+| Upstream registry and notices | `software/vendor/upstreams/`, `software/vendor/THIRD_PARTY_NOTICES.md` | 24 | Dependency identities, unknown-code detection, notice generation, catalogue and dated report evidence |
 | Guides, research, lessons and examples | Domain guides under `docs/`; research data in `docs/research/`, lessons in `docs/lessons/`, examples in `docs/examples/` | 21 | Package data defaults, citations and scans, catalogue IDs/kinds, public URLs, relative links, checkout and wheel starter behavior |
 | Site source, assets and configuration | `tools/site/` and its `assets/` folder | 17 | Node ESM resolution, test dependency context, public assets/installers, provenance, CI/cache paths, npm audit history and the actual Pages build contract |
 
-After v0.22.0, the 17 tracked root entries are `.agents`, `.github`, `.gitignore`, `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `agents`, `changelog.d`, `docs`, `pyproject.toml`, `skills`, `src`, `tests`, `tools` and `vendor`. Keep harness-discovered skills, agents and current wiring stable. `CHANGELOG.md` and its fragments remain release-history anchors: moving the changelog would change the resolution of its historical relative links. A smaller count alone does not justify privileged compatibility machinery or ambiguous history.
+The ownership layout keeps 14 tracked root entries: `.agents`, `.claude-plugin`, `.github`, `.gitignore`, `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `docs`, `pyproject.toml`, `software`, `tests` and `tools`. Canonical skills and roles live inside `.agents`; the native plugin manifest and existing installer retain their discovery and installed-name contracts. `software` owns the toolkit package and pinned dependencies. Release fragments live under `docs/changelog.d`, while `CHANGELOG.md` remains at the root so its historical relative links retain their meaning. Root count includes both files and folders; it is enforced by the existing layout check.
 
 The package manifests and Wrangler file are current site integration defaults. Their move co-locates the Node site modules, because ESM resolves dependencies upward from an importing module. Node tests remain with their test domains and use an explicit dependency context for the site package. The web kit's JavaScript module scope remains explicit. Public page routes, catalogue identities and served asset paths remain stable while GitHub sources and breadcrumbs point to the new physical files.
 

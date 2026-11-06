@@ -82,7 +82,7 @@ const KEYS = {
  * rendered HTML. It throws on a page that is not published, an empty entry or an unknown key, a picture that is not
  * committed under docs/img/, a heading the page does not have, missing alt text, caption or `on`, a `shows` that is
  * not output or diagram, or a tool that is not a cad-agent command, a cadagent module, a web kit file (kit/…, as the
- * site publishes src/cadagent/webkit/) or a script under tools/. */
+ * site publishes software/cadagent/webkit/) or a script under tools/. */
 export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pageURL }) {
   const fail = (at, why) => { throw new Error(`docs/pages.yaml ${at}: ${why}`); };
   const only = (o, keys, at) => {
@@ -106,15 +106,15 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
   const tool = (name, at) => {
     const cmd = name.match(/^cad-agent ([a-z0-9-]+)$/)?.[1], mod = name.match(/^cadagent(?:\.[a-z_]+)+$/)?.[0];
     const ok = cmd ? commandNames.has(cmd)
-      : mod ? [`src/${mod.replace(/\./g, '/')}.py`, `src/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
-        : /^kit\/[\w./-]+$/.test(name) ? tracked.includes(`src/cadagent/webkit/${name.slice(4)}`)
+      : mod ? [`software/${mod.replace(/\./g, '/')}.py`, `software/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
+        : /^kit\/[\w./-]+$/.test(name) ? tracked.includes(`software/cadagent/webkit/${name.slice(4)}`)
           : /^tools\/[\w./-]+$/.test(name) && tracked.includes(name);
     if (!ok) fail(at, `${name} is not a cad-agent command, a cadagent module, a web kit file (kit/…) or a script under tools/`);
     return `<code>${esc(name)}</code>`;
   };
   const need = (o, keys, at) => { for (const k of keys) if (!o?.[k]) fail(at, `no ${k}`); };
   // What the picture is, said first in its caption: "Real output of `cad-agent site`, on a test fixture in this repo."
-  // or "Diagram of `cadagent.review.gates.motion`, drawn by `tools/motion_figures.py`, on a test fixture, drawn in 2D…".
+  // or "Diagram of `cadagent.review.gates.motion`, drawn by `tools/figures/motion_figures.py`, on a test fixture, drawn in 2D…".
   // A real output is the tool's own (it wrote or drew the picture); a diagram names the script that drew it. Inside a
   // link (a band tile is one), the "on" credit drops its own link: a link in a link would split the tile.
   const what = (v, at, inLink = false) => {

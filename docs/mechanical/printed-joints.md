@@ -18,7 +18,7 @@ rate one: print the part or a coupon and test it.**
 
 ![Safety factors of a 5 mm pin's eye in 6 mm PETG at 900 N: printed flat and bare, bearing warns at 1.60; an 8 mm bushing lifts bearing to 2.56 but its larger hole leaves less plastic for shear-out, 2.22; printed on its side, shear-out lies along the layers, 2.02 bare and 1.62 bushed, a warn](../img/joints/eye.svg)
 
-*Drawn by `tools/printed_joint_figures.py` from `pin_eye` on a worked example: a 5 mm pin pulling 900 N through an
+*Drawn by `tools/figures/printed_joint_figures.py` from `pin_eye` on a worked example: a 5 mm pin pulling 900 N through an
 eye 6 mm thick in Bambu PETG Basic, its centre 10 mm from the end, 16 mm wide, bare or with an 8 mm metal bushing,
 printed flat (pin upright) or on its side.*
 
@@ -49,7 +49,7 @@ against the across-layer strength, the rest against the in-plane strength. What 
 
 ![Layer stress at the root of an upright 16 mm PLA boss against a side load 20 mm up: with no rod, the tension side reaches 10 MPa at 200 N; with an M5 rod whose kept preload is 1000 N, the seam stays closed to about 110 N; the rod's most preload, 3333 N, squeezes the compression side to 29 MPa at 200 N, past the 17.5 MPa limit](../img/joints/peel.svg)
 
-*Drawn by `tools/printed_joint_figures.py` from `root_peel` on a worked example: a Bambu PLA Basic boss 16 mm across
+*Drawn by `tools/figures/printed_joint_figures.py` from `root_peel` on a worked example: a Bambu PLA Basic boss 16 mm across
 on a 5.5 mm bore, loaded 20 mm above its root, with an M5 rod tightened to 3 N·m.*
 
 A boss or rib built upright and loaded from the side bends at its root, and its bending stress, M c / I, crosses the
@@ -126,7 +126,7 @@ nominal + allowance + undersize, from [docs/research/process-profiles.yaml](../r
 
 ![A fit coupon for a 5 mm pin in a sliding fit: a 25 mm square plate with nine holes from 5.30 to 5.70 mm in 0.05 mm steps, hole 1 by the notched corner](../img/joints/coupon.svg)
 
-*Drawn by `tools/printed_joint_figures.py` from `fit_coupons.layout` for a 5 mm pin in a sliding fit.*
+*Drawn by `tools/figures/printed_joint_figures.py` from `fit_coupons.layout` for a 5 mm pin in a sliding fit.*
 
 `write` exports a STEP and a print-oriented STL per coupon, a measurement sheet (`fit-coupons.csv`, a row per hole
 with blanks for the measured size and the fit) and the plan. Print the coupons in the part's filament, try the real
@@ -181,7 +181,7 @@ from 1 and fails below 1. Materials are the keys of `cadagent.mechanical.complia
   Gere and Goodno, *Mechanics of Materials*, 8th ed., Section 5.9 (shear in a hollow circular beam).
 - Layer criterion: `cadagent.simulation.fea.layer_modes`, after Brewer and Lagace (1988), as the FEA layer check uses it.
 - Strengths: the makers' data sheets, edition by edition, in
-  [`allowables.py`](../../src/cadagent/mechanical/compliant/allowables.py).
+  [`allowables.py`](../../software/cadagent/mechanical/compliant/allowables.py).
 - Pin bearing in printed parts: M. R. Khosravani, H. Sadeghian, M. R. Ayatollahi and T. Reinicke, *On the
   Pin-Bearing Strength of Additively Manufactured Polymer Parts*, Polymers 15 (2023) 1660 (CC BY), Tables 2 and 3;
   ASTM D5961 (paid, cited by number) for the w/D 6 and e/D 3 advice.

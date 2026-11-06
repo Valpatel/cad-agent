@@ -18,7 +18,7 @@ Other agent sessions use and change this repo at the same time, so:
   `main`), and `python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr <n>`, run from an up-to-date `dev`
   checkout, exits 0 just before you merge (it reads the reviews live). Never write a review verdict on your own PR, and never merge around a failing gate.
 - **Ship to `main` as part of the loop.** Every merged change adds its CHANGELOG lines as a fragment in
-  [`changelog.d/`](changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
+  [`docs/changelog.d/`](docs/changelog.d/README.md), not by editing `CHANGELOG.md` (parallel PRs would conflict). When `dev`
   has user-visible work that `main` lacks, cut a release with `tools/cut_release.py` and merge it through the release
   gates ([CONTRIBUTING.md](.github/CONTRIBUTING.md#releases)); `main` should never be more than a day behind `dev`.
 - **Who changes what: three tiers.** See [CONTRIBUTING.md](.github/CONTRIBUTING.md#gates) and #111.
@@ -55,10 +55,10 @@ Other agent sessions use and change this repo at the same time, so:
 - **Keep the map whole.** A new docs or research page, `cad-agent` command, skill or agent gets its line in
   [`docs/areas.yaml`](docs/areas.yaml); `tests/repo/test_areas.py` fails until it does. Merge `dev` in before merging.
 - **Put each file where the map says** ([Repo structure and where files go](#repo-structure-and-where-files-go)):
-  code in `src/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
+  code in `software/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
-  joining` and design to the card ([skills/design-process](skills/design-process/SKILL.md)); never copy rules into
+  joining` and design to the card ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
   Markdown, since they live in `docs/research/process-profiles.yaml`.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.
@@ -72,7 +72,8 @@ its failures says where the file goes.
 
 | Folder | What belongs there |
 |---|---|
-| `src/cadagent/<domain>/` | All package code, in the package for its domain ([map](src/cadagent/README.md)). ✓ No new files at the top of `src/cadagent/`. |
+| `software/` | [Toolkit package and pinned dependencies](software/README.md); product code stays in its product repository. |
+| `software/cadagent/<domain>/` | All package code, in the package for its domain ([map](software/cadagent/README.md)). ✓ No new files at the top of `software/cadagent/`. |
 | `tests/<domain>/` | Tests, in the folder named after the package their subject lives in; `cli/`, `site/` and `repo/` for what is not a package; shared data in `tests/fixtures/` ([map](tests/README.md)). ✓ No test file directly in `tests/`. |
 | `docs/` | Pages that explain a topic and point at the code; figures in `docs/img/<topic>/`. Pages move into `docs/<domain>/` as each area reaches three pages (#145). |
 | `docs/research/` | Surveys and sourced data tables (landscape, process profiles, security reports). |
@@ -80,10 +81,12 @@ its failures says where the file goes.
 | `docs/examples/<name>/` | Example projects the docs and tests run. |
 | `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
 | `tools/site/assets/` | The website's own static files (CSS, icons, the landing model). |
-| `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
-| `vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](vendor/README.md)). |
-| `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |
-| `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `docs/lessons/`. The links, and the move of today's `.agents/` notes into `docs/lessons/`, come in a follow-up PR. |
+| `docs/changelog.d/` | One CHANGELOG fragment per PR ([how](docs/changelog.d/README.md)). |
+| `software/vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](software/vendor/README.md)). |
+| `.agents/skills/<name>/`, `.agents/agents/<name>.md` | Canonical skills and independent-role prompts: edit these copies, which `cad-agent agents install` ships. The repository remains the plugin root; `.claude-plugin/plugin.json` names these components. |
+| `.agents/` | The agent-kit owner and its existing operational notes; [map](.agents/README.md). Operational evidence starts in its inbox and symptom index; reusable toolkit/project guidance is curated into `docs/lessons/`. Notes are not skills or published pages. |
+| `.claude-plugin/` | Native plugin metadata pointing at the canonical kit assets, with no hooks or duplicate instructions. |
+| `.claude/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through those links. |
 | `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](.github/CONTRIBUTING.md#gates)). |
 
 ✓ **Keep the root compact.** `tests/repo/test_layout.py` caps tracked root entries (files and folders together); its budget only shrinks as maintenance files move to their owning hierarchy.

@@ -2,7 +2,7 @@
 """Regenerate docs/img/fea/corner-convergence.svg: the peak stress at an inside corner as refine= makes the mesh there
 finer, for a sharp corner and for the same corner with an R1.5 fillet.
 
-    PYTHONPATH=src python3 tools/fea_mesh_figure.py       # needs cadquery, gmsh and scikit-fem (about a minute)
+    PYTHONPATH=software python3 tools/fea_mesh_figure.py       # needs cadquery, gmsh and scikit-fem (about a minute)
 
 A steel L-bracket (legs 20 mm, 4 mm thick, 2 mm wide), one leg clamped at its end and 100 N on the other's, meshed
 at 2 mm, then refined round the inside corner (a 1.5 mm ball) to 1, 0.5, 0.25 and 0.125 mm. The dots are
@@ -21,7 +21,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 OUT = ROOT / "docs" / "img" / "fea" / "corner-convergence.svg"
 INK, MUTED, LINE, BG = "#173d3c", "#526863", "#d8e0d3", "#fffdf5"
 SHARP, FILLET = "#bd3a12", "#2f6f9f"                # the pair the layer-check chart uses (validated, light surface)

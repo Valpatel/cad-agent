@@ -81,8 +81,8 @@ if (tracked.includes(ASSETS + '/favicon.ico')) await copyTracked(ASSETS + '/favi
 // The one-line installers (#282), at the short URLs the README and the home page give.
 for (const f of ['install.sh', 'install.ps1']) await copyTracked(`${ASSETS}/${f}`, path.join(out, f));
 // The shared web kit (3D viewer, part tables, diagrams) is published as /kit/, the same files projects copy.
-for (const f of tracked.filter(f => f.startsWith('src/cadagent/webkit/'))) {
-  await copyTracked(f, path.join(out, 'kit', f.slice('src/cadagent/webkit/'.length)));
+for (const f of tracked.filter(f => f.startsWith('software/cadagent/webkit/'))) {
+  await copyTracked(f, path.join(out, 'kit', f.slice('software/cadagent/webkit/'.length)));
 }
 
 // ----------------------------------------------------------------------------- content
@@ -151,8 +151,8 @@ const refModel = referenceModel(await loadReferences({ files: tracked, read }), 
 
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('docs/research/landscape.json'));
-const upstreams = YAML.parse(await read('vendor/upstreams/registry.yaml')) || [];
-const cli = await read('src/cadagent/cli.py');
+const upstreams = YAML.parse(await read('software/vendor/upstreams/registry.yaml')) || [];
+const cli = await read('software/cadagent/cli.py');
 const parserCount = (cli.match(/sub\.add_parser\(/g) || []).length;
 const commands = [...cli.matchAll(/sub\.add_parser\("([a-z0-9-]+)",[^)]*?help="((?:[^"\\]|\\.)*)"(?:\s*\n?\s*"((?:[^"\\]|\\.)*)")?/g)]
   .map(m => ({ name: m[1], help: (m[2] + (m[3] || '')).replace(/\\"/g, '"') }));
@@ -330,7 +330,7 @@ placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // ba
 // web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by
 // kit/diagrams.js in the reader's browser, in the page's theme.
 const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
-  kit: f => readBuf(`src/cadagent/webkit/${f}`), site: f => readBuf(`${ASSETS}/${f}`), theme, client: CLIENT_DIAGRAMS,
+  kit: f => readBuf(`software/cadagent/webkit/${f}`), site: f => readBuf(`${ASSETS}/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
 });
 const drawnLight = await drawIn('light'), drawnDark = await drawIn('dark'), leftBlocks = new Set();
@@ -345,7 +345,7 @@ const SNAP = snapDemo();                 // geometry-driven animation: tools/sit
 const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
   ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, publicPath, safeUrl,
   areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
-  snap: SNAP, cliUpdated: lastChange('src/cadagent/cli.py'), draft: WORKTREE,
+  snap: SNAP, cliUpdated: lastChange('software/cadagent/cli.py'), draft: WORKTREE,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
 // Each ### entry in a lesson file is one lesson (docs/lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
@@ -404,7 +404,7 @@ const homeImg = async (src, at, attrs = '') => {
 const commandNames = new Set(commands.map(c => c.name));
 const realTool = (tool, at) => {
   const cmd = tool.match(/^cad-agent ([a-z0-9-]+)$/)?.[1], mod = tool.match(/^cadagent(?:\.[a-z_]+)+$/)?.[0];
-  const ok = cmd ? commandNames.has(cmd) : mod ? [`src/${mod.replace(/\./g, '/')}.py`, `src/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
+  const ok = cmd ? commandNames.has(cmd) : mod ? [`software/${mod.replace(/\./g, '/')}.py`, `software/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
     : /^tools\/[\w./-]+$/.test(tool) && tracked.includes(tool);
   if (!ok) throw new Error(`docs/home.yaml ${at}: ${tool} is not a cad-agent command, a cadagent module or a script under tools/`);
   return tool;
@@ -454,7 +454,7 @@ const fitsTile = async (t, i) => {
 const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
 const makeChip = (m, i) => {
   const u = m.upstream && upstreamByName.get(m.upstream);
-  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in vendor/upstreams/registry.yaml`);
+  if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in software/vendor/upstreams/registry.yaml`);
   return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
 };
 const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)
@@ -522,7 +522,7 @@ ${useCard}
 <li><a href="https://github.com/mvalancy/j501-agx-orin">${await homeImg('docs/img/viewer.jpg', 'projects', ' alt="The J501 enclosure in the kit\'s 3D viewer, with its parts list" loading="lazy" decoding="async"')}<b>J501 AGX Orin enclosure</b></a><p>A printed enclosure and cooler for a Jetson AGX Orin carrier, where most of the lessons came from.</p></li></ul></section>
 
 <section class="section skills-row" style="padding-top:0"><div class="lead"><h2>Skills your agents <span>can load.</span></h2><p>The installer puts them where Claude Code, Codex and the other agents look (<code>~/.claude/skills</code>, <code>~/.agents/skills</code>). <a href="/docs/agent-workflow">How they work together →</a></p></div>
-<ul class="skill-chips">${skillCards.map(p => `<li><a href="${esc(pageURL(p.file))}"><b>${esc(p.title)}</b><span class="pill">${p.section === 'agents' ? 'subagent' : 'skill'}</span></a><a class="skill-md" href="/${esc(p.file)}" aria-label="${esc(p.title)} as Markdown">.md</a></li>`).join('')}</ul></section>
+<ul class="skill-chips">${skillCards.map(p => `<li><a href="${esc(pageURL(p.file))}"><b>${esc(p.title)}</b><span class="pill">${p.section === 'agents' ? 'subagent' : 'skill'}</span></a><a class="skill-md" href="/${esc(publicPath(p.file))}" aria-label="${esc(p.title)} as Markdown">.md</a></li>`).join('')}</ul></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
 await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model.css'] }));
@@ -613,7 +613,7 @@ await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${
 // script each, allowed by hash. Styles allow inline for the diagram kit's SVG output; wasm for the STEP reader.
 const htmlFiles = async d => (await readdir(d, { withFileTypes: true, recursive: true }))
   .filter(e => e.isFile() && e.name.endsWith('.html')).map(e => path.join(e.parentPath, e.name));
-// Only the kit's own pages (copied byte for byte from src/cadagent/webkit/) may carry inline script, so only their
+// Only the kit's own pages (copied byte for byte from software/cadagent/webkit/) may carry inline script, so only their
 // hashes go into the policy; any inline script on a site page stops the build.
 const inlineHashes = new Set();
 // Every <script> tag is looked at (any attributes, `</script >`, an unclosed one): a script with a src may not also
@@ -644,7 +644,7 @@ await writeFile(path.join(out, '_headers'), [
   '  Strict-Transport-Security: max-age=31536000',
   '/*.md', '  Content-Type: text/markdown; charset=utf-8', '/llms.txt', '  Content-Type: text/plain; charset=utf-8',
   '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/install.sh', '  Content-Type: text/plain; charset=utf-8',
-  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=0, must-revalidate',
+  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=0, no-cache, must-revalidate',
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +

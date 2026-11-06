@@ -426,7 +426,7 @@ def test_cli_checks_a_spec_file_and_exits_1_only_on_a_fail(tmp_path):
                     "joints:\n  - {name: lid, insert: mcmaster-94459A140, boss_outside_mm: 9.5}\n")
     out = tmp_path / "out.json"
     run = [sys.executable, "-m", "cadagent.cli", "inserts", str(spec), "--output", str(out)]
-    env = {"PYTHONPATH": str(ROOT / "src")}
+    env = {"PYTHONPATH": str(ROOT / "software")}
     import os
     r = subprocess.run(run, capture_output=True, text=True, env={**os.environ, **env})
     assert r.returncode == 0, r.stdout + r.stderr
@@ -813,7 +813,7 @@ def test_the_cli_prints_the_fix(tmp_path):
                     "boss_outside_mm: 8, clamped: {thickness_mm: 3.0}}\n")
     import os
     r = subprocess.run([sys.executable, "-m", "cadagent.cli", "inserts", str(spec)], capture_output=True, text=True,
-                       env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+                       env={**os.environ, "PYTHONPATH": str(ROOT / "software")})
     assert r.returncode == 0, r.stdout + r.stderr
     assert "tighten to at most 0.20 N m (clamped on insert)" in r.stdout
     assert ("fix: an ISO 7089 washer between the part and the insert and one under the head: at most 0.30 N m, "

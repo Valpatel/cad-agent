@@ -112,7 +112,7 @@ def test_the_tiny_record_renders_its_own_numbers(present):
 
 
 def test_the_committed_figure_is_its_scene(built):
-    assert FIGURE.read_text(encoding="utf-8") == built, "run PYTHONPATH=src python3 tools/readme_anim.py"
+    assert FIGURE.read_text(encoding="utf-8") == built, "run PYTHONPATH=software python3 tools/readme_anim.py"
 
 
 # ---------------------------------------------------------------------------------------------- what the figure says
@@ -256,7 +256,7 @@ def test_the_docs_show_the_figure_and_say_what_it_is(scene):
     first_pass = next(s["size_mm"] for s in fillet["steps"] if s["converge"]["converged"])
     claims = [f"from {sharp['steps'][0]['peak_mpa']:,.0f} to {sharp['steps'][-1]['peak_mpa']:,.0f} MPa",
               f"between {min(v):,.0f} and {max(v):,.0f} MPa"]
-    pages = [ROOT / "docs" / "toolkit.md", ROOT / "src" / "cadagent" / "simulation" / "README.md",
+    pages = [ROOT / "docs" / "toolkit.md", ROOT / "software" / "cadagent" / "simulation" / "README.md",
              ROOT / "docs" / "practice" / "animated-figures.md"]
     for page in pages:
         text = page.read_text(encoding="utf-8")

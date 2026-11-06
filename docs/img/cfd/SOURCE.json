@@ -1,6 +1,6 @@
 {
  "figure": "fan-faces.webp",
- "regenerate": "PYTHONPATH=src python3 tools/cfd_fan_figure.py <work dir>",
+ "regenerate": "PYTHONPATH=software python3 tools/cfd_fan_figure.py <work dir>",
  "cad_agent_revision": "924e206c96c11b6bf76f2bda169d385c9b650e7d",
  "solver": "chtMultiRegionSimpleFoam (OpenFOAM v2512)",
  "image": "opencfd/openfoam-default:2512",

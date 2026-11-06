@@ -33,6 +33,6 @@ flowchart TD
 | `test_skills.py` | Lint for `skills/<name>/SKILL.md`: front matter, links, and that what a skill names exists |
 | `test_vendor_sync.py` | `tools/vendor_sync.py` rebuilds only the vendored table in `THIRD_PARTY_NOTICES.md` |
 
-Run: `pytest tests/repo` (with `PYTHONPATH=src`).
+Run: `pytest tests/repo` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

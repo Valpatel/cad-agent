@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Pictures of the gate bench's review packets, for the docs (#122, #179).
 
-    PYTHONPATH=src python3 tools/site/figures/site-packet-pictures.py          # needs the cad extra: CadQuery, VTK, Pillow
-    PYTHONPATH=src python3 tools/site/figures/site-packet-pictures.py --only thin_wall     # one scenario again, keep the rest
-    PYTHONPATH=src python3 tools/site/figures/site-packet-pictures.py --list    # what it would make, without a CAD kernel
+    PYTHONPATH=software python3 tools/site/figures/site-packet-pictures.py          # needs the cad extra: CadQuery, VTK, Pillow
+    PYTHONPATH=software python3 tools/site/figures/site-packet-pictures.py --only thin_wall     # one scenario again, keep the rest
+    PYTHONPATH=software python3 tools/site/figures/site-packet-pictures.py --list    # what it would make, without a CAD kernel
 
 The gate bench (tests/fixtures/gate_bench/) is the repo's own test assembly: a hopper of loose balls under a screwed
 lid, a bracket on a boss and an arm on a pin that swings under a frame. Its build can seed one defect per gate
@@ -95,7 +95,7 @@ def _versions() -> dict:
 def _commit() -> str:
     """The cad-agent commit the pictures were made from. A record cannot name uncommitted changes, so a tree with any
     in what draws the pictures (src/, the gate bench, this script) is refused: commit first."""
-    dirty = subprocess.run(["git", "status", "--porcelain", "--", "src", "tests/fixtures/gate_bench",
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", "software/cadagent", "tests/fixtures/gate_bench",
                             "tools/site/figures/site-packet-pictures.py"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     if dirty:
         raise SystemExit("uncommitted changes in src/, the gate bench or this script; commit first, so SOURCE.json's "
@@ -111,7 +111,7 @@ def make(tmp: Path, only: list[str] | None = None) -> dict:
 
     seeds = _seeds()
     _commit()                                          # refuse a dirty tree before rendering anything
-    record: dict = {"regenerate": "PYTHONPATH=src python3 tools/site/figures/site-packet-pictures.py", "size": list(SIZE),
+    record: dict = {"regenerate": "PYTHONPATH=software python3 tools/site/figures/site-packet-pictures.py", "size": list(SIZE),
                     **_versions(), "scenarios": {}, "pictures": {}}
     if only:                                           # keep the other scenarios' pictures and records as they are
         old = json.loads((OUT / "SOURCE.json").read_text())

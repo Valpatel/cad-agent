@@ -1,6 +1,6 @@
 # tests/manufacturing
 
-Tests for [`src/cadagent/manufacturing/`](../../src/cadagent/manufacturing/README.md): 3MF files, build plates, slicer
+Tests for [`software/cadagent/manufacturing/`](../../software/cadagent/manufacturing/README.md): 3MF files, build plates, slicer
 numbers, fit coupons, the process profiles and the checks that read them (design for manufacture, sheet-metal bends).
 
 Arrows: what a test imports, runs or reads.
@@ -27,13 +27,13 @@ flowchart TD
 | `test_mesh3mf.py` | The 3MF writer and its read-back, on hand-built meshes |
 | `test_plates.py` | Build plates: packing rules, the Bambu Studio project 3MF, byte stability |
 | `test_process.py` | `cadagent.manufacturing.process`: every profile loads, every value has a source that resolves |
-| `test_process_figures.py` | The process-checks figures are drawn by `tools/process_figures.py` from the modules |
+| `test_process_figures.py` | The process-checks figures are drawn by `tools/figures/process_figures.py` from the modules |
 | `test_process_profiles.py` | `docs/research/process-profiles.yaml`: every rule sourced, with units, in step with its page |
 | `test_prusa3mf.py` | PrusaSlicer project 3MFs: volumes on their tools, the wipe tower, plates, byte stability |
 | `test_sheet_metal.py` | `cadagent.manufacturing.sheet_metal`: bend allowance and deduction, K and the flange |
 | `test_slicer.py` | Slicer profile flattening (the slicer runs only where it is installed) |
 | `test_slicer_prusa.py` | PrusaSlicer support: vendor-bundle profiles, G-code statistics, slicing where installed |
 
-Run: `pytest tests/manufacturing` (with `PYTHONPATH=src`).
+Run: `pytest tests/manufacturing` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

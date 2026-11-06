@@ -1,6 +1,6 @@
 """Time the gate relation table on a synthetic assembly (the plan's 100-part acceptance figure).
 
-    PYTHONPATH=src python tools/gate_timing.py [--parts 100] [--cache DIR] [--json] [--motion SAMPLES]
+    PYTHONPATH=software python tools/gate_timing.py [--parts 100] [--cache DIR] [--json] [--motion SAMPLES]
 
 Builds ``parts`` simple solids (boxes, cylinders, spheres) in rows of ten: within a row,
 neighbours touch, overlap, sit inside one another or hover 0.5 mm apart, by row; rows are
@@ -25,7 +25,7 @@ import time
 from pathlib import Path
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "software"))
 
 ROW_KINDS = ("touching", "overlapping", "apart", "contains", "touching")
 

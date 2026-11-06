@@ -1,6 +1,6 @@
 # tests/publish
 
-Tests for [`src/cadagent/publish/`](../../src/cadagent/publish/README.md): results JSON, reports, renders, 3D views, a
+Tests for [`software/cadagent/publish/`](../../software/cadagent/publish/README.md): results JSON, reports, renders, 3D views, a
 project's site, the print release and the animated figures.
 
 Arrows: what a test imports, runs or reads.
@@ -33,6 +33,6 @@ flowchart TD
 | `test_site_review.py` | The project site's review pages, built from the gate-bench fixture |
 | `test_view.py` | `cadagent.publish.view`: STL round trips and the 3D view export, bad input refused before writing |
 
-Run: `pytest tests/publish` (with `PYTHONPATH=src`).
+Run: `pytest tests/publish` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

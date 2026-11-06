@@ -262,6 +262,6 @@ def test_figures_are_current():
     import sys
     from pathlib import Path
     root = Path(__file__).resolve().parents[2]
-    r = subprocess.run([sys.executable, str(root / "tools" / "printed_joint_figures.py"), "--check"],
+    r = subprocess.run([sys.executable, str(root / "tools" / "figures" / "printed_joint_figures.py"), "--check"],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr

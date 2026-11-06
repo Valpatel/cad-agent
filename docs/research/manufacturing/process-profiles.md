@@ -19,7 +19,7 @@ the YAML (`as_printed`). Paid standards are cited by number and title only.
 
 <img src="../../img/research/process-min-wall.svg" alt="Range chart of the minimum wall thickness each source recommends, grouped by process" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: min-wall` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: min-wall` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ## 1. Reading the rules
 
@@ -30,7 +30,7 @@ the YAML (`as_printed`). Paid standards are cited by number and title only.
   inside face or the hole's edge, depending on who wrote them (§7). The YAML has a `datum` field for this.
 - **Limits are written once, as numbers or expressions.** `min: "2*T + R"` means at least twice the thickness plus the
   bend radius; `value: "max(0.005*L, 0.5)"` is ±0.5 % of the dimension with a ±0.5 mm floor.
-  `tools/process_profile_figures.py` has the evaluator, and the tests evaluate every expression.
+  `tools/figures/process_profile_figures.py` has the evaluator, and the tests evaluate every expression.
 - **Rules that compare** share a `compare` key (`min-wall`, `sm-hole-to-bend`, …). The charts on this page are drawn
   from those keys, so a rule added to the YAML appears in its chart on the next run.
 
@@ -65,7 +65,7 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 <img src="../../img/research/process-overhangs.svg" alt="Range chart of the steepest FDM overhang each source prints without support, in degrees from vertical: 45 from two services, 45 to 60 and up to 75 with full cooling from Prusa" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: overhang-max` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: overhang-max` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Walls, holes, pins and corners
 
@@ -85,7 +85,7 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 <img src="../../img/research/process-holes-pins.svg" alt="Range chart of the smallest hole and pin each source prints, grouped by FDM, resin, SLS and MJF: holes from 0.5 to 1.5 mm, pins from 0.8 to 5 mm" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: min-hole` and `compare: min-pin` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: min-hole` and `compare: min-pin` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Elephant's foot and warping
 
@@ -109,7 +109,7 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 <img src="../../img/research/process-fits.svg" alt="Range chart of the clearance between mating printed parts each source recommends, by process: 0.1 to 0.76 mm, with powder parts printed together needing the most" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: clearance-fit` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31; Formlabs' Fuse rules step with the mating area and are drawn from 10 to 30 mm². A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: clearance-fit` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31; Formlabs' Fuse rules step with the mating area and are drawn from 10 to 30 mm². A test redraws it and fails if the committed chart differs.*
 
 ### Threads and inserts
 
@@ -154,7 +154,7 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 <img src="../../img/research/process-fdm-tolerance.svg" alt="Chart of the tolerance each FDM source gives on a 50 mm dimension: 0.127 mm from Xometry's US service, 0.2 mm industrial, 0.5 mm desktop and at Xometry Europe" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the FDM `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 50 mm. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the FDM `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 50 mm. A test redraws it and fails if the committed chart differs.*
 
 ## 3. SLA and MSLA (resin)
 
@@ -175,7 +175,7 @@ shows how much a resin rule depends on the machine:
 
 <img src="../../img/research/process-resin-overhangs.svg" alt="Range chart of the longest unsupported overhang and bridge each resin printer or service allows: overhangs of 2 to 5 mm, bridges of 21 to 29 mm on Formlabs printers" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: overhang-length-max` and `compare: bridge-max` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: overhang-length-max` and `compare: bridge-max` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
@@ -205,7 +205,7 @@ shows how much a resin rule depends on the machine:
 
 <img src="../../img/research/process-escape-holes.svg" alt="Range chart of the smallest drain or escape hole for a hollow print each source asks for: 0.75 mm on a Form 4 to 3.5 mm at most services, and 10 mm to pull supports out" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: escape-hole` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: escape-hole` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 From Protolabs Network's [SLA guide][hubs-sla-design]:
 
@@ -300,7 +300,7 @@ From Protolabs Network:
 
 <img src="../../img/research/process-fine-detail.svg" alt="Range chart of the smallest embossed and engraved detail each source prints, by process: 0.1 mm on Formlabs resin printers to 1 mm on powder" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: emboss-min` and `compare: engrave-min` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: emboss-min` and `compare: engrave-min` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Where the SLS sources disagree
 
@@ -318,7 +318,7 @@ From Protolabs Network:
 
 <img src="../../img/research/process-powder-tolerance.svg" alt="Chart of the tolerance each SLS and MJF source gives on a 25 mm dimension: 0.2 to 0.42 mm, with HP's own Z figure the widest" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
 
 ## 5. HP Multi Jet Fusion
 
@@ -382,7 +382,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 
 <img src="../../img/research/process-moulding-wall.svg" alt="Range chart of the wall thickness Protolabs recommends for moulding ABS, polycarbonate, polypropylene, nylon and acetal, about 0.8 to 3.8 mm, and its stable window of 1.5 to 2.5 mm" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-wall` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: im-wall` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
@@ -404,7 +404,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 
 <img src="../../img/research/process-moulding-draft.svg" alt="Range chart of the draft each source asks for on moulded faces: 0 to 0.25 degrees for shallow acetal, 0.5 to 2 for most, 3 to 5 for high-heat polycarbonate and TPU" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-draft` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: im-draft` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Ribs and gussets
 
@@ -422,7 +422,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 
 <img src="../../img/research/process-moulding-ratios.svg" alt="Range chart of rib thickness, rib height and the fillet at the rib base as multiples of the nominal wall, by source: ribs 0.4 to 0.66 of the wall" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the rib `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a nominal wall of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the rib `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a nominal wall of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
 
 ### Bosses and inserts
 
@@ -439,7 +439,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 
 <img src="../../img/research/process-moulding-bosses.svg" alt="Range chart of boss outside diameter, 2 to 2.5 times the hole, and blind cored-hole depth, at most 2 or 3 times the hole, from DuPont and Covestro" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-boss-od` and `compare: im-hole-depth` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a hole diameter of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: im-boss-od` and `compare: im-hole-depth` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a hole diameter of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
 
 ### Corners, holes, gates and undercuts
 
@@ -458,7 +458,7 @@ online bureaus (Fictiv, and the Boothroyd Dewhurst checklist for screening). T b
 
 <img src="../../img/research/process-moulding-corners.svg" alt="Range chart of boss wall, 0.4 to 0.6 of the nominal wall, and inside corner radius, 0.15 to 0.5 of it, by source" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: im-boss-wall` and `compare: im-corner` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, as multiples of the nominal wall. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: im-boss-wall` and `compare: im-corner` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, as multiples of the nominal wall. A test redraws it and fails if the committed chart differs.*
 
 ### Where the moulding sources disagree
 
@@ -492,7 +492,7 @@ publishes its tooling per stock size, and the YAML holds 23 of its bend rows (`s
 
 <img src="../../img/research/process-sheet-shop.svg" alt="Chart of SendCutSend's inside bend radius for each 5052, mild steel, 304, 316 and G90 stock it bends, with the K-factor in each label: from 0.61 to 4.75 mm, not simply the thickness" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from SendCutSend's bend tables in [`process-profiles.yaml`](../process-profiles.yaml) (`shop_tables`), read 2026-10-31 and 2026-11-01. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from SendCutSend's bend tables in [`process-profiles.yaml`](../process-profiles.yaml) (`shop_tables`), read 2026-10-31 and 2026-11-01. A test redraws it and fails if the committed chart differs.*
 
 ### Bend radius and K-factor
 
@@ -527,7 +527,7 @@ publishes its tooling per stock size, and the YAML holds 23 of its bend rows (`s
 
 <img src="../../img/research/process-sheet-metal.svg" alt="The same sheet-metal rule from different sources, evaluated at 1.5 mm thickness and radius, with one shop's real tooling" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, with SendCutSend's tooling table in orange. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the sheet-metal `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, with SendCutSend's tooling table in orange. A test redraws it and fails if the committed chart differs.*
 
 ### Reliefs, hems and small features
 
@@ -548,7 +548,7 @@ publishes its tooling per stock size, and the YAML holds 23 of its bend rows (`s
 
 <img src="../../img/research/process-sheet-holes.svg" alt="Range chart of sheet-metal bend radius, smallest hole, hole to edge, hole to hole and hem return at 1.5 mm thickness, by source" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a sheet thickness of 1.5 mm. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the sheet-metal hole, edge, bend and hem `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a sheet thickness of 1.5 mm. A test redraws it and fails if the committed chart differs.*
 
 ### Where the sheet-metal sources disagree
 
@@ -599,7 +599,7 @@ hole-to-edge distance and the least hardware distances (`sendcutsend-cut-and-har
 
 <img src="../../img/sheet-metal/shop-hardware.svg" alt="Range chart of SendCutSend's least distances for pressed-in hardware by sheet family: hole centre to a cut edge 7.2 to 11.2 mm, to a bend line 10.4 to 14 mm, and to the next part of the same kind 10.3 to 17.5 mm" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from that `sendcutsend-cut-and-hardware-limits` table: the least
+*Diagram drawn by `tools/figures/process_profile_figures.py` from that `sendcutsend-cut-and-hardware-limits` table: the least
 hardware distances by sheet family, across 27 stocks. A test redraws it and fails if the committed file differs.*
 
 ### Clinch hardware and blind rivets
@@ -609,7 +609,7 @@ These rules apply to any shop. The research and the per-size data are on
 
 <img src="../../img/sheet-metal/rivet-spacing.svg" alt="Range chart of rivet edge distance and pitch in rivet diameters by source: edge distance at least 2 D from POP, the FAA and MIL-HDBK-5J, 2 D nominal and 1.5 D minimum from NASA; pitch at least 3 D for a single row (FAA) and 4 D for a double row (FAA) and nominal (NASA)" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch`
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch`
 rules below, divided by the rivet diameter. A test redraws it and fails if the committed file differs.*
 
 | Rule | Value | Source |
@@ -649,7 +649,7 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 
 <img src="../../img/research/process-cnc-corners.svg" alt="Range chart of the inside corner radius each source asks for when a 6 mm end mill cuts a pocket 12 mm deep: 3.5 to 4.3 mm from three sources, at least 0.8 mm from Fictiv" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: cnc-corner-radius` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, for a 6 mm end mill in a pocket 12 mm deep. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: cnc-corner-radius` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, for a 6 mm end mill in a pocket 12 mm deep. A test redraws it and fails if the committed chart differs.*
 
 ### Walls and small features
 
@@ -666,7 +666,7 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 
 <img src="../../img/research/process-cnc-walls.svg" alt="Range chart of the thinnest machined wall in metal and plastic, 0.25 to 1.5 mm, and the smallest tool, 2.5 mm before micro-machining, by source" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: min-wall` (CNC) and `compare: cnc-small-tool` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: min-wall` (CNC) and `compare: cnc-small-tool` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
 ### Holes and threads
 
@@ -688,7 +688,7 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 
 <img src="../../img/research/process-cnc-depths.svg" alt="Range chart of how deep an end mill can cut, a cavity can go, a hole can be drilled and a thread can run, as multiples of the diameter, by source" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the CNC depth `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a diameter of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the CNC depth `compare` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, at a diameter of 1 so each reads as a multiple of it. A test redraws it and fails if the committed chart differs.*
 
 ### Tolerances
 
@@ -701,7 +701,7 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 
 <img src="../../img/research/process-cnc-tolerance.svg" alt="Chart of the default tolerance on a 25 mm dimension for machined parts, 0.1 to 0.13 mm, and for a part moulded in Protolabs' aluminium tooling, 0.13 mm" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the CNC and moulding `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the CNC and moulding `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
 
 ### Where the CNC sources disagree
 
@@ -726,8 +726,8 @@ What reads the YAML today (solid) and what is planned to (dashed):
 
 ```mermaid
 flowchart TD
-    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> P["cadagent.manufacturing.process<br/>typed profiles, evaluate()"]
-    P --> E["tools/process_profile_figures.py<br/>the charts on this page"]
+    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> P["cadagent.manufacturing.<br/>process<br/>typed profiles, evaluate()"]
+    P --> E["tools/figures/<br/>process_profile_figures.py<br/>the charts on this page"]
     P --> K["dfm.check · sheet_metal.bend<br/>fit_coupons' allowances"]
     K -.->|"planned"| S["sheet metal S1–S8<br/>pitfall checks #97"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

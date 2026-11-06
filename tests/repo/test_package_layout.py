@@ -211,7 +211,7 @@ def test_the_job_layout_paths_are_gone(name):
     assert importlib.util.find_spec(name) is None, (
         f"{name} still resolves: {folder.relative_to(PKG.parents[1])}/ holds only __pycache__ from a checkout before "
         f"the move (delete it)" if _leftover(folder) else
-        f"{name} still resolves: a folder or module under src/cadagent, or a shim for a path that never shipped")
+        f"{name} still resolves: a folder or module under software/cadagent, or a shim for a path that never shipped")
 
 
 # Each form that reaches a moved module, as the last line of a script. dotsvg needs only the standard library.

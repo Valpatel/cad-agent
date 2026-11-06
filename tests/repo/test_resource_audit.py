@@ -43,15 +43,15 @@ def checkout(root: Path):
                                   '    "pillow>=10.0",\n]\ndev = ["pytest"]\n')
     write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
     write(root, "tools/site/package-lock.json", lock(good_pkg("marked", "16.4.1")))
-    write(root, "vendor/manifest.json", json.dumps({"projects": [
+    write(root, "software/vendor/manifest.json", json.dumps({"projects": [
         {"name": "tool", "url": "https://github.com/someone/tool", "license": "MIT", "sha": SHA, "imported": "2026-10-24",
-         "report": "vendor/reports/tool.md", "exclude": [".github"]}]}))
-    write(root, "vendor/tool/LICENSE", MIT)
-    write(root, "vendor/tool/src/a.py", "print('a')\n")
-    write(root, "vendor/tool/skills/x/SKILL.md", "---\nname: x\n---\n")
-    write(root, "vendor/baselines/tool.json", json.dumps({"project": "tool", "sha": SHA, "fingerprints": []}))
-    write(root, "vendor/reports/tool.md", "# scan\n")
-    write(root, "vendor/THIRD_PARTY_NOTICES.md",
+         "report": "software/vendor/reports/tool.md", "exclude": [".github"]}]}))
+    write(root, "software/vendor/tool/LICENSE", MIT)
+    write(root, "software/vendor/tool/src/a.py", "print('a')\n")
+    write(root, "software/vendor/tool/skills/x/SKILL.md", "---\nname: x\n---\n")
+    write(root, "software/vendor/baselines/tool.json", json.dumps({"project": "tool", "sha": SHA, "fingerprints": []}))
+    write(root, "software/vendor/reports/tool.md", "# scan\n")
+    write(root, "software/vendor/THIRD_PARTY_NOTICES.md",
           "| Project | Licence | Upstream | Pinned commit | Imported |\n|---|---|---|---|---|\n"
           f"| tool | MIT | https://github.com/someone/tool | `{SHA[:12]}` | 2026-10-24 |\n\n"
           "## Web kit\n\n| Project | Licence | Version | Licence file in the kit |\n|---|---|---|---|\n"
@@ -62,7 +62,7 @@ def checkout(root: Path):
     write(root, f"{ra.KIT}/mermaid/SOURCE.json", json.dumps({"package": "mermaid", "version": "11.4.1", "files": {
         "mermaid.min.js": hashlib.sha256(mjs).hexdigest(), "LICENSE": hashlib.sha256(MIT.encode()).hexdigest()}}))
     write(root, f"{ra.KIT}/file-viewer-sources.json", "{}")
-    write(root, "vendor/upstreams/registry.yaml", "- name: someone/tool\n  url: https://github.com/someone/tool\n  license: MIT\n"
+    write(root, "software/vendor/upstreams/registry.yaml", "- name: someone/tool\n  url: https://github.com/someone/tool\n  license: MIT\n"
                                            "  last_push: 2026-10-01\n  status: trial\n")
     write(root, "docs/research/landscape.json", json.dumps({"projects": [], "libraries": [
         {"name": "gumyr/build123d", "license_spdx": "Apache-2.0", "last_push": "2026-10-23"}], "benchmarks": []}))
@@ -70,6 +70,9 @@ def checkout(root: Path):
                                  "```bash\ncurl http://localhost:8000/ && uvx --from cadgen==0.7.26 cadgen mcp\n```\n")
     write(root, ".github/dependabot.yml", "version: 2\nupdates:\n  - package-ecosystem: npm\n  - package-ecosystem: pip\n"
                                           "  - package-ecosystem: github-actions\n")
+    for source in ra._PAGE_ALIASES:
+        if source.startswith(('.agents/skills/', '.agents/agents/')):
+            write(root, source, "# Current instruction\n")
     return root
 
 
@@ -142,10 +145,10 @@ def test_offline_checks_find_planted_problems(tmp_path):
         **good_pkg("fsevents", "2.3.2", hasInstallScript=True, os=["darwin"], optional=True),
         "node_modules/nohash": {"version": "1.0.0", "resolved": "https://registry.npmjs.org/nohash/-/nohash-1.0.0.tgz"}}))
     write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
-    man = json.loads((root / "vendor/manifest.json").read_text())
+    man = json.loads((root / "software/vendor/manifest.json").read_text())
     man["projects"][0].update(sha="abc123", license="Apache-2.0")
-    write(root, "vendor/manifest.json", json.dumps(man))
-    write(root, "vendor/stray/x.py", "x = 1\n")                                    # not in the manifest
+    write(root, "software/vendor/manifest.json", json.dumps(man))
+    write(root, "software/vendor/stray/x.py", "x = 1\n")                                    # not in the manifest
     write(root, f"{ra.KIT}/mermaid/mermaid.min.js", b"/* mermaid 11.4.1, edited */")   # no longer the recorded file
     write(root, f"{ra.KIT}/fonts/inter.woff2", b"\x00font")                       # no recorded hash
     write(root, "docs/guide.md", "# Guide\n\nThe [solver](http://www.dhondt.de/).\n\n"
@@ -176,7 +179,7 @@ def test_an_install_script_finding_is_per_version(tmp_path):
 
 def test_missing_licence_file_and_kit_licence(tmp_path):
     root = checkout(tmp_path)
-    (root / "vendor/tool/LICENSE").unlink()
+    (root / "software/vendor/tool/LICENSE").unlink()
     (root / f"{ra.KIT}/mermaid/LICENSE").unlink()
     r = run(root)
     assert ("vendor-no-licence", "vendor:tool") in checks(r, "high")
@@ -186,7 +189,7 @@ def test_missing_licence_file_and_kit_licence(tmp_path):
 
 def test_accepted_findings_do_not_fail(tmp_path):
     root = checkout(tmp_path)
-    write(root, "vendor/stray/x.py", "x = 1\n")
+    write(root, "software/vendor/stray/x.py", "x = 1\n")
     accepted = [{"check": "vendor-unrecorded", "subject": "vendor:stray", "reason": "fixture", "accepted": "2026-10-31"}]
     r = ra.build(root, AS_OF, None, npm_audit=False, accepted=accepted).to_json()
     f = next(f for f in r["findings"] if f["check"] == "vendor-unrecorded")
@@ -311,7 +314,7 @@ def test_online_checks_from_recorded_answers(tmp_path):
 
 def test_patched_files_are_not_drift(tmp_path):
     root = checkout(tmp_path)
-    write(root, "vendor/patches/tool/0001-x.patch", "diff --git a/src/a.py b/src/a.py\n--- a/src/a.py\n+++ b/src/a.py\n")
+    write(root, "software/vendor/patches/tool/0001-x.patch", "diff --git a/src/a.py b/src/a.py\n--- a/src/a.py\n+++ b/src/a.py\n")
     r = run(root, online_net(tmp_path))
     assert ("vendor-drift", "vendor:tool") not in checks(r)
 
@@ -319,7 +322,7 @@ def test_patched_files_are_not_drift(tmp_path):
 def test_malicious_package_is_critical_and_moved_or_gone_repos(tmp_path):
     root = checkout(tmp_path)
     write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
-    write(root, "vendor/upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
+    write(root, "software/vendor/upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
                                            "- name: a/gone\n  url: https://github.com/a/gone\n  license: MIT\n")
 
     def osv(q):
@@ -373,7 +376,7 @@ def test_gate_needs_a_row_for_each_added_item(repo_with_base, capsys):
     assert gate(root, "") == 0                                        # nothing added
     text = (root / "pyproject.toml").read_text().replace('dev = ["pytest"]', 'dev = ["pytest"]\nexplore = ["optuna>=3.4"]')
     write(root, "pyproject.toml", text)
-    write(root, "vendor/upstreams/registry.yaml", (root / "vendor/upstreams/registry.yaml").read_text() +
+    write(root, "software/vendor/upstreams/registry.yaml", (root / "software/vendor/upstreams/registry.yaml").read_text() +
           "- name: new/thing\n  url: https://github.com/new/thing\n  license: MIT\n  status: candidate\n")
     write(root, f"{ra.KIT}/fonts/new.woff2", b"\x00")
     assert gate(root, "no rows here") == 1
@@ -390,9 +393,9 @@ def test_gate_needs_a_row_for_each_added_item(repo_with_base, capsys):
 
 
 def test_gate_fails_on_a_high_finding_anywhere(repo_with_base, capsys):
-    write(repo_with_base, "vendor/stray/x.py", "x = 1\n")
+    write(repo_with_base, "software/vendor/stray/x.py", "x = 1\n")
     assert gate(repo_with_base, "| `vendor:stray` |", ["--fail-on", "critical"]) == 1
-    assert "vendor/stray is not in vendor/manifest.json" in capsys.readouterr().out
+    assert "software/vendor/stray is not in software/vendor/manifest.json" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("name", ["unexpected.py", "nested/unexpected.py", ".hidden", "nested/.hidden"])
@@ -400,7 +403,7 @@ def test_gate_fails_on_a_high_finding_anywhere(repo_with_base, capsys):
 def test_owned_metadata_does_not_hide_unrecorded_code(repo_with_base, name, staged):
     root = repo_with_base
     assert "vendor:upstreams" not in ra.item_ids(ra.WorkTree(root))
-    write(root, f"vendor/upstreams/{name}", "unexpected content\n")
+    write(root, f"software/vendor/upstreams/{name}", "unexpected content\n")
     if staged:
         git(root, "add", "--all")
     assert ("vendor-unrecorded", "vendor:upstreams") in checks(run(root), "high")
@@ -415,7 +418,7 @@ def test_registry_move_keeps_historical_dependency_identity(repo_with_base):
     git(root, "mv", ra.REGISTRY, "upstreams/registry.yaml")
     git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "old registry location")
     before = ra.item_ids(ra.GitTree(root, "HEAD"))
-    (root / "vendor/upstreams").mkdir(exist_ok=True)
+    (root / "software/vendor/upstreams").mkdir(exist_ok=True)
     git(root, "mv", "upstreams/registry.yaml", ra.REGISTRY)
     assert ra.item_ids(ra.WorkTree(root)) == before
     assert ra.added_items(root, "HEAD")[0] == []
@@ -457,9 +460,35 @@ def test_landscape_move_keeps_historical_identity_but_cannot_hide_a_missing_curr
 
 def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
     root = checkout(tmp_path)
-    (root / "vendor/THIRD_PARTY_NOTICES.md").rename(root / "THIRD_PARTY_NOTICES.md")
+    (root / "software/vendor/THIRD_PARTY_NOTICES.md").rename(root / "THIRD_PARTY_NOTICES.md")
     assert ("vendor-notices", "vendor:tool") in checks(run(root), "medium")
 
+
+
+def test_software_move_keeps_historical_ids_and_requires_current_vendor_sources(repo_with_base):
+    """Real old-tree comparison keeps identities; stale old code cannot replace a missing live owner."""
+    root = repo_with_base
+    git(root, "mv", "software/vendor", "vendor")
+    (root / "src/cadagent/webkit").mkdir(parents=True)
+    git(root, "mv", ra.KIT, "src/cadagent/webkit/vendor")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "previous software locations")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    assert {"vendor:tool", "webkit:mermaid"} <= before
+    git(root, "mv", "vendor", "software/vendor")
+    git(root, "mv", "src/cadagent/webkit/vendor", ra.KIT)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    # A stale old registry, manifest and kit are never current audit inputs.
+    write(root, "vendor/manifest.json", '{"projects":[{"name":"stale"}]}')
+    write(root, "vendor/upstreams/registry.yaml", "- name: stale/old\n  url: https://github.com/stale/old\n")
+    write(root, "src/cadagent/webkit/vendor/stale/unused.js", "stale\n")
+    git(root, "add", "--all")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "both software locations")
+    for tree in (ra.WorkTree(root), ra.GitTree(root, "HEAD")):
+        assert ra.item_ids(tree) == before
+    (root / ra.REGISTRY).unlink()
+    with pytest.raises(FileNotFoundError, match="registry"):
+        ra.item_ids(ra.WorkTree(root))
 
 def test_npm_move_keeps_historical_ids_and_live_reads_reject_stale_roots(repo_with_base):
     root = repo_with_base
@@ -558,9 +587,9 @@ def test_release_pr_and_main_push_get_the_whole_repo_check_only(repo_with_base, 
     assert gate(root, None, ["--into", "main"]) == 0                 # the push to main: no body at all
     assert gate(root, "no rows here", ["--into", "dev"]) == 1        # the same change into dev is judged
     assert ra.gate_scope("dev") == "change" and ra.gate_scope("main") == "repo" and ra.gate_scope("feat/x") == "repo"
-    write(root, "vendor/stray/x.py", "x = 1\n")                      # a high finding fails everywhere
+    write(root, "software/vendor/stray/x.py", "x = 1\n")                      # a high finding fails everywhere
     assert gate(root, None, ["--into", "main"]) == 1
-    assert "vendor/stray is not in vendor/manifest.json" in capsys.readouterr().out
+    assert "software/vendor/stray is not in software/vendor/manifest.json" in capsys.readouterr().out
 
 
 def test_ci_job_passes_the_target_branch_and_reads_only():
@@ -792,7 +821,7 @@ def receipt_checkout(root, mjs=MJS, bundled=None, tarball_mjs=None):
         "files": {"mermaid.min.js": hashlib.sha256(mjs).hexdigest(), "LICENSE": hashlib.sha256(MIT.encode()).hexdigest()},
         "paths_in_package": {"mermaid.min.js": "package/dist/mermaid.min.js", "LICENSE": "package/LICENSE"},
         "bundled": bundled or {"dompurify": "3.4.12", "katex": "0.16.47", "note": "inlined"}}))
-    write(root, "vendor/THIRD_PARTY_NOTICES.md", (root / "vendor/THIRD_PARTY_NOTICES.md").read_text().replace("11.4.1", "11.17.2"))
+    write(root, "software/vendor/THIRD_PARTY_NOTICES.md", (root / "software/vendor/THIRD_PARTY_NOTICES.md").read_text().replace("11.4.1", "11.17.2"))
     return root, url, pkg
 
 
@@ -1036,7 +1065,7 @@ def test_published_pages_match_the_site_build():
     policy = next(p for p in selected if p["file"] == ".github/CONTRIBUTING.md")
     assert policy == {"file": ".github/CONTRIBUTING.md", "section": "docs", "public": "CONTRIBUTING.md"}
     assert not any(p["file"] in ("CONTRIBUTING.md", "SECURITY.md", ".github/SECURITY.md") for p in selected)
-    notices = next(p for p in selected if p["file"] == "vendor/THIRD_PARTY_NOTICES.md")
+    notices = next(p for p in selected if p["file"] == "software/vendor/THIRD_PARTY_NOTICES.md")
     assert notices["public"] == "THIRD_PARTY_NOTICES.md"
     assert not any(p["file"] == "THIRD_PARTY_NOTICES.md" for p in selected)
 
@@ -1054,11 +1083,12 @@ def test_weekly_link_audit_selects_current_published_files():
     options, remaining = parser.parse_known_args(shlex.split(step["with"]["args"]))
     inventory = set(_tracked_pages(ROOT))
     actual = {p for pattern in remaining for p in glob.glob(pattern, root_dir=ROOT, recursive=True)
-              if p in inventory and p.endswith(".md")} - set(options.exclude_path)
+              if p in inventory and p.endswith(".md")
+              and not any(p == excluded or p.startswith(excluded.rstrip("/") + "/") for excluded in options.exclude_path)}
     assert actual == {p for p in inventory if ra.published(p)}, "weekly link inputs drifted from actual publication sources"
 
 
-@pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md"])
+@pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "software/vendor/THIRD_PARTY_NOTICES.md"])
 def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path, source):
     """A stale old file cannot stand in for a missing mandatory source; whitespace paths stay whole."""
     subprocess.run(["git", "-C", str(tmp_path), "-c", "init.templateDir=", "init", "-q"], check=True)
@@ -1116,3 +1146,33 @@ def test_committed_report_is_clean_and_dated():
     text = (ROOT / "docs/research/security-report.json").read_text() + (ROOT / "docs/research/security-report.md").read_text()
     home = str(Path.home())          # whichever machine runs it: no account name is written down here
     assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)
+
+
+def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_substitution(tmp_path):
+    root = checkout(tmp_path)
+    expected = {
+        "skill:cad-motion-validation", "skill:cad-pr-review", "skill:cad-remote-runs", "skill:cad-supply-chain",
+        "skill:cad-work-tracking", "skill:design-process", "skill:mcmaster-parts", "skill:sheet-metal-hardware",
+        "agent:cad-pr-reviewer", "agent:cad-resume",
+    }
+    def own():
+        rep = ra.Report(root, AS_OF, False)
+        ra.check_skills(rep)
+        return rep, {row["id"]: row for row in rep.inventory["skills"] if row["source"] == "this repository"}
+    rep, rows = own()
+    assert set(rows) == expected
+    assert all(row["file"].startswith(".agents/") for row in rows.values())
+    for row in rows.values():
+        write(root, row["file"].removeprefix(".agents/"), "# Stale copy\n")
+    assert set(own()[1]) == expected
+    missing = root / ".agents/skills/design-process/SKILL.md"
+    missing.unlink()
+    rep, rows = own()
+    assert set(rows) == expected - {"skill:design-process"}
+    findings = [f for f in rep.findings if f["check"] == "skill-missing"]
+    assert len(findings) == 1 and findings[0]["severity"] == "high"
+    assert findings[0]["subject"] == "doc:.agents/skills/design-process/SKILL.md"
+    # The real checkout must never pass with an empty or partial own-kit inventory either.
+    actual = ra.Report(ROOT, AS_OF, False)
+    ra.check_skills(actual)
+    assert {row["id"] for row in actual.inventory["skills"] if row["source"] == "this repository"} == expected

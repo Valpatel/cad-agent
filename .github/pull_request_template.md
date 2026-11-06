@@ -11,7 +11,7 @@
 
 ## Considered existing tools
 <!-- A new capability (command, check, calculator, generator or skill): what you looked for first, in the catalogue,
-     docs/research/agent-workflow/landscape.md, vendor/upstreams/registry.yaml, skills/ and the open-source libraries and agent skills outside
+     docs/research/agent-workflow/landscape.md, software/vendor/upstreams/registry.yaml, skills/ and the open-source libraries and agent skills outside
      them. For each candidate: adopted, wrapped, borrowed from or passed on, and why (CONTRIBUTING.md, "Look before
      building"). "None: no new capability" is an answer. -->
 
@@ -19,7 +19,7 @@
 - [ ] `python -m pytest -q` passes locally (with the extras this change touches)
 - [ ] Tried on a real project (name it), with the evidence (render, report or JSON) linked or attached
 - [ ] New docs or research pages, `cad-agent` commands, skills and agents have their line in `docs/areas.yaml` (or there are none)
-- [ ] A CHANGELOG fragment in `changelog.d/` (see its README), or none needed: say why
+- [ ] A CHANGELOG fragment in `docs/changelog.d/` (see its README), or none needed: say why
 
 ## Effect on projects that use cad-agent
 <!-- API or output changes that J501, Gyropup, the CAN boards or any other user project must follow. "None" is an answer. -->

@@ -1,5 +1,5 @@
 # An FEA mesh-convergence study, recorded from a real run of cadagent.simulation.fea (#167). Record it again with
-#   PYTHONPATH=src python3 tools/readme_anim.py --extract convergence      # needs cadquery, gmsh and scikit-fem
+#   PYTHONPATH=software python3 tools/readme_anim.py --extract convergence      # needs cadquery, gmsh and scikit-fem
 # and render or check the SVG without them (tools/readme_anim.py, --check).
 name: fea-convergence
 source:

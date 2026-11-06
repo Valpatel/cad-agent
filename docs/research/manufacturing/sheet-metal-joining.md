@@ -54,7 +54,7 @@ flows into the undercut and locks it [ref:pem-handbook]. So:
 
 <img src="../../img/sheet-metal/clinch-hardness.svg" alt="Range chart of the hardest sheet each PEM fastener material takes: aluminium parts up to HRB 50, 300-series stainless up to HRB 70, hardened steel up to HRB 80, hardened stainless 88 to 92" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: sm-clinch-sheet-hardness` rules in
 [`process-profiles.yaml`](../process-profiles.yaml). A test redraws it and fails if the committed file differs.*
 
 Read with PEM's table of typical sheet hardness [ref:pem-handbook], the chart says which parts go where:
@@ -124,7 +124,7 @@ flowchart TD
 
 <img src="../../img/sheet-metal/shop-hardware.svg" alt="Range chart of SendCutSend's least distances for pressed-in hardware by sheet family: hole centre to a cut edge 7.2 to 11.2 mm, to a bend line 10.4 to 14 mm, and to the next part of the same kind 10.3 to 17.5 mm" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from SendCutSend's `sendcutsend-cut-and-hardware-limits` table in
+*Diagram drawn by `tools/figures/process_profile_figures.py` from SendCutSend's `sendcutsend-cut-and-hardware-limits` table in
 [`process-profiles.yaml`](../process-profiles.yaml): the per-stock minimums of its specs feed, across 27 stocks. Each
 part's own catalogue value may be larger. A test redraws it and fails if the committed file differs.*
 
@@ -417,7 +417,7 @@ both bands. A multi-grip rivet (POP AD41-43, 0.039–0.187 in) covers the whole 
 
 <img src="../../img/sheet-metal/rivet-spacing.svg" alt="Range chart of rivet edge distance and pitch in rivet diameters by source: edge distance at least 2 D from POP, the FAA and MIL-HDBK-5J, 2 D nominal and 1.5 D minimum from NASA; pitch at least 3 D for a single row (FAA) and 4 D for a double row (FAA) and nominal (NASA)" width="680">
 
-*Diagram drawn by `tools/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch`
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: sm-rivet-edge` and `compare: sm-rivet-pitch`
 rules in [`process-profiles.yaml`](../process-profiles.yaml), divided by the rivet diameter. A test redraws it and fails
 if the committed file differs.*
 
@@ -565,7 +565,7 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
   - [`sheet-hardware.yaml`](../sheet-hardware.yaml), read by `cadagent.mechanical.sheet_hardware`: the PEM parts and
     rivets the checks know, with dated prices, stock and where to buy
     ([the page](../../sheet-metal-hardware.md));
-  - the [`sheet-metal-hardware` skill](../../../skills/sheet-metal-hardware/SKILL.md) for the bent-plate, PEM and rivet
+  - the [`sheet-metal-hardware` skill](../../../.agents/skills/sheet-metal-hardware/SKILL.md) for the bent-plate, PEM and rivet
     pattern.
 - **Open questions:**
   - whether PEM's numbers may be stored in the MIT repo as data (PEM's terms forbid republishing its material; this

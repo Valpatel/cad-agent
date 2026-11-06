@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {dirname} from 'node:path';
 import vm from 'node:vm';
-const url=new URL('../../src/cadagent/webkit/'+(workerData.format==='step'?'file-step-worker.js':'file-mesh-worker.js'),import.meta.url);
+const url=new URL('../../software/cadagent/webkit/'+(workerData.format==='step'?'file-step-worker.js':'file-mesh-worker.js'),import.meta.url);
 globalThis.self={location:{href:url.href}};globalThis.onmessage=null;
 globalThis.postMessage=(data,transfer)=>parentPort.postMessage(data,transfer);
 globalThis.require=createRequire(import.meta.url);

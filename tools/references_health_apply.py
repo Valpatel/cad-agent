@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Tuple
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 from cadagent.review import references as refs  # noqa: E402
 
 

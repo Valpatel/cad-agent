@@ -1,4 +1,4 @@
-"""The animated concept figures (tools/motion_figures.py, docs/img/motion/*.svg) match their sources.
+"""The animated concept figures (tools/figures/motion_figures.py, docs/img/motion/*.svg) match their sources.
 
 Without CadQuery these tests check:
 * the committed SVGs against the generator;
@@ -23,7 +23,7 @@ import pytest
 from tests.repo.test_markdown_images import image_refs, resolve
 
 ROOT = Path(__file__).resolve().parents[2]
-_spec = importlib.util.spec_from_file_location("motion_figures", ROOT / "tools" / "motion_figures.py")
+_spec = importlib.util.spec_from_file_location("motion_figures", ROOT / "tools" / "figures" / "motion_figures.py")
 mf = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mf)
 BENCH_PY = ROOT / "tests" / "fixtures" / "gate_bench" / "build.py"

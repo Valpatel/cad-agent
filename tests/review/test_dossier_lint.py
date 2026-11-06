@@ -544,7 +544,7 @@ def test_the_lint_imports_no_cad_kernel():
     import sys
     code = ("import sys; import cadagent.review.dossier.lint, cadagent.cli, cadagent.publish.report; "
             "print(any(m in sys.modules for m in ('cadquery', 'OCP')))")
-    src = str(Path(__file__).resolve().parents[2] / "src")
+    src = str(Path(__file__).resolve().parents[2] / "software")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env={"PYTHONPATH": src, "PATH": ""})
     assert out.stdout.strip() == "False", out.stderr

@@ -64,6 +64,7 @@ def test_markdown_links_are_rewritten(tmp_path):
     assert 'import("./assets/diagrams.js")' in (root / "site/index.html").read_text()
     for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js", "vendor/mermaid/LICENSE"):
         assert (root / "site/assets" / rel).read_bytes() == (site.KIT_DIR / rel).read_bytes()
+    assert not (root / "site/assets/software/vendor").exists(), "repository source owners must not leak into project asset URLs"
     plan = (root / "site" / "pages" / "docs-plan-md.html").read_text()
     assert 'href="readme-md.html"' in plan and "<table>" in plan
 
@@ -132,6 +133,9 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
             assert b"createViewer" in r.read()
         with urllib.request.urlopen(kit + "vendor/three/addons/loaders/STLLoader.js") as r:
             assert b"STLLoader" in r.read()
+        with pytest.raises(urllib.error.HTTPError) as wrong_namespace:
+            urllib.request.urlopen(kit + "software/vendor/three/addons/loaders/STLLoader.js")
+        assert wrong_namespace.value.code == 404, "source ownership is not a second served namespace"
     finally:
         server.shutdown()
         server.server_close()

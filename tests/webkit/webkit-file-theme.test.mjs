@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {normalizeFileTheme} from '../../src/cadagent/webkit/file-viewer-theme.js';
+import {normalizeFileTheme} from '../../software/cadagent/webkit/file-viewer-theme.js';
 
 test('theme configuration keeps product colors outside the toolkit',()=>{
   assert.equal(normalizeFileTheme().mode,'dark');

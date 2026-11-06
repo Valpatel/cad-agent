@@ -21,15 +21,15 @@ material value names its source.
   0.38 mm; R/h below 0.6 concentrates strain), mating force against a limit, retention force against a minimum.
 - **Allowable strain with its source**: moulded resins from the Covestro Table 2 and DuPont Table 10.06; 11 printed
   filaments (13 entries: two have dry and wet values) from their manufacturers' data sheets **by print direction**
-  ([`allowables.py`](../../src/cadagent/mechanical/compliant/allowables.py)).
+  ([`allowables.py`](../../software/cadagent/mechanical/compliant/allowables.py)).
 - **Along the insertion**: `engagement()` gives the root strain and the push to mate as the mating edge rides the
   hook's lead, slides along its land and drops off ([a snap engaging](#a-snap-engaging-computed)).
-- **Figures**: `tools/snapfit_figures.py` draws the cantilever with its dimensions, and `tools/readme_anim.py` animates
+- **Figures**: `tools/figures/snapfit_figures.py` draws the cantilever with its dimensions, and `tools/readme_anim.py` animates
   one engaging (`docs/img/compliant/`).
 
 ![Example I from the Covestro guide, computed: a tapered polycarbonate cantilever hook with its length, thicknesses and deflection drawn to scale, root strain 2.00 percent](../img/compliant/example-1.svg)
 
-*Example I of the Covestro guide (polycarbonate, tapered hook), drawn by `tools/snapfit_figures.py` from the
+*Example I of the Covestro guide (polycarbonate, tapered hook), drawn by `tools/figures/snapfit_figures.py` from the
 module's own result: the arm length, root thickness and undercut are the guide's inputs; the 2.00 % root strain and
 the forces are computed by the module, not typed in.*
 

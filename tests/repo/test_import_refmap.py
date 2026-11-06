@@ -59,7 +59,7 @@ DATA = {
          "proc": ["sheet"], "authority": "primary", "numbers": "unknown", "tested": "no", "cost": "no", "fit": "low",
          "gist": "Gated guide.", "rule": "", "note": "Title only.", "grp": ["sheet"]},
     ],
-    "CA": [{"topic": "1 Heat-set insert hole", "status": "implemented", "where": "src/cadagent/mechanical/inserts.py",
+    "CA": [{"topic": "1 Heat-set insert hole", "status": "implemented", "where": "software/cadagent/mechanical/inserts.py",
             "defaults": "maker hole + 0.2", "source": "makers", "gap": "not by material",
             "issue_title": "Vary insert holes by material", "issue_body": "Add a table."}],
     "PR": {"mould": "Moulding and casting"},
@@ -191,7 +191,7 @@ def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
     cov = yaml.safe_load((root / "docs" / "research" / "references" / "coverage.yaml").read_text())
     assert cov["rows"] == [{"id": "ca-1-heat-set-insert-hole", "number": "1", "topic": "Heat-set insert hole",
                             "status": "implemented", "areas": ["threaded-inserts"],
-                            "where": "src/cadagent/mechanical/inserts.py", "defaults": "maker hole + 0.2",
+                            "where": "software/cadagent/mechanical/inserts.py", "defaults": "maker hole + 0.2",
                             "sources": "makers", "gap": "not by material",
                             "draft_issue": {"title": "Vary insert holes by material", "body": "Add a table.",
                                             "posted": False}}]

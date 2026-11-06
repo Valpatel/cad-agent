@@ -1,6 +1,6 @@
 # tests/geometry
 
-Tests for [`src/cadagent/geometry/`](../../src/cadagent/geometry/README.md): the shared CAD helpers and reproducible
+Tests for [`software/cadagent/geometry/`](../../software/cadagent/geometry/README.md): the shared CAD helpers and reproducible
 STEP. Most need CadQuery and skip cleanly without it.
 
 Arrows: what a test imports, runs or reads.
@@ -25,6 +25,6 @@ flowchart TD
 | `test_part_cache.py` | `PartCache`: the BREP cache of built parts, keyed by their sources |
 | `test_step_export.py` | Reproducible STEP export: `export_step`, `step_timestamp` and assemblies |
 
-Run: `pytest tests/geometry` (with `PYTHONPATH=src`).
+Run: `pytest tests/geometry` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

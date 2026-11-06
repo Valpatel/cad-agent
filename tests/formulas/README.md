@@ -1,6 +1,6 @@
 # tests/formulas
 
-Tests for [`src/cadagent/formulas/`](../../src/cadagent/formulas/README.md): each closed form against a published
+Tests for [`software/cadagent/formulas/`](../../software/cadagent/formulas/README.md): each closed form against a published
 worked example or a derivation written out in the test.
 
 Arrows: what a test imports, runs or reads.
@@ -27,6 +27,6 @@ flowchart TD
 | `test_inserts_formulas.py` | Threaded inserts and compression limiters: golden vectors and an independent derivation |
 | `test_torsion_snap_boss.py` | The torsion-bar snap and the screw in a printed boss, against Saint-Venant and thread statics |
 
-Run: `pytest tests/formulas` (with `PYTHONPATH=src`).
+Run: `pytest tests/formulas` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

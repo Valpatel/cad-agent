@@ -22,7 +22,7 @@ flowchart TD
 ## Which folders
 
 - Every folder we write has a `README.md`.
-- **Vendored trees** (`vendor/<name>/`, `src/cadagent/webkit/vendor/<name>/`) keep their upstream layout. One README at
+- **Vendored trees** (`software/vendor/<name>/`, `software/cadagent/webkit/vendor/<name>/`) keep their upstream layout. One README at
   the vendor root covers them, with credits and licences.
 - **Skill folders** (`skills/<name>/`) have `SKILL.md` instead; the `skills/` README lists them.
 - `.github/` is documented in [CONTRIBUTING.md](../../.github/CONTRIBUTING.md).

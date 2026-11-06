@@ -9,7 +9,7 @@ bearings, not a promise for one. It leaves out lubrication, contamination, wear 
 
 ![Basic rating life against load on log-log axes for an SKF 61804, 6201, 6301 and NU 202 ECP: straight lines of slope -3 (balls) and -10/3 (the roller); the ball bearings' lines end at their C0; the roller's turns dashed above 0.33 C; a knee's duty of 760 N on the 6201 gives L10 879 million revolutions](../img/bearings/life-load.svg)
 
-*Drawn by `tools/bearing_figures.py` from `rating_life` and the SKF ratings in `BEARINGS`.*
+*Drawn by `tools/figures/bearing_figures.py` from `rating_life` and the SKF ratings in `BEARINGS`.*
 
 ## Check a bearing
 
@@ -42,7 +42,7 @@ FAIL  knee: oscillating, 2.42e+03 million oscillations (672,798 h), least s0 0.8
 
 ![The example above, checked: each row's margin to its limit on a log axis from 0.2 to 1000. The rope sheave passes every row, the nearest being the minimum load at 2 times. The knee passes life at 336 times and speed at 478 times, warns on the critical amplitude at 0.43 times and fails the power-cut s0 at 0.89 times](../img/bearings/checks.svg)
 
-*Drawn by `tools/bearing_figures.py` from `check_spec` on the file above: each row's value over its limit (limit
+*Drawn by `tools/figures/bearing_figures.py` from `check_spec` on the file above: each row's value over its limit (limit
 over value for the load range and speed), so anything left of 1 warns or fails.*
 
 It exits 1 on a fail and 2 on a bad file. In Python, `check_bearing(...)` takes the same keys and returns each
@@ -72,7 +72,7 @@ width 2b, and warns below 1. A wear study that measures x over the full stroke q
 
 ![Left: oscillations per revolution of equal fatigue against amplitude on log axes; Harris's 90/θ and the Rumbarger factor for 7 balls, which falls below Harris under the critical amplitude of 71 degrees; below 10 degrees is shaded; the knee at ±30 degrees reads 2.75. Right: the knee's check rows: the 6201-2RSH passes life, speed and running s0 3.44 but fails s0 0.89 in a 3485 N power cut; the 6301-2RSH passes with 1.19](../img/bearings/knee.svg)
 
-*Drawn by `tools/bearing_figures.py` from `check_bearing` on the worked example: a walking robot's knee, an SKF
+*Drawn by `tools/figures/bearing_figures.py` from `check_bearing` on the worked example: a walking robot's knee, an SKF
 6201-2RSH swinging ±30° once a second, 900 N for 60 % of each stride and 150 N for the rest (assumed loads), and a
 fall with the power cut that puts 3 485 N on the more loaded of the knee's two bearings (a simulated load, not a
 measured one: Gyropup's undamped power cut, with the knee's moment taken over the 6201 pair's 38 mm span).*
@@ -101,7 +101,7 @@ angle and takes axial load better.
 
 ![e and Y against f0 Fa / C0 on a log scale for normal, C3 and C4 clearance: e rises from 0.19 to 0.44 (normal), Y falls from 2.3 to 1.0; the larger clearances start higher in e and lower in Y](../img/bearings/xy-table.svg)
 
-*Drawn by `tools/bearing_figures.py` from `deep_groove_factors`: the dots are SKF's Table 9 (p. 257), the lines its
+*Drawn by `tools/figures/bearing_figures.py` from `deep_groove_factors`: the dots are SKF's Table 9 (p. 257), the lines its
 linear interpolation.*
 
 ## The catalogue
@@ -184,4 +184,4 @@ Palmgren–Miner and the cubic mean are one sum, the catalogue's consistency, ev
 the CLI's exit codes. It also redraws every figure on this page and fails if one has gone stale.
 
 Related: [Engineering formulas](../formulas.md) · [Printed load-bearing joints](printed-joints.md) ·
-[package map](../../src/cadagent/mechanical/README.md)
+[package map](../../software/cadagent/mechanical/README.md)

@@ -1,6 +1,6 @@
 # tests/mechanical
 
-Tests for [`src/cadagent/mechanical/`](../../src/cadagent/mechanical/README.md): holes, fasteners, connectors,
+Tests for [`software/cadagent/mechanical/`](../../software/cadagent/mechanical/README.md): holes, fasteners, connectors,
 inserts, compliant features, linkages and motion traces, and the figures drawn from them.
 
 Arrows: what a test imports, runs or reads.
@@ -31,7 +31,7 @@ flowchart TD
 | `test_markings.py` | `cadagent.mechanical.markings`: engraved strokes and lettering export as valid solids |
 | `test_mcmaster.py` | `cadagent.mechanical.mcmaster` without the network, on the pages in `fixtures/mcmaster/` |
 | `test_mechanical_inserts.py` | Insert data and sources, hole and boss rules, the calibration and the joint check |
-| `test_motion_figures.py` | The animated concept figures (`tools/motion_figures.py`) match the tests they copy |
+| `test_motion_figures.py` | The animated concept figures (`tools/figures/motion_figures.py`) match the tests they copy |
 | `test_motion_trace.py` | `cadagent.mechanical.motion_trace` on an independent analytic fixture |
 | `test_printed_joints.py` | `cadagent.mechanical.printed_joints`: printed-part load pitfalls, each with a planted defect |
 | `test_clinch.py` | `cadagent.mechanical.clinch`: the parts against PEM's bulletins, SendCutSend's worked 1/4-20 example, spacing both ways, BA/2 + E to a bend, hardness by material, thickness, hole, loads and `parts_for` |
@@ -40,6 +40,6 @@ flowchart TD
 | `test_snapfit.py` | The snap-fit calculator against the Covestro guide's worked examples, plus its check rows |
 | `test_snapfit_sheets.py` | The printed snap-fit allowables pinned to the data-sheet editions they cite |
 
-Run: `pytest tests/mechanical` (with `PYTHONPATH=src`).
+Run: `pytest tests/mechanical` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

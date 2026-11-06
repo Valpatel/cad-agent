@@ -1,4 +1,4 @@
-"""Every Python fetch in src/ and tools/ sends its own User-Agent (#282).
+"""Every Python fetch in software/cadagent/ and tools/ sends its own User-Agent (#282).
 
 cad-agent.valpatel.com is served by Cloudflare Pages, which answers Python urllib's default User-Agent
 (``Python-urllib/3.x``) with error 1010, on the cad-agent hosts and on pages.dev alike; curl, browsers and the agents'
@@ -10,13 +10,15 @@ which the CDN lets through. docs/agent-prompt.txt tells agents the same.
 from __future__ import annotations
 
 import ast
+
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def _python_files():
-    for top in ("src", "tools"):
+    for top in ("software/cadagent", "tools"):
         for path in sorted((ROOT / top).rglob("*.py")):
             if "vendor" not in path.relative_to(ROOT).parts:
                 yield path
@@ -57,7 +59,9 @@ def offenders(source: str, where: str = "") -> list:
 
 
 def test_every_fetch_sends_a_user_agent():
-    bad = [b for path in _python_files() for b in offenders(path.read_text(), str(path.relative_to(ROOT)))]
+    files = list(_python_files())
+    assert any(path.is_relative_to(ROOT / "software/cadagent") for path in files), "no current toolkit package files were selected"
+    bad = [b for path in files for b in offenders(path.read_text(), str(path.relative_to(ROOT)))]
     assert not bad, "send a User-Agent, e.g. Request(url, headers={'User-Agent': 'cad-agent/<version>'}):\n" + "\n".join(bad)
 
 
@@ -76,3 +80,26 @@ def test_the_check_catches_the_default():
 def test_agents_are_told():
     flat = " ".join((ROOT / "docs" / "agent-prompt.txt").read_text().split())
     assert "send a User-Agent header" in flat and "urllib" in flat
+
+
+@pytest.mark.parametrize("bad_path", ["software/cadagent/review/request.py", "tools/request.py"])
+def test_the_real_inventory_rejects_fetch_faults_and_excludes_foreign_code(tmp_path, monkeypatch, bad_path):
+    monkeypatch.setitem(globals(), "ROOT", tmp_path)
+    bad = "import urllib.request\nurllib.request.urlopen('https://example.invalid')\n"
+    for name, text in (("software/cadagent/__init__.py", ""), (bad_path, bad),
+                       ("software/vendor/upstream/request.py", bad),
+                       ("software/cadagent/webkit/vendor/upstream/request.py", bad), ("src/stale.py", bad)):
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    selected = {path.relative_to(tmp_path).as_posix() for path in _python_files()}
+    assert selected == {"software/cadagent/__init__.py", bad_path}
+    with pytest.raises(AssertionError, match="bare URL"):
+        test_every_fetch_sends_a_user_agent()
+    (tmp_path / bad_path).write_text("# no fetch\n")
+    test_every_fetch_sends_a_user_agent()
+    # An old source tree cannot rescue an empty canonical package inventory.
+    import shutil
+    shutil.rmtree(tmp_path / "software/cadagent")
+    with pytest.raises(AssertionError, match="no current toolkit package"):
+        test_every_fetch_sends_a_user_agent()

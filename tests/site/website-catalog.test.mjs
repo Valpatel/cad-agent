@@ -57,7 +57,7 @@ test('schema 2 keeps every schema-1 field, with the same meaning', () => {
     if (i.markdown) assert.ok(i.markdown.startsWith(ORIGIN) && existsSync(local(i.markdown)), `${i.id}: markdown ${i.markdown}`);
   }
   // Every entry schema 1 listed is still there under the same type and name (the demos are new).
-  const upstreams = YAML.parse(execFileSync('git', ['show', 'HEAD:vendor/upstreams/registry.yaml'], { cwd: root }).toString());
+  const upstreams = YAML.parse(execFileSync('git', ['show', 'HEAD:software/vendor/upstreams/registry.yaml'], { cwd: root }).toString());
   for (const u of upstreams) assert.ok(catalog.items.some(i => i.type === 'upstream' && i.name === u.name), u.name);
   const commands = catalog.items.filter(i => i.type === 'tool').length;
   assert.equal(commands, catalog.items.filter(i => i.kind === 'tool').length);
@@ -80,7 +80,7 @@ test('schema 2 lost gyropup in v0.10.0 but kept its schema value: fields.removed
 test('schema-1 fields keep their schema-1 values: summary, licence (null stays null), tool urls', () => {
   // Schema 1's builder, as it was (tools/site/build-site.mjs before catalogue v2), run over today's data.
   const landscape = JSON.parse(show('docs/research/landscape.json'));
-  const upstreams = YAML.parse(show('vendor/upstreams/registry.yaml'));
+  const upstreams = YAML.parse(show('software/vendor/upstreams/registry.yaml'));
   const notes = new Map(landscape.projects.map(p => [p.name, p.notes || '']));
   const want = [
     ...upstreams.map(u => ({ type: 'upstream', status: u.status, name: u.name, url: u.url, summary: notes.get(u.name) || u.what || u.policy,
@@ -306,7 +306,7 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
     const bad = n => `"><img src=x onerror=alert(${n})><script>alert(${n})</script>`;
     const entry = { name: `evil/${bad(1)}`, what: bad(2), areas: ['3d-printing'], url: 'https://github.com/evil/evil', license: bad(3),
       status: 'candidate', policy: bad(4), last_push: bad(5), stars: bad(6) };
-    const registry = path.join(wt, 'vendor/upstreams/registry.yaml');
+    const registry = path.join(wt, 'software/vendor/upstreams/registry.yaml');
     await writeFile(registry, `${await readFile(registry, 'utf8')}\n${YAML.stringify([entry])}`);
     execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root, stdio: 'pipe' });
     const html = await readFile(path.join(draft, 'catalog.html'), 'utf8');

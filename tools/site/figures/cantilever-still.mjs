@@ -8,7 +8,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawCantilever, summary } from '../../../src/cadagent/webkit/cantilever.js';
+import { readState, compute, drawCantilever, summary } from '../../../software/cadagent/webkit/cantilever.js';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 const PAGE = 'docs/mechanical/compliant.md', STILL = 'docs/img/compliant/cantilever-explorer.svg';

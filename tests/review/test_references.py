@@ -137,13 +137,13 @@ def test_isbn_check_digits(isbn, ok):
 
 GOOD = {"id": "good-guide", "title": "A Guide", "authors": [], "org": "Maker", "year": 2020,
         "url": "https://example.org/guide", "access": "free", "terms": "cited and summarised, never copied",
-        "areas": ["fdm"], "used_for": ["src/cadagent/mod.py"], "verified": "2026-11-01: read p. 2"}
+        "areas": ["fdm"], "used_for": ["software/cadagent/mod.py"], "verified": "2026-11-01: read p. 2"}
 
 
 def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
     (tmp_path / "docs" / "research").mkdir(parents=True)
-    (tmp_path / "src" / "cadagent").mkdir(parents=True)
-    (tmp_path / "src" / "cadagent" / "mod.py").write_text(textwrap.dedent('''
+    (tmp_path / "software" / "cadagent").mkdir(parents=True)
+    (tmp_path / "software" / "cadagent" / "mod.py").write_text(textwrap.dedent('''
         SRC = {"good-guide": "Maker, A Guide, p. 2", "gone": "nowhere"}
         x = cite("good-guide", "p. 3")
         m = Material("PLA", 1, 0.3, 1, 1, source="good-guide")
@@ -164,9 +164,9 @@ def _planted(tmp_path: Path, sources, unverified=(), uncited=()) -> Path:
 def test_the_scan_reads_each_way_of_citing(tmp_path):
     root = _planted(tmp_path, [GOOD])
     found = {(c.key, c.path, c.how) for c in citations(root)}
-    assert found == {("good-guide", "src/cadagent/mod.py", "table"), ("gone", "src/cadagent/mod.py", "table"),
-                     ("good-guide", "src/cadagent/mod.py", "cite"), ("good-guide", "src/cadagent/mod.py", "material"),
-                     ("good-guide", "src/cadagent/mod.py", "row"),
+    assert found == {("good-guide", "software/cadagent/mod.py", "table"), ("gone", "software/cadagent/mod.py", "table"),
+                     ("good-guide", "software/cadagent/mod.py", "cite"), ("good-guide", "software/cadagent/mod.py", "material"),
+                     ("good-guide", "software/cadagent/mod.py", "row"),
                      ("good-guide", "docs/page.md", "tag"), ("elsewhere", "docs/page.md", "tag"),
                      ("good-guide", "README.md", "tag"),
                      ("good-guide", "docs/research/process-profiles.yaml", "process-profile")}
@@ -179,17 +179,17 @@ def test_check_reports_unknown_keys_and_missing_used_for(tmp_path):
     assert any("add docs/page.md to used_for of good-guide" in p for p in problems)
     assert any("add README.md to used_for of good-guide" in p for p in problems)
     assert any("add docs/research/process-profiles.yaml to used_for" in p for p in problems)
-    assert not any("src/cadagent/mod.py to used_for" in p for p in problems) and not warnings
+    assert not any("software/cadagent/mod.py to used_for" in p for p in problems) and not warnings
 
 
 def test_check_warns_on_code_citing_an_unverified_entry(tmp_path):
-    root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent/mod.py", "docs/page.md", "README.md#top",
+    root = _planted(tmp_path, [{**GOOD, "used_for": ["software/cadagent/mod.py", "docs/page.md", "README.md#top",
                                                      "docs/research/process-profiles.yaml"]}],
                     unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL recorded",
-                                 "used_for": ["src/cadagent/mod.py"]}],
+                                 "used_for": ["software/cadagent/mod.py"]}],
                     uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
     problems, warnings = check(root)
-    assert not problems and warnings == ["src/cadagent/mod.py:2: cites 'gone', an unverified entry (no URL recorded)"]
+    assert not problems and warnings == ["software/cadagent/mod.py:2: cites 'gone', an unverified entry (no URL recorded)"]
 
 
 @pytest.mark.parametrize("change,message", [
@@ -233,14 +233,14 @@ def test_uncited_and_unverified_entries_are_checked_too(tmp_path):
 
 
 def test_used_for_may_name_a_folder_or_an_anchor(tmp_path):
-    root = _planted(tmp_path, [{**GOOD, "used_for": ["src/cadagent", "docs/page.md#rules", "README.md",
+    root = _planted(tmp_path, [{**GOOD, "used_for": ["software/cadagent", "docs/page.md#rules", "README.md",
                                                      "docs/research/process-profiles.yaml"]}],
-                    unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL", "used_for": ["src/"]}],
+                    unverified=[{"id": "gone", "title": "Lost", "org": "Maker", "why": "no URL", "used_for": ["software/cadagent/"]}],
                     uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
     problems, _ = check(root)
     assert not problems, problems
-    assert refs.lists(["src/cadagent"], "src/cadagent/mod.py") and not refs.lists(["src/cad"], "src/cadagent/mod.py")
-    assert not refs.lists(["proposed: src/cadagent/mod.py"], "src/cadagent/mod.py")
+    assert refs.lists(["software/cadagent"], "software/cadagent/mod.py") and not refs.lists(["src/cad"], "software/cadagent/mod.py")
+    assert not refs.lists(["proposed: software/cadagent/mod.py"], "software/cadagent/mod.py")
 
 
 def test_a_malformed_tag_is_reported_not_skipped(tmp_path):
@@ -347,14 +347,14 @@ def test_an_id_in_two_files_is_reported(tmp_path):
 
 
 def test_extends_adds_schema2_fields_to_a_core_entry(tmp_path):
-    ext = {"id": "good-guide", "extends": True, "kind": "guide", "used_for": ["docs/page.md", "src/cadagent/mod.py"],
+    ext = {"id": "good-guide", "extends": True, "kind": "guide", "used_for": ["docs/page.md", "software/cadagent/mod.py"],
            "areas": ["threaded-inserts"], "evidence": {"numbers": "claimed", "authority": "primary"},
            "claims": [{"text": "wall 1.2 mm", "status": "unconfirmed"}]}
     root = _planted2(tmp_path, {"guides-inserts": _shard([ext])})
     reg = load(root / "docs" / "research" / "references.yaml")
     ref = reg.resolve("good-guide")
     assert ref.file == "docs/research/references.yaml" and ref.kind == "source" and ref.evidence_class == "read"
-    assert ref["used_for"] == ["src/cadagent/mod.py", "docs/page.md"]          # united, the core's order first
+    assert ref["used_for"] == ["software/cadagent/mod.py", "docs/page.md"]          # united, the core's order first
     assert ref["areas"] == ["fdm", "threaded-inserts"] and ref["kind"] == "guide" and ref["claims"]
     assert not _problems(root), _problems(root)
     # an extension changes nothing the core says, extends only what exists, and only once
@@ -488,7 +488,7 @@ def test_the_vocabularies_name_no_project():
 def test_a_catalogued_record_backs_no_rule_check_or_page(tmp_path):
     root = _planted2(tmp_path, {"guides-inserts": _shard([GUIDE])},
                      sources=[{**GOOD, "used_for": ["src", "docs", "README.md", "docs/research"]}])
-    (root / "src" / "cadagent" / "uses.py").write_text('SRC = {"maker-insert-guide": "p. 1"}\n')
+    (root / "software" / "cadagent" / "uses.py").write_text('SRC = {"maker-insert-guide": "p. 1"}\n')
     (root / "docs" / "rule.md").write_text("Insert holes are 4.0 mm [ref:maker-insert-guide].\n")
     (root / "docs" / "research" / "survey.md").write_text("Also seen: [ref:maker-insert-guide].\n")
     pp = yaml.safe_load((root / "docs" / "research" / "process-profiles.yaml").read_text())
@@ -496,7 +496,7 @@ def test_a_catalogued_record_backs_no_rule_check_or_page(tmp_path):
     (root / "docs" / "research" / "process-profiles.yaml").write_text(yaml.safe_dump(pp))
     problems, warnings = check(root)
     bad = sorted(p.split(":", 1)[0] for p in problems if "a snippet-only record: a rule, check or page" in p)
-    assert set(bad) == {"docs/rule.md", "docs/research/process-profiles.yaml", "src/cadagent/uses.py"} and len(bad) == 3, problems
+    assert set(bad) == {"docs/rule.md", "docs/research/process-profiles.yaml", "software/cadagent/uses.py"} and len(bad) == 3, problems
     assert [w for w in warnings if "maker-insert-guide" in w] == [
         "docs/research/survey.md:1: cites 'maker-insert-guide', a snippet-only record (listed, not read)"]
 
@@ -517,7 +517,7 @@ def test_a_read_shard_record_may_be_cited(tmp_path):
     ({"evidence": {"class": "read"}}, "evidence class read needs `verified`"),
     ({"evidence": {"class": "verified-at-source"}, "verified": "2026-11-02: read"},
      "evidence class verified-at-source needs a claim corroborated_by another record"),
-    ({"used_for": ["src/cadagent/mod.py"]}, "a snippet-only record backs nothing outside docs/research/"),
+    ({"used_for": ["software/cadagent/mod.py"]}, "a snippet-only record backs nothing outside docs/research/"),
     ({"checks": ["inserts.check_joint"]}, "a snippet-only record may not back a rule or a check"),
 ])
 def test_the_ladder_rules(tmp_path, change, message):

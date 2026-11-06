@@ -1,6 +1,6 @@
 # tests
 
-cad-agent's tests, one folder per package of [`src/cadagent/`](../src/cadagent/README.md), plus three areas that are
+cad-agent's tests, one folder per package of [`software/cadagent/`](../software/cadagent/README.md), plus three areas that are
 not packages and the shared fixtures. A test goes in the folder of the package its main subject lives in, whatever
 else it imports. [`repo/test_layout.py`](repo/test_layout.py) refuses a test file directly in `tests/` and says
 which folder it belongs in.
@@ -9,7 +9,7 @@ Arrows: which code each group of folders tests.
 
 ```mermaid
 flowchart TD
-    D["mechanical/ · thermal/<br/>manufacturing/ · simulation/<br/>electrical/"] -->|"tests"| S["src/cadagent/<br/>domain packages"]
+    D["mechanical/ · thermal/<br/>manufacturing/ · simulation/<br/>electrical/"] -->|"tests"| S["software/cadagent/<br/>domain packages"]
     C["geometry/ · formulas/ · library/<br/>review/ · publish/ · webkit/"] -->|"tests"| S
     A["cli/ · site/ · repo/<br/>not packages"] -->|"tests"| T["cli.py · tools/<br/>the repo's rules"]
     F["fixtures/<br/>shared data"] --> D
@@ -45,7 +45,7 @@ flowchart TD
 ## Adding a test
 
 - **Which folder:** the package of the code under test (`cadagent.review.gates` → `review/`). For a test of a
-  `tools/` script, the package whose output the script draws or checks (`tools/motion_figures.py` → `mechanical/`),
+  `tools/` script, the package whose output the script draws or checks (`tools/figures/motion_figures.py` → `mechanical/`),
   or `repo/` for the repo's own tooling and `site/` for the site build. A new folder is a new package or area: add it
   to `AREAS` in `repo/test_layout.py` and to this table, with its README and `__init__.py`.
 - **Paths:** a test file is two folders below the repo root: `ROOT = Path(__file__).resolve().parents[2]`, and the
@@ -54,16 +54,16 @@ flowchart TD
 - **Helpers** shared within a folder live in it (`simulation/cfd_fixtures.py`); import them relatively
   (`from .cfd_fixtures import recorded`), or as `tests.<folder>.<module>` from another folder.
 - **When a folder grows** past 20 files, split it into subfolders named after the subpackages, each with a README
-  and `__init__.py`, as `simulation/explore/` mirrors `src/cadagent/simulation/explore/` (the growth rule in
+  and `__init__.py`, as `simulation/explore/` mirrors `software/cadagent/simulation/explore/` (the growth rule in
   [AGENTS.md](../AGENTS.md#repo-structure-and-where-files-go)). A test file there is three folders below the root.
 
 ## Running them
 
 ```bash
-PYTHONPATH=src python -m pytest -q                    # everything Python; or one folder: pytest tests/review
+PYTHONPATH=software python -m pytest -q                    # everything Python; or one folder: pytest tests/review
 node --test tests/webkit/*.test.mjs tests/site/website-*.test.mjs
 npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
 ```
 
 Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·
-[package map](../src/cadagent/README.md) · [style guide](../docs/practice/style-guide.md)
+[package map](../software/cadagent/README.md) · [style guide](../docs/practice/style-guide.md)

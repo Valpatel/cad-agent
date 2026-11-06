@@ -157,7 +157,7 @@ def test_module_runs_as_a_script(tmp_path):
     import subprocess
 
     root = make_project(tmp_path)
-    src = Path(__file__).resolve().parents[2] / "src"
+    src = Path(__file__).resolve().parents[2] / "software"
     proc = subprocess.run([sys.executable, "-m", "cadagent.cli", "check", "--project", str(root)],
                           capture_output=True, text=True, env=dict(os.environ, PYTHONPATH=str(src)))
     assert proc.returncode == 0, proc.stderr

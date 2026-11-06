@@ -19,4 +19,4 @@ flowchart TD
 | [Agent toolkits](agent-toolkits-2026-10.md) | Dated agent-tool comparisons and adoption notes |
 | [Design workflows](design-workflows.md) | Methods, gaps and evaluation evidence |
 
-[Research map](../README.md) · [Skills](../../../skills/README.md)
+[Research map](../README.md) · [Skills](../../../.agents/skills/README.md)

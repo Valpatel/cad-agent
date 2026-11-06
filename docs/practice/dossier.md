@@ -641,7 +641,7 @@ right (the gates check that) or that it meets its requirements (the reviewer che
 ## The reviewer pass
 
 A section is reviewed by an agent or person that did not build it (plan §5.3, task T11;
-`cadagent.review.dossier.review`). The author hands it over (skill [`design-process`](../../skills/design-process/SKILL.md)
+`cadagent.review.dossier.review`). The author hands it over (skill [`design-process`](../../.agents/skills/design-process/SKILL.md)
 §7) once the section is `gated` and its review packet is rendered ([review-packet.md](review-packet.md)). Then:
 
 ```bash

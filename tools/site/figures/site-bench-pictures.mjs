@@ -36,7 +36,7 @@ await cp(path.join(root, 'tests/fixtures/gate_bench'), bench, { recursive: true,
 await cp(path.join(root, 'tests/fixtures/gate_bench/site_snapshot'), path.join(bench, 'project/exports'), { recursive: true });
 const python = process.env.PYTHON || 'python3';
 execFileSync(python, ['-m', 'cadagent.cli', 'site', '--project', path.join(bench, 'project')],
-  { cwd: tmp, env: { ...process.env, PYTHONPATH: path.join(root, 'src') }, stdio: 'inherit' });
+  { cwd: tmp, env: { ...process.env, PYTHONPATH: path.join(root, 'software') }, stdio: 'inherit' });
 const site = path.join(bench, 'project/site');
 await mkdir(OUT, { recursive: true });
 const svg = await readFile(path.join(site, 'review/connectivity.svg'), 'utf8');

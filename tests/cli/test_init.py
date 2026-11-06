@@ -12,6 +12,7 @@ import sys
 import tarfile
 import tempfile
 import venv
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -128,12 +129,18 @@ def _wheel_smoke(tmp_path):
     expected = {p.relative_to(committed_starter).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in committed_starter.rglob("*") if p.is_file()}
     assert expected and "cad-agent.yaml" in expected
-    sdk_source = source / "src" / "cadagent" / "webkit"
+    sdk_source = source / "software" / "cadagent" / "webkit"
     sdk_expected = {name: hashlib.sha256((sdk_source / name).read_bytes()).hexdigest()
-                    for name in ("package.json", "formulas.js")}
+                    for name in (p.relative_to(sdk_source).as_posix() for p in sdk_source.rglob("*") if p.is_file())}
     run([sys.executable, "-m", "pip", "wheel", "--disable-pip-version-check", "--no-deps", "--wheel-dir", wheels, source])
     built = list(wheels.glob("cad_agent-*.whl"))
     assert len(built) == 1, f"expected one cad-agent wheel, found {built}"
+    with zipfile.ZipFile(built[0]) as wheel:
+        names = wheel.namelist()
+        unexpected = [name for name in names if name.split("/", 1)[0] != "cadagent"
+                      and not name.split("/", 1)[0].startswith("cad_agent-")]
+        assert not unexpected, f"non-package software (including imported vendor trees) leaked into wheel: {unexpected[:10]}"
+        assert any(name.startswith("cadagent/webkit/vendor/") for name in names), "the packaged SDK keeps its own runtime dependencies"
     shutil.rmtree(source)
     assert not source.exists()
     # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor

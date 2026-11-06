@@ -3,7 +3,7 @@
  * field without a new schema value (CATALOG_FIELDS.removed says which), so a reader that checks for /2 still runs. Built by
  * tools/site/build-site.mjs from committed files only:
  * - our commands (cli.py), pages (docs, lessons, research, skills, agents) and demos and tool pictures (docs/catalog.yaml);
- * - outside projects (vendor/upstreams/registry.yaml), libraries and benchmarks (docs/research/landscape.json);
+ * - outside projects (software/vendor/upstreams/registry.yaml), libraries and benchmarks (docs/research/landscape.json);
  * - the topic tree (docs/areas.yaml), which places pages, commands, skills, agents and lesson folders in areas. Outside
  *   entries take an `areas:` list of their own; until they have one they are listed as not yet placed.
  * Agents first: an agent reads catalog/index.json (areas with counts and links), then one area file, then the entry.
@@ -165,7 +165,7 @@ export async function buildCatalog(ctx) {
   for (const n of nodes.values()) if (n.lessons) put('lessons', n.lessons, n.slug);
   for (const v of ctx.areas.cross_cutting?.pages || []) put('pages', v, 'cross-cutting');
   // Pages about the whole repository (README, CONTRIBUTING, licence notices, the lessons index) are cross-cutting too.
-  for (const f of ['README.md', '.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'docs/lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
+  for (const f of ['README.md', '.github/CONTRIBUTING.md', 'software/vendor/THIRD_PARTY_NOTICES.md', 'docs/lessons/README.md']) if (!placed.pages.has(f)) put('pages', f, 'cross-cutting');
   /** Area and domain slugs for a list of node slugs (a topic counts for its area), with maturity and domains. */
   const place = (slugs, where) => {
     const areas = [], domains = [];
@@ -216,7 +216,7 @@ export async function buildCatalog(ctx) {
   };
   const tone = it => it.domains?.[0] || (it.areas?.[0] === 'cross-cutting' ? 'cross-cutting' : 'unplaced');
   // An outside entry not placed in an area yet still gets a picture of its subject, guessed from its own words. The
-  // guess only picks the cover's glyph: the entry stays in "not yet placed" until vendor/upstreams/registry.yaml gives areas.
+  // guess only picks the cover's glyph: the entry stays in "not yet placed" until software/vendor/upstreams/registry.yaml gives areas.
   const SUBJECT = [[/\b(kicad|pcb|gerber|schematic|circuit|eda)\b/, 'circuit-boards'], [/(slicer|slicing|\b3mf|\bfdm\b|g-?code|\bprint(?:ing|er)?\b)/, '3d-printing'],
     [/\b(cfd|openfoam|airflow|fluid)\b/, 'cfd'], [/\b(fea|fem|calculix|stress|elmer|finite.element)\b/, 'structural-fea'],
     [/\btopology\b/, 'topology-optimisation'], [/\b(render|blender|visuali[sz]|mesh)/, 'results-and-visuals'],
@@ -268,7 +268,7 @@ export async function buildCatalog(ctx) {
   for (const p of ctx.pages) {
     const kind = kindOfSection[p.section];
     const lessonFolder = publicPath(p.file).match(/^lessons\/([^/]+)\//)?.[1];
-    const skill = p.file.match(/^skills\/([^/]+)\/SKILL\.md$/)?.[1], agent = p.file.match(/^agents\/([^/]+)\.md$/)?.[1];
+    const skill = publicPath(p.file).match(/^skills\/([^/]+)\/SKILL\.md$/)?.[1], agent = publicPath(p.file).match(/^agents\/([^/]+)\.md$/)?.[1];
     const slugs = [...(placed.pages.get(p.file) || []), ...(lessonFolder ? placed.lessons.get(lessonFolder) || [] : []),
       ...(skill ? placed.skills.get(skill) || [] : []), ...(agent ? placed.agents.get(agent) || [] : [])];
     const where = place(slugs, p.file);
@@ -374,7 +374,7 @@ export async function buildCatalog(ctx) {
   // Schema 1's fields keep their schema-1 values (summary is our notes first, as before); `what` is the plain line.
   for (const u of ctx.upstreams) {
     const p = projectData.get(u.name);
-    const where = place(u.areas || [], `vendor/upstreams/registry.yaml ${u.name}`);
+    const where = place(u.areas || [], `software/vendor/upstreams/registry.yaml ${u.name}`);
     const what = plainText(u.what) || composeWhat(p) || null;
     const notes = [p?.notes, p?.license_note].filter(Boolean).map(plainText).join(' ') || null;
     items.push({ type: 'upstream', status: u.status, name: u.name, url: u.url, summary: p?.notes || u.what || u.policy, policy: u.policy,

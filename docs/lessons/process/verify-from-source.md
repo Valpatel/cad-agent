@@ -196,6 +196,10 @@ flowchart TD
   check covered uniqueness and CSP, but not that freshness policy. It now consumes all actual emitted vendor
   paths and their matching rules, requiring revalidation for browser and shared caches while retaining CSP checks.
   This does not identify an unreadable zone rule as the cause of the observed custom-domain caching.
+- **Validation:** Fleet job 207 on cpu-b at `cd6433f6` built both real policies. The previous check accepted the
+  old emitted policy; the refined check rejected it, overlapping rules and duplicate directives. A real Chromium
+  context retained old bytes under the day-long freshness policy and read changed origin bytes under revalidation.
+  [Exact controls, complete artifacts and limits](https://github.com/Valpatel/cad-agent/issues/381#issuecomment-6679791951).
 - **Authorization evidence:** Normal existing-user Wrangler refresh and fresh Pages/zone reads succeeded. At
   07:00:53 UTC, the independently reviewed one-URL purge returned HTTP401/code10000 and stopped before the second
   domain. No purge was accepted; read access did not establish purge permission. [Action receipt](https://github.com/Valpatel/cad-agent/issues/375#issuecomment-6679209776).

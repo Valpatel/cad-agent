@@ -6,7 +6,7 @@ The arrows show the route from discovery to a tested reusable method.
 
 ```mermaid
 flowchart TD
-    L["landscape.md<br/>find existing tools"] --> R["references/<br/>read + cite sources"]
+    L["agent-workflow/landscape.md<br/>find existing tools"] --> R["references/<br/>read + cite sources"]
     R --> P["process-profiles.yaml<br/>encode scoped rules"]
     P --> C["../../src/cadagent/<br/>apply the rule"]
     C --> T["../../tests/<br/>worked examples + defects"]

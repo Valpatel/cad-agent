@@ -9,7 +9,7 @@ flowchart TD
     B["build-site.mjs"] --> S["../dist/<br/>published site"]
     A["anim/<br/>figure generators"] --> I["../docs/img/<br/>committed figures"]
     I --> B
-    M["mining/<br/>transcript extractor"] --> L["../lessons/<br/>reviewed lessons"]
+    M["mining/<br/>transcript extractor"] --> L["../docs/lessons/<br/>reviewed lessons"]
     S & I --> T["../tests/<br/>site + figure checks"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

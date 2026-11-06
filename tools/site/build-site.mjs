@@ -607,8 +607,9 @@ ${homeMd.ours.join('\n')}
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule
-// only: security headers on /*, Cache-Control only on /kit/vendor/* (everything else keeps the Pages default, which
-// revalidates). The site's own pages have no inline script; the kit's viewer pages have an import map and a module
+// only: security headers on /*, Cache-Control only on /kit/vendor/*. Those stable URLs can change between releases,
+// so they revalidate, like the Pages default for everything else. The site's own pages have no inline script;
+// the kit's viewer pages have an import map and a module
 // script each, allowed by hash. Styles allow inline for the diagram kit's SVG output; wasm for the STEP reader.
 const htmlFiles = async d => (await readdir(d, { withFileTypes: true, recursive: true }))
   .filter(e => e.isFile() && e.name.endsWith('.html')).map(e => path.join(e.parentPath, e.name));
@@ -643,7 +644,7 @@ await writeFile(path.join(out, '_headers'), [
   '  Strict-Transport-Security: max-age=31536000',
   '/*.md', '  Content-Type: text/markdown; charset=utf-8', '/llms.txt', '  Content-Type: text/plain; charset=utf-8',
   '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/install.sh', '  Content-Type: text/plain; charset=utf-8',
-  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=86400',
+  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=0, must-revalidate',
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +

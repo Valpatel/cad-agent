@@ -180,6 +180,31 @@ flowchart TD
   not establish write or DNS permissions, and credential-path precedence may change in another Wrangler version.
   [Sanitized readback and run receipts](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6675614833).
 
+### Verify released asset bytes as well as the version marker
+- **Rule:** Read the actual assets through each public domain and compare them with the released source. A current
+  version marker or checksum receipt does not prove that a separately cached asset is current. Stable asset URLs
+  must revalidate when reused; a source header change does not evict responses already stored elsewhere.
+
+<details>
+<summary>2026-11-06 stylesheet readback, cache policy and authorization limits</summary>
+
+- **Incident:** Ordinary GETs at 06:55 UTC found v0.22.1 revision `8ee3093e` and its current font receipt on both
+  custom domains, but their stylesheet was the prior 605-byte file (`bcaa41f3…`, `CF-Cache-Status: HIT`). The public
+  Pages domain returned the expected 607-byte file (`8d4d4568…`). Only an owned source-path comment had changed;
+  the font rules were identical. [Exact hashes and readback](https://github.com/Valpatel/cad-agent/issues/375#issuecomment-6679164089).
+- **Cause and corrective check:** Stable `/kit/vendor/*` URLs received a day of freshness. The existing header
+  check covered uniqueness and CSP, but not that freshness policy. It now consumes all actual emitted vendor
+  paths and their matching rules, requiring revalidation for browser and shared caches while retaining CSP checks.
+  This does not identify an unreadable zone rule as the cause of the observed custom-domain caching.
+- **Authorization evidence:** Normal existing-user Wrangler refresh and fresh Pages/zone reads succeeded. At
+  07:00:53 UTC, the independently reviewed one-URL purge returned HTTP401/code10000 and stopped before the second
+  domain. No purge was accepted; read access did not establish purge permission. [Action receipt](https://github.com/Valpatel/cad-agent/issues/375#issuecomment-6679209776).
+- **Limits:** Local emitted-header checks do not prove CDN behavior, existing browser-cache eviction or global
+  propagation. Preserve the first mismatch, verify ordinary public responses after release, and keep publication
+  pending while bytes disagree. A cache-busting query is diagnostic evidence, not proof that the original URL is fixed.
+
+</details>
+
 ### Check documented commands in the forms people actually use
 - **Rule:** A reference check must consume the actual inline and shell examples, with an invalid example proving it
   rejects each supported form. Passing the current documentation alone does not establish that the checker works.

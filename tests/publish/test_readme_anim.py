@@ -123,11 +123,30 @@ def test_the_hero_states_its_checks_from_the_scene(tool, built):
         assert bool(c["clashes"]) == any(p["kind"] == "clash" for p in c["pairs"])
 
 
-def test_the_readme_embeds_the_hero():
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    m = re.search(r'<img src="docs/img/hero/gyropup-leg\.svg" alt="([^"]+)"', readme)
-    assert m and "Gyropup" in m.group(1)
+def _readme_hero_provenance(readme, tool):
+    m = re.search(r'<img src="([^"]+)" alt="([^"]+)"', readme)
+    assert m and "Gyropup" in m.group(2)
+    assert (ROOT / m.group(1)).resolve() == tool.FIGURES["hero"][-1].resolve(), "wrong hero output"
+    credit = re.search(r'Made by <a href="([^"]+)"><code>([^<]+)</code></a>', readme)
+    assert credit and credit.group(1) == credit.group(2), "producer href and label differ"
+    producer = ROOT / credit.group(1)
+    assert producer.is_file(), "credited producer is missing"
+    assert producer.resolve() == Path(tool.__file__).resolve(), "credit does not name the actual hero producer"
     assert "github.com/Valpatel/gyropup" in readme
+
+
+def test_the_readme_embeds_the_hero(tool):
+    _readme_hero_provenance((ROOT / "README.md").read_text(encoding="utf-8"), tool)
+
+
+@pytest.mark.parametrize("wrong", ["tools/figures/readme_anim.py", "tools/cut_release.py"])
+def test_readme_hero_credit_rejects_missing_or_unrelated_producer(tool, wrong):
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    actual = Path(tool.__file__).relative_to(ROOT).as_posix()
+    assert wrong != actual
+    _readme_hero_provenance(readme, tool)
+    with pytest.raises(AssertionError, match="credited producer is missing|actual hero producer"):
+        _readme_hero_provenance(readme.replace(actual, wrong), tool)
 
 
 # ------------------------------------------------------------------------------------- each rule bites (mutations)

@@ -69,7 +69,8 @@ flowchart TD
 ```
 
 - **A cleaner structure over time, never pre-built.** A folder splits into domain subfolders only once it is
-  cluttered. The new folder gets a README map, and moved files leave stubs and redirects (the #133 pattern).
+  cluttered. The new folder gets a README map; source moves preserve public addresses or declare their redirects
+  and checkout compatibility window ([migration path](#migration-path)).
   - The maintainer agents make these moves as part of the work; a contributor is never asked to reorganise.
   - A ratchet check that makes clutter visible is in review (#276).
 - **The site follows the repo.**
@@ -306,11 +307,11 @@ The owner asked for a starting screen with only necessary files and a visible RE
 | Guides, research, lessons and examples | Domain guides under `docs/`; research data in `docs/research/`, lessons in `docs/lessons/`, examples in `docs/examples/` | 21 | Package data defaults, citations and scans, catalogue IDs/kinds, public URLs, relative links, checkout and wheel starter behavior |
 | Site source, assets and configuration | `tools/site/` and its `assets/` folder | 17 | Node ESM resolution, test dependency context, public assets/installers, provenance, CI/cache paths, npm audit history and the actual Pages build contract |
 
-The planned remaining root entries are `.agents`, `.github`, `.gitignore`, `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `agents`, `changelog.d`, `docs`, `pyproject.toml`, `skills`, `src`, `tests`, `tools` and `vendor`. Keep harness-discovered skills, agents and current wiring stable. `CHANGELOG.md` and its fragments remain release-history anchors: moving the changelog would change the resolution of its historical relative links. A smaller count alone does not justify privileged compatibility machinery or ambiguous history.
+After v0.22.0, the 17 tracked root entries are `.agents`, `.github`, `.gitignore`, `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `agents`, `changelog.d`, `docs`, `pyproject.toml`, `skills`, `src`, `tests`, `tools` and `vendor`. Keep harness-discovered skills, agents and current wiring stable. `CHANGELOG.md` and its fragments remain release-history anchors: moving the changelog would change the resolution of its historical relative links. A smaller count alone does not justify privileged compatibility machinery or ambiguous history.
 
 The package manifests and Wrangler file are current site integration defaults. Their move co-locates the Node site modules, because ESM resolves dependencies upward from an importing module. Node tests remain with their test domains and use an explicit dependency context for the site package. The web kit's JavaScript module scope remains explicit. Public page routes, catalogue identities and served asset paths remain stable while GitHub sources and breadcrumbs point to the new physical files.
 
-Before a move, list its actual path consumers and refine their existing checks. Prove moved sources are consumed, missing current files cannot be replaced by stale old copies, and historical comparisons retain the same identities. A root entry must actually disappear; a root wrapper does not meet the count goal. Research data/defaults and wheel inputs need runtime checks, alongside site discovery. Shared Pages build settings receive independent review before change; the observed contract is a root build command, root `dist` output, production `main` and no preview deployments.
+Before a move, list its actual path consumers and refine their existing checks. Prove moved sources are consumed, missing current files cannot be replaced by stale old copies, and historical comparisons retain the same identities. A root entry must actually disappear; a root wrapper does not meet the count goal. Research data/defaults and wheel inputs need runtime checks, alongside site discovery. Shared Pages build settings receive independent review before change; the verified steady command runs from the repository root as `npm --prefix tools/site ci && npm --prefix tools/site run build`, with root `dist` output, production `main` and no preview deployments.
 
 ## Migration path
 
@@ -321,15 +322,20 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    in CONTRIBUTING.md, AGENTS.md and the PR template). When two open PRs cross, the one that merges second adds it,
    after merging dev and re-running its CI, because dev does not require branches to be up to date.
 2. **After #123, #124 and #133:** the site generates the area hubs and `areas.json` (#141).
-3. **Before the first move:** `tools/site/build-site.mjs` publishes only top-level `docs/` and `docs/research/` pages today. Its
-   docs and research sections must be widened by one domain level, as #133 widened the lessons section, or a moved
-   page would get no site page and its redirect would point at nothing.
-4. **Then, batch by batch:** `docs/` and `docs/research/` pages move into domain folders when their area has three or more
-   pages, or when a page is being edited anyway. Each move follows the #133 pattern:
-   - a `<!-- moved-to: … -->` stub at the old path, kept for one minor release;
-   - a line in the site's permanent redirect list, kept for good;
-   - every reference updated;
-   - a README and map for the new folder (#113).
+3. **Published in v0.22.0:** mechanical and practice guides, and the agent-workflow and manufacturing research
+   collections, have domain folders and visual maps. `tools/site/publication.mjs` selects their real sources;
+   `tools/site/page-sources.json` keeps existing public URLs and catalogue identities stable. Nested pages and
+   their Markdown twins are published and checked; missing required current sources cannot fall back to stale old files.
+4. **Continue in small batches:** move pages when an area has three or more, or when a page is being edited anyway.
+   Distinguish a source-file move from a public URL change:
+   - If its public URL stays the same, update the source map and actual path consumers. The published page still
+     answers directly at its established address; it does not need a redirect to itself.
+   - If a public URL changes, retain a permanent rule in `tools/site/compiler/site-redirects.txt`, for the page and
+     its Markdown twin, with a target that the build actually publishes. Keep any promised source-path stub for
+     its declared compatibility window; the numbered lesson stubs expired at v0.6.0, but their 301s remain.
+   - State checkout-path changes and compatibility windows in the CHANGELOG. v0.22.0 moved the old knowledge roots
+     into `docs/` without recreating them as stub folders; scripts using those source paths must update.
+   - Update every reference and `docs/areas.yaml`, and give each new folder a README and map (#113).
 5. **As jobs land:** `evals/jobs/` fills in area by area, starting with areas at `tooling`, since those have something
    to measure.
 

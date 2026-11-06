@@ -200,6 +200,14 @@ flowchart TD
   old emitted policy; the refined check rejected it, overlapping rules and duplicate directives. A real Chromium
   context retained old bytes under the day-long freshness policy and read changed origin bytes under revalidation.
   [Exact controls, complete artifacts and limits](https://github.com/Valpatel/cad-agent/issues/381#issuecomment-6679791951).
+- **Follow-up, 09:07 UTC:** After v0.22.2, ordinary custom-domain font responses included a fresh `MISS` with
+  `public, max-age=14400, must-revalidate`; the Pages domain still sent the source policy with `max-age=0`.
+  Both custom stylesheets remained old cache hits. Waiting for expiry alone therefore cannot establish effective
+  revalidation. The exact downstream setting remains unreadable (HTTP403/code10000 after normal Wrangler refresh).
+  [Source, public responses and limits](https://github.com/Valpatel/cad-agent/issues/381#issuecomment-6681474506).
+  Require an unqualified `no-cache` directive as well: in an ordinary Chromium 151 context, the observed positive
+  TTL retained 607 bytes after the controlled origin changed to 639; adding `no-cache` read the new 639 bytes.
+  That browser control tests response semantics, not Cloudflare behavior or eviction of an existing cached response.
 - **Authorization evidence:** Normal existing-user Wrangler refresh and fresh Pages/zone reads succeeded. At
   07:00:53 UTC, the independently reviewed one-URL purge returned HTTP401/code10000 and stopped before the second
   domain. No purge was accepted; read access did not establish purge permission. [Action receipt](https://github.com/Valpatel/cad-agent/issues/375#issuecomment-6679209776).

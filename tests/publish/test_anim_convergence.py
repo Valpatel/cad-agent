@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tests.repo.test_markdown_images import image_refs, resolve
+
 from cadagent.publish.anim import convergence as C
 from cadagent.publish.anim import svg
 
@@ -254,11 +256,11 @@ def test_the_docs_show_the_figure_and_say_what_it_is(scene):
     first_pass = next(s["size_mm"] for s in fillet["steps"] if s["converge"]["converged"])
     claims = [f"from {sharp['steps'][0]['peak_mpa']:,.0f} to {sharp['steps'][-1]['peak_mpa']:,.0f} MPa",
               f"between {min(v):,.0f} and {max(v):,.0f} MPa"]
-    pages = {ROOT / "docs" / "toolkit.md": "img/fea/mesh-convergence.svg",
-             ROOT / "src" / "cadagent" / "simulation" / "README.md": "../../../docs/img/fea/mesh-convergence.svg",
-             ROOT / "docs" / "animated-figures.md": "img/fea/mesh-convergence.svg"}
-    for page, src in pages.items():
+    pages = [ROOT / "docs" / "toolkit.md", ROOT / "src" / "cadagent" / "simulation" / "README.md",
+             ROOT / "docs" / "practice" / "animated-figures.md"]
+    for page in pages:
         text = page.read_text(encoding="utf-8")
+        src = next(src for src in image_refs(text) if resolve(page.relative_to(ROOT).as_posix(), src) == FIGURE.relative_to(ROOT).as_posix())
         at = text.index(f"]({src})")
         alt = text[text.rindex("![", 0, at):at]
         caption = text[at:at + 1400]

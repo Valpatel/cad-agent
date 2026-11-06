@@ -3,7 +3,7 @@
 These are runnable examples and test inputs. Their computed results do not establish physical performance.
 
 ```mermaid
-flowchart LR
+flowchart TD
     S["starter box<br/>cad-agent init"] --> C["build + checks"]
     E["two-wheel comparison<br/>design alternatives"] --> V["evaluate + compare"]
     C --> R["inspect evidence + limits"]

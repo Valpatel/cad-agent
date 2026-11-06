@@ -197,7 +197,7 @@ def test_docs_page_example_runs_and_table_matches_the_code():
     import re
     from pathlib import Path
     import yaml
-    doc = (Path(__file__).resolve().parents[2] / "docs" / "compliant.md").read_text()
+    doc = (Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text()
     result = sf.check_spec(yaml.safe_load(re.search(r"```yaml\n(.*?)```", doc, re.S).group(1)))
     assert result["pass"] and [s["name"] for s in result["snaps"]] == ["lid-latch", "example-I"]
     rows = re.findall(r"`([a-z0-9-]+)` \| ([\d.]+) % \| ([\d.]+) %", doc)
@@ -316,7 +316,7 @@ def test_bad_yaml_is_exit_2(tmp_path):
 def test_docs_ranges_match_the_datasheets():
     # the living page's stated across/along ranges for PLA, PETG, ASA and CoPA come from the PRINTED rows
     from pathlib import Path
-    doc = (Path(__file__).resolve().parents[2] / "docs" / "compliant.md").read_text()
+    doc = (Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text()
     rows = [v.sheets[0] for k, v in al.PRINTED.items() if not k.startswith("pa6-cf")]     # the current editions
     strength = [s.uts_mpa[1] / s.uts_mpa[0] for s in rows]
     elong = [s.break_pct[1] / s.break_pct[0] for s in rows]
@@ -327,7 +327,7 @@ def test_docs_ranges_match_the_datasheets():
 
 def test_docs_direction_costs_match_the_code():
     from pathlib import Path
-    doc = " ".join((Path(__file__).resolve().parents[2] / "docs" / "compliant.md").read_text().split())
+    doc = " ".join((Path(__file__).resolve().parents[2] / "docs" / "mechanical" / "compliant.md").read_text().split())
     ratio = {k: v.allowable("across") / v.allowable("along") for k, v in al.PRINTED.items()}
     pct = lambda keys: sorted(round(ratio[k] * 100) for k in keys)
     pla_petg = pct(k for k in ratio if k.startswith(("pla", "petg")))

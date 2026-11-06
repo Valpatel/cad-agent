@@ -128,7 +128,7 @@ def anisotropy() -> str:
 
 
 def stars(top: int = 12) -> str:
-    md = (ROOT / "docs" / "research" / "landscape.md").read_text(encoding="utf-8")
+    md = (ROOT / "docs" / "research" / "agent-workflow" / "landscape.md").read_text(encoding="utf-8")
     verified = re.search(r"verified (\d{4}-\d{2}-\d{2})", md).group(1)
     rows = []
     for cells in table(md, "## 1. Capability matrix"):

@@ -229,7 +229,7 @@ def knee_figure() -> str:
 
 def page_example() -> dict:
     """The spec in docs/mechanical/bearings.md's "Check a bearing" section, read from the page so the figure shows its output."""
-    text = (ROOT / "docs" / "bearings.md").read_text()
+    text = (ROOT / "docs" / "mechanical" / "bearings.md").read_text()
     return yaml.safe_load(text.split("```yaml\n", 1)[1].split("```", 1)[0])
 
 

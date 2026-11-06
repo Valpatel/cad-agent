@@ -63,7 +63,7 @@ test('a shard record read at source is a source, and aliases of every entry reso
 
 test('the loader refuses an extension of nothing and a second record with one id', async () => {
   await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: b-later, extends: true}\n' }), /extends no read source/);
-  await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: a-guide, title: Again}\n' }), /also in research\/references\.yaml/);
+  await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: a-guide, title: Again}\n' }), /also in docs\/research\/references\.yaml/);
   const r = await fake({ [CORE]: core, [`${DIR}vocab.yaml`]: 'kind: {}\n', [`${DIR}coverage.yaml`]: 'rows: []\n', [`${DIR}sub/x.yaml`]: 'sources: [{id: z}]\n' });
   assert.deepEqual(r.shards, [], 'vocab, coverage and files in subfolders are not shards');
 });
@@ -96,7 +96,7 @@ test('index.json counts every committed record once, and each area file lists ex
   // Counted from the YAML here, not through the module under test.
   // A shard record read at source (#323's sweeps) is a source; one still snippet-only is catalogued.
   const own = [], ownRead = [];
-  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
+  for (const f of tracked.filter(f => /^docs\/research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
     for (const r of YAML.parse(await show(f)).sources) {
       if (r.extends) continue;
       own.push(r.id);
@@ -173,7 +173,7 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
   const unread = [...refs.others.keys()][0];
   assert.match(linkTags(`<p>[ref:${unread}]</p>`, model), /class="ref-cite ref-unread"/);
   // In the site: a page that cites leaves no bare tag of a known record, and loads the style for its links.
-  const page = await text('docs/research/sheet-metal-joining.html');
+  const page = await text('research/sheet-metal-joining.html');
   assert.match(page, /class="ref-cite"/);
   assert.match(page, /<link rel="stylesheet" href="\/web\/references\.css">/);
   const bare = [...page.replace(/<(code|pre)\b[\s\S]*?<\/\1>/g, '').matchAll(/\[ref:([a-z0-9-]+)\](?!<)/g)].map(m => m[1]).filter(k => model.home(k));
@@ -183,11 +183,11 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
 test('Markdown twins link [ref:] tags to the records\' pages; code is left alone', () => {
   const md = `A [ref:pem-handbook] rule.\n\n\`[ref:pem-handbook]\`\n\n\`\`\`\n[ref:pem-handbook]\n\`\`\`\n[ref:pem-handbook](kept)\n[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)\n`;
   const page = model.home('pem-handbook').slice(1).split('#')[0];
-  const twin = mdTags(md, 'docs/research/x.md', model, { ORIGIN });
+  const twin = mdTags(md, 'research/x.md', model, { ORIGIN });
   assert.ok(twin.startsWith(`A [ref:pem-handbook](${path.posix.relative('research', page)}.md#pem-handbook) rule.`), twin);
   assert.ok(twin.includes('`[ref:pem-handbook]`') && twin.includes('```\n[ref:pem-handbook]\n```') && twin.includes('[ref:pem-handbook](kept)')
     && twin.includes('[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)'), 'a tag that is already link text stays as written');
-  assert.ok(mdTags(md, 'docs/research/x.md', model, { ORIGIN, absolute: true }).startsWith(`A [ref:pem-handbook](${ORIGIN}/${page}.md#pem-handbook)`));
+  assert.ok(mdTags(md, 'research/x.md', model, { ORIGIN, absolute: true }).startsWith(`A [ref:pem-handbook](${ORIGIN}/${page}.md#pem-handbook)`));
 });
 
 test('records are not catalogue entries, and llms.txt has one line per area and no record', async () => {

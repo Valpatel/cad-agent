@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { parseHeaders } from '../../tools/preview-site.mjs';
+import { createPublication } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -23,6 +24,7 @@ const files = (await readdir(out, { recursive: true, withFileTypes: true })).fil
   .map(e => path.relative(out, path.join(e.parentPath, e.name)).split(path.sep).join('/'));
 const html = files.filter(f => f.endsWith('.html'));
 const git = (...a) => execFileSync('git', a, { cwd: root }).toString();
+const { publicPath } = createPublication(JSON.parse(git('show', 'HEAD:tools/site/page-sources.json')));
 // Cloudflare Pages resolution: /x serves x.html, /dir/ serves dir/index.html, files as they are.
 const resolve = url => {
   const p = decodeURIComponent(url.split('#')[0].split('?')[0]).replace(/^\//, '');
@@ -180,19 +182,20 @@ test('pages have one h1 and heading ids follow GitHub anchors', async () => {
       if (/[’'&]/.test(inner) || /&#39;|&amp;|&quot;/.test(inner)) assert.doesNotMatch(id, /\d{2}/.test(inner) ? /^$/ : /39/, `${f}: ${id}`);
     }
   }
-  assert.ok((await ids('docs/lessons/process/README.html')).has('lessons--process'), 'runs of spaces are not merged');
+  assert.ok((await ids('lessons/process/README.html')).has('lessons--process'), 'runs of spaces are not merged');
 });
 
-test('Markdown twins and llms-full.txt carry working links', async () => {
+test('Markdown twins and both agent indexes carry working links', async () => {
   const full = await readFile(path.join(out, 'llms-full.txt'), 'utf8');
   const relative = [...full.replace(/```[\s\S]*?```/g, '').matchAll(/\]\(([^)\s]+)/g)].map(m => m[1]).filter(u => !/^(?:[a-z]+:|#)/i.test(u));
   assert.deepEqual(relative, [], 'llms-full.txt is one file: its links must be absolute');
   const broken = [];
-  for (const f of files.filter(f => f.endsWith('.md') && f !== 'index.md')) {
+  for (const f of [...files.filter(f => f.endsWith('.md')), 'llms.txt', 'llms-full.txt']) {
     const md = (await readFile(path.join(out, f), 'utf8')).replace(/```[\s\S]*?```/g, '');
     for (const [, url] of md.matchAll(/\]\(([^)\s#]+)(?:#[^)\s]*)?(?:\s+"[^"]*")?\)/g)) {
-      if (/^(?:[a-z]+:|\/\/)/i.test(url)) continue;
-      if (!files.includes(path.posix.normalize(path.posix.join(path.posix.dirname(f), url)))) broken.push(`${f} → ${url}`);
+      const target = new URL(url, `https://cad-agent.valpatel.com/${f}`);
+      if (target.origin !== 'https://cad-agent.valpatel.com') continue;
+      if (!resolve(target.pathname)) broken.push(`${f} → ${url}`);
     }
   }
   assert.deepEqual(broken, []);
@@ -392,8 +395,8 @@ test('docs/pages.yaml places real outputs on the site page only; the Markdown tw
   const spec = YAML.parse(git('show', 'HEAD:docs/pages.yaml'));
   assert.ok(Object.keys(spec).length, 'docs/pages.yaml places something');
   for (const [file, page] of Object.entries(spec)) {
-    const html = await readFile(path.join(out, file.replace(/\.md$/, '.html')), 'utf8');
-    const twin = await readFile(path.join(out, file), 'utf8');
+    const html = await readFile(path.join(out, publicPath(file).replace(/\.md$/, '.html')), 'utf8');
+    const twin = await readFile(path.join(out, publicPath(file)), 'utf8');
     for (const v of [...(page.hero ? [page.hero] : []), ...(page.band || []), ...(page.figures || [])]) {
       assert.ok(html.includes(`<img src="/${v.img}" width=`), `${file}: ${v.img} on the page, sized`);
       // the caption, after what the picture is: a real output of its tool, or a diagram and the script that drew it
@@ -593,7 +596,7 @@ test('every diagram arrives drawn, with its source, and the Markdown twins keep 
     figures += figs.length;
   }
   assert.ok(figures >= 120, `${figures} drawings`);
-  assert.match(await readFile(path.join(out, 'docs/practice/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
+  assert.match(await readFile(path.join(out, 'docs/style-guide.md'), 'utf8'), /^```mermaid$/m, 'the twin keeps the Mermaid source for agents');
 });
 
 test('two builds with empty diagram caches draw every page byte for byte the same', async () => {

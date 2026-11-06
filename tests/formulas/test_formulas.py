@@ -14,6 +14,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from tests.repo.test_markdown_images import image_refs, resolve
+
 from cadagent import formulas as fx
 from cadagent.thermal import heatsink
 from cadagent.mechanical.compliant import snapfit
@@ -806,7 +808,8 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
     # quotes (tools/cantilever-still.mjs checks the same from the browser side), and the page's claim that the arm
     # passes flat and fails upright holds.
     from cadagent.mechanical.compliant.allowables import PRINTED
-    page = (ROOT / "docs" / "compliant.md").read_text()
+    page_file = ROOT / "docs" / "mechanical" / "compliant.md"
+    page = page_file.read_text()
     tag = re.search(r"<cad-cantilever\b([^>]*)>([\s\S]*?)</cad-cantilever>", page)
     assert tag, "docs/mechanical/compliant.md has no <cad-cantilever> demo"
     attrs = dict(re.findall(r'(\w+)="([^"]*)"', tag.group(1)))
@@ -820,7 +823,7 @@ def test_the_demo_on_docs_compliant_starts_from_what_the_python_computes():
     assert attrs["direction"] == "along" and flat["passes"] and not upright["passes"]
     assert f"{flat['strain'] * 100:.2f} %" in tag.group(2) and f"{flat['force']:.2f} N" in tag.group(2)
     assert f"{round(flat['ratio'] * 100)} %" in page and f"{round(upright['ratio'] * 100)} %" in page
-    assert 'src="img/compliant/cantilever-explorer.svg"' in tag.group(2)          # the still before the script loads
+    assert [resolve(page_file.relative_to(ROOT).as_posix(), src) for src in image_refs(tag.group(2))] == ["docs/img/compliant/cantilever-explorer.svg"]          # the still before the script loads
 
 
 def test_the_fourbar_demo_and_its_pages_say_what_the_python_computes():
@@ -830,8 +833,10 @@ def test_the_fourbar_demo_and_its_pages_say_what_the_python_computes():
     def deg(rad):
         return f"{round(math.degrees(rad), 1):g}°"
 
-    linkages = (ROOT / "docs" / "linkages.md").read_text()
-    for page in (linkages, (ROOT / "docs" / "formulas.md").read_text()):
+    linkages_file = ROOT / "docs" / "mechanical" / "linkages.md"
+    linkages = linkages_file.read_text()
+    for page_file in (linkages_file, ROOT / "docs" / "formulas.md"):
+        page = page_file.read_text()
         tag = re.search(r"^<cad-fourbar\b([^>]*)>([\s\S]*?)</cad-fourbar>", page, re.M)
         assert tag, "no <cad-fourbar> demo"
         attrs = dict(re.findall(r'(\w+)="([^"]*)"', tag.group(1)))
@@ -842,7 +847,7 @@ def test_the_fourbar_demo_and_its_pages_say_what_the_python_computes():
         assert lowest == fx.transmission_angle(*links, 0.0)                            # lowest at 0 degrees
         assert f"{deg(lowest)} at 0°" in alt and "crank-rocker" in alt
         assert f"is {deg(fx.transmission_angle(*links, math.radians(float(attrs['angle']))))}" in alt.replace("°;", "°")
-        assert 'src="img/formulas/fourbar-animator.svg"' in alt
+        assert [resolve(page_file.relative_to(ROOT).as_posix(), src) for src in image_refs(alt)] == ["docs/img/formulas/fourbar-animator.svg"]
     assert f"falls to {deg(fx.transmission_angle(40, 120, 80, 100, 0.0))} at" in linkages
     tri = fx.fourbar_input_limits(100, 80, 70, 60)
     assert fx.grashof(100, 80, 70, 60)["inversion"] == "triple-rocker" and f"±{deg(tri['stretched'])}" in linkages

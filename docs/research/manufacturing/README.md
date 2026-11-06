@@ -3,7 +3,7 @@
 Read the source before applying a generic limit. The typed process data stays in [process-profiles.yaml](../process-profiles.yaml), beside its [reference registry](../references.yaml).
 
 ```mermaid
-flowchart LR
+flowchart TD
     S["shop + expert sources"] --> P["cited process rules"]
     P --> C["typed checks"]
     C --> R["review assumptions<br/>record limits"]

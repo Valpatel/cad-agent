@@ -89,7 +89,7 @@ def test_scripts_that_run_wrangler_keep_its_metrics_off():
 
 
 def test_the_survey_page_lists_every_opt_out():
-    page = (ROOT / "docs" / "supply-chain.md").read_text().split("## Usage reporting", 1)[1].split("\n## ", 1)[0]
+    page = (ROOT / "docs" / "practice" / "supply-chain.md").read_text().split("## Usage reporting", 1)[1].split("\n## ", 1)[0]
     for k, (v, _) in cli.OPT_OUTS.items():
         assert f"{k}={v}" in page, f"docs/practice/supply-chain.md's Usage reporting table names {k}={v}"
 

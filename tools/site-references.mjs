@@ -517,7 +517,7 @@ function indexMd(m, ORIGIN) {
 export function llmsSection(m, ORIGIN) {
   const all = [...m.refs.records.values()], read = all.filter(r => r.status === 'source').length;
   return ['## References', '',
-    `The reference knowledge base: ${all.length} records, ${read} read sources that rules and checks cite and ${all.length - read} catalogued from a survey (snippet-only: listed and linked, never cited until read). Counts per area: ${ORIGIN}/catalog/references/index.json; one area's records: ${ORIGIN}/catalog/references/<area>.json; every record in brief (for a mirror): ${ORIGIN}/catalog/references/records.json. \`[ref:<id>]\` in any page links to its record. The people and organisations behind the read sources: ${ORIGIN}/docs/practice/experts.md`, '',
+    `The reference knowledge base: ${all.length} records, ${read} read sources that rules and checks cite and ${all.length - read} catalogued from a survey (snippet-only: listed and linked, never cited until read). Counts per area: ${ORIGIN}/catalog/references/index.json; one area's records: ${ORIGIN}/catalog/references/<area>.json; every record in brief (for a mirror): ${ORIGIN}/catalog/references/records.json. \`[ref:<id>]\` in any page links to its record. The people and organisations behind the read sources: ${ORIGIN}/docs/experts.md`, '',
     ...m.pages.map(slug => {
       const list = m.byArea.get(slug) || [], r = list.filter(x => x.status === 'source').length;
       return `- [${m.area(slug).title}](${ORIGIN}/references/${slug}.md): ${plural(list.length, 'record')} (${r} read, ${list.length - r} catalogued); ${ORIGIN}/catalog/references/${slug}.json`;

@@ -3,7 +3,7 @@
 Follow the workflow from a requirement to an inspectable result. A passing software check records its assumptions; it does not prove physical fit or strength.
 
 ```mermaid
-flowchart LR
+flowchart TD
     B["brief + sources"] --> D["dossier"]
     D --> C["checks + evidence"]
     C --> R["independent review"]

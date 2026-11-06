@@ -353,7 +353,7 @@ def test_check_spec_and_the_cli(tmp_path):
 def test_the_docs_example_says_what_the_check_computes():
     import re
     import yaml
-    page = (ROOT / "docs" / "bearings.md").read_text()
+    page = (ROOT / "docs" / "mechanical" / "bearings.md").read_text()
     spec = yaml.safe_load(re.search(r"```yaml\n# bearings.yaml\n(.*?)```", page, re.S).group(1))
     out = mb.check_spec(spec)
     for b in out["bearings"]:

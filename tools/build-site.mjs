@@ -233,7 +233,7 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
     return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
   })).join('');
 // A Markdown copy with its [ref:<id>] tags as links to the records' pages (relative, or absolute for llms-full.txt).
-const twinMd = (file, md, absolute = false) => mdTags(rewriteMd(file, md, absolute), file, refModel, { ORIGIN, absolute });
+const twinMd = (file, md, absolute = false) => mdTags(rewriteMd(file, md, absolute), publicPath(file), refModel, { ORIGIN, absolute });
 // Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
 // the build and kept from growing by tests/site/website-build.test.mjs.
 // What counts as something to look at in a doc page's sanitized HTML (the sanitizer drops inline <svg>, <video> and
@@ -570,9 +570,9 @@ ${agentGuide}
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
 - [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
-- [Agent workflow](${ORIGIN}/docs/practice/agent-workflow.md): skills, subagents, work claims and crash-safe work
-- [Common issues](${ORIGIN}/docs/practice/common-issues.md): recurring CAD mistakes and the checks that catch them
-- [Landscape](${ORIGIN}/docs/research/agent-workflow/landscape.md): the agentic-CAD tools we track, verified
+- [Agent workflow](${ORIGIN}/${publicPath("docs/practice/agent-workflow.md")}): skills, subagents, work claims and crash-safe work
+- [Common issues](${ORIGIN}/${publicPath("docs/practice/common-issues.md")}): recurring CAD mistakes and the checks that catch them
+- [Landscape](${ORIGIN}/${publicPath("docs/research/agent-workflow/landscape.md")}): the agentic-CAD tools we track, verified
 
 ${SECTIONS.map(s => `## ${s.title}\n\n${bySection(s.id).map(p => `- [${p.title}](${ORIGIN}/${publicPath(p.file)}): ${p.summary.replace(/\s+/g, ' ').slice(0, 200)}`).join('\n')}`).join('\n\n')}
 
@@ -631,7 +631,7 @@ export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].so
   "form-action 'self'; frame-ancestors 'self'";
 // Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
 await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
-  [`/${from.replace(/\.md$/, '')} /${to.replace(/\.md$/, '')} 301`, `/${from} /${to} 301`]).join('\n') + (redirects.length ? '\n' : ''));
+  [`/${from.replace(/\.md$/, '')} /${publicPath(to).replace(/\.md$/, '')} 301`, `/${from} /${publicPath(to)} 301`]).join('\n') + (redirects.length ? '\n' : ''));
 // The kit's own pages (kit/*.html) are copied byte for byte from the kit, so they cannot carry a canonical <link>;
 // Pages sends it as a Link header instead, at the pretty URL Pages serves them on (/kit/viewer, not /kit/viewer.html).
 const kitPages = (await readdir(path.join(out, 'kit'))).filter(f => f.endsWith('.html')).sort().map(f => '/kit/' + f.replace(/\.html$/, ''));

@@ -108,3 +108,21 @@ flowchart TD
 - **Cause and check:** The old branch gate checked branch names only. Existing gate tests now exercise the real
   evaluator with changed dates, text, order and unreadable API data. This protects release claims, not the accuracy of
   the engineering claims themselves. [Tracking and settings evidence](https://github.com/Valpatel/cad-agent/issues/112).
+
+### Exercise moved consumers instead of checking path declarations
+- **Rule:** When reorganizing sources, test their actual readers and emitted artifacts. Keep physical source paths
+  separate from public identity; plant missing current sources beside stale old copies, and require a refusal.
+- **Evidence:** On 2026-11-06 UTC, fleet job 181 on cpu-b at `3b3f63a1` built 84 pages, but the full diagnostics
+  found old flat-guide reads, incorrect public reference/redirect/twin paths, and four diagrams too wide at laptop
+  width. A successful build and selector-unit tests alone did not establish correct consumers. Fleet job 180 at
+  `d5fd6848` separately passed `python tests/cli/test_init.py --wheel-smoke`: a committed archive supplied both expected
+  bytes and the wheel, its extracted build source was removed, and the installed CLI ran outside the checkout.
+- **Cause and corrective check:** Declaration-only tests and source-path string checks can agree with each other
+  while missing runtime selection or public routes. Existing image tests now resolve real references from each
+  nested page; website checks consume actual output links, including absolute links in both agent indexes. Restoring
+  the old tracked-path-only redirect guard makes the real redirect test fail with
+  `Missing expected exception: docs/compliant.md`; an alias must not hide a live page. The wheel test deletes the
+  installed starter configuration and requires exit 2 with no copied destination.
+- **Limits:** These controls establish the tested checkout, website and Linux wheel behavior, not physical CAD
+  qualification or untested platforms. Job 181 was a failed diagnostic, not a passing full-suite receipt.
+  [Commands, receipts and recovery instructions](https://github.com/Valpatel/cad-agent/issues/362).

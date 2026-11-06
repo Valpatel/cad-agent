@@ -308,7 +308,7 @@ export async function buildCatalog(ctx) {
     const pageFile = d.url ? d.url.split('#')[0] : shown.it.page.file;
     const where2 = d.areas ? place(d.areas, `docs/catalog.yaml demo ${d.id}`) : { ...pick(pageItems.get(pageFile)) };
     const what = d.what || oneLine(shown?.alt || '');
-    demos.push({ type: 'demo', status: 'ours', name: d.title, summary: what, url: ORIGIN + url, markdown: pageItems.has(pageFile) ? `${ORIGIN}/${pageFile}` : undefined,
+    demos.push({ type: 'demo', status: 'ours', name: d.title, summary: what, url: ORIGIN + url, markdown: pageItems.has(pageFile) ? `${ORIGIN}/${publicPath(pageFile)}` : undefined,
       id: `demo-${slugify(d.id)}`, kind: 'demo', mode: d.mode, ...where2, what, notes: null, license: 'MIT', cover, demo: ORIGIN + url,
       updated: pageItems.get(pageFile)?.updated || null, tools: d.tools || [], figure: d.cover, still: d.still ?? 0.5 });
   };
@@ -358,7 +358,7 @@ export async function buildCatalog(ctx) {
     // Schema 1's url (the toolkit page) is kept; `doc` is the page that documents this command, `markdown` its twin.
     const it = { type: 'tool', status: 'ours', name: `cad-agent ${c.name}`, summary: c.help, url: `${ORIGIN}/docs/toolkit`, how: `cad-agent ${c.name} --help`,
       id: `tool-${c.name}`, kind: 'tool', ...where, what: oneLine(c.help), notes: null, license: 'MIT', updated: cliChanged, command: c.name,
-      href, doc: ORIGIN + href, markdown: pageItems.has(docFile) ? `${ORIGIN}/${docFile}` : undefined };
+      href, doc: ORIGIN + href, markdown: pageItems.has(docFile) ? `${ORIGIN}/${publicPath(docFile)}` : undefined };
     const chart = t.chart && await chartData(t.chart, `docs/catalog.yaml tools.${c.name}.chart`);
     if (chart) it.cover = generated(it.id, chartCover({ ...chart, tint: TINT[tone(it)] || TINT.unplaced, name: it.name }), true);
     else [it.cover, it.figure] = await takeFigure(t.figures || [], t.still ?? 0.5, t.still != null ? c.name : null);

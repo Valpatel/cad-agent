@@ -3,7 +3,7 @@
 Compare existing tools before adding a capability. These surveys record what was read and evaluated, with dates and limits.
 
 ```mermaid
-flowchart LR
+flowchart TD
     S["sources + surveys"] --> E["evaluate an existing tool"]
     E --> D["adopt, wrap or pass"]
     D --> T["reusable technique<br/>check its evidence"]

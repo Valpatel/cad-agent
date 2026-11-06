@@ -193,4 +193,4 @@ tools:
   review-packet: {page: docs/practice/review-packet.md}
   review-section: {page: docs/practice/review-packet.md}
   agents: {page: docs/practice/agent-workflow.md}
-  mcmaster: {page: skills/mcmaster-parts/SKILL.md}
+  mcmaster: {page: .agents/skills/mcmaster-parts/SKILL.md}

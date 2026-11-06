@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
-import { createPublication } from '../../tools/site/publication.mjs';
+import { createPublication, selectPages } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -556,17 +556,19 @@ test('every local image has its width and height, so nothing jumps while it load
 });
 
 test('diagrams in files agents load leave the palette to the site', async () => {
-  const sources = git('ls-tree', '-r', '--name-only', 'HEAD', 'skills', 'agents').split('\n').filter(f => /^(skills\/[^/]+\/SKILL|agents\/[^/]+)\.md$/.test(f));
+  const sources = selectPages(git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean))
+    .filter(p => ['skills', 'agents'].includes(p.section.id)).map(p => p.file);
+  assert.equal(sources.length, 10, 'all eight canonical skills and two roles must reach the palette consumer');
   let drawn = 0;
   for (const f of sources) {
     const md = git('show', `HEAD:${f}`);
     if (!/```mermaid/.test(md)) continue;
     drawn++;
     assert.doesNotMatch(md, /^\s*classDef (?:here|near|out)\b/m, `${f}: the site adds the palette; keep agent context short`);
-    const page = await readFile(path.join(out, f.replace(/\.md$/, '.html')), 'utf8');
+    const page = await readFile(path.join(out, publicPath(f).replace(/\.md$/, '.html')), 'utf8');
     const used = [...md.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*$/gm)].map(m => m[1]);
     for (const c of new Set(used)) assert.match(page, new RegExp(`classDef ${c} fill:#`), `${f}: ${c} is drawn in the palette`);
-    assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /classDef/, `${f}: the Markdown twin stays as written`);
+    assert.doesNotMatch(await readFile(path.join(out, publicPath(f)), 'utf8'), /classDef/, `${f}: the Markdown twin stays as written`);
   }
   assert.ok(drawn >= 8, `${drawn} skill and subagent diagrams`);
 });
@@ -716,9 +718,9 @@ test('the moved notices keep public URLs, catalogue identity, links and real pro
   const notice = catalog.items.find(i => i.id === 'guide-third-party-notices');
   assert.equal(notice.url, 'https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES');
   assert.equal(notice.markdown, 'https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES.md');
-  assert.equal(notice.source, 'https://github.com/Valpatel/cad-agent/blob/dev/vendor/THIRD_PARTY_NOTICES.md');
+  assert.equal(notice.source, 'https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/THIRD_PARTY_NOTICES.md');
   const html = await readFile(path.join(out, 'THIRD_PARTY_NOTICES.html'), 'utf8');
-  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/vendor\/THIRD_PARTY_NOTICES\.md"/);
+  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/software\/vendor\/THIRD_PARTY_NOTICES\.md"/);
   assert.match(html, /href="\/research\/landscape"/);
   assert.ok((await ids('THIRD_PARTY_NOTICES.html')).has('third-party-notices'));
   assert.match(await readFile(path.join(out, 'README.html'), 'utf8'), /href="\/THIRD_PARTY_NOTICES"/);
@@ -739,7 +741,7 @@ test('a real draft consumes moved sources and cannot substitute stale root files
   try {
     await writeFile(path.join(wt, '.github/CONTRIBUTING.md'), '# Current policy\n\nMOVED_SOURCE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
     await writeFile(path.join(wt, 'CONTRIBUTING.md'), '# Stale root policy\n\nSTALE_ROOT_SENTINEL.\n');
-    await writeFile(path.join(wt, 'software/vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'software/vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../../docs/toolkit.md#commands)\n');
     await writeFile(path.join(wt, 'THIRD_PARTY_NOTICES.md'), '# Stale root notices\n\nSTALE_NOTICE_SENTINEL.\n');
     const registry = path.join(wt, 'software/vendor/upstreams/registry.yaml');
     const upstreams = YAML.parse(await readFile(registry, 'utf8'));

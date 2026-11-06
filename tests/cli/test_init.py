@@ -106,11 +106,12 @@ def test_wheel_data_declarations_cover_the_starter():
 
 
 def _wheel_smoke(tmp_path):
-    """Mandatory full-CI smoke: consume a real committed wheel with its disposable build source removed."""
+    """Mandatory full-CI smoke: consume the committed starter and SDK outside the removed build source."""
     tmp_path = Path(tmp_path).resolve()
-    source, wheels, outside, env_dir = (tmp_path / name for name in ("source", "wheels", "outside", "venv"))
+    source, wheels, outside = (tmp_path / name for name in ("source", "wheels", "outside"))
+    env_dir = outside / ".venv"
     source.mkdir(); wheels.mkdir(); outside.mkdir()
-    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME", "NODE_PATH", "NODE_OPTIONS")}
 
     def run(args, *, cwd=outside, check=True):
         result = subprocess.run([str(a) for a in args], cwd=cwd, env=env, capture_output=True, text=True, timeout=180)
@@ -127,11 +128,17 @@ def _wheel_smoke(tmp_path):
     expected = {p.relative_to(committed_starter).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in committed_starter.rglob("*") if p.is_file()}
     assert expected and "cad-agent.yaml" in expected
+    sdk_source = source / "src" / "cadagent" / "webkit"
+    sdk_expected = {name: hashlib.sha256((sdk_source / name).read_bytes()).hexdigest()
+                    for name in ("package.json", "formulas.js")}
     run([sys.executable, "-m", "pip", "wheel", "--disable-pip-version-check", "--no-deps", "--wheel-dir", wheels, source])
     built = list(wheels.glob("cad_agent-*.whl"))
     assert len(built) == 1, f"expected one cad-agent wheel, found {built}"
     shutil.rmtree(source)
     assert not source.exists()
+    # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor
+    # prevents Node 22's automatic syntax detection from hiding a missing installed SDK scope declaration.
+    (outside / "package.json").write_text('{"type":"commonjs"}\n')
     venv.EnvBuilder(with_pip=True).create(env_dir)
     python, cli = env_dir / "bin/python", env_dir / "bin/cad-agent"
     run([python, "-I", "-m", "pip", "install", "--disable-pip-version-check", built[0]])
@@ -153,6 +160,31 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
     actual = {p.relative_to(target).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in target.rglob("*") if p.is_file()}
     assert actual == expected, "installed wheel starter files differ from committed source bytes"
+    sdk = Path(paths["package"]).parent / "webkit"
+    for name, digest in sdk_expected.items():
+        installed = (sdk / name).resolve()
+        assert installed.is_relative_to(env_dir), installed
+        assert hashlib.sha256(installed.read_bytes()).hexdigest() == digest, installed
+    scopes = [parent / "package.json" for parent in (sdk, *sdk.parents) if (parent / "package.json").is_file()]
+    assert scopes[:2] == [sdk / "package.json", outside / "package.json"], scopes
+    node = shutil.which("node", path=env.get("PATH"))
+    assert node, "the required wheel SDK consumer needs Node 22+; it must not be skipped"
+    node_version = run([node, "-p", "process.versions.node"]).stdout.strip()
+    assert int(node_version.split(".")[0]) >= 22, node_version
+    sdk_probe = """import { pathToFileURL } from 'node:url';
+const sdk = await import(pathToFileURL(process.argv[1]).href);
+if (typeof sdk.snapArm !== 'function' || sdk.SMALL_DEFLECTION !== 0.1) throw new Error('wrong installed SDK exports');
+console.log('installed SDK ESM PASS');"""
+    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"])
+    assert "installed SDK ESM PASS" in good_sdk.stdout
+    # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
+    (sdk / "package.json").unlink()
+    assert Path(paths["declared_config"]).is_file() and not source.exists()
+    assert hashlib.sha256((sdk / "formulas.js").read_bytes()).hexdigest() == sdk_expected["formulas.js"]
+    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"], check=False)
+    assert bad_sdk.returncode != 0 and "SyntaxError" in bad_sdk.stderr and "export" in bad_sdk.stderr, (bad_sdk.stdout, bad_sdk.stderr)
+    assert str(sdk / "formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
+    print(f"installed SDK scope PASS on Node {node_version}: real file-URL import and missing-metadata rejection")
     Path(paths["declared_config"]).unlink()
     rejected = outside / "missing-starter"
     bad = run([cli, "init", rejected], check=False)

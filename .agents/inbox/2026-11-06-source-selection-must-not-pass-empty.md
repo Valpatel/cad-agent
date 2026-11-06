@@ -13,3 +13,19 @@ Search found the general procedure in [Exercise moved consumers](../../docs/less
 **Rule:** exercise the actual collector with current, missing, stale and excluded paths. Require nonempty expected package coverage and plant a fault in a nested current module. Before generating a product, assert both the package and generator files resolve inside the intended checkout. Keep the real parser/render consumer; test the source binding rather than matching its implementation text.
 
 **Limits:** the HTTP test is a static heuristic over named calls and headers, not a network execution or complete semantic proof. The import controls establish the tested Python source binding and generated fixtures, not all environments or physical CAD qualification. Fleet 216 remains scoped to its own immutable source and commands; a later test-only correction does not relabel that run as a new build.
+
+## Keep repository ownership separate from served namespaces
+
+On 2026-11-06, the exact `6bea336a` full CI run failed two `tests/publish/test_site.py` assertions after 3,372 passed / 19 skipped in 629.93 seconds. The migration had incorrectly prefixed preserved SDK-relative expectations with `software/`: copied `site/assets/software/vendor/mermaid/...` did not exist, and `/_cadagent/kit/software/vendor/three/...` returned 404. The producer still correctly used `assets/vendor/` and `/_cadagent/kit/vendor/`; repository `software/vendor/` is a different owner.
+
+Both original assertions were replayed with the declared Markdown extra and failed for those same file/HTTP causes. The corrected entire project-site test module passed 14 tests with one existing optional CAD check skipped. It compares actual copied Mermaid bytes with `KIT_DIR`, fetches the real STL loader over HTTP, refuses the wrong `software/vendor` endpoint with 404, and asserts no second copied namespace appears.
+
+**Rule:** classify physical repository paths, packaged SDK-relative paths and served URLs separately. Run the actual publication consumer with its declared optional extra before claiming coverage. The core jobs were green because Markdown was absent and this module was skipped; that was not a passing path check. Required full CI correctly caught the mistakes. Do not relabel this application assertion failure as provisioning or retry unchanged source.
+
+## Check the complete publication identity
+
+A release-probe review on 2026-11-06 found a separate false pass: matching only URL pathnames accepted a changed catalogue ID or an unrelated origin with the same route. The rejected operator recipe is preserved with SHA-256 `fc2b58aaef2466284d9a2dcacfa53413fecdb18271cf69f99f2253c8e0bcd339`; the corrected recipe is `d02693d76fea44ce44d2573e6476ee70e1db452fee2d334698dc9d0f758b1e4a`.
+
+The corrected actual consumer checks the reviewed expected ID and exact canonical HTML, Markdown and source URLs. Its retained-catalogue controls accepted all 10 correct kit identities and rejected 30 wrong-origin/changed-ID faults without public calls; [independent release-probe review](https://github.com/Valpatel/cad-agent/issues/389#issuecomment-6683686983) exercised further faults. These were pre-publication verifier controls, not evidence that an incorrect deployment had been accepted.
+
+**Rule:** derive expected identities from the reviewed release contract, then compare every identity field in the response. A matching pathname or a current version endpoint cannot establish the origin, catalogue ID or exact linked resource. Preserve the rejected recipe/hash and make the same consumer reject faults before using it for publication acceptance. This rule supplements actual deployment, asset and no-script checks; it does not replace them.

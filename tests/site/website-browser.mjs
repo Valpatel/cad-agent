@@ -1147,10 +1147,18 @@ async function drawnDiagramProblems() {
 }
 
 /** A failed iteration owns this context, not the other browser-test lane's pages. */
-async function withDiagramPage(options, action) {
-  const context = await browser.newContext(options);
+async function withDiagramPage(options, action, open = options => browser.newContext(options)) {
+  const context = await open(options);
+  let failed = false, failure;
   try { return await action(await context.newPage(), context); }
-  finally { await context.close(); }
+  catch (error) { failed = true; failure = error; throw error; }
+  finally {
+    try { await context.close(); }
+    catch (cleanup) {
+      if (failed) throw new AggregateError([failure, cleanup], `Diagram iteration failed: ${failure.message}; context cleanup failed: ${cleanup.message}`, { cause: failure });
+      throw cleanup;
+    }
+  }
 }
 
 /** Keep the normal 30-second load boundary; collect evidence on failure instead of guessing which resource stalled. */
@@ -1188,11 +1196,12 @@ async function navigateDiagram(page, url, where, timeout = 30000) {
 /** A real stylesheet stays pending through a short fixture timeout; the ordinary checks keep their 30 seconds. */
 async function diagramNavigationControl() {
   const out = [], sentinel = await browser.newContext();
-  const neighbor = await sentinel.newPage();
-  let owned, release, held = false, caught;
+  let owned, release, held = false, caught, failed = false, failure;
   const gate = new Promise(resolve => { release = resolve; });
   try {
+    const neighbor = await sentinel.newPage();
     await navigateDiagram(neighbor, base + '/docs/style-guide', 'diagnostic neighbor, JavaScript enabled');
+    out.push(...await diagramCleanupControl(neighbor));
     try {
       await withDiagramPage({ viewport: { width: 360, height: 800 }, javaScriptEnabled: false, colorScheme: 'dark' }, async (page, context) => {
         owned = context;
@@ -1214,7 +1223,51 @@ async function diagramNavigationControl() {
     if (evidence?.url.includes('?')) out.push('diagram navigation diagnostics include query parameters');
     if (browser.contexts().includes(owned)) out.push('diagram navigation failure retained its owned context');
     if (await neighbor.evaluate(() => document.readyState) !== 'complete') out.push('diagram cleanup disrupted another context');
-  } finally { release(); await owned?.close(); await sentinel.close(); }
+  } catch (error) { failed = true; failure = error; throw error; }
+  finally {
+    release();
+    const closed = await Promise.allSettled([owned, sentinel].filter(Boolean).map(context => Promise.resolve().then(() => context.close())));
+    const errors = closed.filter(result => result.status === 'rejected').map(result => result.reason);
+    if (errors.length) {
+      if (failed) errors.unshift(failure);
+      else if (caught) errors.unshift(caught); // retain the fixture's navigation evidence if its fallback cleanup fails
+      if (errors.length === 1) throw errors[0];
+      throw new AggregateError(errors, `Diagram control failed: ${errors.map(error => error.message).join('; ')}`, { cause: errors[0] });
+    }
+  }
+  return out;
+}
+
+/** Plant API failures on real, privately owned contexts; the original failure and other lane must survive cleanup. */
+async function diagramCleanupControl(neighbor) {
+  const out = [];
+  for (const mode of ['page setup', 'action and cleanup', 'cleanup only']) {
+    const context = await browser.newContext(), close = context.close.bind(context), newPage = context.newPage.bind(context);
+    const original = new Error(`planted ${mode} action failure`), cleanup = new Error(`planted ${mode} close failure`);
+    original.navigation = { where: 'cleanup control' };
+    let caught;
+    try {
+      if (mode === 'page setup') context.newPage = async () => { throw original; };
+      else context.close = async () => { await close(); throw cleanup; };
+      try {
+        await withDiagramPage({}, async () => { if (mode === 'action and cleanup') throw original; }, async () => context);
+      } catch (error) { caught = error; }
+      if (mode === 'action and cleanup') {
+        if (!(caught instanceof AggregateError) || caught.cause !== original || caught.errors[0] !== original ||
+            caught.errors[1] !== cleanup || caught.cause.navigation !== original.navigation ||
+            !caught.message.includes(original.message) || !caught.message.includes(cleanup.message)) {
+          out.push('diagram cleanup lost the original failure, navigation evidence or cleanup error');
+        }
+      } else if (caught !== (mode === 'page setup' ? original : cleanup)) {
+        out.push(`diagram ${mode} control lost its original error`);
+      }
+      if (browser.contexts().includes(context)) out.push(`diagram ${mode} failure retained its owned context`);
+      if (await neighbor.evaluate(() => document.readyState) !== 'complete') out.push(`diagram ${mode} cleanup disrupted another context`);
+    } finally {
+      context.close = close; context.newPage = newPage;
+      await close();
+    }
+  }
   return out;
 }
 

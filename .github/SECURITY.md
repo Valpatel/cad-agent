@@ -25,7 +25,7 @@ or a malicious update. These rules apply to every import and every weekly update
 9. **Supply-chain report.** `tools/resource_audit.py` checks dependencies, vendored code (pins, recorded hashes,
    drift from upstream at the pinned commit, licences) and the links we publish; CI runs its offline checks on every
    PR and a weekly workflow runs the online ones and keeps one issue current. When to run it and what blocks a merge:
-   [`skills/cad-supply-chain`](../skills/cad-supply-chain/SKILL.md). A clean report is not proof of safety.
+   [`skills/cad-supply-chain`](../.agents/skills/cad-supply-chain/SKILL.md). A clean report is not proof of safety.
 
 The initial baselines (2026-10-24) were accepted after every HIGH finding was read. Those findings were CI scripts,
 docs and test fixtures, which are now excluded or documented. text-to-cad's runtime network and telemetry code was also

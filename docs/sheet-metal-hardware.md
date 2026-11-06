@@ -27,7 +27,7 @@ flowchart TD
 ```
 
 *Each box is a function, and each one gives the next a number it needs: the bend allowance for the clinch part's
-distance to the bend, and the stack for the rivet's grip. The [`sheet-metal-hardware` skill](../skills/sheet-metal-hardware/SKILL.md)
+distance to the bend, and the stack for the rivet's grip. The [`sheet-metal-hardware` skill](../.agents/skills/sheet-metal-hardware/SKILL.md)
 walks an agent through it.*
 
 ```python

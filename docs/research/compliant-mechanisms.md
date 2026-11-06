@@ -296,7 +296,7 @@ Rule:
 [`cadagent.mechanical.compliant`](../../src/cadagent/mechanical/compliant/README.md) snap calculator. Its
 [source-example and planted-defect tests](../../tests/mechanical/test_snapfit.py) cover the declared snap subset;
 the [method, declaration file and limits](../mechanical/compliant.md) are the usable entry point, also routed from
-the [design-process skill](../../skills/design-process/SKILL.md). The surveyed external tools and their dated
+the [design-process skill](../../.agents/skills/design-process/SKILL.md). The surveyed external tools and their dated
 assessments above remain evidence of what was considered, not a fresh search of current libraries. PRBM flexures,
 living hinges, bistable beams, a generated physical coupon and the first product qualification remain open under
 #94/#95. Calculated snap results do not establish measured fit, retention, creep or fatigue life.

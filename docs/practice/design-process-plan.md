@@ -334,7 +334,7 @@ them only when geometry changed (the cache keys make an unchanged assembly free)
 
 ### 5.1 Skill `skills/design-process/SKILL.md` (T10)
 
-Built: [`skills/design-process/SKILL.md`](../../skills/design-process/SKILL.md), the packet and the checklist in
+Built: [`skills/design-process/SKILL.md`](../../.agents/skills/design-process/SKILL.md), the packet and the checklist in
 [`review-packet.md`](review-packet.md) (`cadagent.publish.render.review_packet`, `cad-agent review-packet`).
 
 Tells an agent building or changing a design to work in this order, per section:

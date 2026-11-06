@@ -7,10 +7,10 @@ description: Use before adding or updating a dependency, a vendored file or proj
 
 cad-agent depends on, vendors and links to many projects we do not control. A compromised package, a vendored file
 that quietly changed, or a catalogue link whose repository was deleted and re-registered by someone else can hurt
-everyone who follows us. [`tools/resource_audit.py`](../../tools/resource_audit.py) checks all of it the same way
+everyone who follows us. [`tools/resource_audit.py`](../../../tools/resource_audit.py) checks all of it the same way
 every time; this skill says when to run it, how to read it and what to do with what it finds. The
-[supply-chain page](../../docs/practice/supply-chain.md) shows where it runs, and the
-[latest report](../../docs/research/security-report.md) what it found. It complements [SECURITY.md](../../.github/SECURITY.md)
+[supply-chain page](../../../docs/practice/supply-chain.md) shows where it runs, and the
+[latest report](../../../docs/research/security-report.md) what it found. It complements [SECURITY.md](../../../.github/SECURITY.md)
 (vendored-code rules) and the red-flag scan in `tools/security_scan.py`, which reads the code itself; this report
 reads what surrounds it.
 
@@ -54,7 +54,7 @@ the owner runs `report --online --repo Valpatel/cad-agent` with their own login.
 
 ## How to read it
 
-![Open findings of the latest report by area and severity: horizontal bars for Python dependencies, npm packages, vendored projects, web kit files, links and catalogue, install advice in pages and the repository](../../docs/img/supply-chain/findings.svg)
+![Open findings of the latest report by area and severity: horizontal bars for Python dependencies, npm packages, vendored projects, web kit files, links and catalogue, install advice in pages and the repository](../../../docs/img/supply-chain/findings.svg)
 
 *The latest committed report, drawn by the tool from its JSON (`render`). Each bar is one area; the counts are open
 findings at low or above.*
@@ -96,7 +96,7 @@ flowchart TD
     G -->|"high or critical anywhere,<br/>medium on what is added,<br/>a missing row"| X["the job fails"]
 ```
 
-The job is not a required check (making it one is the owner's call, on the [supply-chain page](../../docs/practice/supply-chain.md#making-it-required-owner)).
+The job is not a required check (making it one is the owner's call, on the [supply-chain page](../../../docs/practice/supply-chain.md#making-it-required-owner)).
 It runs the PR's own copy of `tools/resource_audit.py`, `docs/research/security-accepted.yaml` and `ci.yml`, so a PR can
 change them and pass: it is an honesty check, not a security boundary. **Reviewers read every change to those three
 files**, and above all an acceptance added in the same PR as the finding it hides.

@@ -51,6 +51,6 @@ flowchart TD
 | `motion_trace.py` | Compares rendered landmarks with CAD joint intent, without a CAD kernel |
 | `clearance.py` | Range-of-motion collision check: placed parts related pairwise (the relation gate's `relate`) at each sampled pose, proven clear between poses given the travel, and revolved swept-volume cutters with slopes capped at 45° ([toolkit](../../../docs/toolkit.md#range-of-motion-clearance-cadagentmechanicalclearance)) |
 
-Related: [package map](../README.md) · [mcmaster-parts skill](../../../skills/mcmaster-parts/SKILL.md) ·
+Related: [package map](../README.md) · [mcmaster-parts skill](../../../.agents/skills/mcmaster-parts/SKILL.md) ·
 [compliant mechanisms](../../../docs/mechanical/compliant.md) · [common issues](../../../docs/practice/common-issues.md) (the mistakes
 these catch)

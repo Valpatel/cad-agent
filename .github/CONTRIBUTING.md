@@ -71,7 +71,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site/compiler/site-catalog.mjs` builds from the
    repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
-   skills in [`skills/`](../skills), and the open-source libraries and agent skills outside them. Under "Considered
+   skills in [`.agents/skills/`](../.agents/skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
 2. **Worktree from `dev`.** Never edit a checkout another session may be using:
@@ -91,7 +91,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    features must skip cleanly) and `full` on 3.12 (CAD, FEA, robot and site extras, imported loudly before the tests;
    the `cad` and `sim` extras need 3.11 or newer);
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
-   [supply-chain report](../skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
+   [supply-chain report](../.agents/skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
    entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".
 6. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with

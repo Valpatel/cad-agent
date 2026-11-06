@@ -5,7 +5,7 @@ readers to hundreds of outside projects from its catalogue and pages. `tools/res
 same way every time: known advisories and malicious packages, pins and recorded hashes, vendored files against their
 upstream, licences, and links that died, moved or now point somewhere else. Each pull request into `dev` gets the
 offline checks; a weekly run adds the online ones and keeps one issue current. The latest run is in the
-[supply-chain report](../research/security-report.md), and the [`cad-supply-chain` skill](../../skills/cad-supply-chain/SKILL.md)
+[supply-chain report](../research/security-report.md), and the [`cad-supply-chain` skill](../../.agents/skills/cad-supply-chain/SKILL.md)
 says what to do with each finding.
 
 ![Open supply-chain findings by area and severity, from the committed report: horizontal bars for Python dependencies, npm packages, vendored projects, web kit files, links and catalogue, install advice in pages and the repository, each split into critical, high, medium and low](../img/supply-chain/findings.svg)

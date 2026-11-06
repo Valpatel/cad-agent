@@ -25,9 +25,9 @@ flowchart TD
     class Rv,Rp out
 ```
 
-References: [`docs/practice/dossier.md`](../../docs/practice/dossier.md) (the YAML and the build-script declarations),
-[`docs/practice/gates.md`](../../docs/practice/gates.md) (what each gate measures), [`docs/practice/review-packet.md`](../../docs/practice/review-packet.md)
-(the packet and the checklist), [`docs/practice/design-process-plan.md`](../../docs/practice/design-process-plan.md) §5 (why).
+References: [`docs/practice/dossier.md`](../../../docs/practice/dossier.md) (the YAML and the build-script declarations),
+[`docs/practice/gates.md`](../../../docs/practice/gates.md) (what each gate measures), [`docs/practice/review-packet.md`](../../../docs/practice/review-packet.md)
+(the packet and the checklist), [`docs/practice/design-process-plan.md`](../../../docs/practice/design-process-plan.md) §5 (why).
 
 ## Before you start
 
@@ -90,7 +90,7 @@ guideline's wiggle room to make the part cheaper or simpler unless a function ne
 or `gap:`, no source covers that point, so record your own call as a decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded
 rules.
 
-**For a cantilever snap-fit lid or cover**, start from the [checked declaration example](../../docs/mechanical/compliant.md#declaring-snaps)
+**For a cantilever snap-fit lid or cover**, start from the [checked declaration example](../../../docs/mechanical/compliant.md#declaring-snaps)
 and its sourced material data. Declare the process, bending direction relative to layers and repeated service;
 include the required mating/retention limits and the inputs needed to calculate them. Run
 `cad-agent snapfit snaps.yaml --output snap-checks.json` and keep the JSON with the part's decision. Inspect failed
@@ -141,7 +141,7 @@ Fix in this order, rerunning after each group (a fix early in the list often cle
 
 Then the standard part checks, which every project runs whether or not it has a dossier: `cad-agent holes` (every
 hole in every part clear of material: build features first and cut holes last) and the rest of `cad-agent all`. Walk
-[docs/practice/common-issues.md](../../docs/practice/common-issues.md) for the issues no check covers yet.
+[docs/practice/common-issues.md](../../../docs/practice/common-issues.md) for the issues no check covers yet.
 
 Never lower a threshold or widen a tolerance to pass. A finding that is not a defect becomes an explained
 exclusion: `gates.free_parts` (a loose item), `gates.intended_overlaps` (a heat-set insert, a press fit, a screw's

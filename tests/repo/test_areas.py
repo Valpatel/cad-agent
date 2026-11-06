@@ -121,9 +121,9 @@ def test_every_named_page_skill_agent_and_project_exists(tree):
     for page in placed(tree, "pages"):
         assert page.endswith(".md") and (ROOT / page).is_file(), f"{page} does not exist"
     for skill in placed(tree, "skills"):
-        assert (ROOT / "skills" / skill / "SKILL.md").is_file(), f"skill {skill} does not exist"
+        assert (ROOT / ".agents" / "skills" / skill / "SKILL.md").is_file(), f"skill {skill} does not exist"
     for agent in placed(tree, "agents"):
-        assert (ROOT / "agents" / f"{agent}.md").is_file(), f"agent {agent} does not exist"
+        assert (ROOT / ".agents" / "agents" / f"{agent}.md").is_file(), f"agent {agent} does not exist"
     for key in placed(tree, "projects"):
         assert key in tree["projects"], f"project {key} is not in `projects`"
     for p in tree["projects"].values():
@@ -178,10 +178,10 @@ def test_every_command_skill_and_agent_is_placed(tree):
     from cadagent.cli import SUBCOMMANDS
     missing = sorted(set(SUBCOMMANDS) - set(placed(tree, "cli")))
     assert not missing, f"add these `cad-agent` commands to a node's cli: in docs/areas.yaml: {missing}"
-    skills = sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md"))
+    skills = sorted(p.parent.name for p in (ROOT / ".agents" / "skills").glob("*/SKILL.md"))
     missing = sorted(set(skills) - set(placed(tree, "skills")))
     assert not missing, f"add these skills to a node's skills: in docs/areas.yaml: {missing}"
-    agents = sorted(p.stem for p in (ROOT / "agents").glob("*.md") if p.stem.lower() != "readme")
+    agents = sorted(p.stem for p in (ROOT / ".agents" / "agents").glob("*.md") if p.stem.lower() != "readme")
     missing = sorted(set(agents) - set(placed(tree, "agents")))
     assert not missing, f"add these agents to a node's agents: in docs/areas.yaml: {missing}"
 

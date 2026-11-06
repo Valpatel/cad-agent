@@ -53,7 +53,7 @@ it as a pull request or an issue only if you say yes. By hand, extras and uninst
 |---|---|
 | Make and check something | [Guides](docs/README.md): CAD, assemblies, mechanisms, PCBs, manufacturing and simulation |
 | Find a technique or source | [Research](docs/research/README.md): surveys, rule cards, decisions and sources |
-| Give an agent a repeatable method | [Skills](skills/README.md): design, hardware, motion and review workflows |
+| Give an agent a repeatable method | [Skills](.agents/skills/README.md): design, hardware, motion and review workflows |
 | Inspect the implementation and evidence | [Code](src/cadagent/README.md), [tests](tests/README.md) and [lessons](docs/lessons/README.md) |
 
 Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start an agent from [llms.txt](https://cad-agent.valpatel.com/llms.txt). The [topic tree](docs/areas.yaml) gives each capability one discoverable home.

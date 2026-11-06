@@ -58,7 +58,7 @@ Other agent sessions use and change this repo at the same time, so:
   code in `src/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
-  joining` and design to the card ([skills/design-process](skills/design-process/SKILL.md)); never copy rules into
+  joining` and design to the card ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
   Markdown, since they live in `docs/research/process-profiles.yaml`.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.
@@ -82,8 +82,10 @@ its failures says where the file goes.
 | `tools/site/assets/` | The website's own static files (CSS, icons, the landing model). |
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
 | `vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](vendor/README.md)). |
-| `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |
-| `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `docs/lessons/`. The links, and the move of today's `.agents/` notes into `docs/lessons/`, come in a follow-up PR. |
+| `.agents/skills/<name>/`, `.agents/agents/<name>.md` | Canonical skills and independent-role prompts: edit these copies, which `cad-agent agents install` ships. The repository remains the plugin root; `.claude-plugin/plugin.json` names these components. |
+| `.agents/` | The agent-kit owner and its existing operational notes; [map](.agents/README.md). Notes are not skills or published pages. New shared findings still belong in `docs/lessons/`. |
+| `.claude-plugin/` | Native plugin metadata pointing at the canonical kit assets, with no hooks or duplicate instructions. |
+| `.claude/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through those links. |
 | `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](.github/CONTRIBUTING.md#gates)). |
 
 ✓ **Keep the root compact.** `tests/repo/test_layout.py` caps tracked root entries (files and folders together); its budget only shrinks as maintenance files move to their owning hierarchy.

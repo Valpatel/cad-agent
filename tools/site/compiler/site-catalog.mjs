@@ -268,7 +268,7 @@ export async function buildCatalog(ctx) {
   for (const p of ctx.pages) {
     const kind = kindOfSection[p.section];
     const lessonFolder = publicPath(p.file).match(/^lessons\/([^/]+)\//)?.[1];
-    const skill = p.file.match(/^skills\/([^/]+)\/SKILL\.md$/)?.[1], agent = p.file.match(/^agents\/([^/]+)\.md$/)?.[1];
+    const skill = publicPath(p.file).match(/^skills\/([^/]+)\/SKILL\.md$/)?.[1], agent = publicPath(p.file).match(/^agents\/([^/]+)\.md$/)?.[1];
     const slugs = [...(placed.pages.get(p.file) || []), ...(lessonFolder ? placed.lessons.get(lessonFolder) || [] : []),
       ...(skill ? placed.skills.get(skill) || [] : []), ...(agent ? placed.agents.get(agent) || [] : [])];
     const where = place(slugs, p.file);

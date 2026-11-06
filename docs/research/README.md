@@ -34,4 +34,4 @@ flowchart TD
 
 `python -m cadagent.review.references --check` checks registry consistency and citation/evidence rules. It does not verify every source claim or prove a physical result. The [existing evaluation paths and limits](../lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) distinguish deterministic regression checks from the planned model-comparison framework.
 
-[Home](../../README.md) · [Guides](../README.md) · [Skills](../../skills/README.md) · [Lessons](../lessons/README.md)
+[Home](../../README.md) · [Guides](../README.md) · [Skills](../../.agents/skills/README.md) · [Lessons](../lessons/README.md)

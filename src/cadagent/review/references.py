@@ -110,7 +110,7 @@ TAG = re.compile(r"\[ref:([^\]\n]*)\]")
 PLACEHOLDER = re.compile(r"<[^>]*>")   # "[ref:<id>]" in prose explains the syntax; it cites nothing
 TABLES = ("SRC", "SOURCES")         # module-level dicts whose keys are ids
 ROW_TABLES = ("FDM_MATERIALS",)     # module-level dicts whose values are tuples that end in an id
-TAG_FOLDERS = ("docs", "skills", "src", "agents", "tools")
+TAG_FOLDERS = ("docs", ".agents/skills", "src", ".agents/agents", "tools")
 TAG_SUFFIXES = (".md", ".py", ".yaml", ".yml")
 _LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)   # libyaml when PyYAML has it: the same safe loader, ~9x faster
 

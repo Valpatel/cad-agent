@@ -81,8 +81,8 @@ cad-agent agents uninstall          # remove everything it placed
 
 | Kit file | Claude Code | `~/.agents/skills`: Codex, Copilot CLI, Cursor, Gemini CLI, opencode |
 |---|---|---|
-| `skills/<name>/SKILL.md` | `~/.claude/skills/<name>` (link) | `~/.agents/skills/<name>` (link) |
-| `agents/<name>.md` | `~/.claude/agents/<name>.md` (link): a subagent | `~/.agents/skills/<name>/SKILL.md` (generated): run it as a separate session |
+| `.agents/skills/<name>/SKILL.md` | `~/.claude/skills/<name>` (link) | `~/.agents/skills/<name>` (link) |
+| `.agents/agents/<name>.md` | `~/.claude/agents/<name>.md` (link): a subagent | `~/.agents/skills/<name>/SKILL.md` (generated): run it as a separate session |
 
 Links follow the checkout, so pulling updates the skills; `update` reruns `install` to refresh the generated files
 (`list` shows them as out of date) and to remove links to skills the kit dropped. Link a long-lived checkout, not a
@@ -132,16 +132,16 @@ your own repositories, or where you have been given write access; an agent shoul
 
 | | Name | Use it |
 |---|---|---|
-| Skill | [`cad-work-tracking`](../../skills/cad-work-tracking/SKILL.md) | At the start of any multi-step change and every ~30 minutes: issue, branch, early draft PR, push as you go, checkpoints, resume |
-| Skill | [`cad-pr-review`](../../skills/cad-pr-review/SKILL.md) | When a PR is ready: independent review, answer and resolve every thread, merge rules |
-| Skill | [`cad-remote-runs`](../../skills/cad-remote-runs/SKILL.md) | Before any long run: compute host, detached, recorded in the issue, results pulled back |
-| Skill | [`design-process`](../../skills/design-process/SKILL.md) | Building or changing a design: section by section, with requirements, gates and a reviewer sign-off ([design-process-plan.md](design-process-plan.md)) |
-| Skill | [`cad-motion-validation`](../../skills/cad-motion-validation/SKILL.md) | Rendered mechanisms: independent joint frames, actual mesh captures, pivot/ownership regression checks |
-| Skill | [`mcmaster-parts`](../../skills/mcmaster-parts/SKILL.md) | Bought hardware: real part numbers and manufacturer models |
-| Skill | [`sheet-metal-hardware`](../../skills/sheet-metal-hardware/SKILL.md) | Bent sheet parts with clinch nuts, studs or rivets: bends, placement, seams and price, checked in order ([page](../sheet-metal-hardware.md)) |
-| Skill | [`cad-supply-chain`](../../skills/cad-supply-chain/SKILL.md) | Before adding a dependency, vendored file, catalogue entry or link, or recommending a tool: the supply-chain report, its rows in the PR, what blocks a merge or an adoption |
-| Subagent | [`cad-pr-reviewer`](../../agents/cad-pr-reviewer.md) | Reviews a PR it did not write: verifies, posts inline comments and a summary, never merges |
-| Subagent | [`cad-resume`](../../agents/cad-resume.md) | After a session ended: rebuilds the state from GitHub, checkouts and run logs; reports next steps |
+| Skill | [`cad-work-tracking`](../../.agents/skills/cad-work-tracking/SKILL.md) | At the start of any multi-step change and every ~30 minutes: issue, branch, early draft PR, push as you go, checkpoints, resume |
+| Skill | [`cad-pr-review`](../../.agents/skills/cad-pr-review/SKILL.md) | When a PR is ready: independent review, answer and resolve every thread, merge rules |
+| Skill | [`cad-remote-runs`](../../.agents/skills/cad-remote-runs/SKILL.md) | Before any long run: compute host, detached, recorded in the issue, results pulled back |
+| Skill | [`design-process`](../../.agents/skills/design-process/SKILL.md) | Building or changing a design: section by section, with requirements, gates and a reviewer sign-off ([design-process-plan.md](design-process-plan.md)) |
+| Skill | [`cad-motion-validation`](../../.agents/skills/cad-motion-validation/SKILL.md) | Rendered mechanisms: independent joint frames, actual mesh captures, pivot/ownership regression checks |
+| Skill | [`mcmaster-parts`](../../.agents/skills/mcmaster-parts/SKILL.md) | Bought hardware: real part numbers and manufacturer models |
+| Skill | [`sheet-metal-hardware`](../../.agents/skills/sheet-metal-hardware/SKILL.md) | Bent sheet parts with clinch nuts, studs or rivets: bends, placement, seams and price, checked in order ([page](../sheet-metal-hardware.md)) |
+| Skill | [`cad-supply-chain`](../../.agents/skills/cad-supply-chain/SKILL.md) | Before adding a dependency, vendored file, catalogue entry or link, or recommending a tool: the supply-chain report, its rows in the PR, what blocks a merge or an adoption |
+| Subagent | [`cad-pr-reviewer`](../../.agents/agents/cad-pr-reviewer.md) | Reviews a PR it did not write: verifies, posts inline comments and a summary, never merges |
+| Subagent | [`cad-resume`](../../.agents/agents/cad-resume.md) | After a session ended: rebuilds the state from GitHub, checkouts and run logs; reports next steps |
 
 `design-process` has its own *design* reviewer pass with sign-off (`cad-agent review-section`); `cad-pr-reviewer`
 reviews the pull request (code, evidence, docs), which is a different job.
@@ -198,7 +198,7 @@ Actions are `claim`, `checkpoint` (renews the lease), `release` and `done`. A le
 refreshed in time has expired and the issue is open for anyone. Of the active claims, the one whose unbroken run of
 claims and checkpoints started first holds. Tags are pseudonymous (`a-` + 8 of `[a-z2-7]`; one per tool and machine,
 so sibling sessions share it): no host or user names in public repos. Full rules in
-[cad-work-tracking](../../skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents).
+[cad-work-tracking](../../.agents/skills/cad-work-tracking/SKILL.md#work-claims-sharing-issues-between-agents).
 
 Things that must not live only locally: decisions and reasons, the user's measurements and observations, run
 commands and results, lessons. Licensed or large inputs stay out of git, but the repo says where they come from and

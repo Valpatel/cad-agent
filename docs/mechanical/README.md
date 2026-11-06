@@ -19,4 +19,4 @@ flowchart TD
 | Support or move a part | [Bearings](bearings.md), [linkages](linkages.md), [rendered motion](rendered-motion.md) |
 | Flex or assemble a part | [Compliant mechanisms](compliant.md), [subassembly insertion](subassembly-insertion.md) |
 
-[All guides](../README.md) · [Mechanical lessons](../lessons/mechanical/README.md) · [Skills](../../skills/README.md)
+[All guides](../README.md) · [Mechanical lessons](../lessons/mechanical/README.md) · [Skills](../../.agents/skills/README.md)

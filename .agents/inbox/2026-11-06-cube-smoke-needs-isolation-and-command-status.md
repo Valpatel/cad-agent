@@ -1,0 +1,15 @@
+# A slicer smoke test needs its own workspace and a successful command
+
+## 2026-11-06: invoke the actual consumer before changing it
+
+At `6059c38a`, calling the actual `test_slices_a_cube` body twice with different pytest paths under an isolated HOME reused `snap/bambu-studio/common/cadagent-test`. A marker from the first invocation survived the second. The control exported the real cube and ran the real `slice_part`; only profile lookup and the external command were controlled. That establishes shared workspace use, not a demonstrated crash between concurrent real Bambu processes.
+
+The same control preserved a useful positive: `slice_part` already clears its owned output directory. A planted old mass followed by a failed command producing no new output was rejected. There was no observed runtime cache-rescue defect. A different fault did pass the old test: an external exit of 7 with a freshly produced, plausible 3.5 g result satisfied its only mass assertion.
+
+**Correction:** allocate a unique `TemporaryDirectory` under the existing nonhidden Snap-readable common directory, clean it with its context even when slicing or assertions fail, and require exit 0 before retaining the original `2.5 < grams < 6` assertion. Leave the fixed legacy directory and unrelated files alone. No production slicer, profile data, geometry dimensions or mass threshold changes.
+
+**Regression consumer:** `test_cube_smoke_uses_fresh_snap_workspaces` calls that same cube-test body twice per outcome, through the actual slicer result reader and controlled external command. It requires distinct fresh workspaces under the Snap-readable parent, cleanup after success/nonzero exit/exception, and preservation of a prior workspace marker. Restoring a fixed path, omitting cleanup, using the wrong parent, or ignoring command exit is rejected by the existing consumer checks. The test requires the existing optional trimesh dependency; full CI installs/imports it explicitly, while a core environment without it skips rather than proves this coverage.
+
+**Observed local scope:** the initial focused module command `PYTHONPATH=software:. python -m pytest -q tests/manufacturing/test_slicer.py` reported 43 passed in 2.38 s. Bambu Studio was installed locally (`02.08.04.57`, snap revision 8, read from installed metadata), so this included one short real cube integration. Its assertions established exit 0 and the unchanged mass band; no exact grams or print-time output was retained. It was not repeated. Subsequent local commands select only the injected external boundary or exclude `test_slices_a_cube`; further real integration or long work belongs on the fleet if required by review.
+
+**Limits:** controlled mass output is a consumer fault fixture, not a slicer or physical printing result. Neither model slicing nor directory isolation qualifies fit, material properties or print strength. This addresses only the test-isolation follow-up under #84, not its remaining plate, override, nesting or desktop/printing acceptance.

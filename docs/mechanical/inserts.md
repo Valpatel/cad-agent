@@ -409,9 +409,17 @@ fits), Section 5-5 (shear yield), Table A-5 (metals' moduli); ISO 68-1 (thread s
 
 ## Tests that keep it honest
 
+<details>
+<summary>Calculation, declaration and figure checks</summary>
+
 `tests/formulas/test_inserts_formulas.py` checks each relation against a hand evaluation or a closed form it must reach.
 `tests/mechanical/test_mechanical_inserts.py` reproduces the published tests from the calibration, checks the makers' hole and
 boss rules, each row's verdicts on built cases, the CLI's exit codes, and the coupons' CAD volumes.
 The printed hole's tests check SPIROL's filler steps, CNC Kitchen's 4.2 mm, the RepRap table and Nophead's faceting numbers as golden vectors. They also plant three defects the check must catch: a filled joint drawn with the unfilled hole, a coarse mesh drawn at the round hole, and a boss too thin for the nozzle.
 `tests/library/test_hardware.py` holds the washer and head rows to bd_warehouse's files and the standards' rows.
 `tests/mechanical/test_insert_figures.py` redraws every figure on this page from the module and fails if one has gone stale.
+Its existing number check also runs the actual joint declaration above through `cad-agent inserts`, checking fresh
+JSON and exit status independently: the documented WARN joints pass; a thinner insert boss fails while the separate
+clamp remains WARN. The numeric, source and figure checks remain; a model verdict is not a measured coupon result.
+
+</details>

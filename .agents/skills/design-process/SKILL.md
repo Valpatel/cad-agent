@@ -100,6 +100,15 @@ Record the computed verdict as model evidence. Large deflection, contact, creep 
 print a coupon and measure it before claiming physical fit or retention. Living hinges and flexures remain outside
 this snap workflow. Use the guide for the schema and equations rather than copying allowable strains into the card.
 
+**For a heat-set insert or a joint clamping printed plastic**, use the [checked joint declaration](../../../docs/mechanical/inserts.md#check-a-joint).
+Follow its schema for the insert or thread, material, boss and clamp stack; record the build axis, loads, torque and
+limiter assumptions that apply. Run `cad-agent inserts joints.yaml --output result.json` and retain fresh JSON with
+the decision. Exit 0 may include WARN rows (`pass: true`); inspect their reasons, calibration and model limits.
+Exit 1 means a joint failed; exit 2 means the input could not be checked. A configured `cad: checks` row consumes
+the generated JSON; it does not run this standalone calculator. Use its torque ceilings rather than the screw's
+rating, and follow the guide's coupon plan before claiming physical strength or retained preload. Keep equations,
+source tables and model limits in the guide instead of duplicating them in the card.
+
 ### 3. Declare the geometry facts in the build script
 
 Only the code knows which solid is the cavity, where an axis is, where each screw sits:

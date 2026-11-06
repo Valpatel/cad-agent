@@ -644,7 +644,7 @@ await writeFile(path.join(out, '_headers'), [
   '  Strict-Transport-Security: max-age=31536000',
   '/*.md', '  Content-Type: text/markdown; charset=utf-8', '/llms.txt', '  Content-Type: text/plain; charset=utf-8',
   '/llms-full.txt', '  Content-Type: text/plain; charset=utf-8', '/install.sh', '  Content-Type: text/plain; charset=utf-8',
-  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=0, must-revalidate',
+  '/install.ps1', '  Content-Type: text/plain; charset=utf-8', '/kit/vendor/*', '  Cache-Control: public, max-age=0, no-cache, must-revalidate',
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +

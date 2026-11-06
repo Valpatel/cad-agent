@@ -64,6 +64,34 @@ flowchart TD
 
 </details>
 
+### Measure visible header text, not only its flex box
+- **Rule:** A zero-overflow page can still have overlapping navigation. Measure the text ranges and visible images
+  along with each control's box, after fonts load, on both sides of responsive breakpoints.
+- **Check:** The existing website browser suite's `headerProblems` checks 33 widths from 320 to 1366 px in both
+  themes. Catalogue, GitHub, the brand and theme control remain visible, inside the viewport and separated by at
+  least 4 px. The name stays readable at the narrowest width while its decorative icon yields room.
+
+<details><summary>2026-11-06 incident, evidence and limits</summary>
+
+- **Incident:** Public v0.21.0 (`bf93c1d8`) had zero document overflow at 381 and 390 px, but font-settled DOM
+  text ranges put the brand's right edge at 161.359375 px and Catalogue's left edge at 149.515625 and 158.515625 px:
+  gaps of **−11.84375** and **−2.84375** px. Parent flex boxes falsely suggested a positive gap. A wider sweep also
+  found overlap at 320–345 and 431–440 px and at the full-navigation tablet breakpoint.
+- **Cause:** Flex shrinking reduced the wordmark's box and icon without containing its unbroken text; secondary
+  navigation returned before the complete row fit. The correction prevents wordmark shrinking and switches to
+  compact navigation earlier, while retaining the existing one-line header heights and sticky offsets.
+- **Reproduction:** Serve the actual site from fleet 190 (`a901e134`, before the correction) with the repository's
+  preview server. Run the new `headerProblems` function against that product, then route only `/web/site.css` to
+  the candidate CSS. The old product must report the 381 px text collision and the 761 px tablet failure; the
+  candidate must pass the same widths. The regular browser suite runs the guard on its freshly built HEAD.
+- **Limits:** Range bounds describe text layout, not individual glyph ink. This guard covers the shared site
+  header and its tested fonts/widths; it does not certify other components, arbitrary translated labels or physical
+  device accessibility. The prior-product comparison is a CSS experiment, not a claim that fleet 190 built the fix.
+- **Source:** [#104 measured evidence](https://github.com/Valpatel/cad-agent/issues/104#issuecomment-6675062625),
+  `tools/site/assets/site.css` and `tests/site/website-browser.mjs`.
+
+</details>
+
 ### Keep a progress section during long work
 - **Rule:** During multi-hour work, keep a progress section at the top of the review page with three lists: done,
   running and needs your decision. Mark images that are stale until the rebuild finishes.

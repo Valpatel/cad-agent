@@ -1,13 +1,6 @@
 <div align="center">
 
-<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
-
-<details>
-<summary>From Gyropup’s real CAD and results</summary>
-
-<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
-
-</details>
+<img src="docs/img/hero/repository-map.svg" alt="A conceptual learning workshop: study sources, try methods, test assumptions, review evidence and learn reusable skills" width="100%">
 
 # cad-agent
 
@@ -65,8 +58,6 @@ Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start 
 
 ## How it improves itself
 
-<img src="docs/img/hero/repository-map.svg" alt="Learning loop: read and cite research, evaluate examples and controls, encode methods in code and skills, keep failed cases in tests and lessons" width="100%">
-
 A real design exposes a gap. We search existing work, reproduce its examples, encode what survives in engineering code, and keep the failed case as a regression test. Sources keep their credit; short guides and skills tell the next agent when to apply the method.
 
 For example, [snap-fit calculations](docs/mechanical/compliant.md) reproduce the Covestro/Bayer guide’s worked examples. Their material allowables cite data sheets; no printed coupon has been measured yet. CAD and simulation check a model’s assumptions. Physical fit and strength need physical tests.
@@ -74,6 +65,15 @@ For example, [snap-fit calculations](docs/mechanical/compliant.md) reproduce the
 [Existing checks and their limits](docs/lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) · [Vision and planned model evaluations](docs/vision.md)
 
 ## What works today
+
+<details>
+<summary>A real example: Gyropup’s CAD and results</summary>
+
+<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
+
+<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
+
+</details>
 
 - Parametric parts, bought-hardware models, assemblies and project builds.
 - Geometry, fastener, motion, snap-fit and manufacturing checks with recorded evidence.

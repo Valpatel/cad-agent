@@ -7,6 +7,12 @@ on:
   push:
     branches: [main, dev]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Normal CI or bounded APT diagnostic (temporary branch only)
+        type: choice
+        default: normal
+        options: [normal, apt-transport-probe]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -18,6 +24,7 @@ jobs:
   # 3.10 is the oldest supported Python (and what JetPack 6 ships on Jetson). The cad and sim extras need 3.11 or newer
   # (#151: every Pillow for 3.10 has critical advisories, and CadQuery 2.8 needs 3.11), so `full` runs on 3.12.
   core:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.mode == 'apt-transport-probe' && github.ref == 'refs/heads/ci/apt-transport-diagnostic' && github.repository == 'Valpatel/cad-agent') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
@@ -38,6 +45,7 @@ jobs:
   # Full: CAD, FEA, simulation, robot, site and explore extras, so the geometry, mesh, solver, simulator and optimiser
   # tests run instead of skipping.
   full:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.mode == 'apt-transport-probe' && github.ref == 'refs/heads/ci/apt-transport-diagnostic' && github.repository == 'Valpatel/cad-agent') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30          # usually 4-7 minutes; a hung step must not hold a PR for GitHub's default six hours
     steps:
@@ -84,6 +92,7 @@ jobs:
   # It runs the PR's own copy of the tool and of docs/research/security-accepted.yaml, so it is an honesty check, not a
   # security boundary: a reviewer reads changes to those files (the skill says so).
   supply-chain:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.mode == 'apt-transport-probe' && github.ref == 'refs/heads/ci/apt-transport-diagnostic' && github.repository == 'Valpatel/cad-agent') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -105,3 +114,190 @@ jobs:
           else
             python3 tools/resource_audit.py gate --base HEAD^1 --into "$INTO"
           fi
+
+  apt-transport-probe:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'apt-transport-probe' && github.ref == 'refs/heads/ci/apt-transport-diagnostic' && github.repository == 'Valpatel/cad-agent' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      # No checkout, sudo, source edits, package installation or browser/test execution.
+      - name: Probe two pinned APT payloads over current-origin HTTP and HTTPS
+        shell: bash
+        run: |
+          set -eu
+          cat > "$RUNNER_TEMP/apt-transport-probe.py" <<'PY'
+          #!/usr/bin/env python3
+          """One read-only APT metadata/two-package HTTP-v-HTTPS diagnostic; never install."""
+          import datetime as dt
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import shlex
+          import subprocess
+          import sys
+          import time
+          import urllib.parse
+
+          PINS = {'fonts-wqy-zenhei': '0.9.45-8', 'libcodec2-1.2': '1.2.0-2build1'}
+          HOST = 'azure.archive.ubuntu.com'
+          METRICS = ('http_code', 'size_download', 'time_total', 'time_connect',
+                     'time_appconnect', 'speed_download', 'ssl_verify_result')
+
+          def sha(path):
+              h = hashlib.sha256()
+              with path.open('rb') as f:
+                  for chunk in iter(lambda: f.read(1024 * 1024), b''): h.update(chunk)
+              return h.hexdigest()
+
+          def run(args, timeout=5):
+              return subprocess.run(args, text=True, capture_output=True, timeout=timeout, check=False)
+
+          def save(path, value):
+              path.write_text(json.dumps(value, indent=2) + '\n')
+
+          def apt_snapshot():
+              paths = [Path('/etc/apt/sources.list'), Path('/etc/apt/apt-mirrors.txt')]
+              paths += sorted(Path('/etc/apt/sources.list.d').glob('*'))
+              paths += sorted(Path('/var/lib/apt/lists').glob('*InRelease'))
+              paths += sorted(Path('/var/lib/apt/lists').glob('*_Packages*'))
+              # Hash public source declarations, never read auth.conf or print source contents.
+              return {str(p): {'size':p.stat().st_size, 'mtime_ns':p.stat().st_mtime_ns,
+                               'sha256':sha(p)} for p in paths if p.is_file() and not p.is_symlink()}
+
+          def fields(text):
+              blocks = []
+              for block in text.strip().split('\n\n'):
+                  row = {}
+                  for line in block.splitlines():
+                      if line and not line[0].isspace() and ': ' in line:
+                          k, v = line.split(': ', 1); row[k] = v
+                  if row: blocks.append(row)
+              return blocks
+
+          def configured_azure_mirror():
+              p = Path('/etc/apt/apt-mirrors.txt')
+              if p.is_symlink() or not p.is_file(): return False
+              return any(line.split()[0] == 'http://'+HOST+'/ubuntu/'
+                         for line in p.read_text().splitlines() if line.strip() and not line.lstrip().startswith('#'))
+
+          def metadata(package, version, out):
+              raw = {}
+              for name, args in [('policy', ['apt-cache', 'policy', package]),
+                                 ('show', ['apt-cache','show',package+'='+version]),
+                                 ('uris', ['apt-get','--print-uris','download',package+'='+version])]:
+                  proc = run(args)
+                  if re.search(r'://[^/\s]+@',proc.stdout+proc.stderr):
+                      raise RuntimeError(package+': credential-bearing metadata refused')
+                  raw[name] = {'argv':args,'returncode':proc.returncode,'stdout':proc.stdout,'stderr':proc.stderr}
+                  save(out/(package+'-metadata.json'), raw)
+                  if proc.returncode: raise RuntimeError(package+': metadata command failed: '+name)
+              candidate = re.search(r'^\s*Candidate:\s*(\S+)', raw['policy']['stdout'], re.M)
+              if not candidate or candidate[1] != version:
+                  raise RuntimeError(package+': current candidate differs from failed-log pinned version')
+              identities = {(x.get('Package'),x.get('Version'),x.get('Architecture'),x.get('Filename'),
+                             x.get('Size'),x.get('SHA256')) for x in fields(raw['show']['stdout'])}
+              if len(identities) != 1: raise RuntimeError(package+': ambiguous/missing package record')
+              name, ver, arch, filename, size, digest = identities.pop()
+              if name != package or ver != version or arch not in ('amd64','all'):
+                  raise RuntimeError(package+': metadata identity drift')
+              if not filename or not filename.startswith('pool/') or '..' in Path(filename).parts:
+                  raise RuntimeError(package+': unsafe archive path')
+              if not re.fullmatch(r'[0-9a-f]{64}', digest or '') or not size or not size.isdigit():
+                  raise RuntimeError(package+': missing SHA256/size')
+              size = int(size)
+              if not 0 < size <= 12_000_000: raise RuntimeError(package+': unexpected payload size')
+              urirows = [shlex.split(l) for l in raw['uris']['stdout'].splitlines() if l.startswith("'")]
+              if len(urirows) != 1 or len(urirows[0]) < 3:
+                  raise RuntimeError(package+': missing/ambiguous concrete print-URI')
+              uri = urirows[0][0]; parsed = urllib.parse.urlsplit(uri)
+              direct = parsed.scheme == 'http' and parsed.netloc == HOST and parsed.path == '/ubuntu/'+filename
+              logical = (parsed.scheme == 'mirror+file' and not parsed.netloc and
+                         parsed.path == '/etc/apt/apt-mirrors.txt/'+filename and configured_azure_mirror())
+              # The pinned runner image uses this exact logical mirror list. Select only its existing Azure
+              # entry for this diagnostic, never a new origin, another mirror path or a redirect/fallback.
+              if not (direct or logical) or parsed.query or parsed.fragment:
+                  raise RuntimeError(package+': print-URI does not match the actual failed existing origin/path')
+              if int(urirows[0][2]) != size: raise RuntimeError(package+': print-URI size mismatch')
+              if len(urirows[0]) > 3 and urirows[0][3].startswith('SHA256:') and urirows[0][3] != 'SHA256:'+digest:
+                  raise RuntimeError(package+': print-URI hash mismatch')
+              return {'package':package,'version':ver,'architecture':arch,'filename':filename,
+                      'size':size,'sha256':digest,'apt_print_uri':uri,
+                      'origin_selection':'direct existing origin' if direct else 'existing Azure entry in exact runner mirror list',
+                      'http_url':'http://'+HOST+'/ubuntu/'+filename}
+
+          def transfer(meta, scheme, out):
+              base = meta['package']+'-'+scheme
+              path = out/(base+'.deb')
+              url = scheme+':'+meta['http_url'].split(':',1)[1]
+              writeout = '\n'.join(k+'=%{'+k+'}' for k in METRICS)+'\n'
+              args = ['curl','--disable','--silent','--show-error','--fail-with-body',
+                      '--retry','0','--connect-timeout','10','--max-time','45',
+                      '--max-filesize',str(meta['size']),'--proto','='+scheme,
+                      '--output',str(path),'--write-out',writeout,url]
+              began = time.monotonic()
+              try:
+                  p = run(args, timeout=50)
+                  rc, stdout, stderr = p.returncode,p.stdout,p.stderr
+              except subprocess.TimeoutExpired as e:
+                  rc = 'outer-timeout'
+                  stdout = (e.stdout or b'').decode(errors='replace') if isinstance(e.stdout,bytes) else (e.stdout or '')
+                  stderr = (e.stderr or b'').decode(errors='replace') if isinstance(e.stderr,bytes) else (e.stderr or '')
+              metrics = dict(l.split('=',1) for l in stdout.splitlines() if '=' in l)
+              length = path.stat().st_size if path.exists() else 0
+              digest = sha(path) if path.exists() else None
+              result = {'argv':args,'url':url,'returncode':rc,'metrics':metrics,'stderr':stderr,
+                        'elapsed_seconds':time.monotonic()-began,'bytes':length,'sha256':digest,
+                        'complete_identity':rc == 0 and metrics.get('http_code') == '200' and
+                           length == meta['size'] and digest == meta['sha256'],
+                        'limits':'No redirects/retries, TLS verification enabled; 404/partial/TLS failure is not speed proof.'}
+              save(out/(base+'.json'), result)
+              return result
+
+          def main(out):
+              out.mkdir(parents=False,exist_ok=False)
+              before = apt_snapshot()
+              report = {'started_utc':dt.datetime.now(dt.timezone.utc).isoformat(),
+                        'workflow_commit':os.environ.get('GITHUB_SHA'),
+                        'probe_sha256':sha(Path(__file__)), 'python_version':sys.version,
+                        'runner_image':{k:os.environ.get(k) for k in ('ImageOS','ImageVersion')},
+                        'metadata_trust':'Existing runner APT indexes, not refreshed here; source/InRelease/package-index hashes and mtimes retained. No independent package-index-to-InRelease reverification added.',
+                        'before':before,'packages':[], 'transfers':[]}
+              save(out/'report.json',report)
+              try:
+                  config = run(['apt-config','dump','Acquire::Retries','Acquire::http::Timeout','Acquire::https::Timeout'])
+                  report['effective_apt_acquire'] = {'returncode':config.returncode,'stdout':config.stdout,'stderr':config.stderr}
+                  # Finish ALL identity/candidate preconditions before any network transfer.
+                  report['packages'] = [metadata(p,v,out) for p,v in PINS.items()]
+                  save(out/'report.json',report)
+                  # Reverse pair order for second package; retain every result, including partial failures.
+                  for i,meta in enumerate(report['packages']):
+                      for scheme in (('http','https') if i == 0 else ('https','http')):
+                          report['transfers'].append(transfer(meta,scheme,out));save(out/'report.json',report)
+              except Exception as e:
+                  report['error'] = type(e).__name__+': '+str(e)
+              finally:
+                  report['after'] = apt_snapshot()
+                  report['apt_configuration_and_InRelease_unchanged'] = report['after'] == before
+                  report['collected_all_four'] = len(report['transfers']) == 4
+                  report['all_payloads_verified'] = report['collected_all_four'] and all(x['complete_identity'] for x in report['transfers'])
+                  report['conclusion'] = 'Diagnostic evidence only; no transport-policy change or browser/application coverage established.'
+                  save(out/'report.json',report)
+              return 0 if report['all_payloads_verified'] and report['apt_configuration_and_InRelease_unchanged'] and 'error' not in report else 1
+
+          if __name__ == '__main__':
+              if len(sys.argv) != 2: raise SystemExit('usage: diagnostic.py FRESH_OUTPUT_DIRECTORY')
+              raise SystemExit(main(Path(sys.argv[1])))
+          PY
+          printf '%s  %s\n' '4f5976a80f3305f8a485e277ea20ffdbf6f9b6b266c461b458836cf08fad49f7' "$RUNNER_TEMP/apt-transport-probe.py" | sha256sum -c -
+          python3 "$RUNNER_TEMP/apt-transport-probe.py" "$RUNNER_TEMP/apt-transport-evidence"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: apt-transport-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apt-transport-evidence/
+          if-no-files-found: error
+          retention-days: 7

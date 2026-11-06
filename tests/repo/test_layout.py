@@ -55,7 +55,6 @@ NOT_COUNTED = re.compile(r"^vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
 OVER_LIMIT = {
-    "tools": "remaining Python figure generators; site tooling now has its own hierarchy",
     "src/cadagent/webkit": "browser modules served as one folder (pyproject package-data webkit/*); a split moves "
                            "their URLs",
 }
@@ -406,8 +405,14 @@ def test_a_folder_over_the_limit_is_told_to_split_and_the_list_only_shrinks(file
     assert len(got) == 1 and got[0].startswith(f"docs/lessons/printing/ holds {CLUTTER_LIMIT + 1} files"), got
     assert "only shrinks" in got[0]
     assert clutter_problems(_plant(crowd[:CLUTTER_LIMIT], files)) == []
-    thinned = [f for f in files if not f.startswith("tools/") or f.count("/") > 1]
-    assert clutter_problems(thinned) == ["tools/ is at or under 20 files now: take it off OVER_LIMIT in "
-                                         "tests/repo/test_layout.py"]
+    for folder in OVER_LIMIT:
+        thinned = [f for f in files if str(Path(f).parent) != folder]
+        assert clutter_problems(thinned) == [f"{folder}/ is at or under {CLUTTER_LIMIT} files now: "
+                                             "take it off OVER_LIMIT in tests/repo/test_layout.py"]
+    # The figure move retired tools/'s exception: a new crowd there must fail like any other folder.
+    tools_crowd = [f for f in files if str(Path(f).parent) != "tools"] + [
+        f"tools/new-{i}.py" for i in range(CLUTTER_LIMIT + 1)]
+    assert clutter_problems(tools_crowd)[0].startswith(f"tools/ holds {CLUTTER_LIMIT + 1} files")
+    assert "only shrinks" in clutter_problems(tools_crowd)[0]
     vendored = [f"vendor/x/f{i}.py" for i in range(50)] + [f"docs/img/x/f{i}.svg" for i in range(50)]
     assert clutter_problems(_plant(vendored, files)) == []

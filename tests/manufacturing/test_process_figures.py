@@ -1,4 +1,4 @@
-"""docs/process-checks.md's figures are drawn by tools/process_figures.py from the modules they show (#99)."""
+"""docs/process-checks.md's figures are drawn by tools/figures/process_figures.py from the modules they show (#99)."""
 import subprocess
 import sys
 from pathlib import Path
@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_committed_figures_match_the_code():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "process_figures.py"), "--check"],
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "figures" / "process_figures.py"), "--check"],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
 

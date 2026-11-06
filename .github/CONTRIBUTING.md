@@ -117,7 +117,7 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | A Node or browser test of the web kit | `tests/webkit/`: `webkit-<name>.test.mjs` (`node --test`), `webkit-<name>-browser.mjs` (Playwright) |
 | A test of the website or its build | `tests/site/` (`website-*.test.mjs`, `website-*-browser.mjs`) |
 | A test of a repo rule or of the repo's own tooling | `tests/repo/` |
-| A test of a figure generator in `tools/` | The folder of the package it draws (`tools/motion_figures.py` → `tests/mechanical/`) |
+| A test of a figure generator in `tools/` | The folder of the package it draws (`tools/figures/motion_figures.py` → `tests/mechanical/`) |
 | Test data | `tests/fixtures/<set>/`, made by a script beside it or described in a README |
 | A docs page | `docs/<page>.md` (`docs/<domain>/` once its area has three pages, #145), with its line in `docs/areas.yaml` |
 | A figure on a page | `docs/img/<topic>/`, drawn by a generator in `tools/` that a test runs with `--check` |

@@ -29,7 +29,7 @@ SHEET_PAGES = [ROOT / "docs" / "research" / "manufacturing" / n for n in ("sheet
 
 
 def _figures():
-    spec = importlib.util.spec_from_file_location("process_profile_figures", ROOT / "tools" / "process_profile_figures.py")
+    spec = importlib.util.spec_from_file_location("process_profile_figures", ROOT / "tools" / "figures" / "process_profile_figures.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -188,7 +188,7 @@ def test_the_evaluator_refuses_anything_but_arithmetic():
 
 
 def test_committed_charts_match_the_data():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "process_profile_figures.py"), "--check"],
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "figures" / "process_profile_figures.py"), "--check"],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
 

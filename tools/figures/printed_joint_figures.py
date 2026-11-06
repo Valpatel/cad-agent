@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Draw docs/img/joints/*.svg from cadagent.mechanical.printed_joints and cadagent.manufacturing.fit_coupons.
 
-    python3 tools/printed_joint_figures.py            # write the SVGs
-    python3 tools/printed_joint_figures.py --check    # exit 1 if a committed SVG differs (tests/mechanical/test_printed_joints.py)
+    python3 tools/figures/printed_joint_figures.py            # write the SVGs
+    python3 tools/figures/printed_joint_figures.py --check    # exit 1 if a committed SVG differs (tests/mechanical/test_printed_joints.py)
 
 Pure Python, so the page shows exactly what the checks computed on the worked examples below (generic parts, not
 any one project's). Colours: the categorical slots and status steps of the site's chart palette, each with a label,
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from cadagent.manufacturing import fit_coupons as fc          # noqa: E402  (this checkout's package)
@@ -208,7 +208,7 @@ def main(argv=None) -> int:
             OUT.mkdir(parents=True, exist_ok=True)
             path.write_text(svg)
     if stale:
-        print("out of date (run python3 tools/printed_joint_figures.py):", ", ".join(stale))
+        print("out of date (run python3 tools/figures/printed_joint_figures.py):", ", ".join(stale))
         return 1
     return 0
 

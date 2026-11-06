@@ -9,6 +9,18 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.22.1 (2026-11-06)
+
+**Changed**
+- Reconcile contributor guidance with the verified steady Pages command and record actual production-versus-browserless-fleet evidence in the existing verification lesson.
+
+**Fixed**
+- Point the owned font CSS comment at the current style guide and refresh only its declared owned-file checksum, preserving all font and licence bytes. Include the existing bearing formulas, source-worked evidence and model limits in the package map; distinguish generated port-parity fixtures from independent source expectations.
+- Migration guidance distinguishes physical source moves from public URL changes, records the published v0.22.0 hierarchy and verified nested site build command, and keeps remaining incremental taxonomy work explicit (#145).
+- Validate whole literal skill CLI references in inline, fenced and indented shell examples, including chained commands and actor assignments, while preserving quoted data, comments and options. Keep the historical review-section announcement exception only while that command is absent; it is implemented today.
+- Keep the documented research/ branch prefix aligned with the existing gate; the docs/research/ folder move does not rename branch types.
+- Diagram browser checks retain route, viewport, theme and pending-resource evidence when navigation fails, and release their owned contexts without disrupting another test lane. Real held-resource controls verify the diagnostics and cleanup; normal navigation limits are unchanged (#371).
+
 ## v0.22.0 (2026-11-06)
 
 **Changed**

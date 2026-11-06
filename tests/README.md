@@ -62,7 +62,7 @@ flowchart TD
 ```bash
 PYTHONPATH=src python -m pytest -q                    # everything Python; or one folder: pytest tests/review
 node --test tests/webkit/*.test.mjs tests/site/website-*.test.mjs
-npm run test:site && npm run test:part-table && npm run test:file-viewer && npm run test:diagrams
+npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
 ```
 
 Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·

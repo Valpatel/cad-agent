@@ -73,8 +73,15 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
     assert.match(toolkit, /local edit/);
     assert.match(toolkit, /\+ local changes/);
     assert.match(toolkit, /This page has uncommitted changes/);
+    assert.equal(await readFile(path.join(draft, 'web/site.css'), 'utf8'), 'body{display:none}\n');
     assert.doesNotMatch(toolkit, /<script>|window\.__x=1<\/script>/, 'a nested script survived the sanitizer');
     assert.throws(() => run('--release', '--out', path.join(tmp, 'rel')), /clean working tree/);
+    await mkdir(path.join(wt, 'web'), { recursive: true });
+    await writeFile(path.join(wt, 'web/site.css'), 'STALE_ROOT_ASSET');
+    await rm(path.join(wt, 'tools/site/assets/site.css'));
+    assert.throws(() => run('--worktree', '--client-diagrams', '--out', draft), error =>
+      String(error.stderr).includes('ENOENT') && String(error.stderr).includes('tools/site/assets/site.css'),
+    'a stale web/site.css must not hide a missing current stylesheet');
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
@@ -572,7 +579,7 @@ test('the palette goes into real diagrams only: not into a quoted example, and :
 // nothing moves while the page loads and it shows without script. Its source stays in the figure and in the twin.
 test('every diagram arrives drawn, with its source, and the Markdown twins keep their fences', async () => {
   assert.match(buildLog, /Diagrams: \d+ \(Mermaid 11\.\d+\.\d+\)/);
-  assert.doesNotMatch(buildLog, /left to the reader's browser/, 'the build drew no diagrams: install a browser (npx playwright install chromium)');
+  assert.doesNotMatch(buildLog, /left to the reader's browser/, 'the build drew no diagrams: install a browser (npm --prefix tools/site exec --no -- playwright install chromium)');
   let figures = 0;
   for (const f of html.filter(f => !f.startsWith('kit/'))) {
     const page = await readFile(path.join(out, f), 'utf8');

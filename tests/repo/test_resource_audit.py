@@ -461,6 +461,47 @@ def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
     assert ("vendor-notices", "vendor:tool") in checks(run(root), "medium")
 
 
+def test_npm_move_keeps_historical_ids_and_live_reads_reject_stale_roots(repo_with_base):
+    root = repo_with_base
+    for current in (ra.NPM_PACKAGE, ra.NPM_LOCK):
+        git(root, "mv", current, Path(current).name)
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy npm ownership")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    assert "npm:marked" in before
+    for current in (ra.NPM_PACKAGE, ra.NPM_LOCK):
+        git(root, "mv", Path(current).name, current)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    write(root, "package.json", '{"devDependencies":{"stale":"1.0.0"}}')
+    write(root, "package-lock.json", lock(good_pkg("stale", "1.0.0")))
+    git(root, "add", "--all")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "current and stale npm inputs")
+    for tree in (ra.WorkTree(root), ra.GitTree(root, "HEAD")):
+        assert ra.item_ids(tree) == before
+    assert {p["name"] for p in run(root)["inventory"]["npm"]} == {"marked"}
+    (root / ra.NPM_LOCK).unlink()
+    assert ("npm-no-lockfile", "npm:package-lock.json") in checks(run(root), "high")
+    with pytest.raises(FileNotFoundError, match="current npm lockfile"):
+        ra.item_ids(ra.WorkTree(root))
+    (root / ra.NPM_PACKAGE).unlink()
+    with pytest.raises(FileNotFoundError, match="current npm manifest"):
+        run(root)
+
+
+def test_npm_audit_executes_in_the_current_package_context(tmp_path, monkeypatch):
+    root = checkout(tmp_path / "checkout with spaces")
+    npm = tmp_path / "fake-npm"
+    npm.write_text('#!/bin/sh\nprintf "%s\\n" "$PWD" "$@" > audit-invocation.txt\n'
+                   'printf \'{"vulnerabilities":{}}\\n\'\n')
+    npm.chmod(0o755)
+    monkeypatch.setattr(ra.shutil, "which", lambda name: str(npm) if name == "npm" else None)
+    rep = ra.Report(root, AS_OF, False)
+    assert ra.run_npm_audit(rep) == {}
+    assert (root / ra.NPM_DIR / "audit-invocation.txt").read_text().splitlines() == [
+        str(root / ra.NPM_DIR), "audit", "--package-lock-only", "--json"]
+    assert rep.sources["npm-audit"] == "npm audit --package-lock-only"
+
+
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):
     r = run(checkout(tmp_path))
     assert f"catalog.json, {ra.REGISTRY}, docs/research/landscape.json" in ra.to_markdown(r)

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// `npm run build`: the production site build, as Cloudflare Pages runs it on every push to `main`.
-// The Pages project `cad-agent` is Git-connected: build command `npm ci && npm run build`, output `dist` (wrangler.toml),
-// the same settings as every other Valpatel Pages site. Preview deployments are off, so only `main` publishes.
+// `npm --prefix tools/site run build`: the production site build entry.
+// The Git-connected Pages project publishes only main, with previews off and repository-root dist output.
+// Moving this entry does not update its external build command; the coordinated transition is tracked in #362.
 //
 // Cloudflare's clone may be shallow and has no `origin/main` or `origin/dev`. `build-site.mjs --release` needs both:
 // full history, so each page shows when it really changed, and HEAD on a reviewed branch. This fetches what is

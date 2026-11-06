@@ -91,7 +91,7 @@ export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['
     const { browser, why } = await launch();
     if (!browser) {
       warn(`${todo.length} of ${sources.size} diagrams will be drawn in the reader's browser, not at build time (${why}). ` +
-        'Install a browser with `npx playwright install chromium` to draw them here.');
+        'Install a browser with `npm --prefix tools/site exec --no -- playwright install chromium` to draw them here.');
       stats.left = todo.length;
     } else {
       stats.browser = `${why} ${browser.version()}`;

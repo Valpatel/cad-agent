@@ -161,18 +161,27 @@ such as a new command or check, even one that asks nothing of projects.
    - publishes the GitHub release from the CHANGELOG entry;
 
    Cloudflare Pages deploys the site; `release.yml` does not. The Pages project `cad-agent` (the name in
-   `wrangler.toml` and `npm run deploy:site`) is connected to this repository like every Valpatel Pages site:
-   build command `npm ci && npm run build`, output `dist`, root directory blank. Two settings differ from
+   `tools/site/wrangler.toml` and `npm --prefix tools/site run deploy:site`) is connected to this repository like every Valpatel Pages site:
+   output `dist`, root directory blank. The 2026-11-06 readback still uses the released root-package command
+   `npm ci && npm run build`. The nested-package command is `npm --prefix tools/site ci && npm --prefix tools/site run build`;
+   its reviewed external transition and readback are tracked in [#362](https://github.com/Valpatel/cad-agent/issues/362).
+   Moving repository files does not update that setting. Two settings differ from
    Cloudflare's defaults and matter here:
    - **Production branch `main`.** This repository's default branch is `dev`, and the release build accepts HEAD on
      `origin/dev` too, so a production branch of `dev` would publish every merge into `dev`.
    - **Preview deployments: None.** A branch build fails the release build's reviewed-commits check, and would put
      a red Cloudflare check on every PR.
-   - On each push to `main` it runs `npm ci && npm run build` and publishes `dist` to cad-agent.valpatel.com and
+   - On each push to `main` the configured build publishes `dist` to cad-agent.valpatel.com and
      cad-agent.gyropup.com. `tools/site/pages-build.mjs` fetches the full history and `origin/main` and `origin/dev`,
      which Cloudflare's clone lacks, then runs `tools/site/build-site.mjs --release`.
    - With previews off, only `main` publishes.
    - Check that `https://cad-agent.valpatel.com/version.json` shows the release.
-   - `npm run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
+   - `npm --prefix tools/site run deploy:site` uploads a build by hand. Use it only when Cloudflare's build is down.
+
+   **Runtime readback, 2026-11-06 UTC:** both deployment environments use build image v3 with no `NODE_VERSION`
+   override. The successful v0.21.0 production log detects Node 22.23.4 and npm 10.9.9.
+   [Cloudflare documents](https://developers.cloudflare.com/pages/configuration/build-image/#limitations) that v3 does
+   not select Node from package.json engines, so moving that metadata does not change the observed selection.
+   CI and the installed-wheel check explicitly use Node 22; a future runtime pin is a separate policy decision.
 
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.

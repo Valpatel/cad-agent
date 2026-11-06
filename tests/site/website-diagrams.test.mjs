@@ -1,5 +1,5 @@
 // tools/site/compiler/site-diagrams.mjs: the site's Mermaid blocks drawn at build time (#132), in the headless Chromium the browser
-// tests use. Needs Playwright's Chromium (`npx playwright install chromium`) or Google Chrome.
+// tests use. Needs Playwright's Chromium (`npm --prefix tools/site exec --no -- playwright install chromium`) or Google Chrome.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';

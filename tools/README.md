@@ -6,7 +6,7 @@ The arrows show the artifacts these tools produce and the checks that consume th
 
 ```mermaid
 flowchart TD
-    B["build-site.mjs"] --> S["../dist/<br/>published site"]
+    B["site/build-site.mjs"] --> S["../dist/<br/>published site"]
     A["anim/<br/>figure generators"] --> I["../docs/img/<br/>committed figures"]
     I --> B
     M["mining/<br/>transcript extractor"] --> L["../docs/lessons/<br/>reviewed lessons"]
@@ -20,7 +20,7 @@ flowchart TD
 | Work | Entry point |
 |---|---|
 | Source selection and stable public paths | [site/](site/README.md) |
-| Site build and preview | [build-site.mjs](site/build-site.mjs), [preview-site.mjs](site/preview-site.mjs), [pages-build.mjs](site/pages-build.mjs); `npm run build:site` |
+| Site build and preview | [build-site.mjs](site/build-site.mjs), [preview-site.mjs](site/preview-site.mjs), [pages-build.mjs](site/pages-build.mjs); `npm --prefix tools/site run build:site` |
 | Catalogue and references | [site-catalog.mjs](site/build/site-catalog.mjs), [site-references.mjs](site/build/site-references.mjs), [reference importer](import_refmap.py) |
 | Animated figures | [anim/](anim/), [readme_anim.py](readme_anim.py), [motion_figures.py](motion_figures.py); generators support `--check` |
 | Transcript mining | [mining/](mining/README.md); private transcripts → reviewed, sourced lessons |

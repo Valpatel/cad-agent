@@ -128,3 +128,18 @@ flowchart TD
 - **Limits:** These controls establish the tested checkout, website and Linux wheel behavior, not physical CAD
   qualification or untested platforms. Job 181 was a failed diagnostic, not a passing full-suite receipt.
   [Commands, receipts and recovery instructions](https://github.com/Valpatel/cad-agent/issues/362).
+
+### Follow the credential store selected by the actual CLI
+- **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx wrangler whoami` so its
+  normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path
+  selection before requesting a new login. Never print tokens or change accounts to make a probe pass.
+- **Evidence, 2026-11-06 UTC:** `npx --yes wrangler@4.86.0 whoami` succeeded. A helper that guessed the XDG
+  credential location then received HTTP 401. Reading Wrangler 4.86.0's `getGlobalWranglerConfigPath()` showed it
+  prefers an existing legacy `~/.wrangler` directory. The same read-only project GET using the refreshed store
+  returned HTTP 200; no reauthentication or settings write was needed.
+- **Cause and corrective check:** The helper read a different, expired store from the one the CLI refreshed. Resolve
+  credential selection from the actual CLI implementation, keep credentials only in memory, and publish sanitized
+  configuration fields and response status. A guessed config path is not evidence that normal authentication failed.
+- **Limits:** This establishes that read-only Pages project and deployment-log access worked at that time. It does
+  not establish write or DNS permissions, and credential-path precedence may change in another Wrangler version.
+  [Sanitized readback and run receipts](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6675614833).

@@ -136,7 +136,7 @@ usable frame. `?view=iso&ui=0` is available for a clean automated capture.
 ## Reproducing validation
 
 ```sh
-npm run test:webkit-unit
+npm --prefix tools/site run test:webkit-unit
 node tests/webkit/webkit-file-viewer-browser.mjs
 PLAYWRIGHT_BROWSER=webkit node tests/webkit/webkit-file-viewer-browser.mjs
 ```

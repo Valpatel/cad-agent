@@ -9,7 +9,7 @@ carbon-filled PA6 keeps 90-96 % of its elongation, because the fibre already lim
 an entry here, keeps 64 %). Snap fits are limited by strain, so the direction matters more than strength data
 suggest.
 
-**Rule** (derived; research/compliant-mechanisms.md section 6). For each direction, from one sheet's values:
+**Rule** (derived; docs/research/compliant-mechanisms.md section 6). For each direction, from one sheet's values:
 
 * single joining: ``min(0.7 * UTS / E, 0.5 * elongation_at_break)``. 0.7 x yield strain is the guide's rule for
   amorphous resin, with UTS/E as a lower bound on the strain at maximum stress; half the elongation at break is the

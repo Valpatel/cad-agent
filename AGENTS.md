@@ -1,6 +1,6 @@
 # Rules for AI agents working in this repo
 
-Read [CONTRIBUTING.md](.github/CONTRIBUTING.md). Follow the agent workflow kit ([docs/agent-workflow.md](docs/agent-workflow.md);
+Read [CONTRIBUTING.md](.github/CONTRIBUTING.md). Follow the agent workflow kit ([docs/practice/agent-workflow.md](docs/practice/agent-workflow.md);
 install it with `cad-agent agents install`): the `cad-work-tracking`, `cad-pr-review` and `cad-remote-runs` skills and the
 `cad-pr-reviewer` and `cad-resume` subagents. Assume the session can end at any time: every piece of work has a
 GitHub issue, is pushed in clean commits as it goes and has an early draft PR, so another computer can pick it up.
@@ -59,7 +59,7 @@ Other agent sessions use and change this repo at the same time, so:
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
   joining` and design to the card ([skills/design-process](skills/design-process/SKILL.md)); never copy rules into
-  Markdown, since they live in `research/process-profiles.yaml`.
+  Markdown, since they live in `docs/research/process-profiles.yaml`.
 - **State limits honestly** in code and reports: what a check or simulation assumes, and that CAD and simulation do
   not prove physical fit or strength.
 
@@ -75,15 +75,15 @@ its failures says where the file goes.
 | `src/cadagent/<domain>/` | All package code, in the package for its domain ([map](src/cadagent/README.md)). ✓ No new files at the top of `src/cadagent/`. |
 | `tests/<domain>/` | Tests, in the folder named after the package their subject lives in; `cli/`, `site/` and `repo/` for what is not a package; shared data in `tests/fixtures/` ([map](tests/README.md)). ✓ No test file directly in `tests/`. |
 | `docs/` | Pages that explain a topic and point at the code; figures in `docs/img/<topic>/`. Pages move into `docs/<domain>/` as each area reaches three pages (#145). |
-| `research/` | Surveys and sourced data tables (landscape, process profiles, security reports). |
-| `lessons/<area>/` | Lessons learned on real projects, by area ([map](lessons/README.md)). |
-| `examples/<name>/` | Example projects the docs and tests run. |
+| `docs/research/` | Surveys and sourced data tables (landscape, process profiles, security reports). |
+| `docs/lessons/<area>/` | Lessons learned on real projects, by area ([map](docs/lessons/README.md)). |
+| `docs/examples/<name>/` | Example projects the docs and tests run. |
 | `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
 | `web/` | The website's own static files (CSS, icons, the landing model). |
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
 | `vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](vendor/README.md)). |
 | `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |
-| `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `lessons/`. The links, and the move of today's `.agents/` notes into `lessons/`, come in a follow-up PR. |
+| `.claude/`, `.agents/`, `.codex/` | Wiring only: symlinks or generated files. Never edit through them, and put no new notes in `.agents/`: findings go in `docs/lessons/`. The links, and the move of today's `.agents/` notes into `docs/lessons/`, come in a follow-up PR. |
 | `.github/` | Workflows, the PR and issue templates, Dependabot ([CONTRIBUTING](.github/CONTRIBUTING.md#gates)). |
 
 ✓ **Keep the root compact.** `tests/repo/test_layout.py` caps tracked root entries (files and folders together); its budget only shrinks as maintenance files move to their owning hierarchy.
@@ -97,7 +97,7 @@ its failures says where the file goes.
   package). ✓ `test_layout.py` fails a folder newly over 20 files; the folders over it today are on a list that may
   only shrink, and each is split in the next PR that touches it.
 - **Don't pre-create folders** for one or two files, and never create an empty one.
-- **Every new folder gets a `README.md`** with a short Mermaid map ([style guide](docs/style-guide.md), #113), and
+- **Every new folder gets a `README.md`** with a short Mermaid map ([style guide](docs/practice/style-guide.md), #113), and
   the parent README's table links it.
 - **Move with `git mv`** so history follows, update every reference (code, tests, docs, skills, agents, workflows,
   `docs/areas.yaml`), and leave stubs or redirects where #145 says (published pages).

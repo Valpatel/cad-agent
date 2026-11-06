@@ -23,6 +23,7 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_agentkit.py` | `cad-agent agents install`: which skills and subagents land where (`~/.claude`, `~/.agents/skills`), the move off `~/.codex/skills`, pruning and uninstalling; what each needs, its Needs line, and the notice of what can't be used yet |
 | `test_cli.py` | `cad-agent ...` end to end through `cadagent.cli.main`, on throwaway projects |
+| `test_init.py` | Checkout starter copying and declaration parity; `python tests/cli/test_init.py --wheel-smoke` builds and installs the committed wheel outside the checkout, checks bytes and rejects missing installed data once in full CI |
 | `test_deps.py` | A missing heavy dependency raises `MissingDependency` naming the module, never a quiet skip |
 | `test_installer.py` | `web/install.sh` run twice in a temporary HOME against a `file://` copy of the kit (install, then the `cad-agent update` path, a refusal and `--uninstall`), with a stand-in for uv; the two scripts say the same things; shellcheck and PowerShell's parser when installed |
 | `test_links.py` | `cadagent.links`: local link checks for HTML and Markdown pages |

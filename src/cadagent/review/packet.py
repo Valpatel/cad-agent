@@ -1,4 +1,4 @@
-"""The section review packet (plan T10, ``docs/review-packet.md``): captioned renders of one dossier section with
+"""The section review packet (plan T10, ``docs/practice/review-packet.md``): captioned renders of one dossier section with
 the measurements first, for a reviewer to critique against the render checklist.
 
 Two halves:

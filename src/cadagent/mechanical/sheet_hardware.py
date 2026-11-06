@@ -6,7 +6,7 @@ them (#283).
     sh.choose_rivet(3.2, 3.2)                       # 1/8 in rivets whose grip takes a 3.2 mm stack, cheapest first
     sh.cost({"S-632-1": 8, "mcmaster-97447A015": 24})   # loose parts, the packs to buy, and a shop's price to press in
 
-The data is ``research/sheet-hardware.yaml``, in cad-agent's part-catalogue layout
+The data is ``docs/research/sheet-hardware.yaml``, in cad-agent's part-catalogue layout
 (``cadagent.simulation.explore.catalogue``): one item per orderable part number, with the seller's price at its
 smallest quantity break, the day it was read, the stock shown, the seller's page and, for clinch parts a shop presses
 in, that shop's price per part from its ordering feed. Each item's ``part`` is the key of the part it is checked as:
@@ -29,10 +29,10 @@ from cadagent.mechanical import clinch, rivets
 from cadagent.simulation.explore import catalogue as cat
 
 ROOT = Path(__file__).resolve().parents[3]
-DATA = ROOT / "research" / "sheet-hardware.yaml"
+DATA = ROOT / "docs" / "research" / "sheet-hardware.yaml"
 CATEGORIES = ("clinch_nut", "clinch_stud", "clinch_standoff", "blind_rivet")
 
-# Registry ids (research/references.yaml) of the sources the catalogue's numbers come from.
+# Registry ids (docs/research/references.yaml) of the sources the catalogue's numbers come from.
 SRC = {
     "bossard-pem-prices": "Bossard Americas web shop, PEM part pages read 2026-11-02: price per piece at 1-249 and "
                           "1000-4999, and the stock count",

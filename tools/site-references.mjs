@@ -7,14 +7,14 @@
  * - catalog/references/index.json (areas with counts) and catalog/references/<area>.json (the records);
  * - [ref:<id>] in any page, rendered as a link to the record's row and to the source;
  * - one llms.txt line per area;
- * - docs/experts.md.
+ * - docs/practice/experts.md.
  *
  * Records are not catalogue cards: catalog.json and llms-full.txt carry none. An agent reads index.json, then one
  * area's file. A record is listed in every area it is placed in. A record whose `areas` match no docs/areas.yaml slug
  * goes to /references/unplaced, as outside projects do in the catalogue.
  *
- * tools/build-site.mjs reads the committed registry: research/references.yaml, the shards in research/references/
- * and docs/areas.yaml. `node tools/site-references.mjs --experts` rewrites docs/experts.md from the working tree, and
+ * tools/build-site.mjs reads the committed registry: docs/research/references.yaml, the shards in docs/research/references/
+ * and docs/areas.yaml. `node tools/site-references.mjs --experts` rewrites docs/practice/experts.md from the working tree, and
  * `--experts --check` exits 1 when it is out of date. Every number and badge is computed from the records here, and
  * nothing is typed in by hand. Confidence is the record's own block, which `python -m cadagent.review.references
  * --check` holds equal to what its evidence gives.
@@ -26,12 +26,12 @@ import YAML from 'yaml';
 import { safeUrl } from './site-html.mjs';
 
 export const SCHEMA = 'cad-agent-references/1';
-export const CORE = 'research/references.yaml';
-export const DIR = 'research/references/';
-export const EXPERTS = 'docs/experts.md';
+export const CORE = 'docs/research/references.yaml';
+export const DIR = 'docs/research/references/';
+export const EXPERTS = 'docs/practice/experts.md';
 /** The files in DIR that hold no records: cadagent.review.references NOT_SHARDS (a test pins the two together). */
 export const NOT_SHARDS = new Set(['vocab.yaml', 'coverage.yaml']);
-/** The evidence ladder, lowest first (research/references/vocab.yaml `evidence_class`), and the confidence levels. */
+/** The evidence ladder, lowest first (docs/research/references/vocab.yaml `evidence_class`), and the confidence levels. */
 export const LADDER = ['snippet-only', 'read', 'verified-at-source', 'encoded', 'measured'];
 /** A shard record someone has read at source (`read` or higher) is a source; below, catalogued (references.is_read). */
 export const isRead = r => Boolean(isObj(r) && isObj(r.evidence) && LADDER.indexOf(r.evidence.class) >= 1);
@@ -225,7 +225,7 @@ export function healthOf(report) {
 
 const FIELDS = {
   status: '`source`: read, with a dated `verified` note, and may be cited. `catalogued`: listed from a survey and not yet read; never cite one',
-  kind: 'what the source is (research/references/vocab.yaml `kind`); a read source from before schema 2 has none',
+  kind: 'what the source is (docs/research/references/vocab.yaml `kind`); a read source from before schema 2 has none',
   evidence_class: 'its rung on the evidence ladder, lowest first: ' + LADDER.join(', '),
   confidence: '#143: {level, estimate, sources}, derived from the evidence; `unknown` when the record has no evidence block',
   licence: '{spdx, class, read, note}: `read: false` means the licence text was not read, only stated by the survey',
@@ -445,7 +445,7 @@ function areaBody(slug, m, { feedback }) {
   return `<div class="refs-page"><p class="crumbs"><a href="/references">References</a> · <a href="${slug === UNPLACED ? '/catalog' : `/catalog?area=${esc(slug)}`}">${slug === UNPLACED ? 'Catalogue' : esc(a.title) + ' in the catalogue'}</a> · <a href="/references/${esc(slug)}.md">Markdown</a> · <a href="/catalog/references/${esc(slug)}.json">JSON</a></p>`
     + `<header class="refs-head"><p class="eyebrow">${esc(a.domainTitle ? `References · ${a.domainTitle}` : 'References')}</p><h1>${esc(a.title)}</h1>`
     + `<p class="refs-lede">${list.length ? `${plural(list.length, 'record')}: ${plural(read, 'read source')} that cad-agent's rules and checks may cite, and ${plural(cat, 'record')} catalogued from the Reference Map, not yet read.` : 'No records yet, only the coverage below.'} ${esc(one(a.scope || ''))}</p>`
-    + (cat ? `<p class="refs-caveat">Catalogued records are search snippets: their numbers are the authors' claims and their licences are as the map states them, unread. Cite one only after reading the source and promoting it (<a href="https://github.com/Valpatel/cad-agent/blob/dev/research/references/README.md">how</a>).</p>` : '')
+    + (cat ? `<p class="refs-caveat">Catalogued records are search snippets: their numbers are the authors' claims and their licences are as the map states them, unread. Cite one only after reading the source and promoting it (<a href="https://github.com/Valpatel/cad-agent/blob/dev/docs/research/references/README.md">how</a>).</p>` : '')
     + '</header>' + coverageCards(rows, L) + charts + table + feedback + '</div>';
 }
 
@@ -566,9 +566,9 @@ export function mdTags(md, file, m, { ORIGIN, absolute = false }) {
   })).join('');
 }
 
-// ----------------------------------------------------------------------------- docs/experts.md
+// ----------------------------------------------------------------------------- docs/practice/experts.md
 
-/** docs/experts.md: the people and organisations whose read sources cad-agent stands on (#118 item 3), grouped by
+/** docs/practice/experts.md: the people and organisations whose read sources cad-agent stands on (#118 item 3), grouped by
  * publisher, with what each contributed and the files that cite it. Catalogued records are counted, not listed:
  * nothing stands on them yet. */
 export function expertsMarkdown(m, { ORIGIN }) {
@@ -627,7 +627,7 @@ export function referenceSite(m, { ORIGIN, revision, built, feedbackBox, health 
 
 // ----------------------------------------------------------------------------- command line
 
-/** `node tools/site-references.mjs --experts [--check]`: write docs/experts.md from the working tree's registry. */
+/** `node tools/site-references.mjs --experts [--check]`: write docs/practice/experts.md from the working tree's registry. */
 if (import.meta.url === `file://${process.argv[1]}`) {
   const root = path.resolve(import.meta.dirname, '..');
   if (!process.argv.includes('--experts')) {

@@ -20,4 +20,6 @@ flowchart TD
 |---|---|
 | [publication.mjs](publication.mjs) | Dependency-free source selector and source→public-path mapping; missing mandatory moved sources fail instead of silently disappearing |
 
+| [page-sources.json](page-sources.json) | Data-only source aliases and roots; public identities stay stable while sources move |
+
 [Tools](../README.md) · [Site build](../build-site.mjs) · [Site tests](../../tests/site/README.md)

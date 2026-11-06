@@ -44,7 +44,7 @@ class Sheet:
 
 @dataclass(frozen=True)
 class Row:
-    source: str                           # id in research/references.yaml (#118)
+    source: str                           # id in docs/research/references.yaml (#118)
     edition_in_note: str                  # the edition the row says it uses
     direction: str                        # 'Z' or 'X-Y'
     sheets: Tuple[Sheet, ...]
@@ -266,13 +266,13 @@ def test_carbon_tube_is_labelled_typical():
 def test_sources_are_in_the_reference_registry():
     """Every material's source is a read entry of the registry (#118), and the registry lists fea.py as relying on it."""
     from cadagent.review.references import load
-    reg = load(ROOT / "research" / "references.yaml")
+    reg = load(ROOT / "docs" / "research" / "references.yaml")
     for key, m in MATERIALS.items():
         if not m.source:
             assert "typical" in m.note, f"{key}: no source, and the note does not say its values are typical"
             continue
         ref = reg.resolve(m.source)
-        assert ref.kind == "source", f"{key}: {m.source} is {ref.kind} in research/references.yaml, not a read source"
+        assert ref.kind == "source", f"{key}: {m.source} is {ref.kind} in docs/research/references.yaml, not a read source"
         assert "src/cadagent/simulation/fea.py" in ref["used_for"], m.source
     assert {r.source for r in PRINTED.values()} <= set(reg.entries)
 

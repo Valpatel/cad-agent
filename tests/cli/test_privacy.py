@@ -1,6 +1,6 @@
 """Usage reporting off (#278): cad-agent sends nothing, and every project step it runs gets reporting turned off.
 
-The opt-outs are ``OPT_OUTS`` in ``cadagent/cli.py``; docs/supply-chain.md ("Usage reporting") is the survey behind
+The opt-outs are ``OPT_OUTS`` in ``cadagent/cli.py``; docs/practice/supply-chain.md ("Usage reporting") is the survey behind
 them. A vendored tool that names a new telemetry, update-check or export switch fails here until the list covers it or
 ``NOT_SWITCHES`` says why it is not one to set.
 """
@@ -25,7 +25,7 @@ SUFFIXES = {".py", ".mjs", ".js", ".ts", ".tsx", ".md", ".rst", ".txt", ".exampl
 NOT_SWITCHES = {
     "CADGEN_TELEMETRY_NOTICE": "cadgen's record that it showed its notice once; not a switch",
     "KICAD_MCP_TELEMETRY_BUFFER_MAX_EVENTS": "the size of kicad-mcp-pro's local event buffer; no effect while telemetry is off",
-    "KICAD_MCP_OTEL_ENDPOINT": "kicad-mcp-pro exports only when an endpoint is set: leave it unset (docs/supply-chain.md)",
+    "KICAD_MCP_OTEL_ENDPOINT": "kicad-mcp-pro exports only when an endpoint is set: leave it unset (docs/practice/supply-chain.md)",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "the same, through OpenTelemetry's own variable: leave it unset for the MCP server",
 }
 # text-to-cad's maintainers' own PostHog credentials for their hosted service; nothing a user runs reads them.
@@ -89,9 +89,9 @@ def test_scripts_that_run_wrangler_keep_its_metrics_off():
 
 
 def test_the_survey_page_lists_every_opt_out():
-    page = (ROOT / "docs" / "supply-chain.md").read_text().split("## Usage reporting", 1)[1].split("\n## ", 1)[0]
+    page = (ROOT / "docs" / "practice" / "supply-chain.md").read_text().split("## Usage reporting", 1)[1].split("\n## ", 1)[0]
     for k, (v, _) in cli.OPT_OUTS.items():
-        assert f"{k}={v}" in page, f"docs/supply-chain.md's Usage reporting table names {k}={v}"
+        assert f"{k}={v}" in page, f"docs/practice/supply-chain.md's Usage reporting table names {k}={v}"
 
 
 def test_the_package_has_no_telemetry_client():

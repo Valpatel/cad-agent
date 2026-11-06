@@ -16,6 +16,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from tests.repo.test_markdown_images import image_refs, resolve
+
 from cadagent.mechanical.compliant import snapfit as sf
 from cadagent.mechanical.compliant.allowables import PRINTED
 from cadagent.publish.anim import snapfit as F
@@ -263,7 +265,7 @@ def test_the_loop_is_in_step_with_the_calculator(scene):
 def test_the_drawn_edge_stays_on_the_drawn_hook(scene):
     """The drawing turns the hook with the tip, which the closed form does not: the edge meets the lead where the
     calculator says at contact, moves in all the way up the drawn lead face, and reaches its top after 1.95 mm of
-    travel against the calculator's 2.25 mm, as docs/compliant.md says."""
+    travel against the calculator's 2.25 mm, as docs/mechanical/compliant.md says."""
     a, sh, c = scene["arm"], scene["shape"], scene["drawing"]["clearance_mm"]
     t = math.tan(math.radians(a["lead_deg"]))
     lead = scene["snaps"][0]["engagement"]["lead_travel_mm"]
@@ -272,14 +274,14 @@ def test_the_drawn_edge_stays_on_the_drawn_hook(scene):
     drawn = F.edge_x(a, sh, c, 0.0) - F.edge_x(a, sh, c, y_top)
     assert (round(drawn, 2), round(lead, 2)) == (1.95, 2.25)
     assert "tops the lead after 1.95 mm of travel, not 2.25 mm" in " ".join(
-        (ROOT / "docs" / "compliant.md").read_text(encoding="utf-8").split())
+        (ROOT / "docs" / "mechanical" / "compliant.md").read_text(encoding="utf-8").split())
     xs = [F.edge_x(a, sh, c, y_top * k / 8) for k in range(9)]
     assert all(b < x for x, b in zip(xs, xs[1:]))                       # the edge only moves in
 
 
 def test_the_hooks_turn_and_its_push_are_recorded_and_stated(scene):
     """The closed form keeps the lead at 30°; the drawn hook turns with the tip, atan(y * 1.5 / L) for a uniform arm.
-    The scene records the turn and the guide's push on the turned face, and docs/compliant.md states both: the
+    The scene records the turn and the guide's push on the turned face, and docs/mechanical/compliant.md states both: the
     closed form under-states the push near the top of the lead."""
     a, copa, petg_cf = scene["arm"], *scene["snaps"]
     tip = math.degrees(math.atan(a["undercut_mm"] * 1.5 / a["length_mm"]))
@@ -290,7 +292,7 @@ def test_the_hooks_turn_and_its_push_are_recorded_and_stated(scene):
     assert copa["turned_mating_force_n"] == pytest.approx(p * (mu + t) / (1 - mu * t))
     assert copa["turned_mating_force_n"] > copa["mating_force_n"]
     assert petg_cf["turned_mating_force_n"] is None                     # no friction, no push
-    page = " ".join((ROOT / "docs" / "compliant.md").read_text(encoding="utf-8").split())
+    page = " ".join((ROOT / "docs" / "mechanical" / "compliant.md").read_text(encoding="utf-8").split())
     assert f"rides a face turned {tip:.1f}°: at {a['lead_deg'] + tip:.1f}°, not {a['lead_deg']:g}°" in page
     assert (f"gives CoPA a push of {copa['turned_mating_force_n']:.1f} N, not {copa['mating_force_n']:.1f} N"
             in page)
@@ -349,10 +351,9 @@ def test_render_refuses_another_scene(scene, spec):
 
 # ---------------------------------------------------------------------------------------------- the pages
 
-PAGES = {ROOT / "docs" / "compliant.md": "img/compliant/snap-engagement.svg",
-         ROOT / "src" / "cadagent" / "mechanical" / "compliant" / "README.md":
-             "../../../../docs/img/compliant/snap-engagement.svg",
-         ROOT / "docs" / "animated-figures.md": "img/compliant/snap-engagement.svg"}
+PAGES = [ROOT / "docs" / "mechanical" / "compliant.md",
+         ROOT / "src" / "cadagent" / "mechanical" / "compliant" / "README.md",
+         ROOT / "docs" / "practice" / "animated-figures.md"]
 
 
 @pytest.mark.parametrize("page", list(PAGES), ids=lambda p: p.relative_to(ROOT).as_posix())
@@ -361,7 +362,7 @@ def test_the_pages_show_the_figure_and_say_what_it_is(page, scene):
     closed form on stated inputs, not a measurement, the data sheets it took the allowables from, and that a
     printed snap needs a test print. A re-record that changes the numbers fails here until the words change too."""
     text = page.read_text(encoding="utf-8")
-    src = PAGES[page]
+    src = next(src for src in image_refs(text) if resolve(page.relative_to(ROOT).as_posix(), src) == FIGURE.relative_to(ROOT).as_posix())
     at = text.index(f"]({src})")
     alt = text[text.rindex("![", 0, at):at]
     caption = " ".join(text[at:at + 900].split())

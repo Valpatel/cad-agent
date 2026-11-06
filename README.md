@@ -45,16 +45,16 @@ Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:
 
 cad-agent collects no telemetry. When your agent finds a gap or learns a lesson, it shows you a short report and sends
 it as a pull request or an issue only if you say yes. By hand, extras and uninstall:
-[Install](docs/agent-workflow.md#install).
+[Install](docs/practice/agent-workflow.md#install).
 
 ## Find your next step
 
 | I want to… | Open this |
 |---|---|
 | Make and check something | [Guides](docs/README.md): CAD, assemblies, mechanisms, PCBs, manufacturing and simulation |
-| Find a technique or source | [Research](research/README.md): surveys, rule cards, decisions and sources |
+| Find a technique or source | [Research](docs/research/README.md): surveys, rule cards, decisions and sources |
 | Give an agent a repeatable method | [Skills](skills/README.md): design, hardware, motion and review workflows |
-| Inspect the implementation and evidence | [Code](src/cadagent/README.md), [tests](tests/README.md) and [lessons](lessons/README.md) |
+| Inspect the implementation and evidence | [Code](src/cadagent/README.md), [tests](tests/README.md) and [lessons](docs/lessons/README.md) |
 
 Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start an agent from [llms.txt](https://cad-agent.valpatel.com/llms.txt). The [topic tree](docs/areas.yaml) gives each capability one discoverable home.
 
@@ -64,9 +64,9 @@ Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start 
 
 A real design exposes a gap. We search existing work, reproduce its examples, encode what survives in engineering code, and keep the failed case as a regression test. Sources keep their credit; short guides and skills tell the next agent when to apply the method.
 
-For example, [snap-fit calculations](docs/compliant.md) reproduce the Covestro/Bayer guide’s worked examples. Their material allowables cite data sheets; no printed coupon has been measured yet. CAD and simulation check a model’s assumptions. Physical fit and strength need physical tests.
+For example, [snap-fit calculations](docs/mechanical/compliant.md) reproduce the Covestro/Bayer guide’s worked examples. Their material allowables cite data sheets; no printed coupon has been measured yet. CAD and simulation check a model’s assumptions. Physical fit and strength need physical tests.
 
-[Existing checks and their limits](lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) · [Vision and planned model evaluations](docs/vision.md)
+[Existing checks and their limits](docs/lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) · [Vision and planned model evaluations](docs/vision.md)
 
 ## What works today
 
@@ -79,10 +79,10 @@ The [toolkit reference](docs/toolkit.md) names every command, dependency and lim
 
 ## Extras
 
-The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Python 3.11+. [Choose optional dependencies and manual installation](docs/agent-workflow.md#extras); platform limits are stated in the [FEA guide](docs/toolkit.md).
+The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Python 3.11+. [Choose optional dependencies and manual installation](docs/practice/agent-workflow.md#extras); platform limits are stated in the [FEA guide](docs/toolkit.md).
 
 ## Contribute
 
-Send a minimal reproducer, a source or a better technique. Changes get tests and an independent review before release. [Contributing](.github/CONTRIBUTING.md) explains the process; the [dated recovery audit](lessons/process/2026-11-05-recovery-audit.md) records paused work and what remains.
+Send a minimal reproducer, a source or a better technique. Changes get tests and an independent review before release. [Contributing](.github/CONTRIBUTING.md) explains the process; the [dated recovery audit](docs/lessons/process/2026-11-05-recovery-audit.md) records paused work and what remains.
 
 MIT. [Licence](LICENSE) · [Credits and third-party notices](vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)

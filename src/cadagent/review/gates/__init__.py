@@ -1,6 +1,6 @@
 """Integrity gates: assembly-level checks computed from the model, each written as a verdict file.
 
-The machinery here is shared by every gate (the plan, ``docs/design-process-plan.md`` §4):
+The machinery here is shared by every gate (the plan, ``docs/practice/design-process-plan.md`` §4):
 
 * ``Assembly``: named parts in assembly coordinates, with body and group labels;
 * ``relation_table(assembly)``: the pairwise relation table (apart / touching / overlapping /
@@ -17,7 +17,7 @@ its tool's reach at the step that installs it);
 ``cadagent.review.gates.assembly`` (every part in one assembly step, going in along its direction past the parts already
 fitted, and each screw's tool reaching it at that step).
 The gates check the CAD model against declared intent; none of them proves that printed parts fit, move or hold.
-The API reference is ``docs/gates.md``. CadQuery/OCP is imported only when a query runs.
+The API reference is ``docs/practice/gates.md``. CadQuery/OCP is imported only when a query runs.
 """
 
 from cadagent.review.evidence import shape_content_hash

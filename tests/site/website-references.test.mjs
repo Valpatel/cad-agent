@@ -3,7 +3,7 @@
 // - the built pages, JSON, llms.txt and Markdown twins against the committed records;
 // - [ref:<id>] links;
 // - that no record becomes a catalogue entry or reaches llms-full.txt;
-// - docs/experts.md is the generator's output.
+// - docs/practice/experts.md is the generator's output.
 // The pages in a real browser (filters, both themes, walls of text): tests/site/website-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -63,7 +63,7 @@ test('a shard record read at source is a source, and aliases of every entry reso
 
 test('the loader refuses an extension of nothing and a second record with one id', async () => {
   await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: b-later, extends: true}\n' }), /extends no read source/);
-  await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: a-guide, title: Again}\n' }), /also in research\/references\.yaml/);
+  await assert.rejects(fake({ [CORE]: core, [`${DIR}g.yaml`]: 'sources:\n  - {id: a-guide, title: Again}\n' }), /also in docs\/research\/references\.yaml/);
   const r = await fake({ [CORE]: core, [`${DIR}vocab.yaml`]: 'kind: {}\n', [`${DIR}coverage.yaml`]: 'rows: []\n', [`${DIR}sub/x.yaml`]: 'sources: [{id: z}]\n' });
   assert.deepEqual(r.shards, [], 'vocab, coverage and files in subfolders are not shards');
 });
@@ -96,7 +96,7 @@ test('index.json counts every committed record once, and each area file lists ex
   // Counted from the YAML here, not through the module under test.
   // A shard record read at source (#323's sweeps) is a source; one still snippet-only is catalogued.
   const own = [], ownRead = [];
-  for (const f of tracked.filter(f => /^research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
+  for (const f of tracked.filter(f => /^docs\/research\/references\/[^/]+\.yaml$/.test(f) && !NOT_SHARDS.has(path.basename(f))))
     for (const r of YAML.parse(await show(f)).sources) {
       if (r.extends) continue;
       own.push(r.id);
@@ -209,8 +209,8 @@ test('records are not catalogue entries, and llms.txt has one line per area and 
   for (const slug of model.pages) assert.ok(sitemap.includes(`<loc>${ORIGIN}/references/${slug}</loc>`), slug);
 });
 
-test('docs/experts.md is what the generator writes from the committed registry', async () => {
-  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site-references.mjs --experts and commit docs/experts.md');
+test('docs/practice/experts.md is what the generator writes from the committed registry', async () => {
+  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site-references.mjs --experts and commit docs/practice/experts.md');
   const md = expertsMarkdown(model, { ORIGIN });
   const sources = [...refs.records.values()].filter(r => r.status === 'source');
   assert.ok(md.includes(`${sources.length} read sources`));

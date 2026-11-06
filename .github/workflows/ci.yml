@@ -60,12 +60,15 @@ jobs:
       # importorskip would turn a broken heavy install into silent skips: import them all first, loudly
       - run: python -c "import cadquery, OCP, trimesh, vtk, matplotlib, PIL, gmsh, skfem, mujoco, markdown, pymoto, pyvista, imageio, manifold3d, rtree, optuna; print('extras import ok')"
       - run: python -m pytest -q -rs
+      - name: Verify the installed wheel starter outside the checkout
+        timeout-minutes: 6
+        run: python tests/cli/test_init.py --wheel-smoke
       # the optimiser's adapter for optuna below 5 (constraints_func instead of Trial.set_constraint)
       - run: pip install "optuna==3.4.0" && python -m pytest -q tests/simulation/explore/test_explore_optimise.py
       # markdown at its floor (#151), for the release notes and site pages it renders
       - run: pip install "markdown==3.8.1" && python -m pytest -q tests/publish/test_release.py tests/publish/test_site.py tests/simulation/explore/test_explore_compare.py tests/publish/test_reproducible_outputs.py
 
-  # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/supply-chain.md): offline checks only,
+  # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/practice/supply-chain.md): offline checks only,
   # so the network can never make it flaky (the weekly supply-chain.yml runs the online ones). Not a required check, and
   # it never blocks a release:
   # - every event: no high or critical finding anywhere in the checkout;
@@ -73,7 +76,7 @@ jobs:
   #   on a PR a report row in the description for each added dependency, vendored file or catalogue entry;
   # - into main (a dev -> main release PR, the push after it): the whole-checkout check only. Every item there came
   #   through a PR into dev that this job judged; "added since main" would be everything since the last release.
-  # It runs the PR's own copy of the tool and of research/security-accepted.yaml, so it is an honesty check, not a
+  # It runs the PR's own copy of the tool and of docs/research/security-accepted.yaml, so it is an honesty check, not a
   # security boundary: a reviewer reads changes to those files (the skill says so).
   supply-chain:
     runs-on: ubuntu-24.04

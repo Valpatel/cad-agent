@@ -1,4 +1,4 @@
-"""The dossier lint and status machine (plan ``docs/design-process-plan.md`` §3.2, §4.8, §5.3; ``docs/dossier.md``).
+"""The dossier lint and status machine (plan ``docs/practice/design-process-plan.md`` §3.2, §4.8, §5.3; ``docs/practice/dossier.md``).
 
 The lint is not geometric and needs no CAD kernel: it reads the loaded YAML dossier, the geometry record the build
 wrote (``exports/dossier-geometry.json``), the gate verdicts (``exports/gates/*.json``), the project's configured
@@ -39,7 +39,7 @@ ADDITIVE = ("fdm", "fff", "sla", "sls", "mjf", "dlp", "polyjet", "additive", "3d
 _ADDITIVE_RE = re.compile(r"\b(?:fdm|fff|sla|sls|mjf|dlp|polyjet|additive)\b|\b3d[ -]?print", re.I)
 
 # code -> (severity, what the rule checks). Loader codes (unknown-id, bad-interface, ...) and the registry join's
-# codes (card-without-shape, ...; docs/dossier.md "Joining cards and geometry") are reported under their own codes.
+# codes (card-without-shape, ...; docs/practice/dossier.md "Joining cards and geometry") are reported under their own codes.
 RULES: Dict[str, Tuple[str, str]] = {
     # part cards (plan §3.2, the minimum card)
     "card-no-function": ("error", "a part card states its function"),

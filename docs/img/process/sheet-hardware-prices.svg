@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 738" width="720" height="738" role="img" aria-label="Clinch parts and rivets: price of one piece" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
 <rect width="720" height="738" rx="14" fill="#fffdf5" stroke="#d8e0d3"/>
 <text x="18" y="30" font-size="15" font-weight="700" fill="#173d3c">Clinch parts and rivets: price of one piece</text>
-<text x="18" y="50" font-size="12" fill="#526863">cadagent.mechanical.sheet_hardware on research/sheet-hardware.yaml; log scale, US dollars</text>
+<text x="18" y="50" font-size="12" fill="#526863">cadagent.mechanical.sheet_hardware on docs/research/sheet-hardware.yaml; log scale, US dollars</text>
 <line x1="200.0" y1="78" x2="200.0" y2="666" stroke="#d8e0d3"/>
 <text x="200.0" y="681" font-size="11" fill="#526863" text-anchor="middle">0.03</text>
 <line x1="326.0" y1="78" x2="326.0" y2="666" stroke="#d8e0d3"/>

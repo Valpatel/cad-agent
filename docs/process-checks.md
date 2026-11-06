@@ -2,7 +2,7 @@
 
 A part is made by a process, and the process sets its limits: how thin a printed wall can be, how far a bridge can
 span, how short a bent flange can be. Those limits used to live as numbers typed into each tool. Now they are read
-from one cited file, [research/process-profiles.yaml](../research/process-profiles.yaml): 377 rules from bureaus,
+from one cited file, [docs/research/process-profiles.yaml](research/process-profiles.yaml): 377 rules from bureaus,
 makers and textbooks for FDM, SLA, SLS, MJF, moulding, sheet metal and CNC, each with its source. Three modules read
 it. **A rule from a design guide says a part is likely to be made well. It does not prove that it fits or holds.**
 
@@ -58,7 +58,7 @@ it to the across-layer allowables (`cadagent.mechanical.compliant.allowables`).
 The FDM materials come from the data sheets that `allowables` already holds, so the numbers live in one place:
 PETG, PLA, ASA, CoPA, PETG-CF and PA6-CF, in 13 entries. Their source ids, such as `bambu-petg-basic-tds`, are the
 reference registry's (#118): `python -m cadagent.review.references bambu-petg-basic-tds` prints the sheet's
-citation. A copy of the data file with no `research/references.yaml` beside it still loads, and each factor then cites
+citation. A copy of the data file with no `docs/research/references.yaml` beside it still loads, and each factor then cites
 its sheet's own link.
 
 ## The calculator: sheet-metal bends
@@ -101,7 +101,7 @@ a bend takes off the sum of the legs measured to the outside. The tests check th
 
 This calculator gives a bend's numbers; it does not unfold a model. Unfolding a 3D part into its flat pattern is the
 job of build123d's `BuildSheet` and `unfold` (to adopt once released) or FreeCAD's SheetMetal workbench, which take
-the same K-factor and radius ([the survey](../research/fea-and-process-tools.md#4-sheet-metal-unfold-and-bend-tables)).
+the same K-factor and radius ([the survey](research/fea-and-process-tools.md#4-sheet-metal-unfold-and-bend-tables)).
 
 <details>
 <summary>Feature kinds the check knows, and the limits it states</summary>
@@ -130,5 +130,5 @@ Limits, stated in every report:
 
 ## Related
 
-[Process profiles: the sources](../research/process-profiles.md) · [Printed joints and fit coupons](printed-joints.md) ·
-[FDM anisotropy data](../research/compliant-mechanisms.md) · [Manufacturing package](../src/cadagent/manufacturing/README.md)
+[Process profiles: the sources](research/manufacturing/process-profiles.md) · [Printed joints and fit coupons](mechanical/printed-joints.md) ·
+[FDM anisotropy data](research/compliant-mechanisms.md) · [Manufacturing package](../src/cadagent/manufacturing/README.md)

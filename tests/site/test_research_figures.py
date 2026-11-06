@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.repo.test_markdown_images import image_refs, resolve
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -12,12 +14,21 @@ def test_committed_charts_match_their_tables():
     assert r.returncode == 0, r.stdout + r.stderr
 
 
+def _image_source(page, figure):
+    text = page.read_text()
+    sources = [src for src in image_refs(text) if resolve(page.relative_to(ROOT).as_posix(), src) == f"docs/img/research/{figure}"]
+    assert len(sources) == 1, (page, figure, sources)
+    return sources[0]
+
+
 def test_charts_are_embedded_where_their_tables_are():
-    assert "docs/img/research/fdm-anisotropy.svg" in (ROOT / "research" / "compliant-mechanisms.md").read_text()
-    assert "docs/img/research/landscape-stars.svg" in (ROOT / "research" / "landscape.md").read_text()
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
-    assert md.index("## 3. Allowable") < md.index("docs/img/research/moulded-strain.svg") < md.index("**Bayer Table 2**")
-    assert md.index("## 6. Printed") < md.index("docs/img/research/printed-strain.svg") < md.index("| Material (TDS) |")
+    compliant = ROOT / "docs" / "research" / "compliant-mechanisms.md"
+    landscape = ROOT / "docs" / "research" / "agent-workflow" / "landscape.md"
+    _image_source(compliant, "fdm-anisotropy.svg")
+    _image_source(landscape, "landscape-stars.svg")
+    md = compliant.read_text()
+    assert md.index("## 3. Allowable") < md.index(_image_source(compliant, "moulded-strain.svg")) < md.index("**Bayer Table 2**")
+    assert md.index("## 6. Printed") < md.index(_image_source(compliant, "printed-strain.svg")) < md.index("| Material (TDS) |")
 
 
 def test_every_row_with_ratios_is_drawn():
@@ -30,7 +41,7 @@ def test_every_row_with_ratios_is_drawn():
     assert "≥" not in svg                                    # TPU's two lower bounds give no ratio, not a bound
     assert svg.count(">not known</text>") == 1               # TPU's strain
     assert "PolyFlex TPU95" not in svg                       # no Z data: not drawn
-    md = (ROOT / "research" / "compliant-mechanisms.md").read_text()
+    md = (ROOT / "docs" / "research" / "compliant-mechanisms.md").read_text()
     section = md[md.index("## 5. FDM anisotropy"):]
     lines = section.splitlines()
     first = next(i for i, line in enumerate(lines) if line.startswith("|"))
@@ -84,8 +95,8 @@ def test_strain_charts_draw_every_row_and_ranges_as_ranges():
 
 
 def test_thermal_chart_draws_the_table_against_the_modules_limit():
-    md = (ROOT / "research" / "simulation-tools.md").read_text()
-    assert md.index("## 6. Thermal") < md.index("docs/img/research/thermal-limits.svg") < md.index("**Jetson AGX Orin")
+    md = (ROOT / "docs" / "research" / "simulation-tools.md").read_text()
+    assert md.index("## 6. Thermal") < md.index(_image_source(ROOT / "docs" / "research" / "simulation-tools.md", "thermal-limits.svg")) < md.index("**Jetson AGX Orin")
     svg = (ROOT / "docs" / "img" / "research" / "thermal-limits.svg").read_text()
     assert svg.count('text-anchor="end">PLA Basic<') == svg.count('text-anchor="end">PETG HF<') == 1
     assert ">TTP max 80 °C</text>" in svg and 'stroke-dasharray="5 4"' in svg     # the limit, read from the page

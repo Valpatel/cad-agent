@@ -12,7 +12,7 @@
  * - docs/img/kit/file-viewer-step.webp: kit/file-viewer.html on one of Gyropup's STEP files (MIT; read from the
  *   checkout's git at the revision docs/img/gyropup/SOURCE.json records, never its working tree);
  * - docs/img/kit/file-viewer-front.webp: the same viewer after viewer.fit('front');
- * - docs/img/kit/file-viewer-theme.webp: the same viewer after setTheme() with the palette docs/file-viewer.md shows;
+ * - docs/img/kit/file-viewer-theme.webp: the same viewer after setTheme() with the palette docs/practice/file-viewer.md shows;
  * - docs/img/kit/file-viewer-error.webp: the viewer on a STEP file cut off halfway, as the validation's bad files are.
  *
  * Captured in Chrome (WebGL in software when there is no GPU) at the docs column's width and twice its density, so the

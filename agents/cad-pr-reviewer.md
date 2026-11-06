@@ -49,7 +49,7 @@ flowchart TD
 ```
 
 6. For any change to part geometry, walk cad-agent's common-issues index
-   ([docs/common-issues.md](https://github.com/Valpatel/cad-agent/blob/dev/docs/common-issues.md)), every row:
+   ([docs/practice/common-issues.md](https://github.com/Valpatel/cad-agent/blob/dev/docs/practice/common-issues.md)), every row:
    - Every automatic check row must be in the committed report (`exports/cad-agent-results.json`) and pass, bound to
      the current files. If "Holes clear" is missing or stale, run it without touching the checkout:
      `cad-agent holes --out /tmp/<scratch>/holes.json` (about 10 s for a large part). A missing, stale or failing row

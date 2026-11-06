@@ -1,4 +1,4 @@
-"""The section review packet (plan T10, docs/review-packet.md).
+"""The section review packet (plan T10, docs/practice/review-packet.md).
 
 The first part needs no CAD kernel: ``plan_packet`` works from a hand-written geometry record, YAML dossier and
 verdicts, and ``cad-agent review-packet --list`` plans without rendering. The end of the file renders the gate

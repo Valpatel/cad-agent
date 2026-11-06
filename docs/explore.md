@@ -12,11 +12,11 @@ cad-agent compare --swaps --open  # evaluate and rank the designs; try every one
 cad-agent optimise --trials 200   # search parts and parameters for better trade-offs
 ```
 
-Worked example: [`examples/explore-two-wheel`](../examples/explore-two-wheel/) compares small two-wheel-legged robot
+Worked example: [`docs/examples/explore-two-wheel`](examples/explore-two-wheel/) compares small two-wheel-legged robot
 configurations. The tests use a second, non-robot project: an electronics enclosure choosing a fan, a power supply and
 screws sold in packs (`tests/simulation/explore/explore_fixtures.py`).
 
-![The comparison page of examples/explore-two-wheel: four two-wheel-legged robot designs plotted by cost and mass, two on the Pareto front, one infeasible, with the leaderboard below](img/explore/two-wheel-compare.png)
+![The comparison page of docs/examples/explore-two-wheel: four two-wheel-legged robot designs plotted by cost and mass, two on the Pareto front, one infeasible, with the leaderboard below](img/explore/two-wheel-compare.png)
 
 *The page `cad-agent compare` wrote for the worked example (2026-10-26). Light and Standard are on the Pareto front;
 Long range fails a requirement. Every number comes from the catalogue's cited specs and the project's evaluator:
@@ -175,7 +175,7 @@ flowchart TD
 ```
 
 *How `extends` (below) resolves the worked example's Long range design: the two files in
-`examples/explore-two-wheel/designs/`, and the design and bill of materials `cad-agent compare` makes of them.*
+`docs/examples/explore-two-wheel/designs/`, and the design and bill of materials `cad-agent compare` makes of them.*
 
 ```json
 {
@@ -349,7 +349,7 @@ Exit code 0 when the run finished with at least one feasible trial, 1 otherwise.
 
 ![The worked example's 60 seeded random trials plotted by cost and mass as they arrive: 4 are feasible, and trials 1 and 47 form the Pareto front over cost, mass and runtime](img/motion/search-front.svg)
 
-*`cad-agent optimise` on `examples/explore-two-wheel`: the trials arrive, a repeated combination is not evaluated again, and the front over cost, mass and runtime is redrawn as trials join it. An illustration drawn from the example's own seeded run; its parts and prices are made up.*
+*`cad-agent optimise` on `docs/examples/explore-two-wheel`: the trials arrive, a repeated combination is not evaluated again, and the front over cost, mass and runtime is redrawn as trials join it. An illustration drawn from the example's own seeded run; its parts and prices are made up.*
 
 ### Confirm the leaders
 

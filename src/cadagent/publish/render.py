@@ -11,7 +11,7 @@ Usage::
              clip=((0, 60, 0), (0, 1, 0)))
 
 ``review_packet(section, root=...)`` renders a dossier section's review packet (``cadagent.review.packet``,
-``docs/review-packet.md``).
+``docs/practice/review-packet.md``).
 
 Colors are ``(r, g, b)`` or ``(r, g, b, opacity)`` floats in 0..1. Views are
 directions from the scene centre; the camera is parallel-projection and fitted
@@ -301,7 +301,7 @@ def review_packet(section: str, **kwargs: Any) -> Dict[str, Any]:
     and fastener axes, exploded along its assembly steps, access along its screws, its joints' range ends and its
     gate findings at their witness points, captioned with the section and content hashes, with
     ``exports/review/<section>/manifest.json`` (``cad-agent.review-packet/1``). Keyword arguments and the manifest
-    schema: ``cadagent.review.packet.review_packet`` and ``docs/review-packet.md``."""
+    schema: ``cadagent.review.packet.review_packet`` and ``docs/practice/review-packet.md``."""
     from cadagent.review.packet import review_packet as _review_packet
     return _review_packet(section, **kwargs)
 

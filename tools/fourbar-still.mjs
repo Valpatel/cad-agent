@@ -12,7 +12,7 @@ import path from 'node:path';
 import { readState, compute, drawFourbar, summary, className } from '../src/cadagent/webkit/fourbar.js';
 
 const root = path.resolve(import.meta.dirname, '..');
-export const PAGES = ['docs/formulas.md', 'docs/linkages.md'];
+export const PAGES = ['docs/formulas.md', 'docs/mechanical/linkages.md'];
 export const STILL = 'docs/img/formulas/fourbar-animator.svg';
 
 /** The element on a page (a line that starts with it, not a mention in the text): its attributes, as the browser

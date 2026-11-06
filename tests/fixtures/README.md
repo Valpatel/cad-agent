@@ -19,6 +19,7 @@ flowchart TD
 
 | File or folder | What it is |
 |---|---|
+| `site-page-identities.json` | Public page IDs, kinds and URLs from the actual fleet 171 build at `e4556ea0`; a compatibility baseline for physical source moves, not generated from the new mapping |
 | `bambu_templates/` | A reduced Bambu Studio P1S profile graph, for `manufacturing/test_slicer.py` ([README](bambu_templates/README.md)) |
 | `cards/` | Golden `cad-agent rules` and `choose` output for `manufacturing/test_cards.py`; rewrite with `CADAGENT_UPDATE_GOLDEN=1` and read the diff |
 | `cfd_runs/` | Recorded-format CFD runs, synthetic numbers in OpenFOAM's layout; rebuild with `python tests/fixtures/cfd_runs/build.py` |

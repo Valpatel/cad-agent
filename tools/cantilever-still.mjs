@@ -3,7 +3,7 @@
  *   node tools/cantilever-still.mjs            # write docs/img/compliant/cantilever-explorer.svg
  *   node tools/cantilever-still.mjs --check    # exit 1 if the committed still or its alt text is out of date
  *
- * The state is read from the <cad-cantilever> attributes in docs/compliant.md, so the page, the still and the live
+ * The state is read from the <cad-cantilever> attributes in docs/mechanical/compliant.md, so the page, the still and the live
  * demo always start from the same arm; the alt text must quote the computed root strain.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -11,7 +11,7 @@ import path from 'node:path';
 import { readState, compute, drawCantilever, summary } from '../src/cadagent/webkit/cantilever.js';
 
 const root = path.resolve(import.meta.dirname, '..');
-const PAGE = 'docs/compliant.md', STILL = 'docs/img/compliant/cantilever-explorer.svg';
+const PAGE = 'docs/mechanical/compliant.md', STILL = 'docs/img/compliant/cantilever-explorer.svg';
 
 export function still(md = readFileSync(path.join(root, PAGE), 'utf8')) {
   const tag = md.match(/<cad-cantilever\b([^>]*)>([\s\S]*?)<\/cad-cantilever>/);

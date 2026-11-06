@@ -31,6 +31,18 @@ const BUCKETS = ['cross-cutting', 'unplaced'];
 const show = f => execFileSync('git', ['show', `HEAD:${f}`], { cwd: root }).toString();
 const OUTSIDE = ['project', 'library', 'benchmark'];
 
+test('every previously published page retains its public identity after source consolidation', async () => {
+  const baseline = JSON.parse(await readFile(path.join(root, 'tests/fixtures/site-page-identities.json'), 'utf8'));
+  assert.ok(baseline.pages.some(p => p.id === 'guide-index') && baseline.pages.some(p => p.id === 'research-index')
+    && baseline.pages.some(p => p.id === 'lesson-index'), 'the recorded identity fixture covers all knowledge kinds');
+  assert.equal(new Set(baseline.pages.map(p => p.id)).size, baseline.pages.length);
+  for (const expected of baseline.pages) {
+    const actual = catalog.items.find(i => i.id === expected.id);
+    assert.ok(actual, `${expected.id} disappeared`);
+    for (const key of ['kind', 'url', 'markdown']) assert.equal(actual[key], expected[key], `${expected.id}: ${key}`);
+  }
+});
+
 test('schema 2 keeps every schema-1 field, with the same meaning', () => {
   assert.equal(catalog.schema, 'cad-agent-catalog/2');
   for (const k of ['origin', 'repo', 'revision', 'built', 'tagline', 'description']) assert.ok(catalog[k], `top-level ${k}`);
@@ -67,7 +79,7 @@ test('schema 2 lost gyropup in v0.10.0 but kept its schema value: fields.removed
 
 test('schema-1 fields keep their schema-1 values: summary, licence (null stays null), tool urls', () => {
   // Schema 1's builder, as it was (tools/build-site.mjs before catalogue v2), run over today's data.
-  const landscape = JSON.parse(show('research/landscape.json'));
+  const landscape = JSON.parse(show('docs/research/landscape.json'));
   const upstreams = YAML.parse(show('vendor/upstreams/registry.yaml'));
   const notes = new Map(landscape.projects.map(p => [p.name, p.notes || '']));
   const want = [
@@ -114,7 +126,7 @@ test('schema-1 fields keep their schema-1 values: summary, licence (null stays n
 });
 
 test("an outside entry's licence note reaches its card, benchmarks included", () => {
-  const landscape = JSON.parse(show('research/landscape.json'));
+  const landscape = JSON.parse(show('docs/research/landscape.json'));
   const noted = [...landscape.projects.map(p => ['upstream', p]), ...landscape.libraries.map(l => ['library', l]),
     ...landscape.benchmarks.map(b => ['benchmark', b])].filter(([, e]) => e.license_note);
   assert.ok(noted.some(([type]) => type === 'benchmark'), 'a benchmark with a licence note to check');

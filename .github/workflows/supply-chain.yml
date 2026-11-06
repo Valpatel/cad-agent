@@ -1,5 +1,5 @@
 name: Supply-chain report
-# Weekly online run of tools/resource_audit.py (#117; skills/cad-supply-chain/SKILL.md, docs/supply-chain.md). It reads
+# Weekly online run of tools/resource_audit.py (#117; skills/cad-supply-chain/SKILL.md, docs/practice/supply-chain.md). It reads
 # OSV.dev, npm audit, PyPI, the npm registry and its tarballs, deps.dev, the GitHub API and the OpenSSF Scorecard API,
 # then opens, updates or closes ONE issue ("Supply-chain report: open findings") when the findings change. It never
 # pushes, never opens a PR and never merges. Fixes go through normal PRs.
@@ -14,7 +14,7 @@ name: Supply-chain report
 # run leaves --repo out; the owner checks those with their own login (the skill says how). Network answers vary, so
 # this workflow never gates anything; CI's supply-chain job runs the offline checks instead.
 #
-# Reference health (#323 phase 4; research/references/README.md): three more jobs on the same schedule.
+# Reference health (#323 phase 4; docs/research/references/README.md): three more jobs on the same schedule.
 # - references (contents: read, actions: read) checks the registry's links on dev with `tools/resource_audit.py
 #   references` (one request a second per host, at most 400 records a run, the longest unchecked first), starting from
 #   the last run's state (its artifact); lychee checks every link in the published Markdown. It uploads the state and
@@ -120,8 +120,10 @@ jobs:
             --no-progress --max-concurrency 8 --host-concurrency 1 --host-request-interval 1s --timeout 30
             --max-retries 1 --include-fragments --exclude-all-private
             --exclude '^https?://([a-z0-9-]+\.)*example\.(com|org|net)'
-            --exclude-path research/security-report.md
-            'README.md' '.github/CONTRIBUTING.md' 'vendor/THIRD_PARTY_NOTICES.md' 'docs/*.md' 'research/*.md' 'lessons/**/*.md'
+            --exclude-path docs/research/security-report.md
+            --exclude-path docs/research/references/README.md --exclude-path docs/research/bench/README.md
+            --exclude-path docs/examples/starter-box/README.md --exclude-path docs/examples/explore-two-wheel/README.md
+            'README.md' '.github/CONTRIBUTING.md' 'vendor/THIRD_PARTY_NOTICES.md' 'docs/**/*.md'
             'skills/*/SKILL.md' 'agents/*.md'
           format: json
           output: build/lychee.json
@@ -142,7 +144,7 @@ jobs:
           python3 tools/references_health_apply.py --health build/references-health.json --write \
             --body build/references-health-pr.md
           PYTHONPATH=src python3 -m cadagent.review.references --check > /dev/null
-          git diff -- research/references > build/references-health.patch
+          git diff -- docs/research/references > build/references-health.patch
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # v7.0.2
         with:
           name: references-health
@@ -199,10 +201,10 @@ jobs:
             if [ -n "$(git apply --summary "$patch")" ]; then
               echo "::error::the patch renames, creates, deletes or changes the mode of a file"; exit 1
             fi
-            bad=$(git apply --numstat "$patch" | cut -f3 | grep -Ev '^research/references/[a-z0-9-]+\.yaml$' || true)
+            bad=$(git apply --numstat "$patch" | cut -f3 | grep -Ev '^docs/research/references/[a-z0-9-]+\.yaml$' || true)
             if [ -n "$bad" ]; then echo "::error::the patch touches files outside the shards: $bad"; exit 1; fi
             git apply "$patch"
-            bad=$(git status --porcelain --untracked-files=all | grep -Ev '^ M research/references/[a-z0-9-]+\.yaml$' || true)
+            bad=$(git status --porcelain --untracked-files=all | grep -Ev '^ M docs/research/references/[a-z0-9-]+\.yaml$' || true)
             if [ -n "$bad" ]; then echo "::error::after the patch, more than shard edits: $bad"; exit 1; fi
             # end guard
             day=$(date -u +%F)

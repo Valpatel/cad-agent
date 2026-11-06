@@ -24,4 +24,4 @@ From the repository root: `python tools/mining/extract_session.py session.jsonl 
 
 Raw transcripts stay outside git. Both legacy `mining/raw/`, `mining/out/private/` and their new `tools/mining/` equivalents remain ignored so an old checkout cannot accidentally expose existing private files. Scrubbing recognises only its declared patterns; inspect the output before sharing it. Confirm a lesson against project evidence before treating it as fact.
 
-[Tools](../README.md) · [Repository](../../README.md) · [Lesson format](../../lessons/README.md#lesson-format)
+[Tools](../README.md) · [Repository](../../README.md) · [Lesson format](../../docs/lessons/README.md#lesson-format)

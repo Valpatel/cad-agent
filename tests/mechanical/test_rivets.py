@@ -28,7 +28,7 @@ def test_the_rivets_are_the_catalogues_numbers():
 
 
 def test_worked_example_two_1_6_mm_5052_sheets():
-    # research/sheet-metal-joining.md section 8: hole 0.1285 in, 2D edge, 3D pitch, MIL-HDBK-5J 5052-H32 (Ftu 31 ksi,
+    # docs/research/manufacturing/sheet-metal-joining.md section 8: hole 0.1285 in, 2D edge, 3D pitch, MIL-HDBK-5J 5052-H32 (Ftu 31 ksi,
     # Fbru 50 / 65 ksi at e/D 1.5 / 2.0): rivet 155 lbf, tearing 481 lbf, solid 732 lbf, efficiency 0.21. e/D is on the
     # hole: 0.25 / 0.130 = 1.923, so Fbru = 50 + 15 x 0.423 / 0.5 = 62.69 ksi (MIL-HDBK-5J 1.4.7.1: linear between).
     s = R.check_joint("pop-AD43", [("5052-h32", T063), ("5052-h32", T063)], edge_mm=6.35, pitch_mm=9.525,

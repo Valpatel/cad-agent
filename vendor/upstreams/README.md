@@ -17,4 +17,4 @@ flowchart LR
 |---|---|
 | [registry.yaml](registry.yaml) | Source data for tracked projects; keep assessments and evidence limits explicit |
 
-[Vendor map](../README.md) · [Weekly update procedure](../../docs/weekly-upstream-update.md) · [Research entry](../../research/README.md)
+[Vendor map](../README.md) · [Weekly update procedure](../../docs/practice/weekly-upstream-update.md) · [Research entry](../../docs/research/README.md)

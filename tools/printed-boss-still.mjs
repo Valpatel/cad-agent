@@ -12,7 +12,7 @@ import path from 'node:path';
 import { readState, compute, drawPrintedBoss, summary, nm, newtons } from '../src/cadagent/webkit/printed-boss.js';
 
 const root = path.resolve(import.meta.dirname, '..');
-export const PAGES = ['docs/screw-bosses.md'];
+export const PAGES = ['docs/mechanical/screw-bosses.md'];
 export const STILL = 'docs/img/fasteners/screw-boss-explorer.svg';
 
 /** The element on a page (a line that starts with it, not a mention in the text): its attributes, as the browser

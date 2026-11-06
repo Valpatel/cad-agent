@@ -6,7 +6,7 @@ and boss to print for them, how each load direction is carried, and one check of
                 recess_mm=0.0, torque_nm=0.4, pull_n=150)
     # verdict pass / warn / fail, each check's value and limit, the capacities with their bands, the limits
 
-``cad-agent inserts joints.yaml`` runs the same check on a file of joints (docs/inserts.md).
+``cad-agent inserts joints.yaml`` runs the same check on a file of joints (docs/mechanical/inserts.md).
 
 **What is data and what is model.** The inserts' dimensions are the makers' (each row names its page and the date it
 was read). Their strengths are a shear model (:func:`cadagent.formulas.insert_shear_force`) calibrated to the
@@ -316,7 +316,7 @@ BOSS_FLOOR = 1.5                     # x the knurl diameter: SPIROL's least boss
 BOSS_FULL = 2.0                      # x the knurl diameter: full performance (spirol-3dp p. 2; pem-si SI-25)
 PROUD_OK_MM = 0.13                   # proud by up to this still counts as flush (pem-si SI-25; spirol-inserts p. 5)
 CAD_ALLOWANCE_MM = (0.2, 0.3)        # added to the maker's hole in CAD for a printed hole (cnck-2026); the same row
-#                                      as fit_coupons' insert sweep, research/process-profiles.yaml
+#                                      as fit_coupons' insert sweep, docs/research/process-profiles.yaml
 #                                      fdm-insert-hole-cad-offset-cnckitchen: hole_design takes the low end, 4.2 mm for
 #                                      CNC Kitchen's 4.0 mm M3 hole, its sweet spot (about 90 % of the highest
 #                                      pull-out, pre-seating with slight resistance); the coupon centres there
@@ -339,7 +339,7 @@ def _knurl(ins: Insert) -> Tuple[float, str]:
 
 
 # ----------------------------------------------------------------------------- the printed hole, by filament and nozzle
-# (#323 phase 7). Each number is a rule of research/process-profiles.yaml, read when first needed (so the module imports
+# (#323 phase 7). Each number is a rule of docs/research/process-profiles.yaml, read when first needed (so the module imports
 # without the checkout's data), or a formula of cadagent.formulas. Where sources disagree the range is kept and one
 # governs: a coupon printed on your printer, in your filament, governs every default below.
 
@@ -352,7 +352,7 @@ NOZZLE_LINE_MM = 0.42                 # boss_design's default line width, the fl
 
 @lru_cache(maxsize=None)
 def _rule(rule_id: str) -> Any:
-    """An FDM profile rule (``research/process-profiles.yaml``), read by id where it applies, so the rule's
+    """An FDM profile rule (``docs/research/process-profiles.yaml``), read by id where it applies, so the rule's
     ``applied_by`` names that function (``verified_rule`` refuses a ``u`` row)."""
     from cadagent.manufacturing.process import profile
     return profile("fdm").verified_rule(rule_id)

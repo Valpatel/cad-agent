@@ -241,9 +241,9 @@ def test_checks_are_local(monkeypatch):
 
 
 def test_the_workflow_page_lists_who_needs_what():
-    """docs/agent-workflow.md's table of needs names, for each need, exactly the items whose frontmatter has it."""
+    """docs/practice/agent-workflow.md's table of needs names, for each need, exactly the items whose frontmatter has it."""
     root = agentkit.kit_root()
-    page = (root / 'docs/agent-workflow.md').read_text()
+    page = (root / 'docs/practice/agent-workflow.md').read_text()
     rows = {}
     for line in page.splitlines():
         cells = [c.strip() for c in line.strip().strip('|').split('|')]

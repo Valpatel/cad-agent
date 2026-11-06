@@ -43,7 +43,7 @@ def test_readme_opens_with_one_command_and_the_paste_in_line():
     assert words <= 140, f"{words} words: keep the section about as short as text-to-cad's quick start (~125)"
     flat = " ".join(use_it.split())
     assert "collects no telemetry" in flat and "only if you say yes" in flat
-    assert "docs/agent-workflow.md#install" in use_it, "the long form is one link away"
+    assert "docs/practice/agent-workflow.md#install" in use_it, "the long form is one link away"
     assert "## Quick start" not in README, "one quick start: the first section replaced it"
 
 

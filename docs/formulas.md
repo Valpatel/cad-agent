@@ -8,7 +8,7 @@ function states its SI units and its validity limits, and cites its source by au
 
 ## Try it: the snap-arm explorer
 
-The explorer (`<cad-cantilever>`, also on [Snap fits](compliant.md#try-it-the-snap-arm-explorer)) runs the browser port
+The explorer (`<cad-cantilever>`, also on [Snap fits](mechanical/compliant.md#try-it-the-snap-arm-explorer)) runs the browser port
 of `snap_arm`. Sliders set the length, root thickness, width and deflection, and you pick the material and print
 direction. The beam bends along its computed curve, coloured by strain, with the root strain, force and pass or fail
 against the filament's allowable strain.
@@ -19,7 +19,7 @@ against the filament's allowable strain.
 
 ## Try it: the four-bar animator
 
-The animator (`<cad-fourbar>`, also on [Linkages](linkages.md#try-it-the-four-bar-animator)) runs the browser
+The animator (`<cad-fourbar>`, also on [Linkages](mechanical/linkages.md#try-it-the-four-bar-animator)) runs the browser
 port of `grashof`, `fourbar_input_limits`, `fourbar_angles` and `transmission_angle`. Sliders set the four links. The
 crank turns, or rocks and stops where the linkage locks, on the assembly you pick, with the other assembly dashed. The
 chart plots the transmission angle over a turn of the input against the 40° guideline. Rigid links on ideal pins,
@@ -40,9 +40,9 @@ fans in parallel or in series. The dot marks the operating point; the shaded ban
 <img src="img/thermal/fan-curve-explorer.svg" alt="Fan-curve explorer, before its controls load: the datasheet curve of one ebm-papst W2G115-AD15-13 fan at 12 V against a system that needs 12 Pa at 100 m³/h; they cross at 150 m³/h at 26.9 Pa, clear of the stall region below 132 m³/h, which is shaded" width="640" height="340">
 </cad-fan-curve>
 
-Two more explorers run the same port: the [torsion-snap explorer](compliant.md#try-it-the-torsion-snap-explorer)
+Two more explorers run the same port: the [torsion-snap explorer](mechanical/compliant.md#try-it-the-torsion-snap-explorer)
 (`torsion_snap_bar`: a rectangular bar twisted by a lever) and the
-[screw-boss explorer](screw-bosses.md#try-it-the-screw-boss-explorer) (`screw_boss`: a thread-forming screw tightened
+[screw-boss explorer](mechanical/screw-bosses.md#try-it-the-screw-boss-explorer) (`screw_boss`: a thread-forming screw tightened
 in a printed boss).
 
 ## Limits

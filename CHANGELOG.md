@@ -2,7 +2,7 @@
 
 Every release of cad-agent: what projects using it gain and what they must change. Each PR adds its lines as a
 fragment in [`changelog.d/`](changelog.d/README.md). Releasing is part of the development loop
-([CONTRIBUTING.md](CONTRIBUTING.md#releases)): `tools/cut_release.py` folds the fragments into `## Unreleased` and
+([CONTRIBUTING.md](.github/CONTRIBUTING.md#releases)): `tools/cut_release.py` folds the fragments into `## Unreleased` and
 dates that entry as `## vX.Y.Z (YYYY-MM-DD)`, which the `cad-gates/main/release` check requires. Merging the release PR
 (`dev` → `main`) tags the release, and Cloudflare Pages builds and deploys the site from `main` by itself. Releases up to v0.4.2
 are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).

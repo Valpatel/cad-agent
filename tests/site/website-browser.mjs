@@ -440,22 +440,29 @@ try {
     }],
     ['diagram widths', async () => {
       const problems = [];
-      // Every page with a diagram, at the narrowest desktop width: each rendered diagram fits its column (#122).
+      // Every diagram fits at the narrowest desktop width. The five concise hierarchy overviews also fit a phone:
+      // document overflow alone misses a clipped branch inside the diagram's own horizontal scroller.
+      const OVERVIEWS = new Set(['/docs/mechanical/README', '/docs/practice/README', '/docs/examples/README',
+        '/research/agent-workflow/README', '/research/manufacturing/README']);
+      for (const route of OVERVIEWS) if (!diagramPages.some(([r]) => r === route))
+        problems.push(`${route}: the overview diagram is not published`);
       // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
       const KNOWN_WIDE = new Map();
       // Headless Chrome hides scrollbars; a desktop browser with classic ones has up to 17px less, so keep that much spare.
-      const SCROLLBAR = 17;
+      for (const width of [1100, 360]) {
+      const SCROLLBAR = width === 1100 ? 17 : 0;
       // In both themes: each block is drawn twice (#305), and the page shows the drawing for its theme.
       for (const colorScheme of ['light', 'dark']) {
-      const wide = await browser.newPage({ viewport: { width: 1100, height: 900 }, colorScheme });
+      const wide = await browser.newPage({ viewport: { width, height: 900 }, colorScheme });
       for (const [route, sources] of diagramPages.sort()) {
+        if (width === 360 && !OVERVIEWS.has(route)) continue;
         await wide.goto(base + route);
         await settled(wide);
         await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
           [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'),
-          sources, { timeout: 20000 }).catch(() => problems.push(`1100px ${route}: diagrams did not finish rendering`));
+          sources, { timeout: 20000 }).catch(() => problems.push(`${width}px ${route}: diagrams did not finish rendering`));
         const drawn = await wide.$$eval('.cad-diagram', fs => fs.filter(f => f.dataset.state === 'ready' && f.querySelector('svg')).length);
-        if (drawn !== sources) problems.push(`1100px ${route}: ${drawn} of ${sources} diagrams rendered`);
+        if (drawn !== sources) problems.push(`${width}px ${route}: ${drawn} of ${sources} diagrams rendered`);
         // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
         // show how much spare there is).
         // A view without a drawing failed to render; the count above reports it.
@@ -464,9 +471,10 @@ try {
           return { w: Math.ceil(v.querySelector('svg').getBoundingClientRect().width), room };
         }))).filter(d => d.w > d.room - SCROLLBAR + 1);
         if (KNOWN_WIDE.has(route)) { if (!over.length) problems.push(`${route} now fits: remove it from KNOWN_WIDE`); continue; }
-        for (const d of over) problems.push(`1100px ${colorScheme} ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
+        for (const d of over) problems.push(`${width}px ${colorScheme} ${route}: a diagram is ${d.w}px wide; the column has ${d.room}px, less ${SCROLLBAR}px for a scrollbar (top-down, at most three boxes per row)`);
       }
       await wide.close();
+      }
       }
       return problems;
     }],

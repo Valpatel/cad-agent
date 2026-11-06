@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.repo.test_markdown_images import image_refs, resolve
+
 ROOT = Path(__file__).resolve().parents[2]
 _spec = importlib.util.spec_from_file_location("motion_figures", ROOT / "tools" / "motion_figures.py")
 mf = importlib.util.module_from_spec(_spec)
@@ -69,12 +71,13 @@ def test_each_figure_stands_alone_is_labelled_sized_and_has_a_still(name):
 
 
 def test_every_figure_is_shown_on_a_page_with_a_caption():
-    pages = {p: p.read_text(encoding="utf-8") for p in (ROOT / "docs").glob("*.md")}
+    pages = {p: p.read_text(encoding="utf-8") for p in (ROOT / "docs").rglob("*.md")}
     for name in mf.FIGURES:
-        hits = [(p, t) for p, t in pages.items() if f"img/motion/{name}" in t]
+        hits = [(p, t, src) for p, t in pages.items() for src in image_refs(t)
+                if resolve(p.relative_to(ROOT).as_posix(), src) == f"docs/img/motion/{name}"]
         assert hits, f"{name} is not on any docs page"
-        for p, t in hits:
-            after = t.split(f"img/motion/{name})", 1)[1].lstrip("\n")
+        for p, t, src in hits:
+            after = t.split(f"{src})", 1)[1].lstrip("\n")
             assert after.startswith("*") and "illustration" in after.split("\n\n")[0].lower(), (p, name)
 
 

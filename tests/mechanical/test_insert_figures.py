@@ -25,7 +25,7 @@ def test_committed_coupon_figure_matches_the_cad():
 
 
 def test_every_figure_is_on_the_page_and_themed():
-    page = (ROOT / "docs" / "inserts.md").read_text()
+    page = (ROOT / "docs" / "mechanical" / "inserts.md").read_text()
     for name in ("section", "clamp-paths", "limiters", "calibration", "coupons", "washers", "fix-ladder"):
         svg = (ROOT / "docs" / "img" / "inserts" / f"{name}.svg").read_text()
         assert f"img/inserts/{name}.svg" in page
@@ -34,7 +34,7 @@ def test_every_figure_is_on_the_page_and_themed():
 
 def test_the_pages_numbers_are_what_the_module_computes():
     from cadagent.mechanical import inserts as I
-    page = (ROOT / "docs" / "inserts.md").read_text()
+    page = (ROOT / "docs" / "mechanical" / "inserts.md").read_text()
     m3 = dict(insert="mcmaster-94459A140", material="pla-bambu-basic", boss_outside_mm=9.5)
     lid = I.check_joint(**m3, head_mm=7.0, clearance_mm=3.4, clamped={"thickness_mm": 4.0})
     assert f"at most {lid['torque']['allowed_nm']:.2f} N m ({lid['torque']['governed_by'].replace('_', ' ')})" in page

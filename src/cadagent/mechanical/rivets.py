@@ -7,7 +7,7 @@ strength, and one check of a riveted lap joint against the published rules (#283
     # verdict pass / warn / fail, each check with its value, limit, rule and source, the joint's strength per pitch
     rivets_for(3.2, 0.118 * 25.4, 0.134 * 25.4)   # the 1/8 in rivets whose grip covers a stack of 3.0-3.4 mm
 
-**What is checked**, each against the rule in ``research/process-profiles.yaml`` it names (the ``sm-rivet-*`` rules):
+**What is checked**, each against the rule in ``docs/research/process-profiles.yaml`` it names (the ``sm-rivet-*`` rules):
 
 - the grip: the stack, with its thickness tolerance, inside the rivet's grip band;
 - the hole, when given: inside the maker's drill range (an oversize hole loses strength);
@@ -43,7 +43,7 @@ from cadagent.manufacturing import process as pp
 IN, LBF, KSI = 25.4, 4.4482216152605, 6.894757293168      # mm per inch, N per lbf, MPa per ksi
 FAMILIES = ("aluminium", "steel", "stainless")
 
-# Registry ids (research/references.yaml) of the sources this module reads its numbers from.
+# Registry ids (docs/research/references.yaml) of the sources this module reads its numbers from.
 SRC = {
     "pop-rivet-catalog": "Emhart Teknologies (Stanley), POP Blind Riveting Systems, P3100 Rev. D (2012): hole, grip "
                          "codes and typical shear and tensile, pp. 14, 33; design guidelines pp. 10-12",

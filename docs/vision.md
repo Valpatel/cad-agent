@@ -221,7 +221,7 @@ flowchart TD
 Nothing here exists yet: no `evals/` folder and no runner. This is the plan #142 builds from.
 
 - **Survey first.** Before building a runner, #142 will survey existing evaluation harnesses and CAD benchmarks (some
-  are already listed in `research/landscape.json`) and record adopt-vs-build, as for any new capability.
+  are already listed in `docs/research/landscape.json`) and record adopt-vs-build, as for any new capability.
 - **Jobs** will live at `evals/jobs/<domain>/<area>/<job>/`: the task as the user would write it, input files, a time
   and token budget, and a reference solution that passes.
 - **Graders** will be code, not opinions. They measure geometry, read `cad-agent` check results, or compare numbers
@@ -275,10 +275,10 @@ flowchart TD
     domain, and a node that relies on another domain's module names it under `uses:` (thermal's airflow area uses
     `cadagent.simulation.cfd`). `tests/repo/test_package_areas.py` keeps the code and the tree in step.
   - `skills/` and `agents/` stay flat, because harnesses install them by name.
-  - `lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
+  - `docs/lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
     field maps each folder to the node that owns it. Renaming them to taxonomy slugs waits for #145's batches, once
     the taxonomy has settled.
-  - `docs/` and `research/` gain domain folders once an area has a few pages (#145).
+  - `docs/` and `docs/research/` gain domain folders once an area has a few pages (#145).
   - `evals/jobs/` is laid out by domain and area from the start.
 - **The taxonomy ties them together.** Each node lists its pages, commands, modules (its own under `api:`, other
   domains' under `uses:`), skills, lessons and issues, and the site generates one hub per area. Browsing by topic
@@ -296,24 +296,21 @@ The hubs give the topic-first view without those costs.
 
 ## Root consolidation (2026-11-05)
 
-The owner asked for a starting screen with only necessary files and a visible README. The measured baseline is **30 tracked root entries** (files and folders together). The next target is **15**, reached in coherent reviewed batches; it is a plan, not completed work. `tests/repo/test_layout.py` ratchets the allowed count down with each batch. Ignored local files are not part of this measure.
+The owner asked for a starting screen with only necessary files and a visible README. The measured baseline is **30 tracked root entries** (files and folders together). The next planned result is **about 17 meaningful entries**, with actual counts ratcheted in `tests/repo/test_layout.py` as reviewed moves land. Ignored local files are outside this measure. Counts in the remaining plan are not completed work; [the consolidation issue](https://github.com/Valpatel/cad-agent/issues/362) records current evidence and integration status.
 
-| Batch | Owning location | Root count after batch | Consumers to preserve |
+| Batch | Owning location | Root count after batch | Contracts to preserve |
 |---|---|---|---|
-| Transcript mining and weekly procedure | `tools/mining/`, `docs/weekly-upstream-update.md` | 28 | CLI example, old and new private-input ignore paths, lessons provenance links, topic map |
-| Contributor and security policies | `.github/CONTRIBUTING.md`, `.github/SECURITY.md` | 26 | GitHub policy discovery, all relative links, site publication and gate references |
-| Upstream registry and notices | `vendor/upstreams/`, `vendor/THIRD_PARTY_NOTICES.md` | 24 | Vendor sync, supply-chain audit, catalogue/data consumers, license links; dated reports keep historical meaning |
-| Release notes and fragments | `docs/releases/CHANGELOG.md`, `docs/releases/changes/` | 22 | Release cutting and gates, installer/update notes, tests, published routes and contributor workflow |
-| Site source assets | `tools/site/assets/` | 21 | Site build/copy paths, installers, browser tests, licensing and Cloudflare build |
-| Research and lessons | Inside `docs/`, grouped by the existing domain/topic tree | 19 | Reference loaders and citations, source scans, catalogue placement, figures, permanent site redirects and regression fixtures |
-| Worked examples | `docs/examples/` | 18 | Starter lookup, wheel data-files, documentation, integration tests and regeneration commands |
-| Site build and hosting configuration | `tools/site/` beside its Node modules | 15 | ESM dependency resolution, npm commands, provenance, CI caches/working directories, Dependabot, audit history, Cloudflare build root/command/output and explicit Wrangler configuration |
+| Transcript mining and weekly procedure | `tools/mining/`, `docs/practice/weekly-upstream-update.md` | 28 | CLI examples, private-input ignore paths, provenance and topic map |
+| Contributor and security policies | `.github/CONTRIBUTING.md`, `.github/SECURITY.md` | 26 | GitHub discovery, relative links, stable public routes and real source provenance |
+| Upstream registry and notices | `vendor/upstreams/`, `vendor/THIRD_PARTY_NOTICES.md` | 24 | Dependency identities, unknown-code detection, notice generation, catalogue and dated report evidence |
+| Guides, research, lessons and examples | Domain guides under `docs/`; research data in `docs/research/`, lessons in `docs/lessons/`, examples in `docs/examples/` | 21 | Package data defaults, citations and scans, catalogue IDs/kinds, public URLs, relative links, checkout and wheel starter behavior |
+| Site source, assets and configuration | `tools/site/` and its `assets/` folder | 17 | Node ESM resolution, test dependency context, public assets/installers, provenance, CI/cache paths, npm audit history and the actual Pages build contract |
 
-The remaining root entries would be `.agents`, `.github`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `agents`, `docs`, `pyproject.toml`, `skills`, `src`, `tests`, `tools` and `vendor`. These have current package, harness, legal or navigation roles. Keep harness-discovered `skills/` and `agents/` stable. A move must remove the old tracked root entry; a wrapper that leaves it behind does not meet the count goal.
+The planned remaining root entries are `.agents`, `.github`, `.gitignore`, `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.md`, `LICENSE`, `README.md`, `agents`, `changelog.d`, `docs`, `pyproject.toml`, `skills`, `src`, `tests`, `tools` and `vendor`. Keep harness-discovered skills, agents and current wiring stable. `CHANGELOG.md` and its fragments remain release-history anchors: moving the changelog would change the resolution of its historical relative links. A smaller count alone does not justify privileged compatibility machinery or ambiguous history.
 
-Root npm manifests and `wrangler.toml` are current build/deploy defaults, rather than Python runtime anchors. Their move needs the Node site modules under the same package hierarchy (ESM resolves dependencies upward from an importing module) and a verified Cloudflare build contract. Changing only the manifest path would break that contract. No hosting setting changes are implied by this plan. Registry/notices have no package runtime reader in the current source; their live audit/site consumers use the moved paths, while historical comparisons preserve old dependency identities.
+The package manifests and Wrangler file are current site integration defaults. Their move co-locates the Node site modules, because ESM resolves dependencies upward from an importing module. Node tests remain with their test domains and use an explicit dependency context for the site package. The web kit's JavaScript module scope remains explicit. Public page routes, catalogue identities and served asset paths remain stable while GitHub sources and breadcrumbs point to the new physical files.
 
-Before each move, list every current path consumer, update it in the same PR, and run its existing integration checks. Published pages need permanent redirects; unpublished maintenance files can move without a root stub. Never move another session's private inputs or worktree. Domain migrations also replace hard-coded top-level docs/research discovery before moving a page, so a clean hierarchy cannot silently remove it from the site.
+Before a move, list its actual path consumers and refine their existing checks. Prove moved sources are consumed, missing current files cannot be replaced by stale old copies, and historical comparisons retain the same identities. A root entry must actually disappear; a root wrapper does not meet the count goal. Research data/defaults and wheel inputs need runtime checks, alongside site discovery. Shared Pages build settings receive independent review before change; the observed contract is a root build command, root `dist` output, production `main` and no preview deployments.
 
 ## Migration path
 
@@ -324,10 +321,10 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    in CONTRIBUTING.md, AGENTS.md and the PR template). When two open PRs cross, the one that merges second adds it,
    after merging dev and re-running its CI, because dev does not require branches to be up to date.
 2. **After #123, #124 and #133:** the site generates the area hubs and `areas.json` (#141).
-3. **Before the first move:** `tools/build-site.mjs` publishes only top-level `docs/` and `research/` pages today. Its
+3. **Before the first move:** `tools/build-site.mjs` publishes only top-level `docs/` and `docs/research/` pages today. Its
    docs and research sections must be widened by one domain level, as #133 widened the lessons section, or a moved
    page would get no site page and its redirect would point at nothing.
-4. **Then, batch by batch:** `docs/` and `research/` pages move into domain folders when their area has three or more
+4. **Then, batch by batch:** `docs/` and `docs/research/` pages move into domain folders when their area has three or more
    pages, or when a page is being edited anyway. Each move follows the #133 pattern:
    - a `<!-- moved-to: … -->` stub at the old path, kept for one minor release;
    - a line in the site's permanent redirect list, kept for good;

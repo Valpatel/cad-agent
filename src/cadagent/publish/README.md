@@ -41,4 +41,4 @@ flowchart TD
 | `serve.py` | Serves a project over http so pages can hand 3MF files to a slicer |
 
 Related: [package map](../README.md) · [review](../review/README.md) · [web kit](../webkit/README.md) ·
-[review packet docs](../../../docs/review-packet.md)
+[review packet docs](../../../docs/practice/review-packet.md)

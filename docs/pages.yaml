@@ -39,7 +39,7 @@
 # (tests/fixtures/gate_bench/build.py, SEEDS). docs/img/packets/SOURCE.json records each run's gate verdicts, and
 # tests/review/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
 
-docs/gates.md:
+docs/practice/gates.md:
   hero:
     img: docs/img/gates/bench-review.webp
     shows: output
@@ -67,7 +67,7 @@ docs/gates.md:
       output: bench, insertion and withdrawal verdicts
       caption: A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and withdrawn again.
       alt: A diagram of a preassembled module inserted into its parent as one rigid body, then withdrawn
-      href: docs/subassembly-insertion.md
+      href: docs/mechanical/subassembly-insertion.md
   figures:
     - after: connectivity-and-floating-parts-cadagentreviewgatesconnectivity
       img: docs/img/gates/bench-connectivity.svg
@@ -247,7 +247,7 @@ docs/gates.md:
       caption: "The gate bench as built: its store section, the hopper under a lid held by four screws, on the base, as the review packet renders it. The arm, its pin and stop and the frame are the arm section, pictured above."
       alt: "The gate bench's store: a blue hopper with a green lid and four screw heads, standing on the grey base"
 
-docs/dossier.md:
+docs/practice/dossier.md:
   hero:
     img: docs/img/gates/bench-sections.webp
     shows: output
@@ -339,7 +339,7 @@ docs/dossier.md:
       caption: "One of the images a bundle carries in packet/: the gate bench's arm, as built, at the top of its declared range (40 degrees), rendered by the review packet with the section hash it was made from."
       alt: The gate bench's arm raised to 40 degrees, its purple beam below the grey frame, under a caption bar with the section hash
 
-docs/design-process-plan.md:
+docs/practice/design-process-plan.md:
   hero:
     img: docs/img/gates/bench-sections.webp
     shows: output
@@ -390,7 +390,7 @@ docs/design-process-plan.md:
 # The web kit at work (docs/img/kit/), from tools/site-kit-pictures.mjs: the part table on the gate bench's parts, and
 # the file viewer on Gyropup's left hip motor plate (MIT; its STEP file at the revision docs/img/gyropup/SOURCE.json
 # records): 7,724 triangles, 164.02 x 24.1 x 178 mm.
-docs/web-parts.md:
+docs/practice/web-parts.md:
   figures:
     - after: tables-and-status
       below: supplies visible header sort buttons
@@ -408,7 +408,7 @@ docs/web-parts.md:
       caption: The same table searched for "screw". It keeps the 9 of its 19 rows whose text names a screw (the lid, the four inserts and the four screws), says so beside the box (the kit counts rows as parts), and keeps the sort.
       alt: The gate bench's part table filtered by the search "screw", showing 9 of 19 rows, the lid, four heat-set inserts and four M3 screws
 
-docs/file-viewer.md:
+docs/practice/file-viewer.md:
   figures:
     - after: behavior-and-limits
       img: docs/img/kit/file-viewer-step.webp
@@ -440,7 +440,7 @@ docs/file-viewer.md:
       alt: The file viewer with an error panel reading that the STEP reader could not find displayable surfaces in this file, a Retry file button, and the view buttons dimmed
 
 # Lessons and the issue list: the check each lesson names, at work.
-lessons/review/review-site-ux.md:
+docs/lessons/review/review-site-ux.md:
   figures:
     - after: keep-a-progress-section-during-long-work
       below: The progress section is updated at each milestone
@@ -469,10 +469,10 @@ lessons/review/review-site-ux.md:
       shows: output
       tool: kit/file-viewer.js
       on: gyropup
-      caption: The shared file viewer, on Gyropup's hip motor plate. Its wheel moves the camera in small eased steps (about 1.57 percent per 120 px notch, docs/file-viewer.md), so every project gets the same fine zoom.
+      caption: The shared file viewer, on Gyropup's hip motor plate. Its wheel moves the camera in small eased steps (about 1.57 percent per 120 px notch, docs/practice/file-viewer.md), so every project gets the same fine zoom.
       alt: The file viewer showing a motor plate from the front, its bore and screw holes in full view
 
-lessons/process/user-intent-and-requirements.md:
+docs/lessons/process/user-intent-and-requirements.md:
   figures:
     - after: capture-each-mid-turn-requirement-verbatim-and-give-it-a-feature
       below: A requirements table lists each quote
@@ -505,7 +505,7 @@ lessons/process/user-intent-and-requirements.md:
       caption: Every section on the review site with its evidence. The gate bench's front page links each section to its requirements, gates and review state.
       alt: The review site's front page for the gate bench, with its counts and a table of its four sections
 
-lessons/mechanical/fasteners-and-assembly-access.md:
+docs/lessons/mechanical/fasteners-and-assembly-access.md:
   figures:
     - after: check-tool-access-for-every-fastener-at-the-step-where-it-is-installed
       below: Sweep a tool envelope
@@ -526,7 +526,7 @@ lessons/mechanical/fasteners-and-assembly-access.md:
       caption: A head seat is only as deep as the model says after every feature is added. A rib unioned after the counterbore was cut refills it; the hole check finds it, and cutting the holes last keeps the seat clear.
       alt: A section through a screw hole in two build orders; a rib added after the counterbore was cut refills it, and with the holes cut last it is clear
 
-docs/common-issues.md:
+docs/practice/common-issues.md:
   figures:
     - after: geometry-and-modelling
       img: docs/img/gates/bench-review.webp
@@ -552,7 +552,7 @@ docs/common-issues.md:
       caption: A result that never converges. Refining the mesh at a steel L-bracket's sharp inside corner from 2 mm to 0.125 mm raises its peak stress from 443 to 1448 MPa; with an R1.5 fillet it stays between 432 and 447 MPa. Model the fillet the part will have, then refine until the peak settles.
       alt: Peak stress at an L-bracket's inside corner against mesh size; the sharp corner's peak keeps rising as the mesh is refined, the filleted corner's stays flat
 
-research/design-workflows.md:
+docs/research/agent-workflow/design-workflows.md:
   hero:
     img: docs/img/packets/ball_through_wall-store-cut-cavity-hopper_cavity-plan.webp
     shows: output
@@ -660,7 +660,7 @@ research/design-workflows.md:
       caption: "A view for hidden interiors, one of the unmeasured mitigations the plan uses: the review packet's x-ray of the gate bench's store as built, its parts translucent and the loose balls, screws and declared cavity drawn inside. No paper has measured how much such a view helps a judge."
       alt: "An x-ray view of the gate bench's store: translucent hopper and lid with eight orange balls and four screws visible inside"
 
-research/compliant-mechanisms.md:
+docs/research/compliant-mechanisms.md:
   hero:
     img: docs/img/compliant/snap-engagement.svg
     shows: diagram
@@ -876,7 +876,7 @@ docs/toolkit.md:
       caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/mechanical/test_holes.py, in section; the volumes match the hole check's."
       alt: "Section through a screw hole in two build orders: a rib unioned after the clearance hole and counterbore were cut refills both, and the hole check finds rib inside each; with the holes cut last, both are clear"
 
-research/simulation-tools.md:
+docs/research/simulation-tools.md:
   figures:
     - after: 1-3d-topology-optimisation-from-python
       below: Non-design regions

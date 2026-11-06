@@ -1,4 +1,4 @@
-"""Running the integrity gates for a project: ``cad-agent gates`` (plan ``docs/design-process-plan.md`` §4, T14).
+"""Running the integrity gates for a project: ``cad-agent gates`` (plan ``docs/practice/design-process-plan.md`` §4, T14).
 
 The parent side (``plan``, ``run_gates``, ``gate_rows``) needs no CAD kernel: it reads ``cad-agent.yaml``, the
 geometry record (``exports/dossier-geometry.json``), the YAML dossier and the verdict files. Each gate runs in a
@@ -659,7 +659,7 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
                                                   "yet); what applies is known after the build")], 0.0)
     if record is None and wants_geometry:
         raise GatesConfigError(f"no geometry record at {cfg.rel(cfg.geometry)}: run the build that registers the "
-                               "parts (cad-agent build), or set cad.gates.build (docs/gates.md)")
+                               "parts (cad-agent build), or set cad.gates.build (docs/practice/gates.md)")
     extra = load_extra(cfg)
     dossier = load_dossier(project)
     planned = plan(project, cfg, record, dossier, extra, only=only, skip=skip)

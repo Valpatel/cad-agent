@@ -64,7 +64,7 @@ def checkout(root: Path):
     write(root, f"{ra.KIT}/file-viewer-sources.json", "{}")
     write(root, "vendor/upstreams/registry.yaml", "- name: someone/tool\n  url: https://github.com/someone/tool\n  license: MIT\n"
                                            "  last_push: 2026-10-01\n  status: trial\n")
-    write(root, "research/landscape.json", json.dumps({"projects": [], "libraries": [
+    write(root, "docs/research/landscape.json", json.dumps({"projects": [], "libraries": [
         {"name": "gumyr/build123d", "license_spdx": "Apache-2.0", "last_push": "2026-10-23"}], "benchmarks": []}))
     write(root, "docs/guide.md", "# Guide\n\nSee [the docs](https://docs.someone.dev/x) and https://example.com/demo.\n\n"
                                  "```bash\ncurl http://localhost:8000/ && uvx --from cadgen==0.7.26 cadgen mcp\n```\n")
@@ -437,6 +437,24 @@ def test_registry_reads_prefer_moved_source_and_only_history_can_fall_back(repo_
         ra.item_ids(ra.WorkTree(root))
 
 
+def test_landscape_move_keeps_historical_identity_but_cannot_hide_a_missing_current_source(repo_with_base):
+    root = repo_with_base
+    (root / "research").mkdir()
+    git(root, "mv", ra.LANDSCAPE, "research/landscape.json")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy landscape path")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    git(root, "mv", "research/landscape.json", ra.LANDSCAPE)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    write(root, "research/landscape.json", '{"projects":[{"name":"stale/old","url":"https://github.com/stale/old"}]}')
+    assert "url:https://github.com/stale/old" not in ra.item_ids(ra.WorkTree(root))
+    (root / ra.LANDSCAPE).unlink()
+    with pytest.raises(FileNotFoundError, match="landscape"):
+        ra.catalogue_entries(root)
+    with pytest.raises(FileNotFoundError, match="landscape"):
+        ra.item_ids(ra.WorkTree(root))
+
+
 def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
     root = checkout(tmp_path)
     (root / "vendor/THIRD_PARTY_NOTICES.md").rename(root / "THIRD_PARTY_NOTICES.md")
@@ -445,9 +463,9 @@ def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
 
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):
     r = run(checkout(tmp_path))
-    assert f"catalog.json, {ra.REGISTRY}, research/landscape.json" in ra.to_markdown(r)
+    assert f"catalog.json, {ra.REGISTRY}, docs/research/landscape.json" in ra.to_markdown(r)
     r["sources"]["offline"] = r["sources"]["offline"].replace(ra.REGISTRY, "upstreams/registry.yaml")
-    assert "catalog.json, upstreams/registry.yaml, research/landscape.json" in ra.to_markdown(r)
+    assert "catalog.json, upstreams/registry.yaml, docs/research/landscape.json" in ra.to_markdown(r)
 
 
 # ------------------------------------------------------------------------------------------------------------- issue
@@ -982,12 +1000,30 @@ def test_published_pages_match_the_site_build():
     assert not any(p["file"] == "THIRD_PARTY_NOTICES.md" for p in selected)
 
 
+def test_weekly_link_audit_selects_current_published_files():
+    """Exercise configured file globs on the real tracked inventory, including nested owners and exclusions."""
+    import argparse
+    import glob
+    import shlex
+    import yaml
+    workflow = yaml.safe_load((ROOT / ".github/workflows/supply-chain.yml").read_text())
+    step = next(s for s in workflow["jobs"]["references"]["steps"] if "lycheeverse/lychee-action" in s.get("uses", ""))
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--exclude-path", action="append", default=[])
+    options, remaining = parser.parse_known_args(shlex.split(step["with"]["args"]))
+    inventory = set(_tracked_pages(ROOT))
+    actual = {p for pattern in remaining for p in glob.glob(pattern, root_dir=ROOT, recursive=True)
+              if p in inventory and p.endswith(".md")} - set(options.exclude_path)
+    assert actual == {p for p in inventory if ra.published(p)}, "weekly link inputs drifted from actual publication sources"
+
+
 @pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md"])
 def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path, source):
     """A stale old file cannot stand in for a missing mandatory source; whitespace paths stay whole."""
     subprocess.run(["git", "-C", str(tmp_path), "-c", "init.templateDir=", "init", "-q"], check=True)
-    expected = {"README.md", ".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md", "docs/space name.md", "docs/tab\tname.md"}
-    extra = {"CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "research/data.json"}
+    sources = json.loads((ROOT / "tools/site/page-sources.json").read_text())["files"]
+    expected = {r["source"] for r in sources} | {"README.md", "docs/space name.md", "docs/tab\tname.md"}
+    extra = {"CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "docs/research/data.json"}
     for name in expected | extra:
         write(tmp_path, name, "# candidate\n")
     subprocess.run(["git", "-C", str(tmp_path), "add", "--all"], check=True)
@@ -1017,7 +1053,7 @@ def test_figure_is_deterministic_and_says_what_it_leaves_out(tmp_path):
 
 
 def test_committed_page_and_figure_match_committed_report():
-    """research/security-report.md and docs/img/supply-chain/findings.svg are rendered from research/security-report.json,
+    """docs/research/security-report.md and docs/img/supply-chain/findings.svg are rendered from docs/research/security-report.json,
     so neither can disagree with it."""
     assert ra.main(["render", "--check"]) == 0
 
@@ -1034,8 +1070,8 @@ def test_the_page_folds_all_but_critical_and_high(tmp_path):
 
 def test_committed_report_is_clean_and_dated():
     """The committed report came from a committed tree (no uncommitted changes) and has no private details."""
-    r = json.loads((ROOT / "research/security-report.json").read_text())
+    r = json.loads((ROOT / "docs/research/security-report.json").read_text())
     assert r["schema"] == ra.SCHEMA and r["dirty"] is False and r["mode"] == "online"
-    text = (ROOT / "research/security-report.json").read_text() + (ROOT / "research/security-report.md").read_text()
+    text = (ROOT / "docs/research/security-report.json").read_text() + (ROOT / "docs/research/security-report.md").read_text()
     home = str(Path.home())          # whichever machine runs it: no account name is written down here
     assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)

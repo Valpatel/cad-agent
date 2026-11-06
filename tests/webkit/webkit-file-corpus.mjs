@@ -1,5 +1,5 @@
 // Parse a bounded manifest of already-published originals using the actual workers.
-// Run large corpora on a compute host; see docs/file-viewer.md.
+// Run large corpora on a compute host; see docs/practice/file-viewer.md.
 import {readFile,writeFile} from 'node:fs/promises';
 import {Worker} from 'node:worker_threads';
 import {createHash} from 'node:crypto';

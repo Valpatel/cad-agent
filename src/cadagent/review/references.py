@@ -1,6 +1,6 @@
 """The reference registry (#118): every outside source a cad-agent rule, check or number relies on, by a stable id.
 
-The registry is ``research/references.yaml`` in a cad-agent checkout. Code cites a source by its id, and the registry
+The registry is ``docs/research/references.yaml`` in a cad-agent checkout. Code cites a source by its id, and the registry
 says who wrote it, where it is, what was read and when, and what cad-agent may do with it: sources are summarised and
 cited, never copied, and paid documents are cited by number and title only. Nothing here vendors a source.
 
@@ -11,7 +11,7 @@ Where code cites by id (``citations()`` finds them all):
   another name (``cadagent.mechanical.bearings.WHERE`` is keyed by check);
 * a module-level ``FDM_MATERIALS`` dict whose values are tuples ending in an id (``cadagent.manufacturing.process``);
 * ``Material(..., source="<id>")`` (``cadagent.simulation.fea``);
-* ``research/process-profiles.yaml``: each rule's, formula's and shop table's ``source``, and each dataset's ``cites``;
+* ``docs/research/process-profiles.yaml``: each rule's, formula's and shop table's ``source``, and each dataset's ``cites``;
 * ``[ref:<id>]`` tags in Markdown, YAML and Python text (a malformed tag is reported, not skipped).
 
 A key resolves to one of three kinds of entry:
@@ -30,14 +30,14 @@ in the code that cites it. From a shell::
     python -m cadagent.review.references covestro roark     # print the citations
     python -m cadagent.review.references --check            # exit 1 on a problem
 
-Schema 2 (#323) adds shards: ``research/references/*.yaml`` beside the core file, each ``schema: 2`` with a
+Schema 2 (#323) adds shards: ``docs/research/references/*.yaml`` beside the core file, each ``schema: 2`` with a
 ``sources`` list of at most ``SHARD_LIMIT`` records. One id space covers the core file and every shard; ``lookup()``
 does not care which file an id lives in. A schema-2 record says what it is (``kind``), what its source's licence
 allows (``licence``, ``reuse``), how far it has been checked (``evidence.class``, a ladder from ``snippet-only`` to
 ``measured``) and, for an open project, an objective ``assessment``. Its fixed vocabularies live in
-``research/references/vocab.yaml``; its ``areas`` are slugs of ``docs/areas.yaml``. A shard record below ``read`` is
+``docs/research/references/vocab.yaml``; its ``areas`` are slugs of ``docs/areas.yaml``. A shard record below ``read`` is
 *catalogued*: it may be listed and linked, but a rule, a check or a page's rule line may not cite it (``check()``
-reports that, and warns on a ``[ref:]`` to one in ``research/``). A shard record with ``extends: true`` adds schema-2
+reports that, and warns on a ``[ref:]`` to one in ``docs/research/``). A shard record with ``extends: true`` adds schema-2
 fields to the core entry of the same id (lists are united, the core's other fields win). ``confidence()`` derives
 #143's level from the evidence, so a stored ``confidence`` cannot drift from it. The folder's README has the map.
 
@@ -60,8 +60,8 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
-REGISTRY = ROOT / "research" / "references.yaml"
-PROCESS_PROFILES = ROOT / "research" / "process-profiles.yaml"
+REGISTRY = ROOT / "docs" / "research" / "references.yaml"
+PROCESS_PROFILES = ROOT / "docs" / "research" / "process-profiles.yaml"
 VOCAB = "vocab.yaml"                  # in the shard folder: the vocabularies
 COVERAGE = "coverage.yaml"            # in the shard folder: what cad-agent enforces per topic, and the gaps (#323)
 NOT_SHARDS = (VOCAB, COVERAGE)        # every other *.yaml there is a shard
@@ -81,7 +81,7 @@ LEVELS = {"high": 0.9, "medium": 0.7, "low": 0.4, "unknown": None}       # #143;
 PRIMARY = ("primary", "independent-tested")           # authorities that count as a primary source
 # Where a [ref:] to a catalogued record is only a warning (a survey may list what it has not read); anywhere else,
 # and in any code table or profile rule, it is a problem.
-CATALOGUED_TAG_OK = ("research/",)
+CATALOGUED_TAG_OK = ("docs/research/",)
 # Record fields a shard may carry. A typo elsewhere would silently drop a fact, so check() reports any other key.
 FIELDS = ("id", "extends", "kind", "category", "title", "authors", "org", "year", "url", "isbn", "mirrors", "access",
           "terms", "licence", "reuse", "areas", "processes", "process_groups", "domains", "evidence", "confidence",
@@ -110,7 +110,7 @@ TAG = re.compile(r"\[ref:([^\]\n]*)\]")
 PLACEHOLDER = re.compile(r"<[^>]*>")   # "[ref:<id>]" in prose explains the syntax; it cites nothing
 TABLES = ("SRC", "SOURCES")         # module-level dicts whose keys are ids
 ROW_TABLES = ("FDM_MATERIALS",)     # module-level dicts whose values are tuples that end in an id
-TAG_FOLDERS = ("docs", "lessons", "research", "skills", "src", "agents", "tools", "examples", "web")
+TAG_FOLDERS = ("docs", "skills", "src", "agents", "tools", "web")
 TAG_SUFFIXES = (".md", ".py", ".yaml", ".yml")
 _LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)   # libyaml when PyYAML has it: the same safe loader, ~9x faster
 
@@ -213,11 +213,11 @@ class Shard:
 class Registry:
     """The registry as loaded: entries by id, aliases to ids, and the raw data.
 
-    ``data`` is the core file (``research/references.yaml``); ``shards`` the schema-2 files beside it and ``vocab``
-    their vocabularies (``research/references/vocab.yaml``). One id space covers them all."""
+    ``data`` is the core file (``docs/research/references.yaml``); ``shards`` the schema-2 files beside it and ``vocab``
+    their vocabularies (``docs/research/references/vocab.yaml``). One id space covers them all."""
 
     def __init__(self, data: Dict[str, Any], path: Optional[Path] = None, shards: Sequence[Shard] = (),
-                 vocab: Optional[Dict[str, Any]] = None, core_file: str = "research/references.yaml",
+                 vocab: Optional[Dict[str, Any]] = None, core_file: str = "docs/research/references.yaml",
                  coverage: Optional[Dict[str, Any]] = None):
         self.data = data
         self.path = path
@@ -269,12 +269,12 @@ class Registry:
         """Merge a shard's ``extends: true`` record into the core entry of the same id: lists are united in order,
         fields the core lacks are added, and a field both set differently keeps the core's value (and is reported)."""
         if rid not in core:
-            self._load_problems.append(f"{rid}: {shard.file} extends it, but research/references.yaml has no such "
+            self._load_problems.append(f"{rid}: {shard.file} extends it, but docs/research/references.yaml has no such "
                                        "entry (drop `extends: true` to make it a record of its own)")
             return
         if self.entries[rid].kind != "source":
             self._load_problems.append(f"{rid}: {shard.file} extends it, but it is {self.entries[rid].kind} in "
-                                       "research/references.yaml; only a read source (under `sources:`) takes "
+                                       "docs/research/references.yaml; only a read source (under `sources:`) takes "
                                        "schema-2 fields: read it and move it up first")
             return
         if rid in self._overlays:
@@ -426,7 +426,7 @@ class _Schema2:
     def vocab_problems(self) -> List[str]:
         if self.reg.vocab is None:
             needs = self.reg.shards or any(_has_schema2(r.data) for r in self.reg.of_kind("source"))
-            return [f"research/references/{VOCAB} is missing: schema-2 records are checked against it"] if needs else []
+            return [f"docs/research/references/{VOCAB} is missing: schema-2 records are checked against it"] if needs else []
         if not isinstance(self.reg.vocab, dict):
             return [f"{VOCAB}: not a mapping of vocabularies"]
         out = []
@@ -510,7 +510,7 @@ class _Schema2:
 
     def rule_ids(self) -> set:
         if self._rules is None:
-            pp = self.root / "research" / "process-profiles.yaml"
+            pp = self.root / "docs" / "research" / "process-profiles.yaml"
             data = _yaml(pp.read_text(encoding="utf-8")) or {} if pp.is_file() else {}
             self._rules = {r.get("id") for r in data.get("rules") or [] if isinstance(r, dict)}
         return self._rules
@@ -524,7 +524,7 @@ class _Schema2:
             extra = sorted(set(d) - set(FIELDS))
             if extra:
                 out.append(f"unknown fields {extra} in {file} (a typo drops a fact; the fields are listed in "
-                           "research/references/README.md)")
+                           "docs/research/references/README.md)")
         if "imported" in d and not (isinstance(d["imported"], str) and re.fullmatch(r"[0-9a-f]{16}", d["imported"])):
             out.append("imported is the importer's 16-hex digest of the record as it wrote it (tools/import_refmap.py); "
                        "never type one")
@@ -571,7 +571,7 @@ class _Schema2:
             out.append("mirrors must be a list")
         for rule in d.get("rules") or []:
             if rule not in self.rule_ids():
-                out.append(f"rule {rule!r} is not a rule id of research/process-profiles.yaml")
+                out.append(f"rule {rule!r} is not a rule id of docs/research/process-profiles.yaml")
         for chk in d.get("checks") or []:
             if not (isinstance(chk, str) and CHECK_NAME.fullmatch(chk)):
                 out.append(f"check {chk!r} is not a dotted cadagent name such as inserts.check_joint")
@@ -679,7 +679,7 @@ class _Schema2:
             heavy = [p for p in d.get("used_for") or [] if isinstance(p, str) and not p.startswith(CATALOGUED_TAG_OK)
                      and not p.startswith("proposed:")]
             if heavy:
-                out.append(f"used_for {heavy}: a snippet-only record backs nothing outside research/; read it at source "
+                out.append(f"used_for {heavy}: a snippet-only record backs nothing outside docs/research/; read it at source "
                            "and promote it first")
             if d.get("rules") or d.get("checks"):
                 out.append("a snippet-only record may not back a rule or a check: read it at source first")
@@ -848,19 +848,20 @@ def confidence(ref: Reference, reg: Registry) -> Dict[str, Any]:
 
 
 def shard_folder(path: Path) -> Path:
-    """The schema-2 shard folder beside a core file: ``research/references.yaml`` -> ``research/references/``."""
+    """The schema-2 shard folder beside a core file: ``docs/research/references.yaml`` -> ``docs/research/references/``."""
     return Path(path).with_suffix("")
 
 
 def load(path: Optional[Path] = None) -> Registry:
-    """Read the registry (default ``research/references.yaml`` of this checkout) and the schema-2 shards beside it
-    (``research/references/*.yaml``, with ``vocab.yaml`` as their vocabularies)."""
+    """Read the registry (default ``docs/research/references.yaml`` of this checkout) and the schema-2 shards beside it
+    (``docs/research/references/*.yaml``, with ``vocab.yaml`` as their vocabularies)."""
     path = Path(path) if path else REGISTRY
     if not path.is_file():
         raise FileNotFoundError(f"{path}: the reference registry is read from a cad-agent checkout "
-                                "(research/references.yaml); pass path= for another copy")
+                                "(docs/research/references.yaml); pass path= for another copy")
     folder, shards, vocab, coverage = shard_folder(path), [], None, None
-    top = path.parent.parent                       # the checkout root, for repo-relative file names
+    # The default layout is now docs/research; explicit standalone copies retain their previous relative base.
+    top = path.parent.parent.parent if path.parent.name == 'research' and path.parent.parent.name == 'docs' else path.parent.parent
     rel = lambda p: p.relative_to(top).as_posix() if top in p.parents else p.name   # noqa: E731
     if folder.is_dir():
         for f in sorted(folder.glob("*.yaml")):
@@ -963,7 +964,7 @@ def citations(root: Path = ROOT) -> List[Citation]:
     for path in sorted((root / "src" / "cadagent").rglob("*.py")):
         if "__pycache__" not in path.parts and path.resolve() != me:
             out += _python_citations(path, path.relative_to(root).as_posix())
-    pp = root / "research" / "process-profiles.yaml"
+    pp = root / "docs" / "research" / "process-profiles.yaml"
     if pp.is_file():
         out += _process_profile_citations(pp, pp.relative_to(root).as_posix())
     for path in sorted(root.glob("*.md")):
@@ -994,16 +995,16 @@ def check(root: Path = ROOT, registry: Optional[Registry] = None,
     Problems: a malformed entry, a key that resolves to nothing, a file that cites an entry its ``used_for`` does
     not list, or a rule, check, code table or page that cites a catalogued (snippet-only) record. Warnings: code that
     cites an ``unverified`` entry (a known gap, to be read and moved up), and a ``[ref:]`` to a catalogued record in
-    ``research/`` (a survey may list what it has not read yet)."""
+    ``docs/research/`` (a survey may list what it has not read yet)."""
     root = Path(root)
-    reg = registry or load(root / "research" / "references.yaml")
+    reg = registry or load(root / "docs" / "research" / "references.yaml")
     problems, warnings = reg.problems(root), []
     for c in (citations(root) if found is None else found):
         if c.how == "bad-tag":
             problems.append(f"{c.where}: [ref:{c.key}] is not a tag: write [ref:<id>] with one kebab-case id")
             continue
         if c.key not in reg:
-            problems.append(f"{c.where}: cites {c.key!r}, which research/references.yaml does not have")
+            problems.append(f"{c.where}: cites {c.key!r}, which docs/research/references.yaml does not have")
             continue
         ref = reg.resolve(c.key)
         if ref.kind == "catalogued":
@@ -1018,11 +1019,11 @@ def check(root: Path = ROOT, registry: Optional[Registry] = None,
             warnings.append(f"{c.where}: cites {c.key!r}, an unverified entry ({ref.get('why')})")
         if ref.kind != "uncited" and not lists(ref.get("used_for") or [], c.path):
             problems.append(f"{c.where}: cites {c.key!r}; add {c.path} to used_for of {ref.id}")
-    pp = root / "research" / "process-profiles.yaml"
+    pp = root / "docs" / "research" / "process-profiles.yaml"
     if pp.is_file() and found is None and re.search(r"^(cards|decisions):", pp.read_text(encoding="utf-8"), re.M):
         # the rule and decision cards (#323 phase 7b): their when-fields and tables cite only read records
         from cadagent.manufacturing.cards import problems as card_problems
-        problems += [f"research/process-profiles.yaml: {p}" for p in card_problems(pp, reg)]
+        problems += [f"docs/research/process-profiles.yaml: {p}" for p in card_problems(pp, reg)]
     return problems, sorted(set(warnings))
 
 

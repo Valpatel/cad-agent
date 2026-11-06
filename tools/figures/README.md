@@ -4,7 +4,7 @@ These repository scripts draw committed diagrams from the toolkit's equations, f
 
 ```mermaid
 flowchart TD
-    C["../../src/cadagent/<br/>model calculations"] --> G["tools/figures/<br/>eight generators"]
+    C["../../software/cadagent/<br/>model calculations"] --> G["tools/figures/<br/>eight generators"]
     D["../../docs/research/<br/>process data + sources"] --> G
     G --> O["../../docs/img/<br/>committed SVGs"]
     O --> T["../../tests/<br/>parity + model checks"]
@@ -14,7 +14,7 @@ flowchart TD
     class C,D,O,T near
 ```
 
-Run from the repository root with its dependencies available. For example, `PYTHONPATH=src python tools/figures/bearing_figures.py --check` compares the current calculation to its committed SVGs. The seven checkable generators return failure on stale figures; omit `--check` to regenerate them. `snapfit_figures.py` only regenerates its two guide figures and needs `PYTHONPATH=src` or an installed toolkit.
+Run from the repository root with its dependencies available. For example, `PYTHONPATH=software python tools/figures/bearing_figures.py --check` compares the current calculation to its committed SVGs. The seven checkable generators return failure on stale figures; omit `--check` to regenerate them. `snapfit_figures.py` only regenerates its two guide figures and needs `PYTHONPATH=software` or an installed toolkit.
 
 | Script | Output under docs/img/ | Existing checks |
 |---|---|---|

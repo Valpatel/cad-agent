@@ -110,7 +110,7 @@ TAG = re.compile(r"\[ref:([^\]\n]*)\]")
 PLACEHOLDER = re.compile(r"<[^>]*>")   # "[ref:<id>]" in prose explains the syntax; it cites nothing
 TABLES = ("SRC", "SOURCES")         # module-level dicts whose keys are ids
 ROW_TABLES = ("FDM_MATERIALS",)     # module-level dicts whose values are tuples that end in an id
-TAG_FOLDERS = ("docs", ".agents/skills", "src", ".agents/agents", "tools")
+TAG_FOLDERS = ("docs", ".agents/skills", "software/cadagent", ".agents/agents", "tools")
 TAG_SUFFIXES = (".md", ".py", ".yaml", ".yml")
 _LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)   # libyaml when PyYAML has it: the same safe loader, ~9x faster
 
@@ -961,7 +961,7 @@ def citations(root: Path = ROOT) -> List[Citation]:
     root = Path(root)
     out: List[Citation] = []
     me = Path(__file__).resolve()
-    for path in sorted((root / "src" / "cadagent").rglob("*.py")):
+    for path in sorted((root / "software" / "cadagent").rglob("*.py")):
         if "__pycache__" not in path.parts and path.resolve() != me:
             out += _python_citations(path, path.relative_to(root).as_posix())
     pp = root / "docs" / "research" / "process-profiles.yaml"

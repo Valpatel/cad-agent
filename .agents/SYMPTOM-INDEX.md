@@ -11,3 +11,4 @@
 | Service is enabled but a requested module member has no service check or finding | [Resolve service targets before changing scope](inbox/2026-10-29-preassembly-needs-its-own-obstacle-scope.md#service-requests-must-survive-a-change-of-assembly-scope) |
 | Cut volume exceeds its input, curved volumes disagree, or a precise-looking invalid solid passes | [Validate solids and aggregate integration errors](inbox/2026-10-29-volume-precision-needs-valid-solids-and-aggregate-errors.md), [volume diagnostic](../docs/volume-precision.md) |
 | A named PA6-CF profile slices successfully but startup still waits at a generic temperature | [Resolve included slicer templates](inbox/2026-10-31-resolve-included-slicer-templates.md), `tests/manufacturing/test_slicer.py` |
+| Skills initialize successfully but copied guide links fail, or repository and global names appear twice | [Discovery names and resource containment](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md) |

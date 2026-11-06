@@ -248,7 +248,7 @@ def test_hash_is_stable_across_processes_and_ignores_meshing(tmp_path):
     assert shape_sha256(box.moved(cq.Location(cq.Vector(0.001, 0, 0)))) != here
     code = ("import cadquery as cq; from cadagent.review.dossier import shape_sha256; "
             "print(shape_sha256(cq.Workplane().box(10, 20, 30).edges('|Z').fillet(2).val()))")
-    src = str(Path(__file__).resolve().parents[2] / "src")
+    src = str(Path(__file__).resolve().parents[2] / "software")
     other = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True,
                            env={"PYTHONPATH": src, "PATH": "/usr/bin:/bin"}).stdout.strip()
     assert other == here

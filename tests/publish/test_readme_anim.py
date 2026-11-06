@@ -437,6 +437,6 @@ def test_repository_route_figure_is_current_and_safe():
     tool = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tool)
     text = tool.build()  # also checks that each declared destination exists
-    assert text == tool.OUT.read_text(), "run PYTHONPATH=src python3 tools/anim/repository_map.py"
+    assert text == tool.OUT.read_text(), "run PYTHONPATH=software python3 tools/anim/repository_map.py"
     assert svg.problems(text) == []
     assert svg.REDUCED_MOTION in text

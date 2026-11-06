@@ -70,7 +70,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site/compiler/site-catalog.mjs` builds from the
-   repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
+   repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`software/vendor/upstreams/registry.yaml`](../software/vendor/upstreams/registry.yaml), the
    skills in [`.agents/skills/`](../.agents/skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
@@ -108,10 +108,10 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 
 | Kind of file | Where it goes |
 |---|---|
-| Code: a check, calculator, generator or reader | The module for its topic in `src/cadagent/<domain>/` ([map](../src/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `src/cadagent/` |
-| A closed-form equation | `src/cadagent/formulas/`, with golden vectors in its test |
-| A `cad-agent` command | Its parser and handler in `src/cadagent/cli.py`, its logic in the domain package |
-| A browser component | `src/cadagent/webkit/` |
+| Code: a check, calculator, generator or reader | The module for its topic in `software/cadagent/<domain>/` ([map](../software/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `software/cadagent/` |
+| A closed-form equation | `software/cadagent/formulas/`, with golden vectors in its test |
+| A `cad-agent` command | Its parser and handler in `software/cadagent/cli.py`, its logic in the domain package |
+| A browser component | `software/cadagent/webkit/` |
 | A test of package code | `tests/<domain>/test_<subject>.py`, the folder of the package its main subject lives in ([map](../tests/README.md)) |
 | A test of `cli.py` or a module beside it | `tests/cli/` |
 | A Node or browser test of the web kit | `tests/webkit/`: `webkit-<name>.test.mjs` (`node --test`), `webkit-<name>-browser.mjs` (Playwright) |
@@ -127,7 +127,7 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | A website asset | `tools/site/assets/` |
 | An example project | `docs/examples/<name>/`, with a README |
 | A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
-| Vendored upstream code | `vendor/<name>/`, through `tools/vendor_sync.py` |
+| Vendored upstream code | `software/vendor/<name>/`, through `tools/vendor_sync.py` |
 | A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
 | A finding or note from agent work | `docs/lessons/<area>/`, not `.agents/` |
 

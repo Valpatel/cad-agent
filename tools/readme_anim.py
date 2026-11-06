@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Regenerate the animated README figures (docs/img/hero/, fea/ and compliant/ SVGs) from their committed scenes.
 
-    PYTHONPATH=src python3 tools/readme_anim.py              # write every SVG from its scene
-    PYTHONPATH=src python3 tools/readme_anim.py --check      # exit 1 if a committed SVG differs or breaks a rule
-    PYTHONPATH=src python3 tools/readme_anim.py --extract hero --source ../gyropup     # re-extract a scene
-    PYTHONPATH=src python3 tools/readme_anim.py --extract convergence                  # re-record the FEA study
-    PYTHONPATH=src python3 tools/readme_anim.py --extract snapfit                      # re-run the snap calculator
+    PYTHONPATH=software python3 tools/readme_anim.py              # write every SVG from its scene
+    PYTHONPATH=software python3 tools/readme_anim.py --check      # exit 1 if a committed SVG differs or breaks a rule
+    PYTHONPATH=software python3 tools/readme_anim.py --extract hero --source ../gyropup     # re-extract a scene
+    PYTHONPATH=software python3 tools/readme_anim.py --extract convergence                  # re-record the FEA study
+    PYTHONPATH=software python3 tools/readme_anim.py --extract snapfit                      # re-run the snap calculator
 
 A figure has three committed files:
 * its spec (``tools/anim/<name>.yaml``): which project files to draw, how, and the words;
@@ -28,8 +28,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "software") not in sys.path:
+    sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent.publish.anim import convergence, hero, snapfit, svg  # noqa: E402
 

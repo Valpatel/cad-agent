@@ -17,7 +17,7 @@
       "previous_sha": "2f793659fb7bab537e2f00836e06448fc4087cb2",
       "sha": "2f793659fb7bab537e2f00836e06448fc4087cb2",
       "imported": "2026-10-24",
-      "report": "vendor/reports/text-to-cad-2f793659fb.md",
+      "report": "software/vendor/reports/text-to-cad-2f793659fb.md",
       "exclude_reason": "release-CI script using GITHUB_TOKEN"
     },
     {
@@ -34,7 +34,7 @@
       "previous_sha": "2fd9aa0fe2d620f36627d9221e8b1393987ae38e",
       "sha": "2fd9aa0fe2d620f36627d9221e8b1393987ae38e",
       "imported": "2026-10-24",
-      "report": "vendor/reports/kicad-happy-2fd9aa0fe2.md",
+      "report": "software/vendor/reports/kicad-happy-2fd9aa0fe2.md",
       "exclude_reason": "GitHub Action that posts PR comments with GITHUB_TOKEN"
     },
     {
@@ -54,7 +54,7 @@
       "previous_sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
       "sha": "f03b478f597d4b3e8c6d99827a2152b73077a122",
       "imported": "2026-10-24",
-      "report": "vendor/reports/kicad-mcp-pro-f03b478f59.md",
+      "report": "software/vendor/reports/kicad-mcp-pro-f03b478f59.md",
       "exclude_reason": "maintainer scripts reading gh auth token; Tauri desktop wrapper; editor and MCP-client settings (.mcp.json, .vscode/), which the tree's own .gitignore kept out of the import: local configuration, not part of the server"
     },
     {
@@ -70,7 +70,7 @@
       "previous_sha": "59b2561218864c15cde08f19dff97be3906b6938",
       "sha": "59b2561218864c15cde08f19dff97be3906b6938",
       "imported": "2026-10-24",
-      "report": "vendor/reports/build123d-mcp-59b2561218.md",
+      "report": "software/vendor/reports/build123d-mcp-59b2561218.md",
       "exclude_reason": "committed ELF binary (unauditable)"
     },
     {
@@ -86,7 +86,7 @@
       "previous_sha": "52af472ddade4b26d8b0d47f304ac5f9f6183d53",
       "sha": "52af472ddade4b26d8b0d47f304ac5f9f6183d53",
       "imported": "2026-10-24",
-      "report": "vendor/reports/agentcad-52af472dda.md",
+      "report": "software/vendor/reports/agentcad-52af472dda.md",
       "exclude_reason": "benchmark harness passing model API keys"
     },
     {
@@ -104,7 +104,7 @@
       "previous_sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
       "sha": "e6ae6e7bae74cb3a50cbde395930ba24a1051f88",
       "imported": "2026-10-24",
-      "report": "vendor/reports/bd_warehouse-e6ae6e7bae.md",
+      "report": "software/vendor/reports/bd_warehouse-e6ae6e7bae.md",
       "exclude_reason": "documentation media (52 MB carousel.glb)"
     }
   ]

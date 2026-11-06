@@ -6,7 +6,7 @@ survey covers *workflow and method*. The plan that applies it is
 [`docs/practice/design-process-plan.md`](../../practice/design-process-plan.md).
 
 Method: papers were read on arXiv (abs and HTML, version and date noted); repositories through the GitHub API and raw
-files; vendored upstreams (`vendor/`) from their pinned source. **(V)** = verified from the primary source;
+files; vendored upstreams (`software/vendor/`) from their pinned source. **(V)** = verified from the primary source;
 **(u)** = README, vendor page or third-party claim not checked further. Licences are noted before any idea or code is
 borrowed (§7). Machine-readable copy: [`design-workflows.json`](../design-workflows.json).
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ### 2.2 earthtojake/text-to-cad `cad` skill, build123d-mcp and agentcad (vendored, pinned)
 
-- **text-to-cad** ([repo](https://github.com/earthtojake/text-to-cad), **MIT (V, `vendor/text-to-cad/LICENSE`)**,
+- **text-to-cad** ([repo](https://github.com/earthtojake/text-to-cad), **MIT (V, `software/vendor/text-to-cad/LICENSE`)**,
   pinned at `2f79365`, imported 2026-10-24; upstream released 0.8.1 on 2026-10-27). Workflow (V,
   `skills/cad/SKILL.md`, `references/`): a model is a parameterless decorated function; the rebuild is the script run;
   user-given dimensions are checked by an `assert` in the model or a measurement, *"never read off a picture."*

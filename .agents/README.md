@@ -4,7 +4,7 @@ Canonical workflow skills and independent reviewer/resume prompts live here. `ca
 
 ```mermaid
 flowchart TD
-    S["skills/<br/>repeatable workflow"] --> C["../src/cadagent/<br/>tested tools"]
+    S["skills/<br/>repeatable workflow"] --> C["../software/cadagent/<br/>tested tools"]
     A["agents/<br/>independent review + recovery"] --> C
     C --> E["../docs/<br/>evidence + limits"]
     E --> S

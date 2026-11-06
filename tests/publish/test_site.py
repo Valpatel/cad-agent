@@ -62,7 +62,7 @@ def test_markdown_links_are_rewritten(tmp_path):
     assert 'import("../assets/diagrams.js")' in readme
     assert "cdn.jsdelivr.net" not in readme
     assert 'import("./assets/diagrams.js")' in (root / "site/index.html").read_text()
-    for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js", "vendor/mermaid/LICENSE"):
+    for rel in ("diagrams.js", "diagrams.css", "software/vendor/mermaid/mermaid.min.js", "software/vendor/mermaid/LICENSE"):
         assert (root / "site/assets" / rel).read_bytes() == (site.KIT_DIR / rel).read_bytes()
     plan = (root / "site" / "pages" / "docs-plan-md.html").read_text()
     assert 'href="readme-md.html"' in plan and "<table>" in plan
@@ -130,7 +130,7 @@ def test_site_serves_the_kit_and_links_the_model(tmp_path):
         kit = url.replace("/site/", site.KIT_URL)
         with urllib.request.urlopen(kit + "viewer.html") as r:
             assert b"createViewer" in r.read()
-        with urllib.request.urlopen(kit + "vendor/three/addons/loaders/STLLoader.js") as r:
+        with urllib.request.urlopen(kit + "software/vendor/three/addons/loaders/STLLoader.js") as r:
             assert b"STLLoader" in r.read()
     finally:
         server.shutdown()

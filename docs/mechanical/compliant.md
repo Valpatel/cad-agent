@@ -21,7 +21,7 @@ material value names its source.
   0.38 mm; R/h below 0.6 concentrates strain), mating force against a limit, retention force against a minimum.
 - **Allowable strain with its source**: moulded resins from the Covestro Table 2 and DuPont Table 10.06; 11 printed
   filaments (13 entries: two have dry and wet values) from their manufacturers' data sheets **by print direction**
-  ([`allowables.py`](../../src/cadagent/mechanical/compliant/allowables.py)).
+  ([`allowables.py`](../../software/cadagent/mechanical/compliant/allowables.py)).
 - **Along the insertion**: `engagement()` gives the root strain and the push to mate as the mating edge rides the
   hook's lead, slides along its land and drops off ([a snap engaging](#a-snap-engaging-computed)).
 - **Figures**: `tools/figures/snapfit_figures.py` draws the cantilever with its dimensions, and `tools/readme_anim.py` animates

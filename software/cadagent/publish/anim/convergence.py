@@ -34,7 +34,7 @@ from cadagent.publish.anim import svg as S
 
 SCHEMA = "cadagent.anim.convergence/1"
 # the files whose sha256 a scene records: the study code, this module and the spec (added by record())
-CODE = ("src/cadagent/simulation/fea.py", "src/cadagent/publish/anim/convergence.py")
+CODE = ("software/cadagent/simulation/fea.py", "software/cadagent/publish/anim/convergence.py")
 
 
 # ----------------------------------------------------------------------------------------------------- the study

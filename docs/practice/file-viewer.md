@@ -12,7 +12,7 @@ Files and the optional back link must be on the current origin. Deploy the entir
 webkit directory, including its vendor assets. No CDN, upload service or application
 server is required. Serve JavaScript modules and WASM with their correct MIME types.
 The runtime WASM is 7,604,031 bytes (below Cloudflare's 25 MB asset limit).
-[Dependency notices](../../src/cadagent/webkit/vendor/FILE-VIEWER-NOTICES.md) include
+[Dependency notices](../../software/cadagent/webkit/vendor/FILE-VIEWER-NOTICES.md) include
 exact source revisions, licenses, hashes, build instructions and library replacement
 instructions. Keep these notices with copies of the viewer.
 

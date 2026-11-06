@@ -1,6 +1,6 @@
 # tests/manufacturing
 
-Tests for [`src/cadagent/manufacturing/`](../../src/cadagent/manufacturing/README.md): 3MF files, build plates, slicer
+Tests for [`software/cadagent/manufacturing/`](../../software/cadagent/manufacturing/README.md): 3MF files, build plates, slicer
 numbers, fit coupons, the process profiles and the checks that read them (design for manufacture, sheet-metal bends).
 
 Arrows: what a test imports, runs or reads.
@@ -34,6 +34,6 @@ flowchart TD
 | `test_slicer.py` | Slicer profile flattening (the slicer runs only where it is installed) |
 | `test_slicer_prusa.py` | PrusaSlicer support: vendor-bundle profiles, G-code statistics, slicing where installed |
 
-Run: `pytest tests/manufacturing` (with `PYTHONPATH=src`).
+Run: `pytest tests/manufacturing` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

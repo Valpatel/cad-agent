@@ -54,7 +54,7 @@ it as a pull request or an issue only if you say yes. By hand, extras and uninst
 | Make and check something | [Guides](docs/README.md): CAD, assemblies, mechanisms, PCBs, manufacturing and simulation |
 | Find a technique or source | [Research](docs/research/README.md): surveys, rule cards, decisions and sources |
 | Give an agent a repeatable method | [Skills](.agents/skills/README.md): design, hardware, motion and review workflows |
-| Inspect the implementation and evidence | [Code](src/cadagent/README.md), [tests](tests/README.md) and [lessons](docs/lessons/README.md) |
+| Inspect the implementation and evidence | [Code](software/cadagent/README.md), [tests](tests/README.md) and [lessons](docs/lessons/README.md) |
 
 Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start an agent from [llms.txt](https://cad-agent.valpatel.com/llms.txt). The [topic tree](docs/areas.yaml) gives each capability one discoverable home.
 
@@ -85,4 +85,4 @@ The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Py
 
 Send a minimal reproducer, a source or a better technique. Changes get tests and an independent review before release. [Contributing](.github/CONTRIBUTING.md) explains the process; the [dated recovery audit](docs/lessons/process/2026-11-05-recovery-audit.md) records paused work and what remains.
 
-MIT. [Licence](LICENSE) · [Credits and third-party notices](vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)
+MIT. [Licence](LICENSE) · [Credits and third-party notices](software/vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)

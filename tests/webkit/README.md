@@ -1,6 +1,6 @@
 # tests/webkit
 
-Node and browser tests for [`src/cadagent/webkit/`](../../src/cadagent/webkit/README.md), the browser pieces.
+Node and browser tests for [`software/cadagent/webkit/`](../../software/cadagent/webkit/README.md), the browser pieces.
 `*.test.mjs` run under `node --test` with no browser; `*-browser.mjs` drive Chrome or WebKit through Playwright; the
 rest are helpers they import.
 
@@ -8,7 +8,7 @@ Arrows: what a test imports, runs or reads.
 
 ```mermaid
 flowchart TD
-    U["webkit-*.test.mjs<br/>node --test"] -->|"imports"| K["src/cadagent/webkit/<br/>*.js"]
+    U["webkit-*.test.mjs<br/>node --test"] -->|"imports"| K["software/cadagent/webkit/<br/>*.js"]
     B["webkit-*-browser.mjs<br/>Playwright"] --> S["webkit-server.mjs<br/>serves the kit"]
     S --> K
     V["fixtures/<br/>formula-vectors.json"] --> U
@@ -37,7 +37,7 @@ flowchart TD
 | `webkit-part-table-browser.mjs` | The part table in a real browser |
 | `webkit-part-tracker.test.mjs` | `part-tracker.js`: statuses per project, atomic imports, storage denial, cross-tab sync |
 | `webkit-printed-boss.test.mjs` | `<cad-printed-boss>` without a browser, against `cadagent.mechanical.bosses` |
-| `webkit-server.mjs` | Helper: serves `src/cadagent/webkit/` for the browser suites |
+| `webkit-server.mjs` | Helper: serves `software/cadagent/webkit/` for the browser suites |
 | `webkit-torsion-snap.test.mjs` | `<cad-torsion-snap>` without a browser: the port's numbers, Saint-Venant scaling |
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 

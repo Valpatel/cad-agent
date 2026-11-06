@@ -252,7 +252,7 @@
       "public": "research/simulation-tools.md"
     },
     {
-      "source": "vendor/THIRD_PARTY_NOTICES.md",
+      "source": "software/vendor/THIRD_PARTY_NOTICES.md",
       "public": "THIRD_PARTY_NOTICES.md"
     },
     {

@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawPrintedBoss, summary, nm, newtons } from '../../../src/cadagent/webkit/printed-boss.js';
+import { readState, compute, drawPrintedBoss, summary, nm, newtons } from '../../../software/cadagent/webkit/printed-boss.js';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 export const PAGES = ['docs/mechanical/screw-bosses.md'];

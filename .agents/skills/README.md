@@ -6,7 +6,7 @@ The arrows mean that a skill directs an agent to existing code, evidence and che
 
 ```mermaid
 flowchart TD
-    S["SKILL.md<br/>when + how"] --> C["../../src/cadagent/<br/>engineering code"]
+    S["SKILL.md<br/>when + how"] --> C["../../software/cadagent/<br/>engineering code"]
     S --> R["../../docs/research/<br/>sources + limits"]
     C --> T["../../tests/<br/>regression evidence"]
     T --> L["../../docs/lessons/<br/>what failed + why"]

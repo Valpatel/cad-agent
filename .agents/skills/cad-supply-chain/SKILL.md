@@ -30,7 +30,7 @@ flowchart TD
 |---|---|
 | add a Python or npm dependency, or raise or drop a pin | `rows --online` before you push; paste the rows into the PR |
 | vendor a project or a web kit file, or update one | `rows --online`, plus the vendor scan (`tools/vendor_sync.py import`); a web kit folder gets a `SOURCE.json` receipt: the npm tarball, its integrity and each file's SHA-256 (`three/SOURCE.json`), or `"npm": false` and each file's URL when it is not from npm (`fonts/SOURCE.json`) |
-| add a catalogue entry (`vendor/upstreams/registry.yaml`, `docs/research/landscape.json`) or a link in a published page | `rows --online` |
+| add a catalogue entry (`software/vendor/upstreams/registry.yaml`, `docs/research/landscape.json`) or a link in a published page | `rows --online` |
 | recommend a tool, skill, plugin or MCP server to someone | `report --online` and read its row; check it is not installed from a registry |
 | act on the weekly "Supply-chain report" issue | `report --online` to confirm, then fix in a PR |
 | act on the weekly "Reference health" issue or its bot PR | `references --online --state <the last artifact's JSON>` to confirm; fix a link in a PR, or accept a false soft-404 by fingerprint |
@@ -109,7 +109,7 @@ which should come from `rows --online`.
 - no high or critical advisory without a fix and a plan;
 - the repository is not archived, deleted or moved without an explanation;
 - a licence we can use: MIT, BSD or Apache-2.0 to incorporate; GPL and AGPL as external programs only; no licence or
-  non-commercial means ideas only (the policy in `vendor/upstreams/registry.yaml`);
+  non-commercial means ideas only (the policy in `software/vendor/upstreams/registry.yaml`);
 - a Scorecard below 4, or none, means you read its code and maintenance yourself and say so in the PR;
 - for each new dependency, a "can we drop it?" note in the PR: what it does that the standard library or an existing
   dependency cannot, and which extra it lives in. Fewer dependencies is the goal.
@@ -127,7 +127,7 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 | advisory on a transitive Python package | Upgrade it; if a direct dependency pins it, raise or replace that one. The finding names the direct dependencies it comes through. |
 | advisory on a vendored web kit library | Re-vendor a fixed release: new files, a new receipt (`SOURCE.json` or `file-viewer-sources.json`), notices, then the web kit browser suites. It ships to every project site that copies the kit. |
 | advisory on a library bundled inside a vendored file | Take the first release of the bundling library that bundles a fixed one, and say in its receipt's `bundled` note whether the affected code is reachable. |
-| `vendor-drift`, `webkit-hash`, `webkit-drift` | Someone changed vendored code. Find out who and why; restore it, or record the change (a patch in `vendor/patches/`; in a web kit receipt, `patched` with the upstream file's SHA-256 and what changed, as `three/SOURCE.json` does for OrbitControls) and re-run the scan. |
+| `vendor-drift`, `webkit-hash`, `webkit-drift` | Someone changed vendored code. Find out who and why; restore it, or record the change (a patch in `software/vendor/patches/`; in a web kit receipt, `patched` with the upstream file's SHA-256 and what changed, as `three/SOURCE.json` does for OrbitControls) and re-run the scan. |
 | `webkit-receipt-integrity` | The registry serves different bytes for that version than when we vendored it. Stop and tell the owner; do not re-vendor from it. |
 | `repo-archived`, `repo-stale` | Keep the entry and show it: set `status: unmaintained` (or a note in `docs/research/landscape.json`). Never remove it silently. |
 | `repo-moved` | Check the new owner is who you expect, then update the URL. The old name can be registered by someone else. |
@@ -141,7 +141,7 @@ Fix it in a PR, or record why it is fine (below). The action for each kind of fi
 </details>
 
 Use visible statuses on the site (`unmaintained`, `moved`, `under review`, `gone`): the catalogue shows the `status`
-of a `vendor/upstreams/registry.yaml` entry or a `docs/research/landscape.json` library as its badge (other entries: say it in
+of a `software/vendor/upstreams/registry.yaml` entry or a `docs/research/landscape.json` library as its badge (other entries: say it in
 their notes). A flagged entry stays listed with its status until a person decides to drop it.
 
 ## Accepting a finding

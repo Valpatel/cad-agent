@@ -1,7 +1,7 @@
 """Every image a Markdown page shows on GitHub must exist and be the image its name says.
 
 A broken picture on the repo page is the first thing a visitor sees, so this walks every tracked ``.md`` outside
-``vendor/`` (vendored projects keep their own paths) and checks each local image reference the way GitHub resolves
+``software/vendor/`` (vendored projects keep their own paths) and checks each local image reference the way GitHub resolves
 it: relative to the page, or to the repo root for a leading ``/``, with exact case. The file must be in git, not
 empty, not a Git LFS pointer (GitHub shows those as broken), and start with the magic bytes of its extension.
 Remote images (badges) are not fetched here, so the suite stays offline.
@@ -126,13 +126,13 @@ def problems(page: str, text: str, files: set[str], read=lambda p: (ROOT / p).re
 
 
 def markdown_pages(files):
-    metadata = {"vendor/README.md", "vendor/upstreams/README.md", "vendor/THIRD_PARTY_NOTICES.md"}
-    return sorted(f for f in files if f.endswith(".md") and (not f.startswith("vendor/") or f in metadata))
+    metadata = {"software/vendor/README.md", "software/vendor/upstreams/README.md", "software/vendor/THIRD_PARTY_NOTICES.md"}
+    return sorted(f for f in files if f.endswith(".md") and (not f.startswith("software/vendor/") or f in metadata))
 
 
 def test_repository_metadata_stays_in_the_image_audit():
-    metadata = {"vendor/README.md", "vendor/upstreams/README.md", "vendor/THIRD_PARTY_NOTICES.md"}
-    assert set(markdown_pages(metadata | {"vendor/imported/README.md", "vendor/upstreams/registry.yaml"})) == metadata
+    metadata = {"software/vendor/README.md", "software/vendor/upstreams/README.md", "software/vendor/THIRD_PARTY_NOTICES.md"}
+    assert set(markdown_pages(metadata | {"software/vendor/imported/README.md", "software/vendor/upstreams/registry.yaml"})) == metadata
 
 
 def test_every_markdown_image_exists_and_is_an_image():
@@ -159,7 +159,7 @@ def test_every_markdown_image_exists_and_is_an_image():
         ("docs/a.md", "![x](<img/my gone.png>)", {}, "not in git"),
         ("docs/a.md", '<source srcset="img/p.png 1x, img/gone.png 2x">', {"docs/img/p.png": b"\x89PNG\r\n\x1a\n"}, "gone.png"),
         ("README.md", "![x](docs/examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
-        ("vendor/THIRD_PARTY_NOTICES.md", "![x](../docs/examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
+        ("software/vendor/THIRD_PARTY_NOTICES.md", "![x](../../docs/examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
         ("docs/mechanical/new.md", "![x](../../tools/p.png)", {"tools/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
         ("docs/research/manufacturing/sheet-metal.md", "![x](../../examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
         ("docs/lessons/process/note.md", "![x](../../examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),

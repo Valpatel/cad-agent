@@ -135,7 +135,7 @@ def _planted(tmp_path: Path, report: str, calls: list) -> Path:
     (work / "transcript.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     (work / "project" / "cad-agent-report.md").write_text(report)
     (work / "project" / "box.stl").write_text("solid x\nendsolid x\n")
-    cli = work / "home" / "cad-agent" / "src" / "cadagent" / "cli.py"        # the commands the agent's clone defines
+    cli = work / "home" / "cad-agent" / "software" / "cadagent" / "cli.py"        # the commands the agent's clone defines
     cli.parent.mkdir(parents=True)
     cli.write_text('sub.add_parser("inserts", help="x")\nsub.add_parser("all", help="x")\nsub.add_parser("agents", help="x")\n')
     return work

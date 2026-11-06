@@ -60,8 +60,8 @@ def _pyproject_version(path: str):
 def _version() -> str:
     """The version of the cad-agent these files are.
 
-    A source tree first: ``src/cadagent`` beside the checkout's ``pyproject.toml`` (a checkout run with
-    ``PYTHONPATH=src``, or an editable install). Its pyproject.toml is what ``tools/cut_release.py`` bumps, and the
+    A source tree first: ``software/cadagent`` beside the checkout's ``pyproject.toml`` (a checkout run with
+    ``PYTHONPATH=software``, or an editable install). Its pyproject.toml is what ``tools/cut_release.py`` bumps, and the
     installed metadata can be stale there: an editable install keeps the version it was installed at, and a venv
     can hold another checkout's install while ``PYTHONPATH`` points here. Otherwise the installed metadata
     (``importlib.metadata``), when that distribution's ``cadagent/__init__.py`` is this file (a wheel install).

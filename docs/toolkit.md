@@ -535,7 +535,7 @@ flowchart TD
     R --> P["package<br/>written even when a check failed,<br/>for review; exit 1 if anything failed"]
 ```
 
-*What `cad-agent all` runs, in order (`cmd_all` in `src/cadagent/cli.py`): a failed build step or 3MF export stops it;
+*What `cad-agent all` runs, in order (`cmd_all` in `software/cadagent/cli.py`): a failed build step or 3MF export stops it;
 after that every step runs, and the exit code says whether anything failed.*
 
 | Command | Does | Exit code |
@@ -575,7 +575,7 @@ skip the work silently.
 
 Modules are grouped by domain, as the [topic tree](areas.yaml) groups the work: `cadagent.<domain>.<module>`, with the
 practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared core at the
-top ([`src/cadagent/README.md`](../src/cadagent/README.md)). `tests/repo/test_package_areas.py` keeps each package and its
+top ([`software/cadagent/README.md`](../software/cadagent/README.md)). `tests/repo/test_package_areas.py` keeps each package and its
 domain's `api:` lists in step. The old flat paths (`cadagent.fea`, `from cadagent import report`, ...) still import the
 same module, with a `DeprecationWarning`; so do the old package paths and everything under them
 (`cadagent.gates.motion` is `cadagent.review.gates.motion`), and `python -m` through an old path runs the module at its
@@ -599,7 +599,7 @@ flowchart TD
 ```
 
 *The packages and how a command runs through them (the same diagram as
-[`src/cadagent/README.md`](../src/cadagent/README.md)); the table maps each old path to its package.*
+[`software/cadagent/README.md`](../software/cadagent/README.md)); the table maps each old path to its package.*
 
 | New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
 |---|---|
@@ -1685,7 +1685,7 @@ notes to unpack the zip and open `index.html`, or publish the folder with GitHub
 pip install -e ".[cad,dev]"
 pytest
 # or, with a CAD project's venv that already has cadquery, trimesh, vtk and PIL:
-PYTHONPATH=src /path/to/project/.venv/bin/python -m pytest tests -q
+PYTHONPATH=software /path/to/project/.venv/bin/python -m pytest tests -q
 ```
 
 The geometry and render tests skip unless cadquery and vtk are importable.

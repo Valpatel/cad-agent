@@ -1450,7 +1450,7 @@ def build_parser() -> argparse.ArgumentParser:
     up_p.add_argument("--reinstalled", action="store_true",
                       help="record that the reinstall printed by --reinstall-command has run (install.ps1)")
     lib_p = sub.add_parser("library", help="Write the parts library (KiCad footprints and STEP bodies) for a project, "
-                                           "or audit a board for footprints with no 3D model (src/cadagent/library)")
+                                           "or audit a board for footprints with no 3D model (software/cadagent/library)")
     lib_actions = lib_p.add_subparsers(dest="action", required=True)
     lb = lib_actions.add_parser("build", help="write <out>/cad-agent.pretty and <out>/cad-agent.3dshapes")
     lb.add_argument("out", help="folder to write the library into")

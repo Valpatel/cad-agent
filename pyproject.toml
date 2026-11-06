@@ -38,7 +38,8 @@ dev = ["pytest>=9.0.3"]
 cad-agent = "cadagent.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["software"]
+include = ["cadagent*"]
 
 [tool.setuptools.package-data]
 cadagent = ["webkit/*", "webkit/vendor/**/*"]
@@ -54,4 +55,4 @@ cadagent = ["webkit/*", "webkit/vendor/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["software"]

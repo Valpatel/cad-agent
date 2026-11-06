@@ -21,7 +21,7 @@ never passes or fails a part on it. :meth:`Profile.verified_rule` refuses one, f
 **Where the data comes from.**
 
 * Rules, formulas and the shop table: ``docs/research/process-profiles.yaml`` at the root of the cad-agent checkout this
-  package runs from (an editable install or ``PYTHONPATH=src``), or the file named by ``CADAGENT_PROCESS_PROFILES``, or
+  package runs from (an editable install or ``PYTHONPATH=software``), or the file named by ``CADAGENT_PROCESS_PROFILES``, or
   the ``path`` given to :func:`load`. A wheel without the checkout has no data: :func:`load` says so.
 * FDM materials: the maker's data sheets that :mod:`cadagent.mechanical.compliant.allowables` holds, one entry per
   filament with every edition read. Their source ids (``bambu-petg-basic-tds`` and so on) are the reference registry's

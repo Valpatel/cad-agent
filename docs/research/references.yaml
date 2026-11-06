@@ -62,14 +62,14 @@ sources:
     aliases: [covestro, covestro-friction]
     used_for:
       - docs/research/process-profiles.yaml
-      - src/cadagent/mechanical/compliant/snapfit.py
+      - software/cadagent/mechanical/compliant/snapfit.py
       - tests/mechanical/test_snapfit.py
       - docs/mechanical/compliant.md
       - docs/research/compliant-mechanisms.md
-      - src/cadagent/formulas/_registry.py
-      - src/cadagent/formulas/beams.py
-      - src/cadagent/formulas/torsion.py
-      - src/cadagent/mechanical/printed_joints.py
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/beams.py
+      - software/cadagent/formulas/torsion.py
+      - software/cadagent/mechanical/printed_joints.py
     verified: >-
       2026-10-31: opened the Bayer-branded 26-page copy at this URL (pdftotext). Read the contents page, the
       root-radius rule (not less than 0.015 in), Table 2 heading and the 60 % frequent-use note, the 70 % of
@@ -86,8 +86,8 @@ sources:
     terms: cited and summarised, never copied
     areas: [snap-fits, moulding, materials, ribs-and-bosses, injection-moulding]
     used_for:
-      - src/cadagent/mechanical/compliant/snapfit.py
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/snapfit.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
       - docs/research/compliant-mechanisms.md
       - docs/research/fea-and-process-tools.md
@@ -238,9 +238,9 @@ sources:
     terms: cited; values quoted with the TDS version; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/manufacturing/process.py
-      - src/cadagent/mechanical/compliant/allowables.py
-      - src/cadagent/simulation/fea.py
+      - software/cadagent/manufacturing/process.py
+      - software/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/simulation/fea.py
       - docs/lessons/simulation/simulation-and-material.md
       - docs/mechanical/compliant.md
       - tests/simulation/test_fea_materials.py
@@ -261,9 +261,9 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: opened the PDF; read E 1960 / 1670 MPa, UTS 32 / 25 MPa, elongation 32.8 / 4.8 % (X-Y / Z).
 
@@ -277,9 +277,9 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/manufacturing/process.py
-      - src/cadagent/mechanical/compliant/allowables.py
-      - src/cadagent/simulation/fea.py
+      - software/cadagent/manufacturing/process.py
+      - software/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/simulation/fea.py
       - docs/lessons/simulation/simulation-and-material.md
       - docs/mechanical/compliant.md
       - tests/simulation/test_fea_materials.py
@@ -299,9 +299,9 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: "2026-10-31: opened the PDF; read E 1810 / 1540 MPa, UTS 34 / 23 MPa, elongation 8.6 / 5.1 % (X-Y / Z)."
 
   - id: bambu-petg-cf-tds
@@ -314,9 +314,9 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/manufacturing/process.py
-      - src/cadagent/mechanical/compliant/allowables.py
-      - src/cadagent/simulation/fea.py
+      - software/cadagent/manufacturing/process.py
+      - software/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/simulation/fea.py
       - docs/mechanical/compliant.md
       - tests/simulation/test_fea_materials.py
     verified: >-
@@ -334,9 +334,9 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: "2026-10-31: opened the PDF; read E 2450 / 2120 MPa, UTS 52 / 35 MPa, elongation 9.2 / 4.6 % (X-Y / Z)."
 
   - id: bambu-tpu-95a-hf-tds
@@ -348,7 +348,7 @@ sources:
     access: free
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [docs/research/compliant-mechanisms.md, src/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
+    used_for: [docs/research/compliant-mechanisms.md, software/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
     verified: >-
       2026-10-31: opened the PDF; read E 9.8 / 7.4 MPa, UTS 27.3 / 22.3 MPa, elongation >650 / >480 % (X-Y / Z).
       #125 (2026-10-31) read the same edition at https://store.bblcdn.com/58df32731eab4c90a7dac9b12e13ba88.pdf
@@ -364,10 +364,10 @@ sources:
     terms: cited; values quoted with the TDS version; never copied
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
       - tests/mechanical/test_snapfit.py
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page (Markdown view); E 3426.9 / 3064.9 MPa, UTS 52.3 / 40.5 MPa, elongation 6.3
       / 1.8 % (X-Y / Z).
@@ -382,10 +382,10 @@ sources:
     terms: cited; never copied
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
       - tests/mechanical/test_snapfit.py
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; E 2116.8 / 1898.7 MPa, UTS 50.8 / 42.8 MPa, elongation 8.4 / 3.3 % (X-Y /
       Z).
@@ -400,10 +400,10 @@ sources:
     terms: cited; never copied
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
       - tests/mechanical/test_snapfit.py
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; E 2379 / 1965 MPa, UTS 43.8 / 32 MPa, elongation 6.7 / 1.65 % (X-Y / Z).
 
@@ -417,10 +417,10 @@ sources:
     terms: cited; never copied
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
       - tests/mechanical/test_snapfit.py
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: read the wiki page; dry E 2703 / 2209 MPa, UTS 78.0 / 45.8 MPa, elongation 12.7 / 1.3 % (X-Y /
       Z).
@@ -447,10 +447,10 @@ sources:
     terms: cited; the PDF is not redistributed
     areas: [materials, fdm]
     used_for:
-      - src/cadagent/mechanical/compliant/allowables.py
+      - software/cadagent/mechanical/compliant/allowables.py
       - docs/mechanical/compliant.md
       - tests/mechanical/test_snapfit.py
-      - src/cadagent/manufacturing/process.py
+      - software/cadagent/manufacturing/process.py
     verified: >-
       2026-10-31: opened the PDF; dry E 8636.5 / 3759.5 MPa, UTS 109.3 / 54.0 MPa, elongation 2.1 / 1.9 %; wet E
       2508.1 / 1056.1 MPa, UTS 54.7 / 25.5 MPa, elongation 7.0 / 6.7 % (X-Y / Z).
@@ -480,7 +480,7 @@ sources:
     access: free
     terms: cited; values quoted with the TDS version; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
+    used_for: [software/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
     verified: >-
       2026-10-31: read for #125 (the V3.0 sheet, dry): tensile modulus 4430 / 2170 MPa, bending modulus 5460 /
       2240 MPa, UTS 102 / 48 MPa (X-Y / Z), density 1.09 g/cm3, as tests/simulation/test_fea_materials.py records them. The
@@ -495,7 +495,7 @@ sources:
     access: free
     terms: cited; values quoted with the TDS version; the PDF is not redistributed
     areas: [materials, fdm]
-    used_for: [src/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
+    used_for: [software/cadagent/simulation/fea.py, tests/simulation/test_fea_materials.py]
     verified: >-
       2026-10-31: read for #125 (the V3.0 sheet, dry): tensile modulus 3860 / 2180 MPa, bending modulus 4230 /
       1820 MPa, UTS 92 / 47 MPa (X-Y / Z), density 1.06 g/cm3, as tests/simulation/test_fea_materials.py records them.
@@ -617,7 +617,7 @@ sources:
     terms: cited and summarised, never copied
     areas: [fdm, fasteners]
     aliases: [cnck-tips]
-    used_for: [docs/research/manufacturing/process-profiles.md, docs/research/process-profiles.yaml, src/cadagent/mechanical/inserts.py]
+    used_for: [docs/research/manufacturing/process-profiles.md, docs/research/process-profiles.yaml, software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-10-31: opened the article (published 2021-10-01, since updated); read the iron temperature (10–20 °C
       above printing temperature), the 90 % melt-in, and the hole rules (blind hole about 1 mm deeper than the
@@ -633,7 +633,7 @@ sources:
     terms: cited and summarised, never copied
     areas: [fdm, fasteners]
     aliases: [cnck-2026]
-    used_for: [docs/research/manufacturing/process-profiles.md, docs/research/process-profiles.yaml, src/cadagent/mechanical/inserts.py]
+    used_for: [docs/research/manufacturing/process-profiles.md, docs/research/process-profiles.yaml, software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-10-31: opened the article (2026-03-28); read the pull-out test of about 50 M3 inserts in PLA over
       hole diameters 3.6–4.6 mm: printed holes about 0.25 mm under CAD, 4.0 mm nominal, 4.2 mm in CAD as the
@@ -1103,8 +1103,8 @@ sources:
     used_for:
       - docs/research/manufacturing/process-profiles.md
       - docs/research/process-profiles.yaml
-      - src/cadagent/mechanical/inserts.py
-      - src/cadagent/mechanical/printed_joints.py
+      - software/cadagent/mechanical/inserts.py
+      - software/cadagent/mechanical/printed_joints.py
     verified: >-
       2026-10-31: opened the 172-page PDF (COV-034, 10/2015). Its text layer uses a shifted font encoding, so it
       was decoded and the rib table (Table 2-1) checked against a rendered page. Read chapter 2 (wall thickness,
@@ -1281,7 +1281,7 @@ sources:
     used_for:
       - docs/research/compliant-mechanisms.md
       - docs/research/fea-and-process-tools.md
-      - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
+      - software/vendor/text-to-cad/skills/dfm/references/sheet-metal.md
       - docs/research/manufacturing/process-profiles.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/sheet-metal-guides.md
@@ -1306,7 +1306,7 @@ sources:
     terms: cited and summarised, never copied; its K-factor chart is not reproduced
     areas: [sheet-metal, laser-cutting, waterjet]
     used_for:
-      - vendor/text-to-cad/skills/dfm/references/sheet-metal.md
+      - software/vendor/text-to-cad/skills/dfm/references/sheet-metal.md
       - docs/research/manufacturing/process-profiles.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/sheet-metal-guides.md
@@ -1330,7 +1330,7 @@ sources:
     terms: fetched and cited by SKU and field path with the access date; the file is not redistributed. Treat as live data, not a stable API (it changes).
     areas: [sheet-metal, laser-cutting, waterjet, pem-hardware, tolerances]
     used_for:
-      - vendor/text-to-cad/skills/sendcutsend/references/official-sources.md
+      - software/vendor/text-to-cad/skills/sendcutsend/references/official-sources.md
       - docs/research/manufacturing/process-profiles.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/sheet-metal-guides.md
@@ -1651,8 +1651,8 @@ sources:
     access: print
     terms: cited by author, title, edition and section; never copied
     areas: [beams, torsion, plates, elastic-foundations]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/beams.py, src/cadagent/formulas/torsion.py,
-      src/cadagent/formulas/limiters.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/beams.py, software/cadagent/formulas/torsion.py,
+      software/cadagent/formulas/limiters.py]
     verified: >-
       2026-11-01: the edition, authors and ISBN checked against the Open Library record. The registry records
       the edition only: cadagent.formulas names the section and case of each formula it takes, and
@@ -1669,12 +1669,12 @@ sources:
     areas: [fasteners, beams, springs, bolted-joints]
     aliases: [shigley-shear, shigley-beam, shigley-torque]
     used_for:
-      - src/cadagent/formulas/_registry.py
-      - src/cadagent/formulas/inserts.py
-      - src/cadagent/formulas/limiters.py
-      - src/cadagent/formulas/screws.py
-      - src/cadagent/formulas/springs.py
-      - src/cadagent/mechanical/printed_joints.py
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/inserts.py
+      - software/cadagent/formulas/limiters.py
+      - software/cadagent/formulas/screws.py
+      - software/cadagent/formulas/springs.py
+      - software/cadagent/mechanical/printed_joints.py
     verified: >-
       2026-11-01: the title and ISBN checked against the Open Library record (it gives the printing year 2014;
       the book's copyright year is 2015, as cadagent.formulas cites it). The sections are cited where they are
@@ -1691,7 +1691,7 @@ sources:
     terms: cited by author, title, edition and table; never copied
     areas: [fasteners, friction]
     aliases: [rothbart]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: only the edition and ISBN were checked (Open Library); the book was not opened.
       cadagent.mechanical.inserts (key rothbart) takes its screw-in-brass-nut friction from this edition's table
@@ -1709,7 +1709,7 @@ sources:
     access: print
     terms: cited by author, title, edition and section; never copied
     areas: [beams]
-    used_for: [src/cadagent/mechanical/printed_joints.py]
+    used_for: [software/cadagent/mechanical/printed_joints.py]
     verified: >-
       2026-11-01: the edition and ISBN checked against the Open Library record.
       cadagent.mechanical.printed_joints cites Section 5.9 (the largest shear stress in a hollow circular beam).
@@ -1723,7 +1723,7 @@ sources:
     access: print
     terms: cited by author, title, edition and section; never copied
     areas: [linkages, mechanisms]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/linkages.py]
     verified: >-
       2026-11-01: the 5th edition's hardcover ISBN checked against library records (McGraw-Hill, copyright 2012;
       the edition with the student DVD is ISBN 978-0-07-742171-7). cadagent.formulas.linkages cites the
@@ -1738,7 +1738,7 @@ sources:
     access: print
     terms: cited by author, title, edition and section; never copied
     areas: [heat-transfer]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/thermal.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/thermal.py]
     verified: >-
       2026-11-01: the edition and ISBN checked against the Open Library record. cadagent.formulas.thermal cites
       the sections.
@@ -1752,7 +1752,7 @@ sources:
     access: print
     terms: cited by author, title, edition and section; never copied
     areas: [fluids, fans]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/thermal.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/thermal.py]
     verified: >-
       2026-11-01: the 7th edition's ISBN checked against library records (McGraw-Hill, 2011; Open Library labels
       this ISBN 6th edition, which library catalogues and the book's front matter do not).
@@ -1767,7 +1767,7 @@ sources:
     access: paid
     terms: cited by author, title and equation; never copied
     areas: [linkages, mechanisms]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/linkages.py]
     verified: >-
       2026-11-01: the DOI, title, author, volume and pages checked against Crossref: the paper is pp. 853-859,
       and the published discussion and closure that follow it run to p. 861 (cadagent.formulas cites 853-861).
@@ -1781,7 +1781,7 @@ sources:
     access: paid
     terms: cited by author, title and equation; never copied
     areas: [linkages, mechanisms]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/linkages.py]
     verified: "2026-11-01: the DOI, title, authors and year checked against Crossref."
 
   - id: brewer-lagace-1988
@@ -1793,7 +1793,7 @@ sources:
     access: paid
     terms: cited by author, title and equation; never copied
     areas: [composites, fdm, fea]
-    used_for: [src/cadagent/simulation/fea.py]
+    used_for: [software/cadagent/simulation/fea.py]
     verified: >-
       2026-11-01: the DOI, title, authors and year checked against Crossref. cadagent.simulation.fea's layer
       check takes the form of its quadratic criterion (cited there, and by cadagent.mechanical.printed_joints
@@ -1810,7 +1810,7 @@ sources:
     access: paid
     terms: cited by author, title and paper number; never copied
     areas: [fasteners, vibration]
-    used_for: [src/cadagent/mechanical/printed_joints.py]
+    used_for: [software/cadagent/mechanical/printed_joints.py]
     verified: "2026-11-01: the DOI, title, author and year checked against Crossref."
 
   - id: nasa-1228
@@ -1823,12 +1823,12 @@ sources:
     terms: cited and summarised, never copied (a US government work)
     areas: [fasteners]
     used_for:
-      - src/cadagent/mechanical/printed_joints.py
+      - software/cadagent/mechanical/printed_joints.py
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/process-profiles.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/rivets.py
+      - software/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: the NTRS record opened. cadagent.mechanical.printed_joints cites pp. 6-8 (locking methods:
       locknuts, jam nuts, nylon patches, spring lock washers).
@@ -1842,7 +1842,7 @@ sources:
     access: free
     terms: cited and summarised; the PDF is not redistributed
     areas: [fasteners, threadlockers]
-    used_for: [src/cadagent/mechanical/printed_joints.py]
+    used_for: [software/cadagent/mechanical/printed_joints.py]
     verified: >-
       2026-11-01: the PDF opened (5 pages). cadagent.mechanical.printed_joints cites its April 2025 edition's
       General Information: not normally recommended on plastics, particularly thermoplastics, for stress
@@ -1857,7 +1857,7 @@ sources:
     access: free
     terms: cited and summarised, never copied (CC BY 4.0)
     areas: [fdm, bolted-joints]
-    used_for: [src/cadagent/mechanical/printed_joints.py]
+    used_for: [software/cadagent/mechanical/printed_joints.py]
     verified: >-
       2026-11-01: the DOI, title, authors and year checked against Crossref. cadagent.mechanical.printed_joints
       takes Tables 2 and 3 (PLA and ABS double-shear coupons and their failure modes).
@@ -1871,7 +1871,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [fasteners, screw-bosses, moulding]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py, docs/research/process-profiles.yaml]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/screws.py, docs/research/process-profiles.yaml]
     verified: >-
       2026-11-01: the 4-page PDF opened; it is COV00073610, edition 2016-04, as cadagent.formulas cites it.
       2026-11-05: read p. 2 for the joining decision (#323 phase 7b): thread-cutting screws suit one-time assembly
@@ -1887,7 +1887,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [fasteners, screw-bosses, moulding]
-    used_for: [src/cadagent/formulas/_registry.py, docs/research/process-profiles.yaml]
+    used_for: [software/cadagent/formulas/_registry.py, docs/research/process-profiles.yaml]
     verified: >-
       2026-11-01: the 38-page PDF opened. It prints no date; its file metadata says 2015-10-30, the date
       cadagent.formulas cites it by. 2026-11-05: read for the joining decision (#323 phase 7b): snap fits are
@@ -1905,7 +1905,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [fasteners, screw-bosses]
-    used_for: [src/cadagent/mechanical/bosses.py, src/cadagent/formulas/_registry.py]
+    used_for: [software/cadagent/mechanical/bosses.py, software/cadagent/formulas/_registry.py]
     verified: >-
       2026-11-01: the 8-page PDF opened (version 250422). cadagent.mechanical.bosses takes the DELTA PT
       dimensions (p. 4) and boss recommendations (p. 7).
@@ -1919,7 +1919,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [compression-limiters]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the 4-page PDF opened. It prints no date; its file metadata says 2024-08-01, the date
       cadagent.mechanical.inserts cites it by. That module takes the boss wall of at least half the bolt diameter.
@@ -1935,9 +1935,9 @@ sources:
     areas: [inserts, fdm, moulding]
     used_for:
       - docs/research/process-profiles.yaml
-      - src/cadagent/formulas/_registry.py
-      - src/cadagent/formulas/inserts.py
-      - src/cadagent/mechanical/inserts.py
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/inserts.py
+      - software/cadagent/mechanical/inserts.py
     verified: >-
       2026-11-01: the 24-page PDF opened (edition 05/26). Read for cadagent.mechanical.inserts (#230): printed
       pp. 5, 8-9, 18 and 20-21, as its SRC entry lists them.
@@ -1951,7 +1951,7 @@ sources:
     access: free
     terms: cited and summarised, never copied; values read off its charts are cited as such
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py, docs/research/process-profiles.yaml]
+    used_for: [software/cadagent/mechanical/inserts.py, docs/research/process-profiles.yaml]
     verified: >-
       2026-11-01: the 5-page PDF opened (edition 04/26). Read for cadagent.mechanical.inserts (#230): pp. 2-5
       and Figures 8-12, whose bar values were read off the charts at 300 dpi. 2026-11-05: re-read pp. 1-2 and 5
@@ -1968,7 +1968,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [compression-limiters]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the 20-page PDF opened. Read for cadagent.mechanical.inserts (#230): pp. 3, 4, 6, 7 and 14.
 
@@ -1981,7 +1981,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [compression-limiters]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: "2026-11-01: the 20-page PDF opened. Read for cadagent.mechanical.inserts (#230): pp. 6, 15 and 16."
 
   - id: spirol-wp-2022
@@ -1993,7 +1993,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [compression-limiters, inserts]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the white paper's page and its 2-page PDF opened (by Christie L. Jones, © 2022): the limiter
       abuts the insert, so the insert, not the plastic, carries the load.
@@ -2007,7 +2007,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the 2-page PDF opened. It prints no date; its file metadata says 2025-06, and
       cadagent.mechanical.inserts cites it as the PDF of 2025-06-30. Read for that module (#230): p. 2, the metric
@@ -2022,7 +2022,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the article (2019-12-07) opened; read for cadagent.mechanical.inserts (#230), its pull-out
       tests.
@@ -2036,7 +2036,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the article (2020-05-30) opened; read for cadagent.mechanical.inserts (#230), its pull-out
       tests.
@@ -2050,7 +2050,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: "2026-11-01: the product page opened; read for cadagent.mechanical.inserts (#230), its size table."
 
   - id: laszlo-2026
@@ -2062,7 +2062,7 @@ sources:
     access: free
     terms: cited and summarised, never copied (CC BY 4.0)
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the DOI, title, authors and year checked against Crossref; read for
       cadagent.mechanical.inserts (#230).
@@ -2076,7 +2076,7 @@ sources:
     access: free
     terms: cited and summarised, never copied (CC BY 4.0)
     areas: [inserts, fdm]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the DOI, authors and year checked against Crossref; read for cadagent.mechanical.inserts
       (#230), infill and perimeters.
@@ -2097,7 +2097,7 @@ sources:
     access: free
     terms: cited and summarised, never copied (CC BY 4.0)
     areas: [inserts, fdm, ageing]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the DOI, title, authors and year checked against Crossref (cadagent.mechanical.inserts cites
       it by journal and title). Read for that module (#230), on ageing.
@@ -2111,7 +2111,7 @@ sources:
     access: free
     terms: cited and summarised, never copied (CC BY 4.0)
     areas: [fdm, materials, ageing]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the DOI, title, authors and year checked against Crossref; cadagent.mechanical.inserts takes
       Table 4.
@@ -2125,7 +2125,7 @@ sources:
     access: free
     terms: cited and summarised, never copied (CC BY 4.0)
     areas: [fdm, materials, relaxation]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the DOI, title, authors and year checked against Crossref; read for
       cadagent.mechanical.inserts (#230), PLA relaxation.
@@ -2141,7 +2141,7 @@ sources:
     access: free
     terms: cited by section, table and page; the catalogue is SKF's copyright and is never copied
     areas: [bearings]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/mechanical/bearings.md]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/bearings.py, software/cadagent/mechanical/bearings.py, docs/mechanical/bearings.md]
     verified: >-
       2026-11-01: opened the PDF (1152 pages): "PUB BU/P1 17000/1 EN · October 2018", © SKF Group 2018. The
       page and table numbers are cadagent.formulas.bearings' and cadagent.mechanical.bearings' (#180).
@@ -2155,7 +2155,7 @@ sources:
     access: free
     terms: cited by page; the report is NSK's copyright and is never copied
     areas: [bearings]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, docs/mechanical/bearings.md]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/bearings.py, docs/mechanical/bearings.md]
     verified: >-
       2026-11-01: opened the PDF linked from NSK's Technical Report page (154 pages, made 2024-11-26): it is CAT.
       No. E728h, the edition cadagent.formulas cites.
@@ -2171,7 +2171,7 @@ sources:
     access: free
     terms: cited and summarised by equation, never copied; the paper is open access under CC BY 4.0
     areas: [bearings]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/mechanical/bearings.md]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/bearings.py, software/cadagent/mechanical/bearings.py, docs/mechanical/bearings.md]
     verified: >-
       2026-11-01: the DOI, title, authors, volume, issue, pages 777-798 and licence (CC BY 4.0) checked against
       Crossref.
@@ -2187,7 +2187,7 @@ sources:
     terms: cited by chapter and equation; never copied
     areas: [bearings, contact]
     aliases: [johnson]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/bearings.py]
     verified: >-
       2026-11-01: title, author, year and ISBN (the 1985 hardback; the 1987 paperback is 978-0-521-34796-9)
       checked against Open Library; the DOI is the Cambridge Core edition. Content not re-read.
@@ -2202,7 +2202,7 @@ sources:
     terms: cited by author, title and equation; never copied
     areas: [bearings, contact]
     aliases: [hamrock-brewe]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/bearings.py]
     verified: "2026-11-01: the DOI, title, authors, volume, issue and pages 171-177 checked against Crossref."
 
   # ---------------------------------------------------------------- metals
@@ -2218,15 +2218,15 @@ sources:
     areas: [materials, metals, fea]
     used_for:
       - tests/simulation/test_fea_materials.py
-      - src/cadagent/simulation/fea.py
+      - software/cadagent/simulation/fea.py
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/process-profiles.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/formulas/_registry.py
-      - src/cadagent/formulas/rivets.py
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/rivets.py
       - tests/formulas/test_rivet_formulas.py
-      - src/cadagent/mechanical/rivets.py
+      - software/cadagent/mechanical/rivets.py
     verified: >-
       2026-10-31: read for #157 (the 31 January 2003 edition): Tables 3.6.2.0(b1), (b2) and (g) (6061),
       3.7.6.0(b1) and (d) (7075) and 2.2.1.0(b) (AISI 1025), as cadagent.simulation.fea's metal rows and
@@ -2246,7 +2246,7 @@ sources:
     access: free
     terms: cited and summarised, never copied
     areas: [materials, metals, inserts]
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     verified: >-
       2026-11-01: the 1-page PDF opened (© Smiths Metal Centres 2023): yield strength depends on temper, the
       range cadagent.mechanical.inserts takes as typical values.
@@ -2313,7 +2313,7 @@ sources:
     aliases: [iso273]
     used_for:
       - "proposed: docs/lessons/process/verify-from-source.md (infer the thread from clearance-hole sizes)"
-      - src/cadagent/mechanical/inserts.py
+      - software/cadagent/mechanical/inserts.py
     verified: >-
       2026-10-31: opened the store page; read the title and scope (fine, medium and coarse series for 1-150 mm
       threads). Content not read.
@@ -2436,7 +2436,7 @@ sources:
     terms: cited by number and title only; never copied
     areas: [fasteners, threads]
     aliases: [iso68]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/screws.py]
     verified: >-
       2026-11-01: read the Estonian standards body's listing: this edition was withdrawn on 2023-10-05 and
       replaced by ISO 68-1:2023 (Basic and design profiles). cadagent.formulas still cites 1998; content not
@@ -2452,7 +2452,7 @@ sources:
     terms: cited by number and title only; never copied
     areas: [fasteners]
     aliases: [iso898]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/screws.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/screws.py]
     verified: "2026-11-01: read the Estonian standards body's listing: valid since 2013-01-14. Content not read."
 
   - id: iso-76
@@ -2465,7 +2465,7 @@ sources:
     terms: cited by number and title only; never copied
     areas: [bearings]
     aliases: [iso76]
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/bearings.py, src/cadagent/mechanical/bearings.py, docs/mechanical/bearings.md]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/bearings.py, software/cadagent/mechanical/bearings.py, docs/mechanical/bearings.md]
     verified: >-
       2026-11-01: read the Estonian standards body's listing: valid since 2006-05-05, amended by ISO 76:2006/Amd
       1:2017. Content not read.
@@ -2479,7 +2479,7 @@ sources:
     access: paid
     terms: cited by number and title only; never copied
     areas: [bolted-joints, composites, testing]
-    used_for: [src/cadagent/mechanical/printed_joints.py]
+    used_for: [software/cadagent/mechanical/printed_joints.py]
     verified: >-
       2026-11-01: read the ASTM store page's title (the -17 edition). Not read:
       cadagent.mechanical.printed_joints takes its coupon proportions as Khosravani et al. (2023) quote them.
@@ -2526,7 +2526,7 @@ sources:
     terms: MIT; vendored with attribution
     areas: [cad, dfm, sheet-metal, fdm]
     used_for:
-      - vendor/text-to-cad
+      - software/vendor/text-to-cad
       - docs/research/agent-workflow/landscape.md
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal.md
@@ -2543,7 +2543,7 @@ sources:
     access: free
     terms: MIT; vendored with attribution
     areas: [pcb]
-    used_for: [vendor/kicad-happy]
+    used_for: [software/vendor/kicad-happy]
     verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2025 Andrew Klofas."
 
   - id: kicad-mcp-pro
@@ -2555,7 +2555,7 @@ sources:
     access: free
     terms: MIT; vendored with attribution
     areas: [pcb]
-    used_for: [vendor/kicad-mcp-pro]
+    used_for: [software/vendor/kicad-mcp-pro]
     verified: "2026-10-31: gh api (MIT, pushed 2026-10-31); LICENSE copyright 2026 Osman Aslan."
 
   - id: build123d-mcp
@@ -2567,7 +2567,7 @@ sources:
     access: free
     terms: Apache-2.0; vendored with attribution
     areas: [cad]
-    used_for: [vendor/build123d-mcp]
+    used_for: [software/vendor/build123d-mcp]
     verified: >-
       2026-10-31: gh api (Apache-2.0, pushed 2026-10-15). The LICENSE has no copyright line; the author is the
       owner's GitHub profile name.
@@ -2581,7 +2581,7 @@ sources:
     access: free
     terms: Apache-2.0; vendored with attribution
     areas: [cad]
-    used_for: [vendor/agentcad]
+    used_for: [software/vendor/agentcad]
     verified: >-
       2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the
       owner's GitHub profile name.
@@ -2595,7 +2595,7 @@ sources:
     access: free
     terms: Apache-2.0; vendored with attribution
     areas: [cad, fasteners]
-    used_for: [vendor/bd_warehouse, docs/research/manufacturing/sheet-metal-guides.md]
+    used_for: [software/vendor/bd_warehouse, docs/research/manufacturing/sheet-metal-guides.md]
     verified: >-
       2026-10-31: gh api (Apache-2.0, pushed 2026-10-31). The LICENSE has no copyright line; the author is the
       owner's GitHub profile name.
@@ -2615,7 +2615,7 @@ sources:
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/sheet_hardware.py
+      - software/cadagent/mechanical/sheet_hardware.py
       - docs/research/sheet-hardware.yaml
       - docs/sheet-metal-hardware.md
     verified: >-
@@ -2899,7 +2899,7 @@ sources:
       - docs/research/manufacturing/process-profiles.md
       - docs/research/manufacturing/sheet-metal-joining.md
       - docs/research/manufacturing/sheet-metal.md
-      - src/cadagent/mechanical/clinch.py
+      - software/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the 20-page PDF (© 2025, created 2025-11-14) through pdftotext. Read HB-4 (the sheet
       softer than the fastener, about 20 points of Rockwell B), HB-5 (general push-out and torque-out for -1
@@ -2922,7 +2922,7 @@ sources:
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal-joining.md
       - docs/research/manufacturing/sheet-metal.md
-      - src/cadagent/mechanical/clinch.py
+      - software/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 10/13/26), text and the table pages rendered. Read
       CL-4 and CL-5 (S, SS, CLS, CLSS, SP dimensions by shank code: minimum sheet, hole +0.08 mm / +0.003 in,
@@ -2942,7 +2942,7 @@ sources:
     used_for:
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/clinch.py
+      - software/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 10/19/26). Read FH-5 (FH, FHS, FHA dimensions: minimum
       sheet, hole, head, edge distance), FH-17 (materials and sheet hardness), FH-29 (FH and FHS push-out,
@@ -2961,7 +2961,7 @@ sources:
     used_for:
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/clinch.py
+      - software/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the PDF (© 2026, back page dated 6/12/26). Read SO-3 and SO-4 (SO and BSO dimensions:
       minimum sheet, hole, edge distance), SO-9 (materials and sheet hardness) and SO-12 (push-out, torque-out,
@@ -3013,7 +3013,7 @@ sources:
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/process-profiles.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/clinch.py
+      - software/cadagent/mechanical/clinch.py
     verified: >-
       2026-11-01: opened the 7-page sheet (July 2019). Read Table 1 (stainless sheet by UNS number in three
       groups, HRB 88, 90 and 92 maximum per ASTM A240, and the PEM parts rated for each; 304 is in the HRB 92
@@ -3060,7 +3060,7 @@ sources:
     areas: [pem-hardware, pricing]
     used_for:
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/sheet_hardware.py
+      - software/cadagent/mechanical/sheet_hardware.py
       - docs/research/sheet-hardware.yaml
       - docs/sheet-metal-hardware.md
     verified: >-
@@ -3085,7 +3085,7 @@ sources:
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/process-profiles.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/rivets.py
+      - software/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: opened the 68-page PDF (© 2012, Rev. D 6/12; the URL redirects to Stanley's CDN). Read the
       design guidelines pp. 10–12 (edge distance at least twice the diameter for full strength, open end down to
@@ -3121,7 +3121,7 @@ sources:
     used_for:
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/rivets.py
+      - software/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: opened the DigiKey-hosted PDF (© 2018). Read the design information p. 4 (rated strength times
       count meets the load, compatible body material, grip covers the stack, oversize holes lose strength,
@@ -3193,7 +3193,7 @@ sources:
     used_for:
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/rivets.py
+      - software/cadagent/mechanical/rivets.py
     verified: >-
       2026-11-01: opened the PDF (22 August 2016; superseded by 889D in 2021). Read 5.1.3 (the small fastener
       the same metal or more noble), 5.1.6, 5.2a (stainless screws in aluminium acceptable with sealed faying
@@ -3211,8 +3211,8 @@ sources:
     areas: [rivets, pricing]
     used_for:
       - docs/research/manufacturing/sheet-metal-joining.md
-      - src/cadagent/mechanical/rivets.py
-      - src/cadagent/mechanical/sheet_hardware.py
+      - software/cadagent/mechanical/rivets.py
+      - software/cadagent/mechanical/sheet_hardware.py
       - docs/research/sheet-hardware.yaml
       - docs/sheet-metal-hardware.md
     verified: >-
@@ -3235,8 +3235,8 @@ sources:
     terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers are used as test vectors
     areas: [rivets, formulas]
     used_for:
-      - src/cadagent/formulas/_registry.py
-      - src/cadagent/formulas/rivets.py
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/rivets.py
       - tests/formulas/test_rivet_formulas.py
     verified: >-
       2026-11-01: opened the 10-page PDF. Read the tearing, shearing and crushing resistances per pitch, Pt = (p - d)
@@ -3612,7 +3612,7 @@ unverified:
   - id: phoenix-1777989
     title: Phoenix Contact MSTB 2,5/2-STF-5,08 (1777989) datasheet
     org: Phoenix Contact
-    used_for: [docs/lessons/wiring/cables-connectors-and-routing.md, src/cadagent/mechanical/connectors.py]
+    used_for: [docs/lessons/wiring/cables-connectors-and-routing.md, software/cadagent/mechanical/connectors.py]
     why: "2026-10-31: phoenixcontact.com returned 403. Named as a Source in docs/lessons/05."
 
   - id: usb-type-c-spec
@@ -3633,7 +3633,7 @@ unverified:
     authors: [R. S. Goncalves, J. C. M. Carvalho, R. R. Santos]
     org: ABCM (20th International Congress of Mechanical Engineering, COBEM 2009)
     year: 2009
-    used_for: [src/cadagent/formulas/_registry.py, src/cadagent/formulas/linkages.py]
+    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/linkages.py]
     why: >-
       2026-11-01: no copy, DOI or proceedings page was found (searched by title and authors).
       cadagent.formulas.linkages cites it; find the ABCM proceedings record and add its URL.
@@ -3643,7 +3643,7 @@ unverified:
     authors: []
     org: PennEngineering (PEM)
     year: 2026
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     why: >-
       2026-11-01: cadagent.mechanical.inserts read the bulletin of 2026-07-16 but recorded no URL. pemnet.com
       answers a script with a bot check, and the copies found online are older editions. Record the edition's
@@ -3653,7 +3653,7 @@ unverified:
     title: ruthex soldering-tip set LOE-SET-012 (product page)
     authors: []
     org: ruthex
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     why: >-
       2026-11-01: cadagent.mechanical.inserts read the product page but recorded no URL, and no ruthex.de page
       for the set was found (only resellers' listings). Record the page's URL.
@@ -3662,7 +3662,7 @@ unverified:
     title: Screws property class 4.6 to 12.9 (Bossard technical information, 01-2025)
     authors: []
     org: Bossard
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     why: >-
       2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
       recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
@@ -3672,7 +3672,7 @@ unverified:
     title: Surface pressure when mounted (Bossard technical information, 01-2025)
     authors: []
     org: Bossard
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     why: >-
       2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
       recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
@@ -3682,7 +3682,7 @@ unverified:
     title: Friction and friction coefficients (Bossard technical information, 01-2025, after VDI 2230:2015)
     authors: []
     org: Bossard
-    used_for: [src/cadagent/mechanical/inserts.py]
+    used_for: [software/cadagent/mechanical/inserts.py]
     why: >-
       2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
       recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
@@ -3770,13 +3770,13 @@ uncited:
 
   - id: fea-layer
     kind: internal
-    where: src/cadagent/simulation/fea.py
+    where: software/cadagent/simulation/fea.py
     note: The layer-bond criterion of cadagent.simulation.fea's Study.layer_check.
     cites: [brewer-lagace-1988]
 
   - id: printed
     kind: internal
-    where: src/cadagent/mechanical/compliant/allowables.py
+    where: software/cadagent/mechanical/compliant/allowables.py
     note: The printed-material allowables of cadagent.mechanical.compliant.allowables, from the makers' data sheets.
     cites:
       - bambu-pla-basic-tds

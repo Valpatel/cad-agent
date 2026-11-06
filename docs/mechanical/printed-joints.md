@@ -181,7 +181,7 @@ from 1 and fails below 1. Materials are the keys of `cadagent.mechanical.complia
   Gere and Goodno, *Mechanics of Materials*, 8th ed., Section 5.9 (shear in a hollow circular beam).
 - Layer criterion: `cadagent.simulation.fea.layer_modes`, after Brewer and Lagace (1988), as the FEA layer check uses it.
 - Strengths: the makers' data sheets, edition by edition, in
-  [`allowables.py`](../../src/cadagent/mechanical/compliant/allowables.py).
+  [`allowables.py`](../../software/cadagent/mechanical/compliant/allowables.py).
 - Pin bearing in printed parts: M. R. Khosravani, H. Sadeghian, M. R. Ayatollahi and T. Reinicke, *On the
   Pin-Bearing Strength of Additively Manufactured Polymer Parts*, Polymers 15 (2023) 1660 (CC BY), Tables 2 and 3;
   ASTM D5961 (paid, cited by number) for the w/D 6 and e/D 3 advice.

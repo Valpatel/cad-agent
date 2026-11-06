@@ -293,7 +293,7 @@ Rule:
 | [skyneticist/flexure-hinge-calculator](https://github.com/skyneticist/flexure-hinge-calculator) | MIT | 1★ | HTML/JS hinge thickness and length | Skip |
 
 **Status reconciled 2026-11-06:** this dated survey led to the existing
-[`cadagent.mechanical.compliant`](../../src/cadagent/mechanical/compliant/README.md) snap calculator. Its
+[`cadagent.mechanical.compliant`](../../software/cadagent/mechanical/compliant/README.md) snap calculator. Its
 [source-example and planted-defect tests](../../tests/mechanical/test_snapfit.py) cover the declared snap subset;
 the [method, declaration file and limits](../mechanical/compliant.md) are the usable entry point, also routed from
 the [design-process skill](../../.agents/skills/design-process/SKILL.md). The surveyed external tools and their dated

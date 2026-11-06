@@ -131,4 +131,4 @@ Limits, stated in every report:
 ## Related
 
 [Process profiles: the sources](research/manufacturing/process-profiles.md) · [Printed joints and fit coupons](mechanical/printed-joints.md) ·
-[FDM anisotropy data](research/compliant-mechanisms.md) · [Manufacturing package](../src/cadagent/manufacturing/README.md)
+[FDM anisotropy data](research/compliant-mechanisms.md) · [Manufacturing package](../software/cadagent/manufacturing/README.md)

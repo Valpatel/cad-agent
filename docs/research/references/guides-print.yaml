@@ -998,7 +998,7 @@ sources:
   - docs/mechanical/inserts.md
   - docs/research/manufacturing/process-profiles.md
   - docs/research/process-profiles.yaml
-  - src/cadagent/mechanical/inserts.py
+  - software/cadagent/mechanical/inserts.py
 - id: padt-adding-inserts-to-3d-printed-parts-hardware-tips
   kind: guide
   category: manufacturing-guides
@@ -1058,7 +1058,7 @@ sources:
   - docs/mechanical/inserts.md
   - docs/research/manufacturing/process-profiles.md
   - docs/research/process-profiles.yaml
-  - src/cadagent/mechanical/inserts.py
+  - software/cadagent/mechanical/inserts.py
 - id: epfl-make-how-to-use-threaded-inserts-epfl-makerspace-wiki
   kind: guide
   category: manufacturing-guides
@@ -1116,7 +1116,7 @@ sources:
   used_for:
   - docs/mechanical/inserts.md
   - docs/research/process-profiles.yaml
-  - src/cadagent/mechanical/inserts.py
+  - software/cadagent/mechanical/inserts.py
 - id: formlabs-3d-printing-threads-and-adding-threaded-inserts-to
   kind: guide
   category: manufacturing-guides
@@ -1662,9 +1662,9 @@ sources:
   - formulas.polyhole
   - inserts.printed_hole
   used_for:
-  - src/cadagent/formulas/_registry.py
-  - src/cadagent/formulas/inserts.py
-  - src/cadagent/mechanical/inserts.py
+  - software/cadagent/formulas/_registry.py
+  - software/cadagent/formulas/inserts.py
+  - software/cadagent/mechanical/inserts.py
   - docs/mechanical/inserts.md
   - docs/research/process-profiles.yaml
   confidence:
@@ -1717,9 +1717,9 @@ sources:
   - formulas.arc_printed_diameter
   - inserts.printed_hole
   used_for:
-  - src/cadagent/formulas/_registry.py
-  - src/cadagent/formulas/inserts.py
-  - src/cadagent/mechanical/inserts.py
+  - software/cadagent/formulas/_registry.py
+  - software/cadagent/formulas/inserts.py
+  - software/cadagent/mechanical/inserts.py
   - docs/mechanical/inserts.md
   - docs/research/process-profiles.yaml
   confidence:

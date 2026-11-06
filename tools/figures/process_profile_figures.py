@@ -32,7 +32,7 @@ FONT = "system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
 # ----------------------------------------------------------------------------- expressions
 
 # The one evaluator lives in the package, which checks and calculators use too (#99).
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 from cadagent.manufacturing.process import evaluate  # noqa: E402
 from cadagent.review import references  # noqa: E402
 

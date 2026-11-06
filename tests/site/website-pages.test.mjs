@@ -8,7 +8,7 @@ import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
 const base = {
   pageFiles: new Set(['docs/a.md', 'docs/b.md']),
-  tracked: ['docs/img/out.png', 'docs/img/two.png', 'src/cadagent/review/gates/motion.py', 'src/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'src/cadagent/webkit/part-table.js'],
+  tracked: ['docs/img/out.png', 'docs/img/two.png', 'software/cadagent/review/gates/motion.py', 'software/cadagent/simulation/fea/__init__.py', 'tools/draw.py', 'software/cadagent/webkit/part-table.js'],
   commandNames: new Set(['gates', 'site']), readBuf: async () => PNG, pageURL: f => '/' + f.replace(/\.md$/, ''),
 };
 const out = (o = {}) => ({ img: 'docs/img/out.png', shows: 'output', tool: 'cad-agent site', on: 'fixture', caption: 'Six gates pass.', alt: 'A table', ...o });
@@ -141,7 +141,7 @@ test('the real source selector keeps moved identities and rejects missing curren
   assert.deepEqual(selectPages(files).map(p => p.file), [...requiredSources, 'docs/a b.md', 'docs/a\tb.md']);
   const cases = [
     ['.github/CONTRIBUTING.md', 'CONTRIBUTING.md', 'docs'],
-    ['vendor/THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md', 'docs'],
+    ['software/vendor/THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md', 'docs'],
     ['docs/mechanical/compliant.md', 'docs/compliant.md', 'docs'],
     ['docs/research/manufacturing/process-profiles.md', 'research/process-profiles.md', 'research'],
     ['docs/lessons/process/verify-from-source.md', 'lessons/process/verify-from-source.md', 'lessons'],

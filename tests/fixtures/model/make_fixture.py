@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[2] / "src"))
+sys.path.insert(0, str(HERE.parents[2] / "software"))
 
 from cadagent.publish.view import _write_stl, pack_view, unpack_model  # noqa: E402
 

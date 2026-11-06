@@ -39,8 +39,8 @@ from cadagent.publish.anim import svg as S
 SCHEMA = "cadagent.anim.snapfit/1"
 # the files whose sha256 a scene records: the calculator, the allowables, the beam shape and this module (record()
 # adds the spec)
-CODE = ("src/cadagent/mechanical/compliant/snapfit.py", "src/cadagent/mechanical/compliant/allowables.py",
-        "src/cadagent/formulas/beams.py", "src/cadagent/publish/anim/snapfit.py")
+CODE = ("software/cadagent/mechanical/compliant/snapfit.py", "software/cadagent/mechanical/compliant/allowables.py",
+        "software/cadagent/formulas/beams.py", "software/cadagent/publish/anim/snapfit.py")
 # the geometry every snap in the spec must share: the figure draws one arm
 ARM_KEYS = ("length_mm", "undercut_mm", "design", "section", "root_radius_mm", "lead_deg", "orientation")
 

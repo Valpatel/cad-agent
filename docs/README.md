@@ -7,7 +7,7 @@ The arrows show how a guide connects to the files that support it.
 ```mermaid
 flowchart TD
     A["areas.yaml<br/>choose a topic"] --> G["toolkit.md<br/>find a command"]
-    G --> S["../src/cadagent/<br/>run the method"]
+    G --> S["../software/cadagent/<br/>run the method"]
     G --> R["research/<br/>read its sources"]
     S --> T["../tests/<br/>check the result"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

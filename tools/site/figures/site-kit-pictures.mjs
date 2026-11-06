@@ -2,7 +2,7 @@
  *
  *   node tools/site/figures/site-kit-pictures.mjs --gyropup <checkout of Valpatel/gyropup>
  *
- * Each picture is the kit itself (src/cadagent/webkit/), served as the site serves it, running on real files:
+ * Each picture is the kit itself (software/cadagent/webkit/), served as the site serves it, running on real files:
  *
  * - docs/img/kit/part-table.webp: kit/part-table.js and kit/part-tracker.js on the gate bench's parts (its committed
  *   run, tests/fixtures/gate_bench/site_snapshot/dossier-geometry.json, and its dossier cards), one row per part or
@@ -26,7 +26,7 @@ import path from 'node:path';
 import YAML from 'yaml';
 
 const root = path.resolve(import.meta.dirname, '../../..');
-const kit = path.join(root, 'src/cadagent/webkit');
+const kit = path.join(root, 'software/cadagent/webkit');
 const OUT = path.join(root, 'docs/img/kit');
 const DOCS_COLUMN = 860;              // CSS px: the docs page's article column (880) less its figure's padding and border
 const arg = process.argv.indexOf('--gyropup');

@@ -1,6 +1,6 @@
 # tests/cli
 
-Tests for `cli.py` and the modules beside it at the top of [`src/cadagent/`](../../src/cadagent/README.md): the
+Tests for `cli.py` and the modules beside it at the top of [`software/cadagent/`](../../software/cadagent/README.md): the
 project file, links, the review zip, the agent kit, lazy dependencies and the version.
 
 Arrows: what a test imports, runs or reads.
@@ -32,6 +32,6 @@ flowchart TD
 | `test_update.py` | `cad-agent update` against a temporary git remote: fast-forward only, the refusals, `--ref` tags, a dependency change, the changelog with "Projects must change" first, project advice, staleness and `cad: cad-agent:` in `all` |
 | `test_version.py` | `cadagent.__version__` from a checkout, an editable install or a wheel |
 
-Run: `pytest tests/cli` (with `PYTHONPATH=src`).
+Run: `pytest tests/cli` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

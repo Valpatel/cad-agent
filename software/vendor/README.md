@@ -22,4 +22,4 @@ flowchart TD
 | `baselines/`, `reports/`, `patches/` | Reviewed scan fingerprints, import reports and local patches |
 | Project folders | Imported upstream code; each remains pinned in the manifest |
 
-Use [vendor_sync.py](../tools/vendor_sync.py) for imports and notice updates, and the [supply-chain skill](../skills/cad-supply-chain/SKILL.md) for checks. Repository metadata paths are explicitly classified; unexpected files under them still trigger the vendor audit.
+Use [vendor_sync.py](../../tools/vendor_sync.py) for imports and notice updates, and the [supply-chain skill](../../.agents/skills/cad-supply-chain/SKILL.md) for checks. Repository metadata paths are explicitly classified; unexpected files under them still trigger the vendor audit.

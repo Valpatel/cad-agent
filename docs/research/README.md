@@ -8,7 +8,7 @@ The arrows show the route from discovery to a tested reusable method.
 flowchart TD
     L["agent-workflow/landscape.md<br/>find existing tools"] --> R["references/<br/>read + cite sources"]
     R --> P["process-profiles.yaml<br/>encode scoped rules"]
-    P --> C["../../src/cadagent/<br/>apply the rule"]
+    P --> C["../../software/cadagent/<br/>apply the rule"]
     C --> T["../../tests/<br/>worked examples + defects"]
     T --> S["../../skills/<br/>when to use it"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
@@ -21,7 +21,7 @@ flowchart TD
 |---|---|
 | Research collections | [Agent tools and workflows](agent-workflow/README.md), [manufacturing](manufacturing/README.md) |
 | Reference registry | [Core sources](references.yaml), [shards, evidence ladder and promotion procedure](references/README.md); one id space, not one confidence level |
-| Tools to adopt or wrap | [Landscape](agent-workflow/landscape.md) and [data](landscape.json), [agent toolkits](agent-workflow/agent-toolkits-2026-10.md), [upstream registry](../../vendor/upstreams/registry.yaml) |
+| Tools to adopt or wrap | [Landscape](agent-workflow/landscape.md) and [data](landscape.json), [agent toolkits](agent-workflow/agent-toolkits-2026-10.md), [upstream registry](../../software/vendor/upstreams/registry.yaml) |
 | Process rules | [Profiles and limits](manufacturing/process-profiles.md), [rule data](process-profiles.yaml); unread rules cannot drive checks |
 | Compliant mechanisms | [Survey](compliant-mechanisms.md) → [snap-fit method](../mechanical/compliant.md) |
 | Simulation | [Tools](simulation-tools.md), [FEA/process survey](fea-and-process-tools.md) → [toolkit](../toolkit.md) |

@@ -154,7 +154,7 @@ def test_the_shape_is_the_formula(scene):
 # ---------------------------------------------------------------------------------------------- the tool's --check
 
 def test_the_committed_figure_is_its_scene(built):
-    assert FIGURE.read_text(encoding="utf-8") == built, "run PYTHONPATH=src python3 tools/readme_anim.py"
+    assert FIGURE.read_text(encoding="utf-8") == built, "run PYTHONPATH=software python3 tools/readme_anim.py"
 
 
 def test_check_and_extract_round_trip(tmp_path, monkeypatch, capsys, scene):
@@ -352,7 +352,7 @@ def test_render_refuses_another_scene(scene, spec):
 # ---------------------------------------------------------------------------------------------- the pages
 
 PAGES = [ROOT / "docs" / "mechanical" / "compliant.md",
-         ROOT / "src" / "cadagent" / "mechanical" / "compliant" / "README.md",
+         ROOT / "software" / "cadagent" / "mechanical" / "compliant" / "README.md",
          ROOT / "docs" / "practice" / "animated-figures.md"]
 
 

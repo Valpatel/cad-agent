@@ -711,7 +711,7 @@ def test_cache_hit_skips_the_kernel_and_a_moved_part_requeries_only_its_pairs(tm
 def test_cache_hits_across_processes(tmp_path):
     """OCP's TopoDS hash changes per process; the content hash must not."""
     cache = tmp_path / "cache"
-    env_path = str(ROOT / "src")
+    env_path = str(ROOT / "software")
     cmd = [sys.executable, str(ROOT / "tools" / "gate_timing.py"), "--parts", "20", "--cache", str(cache), "--json"]
     first = json.loads(subprocess.run(cmd, check=True, capture_output=True, text=True,
                                       env={"PYTHONPATH": env_path, "PATH": ""}).stdout)

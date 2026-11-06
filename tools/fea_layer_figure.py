@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regenerate the layer check's two figures in docs/img/fea/.
 
-    PYTHONPATH=src python3 tools/fea_layer_figure.py      # needs cadquery, gmsh, scikit-fem, matplotlib, PIL (~30 s)
+    PYTHONPATH=software python3 tools/fea_layer_figure.py      # needs cadquery, gmsh, scikit-fem, matplotlib, PIL (~30 s)
 
 layer-check.svg: a printed bar's safety factor against its layers, by print tilt. A PETG-CF bar, 10 x 10 x 100 mm,
 clamped at one end and pulled with 1000 N at the other (10 MPa). The lines are
@@ -23,7 +23,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 OUT = ROOT / "docs" / "img" / "fea" / "layer-check.svg"
 OUT_CRITERIA = ROOT / "docs" / "img" / "fea" / "layer-criteria.png"
 OUT_SPREAD = ROOT / "docs" / "img" / "fea" / "layer-spread.svg"

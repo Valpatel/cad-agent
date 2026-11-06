@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the animated concept figures (docs/img/motion/*.svg) from the code and fixtures they illustrate.
 
-    PYTHONPATH=src python3 tools/figures/motion_figures.py            # write the SVGs
-    PYTHONPATH=src python3 tools/figures/motion_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
+    PYTHONPATH=software python3 tools/figures/motion_figures.py            # write the SVGs
+    PYTHONPATH=software python3 tools/figures/motion_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
 
 Nothing is keyframed by eye. Each figure draws one fixture or worked example from this repo:
 
@@ -22,7 +22,7 @@ CadQuery is installed, it also checks the 2D numbers against the real motion gat
 The SVGs animate with CSS only, with no script, so they run in an ``<img>`` under the site's Content-Security-Policy
 and on GitHub. They carry their own light background. Under ``prefers-reduced-motion`` each one holds a still frame
 that shows the result. They need cadagent's core dependencies (numpy, pyyaml): run them from a checkout with
-``PYTHONPATH=src``, or with cadagent installed.
+``PYTHONPATH=software``, or with cadagent installed.
 """
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "software") not in sys.path:
+    sys.path.insert(0, str(ROOT / "software"))
 OUT = ROOT / "docs" / "img" / "motion"
 
 BG, INK, PALE, GREEN, PEACH, ORANGE = "#fffdf5", "#173d3c", "#eef1e4", "#6f8a80", "#ffe1cc", "#bd3a12"
@@ -1684,7 +1684,7 @@ def main(argv: list) -> int:
             OUT.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")
     if stale:
-        print("out of date with their sources (run PYTHONPATH=src python3 tools/figures/motion_figures.py):", ", ".join(stale))
+        print("out of date with their sources (run PYTHONPATH=software python3 tools/figures/motion_figures.py):", ", ".join(stale))
         return 1
     return 0
 

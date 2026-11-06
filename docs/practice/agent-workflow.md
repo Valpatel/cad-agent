@@ -89,7 +89,9 @@ Links follow the checkout, so pulling updates the skills; `update` reruns `insta
 feature worktree that will be removed; `--copy` copies instead, and `install` copies by itself where links are not
 allowed (Windows without Developer Mode). The installer replaces only what it installed (links into a cad-agent
 checkout, generated files and marked copies); anything else at a destination, including your own links, is reported
-as a conflict and left alone. `--target claude` or `--target agents` installs one side only.
+as a conflict and left alone. Copy mode preserves instructions and files bundled inside each skill; relative links
+to repository guides still require the checkout and are not an offline documentation bundle (#282). A native Claude
+plugin copies the full repository cache, so those guides remain inside that cache. `--target claude` or `--target agents` installs one side only.
 
 Earlier versions put Codex's skills in `~/.codex/skills` (`$CODEX_HOME/skills`). Codex now reads `~/.agents/skills`,
 so `install` removes what cad-agent put in the old folder and leaves the rest. If `~/.agents/skills` is a link to

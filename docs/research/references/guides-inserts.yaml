@@ -246,7 +246,7 @@ sources:
   - docs/mechanical/inserts.md
   - docs/research/manufacturing/process-profiles.md
   - docs/research/process-profiles.yaml
-  - src/cadagent/mechanical/inserts.py
+  - software/cadagent/mechanical/inserts.py
 - id: spirol-compression-limiter-design-guide
   kind: guide
   category: manufacturing-guides

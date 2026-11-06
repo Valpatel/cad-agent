@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The insert coupons of the test plan (cadagent.mechanical.inserts.coupon_plan), as CAD to print.
 
-    PYTHONPATH=src python3 tools/insert_coupons.py --out exports/insert-coupons   # STEP + STL per coupon, plan.json
-    PYTHONPATH=src python3 tools/insert_coupons.py --figure                       # docs/img/inserts/coupons.svg
-    PYTHONPATH=src python3 tools/insert_coupons.py --figure --check               # exit 1 if the figure is stale
+    PYTHONPATH=software python3 tools/insert_coupons.py --out exports/insert-coupons   # STEP + STL per coupon, plan.json
+    PYTHONPATH=software python3 tools/insert_coupons.py --figure                       # docs/img/inserts/coupons.svg
+    PYTHONPATH=software python3 tools/insert_coupons.py --figure --check               # exit 1 if the figure is stale
 
 Each insert gets a block printed upright (the insert's axis along the build direction) and one printed lying (its
 axis in the layer plane); the same block is pulled out and turned out. The clamp coupons add a printed plate with a
@@ -20,8 +20,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "software") not in sys.path:
+    sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent.mechanical import inserts as I                          # noqa: E402
 from cadagent.publish.anim import svg as S                            # noqa: E402

@@ -24,7 +24,7 @@ from cadagent.cli import main
 
 from .test_report import make_project
 
-SRC = Path(__file__).resolve().parents[2] / "src"
+SRC = Path(__file__).resolve().parents[2] / "software"
 FIRST = "2001-02-03T04:05:06+00:00"          # the test project's first commit
 LATER = "2002-03-04T05:06:07+00:00"
 SHIFT_S = 400 * 86400 + 5 * 3600 + 7 * 60     # the second build's clock: 400 days, 5 h and 7 min later

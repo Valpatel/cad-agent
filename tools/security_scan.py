@@ -7,7 +7,7 @@ credential access, telemetry/self-update, network calls, process spawning, new b
 It is a tripwire for a human/agent reviewer, not a proof of safety. Findings are fingerprinted so a reviewed
 baseline suppresses known items and an update only reports what is new.
 
-    python tools/security_scan.py scan  <tree> [--baseline vendor/baselines/x.json] [--json out.json] [--md out.md]
+    python tools/security_scan.py scan  <tree> [--baseline software/vendor/baselines/x.json] [--json out.json] [--md out.md]
     python tools/security_scan.py diff  <old_tree> <new_tree> [--baseline ...] [--json ...] [--md ...]
 Exit code: 0 no new HIGH findings, 1 new HIGH findings (block), 2 usage error.
 """

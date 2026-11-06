@@ -95,6 +95,6 @@ def test_the_survey_page_lists_every_opt_out():
 
 
 def test_the_package_has_no_telemetry_client():
-    hits = [str(p.relative_to(ROOT)) for p in (ROOT / "src" / "cadagent").rglob("*.py")
+    hits = [str(p.relative_to(ROOT)) for p in (ROOT / "software" / "cadagent").rglob("*.py")
             if re.search(r"posthog|sentry_sdk|mixpanel|segment\.io|google-analytics|api\.amplitude\.com", p.read_text(), re.I)]
     assert not hits, hits

@@ -15,7 +15,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent.manufacturing import fit_coupons as fc          # noqa: E402  (this checkout's package)
 from cadagent.mechanical import printed_joints as pj          # noqa: E402

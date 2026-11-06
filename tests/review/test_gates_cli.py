@@ -316,7 +316,7 @@ def test_check_and_report_need_no_cad_kernel(project):
             f"r = collect(load_project({str(project)!r})); "
             "assert any(f['feature_id'] == 'cad-gates' for f in r['features']); "
             "print(any(m in sys.modules for m in ('cadquery', 'OCP', 'trimesh')))")
-    src = str(Path(__file__).resolve().parents[2] / "src")
+    src = str(Path(__file__).resolve().parents[2] / "software")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                          env={"PYTHONPATH": src, "PATH": ""})
     assert out.stdout.strip() == "False", out.stderr

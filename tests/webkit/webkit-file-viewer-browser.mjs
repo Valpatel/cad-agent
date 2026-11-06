@@ -3,7 +3,7 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {chromium,webkit} from '../site/npm-context.mjs';
 import {serveWebkit} from './webkit-server.mjs';
 import {checkFileThemes} from './webkit-file-theme-browser.mjs';
-import {zipSync,strToU8} from '../../src/cadagent/webkit/vendor/file-parsers/fflate.module.js';
+import {zipSync,strToU8} from '../../software/cadagent/webkit/vendor/file-parsers/fflate.module.js';
 const vertices=[[0,0,0],[10,0,0],[10,20,0],[0,20,0],[0,0,30],[10,0,30],[10,20,30],[0,20,30]],faces=[[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]];
 const stl=new Uint8Array(84+faces.length*50),dv=new DataView(stl.buffer);dv.setUint32(80,faces.length,true);faces.forEach((face,i)=>face.forEach((vertex,j)=>vertices[vertex].forEach((n,k)=>dv.setFloat32(84+i*50+12+j*12+k*4,n,true))));
 function threeMF({unit='millimeter',components=false,required=false,badIndex=false,texture=false}={}){

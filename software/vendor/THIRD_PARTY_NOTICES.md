@@ -86,7 +86,7 @@ described wrongly here, please [tell us](https://github.com/Valpatel/cad-agent/i
 - DuPont, *General Design Principles – Module I*: permissible strains (Table 10.06).
 - Bambu Lab and Polymaker technical data sheets: printed-filament properties by print direction.
 
-**Code we vendor, pinned and security-reviewed** ([`vendor/`](./), [`SECURITY.md`](../.github/SECURITY.md)):
+**Code we vendor, pinned and security-reviewed** ([`vendor/`](./), [`SECURITY.md`](../../.github/SECURITY.md)):
 [text-to-cad](https://github.com/earthtojake/text-to-cad) by Thompson Labs LLC (MIT),
 [kicad-happy](https://github.com/aklofas/kicad-happy) by Andrew Klofas (MIT),
 [kicad-mcp-pro](https://github.com/oaslananka/kicad-mcp-pro) by Osman Aslan (MIT),
@@ -111,5 +111,5 @@ is imported, but only by the optional `fea` extra.
 
 **Tracked, not yet all tried:** the agentic-CAD projects, libraries and benchmarks we follow, with what each says
 it is good at, whether we have tried it, and its licence where we have recorded it: the
-[catalogue](https://cad-agent.valpatel.com/catalog) and the [landscape survey](../docs/research/agent-workflow/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+[catalogue](https://cad-agent.valpatel.com/catalog) and the [landscape survey](../../docs/research/agent-workflow/landscape.md). Full licence notices: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 

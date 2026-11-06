@@ -24,7 +24,7 @@ sys.path.insert(0, sys.argv[1])
 from cadagent.mechanical import sheet_hardware as sh
 sh.ROOT = Path(sys.argv[2]); sh.DATA = sh.ROOT / "docs/research/sheet-hardware.yaml"
 print(len(sh.load()))'''
-    command = [sys.executable, "-c", code, str(Path(__file__).resolve().parents[2] / "src"), str(tmp_path)]
+    command = [sys.executable, "-c", code, str(Path(__file__).resolve().parents[2] / "software"), str(tmp_path)]
     good = subprocess.run(command, cwd=tmp_path, capture_output=True, text=True)
     assert good.returncode == 0 and int(good.stdout.strip()) == len(sh.load()), good.stderr
     current.unlink()

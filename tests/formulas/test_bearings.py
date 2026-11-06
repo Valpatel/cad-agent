@@ -338,7 +338,7 @@ def test_check_spec_and_the_cli(tmp_path):
     import yaml
     f.write_text(yaml.safe_dump(spec))
     run = lambda *a: subprocess.run([sys.executable, "-m", "cadagent.cli", "bearings", *a], capture_output=True,  # noqa
-                                    text=True, cwd=tmp_path, env={"PYTHONPATH": str(ROOT / "src"), "PATH": ""})
+                                    text=True, cwd=tmp_path, env={"PYTHONPATH": str(ROOT / "software"), "PATH": ""})
     r = run(str(f), "--output", str(tmp_path / "out.json"))
     assert r.returncode == 1, r.stderr
     assert "FAIL  knee" in r.stdout and "WARN  knee, 6301" in r.stdout

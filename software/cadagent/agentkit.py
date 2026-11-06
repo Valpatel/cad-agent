@@ -17,7 +17,8 @@ The kit lives in the cad-agent checkout: ``.agents/skills/<name>/SKILL.md`` (the
 copies instead.
 
 Skills and agents are symlinked to the checkout by default, so ``git pull`` updates them; ``--copy`` copies instead
-(for a checkout that will move). Link to a long-lived checkout, not a feature worktree that will be removed. Only
+(instructions and bundled files only; links to repository guides still need the checkout). Link to a long-lived
+checkout, not a feature worktree that will be removed. Only
 what this module made is ever replaced (links into a cad-agent checkout, generated files, marked copies); anything else
 at a destination, including the user's own links, is reported as a conflict and left alone.
 

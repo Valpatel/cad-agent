@@ -453,7 +453,7 @@ def _figures():
 def test_the_committed_figure_matches_its_generator_and_is_safe_to_embed():
     from cadagent.publish.anim import svg as S
     lf = _figures()
-    assert lf.main(["--check"]) == 0, "run PYTHONPATH=src python3 tools/figures/linkage_figures.py"
+    assert lf.main(["--check"]) == 0, "run PYTHONPATH=software python3 tools/figures/linkage_figures.py"
     content = (ROOT / "docs" / "img" / "linkages" / "fivebar.svg").read_text(encoding="utf-8")
     assert S.problems(content) == []
 

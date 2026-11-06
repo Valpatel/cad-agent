@@ -9,7 +9,7 @@ from cadagent.cli import main
 
 def kit(tmp_path):
     root = tmp_path / 'cad-agent-kit'
-    (root / 'src/cadagent').mkdir(parents=True)
+    (root / 'software/cadagent').mkdir(parents=True)
     (root / '.agents/skills/alpha').mkdir(parents=True)
     (root / '.agents/skills/alpha/SKILL.md').write_text('---\nname: alpha\ndescription: "Use when: alpha things"\n---\n\nBody A\n')
     (root / '.agents/agents').mkdir(parents=True)

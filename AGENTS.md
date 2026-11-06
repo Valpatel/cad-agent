@@ -55,7 +55,7 @@ Other agent sessions use and change this repo at the same time, so:
 - **Keep the map whole.** A new docs or research page, `cad-agent` command, skill or agent gets its line in
   [`docs/areas.yaml`](docs/areas.yaml); `tests/repo/test_areas.py` fails until it does. Merge `dev` in before merging.
 - **Put each file where the map says** ([Repo structure and where files go](#repo-structure-and-where-files-go)):
-  code in `src/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
+  code in `software/cadagent/<domain>/`, tests in `tests/<domain>/`, never a new top-level folder.
 - **Keep cad-agent generic** (housings, robots, boards, any 3D model). Product-specific code stays in the product repo.
 - **Design to the rule cards.** Before drawing a feature, run `cad-agent rules <feature>` or `cad-agent choose
   joining` and design to the card ([skills/design-process](.agents/skills/design-process/SKILL.md)); never copy rules into
@@ -72,7 +72,8 @@ its failures says where the file goes.
 
 | Folder | What belongs there |
 |---|---|
-| `src/cadagent/<domain>/` | All package code, in the package for its domain ([map](src/cadagent/README.md)). ✓ No new files at the top of `src/cadagent/`. |
+| `software/` | [Toolkit package and pinned dependencies](software/README.md); product code stays in its product repository. |
+| `software/cadagent/<domain>/` | All package code, in the package for its domain ([map](software/cadagent/README.md)). ✓ No new files at the top of `software/cadagent/`. |
 | `tests/<domain>/` | Tests, in the folder named after the package their subject lives in; `cli/`, `site/` and `repo/` for what is not a package; shared data in `tests/fixtures/` ([map](tests/README.md)). ✓ No test file directly in `tests/`. |
 | `docs/` | Pages that explain a topic and point at the code; figures in `docs/img/<topic>/`. Pages move into `docs/<domain>/` as each area reaches three pages (#145). |
 | `docs/research/` | Surveys and sourced data tables (landscape, process profiles, security reports). |
@@ -81,7 +82,7 @@ its failures says where the file goes.
 | `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
 | `tools/site/assets/` | The website's own static files (CSS, icons, the landing model). |
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
-| `vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](vendor/README.md)). |
+| `software/vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](software/vendor/README.md)). |
 | `.agents/skills/<name>/`, `.agents/agents/<name>.md` | Canonical skills and independent-role prompts: edit these copies, which `cad-agent agents install` ships. The repository remains the plugin root; `.claude-plugin/plugin.json` names these components. |
 | `.agents/` | The agent-kit owner and its existing operational notes; [map](.agents/README.md). Notes are not skills or published pages. New shared findings still belong in `docs/lessons/`. |
 | `.claude-plugin/` | Native plugin metadata pointing at the canonical kit assets, with no hooks or duplicate instructions. |

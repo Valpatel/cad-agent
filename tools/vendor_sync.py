@@ -1,4 +1,4 @@
-"""Vendor third-party repositories into vendor/<name>/ safely, pinned by commit, never auto-merged.
+"""Vendor third-party repositories into software/vendor/<name>/ safely, pinned by commit, never auto-merged.
 
     python tools/vendor_sync.py check                 # which upstreams moved (no code downloaded)
     python tools/vendor_sync.py import <name> [--sha SHA] [--initial]
@@ -6,7 +6,7 @@
     python tools/vendor_sync.py notices               # rebuild the vendored table in THIRD_PARTY_NOTICES.md
 
 Safety rules this script enforces:
-- Pins are full commit SHAs from vendor/manifest.json; a branch or tag is never trusted.
+- Pins are full commit SHAs from software/vendor/manifest.json; a branch or tag is never trusted.
 - Upstream code is fetched with git hooks disabled and exported with `git archive` (no .git, no submodules, nothing
   executed). Excluded paths are dropped before anything is scanned or copied.
 - Imports never land on main: unless --initial, the script switches to a new branch vendor-update/<name>-<sha>.
@@ -18,7 +18,7 @@ import argparse, datetime as dt, fnmatch, json, shutil, subprocess, sys, tempfil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-V = ROOT / 'vendor'
+V = ROOT / 'software' / 'vendor'
 MAN = V / 'manifest.json'
 SAFE_GIT = ['git', '-c', 'core.hooksPath=/dev/null', '-c', 'protocol.file.allow=never', '-c', 'protocol.ext.allow=never',
             '-c', 'submodule.recurse=false', '-c', 'core.symlinks=false']
@@ -40,7 +40,7 @@ def entry(m, name):
     for e in m['projects']:
         if e['name'] == name:
             return e
-    sys.exit(f'unknown project {name}; add it to vendor/manifest.json first')
+    sys.exit(f'unknown project {name}; add it to software/vendor/manifest.json first')
 
 
 def remote_head(url):
@@ -79,7 +79,7 @@ def export_tree(url, sha, dest: Path, exclude):
 
 def cmd_import(a):
     m = manifest(); e = entry(m, a.name)
-    notices = ROOT / 'vendor' / 'THIRD_PARTY_NOTICES.md'
+    notices = ROOT / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md'
     if notices.exists():                      # a notices file `notices` would refuse stops the import before it starts
         notices_text(notices.read_text(), m['projects'])
     sha = a.sha or remote_head(e['url'])
@@ -103,7 +103,7 @@ def cmd_import(a):
         shutil.rmtree(target)
     shutil.copytree(new, target)
     for patch in sorted((V / 'patches' / a.name).glob('*.patch')) if (V / 'patches' / a.name).exists() else []:
-        subprocess.run(['git', '-C', str(ROOT), 'apply', '--directory', f'vendor/{a.name}', str(patch)], check=True)
+        subprocess.run(['git', '-C', str(ROOT), 'apply', '--directory', f'software/vendor/{a.name}', str(patch)], check=True)
         print('applied', patch.name)
     e['previous_sha'] = e.get('sha'); e['sha'] = full; e['imported'] = dt.date.today().isoformat(); e['report'] = str(rep.relative_to(ROOT))
     save(m); cmd_notices(None)
@@ -125,8 +125,8 @@ def cmd_accept(a):
 
 
 TABLE_HEAD = '| Project | Licence | Upstream | Pinned commit | Imported |'
-NOTICES_HEAD = ['# Third-party notices', '', 'Code under `vendor/` is copied from the projects below at the pinned commit. Each directory keeps its',
-                "upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `vendor/patches/`.", '']
+NOTICES_HEAD = ['# Third-party notices', '', 'Code under `software/vendor/` is copied from the projects below at the pinned commit. Each directory keeps its',
+                "upstream LICENSE/NOTICE files; those terms apply to that code. Our changes are listed as patches in `software/vendor/patches/`.", '']
 
 
 def vendored_table(projects):
@@ -151,7 +151,7 @@ def notices_text(text, projects):
 
 
 def cmd_notices(_):
-    path = ROOT / 'vendor' / 'THIRD_PARTY_NOTICES.md'
+    path = ROOT / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md'
     projects = manifest()['projects']
     text = notices_text(path.read_text(), projects) if path.exists() else '\n'.join(NOTICES_HEAD + vendored_table(projects)) + '\n'
     path.write_text(text)

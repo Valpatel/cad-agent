@@ -229,7 +229,7 @@ test('catalogue statuses are honest', async () => {
     const pkg = lib.name.split('/').pop().toLowerCase();
     assert.match(pyproject, new RegExp(`"${pkg}[>=<\\[" ]`), `${lib.name} is marked used but is not a dependency`);
   }
-  const cli = await readFile(path.join(root, 'src/cadagent/cli.py'), 'utf8');
+  const cli = await readFile(path.join(root, 'software/cadagent/cli.py'), 'utf8');
   for (const t of catalog.items.filter(i => i.type === 'tool')) assert.ok(cli.includes(`"${t.name.replace('cad-agent ', '')}"`), t.name);
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
   for (const [, cmd] of index.matchAll(/<code>cad-agent ([a-z0-9-]+)<\/code>/g))
@@ -271,7 +271,7 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
   for (const f of html) for (const m of (await readFile(path.join(out, f), 'utf8')).matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (!m[1].trim()) continue;
     assert.ok(f.startsWith('kit/'), `${f}: inline script on a site page`);
-    assert.equal((await readFile(path.join(out, f), 'utf8')), git('show', `HEAD:src/cadagent/webkit/${f.slice(4)}`), `${f} is not the kit's own file`);
+    assert.equal((await readFile(path.join(out, f), 'utf8')), git('show', `HEAD:software/cadagent/webkit/${f.slice(4)}`), `${f} is not the kit's own file`);
     kitHashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
   }
   assert.deepEqual([...allowed].sort(), [...kitHashes].sort());
@@ -723,7 +723,7 @@ test('the moved notices keep public URLs, catalogue identity, links and real pro
   const twin = await readFile(path.join(out, 'THIRD_PARTY_NOTICES.md'), 'utf8');
   assert.match(twin, /\]\(research\/landscape\.md\)/);
   assert.doesNotMatch(twin, /\]\(\.\.\/research\/landscape\.md\)/);
-  assert.ok(!files.includes('vendor/THIRD_PARTY_NOTICES.html'));
+  assert.ok(!files.includes('software/vendor/THIRD_PARTY_NOTICES.html'));
   for (const file of ['llms.txt', 'sitemap.xml']) {
     const body = await readFile(path.join(out, file), 'utf8');
     assert.match(body, /https:\/\/cad-agent\.valpatel\.com\/THIRD_PARTY_NOTICES/);
@@ -737,9 +737,9 @@ test('a real draft consumes moved sources and cannot substitute stale root files
   try {
     await writeFile(path.join(wt, '.github/CONTRIBUTING.md'), '# Current policy\n\nMOVED_SOURCE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
     await writeFile(path.join(wt, 'CONTRIBUTING.md'), '# Stale root policy\n\nSTALE_ROOT_SENTINEL.\n');
-    await writeFile(path.join(wt, 'vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'software/vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
     await writeFile(path.join(wt, 'THIRD_PARTY_NOTICES.md'), '# Stale root notices\n\nSTALE_NOTICE_SENTINEL.\n');
-    const registry = path.join(wt, 'vendor/upstreams/registry.yaml');
+    const registry = path.join(wt, 'software/vendor/upstreams/registry.yaml');
     const upstreams = YAML.parse(await readFile(registry, 'utf8'));
     upstreams[0].what = 'REGISTRY_SOURCE_SENTINEL';
     await writeFile(registry, YAML.stringify(upstreams));
@@ -775,7 +775,7 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     assert.doesNotMatch(movedGuide, /STALE_GUIDE_SENTINEL/);
     assert.match(movedGuide, /href="\/docs\/toolkit#commands"/);
     assert.match(await readFile(path.join(draft, 'docs/weekly-upstream-update.md'), 'utf8'), /\]\(toolkit\.md#commands\)/);
-    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml', guide, landscapeSource]) {
+    for (const source of ['.github/CONTRIBUTING.md', 'software/vendor/THIRD_PARTY_NOTICES.md', 'software/vendor/upstreams/registry.yaml', guide, landscapeSource]) {
       const current = await readFile(path.join(wt, source));
       await rm(path.join(wt, source));
       assert.throws(run, error => String(error.stderr).includes('ENOENT') && String(error.stderr).includes(source),

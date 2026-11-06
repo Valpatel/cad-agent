@@ -25,7 +25,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 
 OUT = ROOT / "docs" / "img" / "plates"
 FILAMENTS = {"pa6-cf": "Bambu PA6-CF @BBL X1C", "petg": "Bambu PETG HF @BBL P1S 0.4 nozzle",

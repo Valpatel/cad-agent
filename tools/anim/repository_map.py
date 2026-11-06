@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Draw the repository's evidence → evaluation → method → regression route.
 
-    PYTHONPATH=src python3 tools/anim/repository_map.py [--check]
+    PYTHONPATH=software python3 tools/anim/repository_map.py [--check]
 
 This is a navigation diagram of existing paths, not a measured engineering result.
 The SVG uses the existing embed validator, themes and reduced-motion policy.
@@ -11,7 +11,7 @@ import sys
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 from cadagent.publish.anim import svg
 
 OUT = ROOT / "docs/img/hero/repository-map.svg"
@@ -19,7 +19,7 @@ OUT = ROOT / "docs/img/hero/repository-map.svg"
 STEPS = (
     ("Sources", "docs/research/", "read + cite", "docs/research/references/README.md"),
     ("Evaluate", "tests/", "examples + controls", "tests/review/test_gate_bench.py"),
-    ("Methods", "src/ + skills/", "encode + explain", "skills/design-process/SKILL.md"),
+    ("Methods", "software/ + .agents/", "encode + explain", ".agents/skills/design-process/SKILL.md"),
     ("Regress", "tests/ + docs/lessons/", "keep the failed case", "docs/lessons/process/README.md"),
 )
 

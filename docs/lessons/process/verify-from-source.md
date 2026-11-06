@@ -114,7 +114,9 @@ flowchart TD
   separate from public identity; plant missing current sources beside stale old copies, and require a refusal.
 - **Evidence:** On 2026-11-06 UTC, fleet job 181 on cpu-b at `3b3f63a1` built 84 pages, but the full diagnostics
   found old flat-guide reads, incorrect public reference/redirect/twin paths, and four diagrams too wide at laptop
-  width. A successful build and selector-unit tests alone did not establish correct consumers. Fleet job 180 at
+  width. Subsequent phone inspection found two new overview diagrams clipped inside their own scrollers despite
+  zero page overflow: 452 px and 468 px of drawing in 290 px of inner room. The extended existing browser width
+  part fails against that actual artifact in both themes, before simplifying those two maps. A successful build and selector-unit tests alone did not establish correct consumers. Fleet job 180 at
   `d5fd6848` separately passed `python tests/cli/test_init.py --wheel-smoke`: a committed archive supplied both expected
   bytes and the wheel, its extracted build source was removed, and the installed CLI ran outside the checkout.
 - **Cause and corrective check:** Declaration-only tests and source-path string checks can agree with each other

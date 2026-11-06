@@ -4,15 +4,13 @@ Choose a feature, read its sources, then run the matching check. The [topic tree
 
 ```mermaid
 flowchart TD
-    F["choose a feature"] --> J["joints + fasteners"]
-    F --> M["mechanisms + motion"]
+    F["choose a feature"] --> J["joints or mechanisms"]
     J --> C["run the check<br/>record assumptions"]
-    M --> C
     C --> R["review evidence<br/>state physical limits"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     class F,C here
-    class J,M,R near
+    class J,R near
 ```
 
 | Task | Start here |

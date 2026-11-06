@@ -9,6 +9,38 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.21.0 (2026-11-06)
+
+**New**
+- `cad-agent rules <feature> [--process P --material M] [--json] [--why RULE]`: a rule card. It gives a feature's cited rules in about 2 KB, one line each, with the numbers, when each applies and when not (and what to use then), whether it is non-negotiable or a guideline with wiggle room, what tightening it costs, the confidence from the source's evidence, the function that enforces it, and `[ref:<id>]`. The cards are generated from `research/process-profiles.yaml` and the reference registry; `insert-hole`, `printed-hole`, `insert-boss`, `insert-install` and `snap-clip` gather rules across features (#323).
+- `cad-agent choose joining --load N [--cycles N --qty N --material M --process P] [--json]`: the first decision card. It chooses between a heat-set insert, a glued insert (resin), a thread-forming screw, a through-bolt and nut, a PEM and a snap or clip from a cited decision table, sizes the insert with `cadagent.mechanical.inserts.capacity`, names the runner-up and when it would win, and says where no source covers a branch and which linked cards hold no rule for the process. `--load` is required. With a load and no capacity model (an FDM part with no `--material`, or another process) it answers "not decided" and names what is missing, rather than choose unchecked (#323).
+- `cadagent.manufacturing.cards`: the cards, the decision-table format later decisions reuse, and the validation that `python -m cadagent.review.references --check` and the profile tests run (#323).
+
+**Changed**
+- Check the rendered reduced-motion hero still and reject a hidden-drawing control, rather than relying only on media-rule presence or zero animation counts. Document the page-emulation limit for external SVG images; generated geometry and animation remain unchanged.
+- Add a dated recovery audit and entry maps for the repository’s sources, methods and evaluation evidence.
+- Condense the tracked repository root from 30 to 24 entries: transcript mining moves under tools, the weekly upstream procedure under docs, GitHub policies under .github, and upstream metadata under vendor.
+- `research/process-profiles.yaml`: rules may carry `when`, `not_when`, `instead`, `strictness`, `wiggle`, `cost`, `materials` and `cards`, filled from their sources for the insert and thread rules, and `unstated` where no source says. New rule `fdm-insert-infill-min-spirol` (at least 50 % infill round an insert, SPIROL) (#323).
+- Move contribution and security policies into .github/, preserving GitHub discovery and the public contribution page/Markdown URLs and catalogue identity.
+- Correct the contributor gate table to match the independently reviewed 2026-11-05 main-branch protection settings (#112).
+- Check actual site publication selection and moved/missing/stale source handling, including whitespace-containing tracked filenames.
+- Group the tracked-upstream registry and third-party notices under `vendor/`, preserving published notice addresses and dependency identities across historical comparisons. Audit controls still reject unexpected files alongside repository metadata.
+
+**Fixed**
+- The existing branch-flow merge gate rejects changes to dated CHANGELOG entries already published on `main`,
+  including edits, deletions, reordered entries and inserted historical sections. It reads candidate files only as
+  data at fixed commits and fails closed when history cannot be read. New changes remain in `changelog.d/`.
+- GitHub now requires both browser checks and all three release gates on `main`, with an up-to-date branch, matching
+  the documented release process; the other protection settings remain unchanged.
+- The shallow-crossing regression accepts either a measured CAD-kernel crossing or a contact-probe finding, without assuming a particular OCCT build misses it. A planted boolean miss independently exercises the real fallback probe.
+- Website copy buttons switch foreground and background together when the page theme changes, keeping labels readable through the change. The browser contrast check also samples transition frames.
+- Decision cards reject NaN and infinite loads, cycle counts and quantities before choosing a joint. The CLI reports invalid loads as input errors instead of emitting nonstandard JSON.
+
+**Projects must change**
+- Repo maintainers run `python tools/mining/extract_session.py` instead of `python mining/extract_session.py`.
+- Repository maintainers use .github/CONTRIBUTING.md and .github/SECURITY.md; public website addresses remain unchanged.
+- Repository maintainers use vendor/upstreams/registry.yaml instead of upstreams/registry.yaml, and vendor/THIRD_PARTY_NOTICES.md for the notice source; the public notice address remains unchanged.
+
 ## v0.20.0 (2026-11-05)
 
 **New**

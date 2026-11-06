@@ -1,8 +1,11 @@
 /** Page-source discovery and stable public paths. No npm dependencies: audit parity runs without a site install. */
-const PUBLIC_PATHS = new Map([['.github/CONTRIBUTING.md', 'CONTRIBUTING.md']]);
+const PUBLIC_PATHS = new Map([
+  ['.github/CONTRIBUTING.md', 'CONTRIBUTING.md'],
+  ['vendor/THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md'],
+]);
 
 export const SECTIONS = [
-  { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || f === '.github/CONTRIBUTING.md' || f === 'THIRD_PARTY_NOTICES.md' },
+  { id: 'docs', title: 'Docs', match: f => /^docs\/[^/]+\.md$/.test(f) || f === 'README.md' || PUBLIC_PATHS.has(f) },
   { id: 'skills', title: 'Skills', match: f => /^skills\/[^/]+\/SKILL\.md$/.test(f) },
   { id: 'agents', title: 'Subagents', match: f => /^agents\/[^/]+\.md$/.test(f) },
   { id: 'lessons', title: 'Lessons (pitfalls)', match: f => /^lessons\/(?:[a-z0-9-]+\/)?[^/]+\.md$/.test(f) },

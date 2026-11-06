@@ -51,7 +51,7 @@ def checkout(root: Path):
     write(root, "vendor/tool/skills/x/SKILL.md", "---\nname: x\n---\n")
     write(root, "vendor/baselines/tool.json", json.dumps({"project": "tool", "sha": SHA, "fingerprints": []}))
     write(root, "vendor/reports/tool.md", "# scan\n")
-    write(root, "THIRD_PARTY_NOTICES.md",
+    write(root, "vendor/THIRD_PARTY_NOTICES.md",
           "| Project | Licence | Upstream | Pinned commit | Imported |\n|---|---|---|---|---|\n"
           f"| tool | MIT | https://github.com/someone/tool | `{SHA[:12]}` | 2026-10-24 |\n\n"
           "## Web kit\n\n| Project | Licence | Version | Licence file in the kit |\n|---|---|---|---|\n"
@@ -62,7 +62,7 @@ def checkout(root: Path):
     write(root, f"{ra.KIT}/mermaid/SOURCE.json", json.dumps({"package": "mermaid", "version": "11.4.1", "files": {
         "mermaid.min.js": hashlib.sha256(mjs).hexdigest(), "LICENSE": hashlib.sha256(MIT.encode()).hexdigest()}}))
     write(root, f"{ra.KIT}/file-viewer-sources.json", "{}")
-    write(root, "upstreams/registry.yaml", "- name: someone/tool\n  url: https://github.com/someone/tool\n  license: MIT\n"
+    write(root, "vendor/upstreams/registry.yaml", "- name: someone/tool\n  url: https://github.com/someone/tool\n  license: MIT\n"
                                            "  last_push: 2026-10-01\n  status: trial\n")
     write(root, "research/landscape.json", json.dumps({"projects": [], "libraries": [
         {"name": "gumyr/build123d", "license_spdx": "Apache-2.0", "last_push": "2026-10-23"}], "benchmarks": []}))
@@ -319,7 +319,7 @@ def test_patched_files_are_not_drift(tmp_path):
 def test_malicious_package_is_critical_and_moved_or_gone_repos(tmp_path):
     root = checkout(tmp_path)
     write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
-    write(root, "upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
+    write(root, "vendor/upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
                                            "- name: a/gone\n  url: https://github.com/a/gone\n  license: MIT\n")
 
     def osv(q):
@@ -373,7 +373,7 @@ def test_gate_needs_a_row_for_each_added_item(repo_with_base, capsys):
     assert gate(root, "") == 0                                        # nothing added
     text = (root / "pyproject.toml").read_text().replace('dev = ["pytest"]', 'dev = ["pytest"]\nexplore = ["optuna>=3.4"]')
     write(root, "pyproject.toml", text)
-    write(root, "upstreams/registry.yaml", (root / "upstreams/registry.yaml").read_text() +
+    write(root, "vendor/upstreams/registry.yaml", (root / "vendor/upstreams/registry.yaml").read_text() +
           "- name: new/thing\n  url: https://github.com/new/thing\n  license: MIT\n  status: candidate\n")
     write(root, f"{ra.KIT}/fonts/new.woff2", b"\x00")
     assert gate(root, "no rows here") == 1
@@ -393,6 +393,61 @@ def test_gate_fails_on_a_high_finding_anywhere(repo_with_base, capsys):
     write(repo_with_base, "vendor/stray/x.py", "x = 1\n")
     assert gate(repo_with_base, "| `vendor:stray` |", ["--fail-on", "critical"]) == 1
     assert "vendor/stray is not in vendor/manifest.json" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("name", ["unexpected.py", "nested/unexpected.py", ".hidden", "nested/.hidden"])
+@pytest.mark.parametrize("staged", [False, True])
+def test_owned_metadata_does_not_hide_unrecorded_code(repo_with_base, name, staged):
+    root = repo_with_base
+    assert "vendor:upstreams" not in ra.item_ids(ra.WorkTree(root))
+    write(root, f"vendor/upstreams/{name}", "unexpected content\n")
+    if staged:
+        git(root, "add", "--all")
+    assert ("vendor-unrecorded", "vendor:upstreams") in checks(run(root), "high")
+    assert "vendor:upstreams" in ra.item_ids(ra.WorkTree(root))
+    assert "vendor:upstreams" in ra.added_items(root, "HEAD")[0]
+
+
+def test_registry_move_keeps_historical_dependency_identity(repo_with_base):
+    root = repo_with_base
+    # Reconstruct a pre-move base commit, then make the real layout change.
+    (root / "upstreams").mkdir()
+    git(root, "mv", ra.REGISTRY, "upstreams/registry.yaml")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "old registry location")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    (root / "vendor/upstreams").mkdir(exist_ok=True)
+    git(root, "mv", "upstreams/registry.yaml", ra.REGISTRY)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    assert gate(root, "") == 0
+
+
+def test_registry_reads_prefer_moved_source_and_only_history_can_fall_back(repo_with_base):
+    root = repo_with_base
+    write(root, "upstreams/registry.yaml", "- name: stale/old\n  url: https://github.com/stale/old\n")
+    git(root, "add", "--all")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "both locations")
+    for tree in (ra.WorkTree(root), ra.GitTree(root, "HEAD")):
+        assert "url:https://github.com/stale/old" not in ra.item_ids(tree)
+    assert not any(e["name"] == "stale/old" for e in ra.catalogue_entries(root))
+    (root / ra.REGISTRY).unlink()
+    with pytest.raises(FileNotFoundError, match="registry"):
+        ra.catalogue_entries(root)
+    with pytest.raises(FileNotFoundError, match="registry"):
+        ra.item_ids(ra.WorkTree(root))
+
+
+def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
+    root = checkout(tmp_path)
+    (root / "vendor/THIRD_PARTY_NOTICES.md").rename(root / "THIRD_PARTY_NOTICES.md")
+    assert ("vendor-notices", "vendor:tool") in checks(run(root), "medium")
+
+
+def test_dated_report_uses_its_recorded_registry_location(tmp_path):
+    r = run(checkout(tmp_path))
+    assert f"catalog.json, {ra.REGISTRY}, research/landscape.json" in ra.to_markdown(r)
+    r["sources"]["offline"] = r["sources"]["offline"].replace(ra.REGISTRY, "upstreams/registry.yaml")
+    assert "catalog.json, upstreams/registry.yaml, research/landscape.json" in ra.to_markdown(r)
 
 
 # ------------------------------------------------------------------------------------------------------------- issue
@@ -678,7 +733,7 @@ def receipt_checkout(root, mjs=MJS, bundled=None, tarball_mjs=None):
         "files": {"mermaid.min.js": hashlib.sha256(mjs).hexdigest(), "LICENSE": hashlib.sha256(MIT.encode()).hexdigest()},
         "paths_in_package": {"mermaid.min.js": "package/dist/mermaid.min.js", "LICENSE": "package/LICENSE"},
         "bundled": bundled or {"dompurify": "3.4.12", "katex": "0.16.47", "note": "inlined"}}))
-    write(root, "THIRD_PARTY_NOTICES.md", (root / "THIRD_PARTY_NOTICES.md").read_text().replace("11.4.1", "11.17.2"))
+    write(root, "vendor/THIRD_PARTY_NOTICES.md", (root / "vendor/THIRD_PARTY_NOTICES.md").read_text().replace("11.4.1", "11.17.2"))
     return root, url, pkg
 
 
@@ -922,13 +977,17 @@ def test_published_pages_match_the_site_build():
     policy = next(p for p in selected if p["file"] == ".github/CONTRIBUTING.md")
     assert policy == {"file": ".github/CONTRIBUTING.md", "section": "docs", "public": "CONTRIBUTING.md"}
     assert not any(p["file"] in ("CONTRIBUTING.md", "SECURITY.md", ".github/SECURITY.md") for p in selected)
+    notices = next(p for p in selected if p["file"] == "vendor/THIRD_PARTY_NOTICES.md")
+    assert notices["public"] == "THIRD_PARTY_NOTICES.md"
+    assert not any(p["file"] == "THIRD_PARTY_NOTICES.md" for p in selected)
 
 
-def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path):
+@pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md"])
+def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path, source):
     """A stale old file cannot stand in for a missing mandatory source; whitespace paths stay whole."""
     subprocess.run(["git", "-C", str(tmp_path), "-c", "init.templateDir=", "init", "-q"], check=True)
-    expected = {"README.md", ".github/CONTRIBUTING.md", "docs/space name.md", "docs/tab\tname.md"}
-    extra = {"CONTRIBUTING.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "research/data.json"}
+    expected = {"README.md", ".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md", "docs/space name.md", "docs/tab\tname.md"}
+    extra = {"CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", ".github/SECURITY.md", "SECURITY.md", "docs/AGENTS.md", "research/data.json"}
     for name in expected | extra:
         write(tmp_path, name, "# candidate\n")
     subprocess.run(["git", "-C", str(tmp_path), "add", "--all"], check=True)
@@ -938,11 +997,11 @@ def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path):
     assert result.returncode == 0, result.stderr
     assert {p["file"] for p in json.loads(result.stdout)} == expected
     assert {f for f in files if ra.published(f, report=True)} == expected
-    (tmp_path / ".github/CONTRIBUTING.md").unlink()
+    (tmp_path / source).unlink()
     subprocess.run(["git", "-C", str(tmp_path), "add", "--all"], check=True)
     missing = _site_selection(_tracked_pages(tmp_path))
     assert missing.returncode != 0
-    assert "required published source .github/CONTRIBUTING.md is missing" in missing.stderr
+    assert f"required published source {source} is missing" in missing.stderr
 
 
 def test_figure_is_deterministic_and_says_what_it_leaves_out(tmp_path):

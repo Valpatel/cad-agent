@@ -42,8 +42,8 @@ TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all t
 # .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that
 # adds them.
 TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs", "examples", "lessons", "research",
-            "skills", "src", "tests", "tools", "upstreams", "vendor", "web"}
-ROOT_ENTRY_LIMIT = 26  # #145: maintenance under tools/docs; contributor and security policies under .github.
+            "skills", "src", "tests", "tools", "vendor", "web"}
+ROOT_ENTRY_LIMIT = 24  # #145/#358: registry metadata and notices join their vendor owner.
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else
 PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the top of src/cadagent/: may only shrink
 
@@ -51,7 +51,7 @@ PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the t
 # into subfolders named after the domains. Vendored trees keep their upstream layout; fixtures and the figure folders
 # under docs/img/ hold one tool's output each, so splitting them would scatter it.
 CLUTTER_LIMIT = 20
-NOT_COUNTED = re.compile(r"^(vendor|upstreams)/|/vendor/|^tests/fixtures/|^docs/img/")
+NOT_COUNTED = re.compile(r"^vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
 OVER_LIMIT = {

@@ -85,4 +85,4 @@ The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Py
 
 Send a minimal reproducer, a source or a better technique. Changes get tests and an independent review before release. [Contributing](.github/CONTRIBUTING.md) explains the process; the [dated recovery audit](lessons/process/2026-11-05-recovery-audit.md) records paused work and what remains.
 
-MIT. [Licence](LICENSE) · [Credits and third-party notices](THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)
+MIT. [Licence](LICENSE) · [Credits and third-party notices](vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)

@@ -46,7 +46,7 @@ test('the one patched three.js file says so, and the rest of three/ is the npm p
   const orbit = await readFile(path.join(vendor, 'three/addons/controls/OrbitControls.js'), 'utf8');
   assert.match(orbit, /^\t+const normalized_delta = Math\.abs\( delta \) \/ 100;$/m);
   assert.notEqual(three.patched['addons/controls/OrbitControls.js'].upstream_sha256, three.files['addons/controls/OrbitControls.js']);
-  const notices = await readFile(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+  const notices = await readFile(path.join(root, 'vendor/THIRD_PARTY_NOTICES.md'), 'utf8');
   assert.match(notices, new RegExp(`^\\| three\\.js .*\\| MIT \\| r${three.version.split('.')[1]}\\b`, 'm'));
   const fonts = await json('fonts/SOURCE.json');
   assert.ok(!fonts.package && fonts.sources['inter.woff2'].url.startsWith('https://fonts.gstatic.com/'));   // not from npm
@@ -60,7 +60,7 @@ test('receipts, notices and the source URLs name the same versions', async () =>
   // The single-file bundle inlines DOMPurify and KaTeX; the receipt names the versions inside it.
   const bundle = await readFile(path.join(vendor, 'mermaid/mermaid.min.js'), 'utf8');
   assert.ok(bundle.includes(`DOMPurify ${mermaid.bundled.dompurify}`) && bundle.includes(`"${mermaid.bundled.katex}"`));
-  const notices = await readFile(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+  const notices = await readFile(path.join(root, 'vendor/THIRD_PARTY_NOTICES.md'), 'utf8');
   assert.match(notices, new RegExp(`^\\| Mermaid \\| MIT \\| ${mermaid.version.replaceAll('.', '\\.')} \\|`, 'm'));
   assert.match(notices, new RegExp(`^\\| fflate .*\\| MIT \\| ${fflate.version.replaceAll('.', '\\.')}, from npm \\|`, 'm'));
   const viewerNotices = await readFile(path.join(vendor, 'FILE-VIEWER-NOTICES.md'), 'utf8');

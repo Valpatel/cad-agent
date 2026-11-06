@@ -137,8 +137,11 @@ test('long tables and code blocks fold, with a summary of what is inside; short 
 
 test('the real source selector keeps moved policy identity and rejects a stale replacement', () => {
   const source = '.github/CONTRIBUTING.md';
-  const files = [source, 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];
-  assert.deepEqual(selectPages(files).map(p => p.file), [source, 'docs/a b.md', 'docs/a\tb.md']);
+  const notices = 'vendor/THIRD_PARTY_NOTICES.md';
+  const files = [source, notices, 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];
+  assert.deepEqual(selectPages(files).map(p => p.file), [source, notices, 'docs/a b.md', 'docs/a\tb.md']);
   assert.equal(publicPath(source), 'CONTRIBUTING.md');
+  assert.equal(publicPath(notices), 'THIRD_PARTY_NOTICES.md');
   assert.throws(() => selectPages(files.filter(f => f !== source)), /required published source \.github\/CONTRIBUTING\.md is missing/);
+  assert.throws(() => selectPages(files.filter(f => f !== notices)), /required published source vendor\/THIRD_PARTY_NOTICES\.md is missing/);
 });

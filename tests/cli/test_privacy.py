@@ -69,7 +69,7 @@ def test_opt_out_sets_only_what_is_missing():
 
 def test_every_switch_a_vendored_tool_names_is_covered():
     named = set()
-    for path in (ROOT / "vendor").rglob("*"):
+    for path in (ROOT / "software" / "vendor").rglob("*"):
         if path.is_file() and (path.suffix in SUFFIXES or path.name.startswith(".env")):
             named |= set(SWITCH.findall(path.read_text(errors="replace")))
     assert named, "the survey found nothing: the pattern or the vendor folder moved"

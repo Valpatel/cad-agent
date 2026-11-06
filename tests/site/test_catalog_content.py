@@ -26,7 +26,7 @@ def landscape():
 @pytest.fixture(scope="module")
 def entries(landscape):
     """(kind, entry, notes) for every outside entry the catalogue shows. An upstream's notes live in landscape.json."""
-    upstreams = yaml.safe_load((ROOT / "vendor" / "upstreams" / "registry.yaml").read_text(encoding="utf-8"))
+    upstreams = yaml.safe_load((ROOT / "software" / "vendor" / "upstreams" / "registry.yaml").read_text(encoding="utf-8"))
     notes = {p["name"]: p.get("notes", "") for p in landscape["projects"]}
     out = [("upstream", u, notes.get(u["name"], "")) for u in upstreams]
     out += [("library", lib, lib.get("notes", "")) for lib in landscape["libraries"]]

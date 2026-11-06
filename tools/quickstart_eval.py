@@ -9,7 +9,7 @@
 ``install`` runs the install command verbatim with HOME set to ``DIR/home`` (so ``~/cad-agent``, uv and the installed
 skills land there, never in your own home), twice (the second run is an update and must change nothing), then checks
 that ``cad-agent`` runs, the skills are installed, CadQuery makes and exports a solid, and the site's llms.txt answers.
-``--local`` runs this checkout's ``web/install.sh`` with ``--ref REF`` instead of the site's copy, to try a change
+``--local`` runs this checkout's ``tools/site/assets/install.sh`` with ``--ref REF`` instead of the site's copy, to try a change
 before it is deployed. It is light enough for a laptop, but it downloads
 CadQuery and VTK (about 1 GB); the PR that added it ran it on a CPU cluster node.
 
@@ -118,7 +118,7 @@ def install(work: Path, ref: str = "main", local: bool = False) -> dict:
     home.mkdir(parents=True, exist_ok=True)
     env = _clean_env(home)
     if local:
-        cmds = [f'sh "{ROOT}/web/install.sh" --ref {ref}']
+        cmds = [f'sh "{ROOT}/tools/site/assets/install.sh" --ref {ref}']
     else:
         cmds = [c.replace("| sh", f"| sh -s -- --ref {ref}") if ref != "main" else c for c in commands()]
     steps = [_run(c, env, home) for c in cmds + cmds]
@@ -424,7 +424,7 @@ def main(argv=None) -> int:
     i = sub.add_parser("install")
     i.add_argument("--work", type=Path, required=True)
     i.add_argument("--ref", default="main", help="branch or tag to install instead of main (to try a change first)")
-    i.add_argument("--local", action="store_true", help="run this checkout's web/install.sh, not the site's")
+    i.add_argument("--local", action="store_true", help="run this checkout's tools/site/assets/install.sh, not the site's")
     a = sub.add_parser("agent")
     a.add_argument("--work", type=Path, required=True)
     a.add_argument("--harness", choices=("claude", "codex"), default="claude")

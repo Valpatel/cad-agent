@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { parseHeaders } from '../../tools/site/preview-site.mjs';
+import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
 import { createPublication } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 
@@ -237,14 +237,29 @@ test('catalogue statuses are honest', async () => {
   for (const i of catalog.items.filter(i => i.type === 'upstream')) assert.ok(i.summary, `${i.name} has no summary`);
 });
 
-test('headers: each header comes from one rule, and every inline script is allowed by hash', async () => {
+test('headers: stable assets revalidate, each header has one rule, and inline scripts are allowed by hash', async () => {
   const text = await readFile(path.join(out, '_headers'), 'utf8');
   const rules = parseHeaders(text);
-  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/vendor/three/three.module.min.js', '/kit/viewer']) {
+  const vendorPaths = files.filter(f => f.startsWith('kit/vendor/')).map(f => '/' + f);
+  assert.ok(vendorPaths.includes('/kit/vendor/fonts/fonts.css') && vendorPaths.includes('/kit/vendor/fonts/SOURCE.json'));
+  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/viewer', ...vendorPaths]) {
     const seen = {};
     for (const r of rules) if (r.pattern.test(p)) for (const [k] of r.headers) seen[k.toLowerCase()] = (seen[k.toLowerCase()] || 0) + 1;
     for (const [k, n] of Object.entries(seen)) assert.equal(n, 1, `${p}: ${k} is set by ${n} rules and Pages would join them`);
     assert.ok(seen['content-security-policy'], `${p} has no CSP`);
+  }
+  // Consume the emitted wildcard rules as the preview server does. A current version marker cannot make a
+  // separately cached, stable asset URL current; neither browser nor shared caches may reuse it while fresh.
+  for (const p of vendorPaths) {
+    const cache = headersFor(rules, p)['cache-control'];
+    assert.ok(cache, `${p}: stable asset has no explicit revalidation policy`);
+    const pairs = cache.toLowerCase().split(',').map(s => s.trim().split('='));
+    const directives = new Map(pairs);
+    assert.equal(directives.size, pairs.length, `${p}: duplicate cache directives are ambiguous`);
+    assert.equal(directives.get('max-age'), '0', `${p}: browser cache may serve old release bytes`);
+    assert.ok(directives.has('must-revalidate'), `${p}: stale responses need revalidation`);
+    assert.ok(!directives.has('s-maxage') || directives.get('s-maxage') === '0', `${p}: shared cache may serve old release bytes`);
+    assert.ok(!directives.has('immutable'), `${p}: a stable URL is not immutable`);
   }
   for (const p of ['/install.sh', '/install.ps1']) assert.ok(rules.some(r => r.pattern.test(p) && r.headers.some(([k, v]) => k === 'Content-Type' && v.startsWith('text/plain'))), `${p} is served as text, so curl and irm get the script and a browser shows it`);
   const csp = text.match(/Content-Security-Policy: (.*)/)[1];

@@ -145,6 +145,26 @@ flowchart TD
 
 </details>
 
+### Exercise moved files through each entry point
+- **Rule:** After a file move, run each caller's actual selection path. A direct test of the destination does not
+  prove a wrapper, evaluator or alternate mode can find it.
+
+<details>
+<summary>2026-11-06 local quickstart dispatch evidence and limits</summary>
+
+- **Incident:** At `a73198a7`, `tools/quickstart_eval.py install --local` still selected `web/install.sh` after
+  the installer moved into `tools/site/assets/`. Executing that selected command with the real script's safe
+  `--help` option exited 2: `cannot open .../web/install.sh: No such file` ([#378](https://github.com/Valpatel/cad-agent/issues/378)).
+- **Cause:** Direct installer tests used the correct new path; the evaluator's separate local branch was not
+  exercised by the existing public-command check.
+- **Corrective check:** That existing check now enters the evaluator's actual CLI and local dispatch from outside
+  the checkout, then executes the selected installer with `--help`. The immutable old-path implementation fails
+  this check; the corrected path reaches the real option parser. The temporary home has no installed checkout.
+- **Limits:** This proves dispatch, not downloads, real uv installation, repeat updates, authenticated agent runs,
+  Windows execution or physical CAD quality. Those retain their separate acceptance evidence under #282.
+
+</details>
+
 ### Follow the credential store selected by the actual CLI
 - **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx wrangler whoami` so its
   normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path
@@ -159,6 +179,35 @@ flowchart TD
 - **Limits:** This establishes that read-only Pages project and deployment-log access worked at that time. It does
   not establish write or DNS permissions, and credential-path precedence may change in another Wrangler version.
   [Sanitized readback and run receipts](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6675614833).
+
+### Verify released asset bytes as well as the version marker
+- **Rule:** Read the actual assets through each public domain and compare them with the released source. A current
+  version marker or checksum receipt does not prove that a separately cached asset is current. Stable asset URLs
+  must revalidate when reused; a source header change does not evict responses already stored elsewhere.
+
+<details>
+<summary>2026-11-06 stylesheet readback, cache policy and authorization limits</summary>
+
+- **Incident:** Ordinary GETs at 06:55 UTC found v0.22.1 revision `8ee3093e` and its current font receipt on both
+  custom domains, but their stylesheet was the prior 605-byte file (`bcaa41f3…`, `CF-Cache-Status: HIT`). The public
+  Pages domain returned the expected 607-byte file (`8d4d4568…`). Only an owned source-path comment had changed;
+  the font rules were identical. [Exact hashes and readback](https://github.com/Valpatel/cad-agent/issues/375#issuecomment-6679164089).
+- **Cause and corrective check:** Stable `/kit/vendor/*` URLs received a day of freshness. The existing header
+  check covered uniqueness and CSP, but not that freshness policy. It now consumes all actual emitted vendor
+  paths and their matching rules, requiring revalidation for browser and shared caches while retaining CSP checks.
+  This does not identify an unreadable zone rule as the cause of the observed custom-domain caching.
+- **Validation:** Fleet job 207 on cpu-b at `cd6433f6` built both real policies. The previous check accepted the
+  old emitted policy; the refined check rejected it, overlapping rules and duplicate directives. A real Chromium
+  context retained old bytes under the day-long freshness policy and read changed origin bytes under revalidation.
+  [Exact controls, complete artifacts and limits](https://github.com/Valpatel/cad-agent/issues/381#issuecomment-6679791951).
+- **Authorization evidence:** Normal existing-user Wrangler refresh and fresh Pages/zone reads succeeded. At
+  07:00:53 UTC, the independently reviewed one-URL purge returned HTTP401/code10000 and stopped before the second
+  domain. No purge was accepted; read access did not establish purge permission. [Action receipt](https://github.com/Valpatel/cad-agent/issues/375#issuecomment-6679209776).
+- **Limits:** Local emitted-header checks do not prove CDN behavior, existing browser-cache eviction or global
+  propagation. Preserve the first mismatch, verify ordinary public responses after release, and keep publication
+  pending while bytes disagree. A cache-busting query is diagnostic evidence, not proof that the original URL is fixed.
+
+</details>
 
 ### Check documented commands in the forms people actually use
 - **Rule:** A reference check must consume the actual inline and shell examples, with an invalid example proving it

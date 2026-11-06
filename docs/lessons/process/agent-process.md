@@ -179,3 +179,40 @@ Preserve completed sibling checks and investigate any actual assertion failure. 
 physical qualification or coverage for a stage that did not run.
 
 </details>
+
+### Keep navigation evidence and close only the failed check's context
+- **Rule:** A navigation timeout needs its route, viewport, theme, script mode and outstanding resources. Capture
+  that evidence at failure without changing the navigation boundary; preserve the original error if collecting
+  DOM evidence also fails. Cover page creation with the ownership `try`, close each owned context in `finally`,
+  and retain both failures if cleanup also throws. Leave other test lanes running.
+- **Check:** The existing diagram browser check records pending/failed requests, response status and bounded
+  DOM/font/style/image evidence. A real held stylesheet must produce the expected timeout, report its actual
+  pending request and missing sheet, and close its context while a neighboring page remains usable. Controls that
+  remove diagnostics or owned-context cleanup are rejected in both Chromium and WebKit. Real-context setup and
+  close faults also verify that single errors keep their identity and a dual failure preserves both errors.
+
+<details><summary>2026-11-06 incident and limits (#369 / #371)</summary>
+
+- **Observed:** #369 at `fd85c59d`, run 42158688838 attempt 1 / job 127698877186, completed setup/build and then
+  failed during the browser suite at 03:51 UTC. The JavaScript-disabled navigation to `/docs/style-guide` exceeded
+  its existing 30-second `load` timeout. The log omitted the iteration's viewport/theme and pending request.
+  [Original failure receipt](https://github.com/Valpatel/cad-agent/pull/369#issuecomment-6676472949).
+- **Reproduction scope:** fleet 200 built that exact source. All 20 isolated no-script loads passed; the unchanged
+  diagram/theme functions then passed together in their original two lanes/shared WebKit browser: 148 navigations,
+  20 no-script, no errors, maximum 2,952 ms; the five no-script style-guide loads took 454–512 ms. This did not
+  identify the initial cause. The reviewer permitted one unchanged-head full-job rerun, preserving that failure.
+- **Review refinement:** Independent #373 review reproduced a context leak when sentinel page creation failed
+  before its `try`, and a cleanup error replacing the original action error. The corrected boundaries release
+  the setup context and use `AggregateError` only for a dual failure, retaining the original as `cause` and both
+  errors and messages. A control restoring the old error-masking helper is rejected in both engines.
+- **Correction:** `navigateDiagram` in `tests/site/website-browser.mjs` keeps the ordinary 30-second boundary and
+  records structured URLs without queries/fragments; the preserved original error may contain its native call
+  log. Its DOM snapshot has a separate two-second diagnostic
+  bound. `withDiagramPage` releases only the context it creates. The held-stylesheet control uses a three-second
+  fixture timeout so it can test a real error and cleanup without adding 30 seconds to every browser job.
+- **Limits:** This improves observability and ownership, not the unproven cause of the original timeout. The old
+  delayed cleanup happened after the failure; it is not evidence that cleanup caused it. The local replay does
+  not reproduce every property of the CI host. A repeated failure still requires investigation, and skipped or
+  interrupted stages are never counted as passes.
+
+</details>

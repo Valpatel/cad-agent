@@ -121,6 +121,8 @@ jobs:
             --max-retries 1 --include-fragments --exclude-all-private
             --exclude '^https?://([a-z0-9-]+\.)*example\.(com|org|net)'
             --exclude-path docs/research/security-report.md
+            --exclude-path docs/research/references/README.md --exclude-path docs/research/bench/README.md
+            --exclude-path docs/examples/starter-box/README.md --exclude-path docs/examples/explore-two-wheel/README.md
             'README.md' '.github/CONTRIBUTING.md' 'vendor/THIRD_PARTY_NOTICES.md' 'docs/**/*.md'
             'skills/*/SKILL.md' 'agents/*.md'
           format: json

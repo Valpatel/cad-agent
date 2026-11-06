@@ -2,7 +2,7 @@
  * folded (#179). */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createPublication, pageSection, publicPath, requiredSources, selectPages, sourceSpec } from '../../tools/site/publication.mjs';
+import { createPublication, pageSection, publicPath, requiredSources, selectPages, sourceSpec, validateRedirects } from '../../tools/site/publication.mjs';
 import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from '../../tools/site-pages.mjs';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
@@ -165,4 +165,26 @@ test('source aliases fail on duplicate public pages and ambiguous or incomplete 
   const spec = structuredClone(sourceSpec);
   spec.roots.push({ source: 'docs/absent', public: 'absent' });
   assert.throws(() => createPublication(spec).selectPages(requiredSources), /required published root docs\/absent is missing/);
+});
+
+
+test('redirect validation rejects malformed routes and live public aliases using real source identity', () => {
+  const context = { tracked: requiredSources, pageFiles: new Set(requiredSources), moved: [], publicPath };
+  const target = 'docs/lessons/README.md';
+  for (const from of ['/lessons/gone.md', 'lessons/gone', 'web/site.css', 'lessons/*.md', 'lessons/:name.md',
+    'lessons/../gone.md', 'lessons//gone.md', 'lessons/./gone.md'])
+    assert.throws(() => validateRedirects([[from, target]], context), /without a leading slash/, from);
+  for (const from of ['docs/compliant.md', 'CONTRIBUTING.md'])
+    assert.throws(() => validateRedirects([[from, target]], context), /still a file in the repo/, from);
+  assert.throws(() => validateRedirects([['lessons/old.md', target], ['lessons/old.md', target]], context), /listed twice/);
+  assert.throws(() => validateRedirects([['lessons/old.md', 'docs/absent.md']], context), /not a published page/);
+});
+
+test('a physical source stub keeps its public redirect identity, and missing or mismatched rules fail', () => {
+  const source = 'docs/lessons/03-mechanical-design-rules.md', identity = 'lessons/03-mechanical-design-rules.md';
+  const target = 'docs/lessons/mechanical/design-rules.md';
+  const context = { tracked: [...requiredSources, source], pageFiles: new Set(requiredSources), moved: [[source, target]], publicPath };
+  assert.doesNotThrow(() => validateRedirects([[identity, target]], context));
+  assert.throws(() => validateRedirects([], context), /add "lessons\/03-mechanical-design-rules\.md/);
+  assert.throws(() => validateRedirects([[identity, 'docs/lessons/README.md']], context), /change its line/);
 });

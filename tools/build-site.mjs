@@ -20,7 +20,7 @@ import { buildCatalog } from './site-catalog.mjs';            // the catalogue p
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
-import { SECTIONS, createPublication } from './site/publication.mjs';
+import { SECTIONS, createPublication, validateRedirects } from './site/publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
@@ -140,26 +140,7 @@ const pageFiles = new Set(pages.map(p => p.file));
 // Permanent redirects (tools/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
 const redirects = (await read('tools/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
   .map(l => l.split(/\s+/));
-const stubFiles = new Set(moved.map(([from]) => from)), seenFrom = new Set();
-for (const [from, to] of redirects) {
-  const at = `tools/site-redirects.txt: ${from}`;
-  // Pages keeps the first rule for a path and the preview server the last, so a duplicate would make them disagree.
-  if (seenFrom.has(from)) throw new Error(`${at} is listed twice`);
-  seenFrom.add(from);
-  // Pages reads * as a splat and :name as a placeholder, so `docs/lessons/*.md` would redirect every lesson page, the
-  // target included, into a loop; the preview server matches exact paths and would never show it. Plain paths only.
-  if (!/^[\w-][\w.\/-]*\.md$/.test(from) || path.posix.normalize(from) !== from)
-    throw new Error(`${at}: a source is a plain repo path to a .md file (letters, digits, - _ . /), without a leading slash ` +
-      'or dot, `.` or `..` segments, `//`, `*` or `:`');
-  if (tracked.includes(from) && !stubFiles.has(from)) throw new Error(`${at} is still a file in the repo (only its stub may remain)`);
-  if (!to || !pageFiles.has(to)) throw new Error(`${at} -> ${to}, which is not a published page`);
-}
-for (const [from, to] of moved) {
-  if (!pageFiles.has(to)) throw new Error(`${from} says it moved to ${to}, which is not a published page`);
-  const listed = redirects.find(([f]) => f === from);
-  if (!listed) throw new Error(`${from} moved to ${to}: add "${from} ${to}" to tools/site-redirects.txt`);
-  if (listed[1] !== to) throw new Error(`${from} moved to ${to}: change its line in tools/site-redirects.txt (it says ${listed[1]})`);
-}
+validateRedirects(redirects, { tracked, pageFiles, moved, publicPath });
 
 // ----------------------------------------------------------------------------- references
 // The reference registry (docs/research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]

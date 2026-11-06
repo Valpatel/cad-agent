@@ -1000,6 +1000,23 @@ def test_published_pages_match_the_site_build():
     assert not any(p["file"] == "THIRD_PARTY_NOTICES.md" for p in selected)
 
 
+def test_weekly_link_audit_selects_current_published_files():
+    """Exercise configured file globs on the real tracked inventory, including nested owners and exclusions."""
+    import argparse
+    import glob
+    import shlex
+    import yaml
+    workflow = yaml.safe_load((ROOT / ".github/workflows/supply-chain.yml").read_text())
+    step = next(s for s in workflow["jobs"]["references"]["steps"] if "lycheeverse/lychee-action" in s.get("uses", ""))
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--exclude-path", action="append", default=[])
+    options, remaining = parser.parse_known_args(shlex.split(step["with"]["args"]))
+    inventory = set(_tracked_pages(ROOT))
+    actual = {p for pattern in remaining for p in glob.glob(pattern, root_dir=ROOT, recursive=True)
+              if p in inventory and p.endswith(".md")} - set(options.exclude_path)
+    assert actual == {p for p in inventory if ra.published(p)}, "weekly link inputs drifted from actual publication sources"
+
+
 @pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "vendor/THIRD_PARTY_NOTICES.md"])
 def test_publication_uses_moved_source_and_nul_safe_real_inventory(tmp_path, source):
     """A stale old file cannot stand in for a missing mandatory source; whitespace paths stay whole."""

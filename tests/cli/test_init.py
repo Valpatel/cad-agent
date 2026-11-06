@@ -106,7 +106,7 @@ def test_wheel_data_declarations_cover_the_starter():
 
 
 def _wheel_smoke(tmp_path):
-    """Mandatory full-CI smoke: consume a real committed wheel with its disposable build checkout removed."""
+    """Mandatory full-CI smoke: consume a real committed wheel with its disposable build source removed."""
     tmp_path = Path(tmp_path).resolve()
     source, wheels, outside, env_dir = (tmp_path / name for name in ("source", "wheels", "outside", "venv"))
     source.mkdir(); wheels.mkdir(); outside.mkdir()

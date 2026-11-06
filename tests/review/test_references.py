@@ -26,6 +26,22 @@ def registry():
     return load()
 
 
+def test_default_registry_requires_the_moved_source_despite_a_stale_old_copy(tmp_path, monkeypatch):
+    content = refs.REGISTRY.read_bytes()
+    current, stale = tmp_path / "docs/research/references.yaml", tmp_path / "research/references.yaml"
+    for path in (current, stale):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+    monkeypatch.setattr(refs, "ROOT", tmp_path)
+    monkeypatch.setattr(refs, "REGISTRY", current)
+    monkeypatch.chdir(tmp_path)
+    assert load().core_file == "docs/research/references.yaml"
+    current.unlink()
+    with pytest.raises(FileNotFoundError, match="reference registry") as error:
+        load()
+    assert str(current) in str(error.value) and stale.exists()
+
+
 def test_the_registry_is_well_formed(registry):
     problems = registry.problems(ROOT)
     assert not problems, "\n".join(problems)

@@ -20,6 +20,23 @@ def profiles():
     return pp.load()
 
 
+def test_default_data_uses_the_moved_source_and_never_a_stale_old_copy(tmp_path, monkeypatch):
+    content = pp.DATA.read_bytes()
+    current, stale = tmp_path / "docs/research/process-profiles.yaml", tmp_path / "research/process-profiles.yaml"
+    for path in (current, stale):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+    monkeypatch.setattr(pp, "ROOT", tmp_path)
+    monkeypatch.setattr(pp, "DATA", current)
+    monkeypatch.delenv(pp.ENV, raising=False)
+    monkeypatch.chdir(tmp_path)
+    assert pp.load().path == current
+    current.unlink()
+    with pytest.raises(pp.ProfileDataError, match="no process-profile data") as error:
+        pp.load()
+    assert str(current) in str(error.value) and stale.exists()
+
+
 def test_every_process_loads_with_its_rules(profiles):
     assert sorted(p.process for p in profiles) == sorted(RAW["processes"])
     assert sum(len(p.rules) for p in profiles) == len(RAW["rules"])

@@ -259,6 +259,7 @@ def test_cube_smoke_uses_fresh_snap_workspaces(tmp_path, monkeypatch, outcome):
         assert work.parent == common and not work.name.startswith('.')
         assert work != legacy and work not in workspaces
         assert Path(model).is_file() and not Path(workdir).exists()
+        assert Path(workdir).resolve().is_relative_to(work.resolve())
         workspaces.append(work)
         return real_slice(model, workdir=workdir)
 

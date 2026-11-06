@@ -158,6 +158,7 @@ flowchart TD
   configuration fields and response status. A guessed config path is not evidence that normal authentication failed.
 - **Limits:** This establishes that read-only Pages project and deployment-log access worked at that time. It does
   not establish write or DNS permissions, and credential-path precedence may change in another Wrangler version.
+  [Sanitized readback and run receipts](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6675614833).
 
 ### Verify released asset bytes as well as the version marker
 - **Rule:** Read the actual assets through each public domain and compare them with the released source. A current
@@ -183,7 +184,6 @@ flowchart TD
   pending while bytes disagree. A cache-busting query is diagnostic evidence, not proof that the original URL is fixed.
 
 </details>
-  [Sanitized readback and run receipts](https://github.com/Valpatel/cad-agent/issues/362#issuecomment-6675614833).
 
 ### Check documented commands in the forms people actually use
 - **Rule:** A reference check must consume the actual inline and shell examples, with an invalid example proving it

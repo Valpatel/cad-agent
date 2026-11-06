@@ -115,3 +115,90 @@ def test_the_kind_and_the_installed_block_are_checked(tmp_path, extra, match):
 def test_an_unpriced_rivet_leaves_the_installed_total_alone():
     r = sh.cost({"S-632-1": 8, "pop-AD42": 10})
     assert r["unpriced"] == ["pop-AD42"] and r["installed_usd"] == pytest.approx(6.16)
+
+
+# The canonical six-step technique must exercise these APIs, not just name them in a skill.
+def _sheet_skill_code():
+    source = (Path(__file__).resolve().parents[2] / ".agents/skills/sheet-metal-hardware/SKILL.md").read_text()
+    assert source.count("```python\n") == 1, "identify the canonical six-step example"
+    return source.split("```python\n", 1)[1].split("\n```", 1)[0]
+
+
+def _run_sheet_skill(code, monkeypatch):
+    from cadagent.manufacturing import sheet_metal as sm
+    from cadagent.mechanical import clinch, rivets
+    observed = {}
+    calls = ((sm, "check_bends"), (sm, "bend"), (sm, "flat_length"), (sm, "feature_to_bend"),
+             (sh, "choose_clinch"), (clinch, "check_placement"), (sh, "choose_rivet"),
+             (rivets, "check_joint"), (sh, "cost"))
+    with monkeypatch.context() as tap:
+        for module, name in calls:
+            actual = getattr(module, name)
+            def record(*args, _actual=actual, _name=name, **kwargs):
+                result = _actual(*args, **kwargs)
+                observed[_name] = result  # retain the explicit call after any nested helper calls
+                return result
+            tap.setattr(module, name, record)
+        exec(compile(code, "<canonical sheet-metal skill>", "exec"), {})
+    return observed
+
+
+def _check_sheet_skill(observed, feature="pass", placement="pass"):
+    assert set(observed) == {"check_bends", "bend", "flat_length", "feature_to_bend", "choose_clinch",
+                             "check_placement", "choose_rivet", "check_joint", "cost"}, "missing technique steps"
+    for name, verdict in (("check_bends", "pass"), ("feature_to_bend", feature),
+                          ("check_placement", placement), ("check_joint", "pass")):
+        assert isinstance(observed[name], dict) and observed[name].get("verdict") == verdict, name
+    assert observed["bend"]["allowance_mm"] == pytest.approx(2.452, abs=0.001)
+    assert observed["flat_length"]["flat_mm"] == pytest.approx(74.948, abs=0.001)
+    nut, rivet = observed["choose_clinch"][0], observed["choose_rivet"][0]
+    assert nut["part"]["key"] == "S-632-1" and rivet["part"]["key"] == "pop-AD41-43-mg"
+    cost = observed["cost"]
+    assert isinstance(cost, dict), "missing cost output"
+    assert cost["unpriced"] == [rivet["part"]["key"]] and rivet["offer"] is None
+    assert cost["pieces_usd"] == pytest.approx(0.6776) and cost["installed_usd"] == pytest.approx(6.16)
+    assert cost["lines"][0]["price_checked"] == nut["offer"]["price_checked"] == "2026-11-02"
+    assert cost["limits"], "the dated price and installation limits must survive"
+
+
+def test_the_canonical_sheet_skill_example_runs(monkeypatch):
+    _check_sheet_skill(_run_sheet_skill(_sheet_skill_code(), monkeypatch))
+
+
+@pytest.mark.parametrize("old,new,feature,placement", [
+    ("10.5 - ba / 2 - hole / 2", "8.0 - ba / 2 - hole / 2", "warn", "pass"),
+    ("edge_mm=6.5", "edge_mm=4.0", "pass", "fail"),
+])
+def test_sheet_skill_changed_inputs_keep_warn_and_fail(monkeypatch, old, new, feature, placement):
+    code = _sheet_skill_code()
+    assert code.count(old) == 1
+    _check_sheet_skill(_run_sheet_skill(code.replace(old, new), monkeypatch), feature, placement)
+
+
+def test_sheet_skill_bad_material_does_not_pass(monkeypatch):
+    code = _sheet_skill_code()
+    old = 'sh.choose_clinch("632", "5052-h32", 1.6)'
+    assert code.count(old) == 1
+    with pytest.raises(ValueError, match="unknown sheet"):
+        _run_sheet_skill(code.replace(old, 'sh.choose_clinch("632", "unlisted-sheet", 1.6)'), monkeypatch)
+
+
+def test_sheet_skill_consumer_rejects_missing_or_noop_output(monkeypatch):
+    with pytest.raises(AssertionError, match="missing technique steps"):
+        _check_sheet_skill(_run_sheet_skill("", monkeypatch))
+    code = _sheet_skill_code()
+    cost_call = 'sh.cost({"S-632-1": 8, rivet: 24})'
+    assert code.count(cost_call) == 1
+    with pytest.raises(AssertionError, match="missing technique steps"):
+        _check_sheet_skill(_run_sheet_skill(code.replace(cost_call, "None"), monkeypatch))
+    monkeypatch.setattr(sh, "cost", lambda *args, **kwargs: None)
+    with pytest.raises(AssertionError, match="missing cost output"):
+        _check_sheet_skill(_run_sheet_skill(_sheet_skill_code(), monkeypatch))
+
+
+def test_sheet_skill_consumer_rejects_forced_pass_on_warn(monkeypatch):
+    from cadagent.manufacturing import sheet_metal as sm
+    code = _sheet_skill_code().replace("10.5 - ba / 2 - hole / 2", "8.0 - ba / 2 - hole / 2")
+    monkeypatch.setattr(sm, "feature_to_bend", lambda *args, **kwargs: {"verdict": "pass"})
+    with pytest.raises(AssertionError, match="feature_to_bend"):
+        _check_sheet_skill(_run_sheet_skill(code, monkeypatch), feature="warn")

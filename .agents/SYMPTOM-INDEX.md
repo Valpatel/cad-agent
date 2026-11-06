@@ -13,5 +13,6 @@
 | A named PA6-CF profile slices successfully but startup still waits at a generic temperature | [Resolve included slicer templates](inbox/2026-10-31-resolve-included-slicer-templates.md), `tests/manufacturing/test_slicer.py` |
 | Skills initialize successfully but copied guide links fail, or repository and global names appear twice | [Discovery names and resource containment](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md) |
 | A precheck exits nonzero but a later state-changing command still runs | [Failed prechecks must stop mutations](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md) |
+| A documented technique breaks while its API tests stay green | [Execute the canonical technique](inbox/2026-11-06-source-selection-must-not-pass-empty.md#execute-the-canonical-technique-not-only-its-underlying-apis) |
 | A moved-source check selects no package files, or a child imports another editable checkout | [Nonempty source selection and import origin](inbox/2026-11-06-source-selection-must-not-pass-empty.md) |
 | A publication check accepts a changed catalogue ID or a wrong origin with the same path | [Complete public identities and preserved served namespaces](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-the-complete-publication-identity) |

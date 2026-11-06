@@ -292,9 +292,14 @@ Rule:
 | Laser living hinges: [buxtronix/living-hinge](https://github.com/buxtronix/living-hinge) (GPL-3.0), [Gernreich/living-hinge](https://github.com/Gernreich/living-hinge) (CC0) [LH-INK] | as listed | 2024 / 2026-10 | Kerf-pattern SVG generators | CC0 one is freely reusable |
 | [skyneticist/flexure-hinge-calculator](https://github.com/skyneticist/flexure-hinge-calculator) | MIT | 1★ | HTML/JS hinge thickness and length | Skip |
 
-**No maintained Python or JS library** implements the Bayer/BASF/DuPont snap-fit calculations, PRBM flexures or Qiu
-bistable beams with tests. cad-agent #95 has to build this; it is small (§2 equations plus tables), and the §2 gold
-cases are its tests.
+**Status reconciled 2026-11-06:** this dated survey led to the existing
+[`cadagent.mechanical.compliant`](../../src/cadagent/mechanical/compliant/README.md) snap calculator. Its
+[source-example and planted-defect tests](../../tests/mechanical/test_snapfit.py) cover the declared snap subset;
+the [method, declaration file and limits](../mechanical/compliant.md) are the usable entry point, also routed from
+the [design-process skill](../../skills/design-process/SKILL.md). The surveyed external tools and their dated
+assessments above remain evidence of what was considered, not a fresh search of current libraries. PRBM flexures,
+living hinges, bistable beams, a generated physical coupon and the first product qualification remain open under
+#94/#95. Calculated snap results do not establish measured fit, retention, creep or fatigue life.
 
 ## 10. References
 

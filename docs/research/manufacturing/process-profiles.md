@@ -726,8 +726,8 @@ What reads the YAML today (solid) and what is planned to (dashed):
 
 ```mermaid
 flowchart TD
-    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> P["cadagent.manufacturing.process<br/>typed profiles, evaluate()"]
-    P --> E["tools/figures/process_profile_figures.py<br/>the charts on this page"]
+    Y["process-profiles.yaml<br/>rules, sources, a shop table"] --> P["cadagent.manufacturing.<br/>process<br/>typed profiles, evaluate()"]
+    P --> E["tools/figures/<br/>process_profile_figures.py<br/>the charts on this page"]
     P --> K["dfm.check · sheet_metal.bend<br/>fit_coupons' allowances"]
     K -.->|"planned"| S["sheet metal S1–S8<br/>pitfall checks #97"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

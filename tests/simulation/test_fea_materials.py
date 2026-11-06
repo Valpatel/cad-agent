@@ -273,7 +273,7 @@ def test_sources_are_in_the_reference_registry():
             continue
         ref = reg.resolve(m.source)
         assert ref.kind == "source", f"{key}: {m.source} is {ref.kind} in docs/research/references.yaml, not a read source"
-        assert "src/cadagent/simulation/fea.py" in ref["used_for"], m.source
+        assert "software/cadagent/simulation/fea.py" in ref["used_for"], m.source
     assert {r.source for r in PRINTED.values()} <= set(reg.entries)
 
 

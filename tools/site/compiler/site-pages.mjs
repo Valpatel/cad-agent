@@ -82,7 +82,7 @@ const KEYS = {
  * rendered HTML. It throws on a page that is not published, an empty entry or an unknown key, a picture that is not
  * committed under docs/img/, a heading the page does not have, missing alt text, caption or `on`, a `shows` that is
  * not output or diagram, or a tool that is not a cad-agent command, a cadagent module, a web kit file (kit/…, as the
- * site publishes src/cadagent/webkit/) or a script under tools/. */
+ * site publishes software/cadagent/webkit/) or a script under tools/. */
 export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pageURL }) {
   const fail = (at, why) => { throw new Error(`docs/pages.yaml ${at}: ${why}`); };
   const only = (o, keys, at) => {
@@ -106,8 +106,8 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
   const tool = (name, at) => {
     const cmd = name.match(/^cad-agent ([a-z0-9-]+)$/)?.[1], mod = name.match(/^cadagent(?:\.[a-z_]+)+$/)?.[0];
     const ok = cmd ? commandNames.has(cmd)
-      : mod ? [`src/${mod.replace(/\./g, '/')}.py`, `src/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
-        : /^kit\/[\w./-]+$/.test(name) ? tracked.includes(`src/cadagent/webkit/${name.slice(4)}`)
+      : mod ? [`software/${mod.replace(/\./g, '/')}.py`, `software/${mod.replace(/\./g, '/')}/__init__.py`].some(f => tracked.includes(f))
+        : /^kit\/[\w./-]+$/.test(name) ? tracked.includes(`software/cadagent/webkit/${name.slice(4)}`)
           : /^tools\/[\w./-]+$/.test(name) && tracked.includes(name);
     if (!ok) fail(at, `${name} is not a cad-agent command, a cadagent module, a web kit file (kit/…) or a script under tools/`);
     return `<code>${esc(name)}</code>`;

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the inserts page's diagrams (docs/img/inserts/*.svg) from cadagent.mechanical.inserts.
 
-    PYTHONPATH=src python3 tools/figures/insert_figures.py            # write the SVGs
-    PYTHONPATH=src python3 tools/figures/insert_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
+    PYTHONPATH=software python3 tools/figures/insert_figures.py            # write the SVGs
+    PYTHONPATH=software python3 tools/figures/insert_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
 
 Nothing is drawn by eye: every section is to scale from the module's own hole and boss design for one insert, and
 every number on a figure is what the module computed. ``section.svg`` is a boss with a heat-set insert (hole, taper,
@@ -20,8 +20,8 @@ from typing import List, Sequence, Tuple
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "software") not in sys.path:
+    sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent.mechanical import inserts as I                          # noqa: E402
 from cadagent.publish.anim import svg as S                            # noqa: E402

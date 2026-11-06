@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
-import { decodeModel, inflate, partLabel } from '../../src/cadagent/webkit/model.js';
+import { decodeModel, inflate, partLabel } from '../../software/cadagent/webkit/model.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const load = async (json) => {

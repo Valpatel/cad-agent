@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the linkage figures (docs/img/linkages/*.svg) from cadagent.mechanical.linkages.
 
-    PYTHONPATH=src python3 tools/figures/linkage_figures.py            # write the SVGs
-    PYTHONPATH=src python3 tools/figures/linkage_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
+    PYTHONPATH=software python3 tools/figures/linkage_figures.py            # write the SVGs
+    PYTHONPATH=software python3 tools/figures/linkage_figures.py --check    # exit 1 if a committed SVG differs (tests run this)
 
 Nothing is drawn by eye. ``fivebar.svg`` sweeps a five-bar leg's tip round a stride with ``sweep_fivebar_tip`` and
 animates the links through the poses it solves. Beside it is the map of the two crank angles from
@@ -19,8 +19,8 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "software") not in sys.path:
+    sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent.mechanical import linkages as L                       # noqa: E402
 from cadagent.publish.anim import svg as S                           # noqa: E402
@@ -258,7 +258,7 @@ def main(argv: list) -> int:
             OUT.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")
     if stale:
-        print("out of date with their sources (run PYTHONPATH=src python3 tools/figures/linkage_figures.py):", ", ".join(stale))
+        print("out of date with their sources (run PYTHONPATH=software python3 tools/figures/linkage_figures.py):", ", ".join(stale))
         return 1
     return 0
 

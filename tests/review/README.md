@@ -1,6 +1,6 @@
 # tests/review
 
-Tests for [`src/cadagent/review/`](../../src/cadagent/review/README.md): the design dossier, the integrity gates,
+Tests for [`software/cadagent/review/`](../../software/cadagent/review/README.md): the design dossier, the integrity gates,
 review packets and evidence hashes. Most gates run on a box world with no CAD kernel first, then on real geometry.
 
 Arrows: what a test imports, runs or reads.
@@ -43,6 +43,6 @@ flowchart TD
 | `test_review.py` | `review_html` and the review page: local assets, no pass without a current check |
 | `test_volume_precision.py` | Analytic controls for volume cancellation, topology and uncertain decisions |
 
-Run: `pytest tests/review` (with `PYTHONPATH=src`).
+Run: `pytest tests/review` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

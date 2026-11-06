@@ -1,6 +1,6 @@
 # tests/simulation/explore
 
-Tests for [`src/cadagent/simulation/explore/`](../../../src/cadagent/simulation/explore/): design exploration, from a
+Tests for [`software/cadagent/simulation/explore/`](../../../software/cadagent/simulation/explore/): design exploration, from a
 catalogue of parts to ranked designs. `explore_fixtures.py` holds the small projects they share; the `cad-agent
 catalogue`, `compare` and `optimise` commands run end to end in `test_explore_cli.py`.
 
@@ -31,6 +31,6 @@ flowchart TD
 | `test_explore_evaluate.py` | `explore.evaluate`: the evaluators, goals and verdicts |
 | `test_explore_optimise.py` | `explore.optimise`: the search space, samplers, resuming, optuna when installed |
 
-Run: `pytest tests/simulation/explore` (with `PYTHONPATH=src`).
+Run: `pytest tests/simulation/explore` (with `PYTHONPATH=software`).
 
 Related: [parent](../README.md) · [tests](../../README.md) · [where files go](../../../.github/CONTRIBUTING.md#where-files-go)

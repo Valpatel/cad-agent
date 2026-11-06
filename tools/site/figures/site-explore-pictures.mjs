@@ -35,7 +35,7 @@ const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-explore-'));
 const project = path.join(tmp, 'explore-two-wheel');
 await cp(path.join(root, EXAMPLE), project, { recursive: true, filter: src => !/(__pycache__|[/\\]exports)$/.test(src) });
 const python = process.env.PYTHON || 'python3';
-const env = { ...process.env, PYTHONPATH: path.join(root, 'src'), SOURCE_DATE_EPOCH: epoch };
+const env = { ...process.env, PYTHONPATH: path.join(root, 'software'), SOURCE_DATE_EPOCH: epoch };
 for (const args of [['catalogue'], ['compare', '--swaps'], ['optimise']])
   execFileSync(python, ['-m', 'cadagent.cli', ...args], { cwd: project, env, stdio: ['ignore', 'inherit', 'inherit'] });
 const pages = { compare: path.join(project, 'exports/explore/compare.html'),

@@ -10,7 +10,7 @@ import pytest
 
 from cadagent.library import hardware
 
-DATA = Path(__file__).resolve().parents[2] / 'vendor' / 'bd_warehouse' / 'src' / 'bd_warehouse' / 'data'
+DATA = Path(__file__).resolve().parents[2] / 'software' / 'vendor' / 'bd_warehouse' / 'src' / 'bd_warehouse' / 'data'
 
 
 def rows(name, prefix):

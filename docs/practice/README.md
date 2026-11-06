@@ -21,4 +21,4 @@ flowchart TD
 | Publish readable evidence | [Style guide](style-guide.md), [animated figures](animated-figures.md), [web parts](web-parts.md), [file viewer](file-viewer.md) |
 | Maintain the system | [Supply chain](supply-chain.md), [weekly updates](weekly-upstream-update.md), [process lessons](../lessons/process/README.md) |
 
-[All guides](../README.md) · [Skills](../../skills/README.md)
+[All guides](../README.md) · [Skills](../../.agents/skills/README.md)

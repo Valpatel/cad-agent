@@ -8,6 +8,14 @@
     {
       "source": "docs/lessons",
       "public": "lessons"
+    },
+    {
+      "source": ".agents/skills",
+      "public": "skills"
+    },
+    {
+      "source": ".agents/agents",
+      "public": "agents"
     }
   ],
   "files": [
@@ -244,8 +252,48 @@
       "public": "research/simulation-tools.md"
     },
     {
-      "source": "vendor/THIRD_PARTY_NOTICES.md",
+      "source": "software/vendor/THIRD_PARTY_NOTICES.md",
       "public": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "source": ".agents/skills/cad-motion-validation/SKILL.md",
+      "public": "skills/cad-motion-validation/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/cad-pr-review/SKILL.md",
+      "public": "skills/cad-pr-review/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/cad-remote-runs/SKILL.md",
+      "public": "skills/cad-remote-runs/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/cad-supply-chain/SKILL.md",
+      "public": "skills/cad-supply-chain/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/cad-work-tracking/SKILL.md",
+      "public": "skills/cad-work-tracking/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/design-process/SKILL.md",
+      "public": "skills/design-process/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/mcmaster-parts/SKILL.md",
+      "public": "skills/mcmaster-parts/SKILL.md"
+    },
+    {
+      "source": ".agents/skills/sheet-metal-hardware/SKILL.md",
+      "public": "skills/sheet-metal-hardware/SKILL.md"
+    },
+    {
+      "source": ".agents/agents/cad-pr-reviewer.md",
+      "public": "agents/cad-pr-reviewer.md"
+    },
+    {
+      "source": ".agents/agents/cad-resume.md",
+      "public": "agents/cad-resume.md"
     }
   ],
   "unpublished": [

@@ -1,5 +1,5 @@
 # A printed cantilever snap engaging, computed by cadagent.mechanical.compliant.snapfit (#165). Record it again with
-#   PYTHONPATH=src python3 tools/readme_anim.py --extract snapfit      # pure Python: no CAD kernel, under a second
+#   PYTHONPATH=software python3 tools/readme_anim.py --extract snapfit      # pure Python: no CAD kernel, under a second
 # and render or check the SVG (tools/readme_anim.py, --check). The `snaps` list is a cad-agent snapfit declaration, so
 #   cad-agent snapfit tools/anim/snap-engagement.yaml
 # prints the same verdicts: the CoPA arm passes, the PETG-CF arm fails on root strain.

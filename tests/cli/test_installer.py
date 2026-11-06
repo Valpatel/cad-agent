@@ -35,7 +35,7 @@ for last; do :; done
 extras=$(printf '%s' "$last" | sed -n 's/.*\\[\\(.*\\)\\]$/\\1/p' | sed 's/\\([^,]*\\)/"\\1"/g; s/,/, /g')
 printf '[tool]\\nrequirements = [{ name = "cad-agent", editable = "%s", extras = [%s] }]\\n' "${last%%[*}" "$extras" \\
     > "@ENV@/uv-receipt.toml"
-printf '#!/bin/sh\\nPYTHONPATH="%s:@SITE@" exec "@ENV@/bin/python" -m cadagent.cli "$@"\\n' "${last%%[*}/src" \\
+printf '#!/bin/sh\\nPYTHONPATH="%s:@SITE@" exec "@ENV@/bin/python" -m cadagent.cli "$@"\\n' "${last%%[*}/software" \\
     > "${HOME:?}/.local/bin/cad-agent"
 chmod +x "${HOME:?}/.local/bin/cad-agent"
 """
@@ -50,7 +50,7 @@ def _git(cwd: Path, *args: str) -> str:
 def world(tmp_path):
     """A remote holding this checkout's kit (as it is on disk), an empty HOME, and a PATH with the fake uv."""
     remote = tmp_path / "remote"
-    for part in ("src", "skills", "agents"):
+    for part in ("software/cadagent", ".agents"):
         shutil.copytree(ROOT / part, remote / part, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     for f in ("pyproject.toml", "CHANGELOG.md"):
         shutil.copy(ROOT / f, remote / f)
@@ -85,7 +85,10 @@ def test_it_installs_then_a_second_run_updates(world):
     calls = (home / "uv-calls.log").read_text().splitlines()
     assert calls == [f"tool install --quiet --force --editable --python 3.12 {kit}[cad]"]
     skills = sorted(p.name for p in (home / ".claude" / "skills").iterdir())
-    assert "design-process" in skills and (home / ".claude" / "skills" / "design-process").is_symlink()
+    expected = sorted(p.parent.name for p in (kit / ".agents/skills").glob("*/SKILL.md"))
+    assert len(expected) == 8 and skills == expected
+    assert (kit / "software/cadagent/cli.py").is_file()
+    assert (home / ".claude" / "skills" / "design-process").resolve() == kit / ".agents/skills/design-process"
     assert {p.name for p in (home / ".agents" / "skills").iterdir()} >= set(skills), "the same skills for the other agents"
     assert (home / ".claude" / "agents" / "cad-pr-reviewer.md").is_symlink()
     assert PASTE in first.stdout, "it ends with the line to paste into an agent"

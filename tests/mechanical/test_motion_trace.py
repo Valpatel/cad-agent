@@ -207,7 +207,7 @@ def test_installed_copy_retains_the_capture_protocol(tmp_path):
     result = install(tmp_path, root, ("agents",), copy=True)
     assert not result["conflicts"]
     skill = tmp_path / ".agents/skills/cad-motion-validation"
-    assert (skill / "references/trace-protocol.md").read_text() == (root / "skills/cad-motion-validation/references/trace-protocol.md").read_text()
+    assert (skill / "references/trace-protocol.md").read_text() == (root / ".agents/skills/cad-motion-validation/references/trace-protocol.md").read_text()
 
 
 # ----------------------------------------------------------------------------- closed loops (#187)

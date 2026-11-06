@@ -260,7 +260,7 @@ def test_applied_by_names_code_that_reads_the_rule(data):
     for r in data["rules"]:
         for name in r.get("applied_by") or []:
             assert _reads(_code(name), r["id"]), f"{r['id']}: {name} does not read it"
-    inserts = (ROOT / "src" / "cadagent" / "mechanical" / "inserts.py").read_text(encoding="utf-8")
+    inserts = (ROOT / "software" / "cadagent" / "mechanical" / "inserts.py").read_text(encoding="utf-8")
     bare = [r["id"] for r in data["rules"] if f'"{r["id"]}"' in inserts and not r.get("applied_by")]
     assert not bare, f"rules cadagent.mechanical.inserts reads with no applied_by: {bare}"
 

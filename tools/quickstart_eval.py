@@ -336,7 +336,7 @@ def _session(rows: list, work: Path) -> dict:
 
 def _kit_commands(home: Path) -> list:
     """The `cad-agent` commands the agent's clone defines (its cli.py), or none if it never cloned."""
-    cli = home / "cad-agent" / "src" / "cadagent" / "cli.py"
+    cli = home / "cad-agent" / "software" / "cadagent" / "cli.py"
     names = re.findall(r'add_parser\(\s*"([a-z0-9-]+)"', cli.read_text()) if cli.is_file() else []
     return [n for n in names if n != "agents"]
 

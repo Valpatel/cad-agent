@@ -1,11 +1,11 @@
 # Supply chain and resource safety
 
-cad-agent depends on Python and npm packages, vendors other people's code into `vendor/` and the web kit, and sends
+cad-agent depends on Python and npm packages, vendors other people's code into `software/vendor/` and the web kit, and sends
 readers to hundreds of outside projects from its catalogue and pages. `tools/resource_audit.py` checks all of it the
 same way every time: known advisories and malicious packages, pins and recorded hashes, vendored files against their
 upstream, licences, and links that died, moved or now point somewhere else. Each pull request into `dev` gets the
 offline checks; a weekly run adds the online ones and keeps one issue current. The latest run is in the
-[supply-chain report](../research/security-report.md), and the [`cad-supply-chain` skill](../../skills/cad-supply-chain/SKILL.md)
+[supply-chain report](../research/security-report.md), and the [`cad-supply-chain` skill](../../.agents/skills/cad-supply-chain/SKILL.md)
 says what to do with each finding.
 
 ![Open supply-chain findings by area and severity, from the committed report: horizontal bars for Python dependencies, npm packages, vendored projects, web kit files, links and catalogue, install advice in pages and the repository, each split into critical, high, medium and low](../img/supply-chain/findings.svg)
@@ -19,8 +19,8 @@ this repository. A test redraws it from the report's JSON, so the two cannot dis
 |---|---|---|
 | Python dependencies (`pyproject.toml`, every extra) | lower bounds, readable requirements | OSV advisories at the newest release and the lowest one each range allows, and for every transitive package deps.dev resolves; PyPI releases, licences, "inactive" |
 | npm packages (`package-lock.json`) | registry source over HTTPS, sha512 integrity, install scripts, licences, lockfile in step | OSV and `npm audit`, deprecations |
-| Vendored projects (`vendor/`) | full-commit pins, licence files, reviewed baselines, notices | every file against upstream at the pinned commit (git blob hashes), upstream advisories since the import, archived or moved, Scorecard |
-| Web kit (`src/cadagent/webkit/vendor/`) | every file against the SHA-256 in its receipt; each receipt names its npm tarball and integrity, or `"npm": false` and each file's URL; the versions of the libraries a file bundles are in that file | OSV for each library, including DOMPurify and KaTeX inside `mermaid.min.js`; the tarball against its integrity, and each file against the package's bytes (a `patched` file must differ, from the file its `upstream_sha256` names) |
+| Vendored projects (`software/vendor/`) | full-commit pins, licence files, reviewed baselines, notices | every file against upstream at the pinned commit (git blob hashes), upstream advisories since the import, archived or moved, Scorecard |
+| Web kit (`software/cadagent/webkit/vendor/`) | every file against the SHA-256 in its receipt; each receipt names its npm tarball and integrity, or `"npm": false` and each file's URL; the versions of the libraries a file bundles are in that file | OSV for each library, including DOMPurify and KaTeX inside `mermaid.min.js`; the tarball against its integrity, and each file against the package's bytes (a `patched` file must differ, from the file its `upstream_sha256` names) |
 | Links (catalogue and every published page) | plain HTTP, missing licences, stale records | repository gone, moved, archived or relicensed; dead pages, redirects to another domain, HTTPS downgrades |
 | Install advice in pages | installing skills or plugins from a registry, piping a download into a shell, running a package through npx or uvx without a version, pointing at a moving "latest" | |
 
@@ -113,7 +113,7 @@ variables yourself for tools you or your agent start directly, such as an MCP se
 | Tool (how it reaches you) | Reports usage? | Turned off by |
 |---|---|---|
 | text-to-cad's cadgen, installed from upstream | yes, analytics and an update check, on by default | `CADGEN_TELEMETRY=0`, `CADGEN_UPDATE_CHECK=0`, `DO_NOT_TRACK=1` |
-| text-to-cad's cadgen, our vendored copy | no: patched off (`vendor/patches/text-to-cad/0001-…`) | |
+| text-to-cad's cadgen, our vendored copy | no: patched off (`software/vendor/patches/text-to-cad/0001-…`) | |
 | kicad-mcp-pro (your agent starts it) | only to an OpenTelemetry endpoint you set; off by default | `KICAD_MCP_TELEMETRY_ENABLED=false`, and leave `KICAD_MCP_OTEL_ENDPOINT` and `OTEL_EXPORTER_OTLP_ENDPOINT` unset: an endpoint turns export on |
 | Cloudflare wrangler (`npm --prefix tools/site run deploy:site`) | usage data on by default; asks about each error report | `WRANGLER_SEND_METRICS=false`, `WRANGLER_SEND_ERROR_REPORTS=false`, both set in the script |
 | Python extras, npm dev packages, the other vendored projects | none found (survey of 2026-11-01) | |

@@ -399,7 +399,7 @@ Roark's beam on an elastic foundation (8th ed., Chapter 8).
 
 **Plastics.** C. G. Amza et al., *Polymers* 13 (2021), Table 4 (printed PLA and PETG in compression, and a joint's
 torque after 7 days); A. Liber-Kneć and S. Łagan, *Materials* 18 (2025) 3262 (printed PLA relaxing over an hour); the
-filament makers' data sheets in [`allowables.py`](../../src/cadagent/mechanical/compliant/allowables.py).
+filament makers' data sheets in [`allowables.py`](../../software/cadagent/mechanical/compliant/allowables.py).
 
 **Relations.** Shigley's *Mechanical Engineering Design*, 10th ed.: Section 8-2 and Eq. 8-27 (torque and clamp),
 Section 8-5 (the frustum), Section 8-7 (load sharing), Section 8-9 (75 % of the proof load), Section 3-16 (press

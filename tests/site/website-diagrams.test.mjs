@@ -10,7 +10,7 @@ import { drawDiagrams, forDrawing, PALETTES, themePalette, unescapeHtml } from '
 const root = path.resolve(import.meta.dirname, '../..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-site-diagrams-'));
 test.after(() => rm(tmp, { recursive: true, force: true }));
-const kit = f => readFile(path.join(root, 'src/cadagent/webkit', f));
+const kit = f => readFile(path.join(root, 'software/cadagent/webkit', f));
 const site = f => readFile(path.join(root, 'tools/site/assets', f));
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const block = src => `<pre><code class="language-mermaid">${esc(src)}</code></pre>`;

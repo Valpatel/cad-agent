@@ -1,5 +1,5 @@
 {
- "regenerate": "PYTHONPATH=src python3 tools/site-packet-pictures.py",
+ "regenerate": "PYTHONPATH=software python3 tools/site-packet-pictures.py",
  "size": [
   1400,
   1000

@@ -565,7 +565,7 @@ A riveted seam therefore costs a few cents a rivet, against about $0.77 for each
   - [`sheet-hardware.yaml`](../sheet-hardware.yaml), read by `cadagent.mechanical.sheet_hardware`: the PEM parts and
     rivets the checks know, with dated prices, stock and where to buy
     ([the page](../../sheet-metal-hardware.md));
-  - the [`sheet-metal-hardware` skill](../../../skills/sheet-metal-hardware/SKILL.md) for the bent-plate, PEM and rivet
+  - the [`sheet-metal-hardware` skill](../../../.agents/skills/sheet-metal-hardware/SKILL.md) for the bent-plate, PEM and rivet
     pattern.
 - **Open questions:**
   - whether PEM's numbers may be stored in the MIT repo as data (PEM's terms forbid republishing its material; this

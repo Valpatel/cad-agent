@@ -7,7 +7,7 @@ this date.
 
 ## 0. What `cadagent.simulation.fea` does today
 
-From the module docstring, read from `origin/dev:src/cadagent/fea.py` (now `src/cadagent/simulation/fea.py`):
+From the module docstring, read from `origin/dev:software/cadagent/fea.py` (now `software/cadagent/simulation/fea.py`):
 - gmsh tetrahedra and scikit-fem P2 linear elasticity.
 - Solvers: PARDISO, SciPy direct, or CG with pyamg.
 - "linear and small-deflection; isotropic", with weak-direction strengths for printed materials.

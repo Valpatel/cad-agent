@@ -14,7 +14,7 @@ export const SECTIONS = [
 export function createPublication(spec) {
   if (spec?.schema !== 1 || !Array.isArray(spec.roots) || !spec.roots.length || !Array.isArray(spec.files) || !spec.files.length)
     throw new Error('page source contract needs schema 1, roots and files');
-  const plain = value => typeof value === 'string' && /^(?:\.github\/)?[a-zA-Z0-9_][a-zA-Z0-9_.\/-]*$/.test(value)
+  const plain = value => typeof value === 'string' && /^(?:\.github\/|\.agents\/)?[a-zA-Z0-9_][a-zA-Z0-9_.\/-]*$/.test(value)
     && !value.split('/').some(p => !p || p === '.' || p === '..');
   const aliases = new Map(), publicFiles = new Set();
   for (const row of spec.files) {

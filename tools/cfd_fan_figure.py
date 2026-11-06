@@ -2,8 +2,8 @@
 """Regenerate docs/img/cfd/fan-faces.webp and the two recorded runs it is drawn from (tests/fixtures/cfd_runs/
 exhaust-under-opening and exhaust-ducted): where the air through an exhaust fan goes, and the heat it carries.
 
-    PYTHONPATH=src python3 tools/cfd_fan_figure.py <work dir>          # runs both cases, records them, draws (~5 min)
-    PYTHONPATH=src python3 tools/cfd_fan_figure.py <work dir> --draw   # redraws from the runs already in <work dir>
+    PYTHONPATH=software python3 tools/cfd_fan_figure.py <work dir>          # runs both cases, records them, draws (~5 min)
+    PYTHONPATH=software python3 tools/cfd_fan_figure.py <work dir> --draw   # redraws from the runs already in <work dir>
 
 Running needs OpenFOAM v2512 or Docker (the opencfd/openfoam-default:2512 image), drawing needs PyVista, and both need
 CadQuery. The case: a vented box (80 x 80 x 60 mm, 4 mm walls, a 50 x 8 mm vent low in two opposite sides) on a table
@@ -25,7 +25,7 @@ import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 OUT = ROOT / "docs" / "img" / "cfd" / "fan-faces.webp"
 FIXTURES = ROOT / "tests" / "fixtures" / "cfd_runs"
 CASES = {"exhaust-under-opening": False, "exhaust-ducted": True}      # name: ducted
@@ -166,7 +166,7 @@ def draw(work: Path):
     rev = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     meta = json.loads((work / "exhaust-ducted" / "cadagent-case.json").read_text())
     (OUT.parent / "SOURCE.json").write_text(json.dumps({
-        "figure": "fan-faces.webp", "regenerate": "PYTHONPATH=src python3 tools/cfd_fan_figure.py <work dir>",
+        "figure": "fan-faces.webp", "regenerate": "PYTHONPATH=software python3 tools/cfd_fan_figure.py <work dir>",
         "cad_agent_revision": rev, "solver": meta["solver"], "image": "opencfd/openfoam-default:2512",
         "iterations": ITERATIONS, "processes": NP, "recorded_runs": [f"tests/fixtures/cfd_runs/{n}" for n in CASES],
         "facts": {n: f for n, (_, f) in got.items()}}, indent=1) + "\n")

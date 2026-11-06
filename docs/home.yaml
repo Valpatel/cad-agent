@@ -97,7 +97,7 @@ fits:
     - name: text-to-cad
       upstream: earthtojake/text-to-cad
       does: build123d models, STEP and 3MF, drawings, DfAM checks, print handoff
-      note: vendored in vendor/, pinned, telemetry and update check removed by patch
+      note: vendored in software/vendor/, pinned, telemetry and update check removed by patch
       href: https://github.com/Valpatel/cad-agent/tree/dev/vendor/text-to-cad
     - name: build123d and CadQuery
       does: The code-CAD kernels (both on OCP); our own tools and projects are CadQuery

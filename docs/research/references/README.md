@@ -169,6 +169,6 @@ After changing a record, run `node tools/site/compiler/site-references.mjs --exp
 ## Related
 
 - [`docs/research/references.yaml`](../references.yaml): the core registry and its field notes.
-- [`src/cadagent/review/references.py`](../../../src/cadagent/review/references.py): the loader and the checks.
+- [`software/cadagent/review/references.py`](../../../software/cadagent/review/references.py): the loader and the checks.
 - [`docs/areas.yaml`](../../areas.yaml): the topic tree records are placed in.
 - #118 (cite every rule by name), #143 (confidence levels), #323 (this knowledge base).

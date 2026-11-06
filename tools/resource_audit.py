@@ -13,11 +13,11 @@
 
 What it reads:
 - Python dependencies (pyproject.toml, every extra), npm dependencies (package.json and package-lock.json);
-- vendored code (vendor/ with vendor/manifest.json; src/cadagent/webkit/vendor/ with its receipts:
+- vendored code (software/vendor/ with software/vendor/manifest.json; software/cadagent/webkit/vendor/ with its receipts:
   file-viewer-sources.json and each folder's SOURCE.json, which name the npm package, its integrity, the path of each
   file in the package, the SHA-256 of each file and the libraries a file bundles) and the notice files
   (THIRD_PARTY_NOTICES.md and the kit's own);
-- the external links the site publishes: catalog.json's sources (vendor/upstreams/registry.yaml, docs/research/landscape.json),
+- the external links the site publishes: catalog.json's sources (software/vendor/upstreams/registry.yaml, docs/research/landscape.json),
   and the links in every published Markdown page;
 - the skills and agents we ship or point to, and install advice in published pages (no installing from registries).
 
@@ -694,7 +694,7 @@ def check_python(rep, net, installed=False):
     if text is None:
         return
     groups, pkgs, bad = python_packages(text)
-    notices = (read_text(rep.root / 'vendor' / 'THIRD_PARTY_NOTICES.md') or '').lower()
+    notices = (read_text(rep.root / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md') or '').lower()
     for group, raw in bad:
         rep.add('py-unparsed', 'low', f'pypi:{raw}', 'a requirement this report cannot read', f'{group}: {raw!r}',
                 'Write it as name[extras]>=version; markers after ";".')
@@ -975,7 +975,7 @@ def repo_findings(rep, subject, slug, st, recorded_licence=None, context='catalo
     url = f'https://github.com/{slug}'
     if st['state'] == 'gone':
         rep.add('repo-gone', 'high', subject, f'{slug} no longer exists (or is private)', f'GitHub answers {st["http"]} for {url}',
-                'Mark the entry "moved" or "gone" (status in vendor/upstreams/registry.yaml or a note in docs/research/landscape.json) and '
+                'Mark the entry "moved" or "gone" (status in software/vendor/upstreams/registry.yaml or a note in docs/research/landscape.json) and '
                 'remove the link: anyone can register the freed name.')
         return
     if st['state'] != 'ok':
@@ -1015,7 +1015,7 @@ def excluded(rel, globs):
 
 def patched_paths(root, name):
     out = set()
-    for p in sorted((root / 'vendor' / 'patches' / name).glob('*.patch')):
+    for p in sorted((root / 'software' / 'vendor' / 'patches' / name).glob('*.patch')):
         out |= set(re.findall(r'^diff --git a/\S+ b/(\S+)$', read_text(p) or '', re.M))
     return out
 
@@ -1036,11 +1036,11 @@ def find_licence_file(d: Path):
     return None
 
 
-REGISTRY = 'vendor/upstreams/registry.yaml'
+REGISTRY = 'software/vendor/upstreams/registry.yaml'
 LANDSCAPE = 'docs/research/landscape.json'
 # Repository-owned metadata, not imported code. Unknown files beside these still need a vendor record.
-VENDOR_METADATA = frozenset(('vendor/README.md', 'vendor/THIRD_PARTY_NOTICES.md',
-                             'vendor/upstreams/README.md', REGISTRY))
+VENDOR_METADATA = frozenset(('software/vendor/README.md', 'software/vendor/THIRD_PARTY_NOTICES.md',
+                             'software/vendor/upstreams/README.md', REGISTRY))
 VENDOR_SUPPORT_DIRS = ('baselines', 'patches', 'reports')
 
 
@@ -1049,24 +1049,26 @@ def owned_vendor_metadata(path):
 
 
 def vendor_project(path):
-    parts = path.split('/')
+    if not path.startswith('software/vendor/'):
+        return None
+    parts = path.removeprefix('software/').split('/')
     if len(parts) >= 3 and parts[0] == 'vendor' and parts[1] not in VENDOR_SUPPORT_DIRS and not owned_vendor_metadata(path):
         return parts[1]
     return None
 
 
 def check_vendored(rep, net):
-    man_text = read_text(rep.root / 'vendor' / 'manifest.json')
+    man_text = read_text(rep.root / 'software' / 'vendor' / 'manifest.json')
     if man_text is None:
         return
     man = json.loads(man_text)
-    notices = notice_rows(read_text(rep.root / 'vendor' / 'THIRD_PARTY_NOTICES.md'))
+    notices = notice_rows(read_text(rep.root / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md'))
     names = set()
     for e in man.get('projects') or []:
         name, sha, url = e['name'], e.get('sha') or '', e.get('url') or ''
         names.add(name)
-        sid, d = f'vendor:{name}', rep.root / 'vendor' / name
-        files = tracked(rep.root, f'vendor/{name}') if d.is_dir() else []
+        sid, d = f'vendor:{name}', rep.root / 'software' / 'vendor' / name
+        files = tracked(rep.root, f'software/vendor/{name}') if d.is_dir() else []
         skills = [f for f in files if f.endswith('/SKILL.md')]
         row = rep.item('vendored', id=sid, name=name, url=url, sha=sha, imported=e.get('imported'), licence=e.get('license'),
                        files=len(files), skills=len(skills), patches=sorted(patched_paths(rep.root, name)))
@@ -1077,7 +1079,7 @@ def check_vendored(rep, net):
             rep.add('vendor-source', 'medium', sid, f'{name} is not fetched from GitHub over HTTPS', url,
                     'Use an HTTPS GitHub URL, or extend this report to verify that host.')
         if not d.is_dir():
-            rep.add('vendor-missing', 'high', sid, f'vendor/{name} is in the manifest but not in the tree', f'vendor/{name}',
+            rep.add('vendor-missing', 'high', sid, f'software/vendor/{name} is in the manifest but not in the tree', f'software/vendor/{name}',
                     'Re-import it with tools/vendor_sync.py or remove it from the manifest.')
             continue
         lf = find_licence_file(d)
@@ -1085,15 +1087,15 @@ def check_vendored(rep, net):
         found = detect_licence(read_text(lf)) if lf else None
         row['licence_detected'] = found
         if not lf:
-            rep.add('vendor-no-licence', 'high', sid, f'vendor/{name} has no LICENSE/COPYING/NOTICE file', f'vendor/{name}/',
+            rep.add('vendor-no-licence', 'high', sid, f'software/vendor/{name} has no LICENSE/COPYING/NOTICE file', f'software/vendor/{name}/',
                     'Keep the upstream licence text with the code, or remove the code.')
         elif not found:
             rep.add('vendor-licence-unknown', 'low', sid, f'the licence text of {name} is not one this report recognises',
-                    row['licence_file'], 'Read it and record the licence in vendor/manifest.json.')
+                    row['licence_file'], 'Read it and record the licence in software/vendor/manifest.json.')
         elif not same_licence(e.get('license'), found):
             rep.add('vendor-licence-mismatch', 'medium', sid, f"{name}: manifest says {e.get('license')}, the licence file reads as {found}",
                     row['licence_file'], 'The licence file governs: correct the manifest and THIRD_PARTY_NOTICES.md, and the policy.')
-        base = rep.root / 'vendor' / 'baselines' / f'{name}.json'
+        base = rep.root / 'software' / 'vendor' / 'baselines' / f'{name}.json'
         bsha = (json.loads(read_text(base) or '{}') or {}).get('sha') if base.exists() else None
         if bsha != sha:
             rep.add('vendor-baseline', 'medium', sid, f'the reviewed security baseline of {name} is not for the pinned commit',
@@ -1109,14 +1111,14 @@ def check_vendored(rep, net):
             rep.add('vendor-notices', 'medium', sid, f'THIRD_PARTY_NOTICES.md disagrees with the manifest for {name}',
                     f"notices: {n['licence']}, {n['url']}, {n['sha']}; manifest: {e.get('license')}, {url}, {sha[:12]}",
                     'Make the notices match the manifest.')
-    for d in sorted((rep.root / 'vendor').iterdir()):
+    for d in sorted((rep.root / 'software' / 'vendor').iterdir()):
         if d.is_dir() and d.name not in names and d.name not in VENDOR_SUPPORT_DIRS:
             # Inspect the filesystem, including untracked/hidden entries. Never exempt a whole metadata subtree.
             entries = list(d.rglob('*'))
             if entries and all(p.is_file() and owned_vendor_metadata(p.relative_to(rep.root).as_posix()) for p in entries):
                 continue
-            rep.add('vendor-unrecorded', 'high', f'vendor:{d.name}', f'vendor/{d.name} is not in vendor/manifest.json',
-                    f'vendor/{d.name}/', 'Every vendored tree needs a pinned manifest entry, a scan report and a baseline (SECURITY.md).')
+            rep.add('vendor-unrecorded', 'high', f'vendor:{d.name}', f'software/vendor/{d.name} is not in software/vendor/manifest.json',
+                    f'software/vendor/{d.name}/', 'Every vendored tree needs a pinned manifest entry, a scan report and a baseline (SECURITY.md).')
     if not net:
         return
     projects = {r['name']: r for r in rep.inventory['vendored']}
@@ -1164,12 +1166,12 @@ def vendor_drift(rep, net, row, slug, entry):
                 'tree listing truncated' if isinstance(tree, dict) and tree.get('truncated') else (err or f'HTTP {status}'), 'Run again later.')
         return
     up = {t['path']: t['sha'] for t in tree.get('tree') or [] if t.get('type') == 'blob' and t.get('mode') != '120000'}
-    base = rep.root / 'vendor' / row['name']
+    base = rep.root / 'software' / 'vendor' / row['name']
     local = {}
-    for rel in tracked(rep.root, f"vendor/{row['name']}"):
+    for rel in tracked(rep.root, f"software/vendor/{row['name']}"):
         p = rep.root / rel
         if p.is_file() and not p.is_symlink():
-            local[rel[len(f"vendor/{row['name']}/"):]] = git_blob_sha(p.read_bytes())
+            local[rel[len(f"software/vendor/{row['name']}/"):]] = git_blob_sha(p.read_bytes())
     patched, globs = set(row['patches']), entry.get('exclude') or []
     changed = sorted(p for p in local if p in up and up[p] != local[p] and p not in patched)
     added = sorted(p for p in local if p not in up and p not in patched)
@@ -1179,10 +1181,10 @@ def vendor_drift(rep, net, row, slug, entry):
         rep.add('vendor-drift', 'high', row['id'], f"{len(changed) + len(added)} vendored files of {row['name']} differ from upstream "
                 f"at the pinned commit with no patch to explain them",
                 'changed: ' + ', '.join(changed[:6]) + (' …' if len(changed) > 6 else '') + '; added: ' + ', '.join(added[:6]),
-                'Re-import with tools/vendor_sync.py, or record the change as a patch in vendor/patches/.',
+                'Re-import with tools/vendor_sync.py, or record the change as a patch in software/vendor/patches/.',
                 key=','.join(changed + added))
     if missing:
-        ignored = git(rep.root, 'check-ignore', '--', *[f"vendor/{row['name']}/{m}" for m in missing[:50]]) or ''
+        ignored = git(rep.root, 'check-ignore', '--', *[f"software/vendor/{row['name']}/{m}" for m in missing[:50]]) or ''
         hidden = f" ({len(ignored.splitlines())} of them ignored by a .gitignore, so never committed)" if ignored else ''
         rep.add('vendor-incomplete', 'low', row['id'], f"{len(missing)} upstream files of {row['name']} are neither vendored nor excluded",
                 ', '.join(missing[:8]) + (' …' if len(missing) > 8 else '') + hidden,
@@ -1191,7 +1193,7 @@ def vendor_drift(rep, net, row, slug, entry):
 
 
 # ------------------------------------------------------------------------------------------------------------ web kit
-KIT = 'src/cadagent/webkit/vendor'
+KIT = 'software/cadagent/webkit/vendor'
 VIEWER_RECEIPT = 'file-viewer-sources.json'
 RECORD_FILES = {VIEWER_RECEIPT, 'FILE-VIEWER-NOTICES.md'}       # plus every <folder>/SOURCE.json
 # Where a receipt leaves a repository out, the repository each kit folder comes from.
@@ -1353,10 +1355,10 @@ def check_webkit(rep, net, added_files=()):
     for rel in sorted(set(hashes) - set(files)):
         rep.add('webkit-hash-missing', 'high', f"webkit:{rel.split('/')[0]}", f'{KIT}/{rel} is recorded but missing',
                 'listed in a hash record', 'Restore it or remove it from the record.', key=rel)
-    notices = read_text(rep.root / 'vendor' / 'THIRD_PARTY_NOTICES.md') or ''
+    notices = read_text(rep.root / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md') or ''
     kit_section = notices.split('## Web kit', 1)[-1] if '## Web kit' in notices else ''
     for lic in sorted(set(re.findall(r'`([^`]+)`', kit_section))):
-        if '/' in lic and not lic.startswith(('src/', 'vendor/')) and not (kit / lic.rstrip('/')).exists():
+        if '/' in lic and not lic.startswith(('software/', 'src/', 'vendor/')) and not (kit / lic.rstrip('/')).exists():
             rep.add('webkit-licence-missing', 'medium', f"webkit:{lic.split('/')[0]}", f'licence file {lic} named in THIRD_PARTY_NOTICES.md is missing',
                     f'{KIT}/{lic}', 'Restore the licence text beside the code.', key=lic)
     folder_names = sorted({f.split('/')[0] for f in files if '/' in f})
@@ -2184,8 +2186,8 @@ def check_references(net, records, state, as_of, limit=HEALTH_LIMIT, pacer=None,
 
 def registry_records(root):
     """Every registry record with a link: [{id, url, file, kind, evidence, activity, spdx, claims}], in id order."""
-    if str(ROOT / 'src') not in sys.path:
-        sys.path.insert(0, str(ROOT / 'src'))
+    if str(ROOT / 'software') not in sys.path:
+        sys.path.insert(0, str(ROOT / 'software'))
     from cadagent.review import references as refs    # the registry's own loader: one schema, one source of truth
     reg = refs.load(Path(root) / 'docs' / 'research' / 'references.yaml')
     out = []
@@ -2475,19 +2477,24 @@ def unpinned_runner(tool, args):
 
 def check_skills(rep, net=None):
     files = tracked(rep.root)
-    ours = [f for f in files if re.match(r'^skills/[^/]+/SKILL\.md$', f)] + [f for f in files if re.match(r'^agents/[^/]+\.md$', f)]
+    ours = [f for f in files if re.match(r'^\.agents/skills/[^/]+/SKILL\.md$', f)] + [f for f in files if re.match(r'^\.agents/agents/[^/]+\.md$', f)]
+    required = {f for f in _PAGE_ALIASES if f.startswith(('.agents/skills/', '.agents/agents/'))}
+    for file in sorted(required - {f for f in ours if (rep.root / f).is_file()}):
+        rep.add('skill-missing', 'high', f'doc:{file}', f'required current agent-kit source {file} is missing', file,
+                'Restore the canonical source; a stale root skills/ or agents/ copy is not a current input.')
+    ours = [f for f in ours if (rep.root / f).is_file()]
     rev = (git(rep.root, 'rev-parse', '--short=12', 'HEAD') or 'working tree')
     for f in ours:
-        kind = 'skill' if f.startswith('skills/') else 'agent'
-        name = f.split('/')[1] if kind == 'skill' else Path(f).stem
+        kind = 'skill' if f.startswith('.agents/skills/') else 'agent'
+        name = f.split('/')[2] if kind == 'skill' else Path(f).stem
         rep.item('skills', id=f'{kind}:{name}', name=name, kind=kind, source='this repository', file=f, version=rev)
-    man = json.loads(read_text(rep.root / 'vendor' / 'manifest.json') or '{"projects": []}')
+    man = json.loads(read_text(rep.root / 'software' / 'vendor' / 'manifest.json') or '{"projects": []}')
     for e in man.get('projects') or []:
-        n = sum(1 for f in files if f.startswith(f"vendor/{e['name']}/") and f.endswith('/SKILL.md'))
+        n = sum(1 for f in files if f.startswith(f"software/vendor/{e['name']}/") and f.endswith('/SKILL.md'))
         if n:
             rep.item('skills', id=f"vendored-skills:{e['name']}", name=e['name'], kind=f'{n} vendored skills',
-                     source=e.get('url'), file=f"vendor/{e['name']}/", version=(e.get('sha') or '')[:12])
-    scan = [f for f in files if f.endswith('.md') and (published(f) or f.startswith(('skills/', 'agents/')))]
+                     source=e.get('url'), file=f"software/vendor/{e['name']}/", version=(e.get('sha') or '')[:12])
+    scan = [f for f in files if f.endswith('.md') and (published(f) or f.startswith(('.agents/skills/', '.agents/agents/')))]
     for f in scan:
         text = read_text(rep.root / f) or ''
         spans = code_spans(text)
@@ -2566,8 +2573,8 @@ def check_repo(rep, net, repo=None):
 def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, npm_audit=True, added_files=(), accepted=None):
     rep = Report(root, as_of or dt.datetime.now(dt.timezone.utc).date(), bool(net))
     rep.extra['accepted_source'] = ACCEPTED
-    rep.sources.setdefault('offline', 'pyproject.toml, tools/site/package.json, tools/site/package-lock.json, vendor/manifest.json, kit hash records, '
-                           'vendor/THIRD_PARTY_NOTICES.md, vendor/upstreams/registry.yaml, docs/research/landscape.json, published Markdown')
+    rep.sources.setdefault('offline', 'pyproject.toml, tools/site/package.json, tools/site/package-lock.json, software/vendor/manifest.json, kit hash records, '
+                           'software/vendor/THIRD_PARTY_NOTICES.md, software/vendor/upstreams/registry.yaml, docs/research/landscape.json, published Markdown')
     check_python(rep, net, installed)
     check_npm(rep, net, npm_audit)
     check_vendored(rep, net)
@@ -2661,7 +2668,7 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
     out = ['# Supply-chain and resource report', '',
            f"What cad-agent depends on, vendors and links to, checked on {r['as_of']} at revision {revision_label(r)} "
            f"({r['mode']} checks). Findings: {counts}. Generated by `tools/resource_audit.py`; how to read it and what blocks "
-           "a merge are in the [cad-supply-chain skill](../../skills/cad-supply-chain/SKILL.md) and on the "
+           "a merge are in the [cad-supply-chain skill](../../.agents/skills/cad-supply-chain/SKILL.md) and on the "
            "[supply-chain page](../practice/supply-chain.md).", '']
     if figure:
         out += [f'![Open findings by area and severity, from this report: {counts}]({figure})', '']
@@ -2714,7 +2721,9 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
             body.append(f"| `{p['name']}` | {p['version']} | {'yes' if p['direct'] else ''} | {'yes' if p['dev'] else ''} | "
                        f"{p.get('licence') or ''} | {'yes' if p['install_script'] else ''} | {len(p.get('advisories') or [])} |")
         flagged = {f['subject'] for f in open_}
-        body += ['', '### Vendored code (vendor/)', '', '| Project | Pinned | Imported | Licence (manifest / file) | Files | Skills | '
+        vendor_root = 'software/vendor' if 'software/vendor/manifest.json' in r.get('sources', {}).get('offline', '') else 'vendor'
+        kit_root = 'software/cadagent/webkit/vendor' if vendor_root.startswith('software/') else 'src/cadagent/webkit/vendor'
+        body += ['', f'### Vendored code ({vendor_root}/)', '', '| Project | Pinned | Imported | Licence (manifest / file) | Files | Skills | '
                 'Upstream | Behind | Scorecard | Drift |', '|---|---|---|---|---|---|---|---|---|---|']
         for v in inv['vendored']:
             up, d = v.get('upstream') or {}, v.get('drift')
@@ -2726,7 +2735,7 @@ def to_markdown(r, inventory=True, limit=None, figure=None):
                        f"{v.get('licence_detected') or '?'} | {v['files']} | {v['skills']} | "
                        f"{'archived' if up.get('archived') else up.get('state', '')} | {v.get('behind', '')} | "
                        f"{score if score is not None else ''} | {drift} |")
-        body += ['', '### Web kit (src/cadagent/webkit/vendor/)', '',
+        body += ['', f'### Web kit ({kit_root}/)', '',
                 '| Folder | Packages | Bundled inside | Files | Hashed | Matches its npm package | Newest | Advisories |',
                 '|---|---|---|---|---|---|---|---|']
         for w in inv['webkit']:
@@ -2862,16 +2871,33 @@ class GitTree:
         out = git(root, 'ls-tree', '-r', '-z', '--name-only', ref)
         if out is None:
             raise SystemExit(f'cannot read {ref!r}: fetch it first (git fetch origin)')
-        self.files = sorted(f for f in out.split('\0') if f)
+        original = {f for f in out.split('\0') if f}
+        aliases = (('vendor/', 'software/vendor/'), ('src/cadagent/', 'software/cadagent/'))
+        self.current_roots = {new for _, new in aliases if any(f.startswith(new) for f in original)}
+        canonical = set()
+        for file in original:
+            for old, new in aliases:
+                if file.startswith(old):
+                    if new not in self.current_roots:
+                        canonical.add(new + file[len(old):])
+                    break
+            else:
+                canonical.add(file)
+        self.files = sorted(canonical)
 
     def read(self, path):
         try:
             return subprocess.run(['git', '-C', str(self.root), 'show', f'{self.ref}:{path}'], capture_output=True,
                                   check=True).stdout.decode('utf-8', 'replace')
         except subprocess.CalledProcessError:
+            if path.startswith('software/vendor/') and 'software/vendor/' not in self.current_roots:
+                previous = self.read(path.removeprefix('software/'))
+                if previous is not None:
+                    return previous
             if path == REGISTRY:
-                # Old commits predate the move. Only historical comparisons may use the previous location.
                 return self.read('upstreams/registry.yaml') or '[]'
+            if path.startswith('software/cadagent/') and 'software/cadagent/' not in self.current_roots:
+                return self.read('src/' + path.removeprefix('software/'))
             if path in (NPM_PACKAGE, NPM_LOCK):
                 return self.read(path.rsplit('/', 1)[-1]) or ('{}' if path == NPM_LOCK else None)
             if path == LANDSCAPE:
@@ -2898,7 +2924,7 @@ def item_ids(tree):
         raise FileNotFoundError(f'required current npm lockfile {NPM_LOCK} is missing')
     if lock:
         ids |= {f'npm:{n}' for n in npm_packages(json.loads(lock))}
-    man = tree.read('vendor/manifest.json')
+    man = tree.read('software/vendor/manifest.json')
     if man:
         ids |= {f"vendor:{e['name']}" for e in json.loads(man).get('projects') or []}
     ids |= {f'vendor:{name}' for f in tree.files if (name := vendor_project(f))}
@@ -2922,7 +2948,7 @@ def added_items(root, base):
     b, h = GitTree(root, base), WorkTree(root)
     ids = item_ids(h) - item_ids(b)
     old = set(b.files)
-    new_files = [f for f in h.files if f not in old and (f.startswith('vendor/') or f.startswith(KIT + '/'))]
+    new_files = [f for f in h.files if f not in old and (f.startswith('software/vendor/') or f.startswith(KIT + '/'))]
     for f in new_files:
         if f.startswith(KIT + '/') and f[len(KIT) + 1:].count('/'):
             ids.add(f"webkit:{f[len(KIT) + 1:].split('/')[0]}")

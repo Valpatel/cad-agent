@@ -40,7 +40,7 @@ def _bare_package(into: Path) -> Path:
 
 
 def test_the_version_is_pyproject_tomls():
-    """In this checkout (CI runs it as an editable install, these suites with PYTHONPATH=src): what cut_release.py
+    """In this checkout (CI runs it as an editable install, these suites with PYTHONPATH=software): what cut_release.py
     bumps. An installed copy's metadata can be stale here, so it does not count."""
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert cadagent.__version__ == ".".join(map(str, parse_version(text)))
@@ -49,10 +49,10 @@ def test_the_version_is_pyproject_tomls():
 def test_a_checkout_on_the_path_reads_its_own_pyproject_and_imports_nothing_heavy(tmp_path):
     code = ("import sys, cadagent; print(cadagent.__version__); "
             f"print(sorted(set({sorted(HEAVY)!r}) & set(sys.modules)))")
-    version, heavy = _run(code, ROOT / "src", tmp_path).splitlines()
+    version, heavy = _run(code, ROOT / "software", tmp_path).splitlines()
     assert version == ".".join(map(str, parse_version((ROOT / "pyproject.toml").read_text(encoding="utf-8"))))
     assert heavy == "[]"
-    assert _run("from cadagent import __version__; print(__version__)", ROOT / "src", tmp_path) == version
+    assert _run("from cadagent import __version__; print(__version__)", ROOT / "software", tmp_path) == version
 
 
 def test_a_wheel_install_reads_the_installed_metadata(tmp_path):
@@ -85,7 +85,7 @@ def test_a_copy_that_no_metadata_describes_is_unknown_not_another_installs_versi
     ('[project]\nname = "cad-agent"\ndynamic = ["version"]\n', "0+unknown"),          # no version line to read
 ])
 def test_only_cad_agents_own_project_table_counts(tmp_path, pyproject, expected):
-    """A project that vendors src/cadagent into its own src/ has its own pyproject.toml two folders up."""
+    """A project that vendors software/cadagent into its own src/ has its own pyproject.toml two folders up."""
     (tmp_path / "pyproject.toml").write_text(pyproject, encoding="utf-8")
     _bare_package(tmp_path / "src")
     assert _run("import cadagent; print(cadagent.__version__)", tmp_path / "src", tmp_path) == expected

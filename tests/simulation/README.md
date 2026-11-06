@@ -1,6 +1,6 @@
 # tests/simulation
 
-Tests for [`src/cadagent/simulation/`](../../src/cadagent/simulation/README.md): FEA, CFD, topology optimisation,
+Tests for [`software/cadagent/simulation/`](../../software/cadagent/simulation/README.md): FEA, CFD, topology optimisation,
 robot export, design exploration and their pictures and reports. `cfd_fixtures.py` is a helper the CFD tests import;
 design exploration has its own folder, [`explore/`](explore/README.md).
 
@@ -39,6 +39,6 @@ flowchart TD
 | `test_stl_faces.py` | `stl_faces` with no optional dependencies: binary and ASCII STLs, truncated files |
 | `test_topopt.py` | Topology optimisation (pyMOTO) on a small cantilever |
 
-Run: `pytest tests/simulation` (with `PYTHONPATH=src`).
+Run: `pytest tests/simulation` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

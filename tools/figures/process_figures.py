@@ -23,7 +23,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent.manufacturing import dfm, process, sheet_metal  # noqa: E402
 from cadagent.mechanical import sheet_hardware  # noqa: E402

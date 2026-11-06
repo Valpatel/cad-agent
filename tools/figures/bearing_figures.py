@@ -18,7 +18,7 @@ from xml.sax.saxutils import escape
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "software"))
 
 from cadagent import formulas as fx                     # noqa: E402  (this checkout's package)
 from cadagent.mechanical import bearings as mb          # noqa: E402

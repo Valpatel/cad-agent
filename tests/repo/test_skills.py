@@ -16,7 +16,7 @@ from cadagent._deps import MissingDependency
 from cadagent.cli import SUBCOMMANDS
 
 ROOT = Path(__file__).resolve().parents[2]
-SKILLS = sorted((ROOT / "skills").glob("*/SKILL.md"))
+SKILLS = sorted((ROOT / ".agents" / "skills").glob("*/SKILL.md"))
 
 
 def shell_commands(source: str):

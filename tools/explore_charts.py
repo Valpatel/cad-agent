@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the numbers behind the catalogue's compare cover from the tool's own output.
 
-    PYTHONPATH=src python3 tools/explore_charts.py            # write docs/img/explore/two-wheel-charts.json
-    PYTHONPATH=src python3 tools/explore_charts.py --check    # exit 1 if the committed file differs (tests run this)
+    PYTHONPATH=software python3 tools/explore_charts.py            # write docs/img/explore/two-wheel-charts.json
+    PYTHONPATH=software python3 tools/explore_charts.py --check    # exit 1 if the committed file differs (tests run this)
 
 It copies the worked example (docs/examples/explore-two-wheel) to a scratch folder and runs ``cad-agent compare --json``
 there: the four designs, as the comparison page ranks them.
@@ -32,7 +32,7 @@ X, Y = "cost_usd", "mass_kg"
 
 
 def run(cwd: Path, *args: str) -> str:
-    env = dict(os.environ, PYTHONPATH=os.pathsep.join(filter(None, [str(ROOT / "src"), os.environ.get("PYTHONPATH")])))
+    env = dict(os.environ, PYTHONPATH=os.pathsep.join(filter(None, [str(ROOT / "software"), os.environ.get("PYTHONPATH")])))
     done = subprocess.run([sys.executable, "-m", "cadagent.cli", *args], cwd=cwd, env=env, capture_output=True, text=True)
     if done.returncode not in (0, 1):            # compare exits 1 when a design fails; that is a result, not an error
         raise SystemExit(f"cad-agent {' '.join(args)} failed ({done.returncode}):\n{done.stderr}")
@@ -94,7 +94,7 @@ def main(argv: list[str]) -> int:
     if "--check" in argv:
         old = OUT.read_text(encoding="utf-8") if OUT.exists() else ""
         if old != new:
-            print(f"{OUT.relative_to(ROOT)} is stale: run PYTHONPATH=src python3 tools/explore_charts.py", file=sys.stderr)
+            print(f"{OUT.relative_to(ROOT)} is stale: run PYTHONPATH=software python3 tools/explore_charts.py", file=sys.stderr)
             return 1
         print(f"{OUT.relative_to(ROOT)} matches the tools' output")
         return 0

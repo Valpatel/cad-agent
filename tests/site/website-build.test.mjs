@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
-import { createPublication } from '../../tools/site/publication.mjs';
+import { createPublication, selectPages } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -229,7 +229,7 @@ test('catalogue statuses are honest', async () => {
     const pkg = lib.name.split('/').pop().toLowerCase();
     assert.match(pyproject, new RegExp(`"${pkg}[>=<\\[" ]`), `${lib.name} is marked used but is not a dependency`);
   }
-  const cli = await readFile(path.join(root, 'src/cadagent/cli.py'), 'utf8');
+  const cli = await readFile(path.join(root, 'software/cadagent/cli.py'), 'utf8');
   for (const t of catalog.items.filter(i => i.type === 'tool')) assert.ok(cli.includes(`"${t.name.replace('cad-agent ', '')}"`), t.name);
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
   for (const [, cmd] of index.matchAll(/<code>cad-agent ([a-z0-9-]+)<\/code>/g))
@@ -273,7 +273,7 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
   for (const f of html) for (const m of (await readFile(path.join(out, f), 'utf8')).matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (!m[1].trim()) continue;
     assert.ok(f.startsWith('kit/'), `${f}: inline script on a site page`);
-    assert.equal((await readFile(path.join(out, f), 'utf8')), git('show', `HEAD:src/cadagent/webkit/${f.slice(4)}`), `${f} is not the kit's own file`);
+    assert.equal((await readFile(path.join(out, f), 'utf8')), git('show', `HEAD:software/cadagent/webkit/${f.slice(4)}`), `${f} is not the kit's own file`);
     kitHashes.add(`'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`);
   }
   assert.deepEqual([...allowed].sort(), [...kitHashes].sort());
@@ -556,17 +556,19 @@ test('every local image has its width and height, so nothing jumps while it load
 });
 
 test('diagrams in files agents load leave the palette to the site', async () => {
-  const sources = git('ls-tree', '-r', '--name-only', 'HEAD', 'skills', 'agents').split('\n').filter(f => /^(skills\/[^/]+\/SKILL|agents\/[^/]+)\.md$/.test(f));
+  const sources = selectPages(git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean))
+    .filter(p => ['skills', 'agents'].includes(p.section.id)).map(p => p.file);
+  assert.equal(sources.length, 10, 'all eight canonical skills and two roles must reach the palette consumer');
   let drawn = 0;
   for (const f of sources) {
     const md = git('show', `HEAD:${f}`);
     if (!/```mermaid/.test(md)) continue;
     drawn++;
     assert.doesNotMatch(md, /^\s*classDef (?:here|near|out)\b/m, `${f}: the site adds the palette; keep agent context short`);
-    const page = await readFile(path.join(out, f.replace(/\.md$/, '.html')), 'utf8');
+    const page = await readFile(path.join(out, publicPath(f).replace(/\.md$/, '.html')), 'utf8');
     const used = [...md.matchAll(/^\s*class\s+\S+\s+(here|near|out)\s*$/gm)].map(m => m[1]);
     for (const c of new Set(used)) assert.match(page, new RegExp(`classDef ${c} fill:#`), `${f}: ${c} is drawn in the palette`);
-    assert.doesNotMatch(await readFile(path.join(out, f), 'utf8'), /classDef/, `${f}: the Markdown twin stays as written`);
+    assert.doesNotMatch(await readFile(path.join(out, publicPath(f)), 'utf8'), /classDef/, `${f}: the Markdown twin stays as written`);
   }
   assert.ok(drawn >= 8, `${drawn} skill and subagent diagrams`);
 });
@@ -716,16 +718,16 @@ test('the moved notices keep public URLs, catalogue identity, links and real pro
   const notice = catalog.items.find(i => i.id === 'guide-third-party-notices');
   assert.equal(notice.url, 'https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES');
   assert.equal(notice.markdown, 'https://cad-agent.valpatel.com/THIRD_PARTY_NOTICES.md');
-  assert.equal(notice.source, 'https://github.com/Valpatel/cad-agent/blob/dev/vendor/THIRD_PARTY_NOTICES.md');
+  assert.equal(notice.source, 'https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/THIRD_PARTY_NOTICES.md');
   const html = await readFile(path.join(out, 'THIRD_PARTY_NOTICES.html'), 'utf8');
-  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/vendor\/THIRD_PARTY_NOTICES\.md"/);
+  assert.match(html, /href="https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/software\/vendor\/THIRD_PARTY_NOTICES\.md"/);
   assert.match(html, /href="\/research\/landscape"/);
   assert.ok((await ids('THIRD_PARTY_NOTICES.html')).has('third-party-notices'));
   assert.match(await readFile(path.join(out, 'README.html'), 'utf8'), /href="\/THIRD_PARTY_NOTICES"/);
   const twin = await readFile(path.join(out, 'THIRD_PARTY_NOTICES.md'), 'utf8');
   assert.match(twin, /\]\(research\/landscape\.md\)/);
   assert.doesNotMatch(twin, /\]\(\.\.\/research\/landscape\.md\)/);
-  assert.ok(!files.includes('vendor/THIRD_PARTY_NOTICES.html'));
+  assert.ok(!files.includes('software/vendor/THIRD_PARTY_NOTICES.html'));
   for (const file of ['llms.txt', 'sitemap.xml']) {
     const body = await readFile(path.join(out, file), 'utf8');
     assert.match(body, /https:\/\/cad-agent\.valpatel\.com\/THIRD_PARTY_NOTICES/);
@@ -739,9 +741,9 @@ test('a real draft consumes moved sources and cannot substitute stale root files
   try {
     await writeFile(path.join(wt, '.github/CONTRIBUTING.md'), '# Current policy\n\nMOVED_SOURCE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
     await writeFile(path.join(wt, 'CONTRIBUTING.md'), '# Stale root policy\n\nSTALE_ROOT_SENTINEL.\n');
-    await writeFile(path.join(wt, 'vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../docs/toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'software/vendor/THIRD_PARTY_NOTICES.md'), '# Third-party notices\n\nMOVED_NOTICE_SENTINEL.\n\n[Commands](../../docs/toolkit.md#commands)\n');
     await writeFile(path.join(wt, 'THIRD_PARTY_NOTICES.md'), '# Stale root notices\n\nSTALE_NOTICE_SENTINEL.\n');
-    const registry = path.join(wt, 'vendor/upstreams/registry.yaml');
+    const registry = path.join(wt, 'software/vendor/upstreams/registry.yaml');
     const upstreams = YAML.parse(await readFile(registry, 'utf8'));
     upstreams[0].what = 'REGISTRY_SOURCE_SENTINEL';
     await writeFile(registry, YAML.stringify(upstreams));
@@ -777,7 +779,7 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     assert.doesNotMatch(movedGuide, /STALE_GUIDE_SENTINEL/);
     assert.match(movedGuide, /href="\/docs\/toolkit#commands"/);
     assert.match(await readFile(path.join(draft, 'docs/weekly-upstream-update.md'), 'utf8'), /\]\(toolkit\.md#commands\)/);
-    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml', guide, landscapeSource]) {
+    for (const source of ['.github/CONTRIBUTING.md', 'software/vendor/THIRD_PARTY_NOTICES.md', 'software/vendor/upstreams/registry.yaml', guide, landscapeSource]) {
       const current = await readFile(path.join(wt, source));
       await rm(path.join(wt, source));
       assert.throws(run, error => String(error.stderr).includes('ENOENT') && String(error.stderr).includes(source),

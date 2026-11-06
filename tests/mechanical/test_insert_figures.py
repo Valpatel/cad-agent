@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-ENV = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+ENV = {**os.environ, "PYTHONPATH": str(ROOT / "software")}
 
 
 def test_committed_diagrams_match_the_module():

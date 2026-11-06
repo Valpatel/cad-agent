@@ -2,7 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-const kit = fileURLToPath(new URL('../../src/cadagent/webkit', import.meta.url));
+const kit = fileURLToPath(new URL('../../software/cadagent/webkit', import.meta.url));
 const types = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.woff2': 'font/woff2' };
 export async function serveWebkit(routes = new Map()) {
   const server = http.createServer(async (req, res) => {

@@ -15,8 +15,8 @@ The first figure is [Gyropup](https://github.com/Valpatel/gyropup)'s five-bar le
 ## Regenerate or check
 
 ```bash
-PYTHONPATH=src python3 tools/readme_anim.py            # write every SVG from its committed scene
-PYTHONPATH=src python3 tools/readme_anim.py --check    # exit 1 if a committed SVG differs or breaks a rule
+PYTHONPATH=software python3 tools/readme_anim.py            # write every SVG from its committed scene
+PYTHONPATH=software python3 tools/readme_anim.py --check    # exit 1 if a committed SVG differs or breaks a rule
 ```
 
 `tests/publish/test_readme_anim.py` runs `--check`, so a renderer change that alters a figure fails CI until the SVG is regenerated and committed.
@@ -26,7 +26,7 @@ Rendering needs only cad-agent's core dependencies.
 ## Re-measure from the project
 
 ```bash
-PYTHONPATH=src python3 tools/readme_anim.py --extract hero --source <checkout of the project>
+PYTHONPATH=software python3 tools/readme_anim.py --extract hero --source <checkout of the project>
 ```
 
 Extraction needs the `cad` extra (CadQuery). Use a clean checkout of the project's published branch, not a working tree with uncommitted changes. The scene records the commit and every input file's sha256.
@@ -44,7 +44,7 @@ own `cadagent.simulation.fea` and drawn from what the results said.
 FEA: a converged peak does not prove that the part holds.*
 
 ```bash
-PYTHONPATH=src python3 tools/readme_anim.py --extract convergence    # record it again: gmsh, scikit-fem, CadQuery
+PYTHONPATH=software python3 tools/readme_anim.py --extract convergence    # record it again: gmsh, scikit-fem, CadQuery
 ```
 
 `tools/anim/fea-convergence.yaml` names the study: the bracket, the load, the element sizes at the corner and the
@@ -69,7 +69,7 @@ Allowables from the data sheets Polymaker PolyMide CoPA V5.4 and Bambu Lab PETG-
 print.*
 
 ```bash
-PYTHONPATH=src python3 tools/readme_anim.py --extract snapfit    # run the calculator again: core only, under a second
+PYTHONPATH=software python3 tools/readme_anim.py --extract snapfit    # run the calculator again: core only, under a second
 ```
 
 `tools/anim/snap-engagement.yaml` names the arm, as a `cad-agent snapfit` declaration, and the words.

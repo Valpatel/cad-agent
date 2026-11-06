@@ -1,6 +1,6 @@
 # tests/mechanical
 
-Tests for [`src/cadagent/mechanical/`](../../src/cadagent/mechanical/README.md): holes, fasteners, connectors,
+Tests for [`software/cadagent/mechanical/`](../../software/cadagent/mechanical/README.md): holes, fasteners, connectors,
 inserts, compliant features, linkages and motion traces, and the figures drawn from them.
 
 Arrows: what a test imports, runs or reads.
@@ -40,6 +40,6 @@ flowchart TD
 | `test_snapfit.py` | The snap-fit calculator against the Covestro guide's worked examples, plus its check rows |
 | `test_snapfit_sheets.py` | The printed snap-fit allowables pinned to the data-sheet editions they cite |
 
-Run: `pytest tests/mechanical` (with `PYTHONPATH=src`).
+Run: `pytest tests/mechanical` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

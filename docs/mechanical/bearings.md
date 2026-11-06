@@ -184,4 +184,4 @@ Palmgren–Miner and the cubic mean are one sum, the catalogue's consistency, ev
 the CLI's exit codes. It also redraws every figure on this page and fails if one has gone stale.
 
 Related: [Engineering formulas](../formulas.md) · [Printed load-bearing joints](printed-joints.md) ·
-[package map](../../src/cadagent/mechanical/README.md)
+[package map](../../software/cadagent/mechanical/README.md)

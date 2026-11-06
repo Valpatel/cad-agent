@@ -1,6 +1,7 @@
 """tools/cut_release.py: the release-branch edits, checked against CI's own release gate."""
 import importlib.util
 import pathlib
+import json
 
 import pytest
 
@@ -122,21 +123,28 @@ def test_refuses_an_impossible_date_and_a_missing_choice():
 
 
 def test_cli_dry_run_writes_nothing(tmp_path):
+    (tmp_path / cut_release.FRAGMENTS).mkdir(parents=True)
+    (tmp_path / ".claude-plugin").mkdir()
+    plugin = '{"name":"cad-agent","version":"0.4.2","skills":["./.agents/skills/"]}\n'
+    manifest = tmp_path / ".claude-plugin/plugin.json"
+    manifest.write_text(plugin)
     (tmp_path / "pyproject.toml").write_text(PYPROJECT)
     (tmp_path / "CHANGELOG.md").write_text(CHANGELOG)
     assert cut_release.main(["--minor", "--date", "2026-11-01", "--root", str(tmp_path), "--dry-run"]) == 0
     assert (tmp_path / "pyproject.toml").read_text() == PYPROJECT
+    assert manifest.read_text() == plugin
     assert cut_release.main(["--minor", "--date", "2026-11-01", "--root", str(tmp_path)]) == 0
     assert 'version = "0.5.0"' in (tmp_path / "pyproject.toml").read_text()
+    assert manifest.read_text() == plugin.replace("0.4.2", "0.5.0")
     assert cut_release.main(["--patch", "--root", str(tmp_path)]) == 1  # Unreleased is now empty
 
 
-FIX = ("changelog.d/175-cfd.md", "**Fixed**\n- CFD settles within 1 °C (#175).\n")
-PMC = ("changelog.d/135-names.md", "**Projects must change**\n- Rename the key (#135).\n\n**New**\n- A check (#135).\n")
+FIX = ("docs/changelog.d/175-cfd.md", "**Fixed**\n- CFD settles within 1 °C (#175).\n")
+PMC = ("docs/changelog.d/135-names.md", "**Projects must change**\n- Rename the key (#135).\n\n**New**\n- A check (#135).\n")
 
 
 def test_fragments_fold_into_their_sections_in_order():
-    new = cut_release.fold_fragments(CHANGELOG, [FIX, PMC, ("changelog.d/9.md", "**New**\n- Another (#9).\n")])
+    new = cut_release.fold_fragments(CHANGELOG, [FIX, PMC, ("docs/changelog.d/9.md", "**New**\n- Another (#9).\n")])
     entry = new.split("## Unreleased\n\n", 1)[1].split("\n## v0.4.2", 1)[0]
     assert entry == ("**New**\n- A thing (#1).\n- A check (#135).\n- Another (#9).\n\n**Fixed**\n"
                      "- CFD settles within 1 °C (#175).\n\n**Projects must change**\n- Rename the key (#135).\n")
@@ -166,7 +174,7 @@ def test_fragments_fill_an_empty_entry_and_keep_a_colon_heading():
 ])
 def test_refuses_a_malformed_fragment(text, message):
     with pytest.raises(ValueError, match=message):
-        cut_release.fold_fragments(CHANGELOG, [("changelog.d/x.md", text)])
+        cut_release.fold_fragments(CHANGELOG, [("docs/changelog.d/x.md", text)])
 
 
 def test_a_missing_section_goes_between_the_ones_around_it():
@@ -189,7 +197,7 @@ def test_a_lead_in_paragraph_opens_its_section():
     # a bold lead-in that is not a section stays inside the section it is in
     note = CHANGELOG.replace("- A thing (#1).\n", "- A thing (#1).\n\n**Note:** read this.\n")
     assert "**Note:** read this.\n\n- Another (#9).\n" in cut_release.fold_fragments(
-        note, [("changelog.d/9.md", "**New**\n- Another (#9).\n")])
+        note, [("docs/changelog.d/9.md", "**New**\n- Another (#9).\n")])
 
 
 def test_hashes_that_are_not_headings_stay_in_a_fragment():
@@ -214,8 +222,8 @@ def test_a_blank_line_goes_before_new_bullets_only_after_prose(before, gap):
 def test_cli_folds_and_deletes_fragments_but_not_on_a_dry_run(tmp_path):
     (tmp_path / "pyproject.toml").write_text(PYPROJECT)
     (tmp_path / "CHANGELOG.md").write_text(CHANGELOG.replace("**New**\n- A thing (#1).\n", ""))
-    frags = tmp_path / "changelog.d"
-    frags.mkdir()
+    frags = tmp_path / "docs/changelog.d"
+    frags.mkdir(parents=True)
     (frags / "README.md").write_text("# changelog.d\n\nNot a fragment.\n")
     (frags / "175-cfd.md").write_text(FIX[1])
     assert cut_release.main(["--patch", "--date", "2026-11-01", "--root", str(tmp_path), "--dry-run"]) == 0
@@ -237,3 +245,37 @@ def test_this_repo_can_be_released():
         pytest.skip("nothing unreleased yet")
     frags = [(p.name, p.read_text(encoding="utf-8")) for p in cut_release.fragment_files(ROOT)]
     cut_release.cut(py, cl, bump="patch", date="2099-01-01", fragments=frags)
+
+
+def test_missing_current_fragments_rejects_stale_root_without_writes(tmp_path, capsys):
+    (tmp_path / "pyproject.toml").write_text(PYPROJECT)
+    (tmp_path / "CHANGELOG.md").write_text(CHANGELOG)
+    old = tmp_path / "changelog.d"
+    old.mkdir()
+    (old / "1-stale.md").write_text("**Fixed**\n- Stale note.\n")
+    assert cut_release.main(["--minor", "--root", str(tmp_path)]) == 1
+    assert "required current fragment directory docs/changelog.d is missing" in capsys.readouterr().err
+    assert (tmp_path / "pyproject.toml").read_text() == PYPROJECT
+    assert (tmp_path / "CHANGELOG.md").read_text() == CHANGELOG
+    current = tmp_path / cut_release.FRAGMENTS
+    current.mkdir(parents=True)
+    assert cut_release.fragment_files(tmp_path) == []
+    (current / "2-current.md").write_text("### Fixed\n- Broken current note.\n")
+    assert cut_release.main(["--minor", "--root", str(tmp_path)]) == 1
+    assert "breaks the CHANGELOG entry" in capsys.readouterr().err
+    assert (tmp_path / "pyproject.toml").read_text() == PYPROJECT
+
+
+def test_native_plugin_version_is_current_and_mismatch_prevents_release(tmp_path, capsys):
+    project = (ROOT / "pyproject.toml").read_text()
+    manifest = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
+    assert manifest["version"] == ".".join(map(str, ci_gates.parse_version(project)))
+    (tmp_path / "pyproject.toml").write_text(PYPROJECT)
+    (tmp_path / "CHANGELOG.md").write_text(CHANGELOG)
+    (tmp_path / cut_release.FRAGMENTS).mkdir(parents=True)
+    (tmp_path / ".claude-plugin").mkdir()
+    (tmp_path / ".claude-plugin/plugin.json").write_text('{"version":"9.0.0"}')
+    assert cut_release.main(["--minor", "--root", str(tmp_path)]) == 1
+    assert "native plugin version must match pyproject.toml" in capsys.readouterr().err
+    assert (tmp_path / "pyproject.toml").read_text() == PYPROJECT
+    assert (tmp_path / "CHANGELOG.md").read_text() == CHANGELOG

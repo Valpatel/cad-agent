@@ -81,7 +81,7 @@ commits, then bots and a few contributors.
 
 **How upstream installs it:** from the Claude Code plugin marketplace, tracking the repository's `latest` branch,
 which holds only the plugin (one commit per release) and moves with every release. We do not install it that way:
-cad-agent vendors a pinned, scanned commit in `vendor/text-to-cad` (`vendor/manifest.json`), and agents never install
+cad-agent vendors a pinned, scanned commit in `software/vendor/text-to-cad` (`software/vendor/manifest.json`), and agents never install
 skills or plugins from registries.
 
 **Security review.**
@@ -122,7 +122,7 @@ skills or plugins from registries.
 
 Kernel note: text-to-cad uses build123d. Our J501 code is CadQuery. Both use OCP, so shapes interoperate through `.wrapped`.
 
-**What it does not compute** (checked 2026-10-31 in the vendored copy, `vendor/text-to-cad` at v0.7.26: its `packages/`,
+**What it does not compute** (checked 2026-10-31 in the vendored copy, `software/vendor/text-to-cad` at v0.7.26: its `packages/`,
 `skills/` and `apps/` code). No stress, fatigue, FEA or safety-factor code: no file mentions von Mises, fatigue, stress
 or a safety factor. Bearings and bolts appear only as catalogue parts to download (`step-parts`), and gears only as
 kinematic couplings and URDF/SDF joints (`cadgen.kinematics`, `sdf_validation`), never sized. It is a modelling,

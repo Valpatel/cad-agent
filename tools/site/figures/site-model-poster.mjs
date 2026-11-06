@@ -39,7 +39,7 @@ img{position:absolute;left:700px;top:-10px;width:760px;height:760px}
 <p class="lede">Two five-bar legs, four RS-04 actuators,<br>a foam-ball turret on top,<br>printed in PA6-CF, PETG and TPU.</p>
 <p class="tag">DESIGNED · SIMULATED · CHECKED WITH CAD-AGENT</p></div><img alt="">`;
 const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-poster-'));
-await symlink(path.join(root, 'src/cadagent/webkit'), path.join(dir, 'kit'));
+await symlink(path.join(root, 'software/cadagent/webkit'), path.join(dir, 'kit'));
 await symlink(path.join(root, 'tools/site/assets'), path.join(dir, 'web'));
 await writeFile(path.join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/kit/model.css">' +
   '<script type="module" src="/kit/model.js"></script><body style="margin:0"></body>');

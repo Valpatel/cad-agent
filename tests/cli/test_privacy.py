@@ -69,7 +69,7 @@ def test_opt_out_sets_only_what_is_missing():
 
 def test_every_switch_a_vendored_tool_names_is_covered():
     named = set()
-    for path in (ROOT / "vendor").rglob("*"):
+    for path in (ROOT / "software" / "vendor").rglob("*"):
         if path.is_file() and (path.suffix in SUFFIXES or path.name.startswith(".env")):
             named |= set(SWITCH.findall(path.read_text(errors="replace")))
     assert named, "the survey found nothing: the pattern or the vendor folder moved"
@@ -95,6 +95,6 @@ def test_the_survey_page_lists_every_opt_out():
 
 
 def test_the_package_has_no_telemetry_client():
-    hits = [str(p.relative_to(ROOT)) for p in (ROOT / "src" / "cadagent").rglob("*.py")
+    hits = [str(p.relative_to(ROOT)) for p in (ROOT / "software" / "cadagent").rglob("*.py")
             if re.search(r"posthog|sentry_sdk|mixpanel|segment\.io|google-analytics|api\.amplitude\.com", p.read_text(), re.I)]
     assert not hits, hits

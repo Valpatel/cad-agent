@@ -70,8 +70,8 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 1. **Look before building.** Before writing a new capability (a command, check, calculator, generator or skill),
    find what already does the job: the [catalogue](https://cad-agent.valpatel.com/catalog)
    ([`catalog.json`](https://cad-agent.valpatel.com/catalog.json), which `tools/site/compiler/site-catalog.mjs` builds from the
-   repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`vendor/upstreams/registry.yaml`](../vendor/upstreams/registry.yaml), the
-   skills in [`skills/`](../skills), and the open-source libraries and agent skills outside them. Under "Considered
+   repo), the [landscape survey](../docs/research/agent-workflow/landscape.md), [`software/vendor/upstreams/registry.yaml`](../software/vendor/upstreams/registry.yaml), the
+   skills in [`.agents/skills/`](../.agents/skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
 2. **Worktree from `dev`.** Never edit a checkout another session may be using:
@@ -91,7 +91,7 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    features must skip cleanly) and `full` on 3.12 (CAD, FEA, robot and site extras, imported loudly before the tests;
    the `cad` and `sim` extras need 3.11 or newer);
    `webkit.yml` runs the browser suites and `gates.yml` the [gates](#gates). CI's `supply-chain` job runs the offline
-   [supply-chain report](../skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
+   [supply-chain report](../.agents/skills/cad-supply-chain/SKILL.md): a PR that adds a dependency, vendored file or catalogue
    entry pastes its rows (`python3 tools/resource_audit.py rows --base origin/dev --online`) under "Supply chain".
 6. **Review.** Every PR gets a review from a person or from a separate review agent that did not write the change,
    posted as PR comments (the `cad-pr-reviewer` subagent, or a separate Codex session with that skill), ending with
@@ -104,14 +104,14 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
 
 Each kind of file has one place. Prefer growing an existing module, page or folder to starting a new one; a new
 folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.md#repo-structure-and-where-files-go)).
-`tests/repo/test_layout.py` checks the test, `src/` and top-level rules, and says where a misplaced file goes.
+`tests/repo/test_layout.py` checks the test, `software/` and top-level rules, and says where a misplaced file goes.
 
 | Kind of file | Where it goes |
 |---|---|
-| Code: a check, calculator, generator or reader | The module for its topic in `src/cadagent/<domain>/` ([map](../src/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `src/cadagent/` |
-| A closed-form equation | `src/cadagent/formulas/`, with golden vectors in its test |
-| A `cad-agent` command | Its parser and handler in `src/cadagent/cli.py`, its logic in the domain package |
-| A browser component | `src/cadagent/webkit/` |
+| Code: a check, calculator, generator or reader | The module for its topic in `software/cadagent/<domain>/` ([map](../software/cadagent/README.md)), with its line in that domain's `api:` in `docs/areas.yaml`. A function or two joins an existing module; never a new file at the top of `software/cadagent/` |
+| A closed-form equation | `software/cadagent/formulas/`, with golden vectors in its test |
+| A `cad-agent` command | Its parser and handler in `software/cadagent/cli.py`, its logic in the domain package |
+| A browser component | `software/cadagent/webkit/` |
 | A test of package code | `tests/<domain>/test_<subject>.py`, the folder of the package its main subject lives in ([map](../tests/README.md)) |
 | A test of `cli.py` or a module beside it | `tests/cli/` |
 | A Node or browser test of the web kit | `tests/webkit/`: `webkit-<name>.test.mjs` (`node --test`), `webkit-<name>-browser.mjs` (Playwright) |
@@ -126,10 +126,11 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 | A repo script (figures, site build, gates, release) | `tools/` |
 | A website asset | `tools/site/assets/` |
 | An example project | `docs/examples/<name>/`, with a README |
-| A CHANGELOG entry | `changelog.d/<issue>-<slug>.md` |
-| Vendored upstream code | `vendor/<name>/`, through `tools/vendor_sync.py` |
-| A skill or a subagent | `skills/<name>/SKILL.md`, `agents/<name>.md`: the only copies to edit. `.claude/`, `.agents/` and `.codex/` hold only links or generated files |
-| A finding or note from agent work | `docs/lessons/<area>/`, not `.agents/` |
+| A CHANGELOG entry | `docs/changelog.d/<issue>-<slug>.md` |
+| Vendored upstream code | `software/vendor/<name>/`, through `tools/vendor_sync.py` |
+| A skill or a subagent | `.agents/skills/<name>/SKILL.md`, `.agents/agents/<name>.md`: the canonical copies to edit. `.claude/` and `.codex/` hold only wiring; the native plugin manifest points at the same canonical files |
+| Operational incident evidence | `.agents/inbox/YYYY-MM-DD-<lesson>.md`, linked from `.agents/SYMPTOM-INDEX.md`; preserve dated commands, controls, cause and limits |
+| Reusable toolkit or project guidance | Curate into the existing `docs/lessons/<area>/` lesson and its index; keep one canonical explanation rather than duplicate prose |
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.
@@ -149,7 +150,7 @@ such as a new command or check, even one that asks nothing of projects.
 1. On a `release/vX.Y.Z` branch from `dev`:
    - bring in `main`'s release merges (`git merge origin/main`), so the release PR is up to date with `main`;
    - run `python3 tools/cut_release.py --patch` (or `--minor`). It bumps `version` in `pyproject.toml`, folds the
-     fragments in [`changelog.d/`](../changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
+     fragments in [`docs/changelog.d/`](../docs/changelog.d/README.md) into the CHANGELOG's `## Unreleased` entry and deletes
      them, dates the entry as `## vX.Y.Z (YYYY-MM-DD)`, opens a new empty `## Unreleased`, and checks the result
      against CI's release gate;
    - check that the entry covers every PR merged since the last release, with what projects must change.

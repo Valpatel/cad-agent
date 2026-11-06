@@ -70,7 +70,7 @@ test('the loader refuses an extension of nothing and a second record with one id
 
 test('which files are shards, and which records are read, are the Python registry\'s rules', async () => {
   // cadagent.review.references owns both; the site's copies are pinned to its source text.
-  const py = await readFile(path.join(root, 'src/cadagent/review/references.py'), 'utf8');
+  const py = await readFile(path.join(root, 'software/cadagent/review/references.py'), 'utf8');
   const name = k => py.match(new RegExp(`^${k} = "([^"]+)"`, 'm'))[1];
   assert.deepEqual([...NOT_SHARDS].sort(), py.match(/^NOT_SHARDS = \(([^)]*)\)/m)[1].split(',').map(s => name(s.trim())).sort());
   assert.deepEqual(LADDER, [...py.match(/^LADDER = \(([^)]*)\)/m)[1].matchAll(/"([^"]+)"/g)].map(m => m[1]));

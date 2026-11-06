@@ -1,6 +1,6 @@
 # Repository tools
 
-Build the site, generate figures, maintain releases and audit the toolkit. Engineering code lives in [src/cadagent](../src/cadagent/README.md).
+Build the site, generate figures, maintain releases and audit the toolkit. Engineering code lives in [software/cadagent](../software/cadagent/README.md).
 
 The arrows show the artifacts these tools produce and the checks that consume them.
 

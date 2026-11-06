@@ -232,7 +232,7 @@ def test_unreleased_and_real_cut_release_output_preserve_history(monkeypatch):
     spec = importlib.util.spec_from_file_location("cut_release", Path(__file__).parents[2] / "tools/cut_release.py")
     cutter = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(cutter)
-    fragment = ("changelog.d/123-fix.md", "**Fixed**\n- A newly shipped fix.\n")
+    fragment = ("docs/changelog.d/123-fix.md", "**Fixed**\n- A newly shipped fix.\n")
     _, released, version = cutter.cut(PY.format("0.4.2"), LOG, bump="patch", date="2026-11-01",
                                       fragments=[fragment])
     assert version == "0.4.3"

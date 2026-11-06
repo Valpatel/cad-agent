@@ -16,7 +16,7 @@
 #   process    a key of `processes`
 #   feature    what on the part the rule is about (wall, hole, bend-radius, draft, …)
 #   compare    optional: rules from different sources or processes that limit the same quantity, in the same units,
-#              share this key, so a page or a check can set them side by side (tools/process_profile_figures.py draws
+#              share this key, so a page or a check can set them side by side (tools/figures/process_profile_figures.py draws
 #              them)
 #   variant    optional: a short qualifier when one source gives the same quantity more than once (supported)
 #   quantity   what is limited, in words

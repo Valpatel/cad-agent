@@ -50,7 +50,7 @@ docs/practice/gates.md:
   band:
     - img: docs/img/motion/hinge-sweep.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.review.gates.motion
       on: fixture-2d
       input: a joint and its range
@@ -60,7 +60,7 @@ docs/practice/gates.md:
       href: "#motion-range-interference-cadagentreviewgatesmotion"
     - img: docs/img/motion/module-insertion.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.review.gates.assembly
       on: fixture
       input: a module and its parent's steps
@@ -381,7 +381,7 @@ docs/practice/design-process-plan.md:
     - after: 45-motion-range-interference-t7
       img: docs/img/motion/hinge-sweep.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.review.gates.motion
       on: fixture-2d
       caption: A seeded failure, not the bench as built. With flap_hits_frame, the arm's range is raised from 40 to 60 degrees; swept in 12 poses, then bisected, it first hits the frame between 44.89 and 44.91 degrees. As built, the arm sweeps 0 to 40 degrees with no collision and 1.60 mm clearance.
@@ -492,7 +492,7 @@ docs/lessons/process/user-intent-and-requirements.md:
     - after: treat-doesnt-block-disassembly-as-a-hard-requirement
       img: docs/img/motion/module-insertion.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.review.gates.assembly
       on: fixture
       caption: Removal checked like assembly. The assembly gate's sequence core inserts a module into its parent as one rigid body, then withdraws it with the bumper and retainer assumed removed.
@@ -511,7 +511,7 @@ docs/lessons/mechanical/fasteners-and-assembly-access.md:
       below: Sweep a tool envelope
       img: docs/img/motion/module-insertion.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.review.gates.assembly
       on: fixture
       caption: The assembly gate runs the steps in their declared order and checks each screw's tool at its own step. Here a module is checked on its own bench, then inserted into its parent as one rigid body.
@@ -520,7 +520,7 @@ docs/lessons/mechanical/fasteners-and-assembly-access.md:
       below: Seat Z + stock length
       img: docs/img/motion/rib-in-counterbore.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cad-agent holes
       on: fixture-2d
       caption: A head seat is only as deep as the model says after every feature is added. A rib unioned after the counterbore was cut refills it; the hole check finds it, and cutting the holes last keeps the seat clear.
@@ -538,7 +538,7 @@ docs/practice/common-issues.md:
     - after: fasteners-and-assembly
       img: docs/img/motion/module-insertion.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.review.gates.assembly
       on: fixture
       caption: The assembly-access gate runs the steps in order. A module is checked on its own bench, then inserted into its parent as one rigid body, then withdrawn.
@@ -674,7 +674,7 @@ docs/research/compliant-mechanisms.md:
       below: Undercut = deflection.
       img: docs/img/compliant/example-1.svg
       shows: diagram
-      drawn_by: tools/snapfit_figures.py
+      drawn_by: tools/figures/snapfit_figures.py
       tool: cadagent.mechanical.compliant.snapfit
       on: sources
       caption: "Example I of the table below, computed by the toolkit's snap-fit calculator and drawn to scale: the guide's tapered polycarbonate hook, 19 mm long, deflected 2.4 mm. The 2.00 % root strain and the forces come out of the module, not typed in; a test holds them to the guide's answers."
@@ -691,8 +691,8 @@ docs/research/compliant-mechanisms.md:
     - after: 7-how-the-process-changes-each-feature
       img: docs/img/research/process-fits.svg
       shows: diagram
-      drawn_by: tools/process_profile_figures.py
-      tool: tools/process_profile_figures.py
+      drawn_by: tools/figures/process_profile_figures.py
+      tool: tools/figures/process_profile_figures.py
       on: sources
       caption: "The clearance between mating printed parts that each source recommends, by process, from the process profiles: 0.1 mm to 0.76 mm, and most for powder parts printed together. The table's 0.5 mm for FDM snaps and 0.3 mm for SLS and MJF are Protolabs Network's rows here."
       alt: "Range chart of the clearance between mating printed parts each source recommends, by process: 0.1 to 0.76 mm, with powder parts printed together needing the most"
@@ -814,7 +814,7 @@ docs/toolkit.md:
       below: Identify the receptacle and its mate.
       img: docs/img/motion/connector-window.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cadagent.mechanical.connectors
       on: fixture
       caption: "An RJ45 plug pushed in along its mating axis, the port in tests/mechanical/test_connectors.py in section. Through a window sized from the jack's bounding box its latch sweeps into the wall; through the window derived from the mated plug it clears by the 0.5 mm clearance. The swept volumes match the connector check's."
@@ -847,7 +847,7 @@ docs/toolkit.md:
       below: solid_mass_properties
       img: docs/img/linkages/fivebar.svg
       shows: diagram
-      drawn_by: tools/linkage_figures.py
+      drawn_by: tools/figures/linkage_figures.py
       tool: cadagent.mechanical.linkages
       on: example
       caption: "A closed loop a tree cannot hold: a five-bar leg (cranks 100 mm, links 120 mm, ground 80 mm) moving its foot round a stride, its poses solved by cadagent.mechanical.linkages. Its lowest transmission angle is 53.4°; turning both cranks together from −90° locks at θ1 = −143.1°."
@@ -870,7 +870,7 @@ docs/toolkit.md:
     - after: holes-clear
       img: docs/img/motion/rib-in-counterbore.svg
       shows: diagram
-      drawn_by: tools/motion_figures.py
+      drawn_by: tools/figures/motion_figures.py
       tool: cad-agent holes
       on: fixture-2d
       caption: "Why every hole is cut last: a rib unioned after the holes runs into the counterbore and the clearance hole, and cad-agent holes finds it inside both. The counterbore plate in tests/mechanical/test_holes.py, in section; the volumes match the hole check's."

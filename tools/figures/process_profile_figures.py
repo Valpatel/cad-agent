@@ -2,8 +2,8 @@
 """Draw the process-profile charts (docs/img/research/process-*.svg) and the sheet-metal diagrams
 (docs/img/sheet-metal/*.svg) from docs/research/process-profiles.yaml (and docs/research/references.yaml, the sources it cites).
 
-    python3 tools/process_profile_figures.py            # write the SVGs
-    python3 tools/process_profile_figures.py --check    # exit 1 if a committed SVG differs from the data (tests run this)
+    python3 tools/figures/process_profile_figures.py            # write the SVGs
+    python3 tools/figures/process_profile_figures.py --check    # exit 1 if a committed SVG differs from the data (tests run this)
 
 The YAML is the source: a chart can never disagree with the rules it shows. Each chart takes the rules that share a
 `compare` key, so a rule added to the file appears in its chart on the next run. Stdlib and PyYAML only; the SVGs carry
@@ -21,7 +21,7 @@ from xml.sax.saxutils import escape
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "docs" / "research" / "process-profiles.yaml"
 REGISTRY = ROOT / "docs" / "research" / "references.yaml"
 OUT = ROOT / "docs" / "img" / "research"
@@ -598,7 +598,7 @@ def main(argv: list[str]) -> int:
             folder.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
     if stale:
-        print("out of date with docs/research/process-profiles.yaml (run python3 tools/process_profile_figures.py):",
+        print("out of date with docs/research/process-profiles.yaml (run python3 tools/figures/process_profile_figures.py):",
               ", ".join(stale))
         return 1
     return 0

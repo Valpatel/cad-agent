@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Draw docs/process-checks.md's figures (docs/img/process/*.svg) from the code that makes the numbers.
 
-    python3 tools/process_figures.py            # write the SVGs
-    python3 tools/process_figures.py --check    # exit 1 if a committed SVG differs (tests/manufacturing/test_process_figures.py)
+    python3 tools/figures/process_figures.py            # write the SVGs
+    python3 tools/figures/process_figures.py --check    # exit 1 if a committed SVG differs (tests/manufacturing/test_process_figures.py)
 
 Each figure is computed by the module it shows, on worked examples, never typed in:
 
@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from cadagent.manufacturing import dfm, process, sheet_metal  # noqa: E402
@@ -234,7 +234,7 @@ def main(argv: list[str]) -> int:
             OUT.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
     if stale:
-        print("out of date with the code (run python3 tools/process_figures.py):", ", ".join(stale))
+        print("out of date with the code (run python3 tools/figures/process_figures.py):", ", ".join(stale))
         return 1
     return 0
 

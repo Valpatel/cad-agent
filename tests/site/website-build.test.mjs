@@ -257,6 +257,8 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
     const directives = new Map(pairs);
     assert.equal(directives.size, pairs.length, `${p}: duplicate cache directives are ambiguous`);
     assert.equal(directives.get('max-age'), '0', `${p}: browser cache may serve old release bytes`);
+    assert.ok(directives.has('no-cache') && directives.get('no-cache') === undefined,
+      `${p}: revalidate the whole response even when a downstream cache raises max-age`);
     assert.ok(directives.has('must-revalidate'), `${p}: stale responses need revalidation`);
     assert.ok(!directives.has('s-maxage') || directives.get('s-maxage') === '0', `${p}: shared cache may serve old release bytes`);
     assert.ok(!directives.has('immutable'), `${p}: a stable URL is not immutable`);

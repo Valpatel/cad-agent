@@ -1,4 +1,4 @@
-# Real outputs placed on doc pages by the site build (tools/build-site.mjs, tools/site-pages.mjs), without touching the
+# Real outputs placed on doc pages by the site build (tools/site/build-site.mjs, tools/site/compiler/site-pages.mjs), without touching the
 # Markdown: the .md twins and llms.txt stay exactly as written, and GitHub shows the page as before.
 #
 #   docs/<page>.md:
@@ -29,12 +29,12 @@
 # Owner (2026-10-31): "CAD is graphical, so our site should be too. Not a wall of text." The browser suite measures each
 # page's longest stretch with nothing to look at (tests/site/site-walls.mjs, #179).
 #
-# The gate bench pictures (docs/img/gates/) come from tools/site-bench-pictures.mjs, which builds the review site with
+# The gate bench pictures (docs/img/gates/) come from tools/site/figures/site-bench-pictures.mjs, which builds the review site with
 # `cad-agent site` from the bench's committed run (tests/fixtures/gate_bench/site_snapshot). The bench as built: six
 # gates, 144 checks (31 + 21 + 28 + 1 + 55 + 8), all pass; its arm sweeps 0 to 40 degrees in 12 poses with no
 # collision and 1.60 mm least clearance (the motion gate's verdict, site_snapshot/gates/motion.json).
 #
-# The review-packet renders (docs/img/packets/) come from tools/site-packet-pictures.py, which runs `cad-agent gates
+# The review-packet renders (docs/img/packets/) come from tools/site/figures/site-packet-pictures.py, which runs `cad-agent gates
 # --build` and `cad-agent review-packet` on a copy of the bench, as built and with one seeded defect at a time
 # (tests/fixtures/gate_bench/build.py, SEEDS). docs/img/packets/SOURCE.json records each run's gate verdicts, and
 # tests/review/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
@@ -387,7 +387,7 @@ docs/practice/design-process-plan.md:
       caption: A seeded failure, not the bench as built. With flap_hits_frame, the arm's range is raised from 40 to 60 degrees; swept in 12 poses, then bisected, it first hits the frame between 44.89 and 44.91 degrees. As built, the arm sweeps 0 to 40 degrees with no collision and 1.60 mm clearance.
       alt: A diagram of the gate bench's arm swept from 0 to 60 degrees with the seeded range; it first shares volume with the frame beam between 44.89 and 44.91 degrees
 
-# The web kit at work (docs/img/kit/), from tools/site-kit-pictures.mjs: the part table on the gate bench's parts, and
+# The web kit at work (docs/img/kit/), from tools/site/figures/site-kit-pictures.mjs: the part table on the gate bench's parts, and
 # the file viewer on Gyropup's left hip motor plate (MIT; its STEP file at the revision docs/img/gyropup/SOURCE.json
 # records): 7,724 triangles, 164.02 x 24.1 x 178 mm.
 docs/practice/web-parts.md:
@@ -699,7 +699,7 @@ docs/research/compliant-mechanisms.md:
     - after: 8-failure-modes-that-become-pitfall-catalogue-rows-97
       img: docs/img/compliant/cantilever-explorer.svg
       shows: diagram
-      drawn_by: tools/cantilever-still.mjs
+      drawn_by: tools/site/figures/cantilever-still.mjs
       tool: cadagent.formulas
       on: example
       caption: "The first row below as a working check: a dry CoPA arm 20 mm long, 1.6 mm at the root and 6 mm wide, bent 1.5 mm at the hook along its computed curve. Its root strain is 0.90 %, 44 % of the 2.02 % allowed along the layers, a pass; the push is 3.10 N. The live version is on the snap-fit page."
@@ -708,7 +708,7 @@ docs/research/compliant-mechanisms.md:
       below: No maintained Python or JS library
       img: docs/img/compliant/torsion-snap-explorer.svg
       shows: diagram
-      drawn_by: tools/torsion-snap-still.mjs
+      drawn_by: tools/site/figures/torsion-snap-still.mjs
       tool: cadagent.formulas
       on: example
       caption: "One of the calculators the toolkit has built since (cadagent.formulas.torsion_snap_bar, Bayer's torsion snap with Saint-Venant torsion): two Bambu PLA Basic bars, 15 mm long and 4 × 1.2 mm, twisted 8° by a 10 mm lever. Peak shear strain 1.11 %, 86 % of the 1.28 % allowed across the layers, a pass; 3.45 N at the lever. The live version is on the snap-fit page."
@@ -855,7 +855,7 @@ docs/toolkit.md:
     - after: heatsinks-cadagentthermalheatsink
       img: docs/img/thermal/fan-curve-explorer.svg
       shows: diagram
-      drawn_by: tools/fan-curve-still.mjs
+      drawn_by: tools/site/figures/fan-curve-still.mjs
       tool: kit/fan-curve.js
       on: example
       caption: "The balance operating_point() finds, as the fans page's explorer draws it: a fan's datasheet curve (one ebm-papst W2G115-AD15-13 at 12 V) against a system's resistance, here a system needing 12 Pa at 100 m³/h rather than a heatsink. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."
@@ -898,7 +898,7 @@ docs/research/simulation-tools.md:
       below: Thermal resistance network + fan operating point
       img: docs/img/thermal/fan-curve-explorer.svg
       shows: diagram
-      drawn_by: tools/fan-curve-still.mjs
+      drawn_by: tools/site/figures/fan-curve-still.mjs
       tool: kit/fan-curve.js
       on: example
       caption: "A fan operating point from a datasheet curve, as (a) needs it, drawn by the fans page's explorer: one ebm-papst W2G115-AD15-13 at 12 V against a system needing 12 Pa at 100 m³/h. They cross at 150 m³/h and 26.9 Pa, clear of the stall region below 132 m³/h."

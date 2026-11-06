@@ -41,8 +41,8 @@ def checkout(root: Path):
     write(root, "pyproject.toml", '[project]\nname = "x"\ndependencies = ["pyyaml>=6.0", "numpy>=1.24"]  # core\n'
                                   '[project.optional-dependencies]\ncad = [\n    "cadquery[ocp]>=2.4",  # the kernel\n'
                                   '    "pillow>=10.0",\n]\ndev = ["pytest"]\n')
-    write(root, "package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
-    write(root, "package-lock.json", lock(good_pkg("marked", "16.4.1")))
+    write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "16.4.1"}}))
+    write(root, "tools/site/package-lock.json", lock(good_pkg("marked", "16.4.1")))
     write(root, "vendor/manifest.json", json.dumps({"projects": [
         {"name": "tool", "url": "https://github.com/someone/tool", "license": "MIT", "sha": SHA, "imported": "2026-10-24",
          "report": "vendor/reports/tool.md", "exclude": [".github"]}]}))
@@ -136,12 +136,12 @@ def test_clean_checkout_has_nothing_above_info(tmp_path):
 def test_offline_checks_find_planted_problems(tmp_path):
     root = checkout(tmp_path)
     write(root, "pyproject.toml", '[project]\ndependencies = ["pyyaml"]\n')
-    write(root, "package-lock.json", lock({
+    write(root, "tools/site/package-lock.json", lock({
         **good_pkg("marked", "16.4.1"),
         **good_pkg("evil", "1.0.0", resolved="http://mirror.invalid/evil.tgz"),
         **good_pkg("fsevents", "2.3.2", hasInstallScript=True, os=["darwin"], optional=True),
         "node_modules/nohash": {"version": "1.0.0", "resolved": "https://registry.npmjs.org/nohash/-/nohash-1.0.0.tgz"}}))
-    write(root, "package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
+    write(root, "tools/site/package.json", json.dumps({"devDependencies": {"marked": "^16.4.1"}}))
     man = json.loads((root / "vendor/manifest.json").read_text())
     man["projects"][0].update(sha="abc123", license="Apache-2.0")
     write(root, "vendor/manifest.json", json.dumps(man))
@@ -168,7 +168,7 @@ def test_an_install_script_finding_is_per_version(tmp_path):
     """An acceptance names a fingerprint; a new version of the package (a new script to read) must get a new one."""
     def fp(version):
         root = checkout(tmp_path / version)
-        write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"),
+        write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"),
                                                **good_pkg("fsevents", version, hasInstallScript=True, os=["darwin"], optional=True)}))
         return next(f["fp"] for f in run(root)["findings"] if f["check"] == "npm-install-script")
     assert fp("2.3.2") == fp("2.3.2") != fp("2.3.3")
@@ -318,7 +318,7 @@ def test_patched_files_are_not_drift(tmp_path):
 
 def test_malicious_package_is_critical_and_moved_or_gone_repos(tmp_path):
     root = checkout(tmp_path)
-    write(root, "package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
+    write(root, "tools/site/package-lock.json", lock({**good_pkg("marked", "16.4.1"), **good_pkg("evil", "1.0.0")}))
     write(root, "vendor/upstreams/registry.yaml", "- name: a/moved\n  url: https://github.com/a/moved\n  license: MIT\n"
                                            "- name: a/gone\n  url: https://github.com/a/gone\n  license: MIT\n")
 
@@ -459,6 +459,47 @@ def test_missing_moved_notices_cannot_use_stale_root_copy(tmp_path):
     root = checkout(tmp_path)
     (root / "vendor/THIRD_PARTY_NOTICES.md").rename(root / "THIRD_PARTY_NOTICES.md")
     assert ("vendor-notices", "vendor:tool") in checks(run(root), "medium")
+
+
+def test_npm_move_keeps_historical_ids_and_live_reads_reject_stale_roots(repo_with_base):
+    root = repo_with_base
+    for current in (ra.NPM_PACKAGE, ra.NPM_LOCK):
+        git(root, "mv", current, Path(current).name)
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "legacy npm ownership")
+    before = ra.item_ids(ra.GitTree(root, "HEAD"))
+    assert "npm:marked" in before
+    for current in (ra.NPM_PACKAGE, ra.NPM_LOCK):
+        git(root, "mv", Path(current).name, current)
+    assert ra.item_ids(ra.WorkTree(root)) == before
+    assert ra.added_items(root, "HEAD")[0] == []
+    write(root, "package.json", '{"devDependencies":{"stale":"1.0.0"}}')
+    write(root, "package-lock.json", lock(good_pkg("stale", "1.0.0")))
+    git(root, "add", "--all")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "current and stale npm inputs")
+    for tree in (ra.WorkTree(root), ra.GitTree(root, "HEAD")):
+        assert ra.item_ids(tree) == before
+    assert {p["name"] for p in run(root)["inventory"]["npm"]} == {"marked"}
+    (root / ra.NPM_LOCK).unlink()
+    assert ("npm-no-lockfile", "npm:package-lock.json") in checks(run(root), "high")
+    with pytest.raises(FileNotFoundError, match="current npm lockfile"):
+        ra.item_ids(ra.WorkTree(root))
+    (root / ra.NPM_PACKAGE).unlink()
+    with pytest.raises(FileNotFoundError, match="current npm manifest"):
+        run(root)
+
+
+def test_npm_audit_executes_in_the_current_package_context(tmp_path, monkeypatch):
+    root = checkout(tmp_path / "checkout with spaces")
+    npm = tmp_path / "fake-npm"
+    npm.write_text('#!/bin/sh\nprintf "%s\\n" "$PWD" "$@" > audit-invocation.txt\n'
+                   'printf \'{"vulnerabilities":{}}\\n\'\n')
+    npm.chmod(0o755)
+    monkeypatch.setattr(ra.shutil, "which", lambda name: str(npm) if name == "npm" else None)
+    rep = ra.Report(root, AS_OF, False)
+    assert ra.run_npm_audit(rep) == {}
+    assert (root / ra.NPM_DIR / "audit-invocation.txt").read_text().splitlines() == [
+        str(root / ra.NPM_DIR), "audit", "--package-lock-only", "--json"]
+    assert rep.sources["npm-audit"] == "npm audit --package-lock-only"
 
 
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):

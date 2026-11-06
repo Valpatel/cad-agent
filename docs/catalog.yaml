@@ -1,6 +1,6 @@
 # The catalogue's demos and the pictures of our commands: cad-agent.valpatel.com/catalog, /catalog.json and
 # /catalog/index.json are built from this file, docs/areas.yaml, vendor/upstreams/registry.yaml, docs/research/landscape.json,
-# cli.py and the site's own pages (tools/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
+# cli.py and the site's own pages (tools/site/compiler/site-catalog.mjs). Every picture is one of our own figures in docs/img or is
 # drawn by the build from data; the catalogue never shows an outside image (licences, and the site's CSP).
 #
 # demos: the "Play with it" strip and the Demos tab, in this order (a wide screen shows the first four in the strip). An entry appears once every file it names exists
@@ -8,7 +8,7 @@
 #     id      stable slug (the catalogue entry is demo-<id>)
 #     title   what people see; what: one plain line
 #     mode    interactive (you drive it), animated (it plays) or render (a still result from our tools)
-#     cover   a figure in docs/img, or snap-demo (the landing page's animation, computed by tools/snap-demo.mjs)
+#     cover   a figure in docs/img, or snap-demo (the landing page's animation, computed by tools/site/compiler/snap-demo.mjs)
 #     url     where it lives: a page (docs/x.md, with an optional #anchor that must exist). Without one: the page that
 #             shows the cover, at the heading above it
 #     still   animated covers: the moment the still frame shows, as a fraction of the loop (default 0.5)

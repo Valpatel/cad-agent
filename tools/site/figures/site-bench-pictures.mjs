@@ -1,6 +1,6 @@
 /** Pictures of the review site that `cad-agent site` builds for the gate bench, for the docs (#179):
  *
- *   node tools/site-bench-pictures.mjs        # needs Python with cadagent importable from src/ (no CAD kernel)
+ *   node tools/site/figures/site-bench-pictures.mjs        # needs Python with cadagent importable from src/ (no CAD kernel)
  *
  * The gate bench (tests/fixtures/gate_bench/) is the repo's own test assembly. Its committed site_snapshot/ holds the
  * exports of a clean `cad-agent gates --build` run (refresh them with tests/fixtures/gate_bench/site_snapshot.py), so
@@ -26,7 +26,7 @@ import { cp, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/p
 import os from 'node:os';
 import path from 'node:path';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 const OUT = path.join(root, 'docs/img/gates');
 const DOCS_COLUMN = 860;          // CSS px: the docs page's article column (880) less its figure's padding and border
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-bench-'));
@@ -44,7 +44,7 @@ if (svg.includes(tmp) || /\/home\/|\/Users\//.test(svg)) throw new Error('the gr
 await copyFile(path.join(site, 'review/connectivity.svg'), path.join(OUT, 'bench-connectivity.svg'));
 console.log(`docs/img/gates/bench-connectivity.svg: ${svg.length} bytes`);
 
-const server = spawn(process.execPath, [path.join(root, 'tools/preview-site.mjs'), '--dir', site, '--port', '0']);
+const server = spawn(process.execPath, [path.join(root, 'tools/site/preview-site.mjs'), '--dir', site, '--port', '0']);
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome' });
 try {
   const base = await new Promise((ok, fail) => {

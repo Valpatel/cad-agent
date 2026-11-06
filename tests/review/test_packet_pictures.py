@@ -1,4 +1,4 @@
-"""The review-packet pictures on the site (docs/img/packets, made by tools/site-packet-pictures.py) stay tied to the run
+"""The review-packet pictures on the site (docs/img/packets, made by tools/site/figures/site-packet-pictures.py) stay tied to the run
 that drew them: the folder holds exactly the planned pictures, SOURCE.json records each one, the clean bench passed
 every gate with the counts the review site's snapshot shows, each seed failed its own gate, and every caption on a
 seeded picture says it is seeded and names the seed. No CAD kernel: the bench's seeds are read from its source."""
@@ -17,7 +17,7 @@ BENCH = ROOT / "tests" / "fixtures" / "gate_bench"
 
 
 def _tool():
-    spec = importlib.util.spec_from_file_location("site_packet_pictures", ROOT / "tools" / "site-packet-pictures.py")
+    spec = importlib.util.spec_from_file_location("site_packet_pictures", ROOT / "tools" / "site" / "figures" / "site-packet-pictures.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)                     # imports nothing heavy at module level
     return mod

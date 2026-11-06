@@ -133,7 +133,7 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 <img src="../../img/fasteners/screw-boss-explorer.svg" alt="The screw-boss explorer before its controls load: a DELTA PT 30 screw in a 6 mm PLA boss printed upright with 6 mm of thread, tightened to 0.30 N·m; the thread strips at 767 N, so tighten to at most 0.31 N·m" width="640">
 
-*A still of the [screw-boss explorer](../../mechanical/screw-bosses.md), a kit demo, drawn by `tools/printed-boss-still.mjs` from the demo's own code (`cadagent.formulas`), on a worked example: a self-tapping DELTA PT 30 screw in a printed PLA boss. The page's explorer changes the screw, the boss and the filament.*
+*A still of the [screw-boss explorer](../../mechanical/screw-bosses.md), a kit demo, drawn by `tools/site/figures/printed-boss-still.mjs` from the demo's own code (`cadagent.formulas`), on a worked example: a self-tapping DELTA PT 30 screw in a printed PLA boss. The page's explorer changes the screw, the boss and the filament.*
 
 ### Where the FDM sources disagree
 

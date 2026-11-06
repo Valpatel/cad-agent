@@ -5,14 +5,14 @@ import {mkdtemp,readFile,mkdir,writeFile,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import {chromium,webkit} from '@playwright/test';
+import {chromium,webkit} from './npm-context.mjs';
 const temporary=await mkdtemp(path.join(os.tmpdir(),'cad-agent-generated-diagrams-'));
 execFileSync(process.env.PYTHON||'python3',['-c',`import pathlib,sys
 from cadagent.publish.site import build_site
 root=pathlib.Path(sys.argv[1]);(root/'README.md').write_text('# Generated diagrams\\n\\n\x60\x60\x60mermaid\\nflowchart LR\\nA[Plan]-->B[Build]\\n\x60\x60\x60\\n')
 for theme in ('light','hud'):
  p=root/theme;p.mkdir();(p/'README.md').write_text((root/'README.md').read_text());build_site(p,{'pages':['README.md'],'theme':theme},'Generated fixture')
-`,temporary],{cwd:new URL('../../',import.meta.url),env:{...process.env,PYTHONPATH:'src',PYTHONDONTWRITEBYTECODE:'1'}});
+`,temporary],{cwd:new URL('../..',import.meta.url),env:{...process.env,PYTHONPATH:'src',PYTHONDONTWRITEBYTECODE:'1'}});
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost');const target=path.resolve(temporary,'.'+url.pathname);if(!target.startsWith(temporary+path.sep))throw Error();const data=await readFile(target);res.writeHead(200,{'Content-Type':target.endsWith('.js')?'text/javascript':target.endsWith('.css')?'text/css':'text/html'});res.end(data);}catch{res.writeHead(404).end();}});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base=`http://127.0.0.1:${server.address().port}`,engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch(engine===chromium?{channel:process.env.PLAYWRIGHT_CHANNEL==='chromium'?undefined:'chrome',headless:true}:{headless:true});

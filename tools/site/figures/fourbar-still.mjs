@@ -1,7 +1,7 @@
 /** Draw the still that <cad-fourbar> shows before its script loads, from the same code the live figure uses.
  *
- *   node tools/fourbar-still.mjs            # write docs/img/formulas/fourbar-animator.svg
- *   node tools/fourbar-still.mjs --check    # exit 1 if the committed still or a page's alt text is out of date
+ *   node tools/site/figures/fourbar-still.mjs            # write docs/img/formulas/fourbar-animator.svg
+ *   node tools/site/figures/fourbar-still.mjs --check    # exit 1 if the committed still or a page's alt text is out of date
  *
  * The state is read from the <cad-fourbar> attributes on the pages that show the demo (PAGES), which must all agree,
  * so the pages, the still and the live demo start from the same linkage; each alt text must name the computed class
@@ -9,9 +9,9 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawFourbar, summary, className } from '../src/cadagent/webkit/fourbar.js';
+import { readState, compute, drawFourbar, summary, className } from '../../../src/cadagent/webkit/fourbar.js';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 export const PAGES = ['docs/formulas.md', 'docs/mechanical/linkages.md'];
 export const STILL = 'docs/img/formulas/fourbar-animator.svg';
 
@@ -45,7 +45,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { svg, problems } = still();
   const file = path.join(root, STILL);
   if (process.argv.includes('--check')) {
-    if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) problems.push(`${STILL} is out of date: run node tools/fourbar-still.mjs`);
+    if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) problems.push(`${STILL} is out of date: run node tools/site/figures/fourbar-still.mjs`);
     if (problems.length) { console.error(problems.join('\n')); process.exit(1); }
     console.log(`${STILL} is current`);
   } else {

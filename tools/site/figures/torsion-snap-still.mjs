@@ -1,7 +1,7 @@
 /** Draw the still that <cad-torsion-snap> shows before its script loads, from the same code the live figure uses.
  *
- *   node tools/torsion-snap-still.mjs            # write docs/img/compliant/torsion-snap-explorer.svg
- *   node tools/torsion-snap-still.mjs --check    # exit 1 if the committed still or a page's alt text is out of date
+ *   node tools/site/figures/torsion-snap-still.mjs            # write docs/img/compliant/torsion-snap-explorer.svg
+ *   node tools/site/figures/torsion-snap-still.mjs --check    # exit 1 if the committed still or a page's alt text is out of date
  *
  * The state is read from the <cad-torsion-snap> attributes on the pages that show the demo (PAGES), which must all
  * agree, so the pages, the still and the live demo start from the same bar; each alt text must quote the computed
@@ -9,9 +9,9 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { readState, compute, drawTorsionSnap, summary, pct } from '../src/cadagent/webkit/torsion-snap.js';
+import { readState, compute, drawTorsionSnap, summary, pct } from '../../../src/cadagent/webkit/torsion-snap.js';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 export const PAGES = ['docs/mechanical/compliant.md'];
 export const STILL = 'docs/img/compliant/torsion-snap-explorer.svg';
 
@@ -44,7 +44,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { svg, problems } = still();
   const file = path.join(root, STILL);
   if (process.argv.includes('--check')) {
-    if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) problems.push(`${STILL} is out of date: run node tools/torsion-snap-still.mjs`);
+    if (!existsSync(file) || readFileSync(file, 'utf8') !== svg) problems.push(`${STILL} is out of date: run node tools/site/figures/torsion-snap-still.mjs`);
     if (problems.length) { console.error(problems.join('\n')); process.exit(1); }
     console.log(`${STILL} is current`);
   } else {

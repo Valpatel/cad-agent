@@ -131,6 +131,6 @@ test('the chart marker sits on the transmission angle the port gives', () => {
 });
 
 test('the four-bar still on its pages is what the component draws for their attributes', () => {
-  const out = execFileSync(process.execPath, ['tools/fourbar-still.mjs', '--check'], { cwd: root }).toString();
+  const out = execFileSync(process.execPath, ['tools/site/figures/fourbar-still.mjs', '--check'], { cwd: root }).toString();
   assert.match(out, /current/);
 });

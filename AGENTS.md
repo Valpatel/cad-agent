@@ -79,7 +79,7 @@ its failures says where the file goes.
 | `docs/lessons/<area>/` | Lessons learned on real projects, by area ([map](docs/lessons/README.md)). |
 | `docs/examples/<name>/` | Example projects the docs and tests run. |
 | `tools/` | The repo's own scripts: figure generators, the site build, gates, releases, audits and transcript mining ([map](tools/README.md)). |
-| `web/` | The website's own static files (CSS, icons, the landing model). |
+| `tools/site/assets/` | The website's own static files (CSS, icons, the landing model). |
 | `changelog.d/` | One CHANGELOG fragment per PR ([how](changelog.d/README.md)). |
 | `vendor/` | Vendored code, its pinned manifest/notices and the tracked-upstream registry ([map](vendor/README.md)). |
 | `skills/<name>/`, `agents/<name>.md` | The only real copies of the kit's skills and subagents, and the only place to edit them (what `cad-agent agents install` ships). The repo root is the plugin root (#111), so these are its `skills/` and `agents/`. |

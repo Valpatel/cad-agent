@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const show = f => execFileSync('git', ['show', `HEAD:${f}`], { cwd: root }).toString();
-const css = show('web/site.css'), catalog = show('web/catalog.css');
+const css = show('tools/site/assets/site.css'), catalog = show('tools/site/assets/catalog.css');
 
 const tokens = block => Object.fromEntries([...block.matchAll(/--([\w-]+):([^;}]+)/g)].map(m => [m[1], m[2].trim()]));
 const LIGHT = css.match(/^:root\{(--cream:[^}]*)\}/m)?.[1];
@@ -89,9 +89,9 @@ test('outside the token blocks, colours are tokens (or one of the fixed, always-
 });
 
 test('every page loads the theme script first, has the theme button, and no inline script', () => {
-  const build = show('tools/build-site.mjs');
+  const build = show('tools/site/build-site.mjs');
   assert.match(build, /<head><meta charset="utf-8">[^\n]*\n<title>[^\n]*\n[^\n]*\n<script src="\/web\/theme\.js"><\/script><link rel="icon"/, 'web/theme.js in <head>, before the stylesheets');
   assert.match(build, /class="theme-toggle" aria-pressed="false" title="Dark theme" hidden>/, 'the button starts hidden (it needs the script)');
-  const script = show('web/theme.js');
+  const script = show('tools/site/assets/theme.js');
   assert.match(script, /localStorage/); assert.doesNotMatch(script, /fetch\(|XMLHttpRequest|sendBeacon|navigator\.|document\.cookie/, 'the theme choice stays in this browser');
 });

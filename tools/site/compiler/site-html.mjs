@@ -1,4 +1,4 @@
-/** HTML safety for cad-agent.valpatel.com pages, shared by tools/build-site.mjs and its tests. */
+/** HTML safety for cad-agent.valpatel.com pages, shared by tools/site/build-site.mjs and its tests. */
 import sanitizeHtml from 'sanitize-html';
 
 // Docs are ours, but research quotes outside sources: the site never serves script from Markdown. Drop <script>,

@@ -808,6 +808,9 @@ def check_transitive(rep, net, resolved):
 
 
 # ---------------------------------------------------------------------------------------------------------------- npm
+NPM_PACKAGE = 'tools/site/package.json'
+NPM_LOCK = 'tools/site/package-lock.json'
+NPM_DIR = 'tools/site'
 EXACT = re.compile(r'^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$')
 
 
@@ -822,9 +825,9 @@ def npm_packages(lock):
 
 
 def check_npm(rep, net, npm_audit=True):
-    pj_text, lock_text = read_text(rep.root / 'package.json'), read_text(rep.root / 'package-lock.json')
+    pj_text, lock_text = read_text(rep.root / NPM_PACKAGE), read_text(rep.root / NPM_LOCK)
     if pj_text is None:
-        return
+        raise FileNotFoundError(f'required current npm manifest {NPM_PACKAGE} is missing')
     pj = json.loads(pj_text)
     direct = {}
     for field in ('dependencies', 'devDependencies', 'optionalDependencies'):
@@ -914,7 +917,7 @@ def run_npm_audit(rep):
         rep.sources['npm-audit'] = 'not run (npm not installed)'
         return {}
     try:
-        r = subprocess.run([npm, 'audit', '--package-lock-only', '--json'], cwd=rep.root, capture_output=True,
+        r = subprocess.run([npm, 'audit', '--package-lock-only', '--json'], cwd=rep.root / NPM_DIR, capture_output=True,
                            text=True, timeout=120)
         data = json.loads(r.stdout or '{}')
     except (OSError, ValueError, subprocess.TimeoutExpired) as e:
@@ -1614,7 +1617,7 @@ def site(h):
 
 
 def catalogue_entries(root, catalog=None):
-    """The external entries the site's catalog.json publishes, read from the same sources tools/build-site.mjs reads."""
+    """The external entries the site's catalog.json publishes, read from the same sources tools/site/build-site.mjs reads."""
     land = json.loads((root / LANDSCAPE).read_text(encoding='utf-8'))
     ups = load_yaml((root / REGISTRY).read_text(encoding='utf-8')) or []
     out = []
@@ -2516,7 +2519,7 @@ def check_repo(rep, net, repo=None):
     dep = read_text(rep.root / '.github' / 'dependabot.yml')
     ecos = {u.get('package-ecosystem') for u in (load_yaml(dep) or {}).get('updates', [])} if dep else set()
     rep.item('repo', id='dependabot', ecosystems=sorted(e for e in ecos if e))
-    for eco, manifest in (('npm', 'package.json'), ('pip', 'pyproject.toml')):
+    for eco, manifest in (('npm', 'tools/site/package.json'), ('pip', 'pyproject.toml')):
         if (rep.root / manifest).exists() and eco not in ecos:
             rep.add('dependabot-ecosystem', 'low', f'repo:dependabot-{eco}', f'Dependabot does not watch {eco} ({manifest})',
                     f".github/dependabot.yml ecosystems: {', '.join(sorted(e for e in ecos if e)) or 'none'}",
@@ -2563,7 +2566,7 @@ def check_repo(rep, net, repo=None):
 def build(root, as_of=None, net=None, repo=None, installed=False, catalog=None, npm_audit=True, added_files=(), accepted=None):
     rep = Report(root, as_of or dt.datetime.now(dt.timezone.utc).date(), bool(net))
     rep.extra['accepted_source'] = ACCEPTED
-    rep.sources.setdefault('offline', 'pyproject.toml, package.json, package-lock.json, vendor/manifest.json, kit hash records, '
+    rep.sources.setdefault('offline', 'pyproject.toml, tools/site/package.json, tools/site/package-lock.json, vendor/manifest.json, kit hash records, '
                            'vendor/THIRD_PARTY_NOTICES.md, vendor/upstreams/registry.yaml, docs/research/landscape.json, published Markdown')
     check_python(rep, net, installed)
     check_npm(rep, net, npm_audit)
@@ -2869,6 +2872,8 @@ class GitTree:
             if path == REGISTRY:
                 # Old commits predate the move. Only historical comparisons may use the previous location.
                 return self.read('upstreams/registry.yaml') or '[]'
+            if path in (NPM_PACKAGE, NPM_LOCK):
+                return self.read(path.rsplit('/', 1)[-1]) or ('{}' if path == NPM_LOCK else None)
             if path == LANDSCAPE:
                 return self.read('research/landscape.json') or '{}'
             return None
@@ -2888,7 +2893,9 @@ def item_ids(tree):
     py = tree.read('pyproject.toml')
     if py:
         ids |= {p['id'] for p in python_packages(py)[1].values()}
-    lock = tree.read('package-lock.json')
+    lock = tree.read(NPM_LOCK)
+    if lock is None:
+        raise FileNotFoundError(f'required current npm lockfile {NPM_LOCK} is missing')
     if lock:
         ids |= {f'npm:{n}' for n in npm_packages(json.loads(lock))}
     man = tree.read('vendor/manifest.json')

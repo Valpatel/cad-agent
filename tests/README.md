@@ -36,7 +36,7 @@ flowchart TD
 | [`repo/`](repo/README.md) | The repository's own rules and tooling: the topic tree, where files go, skills, the gates, releases, the supply-chain audit |
 | [`review/`](review/README.md) | `cadagent.review`: the dossier, the integrity gates, review packets, evidence hashes |
 | [`simulation/`](simulation/README.md) | `cadagent.simulation`: FEA, CFD, topology optimisation, robot export; design exploration in `simulation/explore/` |
-| [`site/`](site/README.md) | cad-agent's own website and its build (`tools/build-site.mjs`, `tools/site-*.mjs`) |
+| [`site/`](site/README.md) | cad-agent's own website and its build (`tools/site/build-site.mjs`, `tools/site-*.mjs`) |
 | [`thermal/`](thermal/README.md) | `cadagent.thermal`: heat sinks |
 | [`webkit/`](webkit/README.md) | `cadagent.webkit` in Node (`*.test.mjs`) and in real browsers (`*-browser.mjs`) |
 | [`fixtures/`](fixtures/README.md) | Data any test may read: the gate bench, recorded CFD runs, the formula vectors, McMaster pages, slicer templates, viewer files |
@@ -62,7 +62,7 @@ flowchart TD
 ```bash
 PYTHONPATH=src python -m pytest -q                    # everything Python; or one folder: pytest tests/review
 node --test tests/webkit/*.test.mjs tests/site/website-*.test.mjs
-npm run test:site && npm run test:part-table && npm run test:file-viewer && npm run test:diagrams
+npm --prefix tools/site run test:site && npm --prefix tools/site run test:part-table && npm --prefix tools/site run test:file-viewer && npm --prefix tools/site run test:diagrams
 ```
 
 Related: [repository README](../README.md) · [CONTRIBUTING: where files go](../.github/CONTRIBUTING.md#where-files-go) ·

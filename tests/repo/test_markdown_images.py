@@ -36,7 +36,7 @@ MAGIC = {
     ".gif": (b"GIF87a", b"GIF89a"),
     ".webp": (b"RIFF",),
 }
-# The site (tools/build-site.mjs) renders these pages and copies only images under docs/img/, so an image elsewhere
+# The site (tools/site/build-site.mjs) renders these pages and copies only images under docs/img/, so an image elsewhere
 # would show on GitHub and break on cad-agent.valpatel.com.
 SITE_PAGE = re.compile(
     r"^(?:docs/(?:[a-z0-9-]+/)?[^/]+\.md|README\.md|CONTRIBUTING\.md|THIRD_PARTY_NOTICES\.md|skills/[^/]+/SKILL\.md|agents/[^/]+\.md"

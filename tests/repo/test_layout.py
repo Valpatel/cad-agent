@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 AREAS = {
     "cli": "cli.py and the modules beside it at the top of the package (project, links, package, agentkit, _deps, "
            "the version)",
-    "site": "cad-agent's own website and its build (tools/build-site.mjs and the site-*.mjs tools, the catalogue)",
+    "site": "cad-agent's own website and its build (tools/site/build-site.mjs and the site-*.mjs tools, the catalogue)",
     "repo": "the repository's own rules and tooling: the topic tree, this layout, private names, skills, the merge "
             "gates, releases, the supply-chain audit, vendored files",
     "fixtures": "shared test data, used by tests in any folder",
@@ -42,8 +42,8 @@ TEST_ROOT_FILES = {"__init__.py", "README.md", "conftest.py"}            # all t
 # .claude/ and .codex/ (wiring for the agent kit: links and generated files only) join this list in the PR that
 # adds them.
 TOP_DIRS = {".agents", ".github", "agents", "changelog.d", "docs",
-            "skills", "src", "tests", "tools", "vendor", "web"}
-ROOT_ENTRY_LIMIT = 21  # #145/#362: research, lessons and examples join their docs owner.
+            "skills", "src", "tests", "tools", "vendor"}
+ROOT_ENTRY_LIMIT = 17  # #145/#362: site manifests, configuration and assets join their tools owner.
 SRC_FILES = {"cadagent"}                                                  # src/ holds the package and nothing else
 PKG_FILES = {f"{m}.py" for m in TOP_MODULES} | {"README.md"}             # the top of src/cadagent/: may only shrink
 
@@ -55,7 +55,7 @@ NOT_COUNTED = re.compile(r"^vendor/|/vendor/|^tests/fixtures/|^docs/img/")
 # Folders over the limit today. Each one is split in a PR that touches it, and comes off this list. The list may only
 # shrink: a folder newly over the limit is split in the PR that takes it over, not added here.
 OVER_LIMIT = {
-    "tools": "figure generators and site build tools side by side; split into tools/<domain>/ and tools/site/",
+    "tools": "remaining Python figure generators; site tooling now has its own hierarchy",
     "src/cadagent/webkit": "browser modules served as one folder (pyproject package-data webkit/*); a split moves "
                            "their URLs",
 }

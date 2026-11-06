@@ -28,7 +28,7 @@ test('decodeModel reads the fixture exactly as unpack_model does', async () => {
 });
 
 test('the site\'s Gyropup model decodes whole, matches its checksum and sits where its parts were exported', async () => {
-  const { model, packed, parts } = await load('web/models/gyropup.json');
+  const { model, packed, parts } = await load('tools/site/assets/models/gyropup.json');
   assert.equal(model.schema, 'cad-agent-model/1');
   assert.equal(packed.length, model.bytes);
   assert.equal(createHash('sha256').update(packed).digest('hex'), model.sha256);

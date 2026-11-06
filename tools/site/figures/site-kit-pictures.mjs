@@ -1,6 +1,6 @@
 /** Pictures of the web kit's components at work, for the docs (#179):
  *
- *   node tools/site-kit-pictures.mjs --gyropup <checkout of Valpatel/gyropup>
+ *   node tools/site/figures/site-kit-pictures.mjs --gyropup <checkout of Valpatel/gyropup>
  *
  * Each picture is the kit itself (src/cadagent/webkit/), served as the site serves it, running on real files:
  *
@@ -25,12 +25,12 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 
-const root = path.resolve(import.meta.dirname, '..');
+const root = path.resolve(import.meta.dirname, '../../..');
 const kit = path.join(root, 'src/cadagent/webkit');
 const OUT = path.join(root, 'docs/img/kit');
 const DOCS_COLUMN = 860;              // CSS px: the docs page's article column (880) less its figure's padding and border
 const arg = process.argv.indexOf('--gyropup');
-if (arg < 0) throw new Error('usage: node tools/site-kit-pictures.mjs --gyropup <checkout of Valpatel/gyropup>');
+if (arg < 0) throw new Error('usage: node tools/site/figures/site-kit-pictures.mjs --gyropup <checkout of Valpatel/gyropup>');
 const gyropup = path.resolve(process.argv[arg + 1]);
 const source = JSON.parse(await readFile(path.join(root, 'docs/img/gyropup/SOURCE.json'), 'utf8'));
 const PART = 'exports/asm_hip_motor_plate_l.step';                 // Gyropup's left hip motor plate

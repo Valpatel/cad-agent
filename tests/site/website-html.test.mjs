@@ -1,8 +1,8 @@
-// The site's HTML sanitizer (tools/site-html.mjs): rendered Markdown may quote outside sources, so no script, handler
+// The site's HTML sanitizer (tools/site/compiler/site-html.mjs): rendered Markdown may quote outside sources, so no script, handler
 // or unsafe URL survives, while the markup our docs use (and text inside code) comes through unchanged.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitize, safeUrl, rewriteUrls, imageSize } from '../../tools/site-html.mjs';
+import { sanitize, safeUrl, rewriteUrls, imageSize } from '../../tools/site/compiler/site-html.mjs';
 
 const ATTACKS = {
   'nested script': '<scr<script>x</script>ipt>window.__x=1</script>',

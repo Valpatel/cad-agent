@@ -19,8 +19,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-SH = ROOT / "web" / "install.sh"
-PS1 = ROOT / "web" / "install.ps1"
+SH = ROOT / "tools" / "site" / "assets" / "install.sh"
+PS1 = ROOT / "tools" / "site" / "assets" / "install.ps1"
 PASTE = (ROOT / "docs" / "agent-prompt.txt").read_text().split("\n", 1)[0]
 GIT = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_NOSYSTEM": "1"}

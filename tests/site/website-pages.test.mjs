@@ -1,9 +1,9 @@
-/** tools/site-pages.mjs: real outputs placed on doc pages from docs/pages.yaml, section cards, and long reference parts
+/** tools/site/compiler/site-pages.mjs: real outputs placed on doc pages from docs/pages.yaml, section cards, and long reference parts
  * folded (#179). */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createPublication, pageSection, publicPath, requiredSources, selectPages, sourceSpec, validateRedirects } from '../../tools/site/publication.mjs';
-import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from '../../tools/site-pages.mjs';
+import { CARDS_MIN, FOLD_LINES, FOLD_ROWS, fold, pagePlacer, sectionCards } from '../../tools/site/compiler/site-pages.mjs';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452000002800000019008060000', 'hex');   // 640 x 400
 const base = {

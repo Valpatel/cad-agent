@@ -14,7 +14,7 @@ irm https://cad-agent.valpatel.com/install.ps1 | iex             # Windows Power
 curl -fsSLO https://cad-agent.valpatel.com/install.sh && less install.sh && sh install.sh   # read it first
 ```
 
-The scripts are [`web/install.sh`](../../web/install.sh) and [`web/install.ps1`](../../web/install.ps1). They:
+The scripts are [`web/install.sh`](../../tools/site/assets/install.sh) and [`web/install.ps1`](../../tools/site/assets/install.ps1). They:
 
 1. need git, and install [uv](https://docs.astral.sh/uv/) (a pinned version, from astral.sh) into `~/.local/bin` if it
    is missing, without editing your shell profile;

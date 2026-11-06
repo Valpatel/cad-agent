@@ -145,6 +145,6 @@ test('the demo screws are DELTA PT sizes in SI, with the friction band and the s
 
 
 test('the cantilever still on docs/compliant is what the component draws for the page\'s attributes', () => {
-  const out = execFileSync(process.execPath, ['tools/cantilever-still.mjs', '--check'], { cwd: root }).toString();
+  const out = execFileSync(process.execPath, ['tools/site/figures/cantilever-still.mjs', '--check'], { cwd: root }).toString();
   assert.match(out, /current/);
 });

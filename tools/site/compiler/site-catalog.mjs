@@ -1,7 +1,7 @@
 /** The catalogue: cad-agent.valpatel.com/catalog, /catalog.json (schema cad-agent-catalog/2), /catalog/index.json and
  * one /catalog/<area>.json per domain, area and bucket, and the covers under /catalog/covers/. Schema 2 has lost a
  * field without a new schema value (CATALOG_FIELDS.removed says which), so a reader that checks for /2 still runs. Built by
- * tools/build-site.mjs from committed files only:
+ * tools/site/build-site.mjs from committed files only:
  * - our commands (cli.py), pages (docs, lessons, research, skills, agents) and demos and tool pictures (docs/catalog.yaml);
  * - outside projects (vendor/upstreams/registry.yaml), libraries and benchmarks (docs/research/landscape.json);
  * - the topic tree (docs/areas.yaml), which places pages, commands, skills, agents and lesson folders in areas. Outside
@@ -243,7 +243,7 @@ export async function buildCatalog(ctx) {
     return pageURL(file) + (hash ? '#' + hash : '');
   };
   /** Figures a page shows, in order: { src (repo path), alt, anchor (the heading above it) }. */
-  // The doc template's copies under a page's title (section cards and band tiles, tools/site-pages.mjs) repeat pictures
+  // The doc template's copies under a page's title (section cards and band tiles, tools/site/compiler/site-pages.mjs) repeat pictures
   // shown in a section: a figure is where its section shows it, so a demo opens at that section, not the page's top.
   const figuresOf = p => {
     const out = [];

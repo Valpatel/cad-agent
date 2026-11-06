@@ -148,3 +148,34 @@ flowchart TD
 - **Incident:** on 2026-11-05, PR #350 had CI runs at 22:16, 22:17 and 22:20 UTC cancelled at the same head `a6b61550` when its description was edited to report validation. The CI workflow listens to PR `edited` events and cancels a superseded run for the same ref. The browser workflow has a separate queue and lacked equivalent automatic cancellation.
 - **Check:** inspect `.github/workflows/ci.yml` events and concurrency, then `gh run list --branch <branch> --json headSha,status,conclusion,event,createdAt`. Record a test failure only from its completed check output. Cancel only an owned branch's superseded runs after confirming a newer head exists; preserve its current run and other authors' runs.
 - **Source:** 2026-11-05 integration audit in PR #350; coordinating agent's same-head run timestamps and `.github/workflows/ci.yml`. This explains cancellation in this workflow configuration; it does not prove that a rerun will pass or justify bypassing any required gate.
+- **Classify from executed steps:** a provisioning timeout, superseded run and failed application assertion are
+  different evidence. Read job steps, annotations and exact-attempt logs before retrying. Keep the source frozen
+  when only provisioning is incomplete; a rerun must actually execute and pass every required check.
+
+<details>
+<summary>2026-11-06 UTC: measured provisioning and log-attribution evidence</summary>
+
+- **#363, run 42135518581, attempt 1:** Chromium job 127622524277 exhausted its 15-minute job budget
+  (00:15:42–00:30:51). Playwright dependency setup took 00:15:50–00:23:40; apt reported
+  `Fetched 21.1 MB in 7min 31s (46.7 kB/s)` at 00:23:28. That setup consumed time available for tests;
+  the timeout itself is not an assertion result.
+- **#365, unchanged bcb2ddde:** WebKit's first attempt spent 01:31:33–01:46:37 in dependency setup and exhausted
+  the same 15-minute limit. Build and test steps were all skipped. Its targeted rerun installed dependencies in
+  38 seconds (01:48:37–01:49:15), then actually ran the suites and passed at 01:54:41.
+  [Original provisioning receipt](https://github.com/Valpatel/cad-agent/pull/365#issuecomment-6674644989).
+- **An ID is not proof of another execution:** GitHub associated the completed Chromium sibling with a new job ID
+  in attempt 2 while retaining its original 01:31:23–01:38:02 timestamps. Count that as one execution.
+- **Select the attempt, then verify timestamps:** `gh run view 42135518581 --job 127622524277 --log` returned the
+  later rerun's 00:31 timestamps despite the old job argument. The explicit REST attempt-1 archive contained the
+  actual 00:15 attempt. Fetch `gh api repos/<owner>/<repo>/actions/runs/<run>/attempts/<attempt>/logs > logs.zip`
+  and confirm the job's timestamps inside it; do not attribute a latest-attempt log to the original job.
+- **Keep receipts scoped:** fleet job 183 passed components at 9e108a4d but failed overall on fixture setup;
+  job 185 checked only diagram widths at bcb2ddde. Neither is a full final-head suite receipt. The final bcb2ddde
+  required full CI independently passed 3,340 tests (19 skipped), its real wheel smoke and dependency-floor checks,
+  and both browser jobs passed before merge.
+
+These measurements justify the interruption classification, not blanket timeout, mirror or cache-policy changes.
+Preserve completed sibling checks and investigate any actual assertion failure. A successful rerun never supplies
+physical qualification or coverage for a stage that did not run.
+
+</details>

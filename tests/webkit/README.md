@@ -41,6 +41,6 @@ flowchart TD
 | `webkit-torsion-snap.test.mjs` | `<cad-torsion-snap>` without a browser: the port's numbers, Saint-Venant scaling |
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 
-Run: `node --test tests/webkit/*.test.mjs` and `npm run test:part-table`, `test:file-viewer`, `test:diagrams`.
+Run: `node --test tests/webkit/*.test.mjs` and `npm --prefix tools/site run test:part-table`, `test:file-viewer`, `test:diagrams`.
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

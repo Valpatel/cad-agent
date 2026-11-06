@@ -1,4 +1,4 @@
-// The reference knowledge base on the site (#323 phase 3; tools/site-references.mjs). Checks:
+// The reference knowledge base on the site (#323 phase 3; tools/site/compiler/site-references.mjs). Checks:
 // - the loader against the registry's own rules;
 // - the built pages, JSON, llms.txt and Markdown twins against the committed records;
 // - [ref:<id>] links;
@@ -10,12 +10,12 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import YAML from 'yaml';
+import { YAML } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import {
   CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
   referenceJson, referenceSite, healthOf,
-} from '../../tools/site-references.mjs';
+} from '../../tools/site/compiler/site-references.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const ORIGIN = 'https://cad-agent.valpatel.com';
@@ -210,7 +210,7 @@ test('records are not catalogue entries, and llms.txt has one line per area and 
 });
 
 test('docs/practice/experts.md is what the generator writes from the committed registry', async () => {
-  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site-references.mjs --experts and commit docs/practice/experts.md');
+  assert.equal(await show(EXPERTS), expertsMarkdown(model, { ORIGIN }), 'run node tools/site/compiler/site-references.mjs --experts and commit docs/practice/experts.md');
   const md = expertsMarkdown(model, { ORIGIN });
   const sources = [...refs.records.values()].filter(r => r.status === 'source');
   assert.ok(md.includes(`${sources.length} read sources`));
@@ -275,9 +275,9 @@ test('charts are drawn as links that filter, with what they show spoken', () => 
 });
 
 test('the reference pages\' stylesheet sets colours only through the site\'s tokens', async () => {
-  const css = (await show('web/references.css')).replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = (await show('tools/site/assets/references.css')).replace(/\/\*[\s\S]*?\*\//g, '');
   assert.deepEqual(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi) || [], [], 'use var(--token) from web/site.css, so both themes apply');
-  const tokens = new Set([...(await show('web/site.css')).matchAll(/--([\w-]+):/g)].map(m => m[1]));
+  const tokens = new Set([...(await show('tools/site/assets/site.css')).matchAll(/--([\w-]+):/g)].map(m => m[1]));
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
   assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
 });

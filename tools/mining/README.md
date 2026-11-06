@@ -9,7 +9,7 @@ flowchart TD
     I["session.jsonl<br/>private input"] --> E["extract_session.py"]
     E --> O["out.md<br/>scrubbed prose"]
     O --> R["manual evidence review"]
-    R --> L["../../lessons/<br/>sourced lessons"]
+    R --> L["../../docs/lessons/<br/>sourced lessons"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     class E here

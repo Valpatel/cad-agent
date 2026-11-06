@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// `npm run build`: the production site build, as Cloudflare Pages runs it on every push to `main`.
-// The Pages project `cad-agent` is Git-connected: build command `npm ci && npm run build`, output `dist` (wrangler.toml),
-// the same settings as every other Valpatel Pages site. Preview deployments are off, so only `main` publishes.
+// `npm --prefix tools/site run build`: the production site build entry.
+// The Git-connected Pages project publishes only main, with previews off and repository-root dist output.
+// Moving this entry does not update its external build command; the coordinated transition is tracked in #362.
 //
 // Cloudflare's clone may be shallow and has no `origin/main` or `origin/dev`. `build-site.mjs --release` needs both:
 // full history, so each page shows when it really changed, and HEAD on a reviewed branch. This fetches what is
@@ -11,7 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // CAD_AGENT_REPO_URL points the fetch at a mirror or fork (for testing); unset, it is the public repository.
 const REPO = process.env.CAD_AGENT_REPO_URL || 'https://github.com/Valpatel/cad-agent.git';
 const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }).trim();
@@ -26,4 +26,4 @@ if (shallow || missing.length) {
   git('fetch', '--quiet', ...(shallow ? ['--unshallow'] : []), REPO,
       '+refs/heads/main:refs/remotes/origin/main', '+refs/heads/dev:refs/remotes/origin/dev');
 }
-execFileSync(process.execPath, [resolve(root, 'tools/build-site.mjs'), '--release'], { cwd: root, stdio: 'inherit' });
+execFileSync(process.execPath, [resolve(root, 'tools/site/build-site.mjs'), '--release'], { cwd: root, stdio: 'inherit' });

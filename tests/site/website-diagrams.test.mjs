@@ -1,17 +1,17 @@
-// tools/site-diagrams.mjs: the site's Mermaid blocks drawn at build time (#132), in the headless Chromium the browser
-// tests use. Needs Playwright's Chromium (`npx playwright install chromium`) or Google Chrome.
+// tools/site/compiler/site-diagrams.mjs: the site's Mermaid blocks drawn at build time (#132), in the headless Chromium the browser
+// tests use. Needs Playwright's Chromium (`npm --prefix tools/site exec --no -- playwright install chromium`) or Google Chrome.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { drawDiagrams, forDrawing, PALETTES, themePalette, unescapeHtml } from '../../tools/site-diagrams.mjs';
+import { drawDiagrams, forDrawing, PALETTES, themePalette, unescapeHtml } from '../../tools/site/compiler/site-diagrams.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-site-diagrams-'));
 test.after(() => rm(tmp, { recursive: true, force: true }));
 const kit = f => readFile(path.join(root, 'src/cadagent/webkit', f));
-const site = f => readFile(path.join(root, 'web', f));
+const site = f => readFile(path.join(root, 'tools/site/assets', f));
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const block = src => `<pre><code class="language-mermaid">${esc(src)}</code></pre>`;
 const quiet = () => { const said = []; return { said, log: { log: m => said.push(m), warn: m => said.push(m) } }; };

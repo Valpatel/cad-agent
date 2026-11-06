@@ -69,7 +69,8 @@ flowchart TD
   along with each control's box, after fonts load, on both sides of responsive breakpoints.
 - **Check:** The existing website browser suite's `headerProblems` checks 33 widths from 320 to 1366 px in both
   themes. Catalogue, GitHub, the brand and theme control remain visible, inside the viewport and separated by at
-  least 4 px. The name stays readable at the narrowest width while its decorative icon yields room.
+  least 4 px. Hidden and transparent-header controls must be rejected despite retaining all their geometry. The
+  name stays readable at the narrowest width while its decorative icon yields room.
 
 <details><summary>2026-11-06 incident, evidence and limits</summary>
 
@@ -80,6 +81,9 @@ flowchart TD
 - **Cause:** Flex shrinking reduced the wordmark's box and icon without containing its unbroken text; secondary
   navigation returned before the complete row fit. The correction prevents wordmark shrinking and switches to
   compact navigation earlier, while retaining the existing one-line header heights and sticky offsets.
+- **Review correction:** Independent GPT-6 review of #367 reproduced a false pass when the entire header had
+  `visibility:hidden` but retained its dimensions. The guard now checks computed visibility and ancestor opacity,
+  and its own hidden/transparent controls must report all four required controls missing in both themes.
 - **Reproduction:** Serve the actual site from fleet 190 (`a901e134`, before the correction) with the repository's
   preview server. Run the new `headerProblems` function against that product, then route only `/web/site.css` to
   the candidate CSS. The old product must report the 381 px text collision and the 761 px tablet failure; the

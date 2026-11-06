@@ -667,45 +667,72 @@ async function headerProblems() {
     try {
       await page.goto(base + '/catalog');
       await page.evaluate(() => document.fonts.ready);
+      const measure = () => page.evaluate(() => {
+        const out = [];
+        const shown = el => {
+          if (!el || !el.getBoundingClientRect().width || !el.getBoundingClientRect().height) return false;
+          if (getComputedStyle(el).visibility !== 'visible') return false;
+          for (let ancestor = el; ancestor; ancestor = ancestor.parentElement) {
+            if (Number(getComputedStyle(ancestor).opacity) === 0) return false;
+          }
+          return true;
+        };
+        for (const selector of ['.wordmark', 'nav a[href="/catalog"]', 'nav .pill-link', '.theme-toggle']) {
+          if (!shown(document.querySelector('.site-header ' + selector))) out.push(`missing visible ${selector}`);
+        }
+        const controls = [...document.querySelectorAll('.site-header .wordmark,.site-header nav a,.site-header button')].filter(shown);
+        const boxes = controls.map(el => {
+          const rects = [el.getBoundingClientRect()];
+          // Buttons contain an intentionally clipped screen-reader label; their visible SVG has its own box.
+          if (el.tagName !== 'BUTTON') {
+            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+            while (walker.nextNode()) if (walker.currentNode.textContent.trim()) {
+              const range = document.createRange();
+              range.selectNodeContents(walker.currentNode);
+              rects.push(...range.getClientRects());
+            }
+          }
+          for (const image of [...el.querySelectorAll('img,svg')].filter(shown)) {
+            rects.push(image.getBoundingClientRect());
+            if (image.tagName === 'IMG' && (!image.complete || !image.naturalWidth)) out.push('wordmark image did not load');
+          }
+          return { label: el.getAttribute('aria-label') || el.textContent.trim(),
+            left: Math.min(...rects.map(r => r.left)), right: Math.max(...rects.map(r => r.right)),
+            top: Math.min(...rects.map(r => r.top)), bottom: Math.max(...rects.map(r => r.bottom)) };
+        });
+        for (const box of boxes) if (box.left < 0 || box.right > innerWidth) out.push(`${box.label} extends outside the viewport`);
+        for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i], b = boxes[j];
+          const verticalOverlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
+          if (verticalOverlap > 1 && gap < 4) out.push(`${a.label} / ${b.label}: visible gap ${gap.toFixed(2)}px (need 4px)`);
+        }
+        return out;
+      });
       for (const width of widths) {
         await page.setViewportSize({ width, height: 850 });
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        const found = await page.evaluate(() => {
-          const out = [];
-          const shown = el => el && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0;
-          for (const selector of ['.wordmark', 'nav a[href="/catalog"]', 'nav .pill-link', '.theme-toggle']) {
-            if (!shown(document.querySelector('.site-header ' + selector))) out.push(`missing visible ${selector}`);
-          }
-          const controls = [...document.querySelectorAll('.site-header .wordmark,.site-header nav a,.site-header button')].filter(shown);
-          const boxes = controls.map(el => {
-            const rects = [el.getBoundingClientRect()];
-            // Buttons contain an intentionally clipped screen-reader label; their visible SVG has its own box.
-            if (el.tagName !== 'BUTTON') {
-              const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-              while (walker.nextNode()) if (walker.currentNode.textContent.trim()) {
-                const range = document.createRange();
-                range.selectNodeContents(walker.currentNode);
-                rects.push(...range.getClientRects());
-              }
-            }
-            for (const image of [...el.querySelectorAll('img,svg')].filter(shown)) {
-              rects.push(image.getBoundingClientRect());
-              if (image.tagName === 'IMG' && (!image.complete || !image.naturalWidth)) out.push('wordmark image did not load');
-            }
-            return { label: el.getAttribute('aria-label') || el.textContent.trim(),
-              left: Math.min(...rects.map(r => r.left)), right: Math.max(...rects.map(r => r.right)),
-              top: Math.min(...rects.map(r => r.top)), bottom: Math.max(...rects.map(r => r.bottom)) };
-          });
-          for (const box of boxes) if (box.left < 0 || box.right > innerWidth) out.push(`${box.label} extends outside the viewport`);
-          for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
-            const a = boxes[i], b = boxes[j];
-            const verticalOverlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-            const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
-            if (verticalOverlap > 1 && gap < 4) out.push(`${a.label} / ${b.label}: visible gap ${gap.toFixed(2)}px (need 4px)`);
-          }
-          return out;
-        });
+        const found = await measure();
         problems.push(...found.map(p => `header ${width}px ${colorScheme}: ${p}`));
+      }
+      // A hidden header keeps all its geometry: prove that geometry alone cannot satisfy the visible-control guard.
+      for (const [property, value] of [['visibility', 'hidden'], ['opacity', '0']]) {
+        const previous = await page.locator('.site-header').evaluate((el, [property, value]) => {
+          const old = [el.style.getPropertyValue(property), el.style.getPropertyPriority(property)];
+          el.style.setProperty(property, value, 'important');
+          return old;
+        }, [property, value]);
+        try {
+          const hidden = await measure();
+          if (hidden.filter(p => p.startsWith('missing visible ')).length !== 4) {
+            problems.push(`header ${colorScheme}: ${property} control accepted invisible navigation`);
+          }
+        } finally {
+          await page.locator('.site-header').evaluate((el, [property, value, priority]) => {
+            if (value) el.style.setProperty(property, value, priority);
+            else el.style.removeProperty(property);
+          }, [property, ...previous]);
+        }
       }
     } finally { await page.close(); }
   }

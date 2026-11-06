@@ -119,24 +119,22 @@ def build():
     path("M1214 276v-64h8v64m-8-30h-20v-10h-12v-12h22v10h10m8-10h18v-12h12v-12h-22v12h-8", "#7caa7d")
     # Typography is deliberately outside the busy scene. Meaning survives every still.
     body.append('<text x="52" y="48" class="heading">A workshop that learns.</text>')
-    body.append('<text x="1228" y="47" text-anchor="end" class="concept">Conceptual workflow</text>')
     for (label, _), x in zip(STEPS, (154, 370, 640, 888, 1118)):
         body.append(f'<text x="{x}" y="375" text-anchor="middle" class="step">{escape(label)}</text>')
-    path("M154 400h964v16H182v16h-28Z", "#536e78")
-    path("M1118 392h16v16h-16m-964 16h-16v16h16", "#9fd1bc")
+    path("M154 396h950v-8l28 16-28 16v-8H154Z", "#88b8b1")
+    path("M1114 422h12v22H172v10l-32-16 32-16v10h942Z", "#71948d")
     rect(348, 396, 24, 24, "#efc482", 'class="note"')
     rect(354, 402, 12, 4, "#8b735e", 'class="note"')
-    body.append('<text x="640" y="472" text-anchor="middle" class="limit">Virtual checks + real measurements → reviewed, reusable skills.</text>')
     css = '''.heading{font-size:32px;font-weight:650;fill:#f4d6a0;letter-spacing:1px}
-.concept{font-size:21px;fill:#a8bec5}.step{font-size:38px;font-weight:650;fill:#e4e7dc}
-.limit{font-size:25px;fill:#b5c8c4}.note{animation:carry 18s linear infinite}
+.step{font-size:38px;font-weight:650;fill:#e4e7dc}
+.note{animation:carry 18s linear infinite}
 .lamplight{animation:warm 18s ease-in-out infinite}
 @keyframes carry{0%,12%,100%{transform:translateX(0)}65%,78%{transform:translateX(760px)}}
 @keyframes warm{0%,100%{opacity:.07}50%{opacity:.12}}
 rect,path{shape-rendering:crispEdges}
 svg{max-width:100%;height:auto}
 ''' + svg.REDUCED_MOTION
-    return svg.document(640, 250, "A learning workshop: Study, Try, Test, Review, Learn",
+    return svg.document(640, 240, "A learning workshop: Study, Try, Test, Review, Learn",
                         "Conceptual pixel-art workshop. Study credited sources, try a method, distinguish virtual checks from real measurements, review the evidence, and preserve reusable skills. The loop is a method, not a claim of physical qualification.", css, body, background=False)
 
 

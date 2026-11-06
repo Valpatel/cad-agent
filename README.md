@@ -2,6 +2,8 @@
 
 <img src="docs/img/hero/repository-map.svg" alt="A conceptual learning workshop: study sources, try methods, test assumptions, review evidence and learn reusable skills" width="640">
 
+A conceptual learning loop. Virtual checks and real measurements keep their own evidence.
+
 # cad-agent
 
 **Your one stop shop for agentic CAD.**

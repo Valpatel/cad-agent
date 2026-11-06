@@ -1094,7 +1094,7 @@ async function explorerProblems(x) {
  * sideways-scroll hint shows exactly when its diagram overflows, without script too, and no page downloads Mermaid
  * (DIAGRAM_SHIFT is set at the top, with the routes). */
 async function drawnDiagramProblems() {
-  const out = [];
+  const out = await diagramNavigationControl();
   const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
   // the figures the page shows: each block is drawn in both themes and the page's CSS hides the other one (#305)
   const boxes = page => page.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => {
@@ -1106,33 +1106,31 @@ async function drawnDiagramProblems() {
   }));
   for (const [width, colorScheme] of [[320, 'light'], [360, 'light'], [1366, 'light'], [360, 'dark'], [1366, 'dark']]) for (const route of PAGES) {
     const where = `${width}px ${colorScheme} ${route}`;
-    const still = await browser.newContext({ viewport: { width, height: 800 }, javaScriptEnabled: false, colorScheme });
-    const off = await still.newPage();
-    await off.goto(base + route, { waitUntil: 'load' });
-    await off.evaluate(() => document.fonts.ready);
-    const before = await boxes(off);
-    const stillThemes = await off.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => f.dataset.theme));
-    if (stillThemes.some(t => t !== colorScheme)) out.push(`${where}: without script, it shows diagrams drawn for ${[...new Set(stillThemes)].join(' and ')}`);
-    await still.close();
-    const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme });
-    const page = await context.newPage();
-    const runtime = [];
-    page.on('request', r => { if (/mermaid\.min\.js/.test(r.url())) runtime.push(r.url()); });
-    await page.addInitScript(() => {
-      window.__shift = 0;
-      if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift'))
-        new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
-          .observe({ type: 'layout-shift', buffered: true });
+    const { before, stillThemes } = await withDiagramPage({ viewport: { width, height: 800 }, javaScriptEnabled: false, colorScheme }, async off => {
+      await navigateDiagram(off, base + route, `${where}, JavaScript disabled`);
+      await off.evaluate(() => document.fonts.ready);
+      return { before: await boxes(off),
+        stillThemes: await off.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => f.dataset.theme)) };
     });
-    // Measured once the kit has adopted every drawn figure and none is being drawn again, so a Mermaid download, if
-    // any, has happened (not at networkidle: in WebKit on CI it never came on /docs/vision, #154).
-    await page.goto(base + route);
-    await settled(page);
-    await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
-      [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
-      .catch(() => out.push(`${where}: diagrams did not finish drawing`));
-    const after = await boxes(page), shift = await page.evaluate(() => window.__shift);
-    await context.close();
+    if (stillThemes.some(t => t !== colorScheme)) out.push(`${where}: without script, it shows diagrams drawn for ${[...new Set(stillThemes)].join(' and ')}`);
+    const { runtime, after, shift } = await withDiagramPage({ viewport: { width, height: 800 }, colorScheme }, async page => {
+      const runtime = [];
+      page.on('request', r => { if (/mermaid\.min\.js/.test(r.url())) runtime.push(r.url()); });
+      await page.addInitScript(() => {
+        window.__shift = 0;
+        if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift'))
+          new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
+            .observe({ type: 'layout-shift', buffered: true });
+      });
+      // Measured once the kit has adopted every drawn figure and none is being drawn again, so a Mermaid download, if
+      // any, has happened (not at networkidle: in WebKit on CI it never came on /docs/vision, #154).
+      await navigateDiagram(page, base + route, `${where}, JavaScript enabled`);
+      await settled(page);
+      await page.waitForFunction(() => !document.querySelector('pre.mermaid, code.language-mermaid') &&
+        [...document.querySelectorAll('.cad-diagram')].every(f => f.dataset.state === 'ready' || f.dataset.state === 'error'), null, { timeout: 20000 })
+        .catch(() => out.push(`${where}: diagrams did not finish drawing`));
+      return { runtime, after: await boxes(page), shift: await page.evaluate(() => window.__shift) };
+    });
     if (!before.length) { out.push(`${where}: no diagram on the page`); continue; }
     if (shift > DIAGRAM_SHIFT) out.push(`${where}: the page moved by ${shift.toFixed(3)} while it loaded (limit ${DIAGRAM_SHIFT})`);
     if (runtime.length) out.push(`${where}: downloaded Mermaid (${runtime.length}x), though the build drew every diagram`);
@@ -1145,6 +1143,78 @@ async function drawnDiagramProblems() {
         else if (m?.hint && m.clipped) out.push(`${where}: diagram ${i + 1}'s scroll hint is cut off ${label}`);
     });
   }
+  return out;
+}
+
+/** A failed iteration owns this context, not the other browser-test lane's pages. */
+async function withDiagramPage(options, action) {
+  const context = await browser.newContext(options);
+  try { return await action(await context.newPage(), context); }
+  finally { await context.close(); }
+}
+
+/** Keep the normal 30-second load boundary; collect evidence on failure instead of guessing which resource stalled. */
+async function navigateDiagram(page, url, where, timeout = 30000) {
+  const pending = new Map(), failed = [];
+  const cleanURL = value => { const u = new URL(value); return u.origin + u.pathname; }; // no queries or fragments
+  const request = r => pending.set(r, { url: cleanURL(r.url()), type: r.resourceType(), started: Date.now() });
+  const response = r => { const entry = pending.get(r.request()); if (entry) entry.status = r.status(); };
+  const finished = r => pending.delete(r);
+  const rejected = r => { failed.push({ url: cleanURL(r.url()), error: r.failure()?.errorText }); pending.delete(r); };
+  for (const [event, listener] of [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected]]) page.on(event, listener);
+  try { return await page.goto(url, { waitUntil: 'load', timeout }); }
+  catch (cause) {
+    const evidence = { where, url: cleanURL(url), viewport: page.viewportSize(), timeout,
+      pending: [...pending.values()].map(({ started, ...entry }) => ({ ...entry, ageMs: Date.now() - started })), failed: [...failed] };
+    let timer;
+    try {
+      evidence.dom = await Promise.race([
+        page.evaluate(() => ({ readyState: document.readyState, fontSet: document.fonts.status,
+          fonts: [...document.fonts].map(f => ({ family: f.family, status: f.status })),
+          styles: [...document.querySelectorAll('link[rel=stylesheet]')].map(l => ({ path: new URL(l.href).pathname, sheet: !!l.sheet })),
+          images: [...document.images].map(i => ({ path: new URL(i.src).pathname, complete: i.complete, width: i.naturalWidth })) })),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DOM snapshot exceeded 2 seconds')), 2000); }),
+      ]);
+    } catch (error) { evidence.dom = { unavailable: error.message }; }
+    finally { clearTimeout(timer); }
+    const error = new Error(`Diagram navigation failed: ${JSON.stringify(evidence)}`, { cause });
+    error.navigation = evidence;
+    throw error;
+  } finally {
+    for (const [event, listener] of [['request', request], ['response', response], ['requestfinished', finished], ['requestfailed', rejected]]) page.off(event, listener);
+  }
+}
+
+/** A real stylesheet stays pending through a short fixture timeout; the ordinary checks keep their 30 seconds. */
+async function diagramNavigationControl() {
+  const out = [], sentinel = await browser.newContext();
+  const neighbor = await sentinel.newPage();
+  let owned, release, held = false, caught;
+  const gate = new Promise(resolve => { release = resolve; });
+  try {
+    await navigateDiagram(neighbor, base + '/docs/style-guide', 'diagnostic neighbor, JavaScript enabled');
+    try {
+      await withDiagramPage({ viewport: { width: 360, height: 800 }, javaScriptEnabled: false, colorScheme: 'dark' }, async (page, context) => {
+        owned = context;
+        await context.route('**/web/site.css', async route => {
+          held = true;
+          await gate;
+          await route.continue().catch(() => {}); // the owned context is closed after the expected navigation failure
+        });
+        await navigateDiagram(page, base + '/docs/style-guide?navigation-control=held', '360px dark /docs/style-guide, JavaScript disabled', 3000);
+      });
+    } catch (error) { caught = error; }
+    const evidence = caught?.navigation;
+    if (!held) out.push('diagram navigation control did not reach the actual held stylesheet');
+    if (!evidence?.pending.some(r => r.url.endsWith('/web/site.css')) || evidence.viewport?.width !== 360 ||
+        !evidence.where.includes('dark') || !evidence.where.includes('JavaScript disabled') ||
+        !evidence.dom?.styles?.some(s => s.path === '/web/site.css' && !s.sheet) || caught?.cause?.name !== 'TimeoutError') {
+      out.push('diagram navigation control lost the actual pending resource, iteration, DOM state or original error');
+    }
+    if (evidence?.url.includes('?')) out.push('diagram navigation diagnostics include query parameters');
+    if (browser.contexts().includes(owned)) out.push('diagram navigation failure retained its owned context');
+    if (await neighbor.evaluate(() => document.readyState) !== 'complete') out.push('diagram cleanup disrupted another context');
+  } finally { release(); await owned?.close(); await sentinel.close(); }
   return out;
 }
 

@@ -16,3 +16,4 @@
 | A documented technique breaks while its API tests stay green | [Execute the canonical technique](inbox/2026-11-06-source-selection-must-not-pass-empty.md#execute-the-canonical-technique-not-only-its-underlying-apis) |
 | A moved-source check selects no package files, or a child imports another editable checkout | [Nonempty source selection and import origin](inbox/2026-11-06-source-selection-must-not-pass-empty.md) |
 | A publication check accepts a changed catalogue ID or a wrong origin with the same path | [Complete public identities and preserved served namespaces](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-the-complete-publication-identity) |
+| A release preserves historical notes but its current introduction still links to a moved directory | [Check current navigation outside released history](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-current-navigation-outside-released-history) |

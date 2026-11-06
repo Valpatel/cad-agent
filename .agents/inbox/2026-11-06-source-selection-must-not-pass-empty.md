@@ -38,6 +38,14 @@ Independent review ran `git cat-file -e HEAD:tools/figures/readme_anim.py`: exit
 
 **Rule:** a suggested move is an assumption until the tracked source and real producer agree. Compare provenance against the producer actually loaded and its output, not a second copy of the proposed string. A successful visual rendering cannot establish that an attribution link names a real source file. The custom-directory runtime proof from fleet 218 remains scoped to its exact component; this caption correction does not rerun or relabel it.
 
+## Check current navigation outside released history
+
+On 2026-11-06, independent release review of #391 at `2f380b52b006203931e06f6a46e1ae18ca99c04a` found that the CHANGELOG introduction still linked to `changelog.d/README.md`. `git cat-file -e HEAD:changelog.d/README.md` returned 128; `git cat-file -e HEAD:docs/changelog.d/README.md` returned 0. The hierarchy migration had moved the guide, while source and metadata review missed this current navigation link. Release publication was held for the correction.
+
+**Cause:** preserving dated release notes and reproducing the release producer do not validate the current introduction's links. The producer intentionally carries that introduction through unchanged.
+
+**Rule:** separate current navigation from dated evidence when checking a move. Resolve the current links against the actual tracked tree; keep released notes byte-identical unless a separately reviewed correction requires otherwise. This repair changes only the introduction's fragment-guide label and destination. It does not claim a new link checker, broader publication coverage, or any change to historical release behavior.
+
 ## Execute the canonical technique, not only its underlying APIs
 
 On 2026-11-06, the #283 routing audit found an existing six-step Python example in `sheet-metal-hardware`, but no design-process route and no consumer executing that canonical block. A disposable edit changed only its clinch selector's sheet to `unlisted-sheet`: the original `pytest -q tests/mechanical/test_sheet_hardware.py` still passed all 14 tests, while executing the actual block raised `ValueError: unknown sheet`. The source was restored in `finally`; no catalogue or solver data changed.

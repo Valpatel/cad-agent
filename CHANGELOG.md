@@ -9,6 +9,24 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.23.0 (2026-11-06)
+
+**Changed**
+- Eight repository diagram generators now live under `tools/figures/`, reducing the directly counted tools files from 28 to 20 and retiring that folder's clutter exception. Their published image paths and calculated results are preserved (#113).
+- The existing verification lesson records commit and control-input preconditions for long validation recipes, distinguishing setup failures from actual consumer rejections.
+- The canonical agent-kit assets live under `.agents/skills/` and `.agents/agents/`, with a native manifest retaining the repository as plugin root. The Python package and pinned third-party source share `software/`; release fragments live under `docs/changelog.d/`. The root shrinks from 17 entries to 14. Current published identities and installed destinations remain stable (#145, #111).
+- The design-process skill routes insert and printed-clamp joints to the existing checked declaration, CLI report and coupon plan, preserving the distinction between a passing warning and a failed joint (#230).
+
+**Fixed**
+- Upgrades recognize their owned old instruction links inside live custom-named checkouts, including paths with spaces; unrelated user links remain protected (#145).
+- The existing insert-guide consumer checks the actual YAML through the CLI and fresh JSON, so a bad declaration cannot hide behind separately reconstructed prose values. Numeric and source checks remain (#230).
+- Stable website vendor assets explicitly require revalidation even if a downstream policy raises their freshness lifetime. Already cached responses still require separate public verification (#381).
+
+**Projects must change**
+- Maintainers invoking these repository figure generators must use `tools/figures/<name>.py`; the old top-level script paths are removed. Seven retain `--check`; `snapfit_figures.py` remains regeneration-only (#113).
+- Maintainer references to the kit's source assets use `.agents/skills/` and `.agents/agents/`; the old root directories are moved. Source imports use `software/cadagent/`, third-party tooling uses `software/vendor/`, and new release fragments use `docs/changelog.d/`; installed Python modules and CLI names stay the same. Follow the existing installer to repair its owned links; other authors' files remain protected (#145).
+- Use `cad-agent update` to reinstall and relink across this move. After a manual pull, reinstall the affected editable environment and rerun `cad-agent agents install`; the old source paths are no longer import or link targets (#145).
+
 ## v0.22.2 (2026-11-06)
 
 **Fixed**

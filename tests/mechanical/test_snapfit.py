@@ -232,6 +232,30 @@ def test_docs_page_example_runs_and_table_matches_the_code(tmp_path):
         assert al.PRINTED[name].allowable("across") * 100 == pytest.approx(float(across), abs=0.06), name
 
 
+def test_guide_figures_regenerate_from_their_real_checkout_root(tmp_path):
+    """Copy the real script at its real depth; validate its default before allowing isolated writes."""
+    import importlib.util
+    import shutil
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    checkout = tmp_path / "checkout"
+    script = checkout / "tools" / "snapfit_figures.py"
+    script.parent.mkdir(parents=True)
+    shutil.copyfile(root / "tools" / "snapfit_figures.py", script)
+    spec = importlib.util.spec_from_file_location("snapfit_guide_figures", script)
+    generator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(generator)  # normal repository-test imports provide cadagent; no root override
+    expected = checkout / "docs" / "img" / "compliant"
+    assert generator.OUT == expected  # a bad parent depth must fail before main can write anywhere
+    assert not expected.exists()
+    generator.main()
+    names = ["example-1-short.svg", "example-1.svg"]
+    assert sorted(p.name for p in expected.iterdir()) == names
+    for name in names:
+        assert (expected / name).read_bytes() == (root / "docs" / "img" / "compliant" / name).read_bytes()
+
+
 # --------------------------------------------------------------------------- review of #105: nothing passes unchecked
 
 def _snap(**kw):

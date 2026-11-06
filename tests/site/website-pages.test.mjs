@@ -161,6 +161,7 @@ test('source aliases fail on duplicate public pages and ambiguous or incomplete 
   assert.throws(bad(spec => spec.files.push({ source: 'docs/other.md', public: 'docs/compliant.md' })), /duplicate page source or public identity/);
   assert.throws(bad(spec => spec.roots.push({ source: 'docs/research/nested', public: 'other' })), /ambiguous page source roots/);
   assert.throws(bad(spec => spec.roots = []), /needs schema 1, roots and files/);
+  assert.throws(bad(spec => spec.unpublished = 'docs/private.md'), /must be an array/);
   assert.throws(bad(spec => spec.unpublished.push('docs/mechanical/compliant.md')), /contradictory unpublished source/);
   const spec = structuredClone(sourceSpec);
   spec.roots.push({ source: 'docs/absent', public: 'absent' });

@@ -718,6 +718,15 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     await writeFile(registry, YAML.stringify(upstreams));
     await mkdir(path.join(wt, 'upstreams'), { recursive: true });
     await writeFile(path.join(wt, 'upstreams', 'registry.yaml'), '[]\n');
+    const guide = 'docs/practice/weekly-upstream-update.md';
+    await plant(wt, guide, '# Weekly upstream update\n\nMOVED_GUIDE_SENTINEL.\n\n[Commands](../toolkit.md#commands)\n');
+    await writeFile(path.join(wt, 'docs/weekly-upstream-update.md'), '# Stale guide\n\nSTALE_GUIDE_SENTINEL.\n');
+    const landscapeSource = 'docs/research/landscape.json';
+    const landscape = JSON.parse(await readFile(path.join(wt, landscapeSource), 'utf8'));
+    landscape.libraries[0].what = 'RESEARCH_SOURCE_SENTINEL';
+    await writeFile(path.join(wt, landscapeSource), JSON.stringify(landscape));
+    await mkdir(path.join(wt, 'research'), { recursive: true });
+    await writeFile(path.join(wt, 'research/landscape.json'), '{"projects":[],"libraries":[],"benchmarks":[]}\n');
     const draft = path.join(tmp, 'draft-policy');
     const run = () => execFileSync(process.execPath, ['tools/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     run();
@@ -733,7 +742,13 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     assert.match(await readFile(path.join(draft, 'THIRD_PARTY_NOTICES.md'), 'utf8'), /\]\(docs\/toolkit\.md#commands\)/);
     const catalog = JSON.parse(await readFile(path.join(draft, 'catalog.json'), 'utf8'));
     assert.equal(catalog.items.find(i => i.name === upstreams[0].name).what, 'REGISTRY_SOURCE_SENTINEL');
-    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml']) {
+    assert.equal(catalog.items.find(i => i.kind === 'library' && i.name === landscape.libraries[0].name).what, 'RESEARCH_SOURCE_SENTINEL');
+    const movedGuide = await readFile(path.join(draft, 'docs/weekly-upstream-update.html'), 'utf8');
+    assert.match(movedGuide, /MOVED_GUIDE_SENTINEL/);
+    assert.doesNotMatch(movedGuide, /STALE_GUIDE_SENTINEL/);
+    assert.match(movedGuide, /href="\/docs\/toolkit#commands"/);
+    assert.match(await readFile(path.join(draft, 'docs/weekly-upstream-update.md'), 'utf8'), /\]\(toolkit\.md#commands\)/);
+    for (const source of ['.github/CONTRIBUTING.md', 'vendor/THIRD_PARTY_NOTICES.md', 'vendor/upstreams/registry.yaml', guide, landscapeSource]) {
       const current = await readFile(path.join(wt, source));
       await rm(path.join(wt, source));
       assert.throws(run, error => String(error.stderr).includes('ENOENT') && String(error.stderr).includes(source),

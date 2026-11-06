@@ -23,6 +23,7 @@ export function createPublication(spec) {
     if (aliases.has(row.source) || publicFiles.has(row.public)) throw new Error('duplicate page source or public identity');
     aliases.set(row.source, row.public); publicFiles.add(row.public);
   }
+  if (spec.unpublished !== undefined && !Array.isArray(spec.unpublished)) throw new Error('unpublished sources must be an array');
   const excluded = new Set(spec.unpublished || []);
   if ([...excluded].some(f => !plain(f) || aliases.has(f))) throw new Error('invalid or contradictory unpublished source');
   const roots = spec.roots;

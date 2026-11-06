@@ -253,7 +253,9 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
   for (const p of vendorPaths) {
     const cache = headersFor(rules, p)['cache-control'];
     assert.ok(cache, `${p}: stable asset has no explicit revalidation policy`);
-    const directives = new Map(cache.toLowerCase().split(',').map(s => s.trim().split('=')));
+    const pairs = cache.toLowerCase().split(',').map(s => s.trim().split('='));
+    const directives = new Map(pairs);
+    assert.equal(directives.size, pairs.length, `${p}: duplicate cache directives are ambiguous`);
     assert.equal(directives.get('max-age'), '0', `${p}: browser cache may serve old release bytes`);
     assert.ok(directives.has('must-revalidate'), `${p}: stale responses need revalidation`);
     assert.ok(!directives.has('s-maxage') || directives.get('s-maxage') === '0', `${p}: shared cache may serve old release bytes`);

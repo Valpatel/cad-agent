@@ -10,7 +10,7 @@ flowchart TD
     R --> P["process-profiles.yaml<br/>encode scoped rules"]
     P --> C["../../software/cadagent/<br/>apply the rule"]
     C --> T["../../tests/<br/>worked examples + defects"]
-    T --> S["../../skills/<br/>when to use it"]
+    T --> S["../../.agents/skills/<br/>when to use it"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     class L,R,P here

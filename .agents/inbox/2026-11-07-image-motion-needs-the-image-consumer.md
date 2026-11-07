@@ -29,17 +29,35 @@ browser process preference reaches the image consumer; the page/context emulatio
 version. Chromium documents the flag in its [switches source](https://chromium.googlesource.com/chromium/src/+/refs/tags/126.0.6466.0/ui/gfx/switches.cc).
 No desktop accessibility setting or existing browser profile was changed.
 
+## The second engine caught the same boundary
+
+At source `95af85bb`, the new compiled-image check passed in Chromium but failed in WebKit 26.0:
+
+```text
+Actions run 42343951245, job 128317514214, 2026-11-07T05:48:58Z
+AssertionError: ['README image still animates with reduced motion']
+```
+
+The failed run is retained. A parent media-query match still did not establish the preference inside the embedded
+image. Repeating that run or weakening the assertion would not fix the reader's experience.
+
 ## Corrective rule
 
-Validate the actual embedding mode. The existing website browser harness now compares the compiled README's
-real image over time with motion enabled and disabled. It uses an isolated Chromium process for the browser
-preference, and the ordinary WebKit reduced-motion setting. A deliberately broken image response restores an
-animation with `!important`; that control must visibly change, so a cached or animation-disabled screenshot cannot
-supply a false pass. The original standalone geometry/visibility checks remain useful and remain in place.
+Validate the actual embedding mode. The README now uses standard `picture`/`source` media selection to choose an
+explicit still from the same producer, body and dimensions. All of that file's animations are disabled regardless
+of the image document's media preference. The normal image retains its own reduced-motion rule as well. The site
+compiler preserves the picture and rewrites its single source URL with the same image policy as the fallback.
+
+The existing website browser harness compares the compiled README's actual image over time, verifies the chosen
+`currentSrc`, and retains the painted frames. A deliberately broken still response restores animation with
+`!important`; that control must visibly change, so a cached or animation-disabled screenshot cannot supply a false
+pass. The original standalone geometry/visibility checks remain useful and remain in place. A focused run through
+the real Markdown renderer, sanitizer and URL rewriter passed these controls in Chromium 151.0.7922.71 and WebKit
+26.0 before the final compiled-site CI run. No browser-wide preference flag is needed by the corrected harness.
 
 ## Limits
 
-The observation concerns Chromium 151 and this SVG, not all browsers or every system preference. Pixel equality
+The observations concern the recorded Chromium and WebKit runs and this SVG, not all browsers or every system preference. Pixel equality
 at two times is bounded evidence, not a proof of the entire timeline; source inspection and visual review of the
 full still and representative phases remain necessary. The initial size/theme screenshots proved image loading
 and bounds only. Do not relabel them as reduced-motion acceptance. Final compiled-consumer results belong to

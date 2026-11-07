@@ -75,7 +75,7 @@ try {
   // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, below), and their
   // problems are listed in this order whatever finishes first.
   const parts = [
-    ['README image motion', () => repositoryHeroProblems(browser, engine, launchOptions, base)],
+    ['README image motion', () => repositoryHeroProblems(browser, base)],
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)

@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "software"))
 from cadagent.publish.anim import svg
 
 OUT = ROOT / "docs/img/hero/repository-map.svg"
+STILL_OUT = OUT.with_name("repository-map-still.svg")
 # The story's real destinations live below the image in the compact README.
 STEPS = (
     ("Study", "docs/research/references/README.md"),
@@ -41,7 +42,7 @@ LETTERS = {
 }
 
 
-def build():
+def build(*, still=False):
     for _, target in STEPS:
         if not (ROOT / target).is_file():
             raise ValueError(f"map target is missing: {target}")
@@ -409,18 +410,26 @@ rect,path{shape-rendering:crispEdges}
 @keyframes blue-shot{0%,55%,96%,100%{opacity:0;transform:translateX(0)}58%{opacity:1;transform:translateX(0)}88%{opacity:1;transform:translateX(58px)}}
 @keyframes impact{0%,48%,74%,100%{opacity:0;transform:scale(.4)}54%{opacity:.9;transform:scale(.7)}70%{opacity:0;transform:scale(1.2)}}
 ''' + svg.REDUCED_MOTION
-    return svg.document(640, 240, "Build the builders — a robot-factory cinematic",
-                        "Original conceptual pixel art. A large robot studies a blueprint and assembles a smaller builder; its successor makes another robot, and a signal carries lessons back. Satellites orbit a ringed world above a distant, fictional robot battle. A 24-second repeating scene; reduced motion shows all three generations at once. This is a story about self-improvement, not a hardware design or a claim of autonomous physical qualification.", css, body, background=False)
+    if still:
+        # The README's picture selects this explicit still using the parent page's
+        # preference, even when a browser does not propagate it inside SVG images.
+        css += '\n*{animation:none!important}\n'
+    motion = ("A static scene showing all three generations at once." if still else
+              "A 24-second repeating scene; reduced motion shows all three generations at once.")
+    return svg.document(640, 240, "Build the builders — a robot-factory " + ("still" if still else "cinematic"),
+                        "Original conceptual pixel art. A large robot studies a blueprint and assembles a smaller builder; its successor makes another robot, and a signal carries lessons back. Satellites orbit a ringed world above a distant, fictional robot battle. " + motion + " This is a story about self-improvement, not a hardware design or a claim of autonomous physical qualification.", css, body, background=False)
 
 
 def main():
-    text = build()
-    issues = svg.problems(text)
-    if "--check" in sys.argv:
-        if not OUT.exists() or OUT.read_text() != text:
-            issues.append("repository map differs: run tools/anim/repository_map.py")
-    elif not issues:
-        OUT.write_text(text)
+    outputs = {OUT: build(), STILL_OUT: build(still=True)}
+    issues = []
+    for output, text in outputs.items():
+        issues.extend(f"{output.name}: {issue}" for issue in svg.problems(text))
+        if "--check" in sys.argv and (not output.exists() or output.read_text() != text):
+            issues.append(f"{output.name} differs: run tools/anim/repository_map.py")
+    if "--check" not in sys.argv and not issues:
+        for output, text in outputs.items():
+            output.write_text(text)
     for issue in issues:
         print(issue)
     return bool(issues)

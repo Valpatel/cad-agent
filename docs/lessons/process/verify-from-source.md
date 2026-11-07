@@ -274,6 +274,7 @@ flowchart TD
   zero-animation count do not prove that an external `<img>` receives the same preference. Compare actual image
   frames under the browser preference and require a deliberately animated negative control to fail the still check.
 - **Evidence:** During the cinematic header review on 2026-11-07, Chromium 151 page/context emulation stopped the
-  standalone SVG but left the image moving. The browser-level preference stopped the same image bytes. The existing
+  standalone SVG but left the image moving. The browser-level preference stopped the same image bytes in Chromium; WebKit CI exposed the same embedding
+  boundary. The README now selects a generated still explicitly through `picture`. The existing
   [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
   the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/2026-11-07-image-motion-needs-the-image-consumer.md).

@@ -4,7 +4,9 @@ The README opens with an original 16-bit robot-factory cinematic: a builder make
 builds again, and lessons return to the first builder. Satellites, a ringed world and a distant laser battle give
 the story scale. The 24-second loop is conceptual art; all three generations remain visible when motion is
 disabled. Regenerate it with `PYTHONPATH=software python3 tools/anim/repository_map.py` (`--check` verifies parity).
-It stays 640 × 240 pixels, fits narrow screens and needs no scripts, external fonts or image downloads.
+Both versions stay 640 × 240 pixels and fit narrow screens. The README uses `picture` to select the generated
+`repository-map-still.svg` for reduced motion, including browsers that do not pass that preference into SVG images.
+The selected SVG needs no scripts, external fonts or embedded bitmap downloads.
 
 The README's real-CAD example is separate from that cinematic. `tools/readme_anim.py`
 makes the recorded CAD illustration from a real project's files:

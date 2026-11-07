@@ -83,6 +83,22 @@ test('link rewriting touches real tags only, and decodes and encodes each URL on
   assert.equal(rewriteUrls(html, () => null), html, 'returning null keeps the tag as it was');
 });
 
+test('picture keeps one safe image URL per media source and rewrites it like the fallback image', () => {
+  const html = sanitize('<picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/still.svg?x=1&amp;y=2" onerror="bad()">' +
+    '<img src="docs/moving.svg" alt="Factory"></picture>');
+  const seen = [];
+  const out = rewriteUrls(html, (url, attr) => { seen.push([url, attr]); return '/' + url; });
+  assert.deepEqual(seen, [['docs/still.svg?x=1&y=2', 'srcset'], ['docs/moving.svg', 'src']]);
+  assert.match(out, /<picture><source media="\(prefers-reduced-motion: reduce\)" srcset="\/docs\/still\.svg\?x=1&amp;y=2" \/><img/);
+  assert.doesNotMatch(out, /onerror|&amp;amp;/);
+  for (const srcset of ['javascript:bad()', '&#106;avascript:bad()', '//example.com/x.svg',
+    'data:image/svg+xml;base64,AA', 'mailto:a@b.c', 'a.svg 1x', 'a.svg, b.svg', '']) {
+    assert.doesNotMatch(sanitize(`<picture><source srcset="${srcset}"><img src="safe.svg"></picture>`), /<source\b/, srcset);
+  }
+  const code = '<code>&lt;source srcset="docs/still.svg"&gt;</code>';
+  assert.equal(rewriteUrls(sanitize(code), () => '/wrong'), code);
+});
+
 test('the kit demo element survives with its own attributes only (no handlers, styles or script inside)', () => {
   const demo = '<cad-cantilever material="pla-polymaker" direction="across" design="2" repeated length="12" thickness="1.2" ' +
     'width="5" deflection="0.8"><img src="img/x.svg" alt="still" width="640" height="250"></cad-cantilever>';

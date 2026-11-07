@@ -113,7 +113,23 @@ observes only a synchronous plain-state projection through Playwright. A ten-sec
 observations; missing state, unknown state, a rejected task, a wrong completion value and expiry fail. Cleanup
 still runs and both action/cleanup errors are retained, now including their messages in the aggregate summary.
 The 41 columns, copied labels, late stylesheet, geometry and runtime assertions are unchanged. Product copy.js
-is unchanged. Source/control/CI/publication validation of this follow-up is pending at this checkpoint.
+is unchanged.
+
+One reviewed saved-document experiment at `81f5f0f00950637786329581ffdd365c9c8a2c5f` completed on
+2026-11-07 UTC. The actual released consumer failed at Chromium 1366 px: protocol response id 214 at
+17:37:45.427 UTC returned `-32000 Promise was collected` while awaiting the rooted probe through the utility.
+Its 768 px case and both WebKit cases were quiet. A separate simplified actual Playwright pending-promise control
+also stayed quiet under forced collection; that control did **not** reproduce the failure.
+
+The candidate passed all four 768/1366 px Chromium/WebKit cases with unchanged released assets and geometry/runtime
+assertions. In Chromium, a temporary animation-frame gate held the real task in `running` state during forced
+collection, then released its callbacks. Four scratch mutations of the actual consumer independently rejected a
+missing root, asynchronous task error, non-completing task at the ten-second deadline and wrong completion value.
+All contexts and three owned processes exited, and source stayed clean. Receipt SHA-256:
+`4c42e79606812a5d4d273508b0659725667c3ee9137c1102f3ab5faaee4d2e78`.
+[Independent actual diagnostic review](https://github.com/Valpatel/cad-agent/pull/462#issuecomment-6710788556).
+This supplies local consumer and rejection evidence, not public delivery or proof that every other short asynchronous
+browser evaluation is immune. Current full CI and actual corrective publication remain required.
 
 **Corrective rule:** Test the actual browser-library evaluation boundary while it is pending. A lower-level API
 control or a collection event before the awaited wrapper exists cannot prove that wrapper survives collection.

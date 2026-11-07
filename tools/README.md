@@ -7,6 +7,8 @@ The arrows show the artifacts these tools produce and the checks that consume th
 ```mermaid
 flowchart TD
     B["site/build-site.mjs"] --> S["../dist/<br/>published site"]
+    V["mermaid/<br/>locked security rebuild"] --> K["../software/cadagent/webkit/vendor/mermaid/"]
+    K --> B
     F["figures/<br/>calculated diagrams"] --> I["../docs/img/<br/>committed figures"]
     A["anim/<br/>scene inputs"] --> R["readme_anim.py"] --> I
     I --> B
@@ -14,8 +16,8 @@ flowchart TD
     S & I --> T["../tests/<br/>site + figure checks"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class B,F,A,R,M here
-    class S,I,L,T near
+    class B,V,F,A,R,M here
+    class S,K,I,L,T near
 ```
 
 | Work | Entry point |
@@ -27,6 +29,7 @@ flowchart TD
 | Animated scenes | [anim/](anim/), [readme_anim.py](readme_anim.py); regenerate or use `--check` |
 | Transcript mining | [mining/](mining/README.md); private transcripts → reviewed, sourced lessons |
 | Supply-chain maintenance | [resource_audit.py](resource_audit.py), [vendor_sync.py](vendor_sync.py), [weekly procedure](../docs/practice/weekly-upstream-update.md) |
+| Fixed-dependency Mermaid rebuild | [mermaid/](mermaid/README.md): isolated maintainer dependencies, derived browser bytes, input provenance and notices |
 | Release and review gates | [cut_release.py](cut_release.py), [ci_gates.py](ci_gates.py); [contributor workflow](../.github/CONTRIBUTING.md) |
 | Quickstart evaluation | [quickstart_eval.py](quickstart_eval.py); grades transcript/file evidence, not physical quality |
 

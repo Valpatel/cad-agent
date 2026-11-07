@@ -79,19 +79,35 @@ def test_a_missing_variable_is_named():
         pp.profile("sheet-metal").rule("sm-flange-min-protolabs").limit()
 
 
-def test_unverified_rows_are_marked_and_refused_for_enforcement():
-    sls = pp.profile("sls")
-    u = sls.rule("sls-gap-vs-wall-eos")
+def unverified_profile_path(tmp_path):
+    """Plant an unverified source in a real profile; do not retain bad production data just to test the guard."""
+    data = yaml.safe_load(pp.DATA.read_text(encoding="utf-8"))
+    data["sources"] = yaml.safe_load(pp.REGISTRY.read_text(encoding="utf-8"))["sources"]
+    candidate = next(r for r in data["rules"] if r["id"] == "sls-clearance-jlc3dp")
+    candidate["status"] = "u"
+    path = tmp_path / "profiles.yaml"
+    path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    return path
+
+
+def test_unverified_rows_are_marked_and_refused_for_enforcement(tmp_path):
+    sls = pp.profile("sls", unverified_profile_path(tmp_path))
+    u = sls.rule("sls-clearance-jlc3dp")
     assert not u.verified and u.flag == "(u)"
     lim = u.limit()
     assert not lim.verified and lim.text.endswith("(u)") and lim.cite().endswith("(u)")
-    assert [r.id for r in sls.unverified()] == ["sls-gap-vs-wall-eos"]
+    assert [r.id for r in sls.unverified()] == ["sls-clearance-jlc3dp"]
     with pytest.raises(pp.ProfileDataError, match=r"\(u\)"):
-        sls.verified_rule("sls-gap-vs-wall-eos")
+        sls.verified_rule("sls-clearance-jlc3dp")
     ok = pp.profile("fdm").verified_rule("fdm-wall-min-hubs").limit()
     assert ok.verified and "(u)" not in ok.text
     assert {r.id for r in pp.load().rules() if not r.verified} == \
         {r["id"] for r in RAW["rules"] if r["status"] == "u"}
+
+
+def test_specimen_labels_are_not_a_manufacturing_limit():
+    """EOS slides 10–11 use different wall ranges and show incomplete openings, not a combined minimum."""
+    assert "sls-gap-vs-wall-eos" not in {r.id for r in pp.profile("sls").rules}
 
 
 @pytest.mark.parametrize("rule_id, env, want", [

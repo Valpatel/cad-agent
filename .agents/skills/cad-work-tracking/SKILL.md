@@ -56,6 +56,25 @@ flowchart TD
    never touch another session's branch or worktree. End your claim with `done` (PR, commit, evidence), or
    `release` with resume notes if you stop before the end.
 
+## Goals and issues
+
+When the project already uses a goal graph, read its open goals before choosing work and add a `Goal:` line to
+the issue naming the goal's stable ID or public link. The graph holds outcomes; the issue holds the scoped work,
+claims, PRs and receipts. Keep an existing issue's goal link when resuming it. Work explicitly requested by the
+user still takes priority; do not invent a goal or force unrelated work under one.
+
+The optional `project.goals` block in `cad-agent.yaml` identifies the existing tool and project, for example
+`project: {goals: {tool: graphdone, project: example-project}}`. This is agent-readable metadata, not a toolkit
+API integration: the CAD loader reads only `cad:`. Use the organization's already available tool/skill and
+authorized access. Keep endpoints, credentials and private goal content out of public issues. A public issue
+can use a non-sensitive goal label when its graph is private.
+
+After an issue closes, attach its issue/PR links, published commit and relevant receipts to the linked goal
+through that authorized tool. Describe what the evidence establishes and what remains; closing an issue does
+not automatically complete its parent goal. If access is unavailable or a graph write is outside the authorized
+task, retain a shareable handoff in the issue and report the pending update. Do not claim the graph was updated.
+Without a configured graph, keep the ordinary issue workflow; do not require a service or install a connector.
+
 ## Work claims: sharing issues between agents
 
 A claim is an issue comment whose first line the tools parse. No host names, user names or private infrastructure:

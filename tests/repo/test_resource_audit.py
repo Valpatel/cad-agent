@@ -531,6 +531,113 @@ def test_npm_audit_executes_in_the_current_package_context(tmp_path, monkeypatch
     assert rep.sources["npm-audit"] == "npm audit --package-lock-only"
 
 
+def rebuild_context(root, name="renderer-build", version="1.0.0", **fields):
+    directory = ra.NPM_REBUILD_DIR
+    write(root, f"{directory}/package.json", json.dumps({"devDependencies": {name: version}}))
+    write(root, f"{directory}/package-lock.json", json.dumps({"lockfileVersion": 3, "packages": {
+        "": {"devDependencies": {name: version}}, **good_pkg(name, version, **fields)}}))
+
+
+def test_renderer_rebuild_context_is_audited_and_its_faults_still_block(tmp_path):
+    root = checkout(tmp_path)
+    rebuild_context(root)
+    report = run(root)
+    assert {(p["name"], p["manifest"]) for p in report["inventory"]["npm"]} == {
+        ("marked", "tools/site/package.json"), ("renderer-build", "tools/mermaid/package.json")}
+    assert report["extra"]["npm_counts"] == {"direct": 2, "with_transitive": 2}
+    rebuild_context(root, resolved="https://foreign.invalid/build.tgz", integrity="", hasInstallScript=True)
+    findings = checks(run(root))
+    assert {("npm-foreign-source", "npm:renderer-build"), ("npm-integrity", "npm:renderer-build"),
+            ("npm-install-script", "npm:renderer-build")} <= findings
+
+
+def test_renderer_rebuild_dependencies_need_pr_rows(repo_with_base):
+    root = repo_with_base
+    rebuild_context(root)
+    git(root, "add", ra.NPM_REBUILD_DIR)
+    assert "npm:renderer-build" in ra.added_items(root, "HEAD")[0]
+    assert "| `npm:renderer-build` |" in ra.rows_markdown(run(root), ["npm:renderer-build"])
+
+
+@pytest.mark.parametrize("missing", ["package.json", "package-lock.json"])
+def test_missing_renderer_inputs_cannot_use_the_site_or_stale_root(tmp_path, missing):
+    root = checkout(tmp_path)
+    rebuild_context(root)
+    write(root, missing, (root / ra.NPM_REBUILD_DIR / missing).read_text())
+    (root / ra.NPM_REBUILD_DIR / missing).unlink()
+    if missing == "package.json":
+        with pytest.raises(FileNotFoundError, match="tools/mermaid/package.json"):
+            run(root)
+    else:
+        assert ("npm-no-lockfile", "npm:tools/mermaid/package-lock.json") in checks(run(root), "high")
+    with pytest.raises(FileNotFoundError, match="tools/mermaid/"):
+        ra.item_ids(ra.WorkTree(root))
+
+
+def test_npm_audit_executes_in_the_separate_renderer_context(tmp_path, monkeypatch):
+    root = checkout(tmp_path / "checkout with spaces")
+    rebuild_context(root)
+    npm = tmp_path / "fake-npm"
+    npm.write_text('#!/bin/sh\nprintf "%s\\n" "$PWD" "$@" > audit-invocation.txt\n'
+                   'printf \'{"vulnerabilities":{}}\\n\'\n')
+    npm.chmod(0o755)
+    monkeypatch.setattr(ra.shutil, "which", lambda name: str(npm) if name == "npm" else None)
+    rep = ra.Report(root, AS_OF, False)
+    assert ra.run_npm_audit(rep, ra.NPM_REBUILD_DIR) == {}
+    assert (root / ra.NPM_REBUILD_DIR / "audit-invocation.txt").read_text().splitlines() == [
+        str(root / ra.NPM_REBUILD_DIR), "audit", "--package-lock-only", "--json"]
+    assert rep.sources["npm-audit:tools/mermaid"] == "npm audit --package-lock-only"
+    assert not (root / ra.NPM_DIR / "audit-invocation.txt").exists()
+
+
+def test_npm_online_results_do_not_cross_package_contexts(tmp_path, monkeypatch):
+    root = checkout(tmp_path)
+    rebuild_context(root, name="marked", version="99.0.0")
+    calls, queries = [], []
+
+    def recorded_audit(rep, directory):
+        calls.append(directory)
+        return {"marked": [{"id": "TEST-site-only", "severity": "high", "summary": "site fixture",
+                            "fixed": [], "range": ""}]} if directory == ra.NPM_DIR else {}
+
+    monkeypatch.setattr(ra, "run_npm_audit", recorded_audit)
+    net = FakeNet(http={"https://registry.npmjs.org/marked": {
+        "dist-tags": {"latest": "99.0.0"}, "versions": {"16.4.1": {}, "99.0.0": {}}}},
+        osv=lambda q: queries.append(q["version"]) or [])
+    rep = ra.Report(root, AS_OF, True)
+    ra.check_npm(rep, net)
+    assert calls == [ra.NPM_DIR, ra.NPM_REBUILD_DIR]
+    assert queries == ["16.4.1", "99.0.0"]
+    rows = {p["manifest"]: p for p in rep.inventory["npm"]}
+    assert rows["tools/site/package.json"]["advisories"] == ["TEST-site-only"]
+    assert not rows["tools/mermaid/package.json"].get("advisories")
+
+
+@pytest.mark.parametrize("with_rebuild", [False, True])
+def test_real_esbuild_hook_exception_cannot_accept_the_same_version_in_the_site(tmp_path, with_rebuild):
+    root = checkout(tmp_path)
+    package = json.loads((root / ra.NPM_PACKAGE).read_text())
+    package["devDependencies"]["esbuild"] = "0.28.2"
+    write(root, ra.NPM_PACKAGE, json.dumps(package))
+    locked = json.loads((root / ra.NPM_LOCK).read_text())
+    locked["packages"][""]["devDependencies"]["esbuild"] = "0.28.2"
+    locked["packages"].update(good_pkg("esbuild", "0.28.2", hasInstallScript=True))
+    write(root, ra.NPM_LOCK, json.dumps(locked))
+    if with_rebuild:
+        rebuild_context(root, name="esbuild", version="0.28.2", hasInstallScript=True)
+    # Exercise the actual committed policy and production matcher, not a duplicate test exception.
+    report = run(root, accepted=ra.load_accepted(ROOT / ra.ACCEPTED))
+    hooks = [f for f in report["findings"] if f["check"] == "npm-install-script" and f["subject"] == "npm:esbuild"]
+    assert len(hooks) == (2 if with_rebuild else 1)
+    site = [f for f in hooks if "tools/site/package.json:" in f["evidence"]]
+    assert len(site) == 1 and not site[0].get("accepted")
+    assert site[0]["fp"] == "59651950683e8b3f", "retain the existing site identity deliberately"
+    if with_rebuild:
+        producer = [f for f in hooks if "tools/mermaid/package.json:" in f["evidence"]]
+        assert len(producer) == 1 and producer[0].get("accepted")
+        assert producer[0]["fp"] != site[0]["fp"]
+
+
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):
     r = run(checkout(tmp_path))
     assert f"catalog.json, {ra.REGISTRY}, docs/research/landscape.json" in ra.to_markdown(r)

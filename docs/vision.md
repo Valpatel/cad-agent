@@ -275,15 +275,14 @@ flowchart TD
     many areas (FEA checks a leg frame and a lid alike), so each module has one home, an `api:` line in its own
     domain, and a node that relies on another domain's module names it under `uses:` (thermal's airflow area uses
     `cadagent.simulation.cfd`). `tests/repo/test_package_areas.py` keeps the code and the tree in step.
-  - `skills/` and `agents/` stay flat, because harnesses install them by name.
-  - `docs/lessons/` is grouped into six folders (#133). They are broader than single areas, so for now the `lessons:`
-    field maps each folder to the node that owns it. Renaming them to taxonomy slugs waits for #145's batches, once
-    the taxonomy has settled.
+  - `.agents/skills/` and `.agents/agents/` retain their installed names; harness discovery follows the canonical kit.
+  - `docs/lessons/` has six collections. The explicit `lessons:` mapping names each collection's owner; a folder
+    need not repeat that node's slug. Keep a useful existing name unless a reviewed content move warrants a change.
   - `docs/` and `docs/research/` gain domain folders once an area has a few pages (#145).
-  - `evals/jobs/` is laid out by domain and area from the start.
+  - Planned `evals/jobs/` uses domain and area names (#142); that folder and general runner do not exist yet.
 - **The taxonomy ties them together.** Each node lists its pages, commands, modules (its own under `api:`, other
-  domains' under `uses:`), skills, lessons and issues, and the site generates one hub per area. Browsing by topic
-  costs no file moves.
+  domains' under `uses:`), skills, lessons and issues. The planned area hubs (#141) will expose that map without
+  duplicating source files.
 
 **Why not topic-first folders** (`areas/<domain>/<area>/` holding the code, lessons, research and jobs together)?
 
@@ -338,6 +337,34 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    - Update every reference and `docs/areas.yaml`, and give each new folder a README and map (#113).
 5. **As jobs land:** `evals/jobs/` fills in area by area, starting with areas at `tooling`, since those have something
    to measure.
+
+<details>
+<summary>Current migration boundary and lesson names — 2026-11-07</summary>
+
+The released hierarchy at `a32c1e67` and integration baseline `12a083da` both have 14 tracked root entries.
+Within each kind of writing, the remaining domain-specific root collections have fewer than three pages:
+for example, two simulation surveys in `docs/research/`, and one thermal guide in `docs/`.
+Shared guides and data retain one home even when several topics use them. The growth rule in
+[AGENTS.md](../AGENTS.md#repo-structure-and-where-files-go) governs later batches; it does not require empty
+folders or one folder per topic today.
+
+The six lesson names are intentional mappings in [`areas.yaml`](areas.yaml), not six pending renames:
+
+| Topic owner | Existing lesson collection |
+| --- | --- |
+| `mechanical` | [mechanical](lessons/mechanical/README.md) |
+| `simulation` | [simulation](lessons/simulation/README.md) |
+| `wiring-harnesses` | [wiring](lessons/wiring/README.md) |
+| `circuit-boards` | [electronics](lessons/electronics/README.md) |
+| `agent-workflow` | [process](lessons/process/README.md) |
+| `review-and-evidence` | [review](lessons/review/README.md) |
+
+`test_every_lesson_area_folder_is_claimed` requires each real collection to have exactly one owner; the layout
+ratchet protects the compact root. Existing page selectors, source maps and redirect checks protect published
+addresses during moves. These checks do not implement the general folder-map checker (#113) or the area hubs
+(#141), and source revision alone does not establish deployment or cache-policy acceptance (#381).
+
+</details>
 
 ## Priorities
 

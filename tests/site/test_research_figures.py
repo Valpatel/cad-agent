@@ -98,7 +98,9 @@ def test_thermal_chart_draws_the_table_against_the_modules_limit():
     md = (ROOT / "docs" / "research" / "simulation-tools.md").read_text()
     assert md.index("## 6. Thermal") < md.index(_image_source(ROOT / "docs" / "research" / "simulation-tools.md", "thermal-limits.svg")) < md.index("**Jetson AGX Orin")
     svg = (ROOT / "docs" / "img" / "research" / "thermal-limits.svg").read_text()
-    assert svg.count('text-anchor="end">PLA Basic<') == svg.count('text-anchor="end">PETG HF<') == 1
+    for label in ("PLA Basic (V3.0)", "PETG Basic (V3.0)", "PETG HF (V1.0)"):
+        assert svg.count(f'text-anchor="end">{label}<') == 1  # preserve source editions in a detached figure
+    assert ">71 °C</text>" in svg and ">68 °C</text>" in svg  # PETG V3.0 ISO 75 at 0.45/1.8 MPa
     assert ">TTP max 80 °C</text>" in svg and 'stroke-dasharray="5 4"' in svg     # the limit, read from the page
     assert svg.count("<rect") == 1 + 3 + 3 * 3                                    # frame, legend, three bars a row
     import pytest

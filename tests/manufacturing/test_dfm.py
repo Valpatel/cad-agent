@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from cadagent.manufacturing import dfm
+from tests.manufacturing.test_process import unverified_profile_path
 
 
 def _one(process, feature, **kw):
@@ -41,12 +42,16 @@ def test_upper_limits_bridge_and_overhang():
                                                                       "fdm-overhang-max-prusa"])["verdict"] == "fail"
 
 
-def test_unverified_rows_are_advisory_and_never_decide():
-    g = _one("sls", dfm.Feature("g", "gap", 0.1))
-    assert [a["rule"] for a in g["advisory"]] == ["sls-gap-vs-wall-eos"]
+def test_unverified_rows_are_advisory_and_never_decide(tmp_path):
+    path = unverified_profile_path(tmp_path)
+    g = _one("sls", dfm.Feature("g", "gap", 0.1), path=path)
+    assert [a["rule"] for a in g["advisory"]] == ["sls-clearance-jlc3dp"]
     assert g["advisory"][0]["cite"].endswith("(u)") and not g["advisory"][0]["verified"]
-    assert "sls-gap-vs-wall-eos" not in {r["rule"] for r in g["rules"]}
-    assert "sls-gap-vs-wall-eos" not in g["detail"]
+    assert "sls-clearance-jlc3dp" not in {r["rule"] for r in g["rules"]}
+    assert "sls-clearance-jlc3dp" not in g["detail"]
+    excluded = _one("sls", dfm.Feature("g", "gap", 0.1), path=path, exclude=["sls-clearance-jlc3dp"])
+    assert (g["verdict"], g["detail"], g["strictest"]) == \
+        (excluded["verdict"], excluded["detail"], excluded["strictest"])
 
 
 def test_a_flexing_arm_across_the_layers_warns_with_the_material_factors():

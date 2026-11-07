@@ -3,6 +3,35 @@
 The manufacturing domain of the [topic tree](../../../docs/areas.yaml): getting from a checked model to print files and
 real slicer numbers, and the process profiles that say what each process can make.
 
+## Where machine automation belongs
+
+Keep manufacturing organized by responsibility so printers, CNC machines and other equipment can share the
+workflow without inheriting one vendor's protocol. The current package prepares artifacts and checks process rules;
+the [Bambu connection investigation](../../../docs/research/manufacturing/bambu-cloud.md) is research, not a shipped
+device adapter.
+
+| Responsibility | Home and boundary |
+|---|---|
+| Process knowledge | `process.py`, `dfm.py` and process-specific calculators: materials, limits and cited checks. These do not connect to machines. |
+| Artifact preparation | Existing slicer, plate and file-format modules: parts, quantities, settings and independently checked outputs. Preparing a file does not submit a job. |
+| Machine integration, when implemented | `manufacturing/devices/<vendor>/`: vendor authentication, transports and capability-specific status, camera or command operations. A machine need not support every capability. |
+| Job execution, when implemented | Shared manufacturing code consumes identified artifacts/settings and a selected device's capabilities. It records each attempt and actual result separately; vendor messages stay inside the adapter. |
+| Evidence and learning | Reuse the [release manifest](../publish/README.md) for source/artifact identities; relate machine results and physical feedback to those identities without overwriting prior observations. |
+
+Tests mirror implemented modules under `tests/manufacturing/`; sanitized fixtures live under `tests/fixtures/`.
+Reusable procedures belong in `.agents/skills/` and findings in `docs/research/manufacturing/` or the existing lessons.
+`tools/` remains repository maintenance. Account credentials and local device connection settings remain outside git;
+shareable process/slicer settings stay with the project.
+
+The device and execution rows define ownership for future implementation, not an existing API or a reason to create
+empty folders now. Keep current public imports stable when the package grows. Build the first small adapter from
+the verified behavior; introduce shared interfaces only for demonstrated needs. Test real consumers, timeout cleanup,
+stale or misidentified replies and unsupported capabilities, and distinguish mock coverage from hardware evidence.
+Keep observation separate from operations that change a machine; a lost acknowledgement leaves an attempt unknown
+and must not automatically trigger a duplicate manufacturing job.
+
+## Current modules
+
 Arrows follow the files. `slicer.py` imports `publish/report.py`'s `load_parts` to find the parts it slices, and
 `publish/report.py` and `publish/release.py` import `slicer.py` to read a current slice report; `slicer_prusa.py` runs
 PrusaSlicer for `slicer.py` when `cad.slicer.engine` is `prusa`. `mesh3mf.py` imports

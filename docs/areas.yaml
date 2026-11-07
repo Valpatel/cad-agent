@@ -170,13 +170,14 @@ domains:
         title: 3D printing
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
+        pages: [docs/research/manufacturing/bambu-cloud.md]
         cli: [export-3mf, slice, overhangs]
         pages: [docs/examples/numbered-coupons/README.md]
         api: [cadagent.manufacturing.slicer, cadagent.manufacturing.slicer_prusa, cadagent.manufacturing.mesh3mf,
               cadagent.manufacturing.plates, cadagent.manufacturing.prusa3mf, cadagent.manufacturing.fit_coupons,
               cadagent.manufacturing.experiments,
               cadagent.manufacturing.gcode]
-        issues: [84, 99, 242, 246, 247, 248, 253]
+        issues: [84, 99, 242, 246, 247, 248, 253, 405]
         projects: [gyropup, j501-enclosure]
         topics:
           - {slug: fdm, title: FDM, scope: "Orientation, layer anisotropy, overhangs and slicer evidence.", maturity: tooling}

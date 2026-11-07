@@ -1,11 +1,9 @@
 #!/bin/sh
 # cad-agent installer for macOS, Linux and WSL: https://github.com/Valpatel/cad-agent (MIT)
 #
-#   curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
-#   curl -fsSL https://cad-agent.valpatel.com/install.sh | sh -s -- --extras fea,sim --ref v0.14.0
-#
-# Read it first if you like:
-#   curl -fsSLO https://cad-agent.valpatel.com/install.sh && less install.sh && sh install.sh
+# Download the pinned installer, verify its SHA-256, then run it:
+#   https://cad-agent.valpatel.com/docs/agent-workflow#install
+# Options after download: sh install.sh --extras fea,sim --ref v0.26.0
 #
 # What it does, and nothing else:
 #   1. needs git; installs uv (astral.sh, the version pinned below) into ~/.local/bin if it is missing, without

@@ -6,13 +6,64 @@ and **subagents** that these tools load, not only as prose.
 
 ## Install
 
-One command, for your user only (no sudo or administrator rights):
+For your user only, without sudo or administrator rights. Choose your platform: download the installer from
+an immutable source snapshot, check its SHA-256, then execute the verified file. The checksum is kept here,
+separate from the download; a failed download or mismatch stops before installation.
 
-```bash
-curl -fsSL https://cad-agent.valpatel.com/install.sh | sh        # macOS, Linux, WSL
-irm https://cad-agent.valpatel.com/install.ps1 | iex             # Windows PowerShell
-curl -fsSLO https://cad-agent.valpatel.com/install.sh && less install.sh && sh install.sh   # read it first
+<details id="install-unix">
+<summary>macOS, Linux and WSL</summary>
+
+<!-- checked-installer:posix -->
+```sh
+(
+  set -eu
+  installer=$(mktemp)
+  trap 'rm -f "$installer"' EXIT HUP INT TERM
+  curl -fsSL --proto '=https' --tlsv1.2 \
+    https://raw.githubusercontent.com/Valpatel/cad-agent/da3bc637349159e87ddf9e28bfc9f18192d57841/tools/site/assets/install.sh \
+    -o "$installer"
+  expected=5154f86280c9ae282c47e05f98c97cb67c9f3b77d75ecc27b727a945515a4868
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual=$(sha256sum "$installer")
+  else
+    actual=$(shasum -a 256 "$installer")
+  fi
+  [ "${actual%% *}" = "$expected" ] || { echo 'Installer checksum mismatch' >&2; exit 1; }
+  sh "$installer"
+)
 ```
+
+</details>
+
+<details id="install-windows">
+<summary>Windows PowerShell 5.1 or 7</summary>
+
+<!-- checked-installer:powershell -->
+```powershell
+$installer = Join-Path ([IO.Path]::GetTempPath()) ("cad-agent-" + [guid]::NewGuid() + ".ps1")
+try {
+  Invoke-WebRequest -UseBasicParsing -ErrorAction Stop -OutFile $installer -Uri `
+    'https://raw.githubusercontent.com/Valpatel/cad-agent/da3bc637349159e87ddf9e28bfc9f18192d57841/tools/site/assets/install.ps1'
+  $expected = '6c55e1065392db7ccd9467a3d007c3537415f097cd2d900b612244f4768be20c'
+  if ((Get-FileHash -Algorithm SHA256 -LiteralPath $installer -ErrorAction Stop).Hash.ToLowerInvariant() -ne $expected) {
+    throw 'Installer checksum mismatch'
+  }
+  & (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File $installer
+  if (-not $? -or $LASTEXITCODE -ne 0) { throw "Installer exited with code $LASTEXITCODE" }
+} finally {
+  Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+}
+```
+
+`-ExecutionPolicy Bypass` applies only to the new process running the verified file; it does not change the
+computer's execution-policy settings. The download and hash checks happen before that process starts.
+
+</details>
+
+These checks verify the installer snapshot, not every later download. Installation still trusts the released
+`main` checkout, the installer's pinned Astral uv bootstrap and resolved Python packages. Set `CAD_AGENT_REF`
+to a release tag before running a block if you want the checkout pinned; `cad-agent update` without `--ref`
+returns to the released `main` channel. No background update is installed.
 
 The scripts are [`web/install.sh`](../../tools/site/assets/install.sh) and [`web/install.ps1`](../../tools/site/assets/install.ps1). They:
 
@@ -23,10 +74,10 @@ The scripts are [`web/install.sh`](../../tools/site/assets/install.sh) and [`web
    Python 3.12 of its own that uv manages, and runs the checkout's code, so the skills and the code stay in step;
 4. run `cad-agent agents install` (below), which says which skills this computer can't use yet.
 
-Options: `sh -s -- --extras fea,sim` (see [Extras](#extras)), `--ref v0.14.0` for a release tag, `--dir`
-for another folder and `--uninstall`, which removes the command and the skills and keeps the checkout. In
-PowerShell set `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`, `$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL=1`
-first. They turn usage reporting off for everything they start; cad-agent itself sends nothing.
+Options: set `CAD_AGENT_EXTRAS=fea,sim` (see [Extras](#extras)), `CAD_AGENT_REF` to a release tag,
+`CAD_AGENT_DIR` to another folder or `CAD_AGENT_UNINSTALL=1` before running the block. On macOS/Linux export
+these environment variables; in PowerShell use `$env:CAD_AGENT_EXTRAS`, `$env:CAD_AGENT_REF`,
+`$env:CAD_AGENT_DIR` or `$env:CAD_AGENT_UNINSTALL`. Uninstall removes the command and skills, keeping the checkout. They turn usage reporting off for everything they start; cad-agent itself sends nothing.
 
 **Update** by running the command again, or `cad-agent update`; both do the same. `update` refuses a checkout with
 changes or on another branch (use a fork for your own work), then:

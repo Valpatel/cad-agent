@@ -411,7 +411,7 @@
    "url": "https://github.com/mixelpixx/Konnect",
    "license_spdx": "AGPL-3.0",
    "stars": 1399,
-   "last_push": "2026-10-26",
+   "last_push": "2026-11-02",
    "clients": [
     "kicad-plugin",
     "mcp",
@@ -427,7 +427,7 @@
    "drawings": "no",
    "vendor_integration": "Freerouting",
    "evals": "none",
-   "notes": "archived 2026-10-26, and GitHub showed it unarchived again on 2026-11-01 (last commit 2026-10-25); continues as Konnect-EDA (commercial, closed source, free during its beta), so no longer a candidate; obhox/kicad-mcp is a fork (8 stars, AGPL-3.0)"
+   "notes": "Archived again as observed 2026-11-07 (last push 2026-11-02), after the earlier 2026-11-01 unarchived observation. Rejected as a candidate; AGPL-3.0 external-program-only policy remains. The earlier survey records its commercial Konnect-EDA continuation; this check does not re-verify that service."
   },
   {
    "name": "oaslananka/kicad-mcp-pro",
@@ -495,7 +495,7 @@
    "drawings": "no",
    "vendor_integration": "none",
    "evals": "none",
-   "notes": "stale"
+   "notes": "Declined for this maintenance pass: KiCad 9 candidate, last push 2025-10-17 (checked 2026-11-07), maintenance unverified. Keep the historical MIT entry; current integration work uses the existing KiCad 10 vendors instead. Future adoption needs a fresh review."
   },
   {
    "name": "aklofas/kicad-happy",
@@ -921,7 +921,8 @@
    ],
    "url": "https://github.com/SadilKhan/Text2CAD",
    "license": "CC-BY-NC-SA-4.0",
-   "venue": "NeurIPS 2024"
+   "venue": "NeurIPS 2024",
+   "notes": "Historical research benchmark; last push 2025-05-15 (checked 2026-11-07), maintenance unverified. CC-BY-NC-SA-4.0 restriction retained; not a commercial/runtime adoption. Distinct from the MIT earthtojake/text-to-cad project in the vendor manifest."
   },
   {
    "name": "CADPrompt/CADCodeVerify",
@@ -933,7 +934,8 @@
    "license_spdx": "none",
    "license_note": "no licence file (GitHub detects none, checked 2026-11-01): all rights reserved, ideas only",
    "venue": "ICLR 2025",
-   "size": "200 prompts"
+   "size": "200 prompts",
+   "notes": "Historical ICLR 2025 benchmark; last push 2025-02-28 (checked 2026-11-07), maintenance unverified. No licence: retain the citation for ideas only, without adopting code or benchmark data."
   },
   {
    "name": "CAD-Recode",

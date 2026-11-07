@@ -97,7 +97,7 @@ ACCEPTED = 'docs/research/security-accepted.yaml'
 OUR_REPOS = {'valpatel/cad-agent'}
 OUR_MARKETPLACES = {'valpatel'}   # the plugin marketplace name our own repository publishes
 CHANGE_BRANCHES = ('dev',)       # where new items enter: gate checks what a change adds only for these (see gate)
-FP_REQUIRED = {'advisory', 'vendor-upstream-advisory', 'npm-install-script'}   # an acceptance of these names its fingerprint
+FP_REQUIRED = {'advisory', 'vendor-upstream-advisory', 'npm-install-script', 'npm-no-licence', 'repo-stale'}
 TARBALL_LIMIT = 64 << 20         # largest npm tarball read to check a web kit receipt
 OUR_HOSTS = {'cad-agent.valpatel.com'}
 UA = 'cad-agent-resource-audit/1 (+https://github.com/Valpatel/cad-agent)'
@@ -886,8 +886,10 @@ def check_npm_context(rep, net, npm_audit, directory):
                         'Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.',
                         key=str(e.get('version') or '') if directory == NPM_DIR else f"{package}:{e.get('version') or ''}")   # a script read at one version says nothing about the next
             if not e.get('license'):
-                rep.add('npm-no-licence', 'low', sid, f'{name} declares no licence', f"{e['path']} {e.get('version')}",
-                        'Check its repository for a licence before relying on it.')
+                rep.add('npm-no-licence', 'low', sid, f'{name} declares no licence',
+                        f"{package}: {e['path']} {e.get('version')}",
+                        'Read the exact locked archive licence before relying on it; bind an exception to this context and archive.',
+                        key=f"{package}:{e.get('version') or ''}:{resolved}:{integrity}")
     rep.extra['npm_counts'] = {'direct': rep.extra.get('npm_counts', {}).get('direct', 0) + len(direct),
                                'with_transitive': len(rep.inventory['npm'])}
     if not net:
@@ -986,7 +988,7 @@ def scorecard(net, slug):
     return dict(score=None, note='not scored' if status == 404 else f'not verified ({err or status})')
 
 
-def repo_findings(rep, subject, slug, st, recorded_licence=None, context='catalogue', as_of=None):
+def repo_findings(rep, subject, slug, st, recorded_licence=None, context='catalogue', as_of=None, maintenance_key=''):
     """Archived, deleted, renamed, disabled, licence changed, stale: the signals that a link no longer goes where we think."""
     url = f'https://github.com/{slug}'
     if st['state'] == 'gone':
@@ -1008,7 +1010,7 @@ def repo_findings(rep, subject, slug, st, recorded_licence=None, context='catalo
                 'Show it as "unmaintained" (status or note) instead of removing it; plan a replacement if we use its code.')
     elif st['pushed'] and as_of and (days_since(as_of, st['pushed']) or 0) > STALE_PUSH_DAYS:
         rep.add('repo-stale', 'low', subject, f'no push to {slug} for over a year', f"last push {st['pushed']}",
-                'Check it is still maintained; if not, show it as "unmaintained".')
+                'Check it is still maintained; if not, show it as "unmaintained".', key=maintenance_key)
     rec = (recorded_licence or '').strip()
     gh = st.get('licence')
     if rec and gh and gh not in ('NOASSERTION', 'NONE') and re.fullmatch(r'[A-Za-z0-9.+-]+', rec) and not same_licence(rec, gh):
@@ -1471,7 +1473,11 @@ def check_webkit(rep, net, added_files=()):
         for slug in row.get('repos') or []:
             if slug not in reported:                 # three.js serves two folders: one finding
                 reported.add(slug)
-                repo_findings(rep, row['id'], slug, statuses[slug], None, 'vendored', rep.as_of)
+                # Retaining an old runtime is a decision about these exact recorded bytes, not every future
+                # parser with the same component name. Historical URL findings retain their existing identity.
+                identity = json.dumps({'packages': row['packages'], 'bundled': row['bundled'],
+                                       'files': {f: h for f, h in hashes.items() if f.startswith(row['name'] + '/')}}, sort_keys=True)
+                repo_findings(rep, row['id'], slug, statuses[slug], None, 'vendored', rep.as_of, identity)
 
 
 def tar_files(data, wanted):
@@ -2622,7 +2628,8 @@ def load_accepted(path):
     """docs/research/security-accepted.yaml: [{check, subject, reason, accepted, fp?}]. An acceptance without fp covers every
     finding of that check on that subject, so the checks in FP_REQUIRED must name the fingerprint: otherwise accepting one
     moderate advisory would hide every later one on the same package, and an install script read at one version would
-    cover the next version's script too."""
+    cover the next version's script too. A missing licence declaration needs the exact context and archive read,
+    not a package-name exception that silently covers a future or different input."""
     text = read_text(Path(path)) if path else None
     if not text:
         return []

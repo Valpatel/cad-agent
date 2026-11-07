@@ -34,8 +34,8 @@ Each principle says what holds today and what is still being built, with its iss
   - Today: many formulas and checks carry golden vectors from cited sources (for example `cadagent.formulas`, the
     bearing and screw checks), and many pages credit the expert or standard behind each rule (#118 covers the
     rest).
-  - Next: a golden vector for every tool (#180) and a confidence level on every rule (#143). Area hubs (#141) will
-    say where no tool exists yet, so an agent knows when it is guessing.
+  - Next: a golden vector for every tool (#180) and a confidence level on every rule (#143). The existing area catalogue views (#141)
+    show where no entry exists yet; they do not supply a confidence rating for an unassessed tool.
 - **The fewest tool calls and the least context.**
   - The aim: for any agent on any harness, the site root or `llms.txt` leads to the right tool in about three
     steps, and answers are small and structured, not prose to re-read.
@@ -77,7 +77,7 @@ flowchart TD
   - Nothing on cad-agent.valpatel.com is edited by hand. It is generated from committed files, and Cloudflare builds
     it from `main` (#266).
   - A merged page or tool appears in the catalogue, `llms.txt` and `version.json` at the next release with nobody
-    asking. Area hubs will follow (#141).
+    asking. Area views and their small JSON indexes are already generated from the taxonomy (#141).
   - The target is for `main` to be no more than a day behind `dev`.
 - **The maintainer is part of the repo.** The skills and subagents that run the loop live in this repo, are tested
   like other code, and improve through the same PRs:
@@ -113,8 +113,8 @@ flowchart TD
 
 | | |
 |---|---|
-| **Exists** | the tested toolkit grouped by domain, and the topic tree with its check; the agent workflow kit (skills and subagents above); the review and release gates; changelog fragments; a generated site with Markdown twins, `llms.txt`, `llms-full.txt`, `version.json` and `visuals.json` |
-| **Planned** | area hubs (#141); the evaluation runner and standard jobs (#142); confidence levels on every tool and rule (#143); skills for triaging and integrating contributions |
+| **Exists** | the tested toolkit grouped by domain, and the topic tree with its check; the agent workflow kit (skills and subagents above); the review and release gates; changelog fragments; a generated site with Markdown twins, `llms.txt`, `llms-full.txt`, `version.json` and `visuals.json`; area catalogue views with `catalog/index.json` and per-area JSON |
+| **Planned** | the evaluation runner and standard jobs (#142); confidence levels on every tool and rule (#143); skills for triaging and integrating contributions |
 
 ## How the structure serves the loop
 
@@ -144,8 +144,8 @@ Any layout, page format or tool added here should serve these:
 
 ## The topic tree
 
-The full tree, with what already exists for each node, is [`docs/areas.yaml`](areas.yaml). The site will generate a
-hub page per area from it (#141). In outline:
+The full tree, with what already exists for each node, is [`docs/areas.yaml`](areas.yaml). The existing
+[catalogue](https://cad-agent.valpatel.com/catalog) generates its domain and area views from that tree (#141). In outline:
 
 | Domain | Areas |
 |---|---|
@@ -176,17 +176,17 @@ flowchart TD
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
 ```
 
-Most areas start at `idea` on purpose. A hub page that says "idea, nothing built yet" with its issue is more useful
+Most areas start at `idea` on purpose. An area view that says "idea, nothing built yet" with its issue is more useful
 than an area nobody can find.
 
 Areas and topics are judged on their own evidence, and an area is never rated below its most mature topic. A domain
 takes the highest level among its areas. That says how far its best-developed area has got, not the domain as a whole,
-so its hub shows every area's level beside it. `tests/repo/test_areas.py` checks both rules.
+so the catalogue tree shows every area's level beside it. `tests/repo/test_areas.py` checks both rules.
 
 ## Confidence on tools and rules
 
 This is planned, not built (#143). Every tool and rule will get a confidence level and the evidence behind it. The
-level will be stored with each rule, in the reference registry (#118, draft PR #119) and the process profiles (#99),
+level will be stored with each rule, in the shared reference registry (#118) and the process profiles (#99),
 and with each tool in the catalogue.
 
 The estimate is the chance that the tool or rule gives a right answer, within its stated tolerance, for inputs inside
@@ -210,7 +210,7 @@ flowchart TD
     J["job<br/>task, inputs, budget"] --> R["runner<br/>harness × model × mode"]
     R --> G["deterministic grader<br/>named checks on the outputs"]
     G --> S["results<br/>pass rate, tool calls, tokens,<br/>peak context, time, cost"]
-    S --> H["area hub and<br/>results table"]
+    S --> H["area view and<br/>results table"]
     class J near
     class R,G here
     class S,H out
@@ -238,31 +238,45 @@ Nothing here exists yet: no `evals/` folder and no runner. This is the plan #142
 
 ## Discovery
 
-The long-term aim is that a person or agent reaches the right tool from the site root or `llms.txt` in about three
-steps: root, then the area hub (a small page and its Markdown twin), then the tool's page or `cad-agent` command. The
-pieces:
+Use the existing [catalogue](https://cad-agent.valpatel.com/catalog) as the area view (#141). Each selected area
+shows its scope, maturity, issue links and mapped entries; the same filters are shareable in its URL. Keep this
+single discovery surface instead of adding a parallel `/areas/` page tree.
 
-- **Area hubs** (#141) list each area's tools with their confidence, pages, lessons, research, skills, jobs, real
-  projects and open issues.
-- **Machine-readable indexes:** `catalog.json` gains an `area` on every entry; `areas.json` mirrors the YAML; and
-  `llms.txt` groups pages by domain (#106).
-- **Every folder** has a README and a map (#113).
+Agents start at `llms.txt`, then choose either a linked guide or `catalog/index.json` → `catalog/<area>.json` →
+the tool's `doc` or `markdown` link. The index mirrors the taxonomy's domains, areas and maturity; each area file
+lists its entries. Every catalogue entry has `areas`, and unknown slugs fail the build. A separate `areas.json`
+would duplicate that existing contract.
 
-We will measure this with the runner rather than guess, and not over-optimise it before there is data.
+<details>
+<summary>Measured path and what the checks establish</summary>
+
+On 2026-11-07, ordinary public responses at released main `eb5d163e` led from `llms.txt` to the snap-fit guide:
+three further GETs through the index and area file, or one further GET through the guide link already in `llms.txt`.
+Those are four and two total discovery GETs respectively, including the initial `llms.txt`; two separate revision
+checks are not discovery steps. Each next URL came from the preceding response, and the final page contained the
+actual `cad-agent snapfit` instructions. This is one worked case, not a measured bound for every task.
+
+`website-catalog.test.mjs` checks index/area membership and counts against `docs/areas.yaml` and `catalog.json`,
+including real document targets. The browser suite checks the shared area filters, counts, maturity displays and
+phone controls. These consumers protect discovery; they do not implement tool confidence (#143), standard jobs
+or a cross-model evaluation runner (#142). The general folder-map checker remains #113.
+
+</details>
 
 ## Folder design
 
-Recommendation: **one taxonomy, kind folders that share its slugs, and generated area hubs.**
+Use **one taxonomy, kind folders with explicit topic ownership, and generated catalogue views.**
 
 ```mermaid
 flowchart TD
-    T["docs/areas.yaml<br/>domain → area → topic"] --> H["site: a hub page<br/>per area, generated"]
+    T["docs/areas.yaml<br/>domain → area → topic"] --> H["area catalogue<br/>small JSON indexes"]
     T --> K["kind folders use<br/>the same slugs"]
     K --> C["software/cadagent<br/>by domain (#121)"]
     K --> L["lessons by area;<br/>docs, research<br/>by domain"]
     K --> E["evals/jobs<br/>by area"]
     class T here
-    class H,E out
+    class H here
+    class E out
     class K,C,L near
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
@@ -281,8 +295,8 @@ flowchart TD
   - `docs/` and `docs/research/` gain domain folders once an area has a few pages (#145).
   - Planned `evals/jobs/` uses domain and area names (#142); that folder and general runner do not exist yet.
 - **The taxonomy ties them together.** Each node lists its pages, commands, modules (its own under `api:`, other
-  domains' under `uses:`), skills, lessons and issues. The planned area hubs (#141) will expose that map without
-  duplicating source files.
+  domains' under `uses:`), skills, lessons and issues. Existing catalogue views expose the mapped entries, scope,
+  maturity and issue links without duplicating source files; confidence and evaluation results retain their own work.
 
 **Why not topic-first folders** (`areas/<domain>/<area>/` holding the code, lessons, research and jobs together)?
 
@@ -292,7 +306,7 @@ flowchart TD
 - Cross-cutting content (fasteners, FEA, the review process) would need a home in many places at once.
 - It would undo #121's and #133's fresh moves.
 
-The hubs give the topic-first view without those costs.
+The catalogue gives the topic-first view without those costs.
 
 ## Root consolidation (2026-11-05)
 
@@ -320,7 +334,8 @@ Existing content moves in small batches, never in one big reorganisation (#145):
    one is not placed, so the map cannot fall behind. A PR that adds one adds its line to `docs/areas.yaml` (the rule is
    in CONTRIBUTING.md, AGENTS.md and the PR template). When two open PRs cross, the one that merges second adds it,
    after merging dev and re-running its CI, because dev does not require branches to be up to date.
-2. **After #123, #124 and #133:** the site generates the area hubs and `areas.json` (#141).
+2. **Existing discovery:** the site generates area catalogue views, `catalog/index.json` and `catalog/<area>.json`
+   from the taxonomy. These satisfy #141's chosen discovery path; a second hub tree and `areas.json` are not needed.
 3. **Published in v0.22.0:** mechanical and practice guides, and the agent-workflow and manufacturing research
    collections, have domain folders and visual maps. `tools/site/publication.mjs` selects their real sources;
    `tools/site/page-sources.json` keeps existing public URLs and catalogue identities stable. Nested pages and
@@ -361,8 +376,9 @@ The six lesson names are intentional mappings in [`areas.yaml`](areas.yaml), not
 
 `test_every_lesson_area_folder_is_claimed` requires each real collection to have exactly one owner; the layout
 ratchet protects the compact root. Existing page selectors, source maps and redirect checks protect published
-addresses during moves. These checks do not implement the general folder-map checker (#113) or the area hubs
-(#141), and source revision alone does not establish deployment or cache-policy acceptance (#381).
+addresses during moves. These checks do not implement the general folder-map checker (#113); area discovery uses
+the catalogue contract described above. Source revision alone does not establish deployment or cache-policy
+acceptance (#381).
 
 </details>
 
@@ -379,5 +395,5 @@ addresses during moves. These checks do not implement the general folder-map che
    FEA, CFD and topology renders.
 3. **Everything else** grows in parallel at its own maturity, from the issues filed against its area.
 
-The `demo` priority flag in [`docs/areas.yaml`](areas.yaml) marks the areas for item 2, so hubs and tools can sort by
+The `demo` priority flag in [`docs/areas.yaml`](areas.yaml) marks the areas for item 2, so catalogue views and tools can sort by
 it. The catalogue singles out no project: an area's `projects` lists every real project that used it, alike.

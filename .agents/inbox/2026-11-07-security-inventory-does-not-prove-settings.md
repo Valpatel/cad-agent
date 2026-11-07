@@ -1,5 +1,59 @@
 # Missing security inventory does not prove a disabled protection
 
+## A public URL route is not a local home directory
+
+On 2026-11-07, the actual refreshed issue322 report correctly retained the public source URL
+`https://committee.iso.org/home/tc2`. The existing committed-report privacy test rejected it because it
+searched for the substring `/home/` anywhere, without distinguishing a URL route from a filesystem path:
+
+```text
+python -m pytest -q tests/repo/test_resource_audit.py tests/repo/test_cut_release.py \
+  tests/repo/test_layout.py tests/repo/test_areas.py
+FAILED test_committed_report_is_clean_and_dated: assert not any('/home/' in text, ...)
+1 failed, 196 passed
+```
+
+Keep the source URL and original failure. The corrected guard distinguishes URL route boundaries and
+still rejects bare POSIX/macOS home paths, file URIs, Windows home paths, home paths in query parameters
+and the actual current home string anywhere. Six concrete local-path counterexamples fail, the public ISO
+route passes, and an actual-home string embedded in a URL still fails. The corrected same audit/release/layout
+selection passed204 tests. This is a heuristic privacy regression guard, not a general secret scanner or
+proof that every unknown private identifier is detected. No report finding or source URL was filtered out.
+
+Independent review of PR444 at `adc93b44` planted `cwd:/home/other-agent/private-project`, with a different
+current-home fixture, and reproduced a missed local path: the negative lookbehind unnecessarily exempted
+colons. Adding that exact case to the existing control produced1 failure/7passes before correction. Remove
+only the colon exemption; retain the public ISO URL and all POSIX/macOS/Windows/file/query/current-home
+controls. This was a prevention-guard regression, not evidence that the current report leaked a local path.
+
+## Missing package metadata does not establish a missing archive licence
+
+On 2026-11-07, the finite issue322 follow-up found that the exact `tools/mermaid` lock entry for Khroma2.1.0
+omits `license`, while its integrity-verified archive contains the full MIT licence. The existing renderer
+`BUILD.json` records `node_modules/khroma/license`, SHA256
+`66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49`, and the full text is already retained
+in `THIRD-PARTY-LICENSES.txt`. Reading registry metadata alone would confuse an omitted declaration with
+the absence of an actual licence.
+
+The old missing-licence finding identified only a package name. An exception for that identity could silently
+cover a different archive, version or production context. Bind the finding and any acceptance to the owning
+manifest, version, resolved URL and integrity, and require its fingerprint. The actual-policy controls accept
+only the exact read archive and reject another context, version, archive URL or integrity value.
+
+The same principle applies to retaining a stale shipped parser: its age acceptance now includes recorded
+package versions and all component file hashes. An updated version or legitimately re-recorded different byte
+must trigger review again. Historical URL-age identities remain separate from the shipped-runtime decision.
+
+```text
+sha256sum <integrity-verified Khroma archive>/license
+66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49
+python -m pytest -q tests/repo/test_resource_audit.py
+128 passed
+```
+
+This is archive- and context-bound evidence, not a legal review, a new security assessment of all bundled
+native code, or permission to accept advisories. No package, parser or renderer bytes changed in this repair.
+
 ## Observed on 2026-11-07 UTC
 
 Issue 153's existing audit checked secret scanning but never independently checked push protection. It also treated
@@ -74,6 +128,27 @@ That head's actual WebKit whole-site consumer also measured1262px (page693–195
 limit on `/docs/supply-chain`. Fold the optional maintainer explanation under a purpose-named disclosure, keeping
 the npm/check table visible. Preserve its content, the actual whole-site gate and original failure; component/math
 success and generated diagrams do not establish the entire guide's layout. Corrected-head CI remains required.
+
+### A closed disclosure still has a visible summary
+
+The same page-budget boundary recurred in PR444's `da3bc637` draft on 2026-11-07. Both actual whole-site
+browser jobs rejected the bearings page after its axial-load section:
+
+```text
+node tests/site/website-browser.mjs
+Chromium job128395582744: /docs/bearings wall1207px, page4490–5697px; limit1200px
+WebKit job128395582899: /docs/bearings wall1204px, page4442–5646px; limit1200px
+```
+
+The appended maintenance body was closed, but its new summary still added visible height. Keep every dated
+maintenance statement and the original failures; move that complete body into the existing source/survey
+disclosure instead of adding another visible summary. No threshold, source policy or content limit changes.
+Current-head whole-site CI remains required; source placement alone does not establish a rendered pass.
+
+The later `adc93b44` WebKit job128398813023 reproduced the same1204px bearings wall. Chromium's website-build
+job128398812786 independently rejected the new installation card at96 words against its unchanged95-word cap.
+Shorten the two guide-link labels rather than loosen the visitor's reading budget. Preserve those current-head
+failures separately from the earlier draft and from passing Windows checksum controls.
 
 ## Bind an accepted install hook to its owning package context
 

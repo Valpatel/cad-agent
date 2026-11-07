@@ -1,12 +1,10 @@
 # cad-agent installer for Windows (PowerShell 5.1 or 7): https://github.com/Valpatel/cad-agent (MIT)
 #
-#   irm https://cad-agent.valpatel.com/install.ps1 | iex
+# Download the pinned installer, verify its SHA-256, then run it:
+#   https://cad-agent.valpatel.com/docs/agent-workflow#install
 #
 # Options as variables, set first: $env:CAD_AGENT_EXTRAS = "fea,sim"; $env:CAD_AGENT_REF = "v0.14.0";
 # $env:CAD_AGENT_DIR (default ~\cad-agent); $env:CAD_AGENT_UNINSTALL = "1" removes the command and the skill links.
-#
-# Read it first if you like:
-#   irm https://cad-agent.valpatel.com/install.ps1 -OutFile install.ps1; notepad install.ps1; .\install.ps1
 #
 # The same steps as install.sh:
 #   1. needs git; installs uv (astral.sh, the version pinned below) into ~\.local\bin if it is missing, without

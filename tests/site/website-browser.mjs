@@ -175,11 +175,11 @@ try {
           if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
         }
         if (route === REFS) await refsProblems(page, width, seen);
-        if (route === '/' && width === 1366) {   // the OS tabs switch the install command, with no script (#282)
-          const shown = () => page.$$eval('.os-panel', ps => ps.filter(p => getComputedStyle(p).visibility === 'visible').map(p => p.querySelector('pre').textContent.trim()));
-          if (!/install\.sh \| sh$/.test((await shown()).join())) seen.push(`the install card opens on ${await shown()}, not macOS / Linux`);
+        if (route === '/' && width === 1366) {   // the OS tabs switch the checked guide link, with no script (#322)
+          const shown = () => page.$$eval('.os-panel', ps => ps.filter(p => getComputedStyle(p).visibility === 'visible').map(p => p.querySelector('a').getAttribute('href')));
+          if ((await shown()).join() !== '/docs/agent-workflow#install-unix') seen.push(`the install card opens on ${await shown()}, not macOS / Linux`);
           await page.click('label.os-tab[for="os-win"]');
-          if (!/install\.ps1 \| iex$/.test((await shown()).join())) seen.push('the Windows tab does not show the PowerShell command');
+          if ((await shown()).join() !== '/docs/agent-workflow#install-windows') seen.push('the Windows tab does not link to the checked PowerShell instructions');
           await page.click('label.os-tab[for="os-unix"]');
         }
         if ((route === '/' || route === '/docs/toolkit') && width === 360) {   // copy buttons: one click, exact text
@@ -712,22 +712,35 @@ async function headerProblems() {
           const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
           if (verticalOverlap > 1 && gap < 4) out.push(`${a.label} / ${b.label}: visible gap ${gap.toFixed(2)}px (need 4px)`);
         }
+        const mark = document.querySelector('.wordmark img');
         return { problems: out, boxes, width: innerWidth, fonts: document.fonts.status,
+          viewportMediaMatches: matchMedia(`(width: ${innerWidth}px)`).matches,
+          narrowMarkMediaMatches: matchMedia('(max-width:360px)').matches,
+          markDisplay: mark ? getComputedStyle(mark).display : null,
           icons: [...document.querySelectorAll('.theme-toggle svg')].map(el => {
             const rect = el.getBoundingClientRect();
             return { name: el.getAttribute('class'), display: getComputedStyle(el).display,
               left: rect.left, right: rect.right, width: rect.width, height: rect.height };
           }) };
       });
+      // Capture the requested viewport's paint before reading its geometry. A failed 320px WebKit frame
+      // reported the preceding 390px rectangles, while its following PNG already painted the fitting header.
+      // This is one paint per case, never a wait/retry until the header fits; every real bound stays strict.
+      const paintedMeasure = async name => {
+        const beforePaint = await measure();
+        await writeFile(path.join(evidence, `${name}-${colorScheme}-before-paint.json`), JSON.stringify(beforePaint, null, 2));
+        await page.screenshot({ path: path.join(evidence, `${name}-${colorScheme}.png`) });
+        const found = await measure();
+        await writeFile(path.join(evidence, `${name}-${colorScheme}.json`), JSON.stringify({ ...found, beforePaint }, null, 2));
+        assert.equal(found.width, page.viewportSize().width, 'the painted header uses the requested viewport');
+        assert.equal(found.viewportMediaMatches, true, 'the painted CSS viewport matches the measured width');
+        return found;
+      };
       for (const width of widths) {
         await page.setViewportSize({ width, height: 850 });
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        const found = await measure();
+        const found = await paintedMeasure(String(width));
         problems.push(...found.problems.map(p => `header ${width}px ${colorScheme}: ${p}`));
-        if (width === 320 || found.problems.length) {
-          await writeFile(path.join(evidence, `${width}-${colorScheme}.json`), JSON.stringify(found, null, 2));
-          await page.screenshot({ path: path.join(evidence, `${width}-${colorScheme}.png`) });
-        }
       }
       // A hidden header keeps all its geometry: prove that geometry alone cannot satisfy the visible-control guard.
       for (const [property, value] of [['visibility', 'hidden'], ['opacity', '0']]) {
@@ -737,7 +750,7 @@ async function headerProblems() {
           return old;
         }, [property, value]);
         try {
-          const hidden = await measure();
+          const hidden = await paintedMeasure(`hidden-${property}`);
           if (hidden.problems.filter(p => p.startsWith('missing visible ')).length !== 4) {
             problems.push(`header ${colorScheme}: ${property} control accepted invisible navigation`);
           }
@@ -759,17 +772,16 @@ async function headerProblems() {
           value: () => ({ left: innerWidth + 40, right: innerWidth + 58, top: 0, bottom: 18, width: 18, height: 18 }) });
       });
       try {
-        const hidden = await measure();
+        const hidden = await paintedMeasure('hidden-icon-geometry');
         if (hidden.problems.length) problems.push(`header ${colorScheme}: hidden-icon geometry was treated as painted content`);
       } finally { await hiddenIcon.evaluate(el => { delete el.getBoundingClientRect; }); }
       const visibleIcon = page.locator('.theme-toggle svg').filter({ visible: true }).first();
       const oldStyle = await visibleIcon.getAttribute('style');
       try {
         await visibleIcon.evaluate(el => { el.style.transform = `translateX(${innerWidth * 2}px)`; });
-        const escaped = await measure();
+        const escaped = await paintedMeasure('visible-icon-control');
         if (!escaped.problems.some(p => p.endsWith('extends outside the viewport')))
           problems.push(`header ${colorScheme}: visible escaped icon was accepted inside the viewport`);
-        await writeFile(path.join(evidence, `visible-icon-control-${colorScheme}.json`), JSON.stringify(escaped, null, 2));
       } finally {
         await visibleIcon.evaluate((el, oldStyle) => {
           if (oldStyle === null) el.removeAttribute('style'); else el.setAttribute('style', oldStyle);
@@ -1935,15 +1947,29 @@ async function foldProblems() {
   await turn.goto(base + '/docs/toolkit');
   await settled(turn);
   const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
+  const resizeFailure = async (message, observedOpen) => {
+    // Keep the failed observation before taking a screenshot: a later paint can have different responsive styles.
+    const state = await turn.evaluate(() => {
+      const fold = document.querySelector('details.cad-nav-fold');
+      return { width: innerWidth, height: innerHeight, open: fold?.open,
+        display: fold && getComputedStyle(fold).display, readyState: document.readyState };
+    });
+    const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-nav-fold-'));
+    await writeFile(path.join(evidence, 'resize.json'), JSON.stringify({ message, observedOpen, subsequentState: state }, null, 2) + '\n');
+    await turn.screenshot({ path: path.join(evidence, 'resize.png') });
+    out.push(`${message} (state and subsequent paint: ${evidence})`);
+  };
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
-  if ((await isOpen()) !== false) out.push('1366 -> 360px: the fold the script opened for the wide window stays open on the phone');
+  const afterNarrow = await isOpen();
+  if (afterNarrow !== false) await resizeFailure('1366 -> 360px: the fold the script opened for the wide window stays open on the phone', afterNarrow);
   await turn.locator('.cad-nav-toggle').click();
   await turn.setViewportSize({ width: 1366, height: 800 });
   await turn.waitForTimeout(100);                               // a frame at each width, so the script sees both
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForTimeout(100);
-  if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
+  const afterReturn = await isOpen();
+  if (afterReturn !== true) await resizeFailure('360 -> 1366 -> 360px: the fold the reader opened was closed', afterReturn);
   // Printed from a wide window, where the script opened the fold: the tree does not print, and on paper wide enough for
   // the site's grid (landscape A3, 1500 px) the article keeps the width, not the tree's empty column (#209 review).
   for (const w of [1366, 1500]) {

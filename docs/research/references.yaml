@@ -3088,7 +3088,7 @@ sources:
     authors: []
     org: Emhart Teknologies (Stanley Engineered Fastening)
     year: 2012
-    url: https://www.stanleyengineeredfastening.com/-/media/Web/SEF/Resources/Docs/POP/POP-Rivet-Catalog.pdf
+    url: https://res.cloudinary.com/syndigo-sbd-ps/image/upload/q_auto/Stanley%20Engineered%20Fastening%20%28SEF%29/Public/sef-resources/library/user-manuals-and-documentation/POP-Rivet-Catalog.pdf
     access: free
     terms: cited by part number and page with the values as facts; the catalogue is never copied
     areas: [rivets, fasteners, corrosion]
@@ -3099,6 +3099,7 @@ sources:
       - docs/research/manufacturing/sheet-metal-joining.md
       - software/cadagent/mechanical/rivets.py
     verified: >-
+      2026-11-07: followed the publisher redirect to its canonical CDN and verified the 68-page P3100 Rev. D (6/12) PDF, SHA256 63e2975c3d8fafa7b01659c942743199c257783c37c26ea6efaefaca5b18c387. URL repair only; the engineering edition and earlier section reading below are unchanged.
       2026-11-01: opened the 68-page PDF (© 2012, Rev. D 6/12; the URL redirects to Stanley's CDN). Read the
       design guidelines pp. 10–12 (edge distance at least twice the diameter for full strength, open end down to
       0.020 in aluminium, closed end seals to 100 psi, large flange twice the bearing area, the galvanic chart),
@@ -3198,7 +3199,7 @@ sources:
     authors: []
     org: US Department of Defense (NAVAIR)
     year: 2016
-    url: https://everyspec.com/MIL-STD/MIL-STD-0800-0899/MIL-STD-889C_55418/
+    url: https://quicksearch.dla.mil/qsDocDetails.aspx?ident_number=36032
     access: free
     terms: cited by section and table, never copied (distribution statement A, public release)
     areas: [corrosion, rivets, fasteners]
@@ -3207,6 +3208,7 @@ sources:
       - docs/research/manufacturing/sheet-metal-joining.md
       - software/cadagent/mechanical/rivets.py
     verified: >-
+      2026-11-07: replaced the dead mirror with the official DLA ASSIST document record. Its history lists Revision C dated 22-AUG-2016; the current record is D (2021), validated 29-APR-2026. This preserves the historical C citation and earlier reading below; it does not import D rules or claim a fresh reading of the C PDF.
       2026-11-01: opened the PDF (22 August 2016; superseded by 889D in 2021). Read 5.1.3 (the small fastener
       the same metal or more noble), 5.1.6, 5.2a (stainless screws in aluminium acceptable with sealed faying
       edges, not the reverse), Table I (aluminium with carbon steel or austenitic stainless incompatible in
@@ -3532,6 +3534,119 @@ sources:
       2026-11-01: gh api (MIT, pushed 2026-10-15). It has welds, bolt bearing (J3.3.1) and shear rupture, with a
       test per equation; no screw (J4) or blind rivet (J5) connections.
 
+  # Original-source recovery for the existing equation citations (#118).
+  - id: goncalves
+    title: A multi-objective optimization design for parallel structures (Proceedings of COBEM 2009)
+    authors:
+    - Rogério Sales Gonçalves
+    - João Carlos Mendes Carvalho
+    - Rogério Rodrigues dos Santos
+    org: ABCM (20th International Congress of Mechanical Engineering, COBEM 2009)
+    year: 2009
+    used_for:
+    - software/cadagent/formulas/_registry.py
+    - software/cadagent/formulas/linkages.py
+    url: https://www.abcm.org.br/anais/cobem/2009/pdf/COB09-0410.pdf
+    access: free
+    terms: cited and summarized; never copied or redistributed
+    areas:
+    - linkages
+    - mechanisms
+    verified: '2026-11-07: recovered the ABCM COBEM 2009 proceedings paper, COB09-0410. Read and visually checked PDF pp.
+      2-3, Sections 2.1-2.2, Eqs. (3)-(15): four inverse and two direct kinematic solutions for the symmetric 5R. The paper
+      places the origin at the base midpoint; the toolkit uses the left pivot, a shift of half the base. Existing tests/mechanical/test_linkages.py
+      independently evaluates these equations and converts frames. This reading does not validate asymmetric extensions,
+      stiffness optimization or physical hardware. PDF SHA-256 278c58d0ad8f9a46460fc40f5304cc1e7604891dca661e6b6712381af80facad.'
+  - id: pem-si
+    title: SI Threaded Inserts for Plastics (bulletin SI)
+    authors: []
+    org: PennEngineering (PEM)
+    year: 2026
+    used_for:
+    - software/cadagent/mechanical/inserts.py
+    url: https://www.pemnet.com/en-sg/wp-content/uploads/sites/2/2022/06/sidata.pdf
+    access: free
+    terms: cited and summarized; never copied or redistributed
+    areas:
+    - inserts
+    - fasteners
+    verified: '2026-11-07: recovered the original SI catalog link from PennEngineering Asia datasheets. Read the web tool''s
+      cached PDF extraction for SI-5/6/10/25/26/28, including the 7/16/26 footer. SI-6 IUT M3 long has length 5.74 mm and
+      minimum hole depth 6.50 mm (0.76 mm extra); use the part-specific table, not that increment for every insert. SI-25
+      gives a boss diameter twice the insert diameter; SI-26 specifies flush or up to 0.13 mm proud and explains jack-out.
+      SI-10 performance is an ultrasonic-installation average in ABS/polycarbonate, not printed-part qualification. The
+      direct downloader returned no PDF and screenshot retrieval failed; no fresh PDF digest or visual table inspection
+      is claimed.'
+  - id: ruthex-tip
+    title: ruthex soldering-tip set LOE-SET-012 (product page)
+    authors: []
+    org: ruthex
+    used_for:
+    - software/cadagent/mechanical/inserts.py
+    year: null
+    url: https://www.ruthex.de/collections/gewindeeinsatze/products/ruthex-lotspitzen-einschmelzhilfe-m2-m2-5-m3-m4-m5-m6-m8
+    access: free
+    terms: cited and summarized; never copied or redistributed
+    areas:
+    - inserts
+    - fasteners
+    verified: '2026-11-07: opened the manufacturer product page, confirmed ITEM-NR. LOE-SET-012 and read its installation
+      recommendation of 10-15 degrees above the filament hotend temperature. This is a manufacturer starting recommendation,
+      not a controlled qualification for every iron/material. The page is undated; the access date is not a publication
+      year.'
+  - id: bossard-proof
+    title: Screws property class 4.6 to 12.9 (Bossard technical information, 01-2025)
+    authors: []
+    org: Bossard
+    used_for:
+    - software/cadagent/mechanical/inserts.py
+    year: 2025
+    url: https://assets.eu.ctfassets.net/0vp0u5uh75zd/1VPwGxSRcAQdDRArMtTqeY/8fe01cf6ef692e134b45f895fb69fe97/012_016_Screws_property_class46_Fastening_EN_01_2025.pdf
+    access: free
+    terms: cited and summarized; never copied or redistributed
+    areas:
+    - inserts
+    - fasteners
+    verified: '2026-11-07: opened and visually read Bossard Technical Information 01-2025, printed p. 12, property table
+      row 5: proof stresses 580 MPa for class 8.8 at d <= 16 mm, 830 MPa for 10.9 and 970 MPa for 12.9, at room temperature.
+      The 8.8 column for d > 16 mm is 600 MPa. This verifies the cited table, not the paid ISO 898-1 text or arbitrary
+      screw qualification. PDF SHA-256 419b0e5203a58ccab3118e720fc113bbfa3f751ab71790224e28ebf2857b1e05.'
+  - id: bossard-head
+    title: Surface pressure when mounted (Bossard technical information, 01-2025)
+    authors: []
+    org: Bossard
+    used_for:
+    - software/cadagent/mechanical/inserts.py
+    year: 2025
+    url: https://assets.eu.ctfassets.net/0vp0u5uh75zd/7MM4CVEWakvMoaUSg5YsPX/c4b6542d94541de714325d3d8ebb7dc7/053_056_Surface_pressure_mounted_Fastening_EN_01_2025.pdf
+    access: free
+    terms: cited and summarized; never copied or redistributed
+    areas:
+    - inserts
+    - fasteners
+    verified: '2026-11-07: opened Bossard Technical Information 01-2025 and visually read printed p. 55: minimum bearing
+      diameter / medium clearance hole, M4 6.53/4.5, M5 8.03/5.5, M6 9.38/6.6, M8 12.33/9 mm. Its calculated pressure column
+      assumes 90 percent yield utilization and thread friction 0.12; these are not plastic bearing allowables. Printed
+      p. 53 lists VDI 2230-derived metallic surface pressures, with no plastics; the paid standard itself was not read.
+      PDF SHA-256 5107ce62b98169318f8079e7c221a3fde75a448144f6dea1b2594d37bea20fe6.'
+  - id: vdi2230-friction
+    title: Friction and friction coefficients (Bossard technical information, 01-2025, after VDI 2230:2015)
+    authors: []
+    org: Bossard
+    used_for:
+    - software/cadagent/mechanical/inserts.py
+    year: 2025
+    url: https://assets.eu.ctfassets.net/0vp0u5uh75zd/18oe56PEV3BfmTmCx86F5T/01d62d82f1a1c6d8c5652fd0924d3ae8/057_Friction_coefficients_Fastening_EN_01_2025.pdf
+    access: free
+    terms: cited and summarized; never copied or redistributed
+    areas:
+    - inserts
+    - fasteners
+    verified: '2026-11-07: opened and visually read Bossard Technical Information 01-2025, printed p. 57: VDI 2230:2015-derived
+      classes B 0.08-0.16 and C 0.14-0.24 at room temperature, with different surface/lubrication conditions. These are
+      guideline ranges requiring defined friction conditions, not a universal coefficient. Read the Bossard reproduction,
+      not the paid VDI standard. PDF SHA-256 209fb09a34a4bb84fe7f83d3cc991bad970c2ae6fd237dc056f1f9fdfe51c71d.'
+
 # -------------------------------------------------------------------------------------------------------------------
 # Named but not yet read, or read but not yet found online. Not citable until someone reads it and moves it up;
 # code that cites one is a known gap (check() warns, tests/review/test_references.py pins how many).
@@ -3639,66 +3754,6 @@ unverified:
       Prusa forum posts, PlasticsToday, RapidDirect, Ulbrich, PRBM lecture notes, Haringx 1949, the BYU LET and
       CAFP papers, Paros and Weisbord 1965, and the GitHub projects listed there were read or snippeted by that
       note on 2026-10-31 and were not reopened in this pass. Move each up when it is reopened.
-
-  - id: goncalves
-    title: A multi-objective optimization design for parallel structures (Proceedings of COBEM 2009)
-    authors: [R. S. Goncalves, J. C. M. Carvalho, R. R. Santos]
-    org: ABCM (20th International Congress of Mechanical Engineering, COBEM 2009)
-    year: 2009
-    used_for: [software/cadagent/formulas/_registry.py, software/cadagent/formulas/linkages.py]
-    why: >-
-      2026-11-01: no copy, DOI or proceedings page was found (searched by title and authors).
-      cadagent.formulas.linkages cites it; find the ABCM proceedings record and add its URL.
-
-  - id: pem-si
-    title: SI Threaded Inserts for Plastics (bulletin SI)
-    authors: []
-    org: PennEngineering (PEM)
-    year: 2026
-    used_for: [software/cadagent/mechanical/inserts.py]
-    why: >-
-      2026-11-01: cadagent.mechanical.inserts read the bulletin of 2026-07-16 but recorded no URL. pemnet.com
-      answers a script with a bot check, and the copies found online are older editions. Record the edition's
-      URL.
-
-  - id: ruthex-tip
-    title: ruthex soldering-tip set LOE-SET-012 (product page)
-    authors: []
-    org: ruthex
-    used_for: [software/cadagent/mechanical/inserts.py]
-    why: >-
-      2026-11-01: cadagent.mechanical.inserts read the product page but recorded no URL, and no ruthex.de page
-      for the set was found (only resellers' listings). Record the page's URL.
-
-  - id: bossard-proof
-    title: Screws property class 4.6 to 12.9 (Bossard technical information, 01-2025)
-    authors: []
-    org: Bossard
-    used_for: [software/cadagent/mechanical/inserts.py]
-    why: >-
-      2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
-      recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
-      script. Record the document's URL.
-
-  - id: bossard-head
-    title: Surface pressure when mounted (Bossard technical information, 01-2025)
-    authors: []
-    org: Bossard
-    used_for: [software/cadagent/mechanical/inserts.py]
-    why: >-
-      2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
-      recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
-      script. Record the document's URL.
-
-  - id: vdi2230-friction
-    title: Friction and friction coefficients (Bossard technical information, 01-2025, after VDI 2230:2015)
-    authors: []
-    org: Bossard
-    used_for: [software/cadagent/mechanical/inserts.py]
-    why: >-
-      2026-11-01: cadagent.mechanical.inserts cites Bossard's technical information of 01-2025 by page but
-      recorded no URL; the sheet URLs found by search (F.004, F.040, F.044, 2023.05) did not resolve from a
-      script. Record the document's URL.
 
   # ---- named by the sheet-metal guide survey (docs/research/manufacturing/sheet-metal-guides.md, #283), not yet read
 

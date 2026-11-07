@@ -217,7 +217,7 @@ flowchart TD
   floor, or one between samples is not seen. Next to an edge with no face pair, so is one the coarse pass steps
   over. The depth is that of the deepest sample, so at most the true depth. `apart` rests on
   `BRepExtrema_DistShapeShape`, which read 0 at every crossing tried. A fuzzy boolean does not help. In OCCT's
-  [Boolean Operations guide](https://dev.opencascade.org/doc/overview/html/specification__boolean_operations.html)
+  [Boolean Operations guide](https://occt3d.com/dev/doc/overview/html/specification__boolean_operations.html)
   ("Fuzzy Boolean Operation"), the fuzzy value is an additional tolerance under which touching and near-coincident
   entities coincide. That hides shallow crossings rather than finding them, and `SetFuzzyValue` from 1e-5 to 1e-3
   fixed only 3 of 12 missed crossings.

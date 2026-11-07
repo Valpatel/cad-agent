@@ -620,6 +620,26 @@ print(json.dumps({'ok':True,'actual_os_denial':error,'installed':result,'privile
                 raise
 
 
+def _assert_complete_copied_role(path, expected):
+    assert not path.is_symlink() and path.read_text() == expected, "copied role text differs from source plus known marker"
+
+
+def test_complete_copied_role_rejects_appended_instructions(tmp_path):
+    from cadagent import agentkit
+
+    home = tmp_path / 'copy-home'
+    item = next(i for i in agentkit.items(ROOT) if i.kind == 'agent')
+    result = agentkit.install(home, ROOT, targets=('claude',), copy=True)
+    assert not result['conflicts']
+    path = home / '.claude/agents' / (item.name + '.md')
+    expected = item.path.read_text() + f"\n<!-- {agentkit.COPY_MARK}: copied from {item.path} -->\n"
+    _assert_complete_copied_role(path, expected)
+    with path.open('a') as stream:
+        stream.write('Unexpected appended instruction.\n')
+    with pytest.raises(AssertionError, match='copied role text differs'):
+        _assert_complete_copied_role(path, expected)
+
+
 @pytest.mark.skipif(os.name != 'nt' or os.environ.get('CAD_AGENT_REAL_COPY') != '1',
                     reason='explicit actual Windows copy consumer only')
 def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
@@ -670,7 +690,8 @@ def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
                     for p in item.path.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
             expected[item.name] = rows
         else:
-            expected[item.name] = {'role': item.path.read_text(), 'generated': agentkit.codex_agent_skill(item)}
+            expected[item.name] = {'role': item.path.read_text() + f'\n<!-- {agentkit.COPY_MARK}: copied from {item.path} -->\n',
+                                   'generated': agentkit.codex_agent_skill(item)}
     (base / 'expected-instructions.json').write_text(json.dumps(expected, indent=2))
     foreign = home / '.claude/skills/foreign/SKILL.md'
     foreign.parent.mkdir(parents=True)
@@ -698,7 +719,7 @@ def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
             else:
                 role = home / '.claude/agents' / (item.name + '.md')
                 shared = home / '.agents/skills' / item.name
-                assert not role.is_symlink() and role.read_text().startswith(expected[item.name]['role'])
+                _assert_complete_copied_role(role, expected[item.name]['role'])
                 assert not shared.is_symlink() and (shared / 'SKILL.md').read_text() == expected[item.name]['generated']
         assert foreign.read_bytes() == original_foreign
         assert {p.name for p in (home / '.agents/skills').iterdir()} == {i.name for i in items}

@@ -592,12 +592,13 @@ def _receipt_extras() -> Optional[List[str]]:
 
 
 def installed_extras(root: Path) -> List[str]:
-    """The extras this cad-agent was installed with: what uv recorded, else the extras whose every package is
+    """The extras this cad-agent was installed with: what uv recorded, else the extras whose active requirements are
     installed in this Python. Call it before pulling: a newer pyproject.toml may list packages not installed yet."""
     receipt = _receipt_extras()
     if receipt is not None:
         return receipt
     import importlib.metadata as md
+    from packaging.requirements import Requirement
     try:
         import tomllib
     except ImportError:                                    # Python 3.10: read the table by hand
@@ -614,7 +615,8 @@ def installed_extras(root: Path) -> List[str]:
                   for m in re.finditer(r"^(\w[\w-]*)\s*=\s*\[(.*?)\]", block, re.S | re.M)}
     have = []
     for name, reqs in extras.items():
-        dists = [re.split(r"[<>=!~;\[ ]", r, 1)[0] for r in reqs]
+        requirements = [Requirement(r) for r in reqs]
+        dists = [r.name for r in requirements if r.marker is None or r.marker.evaluate({'extra': name})]
         try:
             for d in dists:
                 md.version(d)

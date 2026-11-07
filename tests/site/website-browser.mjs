@@ -1947,15 +1947,29 @@ async function foldProblems() {
   await turn.goto(base + '/docs/toolkit');
   await settled(turn);
   const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
+  const resizeFailure = async (message, observedOpen) => {
+    // Keep the failed observation before taking a screenshot: a later paint can have different responsive styles.
+    const state = await turn.evaluate(() => {
+      const fold = document.querySelector('details.cad-nav-fold');
+      return { width: innerWidth, height: innerHeight, open: fold?.open,
+        display: fold && getComputedStyle(fold).display, readyState: document.readyState };
+    });
+    const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-nav-fold-'));
+    await writeFile(path.join(evidence, 'resize.json'), JSON.stringify({ message, observedOpen, subsequentState: state }, null, 2) + '\n');
+    await turn.screenshot({ path: path.join(evidence, 'resize.png') });
+    out.push(`${message} (state and subsequent paint: ${evidence})`);
+  };
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
-  if ((await isOpen()) !== false) out.push('1366 -> 360px: the fold the script opened for the wide window stays open on the phone');
+  const afterNarrow = await isOpen();
+  if (afterNarrow !== false) await resizeFailure('1366 -> 360px: the fold the script opened for the wide window stays open on the phone', afterNarrow);
   await turn.locator('.cad-nav-toggle').click();
   await turn.setViewportSize({ width: 1366, height: 800 });
   await turn.waitForTimeout(100);                               // a frame at each width, so the script sees both
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForTimeout(100);
-  if ((await isOpen()) !== true) out.push('360 -> 1366 -> 360px: the fold the reader opened was closed');
+  const afterReturn = await isOpen();
+  if (afterReturn !== true) await resizeFailure('360 -> 1366 -> 360px: the fold the reader opened was closed', afterReturn);
   // Printed from a wide window, where the script opened the fold: the tree does not print, and on paper wide enough for
   // the site's grid (landscape A3, 1500 px) the article keeps the width, not the tree's empty column (#209 review).
   for (const w of [1366, 1500]) {

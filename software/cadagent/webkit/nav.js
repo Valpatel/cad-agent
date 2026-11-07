@@ -143,7 +143,15 @@ export class CadNav extends HTMLElement {
       else if (!wide && opened) { fold.open = false; opened = false; }
     };
     fit();
-    addEventListener('resize', fit, { passive: true, signal });
+    // WebKit may dispatch resize with the new viewport but the previous media-query style.
+    // Read the fold's style on the next frame, after the resize event has finished.
+    let queued = false;
+    const queue = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; if (!signal.aborted) fit(); });
+    };
+    addEventListener('resize', queue, { passive: true, signal });
   }
 
   /** On a scrolling panel, bring the current page into view without hiding the filter (it is sticky) or, when it

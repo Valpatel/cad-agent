@@ -2,15 +2,7 @@
 
 <img src="docs/img/hero/repository-map.svg" alt="A conceptual learning workshop: study sources, try methods, test assumptions, review evidence and learn reusable skills" width="640">
 
-A conceptual learning loop. Virtual checks and real measurements keep their own evidence.
-
 # cad-agent
-
-**Your one stop shop for agentic CAD.**
-
-Self-improving AI for designing physical objects, built with the best open source projects.
-
-Give your AI assistant a design task. cad-agent helps it find a method, build the model, check the assumptions and keep the evidence for review.
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Valpatel/cad-agent?color=f97316)](https://github.com/Valpatel/cad-agent/releases)
@@ -18,90 +10,51 @@ Give your AI assistant a design task. cad-agent helps it find a method, build th
 
 </div>
 
-## Build with your favorite AI agent
+## What is it?
 
-macOS and Linux:
+An open-source toolkit that helps your AI assistant design physical things: find a method, build a model, check
+its assumptions and keep the evidence for review.
+
+Start with the [guides](docs/README.md), or explore the [visual catalogue](https://cad-agent.valpatel.com/catalog).
+
+<a id="find-your-next-step"></a>
+<a id="how-it-improves-itself"></a>
+
+## Why this is cool
+
+Real projects expose gaps. We study good sources, reproduce examples, test what survives and turn the lesson into
+a reusable [skill](.agents/skills/README.md) or [technique](docs/research/README.md).
+
+Virtual checks and real measurements keep separate evidence. CAD and simulation do not prove physical fit or durability.
+
+<div id="what-works-today">
+
+<img src="docs/img/hero/gyropup-leg.svg" alt="A recorded Gyropup five-bar leg CAD snapshot, with its historical fit, strength and motion illustrations" width="480">
+
+<sub>Recorded <a href="https://github.com/Valpatel/gyropup">Gyropup</a> CAD example (MIT), source <code>77f6d00b</code>.
+Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.
+<a href="docs/practice/animated-figures.md">Sources, limits and regeneration</a>; not the latest design or a physical qualification.</sub>
+
+</div>
+
+[What works and its limits](docs/toolkit.md) · [Code and tests](software/cadagent/README.md) · [Lessons](docs/lessons/README.md)
+
+<a id="build-with-your-favorite-ai-agent"></a>
+<a id="contribute"></a>
+
+## How to join in
+
+Install on macOS or Linux:
 
 ```bash
 curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
 ```
 
-<details>
-<summary>Windows, agent setup and installation details</summary>
+[Windows, agent setup and uninstall](docs/practice/agent-workflow.md#install) · [Ask your assistant](docs/practice/agent-workflow.md#ask-your-assistant)
 
-Windows, in PowerShell:
+Bring a small design, a useful source or a reproducible failure. [Contributing](.github/CONTRIBUTING.md) explains
+independent review and how to help. cad-agent collects no telemetry; your agent submits findings only if you say yes.
 
-```powershell
-irm https://cad-agent.valpatel.com/install.ps1 | iex
-```
+<a id="extras"></a>
 
-It installs uv if missing, puts cad-agent in `~/cad-agent` with the `cad-agent` command in `~/.local/bin`, and adds
-its design skills for Claude Code, Codex, Copilot CLI, Cursor, Gemini CLI and opencode. `cad-agent init my-box`
-starts a project; `cad-agent update` updates.
-
-Or paste this into your agent, followed by what you want made:
-
-<!-- The first line of docs/agent-prompt.txt (tests/repo/test_agent_prompt.py); the site's home page shows it too. -->
-```text
-Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:
-```
-
-cad-agent collects no telemetry. When your agent finds a gap or learns a lesson, it shows you a short report and sends
-it as a pull request or an issue only if you say yes. By hand, extras and uninstall:
-[Install](docs/practice/agent-workflow.md#install).
-
-</details>
-
-## Find your next step
-
-| I want to… | Open this |
-|---|---|
-| Make and check something | [Guides](docs/README.md): CAD, assemblies, mechanisms, PCBs, manufacturing and simulation |
-| Find a technique or source | [Research](docs/research/README.md): surveys, rule cards, decisions and sources |
-| Give an agent a repeatable method | [Skills](.agents/skills/README.md): design, hardware, motion and review workflows |
-| Inspect the implementation and evidence | [Code](software/cadagent/README.md), [tests](tests/README.md) and [lessons](docs/lessons/README.md) |
-
-Browse the [visual catalogue](https://cad-agent.valpatel.com/catalog), or start an agent from [llms.txt](https://cad-agent.valpatel.com/llms.txt). The [topic tree](docs/areas.yaml) gives each capability one discoverable home.
-
-<details>
-<summary id="how-it-improves-itself">How it improves itself — sources, checks and evidence limits</summary>
-
-A real design exposes a gap. We search existing work, reproduce its examples, encode what survives in engineering code, and keep the failed case as a regression test. Sources keep their credit; short guides and skills tell the next agent when to apply the method.
-
-For example, [snap-fit calculations](docs/mechanical/compliant.md) reproduce the Covestro/Bayer guide’s worked examples. Their material allowables cite data sheets; no printed coupon has been measured yet. CAD and simulation check a model’s assumptions. Physical fit and strength need physical tests.
-
-[Existing checks and their limits](docs/lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today) · [Vision and planned model evaluations](docs/vision.md)
-
-</details>
-
-<details>
-<summary id="what-works-today">What works today — with a real Gyropup CAD example</summary>
-
-- Parametric parts, bought-hardware models, assemblies and project builds.
-- Geometry, fastener, motion, snap-fit and manufacturing checks with recorded evidence.
-- Structural and thermal predictions, design trade-offs, and slicer time and mass.
-- 3D review sites, section review packets, STEP/STL/3MF exports and hashed packages.
-
-The [toolkit reference](docs/toolkit.md) names every command, dependency and limit. Real projects include [Gyropup](https://github.com/Valpatel/gyropup), the [J501 enclosure](https://github.com/mvalancy/j501-agx-orin) and the [Thor CAN breakout](https://github.com/mvalancy/pcb-agx-thor-can-breakout). Product-specific designs stay in their own repos.
-
-<img src="docs/img/hero/gyropup-leg.svg" alt="Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion by cad-agent" width="100%">
-
-<sub>Drawn from the real CAD and results of <a href="https://github.com/Valpatel/gyropup">Gyropup</a> (MIT), a self-balancing wheel-legged robot designed with cad-agent: its leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.</sub>
-
-</details>
-
-<details>
-<summary id="extras">Extras — optional dependencies and platform limits</summary>
-
-The core needs Python 3.10+, NumPy and PyYAML. CAD and simulation extras need Python 3.11+. [Choose optional dependencies and manual installation](docs/practice/agent-workflow.md#extras); platform limits are stated in the [FEA guide](docs/toolkit.md).
-
-</details>
-
-<details>
-<summary id="contribute">Contribute — sources, reproducers and independent review</summary>
-
-Send a minimal reproducer, a source or a better technique. Changes get tests and an independent review before release. [Contributing](.github/CONTRIBUTING.md) explains the process; the [dated recovery audit](docs/lessons/process/2026-11-05-recovery-audit.md) records paused work and what remains.
-
-</details>
-
-MIT. [Licence](LICENSE) · [Credits and third-party notices](software/vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)
+[Optional dependencies](docs/practice/agent-workflow.md#extras) · [Vision](docs/vision.md) · [Credits](software/vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)

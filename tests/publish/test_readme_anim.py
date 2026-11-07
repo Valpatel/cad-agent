@@ -124,7 +124,8 @@ def test_the_hero_states_its_checks_from_the_scene(tool, built):
 
 
 def _readme_hero_provenance(readme, tool):
-    examples = re.findall(r"<details>.*?</details>", readme, re.S)
+    # The real example may be a visible section or a disclosure; credit must stay with that actual image.
+    examples = [body for _, body in re.findall(r"<(details|div)\b[^>]*>(.*?)</\1>", readme, re.S)]
     example = next(block for block in examples if "Gyropup" in block)
     m = re.search(r'<img src="([^"]+)" alt="([^"]+)"', example)
     assert m and "Gyropup" in m.group(2)

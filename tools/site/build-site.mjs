@@ -92,7 +92,7 @@ const front = src => {
 };
 // Summary: the first prose paragraph (not a heading, badge, image, table, code, HTML or list), else the first list
 // item; plain text, cut at a sentence end before 260 characters.
-const plain = s => s.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+const plain = s => s.replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/gi, '$1').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
   .replace(/<[^>]+>/g, '').replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim();
 const clip = s => {
   if (s.length <= 260) return s;
@@ -133,7 +133,8 @@ for (const { file, section } of selectPages(tracked)) {
     continue;
   }
   const { meta, body } = front(src);
-  const title = meta.name || body.match(/^#\s+(.+)$/m)?.[1] || file;
+  const headingTitle = body.match(/^#\s+(.+)$/m)?.[1];
+  const title = meta.name || (headingTitle?.includes('<picture>') ? plain(headingTitle) : headingTitle) || file;
   pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
 }
 const pageURL = f => '/' + publicPath(f).replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
@@ -198,7 +199,7 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
   ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e] ?? m));
 // GitHub's anchor rule (github-slugger): lower case, drop everything but letters, marks, numbers, connectors, hyphens
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
-export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
+export const slug = text => decode(text.replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/gi, '$1').replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
 // The shared diagram palette (the style guide, #121). Files agents load (skills, subagents) keep only their
 // `class … here` lines (or `:::here`), to save context; GitHub draws those diagrams in its default colours, and the site

@@ -189,3 +189,32 @@ def test_pack_view_uses_32_bit_indices_past_65536_vertices(tmp_path):
     (vertices, faces), = unpack_model(model, (tmp_path / "strip.bin").read_bytes())
     step = (n + 1) / model["quant"]                         # 70 m of strip in 16 bits: about 1.07 mm a step
     assert faces.shape == (n, 3) and faces.max() == n + 1 and np.abs(vertices[:, 0] - xs).max() <= step / 2 + 1e-3
+
+
+# The website showcase consumes current constructor rows, not an unchecked old STEP directory.
+def test_showcase_group_policy_preserves_current_members_and_rejects_drift():
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location("showcase_policy", Path(__file__).resolve().parents[2] / "tools/gyropup_showcase.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    names = sorted(set(tool.WEB_SKIP) | set(tool.FINE_PARTS) | {"body_shell"})
+    shapes = {name: object() for name in names}
+    rows = [(name, "#aabbcc", f"source.{name}", shapes[name], (0, 0, 10)) for name in names]
+    extra = object()
+    rows.append(("body_shell", "#aabbcc", "source.other_shell", extra, (0, 0, 20)))
+    groups = tool.group_rows(rows)
+    assert sum(len(g["members"]) for g in groups.values()) == len(rows)
+    assert groups["body_shell"]["members"] == ["source.body_shell", "source.other_shell"]
+    assert groups["body_shell"]["shapes"] == [shapes["body_shell"], extra]
+    # These offsets are exploded-view hints; assembly shapes are retained unchanged.
+    for name in names:
+        assert groups[name]["shapes"][0] is shapes[name]
+    with pytest.raises(ValueError, match="Duplicate or missing"):
+        tool.group_rows(rows + [rows[0]])
+    with pytest.raises(ValueError, match="Conflicting colours"):
+        tool.group_rows(rows + [("body_shell", "#112233", "source.third_shell", object(), (0, 0, 0))])
+    with pytest.raises(ValueError, match="Current CAD grouping changed"):
+        tool.group_rows([row for row in rows if row[0] != tool.FINE_PARTS[0]])
+    with pytest.raises(ValueError, match="No current CAD parts"):
+        tool.group_rows([])

@@ -121,6 +121,10 @@ test('home and agent indexes give the install commands; the mini README links to
   for (const id of tabs) assert.match(card, new RegExp(`<label for="${id}" class="os-tab`), `${id} has a tab`);
   assert.doesNotMatch(card, /<img|<use |agent-guide/, 'the badges are text, not product marks; the per-agent guide is gone');
   const readme = await readFile(path.join(out, 'README.html'), 'utf8');
+  assert.match(readme, /<h1 id="cad-agent"><a href="\/docs\/share-badge"><picture>/, 'the badge is the README heading, not a duplicate wordmark');
+  assert.match(readme, /<title>cad-agent(?: [^<]*)?<\/title>/, 'the catalogue/page title uses the image alt name, not raw HTML');
+  assert.equal((readme.match(/<h1\b/g) || []).length, 1, 'no generated text heading above the cinematic');
+
   const installPage = resolve('/docs/agent-workflow');
   assert.ok(installPage, 'the linked installation page is actually published');
   const installGuide = await readFile(path.join(out, installPage), 'utf8');

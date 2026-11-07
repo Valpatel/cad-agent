@@ -47,7 +47,12 @@ flowchart TD
 | `guides-<group>.yaml` | Manufacturing and design guides, one shard per process group of the guide's first process: cnc 41, general 23, inserts 17, mould 30, pcb 13, print 37, sheet 40. Of these, 21 records are `extends: true` additions to guides already read in `docs/research/references.yaml`. |
 | `coverage.yaml` | The map's coverage table: what cad-agent enforced per topic (16 rows), where, its gaps, and the issue drafted for each gap, never posted (`posted: false`). `wanted` lists the sources each process group still lacks. |
 
-Every shard is at most 150 records and 150 KB. The shards and `coverage.yaml` come from the Reference Map, through
+Every shard is at most 150 records and 150 KB.
+
+<details>
+<summary>Import provenance and rules that preserve edits</summary>
+
+The shards and `coverage.yaml` come from the Reference Map, through
 [`tools/import_refmap.py`](../../../tools/import_refmap.py), which takes the map's `data.json` by path. The data file
 stays out of the repo. The import is deterministic, and its rules are in the tool's docstring:
 
@@ -62,13 +67,12 @@ stays out of the repo. The import is deterministic, and its rules are in the too
 
 Two guides that `docs/research/references.yaml` lists as `unverified` were left there.
 
+</details>
+
 ## A record
 
 A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `year`, `url` or `isbn`, `access`,
 `terms`, `areas`, `used_for`, `verified`), plus these:
-
-<details>
-<summary>Schema fields, evidence and reuse metadata</summary>
 
 | Field | What it says |
 |---|---|
@@ -87,8 +91,6 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `summary` | One or two plain sentences, in our words |
 | `imported` | Written by `tools/import_refmap.py`: a digest of the record's text as it wrote it. Edit the record freely and leave this line; a record whose text no longer matches it is yours, and a re-import keeps it as written |
 | `extends: true` | The record adds these fields to the core *read source* with the same id, instead of being a record of its own |
-
-</details>
 
 Link health is not kept here. The checker's artifacts and the site JSON hold it, and only evidence-class changes land
 in git. Every Monday `python3 tools/resource_audit.py references` checks up to 400 records' links (the longest

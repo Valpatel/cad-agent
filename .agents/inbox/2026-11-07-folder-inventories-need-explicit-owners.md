@@ -174,6 +174,14 @@ process cleanup. Receipt SHA-256: `58e93de2b54fff790ec75df7b1570a2985adc61f127ee
 This changes the observer, not product scrolling or CSS. These focused controls do not replace the complete new-head
 browser and CI checks. Keep original failures and the rejected focus hypothesis alongside the corrected evidence.
 
+Inspect compiled HTML before adding a fold. The 2026-11-07 UTC `ec21ca2b` reference-page probe still measured
+1,354 px (receipt SHA-256 `9d642d2163f4848b93aaf8671d55738c872de632cbad9e683446a7b694a47d84`). Its 15-row schema
+table was already folded by the publisher, so a new author wrapper merely nested disclosures and barely shortened
+the actual gap. Remove that redundant wrapper and fold the optional import procedure instead. Source length alone
+does not identify visible text walls; retain the actual measurement and verify the corrected rendered page.
+The corrected local draft measured 1,135 px with the unchanged consumer and all six planted geometry controls
+passing, no page errors and clean owned-process cleanup. Current-head CI in both engines remains required.
+
 ## Limits
 
 Relative file/directory destinations are checked; public route/anchor consumers remain the existing site build and browser checks. Source-only Markdown anchors and remote availability are not newly claimed. A diagram rendering successfully does not prove its semantic correctness or physical CAD performance. Upstream and data descendants retain their recorded layouts; parent ownership does not turn them into reviewed toolkit source.

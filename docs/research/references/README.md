@@ -5,18 +5,37 @@ lists, links and, once someone has read them, cites. It grows the one-file regis
 splitting its id space. `docs/research/references.yaml` stays the core of read and cited sources. The records here share
 its ids, and `cadagent.review.references` reads both.
 
+Load the source inventory
+
 ```mermaid
 flowchart TD
-    C["docs/research/references.yaml<br/>core: read, cited sources"] --> L["cadagent.review.references<br/>load(): one id space"]
-    S["docs/research/references/*.yaml<br/>schema-2 shards"] --> L
-    V["vocab.yaml<br/>fixed vocabularies"] --> K["check()<br/>python -m ... --check"]
+    C["docs/research/references.yaml<br/>core: read, cited sources"]
+    L["cadagent.review.references<br/>load(): one id space"]
+    S["docs/research/references/*.yaml<br/>schema-2 shards"]
+    C --> L
+    S --> L
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class S,L here
+    class C near
+```
+
+Check and cite the loaded sources
+
+```mermaid
+flowchart TD
+    L["cadagent.review.references<br/>load(): one id space"]
+    V["vocab.yaml<br/>fixed vocabularies"]
+    K["check()<br/>python -m ... --check"]
+    U["lookup(), citation()<br/>ref tags in pages"]
+    V --> K
     L --> K
-    L --> U["lookup(), citation()<br/>ref tags in pages"]
+    L --> U
     K ~~~ U
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class S,V,L here
-    class C,K,U near
+    class V,L here
+    class K,U near
 ```
 
 ## What's here
@@ -80,7 +99,7 @@ Core entries, cited records and anything the rules do not cover are listed in th
 ## The evidence ladder
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["snippet-only"] --> B["read"]
     B --> C["verified-at-source"]
     C --> D["encoded"]

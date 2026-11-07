@@ -2,15 +2,33 @@
 
 Owned provenance records surround pinned upstream bytes. Integrity and parser limits remain in the source records and existing component tests.
 
+Recorded file-viewer dependencies
+
 ```mermaid
 flowchart TD
-    S["file-viewer-sources.json"] --> P["file-parsers/ + occt-import-js/"]
-    S --> T["three/"]
-    M["mermaid/"] --> D["../diagrams.js"]
-    F["fonts/"] --> C["../theme.css"]
+    S["file-viewer-sources.json"]
+    P["file-parsers/ + occt-import-js/"]
+    T["three/"]
+    S --> P
+    S --> T
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class S,P,T,M,D,F,C here
+    class S,P,T here
+```
+
+Diagram and theme dependencies
+
+```mermaid
+flowchart TD
+    M["mermaid/"]
+    D["../diagrams.js"]
+    F["fonts/"]
+    C["../theme.css"]
+    M --> D
+    F --> C
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class M,D,F,C here
 ```
 
 | File or folder | Purpose |

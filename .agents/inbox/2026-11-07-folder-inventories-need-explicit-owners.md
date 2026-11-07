@@ -2,7 +2,7 @@
 
 On 2026-11-07 UTC, the #113 read-only map study first split ordinary `git ls-tree` output on lines. Git quoted a vendored Unicode filename, producing invented quoted parent paths in that rejected inventory. The corrected inventory used `git ls-files -z`, decoded UTF-8 and split only on NUL. Historical 58/110 and 61/112 counts used declared exclusions; they are dated inventories, not completeness percentages or asserted missing-README defect counts.
 
-The actual installer also treats every `.agents/agents/*.md` as a role prompt. An ordinary README there fails the existing frontmatter/discovery control. Generated figures, fixture trees and imported projects have different consumers from owned source packages; blindly adding READMEs or suppressing all unmatched folders would misrepresent ownership.
+At that audited revision, the installer treated every `.agents/agents/*.md` as a role prompt. An ordinary README there failed the existing frontmatter/discovery control. Generated figures, fixture trees and imported projects have different consumers from owned source packages; blindly adding READMEs or suppressing all unmatched folders would misrepresent ownership.
 
 ## Evidence and correction
 
@@ -31,7 +31,125 @@ A parent-authorized bounded headless local run at exact `d93ce8fe` then built 90
 
 Use the existing NUL-safe inventory convention and a real consumer-based owner for every directory. Ordinary owned folders require an authored map, explicit direct-file table, up link and child ownership links. A group delegates only to its actual named parent/index/validator: new fixture sets or figure topics still need parent rows, new prompt/resources need explicit owner links, dated incidents need real symptom-index entries, and temporary release fragments still pass the actual release parser. Do not preserve omissions by copying a baseline allowlist.
 
-Keep publication scope separate: `docs/map.md` distinguishes public pages from canonical source-only code/tool/operational maps. It does not add broad new catalogue routes. The existing required Chromium job checks freshness and controls and renders source owner diagrams through the actual kit in both themes; local structural success is not that browser evidence.
+The first increment kept publication scope separate: `docs/map.md` distinguished public pages from canonical source-only code/tool/operational maps, without adding broad new catalogue routes. The existing required Chromium job checked freshness and controls and rendered source owner diagrams through the actual kit in both themes; local structural success was not that browser evidence. The later folder-publication increment below addresses the still-unmet site requirement.
+
+## An ownership map does not replace a requested folder README
+
+The 2026-11-07 audit of actual dev `422c9f38a907e31a67a118809ab26f9ca51d25a3` used
+`git ls-tree -rz --name-only` and derived directories from the NUL-delimited names. All 1,034 directories had a
+declared owner, but 38 still lacked their own README after the original upstream, fixture and GitHub-policy
+exception concepts: eight skill roots, role/reference/plugin folders, 22 figure topics, one dated validation run
+and four vendor metadata/patch folders. The original literal request remained unmet despite the green owner check.
+
+The correction adds short human maps with actual file tables, parent/child links, existing figure previews and
+small Mermaid diagrams. Skill maps link the canonical instructions rather than duplicate them. A typed
+`folder-maps` policy keeps historical data prose separate from current authored instructions while requiring
+each data directory's own map. The skill's bundled-resource links remain an independent check.
+
+The actual role installer and supply-chain inventory now reserve exactly `.agents/agents/README.md` as a map;
+other malformed role Markdown still fails discovery. The role map initially remained source-only, so editorial
+publication did not misclassify it as a third agent. Skill maps copy with their local instructions and references; links
+outside the copied bundle use canonical source URLs. Figure maps also use source URLs for captions/producers;
+the source-only maps themselves are not copied to the site's image namespace. No historical report, source record,
+patch or image bytes are rewritten.
+
+**Rule:** test the requested entry point and the real consumers that discover or copy it. Parent ownership and
+literal README coverage are different assertions. Keep the original narrow exceptions; do not add a broader
+waiver merely to make a folder count pass. Current full tests and actual diagram rendering remain required.
+
+The first local consumer run retained 268 Python passes, eight explicit skips and one failure: the weekly lychee
+glob also selected the new source-only figure/run/role maps. The existing test compared actual workflow arguments
+against the real publisher and caught that drift. The workflow now selects the publisher's supported document
+depths plus the existing explicitly published coupon example, and excludes the role map. Seven obsolete example
+exclusions disappear; no network permissions, action pins, result policy or publisher predicate changes. The exact
+previously failing parity check then passed. The 26 map controls also passed, with their actual diagram renderer
+still explicitly reserved for the existing CI browser job.
+
+### Follow each new map through publication and caption consumers
+
+The first full CI at `6a2f52aa` (2026-11-07 UTC) rendered all 120 owner maps / 121 blocks in both themes:
+114 distinct drawings, 83 cached and 31 newly drawn per theme, zero fallback. The Chromium job then failed its
+existing Markdown-twin/link check: `rewriteMd` treated every tracked `docs/img/` file as published, but the actual
+copier selects image extensions only. New README links therefore became 44 broken site/agent-index URLs. Use the
+same exact image inventory for URL rewriting and copying; source-only map links belong to the repository.
+
+The core Python job retained 3,014 passes, 332 skips and one caption failure. Its image collector correctly found
+the new HTML image, but its caption check split at the next `filename)` occurrence, which was an ordinary table
+link. Pair captions with actual Markdown/HTML image boundaries, require every discovered image form to be handled,
+and retain controls for an absent caption and an uncaptioned repeated image. The new preview also gets its own
+explicit illustrative caption. Do not skip source-map pages or relax the required caption meaning.
+
+Evidence: CI jobs `128498821063` / `128498821278` in runs `42404384396` / `42404384463`. Original raw-log SHA-256:
+`d840a8ed7a6a7ddf527bca8429acf08d8ecfb998b3033319b862af34cf7cc3cc` (Chromium),
+`911dfc75dd764a82c70aa59f67f3c7629dc5687ffd0cc5cfd1ad37f21062fe83` (Python 3.12). Later checks do not erase those failures.
+
+## Publish folder details without expanding the front page
+
+After the 38 missing READMEs were authored, #113 still required the site to publish them. A fresh source-derived
+selection on `8e31e884` found **102** owned README maps outside the 90 editorial pages: 38 new maps plus 64 existing
+code/tool/operational maps. Counting only the new files would have left the older maps behind.
+
+The continuation gives those maps their own HTML and Markdown under `repo/folders/`, linked through the existing
+closed hierarchy. The editorial catalogue, navigation and agent index keep their existing selection. One pure
+ownership selector is shared by publication and the strict repo-map checker; the Python link auditor is checked
+against its actual selected set. Dot-safe routes prefix every directory component and escape reserved bytes
+without URL-percent ambiguity, preserving distinct `.agents`, `_agents`, spaces, literal escape text and Unicode.
+The builder uses the same route identity for output, parent navigation and HTML/Markdown links. Images retain
+their actual source asset paths; raw HTML previews in Markdown twins also need URL rewriting.
+
+The weekly checker now consumes the actual published source list with the pinned lychee's
+[`--files-from` interface](https://lychee.cli.rs/guides/cli/#files-from), rather than a second hierarchy of globs.
+Its line/glob format cannot represent every legal Git filename: reject ambiguous newlines and glob metacharacters
+instead of dropping or broadening those inputs. The existing report exclusion and network/rate/result policies
+stay unchanged. Parity checks execute the configured selector, compare it with the actual publisher, and require
+the role and software maps while excluding upstream/fixture leaves.
+
+The initial draft build produced 90 editorial pages, 102 folder maps and 220 catalogue entries; it explicitly
+used client diagrams, so it is not rendered-page evidence. Actual HTML/twin checks must cover every selected map,
+preserve the separate editorial-owner-to-catalogue assertion, and verify no-JavaScript, both-theme and phone
+rendering through the existing browser consumers before acceptance. Local source checks or GitHub links do not
+complete that publication requirement.
+
+## Published folder illustrations must reach the output too
+
+On 2026-11-07 UTC, the actual committed `5c712cb5` client-diagram build passed the Markdown-twin link consumer
+but failed the HTML-link consumer: the new `docs/examples/explore-two-wheel/README.md` page referenced its
+sibling `compare.png`, while the old copier only copied `docs/img/`. The new byte-for-byte consumer also fails
+against that retained output with ENOENT (`/tmp/cad113-image-old-consumer.log`). The renderer now adds actual
+sanitized local image sources to the copy set and rewrites twins after that set is complete. It does not copy
+all example/vendor assets or hide the illustration. The old Python docs/img-only restriction is obsolete;
+Git membership, case, nonempty/magic-byte checks remain, and actual published HTML/twin consumers guard delivery.
+A working-tree client-diagram build passed the image/source-byte/twin check; that is not drawn-page acceptance.
+
+The exact pinned lychee 0.24.2 binary was also exercised, after verifying its official release archive SHA-256
+`73657a111819a30c47c08352896796f23d64e4eb2b3ed39b6d32149241566fc5`. Its actual
+`--dump-inputs --files-from /tmp/cad113-lychee0242-consumer/intended.txt` consumed exactly 191 unique intended
+paths, including 28 hidden paths. Adding `--hidden` consumed the same set, so no flag change is justified.
+The receipt retains both outputs and hashes; this proves input consumption, not remote link health.
+
+## Detailed maps need both desktop fit and a real phone reading path
+
+The exact `8ecd46cd` Chromium CI job `128510182386` completed all 16 browser parts and failed on real diagram
+widths: 23 newly published folder-map routes exceeded the desktop column, and 76 exceeded a phone width.
+Raw log SHA-256: `6425e21b733e2e00bf6664758941bc91730af3cbfbd6a4545232118224174520`.
+The independent [finding](https://github.com/Valpatel/cad-agent/pull/467#issuecomment-6712299739) remains a failure.
+The duplicate local run was deliberately stopped after that definitive result; its closed-page error is an
+[operator stop](https://github.com/Valpatel/cad-agent/pull/467#issuecomment-6712301397), not an inferred browser or OOM defect.
+Its pre-stop cgroup recorded no OOM kills or PID-limit rejections, although memory pressure reached the bound.
+
+The existing kit deliberately keeps natural-size labels on phones and makes wide diagrams focusable horizontal
+scrollers. Applying the five concise overview pages' stricter phone-fit rule to every detailed map contradicted
+that reading contract. Keep the overview fit rule and the desktop fit rule for every page. Exercise all new maps
+on phones for document fit, natural SVG scale, accurate scroll hints, keyboard access and reach to the final
+branch; also exercise representative maps without application JavaScript. Plant real shrink/focus/overflow/
+keyboard counterexamples so a decorative screenshot or a programmatic scroll alone cannot prove usability.
+
+Repair the 23 desktop-wide authored maps by arranging long chains top-down and splitting separate flows into
+smaller figures with repeated boundary nodes. Preserve the real named nodes and semantic arrows; invisible
+layout constraints may change. Do not shrink labels, widen an exception list, remove a drawing or suppress the
+failed run. A changed owned vendor README also needs its actual recorded hash updated. The initial actual draft
+render fixed 22 of the 23 routes; the remaining gate-map label needed a line break. Draft geometry measurements
+are component evidence only; the committed full browser consumers and current CI still decide acceptance.
 
 ## Limits
 

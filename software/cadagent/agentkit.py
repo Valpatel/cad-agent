@@ -2,6 +2,7 @@
 
 The kit lives in the cad-agent checkout: ``.agents/skills/<name>/SKILL.md`` (the open agent-skill format both tools read) and
 ``.agents/agents/<name>.md`` (Claude Code subagents: frontmatter ``name``, ``description``, ``tools``, then the prompt).
+``README.md`` is reserved for the human folder map and is not installed as a role.
 
 ``install`` puts them where the tools look, for the current user:
 
@@ -174,6 +175,8 @@ def items(root: Path) -> List[Item]:
             raise ValueError(f"{folder}/SKILL.md: name {fm['name']!r} does not match its folder")
         found.append(Item("skill", folder.name, folder, fm["description"], *_requires(fm, folder / "SKILL.md")))
     for path in sorted((root / KIT_AGENTS).glob("*.md")):
+        if path.name == "README.md":  # Human folder map, never an installed role or generated skill.
+            continue
         fm = _frontmatter(path.read_text(), path)
         if fm["name"] != path.stem:
             raise ValueError(f"{path}: name {fm['name']!r} does not match its file name")

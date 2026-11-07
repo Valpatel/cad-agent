@@ -5,17 +5,45 @@ inserts, compliant features, linkages and motion traces, and the figures drawn f
 
 Arrows: what a test imports, runs or reads.
 
+Mechanical checks
+
 ```mermaid
 flowchart TD
-    H["test_holes.py · test_fasteners.py<br/>test_connectors.py"] -->|"imports"| M["mechanical/<br/>holes, fasteners"]
-    S["test_snapfit*.py<br/>test_printed_joints.py"] --> C["mechanical/compliant/<br/>printed_joints.py"]
-    F["test_motion_figures.py<br/>test_insert_figures.py"] -->|"--check"| T["tools/*_figures.py<br/>docs/img/"]
-    H ~~~ F
+    H["test_holes.py · test_fasteners.py<br/>test_connectors.py"]
+    M["mechanical/<br/>holes, fasteners"]
+    H -->|"imports"| M
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class H,S,F here
-    class M,C near
+    class H here
+    class M near
+```
+
+Printed joint checks
+
+```mermaid
+flowchart TD
+    S["test_snapfit*.py<br/>test_printed_joints.py"]
+    C["mechanical/compliant/<br/>printed_joints.py"]
+    S --> C
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class S here
+    class C near
+```
+
+Generated figure checks
+
+```mermaid
+flowchart TD
+    F["test_motion_figures.py<br/>test_insert_figures.py"]
+    T["tools/*_figures.py<br/>docs/img/"]
+    F -->|"--check"| T
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class F here
     class T out
 ```
 

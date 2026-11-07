@@ -5,17 +5,37 @@ datasheets, the model audit, registration, and the hardware tables against their
 
 Arrows: what a test imports, runs or reads.
 
+Library rules and source tables
+
 ```mermaid
 flowchart TD
-    T["test_footprints.py<br/>test_audit.py · test_hardware.py"] -->|"imports"| L["library/<br/>footprints · audit · hardware"]
-    B["test_bodies.py<br/>needs CadQuery"] -->|"imports"| BO["library/bodies.py"]
-    T -->|"reads"| V["software/vendor/bd_warehouse<br/>ISO head tables"]
-    L & BO --> O["golden vectors<br/>and planted mistakes"]
+    T["test_footprints.py<br/>test_audit.py · test_hardware.py"]
+    L["library/<br/>footprints · audit · hardware"]
+    V["software/vendor/bd_warehouse<br/>ISO head tables"]
+    T -->|"imports"| L
+    T -->|"reads"| V
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class T,B here
-    class L,BO,V near
+    class T here
+    class L,V near
+```
+
+Geometry and shared expectations
+
+```mermaid
+flowchart TD
+    L["library/<br/>footprints · audit · hardware"]
+    B["test_bodies.py<br/>needs CadQuery"]
+    BO["library/bodies.py"]
+    O["golden vectors<br/>and planted mistakes"]
+    B -->|"imports"| BO
+    L & BO --> O
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class B here
+    class L,BO near
     class O out
 ```
 

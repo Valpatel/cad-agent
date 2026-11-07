@@ -1,6 +1,6 @@
 # Repository map
 
-Choose an owner below. The full tracked inventory is grouped in closed disclosures, including upstream and fixture descendants. This is an ownership map, not a quality percentage or proof of physical performance.
+Choose a folder below, then follow its picture and file links. The full inventory stays folded until you need it. Maps describe where things belong; they do not prove engineering quality or physical performance.
 
 ```mermaid
 flowchart TD
@@ -14,14 +14,14 @@ flowchart TD
 | Owner | Use |
 |---|---|
 | [Project overview](../README.md) | Start here and choose an existing workflow. |
-| [Toolkit packages](https://github.com/Valpatel/cad-agent/blob/dev/software/README.md) | Reusable code and its domain owners. |
+| [Toolkit packages](https://cad-agent.valpatel.com/repo/folders/d-software/README) | Reusable code and its domain owners. |
 | [Guides and research](README.md) | Published explanations, source records and examples. |
-| [Repository tools](https://github.com/Valpatel/cad-agent/blob/dev/tools/README.md) | Build, release, audit and figure producers. |
-| [Tests and fixtures](https://github.com/Valpatel/cad-agent/blob/dev/tests/README.md) | Actual consumers, controls and recorded data. |
-| [Agent kit](https://github.com/Valpatel/cad-agent/blob/dev/.agents/README.md) | Installed skills, independent roles and source-only operations. |
+| [Repository tools](https://cad-agent.valpatel.com/repo/folders/d-tools/README) | Build, release, audit and figure producers. |
+| [Tests and fixtures](https://cad-agent.valpatel.com/repo/folders/d-tests/README) | Actual consumers, controls and recorded data. |
+| [Agent kit](https://cad-agent.valpatel.com/repo/folders/d-.agents/README) | Installed skills, independent roles and source-only operations. |
 | [Contribution policy](../.github/CONTRIBUTING.md) | Review, CI, integration and publication. |
 
-Public owner links below are checked against the actual built HTML and catalogue. Code, tool and operational maps remain canonical source pages rather than new catalogue routes. Relative source file/directory destinations are checked; remote availability and source-only Markdown anchors are not newly verified.
+Guides explain how to use the toolkit. Folder maps lead into its code, tests and working notes without adding them to the main catalogue. Each map also links its canonical source. Upstream and fixture descendants keep their named parent map.
 
 ## Full inventory
 
@@ -47,16 +47,27 @@ Public owner links below are checked against the actual built HTML and catalogue
 <summary>.agents — 16 folders</summary>
 
 <details>
-<summary><code>.agents/README.md</code> — 2 folders</summary>
+<summary><code>.agents/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/README.md)
 
 - Owned folder map.
-- Installer discovers every role Markdown file; parent links the two manifest-listed prompts, not a README in the prompt namespace.
 
 | Folder |
 |---|
 | `.agents` |
+
+</details>
+
+<details>
+<summary><code>.agents/agents/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-agents/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/agents/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
 | `.agents/agents` |
 
 </details>
@@ -64,7 +75,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/domains/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/domains/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-domains/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/domains/README.md)
 
 - Owned folder map.
 
@@ -77,7 +88,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/inbox/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/inbox/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-inbox/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/inbox/README.md)
 
 - Owned folder map.
 
@@ -90,7 +101,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/inbox/publish/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/inbox/publish/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-inbox/d-publish/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/inbox/publish/README.md)
 
 - Owned folder map.
 
@@ -103,7 +114,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/playbooks/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/playbooks/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-playbooks/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/playbooks/README.md)
 
 - Owned folder map.
 
@@ -116,7 +127,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/README.md)
 
 - Owned folder map.
 
@@ -127,26 +138,37 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/cad-motion-validation/SKILL.md</code> — 2 folders</summary>
+<summary><code>.agents/skills/cad-motion-validation/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/cad-motion-validation/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-cad-motion-validation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-motion-validation/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
-- Bundled reference resources are linked from the installed skill; no extra discovered skill entry.
+- Owned folder map.
 
 | Folder |
 |---|
 | `.agents/skills/cad-motion-validation` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/cad-motion-validation/references/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-cad-motion-validation/d-references/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-motion-validation/references/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
 | `.agents/skills/cad-motion-validation/references` |
 
 </details>
 
 <details>
-<summary><code>.agents/skills/cad-pr-review/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/cad-pr-review/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/cad-pr-review/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-cad-pr-review/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-pr-review/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -155,11 +177,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/cad-remote-runs/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/cad-remote-runs/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/cad-remote-runs/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-cad-remote-runs/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-remote-runs/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -168,11 +190,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/cad-supply-chain/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/cad-supply-chain/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/cad-supply-chain/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-cad-supply-chain/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-supply-chain/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -181,11 +203,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/cad-work-tracking/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/cad-work-tracking/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/cad-work-tracking/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-cad-work-tracking/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-work-tracking/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -194,11 +216,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/design-process/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/design-process/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/design-process/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-design-process/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/design-process/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -207,11 +229,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/mcmaster-parts/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/mcmaster-parts/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/mcmaster-parts/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-mcmaster-parts/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/mcmaster-parts/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -220,11 +242,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>.agents/skills/sheet-metal-hardware/SKILL.md</code> — 1 folders</summary>
+<summary><code>.agents/skills/sheet-metal-hardware/README.md</code> — 1 folders</summary>
 
-[Published owner](../.agents/skills/sheet-metal-hardware/SKILL.md)
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-sheet-metal-hardware/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/sheet-metal-hardware/README.md)
 
-- Installed skill entry; resource links stay relative to SKILL.md.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -238,11 +260,11 @@ Public owner links below are checked against the actual built HTML and catalogue
 <summary>.claude-plugin — 1 folders</summary>
 
 <details>
-<summary><code>.agents/README.md</code> — 1 folders</summary>
+<summary><code>.claude-plugin/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.claude-plugin/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.claude-plugin/README.md)
 
-- Plugin wiring uses the canonical kit; its manifest is mapped by the kit owner.
+- Owned folder map.
 
 | Folder |
 |---|
@@ -291,7 +313,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/changelog.d/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/changelog.d/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-changelog.d/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/changelog.d/README.md)
 
 - Owned folder map.
 
@@ -317,7 +339,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/explore-two-wheel/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-explore-two-wheel/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/README.md)
 
 - Owned folder map.
 
@@ -330,7 +352,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/explore-two-wheel/catalogue/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/catalogue/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-explore-two-wheel/d-catalogue/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/catalogue/README.md)
 
 - Owned folder map.
 
@@ -343,7 +365,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/explore-two-wheel/designs/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/designs/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-explore-two-wheel/d-designs/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/designs/README.md)
 
 - Owned folder map.
 
@@ -356,7 +378,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/explore-two-wheel/tools/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/tools/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-explore-two-wheel/d-tools/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/explore-two-wheel/tools/README.md)
 
 - Owned folder map.
 
@@ -382,7 +404,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/starter-box/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/starter-box/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-starter-box/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/starter-box/README.md)
 
 - Owned folder map.
 
@@ -395,7 +417,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/starter-box/cad/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/starter-box/cad/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-starter-box/d-cad/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/starter-box/cad/README.md)
 
 - Owned folder map.
 
@@ -408,7 +430,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/starter-box/tools/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/starter-box/tools/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-starter-box/d-tools/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/starter-box/tools/README.md)
 
 - Owned folder map.
 
@@ -419,36 +441,300 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>docs/img/README.md</code> — 23 folders</summary>
+<summary><code>docs/img/README.md</code> — 1 folders</summary>
 
 [Published owner](img/README.md)
 
-- Committed generated figures retain their topic output layout and recorded producers; parent maps each topic.
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
 
 | Folder |
 |---|
 | `docs/img` |
+
+</details>
+
+<details>
+<summary><code>docs/img/bearings/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-bearings/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/bearings/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/bearings` |
+
+</details>
+
+<details>
+<summary><code>docs/img/cfd/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-cfd/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/cfd/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/cfd` |
+
+</details>
+
+<details>
+<summary><code>docs/img/compliant/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-compliant/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/compliant/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/compliant` |
+
+</details>
+
+<details>
+<summary><code>docs/img/explore/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-explore/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/explore/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/explore` |
+
+</details>
+
+<details>
+<summary><code>docs/img/fasteners/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-fasteners/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/fasteners/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/fasteners` |
+
+</details>
+
+<details>
+<summary><code>docs/img/fea/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-fea/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/fea/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/fea` |
+
+</details>
+
+<details>
+<summary><code>docs/img/formulas/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-formulas/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/formulas/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/formulas` |
+
+</details>
+
+<details>
+<summary><code>docs/img/gates/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-gates/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/gates/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/gates` |
+
+</details>
+
+<details>
+<summary><code>docs/img/gyropup/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-gyropup/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/gyropup/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/gyropup` |
+
+</details>
+
+<details>
+<summary><code>docs/img/hero/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-hero/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/hero/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/hero` |
+
+</details>
+
+<details>
+<summary><code>docs/img/inserts/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-inserts/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/inserts/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/inserts` |
+
+</details>
+
+<details>
+<summary><code>docs/img/joints/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-joints/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/joints/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/joints` |
+
+</details>
+
+<details>
+<summary><code>docs/img/kit/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-kit/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/kit/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/kit` |
+
+</details>
+
+<details>
+<summary><code>docs/img/linkages/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-linkages/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/linkages/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/linkages` |
+
+</details>
+
+<details>
+<summary><code>docs/img/motion/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-motion/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/motion/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/motion` |
+
+</details>
+
+<details>
+<summary><code>docs/img/packets/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-packets/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/packets/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/packets` |
+
+</details>
+
+<details>
+<summary><code>docs/img/plates/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-plates/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/plates/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/plates` |
+
+</details>
+
+<details>
+<summary><code>docs/img/process/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-process/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/process/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/process` |
+
+</details>
+
+<details>
+<summary><code>docs/img/research/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-research/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/research/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/research` |
+
+</details>
+
+<details>
+<summary><code>docs/img/sheet-metal/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-sheet-metal/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/sheet-metal/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/sheet-metal` |
+
+</details>
+
+<details>
+<summary><code>docs/img/supply-chain/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-supply-chain/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/supply-chain/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/supply-chain` |
+
+</details>
+
+<details>
+<summary><code>docs/img/thermal/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-thermal/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/thermal/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/img/thermal` |
 
 </details>
@@ -599,7 +885,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/research/bench/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/bench/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-research/d-bench/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/bench/README.md)
 
 - Owned folder map.
 
@@ -625,7 +911,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/research/references/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/references/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-research/d-references/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/references/README.md)
 
 - Owned folder map.
 
@@ -636,16 +922,27 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>docs/validation/README.md</code> — 2 folders</summary>
+<summary><code>docs/validation/README.md</code> — 1 folders</summary>
 
 [Published owner](validation/README.md)
 
 - Owned folder map.
-- Dated numerical receipts retain their evidence layout; parent maps the immutable run.
 
 | Folder |
 |---|
 | `docs/validation` |
+
+</details>
+
+<details>
+<summary><code>docs/validation/volume-2026-10-29/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-validation/d-volume-2026-10-29/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/validation/volume-2026-10-29/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
 | `docs/validation/volume-2026-10-29` |
 
 </details>
@@ -658,7 +955,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/README.md)
 
 - Owned folder map.
 
@@ -671,7 +968,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/README.md)
 
 - Owned folder map.
 
@@ -684,7 +981,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/electrical/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/electrical/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-electrical/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/electrical/README.md)
 
 - Owned folder map.
 
@@ -697,7 +994,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/formulas/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/formulas/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-formulas/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/formulas/README.md)
 
 - Owned folder map.
 
@@ -710,7 +1007,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/geometry/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/geometry/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-geometry/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/geometry/README.md)
 
 - Owned folder map.
 
@@ -723,7 +1020,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/library/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/library/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-library/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/library/README.md)
 
 - Owned folder map.
 
@@ -736,7 +1033,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/manufacturing/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/manufacturing/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-manufacturing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/manufacturing/README.md)
 
 - Owned folder map.
 
@@ -749,7 +1046,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/mechanical/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/mechanical/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-mechanical/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/mechanical/README.md)
 
 - Owned folder map.
 
@@ -762,7 +1059,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/mechanical/compliant/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/mechanical/compliant/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-mechanical/d-compliant/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/mechanical/compliant/README.md)
 
 - Owned folder map.
 
@@ -775,7 +1072,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/publish/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/publish/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-publish/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/publish/README.md)
 
 - Owned folder map.
 
@@ -788,7 +1085,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/publish/anim/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/publish/anim/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-publish/d-anim/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/publish/anim/README.md)
 
 - Owned folder map.
 
@@ -801,7 +1098,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/review/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/review/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-review/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/review/README.md)
 
 - Owned folder map.
 
@@ -814,7 +1111,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/review/dossier/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/review/dossier/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-review/d-dossier/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/review/dossier/README.md)
 
 - Owned folder map.
 
@@ -827,7 +1124,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/review/gates/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/review/gates/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-review/d-gates/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/review/gates/README.md)
 
 - Owned folder map.
 
@@ -840,7 +1137,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/simulation/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/simulation/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-simulation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/simulation/README.md)
 
 - Owned folder map.
 
@@ -853,7 +1150,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/simulation/explore/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/simulation/explore/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-simulation/d-explore/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/simulation/explore/README.md)
 
 - Owned folder map.
 
@@ -866,7 +1163,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/thermal/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/thermal/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-thermal/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/thermal/README.md)
 
 - Owned folder map.
 
@@ -879,7 +1176,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/webkit/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/README.md)
 
 - Owned folder map.
 
@@ -892,7 +1189,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>software/cadagent/webkit/vendor/README.md</code> — 17 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/vendor/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-vendor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/vendor/README.md)
 
 - Owned folder map.
 - Pinned upstream parser bytes; file-viewer-sources and integrity checks own the components.
@@ -925,15 +1222,12 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
-<summary><code>software/vendor/README.md</code> — 573 folders</summary>
+<summary><code>software/vendor/README.md</code> — 569 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-vendor/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/README.md)
 
 - Owned folder map.
 - Imported upstream layout; manifest pins and vendor audit own contents.
-- Exact vendor scan fingerprints; parent owns metadata, vendor audit validates unexpected files.
-- Recorded vendor patches; parent owns metadata, vendor audit validates unexpected files.
-- Recorded vendor scans; parent owns metadata, vendor audit validates unexpected files.
 
 | Folder |
 |---|
@@ -954,7 +1248,6 @@ Public owner links below are checked against the actual built HTML and catalogue
 | `software/vendor/agentcad/tests/fixtures/validation` |
 | `software/vendor/agentcad/tests_b3d` |
 | `software/vendor/agentcad/tests_b3d/fixtures` |
-| `software/vendor/baselines` |
 | `software/vendor/bd_warehouse` |
 | `software/vendor/bd_warehouse/docs` |
 | `software/vendor/bd_warehouse/examples` |
@@ -1282,9 +1575,6 @@ Public owner links below are checked against the actual built HTML and catalogue
 | `software/vendor/kicad-mcp-pro/tests/research` |
 | `software/vendor/kicad-mcp-pro/tests/reviewer` |
 | `software/vendor/kicad-mcp-pro/tests/unit` |
-| `software/vendor/patches` |
-| `software/vendor/patches/text-to-cad` |
-| `software/vendor/reports` |
 | `software/vendor/text-to-cad` |
 | `software/vendor/text-to-cad/.claude-plugin` |
 | `software/vendor/text-to-cad/.codex-plugin` |
@@ -1514,9 +1804,61 @@ Public owner links below are checked against the actual built HTML and catalogue
 </details>
 
 <details>
+<summary><code>software/vendor/baselines/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-vendor/d-baselines/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/baselines/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
+| `software/vendor/baselines` |
+
+</details>
+
+<details>
+<summary><code>software/vendor/patches/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-vendor/d-patches/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/patches/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
+| `software/vendor/patches` |
+
+</details>
+
+<details>
+<summary><code>software/vendor/patches/text-to-cad/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-vendor/d-patches/d-text-to-cad/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/patches/text-to-cad/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
+| `software/vendor/patches/text-to-cad` |
+
+</details>
+
+<details>
+<summary><code>software/vendor/reports/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-vendor/d-reports/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/reports/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
+| `software/vendor/reports` |
+
+</details>
+
+<details>
 <summary><code>software/vendor/upstreams/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/upstreams/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-vendor/d-upstreams/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/vendor/upstreams/README.md)
 
 - Owned folder map.
 
@@ -1534,7 +1876,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/README.md)
 
 - Owned folder map.
 
@@ -1547,7 +1889,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/cli/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/cli/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-cli/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/cli/README.md)
 
 - Owned folder map.
 
@@ -1560,7 +1902,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/electrical/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/electrical/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-electrical/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/electrical/README.md)
 
 - Owned folder map.
 
@@ -1573,7 +1915,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/fixtures/README.md</code> — 328 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-fixtures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md)
 
 - Shared fixture descendants are data owned by the named fixture set and its generator/tests; not new package folders.
 
@@ -1913,7 +2255,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/formulas/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/formulas/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-formulas/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/formulas/README.md)
 
 - Owned folder map.
 
@@ -1926,7 +2268,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/geometry/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/geometry/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-geometry/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/geometry/README.md)
 
 - Owned folder map.
 
@@ -1939,7 +2281,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/library/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/library/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-library/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/library/README.md)
 
 - Owned folder map.
 
@@ -1952,7 +2294,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/manufacturing/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/manufacturing/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-manufacturing/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/manufacturing/README.md)
 
 - Owned folder map.
 
@@ -1965,7 +2307,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/mechanical/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/mechanical/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-mechanical/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/mechanical/README.md)
 
 - Owned folder map.
 
@@ -1978,7 +2320,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/publish/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/publish/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-publish/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/publish/README.md)
 
 - Owned folder map.
 
@@ -1991,7 +2333,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/repo/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/repo/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-repo/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/repo/README.md)
 
 - Owned folder map.
 
@@ -2004,7 +2346,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/review/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/review/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-review/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/review/README.md)
 
 - Owned folder map.
 
@@ -2017,7 +2359,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/simulation/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/simulation/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-simulation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/simulation/README.md)
 
 - Owned folder map.
 
@@ -2030,7 +2372,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/simulation/explore/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/simulation/explore/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-simulation/d-explore/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/simulation/explore/README.md)
 
 - Owned folder map.
 
@@ -2043,7 +2385,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/site/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/site/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-site/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/site/README.md)
 
 - Owned folder map.
 
@@ -2056,7 +2398,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/thermal/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/thermal/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-thermal/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/thermal/README.md)
 
 - Owned folder map.
 
@@ -2069,7 +2411,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tests/webkit/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/README.md)
 
 - Owned folder map.
 
@@ -2087,7 +2429,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/README.md)
 
 - Owned folder map.
 
@@ -2100,7 +2442,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/anim/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/anim/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-anim/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/anim/README.md)
 
 - Owned folder map.
 
@@ -2113,7 +2455,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/figures/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/figures/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-figures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/figures/README.md)
 
 - Owned folder map.
 
@@ -2126,7 +2468,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/mermaid/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/mermaid/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-mermaid/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/mermaid/README.md)
 
 - Owned folder map.
 
@@ -2139,7 +2481,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/mining/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/mining/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-mining/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/mining/README.md)
 
 - Owned folder map.
 
@@ -2152,7 +2494,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/site/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/README.md)
 
 - Owned folder map.
 
@@ -2165,7 +2507,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/site/assets/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/d-assets/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/README.md)
 
 - Owned folder map.
 
@@ -2178,7 +2520,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/site/assets/models/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/models/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/d-assets/d-models/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/models/README.md)
 
 - Owned folder map.
 
@@ -2191,7 +2533,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/site/compiler/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/compiler/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/d-compiler/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/compiler/README.md)
 
 - Owned folder map.
 
@@ -2204,7 +2546,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>tools/site/figures/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/figures/README.md) · Source only
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-site/d-figures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/figures/README.md)
 
 - Owned folder map.
 

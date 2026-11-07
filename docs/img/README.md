@@ -14,28 +14,28 @@ flowchart TD
 
 | File or folder | Purpose |
 |---|---|
-| [bearings/](bearings/) | Bearing models, vectors and calculator charts. |
-| [cfd/](cfd/) | Recorded CFD result pictures. |
-| [compliant/](compliant/) | Compliant mechanism and cantilever diagrams. |
-| [explore/](explore/) | Exploration comparison pictures. |
-| [fasteners/](fasteners/) | Fastener geometry and assembly illustrations. |
-| [fea/](fea/) | Finite-element study pictures. |
-| [formulas/](formulas/) | Formula and vector illustrations. |
-| [gates/](gates/) | Gate/evidence diagrams and pictures. |
-| [gyropup/](gyropup/) | Product-derived historical engineering pictures. |
-| [hero/](hero/) | README/banner/badge art and source/provenance records. |
-| [inserts/](inserts/) | Heat-set insert geometry and evidence. |
-| [joints/](joints/) | Joint and connection diagrams. |
-| [kit/](kit/) | Web-kit examples and screenshots. |
-| [linkages/](linkages/) | Closed-loop linkage mechanism illustrations. |
-| [motion/](motion/) | Motion study illustrations. |
-| [packets/](packets/) | Review/delivery packet pictures. |
-| [plates/](plates/) | Plate bending illustrations. |
-| [process/](process/) | Manufacturing process illustrations. |
-| [research/](research/) | Survey charts and research figures. |
-| [sheet-metal/](sheet-metal/) | Sheet-metal and hardware drawings. |
-| [supply-chain/](supply-chain/) | Generated audit summary graphic. |
-| [thermal/](thermal/) | Thermal model illustrations. |
+| [bearings/](bearings/README.md) | Bearing models, vectors and calculator charts. |
+| [cfd/](cfd/README.md) | Recorded CFD result pictures. |
+| [compliant/](compliant/README.md) | Compliant mechanism and cantilever diagrams. |
+| [explore/](explore/README.md) | Exploration comparison pictures. |
+| [fasteners/](fasteners/README.md) | Fastener geometry and assembly illustrations. |
+| [fea/](fea/README.md) | Finite-element study pictures. |
+| [formulas/](formulas/README.md) | Formula and vector illustrations. |
+| [gates/](gates/README.md) | Gate/evidence diagrams and pictures. |
+| [gyropup/](gyropup/README.md) | Product-derived historical engineering pictures. |
+| [hero/](hero/README.md) | README/banner/badge art and source/provenance records. |
+| [inserts/](inserts/README.md) | Heat-set insert geometry and evidence. |
+| [joints/](joints/README.md) | Joint and connection diagrams. |
+| [kit/](kit/README.md) | Web-kit examples and screenshots. |
+| [linkages/](linkages/README.md) | Closed-loop linkage mechanism illustrations. |
+| [motion/](motion/README.md) | Motion study illustrations. |
+| [packets/](packets/README.md) | Review/delivery packet pictures. |
+| [plates/](plates/README.md) | Plate bending illustrations. |
+| [process/](process/README.md) | Manufacturing process illustrations. |
+| [research/](research/README.md) | Survey charts and research figures. |
+| [sheet-metal/](sheet-metal/README.md) | Sheet-metal and hardware drawings. |
+| [supply-chain/](supply-chain/README.md) | Generated audit summary graphic. |
+| [thermal/](thermal/README.md) | Thermal model illustrations. |
 | [fea.jpg](fea.jpg) | Historical FEA card picture. |
 | [gyropup.jpg](gyropup.jpg) | Historical product card picture. |
 | [topology.jpg](topology.jpg) | Historical topology card picture. |

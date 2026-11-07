@@ -5,7 +5,7 @@ import { readFileSync, mkdtempSync, writeFileSync, mkdirSync, appendFileSync, rm
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { createPublication } from '../../tools/site/publication.mjs';
+import { createPublication, folderMapPath, folderMapSources } from '../../tools/site/publication.mjs';
 import { checkMap, gitFiles, markdown, renderMap, main } from '../../tools/site/compiler/site-repo-map.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -19,6 +19,37 @@ const rejects = (change, pattern, policy) => {
 };
 
 test('the actual repository map and generated inventory are current', () => main(root, '--check'));
+test('folder publication equals validated owned maps outside the editorial page selection', () => {
+  const files = gitFiles(root), read = f => readFileSync(path.join(root, f), 'utf8');
+  const policy = JSON.parse(read('tools/site/compiler/repo-map.json'));
+  const publication = createPublication(JSON.parse(read('tools/site/page-sources.json')));
+  const checked = checkMap({ files, read, policy, publication });
+  assert.deepEqual(checked.problems, []);
+  const editorial = new Set(publication.selectPages(files).map(p => p.file));
+  const expected = [...new Set(checked.rows.filter(r => r.owner === r.dir + '/README.md' && !editorial.has(r.owner)).map(r => r.owner))].sort();
+  const maps = folderMapSources(files, policy, publication);
+  assert.deepEqual(maps.map(p => p.file), expected);
+  assert.ok(maps.length > 90, 'include the existing code/tool maps, not only the 38 new ones');
+  assert.equal(new Set(maps.map(p => p.public)).size, maps.length);
+});
+test('folder routes are injective and dot-safe, with explicit delegated ownership', () => {
+  const sources = ['.agents/README.md', '_agents/README.md', 'a b/README.md', 'a~20b/README.md', 'β/README.md', 'line\nbreak/README.md'];
+  const paths = sources.map(folderMapPath);
+  assert.equal(new Set(paths).size, sources.length);
+  for (const file of paths) assert.match(file, /^repo\/folders\/(?:d-[A-Za-z0-9_.~-]+\/)+README\.md$/);
+  for (const file of ['../README.md', '/root/README.md', 'a/../README.md', 'a//README.md', 'README.md'])
+    assert.throws(() => folderMapPath(file), /plain owned README/);
+  const files = ['owned/README.md', 'vendor/README.md', 'vendor/upstream/README.md', 'fixtures/README.md', 'fixtures/leaf/README.md'];
+  const policy = { delegated: [
+    { root: 'vendor/upstream', owner: 'vendor/README.md', kind: 'upstream' },
+    { root: 'fixtures', owner: 'fixtures/README.md', kind: 'data' },
+  ] };
+  const publication = { selectPages: () => [], publicPath: f => f, isCurrentSource: () => true };
+  assert.deepEqual(folderMapSources(files, policy, publication).map(p => p.file), ['fixtures/README.md', 'owned/README.md', 'vendor/README.md']);
+  assert.throws(() => folderMapSources([...files, 'docs/guide.md'], policy, {
+    ...publication, selectPages: () => [{ file: 'docs/guide.md' }], publicPath: () => folderMapPath('owned/README.md'),
+  }), /collision/);
+});
 test('ordinary owner maps pass without an exception baseline', () => assert.deepEqual(check(base()).problems, []));
 test('missing owner map fails', () => rejects(d => delete d['code/README.md'], /missing owner map code\/README/));
 test('missing diagram fails', () => rejects(d => d['code/README.md'] = owner.replace(diagram, ''), /missing Mermaid/));
@@ -145,14 +176,32 @@ test('authored delegated role, resource and policy Markdown still gets relative-
 test('new direct bundled skill resources need actual SKILL links', () => {
   const d = base();
   d['.agents/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [skills/](skills/README.md) | Skills. |\n';
-  d['.agents/skills/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [example/](example/SKILL.md) | Skill. |\n';
-  d['.agents/skills/example/SKILL.md'] = '# Example skill\n';
+  d['.agents/skills/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [example/](example/README.md) | Skill. |\n';
+  d['.agents/skills/example/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [SKILL.md](SKILL.md) | Instructions. |\n| [helper.md](helper.md) | Resource. |\n';
+  d['.agents/skills/example/SKILL.md'] = '# Example skill\n\n[Map](README.md)\n';
   d['.agents/skills/example/helper.md'] = '# Bundled resource\n';
   assert.match(check(d).problems.join('\n'), /bundled resource .*helper.md needs an explicit skill link/);
   d['.agents/skills/example/SKILL.md'] += '\n[Resource](helper.md)\n';
   assert.deepEqual(check(d).problems, []);
   d['.agents/skills/example/helper.md'] += '\n[Bad](missing.md)\n';
   assert.match(check(d).problems.join('\n'), /broken relative link missing.md/);
+  delete d['.agents/skills/example/README.md'];
+  assert.match(check(d).problems.join('\n'), /missing owner map .agents\/skills\/example\/README.md/,
+    'an installed SKILL is not a substitute for the human folder map');
+});
+test('data keeps its historical contents while each folder still needs a real map', () => {
+  const d = base();
+  d['code/README.md'] += '\n| Folder | Purpose |\n|---|---|\n| [records/](records/README.md) | Recorded data. |\n';
+  d['code/records/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [dated/](dated/README.md) | Dated run. |\n';
+  d['code/records/dated/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [old.md](old.md) | Immutable report. |\n';
+  d['code/records/dated/old.md'] = '[Recorded old namespace](old-layout/result.json)';
+  const policy = { delegated: [{ root: 'code/records', owner: 'code/records/README.md', reason: 'Dated data with local human maps.',
+    kind: 'data', members: 'folder-maps' }] };
+  assert.deepEqual(check(d, policy).problems, []);
+  d['code/records/dated/README.md'] += '\n[Broken current instruction](missing.md)\n';
+  assert.match(check(d, policy).problems.join('\n'), /broken relative link missing.md/);
+  delete d['code/records/dated/README.md'];
+  assert.match(check(d, policy).problems.join('\n'), /missing owner map code\/records\/dated\/README.md/);
 });
 test('native disclosures keep the complete inventory closed and group repeated owners', () => {
   const rows = [{ dir: 'software/vendor/a', owner: 'software/README.md', published: null, reason: 'Pinned upstream.' },

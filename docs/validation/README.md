@@ -18,6 +18,6 @@ flowchart TD
 | [file-viewer-corpus-manifest.json](file-viewer-corpus-manifest.json) | Source identity and corpus item inventory. |
 | [file-viewer-corpus-results.json](file-viewer-corpus-results.json) | Recorded corpus results bound to that manifest. |
 | [file-viewer-validation.json](file-viewer-validation.json) | Earlier browser validation receipt. |
-| [volume-2026-10-29/](volume-2026-10-29/) | Dated numeric precision outputs; owned as one evidence collection. |
+| [volume-2026-10-29/](volume-2026-10-29/README.md) | Dated numeric precision outputs; owned as one evidence collection. |
 
 [Parent map](../README.md)

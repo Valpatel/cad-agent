@@ -28,7 +28,7 @@ The repository remains the plugin root so relative guide resources stay inside a
 | File or folder | Purpose |
 |---|---|
 | [SYMPTOM-INDEX.md](SYMPTOM-INDEX.md) | Find dated operational evidence by symptom. |
-| [agents/](agents/) | Two manifest-listed independent-role prompts; no README is installed as a role. |
+| [agents/](agents/README.md) | Two manifest-listed independent-role prompts; no README is installed as a role. |
 | [domains/](domains/README.md) | Curated operational facts. |
 | [inbox/](inbox/README.md) | Dated incidents and retained failure evidence. |
 | [playbooks/](playbooks/README.md) | Repeated operational procedures. |

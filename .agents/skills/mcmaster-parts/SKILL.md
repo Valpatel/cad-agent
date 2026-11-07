@@ -121,3 +121,5 @@ page = json.loads((step.parent / "5972K82.page.json").read_text())
 mc.update_catalog("catalog/hardware.json", "bearing_6001",
                   mc.catalog_entry(page, info, cad=str(norm)) | {"used_for": "knee", "qty": 4})
 ```
+
+[Folder map](README.md)

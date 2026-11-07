@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
+import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
@@ -494,6 +495,9 @@ try {
       // document overflow alone misses a clipped branch inside the diagram's own horizontal scroller.
       const OVERVIEWS = new Set(['/docs/mechanical/README', '/docs/practice/README', '/docs/examples/README',
         '/research/agent-workflow/README', '/research/manufacturing/README']);
+      const DETAILS = new Set(diagramPages.map(([route]) => route).filter(route => route.startsWith('/repo/folders/')));
+      const PHONE_PAGES = new Set([...OVERVIEWS, ...DETAILS]);
+      let phoneControlsDone = false;
       for (const route of OVERVIEWS) if (!diagramPages.some(([r]) => r === route))
         problems.push(`${route}: the overview diagram is not published`);
       // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
@@ -505,7 +509,7 @@ try {
       for (const colorScheme of ['light', 'dark']) {
       const wide = await browser.newPage({ viewport: { width, height: 900 }, colorScheme });
       for (const [route, sources] of diagramPages.sort()) {
-        if (width === 360 && !OVERVIEWS.has(route)) continue;
+        if (width === 360 && !PHONE_PAGES.has(route)) continue;
         await wide.goto(base + route);
         await settled(wide);
         await wide.waitForFunction(n => document.querySelectorAll('.cad-diagram').length >= n &&
@@ -516,6 +520,16 @@ try {
         // The drawing's own width against the room inside its view (scrollWidth is never below clientWidth, so it cannot
         // show how much spare there is).
         // A view without a drawing failed to render; the count above reports it.
+        // Detailed maps retain natural-size labels on phones and expose every branch through the shared scroller.
+        // Concise overview pages still fit outright; every page still obeys the unchanged desktop fit limit.
+        if (width === 360 && DETAILS.has(route)) {
+          problems.push(...await folderMapPhoneProblems(wide, `${width}px ${colorScheme} ${route}`));
+          if (!phoneControlsDone) {
+            problems.push(...await folderMapPhoneControls(wide));
+            phoneControlsDone = true;
+          }
+          continue;
+        }
         const over = (await wide.$$eval('.cad-diagram .cad-diagram-view', views => views.filter(v => v.querySelector('svg') && v.getClientRects().length).map(v => {
           const cs = getComputedStyle(v), room = v.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
           return { w: Math.ceil(v.querySelector('svg').getBoundingClientRect().width), room };
@@ -1194,7 +1208,9 @@ async function explorerProblems(x) {
  * (DIAGRAM_SHIFT is set at the top, with the routes). */
 async function drawnDiagramProblems() {
   const out = await diagramNavigationControl();
-  const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
+  const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process',
+    ...['.agents/skills/cad-motion-validation/README.md', 'software/cadagent/README.md', 'docs/img/motion/README.md', 'tests/README.md']
+      .map(file => '/' + folderMapPath(file).replace(/\.md$/, ''))];
   // the figures the page shows: each block is drawn in both themes and the page's CSS hides the other one (#305)
   const boxes = page => page.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => {
     const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();
@@ -1205,12 +1221,14 @@ async function drawnDiagramProblems() {
   }));
   for (const [width, colorScheme] of [[320, 'light'], [360, 'light'], [1366, 'light'], [360, 'dark'], [1366, 'dark']]) for (const route of PAGES) {
     const where = `${width}px ${colorScheme} ${route}`;
-    const { before, stillThemes } = await withDiagramPage({ viewport: { width, height: 800 }, javaScriptEnabled: false, colorScheme }, async off => {
+    const { before, stillThemes, phoneProblems } = await withDiagramPage({ viewport: { width, height: 800 }, javaScriptEnabled: false, colorScheme }, async off => {
       await navigateDiagram(off, base + route, `${where}, JavaScript disabled`);
       await off.evaluate(() => document.fonts.ready);
       return { before: await boxes(off),
+        phoneProblems: width <= 360 && route.startsWith('/repo/folders/') ? await folderMapPhoneProblems(off, `${where}, JavaScript disabled`) : [],
         stillThemes: await off.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => f.dataset.theme)) };
     });
+    out.push(...phoneProblems);
     if (stillThemes.some(t => t !== colorScheme)) out.push(`${where}: without script, it shows diagrams drawn for ${[...new Set(stillThemes)].join(' and ')}`);
     const { runtime, after, shift } = await withDiagramPage({ viewport: { width, height: 800 }, colorScheme }, async page => {
       const runtime = [];
@@ -1242,6 +1260,83 @@ async function drawnDiagramProblems() {
         else if (m?.hint && m.clipped) out.push(`${where}: diagram ${i + 1}'s scroll hint is cut off ${label}`);
     });
   }
+  return out;
+}
+
+/** Real phone reader contract: labels keep their drawn size, the page fits, and wide drawings remain reachable. */
+async function folderMapPhoneProblems(page, where) {
+  const problems = [];
+  const documentWidth = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth }));
+  if (documentWidth.scroll > documentWidth.width + 1) problems.push(`${where}: the document scrolls sideways`);
+  const views = page.locator('.cad-diagram-view');
+  let checkedKeyboard = false;
+  for (let i = 0; i < await views.count(); i++) {
+    const view = views.nth(i);
+    if (!await view.isVisible()) continue;
+    const measured = await view.evaluate(v => {
+      const svg = v.querySelector('svg'), hint = v.closest('.cad-diagram').querySelector('.cad-diagram-hint');
+      const wide = v.scrollWidth > v.clientWidth + 1;
+      const shown = !!hint && hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).display !== 'none';
+      const scale = svg ? svg.getBoundingClientRect().width / svg.viewBox.baseVal.width : 0;
+      const start = v.scrollLeft;
+      v.scrollLeft = v.scrollWidth;
+      const reachesEnd = v.scrollLeft >= v.scrollWidth - v.clientWidth - 1;
+      const lastPixel = svg && svg.getBoundingClientRect().right <= v.getBoundingClientRect().right + 1;
+      v.scrollLeft = start;
+      return { wide, shown, scale, reachesEnd, lastPixel, focusable: v.tabIndex === 0,
+        named: !!v.getAttribute('aria-label'), scrollable: ['auto', 'scroll'].includes(getComputedStyle(v).overflowX),
+        clippedHint: shown && hint.scrollHeight > hint.clientHeight + 1 };
+    });
+    if (Math.abs(measured.scale - 1) > 0.01) problems.push(`${where}: diagram ${i + 1} shrinks its labels or has no drawing`);
+    if (measured.wide !== measured.shown || measured.clippedHint) problems.push(`${where}: diagram ${i + 1} has a missing or clipped scroll hint`);
+    if (!measured.focusable || !measured.named || !measured.scrollable) problems.push(`${where}: diagram ${i + 1} is not an accessible horizontal scroller`);
+    if (measured.wide && (!measured.reachesEnd || !measured.lastPixel)) problems.push(`${where}: diagram ${i + 1} cannot expose its last branch`);
+    // Native keyboard access is exercised once on each wide detail page, in both themes. Every drawing's full
+    // range is checked above; this does not synthesize scrolling in place of the keyboard interaction.
+    if (measured.wide && measured.focusable && measured.scrollable && !checkedKeyboard) {
+      checkedKeyboard = true;
+      await view.evaluate(v => { v.scrollLeft = 0; });
+      await view.focus();
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(element => element.scrollLeft > 0, await view.elementHandle(), { timeout: 1000 })
+        .catch(() => problems.push(`${where}: the focused diagram does not scroll with ArrowRight`));
+      await view.evaluate(v => { v.scrollLeft = 0; v.blur(); });
+    }
+  }
+  return problems;
+}
+
+/** Counterexamples on an actual wide map: a screenshot that merely fits is not enough. */
+async function folderMapPhoneControls(page) {
+  const out = [], view = page.locator('.cad-diagram-view:visible').first();
+  const original = await view.evaluate(v => ({ style: v.getAttribute('style'), tab: v.getAttribute('tabindex'),
+    svgStyle: v.querySelector('svg').getAttribute('style') }));
+  if (!await view.evaluate(v => v.scrollWidth > v.clientWidth + 1)) return ['phone scroller control needs an actual wide drawing'];
+  for (const [fault, expected] of [['shrink', 'shrinks its labels'], ['focus', 'not an accessible'],
+    ['overflow', 'not an accessible'], ['keyboard', 'does not scroll with ArrowRight']]) {
+    try {
+      await view.evaluate((v, fault) => {
+        if (fault === 'shrink') v.querySelector('svg').style.width = `${v.querySelector('svg').viewBox.baseVal.width / 2}px`;
+        if (fault === 'focus') v.tabIndex = -1;
+        if (fault === 'overflow') v.style.overflowX = 'hidden';
+        if (fault === 'keyboard') {
+          v.__phoneControl = e => { if (e.key === 'ArrowRight') e.preventDefault(); };
+          v.addEventListener('keydown', v.__phoneControl);
+        }
+      }, fault);
+      const result = await folderMapPhoneProblems(page, `planted ${fault}`);
+      if (!result.some(p => p.includes(expected))) out.push(`phone reader failed to reject planted ${fault}`);
+    } finally {
+      await view.evaluate((v, original) => {
+        const restore = (element, name, value) => value === null ? element.removeAttribute(name) : element.setAttribute(name, value);
+        restore(v, 'style', original.style); restore(v, 'tabindex', original.tab);
+        restore(v.querySelector('svg'), 'style', original.svgStyle);
+        if (v.__phoneControl) { v.removeEventListener('keydown', v.__phoneControl); delete v.__phoneControl; }
+        v.scrollLeft = 0; v.blur();
+      }, original);
+    }
+  }
+  out.push(...await folderMapPhoneProblems(page, 'restored phone reader'));
   return out;
 }
 

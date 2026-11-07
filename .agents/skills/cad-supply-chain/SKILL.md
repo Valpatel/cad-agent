@@ -197,3 +197,5 @@ npm registry, [Open Source Insights (deps.dev)](https://deps.dev) for dependency
 fall back from HEAD to GET, and treat 403 and 429 as not verified rather than broken. The weekly workflow
 (`.github/workflows/supply-chain.yml`) runs it online and keeps one issue current: a read-only job makes the report,
 and a second job, which holds the only write permission (issues), turns it into the issue.
+
+[Folder map](README.md)

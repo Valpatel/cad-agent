@@ -92,3 +92,5 @@ flowchart TD
 - Pull the results back (`rsync -a <host>:<repo>/<result paths> <local paths>`), commit them with the command that
   made them in the message, push, and tick the issue.
 - Leave the host clean: stop containers you started, delete large scratch case folders you no longer need.
+
+[Folder map](README.md)

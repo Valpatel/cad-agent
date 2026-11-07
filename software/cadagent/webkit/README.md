@@ -59,13 +59,29 @@ The model viewer and FEA viewer inherit the shared default. Projects with copied
 
 [Package map](../README.md)
 
+Model and file viewing
+
 ```mermaid
 flowchart TD
-    L["file-loader.js"] --> V["file-viewer.js"]
-    V --> P["vendor/"]
-    M["model.js"] --> V
-    D["diagrams.js"] --> P
-    T["part-table.js"] --> S["part-tracker.js"]
+    L["file-loader.js"]
+    V["file-viewer.js"]
+    P["vendor/"]
+    M["model.js"]
+    D["diagrams.js"]
+    L --> V
+    V --> P
+    M --> V
+    D --> P
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+```
+
+Parts and tracking
+
+```mermaid
+flowchart TD
+    T["part-table.js"]
+    S["part-tracker.js"]
+    T --> S
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
 ```
 

@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
-import { createPublication } from '../publication.mjs';
+import { createPublication, folderOwner, folderMapSources } from '../publication.mjs';
 
 const posix = path.posix;
 export function gitFiles(root) {
@@ -57,7 +57,7 @@ export function checkMap({ files, read, policy, publication = null }) {
     if (!row || Object.keys(row).some(k => !allowedRow.has(k)) || !plain(row.root) || !plain(row.owner) || !row.owner.endsWith('.md') ||
         (row.reason !== undefined && typeof row.reason !== 'string') ||
         (row.kind !== undefined && !['owned', 'upstream', 'data'].includes(row.kind)) ||
-        (row.members !== undefined && !['linked-files', 'policy'].includes(row.members)))
+        (row.members !== undefined && !['linked-files', 'policy', 'folder-maps'].includes(row.members)))
       problems.push(`repo-map policy row ${i}: invalid path, field, kind or members choice`);
     else if (policy.delegated.slice(0, i).some(before => typeof before?.root === 'string' && (beneath(row.root, before.root) || beneath(before.root, row.root))))
       problems.push(`repo-map policy row ${i}: overlapping delegated roots`);
@@ -74,12 +74,7 @@ export function checkMap({ files, read, policy, publication = null }) {
   const published = new Map(selected.map(row => [row.file, publication.publicPath(row.file)]));
   const publicSources = new Map(selected.map(row => [publication.publicPath(row.file), row.file]));
   const delegate = dir => policy.delegated.find(p => beneath(dir, p.root));
-  const ownerOf = dir => {
-    const p = delegate(dir);
-    if (p) return p.owner;
-    if (dir.startsWith('.agents/skills/') && known.has(dir + '/SKILL.md')) return dir + '/SKILL.md';
-    return dir ? dir + '/README.md' : 'README.md';
-  };
+  const ownerOf = dir => folderOwner(dir, policy);
   for (const p of policy.delegated) {
     if (!dirs.has(p.root)) problems.push(`${p.root}: stale delegated root`);
     if (!known.has(p.owner)) problems.push(`${p.root}: missing parent owner ${p.owner}`);
@@ -95,11 +90,11 @@ export function checkMap({ files, read, policy, publication = null }) {
     const owner = ownerOf(dir), p = delegate(dir);
     rows.push({ dir, owner, published: published.get(owner) || null, reason: p?.reason || (owner.endsWith('/SKILL.md') ? 'Installed skill entry; resource links stay relative to SKILL.md.' : 'Owned folder map.') });
     if (!known.has(owner)) { problems.push(`${dir || '.'}: missing owner map ${owner}`); continue; }
-    if (owner.endsWith('/SKILL.md')) {
-      const links = md(owner).links.map(h => resolve(owner, h));
-      for (const f of files.filter(f => beneath(f, dir) && f !== owner))
-        if (!links.includes(f)) problems.push(`${owner}: bundled resource ${f} needs an explicit skill link`);
-      continue;
+    const skill = dir.startsWith('.agents/skills/') && known.has(dir + '/SKILL.md') ? dir + '/SKILL.md' : null;
+    if (skill) {
+      const links = md(skill).links.map(h => resolve(skill, h));
+      for (const f of files.filter(f => beneath(f, dir) && f !== skill))
+        if (!links.includes(f)) problems.push(`${skill}: bundled resource ${f} needs an explicit skill link`);
     }
     if ((p && owner !== dir + '/README.md' && p.members !== 'policy') || !dir) continue;
     const doc = md(owner);
@@ -155,7 +150,9 @@ export function checkMap({ files, read, policy, publication = null }) {
 }
 const escape = text => String(text).replace(/\|/g, '\\|').replace(/\n/g, ' ');
 const sourceURL = file => `https://github.com/Valpatel/cad-agent/blob/dev/${file.split('/').map(encodeURIComponent).join('/')}`;
-export function renderMap(rows) {
+export function renderMap(rows, folderPages = []) {
+  const folders = new Map(folderPages.map(p => [p.file, p.public]));
+  const folderURL = file => 'https://cad-agent.valpatel.com/' + folders.get(file).replace(/\.md$/, '');
   const nav = [
     ['Project overview', 'README.md', 'Start here and choose an existing workflow.'],
     ['Toolkit packages', 'software/README.md', 'Reusable code and its domain owners.'],
@@ -165,8 +162,8 @@ export function renderMap(rows) {
     ['Agent kit', '.agents/README.md', 'Installed skills, independent roles and source-only operations.'],
     ['Contribution policy', '.github/CONTRIBUTING.md', 'Review, CI, integration and publication.'],
   ];
-  let out = '# Repository map\n\nChoose an owner below. The full tracked inventory is grouped in closed disclosures, including upstream and fixture descendants. This is an ownership map, not a quality percentage or proof of physical performance.\n\n```mermaid\nflowchart TD\n    R["README.md"] --> D["docs/ + .agents/"]\n    R --> S["software/"]\n    R --> T["tests/ + tools/<br/>.github/"]\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c\n    class R,D,S,T here\n```\n\n| Owner | Use |\n|---|---|\n' + nav.map(([label, file, why]) => `| [${label}](${rows.some(row => row.owner === file && row.published) ? posix.relative('docs', file) : sourceURL(file)}) | ${why} |`).join('\n') +
-    '\n\nPublic owner links below are checked against the actual built HTML and catalogue. Code, tool and operational maps remain canonical source pages rather than new catalogue routes. Relative source file/directory destinations are checked; remote availability and source-only Markdown anchors are not newly verified.\n\n## Full inventory\n\n';
+  let out = '# Repository map\n\nChoose a folder below, then follow its picture and file links. The full inventory stays folded until you need it. Maps describe where things belong; they do not prove engineering quality or physical performance.\n\n```mermaid\nflowchart TD\n    R["README.md"] --> D["docs/ + .agents/"]\n    R --> S["software/"]\n    R --> T["tests/ + tools/<br/>.github/"]\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c\n    class R,D,S,T here\n```\n\n| Owner | Use |\n|---|---|\n' + nav.map(([label, file, why]) => `| [${label}](${rows.some(row => row.owner === file && row.published) ? posix.relative('docs', file) : folders.has(file) ? folderURL(file) : sourceURL(file)}) | ${why} |`).join('\n') +
+    '\n\nGuides explain how to use the toolkit. Folder maps lead into its code, tests and working notes without adding them to the main catalogue. Each map also links its canonical source. Upstream and fixture descendants keep their named parent map.\n\n## Full inventory\n\n';
   const groups = new Map();
   for (const row of rows) {
     const top = row.dir.split('/')[0] || 'Repository root';
@@ -180,7 +177,7 @@ export function renderMap(rows) {
     for (const [owner, owned] of owners) {
       const published = owned[0].published;
       out += `<details>\n<summary><code>${escape(owner)}</code> — ${owned.length} folders</summary>\n\n` +
-        (published ? `[Published owner](${posix.relative('docs', owner)})` : `[Canonical source owner](${sourceURL(owner)}) · Source only`) + '\n\n' +
+        (published ? `[Published owner](${posix.relative('docs', owner)})` : folders.has(owner) ? `[Published folder map](${folderURL(owner)}) · [Canonical source owner](${sourceURL(owner)})` : `[Canonical source owner](${sourceURL(owner)}) · Source only`) + '\n\n' +
         [...new Set(owned.map(row => row.reason))].map(reason => `- ${escape(reason)}`).join('\n') + '\n\n| Folder |\n|---|\n' +
         owned.map(row => `| \`${escape(row.dir || '.')}\` |`).join('\n') + '\n\n</details>\n\n';
     }
@@ -195,7 +192,7 @@ export function main(root, mode) {
   const publication = createPublication(JSON.parse(read('tools/site/page-sources.json')));
   const result = checkMap({ files, read, policy, publication });
   if (result.problems.length) throw new Error(result.problems.join('\n'));
-  const rendered = renderMap(result.rows);
+  const rendered = renderMap(result.rows, folderMapSources(files, policy, publication));
   if (mode === '--write') writeFileSync(path.join(root, 'docs/map.md'), rendered);
   else if (read('docs/map.md') !== rendered) throw new Error('docs/map.md is stale: run site-repo-map.mjs --write');
   console.log(`repo-map: ${result.rows.length} folders, explicit owners and relative destinations checked`);

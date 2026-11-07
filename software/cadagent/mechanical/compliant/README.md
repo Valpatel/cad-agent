@@ -8,20 +8,52 @@ Arrows follow the data. A project declares its snaps in a file, and `cad-agent s
 [`cadagent.formulas`](../../formulas/__init__.py) wraps the same equations for the site's explorers, and
 [`publish/anim/snapfit.py`](../../publish/anim/snapfit.py) animates one arm engaging from `engagement()`.
 
+Specs and material allowables
+
 ```mermaid
 flowchart TD
-    Y["snaps.yaml<br/>the project's snaps"] --> SF["snapfit.py<br/>check_spec · engagement"]
-    A["allowables.py<br/>data-sheet editions"] --> SF
-    SF --> J["exports/snap-checks.json<br/>rows, derivation, limits"]
-    SF --> FG["figures.py<br/>a checked snap, still"]
-    SF --> FM["cadagent.formulas<br/>the explorers' equations"]
-    SF --> AN["publish/anim/snapfit.py<br/>a snap engaging"]
+    Y["snaps.yaml<br/>the project's snaps"]
+    SF["snapfit.py<br/>check_spec · engagement"]
+    A["allowables.py<br/>data-sheet editions"]
+    Y --> SF
+    A --> SF
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class SF,A,FG here
-    class Y,FM,AN near
+    class SF,A here
+    class Y near
+```
+
+Checked results and static figures
+
+```mermaid
+flowchart TD
+    SF["snapfit.py<br/>check_spec · engagement"]
+    J["exports/snap-checks.json<br/>rows, derivation, limits"]
+    FG["figures.py<br/>a checked snap, still"]
+    SF --> J
+    SF --> FG
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class SF,FG here
     class J out
+```
+
+Shared equations and animation
+
+```mermaid
+flowchart TD
+    SF["snapfit.py<br/>check_spec · engagement"]
+    FM["cadagent.formulas<br/>the explorers' equations"]
+    AN["publish/anim/snapfit.py<br/>a snap engaging"]
+    SF --> FM
+    SF --> AN
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class SF here
+    class FM,AN near
 ```
 
 | Module | What it does |

@@ -252,3 +252,77 @@ def test_the_grader_rejects_preloaded_current_canonical_kit_names(tmp_path):
     legacy.parent.mkdir(parents=True)
     legacy.write_text("# Historical kit\n")
     assert qe._kit_skills(tmp_path / "legacy") == {"old-skill"}
+
+
+@pytest.mark.skipif(__import__('os').name == 'nt', reason='the evaluator uses a POSIX tool HOME; Windows installer proof is separate')
+@pytest.mark.parametrize('case', ['usable', 'logged-out', 'ambiguous-env', 'codex', 'nonempty-work'])
+def test_explicit_normal_login_route_is_scoped_and_never_lends_credentials(tmp_path, monkeypatch, case):
+    import sys
+
+    qe = _eval()
+    normal = tmp_path / 'existing-normal-config'
+    normal.mkdir()
+    credential = normal / 'private-auth-fixture.json'
+    credential.write_text('{"fixture":"not a real credential; must not be copied"}')
+    original = credential.read_bytes()
+    work = tmp_path / 'current-flow'
+    runtime = tmp_path / 'existing-runtime'
+    runtime.mkdir()
+    userbin = tmp_path / 'unrelated-user-bin'
+    userbin.mkdir()
+    fake = runtime / 'claude-fixture'
+    fake.write_text(f'''#!{sys.executable}
+import json,os,sys
+from pathlib import Path
+args=sys.argv[1:]
+if '--version' in args:
+ print('2.1.319 (inert CLI fixture)');sys.exit(0)
+if 'auth' in args and 'status' in args:
+ print(json.dumps({{'loggedIn':{case != 'logged-out'!r},'authMethod':'claude.ai','configDirectory':os.environ['CLAUDE_CONFIG_DIR']}}));sys.exit(0)
+work=Path(os.environ['HOME']).parent
+(work/'observed-model-request.json').write_text(json.dumps({{'argv':args,'environment':dict(os.environ)}}))
+print(json.dumps({{'type':'system','subtype':'init','cwd':str(Path.cwd()),'skills':[],'mcp_servers':[],'plugins':[],
+                  'memory_paths':{{'auto':str(Path(os.environ['HOME'])/'.claude/memory')}}}}))
+print(json.dumps({{'type':'result','subtype':'success'}}))
+''')
+    fake.chmod(0o755)
+    link = userbin / 'claude'
+    link.symlink_to(fake)
+    (userbin / 'cad-agent').write_text('foreign user command must not be lent')
+    which = qe.shutil.which
+    monkeypatch.setattr(qe.shutil, 'which', lambda name: str(link) if name in ('claude', 'codex') else which(name))
+    for name in ('CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY', 'CODEX_API_KEY', 'OPENAI_API_KEY', 'CODEX_AUTH_FILE'):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv('DO_NOT_LEND_THIS_FIXTURE', 'outside context')
+    if case == 'ambiguous-env':
+        monkeypatch.setenv('ANTHROPIC_API_KEY', 'inert-fixture-not-a-key')
+    if case == 'nonempty-work':
+        work.mkdir()
+        (work / 'leave-me.txt').write_text('existing evidence stays exact')
+    harness = 'codex' if case == 'codex' else 'claude'
+    if case != 'usable':
+        with pytest.raises(SystemExit):
+            qe.agent(work, harness, 'opus', qe.REQUEST, 5, normal_auth_config=normal)
+        assert not (work / 'observed-model-request.json').exists(), 'failed metadata/scope guard must reach no model'
+    else:
+        result = qe.agent(work, harness, 'opus', qe.REQUEST, 5, normal_auth_config=normal)
+        observed = json.loads((work / 'observed-model-request.json').read_text())
+        argv, env = observed['argv'], observed['environment']
+        assert argv[argv.index('-p') + 1] == f'{qe.paste_line()} {qe.REQUEST}\n\n{qe.UNATTENDED}\n'
+        for flag in ('--safe-mode', '--strict-mcp-config', '--no-session-persistence'):
+            assert flag in argv
+        assert argv[argv.index('--setting-sources') + 1] == ''
+        assert argv[argv.index('--agent') + 1] == 'general-purpose'
+        assert argv[argv.index('--max-budget-usd') + 1] == '5'
+        assert argv[argv.index('--tools') + 1] == 'Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch'
+        assert env['HOME'] == str(work / 'home') and env['CLAUDE_CONFIG_DIR'] == str(normal)
+        assert env['PATH'].split(':')[0] == str(runtime) and str(userbin) not in env['PATH'].split(':')
+        assert env['CLAUDE_CODE_DISABLE_AUTO_MEMORY'] == '1' and env['GIT_CONFIG_GLOBAL'] == qe.os.devnull
+        assert 'DO_NOT_LEND_THIS_FIXTURE' not in env and 'ANTHROPIC_API_KEY' not in env
+        assert result['session_boundary'] == 'normal-login-safe-mode'
+        assert result['checks']['fresh_session'] is None and result['of'] == 12, 'normal login must not score as clean-user proof'
+    assert credential.read_bytes() == original
+    if (work / 'home').exists():
+        assert not list((work / 'home').rglob('private-auth-fixture.json'))
+    if case == 'nonempty-work':
+        assert (work / 'leave-me.txt').read_text() == 'existing evidence stays exact'

@@ -9,6 +9,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.25.2 (2026-11-07)
+
+**Fixed**
+- The repository supply-chain audit checks secret-scanning push protection separately from scanning, distinguishes
+  disabled settings from unavailable values, and reports empty or unavailable dependency inventories without
+  inventing their cause or alert coverage. Projects need no changes.
+- FEA installs select Intel PARDISO only on x86-64 Linux and Windows; macOS and other architectures keep the
+  existing SciPy/pyamg fallback. The updater evaluates platform markers when retaining installed extras, using
+  the standard `packaging` parser. Linux ARM still needs the documented external Gmsh setup; a metadata fix does
+  not create a missing upstream wheel. Projects need no source changes; reinstall to use the corrected metadata.
+
 ## v0.25.1 (2026-11-07)
 
 **Changed**

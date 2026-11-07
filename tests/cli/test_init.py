@@ -141,6 +141,20 @@ def _wheel_smoke(tmp_path):
                       and not name.split("/", 1)[0].startswith("cad_agent-")]
         assert not unexpected, f"non-package software (including imported vendor trees) leaked into wheel: {unexpected[:10]}"
         assert any(name.startswith("cadagent/webkit/vendor/") for name in names), "the packaged SDK keeps its own runtime dependencies"
+        # Read what pip consumes, not just pyproject.toml: an optional Intel solver must not make ARM/macOS unresolvable.
+        from email.parser import BytesParser
+        from packaging.requirements import Requirement
+        metadata_paths = [name for name in names if name.endswith(".dist-info/METADATA")]
+        assert len(metadata_paths) == 1
+        metadata = BytesParser().parsebytes(wheel.read(metadata_paths[0]))
+        pardiso = [Requirement(r) for r in metadata.get_all("Requires-Dist", []) if Requirement(r).name == "pypardiso"]
+        assert len(pardiso) == 1 and pardiso[0].marker is not None
+        for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
+                                          ("Linux", "aarch64", False), ("Darwin", "arm64", False),
+                                          ("Darwin", "x86_64", False), ("Windows", "ARM64", False)):
+            env = {"platform_system": system, "platform_machine": machine}
+            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected_pardiso, env
+            assert not pardiso[0].marker.evaluate({**env, "extra": ""}), "PARDISO leaked into the core install"
     shutil.rmtree(source)
     assert not source.exists()
     # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor
@@ -166,7 +180,7 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
     assert all(Path(p).is_relative_to(env_dir) for p in paths.values()), paths
     actual = {p.relative_to(target).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in target.rglob("*") if p.is_file()}
-    assert actual == expected, "installed wheel starter files differ from committed source bytes"
+    assert actual == expected, f"installed wheel starter files differ from committed source bytes: expected={expected}, actual={actual}"
     sdk = Path(paths["package"]).parent / "webkit"
     for name, digest in sdk_expected.items():
         installed = (sdk / name).resolve()

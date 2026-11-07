@@ -68,7 +68,7 @@ python3 -m venv ~/cad-agent/.venv
 
 ### Extras
 
-`pip install -e "<checkout>[cad,fea]"` adds the extras you name; the package alone needs only PyYAML and NumPy.
+`pip install -e "<checkout>[cad,fea]"` adds the extras you name; the package alone needs PyYAML, NumPy and packaging.
 
 | Extra | Adds |
 |---|---|

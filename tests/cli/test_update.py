@@ -222,6 +222,47 @@ def test_the_receipt_says_which_extras_uv_installed(tmp_path, monkeypatch):
     assert agentkit.installed_extras(tmp_path) == ["cad", "sim"]
 
 
+@pytest.mark.parametrize("system,machine,wants_pardiso", [
+    ("Linux", "x86_64", True), ("Windows", "AMD64", True),
+    ("Linux", "aarch64", False), ("Darwin", "arm64", False),
+    ("Darwin", "x86_64", False), ("Windows", "ARM64", False),
+    ("Linux", "i686", False), ("FreeBSD", "x86_64", False),
+])
+def test_fea_markers_and_update_preserve_the_platforms_installed_extra(tmp_path, monkeypatch, system, machine, wants_pardiso):
+    """Use the actual project requirement, not a copied expression; absent optional MKL must not lose FEA on update."""
+    import importlib.metadata as md
+    from packaging import markers
+    from packaging.requirements import Requirement
+    from pathlib import Path
+    try:
+        import tomllib
+    except ImportError:  # pytest supplies tomli on Python 3.10
+        import tomli as tomllib
+
+    project = (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text()
+    fea = tomllib.loads(project)["project"]["optional-dependencies"]["fea"]
+    pardiso = next(Requirement(r) for r in fea if Requirement(r).name == "pypardiso")
+    environment = {**markers.default_environment(), "platform_system": system, "platform_machine": machine}
+    # packaging 26.3 caches process facts; supply the controlled marker environment, not patched platform calls.
+    monkeypatch.setattr(markers, "default_environment", lambda: dict(environment))
+    assert (pardiso.marker is None or pardiso.marker.evaluate(environment)) is wants_pardiso
+    monkeypatch.setattr(agentkit, "_receipt_extras", lambda: None)
+    (tmp_path / "pyproject.toml").write_text(project)
+    available = {Requirement(r).name for r in fea} - {"pypardiso"}
+
+    def version(name):
+        if name not in available:
+            raise md.PackageNotFoundError(name)
+        return "1.0"
+
+    monkeypatch.setattr(md, "version", version)
+    assert ("fea" in agentkit.installed_extras(tmp_path)) is not wants_pardiso
+    available.add("pypardiso")
+    assert "fea" in agentkit.installed_extras(tmp_path)
+    available.remove("scikit-fem")
+    assert "fea" not in agentkit.installed_extras(tmp_path), "a genuinely missing active requirement still excludes FEA"
+
+
 def test_an_unquoted_version_and_a_pinned_tag(kit, tmp_path):
     from cadagent.project import CadConfigError, load_project
     (tmp_path / "cad-agent.yaml").write_text("cad:\n  cad-agent: 0.10\n")

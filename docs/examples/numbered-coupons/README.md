@@ -6,7 +6,7 @@ hashes. The holes reuse the existing [fit-coupon producer](../../../software/cad
 This is the first fixture, not a printable latch library or physical qualification.
 
 ```mermaid
-flowchart LR
+flowchart TD
     S["committed source<br/>resolved parameters"] --> I["persistent UUID registry"]
     I --> C["labelled coupon<br/>STEP and STL"] --> P["native project<br/>actual readback"]
     P --> F["separate print attempts<br/>human feedback"]
@@ -28,6 +28,9 @@ The script never starts Bambu Studio, slices or contacts a printer. It refuses a
 The settings must contain real printer/process/filament identities and printable area; a test fixture or a
 stored preset is not proof of current printer configuration. The initial design assumes a 0.4 mm nozzle and PLA;
 brand, sufficient material and current readiness remain unknown until checked separately.
+
+<details>
+<summary>Look up a stamp and record feedback</summary>
 
 Each allocated UUID is a **physical copy**, including repeated equal geometry. The ten-character stamp is
 collision-checked against the entire declared persistent registry, not only this plate. Keep that registry and
@@ -53,6 +56,8 @@ UUID/stamp next to the existing hole measurements. `experiments.append_observati
 with an attempt or human-feedback payload, referencing the unchanged identity/artifact digest. Record actual job
 identity, function, fit, durability/cycles and notes when known; do not invent passing or printed results. An
 unknown submission outcome stays unresolved and must not trigger an automatic duplicate print under the same IDs.
+
+</details>
 
 Before a real job, independently open/save/reopen the project in Bambu Studio and verify profiles and placements;
 then check fresh device/material/bed/camera evidence and obtain the required submission authority. Physical label

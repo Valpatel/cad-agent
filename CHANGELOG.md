@@ -9,6 +9,18 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.27.4 (2026-11-07)
+
+**Changed**
+- Add short visual README maps to the remaining owned skill, role, image and recorded-data folders. Each points to its actual instructions, pictures or evidence; generated data keeps its recorded layout (#113).
+- Publish owned folder maps behind the repository map, with their own HTML/Markdown pages and parent navigation. These detail pages stay out of the main catalogue, homepage and agent index (#113).
+
+**Fixed**
+- Agent installation and inventory reserve `README.md` as the role folder's human map, while malformed role prompts still fail and skill maps remain available in copy-mode installs (#113).
+- Derive weekly link-check inputs from actual published sources, and publish their embedded example images and preserve image URLs in Markdown twins of deep folder pages (#113).
+- Split wide folder diagrams into readable flows, fold optional reference detail, retain natural-size labels with accessible phone scrolling, and verify actual keyboard and no-script browsing (#113).
+- Record the exact native CSP and capture-phase script-resource evidence used by publication checks, retaining failed runs, strict single-event controls and the finite composite limits (#450).
+
 ## v0.27.3 (2026-11-07)
 
 **Fixed**

@@ -44,3 +44,13 @@ a printed part relaxes and loses some of the clamp, so the joint warns but passe
 hole for material inside ("Holes clear"). The checks say what CAD can: a printed
 box still needs a test fit, and the insert numbers are a model to test, not a rating
 ([inserts](https://cad-agent.valpatel.com/docs/inserts)).
+
+[Examples](../README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [.gitignore](.gitignore) | Ignore local generated exports. |
+| [cad/](cad/README.md) | Copied starter CAD script. |
+| [tools/](tools/README.md) | Copied starter check scripts. |

@@ -22,3 +22,10 @@ flowchart TD
 | Maintain the system | [Supply chain](supply-chain.md), [weekly updates](weekly-upstream-update.md), [process lessons](../lessons/process/README.md) |
 
 [All guides](../README.md) · [Skills](../../.agents/skills/README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [volume-precision.md](volume-precision.md) | Solid validity, units and aggregate numerical precision. |
+| [web-diagrams.md](web-diagrams.md) | Shared browser diagram renderer and fallback limits. |

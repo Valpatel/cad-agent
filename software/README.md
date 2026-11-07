@@ -20,3 +20,5 @@ flowchart TD
 | [vendor/](vendor/README.md) | Imported upstream trees, license notices, registry and reviewed scan records; excluded from the Python wheel |
 
 Install from the repository root with `python -m pip install -e .`; invoke the same `cad-agent` commands. Generic project examples may use their own `src/` or `vendor/` folders; those names do not refer to this repository's software owner.
+
+[Repository](../README.md)

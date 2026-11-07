@@ -570,7 +570,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - `cadagent.mechanical.bearings.check_bearing` and `cad-agent bearings bearings.yaml`: check a rolling bearing's ISO 281 basic rating life (turning or oscillating, under one load or a duty cycle, at any reliability from 90 to 99.95 %), its ISO 76 static safety at running and peak loads against SKF's guideline s0, its axial load, load range, minimum load and speed. A swinging joint, such as a robot's knee, also gets its critical amplitude and a false-brinelling warning. It returns pass, warn or fail rows; the CLI exits 1 on a fail and 2 on a bad file (#180).
 - `cadagent.mechanical.bearings.BEARINGS`: SKF's 6201 (open, 2Z, 2RSH), 6301, 6301-2RSH, 61800 to 61806, 61812, 6207-2RSH, NU 202 ECP and NU 311 ECP, and Koyo's 6201, each with C, C0, Pu, speeds, f0 and its source. Give `check_bearing` a mapping for any other bearing (#180).
 - 21 bearing formulas in `cadagent.formulas`: `rating_life`, `reliability_factor`, `deep_groove_load` (SKF's X, Y and e by clearance), `static_safety`, `duty_cycle_load` and `miner_life`, the oscillation factors `harris_factor` and `rumbarger_factor`, and an exact Hertz contact (`hertz_point_contact`, `ball_raceway_contact`). They are tested against SKF's and NSK's worked examples in `tests/fixtures/bearing-vectors.json` (#180).
-- [Rolling bearings](docs/bearings.md): the check, a robot knee worked through, and four figures drawn from the code (#180).
+- [Rolling bearings](docs/mechanical/bearings.md): the check, a robot knee worked through, and four figures drawn from the code (#180).
 - `cadagent.geometry.robust_union` and `robust_cut`: booleans that check every result (not null, valid by the relation gate's strict checks, at least one solid, a volume within the inputs' bounds by its adaptive integration) and fall back to one shape at a time, then, for a cut, to tools nudged by 0.01 mm. Each fallback and nudge is reported (`report=[]`) and logged; when nothing passes they raise `GeometryError` instead of returning a bad shape. Contributed by Jeff Patrick, from failures he met on a real build (#249).
 - `cadagent.geometry.cache.PartCache`: caches built parts as BREP under a hash of the listed source files, parameters
   (`key_extra`) and each part's own `deps`, so a build rebuilds only the parts whose sources changed.
@@ -1377,12 +1377,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 **New**
 - `cad-agent snapfit`: cantilever, torsion and annular snap-fit sizing by the Covestro method, with allowable strain
-  for moulded resins and, by print direction, for 11 filaments (13 entries: two have dry and wet values) (#105, [docs/compliant.md](docs/compliant.md)).
+  for moulded resins and, by print direction, for 11 filaments (13 entries: two have dry and wet values) (#105, [docs/compliant.md](docs/mechanical/compliant.md)).
 - `cadagent.formulas`: closed-form engineering equations (beams and snap arms, torsion bars, coil springs, screw preload
   and thread strip, four-bar linkages, conduction and fan operating points), each with its SI units, validity limits
   and source; `catalogue()` lists them. A browser port drives the site's snap-arm explorer, tested against golden
   vectors from the Python (#146, [docs/formulas.md](docs/formulas.md)).
-- `cad-agent holes`: the standard hole-clearance check, and [docs/common-issues.md](docs/common-issues.md), the index
+- `cad-agent holes`: the standard hole-clearance check, and [docs/common-issues.md](docs/practice/common-issues.md), the index
   of recurring CAD mistakes and the checks that catch them (#88). Countersinks, chamfers and drill points are probed as
   cones and counted apart from cylindrical holes (#101).
 - Release page: a browsable print page with thumbnails, print settings, CAD files and source (#87), pick-one groups
@@ -1401,7 +1401,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   the design comparison's chart is drawn from `cad-agent compare --json`, which a `--check` keeps current (#189).
 - The topic tree: [docs/vision.md](docs/vision.md) and [docs/areas.yaml](docs/areas.yaml) map six domains and 35
   areas, each at its maturity; a test keeps every page, command, skill and agent on the map (#148).
-- [Manufacturing-process profiles](research/process-profiles.md): design limits for FDM, SLA, SLS, MJF, injection
+- [Manufacturing-process profiles](docs/research/manufacturing/process-profiles.md): design limits for FDM, SLA, SLS, MJF, injection
   moulding, sheet metal and CNC in one table, every rule credited to its source, with charts (#162).
 - `tools/cut_release.py`: cuts a release (dates the Unreleased entry, bumps the version) and checks the result against
   CI's release gate.
@@ -1418,7 +1418,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - The README's animated hero, drawn from Gyropup's real CAD by `tools/readme_anim.py` (`cadagent.publish.anim`): the
   five-bar leg as hidden-line edges from its STEP, assembled, its stride solved from link lengths measured in the CAD,
   its gaps from the assembly gates' relation engine and its hip frame's FEA stress. One CSS-only SVG under 250 KB that
-  GitHub shows in an `<img>`, with rules a test enforces ([docs/animated-figures.md](docs/animated-figures.md), #183).
+  GitHub shows in an `<img>`, with rules a test enforces ([docs/animated-figures.md](docs/practice/animated-figures.md), #183).
 
 **Changed**
 - `src/cadagent/` is laid out by domain, as the topic tree ([docs/areas.yaml](docs/areas.yaml)) groups the work:

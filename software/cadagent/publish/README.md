@@ -42,3 +42,14 @@ flowchart TD
 
 Related: [package map](../README.md) · [review](../review/README.md) · [web kit](../webkit/README.md) ·
 [review packet docs](../../../docs/practice/review-packet.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [anim/](anim/README.md) | Shared animated evidence scene/rendering modules. |
+
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

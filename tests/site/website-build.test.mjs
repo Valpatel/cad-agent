@@ -811,3 +811,20 @@ test('a real draft consumes moved sources and cannot substitute stale root files
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
   }
 });
+
+
+test('repository map publishes ownership without adding source-only catalogue routes', async () => {
+  const html = await readFile(path.join(out, 'docs/map.html'), 'utf8');
+  const twin = await readFile(path.join(out, 'docs/map.md'), 'utf8');
+  assert.match(html, /Repository map/);
+  assert.match(twin, /Canonical source owner/);
+  assert.match(twin, /Published owner/);
+  assert.match(twin, /Source only/);
+  assert.match(twin, /https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/tools\/README\.md/);
+  assert.match(twin, /\[Page\]\(\/docs\/README\)/);
+  assert.match(html, /class="cad-diagram"/);
+  const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
+  assert.ok(catalog.items.some(i => i.markdown === 'https://cad-agent.valpatel.com/docs/map.md'));
+  assert.ok(!catalog.items.some(i => i.source?.endsWith('/tools/README.md')));
+  assert.ok(!catalog.items.some(i => i.source?.endsWith('/.agents/README.md')));
+});

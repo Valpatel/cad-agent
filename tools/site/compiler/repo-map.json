@@ -3,17 +3,20 @@
     {
       "root": ".agents/agents",
       "owner": ".agents/README.md",
-      "reason": "Installer discovers every role Markdown file; parent links the two manifest-listed prompts, not a README in the prompt namespace."
+      "reason": "Installer discovers every role Markdown file; parent links the two manifest-listed prompts, not a README in the prompt namespace.",
+      "members": "linked-files"
     },
     {
       "root": ".claude-plugin",
       "owner": ".agents/README.md",
-      "reason": "Plugin wiring uses the canonical kit; its manifest is mapped by the kit owner."
+      "reason": "Plugin wiring uses the canonical kit; its manifest is mapped by the kit owner.",
+      "members": "linked-files"
     },
     {
       "root": ".github",
       "owner": ".github/CONTRIBUTING.md",
-      "reason": "GitHub policy, templates and workflows are mapped by CONTRIBUTING rather than a front-page-changing README."
+      "reason": "GitHub policy, templates and workflows are mapped by CONTRIBUTING rather than a front-page-changing README.",
+      "members": "policy"
     },
     {
       "root": "tests/fixtures",
@@ -103,7 +106,8 @@
     {
       "root": ".agents/skills/cad-motion-validation/references",
       "owner": ".agents/skills/cad-motion-validation/SKILL.md",
-      "reason": "Bundled reference resources are linked from the installed skill; no extra discovered skill entry."
+      "reason": "Bundled reference resources are linked from the installed skill; no extra discovered skill entry.",
+      "members": "linked-files"
     },
     {
       "root": "docs/validation/volume-2026-10-29",

@@ -1,7 +1,7 @@
 # changelog.d
 
 Each PR's CHANGELOG lines, one file per change, until the next release folds them into
-[CHANGELOG.md](../CHANGELOG.md). PRs that each add a file never conflict. PRs that edit the same lines of
+[CHANGELOG.md](../../CHANGELOG.md). PRs that each add a file never conflict. PRs that edit the same lines of
 CHANGELOG.md do, and every conflict fix means a new review.
 
 ```mermaid
@@ -39,3 +39,11 @@ Name the file `<issue>-<short-slug>.md`. Write bullets under one or more of thes
   - a one-line lead-in such as `**Projects must change:** text`: put the heading on its own line and the text in bullets.
 
   `tests/repo/test_cut_release.py` parses every fragment in this folder, so a malformed one fails CI.
+
+[Guides](../README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [Numbered fragments](../../tools/cut_release.py) | Temporary issue-named Markdown fragments; the actual release parser validates supported sections and consumes them. |

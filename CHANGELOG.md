@@ -9,6 +9,13 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.27.3 (2026-11-07)
+
+**Fixed**
+- Correct the dependency policy to describe the range-based Python installs used by CI and the normal installer; source and installer checksums do not imply hash-locked runtime dependencies (#154).
+- Copy buttons defer font-ready measurement to the next frame, avoiding geometry writes during resize delivery. Browser checks now observe window ErrorEvents as well as Playwright errors and exercise the font-ready scheduling boundary (#450).
+- Full CI reports active test IDs and dumps threads for a slow test, preserving its complete test selection and 30-minute job cap (#463).
+
 ## v0.27.2 (2026-11-07)
 
 **Fixed**

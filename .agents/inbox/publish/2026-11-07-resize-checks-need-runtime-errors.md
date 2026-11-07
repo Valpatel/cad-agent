@@ -38,6 +38,101 @@ Collect unfiltered runtime errors before navigation on the exact page that perfo
 
 Local checks are not publication acceptance. Keep issue450 and the release acceptance open until the correction passes independent review, normal CI and an actual reviewed public consumer. No error whitelist or unchanged public retry is a substitute.
 
+## Font readiness can change geometry during observer delivery
+
+On 2026-11-07 UTC, the corrected plain-state copy probe completed both Chromium cases in the actual v0.27.1
+public campaign, but the first domain's WebKit toolkit navigation emitted the same resize warning. The event
+at 17:43:58.489 UTC preceded the first viewport change at 17:43:59.470 UTC. The receipt remains failed after
+42 responses and 24 cases, with second-domain and later cases unrun; its SHA-256 is
+`506131e7bd6efbeab26b04c63ac897ec742a21e3cae56e6af3283374449d2740`.
+[Independent failure disposition](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6710850120).
+
+An eight-case local font-delay study and one instrumented public WebKit navigation were quiet. They did not
+reproduce the failure or justify a fix by themselves. Their receipts remain scoped nonreproductions:
+`551d4e62b8944847c37a5f61863f6d0c0ad146a28b4e24186f45ec8a325b40fd` and
+`598ecf4763054cb01c03f8b9d761fea0ddc251c58febfb011fba53c20cd30269`.
+
+The next controlled local experiment used the saved actual document and source-bound released assets. In each
+isolated page, it held the actual component's `FontFaceSet.ready` promise, applied the existing late-button
+stylesheet on an animation frame, and resolved readiness in the first actual copy observer notification afterward.
+The browser still delivered every original callback and error. The only scratch product alternative scheduled
+the font-ready measurement on an animation frame.
+
+`timeout --signal=TERM --kill-after=15s 180s node cad450-font-delivery-control.mjs` completed all four old/new
+WebKit/Chromium cases. Each observed 23 readiness reads and exactly one controlled release. Released WebKit
+emitted the exact warning through both `pageerror` and `window.error`. Released Chromium emitted it through
+`window.error` alone: Playwright's `pageerror` stayed empty. The scratch frame alternative emitted neither in
+both engines. All owned browser/preview processes exited, no traces were dropped, and source stayed clean.
+Receipt SHA-256: `d5975f3f8c901fd4df6c321f0ef37eb1481c65c0cfe6a791ee19b54f141feeae`.
+[Independent actual review](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6711195314).
+
+**Cause and corrective rule:** the remaining synchronous font-ready measurement can change observed geometry
+within the resize delivery cycle. Schedule it on the next frame, as the observer-triggered fit already is.
+Collect unfiltered window ErrorEvents as well as Playwright `pageerror` before navigation; drain each document's
+queue before replacing it and after a bounded paint. Do not prevent default error delivery. Prove the collector
+with a planted ErrorEvent, then test the actual component with the controlled readiness boundary and the existing
+overlap and reader-choice assertions.
+
+**Limits:** this establishes a scheduling hazard and a test-observation gap, not the cause of the uninstrumented
+public event. The diagnostic's Chromium `observedDiscrimination: false` field only considered its empty
+Playwright error list; its preserved window-event trace contains the warning. Source-bound regression checks,
+current CI and a new reviewed actual publication remain required. Neither the original failed receipt nor its
+outcome is rewritten.
+
+The committed consumer at `9b3da023975c4082b5a65df1dd2062c5b9684cf3` was then tested against both actual
+released copy bytes and corrected bytes, with the saved document and other released assets unchanged. One bounded
+local run of `cad465-committed-font-consumer.mjs` completed all four expected outcomes: the committed checker
+rejected the released component in both engines and passed the corrected component with no errors or overlap/
+navigation problems. WebKit reported the old warning through both channels; Chromium again reported it only
+through `window.error`. Each of four planted ErrorEvent controls passed, and four scratch variants that discarded
+the window-error queue correctly failed that control. All twelve isolated contexts and three owned processes
+closed; both source checkouts remained clean. Receipt SHA-256:
+`31a640c71e1dadf088e6ff926466b1f3360e5a516030103fad2af242feb4b008`.
+[Independent actual acceptance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711346118).
+
+The validator executes pinned browser-test function declarations and a pure DOM callback in the owned local
+browser, without running the suite's operational top level. An initial static objection was reconsidered after
+checking that these exact regions have no GitHub/Git mutation, subprocess or credential access. This does not
+relax the prohibition on extracting mutation-capable merge/deployment operators for review.
+[Exact bounded author-run clearance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711332641).
+This remains local regression evidence; full current CI and actual publication acceptance are separate.
+
+## Inspect the platform object, not an optional global constructor
+
+The full Chromium job at integrated source `164333d9dd611f4e95c9b89c0176ceace1b2c0ee` failed on
+2026-11-07 at 18:37:04 UTC. Its font-control initialization raised `FontFaceSet is not defined`, followed by
+the missing control state's `reads` error. Both the Playwright and window collectors retained the original
+ReferenceError. The local Chrome 151/WebKit checks did not expose this constructor-name difference.
+[Original failed job](https://github.com/Valpatel/cad-agent/actions/runs/42401796172/job/128490974880).
+
+The test had assumed a global constructor merely to find the `ready` getter, although the product only uses
+`document.fonts`. The correction walks the actual font object's prototype chain and still requires a configurable
+getter. Its isolated control deliberately removes the optional global name, preventing that assumption from
+returning. The actual font object, product component, readiness subscriptions, exact controlled release, geometry,
+error collection and fail-closed assertions remain required. This changes test portability, not product behavior.
+The failed run remains failed; current source validation and CI must pass before merging.
+
+At `91fc921bab93d3544598f7b530a77c166063d8b6`, the first portability validator completed the WebKit released
+rejection and corrected-component pass with the global name absent. Its old-constructor mutant also failed the
+actual consumer, but the validator incorrectly required `FontFaceSet` specifically in the window-event message.
+WebKit's `pageerror` named that missing variable; its window ErrorEvent contained only `Script error.` with empty
+filename and zero line/column. The run remains **failed**, receipt
+`e0b4fb5fd2c1995edbcc16709e901f9302fdd6be075312cd6d6be4ba21ced9fc`; Chrome was not reached. All nine
+contexts and two owned processes exited, and both source guards were clean. A generic window message alone
+does not identify its cause.
+
+A separately reviewed continuation rehashed the original script, receipt and raw runtime records. It accepted
+only that exact isolated mutant pairing, with ten altered signatures rejected, and ran only the three unexecuted
+Chromium variants. The actual consumer rejected released scheduling, passed the correction under the missing
+global, and rejected the old-constructor mutant. Planted ErrorEvent controls and blind-collector mutations also
+behaved as required. All nine new contexts and two owned processes exited; source stayed clean and the original
+failed receipt stayed byte-identical. Continuation SHA-256:
+`4dd356c42bec0ff4373223f3e6aa617693ec2c8ba5e477a000c090bcdd0296c0`.
+[Independent actual continuation acceptance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711580632).
+Use the actual platform object's contract and retain complementary error channels; do not infer that every browser
+exposes its constructor globally or preserves the same error message in every channel. No generic error exception
+was added to the product consumer, and this local acceptance does not replace current CI or publication evidence.
+
 
 ## A navigation-looking error can be a collected probe promise
 

@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A full check is cancelled after a progress percentage with no active test or traceback | [Retain the cap and expose the active test](inbox/publish/2026-11-07-full-test-caps-need-active-case.md) |
 | A normal login works but the exact fresh agent profile is logged out, or initialization omits memory evidence | [Name the normal-login trial boundary](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#separate-a-normal-login-flow-trial-from-a-clean-user-claim) |
 | Fleet submit succeeds but the parser misses its job id, or fetched evidence modes differ from an assumed umask | [Inspect actual receipts and privacy modes before retrying](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#actual-installer-studies-preserve-passed-and-unmet-scopes) |
 | Installer guard tests pass but real Windows body, uv receipt or current clean-agent evidence is missing | [Separate guards from actual platform installation](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#installer-guards-are-not-full-platform-installation-evidence) |
@@ -12,6 +13,7 @@
 | A package omits licence metadata although its locked archive has a licence, or a stale-runtime exception survives new bytes | [Bind archive evidence to context, version and bytes](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#missing-package-metadata-does-not-establish-a-missing-archive-licence) |
 | A browser probe reports context destruction or a collected promise despite a surviving page root | [Observe completion through plain state at the actual library boundary](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md#observe-asynchronous-probe-completion-through-plain-state) |
 | Copy/layout checks pass while resizing emits `ResizeObserver loop completed with undelivered notifications` | [Collect runtime errors on the actual interaction page](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md) |
+| Chromium dispatches a resize ErrorEvent while Playwright reports no pageerror, or font readiness changes observed geometry | [Collect both error channels and exercise font readiness during delivery](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md#font-readiness-can-change-geometry-during-observer-delivery) |
 | A resized viewport has old responsive styles, or an automatic navigation fold remains open on a phone | [Read responsive styles after the resize event](inbox/publish/2026-11-07-responsive-style-can-lag-resize.md) |
 | A release guard assumes fixed check counts, rejects inherited bytes, hits ENOBUFS, or confuses visible link text with its target | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
@@ -19,6 +21,7 @@
 | A public probe fails before launch because ambient Node or a default browser cache differs | [Bind existing publication runtimes explicitly](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md) |
 | A tracked SOURCE JSON gets404 at an assumed website route | [Use the producer's actual source-record namespace](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md) |
 | A provider request fails while a real viewer works, or generic GET and browser HTML differ | [Require matching enforced CSP evidence](inbox/publish/2026-11-07-provider-failures-need-matching-csp-evidence.md) |
+| WebKit reports enforced CSP without requestfailed, or a wider optional campaign stalls a completed finite issue | [Bind the native error and the actual acceptance scope](inbox/publish/2026-11-07-provider-failures-need-matching-csp-evidence.md#webkit-can-report-an-enforced-block-without-requestfailed) |
 | Local release checks pass but the new changelog fragment breaks the repository release | [Select the actual release producer](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#select-the-release-producer-not-only-project-release-checks) |
 | A detached materials chart drops the source edition or makes new thermal data look like a new mechanical allowable | [Preserve material editions in figures](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md#preserve-material-editions-in-detached-figures) |
 | Research YAML loads and imports but its health updater refuses the shard | [Keep source records editable](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md#keep-source-records-editable-by-their-health-consumer) |

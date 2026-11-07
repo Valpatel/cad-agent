@@ -97,6 +97,21 @@ relax the prohibition on extracting mutation-capable merge/deployment operators 
 [Exact bounded author-run clearance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711332641).
 This remains local regression evidence; full current CI and actual publication acceptance are separate.
 
+## Inspect the platform object, not an optional global constructor
+
+The full Chromium job at integrated source `164333d9dd611f4e95c9b89c0176ceace1b2c0ee` failed on
+2026-11-07 at 18:37:04 UTC. Its font-control initialization raised `FontFaceSet is not defined`, followed by
+the missing control state's `reads` error. Both the Playwright and window collectors retained the original
+ReferenceError. The local Chrome 151/WebKit checks did not expose this constructor-name difference.
+[Original failed job](https://github.com/Valpatel/cad-agent/actions/runs/42401796172/job/128490974880).
+
+The test had assumed a global constructor merely to find the `ready` getter, although the product only uses
+`document.fonts`. The correction walks the actual font object's prototype chain and still requires a configurable
+getter. Its isolated control deliberately removes the optional global name, preventing that assumption from
+returning. The actual font object, product component, readiness subscriptions, exact controlled release, geometry,
+error collection and fail-closed assertions remain required. This changes test portability, not product behavior.
+The failed run remains failed; current source validation and CI must pass before merging.
+
 
 ## A navigation-looking error can be a collected probe promise
 

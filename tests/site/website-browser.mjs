@@ -895,11 +895,18 @@ async function fontReadyProblems(covered) {
   const collectRuntime = await watchRuntimeErrors(page, errors, () => phase);
   try {
     await page.addInitScript(() => {
-      const descriptor = Object.getOwnPropertyDescriptor(FontFaceSet.prototype, 'ready');
+      // Some supported Chromium builds expose document.fonts without a global FontFaceSet constructor.
+      // Plant that absence in this isolated control, then use the actual object's prototype chain.
+      if (!Reflect.deleteProperty(window, 'FontFaceSet') || 'FontFaceSet' in window)
+        throw new Error('font control could not remove the optional global constructor');
+      let fontPrototype = Object.getPrototypeOf(document.fonts);
+      while (fontPrototype && !Object.getOwnPropertyDescriptor(fontPrototype, 'ready'))
+        fontPrototype = Object.getPrototypeOf(fontPrototype);
+      const descriptor = fontPrototype && Object.getOwnPropertyDescriptor(fontPrototype, 'ready');
       if (!descriptor?.get || !descriptor.configurable) throw new Error('font readiness cannot be controlled');
       const boundary = window.__cadFontBoundary = { reads: 0, releases: 0, armed: false, styleApplied: false };
       boundary.waiting = new Promise(resolve => { boundary.resolve = resolve; });
-      Object.defineProperty(FontFaceSet.prototype, 'ready', { ...descriptor, get() {
+      Object.defineProperty(fontPrototype, 'ready', { ...descriptor, get() {
         if (this !== document.fonts) return descriptor.get.call(this);
         boundary.reads++;
         return boundary.waiting;

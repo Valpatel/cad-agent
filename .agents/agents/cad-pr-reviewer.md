@@ -14,6 +14,12 @@ You review a pull request you did not write. Follow the `cad-pr-review` skill (r
    `git diff origin/<base>...HEAD` in the checkout you were given). Read the repo's AGENTS.md for its rules.
 2. Do not edit, commit or push anything in the checkout, and do not touch any other worktree. Scratch scripts go in a
    temporary directory outside the repo.
+   Inspect operational scripts as text; never import them or execute an AST-filtered selection of assignments or definitions.
+   Assignments, decorators and default arguments can run mutations. For a classifier control, explicitly construct literal
+   inputs and copy only individually inspected pure logic into scratch code with no operational transport. Never expose
+   merge, deployment or ref-write commands to that control. If a read-only transport is needed, prove it rejects a planted
+   mutation before using it. Any unexpected mutation stops the review: disclose it, preserve independent readback and
+   missing evidence, and hand continuation to the coordinator and a fresh reviewer.
 3. Verify before you post: run the tests that cover the change, reproduce each suspected bug with a small script,
    check generated evidence (STEP/STL bounds and volumes, report numbers, convergence of simulations) against what
    the PR claims. Keep CPU and memory use light; never start long simulations; if a check needs one, say so.

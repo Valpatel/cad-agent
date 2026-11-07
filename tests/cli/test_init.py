@@ -149,11 +149,11 @@ def _wheel_smoke(tmp_path):
         metadata = BytesParser().parsebytes(wheel.read(metadata_paths[0]))
         pardiso = [Requirement(r) for r in metadata.get_all("Requires-Dist", []) if Requirement(r).name == "pypardiso"]
         assert len(pardiso) == 1 and pardiso[0].marker is not None
-        for system, machine, expected in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
+        for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
                                           ("Linux", "aarch64", False), ("Darwin", "arm64", False),
                                           ("Darwin", "x86_64", False), ("Windows", "ARM64", False)):
             env = {"platform_system": system, "platform_machine": machine}
-            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected, env
+            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected_pardiso, env
             assert not pardiso[0].marker.evaluate({**env, "extra": ""}), "PARDISO leaked into the core install"
     shutil.rmtree(source)
     assert not source.exists()
@@ -180,7 +180,7 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
     assert all(Path(p).is_relative_to(env_dir) for p in paths.values()), paths
     actual = {p.relative_to(target).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in target.rglob("*") if p.is_file()}
-    assert actual == expected, "installed wheel starter files differ from committed source bytes"
+    assert actual == expected, f"installed wheel starter files differ from committed source bytes: expected={expected}, actual={actual}"
     sdk = Path(paths["package"]).parent / "webkit"
     for name, digest in sdk_expected.items():
         installed = (sdk / name).resolve()

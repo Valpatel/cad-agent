@@ -49,3 +49,12 @@ solve path without PARDISO against its known displacement and free-degree equili
 Platform markers express upstream platform support, not CPU performance, all ABI variants or future wheel
 availability. The change does not make a PyPI-only Linux ARM Gmsh installation possible. Preserve mesher-build
 identity and the existing external-runtime caveats; a metadata resolution is not a full CAD/FEA validation run.
+
+## The real wheel consumer caught a test-state collision
+
+The first actual `tests/cli/test_init.py --wheel-smoke` invocation at `ed313ae5` reached the new metadata checks but
+failed the later starter-byte comparison. The platform loop had reused the existing `expected` variable, replacing
+its source hash map with a boolean. This was a new harness bug, not missing starter bytes or a native solver failure.
+The loop now uses `expected_pardiso`; a failed byte comparison also prints both small hash maps for diagnosis.
+The original failure remains recorded. A new complete wheel invocation is required after this source correction;
+metadata-only assertions cannot substitute for the downstream consumer.

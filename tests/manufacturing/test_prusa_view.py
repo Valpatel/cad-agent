@@ -125,6 +125,22 @@ def test_prepare_refuses_a_foreign_work_folder_and_tmp_for_the_flatpak(bundle_ro
         prusa_view.prepare(model, exe=['flatpak', 'run', 'x'], workdir='/tmp/cadagent-prusa-view-test')
 
 
+@pytest.mark.parametrize('inside', ['model', 'config'])
+def test_prepare_preserves_model_and_config_inside_a_marked_work_folder(tmp_path, monkeypatch, inside):
+    work = tmp_path / 'owned-work'
+    work.mkdir()
+    (work / prusa_view._MARK).write_text('previous generated work')
+    model = (work if inside == 'model' else tmp_path) / 'keep.3mf'
+    config = (work if inside == 'config' else tmp_path) / 'keep.ini'
+    model.write_bytes(b'previous model must survive')
+    config.write_bytes(b'previous config must survive')
+    before = {p: p.read_bytes() for p in (model, config, work / prusa_view._MARK)}
+    monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [])
+    with pytest.raises(prusa_view.ViewError, match=f'work folder must not contain the {inside}'):
+        prusa_view.prepare(model, config=config, workdir=work, exe=['/fake/prusa-slicer'])
+    assert all(p.is_file() and p.read_bytes() == raw for p, raw in before.items())
+
+
 def test_flatpak_gets_the_ca_file_inside_the_sandbox(monkeypatch):
     monkeypatch.delenv(prusa_view.CA_ENV, raising=False)
     exe = ['flatpak', 'run', '--command=prusa-slicer', 'com.prusa3d.PrusaSlicer']
@@ -245,6 +261,39 @@ def test_open_view_needs_a_display(monkeypatch, model):
         prusa_view.open_view(model)
 
 
+@pytest.mark.parametrize('cleanup_fails', [False, True])
+def test_requested_close_runs_after_screenshot_timeout_without_masking_original(tmp_path, monkeypatch, cleanup_fails):
+    from types import SimpleNamespace
+    monkeypatch.setattr(prusa_view, 'has_display', lambda: True)
+    monkeypatch.setattr(prusa_view.shutil, 'which', lambda name: '/fake/' + name)
+    monkeypatch.setattr(prusa_view, 'prepare', lambda *a, **k: {
+        'exe': ['prusa-slicer'], 'datadir': str(tmp_path / 'datadir'), 'config': str(tmp_path / 'c.ini'),
+        'model': str(tmp_path / 'keep.3mf'), 'work': str(tmp_path)})
+    monkeypatch.setattr(prusa_view, 'ca_file', lambda *a: None)
+    monkeypatch.setattr(prusa_view, 'windows', lambda: [('0x123', 'keep', 1000, 600)])
+    monkeypatch.setattr(prusa_view, 'pick_window', lambda *a: '0x123')
+    monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [4242])
+    child = SimpleNamespace(pid=4242, poll=lambda: None)
+    monkeypatch.setattr(prusa_view.subprocess, 'Popen', lambda *a, **k: child)
+    original = subprocess.TimeoutExpired('controlled screenshot', 120, output='original timeout evidence')
+    def timeout(*a, **k):
+        raise original
+    monkeypatch.setattr(prusa_view.subprocess, 'run', timeout)
+    stops = []
+    def stop(data_dir, popen):
+        stops.append((data_dir, popen))
+        if cleanup_fails:
+            raise prusa_view.ViewError('controlled cleanup refusal')
+        return [4242]
+    monkeypatch.setattr(prusa_view, 'stop', stop)
+    with pytest.raises(subprocess.TimeoutExpired) as got:
+        prusa_view.open_view(tmp_path / 'keep.3mf', screenshot=tmp_path / 'screen.png', wait=0, close=True)
+    assert got.value is original and stops == [(tmp_path / 'datadir', child)]
+    assert not (tmp_path / 'screen.png').exists()
+    if cleanup_fails:
+        assert 'controlled cleanup refusal' in (tmp_path / 'prusaslicer.log').read_text()
+
+
 def test_cli_prusa_view_reports_unusable_cases(monkeypatch, model, capsys, tmp_path):
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv('DISPLAY', raising=False)
@@ -260,6 +309,11 @@ def test_cli_prusa_view_stop_with_nothing_open(monkeypatch, model, capsys, tmp_p
     monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [])
     assert main(['prusa-view', str(model), '--stop']) == 0
     assert 'no view open' in capsys.readouterr().out
+    def refused(*a, **k):
+        raise prusa_view.ViewError('controlled safe-stop refusal')
+    monkeypatch.setattr(prusa_view, 'stop', refused)
+    assert main(['prusa-view', str(model), '--stop']) == 2
+    assert 'controlled safe-stop refusal' in capsys.readouterr().err
 
 
 def test_cli_prusa_view_passes_options(monkeypatch, model, capsys, tmp_path):

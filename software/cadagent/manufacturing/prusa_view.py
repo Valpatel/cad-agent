@@ -362,7 +362,11 @@ def prepare(model, settings: Optional[dict] = None, config=None, view_bed: Optio
     model = Path(model).resolve()
     if not model.is_file():
         raise FileNotFoundError(f'{model} not found')
+    config = Path(config).resolve() if config else None
     work = work_dir(model, workdir)
+    for what, path in (('model', model), ('config', config)):
+        if path is not None and path.is_relative_to(work):
+            raise ViewError(f'the work folder must not contain the {what}: {path}')
     if _is_flatpak(exe):
         for what, path in (('model', model), ('work folder', work)) + ((('config', Path(config)),) if config else ()):
             if _under_tmp(path):
@@ -419,33 +423,46 @@ def open_view(model, settings: Optional[dict] = None, config=None, view_bed=None
         popen = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=fh, stderr=subprocess.STDOUT, env=env,
                                  start_new_session=True)
     r.update(pid=popen.pid, command=cmd, log=str(log), window=None, screenshot=None, closed=False)
-    say(f'PrusaSlicer started (PID {popen.pid}), private profile folder {r["datadir"]}')
-    stem = Path(r['model']).stem
-    deadline = time.monotonic() + window_timeout
-    while time.monotonic() < deadline and popen.poll() is None:
-        r['window'] = pick_window(windows(), stem, before)
-        if r['window']:
-            break
-        time.sleep(1.0)
-    if not r['window']:
-        why = (f'PrusaSlicer exited (code {popen.returncode})' if popen.poll() is not None else
-               f'no new PrusaSlicer window titled {stem!r} or Untitled within {window_timeout:g} s')
-        stop(Path(r['datadir']), popen)
-        raise ViewError(f'{why}; see {log}')
-    r['pids'] = own_processes(Path(r['datadir'])) or [popen.pid]
-    say(f'window {r["window"]}')
-    if screenshot:
-        time.sleep(max(0.0, wait))
-        out = Path(screenshot).resolve()
-        out.parent.mkdir(parents=True, exist_ok=True)
-        p = subprocess.run(['import', '-window', r['window'], str(out)], capture_output=True, text=True, timeout=120)
-        if p.returncode != 0 or not out.is_file():
-            if close:
-                stop(Path(r['datadir']), popen)
-            raise ViewError(f'import could not screenshot window {r["window"]}: {(p.stderr or "").strip()[-300:]}')
-        r['screenshot'] = str(out)
-    if close:
-        r['stopped'] = stop(Path(r['datadir']), popen)
-        r['closed'] = True
-    r.pop('settings', None)
-    return r
+    error = None
+    try:
+        say(f'PrusaSlicer started (PID {popen.pid}), private profile folder {r["datadir"]}')
+        stem = Path(r['model']).stem
+        deadline = time.monotonic() + window_timeout
+        while time.monotonic() < deadline and popen.poll() is None:
+            r['window'] = pick_window(windows(), stem, before)
+            if r['window']:
+                break
+            time.sleep(1.0)
+        if not r['window']:
+            why = (f'PrusaSlicer exited (code {popen.returncode})' if popen.poll() is not None else
+                   f'no new PrusaSlicer window titled {stem!r} or Untitled within {window_timeout:g} s')
+            raise ViewError(f'{why}; see {log}')
+        r['pids'] = own_processes(Path(r['datadir'])) or [popen.pid]
+        say(f'window {r["window"]}')
+        if screenshot:
+            time.sleep(max(0.0, wait))
+            out = Path(screenshot).resolve()
+            out.parent.mkdir(parents=True, exist_ok=True)
+            p = subprocess.run(['import', '-window', r['window'], str(out)], capture_output=True, text=True, timeout=120)
+            if p.returncode != 0 or not out.is_file():
+                raise ViewError(f'import could not screenshot window {r["window"]}: {(p.stderr or "").strip()[-300:]}')
+            r['screenshot'] = str(out)
+        r.pop('settings', None)
+        return r
+    except BaseException as exc:
+        error = exc
+        raise
+    finally:
+        if close or not r['window']:
+            try:
+                r['stopped'] = stop(Path(r['datadir']), popen)
+                r['closed'] = True
+            except Exception as cleanup_error:
+                if error is None:
+                    raise
+                # Preserve the operation's original exception and retain the cleanup diagnostic too.
+                try:
+                    with log.open('a') as fh:
+                        fh.write(f'\nPrusa view cleanup also failed: {cleanup_error}\n')
+                except OSError:
+                    pass

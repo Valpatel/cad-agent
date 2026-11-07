@@ -8,3 +8,5 @@
   (#252).
 - Maintainer intake preserves the contributor's command and GUI evidence, folds its long reference, and binds
   shutdown to actual Prusa argv/start time with Linux pidfds instead of command-text substring matches (#252).
+- Reject a work folder containing the model/config before cleanup, and honor requested shutdown after screenshot
+  errors while retaining the original failure and separate cleanup diagnostics (#252).

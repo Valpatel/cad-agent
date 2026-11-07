@@ -14,6 +14,12 @@ owned fake proc files, including a datadir containing spaces and a single argume
 The stop controls replace every signal boundary: they check identity changes after opening/before signalling/escalation,
 handle closure, and refusal to report an unverifiable running child as closed. They do not send real signals.
 
+The same source review found two adjacent lifecycle failures in the original implementation. A marked work folder
+containing the input model or config was deleted before that input was read. A screenshot subprocess timeout with
+`close=True` skipped shutdown. Existing-consumer controls now require rejection before any input deletion and run
+requested shutdown in `finally`, retaining the original screenshot exception plus a separate cleanup diagnostic.
+These controls use owned temporary bytes and mocked launch/window/signal boundaries, not real applications.
+
 ## Cause and corrective rule
 
 `ps` renders a command as text and loses argument boundaries. A substring plus a program name containing "prusa"

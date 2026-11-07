@@ -223,7 +223,10 @@ def cmd_prusa_view(args: argparse.Namespace) -> int:
         model = project.root / model
     if args.stop:
         data_dir = prusa_view.work_dir(model, args.workdir) / "prusaslicer-datadir"
-        pids = prusa_view.stop(data_dir)
+        try:
+            pids = prusa_view.stop(data_dir)
+        except prusa_view.ViewError as exc:
+            raise _Unusable(str(exc)) from None
         _say(f"stopped PID {', '.join(map(str, pids))}" if pids else f"no view open from {data_dir.parent}")
         return 0
     settings = None

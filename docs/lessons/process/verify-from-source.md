@@ -283,3 +283,12 @@ flowchart TD
   its fallback image at the top of the compiled README. The README now explicitly disables those cards; other
   pages retain them. Keep the actual-image uniqueness check and complete compiled-site acceptance.
   [Failure, cause and controls](../../../.agents/inbox/2026-11-07-page-placement-can-duplicate-footer-art.md).
+
+### Retain the geometry and visibility behind a browser failure
+- **Rule:** A nonzero rectangle does not by itself prove that content paints. Check the element's display and
+  ancestor visibility, preserve visible text and image bounds, and exercise both a hidden-geometry control and
+  a genuinely escaped visible element. Keep the failed rectangles and screenshot rather than only a message.
+- **Evidence and limits:** The actual 320-pixel WebKit header failures lacked those captures. Local successful
+  resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
+  the visibility boundary; [the incident](../../../.agents/inbox/2026-11-07-header-visibility-needs-paint-state.md)
+  distinguishes its controlled regression from the still-unproven historical cause.

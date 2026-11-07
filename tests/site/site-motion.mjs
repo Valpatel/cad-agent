@@ -72,11 +72,13 @@ export async function reducedHeroProblems(browser, base) {
 
 /** Compare the compiled README's actual picture selection and painted image over time.
  * Page emulation need not propagate inside SVG images: the parent selects a generated still explicitly. */
-export async function repositoryHeroProblems(browser, base) {
+async function readmePictureProblems(browser, base, basename) {
   const problems = [];
   // The existing CI artifact upload keeps these real painted controls, including failures.
   const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-readme-motion-'));
-  const selector = 'img[src="/docs/img/hero/repository-map.svg"]';
+  const animatedPath = `/docs/img/hero/${basename}.svg`;
+  const stillPath = `/docs/img/hero/${basename}-still.svg`;
+  const selector = `img[src="${animatedPath}"]`;
   const open = async reducedMotion => {
     const page = await browser.newPage({ viewport: { width: 390, height: 800 }, reducedMotion });
     try {
@@ -99,18 +101,18 @@ export async function repositoryHeroProblems(browser, base) {
   const normal = await open('no-preference');
   try {
     const image = normal.locator(selector);
-    if (await image.evaluate(img => new URL(img.currentSrc).pathname) !== '/docs/img/hero/repository-map.svg')
+    if (await image.evaluate(img => new URL(img.currentSrc).pathname) !== animatedPath)
       problems.push('README did not select the animated image with motion enabled');
     if (!(await changes(image, 'normal'))) problems.push('README image does not animate with motion enabled');
   } finally { await normal.close(); }
   const page = await open('reduce');
   try {
     const image = page.locator(selector);
-    if (await image.evaluate(img => new URL(img.currentSrc).pathname) !== '/docs/img/hero/repository-map-still.svg')
+    if (await image.evaluate(img => new URL(img.currentSrc).pathname) !== stillPath)
       problems.push('README did not select the explicit reduced-motion still');
     if (await changes(image, 'reduced')) problems.push('README image still animates with reduced motion');
     // A cached screenshot or an animation-disabled screenshot API must not pass this check.
-    const source = base + '/docs/img/hero/repository-map-still.svg?broken-motion-control';
+    const source = base + stillPath + '?broken-motion-control';
     await page.route(source, async route => {
       const response = await route.fetch();
       const body = (await response.text()).replace('</svg>',
@@ -119,9 +121,17 @@ export async function repositoryHeroProblems(browser, base) {
       await route.fulfill({ response, body });
     });
     await image.evaluate((img, source) => { img.closest('picture').querySelector('source').srcset = source; }, source);
-    await page.waitForFunction(source => document.querySelector('picture img')?.currentSrc === source, source);
+    await page.waitForFunction(({ selector, source }) => document.querySelector(selector)?.currentSrc === source,
+      { selector, source });
     await image.evaluate(img => img.decode());
     if (!(await changes(image, 'broken-still'))) problems.push('broken reduced-motion image control was accepted as a still');
   } finally { await page.close(); }
+  return problems.map(problem => `${basename}: ${problem}`);
+}
+
+export async function repositoryHeroProblems(browser, base) {
+  const problems = [];
+  for (const name of ['repository-map', 'made-with-cad-agent'])
+    problems.push(...await readmePictureProblems(browser, base, name));
   return problems;
 }

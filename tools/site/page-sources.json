@@ -20,6 +20,10 @@
   ],
   "files": [
     {
+      "source": "docs/practice/share-badge.md",
+      "public": "docs/share-badge.md"
+    },
+    {
       "source": ".github/CONTRIBUTING.md",
       "public": "CONTRIBUTING.md"
     },

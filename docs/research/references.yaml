@@ -244,12 +244,16 @@ sources:
       - docs/lessons/simulation/simulation-and-material.md
       - docs/mechanical/compliant.md
       - tests/simulation/test_fea_materials.py
+      - docs/research/simulation-tools.md
     verified: >-
       2026-10-31: opened the PDF (a reseller's copy of the official sheet). Read HDT 57 C at 0.45 MPa and 54 C
       at 1.8 MPa (ISO 75); E 2680 / 2160 MPa, UTS 39 / 35 MPa, elongation 12.2 / 7.5 % (X-Y / Z, ISO 527). #125
       (2026-10-31) also read V3.0
       (https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf),
-      which cadagent.simulation.fea's row uses.
+      which cadagent.simulation.fea's row uses. 2026-11-07: reread the official V3.0 PDF p. 2 physical properties
+      and pp. 3-4 specimen conditions: Tg 60 C, ISO 75 HDT 57 C at 0.45 MPa and 54 C at 1.8 MPa; specimens
+      annealed and dried at 55 C for 8 h. Thermal values match V2.0; these are typical test values, not a
+      continuous-use rating. PDF SHA-256 05b504148050e17c02d2f20f1a4b718b4e35d43af1c406da34127711762ff939.
 
   - id: bambu-pla-matte-tds
     title: "Bambu Filament Technical Data Sheet V2.0: PLA Matte"
@@ -283,11 +287,16 @@ sources:
       - docs/lessons/simulation/simulation-and-material.md
       - docs/mechanical/compliant.md
       - tests/simulation/test_fea_materials.py
+      - docs/research/simulation-tools.md
     verified: >-
       2026-10-31: opened the PDF; read HDT 69 C at 0.45 MPa and 65 C at 1.8 MPa; E 1460 / 1120 MPa, UTS 48 / 39
       MPa, elongation 11.2 / 5.7 % (X-Y / Z). #125 (2026-10-31) also read V3.0, a reformulated filament
       (https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf);
-      cadagent.simulation.fea's row uses V2.0's lower modulus.
+      cadagent.simulation.fea's row uses V2.0's lower modulus. 2026-11-07: reread the official V3.0 PDF p. 2
+      physical properties and p. 3 specimen conditions: Tg 69 C, ISO 75 HDT 71 C at 0.45 MPa and 68 C at 1.8 MPa.
+      Specimens are not stated to be annealed; the sheet advises against annealing this reformulated filament.
+      Typical test values do not establish an older spool's formulation or continuous-use performance.
+      PDF SHA-256 fc23b725a4632bd931f28d0076461180e0ba87b7c2ddb6b1f16478ad5c5db6c6.
 
   - id: bambu-petg-hf-tds
     title: "Bambu Filament Technical Data Sheet V1.0: PETG HF"

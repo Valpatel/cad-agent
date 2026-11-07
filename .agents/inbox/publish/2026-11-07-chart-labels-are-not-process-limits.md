@@ -68,3 +68,24 @@ Access limits remain part of the record. The PEM URL was recovered through its m
 and its cached extraction was read, including the dated footer and cited sections. Direct retrieval did not
 produce a PDF, and screenshot retrieval failed; no fresh PDF digest, visual inspection or physical validation
 is claimed for that source. A working citation and a live-download check are different evidence.
+
+## Preserve material editions in detached figures
+
+**Evidence, 2026-11-07 UTC:** #157's thermal follow-up reread the official Bambu PLA/PETG Basic V3.0 physical
+tables and specimen conditions. PETG's Tg/HDT values differ from the old V2.0 row; PLA's do not. The existing
+thermal figure producer stripped every parenthetical row suffix, so the detached SVG lost all three material
+editions even when the Markdown table named them. A before-control using the original producer against the
+updated table reproduced all three omissions.
+
+**Correction and rule:** preserve each table label in this scientific figure and extend its existing regression
+check to require the edition-bearing labels. Regenerate through the producer. Retain the older edition's
+conditions in the guide and the source digest/read scope in the existing registry records; do not replace
+mechanical allowables merely because a thermal table changed.
+
+**Limits:** ISO 75 HDT and DSC Tg are typical specimen measurements, not continuous-use or clamp-creep
+qualification. Reading a revised sheet does not identify a user's spool or supply the outstanding physical coupon.
+
+Independent review of PR439 also caught stale numerical ranges in the image's alt text and adjacent caption,
+even though the table, regenerated SVG and focused tests agreed. Those summaries now describe the comparison
+without duplicating changing values. Inspect all explanatory consumers when updating scientific data; a current
+generated figure does not validate surrounding prose.

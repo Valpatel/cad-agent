@@ -112,6 +112,27 @@ returning. The actual font object, product component, readiness subscriptions, e
 error collection and fail-closed assertions remain required. This changes test portability, not product behavior.
 The failed run remains failed; current source validation and CI must pass before merging.
 
+At `91fc921bab93d3544598f7b530a77c166063d8b6`, the first portability validator completed the WebKit released
+rejection and corrected-component pass with the global name absent. Its old-constructor mutant also failed the
+actual consumer, but the validator incorrectly required `FontFaceSet` specifically in the window-event message.
+WebKit's `pageerror` named that missing variable; its window ErrorEvent contained only `Script error.` with empty
+filename and zero line/column. The run remains **failed**, receipt
+`e0b4fb5fd2c1995edbcc16709e901f9302fdd6be075312cd6d6be4ba21ced9fc`; Chrome was not reached. All nine
+contexts and two owned processes exited, and both source guards were clean. A generic window message alone
+does not identify its cause.
+
+A separately reviewed continuation rehashed the original script, receipt and raw runtime records. It accepted
+only that exact isolated mutant pairing, with ten altered signatures rejected, and ran only the three unexecuted
+Chromium variants. The actual consumer rejected released scheduling, passed the correction under the missing
+global, and rejected the old-constructor mutant. Planted ErrorEvent controls and blind-collector mutations also
+behaved as required. All nine new contexts and two owned processes exited; source stayed clean and the original
+failed receipt stayed byte-identical. Continuation SHA-256:
+`4dd356c42bec0ff4373223f3e6aa617693ec2c8ba5e477a000c090bcdd0296c0`.
+[Independent actual continuation acceptance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711580632).
+Use the actual platform object's contract and retain complementary error channels; do not infer that every browser
+exposes its constructor globally or preserves the same error message in every channel. No generic error exception
+was added to the product consumer, and this local acceptance does not replace current CI or publication evidence.
+
 
 ## A navigation-looking error can be a collected probe promise
 

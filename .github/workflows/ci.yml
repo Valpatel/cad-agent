@@ -86,6 +86,22 @@ jobs:
       - run: npm --prefix tools/mermaid ci --ignore-scripts
       - run: npm --prefix tools/mermaid run check
 
+  # Execute the documented PowerShell checksum/failure/cleanup procedure on Windows, with inert download/child
+  # fixtures. This does not install cad-agent, uv or a CAD dependency, or contact the installer URL.
+  installer-windows:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
+        with: {python-version: '3.12'}
+      - run: python -m pip install "pytest==9.0.3"
+      - run: python -c "import shutil; assert shutil.which('pwsh'), 'PowerShell must actually run these guards'"
+      - run: python -m pytest -q tests/cli/test_installer.py -k "checked_installers_pin or actual_powershell_guide or install_ps1_parses"
+
   # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/practice/supply-chain.md): offline checks only,
   # so the network can never make it flaky (the weekly supply-chain.yml runs the online ones). Not a required check, and
   # it never blocks a release:

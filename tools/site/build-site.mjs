@@ -464,14 +464,12 @@ const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
 const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site/figures/site-model-poster.mjs');
-// "Copy this to your agent" (#278, #282): one command per platform (web/install.sh, web/install.ps1, served at /install.sh
-// and /install.ps1), or one line to paste into an agent. docs/agent-prompt.txt holds that line first, then what an
-// agent needs to install and work with the kit, which llms.txt carries (tests/repo/test_agent_prompt.py,
-// tests/site/website-build.test.mjs). The README shows the same commands and line.
+// One checked installation guide per platform, or one line to paste into an agent. Keep checksum/immutable-source
+// instructions canonical in agent-workflow.md; agent-prompt.txt and the README route readers there too.
 const agentPrompt = await read('docs/agent-prompt.txt');
 const [pasteLine, agentGuide] = (([first, ...rest]) => [first, rest.join('\n').trim()])(agentPrompt.split('\n'));
-const INSTALL = [['unix', 'macOS / Linux', `curl -fsSL ${ORIGIN}/install.sh | sh`], ['win', 'Windows', `irm ${ORIGIN}/install.ps1 | iex`]];
-const USE_STEPS = [['Install', 'one line'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
+const INSTALL = [['unix', 'macOS / Linux', '/docs/agent-workflow#install-unix'], ['win', 'Windows', '/docs/agent-workflow#install-windows']];
+const USE_STEPS = [['Install', 'verify first'], ['Find', 'the tool in llms.txt'], ['Build', 'with tested checks'], ['Give back', 'a PR or an issue']];
 const useLoop = `<svg class="use-loop" viewBox="0 0 400 132" role="img" aria-label="The loop it sets up: install, find the tool, build with tested checks, give back what was learned, so the next agent finds more">
 <defs><marker id="use-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="tip" d="M0 0L8 4L0 8z"/></marker></defs>
 ${USE_STEPS.map(([t, d], i) => `<g transform="translate(${8 + i * 98} 10)"><rect class="box${i === 3 ? ' out' : ''}" width="86" height="74" rx="14"/><text class="num" x="43" y="26" text-anchor="middle" font-size="22" font-weight="750">${i + 1}</text><text class="name" x="43" y="47" text-anchor="middle" font-size="12" font-weight="700">${esc(t)}</text><text class="sub" x="43" y="62" text-anchor="middle" font-size="8.5">${esc(d)}</text></g>${i < 3 ? `<path class="flow" d="M${96 + i * 98} 47h8" stroke-width="2" marker-end="url(#use-arrow)"/>` : ''}`).join('')}
@@ -483,10 +481,10 @@ const USE_HEADING = 'Build with your favorite AI agent';
 // ~/.claude/skills or ~/.agents/skills, where the installer puts them (cadagent/agentkit.py, docs/practice/agent-workflow.md).
 const AGENTS = [['Claude Code', 'CC'], ['Codex CLI', 'Cx'], ['Copilot CLI', 'Co'], ['Cursor', 'Cu'], ['Gemini CLI', 'Ge'], ['opencode', 'oc']];
 const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-title"><div class="wrap"><div class="use-card">
-<div class="use-head"><p class="eyebrow">One line to install</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
+<div class="use-head"><p class="eyebrow">Download, verify, install</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
 <div class="os-tabs">${INSTALL.map(([id], i) => `<input type="radio" name="install-os" id="os-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
 <div class="os-tab-row" aria-hidden="true">${INSTALL.map(([id, name]) => `<label for="os-${id}" class="os-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
-${INSTALL.map(([id, name, cmd]) => `<div class="os-panel panel-${id}"><p class="visually-hidden">${esc(name)}</p><cad-copy class="install-copy" label="Copy"><pre class="install-box" aria-label="${esc(name)} install command">${esc(cmd)}</pre></cad-copy></div>`).join('')}</div>
+${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class="install-guide" href="${esc(href)}">Open ${esc(name)} installation instructions →</a></div>`).join('')}</div>
 <p class="use-lead">Then ask your agent for a part, check or simulation.</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
 <div class="use-paste"><p class="paste-title">Or paste this into your agent:</p>

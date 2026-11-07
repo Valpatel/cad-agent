@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Check that the one-line install and the paste-in line (docs/agent-prompt.txt) work for someone who has nothing of ours.
+"""Check the canonical verified install and the agent paste-in line for someone who has nothing of ours.
 
-    python3 tools/quickstart_eval.py commands                       # the agent's install command (step 1), one per line
+    python3 tools/quickstart_eval.py commands                       # the canonical POSIX checked-install block
     python3 tools/quickstart_eval.py install --work DIR [--ref main] [--local]   # run it twice in an empty DIR, then smoke-test
     python3 tools/quickstart_eval.py agent --work DIR [--harness claude|codex] [--model opus] [--request TEXT]
     python3 tools/quickstart_eval.py grade --work DIR               # grade a finished agent run again
 
-``install`` runs the install command verbatim with HOME set to ``DIR/home`` (so ``~/cad-agent``, uv and the installed
+``install`` runs the canonical guide's block verbatim with HOME set to ``DIR/home`` (so ``~/cad-agent``, uv and the installed
 skills land there, never in your own home), twice (the second run is an update and must change nothing), then checks
 that ``cad-agent`` runs, the skills are installed, CadQuery makes and exports a solid, and the site's llms.txt answers.
 ``--local`` runs this checkout's ``tools/site/assets/install.sh`` with ``--ref REF`` instead of the site's copy, to try a change
@@ -34,6 +34,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT = ROOT / "docs" / "agent-prompt.txt"
+INSTALL_GUIDE = ROOT / "docs" / "practice" / "agent-workflow.md"
 LLMS = "https://cad-agent.valpatel.com/llms.txt"
 JOB = "quickstart-project-box"
 REQUEST = ("A 60 x 40 x 25 mm project box with a lid held by four M3 heat-set inserts, ready to print. "
@@ -80,10 +82,12 @@ def paste_line(text: str | None = None) -> str:
 
 
 def commands(text: str | None = None) -> list:
-    """The shell commands of step 1 (install), as the file prints them: its indented lines that start a command."""
-    text = block() if text is None else text
-    step1 = text.split("\n1. ", 1)[1].split("\n2. ", 1)[0]
-    return [ln.strip() for ln in step1.splitlines() if re.match(r"\s{3}(curl|git|python3|~/|\"\$HOME/)\S*\s", ln)]
+    """The actual canonical POSIX download/checksum/execution block, kept verbatim."""
+    text = INSTALL_GUIDE.read_text() if text is None else text
+    matches = re.findall(r"<!-- checked-installer:posix -->\n```sh\n(.*?)\n```", text, re.S)
+    if len(matches) != 1:
+        raise ValueError("the install guide must contain exactly one checked POSIX installer block")
+    return matches
 
 
 def _tool_python(home: Path) -> Path:
@@ -117,10 +121,11 @@ def install(work: Path, ref: str = "main", local: bool = False) -> dict:
         raise SystemExit(f"{home} is not empty: use a new folder")
     home.mkdir(parents=True, exist_ok=True)
     env = _clean_env(home)
+    env["CAD_AGENT_REF"] = ref
     if local:
-        cmds = [f'sh "{ROOT}/tools/site/assets/install.sh" --ref {ref}']
+        cmds = [f'sh {shlex.quote(str(ROOT / "tools/site/assets/install.sh"))} --ref {shlex.quote(ref)}']
     else:
-        cmds = [c.replace("| sh", f"| sh -s -- --ref {ref}") if ref != "main" else c for c in commands()]
+        cmds = commands()
     steps = [_run(c, env, home) for c in cmds + cmds]
     exe = home / ".local" / "bin" / "cad-agent"
     smoke = {

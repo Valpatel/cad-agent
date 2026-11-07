@@ -21,8 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BLOCK = (ROOT / "docs" / "agent-prompt.txt").read_text()
 PASTE, GUIDE = BLOCK.split("\n", 1)
 README = (ROOT / "README.md").read_text()
-ONE_LINERS = ("curl -fsSL https://cad-agent.valpatel.com/install.sh | sh",
-              "irm https://cad-agent.valpatel.com/install.ps1 | iex")
+INSTALL_URL = "https://cad-agent.valpatel.com/docs/agent-workflow#install"
 
 
 def _eval():
@@ -40,9 +39,10 @@ def test_readme_is_a_mini_hyperpage_with_install_detail_one_click_away():
     assert 'docs/practice/agent-workflow.md#install' in use_it
     assert 'docs/practice/agent-workflow.md#ask-your-assistant' in use_it
     assert '## Install\n' in guide and '### Ask your assistant\n' in guide
-    for cmd in ONE_LINERS:
-        assert cmd in guide, f"the linked install guide gives {cmd!r}"
-    assert f'\n{ONE_LINERS[0]}\n' in use_it, 'one obvious getting-started command remains on the root'
+    assert '<details id="install-unix">' in guide and '<details id="install-windows">' in guide
+    assert 'checked-installer:posix' in guide and 'checked-installer:powershell' in guide
+    assert 'pinned installer' in " ".join(use_it.split()), 'one obvious checked installation route remains on the root'
+    assert not re.search(r"curl.*\|\s*sh|irm.*\|\s*iex", use_it), 'do not duplicate an unchecked execution shortcut'
     assert "```text\n" + PASTE + "\n```" in guide, "the canonical paste line is one click away"
     def prose_words(text):
         # Linked image badges are navigation/status, exempt from the visitor's prose budget.
@@ -64,9 +64,14 @@ def test_the_paste_in_line_is_short_and_points_at_llms_txt():
 
 def test_commands_are_public_and_name_real_commands(tmp_path, monkeypatch):
     qe = _eval()
-    cmds = qe.commands(BLOCK)
-    assert cmds == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], "the README's command, nothing else"
-    assert "Windows: irm https://cad-agent.valpatel.com/install.ps1 | iex" in BLOCK
+    cmds = qe.commands()
+    assert len(cmds) == 1 and 'Installer checksum mismatch' in cmds[0]
+    assert INSTALL_URL in BLOCK and 'checksum-before-execution' in BLOCK
+    for control in ('', '<!-- checked-installer:posix -->\n```sh\necho incomplete'):
+        with pytest.raises(ValueError, match="exactly one"):
+            qe.commands(control)
+    with pytest.raises(ValueError, match="exactly one"):
+        qe.commands(qe.INSTALL_GUIDE.read_text() * 2)
     assert "`cad-agent update`" in BLOCK, "an agent that finds it installed updates first"
     from cadagent.cli import build_parser
     names = set(build_parser()._subparsers._group_actions[0].choices)
@@ -125,8 +130,7 @@ def test_the_block_asks_nothing_risky():
     assert "no telemetry" in flat and "through GitHub only" in flat
     assert "Leave out anything private" in flat
     piped = re.findall(r"[^\n]*\|\s*(?:ba|z)?sh\b[^\n]*|[^\n]*curl\b[^\n]*\|[^\n]*", BLOCK)
-    assert [p.strip() for p in piped] == ["curl -fsSL https://cad-agent.valpatel.com/install.sh | sh"], \
-        "the only script piped to a shell is our own installer, from our own site"
+    assert not piped, "the agent reads the canonical checked guide, without an unsafe pipe shortcut"
     assert not re.search(r"sudo|--force|rm -rf|token|password|secret|ignore (?:previous|all)|maintainer", BLOCK, re.I)
     assert "gh issue create -R Valpatel/cad-agent" in BLOCK and "--label" not in BLOCK   # outsiders cannot set labels
 

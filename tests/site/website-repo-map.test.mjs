@@ -202,3 +202,15 @@ test('reference definitions keep whole-document context while their usage owns t
   data['CHANGELOG.md'] = data['CHANGELOG.md'].replace('docs/old-guide.md', 'docs/unregistered.md');
   assert.match(run().problems.join('\n'), /broken relative link docs\/unregistered.md/);
 });
+
+test('Unreleased resets history scope even after a new dated entry', () => {
+  const data = base();
+  data['knowledge/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [current.md](current.md) | Current source. |\n';
+  data['knowledge/current.md'] = '# Current guide\n';
+  const publication = createPublication({ schema: 1, roots: [{ source: 'knowledge', public: 'docs' }],
+    files: [{ source: 'knowledge/current.md', public: 'docs/old-guide.md' }] });
+  data['CHANGELOG.md'] = '# Changelog\n\n## v2.0.0 (2026-11-07)\n\nNew entry.\n\n## Unreleased\n\n[Current stale source][guide]\n\n## v1.0.0 (2026-11-06)\n\n[guide]: docs/old-guide.md\n';
+  const result = checkMap({ files: Object.keys(data), read: f => data[f], policy: { delegated: [] }, publication });
+  assert.deepEqual(markdown(data['CHANGELOG.md']).links, ['docs/old-guide.md']);
+  assert.match(result.problems.join('\n'), /CHANGELOG.md: broken relative link docs\/old-guide.md/);
+});

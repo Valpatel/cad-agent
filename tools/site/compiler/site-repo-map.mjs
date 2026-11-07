@@ -137,6 +137,7 @@ export function checkMap({ files, read, policy, publication = null }) {
     let historical = false;
     for (const token of lexMarkdown(read(f))) {
       if (f === 'CHANGELOG.md' && token.type === 'heading' && token.depth === 2) {
+        historical = false; // Every non-release section, especially Unreleased, remains strict wherever it occurs.
         const heading = /^##[ \t]+v[0-9]+(?:\.[0-9]+)* \((\d{4}-\d{2}-\d{2})\)[ \t]*\r?$/m.exec(token.raw);
         const date = heading && new Date(heading[1] + 'T00:00:00Z');
         if (heading && Number(heading[1].slice(0, 4)) > 0 && Number.isFinite(date.getTime()) &&

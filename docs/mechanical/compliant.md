@@ -62,11 +62,11 @@ snaps:
     root_radius_mm: 1.0
 ```
 
-`cad-agent snapfit FILE` prints one PASS/FAIL line per snap with the root strain, the allowable and the forces, and
+`cad-agent snapfit FILE` prints one PASS/FAIL line per snap with its strain kind, the matching allowable and the forces, and
 any warnings. It exits 0 if every check passes, 1 if any fails and 2 for an unreadable or out-of-range file (the
 message names the snap and the field). `--output` writes every row, the material derivation and the limits as JSON.
 
-Fields:
+Cantilever fields (the default type):
 - **Required:** `name`, `material` (a name below, or `{name, strain, source, secant_mpa, friction}` with `strain` a
   **fraction**: 0.03 = 3 %), `length_mm`, `undercut_mm`, `section` (`rect: {width_mm, thickness_mm}` or `ring:
   {r_inner_mm, r_outer_mm, arc_deg, tension}`), `root_radius_mm`, and `process` (`moulding`, `fdm`, `sla`, `sls` or
@@ -82,6 +82,77 @@ Fields:
 angle. A self-locking hook (μ·tan α ≥ 1, e.g. a 90° return) cannot be pulled apart, so its retention is the hook's
 own strength, which this method does not compute: a declared retention minimum fails there. Where the guide gives
 secant-modulus points, the modulus is interpolated at the arm's actual root strain.
+
+## Declaring a rectangular torsion snap
+
+The existing rectangular-bar formula also accepts a declared **demanded twist**, rather than assuming the bar is
+at its permissible capacity. Save this as `torsion.yaml` and run the same `cad-agent snapfit torsion.yaml --output
+exports/torsion.json` command:
+
+```yaml
+snaps:
+  - name: cover rocker
+    type: torsion
+    material: pla-bambu-basic
+    process: fdm
+    orientation: across
+    length_mm: 15
+    section: {rect: {width_mm: 4, thickness_mm: 1.2}}
+    twist_deg: 8
+    lever_mm: 10
+    bars: 2
+    max_actuation_n: 4
+```
+
+This reproduces the existing explorer's 1.11 % shear strain, 1.28 % shear allowance and approximately 3.45 N at
+the lever. The report compares **shear** against `(1 + nu)` times the derated **tensile** allowance (`nu = 0.35`).
+Lengths are millimetres, twist is degrees, force is newtons; the internal existing formula uses SI units.
+`bars` is the integer 1 or 2; `twist_deg` may be zero. The other geometry fields must be positive. A stated
+`max_actuation_n` gives a force row. Without a known material modulus, give `secant_mpa` explicitly.
+
+Layered declarations must state `orientation: across`: torsion shears both pairs of sides, even with the bar lying
+flat. This selects an across-layer **allowance**, not a physical build-axis prescription. Filaments use their
+across-layer tensile allowance and the existing explorer's highest-edition in-plane modulus for the isotropic
+force estimate. Other layered materials still need sourced `process_factor` and `process_source`. An omitted
+process or across-layer basis fails. The repeated-use derating still applies.
+
+The small-twist row fails when the formula's omitted trapeze torque exceeds a tenth of its Saint-Venant torque.
+End constraints, root stress concentrations, hook contact, mating/retention forces, creep and fatigue remain
+unchecked. Torsion declarations reject cantilever fields such as `share`, `root_radius_mm`, `max_mating_n` and
+`min_retention_n`, and alternative units such as `twist_rad`. Round-bar and annular declarations remain outside
+this adapter. A passing row is a calculation under these assumptions, not qualification of a print or assembly.
+
+<details>
+<summary>Use the existing project check contract</summary>
+
+In an existing CAD project, save this as `tools/check_torsion.py`. The old result is removed before evaluation,
+so an invalid declaration cannot leave a stale passing file:
+
+```python
+from pathlib import Path
+from cadagent.cli import main
+
+Path("exports").mkdir(exist_ok=True)
+Path("exports/torsion.json").unlink(missing_ok=True)
+raise SystemExit(main(["snapfit", "torsion.yaml", "--output", "exports/torsion.json"]))
+```
+
+Append the step and check to the project's existing `cad.steps` and `cad.checks` lists; keep its other build,
+geometry and manufacturing checks. There is no new project schema:
+
+```yaml
+cad:
+  steps:
+    - {name: torsion, run: tools/check_torsion.py}
+  checks:
+    - {id: torsion, title: Cover rocker, file: exports/torsion.json}
+```
+
+`cad-agent all` runs the configured step and consumes its boolean `pass` through the existing report. A failed
+calculator stops the build. Missing or failing JSON also fails `cad-agent check`; physical-fit status remains
+unverified. A real snap specimen and force/cycle measurements are still required by the coupon work in #95.
+
+</details>
 
 ## Materials
 

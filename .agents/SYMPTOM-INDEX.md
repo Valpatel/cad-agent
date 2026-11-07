@@ -2,6 +2,9 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| Research YAML loads and imports but its health updater refuses the shard | [Keep source records editable](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md#keep-source-records-editable-by-their-health-consumer) |
+| Re-importing research restores old folder names although migrated fixtures pass | [Test the original import boundary](inbox/2026-11-06-source-selection-must-not-pass-empty.md#keep-original-import-inputs-when-testing-repository-migrations) |
+| A chart label becomes a manufacturing limit, or correcting data removes the only unverified test case | [Separate specimen labels from process limits](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md) |
 | An optional native solver blocks ARM installation, or update forgets an extra after adding platform markers | [Propagate platform requirements through the updater](inbox/2026-11-07-platform-markers-must-reach-update-consumers.md) |
 | Secret scanning passes while push protection is off, or empty dependency inventory is treated as a disabled setting | [Keep protection state and inventory evidence separate](inbox/2026-11-07-security-inventory-does-not-prove-settings.md), [audit interpretation](../docs/practice/supply-chain.md) |
 | A newly published site still shows an obsolete robot layout | [A source revision does not refresh a CAD export](inbox/publish/2026-11-07-source-revision-does-not-refresh-a-cad-export.md) |

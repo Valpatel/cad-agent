@@ -206,6 +206,29 @@ def test_the_coverage_file_keeps_the_drafts_unposted(checkout):
     assert "draft_issue needs a title and `posted: false`" in problems and "status 'done'" in problems
 
 
+def test_original_coverage_paths_follow_the_migration_without_rewriting_urls(checkout):
+    root, path = checkout
+    data = json.loads(path.read_text())
+    row = data["CA"][0]
+    row["where"] = "src/cadagent/mechanical/inserts.py:321; docs/design-process-plan.md:472"
+    row["source"] = "research/sheet-hardware.yaml; https://example.org/research/paper.pdf"
+    row["gap"] = "See (research/compliant-mechanisms.md:20), not other/src/cadagent/helper.py"
+    row["issue_body"] = "Read `research/process-profiles.yaml` and docs/research/references.yaml."
+    original = json.dumps(data)
+    path.write_text(original)
+    assert _run(root, path) == 0
+    coverage = yaml.safe_load((root / "docs/research/references/coverage.yaml").read_text())
+    got = coverage["rows"][0]
+    assert got["where"] == "software/cadagent/mechanical/inserts.py:321; docs/practice/design-process-plan.md:472"
+    assert got["sources"] == "docs/research/sheet-hardware.yaml; https://example.org/research/paper.pdf"
+    assert got["gap"] == "See (docs/research/compliant-mechanisms.md:20), not other/src/cadagent/helper.py"
+    assert got["draft_issue"] == {"title": row["issue_title"], "posted": False,
+                                  "body": "Read `docs/research/process-profiles.yaml` and docs/research/references.yaml."}
+    assert got["status"] == row["status"] and got["defaults"] == row["defaults"]
+    assert path.read_text() == original
+    assert _run(root, path, "--check") == 0
+
+
 def test_the_import_is_deterministic_and_idempotent(checkout, capsys):
     root, data = checkout
     _run(root, data)

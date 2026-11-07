@@ -285,7 +285,8 @@ def overhangs() -> str:
 def escape_holes() -> str:
     return compared("Drain and escape holes for hollow prints",
                     "{n} rules (compare: escape-hole): the smallest hole that lets resin or powder out.",
-                    [(t, "escape-hole", p) for t, p in BY_PROCESS], unit="mm", step=2, note=READ)
+                    [(t, "escape-hole", p) for t, p in BY_PROCESS], unit="mm", step=2,
+                    note="Conditions and source-specific read dates are recorded in the YAML and on the page.")
 
 
 def fine_detail() -> str:

@@ -72,7 +72,7 @@ export function sectionCards(html, { skip = new Set(), min = CARDS_MIN } = {}) {
 
 // The keys an entry may have: anything else (a typo such as `figure:` or `herf:`) stops the build.
 const KEYS = {
-  page: ['hero', 'band', 'figures'],
+  page: ['hero', 'band', 'figures', 'cards'],
   hero: ['img', 'shows', 'drawn_by', 'on', 'tool', 'caption', 'alt'],
   tile: ['img', 'shows', 'drawn_by', 'on', 'input', 'tool', 'output', 'caption', 'alt', 'href'],
   figure: ['after', 'below', 'img', 'shows', 'drawn_by', 'on', 'tool', 'caption', 'alt'],
@@ -92,7 +92,8 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
   for (const [file, page] of Object.entries(spec || {})) {
     if (!pageFiles.has(file)) fail(file, 'is not a published page');
     only(page, KEYS.page, file);
-    if (!page.hero && !page.band?.length && !page.figures?.length) fail(file, 'places nothing (give it a hero, a band or figures)');
+    if ('cards' in page && typeof page.cards !== 'boolean') fail(`${file} cards`, 'must be a boolean');
+    if (!page.hero && !page.band?.length && !page.figures?.length && !('cards' in page)) fail(file, 'places nothing (give it a hero, a band, figures or a cards setting)');
     // A key that is there is used: an empty hero, band or figures list is a mistake, not nothing.
     if ('hero' in page && (!page.hero || typeof page.hero !== 'object' || Array.isArray(page.hero))) fail(`${file} hero`, 'is not a mapping');
     if ('figures' in page && (!Array.isArray(page.figures) || !page.figures.length)) fail(`${file} figures`, 'is a list of figures');
@@ -208,7 +209,8 @@ export function pagePlacer({ spec, pageFiles, tracked, commandNames, readBuf, pa
       }
       band += `<ul class="band-tiles">${tiles.join('')}</ul>`;
     }
-    const top = (band ? `<section class="page-band" aria-label="What this page's tools make">${band}</section>` : '') + sectionCards(html, { skip: banded });
+    const cards = page.cards === false ? '' : sectionCards(html, { skip: banded });
+    const top = (band ? `<section class="page-band" aria-label="What this page's tools make">${band}</section>` : '') + cards;
     if (!top) return html;
     const where = underTitle(html);
     return html.slice(0, where) + top + html.slice(where);

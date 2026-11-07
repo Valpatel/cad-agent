@@ -22,6 +22,7 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_cards.py` | `cadagent.manufacturing.cards`: golden rule and decision cards, the byte budget, citations, planted defects |
 | `test_dfm.py` | `cadagent.manufacturing.dfm`: features against every verified source, the spread reported |
+| `test_experiments.py` | Persistent physical specimen UUID/short-ID lookup, committed source binding, artifact faults and write-once attempt/feedback records |
 | `test_fit_coupons.py` | `cadagent.manufacturing.fit_coupons`: sizes from the process profile, one watertight coupon |
 | `test_gcode.py` | `cadagent.manufacturing.gcode`: bridge and overhang-perimeter extrusions in sliced G-code |
 | `test_mesh3mf.py` | The 3MF writer and its read-back, on hand-built meshes |

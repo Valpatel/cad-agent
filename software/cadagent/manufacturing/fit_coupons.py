@@ -184,6 +184,81 @@ def coupon(fit: Fit):
     return body.cut(notch).val()
 
 
+# Conventional seven-segment hexadecimal: B/D have the familiar lower-case b/d shapes.
+# This fixed sixteen-glyph stamp uses the existing line/engraving primitive, not a font engine.
+HEX_SEGMENTS = dict(zip("0123456789ABCDEF", (
+    "abcdef", "bc", "abdeg", "abcdg", "bcfg", "acdfg", "acdefg", "abc",
+    "abcdefg", "abcdfg", "abcefg", "cdefg", "adef", "bcdeg", "adefg", "aefg")))
+SEGMENTS = {"a": ((0, 6), (3, 6)), "b": ((3, 6), (3, 3)), "c": ((3, 3), (3, 0)),
+            "d": ((0, 0), (3, 0)), "e": ((0, 0), (0, 3)), "f": ((0, 3), (0, 6)),
+            "g": ((0, 3), (3, 3))}
+
+
+def label_layout(fit: Fit):
+    """Resolved nonfunctional ID-tab geometry, before allocating/generating a specimen."""
+    lay = layout(fit)
+    w, h = lay["size_mm"]
+    stroke = _FDM.verified_rule("fdm-engrave-text-xometry-eu").limit().min
+    # The cited guide specifies this stroke at 0.5 mm depth; use that exact depth here.
+    tab_w, tab_h, overlap = max(w, 52.0), 10.0, 0.5
+    return {"glyphs": "seven-segment-hex/1", "stroke_mm": stroke, "engraving_depth_mm": 0.5,
+            "stroke_rule": "fdm-engrave-text-xometry-eu", "clearance_mm": 0.5,
+            "glyph_origin_mm": [w / 2 - 24.0, h + 2.0], "glyph_pitch_mm": 5.0,
+            "tab_bounds_mm": [(w-tab_w)/2, (w+tab_w)/2, h-overlap, h+tab_h, 0.0, lay["thickness_mm"]]}
+
+
+
+def labelled_coupon(fit: Fit, stamp: str):
+    """Engrave a short specimen ID on an attached tab beyond the functional coupon.
+
+    The existing holes, walls, notch and sweep remain in their original envelope.
+    Seven-segment glyphs use the cited 1 mm stroke at 0.5 mm depth on a separate
+    tab. This remains a design, not a physical legibility result. Returns solid/proof.
+    """
+    import re
+    from cadagent.mechanical.markings import PanelMarkings
+
+    if not isinstance(stamp, str) or not re.fullmatch(r"[0-9A-F]{10}", stamp):
+        raise ValueError("specimen stamp must be the allocated ten uppercase hexadecimal characters")
+    cq = require("cadquery", "labelled fit coupons")
+    lay = layout(fit)
+    w, h = lay["size_mm"]
+    t = lay["thickness_mm"]
+    if t < 1.5:
+        raise ValueError("labelled coupon needs at least 1 mm residual thickness beneath its 0.5 mm engraving")
+    label = label_layout(fit)
+    x0, x1, y0, y1, _, _ = label["tab_bounds_mm"]
+    tab = (cq.Workplane("XY").box(x1-x0, y1-y0, t, centered=False)
+           .translate((x0, y0, 0)).val())
+    original = coupon(fit)
+    unmarked = original.fuse(tab).clean()
+    drawing = PanelMarkings()
+    ox, oy = label["glyph_origin_mm"]
+    for index, character in enumerate(stamp):
+        for segment in HEX_SEGMENTS[character]:
+            drawing.line([(ox + index * label["glyph_pitch_mm"] + x, oy + y)
+                          for x, y in SEGMENTS[segment]], width=label["stroke_mm"])
+    tool = drawing.solids(t - label["engraving_depth_mm"], label["engraving_depth_mm"] + 0.2)
+    box = tool.BoundingBox()
+    # Inspect actual stroke geometry; changed glyphs cannot reach a functional hole.
+    if (box.ymin < h + label["clearance_mm"] or box.ymax > y1 - label["clearance_mm"]
+            or box.xmin < x0 + label["clearance_mm"] or box.xmax > x1 - label["clearance_mm"]):
+        raise ValueError("actual specimen glyphs do not fit inside the reserved nonfunctional label tab")
+    solid = drawing.engrave(unmarked, t, label["engraving_depth_mm"]).clean()
+    removed = unmarked.cut(solid)
+    if not solid.isValid() or len(solid.Solids()) != 1 or removed.Volume() <= 0:
+        raise ValueError("specimen label did not engrave one valid connected coupon")
+    if removed.BoundingBox().ymin < h + 0.5:
+        raise ValueError("specimen engraving reaches the functional coupon envelope")
+    svg = drawing.svg((x0, h, x1-x0, y1-h))
+    svg = svg.replace(">", "><title>Specimen " + stamp + "</title>", 1)
+    return solid, {"stamp": stamp, **label,
+                   "functional_envelope_mm": [0.0, w, 0.0, h, 0.0, t],
+                   "removed_mm3": removed.Volume(),
+                   "svg": svg,
+                   "physical_legibility_verified": False}
+
+
 def sheet(fits: Iterable[Fit]) -> str:
     """The measurement sheet as CSV: a row per hole, with blank columns to fill in after printing."""
     buf = io.StringIO()

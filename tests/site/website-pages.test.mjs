@@ -68,6 +68,13 @@ test('section cards: one per section with a picture, linking to it, once a page 
   assert.equal(sectionCards(page, { skip: new Set(['/docs/img/two.png']) }), '', `fewer than ${CARDS_MIN} left: no cards`);
   const placed = await pagePlacer({ ...base, spec: {} })('docs/b.md', page);
   assert.match(placed, /^<h1 id="t">T<\/h1><p>Lead\.<\/p><nav class="section-cards"/, 'cards come on every page, entry or not');
+  const compact = pagePlacer({ ...base, spec: { 'docs/a.md': { cards: false } } });
+  assert.equal(await compact('docs/a.md', page), page, 'a compact page keeps every authored image and section without duplicate cards');
+  assert.equal(await compact('docs/b.md', page), placed, 'the setting does not suppress cards on another page');
+  assert.equal(await pagePlacer({ ...base, spec: { 'docs/b.md': { cards: true } } })('docs/b.md', page), placed, 'explicit true retains normal cards');
+  const compactWithHero = await pagePlacer({ ...base, spec: { 'docs/a.md': { cards: false, hero: out() } } })('docs/a.md', page);
+  assert.match(compactWithHero, /class="page-band"/, 'suppressing cards still places configured figures');
+  assert.doesNotMatch(compactWithHero, /section-cards/);
   const banded = await pagePlacer({ ...base, spec: { 'docs/a.md': { hero: out({ img: 'docs/img/two.png' }) } } })('docs/a.md', page);
   assert.doesNotMatch(banded, /section-cards/, 'the hero\'s picture is not a card again, and one card is too few');
 });
@@ -83,7 +90,8 @@ test('the build stops on anything a reader could not trust', async () => {
   await fails({ 'docs/a.md': null }, /docs\/a\.md: is not a mapping/);
   await fails({ 'docs/a.md': {} }, /places nothing/);
   await fails({ 'docs/a.md': { figures: [] } }, /places nothing/);
-  await fails({ 'docs/a.md': { figure: [out({ after: 'one' })] } }, /unknown key figure \(one of hero, band, figures\)/);
+  await fails({ 'docs/a.md': { figure: [out({ after: 'one' })] } }, /unknown key figure \(one of hero, band, figures, cards\)/);
+  for (const cards of ['false', 0, null, [], {}]) await fails({ 'docs/a.md': { cards } }, /cards: must be a boolean/);
   await fails({ 'docs/a.md': { band: [tile({ herf: '#one' }), tile()] } }, /band\[0\]: unknown key herf/);
   await fails({ 'docs/a.md': { hero: out({ img: 'docs/img/missing.png' }) } }, /not a committed picture/);
   await fails({ 'docs/a.md': { hero: out({ img: 'https://example.com/x.png' }) } }, /not a committed picture/);

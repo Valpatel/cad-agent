@@ -66,6 +66,17 @@ curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
 Bring a small design, a useful source or a reproducible failure. [Contributing](.github/CONTRIBUTING.md) explains
 independent review and how to help. cad-agent collects no telemetry; your agent submits findings only if you say yes.
 
+### Show our badge
+
+Built something with cad-agent? [Add our badge](docs/practice/share-badge.md) to your project.
+
+<a href="docs/practice/share-badge.md">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/img/hero/made-with-cad-agent-still.svg">
+    <img src="docs/img/hero/made-with-cad-agent.svg" alt="Made with cad-agent — get the badge" width="248" height="56">
+  </picture>
+</a>
+
 <a id="extras"></a>
 
 [Optional dependencies](docs/practice/agent-workflow.md#extras) · [Vision](docs/vision.md) · [Credits](software/vendor/THIRD_PARTY_NOTICES.md) · [Security](.github/SECURITY.md)

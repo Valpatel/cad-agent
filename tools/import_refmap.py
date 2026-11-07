@@ -491,6 +491,28 @@ def _insert_after(rec: Dict[str, Any], after: str, key: str, value: Any) -> None
     rec.update(items[:at] + [(key, value)] + [(k, v) for k, v in items[at:] if k != key])
 
 
+_COVERAGE_PATHS = re.compile(
+    r"(^|[\s(`\"'])"
+    r"(src/cadagent/|research/|docs/design-process-plan\.md(?=$|[:\s`\"'),;]))"
+)
+_COVERAGE_MOVES = {
+    "src/cadagent/": "software/cadagent/",
+    "research/": "docs/research/",
+    "docs/design-process-plan.md": "docs/practice/design-process-plan.md",
+}
+
+
+def _coverage_paths(value: Any) -> Any:
+    """Translate the map's known repository moves; retain observations, line numbers and external URLs."""
+    if isinstance(value, str):
+        return _COVERAGE_PATHS.sub(lambda m: m[1] + _COVERAGE_MOVES[m[2]], value)
+    if isinstance(value, list):
+        return [_coverage_paths(x) for x in value]
+    if isinstance(value, dict):
+        return {key: _coverage_paths(x) for key, x in value.items()}
+    return value
+
+
 def coverage(data: Dict[str, Any]) -> Dict[str, Any]:
     """The map's coverage table: what cad-agent enforces per topic and its gaps, with the drafted issue each row
     carried (never posted), and the sources each process group still lacks."""
@@ -504,12 +526,12 @@ def coverage(data: Dict[str, Any]) -> Dict[str, Any]:
             row["draft_issue"] = {"title": r["issue_title"], "body": r.get("issue_body", ""), "posted": False}
         rows.append(row)
     wanted = [{"group": k, "title": data["PR"][k], "areas": GROUP_AREAS[k], "text": v} for k, v in data["PGAP"].items()]
-    return {"schema": 2, "observed": ASSESSED,
+    return _coverage_paths({"schema": 2, "observed": ASSESSED,
             "note": "The map's coverage table: what cad-agent enforced per topic on the day the map was made, where "
                     "(file:line as of then; lines drift), and the gaps. Each draft_issue is the issue the map's "
                     "authors drafted for the gap; none was posted. `wanted` lists, per process group, the sources "
                     "the map's search did not find.",
-            "rows": rows, "wanted": wanted}
+            "rows": rows, "wanted": wanted})
 
 
 # ----------------------------------------------------------------------------- writing

@@ -10,7 +10,7 @@ sheet metal and CNC, says where they disagree, and credits each one to the perso
 highlighting experts, not taking credit for their tips: every rule names its source and links to it, and nothing is
 copied.
 
-**How this was checked.** "Read" means the number was seen in the source's own text on 2026-10-31 (the page's HTML,
+**How this was checked.** "Read" means the number was seen at its rule's `verified` date (the page's HTML,
 the PDF through `pdftotext`, an Internet Archive copy where the live page blocks scripts, or, for two DuPont figures
 with no text layer, the rendered figure; the YAML says which).
 **(u)** marks anything not verified, and the YAML gives it `status: u` so no check enforces it. **[derived]** means we
@@ -203,9 +203,9 @@ shows how much a resin rule depends on the machine:
 | Hollow wall; drain hole | 1–3 mm; 2–6 mm across, ≥ 2 at the lowest point | ELEGOO SatelLite | [ELEGOO][elegoo-satellite-hollowing] |
 | Hollow wall | 2.5 mm default; 1.5–2 mm miniatures; 3–4 mm strong parts | Lychee Slicer | [Mango3D (Lychee Slicer)][lychee-voxels-hollowing] |
 
-<img src="../../img/research/process-escape-holes.svg" alt="Range chart of the smallest drain or escape hole for a hollow print each source asks for: 0.75 mm on a Form 4 to 3.5 mm at most services, and 10 mm to pull supports out" width="680">
+<img src="../../img/research/process-escape-holes.svg" alt="Range chart of the smallest drain or escape hole for a hollow print each source asks for: 0.75 mm on a Form 4, 5 mm in HP cleaning guidance, and 10 mm to pull supports out" width="680">
 
-*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: escape-hole` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
+*Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: escape-hole` rules in [`process-profiles.yaml`](../process-profiles.yaml), with each source's own conditions and reading date. A test redraws it and fails if the committed chart differs.*
 
 From Protolabs Network's [SLA guide][hubs-sla-design]:
 
@@ -276,8 +276,12 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
 | Pin | ≥ 0.8 mm; 1.8 mm for reproducible properties | | Franz-Josef Kerl, [EOS][eos-design-rules-overview-ls] |
 | Gap: hinge printed in place / loose connection | 0.3–0.5 mm in XY (Z at least three layers) / 0.1 mm | | Franz-Josef Kerl, [EOS][eos-design-rules-overview-ls] |
 | Faces to keep off the XY plane | angles under 20° show layer steps | | Franz-Josef Kerl, [EOS][eos-design-rules-overview-ls] |
-| Smallest gap or hole, rising with the wall **(u)** | 0.5–0.8 mm for walls 0.3–6 mm | Read from a chart | Franz-Josef Kerl, [EOS][eos-design-rules-overview-ls] |
 | Minimum wall, by footprint; clearance | 1.0–2.0 mm; 0.2–0.4 mm | Nylon SLS | [JLC3DP][jlc3dp-design-guideline] |
+
+EOS's rendered slides 10–11 show labelled specimens, including partly closed openings. The gap slide varies
+wall thickness across 0.30, 3.00 and 6.00 mm; the hole slide uses 0.30 and 0.60 mm. Their nominal labels are not
+measured minimum printable dimensions. The former combined rule was removed after this reading on 2026-11-07;
+it must not become a fit guarantee. [ref:eos-design-rules-overview-ls]
 
 From Protolabs Network:
 
@@ -339,6 +343,7 @@ From Protolabs Network:
 | Knife edge | ≥ 0.508 mm | | [Protolabs][protolabs-nylon-design-tip] |
 | Short wall, XY | ≥ 0.3 mm (0.4 mm in Z) | | [Xometry Asia][xometry-mjf-design-guidelines] |
 | Clearance, printed together / assembled after | 0.7 / 0.4 mm | More for walls over 50 mm | [Xometry Asia][xometry-mjf-design-guidelines] |
+| Drain holes; lattice gap | See the HP cleaning rule cards below | Hollow parts and lattices that must be emptied | [ref:hp-mjf-design-for-cleaning] |
 | Drain holes; lattice gap | 2 mm, at least two; ≥ 1 mm | | [Xometry Asia][xometry-mjf-design-guidelines] |
 | Tolerance | ±0.2 mm to 100 mm, 0.2 % above | After sand-blasting | [Xometry Asia][xometry-mjf-design-guidelines] |
 | Minimum feature | 0.508 mm (1.016 mm recommended) | US service | [Xometry][xometry-mjf-service] |
@@ -357,6 +362,12 @@ From Protolabs Network:
 | Snap-fit base thickness and hook depth; clip width | ≥ 1 mm; ≥ 5 mm | | [Protolabs Network][hubs-snapfit-3dp] |
 | Strain to failure across the layers | 0.53–0.70 of XY (strength the same) | PA 12, PA 11, PP on the Jet Fusion 5200 | [HP][hp-mjf-5200-properties] |
 | Expected tolerance | ±0.3 %, floor ±0.3 mm | SLS and MJF | [Protolabs Network][hubs-3dp-dimensional-accuracy] |
+
+The HP cleaning chapter adds `mjf-escape-hole-hp-cleaning` and `mjf-lattice-gap-hp-cleaning` to
+`cad-agent rules escape-hole` and `cad-agent rules lattice-gap`. HP specifies openings on opposite faces;
+the lattice-opening rule concerns powder access, not moving-part clearance. Its recommendation is larger than
+some bureau minima. Select the actual supplier's cleaning route and qualify the part, rather than averaging
+those values. [ref:hp-mjf-design-for-cleaning]
 
 ### Where the MJF sources disagree
 
@@ -851,19 +862,29 @@ YAML under `standards`)
 
 </details>
 
-## 11. Not verified, and next
+## 11. Source verification and limits
 
-- The Protolabs Network design-rules poster that compares every printing process is an image in perspective; it was
-  not read, and none of its numbers are used.
-- Xometry's FDM quick design guide (a 10 mm bridge, among others) returned HTTP 403 to every fetch and has no archive
-  copy; not used. Xometry's US MJF guide is an e-mail-gated e-book, and its European MJF pages returned 403.
-- HP's MJF Handbook chapters other than "Design for accuracy" (best practices, design for cleaning, tolerancing,
-  hinges) sit behind a sign-up form; HP's own escape-hole size was not found.
-- EOS's gap-against-wall chart is an image; its row is marked **(u)**. DuPont's rib and boss proportions (Figures
-  4.07 and 3.10) have no text layer either, so they were read from the rendered figures and are marked read.
-- VDI 3405 Blatt 3 (design rules for laser sintering and melting) could not be opened; it is not cited.
-- Next: re-reading the **(u)** row from EOS's chart (#163). The loader and the first check and calculator that read
-  this file are `cadagent.manufacturing.process`, `.dfm` and `.sheet_metal` (#99).
+The follow-up reading on 2026-11-07 resolves source-access questions without treating a source as a print test.
+The original downloads remain outside the repository; their records state exactly which sections were read.
+
+<details>
+<summary>What changed after opening the original sources</summary>
+
+| Source | Result and limit |
+| --- | --- |
+| EOS slides 10–11 | Removed the combined gap/hole rule: specimen labels and partly closed openings are not a minimum-dimension specification. [ref:eos-design-rules-overview-ls] |
+| HP handbook | Public HP-authored copies linked by [ADDForm](https://www.addform.eu/knowledgebase/download-center) cover best practices and hinges. Hinge geometry needs controlled thickness trials. [ref:hp-mjf-handbook-design-for-hp-multi-jet-fusion] |
+| HP cleaning and tolerancing | Cleaning dimensions now reach the rule cards. Tolerance grades describe targets; process capability needs measured evidence under its statistical assumptions. [ref:hp-mjf-design-for-cleaning] [ref:hp-mjf-dimensional-tolerancing] |
+| Xometry FDM quick guide | The table is readable. Its bridge capability differs from the historical design-tips entry; unspecified material and cooling conditions prevent treating it as a newly qualified desktop limit. [ref:xometry-fdm-quick-design-guide] |
+| Xometry MJF guides | Both public PDFs are readable. US and European drainage recommendations differ; keep edition and region visible, and confirm the chosen supplier's cleaning route. [ref:xometry-mjf-us-design-guide] [ref:xometry-mjf-eu-design-guide] |
+| VDI 3405 Blatt 3 | DIN Media marks the 2015-12 edition withdrawn and recommends DIN EN ISO/ASTM 52911-1:2020-05 and 52911-2:2020-06. Only catalogue metadata was read. [ref:vdi-3405-3-withdrawn] |
+| Materialise | The current index lists named-resin guides. The old Standard Resin page was not recovered; Taurus remains specific to Taurus, with no invented replacement relationship. [ref:materialise-current-design-guidelines] |
+
+</details>
+
+The Protolabs Network comparison poster remains unread; none of its image-only values are used. DuPont Figures
+4.07 and 3.10 were already read from rendered images. Source-access evidence does not qualify fit, strength,
+cleanability or durability: those still need the project's print and feedback loop.
 
 [hubs-fdm-design]: https://www.hubs.com/knowledge-base/how-design-parts-fdm-3d-printing/
 [hubs-3dp-geometry-limits]: https://www.hubs.com/knowledge-base/3d-printing-geometry-restrictions/

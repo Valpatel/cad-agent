@@ -2,6 +2,8 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| Re-importing research restores old folder names although migrated fixtures pass | [Test the original import boundary](inbox/2026-11-06-source-selection-must-not-pass-empty.md#keep-original-import-inputs-when-testing-repository-migrations) |
+| A chart label becomes a manufacturing limit, or correcting data removes the only unverified test case | [Separate specimen labels from process limits](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md) |
 | A newly published site still shows an obsolete robot layout | [A source revision does not refresh a CAD export](inbox/publish/2026-11-07-source-revision-does-not-refresh-a-cad-export.md) |
 | A footer picture appears again near the page title, or a unique image locator finds two copies after compilation | [Page placement can duplicate footer art](inbox/publish/2026-11-07-page-placement-can-duplicate-footer-art.md), [consumer verification](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
 | A narrow-header failure has no retained bounds, or hidden SVG geometry is treated as painted content | [Separate visibility from geometry and retain the failed frame](inbox/publish/2026-11-07-header-visibility-needs-paint-state.md) |

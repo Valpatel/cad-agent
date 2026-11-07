@@ -292,3 +292,18 @@ flowchart TD
   resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
   the visibility boundary; [the incident](../../../.agents/inbox/publish/2026-11-07-header-visibility-needs-paint-state.md)
   distinguishes its controlled regression from the still-unproven historical cause.
+
+
+### Separate specimen labels from manufacturing limits
+
+Render the original chart and distinguish nominal inputs, measured outputs, failed samples and recommendations.
+A readable source can justify removing a rule. Keep unverified-data guards covered with controlled fixtures so
+correcting research does not erase the rejection test. See the [EOS chart incident](../../../.agents/inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md).
+
+
+### Test the original input after a path migration
+
+Keep a fixture of the original external input and feed it through the current importer. Updating both producer and
+fixture to the new path can hide a regression that reappears on the next real import. Preserve external URLs,
+historical observations and source bytes while checking the current destination paths. See the
+[Reference Map incident](../../../.agents/inbox/2026-11-06-source-selection-must-not-pass-empty.md#keep-original-import-inputs-when-testing-repository-migrations).

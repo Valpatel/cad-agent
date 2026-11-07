@@ -53,3 +53,27 @@ On 2026-11-06, the #283 routing audit found an existing six-step Python example 
 The refined existing test module executes that trusted, committed block through its real APIs and inspects the returned step results. It retains the source-derived numbers, WARN/FAIL distinctions, unpriced rivet, dated price and model limits. Changed geometry produces WARN and FAIL; an unknown sheet rejects, and the same consumer rejects missing steps, a no-op price call/output and a forced PASS on the warning case. The existing API/data checks remain in place.
 
 **Rule:** routing to an existing technique should make its canonical example a real consumer of the current implementation. Do not substitute another copy of its inputs or assert only that API names exist. Use real bad inputs and no-op results to check that the consumer cannot pass empty. This is a deterministic model/example check, not evidence of physical fit, joint capacity, current supplier prices or every possible user design. The test executes only the repository's reviewed example, not arbitrary external Markdown.
+
+
+## Keep original import inputs when testing repository migrations
+
+**Evidence, 2026-11-07 UTC (#163):** `tools/import_refmap.py /home/scubasonar/Code/refmap-import/data.json --check`
+failed on both the research worktree and the unchanged security-audit baseline: only `coverage.yaml` would change.
+The retained original map's SHA256 prefix was `5d33252ef56f2048`. Its generated diff restored `src/cadagent/`,
+`research/` and `docs/design-process-plan.md` paths that the repository had moved. All promoted and hand-added
+source records were correctly preserved. No importing write was run before examining this diff.
+
+**Cause:** the migration updated committed coverage and the test fixture's input to current paths, while the importer
+still received historical paths from the actual external data. A green fixture did not exercise that boundary.
+
+**Correction:** translate only the known repository moves at the coverage-import boundary. Preserve the historical
+observation date, line numbers, claims, unposted drafts, current paths and external URLs. The new actual-import
+fixture fails against the old implementation on the `where` path. Its corrected run also checks source text, gap
+text, draft bodies, input-file preservation and idempotence. Do not rewrite the original map to make the check pass.
+
+**Validation:** the new original-input test failed before the fix; all 28 importer tests pass afterward. The real
+map still required four YAML line-wrap changes, with parsed coverage exactly equal and every other shard hash
+unchanged. After adopting only that deterministic formatting, the full original-map `--check` passes.
+
+**Limits:** this is path correspondence, not a fresh evaluation of the map's historical capability claims or line
+positions. Unrecognized or product-relative paths remain untouched; no draft issue is posted by the importer.

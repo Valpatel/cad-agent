@@ -26,9 +26,9 @@ export function inventory(files) {
   }
   return dirs;
 }
-export function markdown(text) {
-  // YAML/frontmatter is metadata, not prose links or a folder diagram.
-  const tokens = marked.lexer(text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ''));
+// Lex the WHOLE document before walking: reference definitions may live in another section.
+const lexMarkdown = text => marked.lexer(text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, ''));
+function tokenDetails(tokens) {
   const links = [], tables = [], diagrams = [];
   marked.walkTokens(tokens, token => {
     if (token.type === 'link' || token.type === 'image') links.push(token.href);
@@ -38,6 +38,7 @@ export function markdown(text) {
   });
   return { links, tables: tables.join('\n'), diagrams };
 }
+export function markdown(text) { return tokenDetails(lexMarkdown(text)); }
 const beneath = (file, root) => file === root || file.startsWith(root + '/');
 const resolve = (from, href) => {
   if (!href || href.startsWith('#') || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) return null;
@@ -131,15 +132,17 @@ export function checkMap({ files, read, policy, publication = null }) {
   const ownedPages = new Set(rows.map(r => r.owner));
   // Ownership delegation is independent of link scanning. Only explicit upstream/data prose is exempt.
   for (const f of files.filter(f => f.endsWith('.md') && (!['upstream', 'data'].includes(delegate(f)?.kind) || ownedPages.has(f)))) {
-    const text = read(f);
-    // Existing ci_gates.changelog_history preserves dated release records byte-for-byte, including the relative
-    // destinations valid at release time. Only that region may name a CURRENT selected public Markdown identity.
-    const heading = f === 'CHANGELOG.md' && /^##[ \t]+v[0-9]+(?:\.[0-9]+)* \((\d{4}-\d{2}-\d{2})\)[ \t]*\r?$/m.exec(text);
-    const date = heading && new Date(heading[1] + 'T00:00:00Z');
-    const boundary = heading && Number(heading[1].slice(0, 4)) > 0 && Number.isFinite(date.getTime()) &&
-      date.toISOString().slice(0, 10) === heading[1] ? heading.index : text.length;
-    for (const [body, historical] of [[text.slice(0, boundary), false], [text.slice(boundary), boundary < text.length]]) {
-      for (const href of markdown(body).links) {
+    // Existing ci_gates.changelog_history preserves dated records. Classify each link by the section where it
+    // is USED, not where its optional reference definition lives; lex once so cross-section definitions resolve.
+    let historical = false;
+    for (const token of lexMarkdown(read(f))) {
+      if (f === 'CHANGELOG.md' && token.type === 'heading' && token.depth === 2) {
+        const heading = /^##[ \t]+v[0-9]+(?:\.[0-9]+)* \((\d{4}-\d{2}-\d{2})\)[ \t]*\r?$/m.exec(token.raw);
+        const date = heading && new Date(heading[1] + 'T00:00:00Z');
+        if (heading && Number(heading[1].slice(0, 4)) > 0 && Number.isFinite(date.getTime()) &&
+            date.toISOString().slice(0, 10) === heading[1]) historical = true;
+      }
+      for (const href of tokenDetails([token]).links) {
         const target = resolve(f, href), source = historical && publicSources.get(target);
         if (target === false || (target !== null && (!targetExists(target) || target.startsWith('../')) &&
             !(source && known.has(source))))

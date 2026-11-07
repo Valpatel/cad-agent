@@ -78,5 +78,8 @@ flowchart TD
    `verdict=block`. Repos with merge gates read it (cad-agent: the latest verdict must be pass, on the PR's head
    commit); then re-run them: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`.
    Do not approve or merge.
+   For an ordinary timeline update, use `gh pr comment --body-file` or `gh issue comment --body-file`, then verify
+   the created comment and its target. Never send a comment body to the issue-update resource; that can replace the
+   description. Keep formal reviews and inline review comments on their documented commands/routes.
 9. Final message: each finding as `file:line, severity, one sentence`, plus what you checked and found fine, and the
    links to the review and comments.

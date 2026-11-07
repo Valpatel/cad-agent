@@ -9,6 +9,13 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.27.2 (2026-11-07)
+
+**Fixed**
+- The homepage Gyropup model, poster and project card are regenerated from the accepted current CAD, retaining the tracked inputs, pinned runtime and immutable source link (#104).
+- Observe the asynchronous copy-layout probe through bounded plain-state snapshots, preserving task errors and cleanup without returning a pending serialization promise through the browser protocol.
+- Direct ordinary reviewer updates through the comment commands, preserving issue and pull-request descriptions after an observed wrong-resource write.
+
 ## v0.27.1 (2026-11-07)
 
 **Fixed**

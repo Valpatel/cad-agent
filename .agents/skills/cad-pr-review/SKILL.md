@@ -85,3 +85,6 @@ flowchart TD
   re-run them so they read it: `gh workflow run gates.yml -R <owner>/<repo> -f pr=<n>`. Do not approve or merge unless the repo's rules give
   the reviewer that role.
 - Finish with a list of findings (file:line, severity, one sentence) for the author.
+- Use `gh pr comment --body-file` or `gh issue comment --body-file` for ordinary timeline updates and verify the
+  created comment/target. The issue-update resource edits the description; it is not a substitute for the comments
+  collection. Formal reviews and inline comments retain their documented commands/routes.

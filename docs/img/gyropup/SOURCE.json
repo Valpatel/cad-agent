@@ -27,13 +27,13 @@
   "file": "docs/img/gyropup.jpg",
   "made": "node tools/site/figures/site-model-poster.mjs: the model's poster on a dark card with the project's words",
   "model": "web/models/gyropup.json",
-  "revision": "0f713c432f73fba0d1a0fddc26cc04b71cdc6677",
+  "revision": "01d5823062ace26eddd7d13428cbbfeec9e0105d",
   "width": 1600,
   "height": 733,
-  "model_sha256": "fb603b5731726be07fbcb5cd415f3cee758449529df326851cc745cb8edc00f8",
-  "binary_sha256": "e249afcbd10f5e0f7d796200b81f7696ab70ba4d8025c3522a26653708b29180",
+  "model_sha256": "576de9ae431c405eda84972e9ba163b565b8bfa782fa336e8b4756627e48bdc1",
+  "binary_sha256": "b7297636dd11edb61bc56190b1bc45c4bb05dce6b789f981655d248749edd0c3",
   "poster": "tools/site/assets/models/gyropup.webp",
-  "poster_sha256": "b751c512d541a0441bf085d146b119d50b9853d9ef56882f7ea528e6baf4cb63",
-  "sha256": "f83ca3d360d49e74e50cd55ba6df15f391827ad03bda41ec7934fec2e684aeac"
+  "poster_sha256": "aec5890a1d351c9d18252ee98d23c877ecb5fb80d15e8276dd71bc1175c5c13e",
+  "sha256": "ced498bdba91792e03b8d2f00651de8ae1175eba8e53d391fb440125f847f31c"
  }
 }

@@ -57,7 +57,7 @@ three old-source cases; all sixteen corrected cases preserved both automatic and
 same timeout. Instrumentation affects timing, so these counts are not a device failure rate. This observation
 explains the tested navigation failure, not unrelated header failures or every browser's resize behavior.
 
-A browser wrapper can obscure the underlying protocol error. Keep async probes alive until their results are consumed, require completion, and report cleanup separately; [the collected-promise incident](../../../.agents/inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md#a-navigation-looking-error-can-be-a-collected-probe-promise) records the actual failure and controls.
+A browser wrapper can obscure the underlying protocol error and introduce its own pending promise. Observe a long asynchronous probe through a plain terminal-state record, preserve failures and cleanup separately, and stress the actual library boundary while pending; [the collected-promise recurrence](../../../.agents/inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md#observe-asynchronous-probe-completion-through-plain-state) records why rooting only the page promise was insufficient.
 
 Collect runtime errors on each interaction page before navigating. Separate generic-route listeners do not cover a
 copy-layout or resize page. The existing copy-boundary consumer could pass all geometry checks while WebKit emitted

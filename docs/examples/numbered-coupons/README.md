@@ -38,7 +38,8 @@ commit it: losing it loses the human-readable stamp resolver. The registry rejec
 changed artifact bytes and overwriting a prior record. A deliberate reprint needs a fresh UUID and stamp.
 
 The immutable identity names the **earlier source commit actually used to generate CAD**, plus declared input
-hashes. Commit its records afterward; they do not pretend to know their own future commit. GitHub sources include a clickable immutable `model_url` in each identity. The declared closure
+hashes. Push that source revision before making a physical specimen, so its immutable `model_url` is reachable.
+Commit the generated records afterward; they do not pretend to know their own future commit. The declared closure
 is explicit, not an automatic dependency discovery proof. The fixed seven-segment hex stamp (styled B/D appear as b/d) uses the existing line/engraving primitive with the profile's cited 1 mm stroke at 0.5 mm depth. Its CAD and SVG share the same segment plan. The stamp sits on an attached tab beyond the original
 hole/fit envelope. Native readback binds object IDs, one placement per specimen, actual mesh geometry and
 embedded settings to that identity. Own XML readback does not establish Bambu GUI acceptance.

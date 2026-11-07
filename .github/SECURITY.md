@@ -20,8 +20,11 @@ or a malicious update. These rules apply to every import and every weekly update
    update check and outbound API are disabled at the source.
 7. **Sandboxed execution.** Vendored code is tested in Docker with no network, a read-only root, a non-root user, all
    capabilities dropped, no-new-privileges and no host home directory mounted.
-8. **Dependencies.** Python dependencies are installed from hash-locked requirement files (`--require-hashes`) into
-   isolated environments. A dependency change is itself a finding to review.
+8. **Dependencies.** Keep installs isolated and review dependency changes as findings. The [Python CI jobs](workflows/ci.yml)
+   install the ranges in `pyproject.toml` with editable pip installs; the normal installer uses an editable checkout in
+   uv's own environment. Neither path currently enforces hash-locked Python requirements (`--require-hashes`). A pinned
+   source revision or verified installer checksum does not lock the Python dependencies it resolves. Hash-locked runtime
+   installs and exact installed-version auditing remain follow-ups in [#154](https://github.com/Valpatel/cad-agent/issues/154).
 9. **Supply-chain report.** `tools/resource_audit.py` checks dependencies, vendored code (pins, recorded hashes,
    drift from upstream at the pinned commit, licences) and the links we publish; CI runs its offline checks on every
    PR and a weekly workflow runs the online ones and keeps one issue current. When to run it and what blocks a merge:

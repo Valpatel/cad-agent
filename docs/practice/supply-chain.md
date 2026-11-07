@@ -171,6 +171,8 @@ the repository's Actions event policy lists events per workflow file, `.github/w
   domain expiry is not checked. GitHub links are checked per repository, not per file.
 - Python ranges are checked at their newest and lowest releases; transitive packages at the versions deps.dev
   resolves, not the ones an existing environment holds.
+- Python CI and the normal editable installer resolve those ranges without a hash-locked requirements file. Checking
+  the installer checksum or the toolkit's source revision does not pin its resolved Python dependencies (#154).
 - Libraries bundled inside a vendored file are checked at the versions its receipt records; whether the bundling
   library reaches the affected code is not assessed.
 - The CI job runs the PR's own copy of the tool and of `docs/research/security-accepted.yaml`: it keeps honest work honest,

@@ -262,7 +262,8 @@ def test_open_view_needs_a_display(monkeypatch, model):
 
 
 @pytest.mark.parametrize('cleanup_fails', [False, True])
-def test_requested_close_runs_after_screenshot_timeout_without_masking_original(tmp_path, monkeypatch, cleanup_fails):
+@pytest.mark.parametrize('operation', ['timeout', 'interrupt', 'nonzero', 'success'])
+def test_requested_close_runs_after_screenshot_timeout_without_masking_original(tmp_path, monkeypatch, cleanup_fails, operation):
     from types import SimpleNamespace
     monkeypatch.setattr(prusa_view, 'has_display', lambda: True)
     monkeypatch.setattr(prusa_view.shutil, 'which', lambda name: '/fake/' + name)
@@ -275,10 +276,15 @@ def test_requested_close_runs_after_screenshot_timeout_without_masking_original(
     monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [4242])
     child = SimpleNamespace(pid=4242, poll=lambda: None)
     monkeypatch.setattr(prusa_view.subprocess, 'Popen', lambda *a, **k: child)
-    original = subprocess.TimeoutExpired('controlled screenshot', 120, output='original timeout evidence')
-    def timeout(*a, **k):
-        raise original
-    monkeypatch.setattr(prusa_view.subprocess, 'run', timeout)
+    original = (subprocess.TimeoutExpired('controlled screenshot', 120, output='original timeout evidence')
+                if operation == 'timeout' else KeyboardInterrupt('controlled screenshot interruption'))
+    def screenshot(*a, **k):
+        if operation in {'timeout', 'interrupt'}:
+            raise original
+        if operation == 'success':
+            (tmp_path / 'screen.png').write_bytes(b'controlled screenshot')
+        return subprocess.CompletedProcess(a[0], 1 if operation == 'nonzero' else 0, stderr='controlled return')
+    monkeypatch.setattr(prusa_view.subprocess, 'run', screenshot)
     stops = []
     def stop(data_dir, popen):
         stops.append((data_dir, popen))
@@ -286,11 +292,22 @@ def test_requested_close_runs_after_screenshot_timeout_without_masking_original(
             raise prusa_view.ViewError('controlled cleanup refusal')
         return [4242]
     monkeypatch.setattr(prusa_view, 'stop', stop)
-    with pytest.raises(subprocess.TimeoutExpired) as got:
-        prusa_view.open_view(tmp_path / 'keep.3mf', screenshot=tmp_path / 'screen.png', wait=0, close=True)
-    assert got.value is original and stops == [(tmp_path / 'datadir', child)]
-    assert not (tmp_path / 'screen.png').exists()
-    if cleanup_fails:
+    if operation == 'success' and not cleanup_fails:
+        got = prusa_view.open_view(tmp_path / 'keep.3mf', screenshot=tmp_path / 'screen.png', wait=0, close=True)
+        assert got['closed'] and got['stopped'] == [4242]
+    else:
+        expected = type(original) if operation in {'timeout', 'interrupt'} else prusa_view.ViewError
+        with pytest.raises(expected) as got:
+            prusa_view.open_view(tmp_path / 'keep.3mf', screenshot=tmp_path / 'screen.png', wait=0, close=True)
+        if operation in {'timeout', 'interrupt'}:
+            assert got.value is original
+        elif operation == 'success':
+            assert 'controlled cleanup refusal' in str(got.value)
+        else:
+            assert 'could not screenshot' in str(got.value)
+    assert stops == [(tmp_path / 'datadir', child)]
+    assert (tmp_path / 'screen.png').exists() == (operation == 'success')
+    if cleanup_fails and operation != 'success':
         assert 'controlled cleanup refusal' in (tmp_path / 'prusaslicer.log').read_text()
 
 

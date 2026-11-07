@@ -552,6 +552,7 @@ after that every step runs, and the exit code says whether anything failed.*
 | `cad-agent serve [--port N] [--host H]` | serves the project root; writes the URL to `preview/server-url.txt` | |
 | `cad-agent site [--serve]` | builds `site/` from milestones, decisions, a designs summary, Markdown pages and git history (config `cad: site:`); `--serve` rebuilds on change and serves the web kit at `/_cadagent/kit/`. One top bar links every page: `site: nav:` (`[{id, title, href}]`, hrefs from the project root) or, when unset, the overview, docs, 3D model and each `html_pages` page plus the check and simulation reports, the design comparison and the search leaderboard. The server adds the bar to every HTML page it sends (files on disk unchanged; a bar the page mounts itself wins; `<meta name="cadagent-nav" content="off">` opts a page out). A project with a `dossier:` or `gates:` key also gets the review pages in `site/review/`: a page per dossier section, the requirements table and the gates page with the connectivity graph ([dossier.md](practice/dossier.md#on-the-review-site)) | |
 | `cad-agent view` | writes every part in assembly position to `exports/view/` (STL + `view.json`) for the 3D viewer (config `cad: view:` for colours, hidden variants, explode directions, extra parts from STEP or STL, list categories) | |
+| `cad-agent prusa-view MODEL [--config INI] [--view-bed WxD[xH]] [--screenshot PNG] [--wait S] [--close]` / `--stop` | opens a 3MF or STL in PrusaSlicer's window with a private copy of the profile folder and no start-up dialogs, optionally screenshots the window and stops only its own process; a project is optional ([below](#looking-at-a-model-in-prusaslicer-cad-agent-prusa-view)) | 2 without a display, PrusaSlicer, `xwininfo` or ImageMagick, or when the window does not appear |
 | `cad-agent webkit [DEST]` | copies the web kit (3D stage, model viewer, HUD panels, three.js, fonts) into the project, default `web/kit` | |
 | `cad-agent dossier [--json] [--no-write] [--min-status S]` | lints the design dossier (`cad: dossier:`) against the build's geometry record, the gate verdicts, the configured checks and the reviewer records; writes each section's and part's status to `exports/dossier-status.json` and the lint verdict to `exports/gates/dossier-lint.json` ([dossier.md](practice/dossier.md#lint-and-status)) | 1 on a lint error or a section below `--min-status` (default `gated`) |
 | `cad-agent review-packet [SECTION ...] [--list] [--view V ...] [--size WxH] [--explode F] [--context C]` | renders each dossier section's review packet into `exports/review/<section>/` with `manifest.json` (`cad-agent.review-packet/1`): the gate measurements and findings first, captioned views with content hashes, the render checklist ([review-packet.md](practice/review-packet.md)); `--list` plans without rendering | 2 on an unknown section or with no geometry record |
@@ -604,7 +605,7 @@ flowchart TD
 | New package (domain in `docs/areas.yaml`) | Modules and packages (old path `cadagent.<name>`) |
 |---|---|
 | `cadagent.mechanical` (mechanical) | `holes`, `fasteners`, `mcmaster`, `connectors`, `markings`, `compliant/`, `motion_trace` |
-| `cadagent.manufacturing` (manufacturing) | `slicer`, `mesh3mf` |
+| `cadagent.manufacturing` (manufacturing) | `slicer`, `prusa_view`, `mesh3mf` |
 | `cadagent.thermal` (thermal) | `heatsink` |
 | `cadagent.simulation` (simulation) | `fea`, `cfd`, `topopt`, `explore/`, `robot`, `simviz`, `simreport` |
 | `cadagent.electrical` (electrical) | `pcb`, `pcb_routing` |
@@ -1523,6 +1524,45 @@ cad:
 ```
 
 </details>
+
+### Looking at a model in PrusaSlicer (`cad-agent prusa-view`)
+
+`cad-agent prusa-view MODEL` opens a 3MF or STL in PrusaSlicer's window (`cadagent.manufacturing.prusa_view`), to see
+what PrusaSlicer makes of it or to keep a screenshot as evidence. PrusaSlicer runs as a separate process.
+- **Private profile folder:** a copy of the profile folder in the work folder (`--workdir`, default
+  `<model folder>/prusa-view/<model name>`), passed with `--datadir`. Your own PrusaSlicer configuration is never read
+  for state or written to. Its `PrusaSlicer.ini` gets the settings that keep start-up free of dialogs:
+  `version_system_info_sent` (the detected version), `version_check`, `preset_update`, `notify_release`,
+  `show_hints` and `show_splash_screen` off. It also gets a 1920 x 1172 `window_mainframe`, `background_processing = 1`
+  (the model is sliced as it loads) and a `[presets]` section naming the printer, print and filament of each tool.
+- **Configuration:** `--config INI` (any ini PrusaSlicer wrote, such as a slice's `build/slicer/<part>/config.ini`).
+  Else the `cad.slicer` presets and overrides of a `prusa` project, resolved by PrusaSlicer as `slice` does, else
+  PrusaSlicer's defaults.
+- **Certificates:** `SSL_CERT_FILE` is set, else the flatpak stops at a certificate-store dialog: `--ca-file`, else
+  `$CADAGENT_PRUSA_CA_FILE`, else the flatpak runtime's `/etc/pki/tls/certs/ca-bundle.crt` (a path inside the
+  sandbox), else the first system bundle found for a native `prusa-slicer`.
+- **Window and screenshot:** an X11 or XWayland display (`DISPLAY`), `xwininfo` and ImageMagick's `import`. The
+  window is the new PrusaSlicer window whose title holds the model's name (`Untitled` for an STL). `--screenshot PNG`
+  waits `--wait` seconds (default 10) after the window appears, for slicing and drawing, then saves it.
+- **Stopping:** `--close` stops the view after the screenshot. Without it the window stays open, and
+  `cad-agent prusa-view MODEL --stop` (with the same `--workdir`) closes it later. Only processes run with this view's
+  own `--datadir` are signalled, by PID (SIGTERM, then SIGKILL). Other PrusaSlicer windows, yours or another
+  session's, are left alone. Never stop PrusaSlicer with `pkill -f <pattern>`: a shell whose command line holds the
+  pattern is killed too.
+- **`--view-bed WxD[xH]`:** shows a model larger than the printer on a viewing bed of that size in mm, with no wipe
+  tower, no bed model and background slicing off. The height defaults to the printer's, raised to the bed's larger
+  side, up to PrusaSlicer's limit of 1200 mm. It is for looking at only, never for printing.
+- **Assemblies:** PrusaSlicer 2.9 shares the objects of a project out among its virtual beds by position, which pulls
+  an assembly apart. Write an assembly to view as one object with a volume per part
+  (`cadagent.manufacturing.prusa3mf.write_project`).
+- **Limits:** the flatpak cannot read `/tmp`, so keep the model, `--config` and the work folder under your home
+  folder. The window shows PrusaSlicer's reading of the file: it does not prove that parts fit or print well.
+
+```bash
+cad-agent prusa-view exports/door.3mf --screenshot exports/door-prusaslicer.png --close
+cad-agent prusa-view exports/assembly.3mf --view-bed 1500x600 --config build/slicer/door/config.ini
+cad-agent prusa-view exports/assembly.3mf --stop
+```
 
 ### Overhangs and bridges (`cad-agent overhangs`)
 

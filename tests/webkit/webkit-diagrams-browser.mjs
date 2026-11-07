@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {chromium,webkit} from '../site/npm-context.mjs';
 import {serveWebkit} from './webkit-server.mjs';
 const diagram='flowchart LR\nA[Design] --> B[Build] --> C[Test]';
+// These are the exact compiler inputs recorded for the shipped bundle, served only by this local test fixture.
+const buildRecord=JSON.parse(await readFile(new URL('../../software/cadagent/webkit/vendor/mermaid/BUILD.json',import.meta.url)));
+const libraryInputs=new Map();
+for(const [name,file] of [['purifier','dompurify/dist/purify.es.mjs'],['math','katex/dist/katex.mjs']]){
+ const bytes=await readFile(new URL('../../tools/mermaid/node_modules/'+file,import.meta.url));
+ const source=buildRecord.inputs.find(row=>row.path==='node_modules/'+file);assert.ok(source);
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),source.sha256,'library regression must use the actual emitted input');
+ libraryInputs.set('/fixed-'+name+'.mjs',bytes);
+}
 const html=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/diagrams.css"><style>body{margin:16px;font:16px system-ui;background:${theme==='dark'?'#10141b':'#fffaf2'};color:${theme==='dark'?'white':'#263e35'}}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Design evidence</h1><pre><code class="language-mermaid">${diagram}</code></pre><pre class="mermaid">sequenceDiagram\nDesigner->>Robot: Test safely\nRobot-->>Designer: Results</pre><div id="dynamic"></div></main><script type="module">import {observeDiagrams} from '/kit/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;
 // A page whose diagram was drawn ahead of time (drawDiagram, as the cad-agent site build does, #132), in `theme`.
 const ahead={figure:''},aheadHtml=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/diagrams.css"><style>body{margin:16px;font:16px system-ui}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Drawn ahead</h1>${ahead.figure}<p id="after">After the diagram</p></main><script type="module">import {observeDiagrams} from '/kit/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;
 const site=await serveWebkit(new Map([['/light',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(html('light'));}],['/dark',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(html('dark'));}],
+ ...[...libraryInputs].map(([url,bytes])=>[url,(_q,r)=>{r.writeHead(200,{'Content-Type':'text/javascript'});r.end(bytes);}]),
  ['/blank',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end('<!doctype html><link rel="stylesheet" href="/kit/diagrams.css"><body><main></main></body>');}],
  ['/ahead-light',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(aheadHtml('light'));}],['/ahead-dark',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(aheadHtml('dark'));}]]));
 const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
@@ -62,6 +73,24 @@ try{
  const injected=await hostile.evaluate(()=>({ran:window.cadXss||0,handlers:document.querySelectorAll('[onerror]').length,states:[...document.querySelectorAll('.cad-diagram')].map(f=>f.dataset.state)}));
  assert.equal(injected.ran,0,'a hostile diagram label ran script');assert.equal(injected.handlers,0,'a hostile diagram label left an event handler in the page');
  cases.push({hostileLabelsInert:injected});await hostile.close();
+ // Nondefault advisory boundaries are tested directly on the hash-bound emitted inputs. This is distinct from
+ // exploitability through our default strict string renderer. No template or unsafe output is evaluated/inserted.
+ const security=await browser.newPage();security.on('pageerror',e=>errors.push(e.message));
+ try{
+  await security.goto(site.url+'/blank');
+  const checked=await security.evaluate(async()=>{
+   const {default:purifier}=await import('/fixed-purifier.mjs');
+   const host=document.createElement('div'),shadow=host.attachShadow({mode:'open'});
+   shadow.append('$',document.createElement('object'),'{41+1}');purifier.sanitize(host,{SAFE_FOR_TEMPLATES:true,IN_PLACE:true});
+   const {default:katex}=await import('/fixed-math.mjs');let text;
+   try{Object.prototype.trust=true;text=katex.renderToString(String.raw`\href{javascript:cadSecurityMarker()}{go}`,{output:'html'});}
+   finally{delete Object.prototype.trust;}
+   return {domVersion:purifier.version,templateText:shadow.textContent,katexVersion:katex.version,
+    inheritedUnsafeLink:/href=["']javascript:/i.test(text)};
+  });
+  assert.equal(checked.domVersion,'3.4.17');assert.ok(!checked.templateText.includes('${'));
+  assert.equal(checked.katexVersion,'0.18.10');assert.equal(checked.inheritedUnsafeLink,false);cases.push({fixedAdvisoryBoundaries:checked});
+ }finally{await security.close();}
  // The pinned KaTeX security update must still draw real mathematical labels through our strict Mermaid consumer.
  const mathSources=[String.raw`flowchart LR
  A["$$x^2 + y^2 = z^2$$"] --> B["$$\frac{1}{2}$$"]`,String.raw`sequenceDiagram

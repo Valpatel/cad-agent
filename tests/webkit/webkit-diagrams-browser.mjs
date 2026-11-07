@@ -62,6 +62,25 @@ try{
  const injected=await hostile.evaluate(()=>({ran:window.cadXss||0,handlers:document.querySelectorAll('[onerror]').length,states:[...document.querySelectorAll('.cad-diagram')].map(f=>f.dataset.state)}));
  assert.equal(injected.ran,0,'a hostile diagram label ran script');assert.equal(injected.handlers,0,'a hostile diagram label left an event handler in the page');
  cases.push({hostileLabelsInert:injected});await hostile.close();
+ // The pinned KaTeX security update must still draw real mathematical labels through our strict Mermaid consumer.
+ const mathSources=[String.raw`flowchart LR
+ A["$$x^2 + y^2 = z^2$$"] --> B["$$\frac{1}{2}$$"]`,String.raw`sequenceDiagram
+ participant A as Alice
+ participant B as Bob
+ A->>B: $$\frac{a}{b}$$`];
+ for(const width of [390,1366])for(const theme of ['light','dark']){
+  const page=await browser.newPage({viewport:{width,height:900},colorScheme:theme});page.on('pageerror',e=>errors.push(e.message));
+  try{
+   await page.goto(site.url+'/blank');
+   const rendered=await page.evaluate(async({sources,theme})=>{const {drawDiagram}=await import('/kit/diagrams.js');const main=document.querySelector('main'),results=[];
+    for(let i=0;i<sources.length;i++){const figure=await drawDiagram(sources[i],{theme,id:'cad-math-'+i,parent:main});
+     if(!figure){results.push({failed:true});continue;}main.append(figure);const svg=figure.querySelector('svg');
+     results.push({state:figure.dataset.state,math:figure.querySelectorAll('math').length,box:[svg.getBoundingClientRect().width,svg.getBoundingClientRect().height]});}
+    return results;},{sources:mathSources,theme});
+   assert.equal(rendered.length,2);assert.ok(rendered.every(r=>r.state==='ready'&&r.math>0&&r.box.every(n=>n>0)),JSON.stringify(rendered));
+   await page.screenshot({path:`${out}/${engine.name()}-math-${width}-${theme}.png`,fullPage:true});cases.push({math:{width,theme,rendered}});
+  }finally{await page.close();}
+ }
  // Drawn ahead of time: drawDiagram returns the finished figure (light and dark), or null for a source Mermaid cannot draw.
  const drawer=await browser.newPage();drawer.on('pageerror',e=>errors.push(e.message));await drawer.goto(site.url+'/blank');
  const drawn=await drawer.evaluate(async source=>{const {drawDiagram}=await import('/kit/diagrams.js');const main=document.querySelector('main');

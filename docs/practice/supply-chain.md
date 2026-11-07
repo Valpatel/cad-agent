@@ -18,7 +18,7 @@ this repository. A test redraws it from the report's JSON, so the two cannot dis
 | Area | Offline, on every PR (seconds, no network) | Online, weekly or on demand |
 |---|---|---|
 | Python dependencies (`pyproject.toml`, every extra) | lower bounds, readable requirements | OSV advisories at the newest release and the lowest one each range allows, and for every transitive package deps.dev resolves; PyPI releases, licences, "inactive" |
-| npm packages (`package-lock.json`) | registry source over HTTPS, sha512 integrity, install scripts, licences, lockfile in step | OSV and `npm audit`, deprecations |
+| npm packages (site and separate Mermaid rebuild locks) | registry source over HTTPS, sha512 integrity, install scripts, licences, lockfile in step | OSV and `npm audit` in each explicit package context, deprecations |
 | Vendored projects (`software/vendor/`) | full-commit pins, licence files, reviewed baselines, notices | every file against upstream at the pinned commit (git blob hashes), upstream advisories since the import, archived or moved, Scorecard |
 | Web kit (`software/cadagent/webkit/vendor/`) | every file against the SHA-256 in its receipt; each receipt names its npm tarball and integrity, or `"npm": false` and each file's URL; the versions of the libraries a file bundles are in that file | OSV for each library, including DOMPurify and KaTeX inside `mermaid.min.js`; the tarball against its integrity, and each file against the package's bytes (a `patched` file must differ, from the file its `upstream_sha256` names) |
 | Links (catalogue and every published page) | plain HTTP, missing licences, stale records | repository gone, moved, archived or relicensed; dead pages, redirects to another domain, HTTPS downgrades |
@@ -27,6 +27,11 @@ this repository. A test redraws it from the report's JSON, so the two cannot dis
 Everything fetched is data: advisory text, package metadata, tarballs and pages are parsed, never run or followed as
 instructions, and a tarball is read in memory, never unpacked to disk. Before building it we compared what exists
 (the fold at the end of this page); the report calls those services rather than keeping its own advisory logic.
+
+The explicit npm contexts are `tools/site` and the maintainer-only [Mermaid rebuild](../../tools/mermaid/README.md).
+Their dependency rows retain the owning manifest, and new rebuild dependencies need the same PR rows and failure
+checks. The rebuild context has its own exactly locked compiler inputs and disabled install hooks; production
+website installation does not install those dependencies. This is not an arbitrary manifest-discovery mechanism.
 
 ## Where it runs
 

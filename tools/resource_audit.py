@@ -811,6 +811,7 @@ def check_transitive(rep, net, resolved):
 NPM_PACKAGE = 'tools/site/package.json'
 NPM_LOCK = 'tools/site/package-lock.json'
 NPM_DIR = 'tools/site'
+NPM_REBUILD_DIR = 'tools/mermaid'
 EXACT = re.compile(r'^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$')
 
 
@@ -825,21 +826,33 @@ def npm_packages(lock):
 
 
 def check_npm(rep, net, npm_audit=True):
-    pj_text, lock_text = read_text(rep.root / NPM_PACKAGE), read_text(rep.root / NPM_LOCK)
+    # The site and the maintainer-only renderer rebuild have separate dependency/install contexts.
+    directories = [NPM_DIR]
+    if (rep.root / NPM_REBUILD_DIR).exists():
+        directories.append(NPM_REBUILD_DIR)
+    for directory in directories:
+        check_npm_context(rep, net, npm_audit, directory)
+
+
+def check_npm_context(rep, net, npm_audit, directory):
+    package, lockfile = f'{directory}/package.json', f'{directory}/package-lock.json'
+    pj_text, lock_text = read_text(rep.root / package), read_text(rep.root / lockfile)
     if pj_text is None:
-        raise FileNotFoundError(f'required current npm manifest {NPM_PACKAGE} is missing')
+        raise FileNotFoundError(f'required current npm manifest {package} is missing')
+    first_row = len(rep.inventory['npm'])
     pj = json.loads(pj_text)
     direct = {}
     for field in ('dependencies', 'devDependencies', 'optionalDependencies'):
         direct.update(pj.get(field) or {})
+    lock_subject = 'npm:package-lock.json' if directory == NPM_DIR else f'npm:{lockfile}'
     if lock_text is None:
-        if direct:
-            rep.add('npm-no-lockfile', 'high', 'npm:package-lock.json', 'package.json has dependencies but no lockfile',
-                    'package-lock.json is missing', 'Commit package-lock.json so installs are reproducible and auditable.')
+        if direct or directory == NPM_REBUILD_DIR:
+            rep.add('npm-no-lockfile', 'high', lock_subject, 'package.json has dependencies but no lockfile',
+                    f'{lockfile} is missing', 'Commit package-lock.json so installs are reproducible and auditable.')
         return
     lock = json.loads(lock_text)
     if int(lock.get('lockfileVersion') or 0) < 2:
-        rep.add('npm-lockfile-old', 'medium', 'npm:package-lock.json', 'lockfile version 1 has no per-package integrity record',
+        rep.add('npm-lockfile-old', 'medium', lock_subject, 'lockfile version 1 has no per-package integrity record',
                 f"lockfileVersion {lock.get('lockfileVersion')}", 'Regenerate it with npm 7 or later.')
     root_pkg = (lock.get('packages') or {}).get('', {})
     locked_direct = {}
@@ -858,7 +871,7 @@ def check_npm(rep, net, npm_audit=True):
             sid = f'npm:{name}'
             row = rep.item('npm', id=sid, name=name, version=e.get('version'), direct=name in direct and e['path'].count('node_modules/') == 1,
                            dev=bool(e.get('dev')), optional=bool(e.get('optional')), licence=e.get('license'),
-                           install_script=bool(e.get('hasInstallScript')), os=e.get('os'))
+                           install_script=bool(e.get('hasInstallScript')), os=e.get('os'), manifest=package)
             resolved, integrity = e.get('resolved') or '', e.get('integrity') or ''
             if not resolved.startswith('https://registry.npmjs.org/'):
                 rep.add('npm-foreign-source', 'high', sid, f'{name} is not resolved from the npm registry over HTTPS',
@@ -875,13 +888,15 @@ def check_npm(rep, net, npm_audit=True):
             if not e.get('license'):
                 rep.add('npm-no-licence', 'low', sid, f'{name} declares no licence', f"{e['path']} {e.get('version')}",
                         'Check its repository for a licence before relying on it.')
-    rep.extra['npm_counts'] = {'direct': len(direct), 'with_transitive': len(rep.inventory['npm'])}
+    rep.extra['npm_counts'] = {'direct': rep.extra.get('npm_counts', {}).get('direct', 0) + len(direct),
+                               'with_transitive': len(rep.inventory['npm'])}
     if not net:
         return
+    rows = rep.inventory['npm'][first_row:]
     asks = [dict(q={'package': {'ecosystem': 'npm', 'name': r['name']}, 'version': r['version']}, row=r, subject=r['id'])
-            for r in rep.inventory['npm'] if r.get('version')]
+            for r in rows if r.get('version')]
     osv_lookup(rep, net, asks)
-    audit = run_npm_audit(rep) if npm_audit else {}
+    audit = run_npm_audit(rep, directory) if npm_audit else {}
     for a in asks:
         row, vulns = a['row'], list(a.get('vulns') or [])
         known = {v['id'] for v in vulns}
@@ -898,7 +913,7 @@ def check_npm(rep, net, npm_audit=True):
     rep.sources['npm-registry'] = 'registry.npmjs.org (abbreviated metadata)'
     meta = net.map(lambda n: net.json(f'https://registry.npmjs.org/{urllib.parse.quote(n, safe="@")}',
                                       headers={'Accept': 'application/vnd.npm.install-v1+json'}), sorted(pkgs))
-    for row in rep.inventory['npm']:
+    for row in rows:
         status, data, _err = meta.get(row['name'], (0, None, ''))
         if status != 200 or not isinstance(data, dict):
             rep.unverified.add(row['id'])
@@ -910,23 +925,24 @@ def check_npm(rep, net, npm_audit=True):
                     'Move to the replacement its maintainers name, or drop it.')
 
 
-def run_npm_audit(rep):
+def run_npm_audit(rep, directory=NPM_DIR):
     """npm's own advisory check on the lockfile (no node_modules, no scripts run). {package: [advisories]}."""
+    source = 'npm-audit' if directory == NPM_DIR else f'npm-audit:{directory}'
     npm = shutil.which('npm')
     if not npm:
-        rep.sources['npm-audit'] = 'not run (npm not installed)'
+        rep.sources[source] = 'not run (npm not installed)'
         return {}
     try:
-        r = subprocess.run([npm, 'audit', '--package-lock-only', '--json'], cwd=rep.root / NPM_DIR, capture_output=True,
+        r = subprocess.run([npm, 'audit', '--package-lock-only', '--json'], cwd=rep.root / directory, capture_output=True,
                            text=True, timeout=120)
         data = json.loads(r.stdout or '{}')
     except (OSError, ValueError, subprocess.TimeoutExpired) as e:
-        rep.sources['npm-audit'] = f'not verified: {str(e)[:120]}'
+        rep.sources[source] = f'not verified: {str(e)[:120]}'
         return {}
     if 'vulnerabilities' not in data:
-        rep.sources['npm-audit'] = f"not verified: {str(data.get('error', {}).get('summary', 'no answer'))[:120]}"
+        rep.sources[source] = f"not verified: {str(data.get('error', {}).get('summary', 'no answer'))[:120]}"
         return {}
-    rep.sources['npm-audit'] = 'npm audit --package-lock-only'
+    rep.sources[source] = 'npm audit --package-lock-only'
     out = collections.defaultdict(list)
     levels = {'critical': 'critical', 'high': 'high', 'moderate': 'medium', 'low': 'low', 'info': 'info'}
     for name, v in (data.get('vulnerabilities') or {}).items():
@@ -2937,6 +2953,16 @@ def item_ids(tree):
         raise FileNotFoundError(f'required current npm lockfile {NPM_LOCK} is missing')
     if lock:
         ids |= {f'npm:{n}' for n in npm_packages(json.loads(lock))}
+    # No legacy-root alias exists for the new maintainer-only producer context.
+    if any(f.startswith(NPM_REBUILD_DIR + '/') for f in tree.files):
+        package = f'{NPM_REBUILD_DIR}/package.json'
+        rebuild_lock = f'{NPM_REBUILD_DIR}/package-lock.json'
+        if tree.read(package) is None:
+            raise FileNotFoundError(f'required current npm manifest {package} is missing')
+        rebuild = tree.read(rebuild_lock)
+        if rebuild is None:
+            raise FileNotFoundError(f'required current npm lockfile {rebuild_lock} is missing')
+        ids |= {f'npm:{n}' for n in npm_packages(json.loads(rebuild))}
     man = tree.read('software/vendor/manifest.json')
     if man:
         ids |= {f"vendor:{e['name']}" for e in json.loads(man).get('projects') or []}

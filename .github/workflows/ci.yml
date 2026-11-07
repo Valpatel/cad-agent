@@ -73,6 +73,19 @@ jobs:
       # markdown at its floor (#151), for the release notes and site pages it renders
       - run: pip install "markdown==3.8.1" && python -m pytest -q tests/publish/test_release.py tests/publish/test_site.py tests/simulation/explore/test_explore_compare.py tests/publish/test_reproducible_outputs.py
 
+  mermaid-provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1   # v7.1.0
+        with: {node-version: 22}
+      - run: npm --prefix tools/mermaid ci --ignore-scripts
+      - run: npm --prefix tools/mermaid run check
+
   # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/practice/supply-chain.md): offline checks only,
   # so the network can never make it flaky (the weekly supply-chain.yml runs the online ones). Not a required check, and
   # it never blocks a release:

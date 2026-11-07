@@ -3,6 +3,19 @@
 # Reviewers read every change to this file, above all an acceptance added in the same PR as the finding it hides.
 
 - check: npm-install-script
+  subject: npm:esbuild
+  fp: 59651950683e8b3f
+  reason: >-
+    Maintainer-only tools/mermaid compiler0.28.2, not a production-site dependency. Its complete install.js was read
+    on2026-11-07 (#322), SHA256612294e278914443bdcf81cb17f54afec34dbdd2ebd999a6ee187912320cc315: it validates or
+    downloads/installs a platform executable and can rewrite its wrapper. The dedicated context and provenance CI
+    use npm ci --ignore-scripts, so this hook is not executed. The producer resolves the installed exact optional
+    platform binary and verifies its SHA256 against the pinned esbuild package's binaryHashes before execution;
+    missing/mismatched input fails instead of invoking the hook. This fingerprint covers only0.28.2's known hook,
+    not an advisory, registry drift, a future hook or another context that runs install scripts.
+  accepted: 2026-11-07
+
+- check: npm-install-script
   subject: npm:fsevents
   fp: 0cf2576d5c5533dc
   reason: >-

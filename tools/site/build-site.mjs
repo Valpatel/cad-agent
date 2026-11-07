@@ -92,7 +92,7 @@ const front = src => {
 };
 // Summary: the first prose paragraph (not a heading, badge, image, table, code, HTML or list), else the first list
 // item; plain text, cut at a sentence end before 260 characters.
-const plain = s => s.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+const plain = s => s.replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/gi, '$1').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
   .replace(/<[^>]+>/g, '').replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim();
 const clip = s => {
   if (s.length <= 260) return s;
@@ -133,7 +133,8 @@ for (const { file, section } of selectPages(tracked)) {
     continue;
   }
   const { meta, body } = front(src);
-  const title = meta.name || body.match(/^#\s+(.+)$/m)?.[1] || file;
+  const headingTitle = body.match(/^#\s+(.+)$/m)?.[1];
+  const title = meta.name || (headingTitle?.includes('<picture>') ? plain(headingTitle) : headingTitle) || file;
   pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
 }
 const pageURL = f => '/' + publicPath(f).replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
@@ -198,7 +199,7 @@ const decode = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] ===
   ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e] ?? m));
 // GitHub's anchor rule (github-slugger): lower case, drop everything but letters, marks, numbers, connectors, hyphens
 // and spaces, then each space becomes a hyphen (runs are not collapsed); repeats get -1, -2.
-export const slug = text => decode(text.replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
+export const slug = text => decode(text.replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/gi, '$1').replace(/<[^>]*>/g, '')).toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '').replace(/ /g, '-');
 
 // The shared diagram palette (the style guide, #121). Files agents load (skills, subagents) keep only their
 // `class … here` lines (or `:::here`), to save context; GitHub draws those diagrams in its default colours, and the site
@@ -463,7 +464,6 @@ const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
 const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site/figures/site-model-poster.mjs');
-const kb = n => `${Math.round(n / 1024)} KB`;
 // "Copy this to your agent" (#278, #282): one command per platform (web/install.sh, web/install.ps1, served at /install.sh
 // and /install.ps1), or one line to paste into an agent. docs/agent-prompt.txt holds that line first, then what an
 // agent needs to install and work with the kit, which llms.txt carries (tests/repo/test_agent_prompt.py,
@@ -499,8 +499,8 @@ const landing = `<div class="wrap"><section class="hero hero-3d">
 <h1>Your one stop shop for <span>agentic CAD.</span></h1>
 <p class="intro">AI helping AI build anything you want.</p>
 <p class="intro-sub">cad-agent is a free toolkit your AI assistant installs in one line. It helps the AI design real, physical things, check them for problems before anything is made, and, with your OK, share what it learns as a pull request, so every AI that uses it gets better at building for people.</p></div>
-<figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret, assembled from ${heroModel.parts.length} of its parts"></cad-model>
-<figcaption><span><b>Gyropup</b>, ${heroModel.parts.length} parts in place${heroModel.source?.left_out?.length ? ' (fasteners and what sits inside the shell left out)' : ''}, exported from its STEP files by <code>cad-agent view</code>: ${heroModel.triangles.toLocaleString('en-US')} triangles in ${kb(heroModel.bytes)}.</span><span><a href="https://gyropup.com">gyropup.com</a> · MIT · drag to turn</span></figcaption></figure>
+<figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret"></cad-model>
+<figcaption><span><b>Gyropup</b>, the current CAD assembly${heroModel.source?.left_out?.length ? ' (internal parts and fasteners hidden)' : ''}.</span><span><a href="https://gyropup.com">gyropup.com</a> · <a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">CAD source</a> · MIT · drag to turn</span></figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
 </div>
 </section></div>

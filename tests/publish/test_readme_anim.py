@@ -448,14 +448,17 @@ def test_the_hero_is_the_first_thing_in_the_readme():
     workshop = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(workshop)
     hero = readme.find(f'<img src="{workshop.OUT.relative_to(ROOT).as_posix()}"')
-    assert 0 <= hero < readme.find("# cad-agent") < readme.find("## ")
+    assert 0 <= hero < readme.find('# <a href="docs/practice/share-badge.md">') < readme.find("## ")
     picture = readme.find('<picture>')
-    assert 0 <= picture < hero < readme.find('</picture>') < readme.find("# cad-agent")
+    assert 0 <= picture < hero < readme.find('</picture>') < readme.find('# <a href="docs/practice/share-badge.md">')
     assert not readme[:picture].strip("\n").replace('<div align="center">', "").strip()
     assert f'<source media="(prefers-reduced-motion: reduce)" srcset="{workshop.STILL_OUT.relative_to(ROOT).as_posix()}">' in readme[picture:hero]
-    # GitHub only renders Markdown inside the centring div when blank lines surround it; without them the title
-    # shows as a literal "# cad-agent" and the badges as raw links.
-    assert "\n\n# cad-agent\n\n" in readme
+    # The badge replaces the plain wordmark and keeps the heading accessible through image alt text.
+    heading = readme[readme.find('# <a'):readme.find('\n', readme.find('# <a'))]
+    assert 'alt="cad-agent"' in heading and 'made-with-cad-agent-still.svg' in heading
+    assert 'width="248" height="56"' in heading
+    assert readme.count('src="docs/img/hero/made-with-cad-agent.svg"') == 1
+    assert '### Show our badge' in readme and '[Add our badge]' in readme
     assert re.search(r"\n\n\[!\[CI\]", readme)
 
 

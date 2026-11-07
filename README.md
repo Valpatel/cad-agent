@@ -5,7 +5,7 @@
   <img src="docs/img/hero/repository-map.svg" alt="Build the builders: a pixel-art robot assembles its successor, which builds another robot, beneath satellites and a distant laser battle" width="640">
 </picture>
 
-# cad-agent
+# <a href="docs/practice/share-badge.md"><picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/img/hero/made-with-cad-agent-still.svg"><img src="docs/img/hero/made-with-cad-agent.svg" alt="cad-agent" width="248" height="56"></picture></a>
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
 [![Browser checks](https://github.com/Valpatel/cad-agent/actions/workflows/webkit.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/webkit.yml)
@@ -69,13 +69,6 @@ independent review and how to help. cad-agent collects no telemetry; your agent 
 ### Show our badge
 
 Built something with cad-agent? [Add our badge](docs/practice/share-badge.md) to your project.
-
-<a href="docs/practice/share-badge.md">
-  <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="docs/img/hero/made-with-cad-agent-still.svg">
-    <img src="docs/img/hero/made-with-cad-agent.svg" alt="Made with cad-agent — get the badge" width="248" height="56">
-  </picture>
-</a>
 
 <a id="extras"></a>
 

@@ -25,10 +25,15 @@
  },
  "banner": {
   "file": "docs/img/gyropup.jpg",
-  "made": "node tools/site-model-poster.mjs: the model's poster on a dark card with the project's words",
+  "made": "node tools/site/figures/site-model-poster.mjs: the model's poster on a dark card with the project's words",
   "model": "web/models/gyropup.json",
-  "revision": "b79896a446cc57391fcd3707c0b898b6f80d2f3d",
+  "revision": "0f713c432f73fba0d1a0fddc26cc04b71cdc6677",
   "width": 1600,
-  "height": 733
+  "height": 733,
+  "model_sha256": "fb603b5731726be07fbcb5cd415f3cee758449529df326851cc745cb8edc00f8",
+  "binary_sha256": "e249afcbd10f5e0f7d796200b81f7696ab70ba4d8025c3522a26653708b29180",
+  "poster": "tools/site/assets/models/gyropup.webp",
+  "poster_sha256": "b751c512d541a0441bf085d146b119d50b9853d9ef56882f7ea528e6baf4cb63",
+  "sha256": "f83ca3d360d49e74e50cd55ba6df15f391827ad03bda41ec7934fec2e684aeac"
  }
 }

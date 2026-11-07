@@ -31,3 +31,10 @@ flowchart TD
 | Quickstart evaluation | [quickstart_eval.py](quickstart_eval.py); grades transcript/file evidence, not physical quality |
 
 Run commands from the repository root. Long builds and test suites use the maintainer compute workflow; generators state their inputs and limits in their docstrings. [Repository](../README.md) · [Guides](../docs/README.md) · [Tests](../tests/README.md)
+
+
+The homepage Gyropup model is regenerated from its current CAD collector, not old STEP exports. Run
+`gyropup_showcase.py --only model --gyropup <clean-checkout> --toolkit <pinned-toolkit> --output <fresh-directory>`
+on the compute fleet using the product's recorded CAD runtime. Review the recorded inputs, included/omitted members
+and source/output hashes, then run `node tools/site/figures/site-model-poster.mjs` for the matching poster and project
+card. Model updates leave historical FEA pictures and their evidence untouched.

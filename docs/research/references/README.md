@@ -9,9 +9,9 @@ Load the source inventory
 
 ```mermaid
 flowchart TD
-    C["docs/research/references.yaml<br/>core: read, cited sources"]
+    C["docs/research/<br/>references.yaml<br/>core: read, cited sources"]
     L["cadagent.review.references<br/>load(): one id space"]
-    S["docs/research/references/*.yaml<br/>schema-2 shards"]
+    S["docs/research/references/<br/>*.yaml · schema-2 shards"]
     C --> L
     S --> L
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c

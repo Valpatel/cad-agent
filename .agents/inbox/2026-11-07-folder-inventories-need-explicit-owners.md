@@ -182,6 +182,15 @@ does not identify visible text walls; retain the actual measurement and verify t
 The corrected local draft measured 1,135 px with the unchanged consumer and all six planted geometry controls
 passing, no page errors and clean owned-process cleanup. Current-head CI in both engines remains required.
 
+Both engines' complete `2921db4e` browser consumers then passed the wall checks but found the reference diagram
+649 px wide against the desktop allowance of 641 px. The same authored diagram had passed on `ec21ca2b`; the
+rendering difference's cause is not established. Keep these failures (Chromium log SHA-256
+`e4a0b58a1afb506b05febfa01183d30085d16f9742eb305f592b01e4bf2124b4`, WebKit
+`41a341b193d452287f4aac1356b6058411d8eb06ea162718cf48549cfe5f7940`). Explicit line breaks at path boundaries
+make the local revised drawing 552 px in both themes, leaving room without shrinking labels or dropping nodes
+and edges; the page's wall remains 1,135 px. Avoid authored layouts that only barely pass in one drawing environment.
+The full new-head consumers still decide acceptance; do not infer that wrapping identified the variation's cause.
+
 ## Limits
 
 Relative file/directory destinations are checked; public route/anchor consumers remain the existing site build and browser checks. Source-only Markdown anchors and remote availability are not newly claimed. A diagram rendering successfully does not prove its semantic correctness or physical CAD performance. Upstream and data descendants retain their recorded layouts; parent ownership does not turn them into reviewed toolkit source.

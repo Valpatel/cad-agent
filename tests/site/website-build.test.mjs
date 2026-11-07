@@ -482,7 +482,8 @@ test('doc pages carry the page tree, with this page marked', async () => {
   assert.deepEqual(listed(inTree ?? ''), heads, 'the outline under the current page lists every h2/h3');
   const rail = toolkit.match(/<nav class="doc-rail" aria-labelledby="rail-title">([\s\S]*?)<\/nav>/)?.[1];
   assert.deepEqual(listed(rail ?? ''), heads, 'the right-hand outline lists every h2/h3');
-  assert.match(toolkit, /<body[^>]*><a class="skip-link" href="#main:content">Skip to content<\/a>/);
+  // The provider exclusion is a comment; the skip link must still be the body's first actual element.
+  assert.match(toolkit, /<body[^>]*><!--email_off--><a class="skip-link" href="#main:content">Skip to content<\/a>/);
   assert.match(toolkit, /<div class="doc-main" id="main:content" tabindex="-1">/);
   // The rail is named once, by its visible title; the outline in the tree keeps its own name inside "Pages and contents".
   assert.match(toolkit, /<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page<\/p><ol class="cad-nav-outline cad-nav-rail">/);

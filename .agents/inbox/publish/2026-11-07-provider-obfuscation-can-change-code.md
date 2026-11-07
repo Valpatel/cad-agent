@@ -43,6 +43,14 @@ source package identifiers remain present, and rejects missing, duplicate, late 
 is a protocol-contract test, not a simulated Cloudflare service. Ordinary deployed readbacks still
 decide whether the provider honors the exclusion.
 
+The first candidate, `e6885a706b48d99539c375f8ac258fdcf1933eb6`, passed its two selected local build checks
+but failed Chromium job `128545856882` in run `42419896239`: the existing page-tree test still required
+the skip-link tag immediately after the body tag. It did not account for the newly required exclusion
+comment. The corrected assertion requires that exact comment followed by the same skip link, preserving
+its position as the first actual body element. Keep the original failure; two selected tests never
+established that every existing frame consumer passed. The complete build-consumer file must now run.
+The retained job log SHA256 is `3537dfd1c41923fec2f9fae1be01df5c85dbbc42773f401ccc433c58c968db46`.
+
 Do not normalize altered code text away in a publication checker. A successful response, correct
 revision footer or readable drawing cannot substitute for preserved authored instructions. Keep the
 failed run immutable, review the changed publisher, and bind the next campaign to its actual release.
@@ -52,5 +60,7 @@ failed run immutable, review the changed publisher, and bind the next campaign t
 The initial failure did not exercise application JavaScript, the provider's decode script or a second
 host. No general browser failure, malicious interference, zone-setting diagnosis or broader cache-policy
 acceptance follows from it. A locally present exclusion comment is not proof of a corrected public page.
+The exclusion covers all authored body text, including any future email addresses, rather than only the
+three package identifiers that exposed this incident.
 
 [Publication incidents](README.md) · [Symptom index](../../SYMPTOM-INDEX.md)

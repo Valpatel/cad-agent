@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| Recovering a real source removes the registry tests' unverified example | [Keep a planted unverified citation](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md#retain-unverified-source-controls-after-recovering-real-citations) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
 | A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |
 | A public probe fails before launch because ambient Node or a default browser cache differs | [Bind existing publication runtimes explicitly](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md) |

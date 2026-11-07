@@ -251,7 +251,7 @@ Studio before slicing. It does not certify GUI compatibility, supports, adhesion
 <summary>Why it is built, not adopted, and its limits</summary>
 
 - **[rectpack](https://github.com/secnot/rectpack)** (Apache-2.0) implements the same MaxRects method. It has had no
-  release since 2021, and cad-agent's core install is PyYAML and NumPy only. The method is about a hundred lines
+  release since 2021, and cad-agent's core install is PyYAML, NumPy and packaging. The method is about a hundred lines
   here, in integer micrometres, with its tests.
 - **PrusaSlicer** arranges with [libnest2d](https://github.com/tamasmeszaros/libnest2d) (no-fit polygons, C++).
   **Bambu Studio's own arrange** (`--arrange 1`) re-places and re-turns parts on every run and ignores filaments.
@@ -901,12 +901,18 @@ numbers, and a `categories` entry that is not a list, names a part that does not
 are artefacts of the idealised support, so the design stress and every failure view leave them out ("support
 patches": capped at the design stress, never shown as failed, their share of the surface reported).
 
+The `fea` extra installs the optional Intel PARDISO acceleration on x86-64 Linux and Windows. macOS (including
+Apple Silicon) and other architectures use the existing SciPy solver, or multigrid-preconditioned CG for large
+systems. `cad-agent update` respects those platform requirements when retaining installed extras. This changes
+dependency selection, not the equations or convergence checks.
+
 <details>
 <summary>On aarch64 Linux (ARM compute hosts), gmsh does not install from PyPI</summary>
 
-PyPI has no aarch64 Linux wheel and no source package for gmsh 4.15.2 (nor for any gmsh release), so `pip install
-gmsh`, and with it the `fea` extra, stops with "No matching distribution". pypardiso cannot install there either: it
-needs Intel MKL, which has no aarch64 wheel. conda-forge builds gmsh for aarch64. Put it in its own environment with
+As checked on 2026-11-07, PyPI has no aarch64 Linux wheel or source package for gmsh 4.15.2, so `pip install
+gmsh`, and with it a fresh PyPI-only `fea` install, still stops with "No matching distribution". The platform marker
+omits pypardiso there because its Intel MKL dependency has no aarch64 wheel; it cannot supply the missing mesher.
+conda-forge builds gmsh for aarch64. Put it in its own environment with
 micromamba and link its Python module into the project's venv:
 
 ```bash
@@ -923,8 +929,10 @@ system OpenSSL (anything that imports `hashlib` or `ssl` first does), and a libr
 newer one. Preload the environment's own OpenSSL in the run's launcher:
 `LD_PRELOAD=<gmsh-env>/lib/libcrypto.so.3:<gmsh-env>/lib/libssl.so.3`.
 
-Without pypardiso the solver falls back to SciPy, and to pyamg for big meshes, which is slower. pyamg has no aarch64
-wheel, so pip builds it from source; that needs a C++ compiler. A conda-forge gmsh is a different build from the PyPI
+Without pypardiso the solver falls back to SciPy, and to pyamg for big meshes, which is slower. As checked on
+2026-11-07, pyamg 5.4.1 has no Linux aarch64 wheel, so pip builds it from source; that needs a C++ compiler.
+conda-forge also distributes pyamg for Linux aarch64. macOS ARM wheels exist for gmsh 4.15.2 and pyamg 5.4.1;
+macOS is a different installation case from Linux ARM. A conda-forge gmsh is a different build from the PyPI
 wheel and can mesh a part slightly differently, so compare before and after on one build. gmsh reads the STEP with
 its own OCCT: the newest conda-forge build of 4.15.2 (build 11) links OCCT 8.0.1, and one of the two build-10 variants
 links 8.0.0, while cadquery-ocp 7.9.3.1.1, builds 0 to 9 and the other build-10 variant use OCCT 7.9.3.

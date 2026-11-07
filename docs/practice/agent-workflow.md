@@ -196,6 +196,39 @@ flowchart TD
 7. **Independent review** by `cad-pr-reviewer` (or a separate Codex session); answer and resolve every thread.
 8. **Merge under the repo's rules**, then check the issues closed and tick the tracking issue.
 
+### Goals and issues
+
+An existing goal graph explains **why** the work matters; GitHub issues carry the work and its evidence. Projects
+without a graph use the same issue workflow. Agents read the graph before choosing work, preserve an issue's
+`Goal:` link and return the published result to that goal when authorized.
+
+<details>
+<summary>Optional configuration and a recoverable handoff</summary>
+
+```yaml
+# Agent-readable metadata beside the existing cad: section.
+project:
+  goals:
+    tool: graphdone
+    project: example-project
+```
+
+`tool` names the project's existing service; another service works too. The CAD loader reads only `cad:`, so this
+optional block changes no builds and adds no network client. Access comes from the organization's available
+tool or private skill, not repository endpoints or credentials.
+
+An issue can name `Goal: example-goal-17` or a public goal link. Use a non-sensitive label for private graphs.
+The issue owns its checklist, work claim and PR; the goal receives the issue/PR links, published commit and
+relevant receipts. State the evidence's limits: a merged issue does not prove the whole goal is complete.
+If the tool is unavailable or writing to it is outside the task's authorization, leave the shareable handoff in
+the issue and report the goal update as pending. Do not fabricate a successful update or require a connector.
+
+`cad-resume` reads this mapping when available, reports open goals with no open issues and unresolved goal
+links, and distinguishes unavailable access from an empty graph. It remains read-only. Explicit user work
+takes priority over selecting a new graph task.
+
+</details>
+
 ### Work claims
 
 Agents on different tools and machines share issues with comments whose first line is machine-readable:

@@ -613,6 +613,31 @@ def test_npm_online_results_do_not_cross_package_contexts(tmp_path, monkeypatch)
     assert not rows["tools/mermaid/package.json"].get("advisories")
 
 
+@pytest.mark.parametrize("with_rebuild", [False, True])
+def test_real_esbuild_hook_exception_cannot_accept_the_same_version_in_the_site(tmp_path, with_rebuild):
+    root = checkout(tmp_path)
+    package = json.loads((root / ra.NPM_PACKAGE).read_text())
+    package["devDependencies"]["esbuild"] = "0.28.2"
+    write(root, ra.NPM_PACKAGE, json.dumps(package))
+    locked = json.loads((root / ra.NPM_LOCK).read_text())
+    locked["packages"][""]["devDependencies"]["esbuild"] = "0.28.2"
+    locked["packages"].update(good_pkg("esbuild", "0.28.2", hasInstallScript=True))
+    write(root, ra.NPM_LOCK, json.dumps(locked))
+    if with_rebuild:
+        rebuild_context(root, name="esbuild", version="0.28.2", hasInstallScript=True)
+    # Exercise the actual committed policy and production matcher, not a duplicate test exception.
+    report = run(root, accepted=ra.load_accepted(ROOT / ra.ACCEPTED))
+    hooks = [f for f in report["findings"] if f["check"] == "npm-install-script" and f["subject"] == "npm:esbuild"]
+    assert len(hooks) == (2 if with_rebuild else 1)
+    site = [f for f in hooks if "tools/site/package.json:" in f["evidence"]]
+    assert len(site) == 1 and not site[0].get("accepted")
+    assert site[0]["fp"] == "59651950683e8b3f", "retain the existing site identity deliberately"
+    if with_rebuild:
+        producer = [f for f in hooks if "tools/mermaid/package.json:" in f["evidence"]]
+        assert len(producer) == 1 and producer[0].get("accepted")
+        assert producer[0]["fp"] != site[0]["fp"]
+
+
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):
     r = run(checkout(tmp_path))
     assert f"catalog.json, {ra.REGISTRY}, docs/research/landscape.json" in ra.to_markdown(r)

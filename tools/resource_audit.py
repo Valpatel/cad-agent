@@ -882,9 +882,9 @@ def check_npm_context(rep, net, npm_audit, directory):
             if e.get('hasInstallScript'):
                 where = f" (only on {', '.join(e['os'])})" if e.get('os') else ''
                 rep.add('npm-install-script', 'medium', sid, f'{name} runs an install script{where}',
-                        f"{e['path']} {e.get('version')}: hasInstallScript" + (', optional' if e.get('optional') else ''),
+                        f"{package}: {e['path']} {e.get('version')}: hasInstallScript" + (', optional' if e.get('optional') else ''),
                         'Read the script; in CI prefer npm ci --ignore-scripts where the package works without it.',
-                        key=str(e.get('version') or ''))   # a script read at one version says nothing about the next
+                        key=str(e.get('version') or '') if directory == NPM_DIR else f"{package}:{e.get('version') or ''}")   # a script read at one version says nothing about the next
             if not e.get('license'):
                 rep.add('npm-no-licence', 'low', sid, f'{name} declares no licence', f"{e['path']} {e.get('version')}",
                         'Check its repository for a licence before relying on it.')

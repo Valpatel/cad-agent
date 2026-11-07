@@ -54,5 +54,5 @@ The model viewer and FEA viewer inherit the shared default. Projects with copied
   `sim/web/moxie/face.js`, `sim/web/css/hud.css`), MIT, © 2026 moxie-robot-parent-app contributors.
 - three.js r160 (`three@0.160.0`), MIT, © 2010–2023 three.js authors. Unmodified.
 - Inter (the Inter Project Authors) and JetBrains Mono (JetBrains), SIL Open Font License 1.1. Unmodified.
-- Mermaid 11.17.2 (`mermaid@11.17.2` core entry), MIT, © 2014–2022 Knut Sveidqvist. Derived security rebuild with locked DOMPurify3.4.17/KaTeX0.18.10; [producer](../../../tools/mermaid/README.md), [receipt/input record](vendor/mermaid/SOURCE.json) and [all emitted dependency licences](vendor/mermaid/THIRD-PARTY-LICENSES.txt). The original bundle hash is retained in the patch record.
+- Mermaid 11.17.2 (`mermaid@11.17.2` core entry), MIT, © 2014–2022 Knut Sveidqvist. Derived security rebuild with locked DOMPurify3.4.17/KaTeX0.18.10; [producer](https://github.com/Valpatel/cad-agent/blob/dev/tools/mermaid/README.md), [receipt/input record](vendor/mermaid/SOURCE.json) and [all emitted dependency licences](vendor/mermaid/THIRD-PARTY-LICENSES.txt). The original bundle hash is retained in the patch record.
 - fflate 0.8.3 (`fflate@0.8.3`, `esm/browser.js`), MIT, © 2026 Arjun Barrett. Unmodified; it replaces three.js r160's bundled fflate 0.6.9.

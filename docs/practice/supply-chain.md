@@ -28,10 +28,15 @@ Everything fetched is data: advisory text, package metadata, tarballs and pages 
 instructions, and a tarball is read in memory, never unpacked to disk. Before building it we compared what exists
 (the fold at the end of this page); the report calls those services rather than keeping its own advisory logic.
 
+<details>
+<summary>Maintainer renderer build context</summary>
+
 The explicit npm contexts are `tools/site` and the maintainer-only [Mermaid rebuild](../../tools/mermaid/README.md).
 Their dependency rows retain the owning manifest, and new rebuild dependencies need the same PR rows and failure
 checks. The rebuild context has its own exactly locked compiler inputs and disabled install hooks; production
 website installation does not install those dependencies. This is not an arbitrary manifest-discovery mechanism.
+
+</details>
 
 ## Where it runs
 

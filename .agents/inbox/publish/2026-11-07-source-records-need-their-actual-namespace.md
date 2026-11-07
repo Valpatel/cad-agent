@@ -11,3 +11,9 @@ Search found [repository ownership and served namespaces](../2026-11-06-source-s
 **Rule:** derive each expected artifact location from the released producer. Distinguish ordinary served assets from immutable source metadata; record both hosts/routes explicitly. Keep source metadata byte binding and actual ordinary-site asset comparisons. Save raw failures before assertions and preserve the original failed attempt when correcting the recipe.
 
 **Limits:** a correct immutable source record does not prove the website served its associated model. Those four ordinary assets, actual viewer controls and both stable deployment revisions were separately checked in the complete accepted run ([actual acceptance](https://github.com/Valpatel/cad-agent/issues/427#issuecomment-6705278005)). No site route or cache setting was changed.
+
+## A copied kit README also needs its own namespace
+
+On 2026-11-07, #432 at `b6c7b16634e776ab82b434c0ac0813705926d34f` added `../../../tools/mermaid/README.md` to the kit README's credits. The repository path was correct, but the site also copies that README into `kit/README.md`. Actual Chromium job128380592823 ran `node --test tests/site/website-*.test.mjs`:130 passed, one failed with `kit/README.md → ../../../tools/mermaid/README.md` ([independent finding](https://github.com/Valpatel/cad-agent/pull/432#discussion_r4501363521)).
+
+Use a canonical repository source URL for a producer that is not part of the copied kit. Preserve the existing Markdown-twin local-link validator and require the corrected built product to pass it; adding the missing repository file or accepting a relative pathname cannot establish its served destination. This was a pre-merge CI failure, not evidence that a bad production page had been accepted.

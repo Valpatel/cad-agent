@@ -2,6 +2,8 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
+| A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |
 | A public probe fails before launch because ambient Node or a default browser cache differs | [Bind existing publication runtimes explicitly](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md) |
 | A tracked SOURCE JSON gets404 at an assumed website route | [Use the producer's actual source-record namespace](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md) |
 | A provider request fails while a real viewer works, or generic GET and browser HTML differ | [Require matching enforced CSP evidence](inbox/publish/2026-11-07-provider-failures-need-matching-csp-evidence.md) |

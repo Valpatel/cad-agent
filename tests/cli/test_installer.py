@@ -322,11 +322,116 @@ def test_a_cad_agent_from_somewhere_else_on_path_is_left_alone(world):
     assert len((home / "uv-calls.log").read_text().splitlines()) == 2, "installed again from the checkout"
 
 
+def _owned_windows_command(argv, env, cwd, stdout, stderr, timeout, status):
+    """Test-only anonymous Job Object; a trusted trampoline joins before spawning the command."""
+    import ctypes
+    import time
+    from ctypes import wintypes as w
+
+    class Basic(ctypes.Structure):
+        _fields_ = [('process_time', ctypes.c_longlong), ('job_time', ctypes.c_longlong),
+                    ('flags', w.DWORD), ('min_working_set', ctypes.c_size_t),
+                    ('max_working_set', ctypes.c_size_t), ('process_limit', w.DWORD),
+                    ('affinity', ctypes.c_size_t), ('priority', w.DWORD), ('scheduling', w.DWORD)]
+
+    class IO(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_ulonglong) for name in
+                    ('read_ops', 'write_ops', 'other_ops', 'read_bytes', 'write_bytes', 'other_bytes')]
+
+    class Extended(ctypes.Structure):
+        _fields_ = [('basic', Basic), ('io', IO), ('process_memory', ctypes.c_size_t),
+                    ('job_memory', ctypes.c_size_t), ('peak_process', ctypes.c_size_t),
+                    ('peak_job', ctypes.c_size_t)]
+
+    class Accounting(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_longlong) for name in ('user', 'kernel', 'period_user', 'period_kernel')] + [
+            (name, w.DWORD) for name in ('page_faults', 'total', 'active', 'terminated')]
+
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateJobObjectW.argtypes = [w.LPVOID, w.LPCWSTR]
+    kernel.CreateJobObjectW.restype = w.HANDLE
+    kernel.SetInformationJobObject.argtypes = [w.HANDLE, ctypes.c_int, w.LPVOID, w.DWORD]
+    kernel.QueryInformationJobObject.argtypes = [w.HANDLE, ctypes.c_int, w.LPVOID, w.DWORD, w.LPVOID]
+    kernel.TerminateJobObject.argtypes = [w.HANDLE, w.UINT]
+    kernel.CloseHandle.argtypes = [w.HANDLE]
+    job = kernel.CreateJobObjectW(None, None)
+    assert job, ctypes.get_last_error()
+    child = None
+    errors = []
+
+    def active():
+        row = Accounting()
+        assert kernel.QueryInformationJobObject(job, 1, ctypes.byref(row), ctypes.sizeof(row), None), ctypes.get_last_error()
+        return row.active
+
+    try:
+        limits = Extended()
+        limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE; no breakaway permission.
+        assert kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)), ctypes.get_last_error()
+        os.set_handle_inheritable(job, True)
+        startup = subprocess.STARTUPINFO()
+        startup.lpAttributeList = {'handle_list': [job]}
+        trampoline = r'''
+import ctypes,json,subprocess,sys
+from ctypes import wintypes as w
+k=ctypes.WinDLL('kernel32',use_last_error=True)
+k.GetCurrentProcess.restype=w.HANDLE
+k.AssignProcessToJobObject.argtypes=[w.HANDLE,w.HANDLE]
+k.CloseHandle.argtypes=[w.HANDLE]
+handle=int(sys.argv[1])
+assert k.AssignProcessToJobObject(handle,k.GetCurrentProcess()),ctypes.get_last_error()
+assert k.CloseHandle(handle),ctypes.get_last_error()
+sys.exit(subprocess.call(json.loads(sys.argv[2])))
+'''
+        # Until assignment this trusted launcher can only join the job, not start installers.
+        child = subprocess.Popen([sys.executable, '-c', trampoline, str(job), json.dumps(argv)],
+                                 env=env, cwd=cwd, stdout=stdout, stderr=stderr, stdin=subprocess.DEVNULL,
+                                 startupinfo=startup, close_fds=True)
+        status['trampoline_pid'] = child.pid
+        try:
+            status.update(finished=True, exit=child.wait(timeout=timeout))
+        except subprocess.TimeoutExpired:
+            status['timed_out'] = True
+            raise
+    except BaseException as exc:
+        status['original_error'] = type(exc).__name__ + ': ' + str(exc)
+        raise
+    finally:
+        primary_error = sys.exc_info()[0] is not None
+        try:
+            remaining = active()
+            status['active_before_cleanup'] = remaining
+            if remaining:
+                assert kernel.TerminateJobObject(job, 124), ctypes.get_last_error()
+            # Also settle a launcher interrupted before its self-assignment; it cannot have spawned commands.
+            if child is not None and child.poll() is None:
+                child.terminate()
+            if child is not None:
+                child.wait(timeout=5)
+            deadline = time.monotonic() + 10
+            while active() and time.monotonic() < deadline:
+                time.sleep(.02)
+            status['active_after_cleanup'] = active()
+            status['owned_processes_quiescent'] = status['active_after_cleanup'] == 0 and (child is None or child.poll() is not None)
+            assert status['owned_processes_quiescent'], 'owned Windows job did not settle'
+        except BaseException as exc:
+            status['owned_processes_quiescent'] = False
+            errors.append(type(exc).__name__ + ': ' + str(exc))
+        finally:
+            if not kernel.CloseHandle(job):
+                errors.append('CloseHandle: ' + str(ctypes.get_last_error()))
+        if errors:
+            status['cleanup_errors'] = errors
+            if not primary_error:
+                raise RuntimeError('; '.join(errors))
+    return status['exit']
+
+
 @pytest.mark.skipif(os.name != 'nt' or os.environ.get('CAD_AGENT_REAL_INSTALLER') != '1',
                     reason='explicit real Windows installer study only; downloads CAD dependencies')
-def test_actual_windows_installer_body_and_uv_receipt(tmp_path):
+@pytest.mark.parametrize('shell', ['powershell', 'pwsh'])
+def test_actual_windows_installer_body_and_uv_receipt(tmp_path, shell):
     """Opt-in real body/uv/exit-3 consumer. Fast guards above retain their separate scope."""
-    shell = os.environ['CAD_AGENT_INSTALLER_SHELL']
     assert shell in ('powershell', 'pwsh') and shutil.which(shell), 'the named PowerShell must actually run'
     base = Path(os.environ['CAD_AGENT_INSTALL_EVIDENCE_DIR']) / shell
     base.mkdir(parents=True, exist_ok=False)
@@ -345,17 +450,25 @@ def test_actual_windows_installer_body_and_uv_receipt(tmp_path):
     expected = '02cbc3c9cef53ef34a97fb24c14a133499af91ec'
     quote = lambda value: "'" + str(value).replace("'", "''") + "'"
     result = {'shell': shell, 'ok': False, 'expected_commit': expected, 'completed': []}
+    import time
+    deadline = time.monotonic() + 30 * 60  # five minutes remain for cleanup/upload before the job's wall.
 
     def run(name, argv, accepted=(0,), timeout=1200):
         (base / (name + '-command.json')).write_text(json.dumps(argv))
         status = {'finished': False}
         try:
+            remaining = min(timeout, deadline - time.monotonic() - 20)
+            assert remaining > 0, 'study deadline reached before the next command'
             with (base / (name + '.stdout')).open('w') as out, (base / (name + '.stderr')).open('w') as err:
-                p = subprocess.run(argv, env=env, cwd=home, stdout=out, stderr=err, timeout=timeout)
-            status = {'finished': True, 'exit': p.returncode}
+                code = _owned_windows_command(argv, env, home, out, err, remaining, status)
         finally:
-            (base / (name + '-status.json')).write_text(json.dumps(status))
-        assert p.returncode in accepted, f'{name}: {status}; raw command/stdout/stderr retained'
+            primary_error = sys.exc_info()[0] is not None
+            try:
+                (base / (name + '-status.json')).write_text(json.dumps(status))
+            except BaseException:
+                if not primary_error:
+                    raise
+        assert code in accepted and status['owned_processes_quiescent'], f'{name}: {status}; raw command/stdout/stderr retained'
         result['completed'].append(name)
         return (base / (name + '.stdout')).read_bytes().decode('utf-8-sig', errors='replace')
 
@@ -374,6 +487,16 @@ def test_actual_windows_installer_body_and_uv_receipt(tmp_path):
         tag = run('tag-pin', ['git', 'ls-remote', 'https://github.com/Valpatel/cad-agent.git',
                               'refs/tags/v0.26.1'], timeout=60).split()[0]
         assert tag == expected, 'released source drift; no installation started'
+        worker = ("import subprocess,sys,time; "
+                  "subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); "
+                  "sys.exit(7)")
+        run('lifecycle-child-failure', [sys.executable, '-c', worker], accepted=(7,), timeout=10)
+        with pytest.raises(subprocess.TimeoutExpired):
+            run('lifecycle-timeout', [sys.executable, '-c', worker.replace('sys.exit(7)', 'time.sleep(60)')], timeout=3)
+        timeout_record = json.loads((base / 'lifecycle-timeout-status.json').read_text())
+        assert timeout_record['timed_out'] and timeout_record['owned_processes_quiescent']
+        assert timeout_record['active_after_cleanup'] == 0
+        result['actual_child_grandchild_lifecycle_controls'] = True
         # Both calls execute the exact canonical checksum/download/child procedure and the real installer body.
         first = ps('first-install', _checked_block('powershell'))
         assert 'installing the cad-agent command' in first
@@ -489,4 +612,9 @@ print(json.dumps({'ok':True,'actual_os_denial':error,'installed':result,'privile
         result.update(ok=True, actual_exit_three=True, actual_receipt_extras=['cad', 'site'],
                       fallback='actual OS error1314 in privilege-reduced disposable child; real agentkit copy install')
     finally:
-        (base / 'result.json').write_text(json.dumps(result, indent=2))
+        primary_error = sys.exc_info()[0] is not None
+        try:
+            (base / 'result.json').write_text(json.dumps(result, indent=2))
+        except BaseException:
+            if not primary_error:
+                raise

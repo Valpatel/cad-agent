@@ -94,13 +94,8 @@ jobs:
   # Execute the documented PowerShell checksum/failure/cleanup procedure on Windows, with inert download/child
   # fixtures on ordinary runs. The explicit manual evidence input also exercises the real installer below.
   installer-windows:
-    name: installer-windows
     runs-on: windows-2025
-    timeout-minutes: ${{ inputs.installer_evidence && 35 || 5 }}
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.installer_evidence && '["powershell","pwsh"]' || '["pwsh"]') }}
+    timeout-minutes: ${{ inputs.installer_evidence && 65 || 5 }}
     permissions:
       contents: read
     steps:
@@ -117,14 +112,20 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.installer_evidence
         env:
           CAD_AGENT_REAL_INSTALLER: '1'
-          CAD_AGENT_INSTALLER_SHELL: ${{ matrix.shell }}
           CAD_AGENT_INSTALL_EVIDENCE_DIR: ${{ runner.temp }}/installer-evidence
         run: python -m pytest -q tests/cli/test_installer.py -k actual_windows_installer_body --basetemp "${{ runner.temp }}/installer-pytest"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always() && github.event_name == 'workflow_dispatch' && inputs.installer_evidence
         with:
-          name: installer-evidence-${{ matrix.shell }}
-          path: ${{ runner.temp }}/installer-evidence
+          name: installer-evidence
+          # Keep receipts/commands/logs and the actual tiny STL, not multi-GB cloned/CAD/cache environments.
+          path: |
+            ${{ runner.temp }}/installer-evidence/*/*.json
+            ${{ runner.temp }}/installer-evidence/*/*.stdout
+            ${{ runner.temp }}/installer-evidence/*/*.stderr
+            ${{ runner.temp }}/installer-evidence/*/*.toml
+            ${{ runner.temp }}/installer-evidence/*/*.ps1
+            ${{ runner.temp }}/installer-evidence/*/home/windows-box.stl
           if-no-files-found: error
 
   # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/practice/supply-chain.md): offline checks only,

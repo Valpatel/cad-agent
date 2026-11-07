@@ -19,8 +19,9 @@ a model larger than the printer on a bed of that size, with the wipe tower and b
 for looking at only, never for printing.
 
 The window is found with ``xwininfo`` (an X11 or XWayland display), as the new PrusaSlicer window whose title holds
-the model's name (``Untitled`` for an STL), and screenshotted with ImageMagick's ``import -window``. Only processes run with this view's own
-``--datadir`` are ever stopped, by PID: other PrusaSlicer windows, yours or another session's, are left alone.
+the model's name (``Untitled`` for an STL), and screenshotted with ImageMagick's ``import -window``. Stopping uses
+Linux pidfds and revalidates actual NUL-delimited Prusa argv and start time before each signal. Generic wrappers
+and processes whose identity cannot be established are not signalled; a surviving child is not reported as closed.
 
 PrusaSlicer 2.9 shares the objects of a project out among its virtual beds by position; an assembly meant to stay
 together should be one object with a volume per part (``prusa3mf.write_project``). What the window shows is PrusaSlicer's reading of the file; it
@@ -48,6 +49,7 @@ WINDOW = (1920, 1172)
 WINDOW_TIMEOUT = 180.0
 MAX_PRINT_HEIGHT = 1200.0      # PrusaSlicer 2.9 refuses a larger max_print_height ("Value out of range")
 _MARK = '.cadagent-prusa-view'
+_PROC = Path('/proc')
 _WINDOW_LINE = re.compile(r'^\s*(0x[0-9a-fA-F]+) "(.*)": \("prusa-slicer" "PrusaSlicer"\)\s+(\d+)x(\d+)')
 _VERSION = re.compile(r'PrusaSlicer-(\d+(?:\.\d+)+)')
 
@@ -164,33 +166,67 @@ def has_display() -> bool:
     return bool(os.environ.get('DISPLAY'))
 
 
-def _prusa_argv0(arg0: str) -> bool:
-    name = Path(arg0).name.lower()
-    return 'prusa' in name or name in ('flatpak', 'bwrap')
+def _owned_argv(argv: Sequence[str], data_dir: Path) -> bool:
+    """Match actual argument boundaries, not the lossy command text printed by ps."""
+    if not argv:
+        return False
+    name = Path(argv[0]).name.lower()
+    args = list(argv[1:])
+    if name == 'flatpak':
+        if not args or args[0] != 'run':
+            return False
+        app = next((i for i in range(1, len(args)) if not args[i].startswith('-')), None)
+        if (app is None or args[app] != slicer_prusa.FLATPAK_ID
+                or '--command=prusa-slicer' not in args[1:app]):
+            return False
+        args = args[app + 1:]
+    elif name not in {'prusa-slicer', 'prusaslicer', 'prusa-slicer.appimage', 'prusaslicer.appimage'}:
+        return False
+    # Reject duplicates too: another value must not override the owned datadir.
+    values = []
+    for i, arg in enumerate(args):
+        if arg == '--':
+            break
+        if arg == '--datadir':
+            if i + 1 == len(args):
+                return False
+            values.append(args[i + 1])
+        elif arg.startswith('--datadir='):
+            values.append(arg.partition('=')[2])
+    return values == [str(data_dir)]
+
+
+def _process_identity(pid: int):
+    """Linux start time and NUL-delimited argv; an unreadable/changing process is unowned."""
+    proc = _PROC / str(pid)
+    try:
+        before = (proc / 'stat').read_text().rsplit(')', 1)[1].split()[19]
+        raw = (proc / 'cmdline').read_bytes()
+        after = (proc / 'stat').read_text().rsplit(')', 1)[1].split()[19]
+        if before != after or not raw.endswith(b'\0'):
+            return None
+        return before, tuple(os.fsdecode(arg) for arg in raw[:-1].split(b'\0'))
+    except (OSError, IndexError, ValueError):
+        return None
 
 
 def own_processes(data_dir: Path, ps_output: Optional[str] = None) -> List[int]:
-    """PIDs of the PrusaSlicer processes (and their flatpak wrappers) run with ``--datadir data_dir``. Only a program
-    named like PrusaSlicer, ``flatpak`` or ``bwrap`` counts, never a shell whose command line mentions the folder, and
-    never this process or its parents."""
+    """PIDs with authoritative Prusa argv and this exact datadir. ps supplies candidate PIDs only;
+    /proc supplies argument boundaries and identity. Generic shells/bwrap/other flatpaks are unowned."""
     if ps_output is None:
         try:
             ps_output = subprocess.run(['ps', '-ww', '-eo', 'pid=,args='], capture_output=True, text=True, timeout=30).stdout
         except (OSError, subprocess.SubprocessError):
             return []
-    needle = f'--datadir {data_dir}'
     mine = {os.getpid(), os.getppid()}
     out = []
     for line in ps_output.splitlines():
-        pid, _, args = line.strip().partition(' ')
+        pid, _, _ = line.strip().partition(' ')
         if not pid.isdigit() or int(pid) in mine:
             continue
-        args = args.strip()
-        at = args.find(needle)
-        end = at + len(needle)
-        if at < 0 or (end < len(args) and args[end] != ' ') or not _prusa_argv0(args.split(' ', 1)[0]):
-            continue
-        out.append(int(pid))
+        identity = _process_identity(int(pid))
+        if identity is not None and _owned_argv(identity[1], data_dir):
+            out.append(int(pid))
     return out
 
 
@@ -232,35 +268,68 @@ def _alive(pid: int) -> bool:
 
 
 def stop(data_dir: Path, popen: Optional[subprocess.Popen] = None, grace: float = 10.0) -> List[int]:
-    """Stop the processes run with this ``--datadir`` (and ``popen``), by PID: SIGTERM, then SIGKILL after ``grace``
-    seconds. Returns the PIDs signalled."""
+    """Stop verified Prusa processes using pidfds: SIGTERM, then SIGKILL after ``grace``.
+    Revalidate start time/argv before each signal; return only PIDs actually signalled."""
+    if not hasattr(os, 'pidfd_open') or not hasattr(signal, 'pidfd_send_signal'):
+        raise ViewError('safe PrusaSlicer stopping requires Linux pidfd support')
     pids = own_processes(data_dir)
     if popen is not None and popen.poll() is None and popen.pid not in pids:
         pids.append(popen.pid)
-    # the program itself first, its flatpak wrapper after (which exits with it)
     pids.sort(key=lambda p: p == (popen.pid if popen else None))
-    for sig in (signal.SIGTERM, signal.SIGKILL):
+    handles, sent = {}, []
+    try:
         for pid in pids:
             try:
-                os.kill(pid, sig)
-            except (ProcessLookupError, PermissionError):
-                pass
-        deadline = time.monotonic() + grace
-        while time.monotonic() < deadline:
-            if popen is not None:
-                popen.poll()
-            if not any(_alive(p) for p in pids):
-                break
-            time.sleep(0.25)
-        else:
-            continue
-        break
+                fd = os.pidfd_open(pid, 0)
+            except ProcessLookupError:
+                continue
+            except OSError as exc:
+                raise ViewError(f'cannot safely open process {pid}: {exc}') from exc
+            identity = _process_identity(pid)
+            if identity is None or not _owned_argv(identity[1], data_dir):
+                os.close(fd)
+                continue
+            handles[pid] = fd, identity
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            for pid, (fd, identity) in list(handles.items()):
+                if _process_identity(pid) != identity:
+                    del handles[pid]
+                    os.close(fd)
+                    continue
+                try:
+                    signal.pidfd_send_signal(fd, sig)
+                    if pid not in sent:
+                        sent.append(pid)
+                except ProcessLookupError:
+                    pass
+                except OSError as exc:
+                    raise ViewError(f'cannot safely signal process {pid}: {exc}') from exc
+            deadline = time.monotonic() + grace
+            while time.monotonic() < deadline:
+                if popen is not None:
+                    popen.poll()
+                if not any(_process_identity(pid) == identity and _alive(pid)
+                           for pid, (_, identity) in handles.items()):
+                    break
+                time.sleep(0.25)
+            else:
+                continue
+            break
+        remaining = [pid for pid, (_, identity) in handles.items()
+                     if _process_identity(pid) == identity and _alive(pid)]
+        if remaining:
+            raise ViewError(f'view processes did not stop: {", ".join(map(str, remaining))}')
+    finally:
+        for fd, _ in handles.values():
+            os.close(fd)
     if popen is not None:
         try:
             popen.wait(timeout=5)
         except subprocess.TimeoutExpired:
             pass
-    return pids
+        if popen.poll() is None:
+            raise ViewError(f'view process {popen.pid} is still running; not reported as closed')
+    return sent
 
 
 def work_dir(model: Path, workdir=None) -> Path:

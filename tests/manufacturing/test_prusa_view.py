@@ -137,18 +137,44 @@ def test_flatpak_gets_the_ca_file_inside_the_sandbox(monkeypatch):
     assert prusa_view.ca_file(exe) == '/my/ca.pem' and prusa_view.ca_file(exe, '/given.pem') == '/given.pem'
 
 
-def test_own_processes_match_only_this_datadir_and_prusaslicer_programs():
+def test_own_processes_match_only_this_datadir_and_prusaslicer_programs(monkeypatch):
     d = '/home/u/w/prusaslicer-datadir'
-    ps = '\n'.join([
-        f' 100 prusa-slicer --datadir {d} --load /home/u/w/view-config.ini /home/u/door.3mf',   # as ps shows it
-        f' 101 /app/bin/prusa-slicer --datadir {d} --load /home/u/w/view-config.ini /home/u/door.3mf',
-        f' 102 flatpak run --command=prusa-slicer com.prusa3d.PrusaSlicer --datadir {d} --load c m',
-        f' 103 /bin/bash -c pkill -f "prusa-slicer --datadir {d}"',          # a shell naming it: never
-        f' 104 /app/bin/prusa-slicer --datadir {d}-other --load c m',        # another view's folder
-        ' 105 /app/bin/prusa-slicer --datadir /home/u/.config/PrusaSlicer m',  # someone else's window
-        f' {os.getpid()} /usr/bin/prusa-slicer --datadir {d}',                # this process
-    ])
+    argv = {
+        100: ['prusa-slicer', '--datadir', d, '--load', 'c', 'm'],
+        101: ['/app/bin/prusa-slicer', '--datadir', d, '--load', 'c', 'm'],
+        102: ['flatpak', 'run', '--env=SSL_CERT_FILE=/etc/ca.pem', '--command=prusa-slicer',
+              slicer_prusa.FLATPAK_ID, '--datadir', d, '--load', 'c', 'm'],
+        103: ['/bin/bash', '-c', f'prusa-slicer --datadir {d}'],
+        104: ['prusa-slicer', '--datadir', d + '-other', '--load', 'c', 'm'],
+        105: ['prusa-slicer', '--datadir', '/home/u/.config/PrusaSlicer', 'm'],
+        106: ['prusa-slicer', f'--description=x--datadir {d}', '--load', 'c', 'm'],
+        107: ['my-prusa-wrapper', '--datadir', d],
+        108: ['flatpak', 'run', 'org.example.Unrelated', '--datadir', d],
+        109: ['bwrap', '--datadir', d],
+        os.getpid(): ['prusa-slicer', '--datadir', d],
+    }
+    # ps is only discovery: even identical command text cannot override actual argv boundaries.
+    ps = '\n'.join(f'{pid} ' + ' '.join(args) for pid, args in argv.items())
+    monkeypatch.setattr(prusa_view, '_process_identity', lambda pid: ('1000', tuple(argv[pid])))
     assert prusa_view.own_processes(Path(d), ps) == [100, 101, 102]
+
+
+def test_actual_proc_reader_preserves_space_arguments_and_rejects_missing_bytes(tmp_path, monkeypatch):
+    monkeypatch.setattr(prusa_view, '_PROC', tmp_path)
+    proc = tmp_path / '123'
+    proc.mkdir()
+    (proc / 'stat').write_text('123 (Prusa Slicer) ' + ' '.join(['S'] + ['0'] * 18 + ['9876']))
+    argv = ['prusa-slicer', '--datadir', '/home/u/work space/prusaslicer-datadir']
+    (proc / 'cmdline').write_bytes(b'\0'.join(os.fsencode(arg) for arg in argv) + b'\0')
+    assert prusa_view._process_identity(123) == ('9876', tuple(argv))
+    assert prusa_view._owned_argv(argv, Path(argv[2]))
+    # Same printed command text, but a single option value, must never count.
+    assert not prusa_view._owned_argv(['prusa-slicer', ' '.join(argv[1:])], Path(argv[2]))
+    assert not prusa_view._owned_argv(argv + ['--datadir', '/foreign'], Path(argv[2]))
+    assert not prusa_view._owned_argv(['prusa-slicer', '--', '--datadir', argv[2]], Path(argv[2]))
+    (proc / 'cmdline').write_bytes(b'prusa-slicer')
+    assert prusa_view._process_identity(123) is None
+    assert prusa_view._process_identity(124) is None
 
 
 TREE = '''
@@ -172,10 +198,45 @@ def test_the_new_window_titled_with_the_model_is_picked():
 def test_stop_signals_only_own_pids(monkeypatch, tmp_path):
     monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [4242])
     sent = []
-    monkeypatch.setattr(prusa_view.os, 'kill', lambda pid, sig: sent.append((pid, sig)))
+    closed = []
+    monkeypatch.setattr(prusa_view, '_process_identity', lambda pid: ('1000', ('prusa-slicer', '--datadir', str(tmp_path))))
+    monkeypatch.setattr(prusa_view.os, 'pidfd_open', lambda pid, flags: 9000)
+    monkeypatch.setattr(prusa_view.os, 'close', closed.append)
+    monkeypatch.setattr(prusa_view.signal, 'pidfd_send_signal', lambda fd, sig: sent.append((fd, sig)))
     monkeypatch.setattr(prusa_view, '_alive', lambda pid: False)
     assert prusa_view.stop(tmp_path) == [4242]
-    assert sent == [(4242, prusa_view.signal.SIGTERM)]
+    assert sent == [(9000, prusa_view.signal.SIGTERM)]
+    assert closed == [9000]
+
+
+@pytest.mark.parametrize('change_before', ['open', 'term', 'kill'])
+def test_stop_revalidates_kernel_identity_before_each_signal(monkeypatch, tmp_path, change_before):
+    monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [4242])
+    owned = ('1000', ('prusa-slicer', '--datadir', str(tmp_path)))
+    reused = ('2000', ('prusa-slicer', '--datadir', str(tmp_path)))
+    foreign = ('1000', ('unrelated', '--datadir', str(tmp_path)))
+    identities = {'open': [foreign], 'term': [owned, reused], 'kill': [owned, owned, reused]}[change_before]
+    calls, closed = [], []
+    monkeypatch.setattr(prusa_view, '_process_identity', lambda pid: identities.pop(0) if len(identities) > 1 else identities[0])
+    monkeypatch.setattr(prusa_view.os, 'pidfd_open', lambda pid, flags: 9000)
+    monkeypatch.setattr(prusa_view.os, 'close', closed.append)
+    monkeypatch.setattr(prusa_view.signal, 'pidfd_send_signal', lambda fd, sig: calls.append((fd, sig)))
+    assert prusa_view.stop(tmp_path, grace=0) == ([4242] if change_before == 'kill' else [])
+    assert calls == ([(9000, prusa_view.signal.SIGTERM)] if change_before == 'kill' else [])
+    assert closed == [9000]
+
+
+def test_stop_cannot_claim_an_unverifiable_running_child_is_closed(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    monkeypatch.setattr(prusa_view, 'own_processes', lambda d: [])
+    monkeypatch.setattr(prusa_view, '_process_identity', lambda pid: None)
+    monkeypatch.setattr(prusa_view.os, 'pidfd_open', lambda pid, flags: 9000)
+    closed = []
+    monkeypatch.setattr(prusa_view.os, 'close', closed.append)
+    child = SimpleNamespace(pid=4242, poll=lambda: None, wait=lambda timeout: None)
+    with pytest.raises(prusa_view.ViewError, match='still running; not reported as closed'):
+        prusa_view.stop(tmp_path, child, grace=0)
+    assert closed == [9000]
 
 
 def test_open_view_needs_a_display(monkeypatch, model):

@@ -6,3 +6,5 @@
   `--close` or a later `--stop` stops only that view's own process, by PID, never other PrusaSlicer windows.
   `--view-bed WxD` shows a model larger than the printer on a viewing bed with no wipe tower, for looking at only
   (#252).
+- Maintainer intake preserves the contributor's command and GUI evidence, folds its long reference, and binds
+  shutdown to actual Prusa argv/start time with Linux pidfds instead of command-text substring matches (#252).

@@ -1558,7 +1558,9 @@ what PrusaSlicer makes of it or to keep a screenshot as evidence. PrusaSlicer ru
   waits `--wait` seconds (default 10) after the window appears, for slicing and drawing, then saves it.
 - **Stopping:** `--close` stops the view after the screenshot. Without it the window stays open, and
   `cad-agent prusa-view MODEL --stop` (with the same `--workdir`) closes it later. Only processes run with this view's
-  own `--datadir` are signalled, by PID (SIGTERM, then SIGKILL). Other PrusaSlicer windows, yours or another
+  exact `--datadir` are signalled through Linux pidfds (SIGTERM, then SIGKILL), with actual Prusa argv and start time
+  rechecked before each signal. Unverifiable processes and generic wrappers are left alone; a surviving child is
+  reported as still running. Other PrusaSlicer windows, yours or another
   session's, are left alone. Never stop PrusaSlicer with `pkill -f <pattern>`: a shell whose command line holds the
   pattern is killed too.
 - **`--view-bed WxD[xH]`:** shows a model larger than the printer on a viewing bed of that size in mm, with no wipe
@@ -1567,7 +1569,7 @@ what PrusaSlicer makes of it or to keep a screenshot as evidence. PrusaSlicer ru
 - **Assemblies:** PrusaSlicer 2.9 shares the objects of a project out among its virtual beds by position, which pulls
   an assembly apart. Write an assembly to view as one object with a volume per part
   (`cadagent.manufacturing.prusa3mf.write_project`).
-- **Limits:** the flatpak cannot read `/tmp`, so keep the model, `--config` and the work folder under your home
+- **Limits:** safe stopping requires Linux pidfd support. The flatpak cannot read `/tmp`, so keep the model, `--config` and the work folder under your home
   folder. The window shows PrusaSlicer's reading of the file: it does not prove that parts fit or print well.
 
 ```bash

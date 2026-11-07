@@ -77,14 +77,14 @@ def current_source(checkout: Path, toolkit: Path):
     """Validate the product's existing conservative source closure before constructing CAD."""
     if git(ROOT, "status", "--porcelain", "--", "tools/gyropup_showcase.py", "software"):
         raise ValueError("Commit the showcase producer and toolkit changes before extraction")
+    for path in (checkout, toolkit):
+        if git(path, "status", "--porcelain"):
+            raise ValueError("Use clean isolated product and toolkit checkouts")
     helper_path = checkout / "tools/engineering/robot/readme_design.py"
     spec = importlib.util.spec_from_file_location("showcase_source", helper_path)
     helper = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(helper)
     cfg = json.loads((checkout / helper.CONFIG).read_text())
-    for path in (checkout, toolkit):
-        if git(path, "status", "--porcelain"):
-            raise ValueError("Use clean isolated product and toolkit checkouts")
     if git(toolkit, "rev-parse", "HEAD") != cfg["toolkit"]["revision"]:
         raise ValueError("Use the product's recorded CAD toolkit revision")
     # The pinned collector and the reviewed current packer must agree: no hidden
@@ -118,6 +118,8 @@ def group_rows(rows):
 
 
 def model(checkout: Path, revision: str, committed: str, toolkit: Path, output: Path) -> dict:
+    if any(output.resolve().is_relative_to(p.resolve()) for p in (checkout, toolkit)):
+        raise ValueError("Model output must be outside the product and pinned toolkit checkouts")
     helper, cfg, files = current_source(checkout, toolkit)
     if any(n == "hardware" or n.startswith("hardware.") or n == "cadagent" or n.startswith("cadagent.") for n in sys.modules):
         raise ValueError("Construct the model in a fresh process without foreign CAD imports")
@@ -182,12 +184,19 @@ def model(checkout: Path, revision: str, committed: str, toolkit: Path, output: 
                 raise ValueError("CAD construction changed tracked product files")
             packed = pack_view(manifest, output / "gyropup", title="Gyropup", view=VIEW, source=source)
         finally:
+            primary_error = sys.exc_info()[1]
             if previous_j501 is None:
                 os.environ.pop("J501_DIR", None)
             else:
                 os.environ["J501_DIR"] = previous_j501
-            if helper.tracked(checkout) != before:
-                raise ValueError("CAD construction changed tracked product files")
+            try:
+                helper.verify_public_tree(checkout, cfg)
+                if helper.tracked(checkout) != before:
+                    raise ValueError("CAD construction changed tracked product files")
+            except Exception as guard_error:
+                if primary_error is None:
+                    raise
+                print(f"Additional source guard failure: {guard_error}", file=sys.stderr)
     print(f"Current Gyropup: {len(packed['parts'])} visible groups, {sum(len(g['members']) for g in groups.values())} source parts, "
           f"{packed['triangles']} triangles, {packed['bytes']} bytes; {time.monotonic() - start:.1f} s")
     return packed

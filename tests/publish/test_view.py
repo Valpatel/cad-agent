@@ -192,7 +192,7 @@ def test_pack_view_uses_32_bit_indices_past_65536_vertices(tmp_path):
 
 
 # The website showcase consumes current constructor rows, not an unchecked old STEP directory.
-def test_showcase_group_policy_preserves_current_members_and_rejects_drift():
+def test_showcase_group_policy_preserves_current_members_and_rejects_drift(tmp_path):
     import importlib.util
     from pathlib import Path
     spec = importlib.util.spec_from_file_location("showcase_policy", Path(__file__).resolve().parents[2] / "tools/gyropup_showcase.py")
@@ -218,3 +218,13 @@ def test_showcase_group_policy_preserves_current_members_and_rejects_drift():
         tool.group_rows([row for row in rows if row[0] != tool.FINE_PARTS[0]])
     with pytest.raises(ValueError, match="No current CAD parts"):
         tool.group_rows([])
+    # Reject an output path (including an alias) inside source before CAD imports or writes.
+    product, toolkit = tmp_path / "product", tmp_path / "toolkit"
+    product.mkdir()
+    toolkit.mkdir()
+    alias = tmp_path / "product-alias"
+    alias.symlink_to(product, target_is_directory=True)
+    for destination in (product / "exports", toolkit / "out", alias / "exports"):
+        with pytest.raises(ValueError, match="outside the product"):
+            tool.model(product, "unused", "unused", toolkit, destination)
+        assert not destination.exists()

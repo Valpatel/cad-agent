@@ -765,8 +765,8 @@ sources:
     used_for: [docs/research/manufacturing/process-profiles.md, docs/research/process-profiles.yaml]
     verified: >-
       2026-10-31: opened the 2-page PDF (4AA7-4107ENW, April 2019); read the minimum-feature table, embossed and
-      engraved details and the accuracy notes. The handbook's other chapters sit behind a sign-up form and were
-      not read.
+      engraved details and the accuracy notes. Other chapters were not read in this pass; the separate
+      handbook, cleaning and tolerancing records document the later 2026-11-07 reading.
 
   - id: hp-learning-design-3d-print-model
     title: How to design a 3D print model for HP Multi Jet Fusion
@@ -1006,7 +1006,10 @@ sources:
     verified: >-
       2026-10-31: opened the 15-slide deck (2011-03-22, by an EOS application engineer) on a reseller's site; no
       copy was found on EOS's own site. Read walls, pins, hinges, loose connections and flat surfaces. The
-      gap-against-wall slide is a chart (its value is status u).
+      2026-11-07: rendered and read slides 10–11. Gap specimen labels span 0.5–0.8 mm at walls
+      0.30, 3.00 and 6.00 mm; the separate hole slide uses walls 0.30 and 0.60 mm. These are
+      micrographs of nominal specimens, with incomplete openings and measured sizes differing
+      from the labels, not a general minimum-dimension rule. Removed the combined unverified row.
 
   - id: jlc3dp-design-guideline
     title: "3D Printing Design Guidelines: Size, Tolerance & Design Rules"

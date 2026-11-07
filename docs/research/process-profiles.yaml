@@ -68,7 +68,7 @@
 # Standards that govern the same ground (ISO 2768-1, ISO 20457, DIN 16742, ISO/ASTM 52910 and 52911-2) are in the
 # registry too, as paid documents cited by number and title only; no rule here takes a value from them.
 schema: 1
-updated: 2026-11-04
+updated: 2026-11-07
 
 units:
   mm: millimetres
@@ -2303,17 +2303,9 @@ rules:
     source: eos-design-rules-overview-ls
     status: read
     verified: 2026-10-31
-  - id: sls-gap-vs-wall-eos
-    process: sls
-    feature: clearance
-    quantity: smallest gap or hole, rising with the wall thickness
-    min: 0.5
-    max: 0.8
-    units: mm
-    applies: EOS; read from a chart for walls 0.3–6 mm, so not verified
-    source: eos-design-rules-overview-ls
-    status: u
-    verified: 2026-10-31
+  # EOS 2011 slides 10–11 show specimen labels and micrographs, not a usable
+  # general minimum-gap/diameter rule. Keep their interpretation in the research
+  # page; the former sls-gap-vs-wall-eos row is intentionally not enforceable.
   - id: sls-wall-min-jlc3dp
     process: sls
     feature: wall
@@ -2341,6 +2333,39 @@ rules:
     verified: 2026-10-31
 
   # ================================================================== MJF
+
+  - id: mjf-escape-hole-hp-cleaning
+    process: mjf
+    feature: escape-hole
+    compare: escape-hole
+    quantity: recommended minimum drain-hole diameter for powder removal
+    min: 5
+    units: mm
+    applies: HP MJF hollow parts; at least two holes on opposite faces
+    source: hp-mjf-design-for-cleaning
+    status: read
+    verified: 2026-11-07
+    strictness: guideline
+    wiggle: unstated
+    note: >-
+      HP handbook 4AA7-4109ENW (February 2019), page 1. This differs from the
+      smaller bureau limits below; use the chosen manufacturer's cleaning process,
+      not an average. A hole alone does not prove the cavity can be depowdered.
+  - id: mjf-lattice-gap-hp-cleaning
+    process: mjf
+    feature: lattice-gap
+    quantity: recommended minimum lattice opening for powder removal
+    min: 5
+    units: mm
+    applies: HP MJF lattices that must be emptied; partly open the lattice to provide access
+    source: hp-mjf-design-for-cleaning
+    status: read
+    verified: 2026-11-07
+    strictness: guideline
+    wiggle: unstated
+    note: >-
+      HP handbook 4AA7-4109ENW, page 1. This is a cleaning opening, not a
+      clearance between moving parts. Deliberately trapped powder is a different design.
 
   - id: mjf-wall-min-hubs-table
     process: mjf

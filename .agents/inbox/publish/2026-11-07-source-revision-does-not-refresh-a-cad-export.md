@@ -51,6 +51,22 @@ Preparation checks the exact model-only helper path for historical Git-object re
 native time. Its input guard hashes current files and its hardware guard reads `HEAD:hardware`; a separate
 README refresh CLI's historical reads are not part of this producer. Run the unchanged source preflight before
 installation and native work, retaining a missing-object failure rather than substituting a stale source.
-Optional timing tools must not prevent the actual producer from starting. Source/owned-process/archive/decode
-acceptance and matching poster/card remain pending until an independently reviewed fleet result exists.
-Battery placement under Gyropup #193 and historical engineering illustrations remain separate.
+Optional timing tools must not prevent the actual producer from starting.
+
+Fleet job 255 failed before CAD when its quiet product fetch reached a 180-second limit, shortened from the
+prior accepted 240 seconds. The owned group and three descendants were killed and reaped; no model was made.
+Its empty transfer log does not identify a network, server or pack cause. Preserve that failed receipt.
+The separately reviewed correction restored 240 seconds and retained transfer progress. Job 256 on cpu-b
+then fetched the product in 31.49 seconds and constructed CAD in 121.51 seconds; that does not prove what caused
+255 to stall. [Actual native acceptance](https://github.com/Valpatel/cad-agent/issues/104#issuecomment-6710880452)
+verified all 13 phases, three unchanged source snapshots, 95 inputs and the exact two-file archive. The new
+model has 233 source parts, 33 visible groups, 116,672 triangles and 390,485 packed bytes under the unchanged
+400 KiB binary budget. Membership and recorded part bounds match the earlier model; the unpacked payload has
+319 differing bytes. This is genuine new construction, without a claim of a dramatic layout change.
+
+The existing headless renderer generated the matching poster/card with a fresh HOME and a bounded owned
+user-service cgroup. Detached browser and preview children must be quiescent before checking the five-file
+set. Check all tracked hashes and full untracked-aware Git status, not only an expected subset. Preserve the
+historical SOURCE prefix and engineering pictures; change only the banner's binding to the actual new model.
+Battery bounds remain unchanged. Gyropup #193, broad #104 capability coverage, physical qualification and
+actual public release acceptance retain their separate criteria.

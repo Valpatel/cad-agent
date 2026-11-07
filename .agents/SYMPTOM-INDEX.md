@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A resized viewport has old responsive styles, or an automatic navigation fold remains open on a phone | [Read responsive styles after the resize event](inbox/publish/2026-11-07-responsive-style-can-lag-resize.md) |
 | A release guard assumes fixed check counts, rejects inherited bytes, hits ENOBUFS, or confuses visible link text with its target | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
 | A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |

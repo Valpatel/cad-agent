@@ -41,6 +41,23 @@ flowchart TD
 
 </details>
 
+### Read responsive styles after the resize event
+- **Rule:** A new viewport width does not prove its responsive styles are current inside the resize callback.
+  Schedule style-dependent updates on a frame, preserving native controls and the reader's chosen state.
+- **Check:** The navigation consumer resizes wide → narrow and verifies that an automatically opened fold closes;
+  a fold opened by the reader must survive the round trip. Failed state and later paint are retained separately.
+
+<details><summary>2026-11-07 incident and limits</summary>
+
+WebKit's existing navigation check failed in [PR #445](https://github.com/Valpatel/cad-agent/pull/445). A traced
+real callback read width 360 with the old `display: contents`; later style was `block`, but the fold stayed open.
+Deferring its style read to an animation frame fixed the bounded component cases. A 24-case comparison rejected
+three old-source cases; all sixteen corrected cases preserved both automatic and reader-owned behavior with the
+same timeout. Instrumentation affects timing, so these counts are not a device failure rate. This observation
+explains the tested navigation failure, not unrelated header failures or every browser's resize behavior.
+
+</details>
+
 ### Verify the SVG still itself, not only its parent's reduced-motion preference
 - **Rule:** A parent page's media query and animation list do not establish the state of an SVG loaded through an image. Inspect the rendered SVG document and its visible drawing, fills and marks.
 - **Check:** `tests/site/site-motion.mjs` loads the actual hero as an SVG document with reduced motion, checks zero animations, visible assembled geometry and check marks, then rejects a hidden-drawing control that retains the valid media rule and zero animations. The existing browser suite calls this check; normal-motion tests keep their existing launch options.

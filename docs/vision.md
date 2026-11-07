@@ -269,7 +269,7 @@ Use **one taxonomy, kind folders with explicit topic ownership, and generated ca
 
 ```mermaid
 flowchart TD
-    T["docs/areas.yaml<br/>domain → area → topic"] --> H["catalogue: area views<br/>and small JSON indexes"]
+    T["docs/areas.yaml<br/>domain → area → topic"] --> H["area catalogue<br/>small JSON indexes"]
     T --> K["kind folders use<br/>the same slugs"]
     K --> C["software/cadagent<br/>by domain (#121)"]
     K --> L["lessons by area;<br/>docs, research<br/>by domain"]

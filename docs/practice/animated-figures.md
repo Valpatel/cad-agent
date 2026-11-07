@@ -1,6 +1,12 @@
 # Animated figures from real CAD
 
-The README's real-CAD example is separate from its conceptual pixel workshop header. `tools/readme_anim.py`
+The README opens with an original 16-bit robot-factory cinematic: a builder makes its successor, the successor
+builds again, and lessons return to the first builder. Satellites, a ringed world and a distant laser battle give
+the story scale. The 24-second loop is conceptual art; all three generations remain visible when motion is
+disabled. Regenerate it with `PYTHONPATH=software python3 tools/anim/repository_map.py` (`--check` verifies parity).
+It stays 640 × 240 pixels, fits narrow screens and needs no scripts, external fonts or image downloads.
+
+The README's real-CAD example is separate from that cinematic. `tools/readme_anim.py`
 makes the recorded CAD illustration from a real project's files:
 - the STEP assembly, drawn as edges by hidden-line removal;
 - the linkage's kinematics, solved from link lengths measured in the CAD;

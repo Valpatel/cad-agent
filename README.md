@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/img/hero/repository-map.svg" alt="A conceptual learning workshop: study sources, try methods, test assumptions, review evidence and learn reusable skills" width="640">
+<img src="docs/img/hero/repository-map.svg" alt="Build the builders: a pixel-art robot assembles its successor, which builds another robot, beneath satellites and a distant laser battle" width="640">
 
 # cad-agent
 

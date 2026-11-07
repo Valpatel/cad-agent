@@ -500,3 +500,80 @@ def test_a_checked_snap_names_the_friction_it_used():
     assert sf.check_spec_entry({**base, "same_material": False})["material"]["friction"] == pytest.approx(0.35)
     assert basis(material="petg-cf-bambu") is None and basis(material="petg-cf-bambu", friction=0.3) == "given"
     assert basis(material="pc", process="moulding") == "same material"
+
+
+# The declaration adapts the existing rectangular torsion formula; it does not add a contact/retention model.
+def _torsion_spec(**changes):
+    return {"name": "cover rocker", "type": "torsion", "material": "pla-bambu-basic", "process": "fdm",
+            "orientation": "across", "length_mm": 15, "section": {"rect": {"width_mm": 4, "thickness_mm": 1.2}},
+            "twist_deg": 8, "lever_mm": 10, "bars": 2, "max_actuation_n": 4, **changes}
+
+
+def test_rectangular_torsion_declaration_matches_existing_explorer_and_twist_demand():
+    import json
+    r = sf.check_spec_entry(_torsion_spec())
+    assert r["pass"], r["rows"]
+    assert r["strain_kind"] == "shear strain" and r["strain"] == pytest.approx(0.0111, abs=0.0001)
+    assert r["strain_allowable"] == pytest.approx(0.0128, abs=0.0001)
+    assert r["actuation_force_n"] == pytest.approx(3.45, abs=0.01)
+    assert r["equivalent_tensile_strain"] * 1.35 == pytest.approx(r["strain"])
+    assert r["material"]["allowable"] * 1.35 == pytest.approx(r["strain_allowable"])
+    assert r["material"]["secant_mpa"] == sf.PRINTED["pla-bambu-basic"].secant_upper_bound("along")
+    assert not any(k.startswith("retention_") or k.startswith("friction") for k in r["material"])
+    assert "Roark" in r["method"] and any("isotropic" in v for v in r["limits"])
+    report = sf.check_spec({"snaps": [_torsion_spec()]})
+    assert report["method"] == r["method"] and report["limits"] == r["limits"]
+    json.dumps(report, allow_nan=False)
+    for changes, failed in [({"twist_deg": 12}, "shear strain"), ({"repeated": True}, "shear strain"),
+                            ({"max_actuation_n": 3}, "actuation force"),
+                            ({"orientation": "along"}, "torsion layer allowance"),
+                            ({"orientation": None}, "torsion layer allowance")]:
+        bad = sf.check_spec_entry(_torsion_spec(**changes))
+        assert not bad["pass"] and any(v["check"] == failed and not v["pass"] for v in bad["rows"])
+    one = sf.check_spec_entry(_torsion_spec(bars=1))
+    assert one["strain"] == r["strain"] and 2 * one["actuation_force_n"] == r["actuation_force_n"]
+    rest = sf.check_spec_entry(_torsion_spec(twist_deg=0))
+    assert rest["pass"] and rest["strain"] == rest["actuation_force_n"] == 0
+
+
+def test_torsion_declaration_fails_outside_the_existing_small_twist_model():
+    r = sf.check_spec_entry(_torsion_spec(length_mm=30, section={"rect": {"width_mm": 12, "thickness_mm": 0.6}},
+                                        twist_deg=30, secant_mpa=3000, max_actuation_n=100))
+    assert r["trapeze_ratio"] == pytest.approx(0.41, abs=0.01)
+    assert not r["pass"] and any(v["check"] == "small twist" and not v["pass"] for v in r["rows"])
+
+
+@pytest.mark.parametrize("changes", [
+    {"twist_deg": math.nan}, {"twist_deg": math.inf}, {"twist_deg": -1}, {"twist_deg": True},
+    {"length_mm": 0}, {"lever_mm": -1}, {"bars": True}, {"bars": 1.0}, {"bars": 3},
+    {"repeated": "false"}, {"secant_mpa": 0}, {"process_factor": 1.1},
+    {"section": {"ring": {"r_inner_mm": 1, "r_outer_mm": 2, "arc_deg": 90}}},
+    {"section": {"rect": {"width_mm": 4, "thickness_mm": 1.2, "radius_mm": 1}}},
+    {"section": {"rect": {"width_mm": math.inf, "thickness_mm": 1}}},
+    {"share": 0.5}, {"min_retention_n": 1}, {"max_mating_n": 4}, {"twist_rad": 0.1},
+    {"root_radius_mm": 1}, {"same_material": False}, {1: "unknown field"},
+    {"process": "magic"}, {"material": "unknown"},
+    {"length_mm": 1e-320}, {"length_mm": 1e308, "section": {"rect": {"width_mm": 1e308, "thickness_mm": 1e308}}},
+])
+def test_torsion_declaration_rejects_unsupported_types_units_and_nonfinite_results(changes):
+    with pytest.raises(ValueError, match="cover rocker"):
+        sf.check_spec_entry({**_torsion_spec(), **changes})
+
+
+def test_torsion_declaration_material_process_evidence_and_tensile_conversion():
+    moulded = _torsion_spec(material="pc", process="moulding", orientation=None)
+    r = sf.check_spec_entry(moulded)
+    assert r["pass"]
+    assert r["material"]["secant_mpa"] == sf.secant_at(sf.MATERIALS["pc"].secant_mpa,
+                                                       r["strain"] / 1.35)
+    assert "equivalent tensile strain" in r["material"]["secant_basis"]
+    assert not sf.check_spec_entry({**moulded, "process": None})["pass"]
+    # A custom layered material still needs the existing sourced derating, assessed across the layers.
+    custom = _torsion_spec(material={"name": "batch", "strain": 0.04, "source": "fixture measured tensile curve",
+                                     "secant_mpa": 2000})
+    assert not sf.check_spec_entry(custom)["pass"]
+    assert sf.check_spec_entry({**custom, "process_factor": 0.5, "process_source": "fixture batch coupons"})["pass"]
+    with pytest.raises(ValueError, match="secant_mpa"):
+        sf.check_spec_entry(_torsion_spec(material="pc-abs", process="moulding"))
+    with pytest.raises(ValueError, match="annular"):
+        sf.check_spec_entry(_torsion_spec(type="annular"))

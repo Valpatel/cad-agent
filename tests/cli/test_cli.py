@@ -342,3 +342,72 @@ def test_library_build_and_audit_from_the_command_line(tmp_path, capsys):
                  "--env", f"KIPRJMOD={proj}", "--output", str(tmp_path / "audit.json")]) == 0
     assert json.loads((tmp_path / "audit.json").read_text())["waived"][0]["reason"] == "a hole"
     assert main(["library", "build", str(tmp_path / "x"), "--no-models", "--parts", "nope"]) == 2
+
+
+def _write_torsion_project_check(root, monkeypatch):
+    """Actual CLI child, through the existing configured step/check contract (not a new project schema)."""
+    from tests.mechanical.test_snapfit import _torsion_spec
+    import yaml
+    config = yaml.safe_load((root / "cad-agent.yaml").read_text())
+    config["cad"]["python"] = sys.executable
+    config["cad"].setdefault("steps", []).append({"name": "torsion", "run": "tools/check_torsion.py"})
+    config["cad"].setdefault("checks", []).append({"id": "torsion", "title": "Cover rocker",
+                                                    "file": "exports/torsion.json"})
+    (root / "cad-agent.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+    (root / "tools").mkdir(exist_ok=True)
+    import re
+    guide = (Path(__file__).resolve().parents[2] / "docs/mechanical/compliant.md").read_text()
+    section = guide.split("## Declaring a rectangular torsion snap\n", 1)[1].split("## Materials", 1)[0]
+    declared = yaml.safe_load(re.search(r"```yaml\n(.*?)```", section, re.S).group(1))
+    assert declared == {"snaps": [_torsion_spec()]}, "the actual published guide is the checked declaration"
+    (root / "tools" / "check_torsion.py").write_text(re.search(r"```python\n(.*?)```", section, re.S).group(1))
+    spec = root / "torsion.yaml"
+    spec.write_text(yaml.safe_dump(declared))
+    monkeypatch.setenv("PYTHONPATH", str(Path(__file__).resolve().parents[2] / "software"))
+    return spec
+
+
+def test_torsion_cli_and_real_project_step_report_reject_bad_and_missing_result(tmp_path, monkeypatch, capsys):
+    import yaml
+    root = make_project(tmp_path)
+    spec = _write_torsion_project_check(root, monkeypatch)
+    assert main(["snapfit", str(spec), "--output", str(root / "exports/torsion.json")]) == 0
+    out = capsys.readouterr().out
+    assert "shear strain 1.11 % (allowed 1.28 %)" in out and "root strain" not in out
+    assert main(["build", "--project", str(root)]) == 0
+    assert main(["report", "--project", str(root)]) == 0
+    results = json.loads((root / "exports/cad-agent-results.json").read_text())
+    checks = next(f["checks"] for f in results["features"] if f["feature_id"] == "cad-checks")
+    assert checks[0]["status"] == "pass"
+    assert not results["physical_fit_verified"]
+    declared = yaml.safe_load(spec.read_text())
+    declared["snaps"][0]["twist_deg"] = 12
+    spec.write_text(yaml.safe_dump(declared))
+    assert main(["build", "--project", str(root)]) == 1
+    assert json.loads((root / "exports/torsion.json").read_text())["pass"] is False
+    assert main(["check", "--project", str(root)]) == 1
+    # Invalid units remove the previous report before the child fails, so the project cannot reuse a stale pass.
+    declared["snaps"][0]["twist_rad"] = 0.1
+    spec.write_text(yaml.safe_dump(declared))
+    assert main(["build", "--project", str(root)]) == 1
+    assert not (root / "exports/torsion.json").exists()
+    capsys.readouterr()
+    assert main(["check", "--project", str(root), "--json"]) == 1
+    missing = json.loads(capsys.readouterr().out)
+    row = next(f["checks"][0] for f in missing["features"] if f["feature_id"] == "cad-checks")
+    assert row["status"] == "fail" and "file not found" in row["error"]
+
+
+def test_torsion_declaration_actual_all_in_existing_starter(tmp_path, monkeypatch, capsys):
+    """The full-extra CI runs actual starter CAD/export/report plus the new existing-contract check."""
+    pytest.importorskip("cadquery")
+    pytest.importorskip("trimesh")
+    pytest.importorskip("scipy")
+    root = tmp_path / "box"
+    assert main(["init", str(root)]) == 0
+    _write_torsion_project_check(root, monkeypatch)
+    assert main(["all", "--project", str(root)]) == 0, capsys.readouterr().out
+    results = json.loads((root / "exports/cad-agent-results.json").read_text())
+    checks = next(f["checks"] for f in results["features"] if f["feature_id"] == "cad-checks")
+    assert any(v["name"].startswith("torsion") and v["status"] == "pass" for v in checks)
+    assert results["pass"] and not results["physical_fit_verified"]

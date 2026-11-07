@@ -21,21 +21,21 @@
 <text x="606.0" y="255" font-size="11" fill="#526863" text-anchor="middle">100 °C</text>
 <line x1="526.8" y1="60" x2="526.8" y2="239" stroke="#173d3c" stroke-width="1.5" stroke-dasharray="5 4"/>
 <text x="522.8" y="56" font-size="11" fill="#173d3c" text-anchor="end">TTP max 80 °C</text>
-<text x="200" y="96.5" font-size="12" fill="#173d3c" text-anchor="end">PLA Basic</text>
+<text x="200" y="96.5" font-size="12" fill="#173d3c" text-anchor="end">PLA Basic (V3.0)</text>
 <rect x="210" y="70" width="237.6" height="13" rx="2" fill="#6f8a80"/>
 <text x="452.6" y="80.5" font-size="11" fill="#173d3c">60 °C</text>
 <rect x="210" y="86" width="225.7" height="13" rx="2" fill="#bd3a12"/>
 <text x="440.7" y="96.5" font-size="11" fill="#173d3c">57 °C</text>
 <rect x="210" y="102" width="213.8" height="13" rx="2" fill="#173d3c"/>
 <text x="428.8" y="112.5" font-size="11" fill="#173d3c">54 °C</text>
-<text x="200" y="155.5" font-size="12" fill="#173d3c" text-anchor="end">PETG Basic</text>
-<rect x="210" y="129" width="269.3" height="13" rx="2" fill="#6f8a80"/>
-<text x="484.3" y="139.5" font-size="11" fill="#173d3c">68 °C</text>
-<rect x="210" y="145" width="273.2" height="13" rx="2" fill="#bd3a12"/>
-<text x="488.2" y="155.5" font-size="11" fill="#173d3c">69 °C</text>
-<rect x="210" y="161" width="257.4" height="13" rx="2" fill="#173d3c"/>
-<text x="472.4" y="171.5" font-size="11" fill="#173d3c">65 °C</text>
-<text x="200" y="214.5" font-size="12" fill="#173d3c" text-anchor="end">PETG HF</text>
+<text x="200" y="155.5" font-size="12" fill="#173d3c" text-anchor="end">PETG Basic (V3.0)</text>
+<rect x="210" y="129" width="273.2" height="13" rx="2" fill="#6f8a80"/>
+<text x="488.2" y="139.5" font-size="11" fill="#173d3c">69 °C</text>
+<rect x="210" y="145" width="281.2" height="13" rx="2" fill="#bd3a12"/>
+<text x="496.2" y="155.5" font-size="11" fill="#173d3c">71 °C</text>
+<rect x="210" y="161" width="269.3" height="13" rx="2" fill="#173d3c"/>
+<text x="484.3" y="171.5" font-size="11" fill="#173d3c">68 °C</text>
+<text x="200" y="214.5" font-size="12" fill="#173d3c" text-anchor="end">PETG HF (V1.0)</text>
 <rect x="210" y="188" width="261.4" height="13" rx="2" fill="#6f8a80"/>
 <text x="476.4" y="198.5" font-size="11" fill="#173d3c">66 °C</text>
 <rect x="210" y="204" width="273.2" height="13" rx="2" fill="#bd3a12"/>

@@ -215,7 +215,7 @@ def thermal_limits() -> str:
     rows = []
     for cells in table(md, "**Printed-material limits"):
         where = f"simulation-tools.md §6, {cells[0]}"
-        rows.append((re.sub(r"\s*\([^)]*\)\s*$", "", cells[0]), [celsius(c, where) for c in cells[1:4]]))
+        rows.append((cells[0], [celsius(c, where) for c in cells[1:4]]))
     limit = float(ttp.group(1))
     return bars_svg("Printed materials soften below the module's thermal plate limit", rows,
                     [("glass transition (DSC)", GREEN), ("HDT at 0.45 MPa", ORANGE), ("HDT at 1.8 MPa", INK)],

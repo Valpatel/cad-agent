@@ -4,4 +4,4 @@
 
 **Fixed**
 - Agent installation and inventory reserve `README.md` as the role folder's human map, while malformed role prompts still fail and skill maps remain available in copy-mode installs (#113).
-- Derive weekly link-check inputs from actual published sources, and preserve image URLs in Markdown twins of deep folder pages (#113).
+- Derive weekly link-check inputs from actual published sources, and publish their embedded example images and preserve image URLs in Markdown twins of deep folder pages (#113).

@@ -839,6 +839,17 @@ test('a real draft consumes moved sources and cannot substitute stale root files
 });
 
 
+test('folder illustrations beside their source are published as real local images', async () => {
+  const image = 'docs/examples/explore-two-wheel/compare.png';
+  const route = 'repo/folders/d-docs/d-examples/d-explore-two-wheel/README';
+  const page = await readFile(path.join(out, route + '.html'), 'utf8');
+  assert.ok(page.includes(`src="/${image}"`), 'keep the example illustration in the actual rendered folder page');
+  assert.ok((await readFile(path.join(out, image))).equals(execFileSync('git', ['show', `HEAD:${image}`], { cwd: root })),
+    'the real example image must be copied from the same commit as the page');
+  const twin = await readFile(path.join(out, route + '.md'), 'utf8');
+  assert.ok(twin.includes(path.posix.relative(path.posix.dirname(route), image)), 'the twin must resolve to that local image too');
+});
+
 test('repository map publishes folder details without flooding the catalogue', async () => {
   const html = await readFile(path.join(out, 'docs/map.html'), 'utf8');
   const twin = await readFile(path.join(out, 'docs/map.md'), 'utf8');

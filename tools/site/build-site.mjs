@@ -47,7 +47,7 @@ if (RELEASE && WORKTREE) throw new Error('--release and --worktree are exclusive
 const onReviewed = ref => { try { execFileSync('git', ['merge-base', '--is-ancestor', 'HEAD', ref], { cwd: root }); return true; } catch { return false; } };
 if (RELEASE && !onReviewed('origin/main') && !onReviewed('origin/dev')) throw new Error('--release needs HEAD on origin/main or origin/dev (merged and pushed), so production only shows reviewed commits');
 const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
-// Only these docs/img files are copied to public URLs; source-only folder maps stay on GitHub.
+// Preserve the public image library; rendered pages also add their actual local illustrations below.
 const publishedImages = new Set(tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f)));
 const head = git('rev-parse', 'HEAD');
 const revision = head;
@@ -288,7 +288,10 @@ for (const p of allPages) {
     let target;
     if (pageFiles.has(resolved)) target = pageURL(resolved);
     else if (folderPage(resolved)) target = pageURL(folderPage(resolved));
-    else if ((attr === 'src' || attr === 'srcset') && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
+    else if ((attr === 'src' || attr === 'srcset') && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) {
+      publishedImages.add(resolved);                    // embedded example images can live beside their source README
+      target = '/' + resolved;
+    }
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
   });
@@ -349,8 +352,9 @@ for (const p of allPages) {
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
-  await writeFile(path.join(out, publicPath(p.file)), twinMd(p.file, p.src));   // the Markdown twin, same path
 }
+// All rendered image sources are known before any twin is rewritten, independent of page traversal order.
+for (const p of allPages) await writeFile(path.join(out, publicPath(p.file)), twinMd(p.file, p.src));
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
 // web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by

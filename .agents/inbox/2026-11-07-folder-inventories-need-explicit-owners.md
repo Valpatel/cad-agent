@@ -95,7 +95,7 @@ ownership selector is shared by publication and the strict repo-map checker; the
 against its actual selected set. Dot-safe routes prefix every directory component and escape reserved bytes
 without URL-percent ambiguity, preserving distinct `.agents`, `_agents`, spaces, literal escape text and Unicode.
 The builder uses the same route identity for output, parent navigation and HTML/Markdown links. Images retain
-their actual `docs/img/` asset paths; raw HTML previews in Markdown twins also need URL rewriting.
+their actual source asset paths; raw HTML previews in Markdown twins also need URL rewriting.
 
 The weekly checker now consumes the actual published source list with the pinned lychee's
 [`--files-from` interface](https://lychee.cli.rs/guides/cli/#files-from), rather than a second hierarchy of globs.
@@ -109,6 +109,23 @@ used client diagrams, so it is not rendered-page evidence. Actual HTML/twin chec
 preserve the separate editorial-owner-to-catalogue assertion, and verify no-JavaScript, both-theme and phone
 rendering through the existing browser consumers before acceptance. Local source checks or GitHub links do not
 complete that publication requirement.
+
+## Published folder illustrations must reach the output too
+
+On 2026-11-07 UTC, the actual committed `5c712cb5` client-diagram build passed the Markdown-twin link consumer
+but failed the HTML-link consumer: the new `docs/examples/explore-two-wheel/README.md` page referenced its
+sibling `compare.png`, while the old copier only copied `docs/img/`. The new byte-for-byte consumer also fails
+against that retained output with ENOENT (`/tmp/cad113-image-old-consumer.log`). The renderer now adds actual
+sanitized local image sources to the copy set and rewrites twins after that set is complete. It does not copy
+all example/vendor assets or hide the illustration. The old Python docs/img-only restriction is obsolete;
+Git membership, case, nonempty/magic-byte checks remain, and actual published HTML/twin consumers guard delivery.
+A working-tree client-diagram build passed the image/source-byte/twin check; that is not drawn-page acceptance.
+
+The exact pinned lychee 0.24.2 binary was also exercised, after verifying its official release archive SHA-256
+`73657a111819a30c47c08352896796f23d64e4eb2b3ed39b6d32149241566fc5`. Its actual
+`--dump-inputs --files-from /tmp/cad113-lychee0242-consumer/intended.txt` consumed exactly 191 unique intended
+paths, including 28 hidden paths. Adding `--hidden` consumed the same set, so no flag change is justified.
+The receipt retains both outputs and hashes; this proves input consumption, not remote link health.
 
 ## Limits
 

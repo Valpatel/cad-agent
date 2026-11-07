@@ -5,18 +5,37 @@ lists, links and, once someone has read them, cites. It grows the one-file regis
 splitting its id space. `docs/research/references.yaml` stays the core of read and cited sources. The records here share
 its ids, and `cadagent.review.references` reads both.
 
+Load the source inventory
+
 ```mermaid
 flowchart TD
-    C["docs/research/references.yaml<br/>core: read, cited sources"] --> L["cadagent.review.references<br/>load(): one id space"]
-    S["docs/research/references/*.yaml<br/>schema-2 shards"] --> L
-    V["vocab.yaml<br/>fixed vocabularies"] --> K["check()<br/>python -m ... --check"]
+    C["docs/research/<br/>references.yaml<br/>core: read, cited sources"]
+    L["cadagent.review.references<br/>load(): one id space"]
+    S["docs/research/references/<br/>*.yaml · schema-2 shards"]
+    C --> L
+    S --> L
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class S,L here
+    class C near
+```
+
+Check and cite the loaded sources
+
+```mermaid
+flowchart TD
+    L["cadagent.review.references<br/>load(): one id space"]
+    V["vocab.yaml<br/>fixed vocabularies"]
+    K["check()<br/>python -m ... --check"]
+    U["lookup(), citation()<br/>ref tags in pages"]
+    V --> K
     L --> K
-    L --> U["lookup(), citation()<br/>ref tags in pages"]
+    L --> U
     K ~~~ U
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class S,V,L here
-    class C,K,U near
+    class V,L here
+    class K,U near
 ```
 
 ## What's here
@@ -28,7 +47,12 @@ flowchart TD
 | `guides-<group>.yaml` | Manufacturing and design guides, one shard per process group of the guide's first process: cnc 41, general 23, inserts 17, mould 30, pcb 13, print 37, sheet 40. Of these, 21 records are `extends: true` additions to guides already read in `docs/research/references.yaml`. |
 | `coverage.yaml` | The map's coverage table: what cad-agent enforced per topic (16 rows), where, its gaps, and the issue drafted for each gap, never posted (`posted: false`). `wanted` lists the sources each process group still lacks. |
 
-Every shard is at most 150 records and 150 KB. The shards and `coverage.yaml` come from the Reference Map, through
+Every shard is at most 150 records and 150 KB.
+
+<details>
+<summary>Import provenance and rules that preserve edits</summary>
+
+The shards and `coverage.yaml` come from the Reference Map, through
 [`tools/import_refmap.py`](../../../tools/import_refmap.py), which takes the map's `data.json` by path. The data file
 stays out of the repo. The import is deterministic, and its rules are in the tool's docstring:
 
@@ -42,6 +66,8 @@ stays out of the repo. The import is deterministic, and its rules are in the too
   a later map change to them still lands.
 
 Two guides that `docs/research/references.yaml` lists as `unverified` were left there.
+
+</details>
 
 ## A record
 
@@ -80,7 +106,7 @@ Core entries, cited records and anything the rules do not cover are listed in th
 ## The evidence ladder
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["snippet-only"] --> B["read"]
     B --> C["verified-at-source"]
     C --> D["encoded"]
@@ -101,6 +127,9 @@ flowchart LR
 - **measured:** a physical result on a real project backs the claim.
 
 ## A promotion sweep
+
+<details>
+<summary>Read, corroborate, promote and encode each source</summary>
 
 One process group (or one area) per PR. The first, threaded inserts (#323 phase 7), is the pattern.
 
@@ -140,6 +169,8 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
     page cites as `[ref:<id>]`), with `applied_by` naming the function or gate that applies it, so `cad-agent rules`
     can serve it. The tests check that each `applied_by` reads the rule by id.
 
+</details>
+
 ## Rules check() enforces
 
 - One id across the core file and every shard. An id in two files is a problem, unless the shard's record says
@@ -153,6 +184,9 @@ mistake of each kind.
 
 ## On the site
 
+<details>
+<summary>Published routes and required index refresh</summary>
+
 `tools/site/compiler/site-references.mjs` publishes the records with the site build:
 
 - `/references` charts every area;
@@ -165,6 +199,8 @@ mistake of each kind.
 After changing a record, run `node tools/site/compiler/site-references.mjs --experts` and commit `docs/practice/experts.md`
 (`tests/site/website-references.test.mjs` fails until it is current). A record whose `areas` match no slug is listed on
 `/references/unplaced`. That count may only fall.
+
+</details>
 
 ## Related
 

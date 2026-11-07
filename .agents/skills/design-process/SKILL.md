@@ -226,3 +226,5 @@ implementer with this skill and its section file; sections whose interfaces are 
 Run the reviewer pass on each section as it comes in and the full gates on the integrated assembly. Nothing is done
 while a finding is open, a verdict is stale or a section lacks its sign-off; `cad-agent check` fails while any
 section is below `gated`.
+
+[Folder map](README.md)

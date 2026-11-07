@@ -6,18 +6,37 @@ Tests for cad-agent's own website (cad-agent.valpatel.com) and its build: `tools
 
 Arrows: what a test imports, runs or reads.
 
+Build and browser consumers
+
 ```mermaid
 flowchart TD
-    U["website-*.test.mjs"] -->|"imports"| T["tools/site/build-site.mjs<br/>tools/site/compiler/*.mjs"]
-    B["website-*-browser.mjs<br/>site-*.mjs"] -->|"serves"| D["dist/<br/>the built site"]
+    U["website-*.test.mjs"]
+    T["tools/site/build-site.mjs<br/>tools/site/compiler/*.mjs"]
+    B["website-*-browser.mjs<br/>site-*.mjs"]
+    D["dist/<br/>the built site"]
+    U -->|"imports"| T
+    B -->|"serves"| D
     T --> D
-    P["test_catalog_content.py<br/>test_research_figures.py"] --> R["docs/research/<br/>software/vendor/upstreams/"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class U,B,P here
-    class T,R near
+    class U,B here
+    class T near
     class D out
+```
+
+Catalogue and figure inputs
+
+```mermaid
+flowchart TD
+    P["test_catalog_content.py<br/>test_research_figures.py"]
+    R["docs/research/<br/>software/vendor/upstreams/"]
+    P --> R
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P here
+    class R near
 ```
 
 | File | What it tests |

@@ -4,11 +4,17 @@ This maintainer-only build context wraps Mermaid 11's official npm core entry wi
 and math dependencies. It preserves the existing `globalThis.mermaid` browser API. Production website installation
 still uses only `tools/site`; it does not install this compiler or execute an esbuild install hook.
 
+Rebuild and consume the pinned runtime
+
 ```mermaid
-flowchart LR
-    L["package-lock.json"] --> P["rebuild.mjs"]
-    P --> B["../../software/cadagent/webkit/vendor/mermaid/"]
-    B --> C["browser and publication consumers"]
+flowchart TD
+    L["package-lock.json"]
+    P["rebuild.mjs"]
+    B["../../software/cadagent/webkit/vendor/mermaid/"]
+    C["browser and publication consumers"]
+    L --> P
+    P --> B
+    B --> C
 ```
 
 Using existing Node 22, install this dedicated context and verify the committed generated files:

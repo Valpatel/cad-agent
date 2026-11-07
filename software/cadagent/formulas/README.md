@@ -27,23 +27,47 @@ Arrows follow the data and the imports:
   published cross-checks. [test_bearings.py](../../../tests/formulas/test_bearings.py) checks those expectations and
   states the model assumptions, separately from the browser port.
 
+Shared formulas and browser parity
+
 ```mermaid
 flowchart TD
-    S["cited sources<br/>books · guides · standards"] --> F["cadagent.formulas<br/>units · limits · source"]
-    S -->|"equations"| B["bearings.py"]
-    S -->|"published cases"| E["tests/fixtures/<br/>bearing-vectors.json"]
-    C["mechanical/compliant/<br/>snapfit.py"] -->|"snap arms, torsion allowable"| F
-    F -->|"browser-supported subset"| V["tools/formula_vectors.py<br/>parity fixtures"]
-    V --> W["webkit/formulas.js<br/>the site's demos"]
+    S["cited sources<br/>books · guides · standards"]
+    F["cadagent.formulas<br/>units · limits · source"]
+    C["mechanical/compliant/<br/>snapfit.py"]
+    V["tools/formula_vectors.py<br/>parity fixtures"]
+    W["webkit/formulas.js<br/>the site's demos"]
+    S --> F
+    C -->|"snap arms, torsion allowable"| F
+    F -->|"browser-supported subset"| V
+    V --> W
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class F here
+    class S,C,V near
+    class W out
+```
+
+Bearing equations and their source cases
+
+```mermaid
+flowchart TD
+    S["cited sources<br/>books · guides · standards"]
+    F["cadagent.formulas<br/>units · limits · source"]
+    B["bearings.py"]
+    E["tests/fixtures/<br/>bearing-vectors.json"]
+    T["tests/formulas/<br/>test_bearings.py"]
+    S -->|"equations"| B
+    S -->|"published cases"| E
     B -->|"registered equations"| F
-    B --> T["tests/formulas/<br/>test_bearings.py"]
+    B --> T
     E -->|"source expectations"| T
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
     class F,B here
-    class S,C,V,E near
-    class W,T out
+    class S,E near
+    class T out
 ```
 
 | Module | What it computes |

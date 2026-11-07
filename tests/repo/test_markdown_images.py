@@ -10,7 +10,6 @@ Remote images (badges) are not fetched here, so the suite stays offline.
 from __future__ import annotations
 
 import posixpath
-import json
 import re
 import subprocess
 from pathlib import Path
@@ -36,24 +35,8 @@ MAGIC = {
     ".gif": (b"GIF87a", b"GIF89a"),
     ".webp": (b"RIFF",),
 }
-# The site (tools/site/build-site.mjs) renders these pages and copies only images under docs/img/, so an image elsewhere
-# would show on GitHub and break on cad-agent.valpatel.com.
-SITE_PAGE = re.compile(
-    r"^(?:docs/(?:[a-z0-9-]+/)?[^/]+\.md|README\.md|CONTRIBUTING\.md|THIRD_PARTY_NOTICES\.md|skills/[^/]+/SKILL\.md|agents/[^/]+\.md"
-    r"|lessons/(?:[a-z0-9-]+/)?[^/]+\.md|research/(?:[a-z0-9-]+/)?[^/]+\.md)$"
-)
-_SOURCES = json.loads((ROOT / "tools/site/page-sources.json").read_text())
-_ALIASES = {r["source"]: r["public"] for r in _SOURCES["files"]}
-
-
-def site_page(page):
-    if page in _SOURCES.get("unpublished", []) or any(page.startswith(r["public"] + "/") for r in _SOURCES["roots"]):
-        return False
-    public = _ALIASES.get(page)
-    if public is None:
-        root = next((r for r in _SOURCES["roots"] if page.startswith(r["source"] + "/")), None)
-        public = root["public"] + page[len(root["source"]):] if root else page
-    return bool(SITE_PAGE.match(public))
+# Rendered-site tests separately check that embedded local images are copied byte-for-byte.
+# Images may live beside an example README as well as in docs/img/.
 
 
 def tracked() -> set[str]:
@@ -110,8 +93,6 @@ def problems(page: str, text: str, files: set[str], read=lambda p: (ROOT / p).re
             near = [f for f in files if f.lower() == path.lower()]
             found.append(f"{page}: {url} -> {path} is not in git" + (f" (case differs: {near[0]})" if near else ""))
             continue
-        if site_page(page) and not path.startswith("docs/img/"):
-            found.append(f"{page}: {url} is outside docs/img/, which the site does not copy")
         head = read(path)[:4096]
         kind = posixpath.splitext(path)[1].lower()
         if not head:
@@ -158,11 +139,6 @@ def test_every_markdown_image_exists_and_is_an_image():
         ("docs/a.md", "![x](img/gone.png 'title')", {}, "not in git"),
         ("docs/a.md", "![x](<img/my gone.png>)", {}, "not in git"),
         ("docs/a.md", '<source srcset="img/p.png 1x, img/gone.png 2x">', {"docs/img/p.png": b"\x89PNG\r\n\x1a\n"}, "gone.png"),
-        ("README.md", "![x](docs/examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
-        ("software/vendor/THIRD_PARTY_NOTICES.md", "![x](../../docs/examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
-        ("docs/mechanical/new.md", "![x](../../tools/p.png)", {"tools/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
-        ("docs/research/manufacturing/sheet-metal.md", "![x](../../examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
-        ("docs/lessons/process/note.md", "![x](../../examples/p.png)", {"docs/examples/p.png": b"\x89PNG\r\n\x1a\n"}, "outside docs/img/"),
     ],
 )
 def test_each_rule_catches_its_break(page, text, data, expect):

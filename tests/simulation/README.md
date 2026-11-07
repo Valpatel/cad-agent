@@ -6,17 +6,48 @@ design exploration has its own folder, [`explore/`](explore/README.md).
 
 Arrows: what a test imports, runs or reads.
 
+Finite elements and topology
+
 ```mermaid
 flowchart TD
-    F["test_fea*.py · test_topopt.py"] -->|"imports"| FE["simulation/fea.py<br/>topopt.py"]
-    C["test_cfd*.py"] --> H["cfd_fixtures.py<br/>fixtures/cfd_runs/"]
-    E["explore/<br/>its own folder"] -->|"imports"| X["simulation/explore/"]
-    C -->|"imports"| CF["simulation/cfd.py"]
+    F["test_fea*.py · test_topopt.py"]
+    FE["simulation/fea.py<br/>topopt.py"]
+    F -->|"imports"| FE
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class F,C,E,H here
-    class FE,CF,X near
+    class F here
+    class FE near
+```
+
+Flow solver and its fixtures
+
+```mermaid
+flowchart TD
+    C["test_cfd*.py"]
+    H["cfd_fixtures.py<br/>fixtures/cfd_runs/"]
+    CF["simulation/cfd.py"]
+    C --> H
+    C -->|"imports"| CF
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class C,H here
+    class CF near
+```
+
+Exploration checks
+
+```mermaid
+flowchart TD
+    E["explore/<br/>its own folder"]
+    X["simulation/explore/"]
+    E -->|"imports"| X
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class E here
+    class X near
 ```
 
 | File | What it tests |

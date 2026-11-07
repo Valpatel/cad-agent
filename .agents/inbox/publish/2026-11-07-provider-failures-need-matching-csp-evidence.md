@@ -46,3 +46,41 @@ do not manufacture the Chromium failure fields or broaden an existing classifier
 The wider #450/#446 public campaign remained failed and open. Match issue closeout to its actual criteria;
 an optional wider campaign is neither a new global merge gate nor permission to discard its failures. No
 settings or CSP change, provider-injection fix, current security re-audit or general browser acceptance is claimed.
+
+## Script resource errors can accompany an enforced block
+
+**Evidence, 2026-11-07 UTC:** the first v0.27.3 public campaign at main
+`1463c144507f36aa9373cbb9407141d5a67a6b40` retained 73 raw readbacks and 37 contexts.
+All 26 first-domain contexts passed, including the formerly failing WebKit navigation and copy cases.
+The second domain's Chromium navigation actions completed, but finalization rejected one capture-phase
+`window.error`: `Error event on SCRIPT`, targeting the exact beacon URI already recorded above. The original
+receipt remains **FAILED**, SHA-256 `f577f18f51929a53d5b99126f2c198cc289086671c0f668feec8c979acdf369d`.
+Fifteen contexts and the final revision reads had not run.
+
+Independent review matched the same Chromium session's parser-initiated GET/script request, native
+`loadingFailed` with `blockedReason=csp`, security-source console entry, injected navigation HTML and
+identical response-header/enforced CSP policy. There was no external response or native runtime exception.
+The captured event was a script resource-loading event, not the historical ResizeObserver runtime error.
+[Actual failure classification](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6712875565).
+
+**Recorded command/output:** one separately reviewed invocation of `<retained-continuation-owner> 1463c144507f36aa9373cbb9407141d5a67a6b40`
+repeated the failed navigation context and ran the 15 missing contexts. Its 70 raw readbacks included both
+ordinary domains' revisions and eight source-pinned assets before and after the browser actions. All 16
+contexts and both real planted-window-error controls passed; owned browsers and the cgroup stopped cleanly.
+The 36 earlier passed contexts plus these 16 form a finite composite, not an unchanged full-campaign retry.
+[Independent actual continuation/composite acceptance](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6712983557). Earlier failed receipts
+remain unchanged. Raw evidence is retained privately with 0700/0600 permissions; provider tokens and private
+paths are excluded from public text.
+
+**Rule:** collecting capture-phase window errors adds resource events as well as runtime ErrorEvents. Keep
+both raw channels. An exception for an inert script resource event must require exactly one window event in
+the context, exact script target/resource/document identities, absent runtime-error fields, matching enforced
+CSP/header and native security evidence, and zero external responses or other errors. Retain the explicit
+WebKit evidence path when `requestfailed` is absent; do not invent Chromium fields. The reviewed consumer
+rejected 28 altered resource-event cases, including duplicates, runtime messages, wrong identities,
+report-only/mismatched policy, missing native evidence and transport failures.
+
+**Limits:** this does not remove provider injection or change CSP, cache policy or settings. It does not prove
+the historical public ResizeObserver warning's timing/cause, explain the earlier README timeout, or qualify
+untested browsers, installers or physical CAD. A revised, independently reviewed consumer must preserve the
+failed run and bound its continuation; a quiet frame or a hostname-only filter cannot erase a failure.

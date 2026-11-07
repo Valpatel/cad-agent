@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.repo.test_markdown_images import image_refs, resolve
+from tests.repo.test_markdown_images import HTML_IMG, IMAGE_INLINE, image_refs, resolve, visible
 
 ROOT = Path(__file__).resolve().parents[2]
 _spec = importlib.util.spec_from_file_location("motion_figures", ROOT / "tools" / "figures" / "motion_figures.py")
@@ -70,15 +70,44 @@ def test_each_figure_stands_alone_is_labelled_sized_and_has_a_still(name):
     assert not re.search(r"<script|<foreignObject|<image|href=|@import|@font-face|url\((?!#)", s, re.I)
 
 
-def test_every_figure_is_shown_on_a_page_with_a_caption():
-    pages = {p: p.read_text(encoding="utf-8") for p in (ROOT / "docs").rglob("*.md")}
-    for name in mf.FIGURES:
-        hits = [(p, t, src) for p, t in pages.items() for src in image_refs(t)
-                if resolve(p.relative_to(ROOT).as_posix(), src) == f"docs/img/motion/{name}"]
+def embedded_figures(text):
+    """Pair each actual inline/HTML image with its following prose, not a later ordinary file link."""
+    text = visible(text)
+    for pattern in (IMAGE_INLINE, HTML_IMG):
+        for image in pattern.finditer(text):
+            for src in image_refs(image.group()):
+                yield src, text[image.end():].lstrip("\n")
+
+
+def check_figure_captions(pages, names):
+    for name in names:
+        hits = []
+        for page, text in pages.items():
+            refs = [src for src in image_refs(text) if resolve(page, src) == f"docs/img/motion/{name}"]
+            captions = [(src, after) for src, after in embedded_figures(text)
+                        if resolve(page, src) == f"docs/img/motion/{name}"]
+            assert len(captions) == len(refs), (page, name, "unhandled image form")
+            hits.extend((page, after) for _, after in captions)
         assert hits, f"{name} is not on any docs page"
-        for p, t, src in hits:
-            after = t.split(f"{src})", 1)[1].lstrip("\n")
-            assert after.startswith("*") and "illustration" in after.split("\n\n")[0].lower(), (p, name)
+        for page, after in hits:
+            assert after.startswith("*") and "illustration" in after.split("\n\n")[0].lower(), (page, name)
+
+
+def test_every_figure_is_shown_on_a_page_with_a_caption():
+    pages = {p.relative_to(ROOT).as_posix(): p.read_text(encoding="utf-8") for p in (ROOT / "docs").rglob("*.md")}
+    check_figure_captions(pages, mf.FIGURES)
+
+
+@pytest.mark.parametrize("image", ['![Sweep](hinge-sweep.svg)', '<img src="hinge-sweep.svg" width="520" alt="Sweep">'])
+def test_caption_consumer_uses_the_actual_image_boundary(image):
+    page = "docs/img/motion/README.md"
+    caption = "\n\n*Illustration, not a physical measurement.*\n\n"
+    ordinary_link = "| [hinge-sweep.svg](hinge-sweep.svg) | Source file. |\n"
+    check_figure_captions({page: image + caption + ordinary_link}, ["hinge-sweep.svg"])
+    with pytest.raises(AssertionError):
+        check_figure_captions({page: image + "\n\n" + ordinary_link}, ["hinge-sweep.svg"])
+    with pytest.raises(AssertionError):
+        check_figure_captions({page: image + caption + image + "\n\n" + ordinary_link}, ["hinge-sweep.svg"])
 
 
 # ----------------------------------------------------------------------------- the fixtures are the tests' own

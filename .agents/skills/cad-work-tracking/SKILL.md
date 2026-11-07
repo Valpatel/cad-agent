@@ -176,3 +176,5 @@ exist that are not on the remote, push them first.
 - Write issue and PR text for a reader who was not in the session: no "as discussed", no chat references.
 - Do not post private infrastructure details (host names, addresses, credentials) in public repos. Name a run host
   by role ("the CFD host") and keep its address in the private notes the team already uses.
+
+[Folder map](README.md)

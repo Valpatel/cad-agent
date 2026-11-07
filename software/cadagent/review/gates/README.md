@@ -2,16 +2,34 @@
 
 Evaluate declared assembly relationships and emit assumption-bearing verdicts. Sampled geometry and access checks do not prove strength or physical fit.
 
+Prepare shared relations
+
 ```mermaid
 flowchart TD
-    R["run.py"] --> A["relations.py + cache.py"]
-    A --> G["assembly.py<br/>subassembly.py"]
-    A --> C["connectivity.py<br/>containment.py"]
-    A --> F["fasteners.py<br/>motion.py + wall.py"]
-    G & C & F --> V["verdict.py"]
+    R["run.py"]
+    A["relations.py<br/>+ cache.py"]
+    R --> A
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class R,A,G,C,F,V here
+    class R,A here
+```
+
+Evaluate relations and collect verdicts
+
+```mermaid
+flowchart LR
+    A["relations.py<br/>+ cache.py"]
+    G["assembly.py<br/>subassembly.py"]
+    C["connectivity.py<br/>containment.py"]
+    F["fasteners.py<br/>motion.py + wall.py"]
+    V["verdict.py"]
+    A --> G
+    A --> C
+    A --> F
+    G & C & F --> V
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class A,G,C,F,V here
 ```
 
 | File or folder | Purpose |

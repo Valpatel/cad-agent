@@ -50,3 +50,7 @@ once per job. A folder built from another commit, or a `--worktree` draft, is re
 build afresh.
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)
+
+| File | Purpose |
+|---|---|
+| [website-repo-map.test.mjs](website-repo-map.test.mjs) | Actual repository owner/link freshness plus missing-map/table/member/link/index/Unicode controls. |

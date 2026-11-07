@@ -54,3 +54,7 @@ flowchart TD
 Related: [package map](../README.md) · [mcmaster-parts skill](../../../.agents/skills/mcmaster-parts/SKILL.md) ·
 [compliant mechanisms](../../../docs/mechanical/compliant.md) · [common issues](../../../docs/practice/common-issues.md) (the mistakes
 these catch)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

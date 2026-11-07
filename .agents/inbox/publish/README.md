@@ -10,6 +10,7 @@ flowchart LR
 
 | Incident | Lesson |
 | --- | --- |
+| [Resize runtime errors](2026-11-07-resize-checks-need-runtime-errors.md) | Collect errors on the exact interaction page; good geometry alone can miss observer feedback. |
 | [Responsive resize](2026-11-07-responsive-style-can-lag-resize.md) | A new viewport width can precede the corresponding responsive style. |
 | [Release guard boundaries](2026-11-07-release-guards-need-current-boundaries.md) | Inspect all current checks, preserve accepted bytes, and preflight source buffers and visible text/link contracts. |
 | [Publication runtime](2026-11-07-publication-consumers-need-explicit-runtimes.md) | Bind the existing executable and browser before public calls. |

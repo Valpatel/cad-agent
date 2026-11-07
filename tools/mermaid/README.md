@@ -44,3 +44,11 @@ The existing diagram browser harness now retains those fixed-input guards and re
 not establish exploitability of the old libraries through every host configuration.
 
 [Tool map](../README.md) · [Supply-chain procedure](../../docs/practice/supply-chain.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [package.json](package.json) | Exact isolated producer dependencies. |
+| [package-lock.json](package-lock.json) | Resolved integrity-bound producer inputs. |
+| [rebuild.mjs](rebuild.mjs) | Reproduce derived renderer and provenance/notices. |

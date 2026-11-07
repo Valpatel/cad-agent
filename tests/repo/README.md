@@ -36,3 +36,12 @@ flowchart TD
 Run: `pytest tests/repo` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [test_import_refmap.py](test_import_refmap.py) | Reference importer canonical output and split records. |
+| [test_markdown_images.py](test_markdown_images.py) | Committed Markdown image destinations. |
+| [test_references_health.py](test_references_health.py) | Reference registry health and maintenance layout. |
+| [test_references_health_apply.py](test_references_health_apply.py) | Reference-health patch application controls. |

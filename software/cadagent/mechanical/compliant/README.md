@@ -38,3 +38,7 @@ print.*
 
 Related: [mechanical](../README.md) · [snap fits and compliant features](../../../../docs/mechanical/compliant.md) ·
 [research note](../../../../docs/research/compliant-mechanisms.md) · [animated figures](../../../../docs/practice/animated-figures.md)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

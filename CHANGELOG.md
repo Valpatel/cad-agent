@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.27.0 (2026-11-07)
+
+**New**
+- Check repository folder owners, file tables and local Markdown destinations, and publish a generated ownership map.
+
+**Fixed**
+- Copy-button layout updates coalesce outside ResizeObserver delivery, preventing the observer-loop error reproduced by the existing late-stylesheet consumer. Copy and navigation-resize checks now retain unfiltered runtime errors alongside their geometry checks (#450).
+
 ## v0.26.1 (2026-11-07)
 
 **Fixed**

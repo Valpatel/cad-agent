@@ -23,3 +23,16 @@ flowchart TD
 | Project folders | Imported upstream code; each remains pinned in the manifest |
 
 Use [vendor_sync.py](../../tools/vendor_sync.py) for imports and notice updates, and the [supply-chain skill](../../.agents/skills/cad-supply-chain/SKILL.md) for checks. Repository metadata paths are explicitly classified; unexpected files under them still trigger the vendor audit.
+
+[Software](../README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [agentcad/](agentcad/) | Pinned imported project, retained in its upstream layout. |
+| [bd_warehouse/](bd_warehouse/) | Pinned imported project, retained in its upstream layout. |
+| [build123d-mcp/](build123d-mcp/) | Pinned imported project, retained in its upstream layout. |
+| [kicad-happy/](kicad-happy/) | Pinned imported project, retained in its upstream layout. |
+| [kicad-mcp-pro/](kicad-mcp-pro/) | Pinned imported project, retained in its upstream layout. |
+| [text-to-cad/](text-to-cad/) | Pinned imported project, retained in its upstream layout. |

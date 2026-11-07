@@ -38,3 +38,9 @@ full history. The Pages settings transition is tracked and reviewed separately i
 [#362](https://github.com/Valpatel/cad-agent/issues/362); moving these files does not change a live setting.
 
 [Tools](../README.md) · [Site tests](../../tests/site/README.md)
+
+| File | Purpose |
+|---|---|
+| [package.json](package.json) | Existing Node scripts and pinned site dependencies. |
+| [package-lock.json](package-lock.json) | Resolved site dependency integrity. |
+| [wrangler.toml](wrangler.toml) | Existing Pages deployment identity; no settings change here. |

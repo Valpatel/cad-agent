@@ -618,3 +618,98 @@ print(json.dumps({'ok':True,'actual_os_denial':error,'installed':result,'privile
         except BaseException:
             if not primary_error:
                 raise
+
+
+@pytest.mark.skipif(os.name != 'nt' or os.environ.get('CAD_AGENT_REAL_COPY') != '1',
+                    reason='explicit actual Windows copy consumer only')
+def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
+    """Real --copy/CLI/filesystem, not an OS-denial or offline repository-guide claim."""
+    from cadagent import agentkit
+
+    base = Path(os.environ['CAD_AGENT_INSTALL_EVIDENCE_DIR']) / 'explicit-copy'
+    base.mkdir(parents=True, exist_ok=False)
+    fixture = tmp_path / 'disposable-kit'
+    for part in ('.agents/skills', '.agents/agents'):
+        shutil.copytree(ROOT / part, fixture / part)
+    (fixture / 'software/cadagent').mkdir(parents=True)
+    items = agentkit.items(fixture)
+    assert sum(i.kind == 'skill' for i in items) == 8 and sum(i.kind == 'agent' for i in items) == 2
+    home = tmp_path / 'copy-home'
+    home.mkdir()
+    # All package imports and readiness subprocesses stay in the new home; no original profile is lent.
+    keep = ('SystemRoot', 'WINDIR', 'COMSPEC', 'PATHEXT', 'ProgramFiles', 'ProgramFiles(x86)',
+            'ProgramW6432', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS', 'PATH')
+    env = {k: os.environ[k] for k in keep if k in os.environ}
+    env.update(HOME=str(home), USERPROFILE=str(home), PYTHONPATH=str(ROOT / 'software'),
+               PYTHONNOUSERSITE='1', PYTHONUTF8='1', GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
+               APPDATA=str(home / 'AppData/Roaming'), LOCALAPPDATA=str(home / 'AppData/Local'),
+               TEMP=str(tmp_path), TMP=str(tmp_path))
+    result = {'ok': False, 'scope': 'actual explicit Windows copy only; automatic OS-denied fallback unproven'}
+
+    def run(name, target_home, accepted=(0,)):
+        argv = [sys.executable, '-m', 'cadagent.cli', 'agents', 'install', '--source', str(fixture),
+                '--home', str(target_home), '--copy']
+        (base / (name + '-command.json')).write_text(json.dumps(argv))
+        status = {'finished': False}
+        try:
+            with (base / (name + '.stdout')).open('w') as out, (base / (name + '.stderr')).open('w') as err:
+                code = _owned_windows_command(argv, env, home, out, err, 120, status)
+        finally:
+            primary_error = sys.exc_info()[0] is not None
+            try:
+                (base / (name + '-status.json')).write_text(json.dumps(status))
+            except BaseException:
+                if not primary_error:
+                    raise
+        assert code in accepted and status['owned_processes_quiescent'], status
+
+    expected = {}
+    for item in items:
+        if item.kind == 'skill':
+            rows = {p.relative_to(item.path).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in item.path.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
+            expected[item.name] = rows
+        else:
+            expected[item.name] = {'role': item.path.read_text(), 'generated': agentkit.codex_agent_skill(item)}
+    (base / 'expected-instructions.json').write_text(json.dumps(expected, indent=2))
+    foreign = home / '.claude/skills/foreign/SKILL.md'
+    foreign.parent.mkdir(parents=True)
+    foreign.write_bytes(b'foreign instructions: keep exact\n')
+    original_foreign = foreign.read_bytes()
+    try:
+        run('first-copy', home)
+        run('second-copy', home)
+        collision_home = tmp_path / 'collision-home'
+        collision = collision_home / '.claude/skills/design-process/SKILL.md'
+        collision.parent.mkdir(parents=True)
+        collision.write_bytes(b'foreign same-name instructions: keep exact\n')
+        run('foreign-collision', collision_home, accepted=(1,))
+        assert collision.read_bytes() == b'foreign same-name instructions: keep exact\n'
+        # Only this disposable fixture is removed, never ROOT, a worktree or an existing environment.
+        shutil.rmtree(fixture)
+        for item in items:
+            if item.kind == 'skill':
+                for relative in ('.claude/skills', '.agents/skills'):
+                    copied = home / relative / item.name
+                    assert not copied.is_symlink()
+                    actual = {p.relative_to(copied).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                              for p in copied.rglob('*') if p.is_file() and p.name != agentkit.COPY_MARK}
+                    assert actual == expected[item.name], (relative, item.name)
+            else:
+                role = home / '.claude/agents' / (item.name + '.md')
+                shared = home / '.agents/skills' / item.name
+                assert not role.is_symlink() and role.read_text().startswith(expected[item.name]['role'])
+                assert not shared.is_symlink() and (shared / 'SKILL.md').read_text() == expected[item.name]['generated']
+        assert foreign.read_bytes() == original_foreign
+        assert {p.name for p in (home / '.agents/skills').iterdir()} == {i.name for i in items}
+        result.update(ok=True, claude_skills=8, claude_roles=2, shared_skills=10,
+                      copied_resource_files=sum(len(expected[i.name]) for i in items if i.kind == 'skill'),
+                      unrelated_foreign_unchanged=True, same_name_foreign_unchanged=True,
+                      source_removed='only owned disposable fixture', automatic_denial=False)
+    finally:
+        primary_error = sys.exc_info()[0] is not None
+        try:
+            (base / 'result.json').write_text(json.dumps(result, indent=2))
+        except BaseException:
+            if not primary_error:
+                raise

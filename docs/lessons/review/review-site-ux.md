@@ -41,15 +41,16 @@ flowchart TD
 
 </details>
 
+<details>
+<summary>Responsive resize: rule and evidence</summary>
+
 ### Read responsive styles after the resize event
 - **Rule:** A new viewport width does not prove its responsive styles are current inside the resize callback.
   Schedule style-dependent updates on a frame, preserving native controls and the reader's chosen state.
 - **Check:** The navigation consumer resizes wide → narrow and verifies that an automatically opened fold closes;
   a fold opened by the reader must survive the round trip. Failed state and later paint are retained separately.
 
-<details><summary>2026-11-07 incident and limits</summary>
-
-WebKit's existing navigation check failed in [PR #445](https://github.com/Valpatel/cad-agent/pull/445). A traced
+On 2026-11-07, WebKit's existing navigation check failed in [PR #445](https://github.com/Valpatel/cad-agent/pull/445). A traced
 real callback read width 360 with the old `display: contents`; later style was `block`, but the fold stayed open.
 Deferring its style read to an animation frame fixed the bounded component cases. A 24-case comparison rejected
 three old-source cases; all sixteen corrected cases preserved both automatic and reader-owned behavior with the

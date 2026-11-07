@@ -41,3 +41,9 @@ style-dependent product update to a frame, and verify native/user-owned state as
 failed observations before later paint; validate a timing fix with the old producer and the same actual consumer.
 Do not generalize this navigation observation into an explanation of unrelated header failures without their own
 evidence. See the [curated lesson](../../../docs/lessons/review/review-site-ux.md#read-responsive-styles-after-the-resize-event).
+
+The first published-lesson placement at `774adea1` caused a separate whole-page prose-wall failure in both engines
+(run 42373254622): the review lesson had 1273 px without a visual against the unchanged 1200 px limit. Component
+and diagram consumers passed; they did not cover that reading budget. The complete new reference lesson is now
+inside a named disclosure, preserving its heading/link target, rule, checks and evidence. Folding reference text
+is a content correction; the wall threshold and its existing consumer remain unchanged.

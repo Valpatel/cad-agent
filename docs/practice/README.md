@@ -18,7 +18,7 @@ flowchart TD
 |---|---|
 | Set up and design | [Agent workflow](agent-workflow.md), [design process](design-process-plan.md), [experts](experts.md) |
 | Review a result | [Dossier](dossier.md), [integrity gates](gates.md), [review packet](review-packet.md), [common issues](common-issues.md) |
-| Publish readable evidence | [Style guide](style-guide.md), [animated figures](animated-figures.md), [web parts](web-parts.md), [file viewer](file-viewer.md) |
+| Publish readable evidence | [Style guide](style-guide.md), [animated figures](animated-figures.md), [project badge](share-badge.md), [web parts](web-parts.md), [file viewer](file-viewer.md) |
 | Maintain the system | [Supply chain](supply-chain.md), [weekly updates](weekly-upstream-update.md), [process lessons](../lessons/process/README.md) |
 
 [All guides](../README.md) · [Skills](../../.agents/skills/README.md)

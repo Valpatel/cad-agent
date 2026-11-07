@@ -2,6 +2,7 @@
 # Markdown: the .md twins and llms.txt stay exactly as written, and GitHub shows the page as before.
 #
 #   docs/<page>.md:
+#     cards: false           # optional: omit automatic section cards on a deliberately compact page
 #     hero:                  # one large figure under the title and its first paragraph
 #       img: docs/img/...    # a committed picture
 #       shows: output        # output: the tool's own (a render, a page it built, a file it wrote);
@@ -38,6 +39,10 @@
 # --build` and `cad-agent review-packet` on a copy of the bench, as built and with one seeded defect at a time
 # (tests/fixtures/gate_bench/build.py, SEEDS). docs/img/packets/SOURCE.json records each run's gate verdicts, and
 # tests/review/test_packet_pictures.py holds the captions below to it: a seeded picture's caption names its seed.
+
+# The README is a small landing page. Keep its CAD picture and sharing badge in their authored sections.
+README.md:
+  cards: false
 
 docs/practice/gates.md:
   hero:

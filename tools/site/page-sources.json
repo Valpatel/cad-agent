@@ -20,6 +20,10 @@
   ],
   "files": [
     {
+      "source": "docs/practice/share-badge.md",
+      "public": "docs/share-badge.md"
+    },
+    {
       "source": ".github/CONTRIBUTING.md",
       "public": "CONTRIBUTING.md"
     },
@@ -294,6 +298,10 @@
     {
       "source": ".agents/agents/cad-resume.md",
       "public": "agents/cad-resume.md"
+    },
+    {
+      "source": "docs/examples/numbered-coupons/README.md",
+      "public": "docs/numbered-coupons.md"
     }
   ],
   "unpublished": [

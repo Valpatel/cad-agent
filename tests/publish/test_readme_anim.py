@@ -459,13 +459,14 @@ def test_the_hero_is_the_first_thing_in_the_readme():
     assert re.search(r"\n\n\[!\[CI\]", readme)
 
 
-def test_repository_route_figure_is_current_and_safe():
-    """A navigation figure has path targets instead of CAD measurements; keep its generated SVG and still safe."""
-    spec = importlib.util.spec_from_file_location("repository_map", ROOT / "tools/anim/repository_map.py")
+@pytest.mark.parametrize("producer", ["repository_map", "made_with_badge"])
+def test_repository_route_figure_is_current_and_safe(producer):
+    """Conceptual art has no CAD measurements; keep its generated SVG and still safe."""
+    spec = importlib.util.spec_from_file_location(producer, ROOT / f"tools/anim/{producer}.py")
     tool = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tool)
     for still, output in ((False, tool.OUT), (True, tool.STILL_OUT)):
         text = tool.build(still=still)  # also checks that each declared destination exists
-        assert text == output.read_text(), "run PYTHONPATH=software python3 tools/anim/repository_map.py"
+        assert text == output.read_text(), f"run PYTHONPATH=software python3 tools/anim/{producer}.py"
         assert svg.problems(text) == []
         assert svg.REDUCED_MOTION in text

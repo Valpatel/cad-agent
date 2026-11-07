@@ -2,8 +2,10 @@
 
 An agent can observe a printer without running a new service. On **2026-11-07**, a normal account login, existing Python libraries and the installed Bambu media runtime produced fresh P1S/X1E telemetry and a real P1S camera frame. X1E video remains unresolved. This is a connection experiment, not a shipped printer-control command.
 
+Production work belongs inside the existing [manufacturing hierarchy](../../../software/cadagent/manufacturing/README.md#where-machine-automation-belongs): separate artifact preparation, device adapters, execution and evidence. Bambu is one integration; its cloud protocol must not define the workflow for every machine.
+
 ```mermaid
-flowchart LR
+flowchart TD
     A["account login"] --> O["owned printer"]
     O --> S["fresh status"]
     O --> G["camera grant"]
@@ -22,6 +24,17 @@ flowchart LR
 | Motion, heating, print submission | Not tested | Not tested |
 
 The X1E returned a camera grant, then rejected preparation of that **same grant** with `84033543`. Its camera works in the official app, according to the owner. A grant is therefore insufficient evidence of a working stream. The error's precise meaning in this camera context is not established by the official error tables.
+
+The intended application is a manufacturing experiment loop: generate technique-test specimens, stamp their part
+numbers, pack plates, verify the printer and a clear bed, submit the job, and connect physical feedback to each
+specimen's exact design and settings. An occupied or uncertain bed must stop submission. The observations above
+establish some prerequisites; they do not establish that the complete loop is implemented.
+
+Each stamped short ID should resolve to a full UUID and a version-controlled experiment record: immutable source
+repository/commit, model parameters, geometry identity and manufacturing settings. Check short IDs for collisions.
+Record print attempts and human function/durability feedback against the exact specimen. Source identity remains
+fixed as later observations guide the next design; the source commit precedes the generated record, avoiding a
+self-referential commit hash.
 
 <details><summary>Repeatable investigation method</summary>
 

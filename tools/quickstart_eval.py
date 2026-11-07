@@ -270,7 +270,10 @@ def _usage(rows: list) -> dict:
 def _kit_skills(home: Path) -> set:
     """The kit's skill and agent names, read from the agent's own clone (empty if it never cloned)."""
     clone = home / "cad-agent"
-    return ({p.parent.name for p in clone.glob("skills/*/SKILL.md")} | {p.stem for p in clone.glob("agents/*.md")}) - {"README"}
+    # Current kits own both instruction namespaces under .agents. Retain the old layout only for grading
+    # historical transcripts against their own old clone, rather than silently selecting no current names.
+    kit = clone / ".agents" if (clone / ".agents" / "skills").is_dir() else clone
+    return ({p.parent.name for p in kit.glob("skills/*/SKILL.md")} | {p.stem for p in kit.glob("agents/*.md")}) - {"README"}
 
 
 def _report(project: Path) -> dict:

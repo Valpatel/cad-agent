@@ -227,3 +227,28 @@ def test_the_grader_reads_empty_fields_posts_and_imports_honestly(tmp_path):
     assert qe.grade(_planted(tmp_path / "p", empty, fed))["kit_used"] == ["cadagent (Python)"]
     assert qe.grade(_planted(tmp_path / "e", empty, ["echo 'next: cad-agent all'"]))["kit_used"] == [], "printed, not run"
     assert qe.grade(_planted(tmp_path / "r", empty, ["cat /run/user/1000/bus"]))["checks"]["stayed_in_its_folder"] is False
+
+
+def test_the_grader_rejects_preloaded_current_canonical_kit_names(tmp_path):
+    qe = _eval()
+    work = _planted(tmp_path, "", ["cad-agent inserts spec.yaml"])
+    clone = work / "home" / "cad-agent"
+    skill = clone / ".agents" / "skills" / "design-process" / "SKILL.md"
+    skill.parent.mkdir(parents=True)
+    skill.write_text("# Design process\n")
+    role = clone / ".agents" / "agents" / "cad-resume.md"
+    role.parent.mkdir(parents=True)
+    role.write_text("# Resume\n")
+    assert qe._kit_skills(work / "home") == {"design-process", "cad-resume"}
+    transcript = (work / "transcript.jsonl").read_text()
+    init = {"type": "system", "subtype": "init", "cwd": str(work / "project"), "skills": [],
+            "mcp_servers": [], "plugins": [],
+            "memory_paths": {"auto": str(work / "home" / ".claude" / "projects" / "memory")}}
+    for names, fresh in (([], True), (["design-process"], False), (["cad-resume"], False)):
+        (work / "transcript.jsonl").write_text(json.dumps({**init, "skills": names}) + "\n" + transcript)
+        assert qe.grade(work)["checks"]["fresh_session"] is fresh, names
+    # Old real transcripts can still be graded against their actual old clone layout.
+    legacy = tmp_path / "legacy" / "cad-agent" / "skills" / "old-skill" / "SKILL.md"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text("# Historical kit\n")
+    assert qe._kit_skills(tmp_path / "legacy") == {"old-skill"}

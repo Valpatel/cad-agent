@@ -9,7 +9,8 @@
  * phones with nav.js loaded, late, blocked, failing or off, and outline jumps (foldProblems and jumpProblems, below). */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readdir, readFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
@@ -662,6 +663,7 @@ try {
  * old and current responsive boundaries, not only the conventional 360 px phone used by the route checks. */
 async function headerProblems() {
   const problems = [];
+  const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-header-'));
   const widths = [320, 340, 359, 360, 361, 379, 380, 381, 390, 409, 410, 411, 429, 430, 431,
     459, 479, 480, 481, 600, 759, 760, 761, 800, 850, 900, 999, 1000, 1001, 1049, 1050, 1051, 1366];
   for (const colorScheme of ['light', 'dark']) {
@@ -675,7 +677,8 @@ async function headerProblems() {
           if (!el || !el.getBoundingClientRect().width || !el.getBoundingClientRect().height) return false;
           if (getComputedStyle(el).visibility !== 'visible') return false;
           for (let ancestor = el; ancestor; ancestor = ancestor.parentElement) {
-            if (Number(getComputedStyle(ancestor).opacity) === 0) return false;
+            const style = getComputedStyle(ancestor);
+            if (style.display === 'none' || Number(style.opacity) === 0) return false;
           }
           return true;
         };
@@ -709,13 +712,22 @@ async function headerProblems() {
           const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
           if (verticalOverlap > 1 && gap < 4) out.push(`${a.label} / ${b.label}: visible gap ${gap.toFixed(2)}px (need 4px)`);
         }
-        return out;
+        return { problems: out, boxes, width: innerWidth, fonts: document.fonts.status,
+          icons: [...document.querySelectorAll('.theme-toggle svg')].map(el => {
+            const rect = el.getBoundingClientRect();
+            return { name: el.getAttribute('class'), display: getComputedStyle(el).display,
+              left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+          }) };
       });
       for (const width of widths) {
         await page.setViewportSize({ width, height: 850 });
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         const found = await measure();
-        problems.push(...found.map(p => `header ${width}px ${colorScheme}: ${p}`));
+        problems.push(...found.problems.map(p => `header ${width}px ${colorScheme}: ${p}`));
+        if (width === 320 || found.problems.length) {
+          await writeFile(path.join(evidence, `${width}-${colorScheme}.json`), JSON.stringify(found, null, 2));
+          await page.screenshot({ path: path.join(evidence, `${width}-${colorScheme}.png`) });
+        }
       }
       // A hidden header keeps all its geometry: prove that geometry alone cannot satisfy the visible-control guard.
       for (const [property, value] of [['visibility', 'hidden'], ['opacity', '0']]) {
@@ -726,7 +738,7 @@ async function headerProblems() {
         }, [property, value]);
         try {
           const hidden = await measure();
-          if (hidden.filter(p => p.startsWith('missing visible ')).length !== 4) {
+          if (hidden.problems.filter(p => p.startsWith('missing visible ')).length !== 4) {
             problems.push(`header ${colorScheme}: ${property} control accepted invisible navigation`);
           }
         } finally {
@@ -735,6 +747,33 @@ async function headerProblems() {
             else el.style.removeProperty(property);
           }, [property, ...previous]);
         }
+      }
+      // An invisible SVG must stay invisible even if an engine reports a cached box for it.
+      // Only this deliberately hidden icon gets a substituted geometry method; the visible control below is real.
+      const hiddenClass = await page.locator('.theme-toggle svg').evaluateAll(icons =>
+        icons.find(el => getComputedStyle(el).display === 'none')?.getAttribute('class'));
+      assert(['sun', 'moon'].includes(hiddenClass), 'the theme toggle must have one hidden icon');
+      const hiddenIcon = page.locator(`.theme-toggle svg.${hiddenClass}`);
+      await hiddenIcon.evaluate(el => {
+        Object.defineProperty(el, 'getBoundingClientRect', { configurable: true,
+          value: () => ({ left: innerWidth + 40, right: innerWidth + 58, top: 0, bottom: 18, width: 18, height: 18 }) });
+      });
+      try {
+        const hidden = await measure();
+        if (hidden.problems.length) problems.push(`header ${colorScheme}: hidden-icon geometry was treated as painted content`);
+      } finally { await hiddenIcon.evaluate(el => { delete el.getBoundingClientRect; }); }
+      const visibleIcon = page.locator('.theme-toggle svg').filter({ visible: true }).first();
+      const oldStyle = await visibleIcon.getAttribute('style');
+      try {
+        await visibleIcon.evaluate(el => { el.style.transform = `translateX(${innerWidth * 2}px)`; });
+        const escaped = await measure();
+        if (!escaped.problems.some(p => p.endsWith('extends outside the viewport')))
+          problems.push(`header ${colorScheme}: visible escaped icon was accepted inside the viewport`);
+        await writeFile(path.join(evidence, `visible-icon-control-${colorScheme}.json`), JSON.stringify(escaped, null, 2));
+      } finally {
+        await visibleIcon.evaluate((el, oldStyle) => {
+          if (oldStyle === null) el.removeAttribute('style'); else el.setAttribute('style', oldStyle);
+        }, oldStyle);
       }
     } finally { await page.close(); }
   }

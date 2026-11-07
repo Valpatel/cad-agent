@@ -37,3 +37,49 @@ Collect unfiltered runtime errors before navigation on the exact page that perfo
 ## Boundaries
 
 Local checks are not publication acceptance. Keep issue450 and the release acceptance open until the correction passes independent review, normal CI and an actual reviewed public consumer. No error whitelist or unchanged public retry is a substitute.
+
+
+## A navigation-looking error can be a collected probe promise
+
+**Observed, 2026-11-07 15:58 UTC:** The first actual v0.27.0 two-domain consumer stopped on the first domain's
+Chromium 768 px planted-copy case. Its source-bound document returned 200 at main
+`918405038071d65e524259c1458bb01c265be456`, and loaded copy/navigation bytes matched. All 41 planted blocks remained
+present. Page, HTTP, request and CSP errors were empty, but the interaction did not complete. The run was retained
+as failed after 28 readbacks and 12 cases; neither the second domain nor final revision checks was reached.
+
+Native protocol logging preserved the underlying error for the exact `Runtime.callFunctionOn` request containing
+the planted async probe and `awaitPromise: true`:
+
+```text
+2026-11-07T15:58:29.327Z  response id 738
+error code -32000: Promise was collected
+```
+
+The same protocol session had no navigation/context-destruction event around that response. Installed
+Playwright 1.56.1's `crExecutionContext.js` rewrites broad protocol errors into
+`Execution context was destroyed, most likely because of a navigation.` That wording was not the cause.
+The failed public receipt correctly marked the copy action incomplete even though cleanup observed the planted
+DOM. A preceding scratch consumer had incorrectly marked its copy row successful during cleanup; that bookkeeping
+was corrected without changing the overall failed outcome or original evidence.
+
+The correction keeps the exact async test probe rooted on its isolated page until the result is consumed, requires
+a completion sentinel, and removes the root afterward. Missing roots fail explicitly. Action and cleanup errors
+are retained together. No product copy component, 41-column boundary, copied label, late stylesheet or overlap
+assertion changes; no exception whitelist or automatic retry is introduced.
+
+One bounded source-bound local experiment used the saved actual public document and unchanged released assets.
+A direct CDP control collected an unrooted pending promise and returned the same underlying error. A rooted
+promise survived forced collection and returned its expected value. The actual corrected consumer passed both
+768 px touch and 1366 px mouse in Chromium and WebKit; Chromium forced collection between creating the probe
+root and consuming it. A separately planted missing root failed the actual consumer. Both released local variants
+also completed: that is nonreproduction, not proof that the old consumer cannot fail. All owned contexts/browser
+processes and preview exited; source stayed clean.
+
+Receipt SHA-256: `045e64b45ed98efe52e45dc3c5bee306186ba9501285b273561d851856ea595d`. [Independent source and actual-control review](https://github.com/Valpatel/cad-agent/pull/457#pullrequestreview-5813510723).
+
+**Corrective rule:** Preserve the underlying protocol error before inferring navigation from a wrapper's message.
+Give an asynchronous browser probe an explicit lifetime until its result is consumed, verify completion, and
+keep cleanup success separate from action success. Preserve failures from the original consumer. These controls
+establish this promise-lifetime hazard and the corrected consumer; they do not identify the cause of older
+uninstrumented failures or constitute a successful public run. Full current CI and new publication evidence remain
+separate requirements.

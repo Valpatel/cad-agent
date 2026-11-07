@@ -7,6 +7,11 @@ on:
   push:
     branches: [main, dev]
   workflow_dispatch:
+    inputs:
+      installer_evidence:
+        description: 'Run the opt-in actual Windows installer study (downloads CAD dependencies)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -87,10 +92,15 @@ jobs:
       - run: npm --prefix tools/mermaid run check
 
   # Execute the documented PowerShell checksum/failure/cleanup procedure on Windows, with inert download/child
-  # fixtures. This does not install cad-agent, uv or a CAD dependency, or contact the installer URL.
+  # fixtures on ordinary runs. The explicit manual evidence input also exercises the real installer below.
   installer-windows:
+    name: installer-windows
     runs-on: windows-2025
-    timeout-minutes: 5
+    timeout-minutes: ${{ inputs.installer_evidence && 35 || 5 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.installer_evidence && '["powershell","pwsh"]' || '["pwsh"]') }}
     permissions:
       contents: read
     steps:
@@ -101,6 +111,21 @@ jobs:
       - run: python -m pip install "pytest==9.0.3"
       - run: python -c "import shutil; assert shutil.which('pwsh'), 'PowerShell must actually run these guards'"
       - run: python -m pytest -q tests/cli/test_installer.py -k "checked_installers_pin or actual_powershell_guide or install_ps1_parses"
+
+      # Explicit manual study only: normal PR/weekly runs keep their fast guard meaning.
+      - name: Run the actual installer body and real uv handoff
+        if: github.event_name == 'workflow_dispatch' && inputs.installer_evidence
+        env:
+          CAD_AGENT_REAL_INSTALLER: '1'
+          CAD_AGENT_INSTALLER_SHELL: ${{ matrix.shell }}
+          CAD_AGENT_INSTALL_EVIDENCE_DIR: ${{ runner.temp }}/installer-evidence
+        run: python -m pytest -q tests/cli/test_installer.py -k actual_windows_installer_body --basetemp "${{ runner.temp }}/installer-pytest"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.installer_evidence
+        with:
+          name: installer-evidence-${{ matrix.shell }}
+          path: ${{ runner.temp }}/installer-evidence
+          if-no-files-found: error
 
   # Supply chain (tools/resource_audit.py, skills/cad-supply-chain/SKILL.md, docs/practice/supply-chain.md): offline checks only,
   # so the network can never make it flaky (the weekly supply-chain.yml runs the online ones). Not a required check, and

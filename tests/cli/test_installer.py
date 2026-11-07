@@ -320,3 +320,173 @@ def test_a_cad_agent_from_somewhere_else_on_path_is_left_alone(world):
     assert again.returncode == 0, again.stdout + again.stderr
     assert not (home / "decoy-ran").exists() and "found " in again.stdout
     assert len((home / "uv-calls.log").read_text().splitlines()) == 2, "installed again from the checkout"
+
+
+@pytest.mark.skipif(os.name != 'nt' or os.environ.get('CAD_AGENT_REAL_INSTALLER') != '1',
+                    reason='explicit real Windows installer study only; downloads CAD dependencies')
+def test_actual_windows_installer_body_and_uv_receipt(tmp_path):
+    """Opt-in real body/uv/exit-3 consumer. Fast guards above retain their separate scope."""
+    shell = os.environ['CAD_AGENT_INSTALLER_SHELL']
+    assert shell in ('powershell', 'pwsh') and shutil.which(shell), 'the named PowerShell must actually run'
+    base = Path(os.environ['CAD_AGENT_INSTALL_EVIDENCE_DIR']) / shell
+    base.mkdir(parents=True, exist_ok=False)
+    home = base / 'home'
+    home.mkdir()
+    for relative in ('tmp', 'AppData/Roaming', 'AppData/Local'):
+        (home / relative).mkdir(parents=True)
+    # Existing machine tools only; no original user configuration, token or package directories are lent.
+    keep = ('SystemRoot', 'WINDIR', 'COMSPEC', 'PATHEXT', 'ProgramFiles', 'ProgramFiles(x86)',
+            'ProgramW6432', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS', 'PATH')
+    env = {key: os.environ[key] for key in keep if key in os.environ}
+    env.update(HOME=str(home), USERPROFILE=str(home), APPDATA=str(home / 'AppData/Roaming'),
+               LOCALAPPDATA=str(home / 'AppData/Local'), TEMP=str(home / 'tmp'), TMP=str(home / 'tmp'),
+               GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, PYTHONNOUSERSITE='1', PYTHONUTF8='1',
+               CAD_AGENT_REF='v0.26.1')
+    expected = '02cbc3c9cef53ef34a97fb24c14a133499af91ec'
+    quote = lambda value: "'" + str(value).replace("'", "''") + "'"
+    result = {'shell': shell, 'ok': False, 'expected_commit': expected, 'completed': []}
+
+    def run(name, argv, accepted=(0,), timeout=1200):
+        (base / (name + '-command.json')).write_text(json.dumps(argv))
+        status = {'finished': False}
+        try:
+            with (base / (name + '.stdout')).open('w') as out, (base / (name + '.stderr')).open('w') as err:
+                p = subprocess.run(argv, env=env, cwd=home, stdout=out, stderr=err, timeout=timeout)
+            status = {'finished': True, 'exit': p.returncode}
+        finally:
+            (base / (name + '-status.json')).write_text(json.dumps(status))
+        assert p.returncode in accepted, f'{name}: {status}; raw command/stdout/stderr retained'
+        result['completed'].append(name)
+        return (base / (name + '.stdout')).read_bytes().decode('utf-8-sig', errors='replace')
+
+    def ps(name, text):
+        script = base / (name + '.ps1')
+        script.write_text(text, encoding='utf-8-sig')  # PS5.1 must read Unicode paths correctly.
+        return run(name, [shell, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script)])
+
+    try:
+        runtime = json.loads(ps('runtime', "$ErrorActionPreference='Stop'; "
+            f"if ($HOME -ne {quote(home)}) {{ throw 'PowerShell HOME escaped owned profile' }}; "
+            "[pscustomobject]@{major=$PSVersionTable.PSVersion.Major; minor=$PSVersionTable.PSVersion.Minor; "
+            "executable=(Get-Process -Id $PID).Path} | ConvertTo-Json -Compress"))
+        assert ((runtime['major'], runtime['minor']) == (5, 1) if shell == 'powershell' else runtime['major'] == 7)
+        result['runtime'] = runtime
+        tag = run('tag-pin', ['git', 'ls-remote', 'https://github.com/Valpatel/cad-agent.git',
+                              'refs/tags/v0.26.1'], timeout=60).split()[0]
+        assert tag == expected, 'released source drift; no installation started'
+        # Both calls execute the exact canonical checksum/download/child procedure and the real installer body.
+        first = ps('first-install', _checked_block('powershell'))
+        assert 'installing the cad-agent command' in first
+        exe = home / '.local/bin/cad-agent.exe'
+        assert exe.is_file()
+        env['PATH'] = str(exe.parent) + os.pathsep + env['PATH']
+        # A machine may already supply uv. Record its real identity without requiring an unnecessary bootstrap.
+        uv = Path(ps('uv-origin', '(Get-Command uv -ErrorAction Stop).Source').strip())
+        assert uv.is_file()
+        run('uv-version', [str(uv), '--version'])
+        clone = home / 'cad-agent'
+        assert run('installed-head', ['git', '-C', str(clone), 'rev-parse', 'HEAD']).strip() == expected
+        tools = Path(run('tool-dir', [str(uv), 'tool', 'dir']).strip())
+        assert home.resolve() in tools.resolve().parents, 'uv tools must stay inside the owned profile'
+        py = tools / 'cad-agent/Scripts/python.exe'
+        assert py.is_file()
+        receipt_path = tools / 'cad-agent/uv-receipt.toml'
+
+        def receipt(name, wanted):
+            raw = receipt_path.read_bytes()
+            (base / (name + '-uv-receipt.toml')).write_bytes(raw)
+            text = run(name, [str(py), '-c',
+                "import json,pathlib,tomllib; from cadagent import agentkit; import cadagent; "
+                "r=tomllib.loads(pathlib.Path(__import__('sys').prefix,'uv-receipt.toml').read_text()); "
+                "print(json.dumps({'requirements':r['tool']['requirements'],'origin':cadagent.__file__,"
+                "'extras':agentkit.installed_extras(pathlib.Path.home()/'cad-agent')}))"])
+            data = json.loads(text)
+            (base / (name + '.json')).write_text(json.dumps(data, indent=2))
+            req = [r for r in data['requirements'] if r.get('name') == 'cad-agent']
+            assert len(req) == 1 and Path(req[0]['editable']).resolve() == clone.resolve()
+            assert sorted(req[0].get('extras', [])) == data['extras'] == wanted
+            assert (clone / 'software').resolve() in Path(data['origin']).resolve().parents
+
+        receipt('before-extra', ['cad'])
+        second = ps('second-install', _checked_block('powershell'))
+        assert 'updating ' in second and 'nothing to reinstall' in second
+        # This real cad-agent.exe holds itself open and must hand uv reinstall back with exit 3.
+        pending = run('actual-exit-three', [str(exe), 'update', '--dir', str(clone), '--ref', 'v0.26.1',
+                                          '--extras', 'site'], accepted=(3,))
+        assert 'finish with:' in pending
+        marker = clone / '.git/cad-agent-reinstall-pending'
+        assert json.loads(marker.read_text())['extras'] == ['cad', 'site']
+        handoff = json.loads(run('actual-reinstall-json', [str(exe), 'update', '--dir', str(clone),
+                                                          '--reinstall-command']))
+        assert handoff[:3] == ['uv', 'tool', 'install'] and handoff[-1] == str(clone) + '[cad,site]'
+        # The unchanged body must flatten ConvertFrom-Json in THIS shell, execute real uv after exit 3,
+        # acknowledge --reinstalled, then relink. No function, executable or OS call is replaced.
+        third = ps('finish-pending-install', _checked_block('powershell'))
+        assert 'finish with:' in third and not marker.exists()
+        receipt('after-handoff', ['cad', 'site'])
+        run('post-handoff-smoke', [str(py), '-c',
+            "import cadquery as cq,markdown; s=cq.Workplane().box(60,40,25).shell(-2); "
+            "cq.exporters.export(s,'windows-box.stl'); assert round(s.val().Volume())==17664; "
+            "print(round(s.val().Volume()),markdown.__version__)"])
+        run('actual-agent-instructions', [str(exe), 'agents', 'list'])
+        assert run('final-head', ['git', '-C', str(clone), 'rev-parse', 'HEAD']).strip() == expected
+        # Reduce only this new child's own token privilege, never machine policy or the runner's token.
+        # If Developer Mode still permits symlinks, fail honestly rather than substitute an injected OSError.
+        fallback = run('actual-os-denied-fallback', [str(py), '-c', r"""
+import ctypes,json,os,pathlib,sys
+from ctypes import wintypes as w
+from cadagent import agentkit
+class LUID(ctypes.Structure): _fields_=[('LowPart',w.DWORD),('HighPart',w.LONG)]
+class LA(ctypes.Structure): _fields_=[('Luid',LUID),('Attributes',w.DWORD)]
+class TP(ctypes.Structure): _fields_=[('PrivilegeCount',w.DWORD),('Privileges',LA*1)]
+a=ctypes.WinDLL('advapi32',use_last_error=True)
+k=ctypes.WinDLL('kernel32',use_last_error=True)
+k.GetCurrentProcess.restype=w.HANDLE
+k.CloseHandle.argtypes=[w.HANDLE]
+a.OpenProcessToken.argtypes=[w.HANDLE,w.DWORD,ctypes.POINTER(w.HANDLE)]
+a.LookupPrivilegeValueW.argtypes=[w.LPCWSTR,w.LPCWSTR,ctypes.POINTER(LUID)]
+a.AdjustTokenPrivileges.argtypes=[w.HANDLE,w.BOOL,ctypes.POINTER(TP),w.DWORD,w.LPVOID,w.LPVOID]
+token=w.HANDLE()
+assert a.OpenProcessToken(k.GetCurrentProcess(),0x20|0x8,ctypes.byref(token)),ctypes.get_last_error()
+try:
+    luid=LUID()
+    assert a.LookupPrivilegeValueW(None,'SeCreateSymbolicLinkPrivilege',ctypes.byref(luid)),ctypes.get_last_error()
+    disable=TP(1,(LA*1)(LA(luid,0)))
+    ctypes.set_last_error(0)
+    assert a.AdjustTokenPrivileges(token,False,ctypes.byref(disable),0,None,None),ctypes.get_last_error()
+    assert ctypes.get_last_error() in (0,1300)  # not assigned is already without that privilege
+finally:
+    k.CloseHandle(token)
+root=pathlib.Path(sys.argv[1]); home=pathlib.Path(sys.argv[2]); home.mkdir()
+probe=home/'probe-target';probe.mkdir(); link=home/'probe-link'
+try:
+    link.symlink_to(probe,target_is_directory=True)
+except OSError as exc:
+    assert exc.winerror==1314,repr(exc)
+    error={'winerror':exc.winerror,'message':str(exc)}
+    print(json.dumps({'actual_os_denial':error}),flush=True)
+else:
+    link.unlink()
+    raise AssertionError('OS still permits symlinks: denied-symlink criterion remains unproven')
+foreign=home/'.claude/skills/foreign/SKILL.md';foreign.parent.mkdir(parents=True);foreign.write_text('foreign keep')
+result=agentkit.install(home,root)
+assert not result['conflicts'] and result['done'] and all(x.startswith(('copy ','generate ')) for x in result['done']),result
+skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=list((root/'.agents/agents').glob('*.md'))
+assert len(skills)==8 and len(roles)==2
+for src in skills:
+    target=home/'.claude/skills'/src.parent.name
+    assert not target.is_symlink() and (target/'SKILL.md').read_bytes()==src.read_bytes()
+for src in roles:
+    target=home/'.claude/agents'/src.name
+    assert not target.is_symlink() and target.read_text().startswith(src.read_text())
+shared=home/'.agents/skills'
+assert {p.name for p in shared.iterdir()}=={p.parent.name for p in skills}|{p.stem for p in roles}
+assert all(not p.is_symlink() and (p/'SKILL.md').is_file() for p in shared.iterdir())
+assert foreign.read_text()=='foreign keep'
+print(json.dumps({'ok':True,'actual_os_denial':error,'installed':result,'privilege_scope':'only this disposable child process'}))
+""", str(clone), str(base / 'denied-symlink-home')], timeout=120)
+        assert json.loads(fallback.strip().splitlines()[-1])['ok']
+        result.update(ok=True, actual_exit_three=True, actual_receipt_extras=['cad', 'site'],
+                      fallback='actual OS error1314 in privilege-reduced disposable child; real agentkit copy install')
+    finally:
+        (base / 'result.json').write_text(json.dumps(result, indent=2))

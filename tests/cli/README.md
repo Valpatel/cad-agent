@@ -25,7 +25,7 @@ flowchart TD
 | `test_cli.py` | `cad-agent ...` end to end through `cadagent.cli.main`, on throwaway projects |
 | `test_init.py` | Checkout starter copying and declaration parity; `python tests/cli/test_init.py --wheel-smoke` builds and installs the committed wheel outside the checkout, checks bytes, rejects missing installed starter data, and verifies SDK ESM scope under an explicit CommonJS ancestor once in full CI |
 | `test_deps.py` | A missing heavy dependency raises `MissingDependency` naming the module, never a quiet skip |
-| `test_installer.py` | `web/install.sh` run twice in a temporary HOME against a `file://` copy of the kit (install, then the `cad-agent update` path, a refusal and `--uninstall`), with a stand-in for uv; the two scripts say the same things; shellcheck and PowerShell's parser when installed |
+| `test_installer.py` | Checked-entry guards and the real POSIX body with a stand-in uv; an explicit manual Windows study runs the canonical checked body under PowerShell 5.1/7 with real uv, exit-3/receipt handoff and an OS-denied copy fallback. Fast tests do not claim this opt-in proof. |
 | `test_links.py` | `cadagent.links`: local link checks for HTML and Markdown pages |
 | `test_privacy.py` | Usage reporting off: every project step runs with the opt-outs in `OPT_OUTS`, the caller's environment is untouched, and every telemetry, update-check or export switch a vendored tool names is covered |
 | `test_project.py` | `cadagent.project`: the `cad:` section of `cad-agent.yaml`, beside other tools' sections |

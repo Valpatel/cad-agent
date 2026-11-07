@@ -38,3 +38,9 @@ flowchart TD
 Run: `pytest tests/manufacturing` (with `PYTHONPATH=software`).
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [test_prusa_view.py](test_prusa_view.py) | Prusa web view behavior and compatibility controls. |

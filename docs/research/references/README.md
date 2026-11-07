@@ -172,3 +172,26 @@ After changing a record, run `node tools/site/compiler/site-references.mjs --exp
 - [`software/cadagent/review/references.py`](../../../software/cadagent/review/references.py): the loader and the checks.
 - [`docs/areas.yaml`](../../areas.yaml): the topic tree records are placed in.
 - #118 (cite every rule by name), #143 (confidence levels), #323 (this knowledge base).
+
+[Research](../README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [guides-cnc.yaml](guides-cnc.yaml) | Guide source records for cnc. |
+| [guides-general.yaml](guides-general.yaml) | Guide source records for general. |
+| [guides-inserts.yaml](guides-inserts.yaml) | Guide source records for inserts. |
+| [guides-mould.yaml](guides-mould.yaml) | Guide source records for mould. |
+| [guides-pcb.yaml](guides-pcb.yaml) | Guide source records for pcb. |
+| [guides-print.yaml](guides-print.yaml) | Guide source records for print. |
+| [guides-sheet.yaml](guides-sheet.yaml) | Guide source records for sheet. |
+| [projects-drive.yaml](projects-drive.yaml) | Project source records for drive. |
+| [projects-drone.yaml](projects-drone.yaml) | Project source records for drone. |
+| [projects-esc.yaml](projects-esc.yaml) | Project source records for esc. |
+| [projects-general.yaml](projects-general.yaml) | Project source records for general. |
+| [projects-legged.yaml](projects-legged.yaml) | Project source records for legged. |
+| [projects-motor.yaml](projects-motor.yaml) | Project source records for motor. |
+| [projects-pantilt.yaml](projects-pantilt.yaml) | Project source records for pantilt. |
+| [projects-turret.yaml](projects-turret.yaml) | Project source records for turret. |
+| [projects-wheel.yaml](projects-wheel.yaml) | Project source records for wheel. |

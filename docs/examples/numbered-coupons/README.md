@@ -67,3 +67,9 @@ will reuse the same identity contract and the [existing snap-fit checks](../../m
 claiming this hole fixture covers their mechanical acceptance.
 
 [Examples](../README.md) · [Manufacturing API](../../../software/cadagent/manufacturing/README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [build.py](build.py) | Generate stamped coupon source and strict project plate. |

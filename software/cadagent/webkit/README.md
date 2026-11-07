@@ -56,3 +56,42 @@ The model viewer and FEA viewer inherit the shared default. Projects with copied
 - Inter (the Inter Project Authors) and JetBrains Mono (JetBrains), SIL Open Font License 1.1. Unmodified.
 - Mermaid 11.17.2 (`mermaid@11.17.2` core entry), MIT, © 2014–2022 Knut Sveidqvist. Derived security rebuild with locked DOMPurify3.4.17/KaTeX0.18.10; [producer](https://github.com/Valpatel/cad-agent/blob/dev/tools/mermaid/README.md), [receipt/input record](vendor/mermaid/SOURCE.json) and [all emitted dependency licences](vendor/mermaid/THIRD-PARTY-LICENSES.txt). The original bundle hash is retained in the patch record.
 - fflate 0.8.3 (`fflate@0.8.3`, `esm/browser.js`), MIT, © 2026 Arjun Barrett. Unmodified; it replaces three.js r160's bundled fflate 0.6.9.
+
+[Package map](../README.md)
+
+```mermaid
+flowchart TD
+    L["file-loader.js"] --> V["file-viewer.js"]
+    V --> P["vendor/"]
+    M["model.js"] --> V
+    D["diagrams.js"] --> P
+    T["part-table.js"] --> S["part-tracker.js"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+```
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [appnav.js](appnav.js) | Application navigation enhancement. |
+| [diagrams.css](diagrams.css) | Diagram presentation and fallback styles. |
+| [file-geometry.js](file-geometry.js) | Geometry decoding/assembly helpers. |
+| [file-loader.js](file-loader.js) | Original-file input lifecycle and format dispatch. |
+| [file-mesh-worker.js](file-mesh-worker.js) | Isolated mesh decode worker. |
+| [file-step-worker.js](file-step-worker.js) | Isolated STEP decode worker. |
+| [file-viewer-theme.js](file-viewer-theme.js) | Theme binding for the original-file viewer. |
+| [file-viewer.css](file-viewer.css) | Original-file viewer layout. |
+| [file-viewer.html](file-viewer.html) | Standalone original-file viewer shell. |
+| [file-viewer.js](file-viewer.js) | Original-file viewer orchestration and controls. |
+| [package.json](package.json) | Web-kit module type metadata. |
+| [part-table.css](part-table.css) | Part checklist styles. |
+| [part-table.js](part-table.js) | Sort/filter checklist enhancement. |
+| [part-tracker.js](part-tracker.js) | Stable part state ownership. |
+| [review.js](review.js) | Review-site interaction. |
+| [viewer.html](viewer.html) | Standalone packed-model viewer shell. |
+| [vendor/](vendor/README.md) | Browser source/licence/integrity records. |
+
+
+| File | Purpose |
+|---|---|
+| [viewer.js](viewer.js) | Packed-model viewer setup and page bindings. |

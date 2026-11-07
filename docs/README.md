@@ -40,3 +40,19 @@ flowchart TD
 [Home](../README.md) · [Tests](../tests/README.md) · [Lessons](lessons/README.md) · [Recovery snapshot](lessons/process/2026-11-05-recovery-audit.md)
 
 Release notes awaiting the next version live in [changelog fragments](changelog.d/README.md); released history stays in the root [CHANGELOG](../CHANGELOG.md).
+
+<details>
+<summary>Repository metadata and owner maps</summary>
+
+| File or folder | Purpose |
+|---|---|
+| [agent-prompt.txt](agent-prompt.txt) | Canonical copyable starter prompt. |
+| [areas.yaml](areas.yaml) | Topic and API ownership metadata. |
+| [changelog.d/](changelog.d/README.md) | Reviewable release fragments. |
+| [home.yaml](home.yaml) | Homepage content and existing product entry points. |
+| [lessons/](lessons/README.md) | Evidence-backed lessons grouped by area. |
+| [process-checks.md](process-checks.md) | Existing process-check catalogue. |
+| [validation/](validation/README.md) | Dated source-bound validation receipts. |
+| [map.md](map.md) | Generated folder ownership inventory. |
+
+</details>

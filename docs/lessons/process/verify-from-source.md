@@ -268,3 +268,22 @@ flowchart TD
   reference checks retain their existing behavior. It establishes no physical CAD qualification.
 
 </details>
+
+### Check motion in the actual embedding mode
+- **Rule:** Test the rendered image a reader receives. A parent page's `matchMedia` value and a standalone SVG's
+  zero-animation count do not prove that an external `<img>` receives the same preference. Compare actual image
+  frames under the browser preference and require a deliberately animated negative control to fail the still check.
+- **Evidence:** During the cinematic header review on 2026-11-07, Chromium 151 page/context emulation stopped the
+  standalone SVG but left the image moving. The browser-level preference stopped the same image bytes in Chromium; WebKit CI exposed the same embedding
+  boundary. The README now selects a generated still explicitly through `picture`. The existing
+  [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
+  the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/2026-11-07-image-motion-needs-the-image-consumer.md).
+
+### Retain the geometry and visibility behind a browser failure
+- **Rule:** A nonzero rectangle does not by itself prove that content paints. Check the element's display and
+  ancestor visibility, preserve visible text and image bounds, and exercise both a hidden-geometry control and
+  a genuinely escaped visible element. Keep the failed rectangles and screenshot rather than only a message.
+- **Evidence and limits:** The actual 320-pixel WebKit header failures lacked those captures. Local successful
+  resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
+  the visibility boundary; [the incident](../../../.agents/inbox/2026-11-07-header-visibility-needs-paint-state.md)
+  distinguishes its controlled regression from the still-unproven historical cause.

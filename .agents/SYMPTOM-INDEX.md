@@ -2,11 +2,15 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A narrow-header failure has no retained bounds, or hidden SVG geometry is treated as painted content | [Separate visibility from geometry and retain the failed frame](inbox/2026-11-07-header-visibility-needs-paint-state.md) |
+| Reduced-motion emulation reports success while an embedded SVG still moves | [Check the actual image consumer](inbox/2026-11-07-image-motion-needs-the-image-consumer.md), [verification rule](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
+| Cloud login or a camera URL succeeds, but fresh telemetry or actual video is missing | [Separate connection stages and match the camera preparation reply](inbox/2026-11-07-camera-grants-do-not-prove-video.md), [reusable method](../docs/research/manufacturing/bambu-cloud.md) |
 | The pointer moves but clicks do not reach other applications despite healthy resources | [Persistent application grabs](inbox/2026-11-07-pointer-grabs-can-mimic-a-frozen-desktop.md), [desktop diagnosis](../docs/lessons/process/agent-process.md#diagnose-desktop-problems-without-disrupting-the-users-session) |
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
 | Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |
 | Old file imports overwrite newer progress or change state after controls are disposed | [Part checklist ownership](domains/web-part-state.md), [reproduced import incident](inbox/2026-10-29-import-ownership-must-survive-file-decoding.md) |
 | Python CI restarts or cancels at the same head after a PR description edit | [Review publication procedure](playbooks/review-publication.md), [observed workflow trigger](inbox/2026-10-29-pr-description-edits-restart-ci.md) |
+| A broader issue closes after a partial PR even though its description said to keep it open | [Negated closing keywords still trigger GitHub](inbox/2026-11-07-negated-closing-keywords-still-close-issues.md), [review publication procedure](playbooks/review-publication.md) |
 | Mermaid source appears on a document, or newly inserted diagrams never render | [Mermaid fences need rendered evidence](inbox/2026-10-29-markdown-fences-need-rendered-evidence.md), [shared diagram API](../docs/practice/web-diagrams.md) |
 | A preassembled board/carrier must enter as one module, but flattening its steps invents tool access or insertion order | [Separate internal and parent assembly scopes](domains/assembly-scopes.md) |
 | Service is enabled but a requested module member has no service check or finding | [Resolve service targets before changing scope](inbox/2026-10-29-preassembly-needs-its-own-obstacle-scope.md#service-requests-must-survive-a-change-of-assembly-scope) |

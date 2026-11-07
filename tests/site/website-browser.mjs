@@ -368,6 +368,8 @@ try {
         }
         return out;
       };
+      await runtimeErrorControl();
+      problems.push(...await fontReadyProblems(covered));
       for (const [width, touch] of [[360, true], [520, true], [768, true], [600, false], [800, false], [1366, false]]) {
         const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch: touch });   // touch: pointer: coarse
         if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
@@ -375,12 +377,13 @@ try {
         const where = `${width}px ${touch ? 'touch' : 'mouse'}`;
         const runtimeErrors = [];
         let phase = 'navigation';
-        page.on('pageerror', error => runtimeErrors.push({ phase, url: page.url(), message: error.message, stack: error.stack }));
+        const collectRuntime = await watchRuntimeErrors(page, runtimeErrors, () => phase);
         for (const route of busiest) {
           phase = `navigate ${route}`;
           await page.goto(base + route, { waitUntil: 'load' });
           await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
           for (const c of await page.evaluate(covered)) problems.push(`${where} ${route}: ${c}`);
+          await collectRuntime(`navigate ${route}`); // save this document's ErrorEvents before the next navigation
         }
         phase = 'copy button';
         await page.locator('cad-copy > .cad-copy-btn').first().click();
@@ -448,6 +451,8 @@ try {
           await settle();
           for (const c of await page.evaluate(covered)) problems.push(`${where} planted, late stylesheet: ${c}`);
         }
+        await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+        await collectRuntime('copy, planted boundaries and late stylesheet');
         if (runtimeErrors.length) {
           const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-copy-layout-'));
           const subsequentState = await page.evaluate(() => ({ width: innerWidth, height: innerHeight,
@@ -830,6 +835,127 @@ async function headerProblems() {
 /** Run `parts` ([name, async () => problems]) LANES at a time, in the order given, and return their problems in that
  * order. The log gives each part's time, so a slow one is easy to find. A part that throws fails the run once the
  * parts already started have finished, so no page is closed under a part still using it. */
+/** Chromium can dispatch a ResizeObserver ErrorEvent without Playwright emitting pageerror. Keep both channels.
+ * The in-page queue is drained before another document replaces it and after bounded frame settling. Do not
+ * suppress the event, and label collection time separately from the pageerror listener's actual action phase. */
+async function watchRuntimeErrors(page, errors, phase) {
+  page.on('pageerror', error => errors.push({ channel: 'pageerror', phase: phase(), url: page.url(),
+    message: error.message, stack: error.stack }));
+  await page.addInitScript(() => {
+    window.__cadWindowErrors = [];
+    window.addEventListener('error', event => window.__cadWindowErrors.push({ channel: 'window.error',
+      url: location.href, at: performance.now(), message: event.message || `Error event on ${event.target?.nodeName || 'window'}`,
+      filename: event.filename, line: event.lineno, column: event.colno, stack: event.error?.stack }), true);
+  });
+  return async collectedAfter => {
+    const queued = await page.evaluate(() => {
+      if (!Array.isArray(window.__cadWindowErrors)) throw new Error('window error collector is missing');
+      return window.__cadWindowErrors.splice(0);
+    });
+    errors.push(...queued.map(error => ({ ...error, phase: `collected after ${collectedAfter}` })));
+  };
+}
+
+async function runtimeErrorControl() {
+  const context = await browser.newContext();
+  try {
+    const page = await context.newPage(), errors = [];
+    const collect = await watchRuntimeErrors(page, errors, () => 'planted ErrorEvent control');
+    await page.goto('about:blank');
+    await collect('empty control document');
+    assert.equal(errors.length, 0);
+    await page.evaluate(() => dispatchEvent(new ErrorEvent('error', { message: 'planted-window-error' })));
+    await collect('planted ErrorEvent');
+    assert(errors.some(error => error.channel === 'window.error' && error.message === 'planted-window-error'),
+      'the actual runtime collector must reject a window ErrorEvent without relying on Playwright pageerror');
+    assert(errors.every(error => error.message === 'planted-window-error'), 'unexpected error in collector control');
+  } finally { await context.close(); }
+}
+
+/** Exercise the real copy component when font readiness resolves during observer delivery. This is a controlled
+ * scheduling regression, not a reconstruction of the historical public warning. Its late stylesheet and overlap
+ * check are the existing copy consumer's; none of the product callbacks or error events is suppressed. */
+async function fontReadyProblems(covered) {
+  const out = [], errors = [];
+  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const page = await context.newPage();
+  let phase = 'navigation';
+  const collectRuntime = await watchRuntimeErrors(page, errors, () => phase);
+  try {
+    await page.addInitScript(() => {
+      const descriptor = Object.getOwnPropertyDescriptor(FontFaceSet.prototype, 'ready');
+      if (!descriptor?.get || !descriptor.configurable) throw new Error('font readiness cannot be controlled');
+      const boundary = window.__cadFontBoundary = { reads: 0, releases: 0, armed: false, styleApplied: false };
+      boundary.waiting = new Promise(resolve => { boundary.resolve = resolve; });
+      Object.defineProperty(FontFaceSet.prototype, 'ready', { ...descriptor, get() {
+        if (this !== document.fonts) return descriptor.get.call(this);
+        boundary.reads++;
+        return boundary.waiting;
+      } });
+      const Native = ResizeObserver;
+      window.ResizeObserver = class extends Native {
+        constructor(callback) {
+          super((entries, observer) => {
+            if (boundary.armed && boundary.styleApplied && !boundary.releases &&
+                entries.some(entry => entry.target.closest('cad-copy'))) {
+              boundary.releases++;
+              boundary.resolve(document.fonts);
+            }
+            callback.call(observer, entries, observer);
+          });
+        }
+      };
+    });
+    await page.goto(base + '/docs/toolkit', { waitUntil: 'networkidle' });
+    const before = await page.evaluate(() => ({ reads: window.__cadFontBoundary.reads,
+      copies: document.querySelectorAll('cad-copy > pre').length, releases: window.__cadFontBoundary.releases }));
+    assert(before.copies > 0 && before.reads >= before.copies, 'real copy components must subscribe to held font readiness');
+    assert.equal(before.releases, 0);
+    phase = 'font readiness during copy observer delivery';
+    await page.evaluate(() => {
+      window.__cadFontBoundary.armed = true;
+      requestAnimationFrame(() => {
+        const style = document.createElement('style');
+        style.textContent = 'cad-copy>.cad-copy-btn{font-size:15px;padding:.3em 1.2em}';
+        document.head.append(style);
+        window.__cadFontBoundary.styleApplied = true;
+      });
+    });
+    await page.waitForFunction(() => window.__cadFontBoundary.releases === 1, null, { timeout: 3000 });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    for (const problem of await page.evaluate(covered)) out.push(`font ready: ${problem}`);
+    await collectRuntime('controlled font readiness');
+    // Keep the original responsive navigation contract alongside the copy geometry.
+    const fold = page.locator('details.cad-nav-fold');
+    assert.equal(await fold.evaluate(element => element.open), true);
+    phase = 'font control, wide to narrow';
+    await page.setViewportSize({ width: 375, height: 900 });
+    await page.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 });
+    await page.locator('.cad-nav-toggle').click();
+    assert.equal(await fold.evaluate(element => element.open), true);
+    phase = 'font control, reader choice across resize';
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await page.setViewportSize({ width: 375, height: 900 });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    assert.equal(await fold.evaluate(element => element.open), true);
+    for (const problem of await page.evaluate(covered)) out.push(`font ready, narrow: ${problem}`);
+    assert.equal(await page.evaluate(() => window.__cadFontBoundary.releases), 1);
+  } catch (error) { out.push(`font-ready control action: ${error.stack || error}`); }
+  finally {
+    try {
+      await collectRuntime('font control and responsive actions');
+      if (errors.length) {
+        const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-copy-font-ready-'));
+        await writeFile(path.join(evidence, 'runtime.json'), JSON.stringify({ errors }, null, 2) + '\n');
+        await page.screenshot({ path: path.join(evidence, 'runtime.png') });
+        for (const error of errors) out.push(`font-ready ${error.channel}, ${error.phase}: ${error.message} (subsequent paint: ${evidence})`);
+      }
+    } finally { await context.close(); }
+  }
+  return out;
+}
+
 async function inLanes(parts) {
   const found = parts.map(() => []), took = parts.map(() => 0), errors = [], start = Date.now();
   let next = 0;
@@ -1981,7 +2107,7 @@ async function foldProblems() {
   const turn = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   const runtimeErrors = [];
   let phase = 'navigation';
-  turn.on('pageerror', error => runtimeErrors.push({ phase, message: error.message, stack: error.stack }));
+  const collectRuntime = await watchRuntimeErrors(turn, runtimeErrors, () => phase);
   await turn.goto(base + '/docs/toolkit');
   await settled(turn);
   const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
@@ -2023,6 +2149,8 @@ async function foldProblems() {
     if (paper.rail) out.push(`print at ${w}px: the "On this page" column prints`);
     await turn.emulateMedia({ media: 'screen' });
   }
+  await turn.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await collectRuntime('navigation, resize and print');
   if (runtimeErrors.length) await resizeFailure(`navigation resize runtime errors: ${runtimeErrors.map(e => `${e.phase}: ${e.message}`).join('; ')}`, await isOpen());
   await turn.close();
   // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the

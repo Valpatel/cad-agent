@@ -38,6 +38,47 @@ Collect unfiltered runtime errors before navigation on the exact page that perfo
 
 Local checks are not publication acceptance. Keep issue450 and the release acceptance open until the correction passes independent review, normal CI and an actual reviewed public consumer. No error whitelist or unchanged public retry is a substitute.
 
+## Font readiness can change geometry during observer delivery
+
+On 2026-11-07 UTC, the corrected plain-state copy probe completed both Chromium cases in the actual v0.27.1
+public campaign, but the first domain's WebKit toolkit navigation emitted the same resize warning. The event
+at 17:43:58.489 UTC preceded the first viewport change at 17:43:59.470 UTC. The receipt remains failed after
+42 responses and 24 cases, with second-domain and later cases unrun; its SHA-256 is
+`506131e7bd6efbeab26b04c63ac897ec742a21e3cae56e6af3283374449d2740`.
+[Independent failure disposition](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6710850120).
+
+An eight-case local font-delay study and one instrumented public WebKit navigation were quiet. They did not
+reproduce the failure or justify a fix by themselves. Their receipts remain scoped nonreproductions:
+`551d4e62b8944847c37a5f61863f6d0c0ad146a28b4e24186f45ec8a325b40fd` and
+`598ecf4763054cb01c03f8b9d761fea0ddc251c58febfb011fba53c20cd30269`.
+
+The next controlled local experiment used the saved actual document and source-bound released assets. In each
+isolated page, it held the actual component's `FontFaceSet.ready` promise, applied the existing late-button
+stylesheet on an animation frame, and resolved readiness in the first actual copy observer notification afterward.
+The browser still delivered every original callback and error. The only scratch product alternative scheduled
+the font-ready measurement on an animation frame.
+
+`timeout --signal=TERM --kill-after=15s 180s node cad450-font-delivery-control.mjs` completed all four old/new
+WebKit/Chromium cases. Each observed 23 readiness reads and exactly one controlled release. Released WebKit
+emitted the exact warning through both `pageerror` and `window.error`. Released Chromium emitted it through
+`window.error` alone: Playwright's `pageerror` stayed empty. The scratch frame alternative emitted neither in
+both engines. All owned browser/preview processes exited, no traces were dropped, and source stayed clean.
+Receipt SHA-256: `d5975f3f8c901fd4df6c321f0ef37eb1481c65c0cfe6a791ee19b54f141feeae`.
+[Independent actual review](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6711195314).
+
+**Cause and corrective rule:** the remaining synchronous font-ready measurement can change observed geometry
+within the resize delivery cycle. Schedule it on the next frame, as the observer-triggered fit already is.
+Collect unfiltered window ErrorEvents as well as Playwright `pageerror` before navigation; drain each document's
+queue before replacing it and after a bounded paint. Do not prevent default error delivery. Prove the collector
+with a planted ErrorEvent, then test the actual component with the controlled readiness boundary and the existing
+overlap and reader-choice assertions.
+
+**Limits:** this establishes a scheduling hazard and a test-observation gap, not the cause of the uninstrumented
+public event. The diagnostic's Chromium `observedDiscrimination: false` field only considered its empty
+Playwright error list; its preserved window-event trace contains the warning. Source-bound regression checks,
+current CI and a new reviewed actual publication remain required. Neither the original failed receipt nor its
+outcome is rewritten.
+
 
 ## A navigation-looking error can be a collected probe promise
 

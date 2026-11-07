@@ -47,6 +47,8 @@ if (RELEASE && WORKTREE) throw new Error('--release and --worktree are exclusive
 const onReviewed = ref => { try { execFileSync('git', ['merge-base', '--is-ancestor', 'HEAD', ref], { cwd: root }); return true; } catch { return false; } };
 if (RELEASE && !onReviewed('origin/main') && !onReviewed('origin/dev')) throw new Error('--release needs HEAD on origin/main or origin/dev (merged and pushed), so production only shows reviewed commits');
 const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
+// Only these docs/img files are copied to public URLs; source-only folder maps stay on GitHub.
+const publishedImages = new Set(tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f)));
 const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
@@ -226,7 +228,7 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(file), pathname));
     const folder = folderPage(resolved);
     const destination = folder || resolved;
-    const published = pageFiles.has(destination) || (/^docs\/img\//.test(destination) && tracked.includes(destination));
+    const published = pageFiles.has(destination) || publishedImages.has(destination);
     let target;
     if (published) {
       const publicFile = publicPath(destination);
@@ -339,7 +341,7 @@ for (const [dest, html] of docPages) await writeFile(dest, drawBoth(html, drawnL
 const diagrams = { stats: { ...drawnLight.stats, cached: drawnLight.stats.cached + drawnDark.stats.cached, drawn: drawnLight.stats.drawn + drawnDark.stats.drawn,
   left: leftBlocks.size } };
 // Images referenced by docs.
-for (const f of tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f))) await copyTracked(f, path.join(out, f));
+for (const f of publishedImages) await copyTracked(f, path.join(out, f));
 
 // Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site/compiler/site-catalog.mjs).
 const SNAP = snapDemo();                 // geometry-driven animation: tools/site/compiler/snap-demo.mjs

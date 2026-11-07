@@ -4,6 +4,8 @@ Existing figures for motion and clearance. The caption/source index distinguishe
 
 <img src="hinge-sweep.svg" width="520" alt="A diagram of the gate bench&#x27;s arm swept from 0 to 60 degrees; it first shares volume with the frame beam between 44.89 and 44.91 degrees">
 
+*Illustration of the gate-bench arm sweep, drawn from the existing fixture; not a physical clearance measurement.*
+
 ```mermaid
 flowchart TD
     A["README.md"]

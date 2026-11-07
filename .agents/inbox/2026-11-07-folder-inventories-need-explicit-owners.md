@@ -49,8 +49,9 @@ each data directory's own map. The skill's bundled-resource links remain an inde
 The actual role installer and supply-chain inventory now reserve exactly `.agents/agents/README.md` as a map;
 other malformed role Markdown still fails discovery. The role map is explicitly source-only, so publication
 does not misclassify it as a third agent. Skill maps copy with their local instructions and references; links
-outside the copied bundle use canonical source URLs. Figure maps also use source URLs for captions/producers
-outside their raw-copied asset namespace. No historical report, source record, patch or image bytes are rewritten.
+outside the copied bundle use canonical source URLs. Figure maps also use source URLs for captions/producers;
+the source-only maps themselves are not copied to the site's image namespace. No historical report, source record,
+patch or image bytes are rewritten.
 
 **Rule:** test the requested entry point and the real consumers that discover or copy it. Parent ownership and
 literal README coverage are different assertions. Keep the original narrow exceptions; do not add a broader
@@ -63,6 +64,24 @@ depths plus the existing explicitly published coupon example, and excludes the r
 exclusions disappear; no network permissions, action pins, result policy or publisher predicate changes. The exact
 previously failing parity check then passed. The 26 map controls also passed, with their actual diagram renderer
 still explicitly reserved for the existing CI browser job.
+
+### Follow each new map through publication and caption consumers
+
+The first full CI at `6a2f52aa` (2026-11-07 UTC) rendered all 120 owner maps / 121 blocks in both themes:
+114 distinct drawings, 83 cached and 31 newly drawn per theme, zero fallback. The Chromium job then failed its
+existing Markdown-twin/link check: `rewriteMd` treated every tracked `docs/img/` file as published, but the actual
+copier selects image extensions only. New README links therefore became 44 broken site/agent-index URLs. Use the
+same exact image inventory for URL rewriting and copying; source-only map links belong to the repository.
+
+The core Python job retained 3,014 passes, 332 skips and one caption failure. Its image collector correctly found
+the new HTML image, but its caption check split at the next `filename)` occurrence, which was an ordinary table
+link. Pair captions with actual Markdown/HTML image boundaries, require every discovered image form to be handled,
+and retain controls for an absent caption and an uncaptioned repeated image. The new preview also gets its own
+explicit illustrative caption. Do not skip source-map pages or relax the required caption meaning.
+
+Evidence: CI jobs `128498821063` / `128498821278` in runs `42404384396` / `42404384463`. Original raw-log SHA-256:
+`d840a8ed7a6a7ddf527bca8429acf08d8ecfb998b3033319b862af34cf7cc3cc` (Chromium),
+`911dfc75dd764a82c70aa59f67f3c7629dc5687ffd0cc5cfd1ad37f21062fe83` (Python 3.12). Later checks do not erase those failures.
 
 ## Limits
 

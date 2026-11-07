@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from cadagent._deps import MissingDependency
 from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, Step, load_project
 
-SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "webkit", "pcb-check", "all",
+SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "prusa-view", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
                "overhangs", "library", "init", "rules", "choose")
@@ -209,6 +209,48 @@ def _print_results(results: Dict[str, Any]) -> None:
     counts = summarize(results)
     _say(f"{counts['pass']} pass / {counts['fail']} fail / {counts['skip']} skip"
          " · CAD only: physical fit not verified, " + _slicer_note(results))
+
+def cmd_prusa_view(args: argparse.Namespace) -> int:
+    """Open a model in PrusaSlicer's window (cadagent.manufacturing.prusa_view); a project is optional."""
+    from cadagent.manufacturing import prusa_view
+    from cadagent.manufacturing.slicer import _settings, engine_of
+    from cadagent.project import find_config
+
+    root = getattr(args, "project", None)
+    project = load_project(root) if root or find_config(Path.cwd()) else None
+    model = Path(args.model)
+    if not model.is_file() and project is not None and (project.root / model).is_file():
+        model = project.root / model
+    if args.stop:
+        data_dir = prusa_view.work_dir(model, args.workdir) / "prusaslicer-datadir"
+        try:
+            pids = prusa_view.stop(data_dir)
+        except prusa_view.ViewError as exc:
+            raise _Unusable(str(exc)) from None
+        _say(f"stopped PID {', '.join(map(str, pids))}" if pids else f"no view open from {data_dir.parent}")
+        return 0
+    settings = None
+    if project is not None and not args.config:
+        if engine_of(project) == "prusa":
+            settings = _settings(project)
+        else:
+            _warn("cad.slicer.engine is not prusa: using PrusaSlicer's default presets (or give --config)")
+    try:
+        bed = prusa_view.parse_bed(args.view_bed) if args.view_bed else None
+        r = prusa_view.open_view(model, settings, args.config, bed, args.screenshot, args.wait, args.close,
+                                 args.workdir, args.ca_file, say=_say)
+    except (prusa_view.ViewError, ValueError) as exc:
+        raise _Unusable(str(exc)) from None
+    if r.get("view_bed"):
+        _say("view bed {:g} x {:g} x {:g} mm".format(*r["view_bed"]) + ", wipe tower off: for looking at only, not for printing")
+    if r["screenshot"]:
+        _say(f"screenshot: {r['screenshot']}")
+    if r["closed"]:
+        _say(f"closed: stopped only this view's own process (PID {', '.join(map(str, r['stopped']))})")
+    else:
+        _say(f"open: PID {', '.join(map(str, r['pids']))}; close it with cad-agent prusa-view {args.model} --stop"
+             + (f" --workdir {args.workdir}" if args.workdir else ""))
+    return 0
 
 def _slicer_note(results: Dict[str, Any]) -> str:
     return results.get("footer_meta", {}).get("slicer", "slicer not run")
@@ -1302,6 +1344,12 @@ def dispatch(args: argparse.Namespace) -> int:
         except (MissingDependency, _Unusable) as exc:
             _err(f"mcmaster: {exc}")
             return 2
+    if sub == "prusa-view":                                # a project is optional
+        try:
+            return cmd_prusa_view(args)
+        except (CadConfigError, FileNotFoundError, _Unusable) as exc:
+            _err(f"prusa-view: {exc}")
+            return 2
     if sub not in HANDLERS:
         _err("choose a subcommand: " + ", ".join(SUBCOMMANDS) + " (cad-agent --help)")
         return 2
@@ -1385,6 +1433,20 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("view", parents=[common], help="Export every part in assembly position for the 3D viewer")
     slice_p = sub.add_parser("slice", parents=[common], help="Slice each part's 3MF (Bambu Studio or PrusaSlicer CLI): grams and print time")
     slice_p.add_argument("parts", nargs="*", help="Parts to slice (default: cad.slicer.parts, else all)")
+    pv_p = sub.add_parser("prusa-view", parents=[common], help="Open a model in PrusaSlicer's window with a private "
+                                                                "profile folder, optionally screenshot it and close it")
+    pv_p.add_argument("model", help="3MF or STL to open")
+    pv_p.add_argument("--config", help="PrusaSlicer ini to load (default: the cad.slicer presets, resolved by PrusaSlicer)")
+    pv_p.add_argument("--view-bed", metavar="WxD[xH]", help="Show the model on a bed this size in mm, wipe tower off: "
+                                                           "for a model larger than the printer, for looking at only")
+    pv_p.add_argument("--screenshot", metavar="PNG", help="Save the window to this file (ImageMagick import)")
+    pv_p.add_argument("--wait", type=float, default=10.0,
+                      help="Seconds after the window appears before the screenshot (default 10)")
+    pv_p.add_argument("--close", action="store_true", help="Stop this view's own PrusaSlicer afterwards")
+    pv_p.add_argument("--stop", action="store_true", help="Stop the view of MODEL left open by an earlier run")
+    pv_p.add_argument("--workdir", help="Work folder (default: <model folder>/prusa-view/<model name>)")
+    pv_p.add_argument("--ca-file", help="CA bundle for SSL_CERT_FILE (default: $CADAGENT_PRUSA_CA_FILE, else the "
+                                        "flatpak's or the system's)")
     webkit_p = sub.add_parser("webkit", parents=[common], help="Copy the web kit (3D stage, viewer, HUD) into the project")
     webkit_p.add_argument("dest", nargs="?", default="web/kit", help="Destination folder (default: web/kit)")
     pcb_p = sub.add_parser("pcb-check", parents=[common], help="Bind KiCad ERC/DRC evidence to current PCB sources")

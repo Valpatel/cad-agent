@@ -9,6 +9,25 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.26.0 (2026-11-07)
+
+**New**
+- HP MJF powder-removal rule cards from the openly available original cleaning chapter, with its distinct drain and lattice-opening scopes; refresh source-access evidence and withdrawn-standard metadata (#163).
+
+**Fixed**
+- The workflow kit connects an existing project goal graph to issue work and published evidence. Optional
+  `project.goals` metadata leaves CAD builds unchanged; resume reports goal coverage without writing to the
+  graph, and unavailable access leaves an explicit pending handoff (#103).
+- Correct the research map's canonical skill path and document the current hierarchy boundary and six explicit lesson-topic aliases. Preserve established source names and public routes; future grouping follows the existing growth rule (#145).
+- The thermal research guide and generated figure use reread official PLA/PETG Basic V3.0 data and preserve
+  each sheet's edition in the figure. Older PETG formulation and test-conditioning limits remain explicit;
+  mechanical allowables, FEA values and physical coupon status are unchanged (#157).
+- Preserve the compact hierarchy when the original Reference Map is imported again: translate recorded repository paths without rewriting external URLs, historical observations or unposted drafts (#163).
+- Remove an unsupported EOS gap/diameter limit after reading the source images; keep unverified-rule rejection covered by planted data instead of an incorrect production row (#163).
+- Audit the separate maintainer-only Mermaid security build context with the same source, integrity, advisory, install-script and PR-row checks as the site dependency context. Production site installation remains separate.
+- Rebuild the existing Mermaid11 core with fixed DOMPurify3.4.17 and non-deprecated KaTeX0.18.10, with reproducible inputs, original upstream hash and full emitted dependency notices. Preserve the strict browser API and verify real math labels in both browser engines; no Mermaid12/ELK migration is introduced.
+- Record publication-probe runtime, artifact-namespace and enforced-CSP diagnostic lessons, including retained failure scopes and limits. No provider setting or CSP policy is changed.
+
 ## v0.25.2 (2026-11-07)
 
 **Fixed**

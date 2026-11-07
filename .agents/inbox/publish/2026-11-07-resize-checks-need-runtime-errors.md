@@ -83,3 +83,40 @@ keep cleanup success separate from action success. Preserve failures from the or
 establish this promise-lifetime hazard and the corrected consumer; they do not identify the cause of older
 uninstrumented failures or constitute a successful public run. Full current CI and new publication evidence remain
 separate requirements.
+
+
+## Observe asynchronous probe completion through plain state
+
+**Observed, 2026-11-07 17:15 UTC:** The first actual v0.27.1 public run failed at the same Chromium 768 px
+probe despite the page promise root. The document was HTTP 200 at main
+`c696d311a3ae6f648d4fbd660f9a824629af6374`; its 742,290 bytes hash to
+`06c100ce429333092358467a61959d21c8911e6af414e6f6eb047909b309fcdf`.
+Released copy/navigation bytes matched, 41 planted blocks remained, and page/request/external errors were empty.
+The whole run failed after 30 responses and 12 cases. WebKit, the second domain and final revision checks were
+not reached. The owned browser exited and source stayed clean. [Independent actual failure disposition](https://github.com/Valpatel/cad-agent/issues/450#issuecomment-6710551391).
+
+```text
+2026-11-07T17:15:22.844Z  id 738: page-root assignment returns undefined successfully
+2026-11-07T17:15:22.948Z  id 739: -32000 Promise was collected
+id 740: page-root deletion succeeds
+```
+
+The installed Playwright 1.56.1 utility's `_promiseAwareJsonValueNoThrow` creates a separate async serialization
+promise when the evaluated value is thenable. `CRExecutionContext.evaluateWithArguments` asks CDP to await that
+utility result. Keeping the page's input promise rooted therefore did not establish the lifetime of the value
+actually awaited by the protocol. The prior direct-CDP control and forced collection **before** the actual
+Playwright consume call did not exercise this boundary. Their local passes remain scoped evidence; the real
+public recurrence disproves their sufficiency.
+
+The follow-up starts the existing DOM probe once, retains its task and terminal value/error on the page, and
+observes only a synchronous plain-state projection through Playwright. A ten-second host deadline rejects late or incomplete
+observations; missing state, unknown state, a rejected task, a wrong completion value and expiry fail. Cleanup
+still runs and both action/cleanup errors are retained, now including their messages in the aggregate summary.
+The 41 columns, copied labels, late stylesheet, geometry and runtime assertions are unchanged. Product copy.js
+is unchanged. Source/control/CI/publication validation of this follow-up is pending at this checkpoint.
+
+**Corrective rule:** Test the actual browser-library evaluation boundary while it is pending. A lower-level API
+control or a collection event before the awaited wrapper exists cannot prove that wrapper survives collection.
+Prefer a plain observable completion record for a long asynchronous probe; reading that record must not rerun
+the action or hide a recorded error. Do not retry the failed public action unchanged, infer a navigation from the
+wrapper message, or retroactively classify older failures that lack native protocol evidence.

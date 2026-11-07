@@ -164,3 +164,12 @@ def test_labelled_coupon_real_geometry_preserves_fit_envelope_and_actual_engravi
     assert back.Volume() == pytest.approx(labelled.Volume(), rel=1e-7)
     mesh = export_print_stl(labelled, tmp_path / "ABCDEF0123.stl")
     assert mesh["watertight"]
+
+
+def test_hex_stamp_patterns_are_distinct_and_follow_the_cited_stroke_rule():
+    assert set(fc.HEX_SEGMENTS) == set("0123456789ABCDEF")
+    assert len({frozenset(v) for v in fc.HEX_SEGMENTS.values()}) == 16
+    assert all(set(v) <= set(fc.SEGMENTS) for v in fc.HEX_SEGMENTS.values())
+    layout = fc.label_layout(fc.Fit("fixture", 5.0))
+    assert layout["stroke_mm"] == _rule(layout["stroke_rule"])["min"]
+    assert layout["engraving_depth_mm"] == 0.5

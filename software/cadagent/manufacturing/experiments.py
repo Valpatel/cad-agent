@@ -15,7 +15,7 @@ import re
 import subprocess
 import uuid
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 FORMAT = "cadagent.specimen/1"
 
@@ -103,7 +103,10 @@ def source_snapshot(root, model, paths, *, repository):
         if raw != committed:
             raise ValueError(f"required source differs from committed bytes: {name}")
         files[name] = hashlib.sha256(raw).hexdigest()
-    return {"repository": repository, "commit": commit, "model": model, "files": files}
+    snapshot = {"repository": repository, "commit": commit, "model": model, "files": files}
+    if urlsplit(repository).hostname == "github.com":
+        snapshot["model_url"] = repository + "/blob/" + commit + "/" + quote(model, safe="/")
+    return snapshot
 
 
 def short_id(full_uuid):

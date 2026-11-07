@@ -1,2 +1,2 @@
 **Changed**
-- Added a generic persistent registry for physical manufacturing specimen UUIDs and short stamps, with committed source/input identity, immutable artifact records and separate attempt/feedback observations; printer transport and physical qualification remain separate.
+- Added numbered fit-coupon specimens with shared CAD/SVG engraving, persistent UUID/short-stamp source identities, immutable artifact/native-plate read-back and separate attempt/feedback records; printer transport and physical qualification remain separate.

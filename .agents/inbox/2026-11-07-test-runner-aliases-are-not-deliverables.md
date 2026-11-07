@@ -21,3 +21,17 @@ its immutable source and state exactly which assertion/control never ran.
 **Limits:** this was a test import and collector-finalizer failure, not a demonstrated coupon geometry defect,
 provisioning timeout, Bambu acceptance or physical result. The corrected missing-scope native check requires its
 own reviewed run. [Tracking and original recipe](https://github.com/Valpatel/cad-agent/issues/409#issuecomment-6702963460).
+
+## Execute the predependency check, not only its syntax
+
+Continuation235 at `165b52a7` was allocated but refused its own preflight before dependencies or native work
+(exit1, command0s/total4s). Removing the bad import alone had left the actual call as `cadquery.importers`;
+the promised `cq.importers.importStep` accessor was absent. Syntax compilation did not establish that semantic
+precondition. The author and procedure review missed it before submission; no geometry assertion was reached.
+Execute the exact standard-library preflight against the immutable candidate in a fresh output directory before
+submitting. Check the actual call as well as the removed import, and retain the refused run.
+
+The submit client's first status read also mistook the recipe's bare `node=` line for cached node metadata while
+an assignment was pending. Read-only controller lookup recovered the already allocated235 rather than submitting
+a duplicate. Use task-specific recipe variable names and treat an uncertain submission as uncertain until its
+actual job is identified; this observation does not authorize a fleet-tool/configuration change.

@@ -159,7 +159,7 @@ def test_labelled_coupon_real_geometry_preserves_fit_envelope_and_actual_engravi
     assert removed.BoundingBox().ymin >= h + 0.5
     assert "ABCDEF0123" in proof["svg"] and proof["physical_legibility_verified"] is False
     step = export_step(labelled, tmp_path / "ABCDEF0123.step")
-    back = cadquery.importers.importStep(str(step)).val()
+    back = cq.importers.importStep(str(step)).val()
     assert back.Volume() == pytest.approx(labelled.Volume(), rel=1e-7)
     mesh = export_print_stl(labelled, tmp_path / "ABCDEF0123.stl")
     assert mesh["watertight"]

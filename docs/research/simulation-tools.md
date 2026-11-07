@@ -205,12 +205,12 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 
 ## 6. Thermal reference data
 
-![Bar chart of the printed-material table below: for PLA Basic, PETG Basic and PETG HF, the glass transition and the heat deflection temperatures at 0.45 and 1.8 MPa, all between 54 and 69 degrees C, against a dashed line at the module's 80 degree C TTP limit](../img/research/thermal-limits.svg)
+![Glass transition and heat-deflection temperatures for PLA Basic, PETG Basic and PETG HF by source edition, compared with the module's thermal plate limit](../img/research/thermal-limits.svg)
 
 *Drawn by `tools/research_figures.py` from the printed-material table below, with the TTP limit read from the module's
-bullet (a test keeps them in step). All three filaments soften 11–26 °C below the 80 °C the module's thermal plate
-may reach. The plate is not the air at a printed wall: the wall's own temperature, from a CHT run or a thermocouple,
-decides.*
+bullet (a test keeps them in step). These specimen values fall below the module's permitted thermal plate
+temperature. The plate is not the air at a printed wall: evaluate the wall's own temperature with a CHT model
+and physical measurements.*
 
 **Jetson AGX Orin module.** Sources: [datasheet DS-10662-001 v1.8, Sep 2025, mirror](https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf) and [Jetson Linux r36.4 power/thermal page](https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html).
 

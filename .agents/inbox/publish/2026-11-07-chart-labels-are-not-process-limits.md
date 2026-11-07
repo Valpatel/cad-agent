@@ -67,3 +67,8 @@ mechanical allowables merely because a thermal table changed.
 
 **Limits:** ISO 75 HDT and DSC Tg are typical specimen measurements, not continuous-use or clamp-creep
 qualification. Reading a revised sheet does not identify a user's spool or supply the outstanding physical coupon.
+
+Independent review of PR439 also caught stale numerical ranges in the image's alt text and adjacent caption,
+even though the table, regenerated SVG and focused tests agreed. Those summaries now describe the comparison
+without duplicating changing values. Inspect all explanatory consumers when updating scientific data; a current
+generated figure does not validate surrounding prose.

@@ -320,3 +320,417 @@ def test_a_cad_agent_from_somewhere_else_on_path_is_left_alone(world):
     assert again.returncode == 0, again.stdout + again.stderr
     assert not (home / "decoy-ran").exists() and "found " in again.stdout
     assert len((home / "uv-calls.log").read_text().splitlines()) == 2, "installed again from the checkout"
+
+
+def _owned_windows_command(argv, env, cwd, stdout, stderr, timeout, status):
+    """Test-only anonymous Job Object; a trusted trampoline joins before spawning the command."""
+    import ctypes
+    import time
+    from ctypes import wintypes as w
+
+    class Basic(ctypes.Structure):
+        _fields_ = [('process_time', ctypes.c_longlong), ('job_time', ctypes.c_longlong),
+                    ('flags', w.DWORD), ('min_working_set', ctypes.c_size_t),
+                    ('max_working_set', ctypes.c_size_t), ('process_limit', w.DWORD),
+                    ('affinity', ctypes.c_size_t), ('priority', w.DWORD), ('scheduling', w.DWORD)]
+
+    class IO(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_ulonglong) for name in
+                    ('read_ops', 'write_ops', 'other_ops', 'read_bytes', 'write_bytes', 'other_bytes')]
+
+    class Extended(ctypes.Structure):
+        _fields_ = [('basic', Basic), ('io', IO), ('process_memory', ctypes.c_size_t),
+                    ('job_memory', ctypes.c_size_t), ('peak_process', ctypes.c_size_t),
+                    ('peak_job', ctypes.c_size_t)]
+
+    class Accounting(ctypes.Structure):
+        _fields_ = [(name, ctypes.c_longlong) for name in ('user', 'kernel', 'period_user', 'period_kernel')] + [
+            (name, w.DWORD) for name in ('page_faults', 'total', 'active', 'terminated')]
+
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateJobObjectW.argtypes = [w.LPVOID, w.LPCWSTR]
+    kernel.CreateJobObjectW.restype = w.HANDLE
+    kernel.SetInformationJobObject.argtypes = [w.HANDLE, ctypes.c_int, w.LPVOID, w.DWORD]
+    kernel.QueryInformationJobObject.argtypes = [w.HANDLE, ctypes.c_int, w.LPVOID, w.DWORD, w.LPVOID]
+    kernel.TerminateJobObject.argtypes = [w.HANDLE, w.UINT]
+    kernel.CloseHandle.argtypes = [w.HANDLE]
+    job = kernel.CreateJobObjectW(None, None)
+    assert job, ctypes.get_last_error()
+    child = None
+    errors = []
+
+    def active():
+        row = Accounting()
+        assert kernel.QueryInformationJobObject(job, 1, ctypes.byref(row), ctypes.sizeof(row), None), ctypes.get_last_error()
+        return row.active
+
+    try:
+        limits = Extended()
+        limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE; no breakaway permission.
+        assert kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)), ctypes.get_last_error()
+        os.set_handle_inheritable(job, True)
+        startup = subprocess.STARTUPINFO()
+        startup.lpAttributeList = {'handle_list': [job]}
+        trampoline = r'''
+import ctypes,json,subprocess,sys
+from ctypes import wintypes as w
+k=ctypes.WinDLL('kernel32',use_last_error=True)
+k.GetCurrentProcess.restype=w.HANDLE
+k.AssignProcessToJobObject.argtypes=[w.HANDLE,w.HANDLE]
+k.CloseHandle.argtypes=[w.HANDLE]
+handle=int(sys.argv[1])
+assert k.AssignProcessToJobObject(handle,k.GetCurrentProcess()),ctypes.get_last_error()
+assert k.CloseHandle(handle),ctypes.get_last_error()
+sys.exit(subprocess.call(json.loads(sys.argv[2])))
+'''
+        # Until assignment this trusted launcher can only join the job, not start installers.
+        child = subprocess.Popen([sys.executable, '-c', trampoline, str(job), json.dumps(argv)],
+                                 env=env, cwd=cwd, stdout=stdout, stderr=stderr, stdin=subprocess.DEVNULL,
+                                 startupinfo=startup, close_fds=True)
+        status['trampoline_pid'] = child.pid
+        try:
+            status.update(finished=True, exit=child.wait(timeout=timeout))
+        except subprocess.TimeoutExpired:
+            status['timed_out'] = True
+            raise
+    except BaseException as exc:
+        status['original_error'] = type(exc).__name__ + ': ' + str(exc)
+        raise
+    finally:
+        primary_error = sys.exc_info()[0] is not None
+        try:
+            remaining = active()
+            status['active_before_cleanup'] = remaining
+            if remaining:
+                assert kernel.TerminateJobObject(job, 124), ctypes.get_last_error()
+            # Also settle a launcher interrupted before its self-assignment; it cannot have spawned commands.
+            if child is not None and child.poll() is None:
+                child.terminate()
+            if child is not None:
+                child.wait(timeout=5)
+            deadline = time.monotonic() + 10
+            while active() and time.monotonic() < deadline:
+                time.sleep(.02)
+            status['active_after_cleanup'] = active()
+            status['owned_processes_quiescent'] = status['active_after_cleanup'] == 0 and (child is None or child.poll() is not None)
+            assert status['owned_processes_quiescent'], 'owned Windows job did not settle'
+        except BaseException as exc:
+            status['owned_processes_quiescent'] = False
+            errors.append(type(exc).__name__ + ': ' + str(exc))
+        finally:
+            if not kernel.CloseHandle(job):
+                errors.append('CloseHandle: ' + str(ctypes.get_last_error()))
+        if errors:
+            status['cleanup_errors'] = errors
+            if not primary_error:
+                raise RuntimeError('; '.join(errors))
+    return status['exit']
+
+
+@pytest.mark.skipif(os.name != 'nt' or os.environ.get('CAD_AGENT_REAL_INSTALLER') != '1',
+                    reason='explicit real Windows installer study only; downloads CAD dependencies')
+@pytest.mark.parametrize('shell', ['powershell', 'pwsh'])
+def test_actual_windows_installer_body_and_uv_receipt(tmp_path, shell):
+    """Opt-in real body/uv/exit-3 consumer. Fast guards above retain their separate scope."""
+    assert shell in ('powershell', 'pwsh') and shutil.which(shell), 'the named PowerShell must actually run'
+    base = Path(os.environ['CAD_AGENT_INSTALL_EVIDENCE_DIR']) / shell
+    base.mkdir(parents=True, exist_ok=False)
+    home = base / 'home'
+    home.mkdir()
+    for relative in ('tmp', 'AppData/Roaming', 'AppData/Local'):
+        (home / relative).mkdir(parents=True)
+    # Existing machine tools only; no original user configuration, token or package directories are lent.
+    keep = ('SystemRoot', 'WINDIR', 'COMSPEC', 'PATHEXT', 'ProgramFiles', 'ProgramFiles(x86)',
+            'ProgramW6432', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS', 'PATH')
+    env = {key: os.environ[key] for key in keep if key in os.environ}
+    env.update(HOME=str(home), USERPROFILE=str(home), APPDATA=str(home / 'AppData/Roaming'),
+               LOCALAPPDATA=str(home / 'AppData/Local'), TEMP=str(home / 'tmp'), TMP=str(home / 'tmp'),
+               GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, PYTHONNOUSERSITE='1', PYTHONUTF8='1',
+               CAD_AGENT_REF='v0.26.1')
+    expected = '02cbc3c9cef53ef34a97fb24c14a133499af91ec'
+    quote = lambda value: "'" + str(value).replace("'", "''") + "'"
+    result = {'shell': shell, 'ok': False, 'expected_commit': expected, 'completed': []}
+    import time
+    deadline = time.monotonic() + 30 * 60  # five minutes remain for cleanup/upload before the job's wall.
+
+    def run(name, argv, accepted=(0,), timeout=1200):
+        (base / (name + '-command.json')).write_text(json.dumps(argv))
+        status = {'finished': False}
+        try:
+            remaining = min(timeout, deadline - time.monotonic() - 20)
+            assert remaining > 0, 'study deadline reached before the next command'
+            with (base / (name + '.stdout')).open('w') as out, (base / (name + '.stderr')).open('w') as err:
+                code = _owned_windows_command(argv, env, home, out, err, remaining, status)
+        finally:
+            primary_error = sys.exc_info()[0] is not None
+            try:
+                (base / (name + '-status.json')).write_text(json.dumps(status))
+            except BaseException:
+                if not primary_error:
+                    raise
+        assert code in accepted and status['owned_processes_quiescent'], f'{name}: {status}; raw command/stdout/stderr retained'
+        result['completed'].append(name)
+        return (base / (name + '.stdout')).read_bytes().decode('utf-8-sig', errors='replace')
+
+    def ps(name, text):
+        script = base / (name + '.ps1')
+        script.write_text(text, encoding='utf-8-sig')  # PS5.1 must read Unicode paths correctly.
+        return run(name, [shell, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script)])
+
+    try:
+        runtime = json.loads(ps('runtime', "$ErrorActionPreference='Stop'; "
+            f"if ($HOME -ne {quote(home)}) {{ throw 'PowerShell HOME escaped owned profile' }}; "
+            "[pscustomobject]@{major=$PSVersionTable.PSVersion.Major; minor=$PSVersionTable.PSVersion.Minor; "
+            "executable=(Get-Process -Id $PID).Path} | ConvertTo-Json -Compress"))
+        assert ((runtime['major'], runtime['minor']) == (5, 1) if shell == 'powershell' else runtime['major'] == 7)
+        result['runtime'] = runtime
+        tag = run('tag-pin', ['git', 'ls-remote', 'https://github.com/Valpatel/cad-agent.git',
+                              'refs/tags/v0.26.1'], timeout=60).split()[0]
+        assert tag == expected, 'released source drift; no installation started'
+        worker = ("import subprocess,sys,time; "
+                  "subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); "
+                  "sys.exit(7)")
+        run('lifecycle-child-failure', [sys.executable, '-c', worker], accepted=(7,), timeout=10)
+        with pytest.raises(subprocess.TimeoutExpired):
+            run('lifecycle-timeout', [sys.executable, '-c', worker.replace('sys.exit(7)', 'time.sleep(60)')], timeout=3)
+        timeout_record = json.loads((base / 'lifecycle-timeout-status.json').read_text())
+        assert timeout_record['timed_out'] and timeout_record['owned_processes_quiescent']
+        assert timeout_record['active_after_cleanup'] == 0
+        result['actual_child_grandchild_lifecycle_controls'] = True
+        # Both calls execute the exact canonical checksum/download/child procedure and the real installer body.
+        first = ps('first-install', _checked_block('powershell'))
+        assert 'installing the cad-agent command' in first
+        exe = home / '.local/bin/cad-agent.exe'
+        assert exe.is_file()
+        env['PATH'] = str(exe.parent) + os.pathsep + env['PATH']
+        # A machine may already supply uv. Record its real identity without requiring an unnecessary bootstrap.
+        uv = Path(ps('uv-origin', '(Get-Command uv -ErrorAction Stop).Source').strip())
+        assert uv.is_file()
+        run('uv-version', [str(uv), '--version'])
+        clone = home / 'cad-agent'
+        assert run('installed-head', ['git', '-C', str(clone), 'rev-parse', 'HEAD']).strip() == expected
+        tools = Path(run('tool-dir', [str(uv), 'tool', 'dir']).strip())
+        assert home.resolve() in tools.resolve().parents, 'uv tools must stay inside the owned profile'
+        py = tools / 'cad-agent/Scripts/python.exe'
+        assert py.is_file()
+        receipt_path = tools / 'cad-agent/uv-receipt.toml'
+
+        def receipt(name, wanted):
+            raw = receipt_path.read_bytes()
+            (base / (name + '-uv-receipt.toml')).write_bytes(raw)
+            text = run(name, [str(py), '-c',
+                "import json,pathlib,tomllib; from cadagent import agentkit; import cadagent; "
+                "r=tomllib.loads(pathlib.Path(__import__('sys').prefix,'uv-receipt.toml').read_text()); "
+                "print(json.dumps({'requirements':r['tool']['requirements'],'origin':cadagent.__file__,"
+                "'extras':agentkit.installed_extras(pathlib.Path.home()/'cad-agent')}))"])
+            data = json.loads(text)
+            (base / (name + '.json')).write_text(json.dumps(data, indent=2))
+            req = [r for r in data['requirements'] if r.get('name') == 'cad-agent']
+            assert len(req) == 1 and Path(req[0]['editable']).resolve() == clone.resolve()
+            assert sorted(req[0].get('extras', [])) == data['extras'] == wanted
+            assert (clone / 'software').resolve() in Path(data['origin']).resolve().parents
+
+        receipt('before-extra', ['cad'])
+        second = ps('second-install', _checked_block('powershell'))
+        assert 'updating ' in second and 'nothing to reinstall' in second
+        # This real cad-agent.exe holds itself open and must hand uv reinstall back with exit 3.
+        pending = run('actual-exit-three', [str(exe), 'update', '--dir', str(clone), '--ref', 'v0.26.1',
+                                          '--extras', 'site'], accepted=(3,))
+        assert 'finish with:' in pending
+        marker = clone / '.git/cad-agent-reinstall-pending'
+        assert json.loads(marker.read_text())['extras'] == ['cad', 'site']
+        handoff = json.loads(run('actual-reinstall-json', [str(exe), 'update', '--dir', str(clone),
+                                                          '--reinstall-command']))
+        assert handoff[:3] == ['uv', 'tool', 'install'] and handoff[-1] == str(clone) + '[cad,site]'
+        # The unchanged body must flatten ConvertFrom-Json in THIS shell, execute real uv after exit 3,
+        # acknowledge --reinstalled, then relink. No function, executable or OS call is replaced.
+        third = ps('finish-pending-install', _checked_block('powershell'))
+        assert 'finish with:' in third and not marker.exists()
+        receipt('after-handoff', ['cad', 'site'])
+        run('post-handoff-smoke', [str(py), '-c',
+            "import cadquery as cq,markdown; s=cq.Workplane().box(60,40,25).shell(-2); "
+            "cq.exporters.export(s,'windows-box.stl'); assert round(s.val().Volume())==17664; "
+            "print(round(s.val().Volume()),markdown.__version__)"])
+        run('actual-agent-instructions', [str(exe), 'agents', 'list'])
+        assert run('final-head', ['git', '-C', str(clone), 'rev-parse', 'HEAD']).strip() == expected
+        # Reduce only this new child's own token privilege, never machine policy or the runner's token.
+        # If Developer Mode still permits symlinks, fail honestly rather than substitute an injected OSError.
+        fallback = run('actual-os-denied-fallback', [str(py), '-c', r"""
+import ctypes,json,os,pathlib,sys
+from ctypes import wintypes as w
+from cadagent import agentkit
+class LUID(ctypes.Structure): _fields_=[('LowPart',w.DWORD),('HighPart',w.LONG)]
+class LA(ctypes.Structure): _fields_=[('Luid',LUID),('Attributes',w.DWORD)]
+class TP(ctypes.Structure): _fields_=[('PrivilegeCount',w.DWORD),('Privileges',LA*1)]
+a=ctypes.WinDLL('advapi32',use_last_error=True)
+k=ctypes.WinDLL('kernel32',use_last_error=True)
+k.GetCurrentProcess.restype=w.HANDLE
+k.CloseHandle.argtypes=[w.HANDLE]
+a.OpenProcessToken.argtypes=[w.HANDLE,w.DWORD,ctypes.POINTER(w.HANDLE)]
+a.LookupPrivilegeValueW.argtypes=[w.LPCWSTR,w.LPCWSTR,ctypes.POINTER(LUID)]
+a.AdjustTokenPrivileges.argtypes=[w.HANDLE,w.BOOL,ctypes.POINTER(TP),w.DWORD,w.LPVOID,w.LPVOID]
+token=w.HANDLE()
+assert a.OpenProcessToken(k.GetCurrentProcess(),0x20|0x8,ctypes.byref(token)),ctypes.get_last_error()
+try:
+    luid=LUID()
+    assert a.LookupPrivilegeValueW(None,'SeCreateSymbolicLinkPrivilege',ctypes.byref(luid)),ctypes.get_last_error()
+    disable=TP(1,(LA*1)(LA(luid,0)))
+    ctypes.set_last_error(0)
+    assert a.AdjustTokenPrivileges(token,False,ctypes.byref(disable),0,None,None),ctypes.get_last_error()
+    assert ctypes.get_last_error() in (0,1300)  # not assigned is already without that privilege
+finally:
+    k.CloseHandle(token)
+root=pathlib.Path(sys.argv[1]); home=pathlib.Path(sys.argv[2]); home.mkdir()
+probe=home/'probe-target';probe.mkdir(); link=home/'probe-link'
+try:
+    link.symlink_to(probe,target_is_directory=True)
+except OSError as exc:
+    assert exc.winerror==1314,repr(exc)
+    error={'winerror':exc.winerror,'message':str(exc)}
+    print(json.dumps({'actual_os_denial':error}),flush=True)
+else:
+    link.unlink()
+    raise AssertionError('OS still permits symlinks: denied-symlink criterion remains unproven')
+foreign=home/'.claude/skills/foreign/SKILL.md';foreign.parent.mkdir(parents=True);foreign.write_text('foreign keep')
+result=agentkit.install(home,root)
+assert not result['conflicts'] and result['done'] and all(x.startswith(('copy ','generate ')) for x in result['done']),result
+skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=list((root/'.agents/agents').glob('*.md'))
+assert len(skills)==8 and len(roles)==2
+for src in skills:
+    target=home/'.claude/skills'/src.parent.name
+    assert not target.is_symlink() and (target/'SKILL.md').read_bytes()==src.read_bytes()
+for src in roles:
+    target=home/'.claude/agents'/src.name
+    assert not target.is_symlink() and target.read_text().startswith(src.read_text())
+shared=home/'.agents/skills'
+assert {p.name for p in shared.iterdir()}=={p.parent.name for p in skills}|{p.stem for p in roles}
+assert all(not p.is_symlink() and (p/'SKILL.md').is_file() for p in shared.iterdir())
+assert foreign.read_text()=='foreign keep'
+print(json.dumps({'ok':True,'actual_os_denial':error,'installed':result,'privilege_scope':'only this disposable child process'}))
+""", str(clone), str(base / 'denied-symlink-home')], timeout=120)
+        assert json.loads(fallback.strip().splitlines()[-1])['ok']
+        result.update(ok=True, actual_exit_three=True, actual_receipt_extras=['cad', 'site'],
+                      fallback='actual OS error1314 in privilege-reduced disposable child; real agentkit copy install')
+    finally:
+        primary_error = sys.exc_info()[0] is not None
+        try:
+            (base / 'result.json').write_text(json.dumps(result, indent=2))
+        except BaseException:
+            if not primary_error:
+                raise
+
+
+def _assert_complete_copied_role(path, expected):
+    assert not path.is_symlink() and path.read_text() == expected, "copied role text differs from source plus known marker"
+
+
+def test_complete_copied_role_rejects_appended_instructions(tmp_path):
+    from cadagent import agentkit
+
+    home = tmp_path / 'copy-home'
+    item = next(i for i in agentkit.items(ROOT) if i.kind == 'agent')
+    result = agentkit.install(home, ROOT, targets=('claude',), copy=True)
+    assert not result['conflicts']
+    path = home / '.claude/agents' / (item.name + '.md')
+    expected = item.path.read_text() + f"\n<!-- {agentkit.COPY_MARK}: copied from {item.path} -->\n"
+    _assert_complete_copied_role(path, expected)
+    with path.open('a') as stream:
+        stream.write('Unexpected appended instruction.\n')
+    with pytest.raises(AssertionError, match='copied role text differs'):
+        _assert_complete_copied_role(path, expected)
+
+
+@pytest.mark.skipif(os.name != 'nt' or os.environ.get('CAD_AGENT_REAL_COPY') != '1',
+                    reason='explicit actual Windows copy consumer only')
+def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
+    """Real --copy/CLI/filesystem, not an OS-denial or offline repository-guide claim."""
+    from cadagent import agentkit
+
+    base = Path(os.environ['CAD_AGENT_INSTALL_EVIDENCE_DIR']) / 'explicit-copy'
+    base.mkdir(parents=True, exist_ok=False)
+    fixture = tmp_path / 'disposable-kit'
+    for part in ('.agents/skills', '.agents/agents'):
+        shutil.copytree(ROOT / part, fixture / part)
+    (fixture / 'software/cadagent').mkdir(parents=True)
+    items = agentkit.items(fixture)
+    assert sum(i.kind == 'skill' for i in items) == 8 and sum(i.kind == 'agent' for i in items) == 2
+    home = tmp_path / 'copy-home'
+    home.mkdir()
+    # All package imports and readiness subprocesses stay in the new home; no original profile is lent.
+    keep = ('SystemRoot', 'WINDIR', 'COMSPEC', 'PATHEXT', 'ProgramFiles', 'ProgramFiles(x86)',
+            'ProgramW6432', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS', 'PATH')
+    env = {k: os.environ[k] for k in keep if k in os.environ}
+    env.update(HOME=str(home), USERPROFILE=str(home), PYTHONPATH=str(ROOT / 'software'),
+               PYTHONNOUSERSITE='1', PYTHONUTF8='1', GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
+               APPDATA=str(home / 'AppData/Roaming'), LOCALAPPDATA=str(home / 'AppData/Local'),
+               TEMP=str(tmp_path), TMP=str(tmp_path))
+    result = {'ok': False, 'scope': 'actual explicit Windows copy only; automatic OS-denied fallback unproven'}
+
+    def run(name, target_home, accepted=(0,)):
+        argv = [sys.executable, '-m', 'cadagent.cli', 'agents', 'install', '--source', str(fixture),
+                '--home', str(target_home), '--copy']
+        (base / (name + '-command.json')).write_text(json.dumps(argv))
+        status = {'finished': False}
+        try:
+            with (base / (name + '.stdout')).open('w') as out, (base / (name + '.stderr')).open('w') as err:
+                code = _owned_windows_command(argv, env, home, out, err, 120, status)
+        finally:
+            primary_error = sys.exc_info()[0] is not None
+            try:
+                (base / (name + '-status.json')).write_text(json.dumps(status))
+            except BaseException:
+                if not primary_error:
+                    raise
+        assert code in accepted and status['owned_processes_quiescent'], status
+
+    expected = {}
+    for item in items:
+        if item.kind == 'skill':
+            rows = {p.relative_to(item.path).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in item.path.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
+            expected[item.name] = rows
+        else:
+            expected[item.name] = {'role': item.path.read_text() + f'\n<!-- {agentkit.COPY_MARK}: copied from {item.path} -->\n',
+                                   'generated': agentkit.codex_agent_skill(item)}
+    (base / 'expected-instructions.json').write_text(json.dumps(expected, indent=2))
+    foreign = home / '.claude/skills/foreign/SKILL.md'
+    foreign.parent.mkdir(parents=True)
+    foreign.write_bytes(b'foreign instructions: keep exact\n')
+    original_foreign = foreign.read_bytes()
+    try:
+        run('first-copy', home)
+        run('second-copy', home)
+        collision_home = tmp_path / 'collision-home'
+        collision = collision_home / '.claude/skills/design-process/SKILL.md'
+        collision.parent.mkdir(parents=True)
+        collision.write_bytes(b'foreign same-name instructions: keep exact\n')
+        run('foreign-collision', collision_home, accepted=(1,))
+        assert collision.read_bytes() == b'foreign same-name instructions: keep exact\n'
+        # Only this disposable fixture is removed, never ROOT, a worktree or an existing environment.
+        shutil.rmtree(fixture)
+        for item in items:
+            if item.kind == 'skill':
+                for relative in ('.claude/skills', '.agents/skills'):
+                    copied = home / relative / item.name
+                    assert not copied.is_symlink()
+                    actual = {p.relative_to(copied).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                              for p in copied.rglob('*') if p.is_file() and p.name != agentkit.COPY_MARK}
+                    assert actual == expected[item.name], (relative, item.name)
+            else:
+                role = home / '.claude/agents' / (item.name + '.md')
+                shared = home / '.agents/skills' / item.name
+                _assert_complete_copied_role(role, expected[item.name]['role'])
+                assert not shared.is_symlink() and (shared / 'SKILL.md').read_text() == expected[item.name]['generated']
+        assert foreign.read_bytes() == original_foreign
+        assert {p.name for p in (home / '.agents/skills').iterdir()} == {i.name for i in items}
+        result.update(ok=True, claude_skills=8, claude_roles=2, shared_skills=10,
+                      copied_resource_files=sum(len(expected[i.name]) for i in items if i.kind == 'skill'),
+                      unrelated_foreign_unchanged=True, same_name_foreign_unchanged=True,
+                      source_removed='only owned disposable fixture', automatic_denial=False)
+    finally:
+        primary_error = sys.exc_info()[0] is not None
+        try:
+            (base / 'result.json').write_text(json.dumps(result, indent=2))
+        except BaseException:
+            if not primary_error:
+                raise

@@ -40,7 +40,11 @@ The maintenance decision in [issue 153](https://github.com/Valpatel/cad-agent/is
 GitHub Actions version PRs. npm and pip version campaigns are deliberately deferred during backlog closure:
 the weekly online audit below and manually reviewed updates remain in use. Their missing configurations stay
 visible as exact accepted policy findings, not as proof Dependabot watches those manifests. Enabled security-fix
-PR creation is separate; dependency-graph and SBOM discovery are still unverified in issue 153.
+PR creation is separate. On 2026-11-07, the independently reviewed repair enabled the dependency graph;
+GitHub then returned 11 parseable manifests and an SPDX SBOM with 174 package records. The manifest query still
+reported zero dependencies per manifest, while the SBOM contained 231 relationships. These are observed service
+results, not complete dependency or advisory coverage; automatic dependency submission remains disabled.
+[Actual setting and inventory evidence](https://github.com/Valpatel/cad-agent/issues/153#issuecomment-6709230798).
 
 </details>
 

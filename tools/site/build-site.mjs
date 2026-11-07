@@ -535,7 +535,7 @@ cad-agent is an open-source toolkit and knowledge base for AI agents that design
 simulation and print releases. It maps the best free tools, demonstrates them on real projects and fills the gaps with
 tested tools of its own. Every page on this site has a Markdown twin at the same path with a .md extension.
 
-- Source: ${REPO} (MIT). Install and use: the section below (one command; then \`cad-agent update\` to update).
+- Source: ${REPO} (MIT). Install and use: the checked guide below (then \`cad-agent update\` to update).
   cad-agent collects no telemetry.
 - Machine-readable catalogue: ${ORIGIN}/catalog.json (schema ${catalog.schema}; ${catalog.items.length} entries, each with an id, kind,
   areas, maturity, a one-line \`what\`, our \`notes\`, a cover picture, a demo link and related ids; tools also have \`doc\`,
@@ -553,7 +553,7 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 
 ## Install and work with it
 
-People install with one command (\`curl -fsSL ${ORIGIN}/install.sh | sh\`, or on Windows \`irm ${ORIGIN}/install.ps1 | iex\`),
+People install with the platform's [pinned download and checksum-before-execution block](${ORIGIN}${pageURL('docs/practice/agent-workflow.md')}#install),
 or paste this line into their agent, followed by what they want made:
 
 \`\`\`text

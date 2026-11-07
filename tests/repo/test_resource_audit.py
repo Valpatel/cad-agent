@@ -3,6 +3,7 @@ against recorded answers (no network), the PR gate in a scratch git repository, 
 import hashlib
 import importlib.util
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -638,6 +639,50 @@ def test_real_esbuild_hook_exception_cannot_accept_the_same_version_in_the_site(
         assert producer[0]["fp"] != site[0]["fp"]
 
 
+@pytest.mark.parametrize("change", [None, "context", "version", "integrity", "resolved"])
+def test_real_khroma_licence_exception_is_bound_to_the_read_archive_and_context(tmp_path, change):
+    root = checkout(tmp_path)
+    original = json.loads((ROOT / "tools/mermaid/package-lock.json").read_text())["packages"]["node_modules/khroma"]
+    entry = dict(original)
+    if change == "version":
+        entry["version"] = "2.1.1"
+    if change == "integrity":
+        entry["integrity"] = "sha512-another-archive"
+    if change == "resolved":
+        entry["resolved"] += "?another-source"
+    directory = ra.NPM_DIR if change == "context" else ra.NPM_REBUILD_DIR
+    write(root, f"{directory}/package.json", json.dumps({"dependencies": {"khroma": entry["version"]}}))
+    write(root, f"{directory}/package-lock.json", json.dumps({"lockfileVersion": 3, "packages": {
+        "": {"dependencies": {"khroma": entry["version"]}}, "node_modules/khroma": entry}}))
+    # Production acceptance and matcher: a metadata waiver must not silently cover another input.
+    report = run(root, accepted=ra.load_accepted(ROOT / ra.ACCEPTED))
+    findings = [f for f in report["findings"] if f["check"] == "npm-no-licence" and f["subject"] == "npm:khroma"]
+    assert len(findings) == 1
+    assert bool(findings[0].get("accepted")) is (change is None)
+    assert (findings[0]["fp"] == "f397c726cbcfe457") is (change is None)
+
+
+@pytest.mark.parametrize("change", [None, "version", "bytes"])
+def test_real_old_step_parser_retention_does_not_cover_a_different_runtime(tmp_path, change):
+    root = checkout(tmp_path)
+    receipt = json.loads((ROOT / ra.KIT / ra.VIEWER_RECEIPT).read_text())
+    shutil.copytree(ROOT / ra.KIT / "occt-import-js", root / ra.KIT / "occt-import-js")
+    if change == "version":
+        receipt["occt"]["version"] = "0.0.24"
+    if change == "bytes":
+        rel = "occt-import-js/occt-import-js.js"
+        changed = root / ra.KIT / rel
+        changed.write_bytes(changed.read_bytes() + b"\n// a different recorded runtime\n")
+        receipt["sha256"][rel] = hashlib.sha256(changed.read_bytes()).hexdigest()
+    write(root, f"{ra.KIT}/{ra.VIEWER_RECEIPT}", json.dumps(receipt))
+    net = online_net(tmp_path, gh={"repos/kovacsv/occt-import-js": repo(
+        "kovacsv/occt-import-js", pushed_at="2024-12-03T00:00:00Z", license={"spdx_id": "LGPL-2.1"})})
+    report = run(root, net, accepted=ra.load_accepted(ROOT / ra.ACCEPTED))
+    findings = [f for f in report["findings"] if f["check"] == "repo-stale" and f["subject"] == "webkit:occt-import-js"]
+    assert len(findings) == 1
+    assert bool(findings[0].get("accepted")) is (change is None)
+
+
 def test_dated_report_uses_its_recorded_registry_location(tmp_path):
     r = run(checkout(tmp_path))
     assert f"catalog.json, {ra.REGISTRY}, docs/research/landscape.json" in ra.to_markdown(r)
@@ -815,7 +860,8 @@ def test_transitive_python_dependencies_are_checked(tmp_path):
 
 
 def test_acceptances_need_a_fingerprint_for_advisories_and_never_cover_critical(tmp_path):
-    for check, subject in (("advisory", "npm:x"), ("npm-install-script", "npm:fsevents")):
+    for check, subject in (("advisory", "npm:x"), ("npm-install-script", "npm:fsevents"),
+                           ("npm-no-licence", "npm:khroma"), ("repo-stale", "webkit:occt-import-js")):
         bad = write(tmp_path, "accepted.yaml", f"- {{check: {check}, subject: '{subject}', reason: read, accepted: 2026-11-01}}\n")
         with pytest.raises(SystemExit, match="needs its fp"):
             ra.load_accepted(bad)
@@ -1325,13 +1371,38 @@ def test_the_page_folds_all_but_critical_and_high(tmp_path):
     assert md.index("<details><summary><strong>Limits.") < md.index("## Findings") and md.count("<details>") == md.count("</details>")
 
 
+def _assert_public_report(text, home):
+    # A public route such as committee.iso.org/home/tc2 is not an OS home directory. Keep rejecting bare
+    # absolute paths, file URIs, Windows homes and actual current-home text, including inside a URL/query.
+    private_path = r"(?<![A-Za-z0-9./-])/(?:home|Users)/|file:///(?:home|Users)/|(?i:[a-z]:[\\/]+Users[\\/])"
+    assert not ra.re.search(private_path, text)
+    assert len(home) < 2 or home not in text
+
+
+@pytest.mark.parametrize("text", [
+    '"/home/fixture-agent/source"', '`/Users/fixture-agent/source`',
+    '"file:///home/fixture-agent/source"', '"C:\\Users\\fixture-agent\\source"',
+    '"C:\\\\Users\\\\fixture-agent\\\\source"', 'https://example.org/?path=/home/fixture-agent/source',
+    'cwd:/home/other-agent/private-project',
+])
+def test_report_privacy_guard_still_rejects_real_local_paths(text):
+    with pytest.raises(AssertionError):
+        _assert_public_report(text, "/different/current-home")
+
+
+def test_report_privacy_guard_keeps_public_routes_and_actual_home_detection():
+    _assert_public_report('"https://committee.iso.org/home/tc2"', "/home/fixture-agent")
+    with pytest.raises(AssertionError):
+        _assert_public_report('https://example.org/path/home/fixture-agent/source', "/home/fixture-agent")
+
+
 def test_committed_report_is_clean_and_dated():
     """The committed report came from a committed tree (no uncommitted changes) and has no private details."""
     r = json.loads((ROOT / "docs/research/security-report.json").read_text())
     assert r["schema"] == ra.SCHEMA and r["dirty"] is False and r["mode"] == "online"
     text = (ROOT / "docs/research/security-report.json").read_text() + (ROOT / "docs/research/security-report.md").read_text()
     home = str(Path.home())          # whichever machine runs it: no account name is written down here
-    assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)
+    _assert_public_report(text, home)
 
 
 def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_substitution(tmp_path):

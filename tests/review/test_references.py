@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # Code that cites an `unverified` entry: each is a source the code's author read but whose URL was not recorded or
 # could not be found. The list only shrinks: record the URL, move the entry up to `sources`, and drop it here.
-UNVERIFIED_CITED = {"goncalves", "pem-si", "ruthex-tip", "bossard-proof", "bossard-head", "vdi2230-friction"}
+UNVERIFIED_CITED = set()
 
 
 @pytest.fixture(scope="module")
@@ -98,7 +98,7 @@ def test_lookup_resolves_ids_and_aliases(registry):
     assert registry.resolve("shigley-torque").id == registry.resolve("shigley").id == "shigley"
     assert registry.resolve("iso68").id == "iso-68-1"
     assert registry.resolve("judgement").kind == "uncited"
-    assert registry.resolve("goncalves").kind == "unverified"
+    assert registry.resolve("goncalves").kind == "source"
     with pytest.raises(KeyError, match="did you mean"):
         registry.resolve("covestro-snapfi")
 
@@ -110,7 +110,8 @@ def test_a_citation_names_the_people_and_the_link(registry):
     assert registry.resolve("covestro").citation() == (
         "Covestro LLC (formerly Bayer MaterialScience LLC), Snap-Fit Joints for Plastics - A Design Guide, n.d.: "
         "https://cdn.sparkfun.com/assets/home_page_posts/1/4/1/0/Plastic_Snap_fit_design.pdf")
-    assert registry.resolve("goncalves").citation().endswith("(unverified)")
+    assert registry.resolve("goncalves").citation().endswith(
+        "https://www.abcm.org.br/anais/cobem/2009/pdf/COB09-0410.pdf")
     assert "not an outside source (general)" in registry.resolve("lug-shear-out").citation()
 
 
@@ -190,6 +191,8 @@ def test_check_warns_on_code_citing_an_unverified_entry(tmp_path):
                     uncited=[{"id": "elsewhere", "kind": "general", "note": "common knowledge"}])
     problems, warnings = check(root)
     assert not problems and warnings == ["software/cadagent/mod.py:2: cites 'gone', an unverified entry (no URL recorded)"]
+    unverified = load(root / "docs/research/references.yaml").resolve("gone")
+    assert unverified.kind == "unverified" and unverified.citation().endswith("(unverified)")
 
 
 @pytest.mark.parametrize("change,message", [

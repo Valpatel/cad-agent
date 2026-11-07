@@ -74,6 +74,25 @@ The simulation modules and the site build use these at run time. None of their c
 | Inter | SIL Open Font License 1.1 | 4.001, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-Inter.txt` |
 | JetBrains Mono | SIL Open Font License 1.1 | 2.211, variable, Latin subset from Google Fonts (sources in `fonts/SOURCE.json`) | `fonts/OFL-JetBrainsMono.txt` |
 
+<details>
+<summary>Retained STEP preview parser (maintenance checked 2026-11-07)</summary>
+
+occt-import-js last pushed 2024-12-03; ongoing maintenance is unverified. Retain the existing 0.0.23 parser at
+commit `c2148e54b456b571238d35cac037d304053d64b2`, with OCCT source commit
+`d2abb6d844231cb8f29be6894440874a4700e4a5`, the four licence files and corresponding sources above. The
+`file-viewer-sources.json` receipt pins npm integrity and every retained file hash. No parser bytes change here.
+
+The actual loader permits same-origin STL, STEP and 3MF URLs, rejects redirects, caps a download at 128 MiB,
+and terminates its worker on cancellation or the 120-second parse deadline. Existing browser fixtures exercise
+real STEP readiness, unavailable-WASM retry, timeout and cancellation. These are compatibility/resource limits,
+not a security sandbox or proof against every malformed model; bundled native-code advisory coverage is incomplete.
+
+This accepts only the visible age warning for these recorded bytes. A new parser/version, changed archive,
+advisory or licence needs fresh review. If a security fix cannot be qualified, keep the original download/desktop
+CAD route and disable affected preview support rather than waive a known vulnerability or blindly upgrade.
+
+</details>
+
 ## Methods, foundations and acknowledgements
 
 

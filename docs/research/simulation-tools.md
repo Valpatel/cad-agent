@@ -309,3 +309,17 @@ Reuse the ESI `cpuCabinet` case, pyMOTO examples and Optuna as templates, rather
 - OpenLB's CHT showcase details.
 - CHT run times.
 - Whether ESI images include ParaView.
+
+<details>
+<summary>Maintenance of historical alternatives (checked 2026-11-07)</summary>
+
+These entries remain visible as prior art or declined alternatives. No upstream push for over a year is a
+maintenance warning, not proof of abandonment or a new vulnerability. Maintenance beyond the recorded activity
+is unverified; any future adoption needs a fresh licence, advisory and compatibility review.
+
+- **dl4to/dl4to**: last observed push 2024-11-19. Historical alternative, already stale; the table records its old installation syntax, not a current installation recommendation.
+- **missionlab/fenitop**: last observed push 2024-11-01. Historical GPL external-program alternative tied to the old DolfinX stack; not adopted.
+- **calculix/beso**: last observed push 2025-04-03. Retain the LGPL external CalculiX/FreeCAD alternative for comparison; not the chosen topology engine.
+- **ElmerCSC/elmerfem-docker**: last observed push 2021-03-09. Do not use this inactive Docker helper as a current install route. It is distinct from the actively released Elmer solver.
+
+</details>

@@ -411,3 +411,18 @@ flowchart LR
 
 Standards (NASA SP-2016-6105, NPR 7123.1D) are US government works and may be quoted; ASME, ISO, SAE, AIAG and
 ECSS documents are cited by number only.
+
+<details>
+<summary>Maintenance of historical alternatives (checked 2026-11-07)</summary>
+
+These entries remain visible as prior art or declined alternatives. No upstream push for over a year is a
+maintenance warning, not proof of abandonment or a new vulnerability. Maintenance beyond the recorded activity
+is unverified; any future adoption needs a fresh licence, advisory and compatibility review.
+
+- **AutodeskAILab/JoinABLe**: last observed push 2022-04-22. Historical CVPR 2022 joint research; keep the MIT-code/noncommercial-data distinction. No new adoption.
+- **dimitrismallis/CAD-Assistant**: last observed push 2025-10-30. Custom-licence prior art, ideas only; not a dependency choice.
+- **anniedoris/CAD-Coder**: last observed push 2025-07-17. Historical paper and Apache-2.0 reference, not a runtime dependency.
+- **Gary-code/CADReview**: last observed push 2025-08-08. No licence file: retain the research citation, without code adoption.
+- **sgsellan/swept-volumes**: last observed push 2024-07-18. Historical method citation; preserve the patent notice and maintained gpytoolbox successor described above.
+
+</details>

@@ -4,9 +4,11 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
 
 1. Install, or update, in a terminal. It needs git, adds uv if missing, and
    puts the kit in ~/cad-agent, the cad-agent command in ~/.local/bin and the
-   skills in ~/.claude/skills and ~/.agents/skills:
-   curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
-   Windows: irm https://cad-agent.valpatel.com/install.ps1 | iex
+   skills in ~/.claude/skills and ~/.agents/skills. Use the platform's
+   pinned download and checksum-before-execution block at
+   https://cad-agent.valpatel.com/docs/agent-workflow#install
+   Stop on a failed download or checksum mismatch; do not pipe a download
+   straight into a shell.
    Already installed? Run `cad-agent update` first. More tools: add
    --extras fea,sim (strength; airflow, topology, renders), robot, explore.
    Fetch pages with curl or your web tool; from Python, send a User-Agent

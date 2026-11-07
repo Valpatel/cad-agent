@@ -1091,8 +1091,10 @@ def cmd_snapfit(args: argparse.Namespace) -> int:
                            if k.endswith("_force_n") and v is not None)
         if snap.get("self_locking"):
             forces += ("; " if forces else "") + "self-locking"
-        _say(f"{'PASS' if snap['pass'] else 'FAIL'}  {snap['name']}: root strain {snap['strain'] * 100:.2f} % "
-             f"(allowed {snap['material']['allowable'] * 100:.2f} %)" + (f"; {forces}" if forces else ""))
+        strain_kind = snap.get("strain_kind", "root strain")
+        allowable = snap.get("strain_allowable", snap["material"]["allowable"])
+        _say(f"{'PASS' if snap['pass'] else 'FAIL'}  {snap['name']}: {strain_kind} {snap['strain'] * 100:.2f} % "
+             f"(allowed {allowable * 100:.2f} %)" + (f"; {forces}" if forces else ""))
         for row in snap["rows"]:
             if not row["pass"]:
                 _say(f"      {row['check']}: {row['detail']}")

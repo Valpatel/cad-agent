@@ -3,7 +3,7 @@
 Compliant features that replace separate parts: snap fits now, living hinges and flexures next. The method, the
 materials and the limits are on the [snap fits and compliant features](../../../../docs/mechanical/compliant.md) page.
 
-Arrows follow the data. A project declares its snaps in a file, and `cad-agent snapfit` checks each one with
+Arrows follow the data. A project declares its snaps in a file, and `cad-agent snapfit` checks declared cantilevers and rectangular torsion bars with
 `snapfit.py`, which takes printed filaments' allowables from `allowables.py`. `figures.py` draws a checked snap still.
 [`cadagent.formulas`](../../formulas/__init__.py) wraps the same equations for the site's explorers, and
 [`publish/anim/snapfit.py`](../../publish/anim/snapfit.py) animates one arm engaging from `engagement()`.

@@ -11,25 +11,74 @@ the parts file (through `publish/report.py`'s `load_parts`). `clearance.py` take
 at each pose and decides each pair with the relation gate (`review/gates/relations.py`). `motion_trace.py`
 (`cad-agent motion-trace`) stands alone.
 
+Geometry and purchased parts
+
 ```mermaid
 flowchart TD
-    G["cadagent.geometry<br/>export_step"] --> MC["mcmaster.py<br/>bought parts"]
-    G ~~~ FK["fasteners.py · bosses.py<br/>inserts.py · rivets.py<br/>clinch.py · sheet_hardware.py<br/>bearings.py · markings.py"]
-    G ~~~ CC["connectors.py<br/>compliant/"]
-    MC & FK & CC --> B["build script<br/>the project's CadQuery"]
-    B -->|"STEP, parts file"| X["exports/<br/>STEP · parts file"]
-    X --> H["holes.py<br/>cad-agent holes"]
-    H --> HJ["exports/<br/>hole-checks.json"]
-    HJ --> R["publish/report.py<br/>results JSON"]
-    HJ ~~~ MT["motion_trace.py<br/>renders vs joints"]
-    B -->|"placed solids per pose"| CL["clearance.py<br/>relate per pair"]
-    CL --> CJ["exports/<br/>clearance-checks.json"]
+    G["cadagent.geometry<br/>export_step"]
+    MC["mcmaster.py<br/>bought parts"]
+    G --> MC
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class MC,FK,CC,H,MT,CL here
-    class G,B,R near
-    class X,HJ,CJ out
+    class MC here
+    class G near
+```
+
+Inputs to a project build
+
+```mermaid
+flowchart LR
+    MC["mcmaster.py<br/>bought parts"]
+    FK["fasteners.py · bosses.py<br/>inserts.py · rivets.py<br/>clinch.py · sheet_hardware.py<br/>bearings.py · markings.py"]
+    CC["connectors.py<br/>compliant/"]
+    B["build script<br/>the project's CadQuery"]
+    MC & FK & CC --> B
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class MC,FK,CC here
+    class B near
+```
+
+Hole checks and motion evidence
+
+```mermaid
+flowchart TD
+    B["build script<br/>the project's CadQuery"]
+    X["exports/<br/>STEP · parts file"]
+    H["holes.py<br/>cad-agent holes"]
+    HJ["exports/<br/>hole-checks.json"]
+    R["publish/report.py<br/>results JSON"]
+    MT["motion_trace.py<br/>renders vs joints"]
+    B -->|"STEP, parts file"| X
+    X --> H
+    H --> HJ
+    HJ --> R
+    HJ ~~~ MT
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class H,MT here
+    class B,R near
+    class X,HJ out
+```
+
+Clearance evidence
+
+```mermaid
+flowchart TD
+    B["build script<br/>the project's CadQuery"]
+    CL["clearance.py<br/>relate per pair"]
+    CJ["exports/<br/>clearance-checks.json"]
+    B -->|"placed solids per pose"| CL
+    CL --> CJ
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class CL here
+    class B near
+    class CJ out
 ```
 
 | Module | What it does |

@@ -7,18 +7,50 @@ which folder it belongs in.
 
 Arrows: which code each group of folders tests.
 
+Physical-domain checks
+
 ```mermaid
 flowchart TD
-    D["mechanical/ · thermal/<br/>manufacturing/ · simulation/<br/>electrical/"] -->|"tests"| S["software/cadagent/<br/>domain packages"]
-    C["geometry/ · formulas/ · library/<br/>review/ · publish/ · webkit/"] -->|"tests"| S
-    A["cli/ · site/ · repo/<br/>not packages"] -->|"tests"| T["cli.py · tools/<br/>the repo's rules"]
-    F["fixtures/<br/>shared data"] --> D
-    F --> C
+    D["mechanical/ · thermal/<br/>manufacturing/ · simulation/<br/>electrical/"]
+    S["software/cadagent/<br/>domain packages"]
+    F["fixtures/<br/>shared data"]
+    F --> D
+    D -->|"tests"| S
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class D,C,A,F here
-    class S,T near
+    class D,F here
+    class S near
+```
+
+Shared toolkit checks
+
+```mermaid
+flowchart TD
+    S["software/cadagent/<br/>domain packages"]
+    C["geometry/ · formulas/ · library/<br/>review/ · publish/ · webkit/"]
+    F["fixtures/<br/>shared data"]
+    F --> C
+    C -->|"tests"| S
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class C,F here
+    class S near
+```
+
+Command, site and repository checks
+
+```mermaid
+flowchart TD
+    A["cli/ · site/ · repo/<br/>not packages"]
+    T["cli.py · tools/<br/>the repo's rules"]
+    A -->|"tests"| T
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A here
+    class T near
 ```
 
 ## What's here

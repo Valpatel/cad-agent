@@ -2,16 +2,34 @@
 
 Recorded scene inputs and original artwork producers used by the existing README animation tools. Decorative art is distinct from engineering evidence.
 
+Scene compilation
+
 ```mermaid
 flowchart TD
-    Y["*.yaml"] --> R["../readme_anim.py"]
-    R --> J["*.scene.json"]
-    J --> S["../../docs/img/"]
-    A["made_with_badge.py"] --> S
-    B["repository_map.py"] --> S
+    Y["*.yaml"]
+    R["../readme_anim.py"]
+    J["*.scene.json"]
+    S["../../docs/img/"]
+    Y --> R
+    R --> J
+    J --> S
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class Y,R,J,S,A,B here
+    class Y,R,J,S here
+```
+
+Badge and map artwork
+
+```mermaid
+flowchart TD
+    S["../../docs/img/"]
+    A["made_with_badge.py"]
+    B["repository_map.py"]
+    A --> S
+    B --> S
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class S,A,B here
 ```
 
 | File or folder | Purpose |

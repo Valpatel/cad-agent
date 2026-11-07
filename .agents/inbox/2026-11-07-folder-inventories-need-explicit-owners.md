@@ -127,6 +127,30 @@ The exact pinned lychee 0.24.2 binary was also exercised, after verifying its of
 paths, including 28 hidden paths. Adding `--hidden` consumed the same set, so no flag change is justified.
 The receipt retains both outputs and hashes; this proves input consumption, not remote link health.
 
+## Detailed maps need both desktop fit and a real phone reading path
+
+The exact `8ecd46cd` Chromium CI job `128510182386` completed all 16 browser parts and failed on real diagram
+widths: 23 newly published folder-map routes exceeded the desktop column, and 76 exceeded a phone width.
+Raw log SHA-256: `6425e21b733e2e00bf6664758941bc91730af3cbfbd6a4545232118224174520`.
+The independent [finding](https://github.com/Valpatel/cad-agent/pull/467#issuecomment-6712299739) remains a failure.
+The duplicate local run was deliberately stopped after that definitive result; its closed-page error is an
+[operator stop](https://github.com/Valpatel/cad-agent/pull/467#issuecomment-6712301397), not an inferred browser or OOM defect.
+Its pre-stop cgroup recorded no OOM kills or PID-limit rejections, although memory pressure reached the bound.
+
+The existing kit deliberately keeps natural-size labels on phones and makes wide diagrams focusable horizontal
+scrollers. Applying the five concise overview pages' stricter phone-fit rule to every detailed map contradicted
+that reading contract. Keep the overview fit rule and the desktop fit rule for every page. Exercise all new maps
+on phones for document fit, natural SVG scale, accurate scroll hints, keyboard access and reach to the final
+branch; also exercise representative maps without application JavaScript. Plant real shrink/focus/overflow/
+keyboard counterexamples so a decorative screenshot or a programmatic scroll alone cannot prove usability.
+
+Repair the 23 desktop-wide authored maps by arranging long chains top-down and splitting separate flows into
+smaller figures with repeated boundary nodes. Preserve the real named nodes and semantic arrows; invisible
+layout constraints may change. Do not shrink labels, widen an exception list, remove a drawing or suppress the
+failed run. A changed owned vendor README also needs its actual recorded hash updated. The initial actual draft
+render fixed 22 of the 23 routes; the remaining gate-map label needed a line break. Draft geometry measurements
+are component evidence only; the committed full browser consumers and current CI still decide acceptance.
+
 ## Limits
 
 Relative file/directory destinations are checked; public route/anchor consumers remain the existing site build and browser checks. Source-only Markdown anchors and remote availability are not newly claimed. A diagram rendering successfully does not prove its semantic correctness or physical CAD performance. Upstream and data descendants retain their recorded layouts; parent ownership does not turn them into reviewed toolkit source.

@@ -9,23 +9,73 @@ Arrows follow the data. Each arrow between pieces here is also an import, and `d
 lint the verdicts it reads. `packet.py` asks `publish/render.py` for its views; `publish/site.py` imports the
 workbench.
 
+Dossier inputs and gate results
+
 ```mermaid
 flowchart TD
-    Y["cad-agent.yaml<br/>dossier: · gates:"] --> DS["dossier/<br/>sections, cards, lint"]
-    EV["evidence.py<br/>content hashes"] --> DS
-    W["cadagent.review<br/>the workbench"] --> ST["publish/site.py<br/>review pages"]
-    DS --> G["gates/<br/>access · motion · walls"]
-    G -->|"verdicts"| GJ["exports/gates/<br/>gate verdicts"]
-    DS & G --> PK["packet.py<br/>section packet"]
-    RY["docs/research/references.yaml<br/>sources by id"] --> RF["references.py<br/>lookup · check"]
-    PK -->|"views"| RN["publish/render.py<br/>captioned PNGs"]
-    PK --> PO["exports/review/<br/>manifest.json"]
+    Y["cad-agent.yaml<br/>dossier: · gates:"]
+    DS["dossier/<br/>sections, cards, lint"]
+    EV["evidence.py<br/>content hashes"]
+    G["gates/<br/>access · motion · walls"]
+    GJ["exports/gates/<br/>gate verdicts"]
+    Y --> DS
+    EV --> DS
+    DS --> G
+    G -->|"verdicts"| GJ
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class DS,EV,W,G,PK,RF here
-    class Y,ST,RN,RY near
-    class GJ,PO out
+    class DS,EV,G here
+    class Y near
+    class GJ out
+```
+
+Packets and rendered review evidence
+
+```mermaid
+flowchart TD
+    DS["dossier/<br/>sections, cards, lint"]
+    G["gates/<br/>access · motion · walls"]
+    PK["packet.py<br/>section packet"]
+    RN["publish/render.py<br/>captioned PNGs"]
+    PO["exports/review/<br/>manifest.json"]
+    DS & G --> PK
+    PK -->|"views"| RN
+    PK --> PO
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class DS,G,PK here
+    class RN near
+    class PO out
+```
+
+Workbench pages
+
+```mermaid
+flowchart TD
+    W["cadagent.review<br/>the workbench"]
+    ST["publish/site.py<br/>review pages"]
+    W --> ST
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class W here
+    class ST near
+```
+
+Reference lookup
+
+```mermaid
+flowchart TD
+    RY["docs/research/references.yaml<br/>sources by id"]
+    RF["references.py<br/>lookup · check"]
+    RY --> RF
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class RF here
+    class RY near
 ```
 
 | Module | What it does |

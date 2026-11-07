@@ -8,16 +8,34 @@ catalogue cards or entries to the full agent prompt. `version.json` reports edit
 separately. The dependency-free selector shares the ownership policy with the repo-map check; CI still validates
 every authored map and exercises the actual rendered HTML and Markdown destinations.
 
+Publication and compilers
+
 ```mermaid
 flowchart TD
-    S["publication.mjs + source aliases"] --> B["build-site.mjs"]
-    C["compiler/<br/>compilers"] --> B
-    B --> D["../../dist/<br/>public pages + agent indexes"]
-    A["assets/<br/>versioned files"] --> D
-    F["figures/<br/>stills + pictures"] --> I["../../docs/img/"]
+    S["publication.mjs + source aliases"]
+    B["build-site.mjs"]
+    C["compiler/<br/>compilers"]
+    D["../../dist/<br/>public pages + agent indexes"]
+    S --> B
+    C --> B
+    B --> D
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     class S,B here
+```
+
+Versioned assets and generated figures
+
+```mermaid
+flowchart TD
+    D["../../dist/<br/>public pages + agent indexes"]
+    A["assets/<br/>versioned files"]
+    F["figures/<br/>stills + pictures"]
+    I["../../docs/img/"]
+    A --> D
+    F --> I
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
 ```
 
 | Owner | Purpose |

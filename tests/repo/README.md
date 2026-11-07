@@ -5,16 +5,46 @@ skills, the merge gates, releases, the supply-chain audit and vendored files.
 
 Arrows: what a test imports, runs or reads.
 
+Layout checks
+
 ```mermaid
 flowchart TD
-    L["test_layout.py<br/>test_package_layout.py"] -->|"reads"| T["the file tree<br/>git ls-files"]
-    A["test_areas.py<br/>test_skills.py"] --> Y["docs/areas.yaml<br/>skills/"]
-    G["test_ci_gates.py<br/>test_cut_release.py"] -->|"imports"| TL["tools/ci_gates.py<br/>tools/cut_release.py"]
+    L["test_layout.py<br/>test_package_layout.py"]
+    T["the file tree<br/>git ls-files"]
+    L -->|"reads"| T
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class L,A,G here
-    class T,Y,TL near
+    class L here
+    class T near
+```
+
+Area and skill checks
+
+```mermaid
+flowchart TD
+    A["test_areas.py<br/>test_skills.py"]
+    Y["docs/areas.yaml<br/>skills/"]
+    A --> Y
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A here
+    class Y near
+```
+
+Review and release checks
+
+```mermaid
+flowchart TD
+    G["test_ci_gates.py<br/>test_cut_release.py"]
+    TL["tools/ci_gates.py<br/>tools/cut_release.py"]
+    G -->|"imports"| TL
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class G here
+    class TL near
 ```
 
 | File | What it tests |

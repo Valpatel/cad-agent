@@ -2,16 +2,34 @@
 
 The installable Python toolkit and pinned third-party source live together here. Product CAD, firmware and application source stay in their product repository.
 
+Package, checks and guides
+
 ```mermaid
 flowchart TD
-    C["cadagent/<br/>Python package + browser SDK"] --> T["../tests/<br/>checks by domain"]
-    V["vendor/<br/>pinned upstream source"] --> A["../tools/<br/>audit + reviewed updates"]
-    C --> D["../docs/<br/>guides + evidence"]
+    C["cadagent/<br/>Python package + browser SDK"]
+    T["../tests/<br/>checks by domain"]
+    D["../docs/<br/>guides + evidence"]
+    C --> T
+    C --> D
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class C here
+    class T,D near
+```
+
+Pinned upstreams and their review
+
+```mermaid
+flowchart TD
+    V["vendor/<br/>pinned upstream source"]
+    A["../tools/<br/>audit + reviewed updates"]
+    D["../docs/<br/>guides + evidence"]
+    V --> A
     V --> D
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class C,V here
-    class T,A,D near
+    class V here
+    class A,D near
 ```
 
 | Folder | Ownership |

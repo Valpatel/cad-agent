@@ -1,7 +1,7 @@
 /** Real structural controls for #113. No browser/build/network is needed for the owner/link contract. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync, mkdtempSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, mkdirSync, appendFileSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -71,13 +71,18 @@ test('an incident collection requires real links in its index', () => {
 });
 test('NUL-delimited Git inventory preserves spaces, Unicode and newlines', () => {
   // Disposable fixture only; it is not an application worktree or environment.
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'cad-agent-map-inventory-'));
-  execFileSync('git', ['init', '-q', dir]);
-  mkdirSync(path.join(dir, 'parts'));
-  const names = ['parts/β model.md', 'parts/line\nbreak.txt'];
-  for (const f of names) writeFileSync(path.join(dir, f), 'data');
-  execFileSync('git', ['-C', dir, 'add', '--', ...names]);
-  assert.deepEqual(gitFiles(dir), names.sort());
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'repo-map-inventory-'));
+  try {
+    execFileSync('git', ['init', '-q', dir]);
+    mkdirSync(path.join(dir, 'parts'));
+    const names = ['parts/β model.md', 'parts/line\nbreak.txt'];
+    for (const f of names) writeFileSync(path.join(dir, f), 'data');
+    execFileSync('git', ['-C', dir, 'add', '--', ...names]);
+    assert.deepEqual(gitFiles(dir), names.sort());
+  } finally {
+    // Only this test-created fixture: keep all application worktrees/environments and retained failure evidence.
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 test('generated map is deterministic and distinguishes publication from source ownership', () => {
   const rows = [{ dir: 'code', owner: 'code/README.md', published: null, reason: 'Owned code.' }, { dir: 'docs', owner: 'docs/README.md', published: 'docs/README.md', reason: 'Guide.' }];

@@ -10,6 +10,7 @@ flowchart LR
 
 | Incident | Lesson |
 | --- | --- |
+| [Agent guide paths](2026-11-07-agent-guides-need-exact-local-paths.md) | Read full installed instructions when a summary drops requirements; validate the actual skill paths. |
 | [Obfuscated code](2026-11-07-provider-obfuscation-can-change-code.md) | Compare delivered authored literals; a successful response and revision footer can still hide transformed instructions. |
 | [Full test cap](2026-11-07-full-test-caps-need-active-case.md) | Preserve the cap and expose the active test and thread stack before diagnosing a cancelled release check. |
 | [Resize runtime errors](2026-11-07-resize-checks-need-runtime-errors.md) | Collect errors on the exact interaction page; good geometry alone can miss observer feedback. |

@@ -171,6 +171,15 @@ life calculation for oscillating bearings*, Wind Energy Science 9 (2024) 777–7
 ISO 76:2006 through the makers' catalogues; K. L. Johnson, *Contact Mechanics* (1985), Chapter 4; B. J. Hamrock and
 D. E. Brewe, *Journal of Lubrication Technology* 105 (1983) 171–177.
 
+**Maintenance recheck, 2026-11-07.**
+
+These entries remain visible as prior art or declined alternatives. No upstream push for over a year is a
+maintenance warning, not proof of abandonment or a new vulnerability. Maintenance beyond the recorded activity
+is unverified; any future adoption needs a fresh licence, advisory and compatibility review.
+
+- **frasere/ISO-281**: last observed push 2020-12-09. Keep the existing unmaintained warning. Manufacturer bearing ratings and the cited standards remain the basis, rather than adopting this old calculator.
+
+
 </details>
 
 ## Tests that keep it honest

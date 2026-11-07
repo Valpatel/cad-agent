@@ -720,3 +720,14 @@ Next (#283):
 - The clinch and rivet checks with golden vectors (PR B).
 - The parts catalogue and the skill for the bent plate + PEM + rivet pattern: [the page](../../sheet-metal-hardware.md).
 - Re-fetch the SendCutSend feeds before relying on any value here; they change.
+
+<details>
+<summary>Maintenance of historical alternatives (checked 2026-11-07)</summary>
+
+These entries remain visible as prior art or declined alternatives. No upstream push for over a year is a
+maintenance warning, not proof of abandonment or a new vulnerability. Maintenance beyond the recorded activity
+is unverified; any future adoption needs a fresh licence, advisory and compatibility review.
+
+- **ulrich1a/sheet_ufo**: last observed push 2018-09-22. Keep the existing Skip decision: the historical predecessor was folded into SheetMetal in 2018.
+
+</details>

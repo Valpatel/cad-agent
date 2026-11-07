@@ -55,13 +55,10 @@ Made by <a href="tools/readme_anim.py"><code>tools/readme_anim.py</code></a>.
 
 ## How to join in
 
-Install on macOS or Linux:
+[Install on macOS, Linux or Windows](docs/practice/agent-workflow.md#install): download, verify and run the
+pinned installer, for your user only.
 
-```bash
-curl -fsSL https://cad-agent.valpatel.com/install.sh | sh
-```
-
-[Windows, agent setup and uninstall](docs/practice/agent-workflow.md#install) · [Ask your assistant](docs/practice/agent-workflow.md#ask-your-assistant)
+[Agent setup and uninstall](docs/practice/agent-workflow.md#install) · [Ask your assistant](docs/practice/agent-workflow.md#ask-your-assistant)
 
 Bring a small design, a useful source or a reproducible failure. [Contributing](.github/CONTRIBUTING.md) explains
 independent review and how to help. cad-agent collects no telemetry; your agent submits findings only if you say yes.

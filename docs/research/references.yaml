@@ -3088,7 +3088,7 @@ sources:
     authors: []
     org: Emhart Teknologies (Stanley Engineered Fastening)
     year: 2012
-    url: https://www.stanleyengineeredfastening.com/-/media/Web/SEF/Resources/Docs/POP/POP-Rivet-Catalog.pdf
+    url: https://res.cloudinary.com/syndigo-sbd-ps/image/upload/q_auto/Stanley%20Engineered%20Fastening%20%28SEF%29/Public/sef-resources/library/user-manuals-and-documentation/POP-Rivet-Catalog.pdf
     access: free
     terms: cited by part number and page with the values as facts; the catalogue is never copied
     areas: [rivets, fasteners, corrosion]
@@ -3099,6 +3099,7 @@ sources:
       - docs/research/manufacturing/sheet-metal-joining.md
       - software/cadagent/mechanical/rivets.py
     verified: >-
+      2026-11-07: followed the publisher redirect to its canonical CDN and verified the 68-page P3100 Rev. D (6/12) PDF, SHA256 63e2975c3d8fafa7b01659c942743199c257783c37c26ea6efaefaca5b18c387. URL repair only; the engineering edition and earlier section reading below are unchanged.
       2026-11-01: opened the 68-page PDF (© 2012, Rev. D 6/12; the URL redirects to Stanley's CDN). Read the
       design guidelines pp. 10–12 (edge distance at least twice the diameter for full strength, open end down to
       0.020 in aluminium, closed end seals to 100 psi, large flange twice the bearing area, the galvanic chart),
@@ -3198,7 +3199,7 @@ sources:
     authors: []
     org: US Department of Defense (NAVAIR)
     year: 2016
-    url: https://everyspec.com/MIL-STD/MIL-STD-0800-0899/MIL-STD-889C_55418/
+    url: https://quicksearch.dla.mil/qsDocDetails.aspx?ident_number=36032
     access: free
     terms: cited by section and table, never copied (distribution statement A, public release)
     areas: [corrosion, rivets, fasteners]
@@ -3207,6 +3208,7 @@ sources:
       - docs/research/manufacturing/sheet-metal-joining.md
       - software/cadagent/mechanical/rivets.py
     verified: >-
+      2026-11-07: replaced the dead mirror with the official DLA ASSIST document record. Its history lists Revision C dated 22-AUG-2016; the current record is D (2021), validated 29-APR-2026. This preserves the historical C citation and earlier reading below; it does not import D rules or claim a fresh reading of the C PDF.
       2026-11-01: opened the PDF (22 August 2016; superseded by 889D in 2021). Read 5.1.3 (the small fastener
       the same metal or more noble), 5.1.6, 5.2a (stainless screws in aluminium acceptable with sealed faying
       edges, not the reverse), Table I (aluminium with carbon steel or austenitic stainless incompatible in

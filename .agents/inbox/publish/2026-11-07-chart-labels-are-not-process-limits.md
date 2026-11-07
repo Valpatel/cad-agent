@@ -52,6 +52,14 @@ the registry/importer controls and original-map check.
 records, as well as the rule-card and website consumers. Valid YAML alone does not prove
 maintenance compatibility. A formatting repair does not re-read or re-qualify sources.
 
+The same boundary recurred in PR444 at `adc93b44` on2026-11-07: core3.12 job128398821750 passed3004 tests
+with329 skips and failed `test_every_real_shard_is_editable` and the permanent same-site-move fixture. The new
+long `verified` scalars made `guides-inserts.yaml` noncanonical, so the updater could not apply the otherwise
+unrelated Jawstec fixture move; `guides-print.yaml` also needed the writer's wrapping. Serialize exactly those
+two current shard bodies through `import_refmap.dump`, preserve their headers and assert identical parsed
+records. The actual health/import/registry/release/layout selection then passed228 tests. Keep both original
+failures and unchanged editable/shard rejection tests; do not loosen the maintenance contract or discard source facts.
+
 ## Retain unverified-source controls after recovering real citations
 
 On 2026-11-07 UTC, the #118 source follow-up recovered six original source links used by existing equations.

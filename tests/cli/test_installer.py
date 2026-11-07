@@ -1,13 +1,17 @@
-"""The one-line installers, web/install.sh and web/install.ps1 (#282), served at /install.sh and /install.ps1.
+"""The installers and their canonical checksum-before-execution guide (#282, #322).
 
 install.sh runs here for real, twice, in a temporary HOME against a file:// copy of this checkout: the first run
 clones and installs, the second takes the `cad-agent update` path. uv is a stand-in that records what it was asked and
 puts a `cad-agent` that runs the clone's code in ~/.local/bin, so nothing is downloaded; the real uv and PyPI path is
 proved by `tools/quickstart_eval.py install` (README in tests/cli). The two scripts must say the same things, and both
 must pass their linters when those are installed (shellcheck; PowerShell's own parser).
+The actual pasted guards run with inert downloads and handoff fixtures: success reaches the real POSIX option
+parser, failures reach no shell/child; PowerShell guards also run in the bounded Windows CI job.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
 import shutil
@@ -21,6 +25,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SH = ROOT / "tools" / "site" / "assets" / "install.sh"
 PS1 = ROOT / "tools" / "site" / "assets" / "install.ps1"
+INSTALL_GUIDE = ROOT / "docs" / "practice" / "agent-workflow.md"
 PASTE = (ROOT / "docs" / "agent-prompt.txt").read_text().split("\n", 1)[0]
 GIT = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_NOSYSTEM": "1"}
@@ -73,6 +78,120 @@ def world(tmp_path):
 
 def _install(env: dict, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["sh", str(SH), *args], env=env, capture_output=True, text=True, timeout=300)
+
+
+def _checked_block(platform):
+    guide = INSTALL_GUIDE.read_text()
+    language = "sh" if platform == "posix" else "powershell"
+    blocks = re.findall(r"<!-- checked-installer:" + platform + r" -->\n```" + language + r"\n(.*?)\n```", guide, re.S)
+    assert len(blocks) == 1, "one canonical executable procedure per platform"
+    return blocks[0]
+
+
+def _snapshot_bytes(source):
+    # The immutable download is Git's blob, not a Windows checkout's possible CRLF conversion.
+    return subprocess.run(["git", "show", "HEAD:" + source.relative_to(ROOT).as_posix()], cwd=ROOT,
+                          check=True, capture_output=True).stdout
+
+
+def test_checked_installers_pin_the_actual_snapshot_bytes():
+    for platform, source in (("posix", SH), ("powershell", PS1)):
+        block = _checked_block(platform)
+        assert hashlib.sha256(_snapshot_bytes(source)).hexdigest() in block
+        assert re.search(r"https://raw\.githubusercontent\.com/Valpatel/cad-agent/[a-f0-9]{40}/tools/site/assets/" + re.escape(source.name), block)
+        assert "Installer checksum mismatch" in block
+
+
+@pytest.mark.parametrize("hasher", ["sha256sum", "shasum"])
+@pytest.mark.parametrize("outcome", ["good", "corrupt", "download-failed"])
+def test_actual_posix_guide_checks_before_real_installer_handoff(tmp_path, hasher, outcome):
+    """Execute the pasted block, with an inert download and sh --help handoff: no network or real install."""
+    command = _checked_block("posix")
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    for executable in ("mktemp", "rm", hasher):
+        target = shutil.which(executable)
+        if not target:
+            pytest.skip(f"{executable} is not installed")
+        (bindir / executable).symlink_to(target)
+    downloaded, handed = tmp_path / "download.json", tmp_path / "handoff.json"
+    payload = tmp_path / "source.sh"
+    payload.write_bytes(_snapshot_bytes(SH))
+    curl = bindir / "curl"
+    curl.write_text(f'''#!{sys.executable}
+import json,sys
+from pathlib import Path
+args=sys.argv[1:]; output=Path(args[args.index('-o')+1])
+Path({str(downloaded)!r}).write_text(json.dumps({{'args':args,'output':str(output)}}))
+data=Path({str(payload)!r}).read_bytes()
+output.write_bytes(data + (b'\\ncorrupt' if {outcome!r}=='corrupt' else b''))
+sys.exit(22 if {outcome!r}=='download-failed' else 0)
+''')
+    curl.chmod(0o755)
+    shell = bindir / "sh"
+    shell.write_text(f'''#!{sys.executable}
+import hashlib,json,os,sys
+from pathlib import Path
+file=Path(sys.argv[1])
+Path({str(handed)!r}).write_text(json.dumps({{'sha256':hashlib.sha256(file.read_bytes()).hexdigest(),'args':sys.argv[1:]}}))
+os.execv('/bin/sh',['sh',str(file),'--help'])
+''')
+    shell.chmod(0o755)
+    env = {**os.environ, "PATH": str(bindir), "TMPDIR": str(tmp_path), "PYTHONNOUSERSITE": "1"}
+    result = subprocess.run(["/bin/bash", "-c", command], env=env, capture_output=True, text=True, timeout=15)
+    download = json.loads(downloaded.read_text())
+    assert not Path(download["output"]).exists(), "the pasted procedure cleans its temporary script"
+    assert "--proto" in download["args"] and "=https" in download["args"]
+    if outcome == "good":
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert json.loads(handed.read_text())["sha256"] == hashlib.sha256(_snapshot_bytes(SH)).hexdigest()
+        assert "cad-agent: install or update cad-agent:" in result.stdout, "the real installer option parser was reached"
+    else:
+        assert result.returncode != 0 and not handed.exists(), "failed input must never reach the shell"
+        if outcome == "corrupt":
+            assert "Installer checksum mismatch" in result.stderr
+
+
+@pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")
+@pytest.mark.parametrize("outcome", ["good", "corrupt", "download-failed", "child-failed"])
+def test_actual_powershell_guide_checks_before_process_handoff(tmp_path, outcome):
+    """Real PowerShell/hash/try-finally, inert downloader and child sink; no network or real installation."""
+    quote = lambda value: "'" + str(value).replace("'", "''") + "'"
+    downloaded, handed = tmp_path / "download.json", tmp_path / "handoff.json"
+    payload = tmp_path / "source.ps1"
+    payload.write_bytes(_snapshot_bytes(PS1))
+    sink = tmp_path / "child.ps1"
+    sink.write_text('param([switch]$NoProfile, [string]$ExecutionPolicy, [string]$File)\n'
+                    f"@{{sha256=(Get-FileHash -LiteralPath $File -Algorithm SHA256).Hash.ToLowerInvariant(); "
+                    "noProfile=[bool]$NoProfile; policy=$ExecutionPolicy} | ConvertTo-Json -Compress | "
+                    f"Set-Content -LiteralPath {quote(handed)}\n"
+                    f"$global:LASTEXITCODE = {7 if outcome == 'child-failed' else 0}\n")
+    prefix = f'''
+function Invoke-WebRequest {{
+  param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing, [string]$ErrorAction)
+  @{{uri=$Uri; output=$OutFile}} | ConvertTo-Json -Compress | Set-Content -LiteralPath {quote(downloaded)}
+  if ({quote(outcome)} -eq 'download-failed') {{ throw 'fixture download refused' }}
+  Copy-Item -LiteralPath {quote(payload)} -Destination $OutFile
+  if ({quote(outcome)} -eq 'corrupt') {{ [IO.File]::WriteAllBytes($OutFile, [byte[]]([IO.File]::ReadAllBytes($OutFile) + 0)) }}
+}}
+function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} }}
+'''
+    script = tmp_path / "checked.ps1"
+    script.write_text(prefix + _checked_block("powershell"))
+    result = subprocess.run(["pwsh", "-NoProfile", "-File", str(script)], capture_output=True, text=True, timeout=20)
+    download = json.loads(downloaded.read_text(encoding="utf-8-sig"))
+    assert not Path(download["output"]).exists(), "finally cleans the downloaded script"
+    assert re.search(r"/[a-f0-9]{40}/tools/site/assets/install\.ps1$", download["uri"])
+    if outcome in ("good", "child-failed"):
+        receipt = json.loads(handed.read_text(encoding="utf-8-sig"))
+        assert receipt == {"sha256": hashlib.sha256(_snapshot_bytes(PS1)).hexdigest(), "noProfile": True, "policy": "Bypass"}
+        assert (result.returncode == 0) is (outcome == "good"), result.stdout + result.stderr
+        if outcome == "child-failed":
+            assert "Installer exited with code 7" in result.stderr
+    else:
+        assert result.returncode != 0 and not handed.exists(), "failed input never reaches a child process"
+        if outcome == "corrupt":
+            assert "Installer checksum mismatch" in result.stderr
 
 
 def test_it_installs_then_a_second_run_updates(world):

@@ -36,6 +36,12 @@ Their dependency rows retain the owning manifest, and new rebuild dependencies n
 checks. The rebuild context has its own exactly locked compiler inputs and disabled install hooks; production
 website installation does not install those dependencies. This is not an arbitrary manifest-discovery mechanism.
 
+The maintenance decision in [issue 153](https://github.com/Valpatel/cad-agent/issues/153) keeps grouped weekly
+GitHub Actions version PRs. npm and pip version campaigns are deliberately deferred during backlog closure:
+the weekly online audit below and manually reviewed updates remain in use. Their missing configurations stay
+visible as exact accepted policy findings, not as proof Dependabot watches those manifests. Enabled security-fix
+PR creation is separate; dependency-graph and SBOM discovery are still unverified in issue 153.
+
 </details>
 
 ## Where it runs

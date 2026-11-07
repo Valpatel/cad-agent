@@ -251,6 +251,10 @@ test('catalogue statuses are honest', async () => {
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
   for (const [, cmd] of index.matchAll(/<code>cad-agent ([a-z0-9-]+)<\/code>/g))
     assert.ok(catalog.items.some(i => i.name === `cad-agent ${cmd}`), `landing page names cad-agent ${cmd}, which does not exist`);
+  const { source } = JSON.parse(await readFile(path.join(out, 'web/models/gyropup.json'), 'utf8'));
+  const modelFigure = index.match(/<figure class="hero-model">[\s\S]*?<\/figure>/)?.[0] || '';
+  assert.ok(modelFigure.includes(`href="${source.repo}/tree/${source.revision}"`), 'the displayed assembly links its actual immutable CAD source');
+  assert.ok(!modelFigure.includes('exported from its STEP files'), 'the current collector does not read historical STEP exports');
   for (const i of catalog.items.filter(i => i.type === 'upstream')) assert.ok(i.summary, `${i.name} has no summary`);
 });
 

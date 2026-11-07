@@ -2,6 +2,32 @@
 # finding"). Each one stays in the report, marked accepted, and no longer counts. Nothing accepts a critical finding.
 # Reviewers read every change to this file, above all an acceptance added in the same PR as the finding it hides.
 
+- check: dependabot-ecosystem
+  subject: repo:dependabot-npm
+  fp: 1f04e00c5e5dc2be
+  reason: >-
+    Deliberate maintenance-pass policy under issues 153 and 322, reaffirmed 2026-11-07: retain grouped weekly
+    GitHub Actions version PRs, without starting recurring npm version-PR campaigns during backlog closure.
+    The weekly supply-chain workflow audits both explicit npm locks online and keeps one findings issue;
+    pin updates still require independent review, provenance and browser CI. This accepts only the absence
+    of the npm version-update configuration, not an advisory, stale pin or failed audit. It does not claim
+    Dependabot monitors these manifests or that dependency-graph/SBOM discovery is verified; issue 153
+    retains that unresolved evidence. Security-fix PRs are enabled separately but their coverage is not proven here.
+  accepted: 2026-11-07
+
+- check: dependabot-ecosystem
+  subject: repo:dependabot-pip
+  fp: b8c4dd692ce86b5e
+  reason: >-
+    Deliberate maintenance-pass policy under issues 153 and 322, reaffirmed 2026-11-07: retain grouped weekly
+    GitHub Actions version PRs, without starting recurring pip version-PR campaigns during backlog closure.
+    The weekly online audit checks direct Python requirements and the transitive resolution it can observe;
+    changes to lower bounds or optional dependencies still require independent review and current CI.
+    This accepts only the missing pip version-update configuration, not an advisory or a claim that every
+    installed/transitive version is covered. Dependabot manifest monitoring and dependency-graph/SBOM
+    discovery remain unverified under issue 153; enabled security-fix PR creation is a separate control.
+  accepted: 2026-11-07
+
 - check: npm-install-script
   subject: npm:esbuild
   fp: 30e8057fdbba6aa6

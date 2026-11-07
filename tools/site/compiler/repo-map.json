@@ -1,20 +1,6 @@
 {
   "delegated": [
     {
-      "root": ".agents/agents",
-      "owner": ".agents/README.md",
-      "reason": "Installer discovers every role Markdown file; parent links the two manifest-listed prompts, not a README in the prompt namespace.",
-      "members": "linked-files",
-      "kind": "owned"
-    },
-    {
-      "root": ".claude-plugin",
-      "owner": ".agents/README.md",
-      "reason": "Plugin wiring uses the canonical kit; its manifest is mapped by the kit owner.",
-      "members": "linked-files",
-      "kind": "owned"
-    },
-    {
       "root": ".github",
       "owner": ".github/CONTRIBUTING.md",
       "reason": "GitHub policy, templates and workflows are mapped by CONTRIBUTING rather than a front-page-changing README.",
@@ -30,8 +16,9 @@
     {
       "root": "docs/img",
       "owner": "docs/img/README.md",
-      "reason": "Committed generated figures retain their topic output layout and recorded producers; parent maps each topic.",
-      "kind": "data"
+      "reason": "Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.",
+      "kind": "data",
+      "members": "folder-maps"
     },
     {
       "root": "software/vendor/agentcad",
@@ -71,21 +58,24 @@
     },
     {
       "root": "software/vendor/baselines",
-      "owner": "software/vendor/README.md",
-      "reason": "Exact vendor scan fingerprints; parent owns metadata, vendor audit validates unexpected files.",
-      "kind": "data"
+      "owner": "software/vendor/baselines/README.md",
+      "reason": "Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.",
+      "kind": "data",
+      "members": "folder-maps"
     },
     {
       "root": "software/vendor/reports",
-      "owner": "software/vendor/README.md",
-      "reason": "Recorded vendor scans; parent owns metadata, vendor audit validates unexpected files.",
-      "kind": "data"
+      "owner": "software/vendor/reports/README.md",
+      "reason": "Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.",
+      "kind": "data",
+      "members": "folder-maps"
     },
     {
       "root": "software/vendor/patches",
-      "owner": "software/vendor/README.md",
-      "reason": "Recorded vendor patches; parent owns metadata, vendor audit validates unexpected files.",
-      "kind": "data"
+      "owner": "software/vendor/patches/README.md",
+      "reason": "Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.",
+      "kind": "data",
+      "members": "folder-maps"
     },
     {
       "root": "software/cadagent/webkit/vendor/file-parsers",
@@ -124,17 +114,11 @@
       "kind": "upstream"
     },
     {
-      "root": ".agents/skills/cad-motion-validation/references",
-      "owner": ".agents/skills/cad-motion-validation/SKILL.md",
-      "reason": "Bundled reference resources are linked from the installed skill; no extra discovered skill entry.",
-      "members": "linked-files",
-      "kind": "owned"
-    },
-    {
       "root": "docs/validation/volume-2026-10-29",
-      "owner": "docs/validation/README.md",
-      "reason": "Dated numerical receipts retain their evidence layout; parent maps the immutable run.",
-      "kind": "data"
+      "owner": "docs/validation/volume-2026-10-29/README.md",
+      "reason": "Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.",
+      "kind": "data",
+      "members": "folder-maps"
     }
   ],
   "indexed": {

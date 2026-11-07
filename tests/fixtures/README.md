@@ -6,15 +6,43 @@ or by hand, and never fetched at test time. A test reaches this folder as
 
 Arrows: who writes a set and which tests read it.
 
+Seeded gate defects
+
 ```mermaid
 flowchart TD
-    B["gate_bench/build.py<br/>a mechanism, seeded defects"] --> R["review/ · publish/<br/>the gates, the review site"]
-    C["cfd_runs/build.py<br/>recorded OpenFOAM runs"] --> S["simulation/<br/>convergence tests"]
-    V["formula-vectors.json<br/>tools/formula_vectors.py"] --> W["formulas/ · webkit/ · site/<br/>Python and its JS port"]
+    B["gate_bench/build.py<br/>a mechanism, seeded defects"]
+    R["review/ · publish/<br/>the gates, the review site"]
+    B --> R
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class B,C,V here
-    class R,S,W near
+    class B here
+    class R near
+```
+
+Recorded simulation runs
+
+```mermaid
+flowchart TD
+    C["cfd_runs/build.py<br/>recorded OpenFOAM runs"]
+    S["simulation/<br/>convergence tests"]
+    C --> S
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class C here
+    class S near
+```
+
+Cross-language formula vectors
+
+```mermaid
+flowchart TD
+    V["formula-vectors.json<br/>tools/formula_vectors.py"]
+    W["formulas/ · webkit/ · site/<br/>Python and its JS port"]
+    V --> W
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class V here
+    class W near
 ```
 
 | File or folder | What it is |

@@ -594,7 +594,7 @@ else:
 foreign=home/'.claude/skills/foreign/SKILL.md';foreign.parent.mkdir(parents=True);foreign.write_text('foreign keep')
 result=agentkit.install(home,root)
 assert not result['conflicts'] and result['done'] and all(x.startswith(('copy ','generate ')) for x in result['done']),result
-skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=list((root/'.agents/agents').glob('*.md'))
+skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=[p for p in (root/'.agents/agents').glob('*.md') if p.name!='README.md']
 assert len(skills)==8 and len(roles)==2
 for src in skills:
     target=home/'.claude/skills'/src.parent.name

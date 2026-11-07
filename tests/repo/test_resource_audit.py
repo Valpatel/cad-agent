@@ -1272,12 +1272,18 @@ def _site_selection(files):
     node = shutil.which("node")
     if not node:
         pytest.skip("Node is an optional local site tool; mandatory Node CI also tests this selector")
-    script = ("const {selectPages, publicPath} = await import(process.argv[1]); "
+    script = ("const {readFileSync} = await import('node:fs'); "
+              "const {createPublication, folderMapSources} = await import(process.argv[1]); "
+              "const publication = createPublication(JSON.parse(readFileSync(process.argv[2], 'utf8'))); "
+              "const policy = JSON.parse(readFileSync(process.argv[3], 'utf8')); "
               "let input=''; for await (const chunk of process.stdin) input += chunk; "
-              "console.log(JSON.stringify(selectPages(JSON.parse(input)).map(p => "
-              "({file:p.file, section:p.section.id, public:publicPath(p.file)}))));")
+              "const files=JSON.parse(input); "
+              "console.log(JSON.stringify([...publication.selectPages(files).map(p => "
+              "({file:p.file, section:p.section.id, public:publication.publicPath(p.file)})), "
+              "...folderMapSources(files,policy,publication).map(p => ({file:p.file,section:'folder-maps',public:p.public}))]));")
     return subprocess.run([node, "--input-type=module", "-e", script,
-                           (ROOT / "tools/site/publication.mjs").as_uri()],
+                           (ROOT / "tools/site/publication.mjs").as_uri(),
+                           str(ROOT / 'tools/site/page-sources.json'), str(ROOT / 'tools/site/compiler/repo-map.json')],
                           input=json.dumps(files), capture_output=True, text=True)
 
 
@@ -1302,22 +1308,43 @@ def test_published_pages_match_the_site_build():
     assert not any(p["file"] == "THIRD_PARTY_NOTICES.md" for p in selected)
 
 
-def test_weekly_link_audit_selects_current_published_files():
-    """Exercise configured file globs on the real tracked inventory, including nested owners and exclusions."""
+def test_weekly_link_audit_selects_current_published_files(tmp_path):
+    """Execute the configured selector and compare lychee's exact file list to the actual publisher."""
     import argparse
-    import glob
     import shlex
+    import sys
     import yaml
     workflow = yaml.safe_load((ROOT / ".github/workflows/supply-chain.yml").read_text())
     step = next(s for s in workflow["jobs"]["references"]["steps"] if "lycheeverse/lychee-action" in s.get("uses", ""))
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--exclude-path", action="append", default=[])
+    parser.add_argument("--files-from", required=True)
     options, remaining = parser.parse_known_args(shlex.split(step["with"]["args"]))
+    assert options.files_from == 'build/lychee-inputs.txt'
+    assert '--exclude-path' not in remaining, 'do not silently drop selected publication sources'
+    selector = next(s for s in workflow['jobs']['references']['steps'] if s.get('name') == 'Select actual published link sources')
+    command = shlex.split(selector['run'])
+    assert command == ['python3', 'tools/resource_audit.py', 'link-inputs', '--out', options.files_from]
+    output = tmp_path / 'inputs.txt'
+    run = subprocess.run([sys.executable, *command[1:-1], str(output)], cwd=ROOT, capture_output=True, text=True)
+    assert run.returncode == 0, run.stderr
     inventory = set(_tracked_pages(ROOT))
-    actual = {p for pattern in remaining for p in glob.glob(pattern, root_dir=ROOT, recursive=True)
-              if p in inventory and p.endswith(".md")
-              and not any(p == excluded or p.startswith(excluded.rstrip("/") + "/") for excluded in options.exclude_path)}
-    assert actual == {p for p in inventory if ra.published(p)}, "weekly link inputs drifted from actual publication sources"
+    selection = _site_selection(sorted(inventory))
+    assert selection.returncode == 0, selection.stderr
+    actual = output.read_text().splitlines()
+    expected = {p['file'] for p in json.loads(selection.stdout)} - {ra.REPORT_MD}
+    assert len(actual) == len(set(actual))
+    assert set(actual) == expected, 'weekly link inputs drifted from actual publication sources'
+    assert '.agents/agents/README.md' in actual and 'software/cadagent/README.md' in actual
+    assert not any(p.startswith('software/vendor/text-to-cad/') for p in actual)
+
+
+def test_link_inputs_preserve_literal_paths_or_fail_closed():
+    assert ra.link_inputs(['docs/space name.md', 'docs/tab\tname.md', 'docs/β.md']) == ['docs/space name.md', 'docs/tab\tname.md', 'docs/β.md']
+    for name in ['docs/line\nbreak.md', 'docs/[glob].md', 'docs/wild*.md']:
+        with pytest.raises(ValueError, match='cannot represent'):
+            ra.link_inputs([name])
+    with pytest.raises(ValueError, match='empty'):
+        ra.link_inputs(['software/vendor/text-to-cad/README.md'])
 
 
 @pytest.mark.parametrize("source", [".github/CONTRIBUTING.md", "software/vendor/THIRD_PARTY_NOTICES.md"])
@@ -1419,6 +1446,11 @@ def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_subst
     rep, rows = own()
     assert set(rows) == expected
     assert all(row["file"].startswith(".agents/") for row in rows.values())
+    write(root, '.agents/agents/README.md', '# Roles\n\n```sh\nnpx example-unpinned-tool\n```\n')
+    rep, mapped = own()
+    assert set(mapped) == expected  # The human map is not an eleventh skill/role.
+    assert any(f['subject'] == 'doc:.agents/agents/README.md' for f in rep.findings), \
+        'the map must still receive install-advice auditing'
     for row in rows.values():
         write(root, row["file"].removeprefix(".agents/"), "# Stale copy\n")
     assert set(own()[1]) == expected

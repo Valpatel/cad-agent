@@ -2,4 +2,4 @@
 import { createRequire } from 'node:module';
 const siteRequire = createRequire(new URL('../../tools/site/package.json', import.meta.url));
 export const YAML = siteRequire('yaml');
-export const { chromium, webkit } = siteRequire('@playwright/test');
+export const { chromium, webkit, expect } = siteRequire('@playwright/test');

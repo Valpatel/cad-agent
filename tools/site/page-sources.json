@@ -306,6 +306,7 @@
   ],
   "unpublished": [
     "docs/research/references/README.md",
-    "docs/research/bench/README.md"
+    "docs/research/bench/README.md",
+    ".agents/agents/README.md"
   ]
 }

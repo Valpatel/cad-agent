@@ -10,6 +10,37 @@ export const SECTIONS = [
   { id: 'research', title: 'Research', match: f => /^research\/(?:[a-z0-9-]+\/)?[^/]+\.md$/.test(f) },
 ];
 
+/** Shared ownership selection only; the repo-map CI check validates prose, diagrams, tables and links. */
+export function folderOwner(dir, policy) {
+  const row = policy.delegated.find(p => dir === p.root || dir.startsWith(p.root + '/'));
+  return row && row.members !== 'folder-maps' ? row.owner : dir ? dir + '/README.md' : 'README.md';
+}
+export function folderMapPath(file) {
+  if (typeof file !== 'string' || !file.endsWith('/README.md') || file.includes('\0') || file.split('/').some(p => !p || p === '.' || p === '..'))
+    throw new Error(`folder map needs a plain owned README path: ${file}`);
+  // Prefix EVERY directory component: .agents is dot-safe, and cannot collide with an actual _agents folder.
+  // Escape URL/Markdown metacharacters and UTF-8 bytes without a literal percent (which servers decode).
+  const segment = p => 'd-' + encodeURIComponent(p).replace(/[!'()*~]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase()).replaceAll('%', '~');
+  return 'repo/folders/' + file.split('/').slice(0, -1).map(segment).join('/') + '/README.md';
+}
+export function folderMapSources(files, policy, publication) {
+  if (!policy || !Array.isArray(policy.delegated)) throw new Error('folder maps need the ownership policy');
+  const editorial = new Set(publication.selectPages(files).map(p => p.file));
+  const destinations = new Set([...editorial].map(f => publication.publicPath(f)));
+  const selected = [];
+  for (const file of [...new Set(files)].sort()) {
+    if (!file.endsWith('/README.md') || editorial.has(file) || !publication.isCurrentSource(file)) continue;
+    const dir = file.slice(0, -'/README.md'.length);
+    if (folderOwner(dir, policy) !== file) continue; // upstream and fixture leaves keep their existing owner
+    const destination = folderMapPath(file);
+    if (destinations.has(destination)) throw new Error(`folder map public route collision: ${destination}`);
+    destinations.add(destination);
+    const parent = path.posix.dirname(dir);
+    selected.push({ file, public: destination, parent: folderOwner(parent === '.' ? '' : parent, policy) });
+  }
+  return selected;
+}
+
 /** Compile data-only source aliases. Every explicit alias names a required current source, never a fallback. */
 export function createPublication(spec) {
   if (spec?.schema !== 1 || !Array.isArray(spec.roots) || !spec.roots.length || !Array.isArray(spec.files) || !spec.files.length)
@@ -39,10 +70,11 @@ export function createPublication(spec) {
     const root = roots.find(r => file.startsWith(r.source + '/'));
     return root ? root.public + file.slice(root.source.length) : file;
   })();
+  const isCurrentSource = file => !roots.some(r => file.startsWith(r.public + '/')) && !['CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md'].includes(file);
   const pageSection = file => {
     if (excluded.has(file) || /(?:^|\/)(?:AGENTS|CLAUDE)\.md$/.test(file)) return null;
     // Old top-level knowledge roots and root policies are no longer page sources, even if a stale copy exists.
-    if (roots.some(r => file.startsWith(r.public + '/')) || ['CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md'].includes(file)) return null;
+    if (!isCurrentSource(file)) return null;
     return SECTIONS.find(s => s.match(publicPath(file))) || null;
   };
   const selectPages = files => {
@@ -60,7 +92,8 @@ export function createPublication(spec) {
       return [{ file, section }];
     });
   };
-  return { publicPath, pageSection, selectPages, requiredSources: [...aliases.keys()] };
+  // `unpublished` is the legacy editorial exclusion list; owned README maps have their separate detail selection.
+  return { publicPath, pageSection, selectPages, isCurrentSource, requiredSources: [...aliases.keys()] };
 }
 
 /** Validate actual redirect data against physical pages and their public identities. */

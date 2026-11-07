@@ -4,20 +4,55 @@ Build the site, generate figures, maintain releases and audit the toolkit. Engin
 
 The arrows show the artifacts these tools produce and the checks that consume them.
 
+Reviewed browser runtime and site build
+
 ```mermaid
 flowchart TD
-    B["site/build-site.mjs"] --> S["../dist/<br/>published site"]
-    V["mermaid/<br/>locked security rebuild"] --> K["../software/cadagent/webkit/vendor/mermaid/"]
+    B["site/build-site.mjs"]
+    S["../dist/<br/>published site"]
+    V["mermaid/<br/>locked security rebuild"]
+    K["../software/cadagent/webkit/vendor/mermaid/"]
+    B --> S
+    V --> K
     K --> B
-    F["figures/<br/>calculated diagrams"] --> I["../docs/img/<br/>committed figures"]
-    A["anim/<br/>scene inputs"] --> R["readme_anim.py"] --> I
-    I --> B
-    M["mining/<br/>transcript extractor"] --> L["../docs/lessons/<br/>reviewed lessons"]
-    S & I --> T["../tests/<br/>site + figure checks"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class B,V,F,A,R,M here
-    class S,K,I,L,T near
+    class B,V here
+    class S,K near
+```
+
+Figures, animations and their consumers
+
+```mermaid
+flowchart TD
+    B["site/build-site.mjs"]
+    S["../dist/<br/>published site"]
+    F["figures/<br/>calculated diagrams"]
+    I["../docs/img/<br/>committed figures"]
+    A["anim/<br/>scene inputs"]
+    R["readme_anim.py"]
+    T["../tests/<br/>site + figure checks"]
+    F --> I
+    A --> R --> I
+    I --> B
+    S & I --> T
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class B,F,A,R here
+    class S,I,T near
+```
+
+Lesson extraction
+
+```mermaid
+flowchart TD
+    M["mining/<br/>transcript extractor"]
+    L["../docs/lessons/<br/>reviewed lessons"]
+    M --> L
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class M here
+    class L near
 ```
 
 | Work | Entry point |

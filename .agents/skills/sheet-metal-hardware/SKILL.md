@@ -86,3 +86,5 @@ sh.cost({"S-632-1": 8, rivet: 24})
 - **State the limits.** The strengths are the makers' test averages, not allowables, and the prices are dated. None of
   this proves a part holds or fits: test a sample part.
 - **Do not contact a shop or buy anything** for the user. Questions for a shop go to the user.
+
+[Folder map](README.md)

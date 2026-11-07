@@ -57,7 +57,7 @@ The refined existing test module executes that trusted, committed block through 
 
 ## Keep original import inputs when testing repository migrations
 
-**Evidence, 2026-11-07 UTC (#163):** `tools/import_refmap.py /home/scubasonar/Code/refmap-import/data.json --check`
+**Evidence, 2026-11-07 UTC (#163):** `tools/import_refmap.py <original-reference-map>/data.json --check`
 failed on both the research worktree and the unchanged security-audit baseline: only `coverage.yaml` would change.
 The retained original map's SHA256 prefix was `5d33252ef56f2048`. Its generated diff restored `src/cadagent/`,
 `research/` and `docs/design-process-plan.md` paths that the repository had moved. All promoted and hand-added

@@ -29,3 +29,25 @@ Use controlled test fixtures to retain rejection behavior when production data i
 **Limits:** these are readings of historical supplier documents, not new physical tests. The retrieved HP chapters
 and Xometry regional guides do not establish universal fit, fatigue or cleaning guarantees. The old Materialise
 Standard Resin page was not recovered; current named-resin guidance is not evidence of a formal replacement.
+
+
+## Keep source records editable by their health consumer
+
+**Evidence, 2026-11-07 UTC:** PR434 core CI failed
+`tests/repo/test_references_health_apply.py::test_every_real_shard_is_editable` on
+`guides-print.yaml` at `90e6a342`. The scoped 342-test run had omitted this existing
+consumer. The source records parsed and re-imported correctly, but the health updater
+requires the importer's canonical YAML layout before it may rewrite a shard.
+
+**Cause:** manually authored flow maps and folded scalars were valid YAML but failed
+the updater's byte-preservation contract. It would leave the whole shard for manual work.
+
+**Correction:** serialize only that shard through the existing writer, retaining its
+header and asserting identical parsed values and unchanged hashes for all other shards.
+The actual `editable` predicate changes from false to true; keep its existing regression
+test and hand-styled-shard rejection unchanged. Run the health-update module alongside
+the registry/importer controls and original-map check.
+
+**Rule and limits:** source verification must exercise the readers that maintain the
+records, as well as the rule-card and website consumers. Valid YAML alone does not prove
+maintenance compatibility. A formatting repair does not re-read or re-qualify sources.

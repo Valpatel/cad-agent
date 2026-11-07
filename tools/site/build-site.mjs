@@ -377,6 +377,7 @@ const SNAP = snapDemo();                 // geometry-driven animation: tools/sit
 const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
   ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, publicPath, safeUrl,
   areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
+  securityReport: JSON.parse(await read('docs/research/security-report.json')),
   snap: SNAP, cliUpdated: lastChange('software/cadagent/cli.py'), draft: WORKTREE,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }

@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { YAML } from './npm-context.mjs';
 import { TINT } from '../../tools/site/compiler/catalog-art.mjs';
+import { catalogueAudit, catalogueAuditHTML } from '../../tools/site/compiler/site-catalog.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -30,6 +31,99 @@ const areaSlugs = areas.domains.flatMap(d => d.areas.map(a => a.slug));
 const BUCKETS = ['cross-cutting', 'unplaced'];
 const show = f => execFileSync('git', ['show', `HEAD:${f}`], { cwd: root }).toString();
 const OUTSIDE = ['project', 'library', 'benchmark'];
+
+const auditHeader = r => `# Supply-chain and resource report\n\nWhat cad-agent depends on, vendors and links to, checked on ${r.as_of} at revision \`${r.revision.slice(0, 12)}\` (online checks).`;
+const auditFixture = (check = 'repo-archived', subject = 'url:https://github.com/owner/part') => ({
+  schema: 'cad-agent-supply-chain/1', mode: 'online', as_of: '2024-02-29', revision: 'a'.repeat(40),
+  findings: [{ check, subject, severity: 'medium', fp: '0123456789abcdef', title: 'Archived repository', evidence: 'last push 2023-01-01', accepted: 'Historical prior art only.' }],
+});
+const auditReader = r => catalogueAudit(r, auditHeader(r));
+
+test('dated catalogue observations match identities, preserve decisions and retain accepted evidence', () => {
+  const r = auditFixture(), get = auditReader(r);
+  for (const kind of OUTSIDE) {
+    const entry = { kind, url: 'https://github.com/OWNER/Part/tree/main', status: 'reference' }, before = structuredClone(entry);
+    const audit = get(entry);
+    assert.equal(audit.as_of, '2024-02-29', 'old observations retain their date, not the build date');
+    assert.equal(audit.observations[0].label, 'Archived');
+    assert.equal(audit.observations[0].accepted, 'Historical prior art only.', 'acceptance is disposition, not erasure');
+    assert.deepEqual(entry, before, 'curated status and identity are untouched');
+  }
+  for (const url of ['https://github.com/other/part', 'https://github.com/owner/part-extra', 'https://github.com/owner-part',
+    'https://github.com.evil.test/owner/part', 'https://github.com:444/owner/part', 'https://owner@github.com/owner/part',
+    'https://example.test/?url=https://github.com/owner/part', 'javascript:alert(1)', 'invalid']) {
+    assert.equal(get({ kind: 'project', name: 'owner/part', url }), null, url);
+  }
+  assert.equal(get({ kind: 'guide', url: 'https://github.com/owner/part' }), null, 'our guide is not the outside project');
+  const stale = auditReader(auditFixture('repo-stale'))({ kind: 'benchmark', url: 'https://github.com/owner/part' });
+  assert.equal(stale.observations[0].label, 'Activity needs review');
+  assert.doesNotMatch(catalogueAuditHTML(stale), /unmaintained|abandoned/i);
+});
+
+test('page observations keep path/query identity and uncertain checks do not assert a move or disappearance', () => {
+  for (const [check, label] of [['link-unverified', 'Check incomplete'], ['link-dead', 'Unavailable'], ['link-redirect-domain', 'Destination changed']]) {
+    const get = auditReader(auditFixture(check, 'url:https://example.test/Part?version=2#section'));
+    const at = url => get({ kind: 'library', url });
+    assert.equal(at('https://example.test/Part?version=2#other').observations[0].label, label);
+    for (const url of ['https://example.test/part?version=2', 'https://example.test/Part?version=3',
+      'https://example.test/Part', 'http://example.test/Part?version=2', 'https://example.test/Part/?version=2']) assert.equal(at(url), null, url);
+  }
+});
+
+test('missing, malformed, offline and mismatched reports cannot silently produce unflagged cards', () => {
+  const r = auditFixture();
+  for (const bad of [undefined, {}, { ...r, schema: 'future/2' }, { ...r, mode: 'offline' },
+    { ...r, as_of: '2024-02-30' }, { ...r, as_of: '2024-99-99' }, { ...r, revision: 'main' },
+    { ...r, findings: null }, { ...r, findings: [null] }, { ...r, findings: [r.findings[0], r.findings[0]] },
+    { ...r, findings: [{ ...r.findings[0], accepted: true }] }, { ...r, findings: [{ ...r.findings[0], evidence: {} }] },
+    { ...r, findings: [{ ...r.findings[0], subject: 'url:javascript:alert(1)' }] }]) {
+    assert.throws(() => catalogueAudit(bad, auditHeader(r)), /security-report\.json/);
+  }
+  for (const md of [undefined, '', auditHeader({ ...r, as_of: '2024-02-28' }), auditHeader({ ...r, revision: 'b'.repeat(40) }),
+    auditHeader(r).replace('online checks', 'offline checks')]) assert.throws(() => catalogueAudit(r, md), /Markdown date\/revision/);
+  // A new check may be valid elsewhere in the report, but it must be classified before affecting a card.
+  for (const check of ['new-url-check', 'repo-new-check', 'constructor', '__proto__']) {
+    const get = auditReader(auditFixture(check));
+    assert.equal(get({ kind: 'project', url: 'https://github.com/unrelated/part' }), null);
+    assert.throws(() => get({ kind: 'project', url: 'https://github.com/owner/part' }), /unmapped check/);
+  }
+});
+
+test('audit evidence is escaped text inside one dated notes fold', () => {
+  const r = auditFixture(), bad = '<img src=x onerror=alert(1)><script>bad</script>';
+  Object.assign(r.findings[0], { title: bad, evidence: bad, accepted: bad });
+  const a = auditReader(r)({ kind: 'benchmark', url: 'https://github.com/owner/part' });
+  const html = catalogueAuditHTML(a, bad, bad);
+  assert.equal((html.match(/<details\b/g) || []).length, 1);
+  assert.match(html, /<time datetime="2024-02-29">2024-02-29<\/time>/);
+  assert.match(html, /href="\/research\/security-report"/);
+  assert.match(html, /revision <code>aaaaaaaaaaaa<\/code>/);
+  assert.match(html, /Recorded disposition:/);
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(html, /<img|<script/);
+  assert.equal(catalogueAuditHTML(null), '');
+  assert.match(catalogueAuditHTML(null, 'A plain note'), /<summary>Our notes<\/summary>/);
+});
+
+test('the committed report reaches HTML and JSON cards without rewriting curated status', () => {
+  const report = JSON.parse(show('docs/research/security-report.json'));
+  const get = catalogueAudit(report, show('docs/research/security-report.md'));
+  for (const item of catalog.items) {
+    const expected = get(item);
+    const card = page.match(new RegExp(`<li class="card cat-card"[^>]*id="${item.id}"[\\s\\S]*?</li>`))?.[0];
+    assert.ok(card, item.id);
+    if (!expected) {
+      assert.equal(item.audit, undefined, item.id);
+      assert.doesNotMatch(card, /class="card-notes card-audit"/, item.id);
+    } else {
+      assert.deepEqual(item.audit, { ...expected, report: ORIGIN + expected.report }, item.id);
+      assert.ok(card.includes(catalogueAuditHTML(expected, item.notes, OUTSIDE.includes(item.kind) ? item.policy : '')), item.id);
+      assert.ok(existsSync(local(item.audit.report + '.html')), 'the report link resolves in the same publication');
+      assert.ok(card.includes(`data-status="${item.status}"`), item.id);
+    }
+  }
+  assert.match(catalog.fields.audit, /Absence is not a safety verdict/);
+});
 
 test('every previously published page retains its public identity after source consolidation', async () => {
   const baseline = JSON.parse(await readFile(path.join(root, 'tests/fixtures/site-page-identities.json'), 'utf8'));
@@ -261,7 +355,7 @@ test('the index and the area files agree with each other and with catalog.json',
     assert.deepEqual(file.items.map(i => i.id).sort(), expected.map(i => i.id).sort(), n.slug);
     for (const e of file.items) {
       const i = byId.get(e.id);
-      for (const k of ['name', 'url', 'kind', 'cover', 'what', 'status']) assert.deepEqual(e[k], i[k], `${n.slug}/${e.id}: ${k}`);
+      for (const k of ['name', 'url', 'kind', 'cover', 'what', 'status', 'audit']) assert.deepEqual(e[k], i[k], `${n.slug}/${e.id}: ${k}`);
     }
   }
   for (const k of index.kinds) assert.equal(k.count, catalog.items.filter(i => k.kinds.includes(i.kind)).length, k.tab);

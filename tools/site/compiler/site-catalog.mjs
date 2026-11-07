@@ -15,6 +15,84 @@ import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsid
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const slugify = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const plainText = s => String(s ?? '').replace(/`/g, '').replace(/\s+/g, ' ').trim();
+const AUDIT_REPORT = '/research/security-report';
+// These are observations, not adoption decisions. In particular, age does not prove abandonment.
+const AUDIT_CHECKS = {
+  'repo-gone': ['Unavailable', true], 'repo-disabled': ['Disabled', true],
+  'repo-moved': ['Moved', true], 'repo-archived': ['Archived', true],
+  'link-dead': ['Unavailable', false], 'link-redirect-domain': ['Destination changed', false],
+  'licence-changed': ['Licence needs review', true], 'licence-none': ['Licence needs review', true],
+  'catalogue-records-disagree': ['Records disagree', false],
+  'link-https-downgrade': ['Connection needs review', false], 'link-not-https': ['Connection needs review', false],
+  'repo-stale': ['Activity needs review', true], 'scorecard-low': ['Review recommended', true],
+  'repo-unverified': ['Check incomplete', true], 'link-unverified': ['Check incomplete', false],
+};
+const auditURL = value => {
+  try {
+    const u = new URL(value);
+    if (!['https:', 'http:'].includes(u.protocol) || u.username || u.password) return null;
+    u.hash = '';
+    return u;
+  } catch { return null; }
+};
+const auditRepo = u => {
+  if (!u || u.hostname !== 'github.com' || u.port) return null;
+  const m = u.pathname.match(/^\/([a-z0-9-]+)\/([a-z0-9_.-]+)(?:\/|$)/i);
+  return m ? `${m[1]}/${m[2]}`.toLowerCase() : null;
+};
+
+/** Read the committed report once. No network, name guesses, status rewrites or implicit "safe" verdicts.
+ * Repository observations apply to that exact GitHub owner/repository; page observations require the same URL
+ * (including query and path case, excluding fragment). Unknown checks on a matching URL require an explicit
+ * mapping; valid findings outside the catalogue and non-URL subjects are not card signals. */
+export function catalogueAudit(report, markdown) {
+  const fail = reason => { throw new Error(`docs/research/security-report.json: ${reason}`); };
+  if (report?.schema !== 'cad-agent-supply-chain/1' || report.mode !== 'online') fail('expected an online cad-agent-supply-chain/1 report');
+  const date = new Date(`${report.as_of}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(report.as_of || '') || !Number.isFinite(date.valueOf()) ||
+      date.toISOString().slice(0, 10) !== report.as_of) fail('invalid observation date');
+  if (!/^[a-f0-9]{40}$/.test(report.revision || '') || !Array.isArray(report.findings)) fail('missing revision or findings');
+  const header = markdown?.match(/^What cad-agent depends on, vendors and links to, checked on (\d{4}-\d{2}-\d{2}) at revision `([a-f0-9]{12})` \(online checks\)\./m);
+  if (!header || header[1] !== report.as_of || header[2] !== report.revision.slice(0, 12)) fail('published Markdown date/revision differs from JSON');
+  const findings = [];
+  const seen = new Set();
+  for (const f of report.findings) {
+    if (!f || typeof f.check !== 'string' || typeof f.subject !== 'string') fail('malformed finding');
+    if (!f.subject.startsWith('url:')) continue;
+    const rule = Object.hasOwn(AUDIT_CHECKS, f.check) ? AUDIT_CHECKS[f.check] : null;
+    const url = auditURL(f.subject.slice(4));
+    if (!url || !/^[a-f0-9]{16}$/.test(f.fp || '') ||
+        !['info', 'low', 'medium', 'high', 'critical'].includes(f.severity) ||
+        typeof f.title !== 'string' || typeof f.evidence !== 'string' ||
+        (f.accepted !== undefined && typeof f.accepted !== 'string')) fail('malformed URL observation');
+    if (seen.has(f.fp)) fail('duplicate finding fingerprint');
+    seen.add(f.fp);
+    const [label, repository] = rule || [null, f.check.startsWith('repo-')];
+    const key = repository ? auditRepo(url) : url.href;
+    if (key) findings.push({ key, repository, observation: { check: f.check, label, severity: f.severity,
+      subject: f.subject, fingerprint: f.fp, title: f.title, evidence: f.evidence, accepted: f.accepted || null } });
+  }
+  return item => {
+    if (!['project', 'library', 'benchmark'].includes(item.kind)) return null;
+    const url = auditURL(item.url);
+    if (!url) return null;
+    const observations = findings.filter(f => f.key === (f.repository ? auditRepo(url) : url.href)).map(f => f.observation);
+    if (observations.some(f => !f.label)) fail(`unmapped check on ${item.url}`);
+    if (!observations.length) return null;
+    return { as_of: report.as_of, revision: report.revision, report: AUDIT_REPORT, observations };
+  };
+}
+
+/** Native details keep the warning and date visible without turning every card into a report. */
+export function catalogueAuditHTML(audit, notes = '', policy = '') {
+  if (!audit && !notes && !policy) return '';
+  const labels = [...new Set(audit?.observations.map(f => f.label) || [])];
+  const summary = audit ? `<span class="pill pill-unverified">${esc(labels[0])}${labels.length > 1 ? ` +${labels.length - 1}` : ''}</span> · <time datetime="${esc(audit.as_of)}">${esc(audit.as_of)}</time>` : 'Our notes';
+  return `<details class="card-notes${audit ? ' card-audit' : ''}"><summary>${summary}</summary>` +
+    (audit ? audit.observations.map(f => `<p><strong>${esc(f.title)}</strong> ${esc(f.evidence)}${f.accepted ? ` <span>Recorded disposition: ${esc(f.accepted)}</span>` : ''}</p>`).join('') +
+    `<p><a href="${AUDIT_REPORT}">Report of ${esc(audit.as_of)}</a>, revision <code>${esc(audit.revision.slice(0, 12))}</code>. An observation, not a current safety verdict.</p>` : '') +
+    (notes ? `<p>${esc(notes)}</p>` : '') + (policy ? `<p class="policy">Licence policy: ${esc(policy)}.</p>` : '') + '</details>';
+}
 const LIMIT = 6;                                // entries per kind in the overview (two rows of three, three of two)
 
 /** Kinds, in page order: the tab value (also the URL's kind= and the section id), labels and a one-line blurb.
@@ -125,6 +203,7 @@ const CATALOG_FIELDS = {
   related: 'ids of up to six entries that share an area (another kind first), else the domain',
   licence_family: 'permissive, copyleft or other (other: none recorded, non-commercial, source-available or custom)',
   updated: 'the last change: last push (outside entries) or last commit (ours), as YYYY-MM-DD, or null',
+  audit: 'optional dated URL/repository observations from the committed supply-chain report: as_of, revision, report and observations (check, label, severity, subject, fingerprint, title, evidence, accepted disposition or null). Status remains our adoption decision. Absence is not a safety verdict; package findings and unknown checks are not joined by name.',
   removed: 'not a field: the fields taken out of entries within schema 2, which kept its schema value (cad-agent-catalog/2) so readers that check it still run. ' +
     'gyropup: removed in v0.10.0. Do not rely on it; the real projects that used an area are its projects list (catalog/index.json and the area files).',
 };
@@ -148,6 +227,7 @@ export async function buildCatalog(ctx) {
   const has = new Set(tracked);
   const files = new Map();
   const abs = u => (u && u.startsWith('/') ? ORIGIN + u : u);
+  const auditOf = catalogueAudit(ctx.securityReport, ctx.pages.find(p => p.file === 'docs/research/security-report.md')?.body);
 
   // --------------------------------------------------------------------------- the topic tree
   const nodes = new Map();                       // slug → node (domain, area or topic), with its domain and area
@@ -442,6 +522,7 @@ export async function buildCatalog(ctx) {
     ids.add(it.id);
     if (!it.areas.length) it.areas = ['unplaced'];
     it.family = licenceFamily(it.license);
+    it.audit = auditOf(it);
   }
   // Our pages take the first of their figures that no demo, tool or earlier page shows (README and the main guides
   // first), else a cover drawn from their outline.
@@ -492,6 +573,7 @@ export async function buildCatalog(ctx) {
     Object.assign(o, { id: it.id, kind: it.kind, areas: it.areas, maturity: it.maturity, what: it.what || null, notes: it.notes || null,
       cover: abs(it.cover.src), demo: it.demo || null, related: it.related, licence_family: it.family, updated: it.updated || null });
     if (it.mode) o.mode = it.mode;
+    if (it.audit) o.audit = { ...it.audit, report: abs(it.audit.report) };
     if (it.cover.anim) o.cover_animated = abs(it.cover.anim);
     return o;
   };
@@ -570,7 +652,7 @@ function catalogPage({ ORIGIN, items, demos, nodes, index, areas, safeUrl, level
     const k = KIND[it.kind] || KIND.skill;
     const azKey = (it.kind === 'project' || it.kind === 'library' ? it.name.split('/').pop() : it.kind === 'tool' ? it.command : it.name).toLowerCase();
     const text = [it.name, it.what, it.notes, it.policy, it.license, KIND_LABEL[it.kind], statusText(it.status), it.mode,
-      ...it.areas.map(areaTitle), ...it.domains.map(areaTitle)].filter(Boolean).join(' ').toLowerCase();
+      ...it.areas.map(areaTitle), ...it.domains.map(areaTitle), ...(it.audit?.observations.map(f => f.label) || [])].filter(Boolean).join(' ').toLowerCase();
     const realAreas = it.areas.filter(a => !BUCKETS[a]);
     const area = realAreas.length
       ? `<a class="card-area" href="/catalog?area=${esc(realAreas[0])}" data-gallery-link>${esc(areaTitle(realAreas[0]))}</a>${realAreas.length > 1 ? `<span class="more" title="${esc(realAreas.slice(1).map(areaTitle).join(', '))}">+${realAreas.length - 1}</span>` : ''}`
@@ -581,7 +663,7 @@ function catalogPage({ ORIGIN, items, demos, nodes, index, areas, safeUrl, level
       (it.last_push ? `<span title="Last push ${esc(fmtDay(it.last_push))}">pushed <time datetime="${esc(it.last_push)}">${esc(fmtMonth(it.last_push))}</time></span>` : '') + '</p>' : '';
     const meta = area || it.maturity ? `<p class="card-meta">${area}${maturity(it.maturity)}</p>` : '';
     const call = it.how ? `<cad-copy class="card-call" text="${esc(it.how)}" label="Copy call"><code>${esc(it.how)}</code></cad-copy>` : '';
-    const notes = it.notes || (outside && it.policy) ? `<details class="card-notes"><summary>Our notes</summary>${it.notes ? `<p>${esc(it.notes)}</p>` : ''}${it.policy ? `<p class="policy">Licence policy: ${esc(it.policy)}.</p>` : ''}</details>` : '';
+    const notes = catalogueAuditHTML(it.audit, it.notes, outside ? it.policy : '');
     const badge = it.mode ? `<span class="pill pill-mode pill-${esc(it.mode)}">${esc(MODE_LABEL[it.mode])}</span>` : '';
     return `<li class="card cat-card" id="${esc(it.id)}" data-item data-type="${esc(it.type)}" data-kind="${esc(k.tab)}" data-tone="${esc(it.domains[0] || it.areas[0])}" data-area="${esc(tokens(it))}" data-status="${esc(it.status)}" data-licence="${esc(it.family)}" data-maturity="${esc(it.maturity || 'none')}"${it.demo ? ' data-demo="1"' : ''} data-sort-recent="${esc(it.updated || '')}" data-sort-stars="${esc(it.stars ?? '')}" data-sort-maturity="${it.maturity ? LEVELS.indexOf(it.maturity) + 1 : ''}" data-sort-az="${esc(azKey)}" data-text="${esc(text)}"${i >= LIMIT ? ' data-over' : ''}>
 <h3 class="card-name"><a href="${esc(site(safeUrl(it.doc || it.url)))}">${title(it)}</a></h3>

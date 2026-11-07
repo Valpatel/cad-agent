@@ -113,8 +113,9 @@ Lengths are millimetres, twist is degrees, force is newtons; the internal existi
 Layered declarations must state `orientation: across`: torsion shears both pairs of sides, even with the bar lying
 flat. This selects an across-layer **allowance**, not a physical build-axis prescription. Filaments use their
 across-layer tensile allowance and the existing explorer's highest-edition in-plane modulus for the isotropic
-force estimate. Other layered materials still need sourced `process_factor` and `process_source`. An omitted
-process or across-layer basis fails. The repeated-use derating still applies.
+force estimate. Known filaments imply FDM, as for cantilevers; other materials require an explicit process.
+Other layered materials still need sourced `process_factor` and `process_source`. A missing across-layer basis
+fails. The repeated-use derating still applies.
 
 The small-twist row fails when the formula's omitted trapeze torque exceeds a tenth of its Saint-Venant torque.
 End constraints, root stress concentrations, hook contact, mating/retention forces, creep and fatigue remain

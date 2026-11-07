@@ -22,7 +22,7 @@ flowchart TD
 | File | What it tests |
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
-| `webkit-diagrams-browser.mjs` | A pre-drawn diagram page in a real browser, in each theme |
+| `webkit-diagrams-browser.mjs` | Real diagram lifecycle/themes/math, hostile labels, and advisory boundaries on hash-bound emitted sanitizer/math inputs |
 | `webkit-fan-curve.test.mjs` | `<cad-fan-curve>` without a browser: every setting gives a point on both curves |
 | `webkit-file-corpus.mjs` | Parses a bounded manifest of published originals with the real workers (run by hand) |
 | `webkit-file-geometry.test.mjs` | `file-geometry.js`: mesh normalising and model and STL validation |
@@ -42,5 +42,10 @@ flowchart TD
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 
 Run: `node --test tests/webkit/*.test.mjs` and `npm --prefix tools/site run test:part-table`, `test:file-viewer`, `test:diagrams`.
+Before the diagram browser suite, run `npm --prefix tools/mermaid ci --ignore-scripts` with Node 22. The suite checks
+that the direct library regression modules match the actual emitted input hashes in the committed build record;
+missing or different inputs fail rather than skip. Its inert template and inherited-trust controls exercise the
+libraries' nondefault advisory boundaries, separately from default strict-renderer exploitability. CI installs this
+maintainer context separately; production website builds do not install it.
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)

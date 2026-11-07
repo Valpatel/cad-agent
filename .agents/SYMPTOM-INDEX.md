@@ -2,6 +2,11 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
+| A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |
+| A public probe fails before launch because ambient Node or a default browser cache differs | [Bind existing publication runtimes explicitly](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md) |
+| A tracked SOURCE JSON gets404 at an assumed website route | [Use the producer's actual source-record namespace](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md) |
+| A provider request fails while a real viewer works, or generic GET and browser HTML differ | [Require matching enforced CSP evidence](inbox/publish/2026-11-07-provider-failures-need-matching-csp-evidence.md) |
 | Research YAML loads and imports but its health updater refuses the shard | [Keep source records editable](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md#keep-source-records-editable-by-their-health-consumer) |
 | Re-importing research restores old folder names although migrated fixtures pass | [Test the original import boundary](inbox/2026-11-06-source-selection-must-not-pass-empty.md#keep-original-import-inputs-when-testing-repository-migrations) |
 | A chart label becomes a manufacturing limit, or correcting data removes the only unverified test case | [Separate specimen labels from process limits](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md) |

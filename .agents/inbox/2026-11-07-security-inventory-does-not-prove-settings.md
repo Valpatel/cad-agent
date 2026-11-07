@@ -64,3 +64,30 @@ new unfolded guidance as a wall of text (Chromium measured 1213 px against the u
 The fragment now uses the existing format and the interpretation detail is in a closed `<details>` section.
 No parser or visual threshold changed. Local release/layout/area checks then passed **69 tests**; fresh full CI
 remains required. Keep these genuine failures on the PR rather than retrying the same source or calling them flaky.
+
+The same boundaries recurred in #432 at `b6c7b166` on2026-11-07. Full CI passed3537 tests with20 skips and rejected
+the322 fragment's missing section; independent parser calls also rejected427. Run the existing
+`tests/repo/test_cut_release.py` for every new fragment: it parses every real fragment and simulates a cut. Its
+supported `**Fixed**` heading preserves the intended bullets without weakening the producer.
+
+That head's actual WebKit whole-site consumer also measured1262px (page693–1955) against the same1200px prose-wall
+limit on `/docs/supply-chain`. Fold the optional maintainer explanation under a purpose-named disclosure, keeping
+the npm/check table visible. Preserve its content, the actual whole-site gate and original failure; component/math
+success and generated diagrams do not establish the entire guide's layout. Corrected-head CI remains required.
+
+## Bind an accepted install hook to its owning package context
+
+Independent review of #432 reproduced a real exception leak ([finding](https://github.com/Valpatel/cad-agent/pull/432#discussion_r4501363452)).
+The new esbuild0.28.2 rationale said maintainer-only, but both npm contexts used `npm:esbuild` plus version as the
+fingerprint key. An actual offline fixture with only `tools/site` received fp59651950683e8b3f and was accepted even
+though that context runs ordinary installs. A manifest field on an inventory row did not constrain the acceptance.
+
+Include the non-site owning manifest in the hook fingerprint together with its version. The corrected
+`tools/mermaid/package.json:0.28.2` key gives fp30e8057fdbba6aa6; deliberately preserve legacy site's version-only
+identity. With the actual committed policy and production matcher, `pytest -q tests/repo/test_resource_audit.py -k real_esbuild_hook_exception`
+passed2 cases: same-version site-only remains unaccepted, and both contexts retain an unaccepted site finding plus
+the intended accepted producer finding. These controls must not substitute a duplicated test acceptance.
+
+This establishes the checked exception's owner/version boundary. It does not prove that every future command
+disables hooks: retain the actual `--ignore-scripts` CI/producer evidence and review workflow changes. No advisory,
+registry drift or binary mismatch is waived by this exception.

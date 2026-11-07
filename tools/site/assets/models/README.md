@@ -18,6 +18,6 @@ flowchart TD
 | [gyropup.bin](gyropup.bin) | Packed mesh buffers for the exact JSON model. |
 | [gyropup.webp](gyropup.webp) | Matching model poster for deferred/no-JavaScript viewing. |
 
-[Parent map](../README.md)
+[Parent map](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/README.md)
 
-[Recorded producer](../../../../docs/img/gyropup/SOURCE.json). The current battery placement remains underbody; no relocation or physical-motion claim.
+[Recorded producer](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/gyropup/SOURCE.json). The current battery placement remains underbody; no relocation or physical-motion claim.

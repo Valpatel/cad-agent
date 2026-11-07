@@ -4,12 +4,11 @@ Choose an owner below. The full tracked inventory is grouped in closed disclosur
 
 ```mermaid
 flowchart TD
-    R["README.md"] --> D["docs/"]
+    R["README.md"] --> D["docs/ + .agents/"]
     R --> S["software/"]
-    R --> T["tests/ + tools/"]
-    R --> A[".agents/ + .github/"]
+    R --> T["tests/ + tools/<br/>.github/"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    class R,D,S,T,A here
+    class R,D,S,T here
 ```
 
 | Owner | Use |

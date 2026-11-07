@@ -5,14 +5,13 @@ Evaluate declared assembly relationships and emit assumption-bearing verdicts. S
 ```mermaid
 flowchart TD
     R["run.py"] --> A["relations.py + cache.py"]
-    A --> G["assembly.py + subassembly.py"]
-    A --> C["connectivity.py + containment.py"]
-    A --> F["fasteners.py + motion.py"]
-    A --> W["wall.py"]
-    G & C & F & W --> V["verdict.py"]
+    A --> G["assembly.py<br/>subassembly.py"]
+    A --> C["connectivity.py<br/>containment.py"]
+    A --> F["fasteners.py<br/>motion.py + wall.py"]
+    G & C & F --> V["verdict.py"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class R,A,G,C,F,W,V here
+    class R,A,G,C,F,V here
 ```
 
 | File or folder | Purpose |

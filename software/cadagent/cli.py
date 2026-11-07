@@ -137,18 +137,21 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
         raise _Unusable(error)
     if not project.printer.bed_mm:
         raise _Unusable("cad.printer.bed_mm is required to centre 3MF files on the bed")
+    strict = getattr(args, 'require_project_settings', False)
+    if strict and _export_plates(project, list(parts), require_project_settings=True):
+        return 1
     reports = export_parts_3mf(project.exports_dir, list(parts), project.printer.bed_mm[:2])
     for r in reports:
         _say(f"  {r['part']}.3mf  {r['triangles']} triangles  watertight  {r['volume_mm3']:.1f} mm3")
     _say(f"{len(reports)} 3MF file(s) written and read back")
-    return _export_plates(project, list(parts))
+    return 0 if strict else _export_plates(project, list(parts))
 
-def _export_plates(project: CadProject, parts: List[str]) -> int:
+def _export_plates(project: CadProject, parts: List[str], require_project_settings: bool = False) -> int:
     """The build plates file after the per-part 3MFs; 1 when the parts cannot be laid out."""
     from cadagent.manufacturing.plates import PlatesError, export_plates
 
     try:
-        rec = export_plates(project, parts)
+        rec = export_plates(project, parts, require_project_settings=require_project_settings)
     except PlatesError as exc:
         _say(f"plates: FAILED: {exc}")
         return 1
@@ -1340,7 +1343,10 @@ def build_parser() -> argparse.ArgumentParser:
     build_p = sub.add_parser("build", parents=[common], help="Run the configured build steps in order")
     build_p.add_argument("--from", dest="from_step", metavar="STEP", help="Start at this step")
     build_p.add_argument("--only", nargs="+", metavar="STEP", help="Run only these steps (config order)")
-    sub.add_parser("export-3mf", parents=[common], help="Write a bed-centred 3MF per part STL, and every part on build plates in one Bambu Studio project 3MF; verify both")
+    export_p = sub.add_parser("export-3mf", parents=[common], help="Write a bed-centred 3MF per part STL, and every part on build plates in one Bambu Studio project 3MF; verify both")
+    export_p.add_argument('--require-project-settings', action='store_true',
+                          help='Fail unless the plates carry native Bambu printer, process and filament settings; '
+                               'preserve prior exports on settings/layout rejection')
     holes_p = sub.add_parser("holes", parents=[common], help="Check every hole of every part (exports/<part>.step) is "
                                                              "clear of material: ribs or bosses added after the holes")
     holes_p.add_argument("parts", nargs="*", help="only these parts (default: every part in the parts file); the other "

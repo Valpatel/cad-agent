@@ -393,30 +393,48 @@ try {
           // (a label a little wider than the room) is missed. All wrapped by enhance(); then every button pressed (the
           // wider labels); then a stylesheet that arrives late and makes the button bigger.
           phase = 'planted copy boundaries';
-          await page.evaluate(async () => {
-            const { enhance } = await import('/kit/copy.js');
-            const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-            const box = document.createElement('div');
-            box.id = 'planted';
-            document.querySelector('article, main, body').append(box);
-            const probe = Object.assign(document.createElement('div'), { style: 'width:520px' });
-            probe.append(Object.assign(document.createElement('pre'), { textContent: 'x'.repeat(10) }));
-            box.append(probe);
-            enhance(probe);
-            await frames();
-            const pre = probe.querySelector('pre'), cs = getComputedStyle(pre), range = document.createRange();
-            range.selectNodeContents(pre.firstChild);
-            const char = range.getBoundingClientRect().width / 10;
-            const text = pre.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-            const line = 'x'.repeat(Math.floor(text / char));
-            box.replaceChildren();
-            for (let i = 0; i <= 40; i++) {
-              const col = Object.assign(document.createElement('div'), { style: `width:${490 + i * 1.5}px` });
-              col.append(Object.assign(document.createElement('pre'), { textContent: line }));
-              box.append(col);
-            }
-            enhance(box);
+          // Chrome can collect the unrooted promise awaited by CDP ("Promise was collected").
+          // Keep this exact probe rooted until its result is consumed; never retry a rejected evaluation.
+          await page.evaluate(() => {
+            window.__cadCopyBoundaryProbe = (async () => {
+              const { enhance } = await import('/kit/copy.js');
+              const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+              const box = document.createElement('div');
+              box.id = 'planted';
+              document.querySelector('article, main, body').append(box);
+              const probe = Object.assign(document.createElement('div'), { style: 'width:520px' });
+              probe.append(Object.assign(document.createElement('pre'), { textContent: 'x'.repeat(10) }));
+              box.append(probe);
+              enhance(probe);
+              await frames();
+              const pre = probe.querySelector('pre'), cs = getComputedStyle(pre), range = document.createRange();
+              range.selectNodeContents(pre.firstChild);
+              const char = range.getBoundingClientRect().width / 10;
+              const text = pre.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+              const line = 'x'.repeat(Math.floor(text / char));
+              box.replaceChildren();
+              for (let i = 0; i <= 40; i++) {
+                const col = Object.assign(document.createElement('div'), { style: `width:${490 + i * 1.5}px` });
+                col.append(Object.assign(document.createElement('pre'), { textContent: line }));
+                box.append(col);
+              }
+              enhance(box);
+              return 'copy-boundary-complete';
+            })();
           });
+          const probeErrors = [];
+          try {
+            const completed = await page.evaluate(() => {
+              const pending = window.__cadCopyBoundaryProbe;
+              if (!pending || typeof pending.then !== 'function') throw new Error('copy-boundary probe lost its root');
+              return pending;
+            });
+            assert.equal(completed, 'copy-boundary-complete');
+          } catch (error) { probeErrors.push(error); }
+          try {
+            await page.evaluate(() => { delete window.__cadCopyBoundaryProbe; });
+          } catch (error) { probeErrors.push(error); }
+          if (probeErrors.length) throw new AggregateError(probeErrors, 'copy-boundary probe or cleanup failed');
           const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
           await settle();
           for (const c of await page.evaluate(covered)) problems.push(`${where} planted, idle: ${c}`);

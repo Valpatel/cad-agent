@@ -178,3 +178,40 @@ The corrective rule is to read `docs/changelog.d/README.md` and include `tests/r
 adding or editing a fragment. Its existing real-fragment loop already detects this defect; adding a duplicate
 test or loosening the parser would not fix the selection mistake. The existing `tests/publish/test_release.py`
 suite remains useful for its different packaging contract. Neither local suite replaces current whole-head CI.
+
+
+## Browser-provider availability is not desktop-browser availability
+
+**Observed, 2026-11-07 15:42 UTC:** The configured browser-control provider reported no available browser.
+That did not establish that the normal desktop browser was unavailable. Opening the repository settings URL in
+the existing authenticated browser session showed **Dependency graph: Off**, while Dependabot alerts and security
+updates were On. No credentials, cookies or profile files were extracted or copied. The initial screenshot API
+returned a blank window image after focus changed; a fresh visible screen capture established the actual target
+before any click. Never act on the blank or stale image.
+
+After [independent review](https://github.com/Valpatel/cad-agent/issues/153#issuecomment-6709190713), the owner recorded
+an exclusive pre-action receipt and clicked only the graph toggle once. A fresh settings page showed
+“Repository settings saved” and **On**. The adjacent controls stayed unchanged. The newly exposed automatic
+dependency submission control was Disabled and was left alone. No permission or account change was made.
+
+```text
+GraphQL dependencyGraphManifests immediately after click: totalCount 0, nodes []
+GraphQL dependencyGraphManifests after discovery: totalCount 11, hasNextPage false
+All 11 manifests: parseable true, exceedsMaxSize false, dependenciesCount 0
+GET repos/Valpatel/cad-agent/dependency-graph/sbom: HTTP 200
+SPDX-2.3: 174 package records, 231 relationships; created 2026-11-07T15:42:36Z
+```
+
+The default branch was dev `86fa3e91cd5ab569881c4562343a632bc1714b02`. Discovered paths included
+`pyproject.toml`, the five workflow manifests, `software/cadagent/webkit/package.json`, and both package manifests
+and locks in `tools/site` and `tools/mermaid`. The SBOM had 162 npm, 3 PyPI, 8 GitHub Actions and 1 repository
+package identifiers. These records establish actual discovery, not a complete resolver result or alert coverage.
+The zero per-manifest counts remain part of the evidence; the SBOM does not silently replace them.
+
+**Corrective rule:** Distinguish a missing automation provider from an unavailable user-authorized application.
+Use the normal authenticated UI without extracting credentials, verify the visible target immediately before a
+reviewed setting change, and read back both the saved setting and discovered data. Retain the empty immediate
+response while the service populates; do not repeat the toggle or reinterpret a missing inventory as a setting.
+[Independent outcome acceptance](https://github.com/Valpatel/cad-agent/issues/153#issuecomment-6709230798) covers only
+this single setting and the observed inventory. It does not expand ecosystem update policy, enable automatic
+submission, establish absence of vulnerabilities, or change the audit's unknown-versus-disabled semantics.

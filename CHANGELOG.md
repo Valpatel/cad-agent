@@ -9,6 +9,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.27.1 (2026-11-07)
+
+**Fixed**
+- Replace the stale unverified dependency-graph note with the actual saved setting and discovered manifest/SBOM evidence, preserving the limits on dependency and alert coverage.
+- Fresh-agent evaluation reads current canonical skill and role names, so preloaded toolkit instructions cannot pass as a clean session.
+- Add explicit Windows installer/receipt and copy-mode evidence consumers; distinguish actual copy resources from an unproved OS-denied automatic fallback and retain ordinary fast guard scope.
+- Add an explicitly scoped normal-login evaluation route with a fresh project/tool home; retain unknown freshness and disabled native discovery instead of claiming clean-user parity.
+- The agent indexes now direct installers to the existing pinned, checksum-checked guide; an unchecked shortcut no longer precedes that guide in `llms.txt` or the homepage Markdown (#322).
+- Independent review guidance now prohibits executing extracted operational assignments and requires preserving unexpected mutations for a fresh review before continuing.
+- Keep the asynchronous browser copy-layout probe alive until its result is consumed; require completion and retain action/cleanup errors without weakening layout checks.
+
 ## v0.27.0 (2026-11-07)
 
 **New**

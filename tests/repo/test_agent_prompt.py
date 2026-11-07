@@ -44,7 +44,13 @@ def test_readme_is_a_mini_hyperpage_with_install_detail_one_click_away():
         assert cmd in guide, f"the linked install guide gives {cmd!r}"
     assert f'\n{ONE_LINERS[0]}\n' in use_it, 'one obvious getting-started command remains on the root'
     assert "```text\n" + PASTE + "\n```" in guide, "the canonical paste line is one click away"
-    words = len(re.sub(r'<[^>]+>', '', README).split())
+    def prose_words(text):
+        # Linked image badges are navigation/status, exempt from the visitor's prose budget.
+        without_badges = re.sub(r'\[!\[[^\]]*\]\([^\s)]+\)\]\([^\s)]+\)', '', text)
+        return len(re.sub(r'<[^>]+>', '', without_badges).split())
+
+    words = prose_words(README)
+    assert prose_words(README + '\n' + '[![status](https://example.org/badge.svg)](https://example.org)\n' * 400) == words
     assert words <= 350, f"{words} words: keep the root a short entrance, not a manual"
     flat = " ".join(use_it.split())
     assert "collects no telemetry" in flat and "only if you say yes" in flat

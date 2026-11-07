@@ -10,6 +10,10 @@ with its source revision and limits. Keep a few clear routes; installation detai
 instructions belong one click away in the existing guides. Label a historical example honestly until a source-bound
 current snapshot replaces it. A virtual check is not a physical measurement.
 
+**Badge collections are welcome and exempt from the compact prose budget.** Keep useful workflow status, release,
+language, licence and navigation badges visible, linked to real destinations and able to wrap on a phone. Do not
+invent coverage, platform support or engineering qualification to fill the collection.
+
 Folder READMEs explain their local contents. The boxes below are their sections, in order from the top; the two at the bottom sit
 side by side.
 
@@ -88,7 +92,7 @@ classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c      %% neighbours and i
 classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c       %% what comes out: files, pages, verdicts
 ```
 
-**Skills and subagents leave the palette out.** Diagrams in `skills/` and `agents/` keep only their `class` lines
+**Skills and subagents leave the palette out.** Diagrams in `.agents/skills/` and `.agents/agents/` keep only their `class` lines
 (`class A,B here`, `class M out`) and leave out the `classDef` lines, because agents load those files into their
 context. The site build adds the `classDef`
 lines that a diagram uses but does not define (#124); on GitHub those diagrams draw in Mermaid's default colours. Do

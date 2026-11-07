@@ -5,7 +5,15 @@
 # cad-agent
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
+[![Browser checks](https://github.com/Valpatel/cad-agent/actions/workflows/webkit.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/webkit.yml)
+[![Supply chain](https://github.com/Valpatel/cad-agent/actions/workflows/supply-chain.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/supply-chain.yml)
+[![Release workflow](https://github.com/Valpatel/cad-agent/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/release.yml)
 [![Release](https://img.shields.io/github/v/release/Valpatel/cad-agent?color=f97316)](https://github.com/Valpatel/cad-agent/releases)
+[![Python 3.10+ core](https://img.shields.io/badge/Python-3.10%2B_core-3776AB)](docs/practice/agent-workflow.md#extras)
+[![Guides](https://img.shields.io/badge/Docs-guides-0f766e)](docs/README.md)
+[![Catalogue](https://img.shields.io/badge/Explore-the_catalogue-0891b2)](https://cad-agent.valpatel.com/catalog)
+[![Skills](https://img.shields.io/badge/Agent_skills-browse-7c3aed)](.agents/skills/README.md)
+[![Contribute](https://img.shields.io/badge/Contributions-welcome-e8892b)](.github/CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 </div>

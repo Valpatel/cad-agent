@@ -27,6 +27,23 @@ fixtures. Local skips are not Windows acceptance; full CI and whole-page consume
 These checks do not perform a real uv/CAD installation, certify PowerShell 5.1 on every Windows setup,
 or authenticate every transitive download. The guide states that remaining trust explicitly.
 
+
+### Check generated preambles as well as embedded guides
+
+On 2026-11-07, the one actual current Opus trial for #282 installed and used the toolkit but failed its existing
+report-contract grade, 7/12 ([independent result](https://github.com/Valpatel/cad-agent/issues/282#issuecomment-6709824302)).
+Its retained WebFetch result also repeated unchecked installer shortcuts from the `llms.txt` preamble before
+following the checked guide. Reading the actual builder found those shortcuts at `tools/site/build-site.mjs`,
+then copied into `index.md`. The prior site consumer checked that both outputs included the safe embedded
+guide, while its no-pipe assertion covered only the HTML entrance and guide. Safe content later in an output
+did not establish that its earlier advice was safe.
+
+Route the generated preamble to the same canonical checked guide. Check the entire actual `llms.txt` and
+`index.md` output, not just the embedded agent-guide substring, and plant each old platform shortcut in a
+preamble to prove it is rejected. Keep the eight-word prompt, installer bytes and checksum procedure unchanged.
+This correction does not turn the failed agent report grade, unknown freshness, disabled native discovery or
+unproved Windows denied-symlink trigger into acceptance. No second model invocation is part of this fix.
+
 Search found the general procedure in [Exercise moved consumers](../../docs/lessons/process/verify-from-source.md#exercise-moved-consumers-instead-of-checking-path-declarations). These are concrete source-selection controls for that rule, recorded with the ownership migration in #387.
 
 **Evidence, 2026-11-06 UTC:** independent review at `ee8f3e3a438403a3ac7d4846de3b9d5fc468f932` reproduced two false positives ([review](https://github.com/Valpatel/cad-agent/pull/387#pullrequestreview-5799130099)). The HTTP checker still enumerated `src` and `tools`: a planted bare `urlopen` under `software/cadagent` was not selected. The generated-site browser test set `PYTHONPATH=src`; with a foreign editable environment, its child imported that other checkout instead of the code under review.

@@ -151,10 +151,20 @@ test('home, README and agent indexes reach the canonical checked installers (#27
     /linked guide keeps the canonical paste-in line/, 'a link alone must not hide missing installation content');
   assert.throws(() => checkReaderRoute(readme, installGuide.replaceAll(hashes[0], 'CONTROL: hash missing')),
     /checks the actual installer bytes/, 'a guide link alone must not hide a missing checksum');
+  const checkAgentIndex = text => {
+    assert.ok(text.includes('```text\n' + paste + '\n```') && text.includes('```text\n' + guide + '\n```'), 'the index carries the line and how to install and work');
+    assert.ok(text.indexOf('## Install and work with it') < text.indexOf('## Start here'), 'installing comes first');
+    assert.match(text, /\[pinned download and checksum-before-execution block\]\(https:\/\/cad-agent\.valpatel\.com\/docs\/agent-workflow#install\)/,
+      'the preamble reaches the actual canonical checked guide');
+    assert.doesNotMatch(text, /(?:curl|irm)[^\n]*\|\s*(?:sh|iex)\b/, 'no unchecked pipe shortcut anywhere in the generated index');
+  };
   for (const f of ['llms.txt', 'index.md']) {
     const text = await readFile(path.join(out, f), 'utf8');
-    assert.ok(text.includes('```text\n' + paste + '\n```') && text.includes('```text\n' + guide + '\n```'), `${f} carries the line and how to install and work`);
-    assert.ok(text.indexOf('## Install and work with it') < text.indexOf('## Start here'), `${f}: installing comes first`);
+    checkAgentIndex(text);
+    for (const unchecked of ['curl -fsSL https://cad-agent.valpatel.com/install.sh | sh', 'irm https://cad-agent.valpatel.com/install.ps1 | iex']) {
+      assert.throws(() => checkAgentIndex(text.replace('## Install and work with it', `## Install and work with it\n${unchecked}`)),
+        /no unchecked pipe shortcut/, `${f}: a checked guide must not hide the old unchecked preamble`);
+    }
   }
   for (const f of ['install.sh', 'install.ps1']) {
     assert.equal(await readFile(path.join(out, f), 'utf8'), git('show', `HEAD:tools/site/assets/${f}`), `/${f} is web/${f}`);

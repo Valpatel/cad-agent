@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.28.0 (2026-11-07)
+
+**New**
+- Rectangular torsion snaps can declare their demanded twist and lever-force limit through the existing snap-fit CLI, with typed shear checks, sourced material/process evidence, a small-twist limit and the existing project step/check contract. Annular declarations, flexures and physical coupon qualification remain separate.
+
+**Fixed**
+- Published HTML protects technical code such as package-version identifiers from provider email obfuscation, with compiled-page contract checks; ordinary deployed readbacks remain required to verify the provider honors the guard (#113).
+
 ## v0.27.4 (2026-11-07)
 
 **Changed**

@@ -277,12 +277,12 @@ flowchart TD
   standalone SVG but left the image moving. The browser-level preference stopped the same image bytes in Chromium; WebKit CI exposed the same embedding
   boundary. The README now selects a generated still explicitly through `picture`. The existing
   [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
-  the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/2026-11-07-image-motion-needs-the-image-consumer.md).
+  the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/publish/2026-11-07-image-motion-needs-the-image-consumer.md).
 - **Include page composition:** A component proof must reach the compiler stages that can clone or move its
   pictures. The sharing badge initially passed the renderer/sanitizer proof but automatic section cards duplicated
   its fallback image at the top of the compiled README. The README now explicitly disables those cards; other
   pages retain them. Keep the actual-image uniqueness check and complete compiled-site acceptance.
-  [Failure, cause and controls](../../../.agents/inbox/2026-11-07-page-placement-can-duplicate-footer-art.md).
+  [Failure, cause and controls](../../../.agents/inbox/publish/2026-11-07-page-placement-can-duplicate-footer-art.md).
 
 ### Retain the geometry and visibility behind a browser failure
 - **Rule:** A nonzero rectangle does not by itself prove that content paints. Check the element's display and
@@ -290,5 +290,5 @@ flowchart TD
   a genuinely escaped visible element. Keep the failed rectangles and screenshot rather than only a message.
 - **Evidence and limits:** The actual 320-pixel WebKit header failures lacked those captures. Local successful
   resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
-  the visibility boundary; [the incident](../../../.agents/inbox/2026-11-07-header-visibility-needs-paint-state.md)
+  the visibility boundary; [the incident](../../../.agents/inbox/publish/2026-11-07-header-visibility-needs-paint-state.md)
   distinguishes its controlled regression from the still-unproven historical cause.

@@ -121,6 +121,10 @@ test('home and agent indexes give the install commands; the mini README links to
   for (const id of tabs) assert.match(card, new RegExp(`<label for="${id}" class="os-tab`), `${id} has a tab`);
   assert.doesNotMatch(card, /<img|<use |agent-guide/, 'the badges are text, not product marks; the per-agent guide is gone');
   const readme = await readFile(path.join(out, 'README.html'), 'utf8');
+  assert.match(readme, /<h1 id="cad-agent"><a href="\/docs\/share-badge"><picture>/, 'the badge is the README heading, not a duplicate wordmark');
+  assert.match(readme, /<title>cad-agent(?: [^<]*)?<\/title>/, 'the catalogue/page title uses the image alt name, not raw HTML');
+  assert.equal((readme.match(/<h1\b/g) || []).length, 1, 'no generated text heading above the cinematic');
+
   const installPage = resolve('/docs/agent-workflow');
   assert.ok(installPage, 'the linked installation page is actually published');
   const installGuide = await readFile(path.join(out, installPage), 'utf8');
@@ -247,6 +251,10 @@ test('catalogue statuses are honest', async () => {
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
   for (const [, cmd] of index.matchAll(/<code>cad-agent ([a-z0-9-]+)<\/code>/g))
     assert.ok(catalog.items.some(i => i.name === `cad-agent ${cmd}`), `landing page names cad-agent ${cmd}, which does not exist`);
+  const { source } = JSON.parse(await readFile(path.join(out, 'web/models/gyropup.json'), 'utf8'));
+  const modelFigure = index.match(/<figure class="hero-model">[\s\S]*?<\/figure>/)?.[0] || '';
+  assert.ok(modelFigure.includes(`href="${source.repo}/tree/${source.revision}"`), 'the displayed assembly links its actual immutable CAD source');
+  assert.ok(!modelFigure.includes('exported from its STEP files'), 'the current collector does not read historical STEP exports');
   for (const i of catalog.items.filter(i => i.type === 'upstream')) assert.ok(i.summary, `${i.name} has no summary`);
 });
 

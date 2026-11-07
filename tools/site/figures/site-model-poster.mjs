@@ -12,6 +12,7 @@
  */
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -88,9 +89,16 @@ try {
   const jpg = await card.screenshot({ type: 'jpeg', quality: BANNER.quality });
   await writeFile(path.join(root, BANNER.file), jpg);
   const model = JSON.parse(await readFile(path.join(root, 'tools/site/assets/models', `${BANNER.model}.json`), 'utf8'));
+  const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+  const modelPath = `tools/site/assets/models/${BANNER.model}.json`;
+  const posterPath = `tools/site/assets/models/${BANNER.model}.webp`;
+  const binary = await readFile(path.join(root, 'tools/site/assets/models', model.bin));
+  if (hash(binary) !== model.sha256) throw new Error('Model binary and source record disagree');
   const recordFile = path.join(root, 'docs/img/gyropup/SOURCE.json');
   const banner = { file: BANNER.file, made: 'node tools/site/figures/site-model-poster.mjs: the model\'s poster on a dark card with the project\'s words',
-                  model: `web/models/${BANNER.model}.json`, revision: model.source.revision, width: BANNER.width, height: BANNER.height };
+                  model: `web/models/${BANNER.model}.json`, revision: model.source.revision, width: BANNER.width, height: BANNER.height,
+                  model_sha256: hash(await readFile(path.join(root, modelPath))), binary_sha256: model.sha256,
+                  poster: posterPath, poster_sha256: hash(await readFile(path.join(root, posterPath))), sha256: hash(jpg) };
   // Spliced into the text tools/gyropup_showcase.py wrote, so its numbers keep Python's spelling (2.0 stays 2.0).
   const text = (await readFile(recordFile, 'utf8')).replace(/,\n "banner": \{[^}]*\}\n\}\n?$/, '\n}\n');
   if (!text.endsWith('\n}\n') || 'banner' in JSON.parse(text)) throw new Error(`${recordFile}: not the layout tools/gyropup_showcase.py writes (banner last)`);

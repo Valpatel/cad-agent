@@ -88,6 +88,42 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
   }
 });
 
+// This checks the documented provider exclusion contract in actual compiled pages, not an emulation of the edge.
+// A post-release read of ordinary public URLs must separately prove that the provider preserves the authored text.
+function assertEmailExclusion(text, label) {
+  const bodies = [...text.matchAll(/<body\b[^>]*>([\s\S]*?)<\/body>/g)];
+  assert.equal(bodies.length, 1, `${label}: one HTML body`);
+  assert.equal((text.match(/<!--email_off-->/g) || []).length, 1, `${label}: one exclusion start`);
+  assert.equal((text.match(/<!--\/email_off-->/g) || []).length, 1, `${label}: one exclusion end`);
+  assert.match(bodies[0][1], /^<!--email_off-->[\s\S]*<!--\/email_off-->$/, `${label}: exclusion covers the entire authored body`);
+}
+
+test('compiled HTML preserves package identifiers inside the provider email exclusion', async () => {
+  // kit/web contain copied upstream HTML, not this publisher's authored page frame.
+  const pages = html.filter(f => !f.startsWith('kit/') && !f.startsWith('web/'));
+  const example = 'repo/folders/d-software/d-cadagent/d-webkit/README.html';
+  for (const required of ['index.html', 'catalog.html', 'docs/map.html', example]) assert.ok(pages.includes(required), required);
+  for (const file of pages) assertEmailExclusion(await readFile(path.join(out, file), 'utf8'), file);
+  const page = await readFile(path.join(out, example), 'utf8');
+  const source = git('show', 'HEAD:software/cadagent/webkit/README.md');
+  for (const name of ['three', 'mermaid', 'fflate']) {
+    const identifiers = [...new Set(source.match(new RegExp(`${name}@[0-9]+(?:\\.[0-9]+)+`, 'g')))];
+    assert.equal(identifiers.length, 1, `${name}: actual source package identifier`);
+    assert.ok(page.includes(`<code>${identifiers[0]}</code>`), `${identifiers[0]} must remain readable without a provider decoder`);
+  }
+  assert.doesNotMatch(page, /__cf_email__|\/cdn-cgi\/l\/email-protection/);
+  for (const [label, changed] of [
+    ['missing start', page.replace('<!--email_off-->', '')],
+    ['missing end', page.replace('<!--/email_off-->', '')],
+    ['duplicate start', page.replace('<!--email_off-->', '<!--email_off--><!--email_off-->')],
+    ['late start', page.replace('<!--email_off-->', '').replace('<main ', '<!--email_off--><main ')],
+    ['early end', page.replace('<!--/email_off-->', '').replace('</main>', '</main><!--/email_off-->')],
+  ]) {
+    assert.notEqual(changed, page, label);
+    assert.throws(() => assertEmailExclusion(changed, label), undefined, label);
+  }
+});
+
 test('code samples keep their text, and every code block has a copy button', async () => {
   const dossier = await readFile(path.join(out, 'docs/dossier.html'), 'utf8');
   assert.match(dossier, /onto=None/, 'the sanitizer ate text inside code');
@@ -446,7 +482,8 @@ test('doc pages carry the page tree, with this page marked', async () => {
   assert.deepEqual(listed(inTree ?? ''), heads, 'the outline under the current page lists every h2/h3');
   const rail = toolkit.match(/<nav class="doc-rail" aria-labelledby="rail-title">([\s\S]*?)<\/nav>/)?.[1];
   assert.deepEqual(listed(rail ?? ''), heads, 'the right-hand outline lists every h2/h3');
-  assert.match(toolkit, /<body[^>]*><a class="skip-link" href="#main:content">Skip to content<\/a>/);
+  // The provider exclusion is a comment; the skip link must still be the body's first actual element.
+  assert.match(toolkit, /<body[^>]*><!--email_off--><a class="skip-link" href="#main:content">Skip to content<\/a>/);
   assert.match(toolkit, /<div class="doc-main" id="main:content" tabindex="-1">/);
   // The rail is named once, by its visible title; the outline in the tree keeps its own name inside "Pages and contents".
   assert.match(toolkit, /<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page<\/p><ol class="cad-nav-outline cad-nav-rail">/);

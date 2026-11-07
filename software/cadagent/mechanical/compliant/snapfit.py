@@ -510,36 +510,29 @@ def _friction_basis(spec: Dict[str, Any], friction: Optional[float]) -> Optional
     return "same material" if spec.get("same_material", True) else "against steel"
 
 
-def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
-    """One cantilever snap from a declaration (see docs/mechanical/compliant.md for the fields). Inputs are range-checked (a
-    ValueError names the snap and field). The process must be stated; a layered part needs its orientation (and,
-    unless it is a datasheet filament, a sourced ``process_factor``); a missing one is a failing row, so layer lines
-    are never forgotten."""
-    if not isinstance(spec, dict):
-        raise ValueError(f"each snap must be a mapping, not {spec!r}")
-    name = str(spec.get("name", "snap"))
-    if spec.get("type", "cantilever") != "cantilever":
-        raise ValueError(f"snap {name!r}: only cantilever snaps are declared in files so far; use the Python API "
-                         "for torsion and annular joints")
+def _spec_material(spec: Dict[str, Any], name: str, eps: float, *,
+                   strain_label: str = "root strain", torsion: bool = False):
+    """Existing declaration material/process rules at the design's equivalent tensile strain.
+
+    Torsion uses the across-layer allowance, matching the existing torsion explorer. This does not make a
+    printed bar isotropic or qualify a particular print.
+    """
     for flag in ("repeated", "same_material"):
         if flag in spec and not isinstance(spec[flag], bool):
             raise ValueError(f"snap {name!r}: {flag} must be true or false")
     printed = PRINTED.get(spec["material"]) if isinstance(spec.get("material"), str) else None
-    length = _num(spec, "length_mm", name, required=True, gt=0)
-    undercut = _num(spec, "undercut_mm", name, required=True, gt=0)
-    share = _num(spec, "share", name, gt=0, le=1, default=1.0)
-    design = spec.get("design", 1)
-    if design not in DESIGN_K:
-        raise ValueError(f"snap {name!r}: design must be 1, 2 or 3, not {design!r}")
     pf = _num(spec, "process_factor", name, gt=0, le=1, hint=": a derating cannot raise the allowable")
-    section = _section(spec, name)
     repeated = bool(spec.get("repeated", False))
     raw_process = spec.get("process")
     process = str(raw_process).strip().lower() if raw_process is not None else ("fdm" if printed else "")
     extra: List[Dict[str, Any]] = []
+    if torsion and PROCESSES.get(process) == "layered" and spec.get("orientation") != "across":
+        extra.append({"check": "torsion layer allowance", "value": spec.get("orientation"),
+                      "limit": "across", "pass": False,
+                      "detail": "torsion shears both side pairs: state orientation: across to use the "
+                                "across-layer allowable; this is not a cantilever bending direction"})
     if process and process not in PROCESSES:
         raise ValueError(f"snap {name!r}: unknown process {process!r}; one of {', '.join(PROCESSES)}")
-    eps = root_strain(section, length, undercut * share, design)
     modulus_note = retention_note = retention_secant = None
     if printed is not None:
         if PROCESSES.get(process) != "layered" or process not in ("fdm", "fff"):
@@ -549,6 +542,8 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
             extra.append({"check": "print orientation", "value": orientation, "limit": "stated", "pass": False,
                           "detail": "state orientation: 'along' (bending stress along the layers, arm lies in XY) "
                                     "or 'across' (arm built along Z); checked here as 'across'"})
+            orientation = "across"
+        if torsion:
             orientation = "across"
         allow = printed.allowable(orientation, repeated) * (pf if pf is not None else 1.0)
         secant = _num(spec, "secant_mpa", name, gt=0)
@@ -566,6 +561,10 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
                                    "above the secant modulus)")
                 modulus_note = "upper bound: the highest edition's datasheet modulus"
                 retention_note = "upper bound: the lowest edition's datasheet modulus"
+        if torsion and spec.get("secant_mpa") is None:
+            # Same in-plane/high-edition modulus as the existing torsion explorer, with the across-layer allowable.
+            secant = printed.secant_upper_bound("along")
+            secant_basis = "highest-edition in-plane tensile modulus; isotropic torsion approximation"
         friction = _num(spec, "friction", name, ge=0, le=1.5, default=printed.mu(spec.get("same_material", True)))
         material = dict(printed.derivation(orientation, repeated), allowable=allow, process=process,
                         process_factor=pf, secant_mpa=secant, secant_basis=secant_basis,
@@ -588,15 +587,113 @@ def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
         if secant is None and mat.secant_mpa:
             secant = secant_at(mat.secant_mpa, eps)
             lo, hi = min(mat.secant_mpa), max(mat.secant_mpa)
-            secant_basis = (f"interpolated at the root strain {eps * 100:.2f} % from the guide's points" if lo <= eps <= hi
-                            else f"the guide's nearest point ({(lo if eps < lo else hi) * 100:g} %), held: the root "
-                                 f"strain {eps * 100:.2f} % is outside the points")
+            secant_basis = (f"interpolated at the {strain_label} {eps * 100:.2f} % from the guide's points" if lo <= eps <= hi
+                            else f"the guide's nearest point ({(lo if eps < lo else hi) * 100:g} %), held: the "
+                                 f"{strain_label} {eps * 100:.2f} % is outside the points")
         friction = _num(spec, "friction", name, ge=0, le=1.5, default=mat.mu(spec.get("same_material", True)))
         material = {"name": mat.name, "strain": mat.strain, "source": mat.source, "allowable": allow,
                     "repeated": repeated, "process": process or None, "orientation": spec.get("orientation"),
                     "process_factor": pf, "process_source": spec.get("process_source"), "secant_mpa": secant,
                     "secant_basis": secant_basis if secant is not None else None, "friction": friction,
                     "friction_basis": _friction_basis(spec, friction)}
+    return material, extra, modulus_note, retention_note
+
+
+def _check_torsion_spec(spec: Dict[str, Any], name: str) -> Dict[str, Any]:
+    """Adapt the existing demand-aware rectangular formula; declaration lengths are mm and twist is degrees."""
+    from cadagent.formulas.torsion import SMALL_TWIST_TRAPEZE, torsion_shear_strain_rect, torsion_snap_bar
+
+    allowed = {"type", "name", "material", "process", "orientation", "process_factor", "process_source",
+               "repeated", "secant_mpa", "length_mm", "section", "twist_deg", "lever_mm",
+               "bars", "max_actuation_n"}
+    unknown = set(spec) - allowed
+    if unknown:
+        raise ValueError(f"snap {name!r}: unsupported torsion fields: {', '.join(sorted(map(str, unknown)))}; "
+                         "hook mating/retention, root fillets and both-parts deflection are not checked")
+    section = spec.get("section")
+    if (not isinstance(section, dict) or set(section) != {"rect"}
+            or not isinstance(section["rect"], dict)
+            or set(section["rect"]) != {"width_mm", "thickness_mm"}):
+        raise ValueError(f"snap {name!r}: torsion section must be {{rect: {{width_mm, thickness_mm}}}}")
+    rect = section["rect"]
+    length = _num(spec, "length_mm", name, required=True, gt=0) / 1000
+    width = _num(rect, "width_mm", name, required=True, gt=0) / 1000
+    thickness = _num(rect, "thickness_mm", name, required=True, gt=0) / 1000
+    twist = math.radians(_num(spec, "twist_deg", name, required=True, ge=0))
+    lever = _num(spec, "lever_mm", name, required=True, gt=0) / 1000
+    bars = spec.get("bars", 1)
+    if type(bars) is not int or bars not in (1, 2):
+        raise ValueError(f"snap {name!r}: bars must be the integer 1 or 2")
+    force_limit = _num(spec, "max_actuation_n", name, gt=0)
+    try:
+        gamma = torsion_shear_strain_rect(twist, length, width, thickness)
+        eps = gamma / (1 + POISSON_PLASTICS)
+        if not math.isfinite(eps):
+            raise ValueError("non-finite equivalent tensile strain")
+        material, extra, _, _ = _spec_material(spec, name, eps, strain_label="equivalent tensile strain", torsion=True)
+        secant = material["secant_mpa"]
+        if secant is None:
+            raise ValueError("missing secant_mpa: the requested torsion force needs a modulus")
+        value = torsion_snap_bar(length, width, thickness, twist, secant * 1e6, material["allowable"], lever, bars)
+        if any(not math.isfinite(v) for v in value.values()):
+            raise ValueError("non-finite torsion result")
+    except (ValueError, OverflowError, ZeroDivisionError) as exc:
+        raise ValueError(f"snap {name!r}: torsion inputs cannot be evaluated: {exc}") from None
+    rows = extra + [
+        {"check": "shear strain", "value": value["shear_strain"], "limit": value["allowable_shear_strain"],
+         "pass": value["passes"],
+         "detail": f"{value['shear_strain'] * 100:.2f} % vs {value['allowable_shear_strain'] * 100:.2f} % "
+                   "allowed: (1 + nu) times the derated tensile allowable, nu = 0.35"},
+        {"check": "small twist", "value": value["trapeze_ratio"], "limit": SMALL_TWIST_TRAPEZE,
+         "pass": value["small_twist"],
+         "detail": "the omitted trapeze torque must be at most a tenth of the Saint-Venant torque; "
+                   "otherwise this declaration needs a different analysis or a coupon"},
+    ]
+    if force_limit is not None:
+        rows.append({"check": "actuation force", "value": value["force"], "limit": force_limit,
+                     "pass": value["force"] <= force_limit,
+                     "detail": f"{value['force']:.2f} N at the lever vs {force_limit:.2f} N allowed; "
+                               + material["secant_basis"] + "; not a hook mating or retention force"})
+    material = {k: v for k, v in material.items() if not k.startswith("retention_")
+                and k not in ("friction", "friction_basis")}
+    limits = list(torsion_snap_bar.formula.limits) + [
+        "hook contact, root stress concentrations, mating/retention, creep, fatigue and both-part compliance "
+        "are not checked",
+        "printed allowables and isotropic torsion forces are hypotheses, not measurements; qualify a real coupon",
+    ]
+    return {"name": name, "type": "torsion", "strain_kind": "shear strain", "strain": value["shear_strain"],
+            "strain_allowable": value["allowable_shear_strain"], "equivalent_tensile_strain": eps,
+            "twist_deg": math.degrees(twist), "permissible_twist_deg": math.degrees(value["permissible_twist"]),
+            "actuation_force_n": value["force"], "torque_nm": value["torque"],
+            "travel_mm": value["travel"] * 1000, "trapeze_ratio": value["trapeze_ratio"],
+            "rows": rows, "pass": all(row["pass"] for row in rows), "warnings": [],
+            "material": material, "method": torsion_snap_bar.formula.source, "limits": limits}
+
+
+def check_spec_entry(spec: Dict[str, Any]) -> Dict[str, Any]:
+    """One cantilever or rectangular torsion snap from a declaration (see docs/mechanical/compliant.md for the fields). Inputs are range-checked (a
+    ValueError names the snap and field). The process must be stated; a layered part needs its orientation (and,
+    unless it is a datasheet filament, a sourced ``process_factor``); a missing one is a failing row, so layer lines
+    are never forgotten."""
+    if not isinstance(spec, dict):
+        raise ValueError(f"each snap must be a mapping, not {spec!r}")
+    name = str(spec.get("name", "snap"))
+    if spec.get("type") == "torsion":
+        return _check_torsion_spec(spec, name)
+    if spec.get("type", "cantilever") != "cantilever":
+        raise ValueError(f"snap {name!r}: declaration type must be cantilever or torsion; "
+                         "annular joints remain Python API only")
+    length = _num(spec, "length_mm", name, required=True, gt=0)
+    undercut = _num(spec, "undercut_mm", name, required=True, gt=0)
+    share = _num(spec, "share", name, gt=0, le=1, default=1.0)
+    design = spec.get("design", 1)
+    if design not in DESIGN_K:
+        raise ValueError(f"snap {name!r}: design must be 1, 2 or 3, not {design!r}")
+    section = _section(spec, name)
+    eps = root_strain(section, length, undercut * share, design)
+    material, extra, modulus_note, retention_note = _spec_material(spec, name, eps)
+    allow, secant, friction = material["allowable"], material["secant_mpa"], material["friction"]
+    retention_secant = material.get("retention_secant_mpa", secant)
     r = check_cantilever(length=length, section=section, undercut=undercut, strain_allow=allow, design=design,
                          secant_mpa=secant, friction=friction,
                          lead_deg=_num(spec, "lead_deg", name, gt=0, lt=90),
@@ -617,4 +714,6 @@ def check_spec(data: Any) -> Dict[str, Any]:
     if not isinstance(snaps, list) or not snaps:
         raise ValueError("the file needs a non-empty 'snaps' list")
     results = [check_spec_entry(s) for s in snaps]
-    return {"pass": all(r["pass"] for r in results), "snaps": results, "method": GUIDE, "limits": list(LIMITS)}
+    return {"pass": all(r["pass"] for r in results), "snaps": results,
+            "method": "; ".join(dict.fromkeys(r["method"] for r in results)),
+            "limits": list(dict.fromkeys(limit for r in results for limit in r["limits"]))}

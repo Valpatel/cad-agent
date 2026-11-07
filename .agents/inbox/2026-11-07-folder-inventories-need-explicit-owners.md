@@ -191,6 +191,25 @@ make the local revised drawing 552 px in both themes, leaving room without shrin
 and edges; the page's wall remains 1,135 px. Avoid authored layouts that only barely pass in one drawing environment.
 The full new-head consumers still decide acceptance; do not infer that wrapping identified the variation's cause.
 
+## No-script fold checks need the visible article control
+
+On 2026-11-07, local preflight of the #113 public consumer caught two selector errors: `main details`
+picked hidden mobile navigation on desktop; `main article details` picked the inactive light-theme
+diagram source on a dark page. Selecting the visible article fold fixed those errors, but Chrome still
+reported an offscreen summary as unstable with application JavaScript disabled. A focused four-case
+diagnostic retained the failure and sampled five identical, hit-testable summary boxes after explicitly
+scrolling it into view; trusted mouse and Enter input worked in both Chrome/WebKit themes. This does
+not establish the internal cause of the locator's stability failure.
+
+The final preflight uses the visible article fold, explicitly scrolls its summary into view, and retains
+the ordinary locator click, original timeout, initially-closed assertion, open assertion and native Enter
+close assertion. The exact action loop passed all 32 local route/width/theme/engine cases, without
+runtime/external errors, in a reaped bounded process. Receipt SHA256:
+`9f2a74f709c27f7252c50ba2a2f53913f667b800f0bc894e6f67a1dfab480943`.
+[Independent scoped acceptance](https://github.com/Valpatel/cad-agent/issues/113#issuecomment-6713553507)
+is local consumer evidence, not public acceptance. Keep previous failed preflights; do not use forced
+clicks, synthetic DOM toggles or relaxed visibility checks to manufacture a pass.
+
 ## Limits
 
 Relative file/directory destinations are checked; public route/anchor consumers remain the existing site build and browser checks. Source-only Markdown anchors and remote availability are not newly claimed. A diagram rendering successfully does not prove its semantic correctness or physical CAD performance. Upstream and data descendants retain their recorded layouts; parent ownership does not turn them into reviewed toolkit source.

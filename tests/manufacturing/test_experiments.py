@@ -253,3 +253,18 @@ def test_numbered_example_real_native_plate_and_new_copy_preserve_prior_artifact
                         for p in (tmp_path / "first").rglob("*") if p.is_file()}
     with pytest.raises(ValueError, match="output already exists"):
         module.build(registry, tmp_path / "first", native, count=1)
+
+
+def test_later_registry_commit_retains_the_actual_earlier_generation_source(source):
+    registry = source / "specimen-records"
+    record = allocate(registry, source)
+    generated_from = record["identity"]["source"]["commit"]
+    subprocess.run(["git", "-C", str(source), "add", "specimen-records"], check=True)
+    subprocess.run(["git", "-C", str(source), "commit", "-qm", "Record unprinted specimen identity"], check=True)
+    recorded_at = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
+    assert generated_from != recorded_at
+    short = record["identity"]["short_id"]
+    committed = subprocess.check_output(["git", "-C", str(source), "show",
+                                        recorded_at + ":specimen-records/" + short + ".identity.json"])
+    assert json.loads(committed) == ex.lookup(registry, short) == record
+    assert record["identity"]["source"]["commit"] == generated_from

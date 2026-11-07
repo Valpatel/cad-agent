@@ -266,7 +266,7 @@ for (const p of pages) {
     let target;
     if (pageFiles.has(resolved)) target = pageURL(resolved);
     else if (folderPage(resolved)) target = pageURL(folderPage(resolved));
-    else if (attr === 'src' && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
+    else if ((attr === 'src' || attr === 'srcset') && tracked.includes(resolved) && /\.(svg|png|jpe?g|gif|webp)$/i.test(resolved)) target = '/' + resolved;
     else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
     return target + (hash.length ? '#' + hash.join('#') : '');
   });

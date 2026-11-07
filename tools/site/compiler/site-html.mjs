@@ -12,8 +12,9 @@ export const SANITIZE = {
   allowedTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'img', 'ul', 'ol', 'li', 'pre', 'code', 'blockquote', 'em',
     'strong', 'del', 's', 'b', 'i', 'kbd', 'sub', 'sup', 'br', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
     'details', 'summary', 'div', 'span', 'input', 'cad-cantilever', 'cad-fourbar', 'cad-fan-curve', 'cad-torsion-snap',
-    'cad-printed-boss'],
+    'cad-printed-boss', 'picture', 'source'],
   allowedAttributes: { a: ['href', 'title', 'id', 'name'], img: ['src', 'alt', 'title', 'width', 'height'],
+    source: ['srcset', 'media', 'type'],
     '*': ['id', 'align'], code: ['class'], pre: ['class'], div: ['class'], span: ['class'], td: ['align', 'width'],
     th: ['align', 'width'], input: ['type', 'checked', 'disabled'], ol: ['start'],
     // the kit's interactive demos (kit/cantilever.js, kit/fourbar.js, kit/fan-curve.js, kit/torsion-snap.js,
@@ -24,20 +25,24 @@ export const SANITIZE = {
     'cad-torsion-snap': ['material', 'bars', 'repeated', 'length', 'width', 'thickness', 'twist', 'lever', 'theme'],
     'cad-printed-boss': ['material', 'size', 'outside', 'engagement', 'torque', 'axis', 'theme'] },
   allowedClasses: { code: ['language-*'], pre: ['mermaid'], div: ['table-scroll', 'cad-table-scroll'], span: [] },
-  allowedSchemes: ['http', 'https', 'mailto'], allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+  allowedSchemes: ['http', 'https', 'mailto'], allowedSchemesByTag: { img: ['http', 'https', 'data'], source: ['http', 'https'] },
+  selfClosing: [...sanitizeHtml.defaults.selfClosing, 'source'],
   allowProtocolRelative: false, disallowedTagsMode: 'discard',
-  exclusiveFilter: f => f.tag === 'input' && f.attribs.type !== 'checkbox',
+  // The docs use one URL per picture source (motion/theme selection). Keep that URL rewriteable as an image;
+  // candidate lists and density/width descriptors need a separate contract, not a guessed srcset parser.
+  exclusiveFilter: f => (f.tag === 'input' && f.attribs.type !== 'checkbox') ||
+    (f.tag === 'source' && !/^[^\s,]+$/.test(f.attribs.srcset || '')),
 };
 export const sanitize = html => sanitizeHtml(html, SANITIZE);
 
 const ENTITY = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&lt;': '<', '&gt;': '>' };
 const decode = s => s.replace(/&(?:amp|quot|#39|lt|gt);/g, e => ENTITY[e]);
 const encode = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-/** Rewrite the href and src of real tags in sanitized HTML: `fn(url, attr)` gets the decoded URL and returns the new
+/** Rewrite href, src and single-URL picture srcset in sanitized HTML: `fn(url, attr)` gets the decoded URL and returns the new
  * one (or null to keep it). Text that only looks like a tag (`<a href=...>` in a code sample, which the sanitizer
  * leaves as `&lt;a href="..."`) is never touched, and each URL is decoded and encoded exactly once. */
 export function rewriteUrls(html, fn) {
-  return html.replace(/<(a|img)\b[^>]*>/gi, tag => tag.replace(/(\s)(href|src)="([^"]*)"/gi, (all, sp, attr, raw) => {
+  return html.replace(/<(a|img|source)\b[^>]*>/gi, tag => tag.replace(/(\s)(href|src|srcset)="([^"]*)"/gi, (all, sp, attr, raw) => {
     const url = fn(decode(raw), attr.toLowerCase());
     return url == null ? all : `${sp}${attr}="${encode(url)}"`;
   }));

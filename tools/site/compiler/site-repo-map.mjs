@@ -69,7 +69,9 @@ export function checkMap({ files, read, policy, publication = null }) {
   const parsed = new Map();
   const md = f => { if (!parsed.has(f)) parsed.set(f, markdown(read(f))); return parsed.get(f); };
   const targetExists = target => known.has(target) || dirs.has(target);
-  const published = new Map(publication ? publication.selectPages(files).map(row => [row.file, publication.publicPath(row.file)]) : []);
+  const selected = publication ? publication.selectPages(files) : [];
+  const published = new Map(selected.map(row => [row.file, publication.publicPath(row.file)]));
+  const publicSources = new Map(selected.map(row => [publication.publicPath(row.file), row.file]));
   const delegate = dir => policy.delegated.find(p => beneath(dir, p.root));
   const ownerOf = dir => {
     const p = delegate(dir);
@@ -127,12 +129,22 @@ export function checkMap({ files, read, policy, publication = null }) {
     }
   }
   const ownedPages = new Set(rows.map(r => r.owner));
-  // Owned Markdown, including operational notes. Upstream/data Markdown keeps its original namespace/content.
+  // Ownership delegation is independent of link scanning. Only explicit upstream/data prose is exempt.
   for (const f of files.filter(f => f.endsWith('.md') && (!['upstream', 'data'].includes(delegate(f)?.kind) || ownedPages.has(f)))) {
-    for (const href of md(f).links) {
-      const target = resolve(f, href);
-      if (target === false || (target !== null && (!targetExists(target) || target.startsWith('../'))))
-        problems.push(`${f}: broken relative link ${href}`);
+    const text = read(f);
+    // Existing ci_gates.changelog_history preserves dated release records byte-for-byte, including the relative
+    // destinations valid at release time. Only that region may name a CURRENT selected public Markdown identity.
+    const heading = f === 'CHANGELOG.md' && /^##[ \t]+v[0-9]+(?:\.[0-9]+)* \((\d{4}-\d{2}-\d{2})\)[ \t]*\r?$/m.exec(text);
+    const date = heading && new Date(heading[1] + 'T00:00:00Z');
+    const boundary = heading && Number(heading[1].slice(0, 4)) > 0 && Number.isFinite(date.getTime()) &&
+      date.toISOString().slice(0, 10) === heading[1] ? heading.index : text.length;
+    for (const [body, historical] of [[text.slice(0, boundary), false], [text.slice(boundary), boundary < text.length]]) {
+      for (const href of markdown(body).links) {
+        const target = resolve(f, href), source = historical && publicSources.get(target);
+        if (target === false || (target !== null && (!targetExists(target) || target.startsWith('../')) &&
+            !(source && known.has(source))))
+          problems.push(`${f}: broken relative link ${href}`);
+      }
     }
   }
   return { problems, rows };

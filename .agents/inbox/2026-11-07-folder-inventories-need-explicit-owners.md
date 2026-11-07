@@ -36,3 +36,7 @@ Keep publication scope separate: `docs/map.md` distinguishes public pages from c
 ## Limits
 
 Relative file/directory destinations are checked; public route/anchor consumers remain the existing site build and browser checks. Source-only Markdown anchors and remote availability are not newly claimed. A diagram rendering successfully does not prove its semantic correctness or physical CAD performance. Upstream and data descendants retain their recorded layouts; parent ownership does not turn them into reviewed toolkit source.
+
+## Preserve dated release history while checking its actual public identities
+
+The branch-flow gate rejected the five attempted historical CHANGELOG link repairs: released history is byte-preserved evidence, including destinations that were correct at release time. Those edits are restored byte-for-byte from actual main `02cbc3c9`; the gate is unchanged. The map checker now treats only the valid dated CHANGELOG history region as a historical namespace: a missing physical destination may resolve through the existing current publication identity contract, with its physical source present and selected. Current authored links and Unreleased remain strict physical-relative. Real controls reject an unknown alias, the same stale alias in Unreleased or an authored guide, an impossible release date and a missing mapped source. This is not a blanket history skip or permission to rewrite shipped records.

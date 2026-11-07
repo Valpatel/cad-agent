@@ -5,6 +5,7 @@ import { readFileSync, mkdtempSync, writeFileSync, mkdirSync, appendFileSync } f
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
+import { createPublication } from '../../tools/site/publication.mjs';
 import { checkMap, gitFiles, markdown, renderMap, main } from '../../tools/site/compiler/site-repo-map.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -156,4 +157,26 @@ test('native disclosures keep the complete inventory closed and group repeated o
   assert.match(out, /`software\/vendor\/a`/);
   assert.match(out, /`software\/vendor\/a\/deep`/);
   assert.equal((out.match(/Pinned upstream\./g) || []).length, 1);
+});
+
+test('only dated CHANGELOG history can resolve current selected public Markdown aliases', () => {
+  const data = base();
+  data['knowledge/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [current.md](current.md) | Current source. |\n';
+  data['knowledge/current.md'] = '# Current guide\n';
+  const publication = createPublication({ schema: 1, roots: [{ source: 'knowledge', public: 'docs' }],
+    files: [{ source: 'knowledge/current.md', public: 'docs/old-guide.md' }] });
+  const run = () => checkMap({ files: Object.keys(data), read: f => data[f], policy: { delegated: [] }, publication });
+  data['CHANGELOG.md'] = '# Changelog\n\n## Unreleased\n\n## v1.0.0 (2026-11-07)\n\n[Original public identity](docs/old-guide.md)\n';
+  assert.deepEqual(run().problems, []);
+  data['CHANGELOG.md'] = data['CHANGELOG.md'].replace('## Unreleased', '## Unreleased\n\n[Current stale source path](docs/old-guide.md)');
+  assert.match(run().problems.join('\n'), /CHANGELOG.md: broken relative link docs\/old-guide.md/);
+  data['CHANGELOG.md'] = '# Changelog\n\n## v1.0.0 (2026-11-07)\n\n[Unknown alias](docs/not-registered.md)\n';
+  assert.match(run().problems.join('\n'), /broken relative link docs\/not-registered.md/);
+  data['CHANGELOG.md'] = '# Changelog\n\n## v1.0.0 (2026-02-31)\n\n[Impossible date](docs/old-guide.md)\n';
+  assert.match(run().problems.join('\n'), /broken relative link docs\/old-guide.md/);
+  data['CHANGELOG.md'] = '# Changelog\n\n## v1.0.0 (2026-11-07)\n\n[Original](docs/old-guide.md)\n';
+  data['knowledge/current.md'] += '\n[Equally stale authored path](../docs/old-guide.md)\n';
+  assert.match(run().problems.join('\n'), /knowledge\/current.md: broken relative link/);
+  delete data['knowledge/current.md'];
+  assert.throws(run, /required published source knowledge\/current.md is missing/);
 });

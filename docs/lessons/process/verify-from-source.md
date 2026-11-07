@@ -278,3 +278,8 @@ flowchart TD
   boundary. The README now selects a generated still explicitly through `picture`. The existing
   [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
   the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/2026-11-07-image-motion-needs-the-image-consumer.md).
+- **Include page composition:** A component proof must reach the compiler stages that can clone or move its
+  pictures. The sharing badge initially passed the renderer/sanitizer proof but automatic section cards duplicated
+  its fallback image at the top of the compiled README. The README now explicitly disables those cards; other
+  pages retain them. Keep the actual-image uniqueness check and complete compiled-site acceptance.
+  [Failure, cause and controls](../../../.agents/inbox/2026-11-07-page-placement-can-duplicate-footer-art.md).

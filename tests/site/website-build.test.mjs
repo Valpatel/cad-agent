@@ -821,10 +821,20 @@ test('repository map publishes ownership without adding source-only catalogue ro
   assert.match(twin, /Published owner/);
   assert.match(twin, /Source only/);
   assert.match(twin, /https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/tools\/README\.md/);
-  assert.match(twin, /\[Page\]\(\/docs\/README\)/);
+  assert.match(twin, /\[Published owner\]\(\/docs\/README\)/);
   assert.match(html, /class="cad-diagram"/);
   const catalog = JSON.parse(await readFile(path.join(out, 'catalog.json'), 'utf8'));
   assert.ok(catalog.items.some(i => i.markdown === 'https://cad-agent.valpatel.com/docs/map.md'));
   assert.ok(!catalog.items.some(i => i.source?.endsWith('/tools/README.md')));
   assert.ok(!catalog.items.some(i => i.source?.endsWith('/.agents/README.md')));
+  // Source selection is only intent. These checks bind EVERY declared public map link to actual build outputs.
+  const destinations = [...new Set([...twin.matchAll(/\[Published owner\]\((\/[^)]+)\)/g)].map(m => m[1]))];
+  assert.ok(destinations.length > 10);
+  for (const href of destinations) {
+    assert.ok(existsSync(path.join(out, href.slice(1) + '.html')), `no actual HTML for ${href}`);
+    assert.ok(existsSync(path.join(out, href.slice(1) + '.md')), `no actual Markdown twin for ${href}`);
+    assert.ok(catalog.items.some(i => i.markdown === 'https://cad-agent.valpatel.com' + href + '.md'), `no actual catalogue identity for ${href}`);
+  }
+  assert.doesNotMatch(html, /<details\b[^>]*\bopen(?:[ >])/);
+
 });

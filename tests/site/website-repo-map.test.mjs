@@ -84,7 +84,7 @@ test('generated map is deterministic and distinguishes publication from source o
   assert.equal(out, renderMap(structuredClone(rows)));
   assert.match(out, /blob\/dev\/code\/README.md/);
   assert.match(out, /Source only/);
-  assert.match(out, /\[Page\]\(\/docs\/README\)/);
+  assert.match(out, /\[Published owner\]\(\/docs\/README\)/);
 });
 
 // Source-only owner diagrams are deliberately not published as new catalogue routes. Validate them with the same
@@ -112,4 +112,48 @@ test('all owned folder diagrams render in both themes through the existing kit',
     console.log(`repo-map ${theme}: ${maps.length} owner maps, ${htmls.length} blocks, ${JSON.stringify(drawn.stats)}`);
   }
   if (drew && process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, 'drew=true\n');
+});
+
+test('unknown policy choices and overlapping roots cannot silently broaden an exemption', () => {
+  for (const row of [
+    { root: 'code', owner: 'README.md', reason: 'r', kind: 'datta' },
+    { root: 'code', owner: 'README.md', reason: 'r', members: 'link-files' },
+    { root: 'code', owner: 'README.md', reason: 'r', exempt: true },
+    { root: '../outside', owner: 'README.md', reason: 'r' },
+  ]) assert.match(check(base(), { delegated: [row] }).problems.join('\n'), /invalid path, field, kind or members/);
+  assert.match(check(base(), { delegated: [], baseline: [] }).problems.join('\n'), /policy needs/);
+  assert.match(check(base(), { delegated: [
+    { root: 'code', owner: 'README.md', reason: 'r' }, { root: 'code/child', owner: 'README.md', reason: 'r' },
+  ] }).problems.join('\n'), /overlapping delegated roots/);
+});
+test('authored delegated role, resource and policy Markdown still gets relative-link checks', () => {
+  for (const [label, members] of [['role', 'linked-files'], ['resource', 'linked-files'], ['policy', 'policy']]) {
+    const d = base(), file = `owned-${label}/guide.md`;
+    d['README.md'] += `\n[Owned](./${file})\n`;
+    d[file] = '[Missing procedure](missing-procedure.md)';
+    const policy = { delegated: [{ root: `owned-${label}`, owner: 'README.md', reason: 'Authored consumer entry.', members, kind: 'owned' }] };
+    assert.match(check(d, policy).problems.join('\n'), /broken relative link missing-procedure.md/, label);
+  }
+});
+test('new direct bundled skill resources need actual SKILL links', () => {
+  const d = base();
+  d['.agents/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [skills/](skills/README.md) | Skills. |\n';
+  d['.agents/skills/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [example/](example/SKILL.md) | Skill. |\n';
+  d['.agents/skills/example/SKILL.md'] = '# Example skill\n';
+  d['.agents/skills/example/helper.md'] = '# Bundled resource\n';
+  assert.match(check(d).problems.join('\n'), /bundled resource .*helper.md needs an explicit skill link/);
+  d['.agents/skills/example/SKILL.md'] += '\n[Resource](helper.md)\n';
+  assert.deepEqual(check(d).problems, []);
+  d['.agents/skills/example/helper.md'] += '\n[Bad](missing.md)\n';
+  assert.match(check(d).problems.join('\n'), /broken relative link missing.md/);
+});
+test('native disclosures keep the complete inventory closed and group repeated owners', () => {
+  const rows = [{ dir: 'software/vendor/a', owner: 'software/README.md', published: null, reason: 'Pinned upstream.' },
+    { dir: 'software/vendor/a/deep', owner: 'software/README.md', published: null, reason: 'Pinned upstream.' }];
+  const out = renderMap(rows);
+  assert.equal((out.match(/<details>/g) || []).length, 2);
+  assert.doesNotMatch(out, /<details[^>]*open/);
+  assert.match(out, /`software\/vendor\/a`/);
+  assert.match(out, /`software\/vendor\/a\/deep`/);
+  assert.equal((out.match(/Pinned upstream\./g) || []).length, 1);
 });

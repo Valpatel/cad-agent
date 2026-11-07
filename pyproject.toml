@@ -53,8 +53,8 @@ cadagent = ["webkit/*", "webkit/vendor/**/*"]
 [tool.setuptools.data-files]
 "share/cad-agent/starter-box" = ["docs/examples/starter-box/.gitignore", "docs/examples/starter-box/README.md",
                                  "docs/examples/starter-box/cad-agent.yaml"]
-"share/cad-agent/starter-box/cad" = ["docs/examples/starter-box/cad/build.py"]
-"share/cad-agent/starter-box/tools" = ["docs/examples/starter-box/tools/checks.py"]
+"share/cad-agent/starter-box/cad" = ["docs/examples/starter-box/cad/build.py", "docs/examples/starter-box/cad/README.md"]
+"share/cad-agent/starter-box/tools" = ["docs/examples/starter-box/tools/checks.py", "docs/examples/starter-box/tools/README.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

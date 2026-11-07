@@ -47,6 +47,25 @@ const resolve = (from, href) => {
 };
 export function checkMap({ files, read, policy, publication = null }) {
   const dirs = inventory(files), known = new Set(files), problems = [], rows = [];
+  const allowedPolicy = new Set(['delegated', 'indexed']);
+  const allowedRow = new Set(['root', 'owner', 'reason', 'kind', 'members']);
+  const plain = p => typeof p === 'string' && p && !p.startsWith('/') && !p.split('/').some(x => !x || x === '.' || x === '..');
+  if (!policy || Object.keys(policy).some(k => !allowedPolicy.has(k)) || !Array.isArray(policy.delegated))
+    return { rows, problems: ['repo-map policy needs only delegated/indexed, with a delegated array'] };
+  for (const [i, row] of policy.delegated.entries()) {
+    if (!row || Object.keys(row).some(k => !allowedRow.has(k)) || !plain(row.root) || !plain(row.owner) || !row.owner.endsWith('.md') ||
+        (row.reason !== undefined && typeof row.reason !== 'string') ||
+        (row.kind !== undefined && !['owned', 'upstream', 'data'].includes(row.kind)) ||
+        (row.members !== undefined && !['linked-files', 'policy'].includes(row.members)))
+      problems.push(`repo-map policy row ${i}: invalid path, field, kind or members choice`);
+    else if (policy.delegated.slice(0, i).some(before => typeof before?.root === 'string' && (beneath(row.root, before.root) || beneath(before.root, row.root))))
+      problems.push(`repo-map policy row ${i}: overlapping delegated roots`);
+  }
+  if (policy.indexed !== undefined && (!policy.indexed || typeof policy.indexed !== 'object' || Array.isArray(policy.indexed) ||
+      Object.entries(policy.indexed).some(([dir, index]) => !plain(dir) || !plain(index))))
+    problems.push('repo-map indexed collections need plain folder/index paths');
+  if (problems.length) return { rows, problems };
+
   const parsed = new Map();
   const md = f => { if (!parsed.has(f)) parsed.set(f, markdown(read(f))); return parsed.get(f); };
   const targetExists = target => known.has(target) || dirs.has(target);
@@ -73,13 +92,19 @@ export function checkMap({ files, read, policy, publication = null }) {
     const owner = ownerOf(dir), p = delegate(dir);
     rows.push({ dir, owner, published: published.get(owner) || null, reason: p?.reason || (owner.endsWith('/SKILL.md') ? 'Installed skill entry; resource links stay relative to SKILL.md.' : 'Owned folder map.') });
     if (!known.has(owner)) { problems.push(`${dir || '.'}: missing owner map ${owner}`); continue; }
-    if ((p && owner !== dir + '/README.md' && p.members !== 'policy') || owner.endsWith('/SKILL.md') || !dir) continue;
+    if (owner.endsWith('/SKILL.md')) {
+      const links = md(owner).links.map(h => resolve(owner, h));
+      for (const f of files.filter(f => beneath(f, dir) && f !== owner))
+        if (!links.includes(f)) problems.push(`${owner}: bundled resource ${f} needs an explicit skill link`);
+      continue;
+    }
+    if ((p && owner !== dir + '/README.md' && p.members !== 'policy') || !dir) continue;
     const doc = md(owner);
     if (!doc.diagrams.length) problems.push(`${owner}: missing Mermaid map`);
     if (!doc.tables.trim()) problems.push(`${owner}: missing file/folder table`);
     const links = doc.links.map(h => resolve(owner, h)).filter(Boolean);
     const parent = posix.dirname(dir) === '.' ? '' : posix.dirname(dir), parentOwner = ownerOf(parent);
-    if (parentOwner !== owner && !links.includes(parentOwner)) problems.push(`${owner}: missing up link to ${parentOwner}`);
+    if (parentOwner !== owner && !links.includes(parentOwner) && !doc.links.includes(sourceURL(parentOwner))) problems.push(`${owner}: missing up link to ${parentOwner}`);
     for (const name of [...dirs.get(dir)].sort()) {
       if (name === 'README.md') continue;
       const item = dir + '/' + name;
@@ -93,6 +118,8 @@ export function checkMap({ files, read, policy, publication = null }) {
       if (dir === 'docs/changelog.d' && /^\d+-[a-z0-9-]+\.md$/.test(name)) continue; // Actual cut_release parser tests own fragment format.
       const literal = doc.tables.includes('`' + name + '`') || doc.tables.includes('`' + name + '/`') || doc.tables.includes('[' + name + ']') || doc.tables.includes('[' + name + '/]') || doc.tables.includes('](' + name + '/') || doc.tables.includes('](' + name + ')');
       if (!literal) problems.push(`${owner}: table missing ${name}`);
+      if (p?.members === 'policy' && !dirs.has(item) && !links.includes(item))
+        problems.push(`${owner}: policy file ${item} needs its exact owner link`);
       if (dirs.has(item)) {
         const childOwner = ownerOf(item);
         if (childOwner !== owner && !links.includes(childOwner) && !links.includes(item)) problems.push(`${owner}: missing down link to ${childOwner}`);
@@ -101,7 +128,7 @@ export function checkMap({ files, read, policy, publication = null }) {
   }
   const ownedPages = new Set(rows.map(r => r.owner));
   // Owned Markdown, including operational notes. Upstream/data Markdown keeps its original namespace/content.
-  for (const f of files.filter(f => f.endsWith('.md') && (!delegate(f) || ownedPages.has(f)))) {
+  for (const f of files.filter(f => f.endsWith('.md') && (!['upstream', 'data'].includes(delegate(f)?.kind) || ownedPages.has(f)))) {
     for (const href of md(f).links) {
       const target = resolve(f, href);
       if (target === false || (target !== null && (!targetExists(target) || target.startsWith('../'))))
@@ -111,8 +138,39 @@ export function checkMap({ files, read, policy, publication = null }) {
   return { problems, rows };
 }
 const escape = text => String(text).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+const sourceURL = file => `https://github.com/Valpatel/cad-agent/blob/dev/${file.split('/').map(encodeURIComponent).join('/')}`;
 export function renderMap(rows) {
-  return '# Repository map\n\nEvery tracked folder has an owner below. Published owner pages have a separate public link; source-only software, tooling and operational maps retain their canonical GitHub source, with no new catalogue routes. Upstream, fixture and generated-data descendants retain their layouts; the named parent explains the collection. This is an ownership inventory, not a quality percentage or proof of physical performance.\n\n```mermaid\nflowchart TD\n    R["README.md"] --> D["docs/"]\n    R --> S["software/"]\n    R --> T["tests/ + tools/"]\n    R --> A[".agents/ + .github/"]\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c\n    class R,D,S,T,A here\n```\n\nGenerated by `node tools/site/compiler/site-repo-map.mjs --write`; use `--check` in review. Sources and file tables remain authored by their owners. Public routes and fragments are checked by the existing site build; the map checker validates relative file/directory destinations (not remote availability or Markdown anchors).\n\n| Folder | Canonical source owner | Published owner | Coverage |\n|---|---|---|---|\n' + rows.map(r => `| \`${escape(r.dir || '.')}\` | [${escape(r.owner)}](https://github.com/Valpatel/cad-agent/blob/dev/${r.owner.split('/').map(encodeURIComponent).join('/')}) | ${r.published ? `[Page](/${r.published.replace(/\.md$/, '')})` : 'Source only'} | ${escape(r.reason)} |`).join('\n') + '\n\n[Guides](README.md) · [Style guide](practice/style-guide.md) · [Contributor workflow](../.github/CONTRIBUTING.md)\n';
+  const nav = [
+    ['Project overview', 'README.md', 'Start here and choose an existing workflow.'],
+    ['Toolkit packages', 'software/README.md', 'Reusable code and its domain owners.'],
+    ['Guides and research', 'docs/README.md', 'Published explanations, source records and examples.'],
+    ['Repository tools', 'tools/README.md', 'Build, release, audit and figure producers.'],
+    ['Tests and fixtures', 'tests/README.md', 'Actual consumers, controls and recorded data.'],
+    ['Agent kit', '.agents/README.md', 'Installed skills, independent roles and source-only operations.'],
+    ['Contribution policy', '.github/CONTRIBUTING.md', 'Review, CI, integration and publication.'],
+  ];
+  let out = '# Repository map\n\nChoose an owner below. The full tracked inventory is grouped in closed disclosures, including upstream and fixture descendants. This is an ownership map, not a quality percentage or proof of physical performance.\n\n```mermaid\nflowchart TD\n    R["README.md"] --> D["docs/"]\n    R --> S["software/"]\n    R --> T["tests/ + tools/"]\n    R --> A[".agents/ + .github/"]\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c\n    class R,D,S,T,A here\n```\n\n| Owner | Use |\n|---|---|\n' + nav.map(([label, file, why]) => `| [${label}](${sourceURL(file)}) | ${why} |`).join('\n') +
+    '\n\nPublic owner links below are checked against the actual built HTML and catalogue. Code, tool and operational maps remain canonical source pages rather than new catalogue routes. Relative source file/directory destinations are checked; remote availability and source-only Markdown anchors are not newly verified.\n\n## Full inventory\n\n';
+  const groups = new Map();
+  for (const row of rows) {
+    const top = row.dir.split('/')[0] || 'Repository root';
+    if (!groups.has(top)) groups.set(top, []);
+    groups.get(top).push(row);
+  }
+  for (const [top, members] of groups) {
+    out += `<details>\n<summary>${escape(top)} — ${members.length} folders</summary>\n\n`;
+    const owners = new Map();
+    for (const row of members) { if (!owners.has(row.owner)) owners.set(row.owner, []); owners.get(row.owner).push(row); }
+    for (const [owner, owned] of owners) {
+      const published = owned[0].published;
+      out += `<details>\n<summary><code>${escape(owner)}</code> — ${owned.length} folders</summary>\n\n` +
+        `[Canonical source owner](${sourceURL(owner)}) · ` + (published ? `[Published owner](/${published.replace(/\.md$/, '')})` : 'Source only') + '\n\n' +
+        [...new Set(owned.map(row => row.reason))].map(reason => `- ${escape(reason)}`).join('\n') + '\n\n| Folder |\n|---|\n' +
+        owned.map(row => `| \`${escape(row.dir || '.')}\` |`).join('\n') + '\n\n</details>\n\n';
+    }
+    out += '</details>\n\n';
+  }
+  return out + 'Generated by `node tools/site/compiler/site-repo-map.mjs --write`; `--check` verifies freshness. Sources and file tables stay authored by their owners.\n\n[Guides](README.md) · [Style guide](practice/style-guide.md) · [Contributor workflow](../.github/CONTRIBUTING.md)\n';
 }
 export function main(root, mode) {
   if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('repo-map needs the existing Node 22 site runtime');

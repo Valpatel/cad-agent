@@ -45,7 +45,7 @@ hole for material inside ("Holes clear"). The checks say what CAD can: a printed
 box still needs a test fit, and the insert numbers are a model to test, not a rating
 ([inserts](https://cad-agent.valpatel.com/docs/inserts)).
 
-[Examples](../README.md)
+[Examples](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/README.md)
 
 ## File and child ownership
 

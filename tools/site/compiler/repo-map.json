@@ -4,115 +4,137 @@
       "root": ".agents/agents",
       "owner": ".agents/README.md",
       "reason": "Installer discovers every role Markdown file; parent links the two manifest-listed prompts, not a README in the prompt namespace.",
-      "members": "linked-files"
+      "members": "linked-files",
+      "kind": "owned"
     },
     {
       "root": ".claude-plugin",
       "owner": ".agents/README.md",
       "reason": "Plugin wiring uses the canonical kit; its manifest is mapped by the kit owner.",
-      "members": "linked-files"
+      "members": "linked-files",
+      "kind": "owned"
     },
     {
       "root": ".github",
       "owner": ".github/CONTRIBUTING.md",
       "reason": "GitHub policy, templates and workflows are mapped by CONTRIBUTING rather than a front-page-changing README.",
-      "members": "policy"
+      "members": "policy",
+      "kind": "owned"
     },
     {
       "root": "tests/fixtures",
       "owner": "tests/fixtures/README.md",
-      "reason": "Shared fixture descendants are data owned by the named fixture set and its generator/tests; not new package folders."
+      "reason": "Shared fixture descendants are data owned by the named fixture set and its generator/tests; not new package folders.",
+      "kind": "data"
     },
     {
       "root": "docs/img",
       "owner": "docs/img/README.md",
-      "reason": "Committed generated figures retain their topic output layout and recorded producers; parent maps each topic."
+      "reason": "Committed generated figures retain their topic output layout and recorded producers; parent maps each topic.",
+      "kind": "data"
     },
     {
       "root": "software/vendor/agentcad",
       "owner": "software/vendor/README.md",
-      "reason": "Imported upstream layout; manifest pins and vendor audit own contents."
+      "reason": "Imported upstream layout; manifest pins and vendor audit own contents.",
+      "kind": "upstream"
     },
     {
       "root": "software/vendor/bd_warehouse",
       "owner": "software/vendor/README.md",
-      "reason": "Imported upstream layout; manifest pins and vendor audit own contents."
+      "reason": "Imported upstream layout; manifest pins and vendor audit own contents.",
+      "kind": "upstream"
     },
     {
       "root": "software/vendor/build123d-mcp",
       "owner": "software/vendor/README.md",
-      "reason": "Imported upstream layout; manifest pins and vendor audit own contents."
+      "reason": "Imported upstream layout; manifest pins and vendor audit own contents.",
+      "kind": "upstream"
     },
     {
       "root": "software/vendor/kicad-happy",
       "owner": "software/vendor/README.md",
-      "reason": "Imported upstream layout; manifest pins and vendor audit own contents."
+      "reason": "Imported upstream layout; manifest pins and vendor audit own contents.",
+      "kind": "upstream"
     },
     {
       "root": "software/vendor/kicad-mcp-pro",
       "owner": "software/vendor/README.md",
-      "reason": "Imported upstream layout; manifest pins and vendor audit own contents."
+      "reason": "Imported upstream layout; manifest pins and vendor audit own contents.",
+      "kind": "upstream"
     },
     {
       "root": "software/vendor/text-to-cad",
       "owner": "software/vendor/README.md",
-      "reason": "Imported upstream layout; manifest pins and vendor audit own contents."
+      "reason": "Imported upstream layout; manifest pins and vendor audit own contents.",
+      "kind": "upstream"
     },
     {
       "root": "software/vendor/baselines",
       "owner": "software/vendor/README.md",
-      "reason": "Exact vendor scan fingerprints; parent owns metadata, vendor audit validates unexpected files."
+      "reason": "Exact vendor scan fingerprints; parent owns metadata, vendor audit validates unexpected files.",
+      "kind": "data"
     },
     {
       "root": "software/vendor/reports",
       "owner": "software/vendor/README.md",
-      "reason": "Recorded vendor scans; parent owns metadata, vendor audit validates unexpected files."
+      "reason": "Recorded vendor scans; parent owns metadata, vendor audit validates unexpected files.",
+      "kind": "data"
     },
     {
       "root": "software/vendor/patches",
       "owner": "software/vendor/README.md",
-      "reason": "Recorded vendor patches; parent owns metadata, vendor audit validates unexpected files."
+      "reason": "Recorded vendor patches; parent owns metadata, vendor audit validates unexpected files.",
+      "kind": "data"
     },
     {
       "root": "software/cadagent/webkit/vendor/file-parsers",
       "owner": "software/cadagent/webkit/vendor/README.md",
-      "reason": "Pinned upstream parser bytes; file-viewer-sources and integrity checks own the components."
+      "reason": "Pinned upstream parser bytes; file-viewer-sources and integrity checks own the components.",
+      "kind": "upstream"
     },
     {
       "root": "software/cadagent/webkit/vendor/fonts",
       "owner": "software/cadagent/webkit/vendor/README.md",
-      "reason": "Pinned fonts and owned wrapper; existing SOURCE hashes and style-pointer control own byte integrity."
+      "reason": "Pinned fonts and owned wrapper; existing SOURCE hashes and style-pointer control own byte integrity.",
+      "kind": "upstream"
     },
     {
       "root": "software/cadagent/webkit/vendor/linkedom",
       "owner": "software/cadagent/webkit/vendor/README.md",
-      "reason": "Pinned DOM helper; component source/licence records own upstream layout."
+      "reason": "Pinned DOM helper; component source/licence records own upstream layout.",
+      "kind": "upstream"
     },
     {
       "root": "software/cadagent/webkit/vendor/mermaid",
       "owner": "software/cadagent/webkit/vendor/README.md",
-      "reason": "Derived renderer with producer/input/licence records and repeat-build CI; no extra source maps inserted."
+      "reason": "Derived renderer with producer/input/licence records and repeat-build CI; no extra source maps inserted.",
+      "kind": "upstream"
     },
     {
       "root": "software/cadagent/webkit/vendor/occt-import-js",
       "owner": "software/cadagent/webkit/vendor/README.md",
-      "reason": "Pinned STEP parser with source/licence records and worker controls; no upstream layout rewrite."
+      "reason": "Pinned STEP parser with source/licence records and worker controls; no upstream layout rewrite.",
+      "kind": "upstream"
     },
     {
       "root": "software/cadagent/webkit/vendor/three",
       "owner": "software/cadagent/webkit/vendor/README.md",
-      "reason": "Pinned renderer; component source/licence records own upstream layout."
+      "reason": "Pinned renderer; component source/licence records own upstream layout.",
+      "kind": "upstream"
     },
     {
       "root": ".agents/skills/cad-motion-validation/references",
       "owner": ".agents/skills/cad-motion-validation/SKILL.md",
       "reason": "Bundled reference resources are linked from the installed skill; no extra discovered skill entry.",
-      "members": "linked-files"
+      "members": "linked-files",
+      "kind": "owned"
     },
     {
       "root": "docs/validation/volume-2026-10-29",
       "owner": "docs/validation/README.md",
-      "reason": "Dated numerical receipts retain their evidence layout; parent maps the immutable run."
+      "reason": "Dated numerical receipts retain their evidence layout; parent maps the immutable run.",
+      "kind": "data"
     }
   ],
   "indexed": {

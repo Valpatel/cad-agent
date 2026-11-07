@@ -70,6 +70,26 @@ test('receipts, notices and the source URLs name the same versions', async () =>
   assert.match(loader, /^import \* as fflate from '\.\/fflate\.module\.js';$/m);
 });
 
+test('the derived Mermaid bundle binds the fixed emitted libraries to its real producer and lock', async () => {
+  const receipt=await json('mermaid/SOURCE.json'),build=await json('mermaid/BUILD.json');
+  const pinned=JSON.parse(await readFile(path.join(root,'tools/mermaid/package-lock.json'),'utf8'));
+  assert.equal(receipt.patched['mermaid.min.js'].upstream_sha256,'581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8');
+  assert.notEqual(receipt.patched['mermaid.min.js'].upstream_sha256,receipt.files['mermaid.min.js']);
+  assert.equal(build.producer,'tools/mermaid/rebuild.mjs');
+  assert.equal(await sha256(path.join(root,build.producer)),build.producer_sha256);
+  assert.equal(await sha256(path.join(root,'tools/mermaid/package-lock.json')),build.package_lock_sha256);
+  assert.equal(build.bundle_sha256,receipt.files['mermaid.min.js']);
+  for(const [name,version] of [['dompurify','3.4.17'],['katex','0.18.10']]){
+    assert.equal(receipt.bundled[name],version);
+    assert.equal(build.packages['node_modules/'+name].version,version);
+    assert.equal(pinned.packages['node_modules/'+name].version,version);
+    assert.ok(build.inputs.some(input=>input.path.startsWith('node_modules/'+name+'/')),'fixed library must contribute actual emitted code');
+  }
+  assert.ok(!Object.values(build.packages).some(p=>p.name==='elkjs'));
+  const notices=await readFile(path.join(vendor,'mermaid/THIRD-PARTY-LICENSES.txt'),'utf8');
+  for(const pkg of Object.values(build.packages))assert.ok(notices.includes(`=== ${pkg.name}@${pkg.version} (`));
+});
+
 /** A ZIP whose only central-directory entry declares compressed size 0xFFFFFFFF (the ZIP64 sentinel) but has no ZIP64
  * extra field, behind a valid ZIP64 end-of-directory record and locator: the GHSA-px8p-9vwx-vf98 shape. fflate 0.6.9's
  * unzipSync loops forever on it; 0.8.3 throws "invalid zip data". */

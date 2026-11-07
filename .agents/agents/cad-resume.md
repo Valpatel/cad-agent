@@ -28,6 +28,11 @@ flowchart TD
    - CI state of the open PRs (`gh pr checks <n>`) and unresolved review threads.
    - Work claims on those issues (comments starting `<!-- work v1 `): who holds each one, until when, and which
      claims have expired (lease passed with no newer `checkpoint`) and are open for grabs.
+   - If the project already configures a goal graph (for example `project.goals` in `cad-agent.yaml`), read it
+     through the organization's available authorized tool/skill and map each issue's `Goal:` line to its goal.
+     Report open goals without open issues and issue links whose goals cannot be resolved. Missing access means
+     **unverified**, not that the graph has no goals. Keep private goal content out of public reports. Without a
+     graph, continue the normal issue-based resume; do not create one or install a connector.
 2. For every run the issue lists under "Running": check its log on its host (read only: `ssh <host> 'tail -n 20
    <log>'`, `ps` with an anchored pattern) and report finished / still running / failed / gone. Do not restart runs.
 3. Do not edit files, commit, start jobs, merge or close anything. If the brief says so, push local commits that are
@@ -36,3 +41,5 @@ flowchart TD
    unresolved threads; active and expired work claims); local-only state found (unpushed commits, uncommitted
    files, stashes) and whether you pushed it; the next three steps, specific enough to start; and anything that contradicts the issue (a run the issue says
    is running but is not, a checklist item ticked without a commit).
+   When a graph is configured, include the goal-to-issue mapping and evidence awaiting a goal update. This resume
+   remains read-only: report the handoff, do not write to the graph or mark goals complete.

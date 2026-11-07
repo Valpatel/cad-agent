@@ -6,16 +6,29 @@
   "published": "2026-08-25",
   "license": "MIT",
   "files": {
-    "mermaid.min.js": "581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8",
-    "LICENSE": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80"
+    "mermaid.min.js": "0c594f6da77369c354eadcf8b3ebc083829150571b1d82af3578c53bb3a794b8",
+    "LICENSE": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80",
+    "BUILD.json": "2d03eddf8dd84ef3d875fa1addb43889c12376154de3774667539a1491e804d0",
+    "THIRD-PARTY-LICENSES.txt": "0908749d36ad71e6bc16ebdacd95708b85f4c1a44974fe5fbbbbff2f6f475776"
   },
   "paths_in_package": {
     "mermaid.min.js": "package/dist/mermaid.min.js",
     "LICENSE": "package/LICENSE"
   },
   "bundled": {
-    "dompurify": "3.4.12",
-    "katex": "0.16.47",
-    "note": "mermaid.min.js inlines these, so an OSV query on mermaid does not see them. OSV lists five advisories for DOMPurify 3.4.12 (its IN_PLACE, SAFE_FOR_TEMPLATES and XHTML-parser paths; fixed by 3.4.17) and one for KaTeX 0.16.47 (a prototype-pollution precondition; fixed in 0.18.2). No Mermaid release bundles a fixed DOMPurify yet: 12.2.0 still inlines 3.4.12. It does inline KaTeX 0.18.11, which is past the KaTeX fix. Whether Mermaid reaches those paths is not assessed here."
+    "dompurify": "3.4.17",
+    "katex": "0.18.10",
+    "note": "These are actual emitted library versions, checked with the compiler input map and version markers. The existing strict renderer sanitizes labels and final SVG strings. Its default configuration does not request SAFE_FOR_TEMPLATES, IN_PLACE, DOM-returning output or an XHTML parser, and it does not supply attached-shadow DOM nodes or evaluate templates; the reported nondefault DOMPurify advisory paths are not exercised by this checked consumer. Other consumers/configurations are not qualified by that inspection. Mermaid uses KaTeX for mathematical labels, then sanitizes its output; no pre-existing prototype-pollution condition is asserted absent. Both libraries are updated rather than accepting their advisories. KaTeX0.18.11 is deliberately excluded because its registry metadata declares accidental breaking changes. The locked derived build preserves Mermaid11, adds no ELK and retains all emitted dependency notices."
+  },
+  "patched": {
+    "mermaid.min.js": {
+      "upstream_sha256": "581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8",
+      "change": "Rebuilt from the official npm core entry with the locked fixed DOMPurify/KaTeX dependencies; no minified source editing. Producer and all emitted input/package/licence hashes are recorded in BUILD.json."
+    }
+  },
+  "rebuild": {
+    "producer": "tools/mermaid/rebuild.mjs",
+    "lock": "tools/mermaid/package-lock.json",
+    "record": "BUILD.json"
   }
 }

@@ -205,12 +205,12 @@ From the source option table ([PrintConfig.cpp](https://github.com/prusa3d/Prusa
 
 ## 6. Thermal reference data
 
-![Bar chart of the printed-material table below: for PLA Basic, PETG Basic and PETG HF, the glass transition and the heat deflection temperatures at 0.45 and 1.8 MPa, all between 54 and 69 degrees C, against a dashed line at the module's 80 degree C TTP limit](../img/research/thermal-limits.svg)
+![Glass transition and heat-deflection temperatures for PLA Basic, PETG Basic and PETG HF by source edition, compared with the module's thermal plate limit](../img/research/thermal-limits.svg)
 
 *Drawn by `tools/research_figures.py` from the printed-material table below, with the TTP limit read from the module's
-bullet (a test keeps them in step). All three filaments soften 11–26 °C below the 80 °C the module's thermal plate
-may reach. The plate is not the air at a printed wall: the wall's own temperature, from a CHT run or a thermocouple,
-decides.*
+bullet (a test keeps them in step). These specimen values fall below the module's permitted thermal plate
+temperature. The plate is not the air at a printed wall: evaluate the wall's own temperature with a CHT model
+and physical measurements.*
 
 **Jetson AGX Orin module.** Sources: [datasheet DS-10662-001 v1.8, Sep 2025, mirror](https://static.generation-robots.com/media/Jetson-AGX-Orin-Data-Sheet.pdf) and [Jetson Linux r36.4 power/thermal page](https://docs.nvidia.com/jetson/archives/r36.4/DeveloperGuide/SD/PlatformPowerAndPerformance/JetsonOrinNanoSeriesJetsonOrinNxSeriesAndJetsonAgxOrinSeries.html).
 
@@ -245,15 +245,31 @@ decides.*
 
 </details>
 
-**Printed-material limits (Bambu TDS; third-party-hosted copies; values read with pdftotext):**
+**Printed-material limits (Bambu Lab TDS; edition-specific typical values, not continuous-use ratings):**
 
 | Material | Tg (DSC) | HDT 0.45 MPa | HDT 1.8 MPa | Source |
 |---|---|---|---|---|
-| PLA Basic (TDS V2.0) | 60 °C | 57 °C | 54 °C | [TDS](https://www.additive-x.com/shop/mpattachments/file/viewonline/id/494/product_id/2236) |
-| PETG Basic (V2.0) | 68 °C | 69 °C | 65 °C | [TDS](https://www.additive-x.com/shop/mpattachments/file/viewonline/id/580/product_id/2330) |
+| PLA Basic (V3.0) | 60 °C | 57 °C | 54 °C | [Bambu TDS, p. 2](https://store.bblcdn.com/s1/default/58b85d0f3db94878854a28fdb8a0006e/Bambu_PLA_Basic_Technical_Data_Sheet.pdf) |
+| PETG Basic (V3.0) | 69 °C | 71 °C | 68 °C | [Bambu TDS, p. 2](https://store.bblcdn.com/s1/default/cb94589bf7994fdcbfa833badefae9cd/Bambu_PETG_Basic_Technical_Data_Sheet.pdf) |
 | PETG HF (V1.0) | 66 °C | 69 °C | 62 °C | [TDS](https://botland.com.pl/img/art/inne/25540_karta_produktu.pdf) |
 
 With the TTP allowed up to 80 °C and the fan exhausting warm air, PLA within a few cm of the heatsink, the exhaust path or the cooler clamp is marginal. Use PETG (or better) for parts that carry the cooler, and treat **~50 °C PLA / ~60 °C PETG sustained wall temperature under load** as design limits. Those limits are my margin choice, not a datasheet value. Creep under clamp load is a separate, unmodelled risk.
+
+<details>
+<summary>Which edition applies to a printed part?</summary>
+
+The official V3.0 sheets were reread on 2026-11-07 (physical-properties tables and specimen conditions).
+PLA's thermal values match V2.0; V3.0 describes annealed/dried specimens at 55 °C for 8 h (p. 4).
+PETG Basic V3.0 describes a reformulated filament, with specimens not stated to be annealed (p. 3).
+The earlier V2.0 PETG sheet reports Tg/HDT at 0.45/1.8 MPa of 68/69/65 °C and annealed specimens.
+Use the edition and conditioning that match the material; a product name alone cannot identify an older spool.
+
+The chart preserves the editions. Neither HDT at a short-term test load nor Tg qualifies sustained clamp load
+or a whole printed part. The 50/60 °C margins above remain engineering choices. Mechanical allowables and FEA
+retain their separately documented, quantity-specific edition choices; no solver values changed here.
+Physical coupon work remains [#94](https://github.com/Valpatel/cad-agent/issues/94).
+
+</details>
 
 ## Existing projects combining CAD + TO + CFD for 3D printing
 

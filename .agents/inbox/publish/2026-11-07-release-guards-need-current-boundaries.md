@@ -58,3 +58,32 @@ normal refresh. Private outputs were mode 0600 and the account identity matched 
 No package was installed and no account, permission or setting changed. Bind an inspected existing CLI when
 resuming; do not install a new one, expose credentials or request login merely because an unqualified resolver
 selects a different version. Successful refresh does not prove deployment or DNS/cache access.
+
+## Preflight source sizes and rendered assertions before public verification
+
+The first v0.26.0 ordinary publication probe on 2026-11-07 UTC saved eleven actual HTTP responses, then stopped
+at `spawnSync git ENOBUFS`. Node's default synchronous child-output limit could not hold the committed
+3,626,560-byte Mermaid renderer. Its saved public response was exact SHA-256
+`0c594f6da77369c354eadcf8b3ebc083829150571b1d82af3578c53bb3a794b8`; the source-reading harness had failed.
+A finite 16 MiB buffer and preflight of every selected source body corrected the local limit without changing
+asset equality. The original failed receipt remains distinct from subsequent attempts.
+
+The next attempt saved sixteen responses and completed one browser case before rejecting `tools/mermaid`
+in the supply-chain page's visible text. That path was the target of the correctly rendered **Mermaid rebuild**
+link, not its label. Offline replay of all five retained pages also caught a lowercase `mechanical` assertion
+whose intended visible statement began **Mechanical allowables and FEA**. Raw HTML substrings are not a
+rendered-content contract: they can match URLs or hidden markup that a reader never sees.
+
+The corrected verifier retained raw checks and separately required the actual visible labels, an opened native
+fold, and the exact visible rebuild link target. Before another public invocation, the same verifier passed
+20 retained-page cases across Chromium/WebKit and phone/desktop widths. Sixteen mutations were rejected: wrong
+link target, missing link, wrong label, and missing mechanical-scope text. External requests were blocked and
+none were attempted in these offline controls. These results validate the verifier, not current deployment;
+the complete ordinary response/browser receipt still needs its own independent acceptance in #440.
+
+**Rule:** inspect the sizes of pinned bodies before spawning source readers, with a finite justified buffer.
+Preflight the actual rendered contract against retained or locally generated pages. Check a link's label and
+target independently, preserve meaningful case and scope, and reject missing or changed destinations. Keep
+failed attempts and their real request/case counts; neither source bytes nor an offline positive control may
+stand in for a complete public run. Do not loosen overflow, request-error, revision or asset-equality checks
+when correcting a harness assumption. These bounded checks do not accept #381's separate cache policies.

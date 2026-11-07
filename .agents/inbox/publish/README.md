@@ -10,7 +10,7 @@ flowchart LR
 
 | Incident | Lesson |
 | --- | --- |
-| [Release guard boundaries](2026-11-07-release-guards-need-current-boundaries.md) | Inspect every current check instance and preserve accepted inherited bytes. |
+| [Release guard boundaries](2026-11-07-release-guards-need-current-boundaries.md) | Inspect all current checks, preserve accepted bytes, and preflight source buffers and visible text/link contracts. |
 | [Publication runtime](2026-11-07-publication-consumers-need-explicit-runtimes.md) | Bind the existing executable and browser before public calls. |
 | [SOURCE namespace](2026-11-07-source-records-need-their-actual-namespace.md) | Derive public and immutable-source routes from the producer. |
 | [Provider CSP failure](2026-11-07-provider-failures-need-matching-csp-evidence.md) | Classify only an observed exact enforced block; retain other errors. |

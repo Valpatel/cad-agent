@@ -20,3 +20,7 @@
   [pytest fault-handler contract](https://docs.pytest.org/en/stable/how-to/failures.html#fault-handler).
 - **Limits:** A future quiet or successful run cannot supply the missing historical test identity or cause.
   The new full head must actually complete all required checks before integration; this note is not a CI waiver.
+
+The first local layout/release check of the added note retained 67 passes and two layout failures: the incident
+inbox had reached 21 direct files against its 20-file growth bound. The note moved into the existing publication
+incident folder, with its map and symptom link updated; the growth check and exception list remain unchanged.

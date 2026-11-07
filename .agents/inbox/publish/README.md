@@ -10,6 +10,7 @@ flowchart LR
 
 | Incident | Lesson |
 | --- | --- |
+| [Full test cap](2026-11-07-full-test-caps-need-active-case.md) | Preserve the cap and expose the active test and thread stack before diagnosing a cancelled release check. |
 | [Resize runtime errors](2026-11-07-resize-checks-need-runtime-errors.md) | Collect errors on the exact interaction page; good geometry alone can miss observer feedback. |
 | [Responsive resize](2026-11-07-responsive-style-can-lag-resize.md) | A new viewport width can precede the corresponding responsive style. |
 | [Release guard boundaries](2026-11-07-release-guards-need-current-boundaries.md) | Inspect all current checks, preserve accepted bytes, and preflight source buffers and visible text/link contracts. |

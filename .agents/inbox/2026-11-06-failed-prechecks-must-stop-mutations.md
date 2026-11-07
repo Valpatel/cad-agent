@@ -29,3 +29,32 @@ The next mutation was gated by the successful corrected proof in a separate chec
 **Corrective rule:** Never execute a whole-script extraction merely because selected nodes look like definitions or assignments. Review statically first. For a pure classifier control, construct the small literal inputs explicitly and extract only individually inspected function bodies under a transport that rejects mutation. Validate decorators/defaults and all calls; use literal evaluation for explicit named constants instead of executing arbitrary assignment expressions. A reviewer process must not have an operational `gh pr merge` or ref-write path callable through its test transport. Before any such read-only harness is used, plant a mutation initializer and prove it cannot reach a recorder. Mutation operators remain author-owned and execute once only after their own review and intent receipt.
 
 **Limits:** The independently observed exact merge tree supports preserving this particular result, not a claim that the unsafe extraction was harmless or that all controls executed. This incident does not accept promotion, publication, issue closure or remote retirement. No source file was edited by the reviewer. The coordinator carried this lesson and reviewer guidance through an owned topic PR. The [coordinator readback](https://github.com/Valpatel/cad-agent/issues/446#issuecomment-6708997995) records the actual result and missing evidence.
+
+## A comment must target the comment resource
+
+**Observed, 2026-11-07 UTC:** A reviewer intended to append compiled-preview evidence to Gyropup PR257 but ran
+`gh api repos/Valpatel/gyropup/issues/257 -X POST -F body=@<review-file>`. The missing `/comments` segment caused
+the PR description to be replaced. A successful command exit did not establish that the intended resource changed.
+The reviewer restored its captured description with `gh pr edit 257 --repo Valpatel/gyropup --body-file <original>`
+and posted the [intended timeline comment](https://github.com/Valpatel/gyropup/pull/257#issuecomment-6710681099)
+to the actual comments collection.
+
+The coordinator independently compared raw API JSON with the author's separately preserved original file:
+1,712 original bytes, SHA-256 `c35d107ca6eda2308b5273f6e2608925e6e37cac0a2b3450b5046062a86ce582`;
+1,713 restored bytes, SHA-256 `583ba8a6c51350ed10ebcf9d1d5d4590100b44bc56b1f2732def5a9e57f676a4`.
+The restored body equals the original plus one terminal newline. All original content is preserved; the raw bytes
+are not identical. [Independent disposition](https://github.com/Valpatel/gyropup/pull/257#issuecomment-6710745646).
+
+**Cause and rule:** The resource route, not merely an HTTP method or zero exit, determines the write. Use
+`gh pr comment --body-file` or `gh issue comment --body-file` for ordinary timeline comments, and `gh pr review`
+for a formal review. Keep the documented inline-review API for actual line comments. Read back the created
+comment/review and its target. An intentional description update is a separate operation: preserve the original
+raw body, apply the exact intended change, then compare raw API strings rather than stripping whitespace.
+On an unexpected write, preserve evidence, stop dependent writes and obtain an independent correction disposition;
+do not repeatedly restore from an unverified reconstruction.
+
+**Limits:** The reviewer had not preserved pre-error raw API JSON; the independent author file establishes the
+content boundary. This was a metadata-resource selection error, not a demonstrated service defect. No source or
+ref change was part of the incident. Product checks, merge gates and publication remain separate. No live destructive
+regression is justified for this CLI-selection mistake; the existing reviewer role and publication playbook carry
+the procedure.

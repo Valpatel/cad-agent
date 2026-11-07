@@ -712,22 +712,35 @@ async function headerProblems() {
           const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
           if (verticalOverlap > 1 && gap < 4) out.push(`${a.label} / ${b.label}: visible gap ${gap.toFixed(2)}px (need 4px)`);
         }
+        const mark = document.querySelector('.wordmark img');
         return { problems: out, boxes, width: innerWidth, fonts: document.fonts.status,
+          viewportMediaMatches: matchMedia(`(width: ${innerWidth}px)`).matches,
+          narrowMarkMediaMatches: matchMedia('(max-width:360px)').matches,
+          markDisplay: mark ? getComputedStyle(mark).display : null,
           icons: [...document.querySelectorAll('.theme-toggle svg')].map(el => {
             const rect = el.getBoundingClientRect();
             return { name: el.getAttribute('class'), display: getComputedStyle(el).display,
               left: rect.left, right: rect.right, width: rect.width, height: rect.height };
           }) };
       });
+      // Capture the requested viewport's paint before reading its geometry. A failed 320px WebKit frame
+      // reported the preceding 390px rectangles, while its following PNG already painted the fitting header.
+      // This is one paint per case, never a wait/retry until the header fits; every real bound stays strict.
+      const paintedMeasure = async name => {
+        const beforePaint = await measure();
+        await writeFile(path.join(evidence, `${name}-${colorScheme}-before-paint.json`), JSON.stringify(beforePaint, null, 2));
+        await page.screenshot({ path: path.join(evidence, `${name}-${colorScheme}.png`) });
+        const found = await measure();
+        await writeFile(path.join(evidence, `${name}-${colorScheme}.json`), JSON.stringify({ ...found, beforePaint }, null, 2));
+        assert.equal(found.width, page.viewportSize().width, 'the painted header uses the requested viewport');
+        assert.equal(found.viewportMediaMatches, true, 'the painted CSS viewport matches the measured width');
+        return found;
+      };
       for (const width of widths) {
         await page.setViewportSize({ width, height: 850 });
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        const found = await measure();
+        const found = await paintedMeasure(String(width));
         problems.push(...found.problems.map(p => `header ${width}px ${colorScheme}: ${p}`));
-        if (width === 320 || found.problems.length) {
-          await writeFile(path.join(evidence, `${width}-${colorScheme}.json`), JSON.stringify(found, null, 2));
-          await page.screenshot({ path: path.join(evidence, `${width}-${colorScheme}.png`) });
-        }
       }
       // A hidden header keeps all its geometry: prove that geometry alone cannot satisfy the visible-control guard.
       for (const [property, value] of [['visibility', 'hidden'], ['opacity', '0']]) {
@@ -737,7 +750,7 @@ async function headerProblems() {
           return old;
         }, [property, value]);
         try {
-          const hidden = await measure();
+          const hidden = await paintedMeasure(`hidden-${property}`);
           if (hidden.problems.filter(p => p.startsWith('missing visible ')).length !== 4) {
             problems.push(`header ${colorScheme}: ${property} control accepted invisible navigation`);
           }
@@ -759,17 +772,16 @@ async function headerProblems() {
           value: () => ({ left: innerWidth + 40, right: innerWidth + 58, top: 0, bottom: 18, width: 18, height: 18 }) });
       });
       try {
-        const hidden = await measure();
+        const hidden = await paintedMeasure('hidden-icon-geometry');
         if (hidden.problems.length) problems.push(`header ${colorScheme}: hidden-icon geometry was treated as painted content`);
       } finally { await hiddenIcon.evaluate(el => { delete el.getBoundingClientRect; }); }
       const visibleIcon = page.locator('.theme-toggle svg').filter({ visible: true }).first();
       const oldStyle = await visibleIcon.getAttribute('style');
       try {
         await visibleIcon.evaluate(el => { el.style.transform = `translateX(${innerWidth * 2}px)`; });
-        const escaped = await measure();
+        const escaped = await paintedMeasure('visible-icon-control');
         if (!escaped.problems.some(p => p.endsWith('extends outside the viewport')))
           problems.push(`header ${colorScheme}: visible escaped icon was accepted inside the viewport`);
-        await writeFile(path.join(evidence, `visible-icon-control-${colorScheme}.json`), JSON.stringify(escaped, null, 2));
       } finally {
         await visibleIcon.evaluate((el, oldStyle) => {
           if (oldStyle === null) el.removeAttribute('style'); else el.setAttribute('style', oldStyle);

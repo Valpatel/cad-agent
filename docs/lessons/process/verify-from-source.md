@@ -290,6 +290,9 @@ flowchart TD
 - **Rule:** A nonzero rectangle does not by itself prove that content paints. Check the element's display and
   ancestor visibility, preserve visible text and image bounds, and exercise both a hidden-geometry control and
   a genuinely escaped visible element. Keep the failed rectangles and screenshot rather than only a message.
+- **After a viewport change:** retain pre-paint geometry and CSS/query state, capture the requested viewport's
+  paint, then assert its strict geometry. Exercise the same capture step with genuinely broken controls; do not
+  wait or retry until their bounds fit. A later fitting screenshot does not retrospectively clear an earlier failure.
 - **Evidence and limits:** The actual 320-pixel WebKit header failures lacked those captures. Local successful
   resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
   the visibility boundary; [the incident](../../../.agents/inbox/publish/2026-11-07-header-visibility-needs-paint-state.md)

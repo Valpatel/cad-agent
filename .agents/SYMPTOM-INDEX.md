@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| Local release checks pass but the new changelog fragment breaks the repository release | [Select the actual release producer](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#select-the-release-producer-not-only-project-release-checks) |
 | Research YAML loads and imports but its health updater refuses the shard | [Keep source records editable](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md#keep-source-records-editable-by-their-health-consumer) |
 | Re-importing research restores old folder names although migrated fixtures pass | [Test the original import boundary](inbox/2026-11-06-source-selection-must-not-pass-empty.md#keep-original-import-inputs-when-testing-repository-migrations) |
 | A chart label becomes a manufacturing limit, or correcting data removes the only unverified test case | [Separate specimen labels from process limits](inbox/publish/2026-11-07-chart-labels-are-not-process-limits.md) |

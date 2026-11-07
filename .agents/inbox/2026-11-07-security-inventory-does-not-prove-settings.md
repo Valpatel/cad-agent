@@ -64,3 +64,16 @@ new unfolded guidance as a wall of text (Chromium measured 1213 px against the u
 The fragment now uses the existing format and the interpretation detail is in a closed `<details>` section.
 No parser or visual threshold changed. Local release/layout/area checks then passed **69 tests**; fresh full CI
 remains required. Keep these genuine failures on the PR rather than retrying the same source or calling them flaky.
+
+## Select the release producer, not only project release checks
+
+On 2026-11-07 UTC, PR438 at `958ae5b7` repeated the `### Fixed` fragment mistake. The author's 198 selected
+tests included `tests/publish/test_release.py`, which checks project release packaging, but omitted
+`tests/repo/test_cut_release.py`, the repository release producer's consumer. Independent review
+[5811778041](https://github.com/Valpatel/cad-agent/pull/438#pullrequestreview-5811778041) rejected the actual new
+fragment. Running the omitted suite on that unchanged source exited 1 with the same Markdown-heading error.
+
+The corrective rule is to read `docs/changelog.d/README.md` and include `tests/repo/test_cut_release.py` whenever
+adding or editing a fragment. Its existing real-fragment loop already detects this defect; adding a duplicate
+test or loosening the parser would not fix the selection mistake. The existing `tests/publish/test_release.py`
+suite remains useful for its different packaging contract. Neither local suite replaces current whole-head CI.

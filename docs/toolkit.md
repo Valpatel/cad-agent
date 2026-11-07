@@ -1537,6 +1537,10 @@ cad:
 
 `cad-agent prusa-view MODEL` opens a 3MF or STL in PrusaSlicer's window (`cadagent.manufacturing.prusa_view`), to see
 what PrusaSlicer makes of it or to keep a screenshot as evidence. PrusaSlicer runs as a separate process.
+
+<details>
+<summary>PrusaSlicer profiles, screenshots and process ownership</summary>
+
 - **Private profile folder:** a copy of the profile folder in the work folder (`--workdir`, default
   `<model folder>/prusa-view/<model name>`), passed with `--datadir`. Your own PrusaSlicer configuration is never read
   for state or written to. Its `PrusaSlicer.ini` gets the settings that keep start-up free of dialogs:
@@ -1571,6 +1575,8 @@ cad-agent prusa-view exports/door.3mf --screenshot exports/door-prusaslicer.png 
 cad-agent prusa-view exports/assembly.3mf --view-bed 1500x600 --config build/slicer/door/config.ini
 cad-agent prusa-view exports/assembly.3mf --stop
 ```
+
+</details>
 
 ### Overhangs and bridges (`cad-agent overhangs`)
 

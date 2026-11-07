@@ -415,3 +415,18 @@ living hinges, bistable beams, a generated physical coupon and the first product
 - Associated Spring flat-spring stress limits.
 - Printed-snap creep (no study found).
 - FDM living-hinge cycle life.
+
+<details>
+<summary>Maintenance of historical alternatives (checked 2026-11-07)</summary>
+
+These entries remain visible as prior art or declined alternatives. No upstream push for over a year is a
+maintenance warning, not proof of abandonment or a new vulnerability. Maintenance beyond the recorded activity
+is unverified; any future adoption needs a fresh licence, advisory and compatibility review.
+
+- **Mechanical-Python/SnapFit_Calculator**: last observed push 2022-03-16. Keep the existing Skip decision (stale project and packaged binaries).
+- **artofscience/flexures**: last observed push 2023-11-06. GPL reference material only, not incorporated code.
+- **nohkumado/openscad_snapfit**: last observed push 2021-11-01. Keep the existing Skip decision; GPL geometry alternative.
+- **buxtronix/living-hinge**: last observed push 2024-05-31. Historical GPL option; the CC0 alternative remains preferred.
+- **skyneticist/flexure-hinge-calculator**: last observed push 2025-06-08. Keep the existing Skip decision for this small calculator.
+
+</details>

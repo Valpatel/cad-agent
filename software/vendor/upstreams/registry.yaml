@@ -172,9 +172,9 @@
   url: https://github.com/mixelpixx/Konnect
   license: AGPL-3.0
   stars: 1399
-  last_push: 2026-10-26
+  last_push: 2026-11-02
   status: rejected
-  policy: external program only (AGPL-3.0); archived 2026-10-26, and GitHub showed it unarchived again on 2026-11-01 (last commit 2026-10-25); its AGPL-3.0 releases stay up; continues as Konnect-EDA, commercial and closed source
+  policy: external program only (AGPL-3.0); remains rejected; GitHub archived again at 2026-11-07 readback, after the historical 2026-11-01 unarchived observation; last push 2026-11-02; no new code adoption
 - name: oaslananka/kicad-mcp-pro
   what: "MCP server for KiCad schematic, PCB, ERC/DRC, DFM and manufacturing-export work, read-only by default"
   areas: [circuit-boards]
@@ -200,8 +200,8 @@
   license: MIT
   stars: 529
   last_push: 2025-10-17
-  status: candidate
-  policy: may incorporate with attribution
+  status: rejected
+  policy: MIT permits incorporation with attribution, but declined for this pass; inactive KiCad 9 candidate (last push 2025-10-17, checked 2026-11-07); maintenance unverified; existing KiCad 10 vendors remain the chosen integration
 - name: aklofas/kicad-happy
   what: "Agent skills that review KiCad schematics, layouts and Gerbers: power tree, subcircuits, SPICE, EMC, BOM"
   areas: [circuit-boards]

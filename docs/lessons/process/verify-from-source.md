@@ -189,7 +189,7 @@ flowchart TD
 </details>
 
 ### Follow the credential store selected by the actual CLI
-- **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx wrangler whoami` so its
+- **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx --yes wrangler@4.86.0 whoami` so its
   normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path
   selection before requesting a new login. Never print tokens or change accounts to make a probe pass.
 - **Evidence, 2026-11-06 UTC:** `npx --yes wrangler@4.86.0 whoami` succeeded. A helper that guessed the XDG

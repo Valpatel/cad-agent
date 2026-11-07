@@ -979,7 +979,7 @@ cleanability or durability: those still need the project's print and feedback lo
 [sendcutsend-finish-thickness]: https://sendcutsend.com/faq/what-are-the-thicknesses-for-your-finishes/
 [pem-handbook]: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/self-clinching-fastener-handbook.pdf
 [pem-tech-sheet-stainless]: https://www.pemnet.com/wp-content/uploads/sites/2/2022/06/Stainless_Steel_Sheets.pdf
-[pop-rivet-catalog]: https://www.stanleyengineeredfastening.com/-/media/Web/SEF/Resources/Docs/POP/POP-Rivet-Catalog.pdf
+[pop-rivet-catalog]: https://res.cloudinary.com/syndigo-sbd-ps/image/upload/q_auto/Stanley%20Engineered%20Fastening%20%28SEF%29/Public/sef-resources/library/user-manuals-and-documentation/POP-Rivet-Catalog.pdf
 [gesipa-rivet-length]: https://www.gesipa.com/service/gesipa-makes-it-clear/calculate-the-length-of-blind-rivets/
 [faa-ac-43-13-1b]: https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_43.13-1B_w-chg1.pdf
 [nasa-1228]: https://ntrs.nasa.gov/citations/19900009424

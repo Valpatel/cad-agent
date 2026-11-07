@@ -185,3 +185,14 @@ the CLI's exit codes. It also redraws every figure on this page and fails if one
 
 Related: [Engineering formulas](../formulas.md) · [Printed load-bearing joints](printed-joints.md) ·
 [package map](../../software/cadagent/mechanical/README.md)
+
+<details>
+<summary>Maintenance of historical alternatives (checked 2026-11-07)</summary>
+
+These entries remain visible as prior art or declined alternatives. No upstream push for over a year is a
+maintenance warning, not proof of abandonment or a new vulnerability. Maintenance beyond the recorded activity
+is unverified; any future adoption needs a fresh licence, advisory and compatibility review.
+
+- **frasere/ISO-281**: last observed push 2020-12-09. Keep the existing unmaintained warning. Manufacturer bearing ratings and the cited standards remain the basis, rather than adopting this old calculator.
+
+</details>

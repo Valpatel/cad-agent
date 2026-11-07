@@ -1,5 +1,33 @@
 # Missing security inventory does not prove a disabled protection
 
+## Missing package metadata does not establish a missing archive licence
+
+On 2026-11-07, the finite issue322 follow-up found that the exact `tools/mermaid` lock entry for Khroma2.1.0
+omits `license`, while its integrity-verified archive contains the full MIT licence. The existing renderer
+`BUILD.json` records `node_modules/khroma/license`, SHA256
+`66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49`, and the full text is already retained
+in `THIRD-PARTY-LICENSES.txt`. Reading registry metadata alone would confuse an omitted declaration with
+the absence of an actual licence.
+
+The old missing-licence finding identified only a package name. An exception for that identity could silently
+cover a different archive, version or production context. Bind the finding and any acceptance to the owning
+manifest, version, resolved URL and integrity, and require its fingerprint. The actual-policy controls accept
+only the exact read archive and reject another context, version, archive URL or integrity value.
+
+The same principle applies to retaining a stale shipped parser: its age acceptance now includes recorded
+package versions and all component file hashes. An updated version or legitimately re-recorded different byte
+must trigger review again. Historical URL-age identities remain separate from the shipped-runtime decision.
+
+```text
+sha256sum <integrity-verified Khroma archive>/license
+66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49
+python -m pytest -q tests/repo/test_resource_audit.py
+128 passed
+```
+
+This is archive- and context-bound evidence, not a legal review, a new security assessment of all bundled
+native code, or permission to accept advisories. No package, parser or renderer bytes changed in this repair.
+
 ## Observed on 2026-11-07 UTC
 
 Issue 153's existing audit checked secret scanning but never independently checked push protection. It also treated

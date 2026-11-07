@@ -135,7 +135,7 @@ def plate_fixture(tmp_path, source):
     """Real STL/project writers, hand-built boxes; no CAD kernel, GUI or slicing."""
     import hashlib
     import numpy as np
-    import trimesh
+    trimesh = pytest.importorskip("trimesh")
     from cadagent.manufacturing import plates as p
     from tests.manufacturing.test_plates import settings_bytes, box
     registry, root = tmp_path / "registry", tmp_path / "artifacts"
@@ -173,7 +173,7 @@ def test_real_project_readback_binds_one_actual_mesh_and_settings_per_physical_i
         ex.bind_plate(registry, stamps + stamps[:1], root, "plate.3mf")
 
 
-@pytest.mark.parametrize("fault", ["wrong-object", "wrong-mesh", "wrong-settings", "scaled-transform", "missing-specimen"])
+@pytest.mark.parametrize("fault", ["wrong-object", "wrong-mesh", "wrong-settings", "scaled-transform", "missing-specimen", "bed-exclusion"])
 def test_real_project_faults_cannot_publish_a_fresh_plate_record(tmp_path, source, fault):
     import zipfile
     registry, root, stamps = plate_fixture(tmp_path, source)
@@ -194,6 +194,14 @@ def test_real_project_faults_cannot_publish_a_fresh_plate_record(tmp_path, sourc
             assert len(values) == 12
             return 'transform="' + ' '.join(str(v*2 if i < 9 else v) for i, v in enumerate(values)) + '"'
         model, count = re.subn(r'transform="([^"]+)"', scale, model, count=1)
+        assert count == 1
+    elif fault == "bed-exclusion":
+        import re
+        def into_wiper(match):
+            values = match[1].split()
+            assert len(values) == 12
+            return 'transform="' + ' '.join(values[:9] + ["8", "10", "0"]) + '"'
+        model, count = re.subn(r'transform="([^"]+)"', into_wiper, model, count=1)
         assert count == 1
     elif fault == "missing-specimen":
         import re

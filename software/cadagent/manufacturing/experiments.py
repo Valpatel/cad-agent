@@ -298,8 +298,10 @@ def bind_plate(registry, identifiers, artifact_root, project_file, *, batch_uuid
                 or not np.allclose(matrix[:, 2], [0, 0, 1], rtol=0, atol=1e-8)):
             raise ValueError("specimen transform scales, mirrors or tips its print-oriented mesh")
     area, _ = plates.printable_area(settings, (256, 256))
+    excluded = plates._exclude_box(settings, area)
     problems = plates.check_plates(plates.as_plates(back), (area[2]-area[0], area[3]-area[1]),
-                                   gap=0, margin=0, quantities={stamp: 1 for stamp in wanted},
+                                   gap=0, margin=0, keep_out=[excluded] if excluded else (),
+                                   quantities={stamp: 1 for stamp in wanted},
                                    tol=plates.POSITION_TOL_MM)
     if problems or any(abs(q["z_mm"]) > 1e-6 for q in held):
         raise ValueError("specimens overlap, leave the bed or float above it: " + "; ".join(problems))

@@ -268,6 +268,11 @@ test('the index and the area files agree with each other and with catalog.json',
   assert.equal(index.kinds.reduce((n, k) => n + k.count, 0), catalog.items.length, 'every entry is under one kind tab');
   const llms = await readFile(path.join(out, 'llms.txt'), 'utf8');
   assert.match(llms, /catalog\/index\.json/);
+  // A real direct path from llms must advertise each tool's actual guide, not merely a working catalogue index.
+  const linked = new Set([...llms.matchAll(/https:\/\/[^\s)<>`]+/g)].map(m => m[0]));
+  for (const tool of catalog.items.filter(i => i.kind === 'tool')) {
+    assert.ok(linked.has(tool.markdown), `${tool.id}: its guide is missing from llms.txt: ${tool.markdown}`);
+  }
   // Each file says what its fields mean.
   for (const k of ['count', 'kinds', 'maturity', 'domains', 'buckets']) assert.equal(typeof index.fields?.[k], 'string', `index.json fields.${k}`);
   for (const k of ['id', 'kind', 'areas', 'what', 'cover', 'doc', 'schema_1']) assert.equal(typeof catalog.fields?.[k], 'string', `catalog.json fields.${k}`);

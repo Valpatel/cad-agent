@@ -253,7 +253,10 @@ Studio before slicing. It does not certify GUI compatibility, supports, adhesion
 - **[rectpack](https://github.com/secnot/rectpack)** (Apache-2.0) implements the same MaxRects method. It has had no
   release since 2021, and cad-agent's core install is PyYAML, NumPy and packaging. The method is about a hundred lines
   here, in integer micrometres, with its tests.
+  Maintenance checked 2026-11-07: upstream last pushed 2021-11-24; retained as a method comparison, not a dependency.
 - **PrusaSlicer** arranges with [libnest2d](https://github.com/tamasmeszaros/libnest2d) (no-fit polygons, C++).
+  That historical upstream last pushed 2024-05-03 (checked 2026-11-07); PrusaSlicer carries its own bundled copy.
+  This credits the method; cad-agent does not adopt the old C++ library. Maintenance of that upstream is unverified.
   **Bambu Studio's own arrange** (`--arrange 1`) re-places and re-turns parts on every run and ignores filaments.
   Both are C++ programs, not libraries cad-agent can call.
 - **Format facts** came from Bambu Studio's source (`bbs_3mf.cpp`, `PartPlate.cpp`, `Plater.cpp` at v02.08.04.57;

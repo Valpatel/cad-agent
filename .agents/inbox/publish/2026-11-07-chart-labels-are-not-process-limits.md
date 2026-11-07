@@ -52,6 +52,31 @@ the registry/importer controls and original-map check.
 records, as well as the rule-card and website consumers. Valid YAML alone does not prove
 maintenance compatibility. A formatting repair does not re-read or re-qualify sources.
 
+The same boundary recurred in PR444 at `adc93b44` on2026-11-07: core3.12 job128398821750 passed3004 tests
+with329 skips and failed `test_every_real_shard_is_editable` and the permanent same-site-move fixture. The new
+long `verified` scalars made `guides-inserts.yaml` noncanonical, so the updater could not apply the otherwise
+unrelated Jawstec fixture move; `guides-print.yaml` also needed the writer's wrapping. Serialize exactly those
+two current shard bodies through `import_refmap.dump`, preserve their headers and assert identical parsed
+records. The actual health/import/registry/release/layout selection then passed228 tests. Keep both original
+failures and unchanged editable/shard rejection tests; do not loosen the maintenance contract or discard source facts.
+
+## Retain unverified-source controls after recovering real citations
+
+On 2026-11-07 UTC, the #118 source follow-up recovered six original source links used by existing equations.
+The registry checker then reported zero warnings instead of eight citation occurrences. Three existing tests
+correctly failed: the shrinking allowance still named the six records, and two lookup/citation checks used the
+now-read Gonçalves paper as their unverified example.
+
+The allowance becomes empty only with the source read records. Keep unverified lookup and citation-label
+assertions in the existing planted `gone` fixture, alongside its exact warning assertion; do not remove the
+failure-path coverage or leave a real source incorrectly unverified for a test. The existing equation tests
+remain separate from source discovery.
+
+Access limits remain part of the record. The PEM URL was recovered through its manufacturer's datasheet index
+and its cached extraction was read, including the dated footer and cited sections. Direct retrieval did not
+produce a PDF, and screenshot retrieval failed; no fresh PDF digest, visual inspection or physical validation
+is claimed for that source. A working citation and a live-download check are different evidence.
+
 ## Preserve material editions in detached figures
 
 **Evidence, 2026-11-07 UTC:** #157's thermal follow-up reread the official Bambu PLA/PETG Basic V3.0 physical

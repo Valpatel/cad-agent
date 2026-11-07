@@ -1,4 +1,4 @@
-# The topic tree: domain → area → topic (#139, #140). The one place that names an area; the site's area hubs (#141),
+# The topic tree: domain → area → topic (#139, #140). The one place that names an area; the site's area catalogue views (#141),
 # the evaluation jobs (#142) and folder names (#145) use these slugs. Read docs/vision.md first.
 #
 # Every node: slug, title, scope (one line), maturity, and optionally:
@@ -17,7 +17,7 @@
 #
 # Maturity values are first estimates; correct them when evidence says otherwise, and only then. An area or topic is
 # judged on its own evidence, and an area is never below its most mature topic. A domain's maturity is the highest of
-# its areas': it says how far the domain's best-developed area has got, and its hub shows every area's level beside it.
+# its areas': it says how far the domain's best-developed area has got, and the catalogue tree shows every area's level beside it.
 #
 # Module names in `api` are import paths. Since #121 the code is laid out by this tree: `cadagent.<domain>.<module>`,
 # with the practice domain's review and publishing areas as `cadagent.review` and `cadagent.publish`, and the shared

@@ -1,5 +1,32 @@
 # Source selection must not pass empty or import a different checkout
 
+## Verify the installer at every actual entrance
+
+On 2026-11-07, issue322's real report flagged two instructions that pipe a mutable download into a shell.
+Reading their consumers found the same shortcut independently copied into the homepage card, agent prompt
+and quickstart evaluator, with tests requiring the unsafe command literally. Editing only the two reported
+pages would leave actual advice and the evaluator inconsistent.
+
+Keep one immutable download/checksum/execution block per platform in the existing installation guide. Route
+the README, homepage and agent instructions there; make the evaluator extract the exact block and reject
+missing or duplicate markers. A hash mismatch or failed download must reach no shell or child process.
+Test the actual documented block, not a separately implemented checksum helper. Compare Git blob bytes,
+which the immutable URL serves, rather than possible Windows checkout CRLF conversion.
+
+```text
+python -m pytest -q tests/cli/test_installer.py tests/repo/test_agent_prompt.py \
+  tests/repo/test_resource_audit.py tests/repo/test_cut_release.py \
+  tests/repo/test_layout.py tests/repo/test_areas.py
+217 passed, 5 skipped (local PowerShell unavailable), 1 existing folder warning
+```
+
+Both POSIX hashing paths accepted exact downloaded bytes and handed off to the real installer's safe
+`--help` parser; corrupted bytes and failed downloads reached no shell, with temporary files removed.
+The Windows job must actually run the PowerShell guard, hash, failed child and cleanup controls with inert
+fixtures. Local skips are not Windows acceptance; full CI and whole-page consumers remain required.
+These checks do not perform a real uv/CAD installation, certify PowerShell 5.1 on every Windows setup,
+or authenticate every transitive download. The guide states that remaining trust explicitly.
+
 Search found the general procedure in [Exercise moved consumers](../../docs/lessons/process/verify-from-source.md#exercise-moved-consumers-instead-of-checking-path-declarations). These are concrete source-selection controls for that rule, recorded with the ownership migration in #387.
 
 **Evidence, 2026-11-06 UTC:** independent review at `ee8f3e3a438403a3ac7d4846de3b9d5fc468f932` reproduced two false positives ([review](https://github.com/Valpatel/cad-agent/pull/387#pullrequestreview-5799130099)). The HTTP checker still enumerated `src` and `tools`: a planted bare `urlopen` under `software/cadagent` was not selected. The generated-site browser test set `PYTHONPATH=src`; with a foreign editable environment, its child imported that other checkout instead of the code under review.

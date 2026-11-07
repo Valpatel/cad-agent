@@ -2,6 +2,46 @@
 # finding"). Each one stays in the report, marked accepted, and no longer counts. Nothing accepts a critical finding.
 # Reviewers read every change to this file, above all an acceptance added in the same PR as the finding it hides.
 
+- check: npm-no-licence
+  subject: npm:khroma
+  fp: f397c726cbcfe457
+  reason: >-
+    Metadata omission in the exact tools/mermaid lock entry khroma 2.1.0. The npm archive pinned by
+    sha512-Ls993zuzfayK269Svk9hzpeGUKob/sIgZzyHYdjQoAdQetRKpOLj+k/QQQ/6Qi0Yz65mlROrfd+Ev+1+7dz9Kw==
+    contains its complete MIT licence, copyright Fabio Spampinato and Andrew Maney. Read on 2026-11-07:
+    node_modules/khroma/license SHA256 66b333b0f66759a0b710459e03f7029abe17f4358114a128d2c972e642961b49.
+    The unchanged renderer BUILD.json records that exact licence and THIRD-PARTY-LICENSES.txt retains the text.
+    This fingerprint binds the owning manifest, version, resolved archive and integrity; another context,
+    version or archive needs a new reading. It accepts only absent registry/lock licence metadata, not
+    package integrity failures, advisories or a general legal review.
+  accepted: 2026-11-07
+
+- check: dependabot-ecosystem
+  subject: repo:dependabot-npm
+  fp: 1f04e00c5e5dc2be
+  reason: >-
+    Deliberate maintenance-pass policy under issues 153 and 322, reaffirmed 2026-11-07: retain grouped weekly
+    GitHub Actions version PRs, without starting recurring npm version-PR campaigns during backlog closure.
+    The weekly supply-chain workflow audits both explicit npm locks online and keeps one findings issue;
+    pin updates still require independent review, provenance and browser CI. This accepts only the absence
+    of the npm version-update configuration, not an advisory, stale pin or failed audit. It does not claim
+    Dependabot monitors these manifests or that dependency-graph/SBOM discovery is verified; issue 153
+    retains that unresolved evidence. Security-fix PRs are enabled separately but their coverage is not proven here.
+  accepted: 2026-11-07
+
+- check: dependabot-ecosystem
+  subject: repo:dependabot-pip
+  fp: b8c4dd692ce86b5e
+  reason: >-
+    Deliberate maintenance-pass policy under issues 153 and 322, reaffirmed 2026-11-07: retain grouped weekly
+    GitHub Actions version PRs, without starting recurring pip version-PR campaigns during backlog closure.
+    The weekly online audit checks direct Python requirements and the transitive resolution it can observe;
+    changes to lower bounds or optional dependencies still require independent review and current CI.
+    This accepts only the missing pip version-update configuration, not an advisory or a claim that every
+    installed/transitive version is covered. Dependabot manifest monitoring and dependency-graph/SBOM
+    discovery remain unverified under issue 153; enabled security-fix PR creation is a separate control.
+  accepted: 2026-11-07
+
 - check: npm-install-script
   subject: npm:esbuild
   fp: 30e8057fdbba6aa6
@@ -41,3 +81,280 @@
     Shown as archived where we name it (docs/research/agent-workflow/design-workflows.md and design-workflows.json). Cited for its
     paper's results; ideas only, we use none of its code.
   accepted: 2026-11-01
+
+- check: repo-stale
+  subject: webkit:occt-import-js
+  fp: eae928e0832442e4
+  reason: >-
+    Retain the existing STEP preview runtime 0.0.23 at c2148e54b456b571238d35cac037d304053d64b2, with OCCT
+    source d2abb6d844231cb8f29be6894440874a4700e4a5, exact npm integrity/file hashes and corresponding LGPL/exception
+    sources recorded in file-viewer-sources.json. Upstream last push 2024-12-03 and unverified maintenance are
+    visible in THIRD_PARTY_NOTICES.md. Same-origin/redirect/download limits, worker deadlines/cancellation and
+    existing real STEP/browser fixtures support bounded retention, not proof of safety or complete native advisory
+    coverage. No code change or advisory waiver. Prefer disabling affected preview with the original desktop-CAD
+    download route if a future security fix cannot be qualified. This age-only fingerprint binds package versions
+    and all recorded component file hashes; a changed runtime must be reviewed again.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/AutodeskAILab/JoinABLe
+  fp: 2b3dd90bfb3d6816
+  reason: >-
+    Checked 2026-11-07: last push 2022-04-22; visible maintenance warning in
+    docs/research/agent-workflow/design-workflows.md. Historical CVPR 2022 joint research; MIT
+    code/noncommercial data distinction remains; no runtime adoption. Retain this exact age warning with that
+    disposition; maintenance beyond the recorded activity is unverified. This does not accept a new advisory,
+    archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/ElmerCSC/elmerfem-docker
+  fp: 90f30849d807734a
+  reason: >-
+    Checked 2026-11-07: last push 2021-03-09; visible maintenance warning in docs/research/simulation-tools.md.
+    Inactive 2021 Docker helper is explicitly declined as a current installation route, separately from
+    maintained Elmer. Retain this exact age warning with that disposition; maintenance beyond the recorded
+    activity is unverified. This does not accept a new advisory, archive/owner/licence change or any future
+    adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/Gary-code/CADReview
+  fp: 317ebec9ceb7bc11
+  reason: >-
+    Checked 2026-11-07: last push 2025-08-08; visible maintenance warning in
+    docs/research/agent-workflow/design-workflows.md. No-licence research citation, ideas only; no code
+    adoption. Retain this exact age warning with that disposition; maintenance beyond the recorded activity is
+    unverified. This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/Kamel773/CAD_Code_Generation
+  fp: ceddbe5d271799d5
+  reason: >-
+    Checked 2026-11-07: last push 2025-02-28; visible maintenance warning in docs/research/landscape.json.
+    Historical ICLR 2025 benchmark; no licence, ideas only; no code/data adoption. Retain this exact age warning
+    with that disposition; maintenance beyond the recorded activity is unverified. This does not accept a new
+    advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/Mechanical-Python/SnapFit_Calculator
+  fp: 289acd50063aa457
+  reason: >-
+    Checked 2026-11-07: last push 2022-03-16; visible maintenance warning in
+    docs/research/compliant-mechanisms.md. Existing Skip decision retained: stale project and packaged binaries.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/SadilKhan/Text2CAD
+  fp: 196726bf37b8d97d
+  reason: >-
+    Checked 2026-11-07: last push 2025-05-15; visible maintenance warning in docs/research/landscape.json and
+    docs/research/agent-workflow/landscape.md. Historical research benchmark; CC-BY-NC-SA-4.0 restriction
+    retained, no runtime/commercial adoption. Distinct from the MIT earthtojake/text-to-cad vendor. Retain this
+    exact age warning with that disposition; maintenance beyond the recorded activity is unverified. This does
+    not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/anniedoris/CAD-Coder
+  fp: 428fc40b69f0735b
+  reason: >-
+    Checked 2026-11-07: last push 2025-07-17; visible maintenance warning in
+    docs/research/agent-workflow/design-workflows.md. Historical paper/prior art, not a runtime dependency.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/artofscience/flexures
+  fp: 555dbcedcee7135a
+  reason: >-
+    Checked 2026-11-07: last push 2023-11-06; visible maintenance warning in
+    docs/research/compliant-mechanisms.md. GPL reference material only, without incorporation. Retain this exact
+    age warning with that disposition; maintenance beyond the recorded activity is unverified. This does not
+    accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/buxtronix/living-hinge
+  fp: 493577645e42df9c
+  reason: >-
+    Checked 2026-11-07: last push 2024-05-31; visible maintenance warning in
+    docs/research/compliant-mechanisms.md. Historical GPL option; the CC0 alternative remains preferred. Retain
+    this exact age warning with that disposition; maintenance beyond the recorded activity is unverified. This
+    does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/calculix/beso
+  fp: 30785c80f5bc244e
+  reason: >-
+    Checked 2026-11-07: last push 2025-04-03; visible maintenance warning in docs/research/simulation-tools.md.
+    Surveyed LGPL external CalculiX/FreeCAD alternative, not the chosen topology engine. Retain this exact age
+    warning with that disposition; maintenance beyond the recorded activity is unverified. This does not accept
+    a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/dimitrismallis/CAD-Assistant
+  fp: 8d460432d3f14bf8
+  reason: >-
+    Checked 2026-11-07: last push 2025-10-30; visible maintenance warning in
+    docs/research/agent-workflow/design-workflows.md. Custom-licence prior art, ideas only; not a dependency
+    choice. Retain this exact age warning with that disposition; maintenance beyond the recorded activity is
+    unverified. This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/dl4to/dl4to
+  fp: 88c304400adb65ce
+  reason: >-
+    Checked 2026-11-07: last push 2024-11-19; visible maintenance warning in docs/research/simulation-tools.md.
+    Historical stale solver alternative; old installation syntax is descriptive, not a current recommendation.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/frasere/ISO-281
+  fp: a1bf9ca7df29be82
+  reason: >-
+    Checked 2026-11-07: last push 2020-12-09; visible maintenance warning in docs/mechanical/bearings.md.
+    Existing unmaintained calculator warning retained; manufacturer ratings and standards remain the basis.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/kovacsv/occt-import-js
+  fp: f54b684d7011e10a
+  reason: >-
+    Checked 2026-11-07: last push 2024-12-03; visible maintenance warning in
+    software/vendor/THIRD_PARTY_NOTICES.md. Visible age of the actual retained 0.0.23 runtime, whose separate
+    webkit finding binds package/version/file hashes and records fallback/qualification limits. No advisory,
+    licence or integrity failure is accepted here. Retain this exact age warning with that disposition;
+    maintenance beyond the recorded activity is unverified. This does not accept a new advisory,
+    archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/lamaalrajih/kicad-mcp
+  fp: cd663c4c619b1029
+  reason: >-
+    Checked 2026-11-07: last push 2025-10-17; visible maintenance warning in
+    software/vendor/upstreams/registry.yaml, docs/research/landscape.json and
+    docs/research/agent-workflow/landscape.md. Inactive KiCad 9 candidate explicitly rejected for this pass;
+    existing KiCad 10 vendors remain the chosen integration. Keep the historical MIT entry; future adoption
+    needs fresh review. Retain this exact age warning with that disposition; maintenance beyond the recorded
+    activity is unverified. This does not accept a new advisory, archive/owner/licence change or any future
+    adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/missionlab/fenitop
+  fp: 2eb000006eec4e1c
+  reason: >-
+    Checked 2026-11-07: last push 2024-11-01; visible maintenance warning in docs/research/simulation-tools.md.
+    Already-stale GPL external alternative and its old DolfinX constraint retained, not adopted. Retain this
+    exact age warning with that disposition; maintenance beyond the recorded activity is unverified. This does
+    not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/nohkumado/openscad_snapfit
+  fp: 36442bf26b3e1a20
+  reason: >-
+    Checked 2026-11-07: last push 2021-11-01; visible maintenance warning in
+    docs/research/compliant-mechanisms.md. Existing Skip decision for this GPL geometry alternative retained.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/secnot/rectpack
+  fp: 5e7a9627b6af498c
+  reason: >-
+    Checked 2026-11-07: last push 2021-11-24; visible maintenance warning in docs/toolkit.md. Method comparison
+    only; own integer-micrometre MaxRects implementation and tests remain, without adding this old dependency.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/sgsellan/swept-volumes
+  fp: a4f7282e5567da9a
+  reason: >-
+    Checked 2026-11-07: last push 2024-07-18; visible maintenance warning in
+    docs/research/agent-workflow/design-workflows.md. Historical method citation; patent notice and maintained
+    gpytoolbox successor remain visible. Retain this exact age warning with that disposition; maintenance beyond
+    the recorded activity is unverified. This does not accept a new advisory, archive/owner/licence change or
+    any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/skyneticist/flexure-hinge-calculator
+  fp: 6d02d78c7b95392f
+  reason: >-
+    Checked 2026-11-07: last push 2025-06-08; visible maintenance warning in
+    docs/research/compliant-mechanisms.md. Existing Skip decision for the small calculator retained. Retain this
+    exact age warning with that disposition; maintenance beyond the recorded activity is unverified. This does
+    not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/slehmann1/Fastenating
+  fp: 69a8dc838243acff
+  reason: >-
+    Checked 2026-11-07: last push 2022-11-27; visible maintenance warning in
+    docs/research/references/guides-inserts.yaml. Historical read reference with zero used_for paths and no
+    calculator adoption. The generated experts page is regenerated from that source metadata. Retain this exact
+    age warning with that disposition; maintenance beyond the recorded activity is unverified. This does not
+    accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/tamasmeszaros/libnest2d
+  fp: 2ed45022234c60c5
+  reason: >-
+    Checked 2026-11-07: last push 2024-05-03; visible maintenance warning in docs/toolkit.md. Historical library
+    provenance retained; PrusaSlicer bundles its own copy, and cad-agent does not adopt this old C++ library.
+    Retain this exact age warning with that disposition; maintenance beyond the recorded activity is unverified.
+    This does not accept a new advisory, archive/owner/licence change or any future adoption.
+  accepted: 2026-11-07
+
+- check: repo-stale
+  subject: url:https://github.com/ulrich1a/sheet_ufo
+  fp: 2c9a8d410ad6449e
+  reason: >-
+    Checked 2026-11-07: last push 2018-09-22; visible maintenance warning in
+    docs/research/manufacturing/sheet-metal.md. Existing Skip decision retained for the 2018 predecessor folded
+    into SheetMetal. Retain this exact age warning with that disposition; maintenance beyond the recorded
+    activity is unverified. This does not accept a new advisory, archive/owner/licence change or any future
+    adoption.
+  accepted: 2026-11-07
+
+- check: repo-archived
+  subject: url:https://github.com/mixelpixx/Konnect
+  fp: ee6c94affc61faed
+  reason: >-
+    GitHub readback on 2026-11-07 shows archived again, last push 2026-11-02. The registry, catalogue notes and
+    landscape page now preserve both this observation and the earlier unarchived observation as dated history.
+    This entry remains rejected; AGPL-3.0 is external-program-only, with no new code adoption. Existing KiCad
+    vendors remain in use. Accept only the visible archive warning, not a new advisory, licence/owner change
+    or a claim that the commercial continuation was re-verified.
+  accepted: 2026-11-07
+
+- check: catalogue-stale
+  subject: url:https://github.com/lamaalrajih/kicad-mcp
+  fp: 481bfd1ee0897075
+  reason: >-
+    Offline counterpart of the exact online age finding: the recorded 2025-10-17 activity was checked online
+    on 2026-11-07. This inactive KiCad 9 candidate is now explicitly rejected for this pass in the registry,
+    catalogue and landscape, retaining the MIT/history entry. Existing KiCad 10 vendors remain chosen.
+    Maintenance beyond that activity is unverified; future adoption needs a fresh review. This accepts only
+    the visible stale-record warning, not a new advisory, owner/licence change or a claim of current support.
+  accepted: 2026-11-07

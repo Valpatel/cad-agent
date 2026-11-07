@@ -850,7 +850,7 @@ sources:
   - Jeremy S. Cook
   org: Embedded Computing
   year: 2020
-  url: https://www.embedded-computing.com/home-page/3d-printed-fasteners-part-1-inserts
+  url: https://embeddedcomputing.com/home-page/3d-printed-fasteners-part-1-inserts
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -879,7 +879,8 @@ sources:
     level: medium
     estimate: 0.7
     sources: 2
-  verified: '2026-11-04: opened the article (2020-08-28; the link now redirects); read it whole. Its strength numbers retell
+  verified: '2026-11-07: canonical publisher redirect verified; the new URL returned HTTP 403, so current content was not
+    re-read. Historical 2026-11-04 reading remains: opened the article (2020-08-28); read it whole. Its strength numbers retell
     CNC Kitchen''s 2020 test.'
   claims:
   - text: M3 pull-out about 120 kg for a direct screw, a heat-set insert and a Helicoil alike; the heat-set insert best in

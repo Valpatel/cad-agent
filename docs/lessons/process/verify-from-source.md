@@ -189,8 +189,10 @@ flowchart TD
 </details>
 
 ### Follow the credential store selected by the actual CLI
-- **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx wrangler whoami` so its
-  normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path
+- **Rule:** Before calling Cloudflare authentication blocked, inspect and reuse the existing user's pinned CLI so
+  its normal refresh can run. For the inspected 4.86.0 cache, use `npx --offline --no-install wrangler@4.86.0 whoami`.
+  A missing CLI/cache is a resolution failure, not evidence that authentication failed; inspect the existing runtime
+  rather than install another package to diagnose credentials. If a subsequent read-only API probe disagrees, inspect that CLI's credential-path
   selection before requesting a new login. Never print tokens or change accounts to make a probe pass.
 - **Evidence, 2026-11-06 UTC:** `npx --yes wrangler@4.86.0 whoami` succeeded. A helper that guessed the XDG
   credential location then received HTTP 401. Reading Wrangler 4.86.0's `getGlobalWranglerConfigPath()` showed it
@@ -288,6 +290,9 @@ flowchart TD
 - **Rule:** A nonzero rectangle does not by itself prove that content paints. Check the element's display and
   ancestor visibility, preserve visible text and image bounds, and exercise both a hidden-geometry control and
   a genuinely escaped visible element. Keep the failed rectangles and screenshot rather than only a message.
+- **After a viewport change:** retain pre-paint geometry and CSS/query state, capture the requested viewport's
+  paint, then assert its strict geometry. Exercise the same capture step with genuinely broken controls; do not
+  wait or retry until their bounds fit. A later fitting screenshot does not retrospectively clear an earlier failure.
 - **Evidence and limits:** The actual 320-pixel WebKit header failures lacked those captures. Local successful
   resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
   the visibility boundary; [the incident](../../../.agents/inbox/publish/2026-11-07-header-visibility-needs-paint-state.md)

@@ -9,6 +9,28 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.26.1 (2026-11-07)
+
+**Fixed**
+- Existing linkage and insert checks now resolve their six missing source records to named original proceedings
+  and manufacturer documents. The citation warning allowance falls from six records to zero, while a planted
+  unverified-source control retains warning and citation-label coverage. Each source records its actual read
+  scope; the PEM catalog retains its cached-text and unavailable-download limits (#118).
+- Align the vision and taxonomy commentary with the existing area catalogue views and small JSON indexes,
+  rather than promising a duplicate hub tree. Record an actual snap-fit discovery path and require every
+  tool's guide to remain directly advertised in `llms.txt`; confidence and evaluation work stay separate (#141).
+- Preserve operational lessons from actual release integration: enumerate current check instances and prove
+  inherited renderer bytes unchanged instead of normalizing them during an unrelated merge.
+- Keep the discovery diagram within the narrow desktop column. Defer navigation fold resizing to the next
+  frame so WebKit reads the current responsive style and closes a fold opened for the wider window.
+- Installation entrances now lead to a single immutable, SHA-256-checked procedure for macOS/Linux and Windows;
+  failed downloads or mismatched bytes stop before execution. The quickstart evaluator uses that real procedure (#322).
+- Repair canonical reference links while preserving cited editions and earlier reading evidence. Old research options
+  stay visible with dated retention/decline decisions; licence exceptions and shipped-parser age decisions bind to
+  the actual archived inputs rather than every future package with the same name (#322).
+- Keep the supply-chain report's explicit npm/pip version-update policy consistent with the repository's reviewed
+  maintenance decision, while retaining the limits of weekly auditing and unverified dependency discovery (#322).
+
 ## v0.26.0 (2026-11-07)
 
 **New**

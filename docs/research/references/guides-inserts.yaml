@@ -710,8 +710,10 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  verified: '2026-11-04: opened the repository; read the README: a tension-only bolted joint calculator (separation, yield
-    and fatigue factors of safety, joint diagrams) with Cornwell''s stiffness fits. Licence file not read.'
+  verified: '2026-11-07: last upstream push 2022-11-27, maintenance unverified; retained as a historical reference, with no
+    used_for paths and no calculator adoption. Historical reading on 2026-11-04: opened the repository; read the README: a
+    tension-only bolted joint calculator (separation, yield and fatigue factors of safety, joint diagrams) with Cornwell''s
+    stiffness fits. Licence file not read.'
   summary: 'An MIT-licensed tension-only bolted joint calculator: separation, yield and fatigue factors of safety and joint
     diagrams, with Cornwell''s stiffness fits.'
   used_for: []

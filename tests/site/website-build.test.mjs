@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { createHash } from 'node:crypto';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
 import { createPublication, selectPages } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
@@ -98,7 +99,7 @@ test('code samples keep their text, and every code block has a copy button', asy
   assert.ok(files.includes('kit/copy.js'));
 });
 
-test('home and agent indexes give the install commands; the mini README links to the complete guide (#278, #282)', async () => {
+test('home, README and agent indexes reach the canonical checked installers (#278, #282, #322)', async () => {
   const [paste, ...rest] = git('show', 'HEAD:docs/agent-prompt.txt').replace(/\n$/, '').split('\n');
   const guide = rest.join('\n').trim();
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
@@ -106,8 +107,9 @@ test('home and agent indexes give the install commands; the mini README links to
   assert.ok(card, 'the home page has the install card');
   const unesc = t => t.replace(/<\/?b>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
   const boxes = [...card.matchAll(/<pre class="(install-box|agent-box)"[^>]*>([\s\S]*?)<\/pre>/g)].map(m => [m[1], unesc(m[2])]);
-  const cmds = ['curl -fsSL https://cad-agent.valpatel.com/install.sh | sh', 'irm https://cad-agent.valpatel.com/install.ps1 | iex'];
-  assert.deepEqual(boxes, [['install-box', cmds[0]], ['install-box', cmds[1]], ['agent-box', paste]], 'a command per platform, then the paste-in line');
+  assert.deepEqual(boxes, [['agent-box', paste]], 'keep the short agent prompt; do not duplicate unchecked script commands');
+  assert.deepEqual([...card.matchAll(/class="install-guide" href="([^"]+)"/g)].map(m => m[1]),
+    ['/docs/agent-workflow#install-unix', '/docs/agent-workflow#install-windows'], 'a canonical checked route per platform');
   assert.equal(paste.split(' ').length, 8, 'the paste-in line is eight words');
   assert.ok(index.indexOf('id="use-it"') < index.indexOf('id="outputs"'), 'the card comes before the first band');
   assert.match(index, /href="#use-it"/, 'the hero links to it');
@@ -128,19 +130,27 @@ test('home and agent indexes give the install commands; the mini README links to
   const installPage = resolve('/docs/agent-workflow');
   assert.ok(installPage, 'the linked installation page is actually published');
   const installGuide = await readFile(path.join(out, installPage), 'utf8');
+  const hashes = ['install.sh', 'install.ps1'].map(f => createHash('sha256').update(git('show', `HEAD:tools/site/assets/${f}`)).digest('hex'));
   const checkReaderRoute = (entrance, detail) => {
     assert.match(entrance, /id="how-to-join-in"/, 'the root has a human invitation');
-    assert.ok(entrance.includes(cmds[0]), 'one getting-started command stays on the root');
+    assert.match(entrance, /pinned installer/, 'the root names the checked getting-started route');
     assert.match(entrance, /href="\/docs\/agent-workflow#install"/, 'installation detail is one click away');
     assert.match(entrance, /href="\/docs\/agent-workflow#ask-your-assistant"/, 'the canonical prompt is one click away');
     assert.match(detail, /id="install"/, 'the installation anchor exists in the emitted guide');
     assert.match(detail, /id="ask-your-assistant"/, 'the assistant anchor exists in the emitted guide');
-    assert.ok(cmds.every(c => detail.includes(c)), 'the linked guide keeps both public install commands');
+    for (const id of ['install-unix', 'install-windows']) assert.ok(detail.includes(`id="${id}"`), 'both platform routes exist');
+    assert.ok(hashes.every(h => detail.includes(h)), 'the linked guide checks the actual installer bytes');
+    for (const guard of ['Installer checksum mismatch', 'Get-FileHash', 'sha256sum', 'shasum -a 256']) {
+      assert.ok(detail.includes(guard), `the linked guide retains ${guard}`);
+    }
+    assert.doesNotMatch(entrance + detail, /(?:curl|irm)[^\n]*\|\s*(?:sh|iex)\b/, 'no unchecked pipe shortcut');
     assert.ok(detail.includes(paste), 'the linked guide keeps the canonical paste-in line');
   };
   checkReaderRoute(readme, installGuide);
   assert.throws(() => checkReaderRoute(readme, installGuide.replaceAll(paste, 'CONTROL: prompt missing')),
     /linked guide keeps the canonical paste-in line/, 'a link alone must not hide missing installation content');
+  assert.throws(() => checkReaderRoute(readme, installGuide.replaceAll(hashes[0], 'CONTROL: hash missing')),
+    /checks the actual installer bytes/, 'a guide link alone must not hide a missing checksum');
   for (const f of ['llms.txt', 'index.md']) {
     const text = await readFile(path.join(out, f), 'utf8');
     assert.ok(text.includes('```text\n' + paste + '\n```') && text.includes('```text\n' + guide + '\n```'), `${f} carries the line and how to install and work`);

@@ -268,3 +268,12 @@ flowchart TD
   reference checks retain their existing behavior. It establishes no physical CAD qualification.
 
 </details>
+
+### Check motion in the actual embedding mode
+- **Rule:** Test the rendered image a reader receives. A parent page's `matchMedia` value and a standalone SVG's
+  zero-animation count do not prove that an external `<img>` receives the same preference. Compare actual image
+  frames under the browser preference and require a deliberately animated negative control to fail the still check.
+- **Evidence:** During the cinematic header review on 2026-11-07, Chromium 151 page/context emulation stopped the
+  standalone SVG but left the image moving. The browser-level preference stopped the same image bytes. The existing
+  [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
+  the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/2026-11-07-image-motion-needs-the-image-consumer.md).

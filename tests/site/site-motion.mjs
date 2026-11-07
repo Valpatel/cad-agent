@@ -65,3 +65,54 @@ export async function reducedHeroProblems(browser, base) {
   } finally { await page.close(); }
   return problems;
 }
+
+/** Image mode is a different consumer: compare pixels of the actual compiled README's header over time.
+ * Chromium's page media override does not reach SVG <img> documents (observed in Chrome 151); use its browser
+ * preference flag for this isolated browser. Keep the normal-motion control and deliberately broken still. */
+export async function repositoryHeroProblems(browser, engine, launchOptions, base) {
+  const problems = [];
+  const selector = 'img[src="/docs/img/hero/repository-map.svg"]';
+  const open = async (host, reducedMotion) => {
+    const page = await host.newPage({ viewport: { width: 390, height: 800 }, reducedMotion });
+    try {
+      const response = await page.goto(base + '/README', { waitUntil: 'networkidle' });
+      if (response?.status() !== 200) throw new Error(`README returned ${response?.status()}`);
+      await page.locator(selector).evaluate(img => img.decode());
+      return page;
+    } catch (error) { await page.close(); throw error; }
+  };
+  const changes = async image => {
+    const before = await image.screenshot();
+    await new Promise(resolve => setTimeout(resolve, 1250));
+    return !before.equals(await image.screenshot());
+  };
+  const normal = await open(browser, 'no-preference');
+  try {
+    if (!(await changes(normal.locator(selector)))) problems.push('README image does not animate with motion enabled');
+  } finally { await normal.close(); }
+  const stillBrowser = await engine.launch({ ...launchOptions,
+    ...(engine.name() === 'chromium' ? { args: [...(launchOptions.args || []), '--force-prefers-reduced-motion'] } : {}) });
+  try {
+    const page = await open(stillBrowser, 'reduce');
+    try {
+      if (!(await page.evaluate(() => matchMedia('(prefers-reduced-motion:reduce)').matches)))
+        problems.push('README did not receive reduced-motion preference');
+      if (await changes(page.locator(selector))) problems.push('README image still animates with reduced motion');
+      // A static blank, a cached screenshot or an animation-disabled screenshot API must not pass this check.
+      const source = base + '/docs/img/hero/repository-map.svg?broken-motion-control';
+      await page.route(source, async route => {
+        const response = await route.fetch();
+        const body = (await response.text()).replace('</svg>',
+          '<style>:root{animation:broken-motion 8s linear infinite!important}' +
+          '@keyframes broken-motion{from{opacity:.1}to{opacity:1}}</style></svg>');
+        await route.fulfill({ response, body });
+      });
+      const image = page.locator(selector);
+      await image.evaluate((img, source) => { img.src = source; }, source);
+      const control = page.locator('img[src$="?broken-motion-control"]');
+      await control.evaluate(img => img.decode());
+      if (!(await changes(control))) problems.push('broken reduced-motion image control was accepted as a still');
+    } finally { await page.close(); }
+  } finally { await stillBrowser.close(); }
+  return problems;
+}

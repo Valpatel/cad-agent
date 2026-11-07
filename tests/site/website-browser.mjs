@@ -13,7 +13,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
-import { reducedHeroProblems } from './site-motion.mjs';
+import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -25,7 +25,8 @@ const base = await new Promise((ok, fail) => {
   server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
 });
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
-const browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
+const launchOptions = engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true };
+const browser = await engine.launch(launchOptions);
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
@@ -74,6 +75,7 @@ try {
   // Each part opens its own pages and returns what it found. LANES of them run at once (inLanes, below), and their
   // problems are listed in this order whatever finishes first.
   const parts = [
+    ['README image motion', () => repositoryHeroProblems(browser, engine, launchOptions, base)],
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)

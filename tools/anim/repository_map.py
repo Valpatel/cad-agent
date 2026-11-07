@@ -204,6 +204,11 @@ def build():
     rect(1044, 316, 32, 4, "#66ced6")
     rect(1076, 316, 8, 4, "#c6ffed")
     end()
+    group("translate(1014 294)")
+    group(cls="impact")
+    path("M-4-16h8v10h8v-6h6v8H8v8h10v6H8v8H0V8h-12V2h8v-8h-8v-6h8Z", "#b5f4de")
+    end()
+    end()
     # A cutaway factory: lit amber inside, indigo load-bearing frame outside.
     path("M76 382V218h72v-40h72v-24h492v24h80v28h152v176Z", "#0b192b")
     path("M224 182h476v24h80v28h140v136H100V238h72v-40h52Z", "#302e3a")
@@ -324,9 +329,9 @@ def build():
     end()
     # Three generations share the screen even in the static, reduced-motion frame.
     robot(722, 348, .72, "#e3b77a", "#9c7364", "successor")
-    group("translate(826 350)")
+    group("translate(816 350)")
     group(cls="hatchling")
-    robot(0, 0, .39, "#8ddbd0", "#418ca1")
+    robot(0, 0, .48, "#8ddbd0", "#418ca1")
     end()
     end()
     # Welding particles follow actual tool locations; small luminous marks, no full-frame flashes.
@@ -351,6 +356,7 @@ def build():
         rect(x, 404, 32, 4, "#a77354")
         rect(x+4, 404, 24, 4, "#f8c57c")
     # Film-frame typography stays out of the action; the README supplies navigation.
+    rect(28, 12, 554, 48, "#0b1026")
     lettering("BUILD THE BUILDERS", 36, 24, 5, "#060d20")
     lettering("BUILD THE BUILDERS", 36, 20, 5, "#f5dbac")
     rect(36, 70, 44, 3, "#75daca")
@@ -381,6 +387,7 @@ rect,path{shape-rendering:crispEdges}
 .shield{opacity:.4;animation:shield 6s ease-in-out infinite}
 .red-shot{animation:red-shot 6s linear infinite}
 .blue-shot{animation:blue-shot 6s linear infinite}
+.impact{opacity:.5;animation:impact 6s ease-out infinite}
 @keyframes stars{0%,100%{transform:translateX(0)}50%{transform:translateX(-12px)}}
 @keyframes horizon{0%,100%{transform:translateX(0)}50%{transform:translateX(-8px)}}
 @keyframes orbit{0%,100%{transform:translate(0,0)}50%{transform:translate(-28px,12px)}}
@@ -400,6 +407,7 @@ rect,path{shape-rendering:crispEdges}
 @keyframes shield{0%,30%,80%,100%{opacity:.15}50%,65%{opacity:.65}}
 @keyframes red-shot{0%,18%,60%,100%{opacity:0;transform:translateX(0)}20%{opacity:1;transform:translateX(0)}50%{opacity:1;transform:translateX(-52px)}}
 @keyframes blue-shot{0%,55%,96%,100%{opacity:0;transform:translateX(0)}58%{opacity:1;transform:translateX(0)}88%{opacity:1;transform:translateX(58px)}}
+@keyframes impact{0%,48%,74%,100%{opacity:0;transform:scale(.4)}54%{opacity:.9;transform:scale(.7)}70%{opacity:0;transform:scale(1.2)}}
 ''' + svg.REDUCED_MOTION
     return svg.document(640, 240, "Build the builders — a robot-factory cinematic",
                         "Original conceptual pixel art. A large robot studies a blueprint and assembles a smaller builder; its successor makes another robot, and a signal carries lessons back. Satellites orbit a ringed world above a distant, fictional robot battle. A 24-second repeating scene; reduced motion shows all three generations at once. This is a story about self-improvement, not a hardware design or a claim of autonomous physical qualification.", css, body, background=False)

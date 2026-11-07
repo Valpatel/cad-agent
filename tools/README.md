@@ -41,3 +41,21 @@ The homepage Gyropup model is regenerated from its current CAD collector, not ol
 on the compute fleet using the product's recorded CAD runtime. Review the recorded inputs, included/omitted members
 and source/output hashes, then run `node tools/site/figures/site-model-poster.mjs` for the matching poster and project
 card. Model updates leave historical FEA pictures and their evidence untouched.
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [cfd_fan_figure.py](cfd_fan_figure.py) | Draw recorded fan/CFD study data. |
+| [explore_charts.py](explore_charts.py) | Draw exploration comparison charts. |
+| [fea_layer_figure.py](fea_layer_figure.py) | Draw layered-material study evidence. |
+| [fea_mesh_figure.py](fea_mesh_figure.py) | Draw mesh-convergence study evidence. |
+| [formula_vectors.py](formula_vectors.py) | Generate shared formula parity fixtures. |
+| [gate_timing.py](gate_timing.py) | Measure existing gate execution timings. |
+| [gyropup_showcase.py](gyropup_showcase.py) | Collect pinned product showcase artifacts. |
+| [insert_coupons.py](insert_coupons.py) | Generate insert fit coupon artifacts. |
+| [plates_figure.py](plates_figure.py) | Draw plate model evidence. |
+| [references_health_apply.py](references_health_apply.py) | Apply reviewed source-health metadata updates. |
+| [research_figures.py](research_figures.py) | Draw source-bound research survey figures. |
+| [security_scan.py](security_scan.py) | Repository security scanning entry point. |
+| [volume_probe.py](volume_probe.py) | Record geometric volume precision evidence. |

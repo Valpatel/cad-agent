@@ -36,3 +36,25 @@ Every part in this example is **illustrative**: made-up but plausible numbers fo
 prices of real products, so every item is marked `"confidence": "estimate"` and the price-age check is turned off.
 The evaluator's formulas are rules of thumb, not a robot model. A real project lists real parts with their datasheets
 and shops in `sources` and `buy`, the date each price was checked, and its own evaluator.
+
+[Examples](../README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [.gitignore](.gitignore) | Exclude local generated results. |
+| [catalogue/](catalogue/README.md) | Illustrative part data and confidence. |
+| [designs/](designs/README.md) | Candidate variations. |
+| [tools/](tools/README.md) | Project-owned textbook evaluator. |
+| [compare.png](compare.png) | Recorded comparison picture. |
+
+
+
+```mermaid
+flowchart TD
+    C["catalogue/"] --> D["designs/"]
+    D --> E["tools/evaluate.py"]
+    E --> R["compare.png"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+```

@@ -197,3 +197,23 @@ such as a new command or check, even one that asks nothing of projects.
    </details>
 
 4. Move the projects' pins (`requirements*.txt`) to the tag, each in its own PR.
+
+## GitHub policy map
+
+These files keep their GitHub discovery names. This guide owns their map rather than installing another front page.
+
+| File or folder | Purpose |
+|---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Canonical contribution, integration and release procedure. |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting policy. |
+| [dependabot.yml](dependabot.yml) | Deliberate GitHub-Actions-only version update campaign. |
+| [pull_request_template.md](pull_request_template.md) | Review and evidence checklist. |
+| [ISSUE_TEMPLATE/](ISSUE_TEMPLATE/) · [feedback.yml](ISSUE_TEMPLATE/feedback.yml) | Structured feedback intake. |
+| [workflows/](workflows/) | Existing required checks and publication automation. |
+| [ci.yml](workflows/ci.yml) | Python, supply-chain, provenance and installer checks. |
+| [gates.yml](workflows/gates.yml) | Live branch-flow, independent review and release guards. |
+| [release.yml](workflows/release.yml) | Normal main tag and release publication. |
+| [supply-chain.yml](workflows/supply-chain.yml) | Weekly online resource/dependency audit. |
+| [webkit.yml](workflows/webkit.yml) | Full browser, site and web-kit consumers. |
+
+[Repository](../README.md) · [Generated ownership map](../docs/map.md)

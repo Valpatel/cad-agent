@@ -90,3 +90,7 @@ geometry-side companion of `gcode.py` ([toolkit: overhangs and bridges](../../..
 Related: [package map](../README.md) · [publish](../publish/README.md) (the print release) ·
 [toolkit: print files](../../../docs/toolkit.md#print-files) ·
 [toolkit: build plates](../../../docs/toolkit.md#build-plates-cadagentmanufacturingplates)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

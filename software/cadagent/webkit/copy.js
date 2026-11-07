@@ -161,7 +161,13 @@ export class CadCopy extends HTMLElement {
       // Only the strip depends on overflow; the right-hand room never does, so this settles in one pass.
       this.toggleAttribute('data-wide', pre.scrollWidth > pre.clientWidth + 1);
     };
-    const watch = new ResizeObserver(() => fit());           // not fit(entries): that would read as fresh
+    // fit() can change the observed boxes (padding or the widest button label). Do that on the next frame,
+    // not during ResizeObserver delivery, where the browser would have to defer another notification as a loop.
+    // Coalesce pre/button notifications; fit's connected check also covers removal before the frame runs.
+    let pendingFit = 0;
+    const watch = new ResizeObserver(() => {
+      if (!pendingFit) pendingFit = requestAnimationFrame(() => { pendingFit = 0; fit(); });
+    });
     watch.observe(pre);
     watch.observe(button);                                     // a stylesheet that arrives later can resize it
     measure();

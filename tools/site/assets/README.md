@@ -12,3 +12,19 @@ flowchart TD
 ```
 
 [Site tooling](../README.md) · [Tests](../../../tests/site/README.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [catalog.css](catalog.css) | Catalogue layout and reading styles. |
+| [favicon.ico](favicon.ico) | Browser icon. |
+| [icon.svg](icon.svg) | Original project emblem. |
+| [install.ps1](install.ps1) | PowerShell installer snapshot source. |
+| [install.sh](install.sh) | POSIX installer snapshot source. |
+| [references.css](references.css) | Reference browsing styles. |
+| [references.js](references.js) | Reference search/filter interaction. |
+| [site.css](site.css) | Shared site layout and typography. |
+| [site.js](site.js) | Shared site navigation and interaction. |
+| [theme.js](theme.js) | Theme preference/bootstrap behavior. |
+| [models/](models/README.md) | Coherent homepage model/poster bundle. |

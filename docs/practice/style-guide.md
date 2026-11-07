@@ -117,3 +117,18 @@ flowchart TD
 ## Writing
 
 Plain, short sentences. Say what a thing does and what it assumes, not how good it is. Name sources and people.
+
+## Folder ownership checks
+
+Run `node tools/site/compiler/site-repo-map.mjs --check` in the existing Node22 site context; `--write` regenerates [the repository map](../map.md). The required Chromium job runs its actual structural fault controls and freshness check. Normal owned folders have a README/Mermaid/table, an up link and child-map links. Every direct file appears explicitly in a table, including package entry points. The root keeps its compact introduction.
+
+Installer role prompts are mapped from the agent-kit owner; installed skills own their bundled resource links. GitHub policy uses CONTRIBUTING. Named fixture sets, generated figure topics and pinned upstream components retain their layouts under explicit parent owners in `tools/site/compiler/repo-map.json`; a new set/topic/component still needs a parent row. Dated incidents require actual symptom-index links, and numbered changelog fragments retain the existing release-parser contract. These are consumer-based ownership rules, not historical inventory counts or wildcard exemptions for new source folders.
+
+The generated map distinguishes public owner pages from source-only code/tool/operational maps. Publication scope and existing routes remain unchanged; a canonical source map is not claimed to be a published guide. Local Markdown checks validate file/directory destinations; the existing site build checks public routes/anchors. Neither proves remote availability or the semantic quality of a diagram.
+
+<details>
+<summary>Immutable release records retain their original namespace</summary>
+
+Released CHANGELOG sections remain byte-preserved by the existing integration gate. Only their valid dated history region may resolve a relative public Markdown identity through the current publication contract to a present, selected source. Unreleased and current authored guidance still require physical-relative source destinations; unknown or missing aliases fail. This preserves evidence without pretending every historical link is a current GitHub source path.
+
+</details>

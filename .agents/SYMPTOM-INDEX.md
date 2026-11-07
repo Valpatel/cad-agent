@@ -9,6 +9,7 @@
 | A report privacy check rejects a public publisher URL containing /home/ | [Distinguish public routes from filesystem paths](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#a-public-url-route-is-not-a-local-home-directory) |
 | Safer install prose still leaves a mutable pipe in the homepage, agent prompt or evaluator | [Exercise the canonical checked installer through every entrance](inbox/2026-11-06-source-selection-must-not-pass-empty.md#verify-the-installer-at-every-actual-entrance) |
 | A package omits licence metadata although its locked archive has a licence, or a stale-runtime exception survives new bytes | [Bind archive evidence to context, version and bytes](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#missing-package-metadata-does-not-establish-a-missing-archive-licence) |
+| Copy/layout checks pass while resizing emits `ResizeObserver loop completed with undelivered notifications` | [Collect runtime errors on the actual interaction page](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md) |
 | A resized viewport has old responsive styles, or an automatic navigation fold remains open on a phone | [Read responsive styles after the resize event](inbox/publish/2026-11-07-responsive-style-can-lag-resize.md) |
 | A release guard assumes fixed check counts, rejects inherited bytes, hits ENOBUFS, or confuses visible link text with its target | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
@@ -50,3 +51,6 @@
 | A moved-source check selects no package files, or a child imports another editable checkout | [Nonempty source selection and import origin](inbox/2026-11-06-source-selection-must-not-pass-empty.md) |
 | A publication check accepts a changed catalogue ID or a wrong origin with the same path | [Complete public identities and preserved served namespaces](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-the-complete-publication-identity) |
 | A release preserves historical notes but its current introduction still links to a moved directory | [Check current navigation outside released history](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-current-navigation-outside-released-history) |
+
+- [Rendered motion needs an independent frame](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md): compare rendered transforms with independent joint intent.
+- [Folder inventories need NUL-safe names and explicit owners](inbox/2026-11-07-folder-inventories-need-explicit-owners.md): quoted paths, grouped maps and installer prompt namespaces; do not infer defect counts or add blanket README exceptions.

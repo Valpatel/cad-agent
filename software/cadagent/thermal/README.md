@@ -31,3 +31,7 @@ flowchart TD
 Related: [package map](../README.md) · [simulation](../simulation/README.md) ·
 [toolkit: heatsinks](../../../docs/toolkit.md#heatsinks-cadagentthermalheatsink) ·
 [Airflow and fans](../../../docs/fans.md)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

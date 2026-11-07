@@ -54,9 +54,17 @@ jobs:
           node tools/site/build-site.mjs --out "$RUNNER_TEMP/site" | tee "$RUNNER_TEMP/site.log"
           echo "CAD_AGENT_SITE=$RUNNER_TEMP/site" >> "$GITHUB_ENV"
           grep -q ', 0 drawn' "$RUNNER_TEMP/site.log" || echo "drew=true" >> "$GITHUB_OUTPUT"
-      # Saved only when this build drew something the cache lacked, and before the tests below add their own drawings.
+      # Ordinary source-only owner maps keep their source namespace; validate their actual diagrams without
+      # publishing new catalogue routes. Save these committed-source drawings before fixture tests add their own.
+      - name: Check folder map diagrams
+        id: maps
+        if: matrix.engine == 'chromium'
+        run: node --test --test-name-pattern='all owned folder diagrams' tests/site/website-repo-map.test.mjs
+        env:
+          CAD_AGENT_REPO_MAP_DIAGRAMS: '1'
+      # Saved only when the site or actual source maps drew something the cache lacked, before fixture drawings.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
-        if: steps.site.outputs.drew == 'true'
+        if: steps.site.outputs.drew == 'true' || steps.maps.outputs.drew == 'true'
         with:
           path: .cache/site-diagrams
           key: ${{ steps.diagrams.outputs.key }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.engine }}

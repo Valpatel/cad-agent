@@ -34,7 +34,8 @@ and must not automatically trigger a duplicate manufacturing job.
 
 Arrows follow the files. `slicer.py` imports `publish/report.py`'s `load_parts` to find the parts it slices, and
 `publish/report.py` and `publish/release.py` import `slicer.py` to read a current slice report; `slicer_prusa.py` runs
-PrusaSlicer for `slicer.py` when `cad.slicer.engine` is `prusa`. `mesh3mf.py` imports
+PrusaSlicer for `slicer.py` when `cad.slicer.engine` is `prusa`, and `prusa_view.py` uses its private profile folder
+to open a model in PrusaSlicer's window. `mesh3mf.py` imports
 nothing from cad-agent. `plates.py` uses `mesh3mf.py`'s 3MF parts, asks `slicer.py` for Bambu Studio's project
 settings, and reads the release's parts and quantities from `publish/release.py`. `prusa3mf.py` uses `mesh3mf.py`'s
 3MF parts and `plates.py`'s layout for PrusaSlicer projects. `process.py` loads the cited rules of
@@ -47,6 +48,7 @@ flowchart TD
     B["build script<br/>STL · parts file"] -->|"STL"| M3["mesh3mf.py<br/>3MF + read-back"]
     M3 -->|"3MF"| SL["slicer.py<br/>Bambu Studio CLI"]
     SL -->|"engine: prusa"| SP["slicer_prusa.py<br/>PrusaSlicer CLI"]
+    SP -->|"private datadir"| PV["prusa_view.py<br/>PrusaSlicer window"]
     B -->|"STL"| PL["plates.py<br/>build plates"]
     SL -->|"project settings"| PL
     PL -->|"layout"| P3["prusa3mf.py<br/>PrusaSlicer project"]
@@ -61,7 +63,7 @@ flowchart TD
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
     classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class M3,SL,SP,PL,P3,PR here
+    class M3,SL,SP,PV,PL,P3,PR here
     class B,R,REL,Y near
     class SR,PF,DF,CA out
 ```
@@ -78,6 +80,7 @@ flowchart TD
 | `dfm.py` | Minimum features (walls, holes, pins, gaps, bridges, overhangs, flanges, hole-to-bend) against every cited source, and which way a printed feature's stress crosses the layers |
 | `sheet_metal.py` | Bend allowance, deduction, flat length, K-factor, shortest flange and relief, from the shop's table first, then the generic rules; `feature_to_bend` (hole to bend on each rule's datum) and `check_bends` (flanges, relief, and a named shop's angle, box and channel limits) |
 | `plates.py` | Every printed part at its quantity packed onto build plates (MaxRects), in one Bambu Studio project 3MF with a read-back check and a top-down picture (`cad-agent export-3mf`) |
+| `prusa_view.py` | Opens a model in PrusaSlicer's window with a private profile folder and no start-up dialogs, screenshots it and stops only its own process (`cad-agent prusa-view`) |
 | `prusa3mf.py` | PrusaSlicer project 3MFs: objects of several volumes, each on its own tool, the wipe tower's place, and build plates one 3MF per plate, with a read-back check |
 
 `cad-agent overhangs` (in `cli.py`) screens the part STLs with `cadagent.geometry.overhang_regions`, the

@@ -2569,7 +2569,7 @@ def check_repo(rep, net, repo=None):
     status, data, err = net.graphql('{ repository(owner: "%s", name: "%s") { dependencyGraphManifests(first: 50) '
                                     '{ totalCount nodes { filename dependenciesCount } } } }' % (owner, name))
     graph = (((data or {}).get('data') or {}).get('repository') or {}).get('dependencyGraphManifests') if isinstance(data, dict) else None
-    if (status == 200 and not data.get('errors') and isinstance(graph, dict)
+    if (status == 200 and isinstance(data, dict) and not data.get('errors') and isinstance(graph, dict)
             and type(graph.get('totalCount')) is int and graph['totalCount'] >= 0):
         row['dependency_graph'] = sorted(f"{n['filename']} ({n['dependenciesCount']})" for n in graph.get('nodes') or [])
         if graph['totalCount'] == 0:

@@ -844,6 +844,21 @@ def test_repo_graph_evidence_does_not_infer_a_setting(tmp_path, status, graph, e
         assert "does not establish" in finding["evidence"]
 
 
+@pytest.mark.parametrize("body", [None, [], "unavailable"])
+def test_repo_graph_success_with_unreadable_body_is_unverified(tmp_path, body):
+    settings = {key: {"status": "enabled"} for key in
+                ("secret_scanning", "secret_scanning_push_protection", "dependabot_security_updates")}
+    net = RepoSettingsSnapshot(settings)
+    net.graphql = lambda query: (200, body, "")
+    rep = ra.Report(tmp_path, AS_OF, True)
+    ra.check_repo(rep, net, "o/r")
+    result = rep.to_json()
+    assert not result["findings"]
+    assert result["unverified"] == ["repo:o/r"]
+    row = next(x for x in result["inventory"]["repo"] if x["id"] == "repo:o/r")
+    assert row["dependency_graph"] == "not verified (200)"
+
+
 def test_a_private_repository_is_reported_as_gone_with_nothing_about_it(tmp_path):
     net = online_net(tmp_path, gh={"repos/gumyr/build123d": repo("gumyr/build123d", private=True, description="secret plans")})
     r = run(checkout(tmp_path), net)

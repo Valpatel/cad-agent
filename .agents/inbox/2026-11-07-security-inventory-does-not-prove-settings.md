@@ -47,3 +47,11 @@ tracks those separately; this source fix does not establish their completion.
 
 The regression suite checks reporting semantics, not GitHub's internal discovery or the completeness of advisory
 databases. No setting mutation, dependency submission or permission change is part of the audit implementation.
+
+## Independent review extended the failure boundary
+
+Review of PR430 reproduced an HTTP 200 with a JSON null body causing `AttributeError` before the new graph guard.
+The final guard now checks the response type before accessing it; added null, list and string response controls keep
+those outcomes unverified. The complete audit suite after this correction passed **112 tests**. Successful transport
+alone does not establish a usable response body. The review and fix remain on the PR rather than being treated as
+an unexplained retry of an external service.

@@ -449,7 +449,10 @@ def test_the_hero_is_the_first_thing_in_the_readme():
     spec.loader.exec_module(workshop)
     hero = readme.find(f'<img src="{workshop.OUT.relative_to(ROOT).as_posix()}"')
     assert 0 <= hero < readme.find("# cad-agent") < readme.find("## ")
-    assert not readme[:hero].strip("\n").replace('<div align="center">', "").strip()
+    picture = readme.find('<picture>')
+    assert 0 <= picture < hero < readme.find('</picture>') < readme.find("# cad-agent")
+    assert not readme[:picture].strip("\n").replace('<div align="center">', "").strip()
+    assert f'<source media="(prefers-reduced-motion: reduce)" srcset="{workshop.STILL_OUT.relative_to(ROOT).as_posix()}">' in readme[picture:hero]
     # GitHub only renders Markdown inside the centring div when blank lines surround it; without them the title
     # shows as a literal "# cad-agent" and the badges as raw links.
     assert "\n\n# cad-agent\n\n" in readme
@@ -461,7 +464,8 @@ def test_repository_route_figure_is_current_and_safe():
     spec = importlib.util.spec_from_file_location("repository_map", ROOT / "tools/anim/repository_map.py")
     tool = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tool)
-    text = tool.build()  # also checks that each declared destination exists
-    assert text == tool.OUT.read_text(), "run PYTHONPATH=software python3 tools/anim/repository_map.py"
-    assert svg.problems(text) == []
-    assert svg.REDUCED_MOTION in text
+    for still, output in ((False, tool.OUT), (True, tool.STILL_OUT)):
+        text = tool.build(still=still)  # also checks that each declared destination exists
+        assert text == output.read_text(), "run PYTHONPATH=software python3 tools/anim/repository_map.py"
+        assert svg.problems(text) == []
+        assert svg.REDUCED_MOTION in text

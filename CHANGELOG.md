@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.24.1 (2026-11-07)
+
+**Changed**
+- Manufacturing research records actual Bambu cloud login, fresh P1S/X1E telemetry and a decoded P1S frame, with a reusable investigation method, inspected agent skills and the unresolved X1E preparation failure (#405). This documents evidence; it does not add a printer-control command.
+- The manufacturing package map defines where future device integrations and job execution belong alongside existing process rules, artifact preparation and evidence, without adding empty packages or changing public imports (#405).
+- Maintainer guidance records how negated issue-closing keywords caused an unintended closure during release preparation, and how to reference incomplete broader work safely (#404).
+- The compact README opens with an original animated pixel-art robot factory: builders create new builders beneath an orbital network and a distant robot battle. The script-free SVG has a complete reduced-motion still, preserves the badges and stays separate from the recorded real-CAD illustration.
+
 ## v0.24.0 (2026-11-07)
 
 **New**

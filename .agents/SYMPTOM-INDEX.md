@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| An optional native solver blocks ARM installation, or update forgets an extra after adding platform markers | [Propagate platform requirements through the updater](inbox/2026-11-07-platform-markers-must-reach-update-consumers.md) |
 | A newly published site still shows an obsolete robot layout | [A source revision does not refresh a CAD export](inbox/publish/2026-11-07-source-revision-does-not-refresh-a-cad-export.md) |
 | A footer picture appears again near the page title, or a unique image locator finds two copies after compilation | [Page placement can duplicate footer art](inbox/publish/2026-11-07-page-placement-can-duplicate-footer-art.md), [consumer verification](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
 | A narrow-header failure has no retained bounds, or hidden SVG geometry is treated as painted content | [Separate visibility from geometry and retain the failed frame](inbox/publish/2026-11-07-header-visibility-needs-paint-state.md) |

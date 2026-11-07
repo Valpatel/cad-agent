@@ -15,6 +15,20 @@ from cadagent.simulation.fea import Material, Study, plane_at  # noqa: E402
 STEEL = Material('steel', 200000, 0.3, 250, 7.85)
 
 
+def test_direct_solve_without_pardiso_keeps_constraints_and_equilibrium(monkeypatch):
+    """The existing SciPy path is usable without the architecture-specific optional acceleration."""
+    import sys
+    from scipy.sparse import csr_matrix
+
+    monkeypatch.setitem(sys.modules, 'pypardiso', None)
+    K = csr_matrix([[3.0, -1.0], [-1.0, 2.0]])
+    force = np.array([0.0, 4.0])
+    study = Study.__new__(Study)  # no CAD or mesh is needed for this algebraic solver boundary
+    displacement = study._solve(K, force, np.array([0]), None)
+    assert displacement == pytest.approx([0.0, 2.0])
+    assert (K @ displacement - force)[1] == pytest.approx(0.0)
+
+
 def test_cantilever_tip_deflection_and_root_stress():
     L, b, h, F = 100.0, 10.0, 10.0, 100.0
     st = Study(cq.Workplane('XY').box(L, b, h).translate((L / 2, 0, 0)), STEEL, mesh_mm=4.0, name='beam')

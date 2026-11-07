@@ -2,6 +2,12 @@
 
 Build the website from committed sources; keep actual source paths separate from public page and asset addresses.
 
+Guides and skills form the editorial catalogue. The repository map opens the remaining owned folder READMEs as
+detail pages under `/repo/folders/`, with parent links and rendered diagrams; these do not add homepage chips,
+catalogue cards or entries to the full agent prompt. `version.json` reports editorial `pages` and `folder_maps`
+separately. The dependency-free selector shares the ownership policy with the repo-map check; CI still validates
+every authored map and exercises the actual rendered HTML and Markdown destinations.
+
 ```mermaid
 flowchart TD
     S["publication.mjs + source aliases"] --> B["build-site.mjs"]

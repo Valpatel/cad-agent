@@ -10,7 +10,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
-import { createPublication, selectPages } from '../../tools/site/publication.mjs';
+import { createPublication, selectPages, folderMapSources } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -237,8 +237,14 @@ test('Markdown twins and both agent indexes carry working links', async () => {
   assert.deepEqual(relative, [], 'llms-full.txt is one file: its links must be absolute');
   const broken = [];
   for (const f of [...files.filter(f => f.endsWith('.md')), 'llms.txt', 'llms-full.txt']) {
-    const md = (await readFile(path.join(out, f), 'utf8')).replace(/```[\s\S]*?```/g, '');
-    for (const [, url] of md.matchAll(/\]\(([^)\s#]+)(?:#[^)\s]*)?(?:\s+"[^"]*")?\)/g)) {
+    const md = (await readFile(path.join(out, f), 'utf8')).replace(/```[\s\S]*?```|`+[^`]*`+/g, '');
+    const urls = [...md.matchAll(/\]\(([^)\s#]+)(?:#[^)\s]*)?(?:\s+"[^"]*")?\)/g)].map(m => m[1]);
+    for (const [tag] of md.matchAll(/<[a-z][^>]*>/gi)) {
+      for (const [, url] of tag.matchAll(/\s(?:href|src)="([^"]+)"/gi)) urls.push(url.replace(/&amp;/g, '&'));
+      for (const [, srcset] of tag.matchAll(/\ssrcset="([^"]+)"/gi))
+        urls.push(...srcset.split(',').map(item => item.trim().split(/\s+/)[0]));
+    }
+    for (const url of urls) {
       const target = new URL(url, `https://cad-agent.valpatel.com/${f}`);
       if (target.origin !== 'https://cad-agent.valpatel.com') continue;
       if (!resolve(target.pathname)) broken.push(`${f} → ${url}`);
@@ -833,13 +839,13 @@ test('a real draft consumes moved sources and cannot substitute stale root files
 });
 
 
-test('repository map publishes ownership without adding source-only catalogue routes', async () => {
+test('repository map publishes folder details without flooding the catalogue', async () => {
   const html = await readFile(path.join(out, 'docs/map.html'), 'utf8');
   const twin = await readFile(path.join(out, 'docs/map.md'), 'utf8');
   assert.match(html, /Repository map/);
   assert.match(twin, /Canonical source owner/);
   assert.match(twin, /Published owner/);
-  assert.match(twin, /Source only/);
+  assert.match(twin, /Published folder map/);
   assert.match(twin, /https:\/\/github\.com\/Valpatel\/cad-agent\/blob\/dev\/tools\/README\.md/);
   assert.match(html, /href="\/docs\/README"[^>]*>Published owner<\/a>/);
   assert.match(html, /class="cad-diagram"/);
@@ -863,6 +869,29 @@ test('repository map publishes ownership without adding source-only catalogue ro
     '$1https://github.com/Valpatel/cad-agent/tree/dev/README$2');
   assert.notEqual(oldMisroute, html);
   assert.throws(() => checkPublishedOwners(oldMisroute), /public owner misrouted to source tree/);
+  const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
+  const publication = createPublication(JSON.parse(git('show', 'HEAD:tools/site/page-sources.json')));
+  const maps = folderMapSources(tracked, JSON.parse(git('show', 'HEAD:tools/site/compiler/repo-map.json')), publication);
+  const expected = new Set(maps.map(p => 'https://cad-agent.valpatel.com/' + p.public.replace(/\.md$/, '')));
+  const actual = new Set([...html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>Published folder map<\/a>/g)].map(m => m[1]));
+  assert.deepEqual(actual, expected, 'every source-derived owned map needs its actual detail route');
+  const folderPaths = new Map(maps.map(p => [p.file, p.public]));
+  for (const p of maps) {
+    const dest = p.public.replace(/\.md$/, '.html');
+    assert.ok(files.includes(dest) && files.includes(p.public), `${p.file}: both HTML and Markdown must exist`);
+    const page = await readFile(path.join(out, dest), 'utf8');
+    assert.match(page, /href="\/docs\/map">Repository map<\/a>/);
+    const parent = '/' + (folderPaths.get(p.parent) || publication.publicPath(p.parent)).replace(/\.md$/, '');
+    assert.ok(page.includes(`href="${parent}">Parent folder</a>`), `${p.file}: current parent route`);
+    assert.match(page, /<figure class="cad-diagram" data-theme-only="light"/);
+    assert.match(page, /<figure class="cad-diagram" data-theme-only="dark"/);
+    assert.ok(!catalog.items.some(i => i.source?.endsWith('/' + p.file)), `${p.file}: folder map became a catalogue item`);
+  }
+  const version = JSON.parse(await readFile(path.join(out, 'version.json'), 'utf8'));
+  assert.equal(version.folder_maps, maps.length);
+  assert.equal(version.pages, publication.selectPages(tracked).length);
+  const llms = await readFile(path.join(out, 'llms-full.txt'), 'utf8');
+  assert.ok(!llms.includes('Source: https://cad-agent.valpatel.com/repo/folders/'), 'maps belong in deep browsing, not every agent prompt');
   const start = html.indexOf('<h2 id="full-inventory"');
   const end = html.indexOf('Generated by', start);
   assert.ok(start >= 0 && end > start, 'measure the generated inventory, not the ordinary open page navigation');

@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
+import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
@@ -493,7 +494,8 @@ try {
       // Every diagram fits at the narrowest desktop width. The five concise hierarchy overviews also fit a phone:
       // document overflow alone misses a clipped branch inside the diagram's own horizontal scroller.
       const OVERVIEWS = new Set(['/docs/mechanical/README', '/docs/practice/README', '/docs/examples/README',
-        '/research/agent-workflow/README', '/research/manufacturing/README']);
+        '/research/agent-workflow/README', '/research/manufacturing/README',
+        ...diagramPages.map(([route]) => route).filter(route => route.startsWith('/repo/folders/'))]);
       for (const route of OVERVIEWS) if (!diagramPages.some(([r]) => r === route))
         problems.push(`${route}: the overview diagram is not published`);
       // Pages whose diagrams are being redrawn in an open PR. One that fits again fails the test, so it leaves this list.
@@ -1194,7 +1196,9 @@ async function explorerProblems(x) {
  * (DIAGRAM_SHIFT is set at the top, with the routes). */
 async function drawnDiagramProblems() {
   const out = await diagramNavigationControl();
-  const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process'];
+  const PAGES = ['/docs/toolkit', '/docs/style-guide', '/docs/vision', '/lessons/process/agent-process',
+    ...['.agents/skills/cad-motion-validation/README.md', 'software/cadagent/README.md', 'docs/img/motion/README.md', 'tests/README.md']
+      .map(file => '/' + folderMapPath(file).replace(/\.md$/, ''))];
   // the figures the page shows: each block is drawn in both themes and the page's CSS hides the other one (#305)
   const boxes = page => page.$$eval('.cad-diagram', figs => figs.filter(f => getComputedStyle(f).display !== 'none').map(f => {
     const r = f.getBoundingClientRect(), svg = f.querySelector('.cad-diagram-view svg')?.getBoundingClientRect();

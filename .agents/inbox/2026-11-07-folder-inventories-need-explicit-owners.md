@@ -31,7 +31,7 @@ A parent-authorized bounded headless local run at exact `d93ce8fe` then built 90
 
 Use the existing NUL-safe inventory convention and a real consumer-based owner for every directory. Ordinary owned folders require an authored map, explicit direct-file table, up link and child ownership links. A group delegates only to its actual named parent/index/validator: new fixture sets or figure topics still need parent rows, new prompt/resources need explicit owner links, dated incidents need real symptom-index entries, and temporary release fragments still pass the actual release parser. Do not preserve omissions by copying a baseline allowlist.
 
-Keep publication scope separate: `docs/map.md` distinguishes public pages from canonical source-only code/tool/operational maps. It does not add broad new catalogue routes. The existing required Chromium job checks freshness and controls and renders source owner diagrams through the actual kit in both themes; local structural success is not that browser evidence.
+The first increment kept publication scope separate: `docs/map.md` distinguished public pages from canonical source-only code/tool/operational maps, without adding broad new catalogue routes. The existing required Chromium job checked freshness and controls and rendered source owner diagrams through the actual kit in both themes; local structural success was not that browser evidence. The later folder-publication increment below addresses the still-unmet site requirement.
 
 ## An ownership map does not replace a requested folder README
 
@@ -47,8 +47,8 @@ small Mermaid diagrams. Skill maps link the canonical instructions rather than d
 each data directory's own map. The skill's bundled-resource links remain an independent check.
 
 The actual role installer and supply-chain inventory now reserve exactly `.agents/agents/README.md` as a map;
-other malformed role Markdown still fails discovery. The role map is explicitly source-only, so publication
-does not misclassify it as a third agent. Skill maps copy with their local instructions and references; links
+other malformed role Markdown still fails discovery. The role map initially remained source-only, so editorial
+publication did not misclassify it as a third agent. Skill maps copy with their local instructions and references; links
 outside the copied bundle use canonical source URLs. Figure maps also use source URLs for captions/producers;
 the source-only maps themselves are not copied to the site's image namespace. No historical report, source record,
 patch or image bytes are rewritten.
@@ -82,6 +82,33 @@ explicit illustrative caption. Do not skip source-map pages or relax the require
 Evidence: CI jobs `128498821063` / `128498821278` in runs `42404384396` / `42404384463`. Original raw-log SHA-256:
 `d840a8ed7a6a7ddf527bca8429acf08d8ecfb998b3033319b862af34cf7cc3cc` (Chromium),
 `911dfc75dd764a82c70aa59f67f3c7629dc5687ffd0cc5cfd1ad37f21062fe83` (Python 3.12). Later checks do not erase those failures.
+
+## Publish folder details without expanding the front page
+
+After the 38 missing READMEs were authored, #113 still required the site to publish them. A fresh source-derived
+selection on `8e31e884` found **102** owned README maps outside the 90 editorial pages: 38 new maps plus 64 existing
+code/tool/operational maps. Counting only the new files would have left the older maps behind.
+
+The continuation gives those maps their own HTML and Markdown under `repo/folders/`, linked through the existing
+closed hierarchy. The editorial catalogue, navigation and agent index keep their existing selection. One pure
+ownership selector is shared by publication and the strict repo-map checker; the Python link auditor is checked
+against its actual selected set. Dot-safe routes prefix every directory component and escape reserved bytes
+without URL-percent ambiguity, preserving distinct `.agents`, `_agents`, spaces, literal escape text and Unicode.
+The builder uses the same route identity for output, parent navigation and HTML/Markdown links. Images retain
+their actual `docs/img/` asset paths; raw HTML previews in Markdown twins also need URL rewriting.
+
+The weekly checker now consumes the actual published source list with the pinned lychee's
+[`--files-from` interface](https://lychee.cli.rs/guides/cli/#files-from), rather than a second hierarchy of globs.
+Its line/glob format cannot represent every legal Git filename: reject ambiguous newlines and glob metacharacters
+instead of dropping or broadening those inputs. The existing report exclusion and network/rate/result policies
+stay unchanged. Parity checks execute the configured selector, compare it with the actual publisher, and require
+the role and software maps while excluding upstream/fixture leaves.
+
+The initial draft build produced 90 editorial pages, 102 folder maps and 220 catalogue entries; it explicitly
+used client diagrams, so it is not rendered-page evidence. Actual HTML/twin checks must cover every selected map,
+preserve the separate editorial-owner-to-catalogue assertion, and verify no-JavaScript, both-theme and phone
+rendering through the existing browser consumers before acceptance. Local source checks or GitHub links do not
+complete that publication requirement.
 
 ## Limits
 

@@ -113,6 +113,8 @@ jobs:
             fi
           done
           ls build/last
+      - name: Select actual published link sources
+        run: python3 tools/resource_audit.py link-inputs --out build/lychee-inputs.txt
       - name: Markdown links (lychee)
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8   # v2.9.0 (lychee v0.24.2)
         with:
@@ -120,12 +122,7 @@ jobs:
             --no-progress --max-concurrency 8 --host-concurrency 1 --host-request-interval 1s --timeout 30
             --max-retries 1 --include-fragments --exclude-all-private
             --exclude '^https?://([a-z0-9-]+\.)*example\.(com|org|net)'
-            --exclude-path docs/research/security-report.md --exclude-path docs/changelog.d
-            --exclude-path docs/research/references/README.md --exclude-path docs/research/bench/README.md
-            --exclude-path .agents/agents/README.md
-            'README.md' '.github/CONTRIBUTING.md' 'software/vendor/THIRD_PARTY_NOTICES.md' 'docs/*.md' 'docs/*/*.md'
-            'docs/research/*/*.md' 'docs/lessons/*/*.md' 'docs/examples/numbered-coupons/README.md'
-            '.agents/skills/*/SKILL.md' '.agents/agents/*.md'
+            --files-from build/lychee-inputs.txt
           format: json
           output: build/lychee.json
           fail: false

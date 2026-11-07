@@ -20,7 +20,7 @@ import { buildCatalog } from './compiler/site-catalog.mjs';            // the ca
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './compiler/site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
-import { SECTIONS, createPublication, validateRedirects } from './publication.mjs';
+import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
@@ -70,7 +70,11 @@ const isoDay = iso => iso.slice(0, 10);                 // the commit's own cale
 const day = iso => new Date(`${isoDay(iso)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const readBuf = p => WORKTREE ? readFile(path.join(root, p)) : Promise.resolve(gitRaw('show', `HEAD:${p}`));
 const read = async p => (await readBuf(p)).toString('utf8');
-const { publicPath, selectPages } = createPublication(JSON.parse(await read('tools/site/page-sources.json')));
+const publication = createPublication(JSON.parse(await read('tools/site/page-sources.json')));
+const folderSources = folderMapSources(tracked, JSON.parse(await read('tools/site/compiler/repo-map.json')), publication);
+const folderPaths = new Map(folderSources.map(p => [p.file, p.public]));
+const publicPath = f => folderPaths.get(f) || publication.publicPath(f);
+const selectPages = publication.selectPages;
 const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recursive: true }); await writeFile(dest, await readBuf(f)); };
 
 await rm(out, { recursive: true, force: true });
@@ -122,10 +126,11 @@ const firstPara = md => {
 };
 
 const pages = [];
+const folderMapPages = [];
 // A file that moved keeps a one-line stub at its old path (`<!-- moved-to: new/path.md -->`), so links into the repo
 // keep working on GitHub; the site serves a permanent redirect instead of a page.
 const moved = [];
-for (const { file, section } of selectPages(tracked)) {
+for (const { file, section, parent } of [...selectPages(tracked), ...folderSources.map(p => ({ ...p, section: { id: 'folder-maps' } }))]) {
   const src = await read(file);
   const to = src.match(/^<!--\s*moved-to:\s*(\S+?\.md)\s*-->/)?.[1];
   if (to) {
@@ -137,11 +142,17 @@ for (const { file, section } of selectPages(tracked)) {
   const { meta, body } = front(src);
   const headingTitle = body.match(/^#\s+(.+)$/m)?.[1];
   const title = meta.name || (headingTitle?.includes('<picture>') ? plain(headingTitle) : headingTitle) || file;
-  pages.push({ file, section: section.id, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
+  (section.id === 'folder-maps' ? folderMapPages : pages).push({ file, section: section.id, parent, title: String(title).replace(/[`*]/g, ''), summary: meta.description || firstPara(body), body, src });
 }
 const pageURL = f => '/' + publicPath(f).replace(/\.md$/, '');                  // Cloudflare Pages serves x.html at /x
 const pageFile = f => publicPath(f).replace(/\.md$/, '.html');
-const pageFiles = new Set(pages.map(p => p.file));
+const allPages = [...pages, ...folderMapPages];
+const pageFiles = new Set(allPages.map(p => p.file));
+const pageDestinations = new Set();
+for (const p of allPages) for (const file of [publicPath(p.file), pageFile(p.file)]) {
+  if (pageDestinations.has(file)) throw new Error(`duplicate public output: ${file}`);
+  pageDestinations.add(file);
+}
 // Permanent redirects (tools/site/compiler/site-redirects.txt): they outlive the stubs, so deleting a stub never drops a 301.
 const redirects = (await read('tools/site/compiler/site-redirects.txt')).split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
   .map(l => l.split(/\s+/));
@@ -221,9 +232,8 @@ const folderPage = resolved => {
 };
 // Resolve links from the real source location, then write them relative to the public Markdown location.
 // A moved policy is sourced under .github/ but keeps its original public URL and Markdown twin.
-const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).map((chunk, i) => i % 2 ? chunk :
-  chunk.replace(/(\]\()([^)\s#][^)\s]*)((?:\s+"[^"]*")?\))/g, (all, open, url, close) => {
-    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return all;
+const rewriteMdURL = (file, url, absolute) => {
+    if (!url || url.startsWith('#') || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)) return null;
     const [pathname, ...hash] = url.split('#');
     const resolved = pathname.startsWith('/') ? pathname.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(file), pathname));
     const folder = folderPage(resolved);
@@ -235,8 +245,17 @@ const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```)/).m
       target = absolute ? `${ORIGIN}/${publicFile}` : pathname.startsWith('/') ? '/' + publicFile
         : path.posix.relative(path.posix.dirname(publicPath(file)), publicFile) || path.posix.basename(publicFile);
     } else target = `${REPO}/${tracked.includes(resolved) ? 'blob' : 'tree'}/dev/${resolved}`;
-    return `${open}${target}${hash.length ? '#' + hash.join('#') : ''}${close}`;
-  })).join('');
+    return `${target}${hash.length ? '#' + hash.join('#') : ''}`;
+};
+const rewriteMd = (file, md, absolute = false) => md.split(/(```[\s\S]*?```|`+[^`]*`+)/).map((chunk, i) => {
+  if (i % 2) return chunk;
+  const links = chunk.replace(/(\]\()([^)\s#][^)\s]*)((?:\s+"[^"]*")?\))/g, (all, open, url, close) => {
+    const target = rewriteMdURL(file, url, absolute);
+    return target === null ? all : `${open}${target}${close}`;
+  });
+  // Raw HTML images are used to size folder previews. Their twin URLs must follow the same public identity.
+  return rewriteUrls(links, url => rewriteMdURL(file, url, absolute));
+}).join('');
 // A Markdown copy with its [ref:<id>] tags as links to the records' pages (relative, or absolute for llms-full.txt).
 const twinMd = (file, md, absolute = false) => mdTags(rewriteMd(file, md, absolute), publicPath(file), refModel, { ORIGIN, absolute });
 // Every page should show something: a picture, render, diagram, animation or demo. Pages without one are listed by
@@ -249,7 +268,7 @@ const docPages = [];                         // [path in out, HTML]: written onc
 // Visual-first pages (#179): real outputs placed from docs/pages.yaml, long reference parts folded (tools/site/compiler/site-pages.mjs).
 const placeVisuals = pagePlacer({ spec: YAML.parse(await read('docs/pages.yaml')) || {}, pageFiles, tracked,
   commandNames: new Set(commands.map(c => c.name)), readBuf, pageURL });
-for (const p of pages) {
+for (const p of allPages) {
   const ids = new Map();
   const renderer = new marked.Renderer();
   const code = renderer.code.bind(renderer);
@@ -302,7 +321,11 @@ for (const p of pages) {
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
   html = await placeVisuals(p.file, fold(html));
-  const crumbs = `<p class="crumbs"><a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a> · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(publicPath(p.file))}">Markdown</a></p>`;
+  if (p.parent && !pageFiles.has(p.parent)) throw new Error(`folder map ${p.file}: parent ${p.parent} is not published`);
+  const entrance = p.section === 'folder-maps'
+    ? `<a href="/docs/map">Repository map</a> · <a href="${esc(pageURL(p.parent))}">Parent folder</a>`
+    : `<a href="/catalog#${p.section}">${esc(SECTIONS.find(s => s.id === p.section).title)}</a>`;
+  const crumbs = `<p class="crumbs">${entrance} · <a href="${REPO}/blob/dev/${esc(p.file)}">${esc(p.file)}</a> · <a href="/${esc(publicPath(p.file))}">Markdown</a></p>`;
   const dest = path.join(out, pageFile(p.file));
   await mkdir(path.dirname(dest), { recursive: true });
   // Long pages: the kit's <cad-nav> on the left (every page, grouped, with this page's outline under it) and, on very
@@ -648,12 +671,12 @@ await writeFile(path.join(out, '_headers'), [
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-  ['/', '/catalog', ...pages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
+  ['/', '/catalog', ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
-await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, items: catalog.items.length }, null, 2) + '\n');
+await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // For agents and the tests: which pages still have nothing to look at.
 const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();
 await writeFile(path.join(out, 'visuals.json'), JSON.stringify({ pages: Object.fromEntries([...visuals].sort()), without: noVisual }, null, 2) + '\n');
-console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} pages (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json). ` +
+console.log(`Built ${path.relative(root, out) || out}${WORKTREE ? ' (draft: working tree)' : ''}: ${pages.length} editorial pages + ${folderMapPages.length} folder maps (+ Markdown twins), ${catalog.items.length} catalogue entries, ${commands.length} commands. Revision ${revision.slice(0, 12)}. ${noVisual.length} pages have no picture, diagram or demo yet (visuals.json). ` +
   `Diagrams: ${diagrams.stats.diagrams} (Mermaid ${diagrams.stats.mermaid}), ${diagrams.stats.cached} from the cache, ${diagrams.stats.drawn} drawn` +
   `${diagrams.stats.browser ? ` in ${diagrams.stats.browser}` : ''}${diagrams.stats.left ? `, ${diagrams.stats.left} left to the reader's browser` : ''}.`);

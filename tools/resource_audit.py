@@ -1569,6 +1569,7 @@ if len(_PAGE_ALIASES) != len(_PAGE_SPEC['files']) or len(set(_PAGE_ALIASES.value
     raise ValueError('duplicate page source or public identity')
 _PAGE_ROOTS = _PAGE_SPEC['roots']
 _PAGE_EXCLUDED = set(_PAGE_SPEC.get('unpublished') or [])
+_FOLDER_POLICY = json.loads((ROOT / 'tools/site/compiler/repo-map.json').read_text(encoding='utf-8'))
 for i, row in enumerate(_PAGE_ROOTS):
     for before in _PAGE_ROOTS[:i]:
         if any(row[k] == before[k] or row[k].startswith(before[k] + '/') or before[k].startswith(row[k] + '/')
@@ -1585,14 +1586,57 @@ def public_page_path(f):
     return f
 
 
-def published(f, report=False):
-    """The site's actual current sources; public URLs never substitute for missing relocated files."""
-    if f in _PAGE_EXCLUDED or re.search(r'(?:^|/)(?:AGENTS|CLAUDE)\.md$', f) or (f == REPORT_MD and not report):
+def owned_folder_map(f):
+    """Same explicit owner boundary as publication.folderOwner; parity checks compare actual selected sources."""
+    if not f.endswith('/README.md'):
         return False
+    directory = f[:-len('/README.md')]
+    row = next((r for r in _FOLDER_POLICY['delegated']
+                if directory == r['root'] or directory.startswith(r['root'] + '/')), None)
+    return not row or row.get('members') == 'folder-maps' or row['owner'] == f
+
+
+def published(f, report=False):
+    """Editorial pages and owned folder details; URLs never substitute for missing relocated sources."""
     if any(f.startswith(r['public'] + '/') for r in _PAGE_ROOTS) or f in ('CONTRIBUTING.md', 'THIRD_PARTY_NOTICES.md'):
+        return False
+    if owned_folder_map(f):
+        return True
+    if f in _PAGE_EXCLUDED or re.search(r'(?:^|/)(?:AGENTS|CLAUDE)\.md$', f) or (f == REPORT_MD and not report):
         return False
     public = public_page_path(f)
     return public in PUBLISHED_FILES or any(rx.match(public) for rx in PUBLISHED)
+
+
+def link_inputs(files):
+    selected = sorted({f for f in files if published(f)})
+    if not selected:
+        raise ValueError('published link inputs are empty')
+    # lychee --files-from is a line/glob format, not a NUL-delimited filename list. Refuse lossy encodings.
+    for f in selected:
+        if f != f.strip() or f.startswith('#') or any(c in f for c in '\r\n*?[]{}'):
+            raise ValueError(f'lychee file list cannot represent this literal path: {f!r}')
+    return selected
+
+
+def cmd_link_inputs(a):
+    root = Path(a.root)
+    try:
+        raw = subprocess.run(['git', '-C', str(root), 'ls-files', '-z', '--cached'],
+                             check=True, capture_output=True).stdout
+    except subprocess.CalledProcessError as error:
+        raise ValueError('cannot read the tracked publication inventory') from error
+    files = [f for f in raw.decode('utf-8').split('\0') if f]
+    selected = link_inputs(files)
+    for f in selected:
+        source = root / f
+        if source.is_symlink() or not source.is_file():
+            raise ValueError(f'published source is not a regular current file: {f}')
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(''.join(f + '\n' for f in selected), encoding='utf-8')
+    print(f'link inputs: {len(selected)} current published source files')
+    return 0
 
 
 FENCE = re.compile(r'^(```|~~~)[^\n]*\n.*?^\1[ \t]*$', re.M | re.S)
@@ -3273,6 +3317,10 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0], formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd', required=True)
 
+    p = sub.add_parser('link-inputs', help='write the current published source filenames for lychee --files-from')
+    p.add_argument('--root', default=str(ROOT), help='the tracked checkout whose published sources to list')
+    p.add_argument('--out', required=True, help='output line file for the existing weekly link checker')
+
     def common(p):
         p.add_argument('--root', default=str(ROOT), help='the checkout to audit (default: this one)')
         p.add_argument('--online', action='store_true', help='also run the network checks (OSV, registries, GitHub, links)')
@@ -3328,7 +3376,7 @@ def main(argv=None):
         ap.error(f'--interval is at least {HOST_INTERVAL} s: one request a second per host at most')
     try:
         return {'report': cmd_report, 'rows': cmd_rows, 'gate': cmd_gate, 'issue': cmd_issue, 'render': cmd_render,
-                'references': cmd_references}[a.cmd](a)
+                'references': cmd_references, 'link-inputs': cmd_link_inputs}[a.cmd](a)
     except (OSError, ValueError, KeyError) as e:
         print(f'resource_audit: {type(e).__name__}: {e}', file=sys.stderr)
         return 2

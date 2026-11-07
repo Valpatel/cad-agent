@@ -13,13 +13,13 @@ flowchart TD
 
 | Owner | Use |
 |---|---|
-| [Project overview](https://github.com/Valpatel/cad-agent/blob/dev/README.md) | Start here and choose an existing workflow. |
+| [Project overview](../README.md) | Start here and choose an existing workflow. |
 | [Toolkit packages](https://github.com/Valpatel/cad-agent/blob/dev/software/README.md) | Reusable code and its domain owners. |
-| [Guides and research](https://github.com/Valpatel/cad-agent/blob/dev/docs/README.md) | Published explanations, source records and examples. |
+| [Guides and research](README.md) | Published explanations, source records and examples. |
 | [Repository tools](https://github.com/Valpatel/cad-agent/blob/dev/tools/README.md) | Build, release, audit and figure producers. |
 | [Tests and fixtures](https://github.com/Valpatel/cad-agent/blob/dev/tests/README.md) | Actual consumers, controls and recorded data. |
 | [Agent kit](https://github.com/Valpatel/cad-agent/blob/dev/.agents/README.md) | Installed skills, independent roles and source-only operations. |
-| [Contribution policy](https://github.com/Valpatel/cad-agent/blob/dev/.github/CONTRIBUTING.md) | Review, CI, integration and publication. |
+| [Contribution policy](../.github/CONTRIBUTING.md) | Review, CI, integration and publication. |
 
 Public owner links below are checked against the actual built HTML and catalogue. Code, tool and operational maps remain canonical source pages rather than new catalogue routes. Relative source file/directory destinations are checked; remote availability and source-only Markdown anchors are not newly verified.
 
@@ -31,7 +31,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/README.md) · [Published owner](/README)
+[Published owner](../README.md)
 
 - Owned folder map.
 
@@ -129,7 +129,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/cad-motion-validation/SKILL.md</code> — 2 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-motion-validation/SKILL.md) · [Published owner](/skills/cad-motion-validation/SKILL)
+[Published owner](../.agents/skills/cad-motion-validation/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 - Bundled reference resources are linked from the installed skill; no extra discovered skill entry.
@@ -144,7 +144,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/cad-pr-review/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-pr-review/SKILL.md) · [Published owner](/skills/cad-pr-review/SKILL)
+[Published owner](../.agents/skills/cad-pr-review/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -157,7 +157,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/cad-remote-runs/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-remote-runs/SKILL.md) · [Published owner](/skills/cad-remote-runs/SKILL)
+[Published owner](../.agents/skills/cad-remote-runs/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -170,7 +170,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/cad-supply-chain/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-supply-chain/SKILL.md) · [Published owner](/skills/cad-supply-chain/SKILL)
+[Published owner](../.agents/skills/cad-supply-chain/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -183,7 +183,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/cad-work-tracking/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-work-tracking/SKILL.md) · [Published owner](/skills/cad-work-tracking/SKILL)
+[Published owner](../.agents/skills/cad-work-tracking/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -196,7 +196,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/design-process/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/design-process/SKILL.md) · [Published owner](/skills/design-process/SKILL)
+[Published owner](../.agents/skills/design-process/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -209,7 +209,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/mcmaster-parts/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/mcmaster-parts/SKILL.md) · [Published owner](/skills/mcmaster-parts/SKILL)
+[Published owner](../.agents/skills/mcmaster-parts/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -222,7 +222,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.agents/skills/sheet-metal-hardware/SKILL.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/sheet-metal-hardware/SKILL.md) · [Published owner](/skills/sheet-metal-hardware/SKILL)
+[Published owner](../.agents/skills/sheet-metal-hardware/SKILL.md)
 
 - Installed skill entry; resource links stay relative to SKILL.md.
 
@@ -258,7 +258,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>.github/CONTRIBUTING.md</code> — 3 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.github/CONTRIBUTING.md) · [Published owner](/CONTRIBUTING)
+[Published owner](../.github/CONTRIBUTING.md)
 
 - GitHub policy, templates and workflows are mapped by CONTRIBUTING rather than a front-page-changing README.
 
@@ -278,7 +278,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/README.md) · [Published owner](/docs/README)
+[Published owner](README.md)
 
 - Owned folder map.
 
@@ -304,7 +304,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/README.md) · [Published owner](/docs/examples/README)
+[Published owner](examples/README.md)
 
 - Owned folder map.
 
@@ -369,7 +369,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/examples/numbered-coupons/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/numbered-coupons/README.md) · [Published owner](/docs/numbered-coupons)
+[Published owner](examples/numbered-coupons/README.md)
 
 - Owned folder map.
 
@@ -421,7 +421,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/img/README.md</code> — 23 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/README.md) · [Published owner](/docs/img/README)
+[Published owner](img/README.md)
 
 - Committed generated figures retain their topic output layout and recorded producers; parent maps each topic.
 
@@ -456,7 +456,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/README.md) · [Published owner](/lessons/README)
+[Published owner](lessons/README.md)
 
 - Owned folder map.
 
@@ -469,7 +469,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/electronics/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/electronics/README.md) · [Published owner](/lessons/electronics/README)
+[Published owner](lessons/electronics/README.md)
 
 - Owned folder map.
 
@@ -482,7 +482,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/mechanical/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/mechanical/README.md) · [Published owner](/lessons/mechanical/README)
+[Published owner](lessons/mechanical/README.md)
 
 - Owned folder map.
 
@@ -495,7 +495,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/process/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/process/README.md) · [Published owner](/lessons/process/README)
+[Published owner](lessons/process/README.md)
 
 - Owned folder map.
 
@@ -508,7 +508,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/review/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/review/README.md) · [Published owner](/lessons/review/README)
+[Published owner](lessons/review/README.md)
 
 - Owned folder map.
 
@@ -521,7 +521,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/simulation/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/simulation/README.md) · [Published owner](/lessons/simulation/README)
+[Published owner](lessons/simulation/README.md)
 
 - Owned folder map.
 
@@ -534,7 +534,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/lessons/wiring/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/lessons/wiring/README.md) · [Published owner](/lessons/wiring/README)
+[Published owner](lessons/wiring/README.md)
 
 - Owned folder map.
 
@@ -547,7 +547,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/mechanical/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/mechanical/README.md) · [Published owner](/docs/mechanical/README)
+[Published owner](mechanical/README.md)
 
 - Owned folder map.
 
@@ -560,7 +560,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/practice/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/practice/README.md) · [Published owner](/docs/practice/README)
+[Published owner](practice/README.md)
 
 - Owned folder map.
 
@@ -573,7 +573,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/research/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/README.md) · [Published owner](/research/README)
+[Published owner](research/README.md)
 
 - Owned folder map.
 
@@ -586,7 +586,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/research/agent-workflow/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/agent-workflow/README.md) · [Published owner](/research/agent-workflow/README)
+[Published owner](research/agent-workflow/README.md)
 
 - Owned folder map.
 
@@ -612,7 +612,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/research/manufacturing/README.md</code> — 1 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/research/manufacturing/README.md) · [Published owner](/research/manufacturing/README)
+[Published owner](research/manufacturing/README.md)
 
 - Owned folder map.
 
@@ -638,7 +638,7 @@ Public owner links below are checked against the actual built HTML and catalogue
 <details>
 <summary><code>docs/validation/README.md</code> — 2 folders</summary>
 
-[Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/validation/README.md) · [Published owner](/docs/validation/README)
+[Published owner](validation/README.md)
 
 - Owned folder map.
 - Dated numerical receipts retain their evidence layout; parent maps the immutable run.

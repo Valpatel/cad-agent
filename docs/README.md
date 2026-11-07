@@ -41,7 +41,8 @@ flowchart TD
 
 Release notes awaiting the next version live in [changelog fragments](changelog.d/README.md); released history stays in the root [CHANGELOG](../CHANGELOG.md).
 
-## File and child ownership
+<details>
+<summary>Repository metadata and owner maps</summary>
 
 | File or folder | Purpose |
 |---|---|
@@ -53,3 +54,5 @@ Release notes awaiting the next version live in [changelog fragments](changelog.
 | [process-checks.md](process-checks.md) | Existing process-check catalogue. |
 | [validation/](validation/README.md) | Dated source-bound validation receipts. |
 | [map.md](map.md) | Generated folder ownership inventory. |
+
+</details>

@@ -149,7 +149,7 @@ export function renderMap(rows) {
     ['Agent kit', '.agents/README.md', 'Installed skills, independent roles and source-only operations.'],
     ['Contribution policy', '.github/CONTRIBUTING.md', 'Review, CI, integration and publication.'],
   ];
-  let out = '# Repository map\n\nChoose an owner below. The full tracked inventory is grouped in closed disclosures, including upstream and fixture descendants. This is an ownership map, not a quality percentage or proof of physical performance.\n\n```mermaid\nflowchart TD\n    R["README.md"] --> D["docs/ + .agents/"]\n    R --> S["software/"]\n    R --> T["tests/ + tools/<br/>.github/"]\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c\n    class R,D,S,T here\n```\n\n| Owner | Use |\n|---|---|\n' + nav.map(([label, file, why]) => `| [${label}](${sourceURL(file)}) | ${why} |`).join('\n') +
+  let out = '# Repository map\n\nChoose an owner below. The full tracked inventory is grouped in closed disclosures, including upstream and fixture descendants. This is an ownership map, not a quality percentage or proof of physical performance.\n\n```mermaid\nflowchart TD\n    R["README.md"] --> D["docs/ + .agents/"]\n    R --> S["software/"]\n    R --> T["tests/ + tools/<br/>.github/"]\n    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c\n    class R,D,S,T here\n```\n\n| Owner | Use |\n|---|---|\n' + nav.map(([label, file, why]) => `| [${label}](${rows.some(row => row.owner === file && row.published) ? posix.relative('docs', file) : sourceURL(file)}) | ${why} |`).join('\n') +
     '\n\nPublic owner links below are checked against the actual built HTML and catalogue. Code, tool and operational maps remain canonical source pages rather than new catalogue routes. Relative source file/directory destinations are checked; remote availability and source-only Markdown anchors are not newly verified.\n\n## Full inventory\n\n';
   const groups = new Map();
   for (const row of rows) {
@@ -164,7 +164,7 @@ export function renderMap(rows) {
     for (const [owner, owned] of owners) {
       const published = owned[0].published;
       out += `<details>\n<summary><code>${escape(owner)}</code> — ${owned.length} folders</summary>\n\n` +
-        `[Canonical source owner](${sourceURL(owner)}) · ` + (published ? `[Published owner](/${published.replace(/\.md$/, '')})` : 'Source only') + '\n\n' +
+        (published ? `[Published owner](${posix.relative('docs', owner)})` : `[Canonical source owner](${sourceURL(owner)}) · Source only`) + '\n\n' +
         [...new Set(owned.map(row => row.reason))].map(reason => `- ${escape(reason)}`).join('\n') + '\n\n| Folder |\n|---|\n' +
         owned.map(row => `| \`${escape(row.dir || '.')}\` |`).join('\n') + '\n\n</details>\n\n';
     }

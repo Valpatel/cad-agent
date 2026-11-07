@@ -4,12 +4,13 @@ Dated validation records bind specific source and tool inputs. They are historic
 
 ```mermaid
 flowchart TD
-    M["file-viewer-corpus-manifest.json"] --> R["file-viewer-corpus-results.json"]
-    V["file-viewer-validation.json"] --> R
-    N["volume-2026-10-29/"] --> R
+    O["README.md"] --> M["file-viewer-<br/>corpus-<br/>manifest.json"]
+    O --> V["file-viewer-<br/>validation.json"]
+    O --> N["volume-<br/>2026-10-29/"]
+    M --> R["file-viewer-<br/>corpus-results.json"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class M,R,V,N here
+    class O,M,V,N,R here
 ```
 
 | File or folder | Purpose |

@@ -84,7 +84,7 @@ test('generated map is deterministic and distinguishes publication from source o
   assert.equal(out, renderMap(structuredClone(rows)));
   assert.match(out, /blob\/dev\/code\/README.md/);
   assert.match(out, /Source only/);
-  assert.match(out, /\[Published owner\]\(\/docs\/README\)/);
+  assert.match(out, /\[Published owner\]\(README\.md\)/);
 });
 
 // Source-only owner diagrams are deliberately not published as new catalogue routes. Validate them with the same

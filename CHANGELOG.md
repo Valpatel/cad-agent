@@ -9,6 +9,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.25.1 (2026-11-07)
+
+**Changed**
+- Refresh the homepage Gyropup model from current source CAD, with pinned runtime, source membership and artifact provenance; preserve historical engineering illustrations separately.
+- The README uses the animated Made with cad-agent badge beneath its cinematic header, with an explicit reduced-motion still and reusable examples linked near the bottom.
+
 ## v0.25.0 (2026-11-07)
 
 **New**

@@ -151,6 +151,29 @@ failed run. A changed owned vendor README also needs its actual recorded hash up
 render fixed 22 of the 23 routes; the remaining gate-map label needed a line break. Draft geometry measurements
 are component evidence only; the committed full browser consumers and current CI still decide acceptance.
 
+## No-script input checks need a test-side observer
+
+The complete local browser run at `d92b57f7` completed all 16 parts and passed diagram widths, but retained seven
+no-script ArrowRight assertions and five text-wall findings (log SHA-256
+`86e5197e48c2a091d99df61c1c0308715db26db453fab8f0ec965daee38b05e2`). The `/docs/inserts` article differed from the
+older build only in its revision label; its 1,213 px gap was a near-boundary browser observation, not a new copy
+regression. The other four findings exposed dense reference material in newly published maps. Fold optional
+API/procedure detail, keep important manufacturing credential and unknown-acknowledgement guidance visible, and
+remeasure actual pages. Do not increase the 1,200 px wall limit or add backlog exceptions.
+
+A separate bounded keyboard study on 2026-11-07 UTC reproduced the old helper's failure on three real maps with
+application JavaScript disabled. Native ArrowRight still moved their scrollers. A pre-scroll/focus hypothesis
+failed 10 of 12 cases and was not adopted; disabling smooth root scrolling also failed. The final observation
+captured the exact error (`page.waitForFunction: Timeout 1000ms exceeded`) and then read `scrollLeft: 40` with the
+correct element focused. The input worked; the page-context observer did not report it.
+
+Use the already-installed Playwright `expect.poll` in the test process to observe the actual native keyboard delta.
+Keep the 1,000 ms bound and strict positive-delta assertion. This candidate passed all 12 route/width/theme no-script
+cases and the four actual shrink/focus/overflow/blocked-keyboard counterexamples with restoration and clean owned
+process cleanup. Receipt SHA-256: `58e93de2b54fff790ec75df7b1570a2985adc61f127ee9655efedea983f4c9c7`.
+This changes the observer, not product scrolling or CSS. These focused controls do not replace the complete new-head
+browser and CI checks. Keep original failures and the rejected focus hypothesis alongside the corrected evidence.
+
 ## Limits
 
 Relative file/directory destinations are checked; public route/anchor consumers remain the existing site build and browser checks. Source-only Markdown anchors and remote availability are not newly claimed. A diagram rendering successfully does not prove its semantic correctness or physical CAD performance. Upstream and data descendants retain their recorded layouts; parent ownership does not turn them into reviewed toolkit source.

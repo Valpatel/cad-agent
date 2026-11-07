@@ -7,6 +7,9 @@ expressive face. Plain ES modules, no build step, works offline.
 cad-agent webkit designer/kit      # copies this kit into your project (re-run to update)
 ```
 
+<details>
+<summary>Embed the viewer and parts table</summary>
+
 ```html
 <link rel="stylesheet" href="kit/hud.css">
 <script type="importmap">{"imports": {"three": "./kit/vendor/three/three.module.min.js",
@@ -21,6 +24,8 @@ cad-agent webkit designer/kit      # copies this kit into your project (re-run t
   stage.start();
 </script>
 ```
+
+</details>
 
 | File | What it gives you |
 |---|---|

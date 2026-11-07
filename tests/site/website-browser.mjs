@@ -12,7 +12,7 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { chromium, webkit } from './npm-context.mjs';
+import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
@@ -1298,7 +1298,9 @@ async function folderMapPhoneProblems(page, where) {
       await view.evaluate(v => { v.scrollLeft = 0; });
       await view.focus();
       await page.keyboard.press('ArrowRight');
-      await page.waitForFunction(element => element.scrollLeft > 0, await view.elementHandle(), { timeout: 1000 })
+      // Poll from the test process: page-context animation-frame polling misses native scrolling when
+      // application JavaScript is disabled. The same actual keyboard delta and time bound still apply.
+      await expect.poll(() => view.evaluate(v => v.scrollLeft), { timeout: 1000 }).toBeGreaterThan(0)
         .catch(() => problems.push(`${where}: the focused diagram does not scroll with ArrowRight`));
       await view.evaluate(v => { v.scrollLeft = 0; v.blur(); });
     }

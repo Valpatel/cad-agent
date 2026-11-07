@@ -3,12 +3,35 @@
 The manufacturing domain of the [topic tree](../../../docs/areas.yaml): getting from a checked model to print files and
 real slicer numbers, and the process profiles that say what each process can make.
 
+Mesh export and slicer handoff
+
+```mermaid
+flowchart TD
+    B["build script<br/>STL · parts file"]
+    M3["mesh3mf.py<br/>3MF + read-back"]
+    SL["slicer.py<br/>Bambu Studio CLI"]
+    SP["slicer_prusa.py<br/>PrusaSlicer CLI"]
+    PV["prusa_view.py<br/>PrusaSlicer window"]
+    B -->|"STL"| M3
+    M3 -->|"3MF"| SL
+    SL -->|"engine: prusa"| SP
+    SP -->|"private datadir"| PV
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class M3,SL,SP,PV here
+    class B near
+```
+
 ## Where machine automation belongs
 
 Keep manufacturing organized by responsibility so printers, CNC machines and other equipment can share the
 workflow without inheriting one vendor's protocol. The current package prepares artifacts and checks process rules;
 the [Bambu connection investigation](../../../docs/research/manufacturing/bambu-cloud.md) is research, not a shipped
 device adapter.
+
+<details>
+<summary>Responsibilities and device boundaries</summary>
 
 | Responsibility | Home and boundary |
 |---|---|
@@ -17,6 +40,8 @@ device adapter.
 | Machine integration, when implemented | `manufacturing/devices/<vendor>/`: vendor authentication, transports and capability-specific status, camera or command operations. A machine need not support every capability. |
 | Job execution, when implemented | Shared manufacturing code consumes identified artifacts/settings and a selected device's capabilities. It records each attempt and actual result separately; vendor messages stay inside the adapter. |
 | Evidence and learning | Reuse the [release manifest](../publish/README.md) for source/artifact identities; relate machine results and physical feedback to those identities without overwriting prior observations. |
+
+</details>
 
 Tests mirror implemented modules under `tests/manufacturing/`; sanitized fixtures live under `tests/fixtures/`.
 Reusable procedures belong in `.agents/skills/` and findings in `docs/research/manufacturing/` or the existing lessons.
@@ -42,26 +67,6 @@ settings, and reads the release's parts and quantities from `publish/release.py`
 `docs/research/process-profiles.yaml` and the filaments' data sheets from `mechanical/compliant/allowables.py`; `dfm.py`,
 `sheet_metal.py` and `fit_coupons.py` read their numbers from it. `cards.py` serves its rules as rule cards and its
 decision tables as decision cards (`cad-agent rules`, `cad-agent choose`), with the registry's evidence.
-
-Mesh export and slicer handoff
-
-```mermaid
-flowchart TD
-    B["build script<br/>STL · parts file"]
-    M3["mesh3mf.py<br/>3MF + read-back"]
-    SL["slicer.py<br/>Bambu Studio CLI"]
-    SP["slicer_prusa.py<br/>PrusaSlicer CLI"]
-    PV["prusa_view.py<br/>PrusaSlicer window"]
-    B -->|"STL"| M3
-    M3 -->|"3MF"| SL
-    SL -->|"engine: prusa"| SP
-    SP -->|"private datadir"| PV
-    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
-    class M3,SL,SP,PV here
-    class B near
-```
 
 Plate layout and project export
 

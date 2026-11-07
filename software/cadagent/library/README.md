@@ -60,11 +60,15 @@ flowchart TD
 - an M5 bonding mounting hole;
 - a non-plated slot.
 
-**Adding a part:**
+<details>
+<summary>Adding a part</summary>
+
 1. Write its footprint generator and its body.
 2. Add a `Part` with the datasheet's numbers and the page each comes from.
 3. Add a test that holds the footprint and body to those numbers. `tests/library/test_bodies.py` already runs the
    registration check on every part with a body.
+
+</details>
 
 **Limits:**
 - The bodies are envelopes: right for pictures, layout and clearance, but not the manufacturer's model.
@@ -73,11 +77,15 @@ flowchart TD
   can still be the wrong footprint for the part fitted, so check the part number.
 - CAD does not prove fit, solderability or current rating.
 
-**When it grows:**
+<details>
+<summary>When to split or extract the library</summary>
+
 - Split it into `kicad/` and `mechanical/` when either side reaches three modules of its own, for example when #283
   brings PEM and rivet bodies.
 - Move it to its own repository only on a trigger: clones grow by tens of MB, the licences diverge (KiCad content
   adopted), or people want the parts without the toolkit.
+
+</details>
 
 Related: [package map](../README.md) · [electrical](../electrical/README.md) (board evidence) ·
 [mechanical](../mechanical/README.md) (`mcmaster`, fastener envelopes) · [tests](../../../tests/library/README.md)

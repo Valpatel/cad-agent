@@ -42,6 +42,9 @@ limit, verdict, reason), the capacities, torque ceilings and limits; its top-lev
 fails, so a project's `cad: checks` row reads it as it is: `{id: inserts, title: Insert joints, file:
 exports/inserts.json}` (`pass_key` defaults to `pass`). From Python:
 
+<details>
+<summary>Python API example</summary>
+
 ```python
 from cadagent.mechanical import inserts
 
@@ -55,6 +58,8 @@ inserts.check_clamp("M10", "pa6-cf20-polymaker-wet", 40.0, head_mm=20.0, clearan
                     limiter={"outside_mm": 18.0, "bore_mm": 12.0}, limiter_length_mm=39.8)
 inserts.coupon_plan()                                             # what to print and measure
 ```
+
+</details>
 
 ## The hole, by filament and nozzle
 

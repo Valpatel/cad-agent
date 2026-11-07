@@ -67,6 +67,9 @@ Two guides that `docs/research/references.yaml` lists as `unverified` were left 
 A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `year`, `url` or `isbn`, `access`,
 `terms`, `areas`, `used_for`, `verified`), plus these:
 
+<details>
+<summary>Schema fields, evidence and reuse metadata</summary>
+
 | Field | What it says |
 |---|---|
 | `kind` | project, guide, standard, datasheet, paper, article, vendor-table, forum-thread, video, patent |
@@ -84,6 +87,8 @@ A shard record has the core entry's fields (`id`, `title`, `authors`, `org`, `ye
 | `summary` | One or two plain sentences, in our words |
 | `imported` | Written by `tools/import_refmap.py`: a digest of the record's text as it wrote it. Edit the record freely and leave this line; a record whose text no longer matches it is yours, and a re-import keeps it as written |
 | `extends: true` | The record adds these fields to the core *read source* with the same id, instead of being a record of its own |
+
+</details>
 
 Link health is not kept here. The checker's artifacts and the site JSON hold it, and only evidence-class changes land
 in git. Every Monday `python3 tools/resource_audit.py references` checks up to 400 records' links (the longest
@@ -120,6 +125,9 @@ flowchart TD
 - **measured:** a physical result on a real project backs the claim.
 
 ## A promotion sweep
+
+<details>
+<summary>Read, corroborate, promote and encode each source</summary>
 
 One process group (or one area) per PR. The first, threaded inserts (#323 phase 7), is the pattern.
 
@@ -159,6 +167,8 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
     page cites as `[ref:<id>]`), with `applied_by` naming the function or gate that applies it, so `cad-agent rules`
     can serve it. The tests check that each `applied_by` reads the rule by id.
 
+</details>
+
 ## Rules check() enforces
 
 - One id across the core file and every shard. An id in two files is a problem, unless the shard's record says
@@ -172,6 +182,9 @@ mistake of each kind.
 
 ## On the site
 
+<details>
+<summary>Published routes and required index refresh</summary>
+
 `tools/site/compiler/site-references.mjs` publishes the records with the site build:
 
 - `/references` charts every area;
@@ -184,6 +197,8 @@ mistake of each kind.
 After changing a record, run `node tools/site/compiler/site-references.mjs --experts` and commit `docs/practice/experts.md`
 (`tests/site/website-references.test.mjs` fails until it is current). A record whose `areas` match no slug is listed on
 `/references/unplaced`. That count may only fall.
+
+</details>
 
 ## Related
 

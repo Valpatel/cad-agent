@@ -51,3 +51,19 @@ the registry/importer controls and original-map check.
 **Rule and limits:** source verification must exercise the readers that maintain the
 records, as well as the rule-card and website consumers. Valid YAML alone does not prove
 maintenance compatibility. A formatting repair does not re-read or re-qualify sources.
+
+## Preserve material editions in detached figures
+
+**Evidence, 2026-11-07 UTC:** #157's thermal follow-up reread the official Bambu PLA/PETG Basic V3.0 physical
+tables and specimen conditions. PETG's Tg/HDT values differ from the old V2.0 row; PLA's do not. The existing
+thermal figure producer stripped every parenthetical row suffix, so the detached SVG lost all three material
+editions even when the Markdown table named them. A before-control using the original producer against the
+updated table reproduced all three omissions.
+
+**Correction and rule:** preserve each table label in this scientific figure and extend its existing regression
+check to require the edition-bearing labels. Regenerate through the producer. Retain the older edition's
+conditions in the guide and the source digest/read scope in the existing registry records; do not replace
+mechanical allowables merely because a thermal table changed.
+
+**Limits:** ISO 75 HDT and DSC Tg are typical specimen measurements, not continuous-use or clamp-creep
+qualification. Reading a revised sheet does not identify a user's spool or supply the outstanding physical coupon.

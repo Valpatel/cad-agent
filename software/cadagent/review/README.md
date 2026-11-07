@@ -40,3 +40,10 @@ flowchart TD
 Related: [package map](../README.md) · [publish](../publish/README.md) (the review pages) ·
 [design process](../../../docs/practice/design-process-plan.md) · [gates](../../../docs/practice/gates.md) ·
 [dossier](../../../docs/practice/dossier.md) · [review packet](../../../docs/practice/review-packet.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [dossier/](dossier/README.md) | Dossier declarations, lint and independent sign-off. |
+| [gates/](gates/README.md) | Assembly integrity checks and verdict records. |

@@ -373,11 +373,16 @@ try {
         if (engine === chromium) await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
         const page = await context.newPage();
         const where = `${width}px ${touch ? 'touch' : 'mouse'}`;
+        const runtimeErrors = [];
+        let phase = 'navigation';
+        page.on('pageerror', error => runtimeErrors.push({ phase, url: page.url(), message: error.message, stack: error.stack }));
         for (const route of busiest) {
+          phase = `navigate ${route}`;
           await page.goto(base + route, { waitUntil: 'load' });
           await page.evaluate(() => document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))));
           for (const c of await page.evaluate(covered)) problems.push(`${where} ${route}: ${c}`);
         }
+        phase = 'copy button';
         await page.locator('cad-copy > .cad-copy-btn').first().click();
         await page.waitForFunction(() => document.querySelector('cad-copy > .cad-copy-btn')?.dataset.state !== 'idle');
         for (const c of await page.evaluate(covered)) problems.push(`${where} ${busiest.at(-1)} after copying: ${c}`);
@@ -387,6 +392,7 @@ try {
           // 1.5 px wider than the last, sweep the line's end 60 px across the button's edge, so no band of a few pixels
           // (a label a little wider than the room) is missed. All wrapped by enhance(); then every button pressed (the
           // wider labels); then a stylesheet that arrives late and makes the button bigger.
+          phase = 'planted copy boundaries';
           await page.evaluate(async () => {
             const { enhance } = await import('/kit/copy.js');
             const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -414,13 +420,24 @@ try {
           const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
           await settle();
           for (const c of await page.evaluate(covered)) problems.push(`${where} planted, idle: ${c}`);
+          phase = 'planted copied labels';
           await page.evaluate(() => { for (const b of document.querySelectorAll('#planted .cad-copy-btn')) b.click(); });
           await page.waitForFunction(() => [...document.querySelectorAll('#planted .cad-copy-btn')].every(b => b.dataset.state !== 'idle'));
           await settle();
           for (const c of await page.evaluate(covered)) problems.push(`${where} planted, after copying: ${c}`);
+          phase = 'late button stylesheet';
           await page.addStyleTag({ content: 'cad-copy>.cad-copy-btn{font-size:15px;padding:.3em 1.2em}' });
           await settle();
           for (const c of await page.evaluate(covered)) problems.push(`${where} planted, late stylesheet: ${c}`);
+        }
+        if (runtimeErrors.length) {
+          const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-copy-layout-'));
+          const subsequentState = await page.evaluate(() => ({ width: innerWidth, height: innerHeight,
+            buttons: document.querySelectorAll('cad-copy > .cad-copy-btn').length,
+            planted: document.querySelectorAll('#planted cad-copy').length }));
+          await writeFile(path.join(evidence, 'runtime.json'), JSON.stringify({ errors: runtimeErrors, subsequentState }, null, 2) + '\n');
+          await page.screenshot({ path: path.join(evidence, 'runtime.png') });
+          for (const error of runtimeErrors) problems.push(`${where} copy layout, ${error.phase}: ${error.message} (state and subsequent paint: ${evidence})`);
         }
         await context.close();
       }
@@ -1944,6 +1961,9 @@ async function foldProblems() {
   // The window crossing the breakpoint: the fold the script opened for a wide window closes again on a phone, and one
   // the reader opened on a phone stays open through a wide window and back.
   const turn = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  const runtimeErrors = [];
+  let phase = 'navigation';
+  turn.on('pageerror', error => runtimeErrors.push({ phase, message: error.message, stack: error.stack }));
   await turn.goto(base + '/docs/toolkit');
   await settled(turn);
   const isOpen = () => turn.locator('details.cad-nav-fold').evaluate(d => d.open, null, { timeout: 2000 }).catch(() => null);
@@ -1955,14 +1975,16 @@ async function foldProblems() {
         display: fold && getComputedStyle(fold).display, readyState: document.readyState };
     });
     const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-nav-fold-'));
-    await writeFile(path.join(evidence, 'resize.json'), JSON.stringify({ message, observedOpen, subsequentState: state }, null, 2) + '\n');
+    await writeFile(path.join(evidence, 'resize.json'), JSON.stringify({ message, observedOpen, runtimeErrors, subsequentState: state }, null, 2) + '\n');
     await turn.screenshot({ path: path.join(evidence, 'resize.png') });
     out.push(`${message} (state and subsequent paint: ${evidence})`);
   };
+  phase = 'wide to narrow';
   await turn.setViewportSize({ width: 360, height: 800 });
   await turn.waitForFunction(() => !document.querySelector('details.cad-nav-fold')?.open, null, { timeout: 2000 }).catch(() => {});
   const afterNarrow = await isOpen();
   if (afterNarrow !== false) await resizeFailure('1366 -> 360px: the fold the script opened for the wide window stays open on the phone', afterNarrow);
+  phase = 'reader choice across resize';
   await turn.locator('.cad-nav-toggle').click();
   await turn.setViewportSize({ width: 1366, height: 800 });
   await turn.waitForTimeout(100);                               // a frame at each width, so the script sees both
@@ -1973,6 +1995,7 @@ async function foldProblems() {
   // Printed from a wide window, where the script opened the fold: the tree does not print, and on paper wide enough for
   // the site's grid (landscape A3, 1500 px) the article keeps the width, not the tree's empty column (#209 review).
   for (const w of [1366, 1500]) {
+    phase = `print at ${w}px`;
     await turn.setViewportSize({ width: w, height: 800 });
     await turn.emulateMedia({ media: 'print' });
     const paper = await turn.evaluate(() => ({ nav: getComputedStyle(document.querySelector('cad-nav')).display,
@@ -1982,6 +2005,7 @@ async function foldProblems() {
     if (paper.rail) out.push(`print at ${w}px: the "On this page" column prints`);
     await turn.emulateMedia({ media: 'screen' });
   }
+  if (runtimeErrors.length) await resizeFailure(`navigation resize runtime errors: ${runtimeErrors.map(e => `${e.phase}: ${e.message}`).join('; ')}`, await isOpen());
   await turn.close();
   // No link text around the filter pill while the tree is scrolled (#134): with a link under the filter's top edge, the
   // points just inside the pill's box at its rounded corners, and in the strips above and below it, hit the panel's cover.

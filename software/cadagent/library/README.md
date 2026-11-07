@@ -81,3 +81,7 @@ flowchart TD
 
 Related: [package map](../README.md) · [electrical](../electrical/README.md) (board evidence) ·
 [mechanical](../mechanical/README.md) (`mcmaster`, fastener envelopes) · [tests](../../../tests/library/README.md)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

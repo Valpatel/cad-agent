@@ -95,3 +95,5 @@ are the project's printed-part IDs.
 The 2026-10-28 Gyropup pivot validation lesson is maintained in
 [the rendered-motion domain](../../.agents/domains/rendered-motion.md), with a
 [symptom index](../../.agents/SYMPTOM-INDEX.md). It is not part of the original J501 transcript mining.
+
+[Guides](../README.md)

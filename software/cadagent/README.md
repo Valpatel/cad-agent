@@ -55,3 +55,9 @@ keeps the packages and the tree in step.
 
 [Repository README](../../README.md) · [Toolkit reference](../../docs/toolkit.md) · [Tests](../../tests) ·
 [Style guide](../../docs/practice/style-guide.md) · [Topic tree](../../docs/areas.yaml)
+
+[Software](../README.md)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

@@ -30,3 +30,12 @@ flowchart TD
 | `model/` | The packed two-part model both model decoders are held to; rebuild with `make_fixture.py` |
 
 Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md#where-files-go)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [bearing-vectors.json](bearing-vectors.json) | Golden Python/JavaScript bearing parity vectors. |
+| [gcode/](gcode/) | Recorded G-code examples for parsing controls. |
+| [prusa_config/](prusa_config/) | Synthetic/recorded Prusa configuration fixtures. |
+| [prusa_logs/](prusa_logs/) | Recorded-format Prusa log fixtures. |

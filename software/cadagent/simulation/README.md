@@ -49,3 +49,14 @@ Linear-elastic FEA: a converged peak does not prove that the part holds.*
 Related: [package map](../README.md) · [thermal](../thermal/README.md) (heat sinks) ·
 [simulation tools research](../../../docs/research/simulation-tools.md) ·
 [lesson: simulation and material](../../../docs/lessons/simulation/simulation-and-material.md)
+
+## File and child ownership
+
+| File or folder | Purpose |
+|---|---|
+| [explore/](explore/README.md) | Catalogue candidate evaluation, search and comparison. |
+
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

@@ -29,3 +29,7 @@ flowchart TD
 
 Related: [package map](../README.md) · [PCB docs](../../../docs/pcb.md) · [review](../review/README.md) (evidence
 hashes)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

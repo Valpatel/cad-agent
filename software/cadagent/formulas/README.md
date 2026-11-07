@@ -67,3 +67,7 @@ and small-angle wear are not predicted by these models.
 
 Related: [package map](../README.md) · [compliant features](../mechanical/README.md) ·
 [formulas reference](../../../docs/formulas.md)
+
+| File | Purpose |
+|---|---|
+| [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |

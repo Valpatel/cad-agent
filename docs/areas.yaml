@@ -170,9 +170,8 @@ domains:
         title: 3D printing
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
-        pages: [docs/research/manufacturing/bambu-cloud.md]
+        pages: [docs/research/manufacturing/bambu-cloud.md, docs/examples/numbered-coupons/README.md]
         cli: [export-3mf, slice, overhangs]
-        pages: [docs/examples/numbered-coupons/README.md]
         api: [cadagent.manufacturing.slicer, cadagent.manufacturing.slicer_prusa, cadagent.manufacturing.mesh3mf,
               cadagent.manufacturing.plates, cadagent.manufacturing.prusa3mf, cadagent.manufacturing.fit_coupons,
               cadagent.manufacturing.experiments,

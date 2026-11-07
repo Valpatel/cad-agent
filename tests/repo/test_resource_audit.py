@@ -1374,7 +1374,7 @@ def test_the_page_folds_all_but_critical_and_high(tmp_path):
 def _assert_public_report(text, home):
     # A public route such as committee.iso.org/home/tc2 is not an OS home directory. Keep rejecting bare
     # absolute paths, file URIs, Windows homes and actual current-home text, including inside a URL/query.
-    private_path = r"(?<![A-Za-z0-9./:-])/(?:home|Users)/|file:///(?:home|Users)/|(?i:[a-z]:[\\/]+Users[\\/])"
+    private_path = r"(?<![A-Za-z0-9./-])/(?:home|Users)/|file:///(?:home|Users)/|(?i:[a-z]:[\\/]+Users[\\/])"
     assert not ra.re.search(private_path, text)
     assert len(home) < 2 or home not in text
 
@@ -1383,6 +1383,7 @@ def _assert_public_report(text, home):
     '"/home/fixture-agent/source"', '`/Users/fixture-agent/source`',
     '"file:///home/fixture-agent/source"', '"C:\\Users\\fixture-agent\\source"',
     '"C:\\\\Users\\\\fixture-agent\\\\source"', 'https://example.org/?path=/home/fixture-agent/source',
+    'cwd:/home/other-agent/private-project',
 ])
 def test_report_privacy_guard_still_rejects_real_local_paths(text):
     with pytest.raises(AssertionError):

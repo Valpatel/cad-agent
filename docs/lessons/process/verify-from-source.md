@@ -189,8 +189,10 @@ flowchart TD
 </details>
 
 ### Follow the credential store selected by the actual CLI
-- **Rule:** Before calling Cloudflare authentication blocked, run the existing user's `npx --yes wrangler@4.86.0 whoami` so its
-  normal refresh can run. If a subsequent read-only API probe disagrees, inspect that pinned CLI's credential-path
+- **Rule:** Before calling Cloudflare authentication blocked, inspect and reuse the existing user's pinned CLI so
+  its normal refresh can run. For the inspected 4.86.0 cache, use `npx --offline --no-install wrangler@4.86.0 whoami`.
+  A missing CLI/cache is a resolution failure, not evidence that authentication failed; inspect the existing runtime
+  rather than install another package to diagnose credentials. If a subsequent read-only API probe disagrees, inspect that CLI's credential-path
   selection before requesting a new login. Never print tokens or change accounts to make a probe pass.
 - **Evidence, 2026-11-06 UTC:** `npx --yes wrangler@4.86.0 whoami` succeeded. A helper that guessed the XDG
   credential location then received HTTP 401. Reading Wrangler 4.86.0's `getGlobalWranglerConfigPath()` showed it

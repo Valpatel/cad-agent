@@ -484,7 +484,7 @@ const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-titl
 <div class="use-head"><p class="eyebrow">Download, verify, install</p><h2 id="use-title">${esc(USE_HEADING).replace(/AI agent$/, '<span>AI agent.</span>')}</h2>
 <div class="os-tabs">${INSTALL.map(([id], i) => `<input type="radio" name="install-os" id="os-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
 <div class="os-tab-row" aria-hidden="true">${INSTALL.map(([id, name]) => `<label for="os-${id}" class="os-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
-${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class="install-guide" href="${esc(href)}">Open ${esc(name)} installation instructions →</a></div>`).join('')}</div>
+${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class="install-guide" href="${esc(href)}">Install on ${esc(name)} →</a></div>`).join('')}</div>
 <p class="use-lead">Then ask your agent for a part, check or simulation.</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
 <div class="use-paste"><p class="paste-title">Or paste this into your agent:</p>

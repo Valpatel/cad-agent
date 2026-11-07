@@ -20,6 +20,12 @@ route passes, and an actual-home string embedded in a URL still fails. The corre
 selection passed204 tests. This is a heuristic privacy regression guard, not a general secret scanner or
 proof that every unknown private identifier is detected. No report finding or source URL was filtered out.
 
+Independent review of PR444 at `adc93b44` planted `cwd:/home/other-agent/private-project`, with a different
+current-home fixture, and reproduced a missed local path: the negative lookbehind unnecessarily exempted
+colons. Adding that exact case to the existing control produced1 failure/7passes before correction. Remove
+only the colon exemption; retain the public ISO URL and all POSIX/macOS/Windows/file/query/current-home
+controls. This was a prevention-guard regression, not evidence that the current report leaked a local path.
+
 ## Missing package metadata does not establish a missing archive licence
 
 On 2026-11-07, the finite issue322 follow-up found that the exact `tools/mermaid` lock entry for Khroma2.1.0
@@ -122,6 +128,27 @@ That head's actual WebKit whole-site consumer also measured1262px (page693–195
 limit on `/docs/supply-chain`. Fold the optional maintainer explanation under a purpose-named disclosure, keeping
 the npm/check table visible. Preserve its content, the actual whole-site gate and original failure; component/math
 success and generated diagrams do not establish the entire guide's layout. Corrected-head CI remains required.
+
+### A closed disclosure still has a visible summary
+
+The same page-budget boundary recurred in PR444's `da3bc637` draft on 2026-11-07. Both actual whole-site
+browser jobs rejected the bearings page after its axial-load section:
+
+```text
+node tests/site/website-browser.mjs
+Chromium job128395582744: /docs/bearings wall1207px, page4490–5697px; limit1200px
+WebKit job128395582899: /docs/bearings wall1204px, page4442–5646px; limit1200px
+```
+
+The appended maintenance body was closed, but its new summary still added visible height. Keep every dated
+maintenance statement and the original failures; move that complete body into the existing source/survey
+disclosure instead of adding another visible summary. No threshold, source policy or content limit changes.
+Current-head whole-site CI remains required; source placement alone does not establish a rendered pass.
+
+The later `adc93b44` WebKit job128398813023 reproduced the same1204px bearings wall. Chromium's website-build
+job128398812786 independently rejected the new installation card at96 words against its unchanged95-word cap.
+Shorten the two guide-link labels rather than loosen the visitor's reading budget. Preserve those current-head
+failures separately from the earlier draft and from passing Windows checksum controls.
 
 ## Bind an accepted install hook to its owning package context
 

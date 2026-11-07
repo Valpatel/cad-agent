@@ -57,6 +57,12 @@ three old-source cases; all sixteen corrected cases preserved both automatic and
 same timeout. Instrumentation affects timing, so these counts are not a device failure rate. This observation
 explains the tested navigation failure, not unrelated header failures or every browser's resize behavior.
 
+Collect runtime errors on each interaction page before navigating. Separate generic-route listeners do not cover a
+copy-layout or resize page. The existing copy-boundary consumer could pass all geometry checks while WebKit emitted
+an observer-loop error; [the incident](../../../.agents/inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md)
+keeps the original public failure, local non-reproduction and later component evidence distinct. Keep errors with
+observed state and subsequent paint; neither a quiet later frame nor passing geometry erases them.
+
 </details>
 
 ### Verify the SVG still itself, not only its parent's reduced-motion preference

@@ -12,6 +12,7 @@
 | Cut volume exceeds its input, curved volumes disagree, or a precise-looking invalid solid passes | [Validate solids and aggregate integration errors](inbox/2026-10-29-volume-precision-needs-valid-solids-and-aggregate-errors.md), [volume diagnostic](../docs/practice/volume-precision.md) |
 | A named PA6-CF profile slices successfully but startup still waits at a generic temperature | [Resolve included slicer templates](inbox/2026-10-31-resolve-included-slicer-templates.md), `tests/manufacturing/test_slicer.py` |
 | Cube smoke invocations share files, or plausible mass hides a failed slicer command | [Fresh Snap-readable workspaces and command status](inbox/2026-11-06-cube-smoke-needs-isolation-and-command-status.md) |
+| A Bambu export succeeds without required settings, or a readable ZIP masks a failed command | [Required project settings and producer exit status](inbox/2026-11-07-readable-project-output-needs-a-successful-producer.md) |
 | Skills initialize successfully but copied guide links fail, or repository and global names appear twice | [Discovery names and resource containment](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md) |
 | A precheck exits nonzero but a later state-changing command still runs | [Failed prechecks must stop mutations](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md) |
 | A documented technique breaks while its API tests stay green | [Execute the canonical technique](inbox/2026-11-06-source-selection-must-not-pass-empty.md#execute-the-canonical-technique-not-only-its-underlying-apis) |

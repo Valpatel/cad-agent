@@ -13,6 +13,9 @@ It writes one SVG of about 140 KB that animates with CSS alone, so GitHub shows 
 
 The first figure is [Gyropup](https://github.com/Valpatel/gyropup)'s five-bar leg (MIT): `docs/img/hero/gyropup-leg.svg`. The SVGs in `docs/img/hero/` may be reused on the site and elsewhere. Each one names its source in its caption and `<desc>`.
 
+<details>
+<summary>Recorded source, related projects and evidence limits</summary>
+
 Drawn from the real CAD and results of Gyropup, a self-balancing wheel-legged robot designed with cad-agent: its
 leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by
 [`tools/readme_anim.py`](../../tools/readme_anim.py). The committed scene records source revision
@@ -30,6 +33,8 @@ For example, [snap-fit calculations](../mechanical/compliant.md) reproduce the C
 examples. Their material allowables cite data sheets; no printed coupon has been measured yet.
 [Evidence that can improve the toolkit](../lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today)
 and the [vision](../vision.md) distinguish recorded checks from planned model evaluations.
+
+</details>
 
 ## Regenerate or check
 

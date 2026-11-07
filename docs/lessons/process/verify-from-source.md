@@ -278,3 +278,12 @@ flowchart TD
   boundary. The README now selects a generated still explicitly through `picture`. The existing
   [website motion harness](../../../tests/site/site-motion.mjs) now covers the compiled README image as well as
   the standalone historical CAD figure. [Observed commands, corrective rule and limits](../../../.agents/inbox/2026-11-07-image-motion-needs-the-image-consumer.md).
+
+### Retain the geometry and visibility behind a browser failure
+- **Rule:** A nonzero rectangle does not by itself prove that content paints. Check the element's display and
+  ancestor visibility, preserve visible text and image bounds, and exercise both a hidden-geometry control and
+  a genuinely escaped visible element. Keep the failed rectangles and screenshot rather than only a message.
+- **Evidence and limits:** The actual 320-pixel WebKit header failures lacked those captures. Local successful
+  resizes did not explain the failed frame. The existing header harness now retains the measurements and tests
+  the visibility boundary; [the incident](../../../.agents/inbox/2026-11-07-header-visibility-needs-paint-state.md)
+  distinguishes its controlled regression from the still-unproven historical cause.

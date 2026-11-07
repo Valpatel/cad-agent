@@ -1,5 +1,25 @@
 # Missing security inventory does not prove a disabled protection
 
+## A public URL route is not a local home directory
+
+On 2026-11-07, the actual refreshed issue322 report correctly retained the public source URL
+`https://committee.iso.org/home/tc2`. The existing committed-report privacy test rejected it because it
+searched for the substring `/home/` anywhere, without distinguishing a URL route from a filesystem path:
+
+```text
+python -m pytest -q tests/repo/test_resource_audit.py tests/repo/test_cut_release.py \
+  tests/repo/test_layout.py tests/repo/test_areas.py
+FAILED test_committed_report_is_clean_and_dated: assert not any('/home/' in text, ...)
+1 failed, 196 passed
+```
+
+Keep the source URL and original failure. The corrected guard distinguishes URL route boundaries and
+still rejects bare POSIX/macOS home paths, file URIs, Windows home paths, home paths in query parameters
+and the actual current home string anywhere. Six concrete local-path counterexamples fail, the public ISO
+route passes, and an actual-home string embedded in a URL still fails. The corrected same audit/release/layout
+selection passed204 tests. This is a heuristic privacy regression guard, not a general secret scanner or
+proof that every unknown private identifier is detected. No report finding or source URL was filtered out.
+
 ## Missing package metadata does not establish a missing archive licence
 
 On 2026-11-07, the finite issue322 follow-up found that the exact `tools/mermaid` lock entry for Khroma2.1.0

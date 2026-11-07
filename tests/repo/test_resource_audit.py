@@ -1371,13 +1371,37 @@ def test_the_page_folds_all_but_critical_and_high(tmp_path):
     assert md.index("<details><summary><strong>Limits.") < md.index("## Findings") and md.count("<details>") == md.count("</details>")
 
 
+def _assert_public_report(text, home):
+    # A public route such as committee.iso.org/home/tc2 is not an OS home directory. Keep rejecting bare
+    # absolute paths, file URIs, Windows homes and actual current-home text, including inside a URL/query.
+    private_path = r"(?<![A-Za-z0-9./:-])/(?:home|Users)/|file:///(?:home|Users)/|(?i:[a-z]:[\\/]+Users[\\/])"
+    assert not ra.re.search(private_path, text)
+    assert len(home) < 2 or home not in text
+
+
+@pytest.mark.parametrize("text", [
+    '"/home/fixture-agent/source"', '`/Users/fixture-agent/source`',
+    '"file:///home/fixture-agent/source"', '"C:\\Users\\fixture-agent\\source"',
+    '"C:\\\\Users\\\\fixture-agent\\\\source"', 'https://example.org/?path=/home/fixture-agent/source',
+])
+def test_report_privacy_guard_still_rejects_real_local_paths(text):
+    with pytest.raises(AssertionError):
+        _assert_public_report(text, "/different/current-home")
+
+
+def test_report_privacy_guard_keeps_public_routes_and_actual_home_detection():
+    _assert_public_report('"https://committee.iso.org/home/tc2"', "/home/fixture-agent")
+    with pytest.raises(AssertionError):
+        _assert_public_report('https://example.org/path/home/fixture-agent/source', "/home/fixture-agent")
+
+
 def test_committed_report_is_clean_and_dated():
     """The committed report came from a committed tree (no uncommitted changes) and has no private details."""
     r = json.loads((ROOT / "docs/research/security-report.json").read_text())
     assert r["schema"] == ra.SCHEMA and r["dirty"] is False and r["mode"] == "online"
     text = (ROOT / "docs/research/security-report.json").read_text() + (ROOT / "docs/research/security-report.md").read_text()
     home = str(Path.home())          # whichever machine runs it: no account name is written down here
-    assert not any(p in text for p in ("/home/", "/Users/")) and (len(home) < 2 or home not in text)
+    _assert_public_report(text, home)
 
 
 def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_substitution(tmp_path):

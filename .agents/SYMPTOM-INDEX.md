@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A report privacy check rejects a public publisher URL containing /home/ | [Distinguish public routes from filesystem paths](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#a-public-url-route-is-not-a-local-home-directory) |
 | Safer install prose still leaves a mutable pipe in the homepage, agent prompt or evaluator | [Exercise the canonical checked installer through every entrance](inbox/2026-11-06-source-selection-must-not-pass-empty.md#verify-the-installer-at-every-actual-entrance) |
 | A package omits licence metadata although its locked archive has a licence, or a stale-runtime exception survives new bytes | [Bind archive evidence to context, version and bytes](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#missing-package-metadata-does-not-establish-a-missing-archive-licence) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |

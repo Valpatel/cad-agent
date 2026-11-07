@@ -7,6 +7,7 @@
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
 | Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |
 | Old file imports overwrite newer progress or change state after controls are disposed | [Part checklist ownership](domains/web-part-state.md), [reproduced import incident](inbox/2026-10-29-import-ownership-must-survive-file-decoding.md) |
+| Native consumer errors disappear behind a pytest `*current` archive error, or final source guards never run | [Separate runner aliases, products and finalizer errors](inbox/2026-11-07-test-runner-aliases-are-not-deliverables.md) |
 | Python CI restarts or cancels at the same head after a PR description edit | [Review publication procedure](playbooks/review-publication.md), [observed workflow trigger](inbox/2026-10-29-pr-description-edits-restart-ci.md) |
 | A broader issue closes after a partial PR even though its description said to keep it open | [Negated closing keywords still trigger GitHub](inbox/2026-11-07-negated-closing-keywords-still-close-issues.md), [review publication procedure](playbooks/review-publication.md) |
 | Mermaid source appears on a document, or newly inserted diagrams never render | [Mermaid fences need rendered evidence](inbox/2026-10-29-markdown-fences-need-rendered-evidence.md), [shared diagram API](../docs/practice/web-diagrams.md) |

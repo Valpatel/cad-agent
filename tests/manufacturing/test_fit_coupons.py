@@ -139,7 +139,6 @@ def test_specimen_stamp_rejects_nonallocated_formats_before_cad():
 def test_labelled_coupon_real_geometry_preserves_fit_envelope_and_actual_engraving(tmp_path):
     cq = pytest.importorskip("cadquery")
     from cadagent.geometry import export_print_stl, export_step
-    import cadquery.importers
     fit = fc.Fit("pin", 5.0, "slide", count=3)
     original = fc.coupon(fit)
     labelled, proof = fc.labelled_coupon(fit, "ABCDEF0123")

@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| Cloud login or a camera URL succeeds, but fresh telemetry or actual video is missing | [Separate connection stages and match the camera preparation reply](inbox/2026-11-07-camera-grants-do-not-prove-video.md), [reusable method](../docs/research/manufacturing/bambu-cloud.md) |
 | The pointer moves but clicks do not reach other applications despite healthy resources | [Persistent application grabs](inbox/2026-11-07-pointer-grabs-can-mimic-a-frozen-desktop.md), [desktop diagnosis](../docs/lessons/process/agent-process.md#diagnose-desktop-problems-without-disrupting-the-users-session) |
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
 | Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |

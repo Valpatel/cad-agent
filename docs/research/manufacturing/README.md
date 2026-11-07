@@ -16,6 +16,7 @@ flowchart TD
 | Topic | Start here |
 |---|---|
 | Process rules | [Profiles and confidence](process-profiles.md) |
+| Printer observation | [Bambu cloud evidence and existing skills](bambu-cloud.md) |
 | Sheet metal | [Survey](sheet-metal.md), [expert guides](sheet-metal-guides.md), [joining](sheet-metal-joining.md) |
 
 [Research map](../README.md) · [Process checks](../../process-checks.md) · [Sheet-metal hardware](../../sheet-metal-hardware.md)

@@ -17,6 +17,16 @@ flowchart TD
     class Cl out
 ```
 
+### Prove each stage of an external connection
+- **Rule:** Authentication, subscription, fresh state, a camera grant and a decoded frame need separate evidence.
+  Match replies to request identities; empty heartbeats, stale state and successful setters do not prove later stages.
+- **Check:** Exercise the real consumer. Preserve partial outcomes and test that missing readiness prevents the
+  next operation. Bound native children and verify that timeout cleanup reaches the actual child process.
+- **Evidence:** The [Bambu cloud investigation](../../research/manufacturing/bambu-cloud.md) obtained fresh P1S/X1E
+  state and a real P1S frame, while the X1E rejected preparation of the exact minted grant. The reader correctly
+  remained stopped. Neither grant issuance nor simulated protocol success was counted as video.
+- **Limits:** Observation does not establish actuator control, safe autonomous printing or physical qualification.
+
 ### Test the geometric result and plant the fallback failure separately
 - **Rule:** A geometry regression must reject the known crossing with the correct depth regardless of which
   detection path finds it. To test recovery from a kernel miss, inject that miss and exercise the real fallback.

@@ -71,6 +71,21 @@ def test_output_is_stable_across_calls():
         cards.render_choice(cards.choose("joining", **ROWS["repeated"]))
 
 
+@pytest.mark.parametrize("feature, rule_id", [
+    ("escape-hole", "mjf-escape-hole-hp-cleaning"),
+    ("lattice-gap", "mjf-lattice-gap-hp-cleaning"),
+])
+def test_hp_cleaning_dimensions_reach_the_actual_rule_card(feature, rule_id, capsys):
+    # HP 4AA7-4109ENW page 1: both dimensions are 5 mm, for distinct cleaning features.
+    rule = pp.profile("mjf").verified_rule(rule_id)
+    assert rule.limit().min == 5 and rule.source == "hp-mjf-design-for-cleaning"
+    code, out, err = _run(["rules", feature, "--process", "mjf"], capsys)
+    assert code == 0, err
+    assert rule_id in out and "5 mm" in out and "HP" in out
+    moving = cards.render_card(cards.card("clearance", process="mjf"))
+    assert rule_id not in moving, "a cleaning opening must not become moving-part clearance"
+
+
 def test_the_insert_hole_card_says_when_how_strict_and_who():
     c = cards.card("insert-hole", process="fdm", material="petg-cf")
     by_id = {ln["rule"]: ln for ln in c["lines"]}

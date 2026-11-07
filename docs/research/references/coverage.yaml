@@ -12,7 +12,8 @@ rows:
   status: implemented
   areas:
   - threaded-inserts
-  where: software/cadagent/mechanical/inserts.py:321 hole_design, :360 boss_design, :532 capacity, :1013 check_joint, :430 TESTS
+  where: software/cadagent/mechanical/inserts.py:321 hole_design, :360 boss_design, :532 capacity, :1013 check_joint, :430
+    TESTS
   defaults: Hole = maker hole +0.2 mm CAD (0.2-0.3 band); blind depth max(L+1, L+2 pitch, maker min); straight, no chamfer;
     6 McMaster inserts M2-M5,M8; PLA/PETG/ASA/CoPA/PA6 shear model
   sources: McMaster pages, bd_warehouse, CNC Kitchen, SPIROL, PEM, ruthex, Laszlo 2026, Kastner 2023 (inserts.py:177 SRC)
@@ -42,8 +43,8 @@ rows:
   status: implemented
   areas:
   - 3d-printing
-  where: software/cadagent/manufacturing/dfm.py:80 KINDS, :259 check; docs/research/process-profiles.yaml:225 (fdm-wall-min-hubs), :947
-    (sla-wall-min-formlabs-form4), :1510 (sls), :2217 (mjf)
+  where: software/cadagent/manufacturing/dfm.py:80 KINDS, :259 check; docs/research/process-profiles.yaml:225 (fdm-wall-min-hubs),
+    :947 (sla-wall-min-formlabs-form4), :1510 (sls), :2217 (mjf)
   defaults: FDM wall 0.45-1.2 mm or 3 x nozzle; SLA 0.2-0.6 mm by printer; SLS 0.3-1.5 mm; MJF 0.3-0.5 mm (ideal 2.5); hole,
     pin, slot, text, bridge, overhang kinds
   sources: Prusa, Hubs, Xometry, Formlabs Form 2/3/4, HP, Protolabs, Materialise, EOS, Stratasys Direct, JLC3DP (rule ids
@@ -74,8 +75,8 @@ rows:
   status: implemented
   areas:
   - sheet-metal
-  where: software/cadagent/manufacturing/sheet_metal.py:76 bend, :137 flat_length, :170 feature_to_bend, :228 check_bends; dfm.py:93-101;
-    profile:2743-3089, shop_tables:5002
+  where: software/cadagent/manufacturing/sheet_metal.py:76 bend, :137 flat_length, :170 feature_to_bend, :228 check_bends;
+    dfm.py:93-101; profile:2743-3089, shop_tables:5002
   defaults: R min = T; flange 2T+R to 4T (Century 3.5(T+R)); hole-to-bend 2T to 4T+; hole-to-edge T to 2T; relief T+R; K 0.33-0.5
     by R/T and hardness; SendCutSend per-SKU R,K,flange
   sources: Hubs, Protolabs, Davis 2001, Paulsen 2017, DFMA, Century Tywood, SendCutSend specs, SolidWorks K page
@@ -226,7 +227,8 @@ rows:
   status: partly
   areas:
   - circuit-boards
-  where: software/cadagent/electrical/pcb.py:66 kicad_report, :154 evidence_bundle, :202 check_jlc_files; pcb_routing.py; docs/pcb.md
+  where: software/cadagent/electrical/pcb.py:66 kicad_report, :154 evidence_bundle, :202 check_jlc_files; pcb_routing.py;
+    docs/pcb.md
   defaults: Fails on any KiCad ERC/DRC error or warning; JLC BOM/CPL file consistency; no numeric fab rules
   sources: KiCad native reports; JLC file format
   gap: No fab-capability rules (min trace/space 4-6 mil, annular ring, drill, board edge clearance, via size, mounting-hole

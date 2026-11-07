@@ -254,14 +254,14 @@ sources:
   authors: []
   org: HP
   year: null
-  url: https://enable.hp.com/us-en-3d-mjf-handbook-download
+  url: https://cdn.prod.website-files.com/643676897bd14f7b040359ad/65bfbea060bcfa83d9957f88_HP-MJF-Design-Handbook-min%20%281%29.pdf
   access: free
   terms: cited and summarised, never copied
   licence:
     spdx: null
     class: proprietary
-    read: false
-    note: A publisher's page; its terms were not read. Cited, never copied.
+    read: true
+    note: HP copyright and informational-use notice; no redistribution licence granted.
   reuse:
     text: cite-only
     geometry: none
@@ -272,17 +272,22 @@ sources:
   process_groups:
   - print
   evidence:
-    class: snippet-only
-    numbers: unknown
-    tested: unknown
+    class: read
+    numbers: claimed
+    tested: 'no'
     authority: primary
-  confidence:
-    level: low
-    estimate: 0.4
-    sources: 1
-  summary: 'HP''s web handbook with design guidelines: best practices, accuracy, cleaning, union joints, tolerancing, threads
-    and inserts. Note: Topics listed only; no numbers seen.'
-  used_for: []
+  verified: '2026-11-07: read best practices (PDF pages 2–5) and hinge design (47–49) in the HP-authored compilation publicly
+    linked from ADDForm''s download centre. Read the separate cleaning and dimensional-tolerancing chapters under their own
+    records. Other chapters have not been assessed; no physical hinge or print test is claimed.'
+  summary: Best practices distinguish wall orientation, assembly clearance and warpage. Hinge guidance calls for controlled
+    thickness experiments, rounded folds and suitable orientation; it does not establish one universal living-hinge thickness.
+  archive:
+    sha256: d15146102a2c1365366ae329dd105019b0463c86da151c4736d1fbaeb0b7929c
+    kind: pdf
+    fetched: '2026-11-07'
+    redistribute: false
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
   imported: 7579373d8ce72d22
 - id: fast-radius-multijet-fusion-dfm-design-guide-fast-radius
   kind: guide
@@ -1726,3 +1731,267 @@ sources:
     level: medium
     estimate: 0.7
     sources: 1
+- id: hp-mjf-design-for-cleaning
+  kind: guide
+  category: manufacturing-guides
+  title: 'HP MJF Handbook: Design for cleaning'
+  authors: []
+  org: HP
+  year: 2019
+  url: https://cdn.prod.website-files.com/643676897bd14f7b040359ad/65b24aafc7d250a8cbe1ccd0_mjg%20design%20for%20cleaning%20HP.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: true
+    note: HP copyright and informational-use notice on page 2; no redistribution licence granted.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - resin-and-powder
+  processes:
+  - mjf
+  process_groups:
+  - print
+  evidence:
+    class: encoded
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  rules:
+  - mjf-escape-hole-hp-cleaning
+  - mjf-lattice-gap-hp-cleaning
+  verified: '2026-11-07: read both pages of HP-authored 4AA7-4109ENW (February 2019), openly linked by ADDForm''s download
+    centre; also inspected the rendered first page. Encoded the two cleaning dimensions; tests exercise their rule-card consumer.
+    This is source verification, not an HP printer or physical cleaning trial.'
+  summary: HP recommends opposite drain openings for hollow parts and accessible lattice gaps. Ducts need an extraction route;
+    opening size alone does not prove all powder can be removed.
+  archive:
+    sha256: 5bcb441a507b15d70e48135e889a06a2084043cfa5689a13cfd95c92a7344b5d
+    kind: pdf
+    fetched: '2026-11-07'
+    redistribute: false
+  used_for:
+  - docs/research/process-profiles.yaml
+  - docs/research/manufacturing/process-profiles.md
+- id: vdi-3405-3-withdrawn
+  kind: standard
+  category: manufacturing-guides
+  title: VDI 3405 Blatt 3:2015-12 — Design rules for laser sintering and laser beam melting
+  authors: []
+  org: VDI
+  year: 2015
+  url: https://www.dinmedia.de/en/technical-rule/vdi-3405-blatt-3/241795108
+  access: paid
+  terms: cited by number and title only; never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Only the public catalogue was read
+    not the paid standard.: null
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - resin-and-powder
+  processes:
+  - sls
+  process_groups:
+  - print
+  evidence:
+    class: read
+    numbers: unknown
+    tested: unknown
+    authority: primary
+  verified: '2026-11-07: read DIN Media''s public catalogue. It marks this edition WITHDRAWN and records the issuing body''s
+    recommendation to use DIN EN ISO/ASTM 52911-1:2020-05 and 52911-2:2020-06. No design value was read from the paid text.'
+  summary: Withdrawn guideline; the catalogue directs readers to the metal and polymer laser powder-bed standards.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+- id: hp-mjf-dimensional-tolerancing
+  kind: guide
+  category: manufacturing-guides
+  title: 'HP MJF Handbook: Dimensional tolerancing'
+  authors: []
+  org: HP
+  year: 2020
+  url: https://cdn.prod.website-files.com/643676897bd14f7b040359ad/65b249dfd19cfcdd0132de32_dimensional%20tollerancing.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: true
+    note: HP copyright and informational-use notice; no redistribution licence granted.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - resin-and-powder
+  processes:
+  - mjf
+  process_groups:
+  - print
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  verified: '2026-11-07: read the four-page HP-authored chapter, 4AA7-4509ENW, March 2020, publicly linked by ADDForm. Read
+    the tolerance-grade explanation and process capability conditions, not a paid ISO standard. Its yield table was not adopted.'
+  summary: Separate dimensional tolerance from measured process capability. Cp and Cpk require a controlled process and a
+    suitable distribution; a design tolerance table alone does not prove printer repeatability or assembly yield.
+  archive:
+    sha256: a017fcb368b62c25f7a1daaf086120be09e5b542384754aa8e9d82f330c01cf9
+    kind: pdf
+    fetched: '2026-11-07'
+    redistribute: false
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+- id: xometry-fdm-quick-design-guide
+  kind: guide
+  category: manufacturing-guides
+  title: Quick Design Guide for Fused Deposition Modeling
+  authors: []
+  org: Xometry
+  year: null
+  url: https://xometry.pro/en-uk/3d-printing-design-guide/quick-guide/fused-deposition-modeling/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: No redistribution licence assessed; cite only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - 3d-printing
+  processes:
+  - fdm
+  process_groups:
+  - print
+  evidence:
+    class: read
+    numbers: claimed
+    tested: unknown
+    authority: primary
+  verified: '2026-11-07: opened and read the FDM specification table, capability/recommendation distinctions and limitations.
+    Its bridge row says 10 mm, differing from the 5 mm historical FDM design-tips entry read on 2026-10-31. Material, cooling
+    and bridge test conditions are not specified; no numerical rule was replaced.'
+  summary: A service capability table is not a qualification of a desktop printer. Keep differing bridge claims and their
+    dates visible, and confirm the actual printer and supplier before changing an enforced limit.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+- id: xometry-mjf-us-design-guide
+  kind: guide
+  category: manufacturing-guides
+  title: 'HP Multi Jet Fusion: Design Guidelines and Best Practices'
+  authors: []
+  org: Xometry
+  year: null
+  url: https://f.hubspotusercontent00.net/hubfs/340051/Design_Guides/Xometry-HP-MJF-DesignGuide.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: No redistribution licence assessed; cite only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - resin-and-powder
+  processes:
+  - mjf
+  process_groups:
+  - print
+  evidence:
+    class: read
+    numbers: claimed
+    tested: unknown
+    authority: primary
+  verified: '2026-11-07: opened the ten-page Xometry-authored PDF; read design, assembly, drainage and technical-specification
+    sections (printed pages 4–6). The US document states 2 mm drain openings, unlike the EU PDF. This older public asset is
+    not proof of the current quotation capability.'
+  summary: The US guide discusses assembly clearances, hollowing and process limits. Its drainage recommendation differs from
+    the later European guide; no mixed regional tolerance or drain table is inferred.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+- id: xometry-mjf-eu-design-guide
+  kind: guide
+  category: manufacturing-guides
+  title: HP Multi Jet Fusion Design Guide (Europe)
+  authors: []
+  org: Xometry
+  year: null
+  url: https://xometry.pro/wp-content/uploads/2024/05/EN-EU-MJF-Design-Guide.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: No redistribution licence assessed; cite only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - resin-and-powder
+  processes:
+  - mjf
+  process_groups:
+  - print
+  evidence:
+    class: read
+    numbers: claimed
+    tested: unknown
+    authority: primary
+  verified: '2026-11-07: opened the 29-page PDF hosted by Xometry; read design pages 6–11 (PDF pages 7–12), including minimum
+    versus recommended dimensions, assembly clearance, snap fits, warpage and hollowing. It recommends opposite drain openings
+    at least 5 mm across. Other sections were not assessed.'
+  summary: The European guide separates minimum and recommended geometry and specifies a larger drainage opening than the
+    US document. Supplier and edition matter; these regional claims are not averaged.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+- id: materialise-current-design-guidelines
+  kind: guide
+  category: manufacturing-guides
+  title: Design for Additive Manufacturing — material-specific guidelines
+  authors: []
+  org: Materialise
+  year: null
+  url: https://www.materialise.com/en/academy/industrial/design-am
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Public index only; no redistribution licence assessed.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - resin-and-powder
+  processes:
+  - sla
+  process_groups:
+  - print
+  evidence:
+    class: read
+    numbers: none
+    tested: unknown
+    authority: primary
+  verified: '2026-11-07: read the live design-guidelines index and SLA material catalogue. Named resin guides include Taurus,
+    PerFORM and ProtoGen White; no Standard Resin guide is listed there. The missing historical page was not recovered, and
+    no formal replacement relationship is inferred.'
+  summary: Materialise publishes guidance for named resins. Use the selected material guide; Taurus data cannot stand in for
+    every SLA resin.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md

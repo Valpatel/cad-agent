@@ -36,9 +36,9 @@ r["verdict"]                      # "fail": the 8 mm bridge is over both sources
 [(f["name"], f["verdict"], f["detail"]) for f in r["features"]]
 ```
 
-**Unverified rows.** A rule whose `status` is `u` has not been read in its source. Today that is one row,
-`sls-gap-vs-wall-eos`, which was read off a chart. The check lists such a rule as advisory with `(u)` after it, and
-it never passes or fails a part on it. `Profile.verified_rule()` refuses one, for code that would enforce it.
+**Unverified rows.** A rule whose `status` is `u` has not been verified in its source. The check lists it as advisory
+with `(u)` and never uses it to pass or fail a part. `Profile.verified_rule()` refuses it. The former EOS gap row
+was removed after reading the chart: specimen labels did not establish a general manufacturing limit.
 
 ## Which way the layers run
 

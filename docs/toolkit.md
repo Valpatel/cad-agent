@@ -239,6 +239,14 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
 `export-3mf` exits 1 when a part fits no plate (too large or too tall at any turn) or the parts need more than the 36
 plates Bambu Studio holds.
 
+For a Bambu project handoff, use `cad-agent export-3mf --require-project-settings`. It fails unless the plates
+embed a native Bambu version, printer and process identities, and a nonempty filament identity for every slot.
+Failed settings generation, layout or read-back leaves prior plate files and per-part exports unchanged; it does
+not accept an old file as a fresh result. Without the flag, missing settings still produce the existing warning
+and geometry-only fallback. Bambu's settings-export command must exit successfully even when it leaves a readable ZIP.
+The flag verifies required settings are embedded; check the chosen printer, nozzle, material and process in Bambu
+Studio before slicing. It does not certify GUI compatibility, supports, adhesion or physical performance.
+
 <details>
 <summary>Why it is built, not adopted, and its limits</summary>
 

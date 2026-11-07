@@ -315,7 +315,8 @@ def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):
     assert set(part['parts']) == {'box', 'lid'} and part['total_grams'] == 11.0
 
 
-def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree, tmp_path, monkeypatch):
+@pytest.mark.parametrize('returncode', [0, 7])
+def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree, tmp_path, monkeypatch, returncode):
     """Bambu Studio's command line writes one colour, one map entry and a 4 x 4 purge matrix whatever the filament
     count, and the Cool Plate whatever the printer; the project settings for build plates are sized and set right."""
     import zipfile
@@ -337,10 +338,16 @@ def test_project_settings_fit_the_filaments_and_the_printers_plate(profile_tree,
         out = Path(cmd[cmd.index('--outputdir') + 1])
         with zipfile.ZipFile(out / 'project.3mf', 'w') as z:
             z.writestr('Metadata/project_settings.config', json.dumps(written, indent=4, sort_keys=True))
-        return SimpleNamespace(returncode=0, stdout='', stderr='')
+        return SimpleNamespace(returncode=returncode, stdout='', stderr='controlled profile export failure')
 
     monkeypatch.setattr(slicer.subprocess, 'run', run)
     work = tmp_path / 'settings'
+    if returncode:
+        # A fresh, plausible ZIP does not turn a failed external command into success.
+        with pytest.raises(RuntimeError, match='exit 7.*controlled profile export failure'):
+            slicer.project_settings(work, filaments=('pla', 'petg'))
+        assert (work / 'out' / 'project.3mf').is_file()
+        return
     got = json.loads(slicer.project_settings(work, filaments=('pla', 'petg'), overrides={'wall_loops': '3'},
                                              colours=['#2f7f73']))
     assert calls[0][calls[0].index('--load-filaments') + 1].count(';') == 1

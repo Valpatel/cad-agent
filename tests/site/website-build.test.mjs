@@ -98,7 +98,7 @@ test('code samples keep their text, and every code block has a copy button', asy
   assert.ok(files.includes('kit/copy.js'));
 });
 
-test('the home page, llms.txt and the README give one install command and one line to paste (#278, #282)', async () => {
+test('home and agent indexes give the install commands; the mini README links to the complete guide (#278, #282)', async () => {
   const [paste, ...rest] = git('show', 'HEAD:docs/agent-prompt.txt').replace(/\n$/, '').split('\n');
   const guide = rest.join('\n').trim();
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
@@ -120,10 +120,23 @@ test('the home page, llms.txt and the README give one install command and one li
   assert.deepEqual(tabs, ['os-unix', 'os-win']);
   for (const id of tabs) assert.match(card, new RegExp(`<label for="${id}" class="os-tab`), `${id} has a tab`);
   assert.doesNotMatch(card, /<img|<use |agent-guide/, 'the badges are text, not product marks; the per-agent guide is gone');
-  const heading = card.match(/<h2 id="use-title">(.+?)<\/h2>/)[1].replace(/<[^>]+>/g, '').replace(/\.$/, '');
-  const readme = git('show', 'HEAD:README.md');
-  assert.ok(readme.includes(`## ${heading}\n`) && cmds.every(c => readme.includes(`\n${c}\n`)) && readme.includes('```text\n' + paste + '\n```'),
-    'the README has the card\'s heading, commands and line');
+  const readme = await readFile(path.join(out, 'README.html'), 'utf8');
+  const installPage = resolve('/docs/agent-workflow');
+  assert.ok(installPage, 'the linked installation page is actually published');
+  const installGuide = await readFile(path.join(out, installPage), 'utf8');
+  const checkReaderRoute = (entrance, detail) => {
+    assert.match(entrance, /id="how-to-join-in"/, 'the root has a human invitation');
+    assert.ok(entrance.includes(cmds[0]), 'one getting-started command stays on the root');
+    assert.match(entrance, /href="\/docs\/agent-workflow#install"/, 'installation detail is one click away');
+    assert.match(entrance, /href="\/docs\/agent-workflow#ask-your-assistant"/, 'the canonical prompt is one click away');
+    assert.match(detail, /id="install"/, 'the installation anchor exists in the emitted guide');
+    assert.match(detail, /id="ask-your-assistant"/, 'the assistant anchor exists in the emitted guide');
+    assert.ok(cmds.every(c => detail.includes(c)), 'the linked guide keeps both public install commands');
+    assert.ok(detail.includes(paste), 'the linked guide keeps the canonical paste-in line');
+  };
+  checkReaderRoute(readme, installGuide);
+  assert.throws(() => checkReaderRoute(readme, installGuide.replaceAll(paste, 'CONTROL: prompt missing')),
+    /linked guide keeps the canonical paste-in line/, 'a link alone must not hide missing installation content');
   for (const f of ['llms.txt', 'index.md']) {
     const text = await readFile(path.join(out, f), 'utf8');
     assert.ok(text.includes('```text\n' + paste + '\n```') && text.includes('```text\n' + guide + '\n```'), `${f} carries the line and how to install and work`);

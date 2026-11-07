@@ -1,8 +1,8 @@
 """What people paste and what agents read (#278, #282): docs/agent-prompt.txt.
 
 Its first line is what a person pastes into an agent; the rest is how to install and work with the kit, which llms.txt
-carries. The README opens with the one-line install commands and that line (the site's card, llms.txt and index.md are
-checked in tests/site/website-build.test.mjs). Here: the README section stays short; the install commands are the
+carries. The root README answers what/why/join, with installation detail one click away (the site's card, llms.txt and
+index.md are checked in tests/site/website-build.test.mjs). Here: the README stays short; the install commands are the
 public ones and name real `cad-agent` commands; the report headings match the issue form, the PR template and the
 grader in tools/quickstart_eval.py; it asks nothing risky of an outside agent; and the grader reads a planted run the
 way it reads a real one.
@@ -21,7 +21,6 @@ ROOT = Path(__file__).resolve().parents[2]
 BLOCK = (ROOT / "docs" / "agent-prompt.txt").read_text()
 PASTE, GUIDE = BLOCK.split("\n", 1)
 README = (ROOT / "README.md").read_text()
-USE_HEADING = "Build with your favorite AI agent"     # the site's card says the same (tests/site/website-build.test.mjs)
 ONE_LINERS = ("curl -fsSL https://cad-agent.valpatel.com/install.sh | sh",
               "irm https://cad-agent.valpatel.com/install.ps1 | iex")
 
@@ -33,18 +32,28 @@ def _eval():
     return mod
 
 
-def test_readme_opens_with_one_command_and_the_paste_in_line():
+def test_readme_is_a_mini_hyperpage_with_install_detail_one_click_away():
     headings = re.findall(r"^## (.+)$", README, re.M)
-    assert headings[0] == USE_HEADING, f"'## {USE_HEADING}' is the README's first section, not {headings[0]!r}"
-    use_it = README.split(f"## {USE_HEADING}\n", 1)[1].split("\n## ", 1)[0]
+    assert headings == ['What is it?', 'Why this is cool', 'How to join in']
+    use_it = README.split('## How to join in\n', 1)[1]
+    guide = (ROOT / 'docs/practice/agent-workflow.md').read_text()
+    assert 'docs/practice/agent-workflow.md#install' in use_it
+    assert 'docs/practice/agent-workflow.md#ask-your-assistant' in use_it
+    assert '## Install\n' in guide and '### Ask your assistant\n' in guide
     for cmd in ONE_LINERS:
-        assert f"\n{cmd}\n" in use_it, f"the README gives {cmd!r} on a line of its own"
-    assert "```text\n" + PASTE + "\n```" in use_it, "and the first line of docs/agent-prompt.txt to paste"
-    words = len(re.sub(r"<!--.*?-->", "", use_it, flags=re.S).split())
-    assert words <= 140, f"{words} words: keep the section about as short as text-to-cad's quick start (~125)"
+        assert cmd in guide, f"the linked install guide gives {cmd!r}"
+    assert f'\n{ONE_LINERS[0]}\n' in use_it, 'one obvious getting-started command remains on the root'
+    assert "```text\n" + PASTE + "\n```" in guide, "the canonical paste line is one click away"
+    def prose_words(text):
+        # Linked image badges are navigation/status, exempt from the visitor's prose budget.
+        without_badges = re.sub(r'\[!\[[^\]]*\]\([^\s)]+\)\]\([^\s)]+\)', '', text)
+        return len(re.sub(r'<[^>]+>', '', without_badges).split())
+
+    words = prose_words(README)
+    assert prose_words(README + '\n' + '[![status](https://example.org/badge.svg)](https://example.org)\n' * 400) == words
+    assert words <= 350, f"{words} words: keep the root a short entrance, not a manual"
     flat = " ".join(use_it.split())
     assert "collects no telemetry" in flat and "only if you say yes" in flat
-    assert "docs/practice/agent-workflow.md#install" in use_it, "the long form is one link away"
     assert "## Quick start" not in README, "one quick start: the first section replaced it"
 
 

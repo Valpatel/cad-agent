@@ -9,6 +9,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.24.0 (2026-11-07)
+
+**New**
+- `export-3mf --require-project-settings` rejects missing or incomplete native Bambu project settings before updating exports, preserving prior files on settings/layout rejection (#84).
+
+**Changed**
+- The root README answers what cad-agent is, why its learning loop is useful and how to join in; installation detail and evidence stay one click away, with the pixel header and visibly dated real CAD example preserved (#139).
+
+**Fixed**
+- A failed Bambu settings-export command can no longer supply accepted project settings through a freshly written ZIP (#84).
+
 ## v0.23.1 (2026-11-06)
 
 **Changed**

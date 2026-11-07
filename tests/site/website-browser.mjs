@@ -488,7 +488,7 @@ try {
         // #146 adds the snap-arm explorer.
         ['/docs/compliant', 146],
         // #179 slice 3 and #122: real outputs for the rest.
-        ...['/CONTRIBUTING', '/README', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/design-process-plan',
+        ...['/CONTRIBUTING', '/THIRD_PARTY_NOTICES', '/docs/agent-workflow', '/docs/design-process-plan',
           '/docs/pcb', '/docs/review-packet', '/docs/vision', '/docs/volume-precision',
           '/lessons/electronics/pcb-evidence-and-review', '/lessons/mechanical/design-rules',
           '/lessons/mechanical/enclosure-features', '/lessons/process/agent-process', '/lessons/process/verify-from-source',
@@ -499,7 +499,7 @@ try {
       ]);
       // The list only shrinks: its length is pinned here, so a page can join it only with a visible edit to this number,
       // and each page that leaves it brings the number down with it.
-      const WALLS_LEFT = 25;
+      const WALLS_LEFT = 24;
       if (WALLS.size !== WALLS_LEFT) problems.push(`walls: WALLS has ${WALLS.size} pages and WALLS_LEFT says ${WALLS_LEFT}: ${WALLS.size < WALLS_LEFT ? `lower WALLS_LEFT to ${WALLS.size}` : 'the backlog only shrinks; fix the page instead'}`);
       const sitePages = [];
       for (const e of await readdir(dir, { withFileTypes: true, recursive: true })) {

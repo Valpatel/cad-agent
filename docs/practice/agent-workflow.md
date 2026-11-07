@@ -43,6 +43,18 @@ Nothing checks for updates in the background. `cad-agent all` notes it when the 
 days old (not for a checkout pinned to a release tag), and refuses a project whose `cad: {cad-agent: "0.14"}` asks
 for a newer cad-agent ([toolkit](../toolkit.md)).
 
+### Ask your assistant
+
+Paste this line, followed by what you want made:
+
+<!-- The first line of docs/agent-prompt.txt; the site's home page shows it too. -->
+```text
+Install cad-agent from https://cad-agent.valpatel.com/llms.txt, then use it for:
+```
+
+cad-agent collects no telemetry. When your agent finds a gap or learns a lesson, it shows you a short report and
+sends it as a pull request or an issue only if you say yes.
+
 **By hand**, with Python 3.11 or newer and git:
 
 ```bash

@@ -145,14 +145,32 @@ test('authored delegated role, resource and policy Markdown still gets relative-
 test('new direct bundled skill resources need actual SKILL links', () => {
   const d = base();
   d['.agents/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [skills/](skills/README.md) | Skills. |\n';
-  d['.agents/skills/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [example/](example/SKILL.md) | Skill. |\n';
-  d['.agents/skills/example/SKILL.md'] = '# Example skill\n';
+  d['.agents/skills/README.md'] = diagram + '\n[Up](../README.md)\n\n| Folder | Purpose |\n|---|---|\n| [example/](example/README.md) | Skill. |\n';
+  d['.agents/skills/example/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [SKILL.md](SKILL.md) | Instructions. |\n| [helper.md](helper.md) | Resource. |\n';
+  d['.agents/skills/example/SKILL.md'] = '# Example skill\n\n[Map](README.md)\n';
   d['.agents/skills/example/helper.md'] = '# Bundled resource\n';
   assert.match(check(d).problems.join('\n'), /bundled resource .*helper.md needs an explicit skill link/);
   d['.agents/skills/example/SKILL.md'] += '\n[Resource](helper.md)\n';
   assert.deepEqual(check(d).problems, []);
   d['.agents/skills/example/helper.md'] += '\n[Bad](missing.md)\n';
   assert.match(check(d).problems.join('\n'), /broken relative link missing.md/);
+  delete d['.agents/skills/example/README.md'];
+  assert.match(check(d).problems.join('\n'), /missing owner map .agents\/skills\/example\/README.md/,
+    'an installed SKILL is not a substitute for the human folder map');
+});
+test('data keeps its historical contents while each folder still needs a real map', () => {
+  const d = base();
+  d['code/README.md'] += '\n| Folder | Purpose |\n|---|---|\n| [records/](records/README.md) | Recorded data. |\n';
+  d['code/records/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [dated/](dated/README.md) | Dated run. |\n';
+  d['code/records/dated/README.md'] = diagram + '\n[Up](../README.md)\n\n| File | Purpose |\n|---|---|\n| [old.md](old.md) | Immutable report. |\n';
+  d['code/records/dated/old.md'] = '[Recorded old namespace](old-layout/result.json)';
+  const policy = { delegated: [{ root: 'code/records', owner: 'code/records/README.md', reason: 'Dated data with local human maps.',
+    kind: 'data', members: 'folder-maps' }] };
+  assert.deepEqual(check(d, policy).problems, []);
+  d['code/records/dated/README.md'] += '\n[Broken current instruction](missing.md)\n';
+  assert.match(check(d, policy).problems.join('\n'), /broken relative link missing.md/);
+  delete d['code/records/dated/README.md'];
+  assert.match(check(d, policy).problems.join('\n'), /missing owner map code\/records\/dated\/README.md/);
 });
 test('native disclosures keep the complete inventory closed and group repeated owners', () => {
   const rows = [{ dir: 'software/vendor/a', owner: 'software/README.md', published: null, reason: 'Pinned upstream.' },

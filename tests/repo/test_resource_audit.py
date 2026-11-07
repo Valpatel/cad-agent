@@ -1419,6 +1419,11 @@ def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_subst
     rep, rows = own()
     assert set(rows) == expected
     assert all(row["file"].startswith(".agents/") for row in rows.values())
+    write(root, '.agents/agents/README.md', '# Roles\n\n```sh\nnpx example-unpinned-tool\n```\n')
+    rep, mapped = own()
+    assert set(mapped) == expected  # The human map is not an eleventh skill/role.
+    assert any(f['subject'] == 'doc:.agents/agents/README.md' for f in rep.findings), \
+        'the map must still receive install-advice auditing'
     for row in rows.values():
         write(root, row["file"].removeprefix(".agents/"), "# Stale copy\n")
     assert set(own()[1]) == expected

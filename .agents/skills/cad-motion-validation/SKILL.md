@@ -36,3 +36,5 @@ flowchart TD
    A passing trace says nothing by itself about continuous clearance, loads, physical fit or hardware safety.
 
 Use the repository's normal independent review and deployment process. This skill adds no publication permission.
+
+[Folder map](README.md) · [Reference map](references/README.md)

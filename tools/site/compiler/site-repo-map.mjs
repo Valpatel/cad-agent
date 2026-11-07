@@ -57,7 +57,7 @@ export function checkMap({ files, read, policy, publication = null }) {
     if (!row || Object.keys(row).some(k => !allowedRow.has(k)) || !plain(row.root) || !plain(row.owner) || !row.owner.endsWith('.md') ||
         (row.reason !== undefined && typeof row.reason !== 'string') ||
         (row.kind !== undefined && !['owned', 'upstream', 'data'].includes(row.kind)) ||
-        (row.members !== undefined && !['linked-files', 'policy'].includes(row.members)))
+        (row.members !== undefined && !['linked-files', 'policy', 'folder-maps'].includes(row.members)))
       problems.push(`repo-map policy row ${i}: invalid path, field, kind or members choice`);
     else if (policy.delegated.slice(0, i).some(before => typeof before?.root === 'string' && (beneath(row.root, before.root) || beneath(before.root, row.root))))
       problems.push(`repo-map policy row ${i}: overlapping delegated roots`);
@@ -76,8 +76,7 @@ export function checkMap({ files, read, policy, publication = null }) {
   const delegate = dir => policy.delegated.find(p => beneath(dir, p.root));
   const ownerOf = dir => {
     const p = delegate(dir);
-    if (p) return p.owner;
-    if (dir.startsWith('.agents/skills/') && known.has(dir + '/SKILL.md')) return dir + '/SKILL.md';
+    if (p && p.members !== 'folder-maps') return p.owner;
     return dir ? dir + '/README.md' : 'README.md';
   };
   for (const p of policy.delegated) {
@@ -95,11 +94,11 @@ export function checkMap({ files, read, policy, publication = null }) {
     const owner = ownerOf(dir), p = delegate(dir);
     rows.push({ dir, owner, published: published.get(owner) || null, reason: p?.reason || (owner.endsWith('/SKILL.md') ? 'Installed skill entry; resource links stay relative to SKILL.md.' : 'Owned folder map.') });
     if (!known.has(owner)) { problems.push(`${dir || '.'}: missing owner map ${owner}`); continue; }
-    if (owner.endsWith('/SKILL.md')) {
-      const links = md(owner).links.map(h => resolve(owner, h));
-      for (const f of files.filter(f => beneath(f, dir) && f !== owner))
-        if (!links.includes(f)) problems.push(`${owner}: bundled resource ${f} needs an explicit skill link`);
-      continue;
+    const skill = dir.startsWith('.agents/skills/') && known.has(dir + '/SKILL.md') ? dir + '/SKILL.md' : null;
+    if (skill) {
+      const links = md(skill).links.map(h => resolve(skill, h));
+      for (const f of files.filter(f => beneath(f, dir) && f !== skill))
+        if (!links.includes(f)) problems.push(`${skill}: bundled resource ${f} needs an explicit skill link`);
     }
     if ((p && owner !== dir + '/README.md' && p.members !== 'policy') || !dir) continue;
     const doc = md(owner);

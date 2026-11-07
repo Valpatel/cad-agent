@@ -122,11 +122,9 @@ jobs:
             --exclude '^https?://([a-z0-9-]+\.)*example\.(com|org|net)'
             --exclude-path docs/research/security-report.md --exclude-path docs/changelog.d
             --exclude-path docs/research/references/README.md --exclude-path docs/research/bench/README.md
-            --exclude-path docs/examples/starter-box/README.md --exclude-path docs/examples/explore-two-wheel/README.md
-            --exclude-path docs/examples/starter-box/cad/README.md --exclude-path docs/examples/starter-box/tools/README.md
-            --exclude-path docs/examples/explore-two-wheel/catalogue/README.md
-            --exclude-path docs/examples/explore-two-wheel/designs/README.md --exclude-path docs/examples/explore-two-wheel/tools/README.md
-            'README.md' '.github/CONTRIBUTING.md' 'software/vendor/THIRD_PARTY_NOTICES.md' 'docs/**/*.md'
+            --exclude-path .agents/agents/README.md
+            'README.md' '.github/CONTRIBUTING.md' 'software/vendor/THIRD_PARTY_NOTICES.md' 'docs/*.md' 'docs/*/*.md'
+            'docs/research/*/*.md' 'docs/lessons/*/*.md' 'docs/examples/numbered-coupons/README.md'
             '.agents/skills/*/SKILL.md' '.agents/agents/*.md'
           format: json
           output: build/lychee.json

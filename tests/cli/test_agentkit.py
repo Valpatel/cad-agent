@@ -93,6 +93,26 @@ def test_bad_kits_rejected(tmp_path):
         agentkit.items(root)
 
 
+def test_folder_maps_are_resources_not_roles(tmp_path):
+    root, home = kit(tmp_path), tmp_path / 'home'
+    (root / '.agents/agents/README.md').write_text('# Roles\n\n[Reviewer](reviewer.md)\n')
+    map_file = root / '.agents/skills/alpha/README.md'
+    map_file.write_text('# Alpha\n\n[Instructions](SKILL.md)\n')
+    assert {(item.kind, item.name) for item in agentkit.items(root)} == {('skill', 'alpha'), ('agent', 'reviewer')}
+    result = agentkit.install(home, root, copy=True)
+    assert not result['conflicts'] and len(result['done']) == 4
+    assert not (home / '.claude/agents/README.md').exists()
+    assert not (home / '.agents/skills/README').exists()
+    for relative in ('.claude/skills/alpha', '.agents/skills/alpha'):
+        copied = home / relative
+        assert (copied / 'README.md').read_bytes() == map_file.read_bytes()
+        assert (copied / 'SKILL.md').is_file()  # The map's local instruction link survives a copy.
+    # The exemption is the one conventional map name, not arbitrary Markdown or malformed roles.
+    (root / '.agents/agents/notes.md').write_text('# Not a role\n')
+    with pytest.raises(ValueError, match='no frontmatter'):
+        agentkit.items(root)
+
+
 def test_cli(tmp_path, capsys):
     root, home = kit(tmp_path), tmp_path / 'home'
     assert main(['agents', 'install', '--source', str(root), '--home', str(home), '--target', 'codex']) == 0

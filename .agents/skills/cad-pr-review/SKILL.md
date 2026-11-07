@@ -88,3 +88,5 @@ flowchart TD
 - Use `gh pr comment --body-file` or `gh issue comment --body-file` for ordinary timeline updates and verify the
   created comment/target. The issue-update resource edits the description; it is not a substitute for the comments
   collection. Formal reviews and inline comments retain their documented commands/routes.
+
+[Folder map](README.md)

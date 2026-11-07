@@ -2,7 +2,7 @@
 
 On 2026-11-07 UTC, the #113 read-only map study first split ordinary `git ls-tree` output on lines. Git quoted a vendored Unicode filename, producing invented quoted parent paths in that rejected inventory. The corrected inventory used `git ls-files -z`, decoded UTF-8 and split only on NUL. Historical 58/110 and 61/112 counts used declared exclusions; they are dated inventories, not completeness percentages or asserted missing-README defect counts.
 
-The actual installer also treats every `.agents/agents/*.md` as a role prompt. An ordinary README there fails the existing frontmatter/discovery control. Generated figures, fixture trees and imported projects have different consumers from owned source packages; blindly adding READMEs or suppressing all unmatched folders would misrepresent ownership.
+At that audited revision, the installer treated every `.agents/agents/*.md` as a role prompt. An ordinary README there failed the existing frontmatter/discovery control. Generated figures, fixture trees and imported projects have different consumers from owned source packages; blindly adding READMEs or suppressing all unmatched folders would misrepresent ownership.
 
 ## Evidence and correction
 
@@ -32,6 +32,37 @@ A parent-authorized bounded headless local run at exact `d93ce8fe` then built 90
 Use the existing NUL-safe inventory convention and a real consumer-based owner for every directory. Ordinary owned folders require an authored map, explicit direct-file table, up link and child ownership links. A group delegates only to its actual named parent/index/validator: new fixture sets or figure topics still need parent rows, new prompt/resources need explicit owner links, dated incidents need real symptom-index entries, and temporary release fragments still pass the actual release parser. Do not preserve omissions by copying a baseline allowlist.
 
 Keep publication scope separate: `docs/map.md` distinguishes public pages from canonical source-only code/tool/operational maps. It does not add broad new catalogue routes. The existing required Chromium job checks freshness and controls and renders source owner diagrams through the actual kit in both themes; local structural success is not that browser evidence.
+
+## An ownership map does not replace a requested folder README
+
+The 2026-11-07 audit of actual dev `422c9f38a907e31a67a118809ab26f9ca51d25a3` used
+`git ls-tree -rz --name-only` and derived directories from the NUL-delimited names. All 1,034 directories had a
+declared owner, but 38 still lacked their own README after the original upstream, fixture and GitHub-policy
+exception concepts: eight skill roots, role/reference/plugin folders, 22 figure topics, one dated validation run
+and four vendor metadata/patch folders. The original literal request remained unmet despite the green owner check.
+
+The correction adds short human maps with actual file tables, parent/child links, existing figure previews and
+small Mermaid diagrams. Skill maps link the canonical instructions rather than duplicate them. A typed
+`folder-maps` policy keeps historical data prose separate from current authored instructions while requiring
+each data directory's own map. The skill's bundled-resource links remain an independent check.
+
+The actual role installer and supply-chain inventory now reserve exactly `.agents/agents/README.md` as a map;
+other malformed role Markdown still fails discovery. The role map is explicitly source-only, so publication
+does not misclassify it as a third agent. Skill maps copy with their local instructions and references; links
+outside the copied bundle use canonical source URLs. Figure maps also use source URLs for captions/producers
+outside their raw-copied asset namespace. No historical report, source record, patch or image bytes are rewritten.
+
+**Rule:** test the requested entry point and the real consumers that discover or copy it. Parent ownership and
+literal README coverage are different assertions. Keep the original narrow exceptions; do not add a broader
+waiver merely to make a folder count pass. Current full tests and actual diagram rendering remain required.
+
+The first local consumer run retained 268 Python passes, eight explicit skips and one failure: the weekly lychee
+glob also selected the new source-only figure/run/role maps. The existing test compared actual workflow arguments
+against the real publisher and caught that drift. The workflow now selects the publisher's supported document
+depths plus the existing explicitly published coupon example, and excludes the role map. Seven obsolete example
+exclusions disappear; no network permissions, action pins, result policy or publisher predicate changes. The exact
+previously failing parity check then passed. The 26 map controls also passed, with their actual diagram renderer
+still explicitly reserved for the existing CI browser job.
 
 ## Limits
 

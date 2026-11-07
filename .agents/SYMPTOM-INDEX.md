@@ -3,6 +3,7 @@
 | Symptom | Guidance |
 | --- | --- |
 | A normal login works but the exact fresh agent profile is logged out, or initialization omits memory evidence | [Name the normal-login trial boundary](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#separate-a-normal-login-flow-trial-from-a-clean-user-claim) |
+| Every folder has a declared owner but requested local README maps are still absent | [Check literal entry points and their discovery consumers](inbox/2026-11-07-folder-inventories-need-explicit-owners.md#an-ownership-map-does-not-replace-a-requested-folder-readme) |
 | Fleet submit succeeds but the parser misses its job id, or fetched evidence modes differ from an assumed umask | [Inspect actual receipts and privacy modes before retrying](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#actual-installer-studies-preserve-passed-and-unmet-scopes) |
 | Installer guard tests pass but real Windows body, uv receipt or current clean-agent evidence is missing | [Separate guards from actual platform installation](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#installer-guards-are-not-full-platform-installation-evidence) |
 | A public fleet job relies on a project default or a quiet checkout times out | [Pin the pool and preserve transfer evidence](inbox/2026-11-07-fleet-public-aliases-are-not-node-selectors.md#pin-the-public-pool-and-keep-transfer-evidence) |

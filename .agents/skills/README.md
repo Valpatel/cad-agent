@@ -18,14 +18,14 @@ flowchart TD
 
 | Task | Skill |
 |---|---|
-| Design a part from requirements through review | [design-process](design-process/SKILL.md) |
-| Diagnose moving parts, pivots and coordinate frames | [cad-motion-validation](cad-motion-validation/SKILL.md) |
-| Select real bought hardware and its CAD | [mcmaster-parts](mcmaster-parts/SKILL.md) |
-| Check clinch hardware and riveted sheet-metal joints | [sheet-metal-hardware](sheet-metal-hardware/SKILL.md) |
-| Audit dependencies, upstreams and resource safety | [cad-supply-chain](cad-supply-chain/SKILL.md) |
-| Keep maintainer work recoverable | [cad-work-tracking](cad-work-tracking/SKILL.md) |
-| Obtain independent review and answer findings | [cad-pr-review](cad-pr-review/SKILL.md) |
-| Run sustained engineering jobs on compute hosts | [cad-remote-runs](cad-remote-runs/SKILL.md) |
+| Design a part from requirements through review | [design-process](design-process/README.md) · [Instructions](design-process/SKILL.md) |
+| Diagnose moving parts, pivots and coordinate frames | [cad-motion-validation](cad-motion-validation/README.md) · [Instructions](cad-motion-validation/SKILL.md) |
+| Select real bought hardware and its CAD | [mcmaster-parts](mcmaster-parts/README.md) · [Instructions](mcmaster-parts/SKILL.md) |
+| Check clinch hardware and riveted sheet-metal joints | [sheet-metal-hardware](sheet-metal-hardware/README.md) · [Instructions](sheet-metal-hardware/SKILL.md) |
+| Audit dependencies, upstreams and resource safety | [cad-supply-chain](cad-supply-chain/README.md) · [Instructions](cad-supply-chain/SKILL.md) |
+| Keep maintainer work recoverable | [cad-work-tracking](cad-work-tracking/README.md) · [Instructions](cad-work-tracking/SKILL.md) |
+| Obtain independent review and answer findings | [cad-pr-review](cad-pr-review/README.md) · [Instructions](cad-pr-review/SKILL.md) |
+| Run sustained engineering jobs on compute hosts | [cad-remote-runs](cad-remote-runs/README.md) · [Instructions](cad-remote-runs/SKILL.md) |
 
 `cad-agent agents install` links the kit into your harness and reports missing requirements; see [the workflow guide](../../docs/practice/agent-workflow.md) before applying maintainer workflows to a project. Skills stay in this folder so harness installation can discover them. New engineering techniques belong in the existing domain code and its tests, with a short skill only when a repeatable workflow needs one.
 

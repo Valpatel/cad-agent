@@ -2499,7 +2499,8 @@ def unpinned_runner(tool, args):
 
 def check_skills(rep, net=None):
     files = tracked(rep.root)
-    ours = [f for f in files if re.match(r'^\.agents/skills/[^/]+/SKILL\.md$', f)] + [f for f in files if re.match(r'^\.agents/agents/[^/]+\.md$', f)]
+    ours = [f for f in files if re.match(r'^\.agents/skills/[^/]+/SKILL\.md$', f)] + [f for f in files
+            if re.match(r'^\.agents/agents/[^/]+\.md$', f) and f != '.agents/agents/README.md']
     required = {f for f in _PAGE_ALIASES if f.startswith(('.agents/skills/', '.agents/agents/'))}
     for file in sorted(required - {f for f in ours if (rep.root / f).is_file()}):
         rep.add('skill-missing', 'high', f'doc:{file}', f'required current agent-kit source {file} is missing', file,

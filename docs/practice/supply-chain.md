@@ -100,11 +100,16 @@ Run the refresh from a checkout with nothing uncommitted: the report records the
 the tree had changes. Repository settings (secret scanning, Dependabot alerts) need admin rights, so only the owner's
 run with `--repo Valpatel/cad-agent` sees them.
 
-Read those settings separately: secret scanning can be enabled while push protection is disabled. An absent or
+<details>
+<summary>Interpreting security settings and missing dependency inventory</summary>
+
+Read settings separately: secret scanning can be enabled while push protection is disabled. An absent or
 unrecognized value is **not verified**, not **off**. Likewise, an empty dependency-graph inventory establishes
 neither the graph's setting nor complete advisory coverage. Inspect supported manifests on the default branch and
 the actual discovered dependencies before relying on alerts; keep the independent audit running. Failed or partial
 graph queries leave earlier findings unverified rather than marking them resolved.
+
+</details>
 
 ## Usage reporting
 

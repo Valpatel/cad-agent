@@ -55,3 +55,12 @@ The final guard now checks the response type before accessing it; added null, li
 those outcomes unverified. The complete audit suite after this correction passed **112 tests**. Successful transport
 alone does not establish a usable response body. The review and fix remain on the PR rather than being treated as
 an unexplained retry of an external service.
+
+## Existing CI also caught release and reading regressions
+
+PR430 at `abeb60cd` failed the existing fragment parser: `153-repository-security-evidence.md` used `### Fixed`
+instead of the documented `**Fixed**` section. Both actual browser engines also rejected the supply-chain page's
+new unfolded guidance as a wall of text (Chromium measured 1213 px against the unchanged 1200 px limit).
+The fragment now uses the existing format and the interpretation detail is in a closed `<details>` section.
+No parser or visual threshold changed. Local release/layout/area checks then passed **69 tests**; fresh full CI
+remains required. Keep these genuine failures on the PR rather than retrying the same source or calling them flaky.

@@ -2536,16 +2536,24 @@ def check_repo(rep, net, repo=None):
     status, data, err = net.github(f'repos/{repo}')
     sa = (data or {}).get('security_and_analysis') if status == 200 and isinstance(data, dict) else None
     admin = bool(((data or {}).get('permissions') or {}).get('admin')) if isinstance(data, dict) else False
-    row = rep.item('repo', id=f'repo:{repo}', settings=sa and {k: (v or {}).get('status') for k, v in sa.items()})
-    if sa:
-        if (sa.get('secret_scanning') or {}).get('status') != 'enabled':
-            rep.add('repo-secret-scanning', 'medium', f'repo:{repo}', 'secret scanning is off',
-                    'security_and_analysis.secret_scanning: ' + str((sa.get('secret_scanning') or {}).get('status')),
-                    'Owner: turn on secret scanning and push protection (Settings, Code security); free for public repositories.')
-        if (sa.get('dependabot_security_updates') or {}).get('status') != 'enabled':
-            rep.add('repo-dependabot-updates', 'low', f'repo:{repo}', 'Dependabot security updates are off',
-                    'security_and_analysis.dependabot_security_updates: ' + str((sa.get('dependabot_security_updates') or {}).get('status')),
-                    'Owner decision: they open fix PRs for alerts (into the default branch, dev).')
+    row = rep.item('repo', id=f'repo:{repo}')
+    if isinstance(sa, dict) and sa:
+        row['settings'] = {k: v.get('status') if isinstance(v, dict) else None for k, v in sa.items()}
+        for field, check, severity, title, action in (
+            ('secret_scanning', 'repo-secret-scanning', 'medium', 'secret scanning is off',
+             'Owner: turn on secret scanning (Settings, Code security); free for public repositories.'),
+            ('secret_scanning_push_protection', 'repo-push-protection', 'medium', 'secret-scanning push protection is off',
+             'Owner: turn on secret-scanning push protection; scanning alone does not block secret-bearing pushes.'),
+            ('dependabot_security_updates', 'repo-dependabot-updates', 'low', 'Dependabot security updates are off',
+             'Owner decision: they open fix PRs for alerts into the default branch.'),
+        ):
+            value = row['settings'].get(field)
+            if value == 'disabled':
+                rep.add(check, severity, f'repo:{repo}', title, f'security_and_analysis.{field}: disabled', action)
+            elif value != 'enabled':
+                # Missing, unreadable or future states are not evidence that a protection is disabled.
+                row['settings'][field] = f'not verified ({value})'
+                rep.unverified.add(f'repo:{repo}')
     else:
         row['settings'] = f'not visible ({err or "needs admin"})'
         rep.unverified.add(f'repo:{repo}')
@@ -2561,12 +2569,17 @@ def check_repo(rep, net, repo=None):
     status, data, err = net.graphql('{ repository(owner: "%s", name: "%s") { dependencyGraphManifests(first: 50) '
                                     '{ totalCount nodes { filename dependenciesCount } } } }' % (owner, name))
     graph = (((data or {}).get('data') or {}).get('repository') or {}).get('dependencyGraphManifests') if isinstance(data, dict) else None
-    if graph is not None:
+    if (status == 200 and not data.get('errors') and isinstance(graph, dict)
+            and type(graph.get('totalCount')) is int and graph['totalCount'] >= 0):
         row['dependency_graph'] = sorted(f"{n['filename']} ({n['dependenciesCount']})" for n in graph.get('nodes') or [])
-        if not graph.get('totalCount'):
+        if graph['totalCount'] == 0:
             rep.add('repo-dependency-graph-empty', 'medium', f'repo:{repo}', "GitHub's dependency graph sees no manifests",
-                    'dependencyGraphManifests.totalCount = 0, so Dependabot alerts cannot fire for package-lock.json or pyproject.toml',
-                    'Owner: check the dependency graph is enabled (Settings, Code security); until then this report is the only advisory check.')
+                    'dependencyGraphManifests.totalCount = 0; this does not establish the graph setting or advisory coverage.',
+                    'Owner: inspect the dependency graph and supported manifests on the default branch; '
+                    'verify discovered dependencies before relying on alert coverage. Keep the independent supply-chain audit.')
+    else:
+        row['dependency_graph'] = f'not verified ({err or status})'
+        rep.unverified.add(f'repo:{repo}')
 
 
 # -------------------------------------------------------------------------------------------------------------- build

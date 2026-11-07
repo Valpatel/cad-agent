@@ -768,16 +768,80 @@ def test_repo_settings_need_an_admin_token(tmp_path):
 
         def github(self, path):
             if path == "repos/o/r":       # security_and_analysis comes only with admin rights
-                sa = {"secret_scanning": {"status": "enabled"}, "dependabot_security_updates": {"status": "enabled"}}
+                sa = {key: {"status": "enabled"} for key in
+                      ("secret_scanning", "secret_scanning_push_protection", "dependabot_security_updates")}
                 return 200, {"full_name": "o/r", "permissions": {"admin": self.admin},
                              **({"security_and_analysis": sa} if self.admin else {})}, ""
             return 404, {"message": "Not Found"}, ""
+        def graphql(self, query):
+            return 200, {"data": {"repository": {"dependencyGraphManifests": {
+                "totalCount": 1, "nodes": [{"filename": "package-lock.json", "dependenciesCount": 1}]}}}}, ""
     for admin in (False, True):
         r = run(checkout(tmp_path / str(admin)), Settings(admin), repo="o/r")
         assert (("repo-dependabot-alerts", "repo:o/r") in checks(r)) is admin
         row = next(x for x in r["inventory"]["repo"] if x["id"] == "repo:o/r")
         assert row["dependabot_alerts"] == ("disabled" if admin else "not verified (needs admin)")
         assert ("repo:o/r" in r["unverified"]) is not admin
+
+
+class RepoSettingsSnapshot(FakeNet):
+    """Only the read-only endpoints used by check_repo; no live settings mutations."""
+    def __init__(self, settings, graph_status=200, graph=None, errors=False):
+        self.settings, self.graph_status, self.graph, self.errors = settings, graph_status, graph, errors
+
+    def github(self, path):
+        if path == "repos/o/r":
+            return 200, {"permissions": {"admin": True}, "security_and_analysis": self.settings}, ""
+        assert path == "repos/o/r/vulnerability-alerts"
+        return 204, None, ""
+
+    def graphql(self, query):
+        return self.graph_status, {"data": {"repository": {"dependencyGraphManifests": self.graph}},
+                                   **({"errors": [{"message": "unavailable"}]} if self.errors else {})}, ""
+
+
+@pytest.mark.parametrize("field,check", [
+    ("secret_scanning", "repo-secret-scanning"),
+    ("secret_scanning_push_protection", "repo-push-protection"),
+    ("dependabot_security_updates", "repo-dependabot-updates"),
+])
+@pytest.mark.parametrize("status", ["enabled", "disabled", None, "pending"])
+def test_repo_protections_are_independent_and_missing_is_not_disabled(tmp_path, field, check, status):
+    settings = {key: {"status": "enabled"} for key in
+                ("secret_scanning", "secret_scanning_push_protection", "dependabot_security_updates")}
+    settings[field] = {"status": status} if status else {}
+    graph = {"totalCount": 1, "nodes": [{"filename": "package-lock.json", "dependenciesCount": 1}]}
+    rep = ra.Report(tmp_path, AS_OF, True)
+    ra.check_repo(rep, RepoSettingsSnapshot(settings, graph=graph), "o/r")
+    result = rep.to_json()
+    assert ((check, "repo:o/r") in checks(result)) is (status == "disabled")
+    assert ("repo:o/r" in result["unverified"]) is (status not in ("enabled", "disabled"))
+    assert len(result["findings"]) == (1 if status == "disabled" else 0)
+
+
+@pytest.mark.parametrize("status,graph,errors,empty,unknown", [
+    (200, {"totalCount": 0, "nodes": []}, False, True, False),
+    (200, {"totalCount": 1, "nodes": [{"filename": "tools/site/package-lock.json", "dependenciesCount": 4}]}, False, False, False),
+    (200, None, False, False, True),
+    (403, None, False, False, True),
+    (200, {"nodes": []}, False, False, True),
+    (200, {"totalCount": 0, "nodes": []}, True, False, True),
+])
+def test_repo_graph_evidence_does_not_infer_a_setting(tmp_path, status, graph, errors, empty, unknown):
+    settings = {key: {"status": "enabled"} for key in
+                ("secret_scanning", "secret_scanning_push_protection", "dependabot_security_updates")}
+    rep = ra.Report(tmp_path, AS_OF, True)
+    ra.check_repo(rep, RepoSettingsSnapshot(settings, status, graph, errors), "o/r")
+    result = rep.to_json()
+    assert (("repo-dependency-graph-empty", "repo:o/r") in checks(result)) is empty
+    assert ("repo:o/r" in result["unverified"]) is unknown
+    row = next(x for x in result["inventory"]["repo"] if x["id"] == "repo:o/r")
+    assert (isinstance(row["dependency_graph"], str) and "not verified" in row["dependency_graph"]) is unknown
+    if empty:
+        finding = result["findings"][0]
+        assert "cannot fire" not in finding["evidence"]
+        assert "only advisory check" not in finding["action"]
+        assert "does not establish" in finding["evidence"]
 
 
 def test_a_private_repository_is_reported_as_gone_with_nothing_about_it(tmp_path):

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cad-agent"
-version = "0.25.1"
+version = "0.25.2"
 description = "Agent toolkit for mechanical and electrical design: CAD checks, simulation, manufacturing files and review reports"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,7 +14,7 @@ license = {text = "MIT"}
 # VTK that cadquery-ocp 7.9.3 (cadquery 2.8) pins; cadquery 2.6 and 2.7 pin vtk 9.3.1, which has three advisories.
 # Python: the package and its core suite run on 3.10, but the cad and sim extras need 3.11 or newer. Every pillow that
 # installs on 3.10 (12.3.0 and older) has critical advisories, and cadquery 2.8 needs 3.11.
-dependencies = ["pyyaml>=6.0", "numpy>=1.22"]
+dependencies = ["pyyaml>=6.0", "numpy>=1.22", "packaging>=26.3"]
 
 [project.optional-dependencies]
 cad = [
@@ -30,7 +30,10 @@ robot = ["mujoco>=3"]
 sim = ["trimesh>=4.0", "manifold3d>=2.4", "rtree>=1.0", "pyvista>=0.44", "imageio>=2.30", "imageio-ffmpeg>=0.5",
        "pymoto>=2.0", "matplotlib>=3.7", "pillow>=13.0", "scipy>=1.10"]
 site = ["markdown>=3.8.1"]
-fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7", "pypardiso>=0.4", "pyamg>=5"]
+# PyPardiso's MKL backend supports Linux/Windows x86-64; the solver already falls back to SciPy elsewhere.
+fea = ["gmsh>=4.11", "scikit-fem>=9", "matplotlib>=3.7",
+       "pypardiso>=0.4; (platform_system == 'Linux' or platform_system == 'Windows') and (platform_machine == 'x86_64' or platform_machine == 'AMD64')",
+       "pyamg>=5"]
 explore = ["optuna>=3.4"]
 dev = ["pytest>=9.0.3"]
 

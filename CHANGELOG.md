@@ -17,6 +17,9 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 - Maintainer guidance records how negated issue-closing keywords caused an unintended closure during release preparation, and how to reference incomplete broader work safely (#404).
 - The compact README opens with an original animated pixel-art robot factory: builders create new builders beneath an orbital network and a distant robot battle. The script-free SVG has a complete reduced-motion still, preserves the badges and stays separate from the recorded real-CAD illustration.
 
+**Fixed**
+- The browser's header check distinguishes hidden theme icons from painted content even when an icon reports a stale rectangle. It retains narrow-screen geometry and screenshots, and still rejects a genuinely visible icon outside the viewport.
+
 ## v0.24.0 (2026-11-07)
 
 **New**

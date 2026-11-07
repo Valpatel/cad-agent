@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A narrow-header failure has no retained bounds, or hidden SVG geometry is treated as painted content | [Separate visibility from geometry and retain the failed frame](inbox/2026-11-07-header-visibility-needs-paint-state.md) |
 | Reduced-motion emulation reports success while an embedded SVG still moves | [Check the actual image consumer](inbox/2026-11-07-image-motion-needs-the-image-consumer.md), [verification rule](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
 | Cloud login or a camera URL succeeds, but fresh telemetry or actual video is missing | [Separate connection stages and match the camera preparation reply](inbox/2026-11-07-camera-grants-do-not-prove-video.md), [reusable method](../docs/research/manufacturing/bambu-cloud.md) |
 | The pointer moves but clicks do not reach other applications despite healthy resources | [Persistent application grabs](inbox/2026-11-07-pointer-grabs-can-mimic-a-frozen-desktop.md), [desktop diagnosis](../docs/lessons/process/agent-process.md#diagnose-desktop-problems-without-disrupting-the-users-session) |

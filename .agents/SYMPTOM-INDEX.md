@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| The pointer moves but clicks do not reach other applications despite healthy resources | [Persistent application grabs](inbox/2026-11-07-pointer-grabs-can-mimic-a-frozen-desktop.md), [desktop diagnosis](../docs/lessons/process/agent-process.md#diagnose-desktop-problems-without-disrupting-the-users-session) |
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
 | Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |
 | Old file imports overwrite newer progress or change state after controls are disposed | [Part checklist ownership](domains/web-part-state.md), [reproduced import incident](inbox/2026-10-29-import-ownership-must-survive-file-decoding.md) |

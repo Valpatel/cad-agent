@@ -1,6 +1,7 @@
 # Animated figures from real CAD
 
-The README's hero is not drawn by hand. `tools/readme_anim.py` makes it from a real project's files:
+The README's real-CAD example is separate from its conceptual pixel workshop header. `tools/readme_anim.py`
+makes the recorded CAD illustration from a real project's files:
 - the STEP assembly, drawn as edges by hidden-line removal;
 - the linkage's kinematics, solved from link lengths measured in the CAD;
 - clearances from the assembly gates' relation engine;
@@ -11,6 +12,29 @@ It writes one SVG of about 140 KB that animates with CSS alone, so GitHub shows 
 ![Gyropup's five-bar leg drawn from its STEP file, assembled, then checked: its running and passing gaps, the hip frame's FEA stress and a stride solved from the link lengths, ending on the cad-agent wordmark](../img/hero/gyropup-leg.svg)
 
 The first figure is [Gyropup](https://github.com/Valpatel/gyropup)'s five-bar leg (MIT): `docs/img/hero/gyropup-leg.svg`. The SVGs in `docs/img/hero/` may be reused on the site and elsewhere. Each one names its source in its caption and `<desc>`.
+
+<details>
+<summary>Recorded source, related projects and evidence limits</summary>
+
+Drawn from the real CAD and results of Gyropup, a self-balancing wheel-legged robot designed with cad-agent: its
+leg's STEP file, the hip frame's FEA and the five-bar's link lengths. Made by
+[`tools/readme_anim.py`](../../tools/readme_anim.py). The committed scene records source revision
+`77f6d00bdb262f0f75a18fa0ddf0075058a649d8` and eight input hashes. This is a historical example, not the latest
+published design or an as-built/physically qualified assembly. Regeneration from a scene proves renderer parity;
+it does not establish that those source files remain current.
+
+The toolkit covers parametric parts, bought hardware, assemblies, geometry/fastener/motion/manufacturing checks,
+structural and thermal predictions, design trade-offs, STEP/STL/3MF exports, review sites and hashed packages.
+The [toolkit reference](../toolkit.md) names the commands, dependencies and limits. Real projects also include the
+[J501 enclosure](https://github.com/mvalancy/j501-agx-orin) and
+[Thor CAN breakout](https://github.com/mvalancy/pcb-agx-thor-can-breakout); product designs stay in their own repos.
+
+For example, [snap-fit calculations](../mechanical/compliant.md) reproduce the Covestro/Bayer guide's worked
+examples. Their material allowables cite data sheets; no printed coupon has been measured yet.
+[Evidence that can improve the toolkit](../lessons/process/2026-11-05-recovery-audit.md#evidence-that-can-improve-the-toolkit-today)
+and the [vision](../vision.md) distinguish recorded checks from planned model evaluations.
+
+</details>
 
 ## Regenerate or check
 

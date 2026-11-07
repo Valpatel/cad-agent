@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/ci.yml)
 [![Browser checks](https://github.com/Valpatel/cad-agent/actions/workflows/webkit.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/webkit.yml)
-[![Supply chain](https://github.com/Valpatel/cad-agent/actions/workflows/supply-chain.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/supply-chain.yml)
+[![Supply chain](https://github.com/Valpatel/cad-agent/actions/workflows/supply-chain.yml/badge.svg?branch=dev)](https://github.com/Valpatel/cad-agent/actions/workflows/supply-chain.yml?query=branch%3Adev)
 [![Release workflow](https://github.com/Valpatel/cad-agent/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/Valpatel/cad-agent/actions/workflows/release.yml)
 [![Release](https://img.shields.io/github/v/release/Valpatel/cad-agent?color=f97316)](https://github.com/Valpatel/cad-agent/releases)
 [![Python 3.10+ core](https://img.shields.io/badge/Python-3.10%2B_core-3776AB)](docs/practice/agent-workflow.md#extras)

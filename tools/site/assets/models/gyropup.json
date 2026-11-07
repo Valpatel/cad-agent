@@ -9,25 +9,133 @@
   -426.9605,
   196.849,
   249.5498,
-  566.0
+  480.0
  ],
  "quant": 65535,
  "bin": "gyropup.bin",
  "encoding": "gzip",
- "bytes": 391703,
- "raw_bytes": 1057020,
- "sha256": "317c8c7d198c194aed262a1eac6c13ec69ce2e671d18500245bafbc56a57a717",
- "triangles": 118300,
+ "bytes": 390479,
+ "raw_bytes": 1042608,
+ "sha256": "e249afcbd10f5e0f7d796200b81f7696ab70ba4d8025c3522a26653708b29180",
+ "triangles": 116672,
  "source": {
   "project": "Valpatel/gyropup",
   "url": "https://gyropup.com",
   "repo": "https://github.com/Valpatel/gyropup",
   "license": "MIT",
-  "revision": "b79896a446cc57391fcd3707c0b898b6f80d2f3d",
-  "committed": "2026-11-02",
-  "export": "cadagent.publish.view.export_view (cad-agent view), tolerance 0.8 mm, angular 0.8 rad; tyre_l, tyre_r, hub_l, hub_r, lidar, lidar_housing, turret_hopper at 0.3 mm, 0.2 rad",
+  "revision": "0f713c432f73fba0d1a0fddc26cc04b71cdc6677",
+  "committed": "2026-11-07",
+  "hardware_tree": "32cb511e33ed1d6e66e6493d7020f1b15b4eec1f",
+  "files": {
+   "hardware/__init__.py": "d6ddd9ce4ef273b82f43f315f09d11db1224f2b8298c9b0b3ea7dafb97280ba0",
+   "hardware/cad/__init__.py": "d6ddd9ce4ef273b82f43f315f09d11db1224f2b8298c9b0b3ea7dafb97280ba0",
+   "hardware/cad/analysis/studies.py": "41d2807c06b54abfa69c966fb274eaa0933e080ee642f977bae8e1aa1900d349",
+   "hardware/cad/body/body_battery.py": "3f491f0e4ccafa2e985fd1f0b20ef886c7b53f059593b354817e17a47b65fa71",
+   "hardware/cad/body/body_bom.py": "aab4d9612ef7176fe74b511be838ad2bb3695a61a81d233ab788cca5650098c0",
+   "hardware/cad/body/body_frame.py": "0dbff64156008827de6e7841e0e310d1741739de93623d23390fa8fe773f7c32",
+   "hardware/cad/body/body_fuse_board.py": "5dcb993962fdcfc0a18cea93c43dec7bb04f0ce3f2174228465f2a73e76d20de",
+   "hardware/cad/body/body_guards.py": "488427babff18f5503df518831dcf68f8ce71573c2fd3d517cedf70af116ff57",
+   "hardware/cad/body/body_joints.py": "696ada09b51da53b01c930ab274f171bf86f8e9f19e1eeb942a8d48345358ee6",
+   "hardware/cad/body/body_layout.py": "2d4514ca185c983caa290ab2c2cc6b167894c9fc473e9b15bf284cb3878e324a",
+   "hardware/cad/body/body_legloads.py": "3a5726ef7c7adf58d2183dd2c55156e1a9f6a55e1c181b3344c777b10d2ce136",
+   "hardware/cad/body/body_params.py": "a68737201e93af4ce8f00f675fbe3c235453b8bb0e19440fe3062635737a2247",
+   "hardware/cad/body/body_sections.py": "1592a87f99a3428761432a4231a9931c2bbddeddbbf20449005aaf3b46710515",
+   "hardware/cad/body/body_sheet.py": "d695fa0d8f3cf1d8c0f9b71fe08a52cb6e701f4d0ed895bf3053cd2325f56459",
+   "hardware/cad/body/body_shell.py": "a5e8f050988b12b1cd7f69e247314eb01ec4b08eed9e4911d7fde5578e780296",
+   "hardware/cad/body/body_studies.py": "e496e35481580e4d1c1c635da5434a300ee63d5140662c5b25a95130375cab0c",
+   "hardware/cad/body/body_thermal.py": "d0aa1a5e8fc31cd9e4fa8ac1bf1600b374611546233cab1db9fe8f884f32b104",
+   "hardware/cad/body/body_views.py": "d6a59be073b020537d55448be63dc89a7867f1118c6e0bf36290482f5518fc0e",
+   "hardware/cad/body/body_wiring.py": "7ae4a6e9684fe852cc22f5efe6cef377be53da3cd1a9dd28b6b1a6a8c69fb1d9",
+   "hardware/cad/builders/build.py": "a2f8bbc581280c219957b00910a8f5fd07ea96114e4e4b41677c82615308225a",
+   "hardware/cad/builders/build_body.py": "218b22c53eac82d94a0f4e6014f4c6f7d833be9c10cffbc062f6ffa4b64fa087",
+   "hardware/cad/builders/build_leg.py": "b2ed60b0da4f38390f8798124e01b0f64c1005fd860204beb944cb17ae80c1ed",
+   "hardware/cad/builders/build_rig.py": "619c6cfd0ad666dbe52fe75e732515bfeefa14a2ab6694c29f91aec4c9ea8779",
+   "hardware/cad/builders/build_turret.py": "1ff62e01fb86b8de8159c7e75dbec2c502aebde457d528f53dedcda4b7a15915",
+   "hardware/cad/builders/build_turret_box.py": "b8cd6154058f1b1eae5b7394b6e22acc0af32c5320a8a922c8fa7bbcbecb1191",
+   "hardware/cad/legs/fivebar.py": "79aa5ae2f902c9a87323a7c9d40edbe71a5f04da8ed228907bddf2dc100a4d17",
+   "hardware/cad/legs/leg.py": "f8cf486e8056b55b024b83d87223429c1d2d163443d3734115e36e2e0f16f1eb",
+   "hardware/cad/legs/leg_studies.py": "a89b96dae120a0d56430eabc8fba5eb7a69f75fc4685087eff106cd496dc9c4a",
+   "hardware/cad/legs/rs04_lug_checks.py": "c5751f8ef30f1b7ea804494e818667419dcfd05f5ac200a03f5936ae3a78d823",
+   "hardware/cad/legs/wheel_fit.py": "ab2141bab7743d89ee330401906ec182e59448188f67e1bce7afb32970badcfc",
+   "hardware/cad/locations.py": "ce87f089e519134d47a041a933b9bf862b91917ddf03e073152d132e845c130e",
+   "hardware/cad/manufacturing/bom_media.py": "785b9c60608980cff01b03fa054159e50230df6a7f223c0edb9172292e9314cb",
+   "hardware/cad/manufacturing/print_provenance.py": "10ab9d0688273573e7d4647b1f2abea23efcfe43a1d89a0ff11330fb04cf558a",
+   "hardware/cad/manufacturing/print_slicing.py": "61c6d39b363efec49e8d111c234c53dfbd9f2c60752bfb0cbe3d253906be1704",
+   "hardware/cad/manufacturing/printplan.py": "3bff04439c3a60ec89a1263b44f6a16c0eb42afe18b514d1207b59d8bfc294d0",
+   "hardware/cad/rig/rig_assembly.py": "13382c222d6bf56363f494279507f761381aa882d95a27409114b1bcb959f9be",
+   "hardware/cad/rig/rig_bench.py": "70c545bbc7fe5fee3d022fa219acb8e25dc074c6534fb19e7ee5c75ca64a9fca",
+   "hardware/cad/rig/rig_hardware.py": "5fa85d0973dc3fff49a4b6ddf7765c01fba193e70fcf102ae11dd58036d983fe",
+   "hardware/cad/rig/rig_integrity.py": "c361c7323b3c2fe461fd5d9c0af9edbee8a4dedfee3fd8ed0fe622e9013365ad",
+   "hardware/cad/rig/rig_parts.py": "4fb51ecb263971c06712696617e59c3bef59280db8bb3bff12ee906e8bd70143",
+   "hardware/cad/rig/rig_views.py": "de912fbdad7616f61c965786add7b296e830e60ae04b134a448cbc9182500709",
+   "hardware/cad/robot/assembly.py": "8da70c67e060884544d1b44c69153480a8a5e541f0f7caa3ea8aec87b0991e1a",
+   "hardware/cad/robot/assembly_checks.py": "33ee6454e3477586e2a2dc7af2901e60678ca61a567152d5d7e987bfde104122",
+   "hardware/cad/robot/cables.py": "26ff1e464439bfe776fa0a30fb511b36d8bbee56fdb92980fde49f82105da75a",
+   "hardware/cad/robot/electronics.py": "e3d322ee903366af22caa191dbc1aab80546a1c90aac886d1d87b7905af93daa",
+   "hardware/cad/robot/gmi.py": "13ee0da5ad9cc1399d6be16d661775633ae16b4ef872907d7c52ff3dc9b45269",
+   "hardware/cad/robot/interfaces.json": "a4842a317dd2e64e9b4e11d34376bc36c26e1ddf8435a4b16a85dae3cd730b73",
+   "hardware/cad/robot/parameters.json": "92cfeaa792a2466594852afeef08af70fe74335ce60f458bd976f62ec0a39e13",
+   "hardware/cad/turret/check_base_board_interfaces.py": "e66019c5d03b14239535af20eaf7aa6ca9db7884a72f01a39fe4182fdd7dc02e",
+   "hardware/cad/turret/check_base_board_print.py": "cdabcfec32a17ab901880ce6fa94f74398923fd0237758a2b6ee5b8d6deb8aeb",
+   "hardware/cad/turret/check_base_board_service.py": "56f07bb65cb5c103948b41e2d5e971a809401b3e7cf793da48317c8000050dc2",
+   "hardware/cad/turret/turret.py": "741b0c28b7c79c468348b5c6c5c478f795e3f4d40a4eb81ec74f2ab55a4430a4",
+   "hardware/cad/turret/turret_assembly.py": "9af4d44b15d7d87fc7d91eed2daaf8534f95f920fbf2eda78ece961318a04963",
+   "hardware/cad/turret/turret_base_board.py": "68fa770daf4d6568f253c103d8f89225c90eadb2a5a523e7afbf3e689fbd395e",
+   "hardware/cad/turret/turret_boards.py": "a10736535be770721bbd3ca59579d5854655026bbd3f4670a96d360b8f8deb71",
+   "hardware/cad/turret/turret_box.py": "9d3f6a82712f1449e03edafe78383fa0916ac0efa1740d0ea9dc6ed03a7ddafe",
+   "hardware/cad/turret/turret_carrier_interfaces.py": "d43e7f968fc16e51447bcbdc515cb4e6043ca8b169b406da4820785cf97eb04f",
+   "hardware/cad/turret/turret_carrier_support.py": "6ce4f816778c10a4d2e91c64b58ca8583c70f6ad443cd34fff9f36cf37b6438a",
+   "hardware/cad/turret/turret_dossier.py": "6c574923e15841171aa522e569b6cede4d65edf753109fd483635af93bdc347c",
+   "hardware/cad/turret/turret_gates.py": "f4a8f86284525ce1c44c53bb9eb923805c8e27aad17c29c8f3084a5ee81b408f",
+   "hardware/cad/turret/turret_lidar.py": "de19beb6390c99a8aa2a15ffdfe3d93eadd410702c5d39c698138e091c207111",
+   "hardware/cad/turret/turret_motion.py": "9487ca3642098e385d099abcf962a0231b58c44028dcbb651c6ba617cb92f963",
+   "hardware/cad/turret/turret_mount.py": "36730bfba9e267e1793eb38645baa5d121d32967d0135742de330f180d0991f3",
+   "hardware/cad/turret/turret_orders.py": "d8654ac8d7bc1ccc92a897741f336115e2065b39a45e2a94e5ce05cb36568ae7",
+   "hardware/cad/turret/turret_print.py": "7482db25ad8334a60ec4ee15e8606c20ef5a15e025c0310e1e64a831334cd54f",
+   "hardware/cad/turret/turret_snaps.py": "9dd5ed2fffeed0c8798e11836866725003fe3265e2bc2f915b56a543d98ad0c1",
+   "hardware/cad/turret/turret_stand.py": "5fb158d98b56c7273056a95c10238b05af2766e17ddcde8a7c684847983d3562",
+   "hardware/cad/turret/turret_studies.py": "52677a7de4af14d4f1974b5bf125783b6293dd083908d2c7d92fa8a3ee62a2f4",
+   "hardware/catalog/alternates.json": "9d5da650878fefa12654cdedae841d2daf22c1101c7f038018a75b8921d5ee3b",
+   "hardware/catalog/body.json": "91a27038348a4e8e4beb3ede92c5c84a073d4728cd73e14f66d3e3226ab9b52b",
+   "hardware/catalog/designed-media-validation.json": "d56261a569674097c2edb511240b76e3603b336848caaba8d433fec3ce15c5ed",
+   "hardware/catalog/hardware.json": "af0f7f3bdce4ee93649e278106d00a93fe2ebea3569c057f1d2a04fe4b360015",
+   "hardware/catalog/images.json": "f149d69e23a6434e7fbbf97aae2e3b15d02495c85df3de0e4017f78924bccdce",
+   "hardware/catalog/index.json": "5e77d00c8ab4961f5da0bb2d5692a23170b9f4143e05d850d7b33fe36d70f334",
+   "hardware/catalog/interfaces.json": "3889bc34503444f389e7951d74944f37b7e57b0b2b3be68ed596b959e83a46af",
+   "hardware/catalog/leg_actuators.json": "b8ed3125cca22e9936b929fa1529395b1dead7a9585c21c63995bb294fa31bc5",
+   "hardware/catalog/lights.json": "7f8a4a2ebf819141ba8929257bce17a3868d5420fd34a4ee137e7d8b2ee51f78",
+   "hardware/catalog/materials.json": "f699e8ea644aeb4f66227f5e021a2a7996b477ef1a41d6048b7f638364ba5d1f",
+   "hardware/catalog/motor_drivers.json": "4b4d83c2ba6ded0127992de1fb01982e96d831a79864af73ff49ecad102704e3",
+   "hardware/catalog/power_electronics.json": "896ad5da63cb4cf56ebb38607e012343395e220d3c4a8d0a2275e9a614012c97",
+   "hardware/catalog/rig.json": "87b982f76287ec4141cdb043de880e985373ca8305a8cf30ed15d378f25879b5",
+   "hardware/catalog/sensors_compute.json": "7ba205b22b43195db0dcff85976a18f0a8405f782c3437e675122dbbc549f47a",
+   "hardware/catalog/sourcing.json": "a002bac6b795357a717ed0528ea6e2a561d774a7e608c35fee64fd8231370a12",
+   "hardware/catalog/turret.json": "4e0ab8a62f75e4da60e50e84dcddc85d2e462ffc0949bacdcdf60d7f4aade9f7",
+   "hardware/catalog/vendor-media-verification.json": "3025ca6b68918b33986078c8a8087f036a653f17c230accf665127fa3d72d733",
+   "hardware/catalog/wheel_motors.json": "e92baa60e433e177d87450145943c32bd6b60bebb97e1c1746354aa00f2dbc99",
+   "hardware/designs/default.json": "3dc7d04d0d6eeec81decefa360f3904b093f19515d6944910c2cb20c976db211",
+   "tests/hardware/body/test_body.py": "1f99193493bd0512cbbcef0f771f1e0585dd1a820ea159719bd828a54f564d64",
+   "tests/hardware/legs/test_leg_loads.py": "f05c09f4719541fa8880dbee28ce01e4314ae5dba7a599e7eecb6240d94341a4",
+   "tests/hardware/turret/test_turret_gate_sources.py": "d4ee3b4082e70a4d859516b064aa45388cf67f704cc11be2d448346716548ca5",
+   "tests/hardware/turret/test_turret_snaps.py": "ac1268ba482917a8f01927f7a363eca48e8a16829f22f620ffe4a77b43e04eb1",
+   "tests/hardware/turret/test_turret_solids.py": "d03677019224ad4e95f8775f374010c450299daf67fd729f546a1ea458e87a31",
+   "tools/engineering/robot/robot_view.py": "e655d2c00c6d8d752ac941d2327d4b6faa673d8941567894f7792c92839ada37"
+  },
+  "collector": "tools/engineering/robot/robot_view.py",
+  "collector_sha256": "e655d2c00c6d8d752ac941d2327d4b6faa673d8941567894f7792c92839ada37",
+  "source_guard_sha256": "8c653277d2aee9fbfd08acb07c23c6542cdd04930804180a111352666110499e",
+  "runtime": {
+   "cadquery": "2.8.0",
+   "numpy": "2.5.4",
+   "cadquery-ocp": "7.9.3.1.1",
+   "vtk": "9.6.2",
+   "cad_agent_revision": "e662a1ce79b4f63f7352b9d065c5027f77d53a81"
+  },
+  "producer_revision": "8394dbfa475dca996a0004cc31768e427a839185",
+  "producer_sha256": "30bf6063cd0ac21eaa194ad4c7ba827f3f4193f75ab3cfecd763eae6b54c29e1",
+  "export": "Fresh robot_view.collect() shapes, STL 0.8 mm/0.8 rad; tyre_l, tyre_r, hub_l, hub_r, lidar, lidar_housing, turret_hopper at 0.3 mm/0.2 rad",
   "pack": "cadagent.publish.view.pack_view",
-  "regenerate": "python3 tools/gyropup_showcase.py --gyropup <checkout>",
+  "regenerate": "python3 tools/gyropup_showcase.py --only model --gyropup <checkout> --toolkit <pinned-toolkit> --output <fresh-model-directory>",
   "recoloured": [],
   "left_out": [
    "frame_inner",
@@ -38,7 +146,325 @@
    "leg_hardware_l",
    "leg_hardware_r",
    "turret_hardware"
-  ]
+  ],
+  "members": {
+   "battery": [
+    "item.battery_front",
+    "item.battery_rear"
+   ],
+   "bay_doors": [
+    "bay_door_front",
+    "bay_door_rear"
+   ],
+   "brackets": [
+    "post_1",
+    "post_2",
+    "post_3",
+    "post_4",
+    "riser",
+    "plate_post_1",
+    "plate_post_2",
+    "plate_post_3",
+    "plate_post_4",
+    "dcdc_bracket",
+    "bay_rail_l",
+    "bay_rail_r",
+    "adapter_plate_front",
+    "adapter_plate_rear",
+    "ear_bracket_l",
+    "ear_bracket_r",
+    "d435_cradle_front",
+    "d435_cradle_rear"
+   ],
+   "bus_bars": [
+    "bus_bar_1",
+    "bus_insulator_1",
+    "bus_bar_2",
+    "bus_insulator_2"
+   ],
+   "cameras": [
+    "d435_front",
+    "d435_rear",
+    "eyes_board"
+   ],
+   "compute": [
+    "item.j501_carrier",
+    "item.agx_module",
+    "item.agx_spreader",
+    "item.agx_cooler",
+    "item.j501_standoff_15_16.5",
+    "item.j501_standoff_165_16.5",
+    "item.j501_standoff_15_146.5",
+    "item.j501_standoff_165_146.5",
+    "item.lidar_box",
+    "item.lidar_coil"
+   ],
+   "deck": [
+    "deck"
+   ],
+   "ear_pods": [
+    "ear_pod_l",
+    "ear_pod_r"
+   ],
+   "electronics": [
+    "item.plate_vesc_r",
+    "item.plate_vesc_l",
+    "item.plate_main_switch",
+    "item.plate_shunt",
+    "item.power_dcdc",
+    "item.plate_mrbf_block",
+    "item.plate_fuses",
+    "item.plate_mcu_board",
+    "item.plate_buck_5v",
+    "item.vn100",
+    "item.battery_adapter_front",
+    "item.battery_adapter_rear"
+   ],
+   "frame": [
+    "cheek_left",
+    "cheek_right",
+    "belly_plate",
+    "bay_floor",
+    "bay_side_l",
+    "bay_side_r"
+   ],
+   "frame_inner": [
+    "floor_tray",
+    "compute_pallet",
+    "turret_plate",
+    "power_plate"
+   ],
+   "front_link_l": [
+    "L.front_link"
+   ],
+   "front_link_r": [
+    "R.front_link"
+   ],
+   "hardware": [
+    "turret_plate_nuts",
+    "isolator_1",
+    "isolator_2",
+    "isolator_3",
+    "isolator_4",
+    "bay_skid_1",
+    "bay_skid_2",
+    "bay_skid_3",
+    "bay_skid_4",
+    "spacers",
+    "spacer_screws",
+    "frame_screws_left",
+    "cheek_nuts_left",
+    "frame_screws_right",
+    "cheek_nuts_right"
+   ],
+   "hip_frame_l": [
+    "L.hip_frame"
+   ],
+   "hip_frame_r": [
+    "R.hip_frame"
+   ],
+   "hub_l": [
+    "L.wheel_hub"
+   ],
+   "hub_r": [
+    "R.wheel_hub"
+   ],
+   "leg_hardware_l": [
+    "L.apex_spacer",
+    "L.bearing_61812_front",
+    "L.bearing_61812_rear",
+    "L.knee_bearing_front_in",
+    "L.knee_bearing_front_out",
+    "L.knee_pin_front",
+    "L.knee_washer_front",
+    "L.knee_spacer_front",
+    "L.knee_bearing_rear_in",
+    "L.knee_bearing_rear_out",
+    "L.knee_pin_rear",
+    "L.knee_washer_rear",
+    "L.knee_spacer_rear",
+    "L.eye_sleeve_front",
+    "L.knee_nut_upper_front",
+    "L.eye_sleeve_rear",
+    "L.knee_nut_upper_rear",
+    "L.apex_61812",
+    "L.apex_circlip",
+    "L.stop_posts",
+    "L.screws_lugs",
+    "L.screws_links",
+    "L.screws_outputs",
+    "L.screws_wheel",
+    "L.washers_wheel"
+   ],
+   "leg_hardware_r": [
+    "R.apex_spacer",
+    "R.bearing_61812_front",
+    "R.bearing_61812_rear",
+    "R.knee_bearing_front_in",
+    "R.knee_bearing_front_out",
+    "R.knee_pin_front",
+    "R.knee_washer_front",
+    "R.knee_spacer_front",
+    "R.knee_bearing_rear_in",
+    "R.knee_bearing_rear_out",
+    "R.knee_pin_rear",
+    "R.knee_washer_rear",
+    "R.knee_spacer_rear",
+    "R.eye_sleeve_front",
+    "R.knee_nut_upper_front",
+    "R.eye_sleeve_rear",
+    "R.knee_nut_upper_rear",
+    "R.apex_61812",
+    "R.apex_circlip",
+    "R.stop_posts",
+    "R.screws_lugs",
+    "R.screws_links",
+    "R.screws_outputs",
+    "R.screws_wheel",
+    "R.washers_wheel"
+   ],
+   "lidar": [
+    "item.vlp16_window"
+   ],
+   "lidar_housing": [
+    "item.vlp16_housing"
+   ],
+   "motors_l": [
+    "L.motor_front",
+    "L.motor_rear"
+   ],
+   "motors_r": [
+    "R.motor_front",
+    "R.motor_rear"
+   ],
+   "output_adapters_l": [
+    "L.output_adapter_front",
+    "L.output_adapter_rear"
+   ],
+   "output_adapters_r": [
+    "R.output_adapter_front",
+    "R.output_adapter_rear"
+   ],
+   "shell": [
+    "shell_side_l_front",
+    "shell_side_l_rear",
+    "shell_side_r_front",
+    "shell_side_r_rear",
+    "shell_front",
+    "shell_rear",
+    "shell_door",
+    "shell_hatch",
+    "fan_duct",
+    "eyes_clip"
+   ],
+   "stops_l": [
+    "L.stop_sleeve_1",
+    "L.stop_sleeve_2",
+    "L.stop_sleeve_3",
+    "L.stop_sleeve_4"
+   ],
+   "stops_r": [
+    "R.stop_sleeve_1",
+    "R.stop_sleeve_2",
+    "R.stop_sleeve_3",
+    "R.stop_sleeve_4"
+   ],
+   "turret_barrel": [
+    "turret.hopper_flap",
+    "turret.barrel"
+   ],
+   "turret_bought": [
+    "turret.pan_servo",
+    "turret.pan_clamp",
+    "turret.cradle_plate_l",
+    "turret.cradle_plate_r",
+    "turret.stop_lug",
+    "turret.base_board",
+    "turret.turret_board",
+    "turret.dt_receptacle",
+    "turret.dt_plug",
+    "turret.tilt_servo",
+    "turret.flywheel_motor_l",
+    "turret.flywheel_motor_r",
+    "turret.cartridge_board",
+    "turret.esc_l",
+    "turret.esc_r",
+    "turret.feed_motor",
+    "turret.laser"
+   ],
+   "turret_dark": [
+    "turret.flywheel_tyre",
+    "turret.flywheel_tyre_2",
+    "turret.dial",
+    "turret.bumper_ring"
+   ],
+   "turret_frame": [
+    "turret.pan_base",
+    "turret.base_board_carrier",
+    "turret.pan_ring",
+    "turret.pan_spacer",
+    "turret.pan_pinion",
+    "turret.tilt_yoke",
+    "turret.cradle",
+    "turret.horn_boss",
+    "turret.pivot_spacer",
+    "turret.cartridge_body",
+    "turret.flywheel",
+    "turret.flywheel_2",
+    "turret.laser_mount",
+    "turret.ring_carrier",
+    "turret.ring_driver",
+    "turret.board_bay",
+    "turret.board_bay_lid"
+   ],
+   "turret_hardware": [
+    "turret.pan_bearing",
+    "turret.pan_bearing_inner",
+    "turret.circlip_50",
+    "turret.slip_ring",
+    "turret.slip_ring_rotor",
+    "turret.ring_coupling",
+    "turret.ring_leads_rotor",
+    "turret.base_board_screws",
+    "turret.base_carrier_screws",
+    "turret.base_board_inserts",
+    "turret.base_carrier_inserts",
+    "turret.index_magnet",
+    "turret.hall_switch",
+    "turret.tilt_bearing",
+    "turret.tilt_bearing_inner",
+    "turret.shoulder_screw",
+    "turret.ct_thumbscrew",
+    "turret.laser_screws",
+    "turret.laser_inserts",
+    "turret.hopper_inserts"
+   ],
+   "turret_hopper": [
+    "turret.hopper",
+    "turret.hopper_lid"
+   ],
+   "tyre_l": [
+    "L.wheel_tyre"
+   ],
+   "tyre_r": [
+    "R.wheel_tyre"
+   ],
+   "upper_links_l": [
+    "L.upper_link_front",
+    "L.upper_link_rear"
+   ],
+   "upper_links_r": [
+    "R.upper_link_front",
+    "R.upper_link_rear"
+   ],
+   "wheel_link_l": [
+    "L.wheel_link"
+   ],
+   "wheel_link_r": [
+    "R.wheel_link"
+   ]
+  },
+  "limits": "Current modeled geometry; bought parts may be envelopes. Not physical fit or strength evidence."
  },
  "view": {
   "azimuth": 55,
@@ -176,8 +602,8 @@
     -90.87
    ],
    "color": "#f5b82e",
-   "vertices": 451,
-   "triangles": 906,
+   "vertices": 456,
+   "triangles": 916,
    "offset": 210576,
    "index_bits": 16
   },
@@ -193,9 +619,9 @@
     -90.87
    ],
    "color": "#f5b82e",
-   "vertices": 451,
-   "triangles": 906,
-   "offset": 218718,
+   "vertices": 456,
+   "triangles": 916,
+   "offset": 218808,
    "index_bits": 16
   },
   {
@@ -212,7 +638,7 @@
    "color": "#5f6670",
    "vertices": 3198,
    "triangles": 6484,
-   "offset": 226860,
+   "offset": 227040,
    "index_bits": 16
   },
   {
@@ -229,7 +655,7 @@
    "color": "#5f6670",
    "vertices": 3198,
    "triangles": 6484,
-   "offset": 284952,
+   "offset": 285132,
    "index_bits": 16
   },
   {
@@ -246,7 +672,7 @@
    "color": "#4a5058",
    "vertices": 252,
    "triangles": 500,
-   "offset": 343044,
+   "offset": 343224,
    "index_bits": 16
   },
   {
@@ -263,7 +689,7 @@
    "color": "#4a5058",
    "vertices": 252,
    "triangles": 500,
-   "offset": 347556,
+   "offset": 347736,
    "index_bits": 16
   },
   {
@@ -280,7 +706,7 @@
    "color": "#15171b",
    "vertices": 126,
    "triangles": 248,
-   "offset": 352068,
+   "offset": 352248,
    "index_bits": 16
   },
   {
@@ -297,7 +723,7 @@
    "color": "#9aa1aa",
    "vertices": 1156,
    "triangles": 2304,
-   "offset": 354312,
+   "offset": 354492,
    "index_bits": 16
   },
   {
@@ -314,7 +740,7 @@
    "color": "#2a2d33",
    "vertices": 128,
    "triangles": 248,
-   "offset": 375072,
+   "offset": 375252,
    "index_bits": 16
   },
   {
@@ -331,7 +757,7 @@
    "color": "#2a2d33",
    "vertices": 128,
    "triangles": 248,
-   "offset": 377328,
+   "offset": 377508,
    "index_bits": 16
   },
   {
@@ -348,7 +774,7 @@
    "color": "#c9ced6",
    "vertices": 2290,
    "triangles": 4644,
-   "offset": 379584,
+   "offset": 379764,
    "index_bits": 16
   },
   {
@@ -365,7 +791,7 @@
    "color": "#c9ced6",
    "vertices": 2290,
    "triangles": 4644,
-   "offset": 421188,
+   "offset": 421368,
    "index_bits": 16
   },
   {
@@ -382,7 +808,7 @@
    "color": "#cdd1db",
    "vertices": 4886,
    "triangles": 10460,
-   "offset": 462792,
+   "offset": 462972,
    "index_bits": 16
   },
   {
@@ -399,7 +825,7 @@
    "color": "#c8382f",
    "vertices": 256,
    "triangles": 496,
-   "offset": 554868,
+   "offset": 555048,
    "index_bits": 16
   },
   {
@@ -416,7 +842,7 @@
    "color": "#c8382f",
    "vertices": 256,
    "triangles": 496,
-   "offset": 559380,
+   "offset": 559560,
    "index_bits": 16
   },
   {
@@ -425,15 +851,15 @@
    "bounds_mm": [
     -130.0,
     -18.0,
-    442.0,
+    356.0,
     110.0,
     18.0,
-    566.0
+    480.0
    ],
    "color": "#e8892b",
    "vertices": 504,
    "triangles": 1024,
-   "offset": 563892,
+   "offset": 564072,
    "index_bits": 16
   },
   {
@@ -442,15 +868,15 @@
    "bounds_mm": [
     -123.09,
     -123.08,
-    256.0,
+    216.0,
     44.5,
     112.81,
-    543.1
+    457.1
    ],
    "color": "#3a3f47",
-   "vertices": 2588,
-   "triangles": 5200,
-   "offset": 573060,
+   "vertices": 2556,
+   "triangles": 5152,
+   "offset": 573240,
    "index_bits": 16
   },
   {
@@ -459,15 +885,15 @@
    "bounds_mm": [
     -133.43,
     -80.22,
-    338.0,
+    252.0,
     46.0,
     87.5,
-    511.75
+    425.75
    ],
    "color": "#3b3f46",
    "vertices": 1314,
    "triangles": 2656,
-   "offset": 619788,
+   "offset": 619488,
    "index_bits": 16
   },
   {
@@ -479,12 +905,12 @@
     246.0,
     44.0,
     103.71,
-    520.5
+    434.5
    ],
    "color": "#b8bec7",
-   "vertices": 14982,
-   "triangles": 30508,
-   "offset": 643608,
+   "vertices": 13740,
+   "triangles": 27928,
+   "offset": 643308,
    "index_bits": 16
   },
   {
@@ -492,16 +918,16 @@
    "visible": true,
    "bounds_mm": [
     -140.72,
-    -51.1,
-    492.0,
-    -36.9,
-    51.1,
-    566.0
+    -53.32,
+    406.0,
+    -31.86,
+    56.27,
+    480.0
    ],
    "color": "#9cc9e8",
-   "vertices": 2138,
-   "triangles": 4304,
-   "offset": 916548,
+   "vertices": 2626,
+   "triangles": 5280,
+   "offset": 893316,
    "index_bits": 16
   },
   {
@@ -518,7 +944,7 @@
    "color": "#1b1d21",
    "vertices": 252,
    "triangles": 504,
-   "offset": 955200,
+   "offset": 940752,
    "index_bits": 16
   },
   {
@@ -535,7 +961,7 @@
    "color": "#1b1d21",
    "vertices": 252,
    "triangles": 504,
-   "offset": 959736,
+   "offset": 945288,
    "index_bits": 16
   },
   {
@@ -552,7 +978,7 @@
    "color": "#f5b82e",
    "vertices": 1910,
    "triangles": 3900,
-   "offset": 964272,
+   "offset": 949824,
    "index_bits": 16
   },
   {
@@ -569,7 +995,7 @@
    "color": "#f5b82e",
    "vertices": 1910,
    "triangles": 3900,
-   "offset": 999132,
+   "offset": 984684,
    "index_bits": 16
   },
   {
@@ -584,9 +1010,9 @@
     -90.87
    ],
    "color": "#e9a21f",
-   "vertices": 633,
-   "triangles": 1286,
-   "offset": 1033992,
+   "vertices": 634,
+   "triangles": 1288,
+   "offset": 1019544,
    "index_bits": 16
   },
   {
@@ -601,9 +1027,9 @@
     -90.87
    ],
    "color": "#e9a21f",
-   "vertices": 633,
-   "triangles": 1286,
-   "offset": 1045506,
+   "vertices": 634,
+   "triangles": 1288,
+   "offset": 1031076,
    "index_bits": 16
   }
  ]

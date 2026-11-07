@@ -57,7 +57,7 @@ test('the site\'s Gyropup model decodes whole, matches its checksum and sits whe
     assert.ok(part.index.every(v => v < n), `${meta.name}: an index past its vertices`);
     const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
     for (let k = 0; k < part.positions.length; k++) { lo[k % 3] = Math.min(lo[k % 3], part.positions[k]); hi[k % 3] = Math.max(hi[k % 3], part.positions[k]); }
-    // Inside the box the export measured on the STEP solid (to 0.02 mm: rounding and one 16-bit step) and filling it
+    // Inside the box measured on the current CAD solid (to 0.02 mm: rounding and one 16-bit step) and filling it
     // to within 1 mm (that box is OpenCascade's, a little loose on curved faces, and a 0.3 mm chord cuts inside them).
     [...lo, ...hi].forEach((v, k) => {
       const inward = k < 3 ? v - meta.bounds_mm[k] : meta.bounds_mm[k] - v;

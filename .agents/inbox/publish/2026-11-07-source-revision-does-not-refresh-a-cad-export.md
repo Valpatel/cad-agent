@@ -12,6 +12,13 @@ checkout's HEAD into the model record. A clean newer checkout alone could theref
 The current Gyropup README's accepted native extraction constructs 233 source parts, but its saved scene is only
 a 2D projection. Neither the old STEP snapshot nor reverse-projecting that scene supplies a current 3D model.
 
+Fleet job 240 then constructed the current main collector: 233 source parts, 33 visible groups, 116,672 triangles
+and 390,479 packed bytes, with all source/stat/hardware guards unchanged. Comparing actual old/new bounds showed
+the turret frame top drop from 520.5 to 434.5 mm, but battery bounds remained exactly
+`[-153, -43.5, -219.04, 153, 43.5, -122.04]` mm. Gyropup issue 193's last owner checkpoint explicitly said the
+front/rear holder work had not started beyond survey notes. The battery complaint was an unfinished product
+change, not another stale export. [Native artifact review](https://github.com/Valpatel/cad-agent/pull/425#issuecomment-6704549724).
+
 ## Corrective rule
 
 Refresh the actual consumer's asset set from current constructor shapes. Reuse the product's conservative source
@@ -29,3 +36,5 @@ on issue #422's implementation PR before claiming the stale homepage has been co
 This establishes displayed CAD provenance, not physical fit or strength. Bought hardware may still be modeled
 envelopes in the product source. A source-matched export may expose design problems; do not hide geometry to improve
 its appearance or claim all illustrations are current because the homepage model was regenerated.
+A current-source match also does not prove a requested design change was implemented: compare the relevant geometry
+and check the product issue. Keep that unfinished work open rather than hiding it in a presentation-only export.

@@ -214,3 +214,104 @@ def append_observation(registry, identifier, root, *, kind, payload, event_uuid=
              "recorded_at": datetime.now(timezone.utc).isoformat(),
              "kind": kind, "payload": json.loads(_json(payload))}
     return _write_once(Path(registry) / (event["event_uuid"] + ".observation.json"), event)
+
+
+def bind_plate(registry, identifiers, artifact_root, project_file, *, batch_uuid=None):
+    """Bind one actual native-project placement per unique physical specimen.
+
+    Reuses the plate reader and checks actual 3MF mesh vertices/faces against the
+    bound STL, not just its object name or volume. This is not Bambu GUI acceptance.
+    """
+    import zipfile
+    import xml.etree.ElementTree as ET
+    from cadagent._deps import require
+    from cadagent.manufacturing import plates
+    from cadagent.manufacturing.mesh3mf import CORE_NS
+
+    np = require("numpy", "experiment plate readback")
+    trimesh = require("trimesh", "experiment plate readback")
+    artifact_root = Path(artifact_root).resolve()
+    identities = [lookup(registry, i) for i in identifiers]
+    wanted = {r["identity"]["short_id"]: r for r in identities}
+    if not wanted or len(wanted) != len(identities):
+        raise ValueError("each physical specimen must occur once; copies need distinct UUIDs")
+    project = _regular(artifact_root / project_file)
+    if Path(project_file).is_absolute() or not project.resolve().is_relative_to(artifact_root):
+        raise ValueError("plate artifact must stay inside its declared root")
+    back = plates.read_plates_3mf(project)
+    settings = back["project_settings"]
+    if (not isinstance(settings, dict) or plates.application(settings) == plates.APPLICATION
+            or any(not settings.get(k) for k in ("printer_settings_id", "print_settings_id", "filament_settings_id"))):
+        raise ValueError("native printer/process/filament settings are required")
+    held = [q for p in back["plates"] for q in p["placements"]]
+    if (back["outside"] or len(held) != len(wanted)
+            or {q["part"] for q in held} != set(wanted)
+            or len({q["part"] for q in held}) != len(held)):
+        raise ValueError("unexpected, missing or repeated physical specimen in plate readback")
+    ns = {"m": CORE_NS}
+    with zipfile.ZipFile(project) as archive:
+        if len(archive.namelist()) != len(set(archive.namelist())):
+            raise ValueError("duplicate project archive member")
+        tree = ET.fromstring(archive.read("3D/3dmodel.model"))
+        settings_hash = hashlib.sha256(archive.read(plates.PROJECT_SETTINGS)).hexdigest()
+    objects = list(tree.iterfind("m:resources/m:object", ns))
+    if len(objects) != len(wanted) or {o.get("name") for o in objects} != set(wanted):
+        raise ValueError("project mesh objects do not match physical specimen identities")
+    artifacts = {}
+    for obj in objects:
+        stamp = obj.get("name")
+        manifest = verify_artifacts(registry, stamp, artifact_root)
+        object_record = back["objects"].get(obj.get("id"), {})
+        if object_record.get("name") != stamp:
+            raise ValueError("native object metadata and actual mesh identity disagree")
+        identity = wanted[stamp]["identity"]
+        if identity["process"].get("project_settings_sha256") != settings_hash:
+            raise ValueError("native settings differ from the allocated specimen identity")
+        slot = object_record.get("extruder", 0)
+        filaments = settings["filament_settings_id"]
+        if (not isinstance(filaments, list) or not 1 <= slot <= len(filaments)
+                or identity["material"].get("profile_id") != filaments[slot - 1]):
+            raise ValueError("actual filament slot differs from the allocated specimen material")
+        stls = [p for p in manifest["files"] if p.endswith(".stl")]
+        if len(stls) != 1:
+            raise ValueError("each specimen must bind exactly one print-oriented STL")
+        mesh = trimesh.load_mesh(artifact_root / stls[0], process=True)
+        expected = plates._normalised(mesh.vertices)
+        actual = np.array([[float(v.get(k)) for k in "xyz"]
+                           for v in obj.iterfind("m:mesh/m:vertices/m:vertex", ns)])
+        faces = np.array([[int(t.get(k)) for k in ("v1", "v2", "v3")]
+                          for t in obj.iterfind("m:mesh/m:triangles/m:triangle", ns)])
+        if (actual.shape != expected.shape or not np.allclose(actual, expected, rtol=0, atol=0.000051)
+                or not np.array_equal(faces, mesh.faces)):
+            raise ValueError("project mesh differs from the bound specimen STL")
+        artifacts[stamp] = _digest(manifest)
+    for item in tree.iterfind("m:build/m:item", ns):
+        transform = [float(v) for v in item.get("transform", "").split()]
+        if len(transform) != 12:
+            raise ValueError("specimen placement lacks an explicit transform")
+        matrix = np.array(transform[:9]).reshape(3, 3)
+        if (not np.allclose(matrix @ matrix.T, np.eye(3), rtol=0, atol=1e-8)
+                or not np.isclose(np.linalg.det(matrix), 1, rtol=0, atol=1e-8)
+                or not np.allclose(matrix[:, 2], [0, 0, 1], rtol=0, atol=1e-8)):
+            raise ValueError("specimen transform scales, mirrors or tips its print-oriented mesh")
+    area, _ = plates.printable_area(settings, (256, 256))
+    problems = plates.check_plates(plates.as_plates(back), (area[2]-area[0], area[3]-area[1]),
+                                   gap=0, margin=0, quantities={stamp: 1 for stamp in wanted},
+                                   tol=plates.POSITION_TOL_MM)
+    if problems or any(abs(q["z_mm"]) > 1e-6 for q in held):
+        raise ValueError("specimens overlap, leave the bed or float above it: " + "; ".join(problems))
+    rows = []
+    for plate in back["plates"]:
+        if sorted((q["object"], q["instance"]) for q in plate["placements"]) != sorted(plate["listed"]):
+            raise ValueError("project lists different instances from its actual placements")
+        for q in plate["placements"]:
+            record = wanted[q["part"]]
+            rows.append({"plate": plate["index"], "placement": q,
+                         "uuid": record["identity"]["uuid"], "identity_sha256": record["identity_sha256"],
+                         "artifacts_sha256": artifacts[q["part"]]})
+    result = {"format": "cadagent.specimen-plate/1", "batch_uuid": str(uuid.UUID(str(batch_uuid)))
+              if batch_uuid else str(uuid.uuid4()), "project": project_file,
+              "project_sha256": hashlib.sha256(project.read_bytes()).hexdigest(),
+              "settings_sha256": settings_hash, "settings": settings, "specimens": rows,
+              "sliced": False, "gui_verified": False, "physical_qualification": False}
+    return _write_once(Path(registry) / (result["batch_uuid"] + ".plate.json"), result)

@@ -184,6 +184,62 @@ def coupon(fit: Fit):
     return body.cut(notch).val()
 
 
+def label_layout(fit: Fit):
+    """Resolved nonfunctional ID-tab geometry, before allocating/generating a specimen."""
+    lay = layout(fit)
+    w, h = lay["size_mm"]
+    tab_w, tab_h, overlap = max(w, 32.0), 8.0, 0.5
+    return {"font": "DejaVu Sans", "font_kind": "bold",
+            "text_height_mm": 3.0, "engraving_depth_mm": 0.6, "clearance_mm": 0.5,
+            "centre_mm": [w / 2, h + tab_h / 2],
+            "tab_bounds_mm": [(w-tab_w)/2, (w+tab_w)/2, h-overlap, h+tab_h, 0.0, lay["thickness_mm"]]}
+
+
+def labelled_coupon(fit: Fit, stamp: str):
+    """Engrave a short specimen ID on an attached tab beyond the functional coupon.
+
+    The existing holes, walls, notch and sweep remain in their original envelope.
+    The 3 mm bold glyphs and 0.6 mm engraving are design assumptions for a 0.4 mm
+    nozzle, not a physical legibility result. Returns the solid and its label proof.
+    """
+    import re
+    from cadagent.mechanical.markings import PanelMarkings
+
+    if not isinstance(stamp, str) or not re.fullmatch(r"[0-9A-F]{10}", stamp):
+        raise ValueError("specimen stamp must be the allocated ten uppercase hexadecimal characters")
+    cq = require("cadquery", "labelled fit coupons")
+    lay = layout(fit)
+    w, h = lay["size_mm"]
+    t = lay["thickness_mm"]
+    if t < 1.2:
+        raise ValueError("labelled coupon needs at least 1.2 mm thickness beneath its engraving")
+    label = label_layout(fit)
+    x0, x1, y0, y1, _, _ = label["tab_bounds_mm"]
+    tab = (cq.Workplane("XY").box(x1-x0, y1-y0, t, centered=False)
+           .translate((x0, y0, 0)).val())
+    original = coupon(fit)
+    unmarked = original.fuse(tab).clean()
+    drawing = PanelMarkings()
+    drawing.text(stamp, *label["centre_mm"], label["text_height_mm"], bold=True)
+    tool = drawing.solids(t - label["engraving_depth_mm"], label["engraving_depth_mm"] + 0.2)
+    box = tool.BoundingBox()
+    # Inspect actual font geometry; a substituted/oversized glyph cannot reach a hole.
+    if (box.ymin < h + label["clearance_mm"] or box.ymax > y1 - label["clearance_mm"]
+            or box.xmin < x0 + label["clearance_mm"] or box.xmax > x1 - label["clearance_mm"]):
+        raise ValueError("actual specimen glyphs do not fit inside the reserved nonfunctional label tab")
+    solid = drawing.engrave(unmarked, t, label["engraving_depth_mm"]).clean()
+    removed = unmarked.cut(solid)
+    if not solid.isValid() or len(solid.Solids()) != 1 or removed.Volume() <= 0:
+        raise ValueError("specimen label did not engrave one valid connected coupon")
+    if removed.BoundingBox().ymin < h + 0.5:
+        raise ValueError("specimen engraving reaches the functional coupon envelope")
+    return solid, {"stamp": stamp, **label,
+                   "functional_envelope_mm": [0.0, w, 0.0, h, 0.0, t],
+                   "removed_mm3": removed.Volume(),
+                   "svg": drawing.svg((x0, h, x1-x0, y1-h)),
+                   "physical_legibility_verified": False}
+
+
 def sheet(fits: Iterable[Fit]) -> str:
     """The measurement sheet as CSV: a row per hole, with blank columns to fill in after printing."""
     buf = io.StringIO()

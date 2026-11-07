@@ -129,3 +129,127 @@ def test_invalid_artifact_set_cannot_publish_a_manifest(source, tmp_path):
         with pytest.raises(ValueError):
             ex.bind_artifacts(registry, short, tmp_path, names)
         assert {p.name: p.read_bytes() for p in registry.iterdir()} == before
+
+
+def plate_fixture(tmp_path, source):
+    """Real STL/project writers, hand-built boxes; no CAD kernel, GUI or slicing."""
+    import hashlib
+    import numpy as np
+    import trimesh
+    from cadagent.manufacturing import plates as p
+    from tests.manufacturing.test_plates import settings_bytes, box
+    registry, root = tmp_path / "registry", tmp_path / "artifacts"
+    root.mkdir()
+    settings = settings_bytes(printer_settings_id="Fixture printer", print_settings_id="Fixture process",
+                              filament_settings_id=["Fixture PLA"])
+    snapshot = ex.source_snapshot(source, "model.py", ["model.py"], repository="https://example.invalid/design")
+    stamps, meshes = [], {}
+    for dimensions in ((6, 5, 2), (8, 4, 3)):
+        row = ex.allocate(registry, source=snapshot, parameters={"box_mm": list(dimensions)},
+                          process={"project_settings_sha256": hashlib.sha256(settings).hexdigest()},
+                          material={"profile_id": "Fixture PLA"})
+        stamp = row["identity"]["short_id"]
+        vertices, faces = box(*dimensions)
+        trimesh.Trimesh(vertices=vertices, faces=faces).export(root / (stamp + ".stl"))
+        mesh = trimesh.load_mesh(root / (stamp + ".stl"), process=True)
+        meshes[stamp] = (p._normalised(mesh.vertices), np.asarray(mesh.faces))
+        ex.bind_artifacts(registry, stamp, root, [stamp + ".stl"])
+        stamps.append(stamp)
+    copies = [p.Copy(s, 1, p.footprint(meshes[s][0]), "Fixture PLA") for s in stamps]
+    packed = p.pack(copies, (256, 256), keep_out=[(0, 0, 18, 28)])
+    p.write_plates_3mf(root / "plate.3mf", meshes, packed, bed_xy=(256, 256), gap=2, margin=5,
+                       keep_out=[(0, 0, 18, 28)], extruders={s: 1 for s in stamps}, project_settings=settings)
+    return registry, root, stamps
+
+
+def test_real_project_readback_binds_one_actual_mesh_and_settings_per_physical_id(tmp_path, source):
+    registry, root, stamps = plate_fixture(tmp_path, source)
+    record = ex.bind_plate(registry, stamps, root, "plate.3mf")
+    assert {r["placement"]["part"] for r in record["specimens"]} == set(stamps)
+    assert len({r["uuid"] for r in record["specimens"]}) == 2
+    assert record["settings"]["printer_settings_id"] == "Fixture printer"
+    assert record["sliced"] is record["gui_verified"] is record["physical_qualification"] is False
+    with pytest.raises(ValueError, match="occur once"):
+        ex.bind_plate(registry, stamps + stamps[:1], root, "plate.3mf")
+
+
+@pytest.mark.parametrize("fault", ["wrong-object", "wrong-mesh", "wrong-settings", "scaled-transform", "missing-specimen"])
+def test_real_project_faults_cannot_publish_a_fresh_plate_record(tmp_path, source, fault):
+    import zipfile
+    registry, root, stamps = plate_fixture(tmp_path, source)
+    path = root / "plate.3mf"
+    with zipfile.ZipFile(path) as archive:
+        members = {n: archive.read(n) for n in archive.namelist()}
+    model = members["3D/3dmodel.model"].decode()
+    if fault == "wrong-object":
+        model = model.replace('name="' + stamps[0] + '"', 'name="DEADBEEF01"', 1)
+    elif fault == "wrong-mesh":
+        import re
+        model, count = re.subn(r'(<vertex x=")[^"]+', r'\g<1>999', model, count=1)
+        assert count == 1
+    elif fault == "scaled-transform":
+        import re
+        def scale(match):
+            values = [float(v) for v in match[1].split()]
+            assert len(values) == 12
+            return 'transform="' + ' '.join(str(v*2 if i < 9 else v) for i, v in enumerate(values)) + '"'
+        model, count = re.subn(r'transform="([^"]+)"', scale, model, count=1)
+        assert count == 1
+    elif fault == "missing-specimen":
+        import re
+        model, count = re.subn(r'<item [^>]+/>', '', model, count=1)
+        assert count == 1
+    else:
+        settings = json.loads(members["Metadata/project_settings.config"])
+        settings["print_settings_id"] = "Changed process"
+        members["Metadata/project_settings.config"] = json.dumps(settings).encode()
+    members["3D/3dmodel.model"] = model.encode()
+    with zipfile.ZipFile(path, "w") as archive:
+        for name, raw in members.items():
+            archive.writestr(name, raw)
+    before = {p.name: p.read_bytes() for p in registry.iterdir()}
+    with pytest.raises(ValueError):
+        ex.bind_plate(registry, stamps, root, "plate.3mf")
+    assert {p.name: p.read_bytes() for p in registry.iterdir()} == before
+
+
+def example_module():
+    import importlib.util
+    path = Path(__file__).resolve().parents[2] / "docs/examples/numbered-coupons/build.py"
+    spec = importlib.util.spec_from_file_location("numbered_coupon_example", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_existing_example_output_is_rejected_before_allocating_or_importing_cad(tmp_path):
+    output, registry = tmp_path / "previous", tmp_path / "registry"
+    output.mkdir()
+    (output / "old.3mf").write_bytes(b"prior real work")
+    with pytest.raises(ValueError, match="output already exists"):
+        example_module().build(registry, output, b"invalid settings")
+    assert not registry.exists()
+    assert {p.name: p.read_bytes() for p in output.iterdir()} == {"old.3mf": b"prior real work"}
+
+
+def test_numbered_example_real_native_plate_and_new_copy_preserve_prior_artifacts(tmp_path):
+    pytest.importorskip("cadquery")
+    pytest.importorskip("trimesh")
+    from tests.manufacturing.test_plates import settings_bytes
+    native = settings_bytes(printer_settings_id="Fixture printer", print_settings_id="Fixture process",
+                             filament_settings_id=["Fixture PLA"])
+    registry = tmp_path / "version-controlled-records"
+    module = example_module()
+    first = module.build(registry, tmp_path / "first", native, count=1)
+    stamp = first["specimens"][0]["placement"]["part"]
+    assert ex.verify_artifacts(registry, stamp, tmp_path / "first")
+    previous = {p.relative_to(tmp_path / "first").as_posix(): p.read_bytes()
+                for p in (tmp_path / "first").rglob("*") if p.is_file()}
+    second = module.build(registry, tmp_path / "deliberate-new-copy", native, count=1)
+    assert first["specimens"][0]["uuid"] != second["specimens"][0]["uuid"]
+    assert first["specimens"][0]["placement"]["part"] != second["specimens"][0]["placement"]["part"]
+    assert ex.verify_artifacts(registry, stamp, tmp_path / "first")
+    assert previous == {p.relative_to(tmp_path / "first").as_posix(): p.read_bytes()
+                        for p in (tmp_path / "first").rglob("*") if p.is_file()}
+    with pytest.raises(ValueError, match="output already exists"):
+        module.build(registry, tmp_path / "first", native, count=1)

@@ -127,3 +127,40 @@ def test_coupon_solid_has_every_hole_and_writes_print_files(tmp_path):
     with pytest.raises(ValueError):
         fc.write([fit, fit], tmp_path)
     assert cq  # imported for the skip
+
+
+def test_specimen_stamp_rejects_nonallocated_formats_before_cad():
+    fit = fc.Fit("fixture", 5.0)
+    for value in ("short", "abcdef0123", "../../part", "ABCDEF01234", None):
+        with pytest.raises(ValueError, match="allocated ten"):
+            fc.labelled_coupon(fit, value)
+
+
+def test_labelled_coupon_real_geometry_preserves_fit_envelope_and_actual_engraving(tmp_path):
+    cq = pytest.importorskip("cadquery")
+    from cadagent.geometry import export_print_stl, export_step
+    import cadquery.importers
+    fit = fc.Fit("pin", 5.0, "slide", count=3)
+    original = fc.coupon(fit)
+    labelled, proof = fc.labelled_coupon(fit, "ABCDEF0123")
+    w, h = fc.layout(fit)["size_mm"]
+    envelope = cq.Workplane("XY").box(w, h, fit.depth, centered=False).val()
+    inside = labelled.intersect(envelope)
+    assert original.cut(inside).Volume() < 1e-7
+    assert inside.cut(original).Volume() < 1e-7
+    assert labelled.isValid() and len(labelled.Solids()) == 1
+    # Independent volume accounting rejects a no-op engraver rather than trusting proof flags.
+    x0, x1, y0, y1, z0, z1 = proof["tab_bounds_mm"]
+    tab = (cq.Workplane("XY").box(x1-x0, y1-y0, z1-z0, centered=False)
+           .translate((x0, y0, z0)).val())
+    unmarked = original.fuse(tab)
+    removed = unmarked.cut(labelled)
+    assert removed.Volume() > 1.0
+    assert removed.Volume() == pytest.approx(proof["removed_mm3"], abs=1e-7)
+    assert removed.BoundingBox().ymin >= h + 0.5
+    assert "ABCDEF0123" in proof["svg"] and proof["physical_legibility_verified"] is False
+    step = export_step(labelled, tmp_path / "ABCDEF0123.step")
+    back = cadquery.importers.importStep(str(step)).val()
+    assert back.Volume() == pytest.approx(labelled.Volume(), rel=1e-7)
+    mesh = export_print_stl(labelled, tmp_path / "ABCDEF0123.stl")
+    assert mesh["watertight"]

@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A full check is cancelled after a progress percentage with no active test or traceback | [Retain the cap and expose the active test](inbox/2026-11-07-full-test-caps-need-active-case.md) |
 | A normal login works but the exact fresh agent profile is logged out, or initialization omits memory evidence | [Name the normal-login trial boundary](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#separate-a-normal-login-flow-trial-from-a-clean-user-claim) |
 | Fleet submit succeeds but the parser misses its job id, or fetched evidence modes differ from an assumed umask | [Inspect actual receipts and privacy modes before retrying](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#actual-installer-studies-preserve-passed-and-unmet-scopes) |
 | Installer guard tests pass but real Windows body, uv receipt or current clean-agent evidence is missing | [Separate guards from actual platform installation](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#installer-guards-are-not-full-platform-installation-evidence) |

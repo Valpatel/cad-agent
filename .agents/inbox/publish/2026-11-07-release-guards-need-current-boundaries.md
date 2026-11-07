@@ -34,3 +34,27 @@ and all other core records matched current dev. The generated expert index was r
 against the intended accepted base, and prove inherited files are unchanged rather than excluding unexplained
 new changes. This is not permission to waive whitespace in authored code, skip provenance, or substitute targeted
 checks for current whole CI and independent composition review.
+
+## Main's live release gate needs a real Git checkout
+
+At the same release's PR443 boundary, running the exact dev gate source from a plain `git archive` directory
+failed before merge: `release_fetch()` calls `git rev-parse --is-shallow-repository`, which exited 128 outside a
+repository. The dev-only gate had not exercised that release path. The archived source being current did not make
+its execution context valid.
+
+A detached, owned Git worktree at exact dev `b39709877a22f78453be1225446d57155f265eed` provided the real context.
+`python3 tools/ci_gates.py all --repo Valpatel/cad-agent --pr 443` then passed branch-flow, independent review and
+release checks. No gate code or acceptance rule changed. Use a real current-dev checkout for all live gates;
+record the failed attempt instead of calling a source archive an equivalent checkout.
+
+## Resolve the existing Wrangler before diagnosing authentication
+
+On 2026-11-07, `npx --no-install wrangler whoami` stopped in npm resolution: it requested an unavailable
+`wrangler@4.158.0` and reported `npx canceled due to missing packages and no YES option`. Wrangler had not run, so
+this was not an authentication failure. The already installed npm cache contained the previously used 4.86.0.
+
+`npx --offline --no-install wrangler@4.86.0 whoami`, under the existing OS user and inspected Node runtime, completed
+normal refresh. Private outputs were mode 0600 and the account identity matched the earlier configured account.
+No package was installed and no account, permission or setting changed. Bind an inspected existing CLI when
+resuming; do not install a new one, expose credentials or request login merely because an unqualified resolver
+selects a different version. Successful refresh does not prove deployment or DNS/cache access.

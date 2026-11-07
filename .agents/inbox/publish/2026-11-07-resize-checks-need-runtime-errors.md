@@ -79,6 +79,24 @@ Playwright error list; its preserved window-event trace contains the warning. So
 current CI and a new reviewed actual publication remain required. Neither the original failed receipt nor its
 outcome is rewritten.
 
+The committed consumer at `9b3da023975c4082b5a65df1dd2062c5b9684cf3` was then tested against both actual
+released copy bytes and corrected bytes, with the saved document and other released assets unchanged. One bounded
+local run of `cad465-committed-font-consumer.mjs` completed all four expected outcomes: the committed checker
+rejected the released component in both engines and passed the corrected component with no errors or overlap/
+navigation problems. WebKit reported the old warning through both channels; Chromium again reported it only
+through `window.error`. Each of four planted ErrorEvent controls passed, and four scratch variants that discarded
+the window-error queue correctly failed that control. All twelve isolated contexts and three owned processes
+closed; both source checkouts remained clean. Receipt SHA-256:
+`31a640c71e1dadf088e6ff926466b1f3360e5a516030103fad2af242feb4b008`.
+[Independent actual acceptance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711346118).
+
+The validator executes pinned browser-test function declarations and a pure DOM callback in the owned local
+browser, without running the suite's operational top level. An initial static objection was reconsidered after
+checking that these exact regions have no GitHub/Git mutation, subprocess or credential access. This does not
+relax the prohibition on extracting mutation-capable merge/deployment operators for review.
+[Exact bounded author-run clearance](https://github.com/Valpatel/cad-agent/pull/465#issuecomment-6711332641).
+This remains local regression evidence; full current CI and actual publication acceptance are separate.
+
 
 ## A navigation-looking error can be a collected probe promise
 

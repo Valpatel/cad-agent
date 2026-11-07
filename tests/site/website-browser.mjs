@@ -845,7 +845,8 @@ async function watchRuntimeErrors(page, errors, phase) {
     window.__cadWindowErrors = [];
     window.addEventListener('error', event => window.__cadWindowErrors.push({ channel: 'window.error',
       url: location.href, at: performance.now(), message: event.message || `Error event on ${event.target?.nodeName || 'window'}`,
-      filename: event.filename, line: event.lineno, column: event.colno, stack: event.error?.stack }), true);
+      filename: event.filename, line: event.lineno, column: event.colno, stack: event.error?.stack,
+      target: event.target?.nodeName, resource: event.target?.src || event.target?.href || null }), true);
   });
   return async collectedAfter => {
     const queued = await page.evaluate(() => {

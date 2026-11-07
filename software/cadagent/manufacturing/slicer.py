@@ -300,6 +300,9 @@ def project_settings(workdir, printer: str = PRINTER, process: str = PROCESS, fi
     cmd = [exe, '--load-settings', f"{work / 'machine.json'};{work / 'process.json'}", '--load-filaments', ';'.join(names),
            '--outputdir', str(out), '--export-3mf', 'project.3mf', str(work / 'cube.stl')]
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if p.returncode != 0:
+        raise RuntimeError(f'Bambu Studio project settings export failed (exit {p.returncode}): '
+                           f'{(p.stdout + p.stderr)[-500:]}')
     try:
         with zipfile.ZipFile(out / 'project.3mf') as z:
             raw = z.read('Metadata/project_settings.config')

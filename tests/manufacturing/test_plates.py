@@ -486,10 +486,13 @@ def stl_project(tmp_path, plates_yaml="", sizes=None):
     return root
 
 
-def test_export_plates_writes_the_project_file_picture_and_record(tmp_path):
+@pytest.mark.parametrize('strict', [False, True])
+def test_export_plates_writes_the_project_file_picture_and_record(tmp_path, strict):
     from cadagent.project import load_project
     root = stl_project(tmp_path, "  plates:\n    parts: {box: {quantity: 2}, lid: {quantity: 3, filament: petg}}\n")
-    rec = P.export_plates(load_project(root), settings_bytes=settings_bytes())
+    native = settings_bytes(printer_settings_id=slicer.PRINTER, print_settings_id=slicer.PROCESS,
+                            filament_settings_id=[slicer.FILAMENTS['pla'], slicer.FILAMENTS['petg']])
+    rec = P.export_plates(load_project(root), settings_bytes=native, require_project_settings=strict)
     exports = root / "exports"
     assert {p.name for p in exports.glob("demo-plates.*")} == {"demo-plates.3mf", "demo-plates.svg", "demo-plates.json"}
     saved = json.loads((exports / "demo-plates.json").read_text())
@@ -501,8 +504,88 @@ def test_export_plates_writes_the_project_file_picture_and_record(tmp_path):
     assert saved["project_settings"]["embedded"] and saved["project_settings"]["slicer_version"] == "02.08.04.57"
     assert rec["read_back"] == {"plates": 2, "copies": 5}
     first = {p.name: p.read_bytes() for p in exports.glob("demo-plates.*")}
-    P.export_plates(load_project(root), settings_bytes=settings_bytes())
+    P.export_plates(load_project(root), settings_bytes=native, require_project_settings=strict)
     assert {p.name: p.read_bytes() for p in exports.glob("demo-plates.*")} == first
+    assert rec['path'] == str(exports / 'demo-plates.3mf')
+
+
+@pytest.mark.parametrize('prior', [False, True])
+@pytest.mark.parametrize('fault', ['missing', 'failed', 'corrupt', 'not-object', 'version', 'printer', 'process',
+                                  'filaments', 'empty-filament', 'disabled', 'prusa', 'layout'])
+def test_strict_project_command_rejects_incomplete_projects_without_replacing_prior_exports(
+        tmp_path, monkeypatch, capsys, prior, fault):
+    """Use the actual CLI: a rejected project cannot be reported fresh or destroy a prior user's files."""
+    from cadagent.cli import main
+    root = stl_project(tmp_path, '  plates: false\n' if fault == 'disabled' else '',
+                       sizes={'box': (300 if fault == 'layout' else 120, 80, 20), 'lid': (120, 80, 4)})
+    if fault == 'prusa':
+        config = root / 'cad-agent.yaml'
+        config.write_text(config.read_text() + '  slicer: {engine: prusa}\n')
+    exports = root / 'exports'
+    if prior:
+        for name in ('demo-plates.3mf', 'demo-plates.json', 'demo-plates.svg', 'box.3mf', 'lid.3mf', 'foreign.txt'):
+            (exports / name).write_bytes(('prior user bytes: ' + name).encode())
+    before = {p.name: p.read_bytes() for p in exports.iterdir()}
+    native = json.loads(settings_bytes(printer_settings_id=slicer.PRINTER, print_settings_id=slicer.PROCESS,
+                                      filament_settings_id=[slicer.FILAMENTS['pla']]))
+    for selected, key in [('version', 'version'), ('printer', 'printer_settings_id'), ('process', 'print_settings_id')]:
+        if fault == selected:
+            native.pop(key)
+    if fault == 'filaments':
+        native['filament_settings_id'] = ['PLA', 'PETG']   # not the one slot requested
+    if fault == 'empty-filament':
+        native['filament_settings_id'] = ['']
+
+    def produce(*a, **kw):
+        if fault == 'failed':
+            raise RuntimeError('controlled Bambu settings failure (exit 7)')
+        return b'{' if fault == 'corrupt' else b'[]' if fault == 'not-object' else json.dumps(native).encode()
+
+    monkeypatch.setattr(slicer, 'executable', lambda: None if fault == 'missing' else '/controlled/BambuStudio')
+    monkeypatch.setattr(slicer, 'project_settings', produce)
+    assert main(['export-3mf', '--project', str(root), '--require-project-settings']) == 1
+    output = capsys.readouterr().out
+    assert 'plates: FAILED:' in output and 'read back ->' not in output
+    assert {p.name: p.read_bytes() for p in exports.iterdir()} == before
+
+
+def test_strict_project_command_writes_native_settings_and_final_destinations(tmp_path, monkeypatch, capsys):
+    from cadagent.cli import main
+    root = stl_project(tmp_path)
+    native = settings_bytes(printer_settings_id=slicer.PRINTER, print_settings_id=slicer.PROCESS,
+                            filament_settings_id=[slicer.FILAMENTS['pla']])
+    monkeypatch.setattr(slicer, 'executable', lambda: '/controlled/BambuStudio')
+    monkeypatch.setattr(slicer, 'project_settings', lambda *a, **kw: native)
+    assert main(['export-3mf', '--project', str(root), '--require-project-settings']) == 0
+    assert 'read back -> demo-plates.3mf' in capsys.readouterr().out
+    back = P.read_plates_3mf(root / 'exports' / 'demo-plates.3mf')
+    assert back['project_settings'] == json.loads(native)
+    assert (root / 'exports' / 'box.3mf').is_file() and (root / 'exports' / 'lid.3mf').is_file()
+    assert not any(p.name.startswith('.demo-plates-') for p in (root / 'exports').iterdir())
+
+
+def test_strict_plate_publication_rolls_back_an_interrupted_replacement(tmp_path, monkeypatch):
+    import os
+    from cadagent.project import load_project
+    root = stl_project(tmp_path)
+    exports = root / 'exports'
+    for suffix in ('.3mf', '.json', '.svg'):
+        (exports / ('demo-plates' + suffix)).write_bytes(('prior ' + suffix).encode())
+    before = {p.name: p.read_bytes() for p in exports.iterdir()}
+    original = os.replace
+
+    def replace(source, target):
+        if Path(source).name == 'demo-plates.json' and Path(source).parent.name.startswith('.demo-plates-'):
+            raise OSError('controlled interrupted publication')
+        return original(source, target)
+
+    monkeypatch.setattr(os, 'replace', replace)
+    with pytest.raises(OSError, match='controlled interrupted publication'):
+        P.export_plates(load_project(root), require_project_settings=True,
+                        settings_bytes=settings_bytes(printer_settings_id=slicer.PRINTER,
+                                                      print_settings_id=slicer.PROCESS,
+                                                      filament_settings_id=['PLA']))
+    assert {p.name: p.read_bytes() for p in exports.iterdir()} == before
 
 
 def test_export_plates_without_bambu_studio_says_what_it_left_out(tmp_path, monkeypatch):

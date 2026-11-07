@@ -994,7 +994,7 @@ def _remove_outputs(path: Path) -> None:
 
 
 def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings_bytes: Optional[bytes] = None,
-                  use_slicer: bool = True) -> Optional[Dict[str, Any]]:
+                  use_slicer: bool = True, require_project_settings: bool = False) -> Optional[Dict[str, Any]]:
     """Write ``<name>-plates.3mf`` (verified), ``<name>-plates.json`` (the layout) and ``<name>-plates.svg`` (the
     plates from above) into ``exports_dir``; None when ``cad.plates`` is false. The project settings are
     ``settings_bytes`` when given, else Bambu Studio's for ``cad.slicer`` when it is installed and ``use_slicer``,
@@ -1002,7 +1002,50 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
     process or filament that Bambu Studio has no profile for is a ``CadConfigError``.
 
     The files a previous run wrote are deleted first, so a failed run or ``cad.plates: false`` never leaves a plates
-    file that no longer matches the parts."""
+    file that no longer matches the parts. With ``require_project_settings``, missing/incomplete native settings
+    are an error instead: settings, layout and read-back are checked in a temporary destination before replacing
+    any prior plate files. This requires embedded settings, not GUI acceptance or physical print qualification."""
+    if not require_project_settings:
+        return _export_plates(project, known_parts, settings_bytes, use_slicer)
+
+    import os
+    import shutil
+    import tempfile
+
+    destination = plates_file(project)
+    with tempfile.TemporaryDirectory(prefix=f'.{destination.stem}-', dir=project.exports_dir) as scratch:
+        staged = Path(scratch) / destination.name
+        record = _export_plates(project, known_parts, settings_bytes, use_slicer,
+                                require_project_settings=True, output_path=staged)
+        targets = [destination.with_suffix(s) for s in ('.3mf', '.json', '.svg')]
+        backups = Path(scratch) / 'previous'
+        backups.mkdir()
+        previous = {}
+        for target in targets:
+            if target.is_symlink() or (target.exists() and not target.is_file()):
+                raise PlatesError(f'refusing to replace non-regular plate output: {target}')
+            if target.is_file():
+                previous[target] = backups / target.name
+                shutil.copy2(target, previous[target])
+        written = []
+        try:
+            for target in targets:
+                os.replace(staged.with_suffix(target.suffix), target)
+                written.append(target)
+        except OSError:
+            for target in reversed(written):
+                if target in previous:
+                    os.replace(previous[target], target)
+                else:
+                    target.unlink(missing_ok=True)
+            raise
+        record['path'] = str(destination)
+        return record
+
+
+def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=True, *,
+                   require_project_settings=False, output_path=None):
+    """Shared exporter; strict calls write into their owned staging directory."""
     import subprocess
 
     from cadagent.manufacturing import slicer
@@ -1014,14 +1057,16 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
         if error:
             raise FileNotFoundError(error)
         known_parts = list(known)
-    _remove_outputs(plates_file(project))
+    path = output_path if output_path is not None else plates_file(project)
+    _remove_outputs(path)
     cfg = plates_config(project, known_parts)
     if cfg is None:
+        if require_project_settings:
+            raise PlatesError('project settings required, but cad.plates is false')
         return None
     bed = project.printer.bed_mm
     if not bed:
         raise PlatesError("cad.printer.bed_mm is required to lay out build plates")
-    path = plates_file(project)
     if path.stem in known_parts:
         raise PlatesError(f"a part is named {path.stem!r}, the plates file's name; rename it or set cad.plates: false")
     meshes = {}
@@ -1057,6 +1102,21 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
         warnings.append("Bambu Studio is not installed, so the file carries no project settings: Bambu Studio "
                         "will open it on one plate (run export-3mf where it is installed)" if use_slicer else
                         "no project settings asked for: Bambu Studio will open the file on one plate")
+    if require_project_settings:
+        if not settings_bytes:
+            raise PlatesError('Bambu project settings required: ' + '; '.join(warnings))
+        try:
+            supplied = json.loads(settings_bytes)
+        except (ValueError, UnicodeError) as exc:
+            raise PlatesError(f'Bambu project settings required: invalid JSON ({exc})') from None
+        if (not isinstance(supplied, dict) or application(supplied) == APPLICATION
+                or any(not isinstance(supplied.get(k), str) or not supplied[k].strip()
+                       for k in ('printer_settings_id', 'print_settings_id'))
+                or not isinstance(supplied.get('filament_settings_id'), list)
+                or len(supplied['filament_settings_id']) != len(groups)
+                or any(not isinstance(f, str) or not f.strip() for f in supplied['filament_settings_id'])):
+            raise PlatesError('Bambu project settings required: native version, printer/process identities and '
+                              'one nonempty filament identity per slot are required')
     if settings_bytes:
         settings = json.loads(settings_bytes)
         _settings_record = {"embedded": True, "slicer_version": settings.get("version"), "printer": sl["printer"],

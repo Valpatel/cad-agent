@@ -38,3 +38,19 @@ envelopes in the product source. A source-matched export may expose design probl
 its appearance or claim all illustrations are current because the homepage model was regenerated.
 A current-source match also does not prove a requested design change was implemented: compare the relevant geometry
 and check the product issue. Keep that unfinished work open rather than hiding it in a presentation-only export.
+
+## Repeat the source check after a later product release
+
+Issue #104's next finite refresh follows Gyropup main `01d5823062ace26eddd7d13428cbbfeec9e0105d`
+and its [actual publication acceptance](https://github.com/Valpatel/gyropup/pull/256#issuecomment-6710253796).
+The recorded closure now contains 95 inputs and hardware tree `d9e2577430dd831bc70cb7a43f24b56f63df7bee`;
+the existing model producer and pinned/current packer remain byte-identical to the accepted route above.
+This source change requires genuine new construction, not a new revision field on the old meshes.
+
+Preparation checks the exact model-only helper path for historical Git-object requirements before spending
+native time. Its input guard hashes current files and its hardware guard reads `HEAD:hardware`; a separate
+README refresh CLI's historical reads are not part of this producer. Run the unchanged source preflight before
+installation and native work, retaining a missing-object failure rather than substituting a stale source.
+Optional timing tools must not prevent the actual producer from starting. Source/owned-process/archive/decode
+acceptance and matching poster/card remain pending until an independently reviewed fleet result exists.
+Battery placement under Gyropup #193 and historical engineering illustrations remain separate.

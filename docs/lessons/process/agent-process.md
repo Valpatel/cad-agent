@@ -180,6 +180,22 @@ physical qualification or coverage for a stage that did not run.
 
 </details>
 
+### A full-job cap needs an active test identity
+- **Rule:** Keep the existing full test selection and job bound, but report each active test unbuffered and enable
+  pytest's built-in thread dump for a test that exceeds 120 seconds. The dump observes the stall; it does not fail
+  or skip that test or extend the 30-minute job cap.
+
+<details><summary>2026-11-07: cancelled full CI stopped reporting at 97%</summary>
+
+PR #465 source `6a5145f1` installed successfully, then job 128496027486 last reported 97% at 19:04:13 UTC and stayed silent
+until 19:23:07 UTC. Its annotation explicitly identifies the 30-minute cap. The exact test and cause remain unknown.
+Separate main `81b9fdc2` passed 3577 tests / 24 skips in 671.27s; that comparison is not a causal explanation. Preserve the
+[original job](https://github.com/Valpatel/cad-agent/actions/runs/42403450255/job/128496027486) and require the new
+whole full-suite head to pass; verbose progress or a later quiet run cannot replace missing historical evidence.
+See [pytest's thread-dump contract](https://docs.pytest.org/en/stable/how-to/failures.html#fault-handler).
+
+</details>
+
 ### Keep navigation evidence and close only the failed check's context
 - **Rule:** A navigation timeout needs its route, viewport, theme, script mode and outstanding resources. Capture
   that evidence at failure without changing the navigation boundary; preserve the original error if collecting

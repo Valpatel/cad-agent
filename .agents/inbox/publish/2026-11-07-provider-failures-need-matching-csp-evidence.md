@@ -15,3 +15,34 @@ A separately reviewed single affected-host browser diagnostic at stable main `a3
 The exact reviewed classifier had one positive and12 negative controls, including wrong host/origin/URI/method/type/failure, missing/report-only/wrong-directive/wrong-URI CSP and provider/other external responses. One full continuation passed both domains with36 raw readbacks/28 contexts/eight ready viewer cases, retaining four exact enforced CSP blocks and zero external responses ([recipe review](https://github.com/Valpatel/cad-agent/issues/427#issuecomment-6705214715), [actual acceptance](https://github.com/Valpatel/cad-agent/issues/427#issuecomment-6705278005)). The earlier failed attempts and single diagnostic were preserved; the successful API audit was not replayed.
 
 **Limits:** the provider script remained injected but blocked in these observations. No provider setting, source, CSP policy, route or cache was changed or claimed fixed. Removing injection needs separately reviewed scoped evidence/action. This does not establish broader cache-policy acceptance, physical CAD qualification or untested browsers.
+
+## WebKit can report an enforced block without requestfailed
+
+On 2026-11-07 UTC, the finite #141/#322 verification completed 45 responses and 16 browser contexts on
+both domains. The last second-domain WebKit catalogue interaction completed its filter actions and screenshot,
+then the verifier rejected an enforcing `script-src-elem` event for the same exact injected beacon URI. There
+was no `requestfailed` callback, external response or page error. The original receipt remains **failed**,
+SHA-256 `67928e4cb7a5b697d74a6bd59593d87650ade31a87afa29b1660f251e2295dd3`.
+
+Native WebKit protocol evidence at 17:59:24.221 UTC recorded a security-source error explicitly refusing the
+exact script because it was absent from the CSP `script-src` directive. The actual navigation HTML contained
+that URI, and both same-context CSP events had disposition `enforce`. The generated catalogue state and saved
+1366×900 screenshot showed the requested area, kind switch and exact visible IDs. An independent reviewer
+inspected the screenshot; its SHA-256 is `8907bf71b1b0408f2113a618b2bca75963f2e555730a41b0e7a91662f1175f24`.
+
+A separately reviewed continuation rehashed the unchanged original source, receipt, all response bodies and
+screenshot; checked the exact host, WebKit engine, catalogue route, URI, directives, enforcement, native security
+message and injected HTML; and rejected 16 altered cases. It performed only the missing final second-domain
+version read at 18:04:47 UTC, which returned main `c696d311a3ae6f648d4fbd660f9a824629af6374` with 90 pages and
+220 catalogue entries. It did not replay browser actions or rewrite the original failed result. Continuation
+SHA-256: `0c9bf3166aed03b4425d49bd17ab07c6b01eeb404bf344ccc3e01d430f80b17b`.
+[Independent finite acceptance](https://github.com/Valpatel/cad-agent/issues/141#issuecomment-6711079606).
+
+**Rule:** absence of Playwright `requestfailed` is not absence of an enforced CSP block. A separate WebKit
+signature needs the actual native security message, same-context enforced event and injected-document evidence;
+do not manufacture the Chromium failure fields or broaden an existing classifier to a hostname alone.
+
+**Scope:** #141's accepted catalogue alternative and #322's dated report criteria were independently satisfied.
+The wider #450/#446 public campaign remained failed and open. Match issue closeout to its actual criteria;
+an optional wider campaign is neither a new global merge gate nor permission to discard its failures. No
+settings or CSP change, provider-injection fix, current security re-audit or general browser acceptance is claimed.

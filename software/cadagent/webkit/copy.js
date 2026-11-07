@@ -171,7 +171,8 @@ export class CadCopy extends HTMLElement {
     watch.observe(pre);
     watch.observe(button);                                     // a stylesheet that arrives later can resize it
     measure();
-    document.fonts?.ready.then(measure);
+    // Font readiness can settle during resize delivery too; its measurement also changes observed boxes.
+    document.fonts?.ready.then(() => requestAnimationFrame(measure));
     matchMedia('(pointer: coarse)').addEventListener?.('change', measure);
   }
 }

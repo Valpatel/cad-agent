@@ -553,7 +553,7 @@ tested tools of its own. Every page on this site has a Markdown twin at the same
 
 ## Install and work with it
 
-People install with the platform's [pinned download and checksum-before-execution block](${ORIGIN}/${publicPath('docs/practice/agent-workflow.md')}#install),
+People install with the platform's [pinned download and checksum-before-execution block](${ORIGIN}${pageURL('docs/practice/agent-workflow.md')}#install),
 or paste this line into their agent, followed by what they want made:
 
 \`\`\`text

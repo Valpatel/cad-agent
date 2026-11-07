@@ -41,6 +41,10 @@ did not establish that its earlier advice was safe.
 Route the generated preamble to the same canonical checked guide. Check the entire actual `llms.txt` and
 `index.md` output, not just the embedded agent-guide substring, and plant each old platform shortcut in a
 preamble to prove it is rejected. Keep the eight-word prompt, installer bytes and checksum procedure unchanged.
+The first full build completed, but the actual output consumer rejected a `.md#install` destination where
+the human-readable checked route was required. The builder now uses its existing `pageURL` alias resolver;
+the expected HTML route stays strict. Original build/consumer failure logs are retained.
+
 This correction does not turn the failed agent report grade, unknown freshness, disabled native discovery or
 unproved Windows denied-symlink trigger into acceptance. No second model invocation is part of this fix.
 

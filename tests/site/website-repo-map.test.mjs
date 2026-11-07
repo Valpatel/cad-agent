@@ -99,7 +99,8 @@ test('all owned folder diagrams render in both themes through the existing kit',
   const { drawDiagrams } = await import('../../tools/site/compiler/site-diagrams.mjs');
   const files = gitFiles(root), read = f => readFileSync(path.join(root, f), 'utf8');
   const policy = JSON.parse(read('tools/site/compiler/repo-map.json'));
-  const result = checkMap({ files, read, policy });
+  const publication = createPublication(JSON.parse(read('tools/site/page-sources.json')));
+  const result = checkMap({ files, read, policy, publication });
   assert.deepEqual(result.problems, []);
   const maps = [...new Set(result.rows.map(row => row.owner))].filter(f => f.endsWith('/README.md') || f.endsWith('/CONTRIBUTING.md'));
   const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

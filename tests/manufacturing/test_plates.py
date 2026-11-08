@@ -497,6 +497,9 @@ def test_export_plates_writes_the_project_file_picture_and_record(tmp_path, stri
     assert {p.name for p in exports.glob("demo-plates.*")} == {"demo-plates.3mf", "demo-plates.svg", "demo-plates.json"}
     saved = json.loads((exports / "demo-plates.json").read_text())
     assert saved["format"] == P.MARKER and saved["sha256"] == hashlib.sha256((exports / "demo-plates.3mf").read_bytes()).hexdigest()
+    assert saved['inputs']['stls'] == {n: hashlib.sha256((exports / (n + '.stl')).read_bytes()).hexdigest()
+                                      for n in ('box', 'lid')}
+    assert saved['inputs']['quantities'] == {'box': 2, 'lid': 3}
     assert saved["keep_out_mm"] == [[0.0, 0.0, 18.0, 28.0]]               # the printer's exclusion corner
     assert [(p["name"], p["bed_type"], len(p["parts"])) for p in saved["plates"]] == [
         ("Bambu PLA Basic", None, 2), ("Bambu PETG HF", "Textured PEI Plate", 3)]

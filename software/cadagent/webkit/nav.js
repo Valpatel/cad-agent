@@ -197,7 +197,7 @@ export class CadNav extends HTMLElement {
     // anywhere (over the tree or a rail too, unless that list scrolls instead; never typing in a field), makes the next
     // page scroll theirs (#123 review 4). A jump that stops short with no such input (the page moved under it, a
     // scrollbar drag) counts as ended after 600 ms without a scroll.
-    let pinned = null, settled = true, settle = 0, steered = false, queued = false, shown = null;
+    let pinned = null, settled = true, settle = 0, steered = false, queued = false;
     const root = document.scrollingElement || document.documentElement;
     const onScreen = h => { const t = h.getBoundingClientRect().top; return t >= -2 && t < innerHeight - 8; };
     const mark = () => {
@@ -211,7 +211,8 @@ export class CadNav extends HTMLElement {
         if (id === active?.id) a.setAttribute('aria-current', 'location');
         else a.removeAttribute('aria-current');
       }
-      if (active !== shown) { shown = active; for (const a of byId.get(active?.id) || []) this.#keepVisible(a, panel); }
+      // Page scrolling can leave the heading unchanged after the reader has moved the panel.
+      for (const a of byId.get(active?.id) || []) this.#keepVisible(a, panel);
     };
     const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
     const px = (v, of) => v.endsWith('%') ? parseFloat(v) * of / 100 : parseFloat(v) || 0;

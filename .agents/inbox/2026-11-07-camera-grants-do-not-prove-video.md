@@ -1,5 +1,18 @@
 # Camera grants do not prove printer readiness or decoded video
 
+## Reusable adapter observation, 2026-11-08 UTC
+
+The adapter at `f822af4456a6f141584f675122367ea61535390c` completed one independently reviewed live trial,
+01:22:08–01:22:12 UTC, using the existing owner-only cached session without a verification email. The bounded
+invocation `python3 cad405-live-observer-f822.py <private-output>` used script SHA-256
+`c254f86788b5c3fc2b2649c26e421986ddda03345f2b089ced099a17dd4abcf1`. P1S and X1E each returned fresh observed
+state and a matching firmware reply after exactly two status/version publications. The owned unit exited 0;
+source remained clean and the private cache-preservation check passed. The reviewer inspected filtered results,
+not credentials ([actual acceptance](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6715577418)).
+
+Keep this scope separate from a complete pushall snapshot, camera/bed assessment, motion or job submission.
+There was no retry, camera or physical command. The earlier prototype results and failures below are preserved.
+
 **Date:** 2026-11-07 UTC. **Tracking:** [#405](https://github.com/Valpatel/cad-agent/issues/405).
 
 ## Evidence

@@ -4,9 +4,13 @@ An agent can observe a printer without running a new service. On **2026-11-07**,
 
 The [read-only adapter](../../../software/cadagent/manufacturing/devices/bambu/README.md) exposes cached-session reuse,
 fresh owned-device listing and a selected printer's status/version query as `cad-agent bambu-status`.
-Its controlled tests exercise those consumers; the earlier printer observations do not count as a live trial of
-the new adapter. Login, refresh, camera capture, clear-bed verification and job submission are not implemented by
-this command. The existing P1S frame remains evidence from the separate prototype.
+On **2026-11-08**, one bounded trial of source `f822af44` reused the existing cache without another verification
+email and obtained fresh observed state plus correlated firmware for both P1S and X1E. The four status/version
+queries completed in about four seconds; the process exited cleanly and source/cache preservation checks passed
+([independent acceptance](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6715577418)).
+Sparse fields may satisfy that observation; it is not a complete snapshot or print-readiness proof. Login,
+refresh, camera capture, clear-bed verification and job submission are not implemented by this command.
+The existing P1S frame remains evidence from the separate prototype.
 
 Production work belongs inside the existing [manufacturing hierarchy](../../../software/cadagent/manufacturing/README.md#where-machine-automation-belongs): separate artifact preparation, device adapters, execution and evidence. Bambu is one integration; its cloud protocol must not define the workflow for every machine.
 

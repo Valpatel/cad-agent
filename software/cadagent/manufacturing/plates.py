@@ -941,6 +941,24 @@ def plates_file(project) -> Path:
     return project.exports_dir / (re.sub(r"[^A-Za-z0-9._-]+", "-", project.name).strip("-") + "-plates.3mf")
 
 
+def _release_inputs(project, cfg: PlatesConfig, stl_hashes=None) -> Dict[str, Any]:
+    """Inputs bound by a generated plate record; legacy records cannot establish this freshness."""
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings, part_overrides
+
+    if stl_hashes is None:
+        stl_hashes = {}
+        for name in cfg.parts:
+            path = project.exports_dir / (name + '.stl')
+            if not path.resolve().is_relative_to(project.root.resolve()):
+                raise PlatesError('plate source STL is outside the project')
+            stl_hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return {"stls": stl_hashes, "parts": cfg.parts, "quantities": cfg.quantities, "filaments": cfg.filaments,
+            "bed_mm": list(project.printer.bed_mm), "gap_mm": cfg.gap, "margin_mm": cfg.margin,
+            "rotate": cfg.rotate, "keep_out_mm": [list(k) for k in cfg.keep_out], "bed_type": cfg.bed_type,
+            "slicer": _settings(project), "part_overrides": {n: part_overrides(project, n) for n in cfg.parts}}
+
+
 def _short(filament: str) -> str:
     return filament.split(" @")[0]
 
@@ -1046,6 +1064,8 @@ def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings
 def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=True, *,
                    require_project_settings=False, output_path=None):
     """Shared exporter; strict calls write into their owned staging directory."""
+    import hashlib
+    import io
     import subprocess
 
     from cadagent.manufacturing import slicer
@@ -1069,12 +1089,16 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
         raise PlatesError("cad.printer.bed_mm is required to lay out build plates")
     if path.stem in known_parts:
         raise PlatesError(f"a part is named {path.stem!r}, the plates file's name; rename it or set cad.plates: false")
-    meshes = {}
+    meshes, stl_hashes = {}, {}
     for part in cfg.parts:
         stl = project.exports_dir / f"{part}.stl"
         if not stl.is_file():
             raise FileNotFoundError(f"{stl} not found; run the build first")
-        mesh = trimesh.load_mesh(stl, process=True)
+        if not stl.resolve().is_relative_to(project.root.resolve()):
+            raise PlatesError('plate source STL is outside the project')
+        raw = stl.read_bytes()
+        mesh = trimesh.load_mesh(io.BytesIO(raw), file_type='stl', process=True)
+        stl_hashes[part] = hashlib.sha256(raw).hexdigest()
         meshes[part] = (_normalised(mesh.vertices), np.asarray(mesh.faces, dtype=np.int64))
     groups = []
     for part in cfg.parts:
@@ -1169,6 +1193,7 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     import hashlib
     record = {
         "format": MARKER,
+        "inputs": _release_inputs(project, cfg, stl_hashes),
         "file": path.name,
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "picture": svg_path.name,

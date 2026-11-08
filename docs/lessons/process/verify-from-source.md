@@ -242,6 +242,9 @@ flowchart TD
 - **Limits:** Local emitted-header checks do not prove CDN behavior, existing browser-cache eviction or global
   propagation. Preserve the first mismatch, verify ordinary public responses after release, and keep publication
   pending while bytes disagree. A cache-busting query is diagnostic evidence, not proof that the original URL is fixed.
+- **Replay contract:** Preflight older publication readers against the current native manifest and built documents.
+  Human folder maps and role frontmatter need their actual selection/content contracts, not an invented common
+  heading. [Dated consumer failures and byte controls](../../../.agents/inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#replay-publication-checks-against-current-document-types).
 
 </details>
 

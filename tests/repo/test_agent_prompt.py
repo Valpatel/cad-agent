@@ -80,6 +80,32 @@ def test_commands_are_public_and_name_real_commands(tmp_path, monkeypatch):
     for url in re.findall(r"(?:https?://)?[\w.-]+\.(?:com|org|net|dev)[\w/.<>-]*", BLOCK):
         assert re.match(r"(?:https://)?(github\.com/Valpatel/cad-agent|cad-agent\.valpatel\.com)\b", url), url
 
+    # Resolve the documented checkout paths against the actual kit, not a copied expected directory name.
+    # The old root skills glob survived the hierarchy move despite the heading/command checks above.
+    from cadagent import agentkit
+    expected_sources = {ROOT / "docs/agent-prompt.txt"} | {
+        item.path / "SKILL.md" for item in agentkit.items(ROOT) if item.kind == "skill"
+    }
+
+    def guide_sources(text):
+        patterns = re.findall(r"~/cad-agent/([A-Za-z0-9_.*-]+(?:/[A-Za-z0-9_.*-]+)+)", text)
+        assert patterns, "the guide must reach the installed instructions"
+        found = set()
+        for pattern in patterns:
+            matches = set(ROOT.glob(pattern.rstrip(".")))
+            assert matches, f"documented checkout path has no files: {pattern}"
+            found.update(matches)
+        assert found == expected_sources, "reach the full guide and every canonical native skill"
+        return found
+
+    guide_sources(GUIDE)
+    for control in (
+        GUIDE.replace(".agents/skills/", "skills/"),
+        GUIDE.replace("~/cad-agent/docs/agent-prompt.txt", "the web summary"),
+    ):
+        with pytest.raises(AssertionError):
+            guide_sources(control)
+
     # Exercise the evaluator's actual --local selection, not only the directly tested installer path. Appending
     # the real script's --help reaches its option parser without downloading, cloning or installing anything.
     # Stop before a second install or the separate CAD/network smoke checks: this proves dispatch, not full setup.

@@ -87,3 +87,35 @@ target independently, preserve meaningful case and scope, and reject missing or 
 failed attempts and their real request/case counts; neither source bytes nor an offline positive control may
 stand in for a complete public run. Do not loosen overflow, request-error, revision or asset-equality checks
 when correcting a harness assumption. These bounded checks do not accept #381's separate cache policies.
+
+
+## Replay publication checks against current document types
+
+On 2026-11-07 UTC, offline preflight of a v0.23.0 smoke recipe against released v0.28.0 found eleven native kit
+candidates where ten were expected: its role glob also selected the new human `.agents/agents/README.md`.
+The actual installer reserves that filename and the plugin manifest lists two roles. Correcting the consumer to
+agree with those native contracts retained eight skills and two roles, with missing/unlisted-role controls.
+
+The first public attempt of that revised recipe then retained six HTTP bodies and failed before opening a
+browser. It required every source and Markdown twin to contain a `# ` heading. The actual reviewer role uses
+frontmatter and has no such heading; its served twin was correct. [Independent failure disposition](https://github.com/Valpatel/cad-agent/issues/381#issuecomment-6714553481).
+Neither failure established a product or cache-policy defect, and neither was relabelled as a pass.
+
+The next separately reviewed consumer compared complete Markdown bytes with the actual current-source build.
+All ten canonical twins were pinned along with the build's current revision. Eleven positives included the
+retained public role response without an H1; thirty altered, truncated or appended byte controls failed.
+The unchanged complete identity and missing/unlisted-role controls also passed. The changed bounded public run
+then completed all 70 ordinary reads and 56 header paint/control cases on both hosts, with stable release markers,
+owned cleanup and [independent actual acceptance](https://github.com/Valpatel/cad-agent/issues/381#issuecomment-6714599323).
+
+**Rule:** before replaying an older acceptance script, preflight every selected document type against the actual
+native manifest and current built artifact. A human map is not an agent role; role frontmatter is not a promised
+H1. Prefer complete canonical bytes to invented generic headings when the publication contract permits an exact
+comparison. Keep invalid-script attempts distinct, correct the demonstrated assumption and review the changed
+consumer and its negative controls before another bounded run. Retain source/version, browser bounds, identity
+and byte equality requirements.
+
+**Limits:** these controls validate the selected consumer and current public route/header scope. They do not
+prove fresh-user agent discovery, every browser interaction or physical CAD quality. The ordinary 18-asset cache
+policy receipt remains separate from the route/header smoke; no new source/provider behavior was needed to fix
+the false H1 assertion.

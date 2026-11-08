@@ -2,6 +2,8 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A fetched guide omits report fields, or its skill path still names the old root | [Read the full installed guide and validate its paths](inbox/publish/2026-11-07-agent-guides-need-exact-local-paths.md) |
+| A cache setting saves on one plan but fails on another, or saved rules are mistaken for delivered-policy proof | [Separate plan support, saved configuration and ordinary delivery](inbox/publish/2026-11-07-cache-policy-needs-plan-and-delivery-evidence.md) |
 | Published package identifiers become email-protection links despite correct source and revision | [Protect authored code and verify delivered text](inbox/publish/2026-11-07-provider-obfuscation-can-change-code.md) |
 | A no-script fold check selects hidden navigation, the inactive theme, or an offscreen summary | [Target the visible article control before ordinary input](inbox/2026-11-07-folder-inventories-need-explicit-owners.md#no-script-fold-checks-need-the-visible-article-control) |
 | A full check is cancelled after a progress percentage with no active test or traceback | [Retain the cap and expose the active test](inbox/publish/2026-11-07-full-test-caps-need-active-case.md) |
@@ -22,7 +24,7 @@
 | Copy/layout checks pass while resizing emits `ResizeObserver loop completed with undelivered notifications` | [Collect runtime errors on the actual interaction page](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md) |
 | Chromium dispatches a resize ErrorEvent while Playwright reports no pageerror, or font readiness changes observed geometry | [Collect both error channels and exercise font readiness during delivery](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md#font-readiness-can-change-geometry-during-observer-delivery) |
 | A resized viewport has old responsive styles, or an automatic navigation fold remains open on a phone | [Read responsive styles after the resize event](inbox/publish/2026-11-07-responsive-style-can-lag-resize.md) |
-| A release guard assumes fixed check counts, rejects inherited bytes, hits ENOBUFS, or confuses visible link text with its target | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
+| A release guard assumes fixed counts or document types, rejects inherited bytes, hits ENOBUFS, or confuses link labels and targets | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
 | A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |
 | A public probe fails before launch because ambient Node or a default browser cache differs | [Bind existing publication runtimes explicitly](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md) |

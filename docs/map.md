@@ -950,7 +950,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 609 folders</summary>
+<summary>software — 611 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1040,6 +1040,32 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/manufacturing` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/manufacturing/devices/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-manufacturing/d-devices/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/manufacturing/devices/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/manufacturing/devices` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/manufacturing/devices/bambu/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-manufacturing/d-devices/d-bambu/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/manufacturing/devices/bambu/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/manufacturing/devices/bambu` |
 
 </details>
 

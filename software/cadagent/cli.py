@@ -21,10 +21,10 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "prusa-view", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
-               "overhangs", "library", "init", "rules", "choose")
+               "overhangs", "library", "init", "rules", "choose", "bambu-status")
 LOG_TAIL_LINES = 20
-# Usage reporting off. cad-agent itself sends nothing anywhere; the only reports are the issues and pull requests a
-# person chooses to send on GitHub. `run_step` sets these in the environment of every project step it runs (and so of
+# Usage reporting off. Explicit network operations, such as owned-printer observations, are separate from usage
+# reporting. `run_step` sets these in the environment of every project step it runs (and so of
 # anything a step starts), unless the variable is already set: a person's own explicit choice stands. They never change
 # the calling process's environment. The list is the survey in docs/practice/supply-chain.md ("Usage reporting");
 # tests/cli/test_privacy.py fails when a vendored tool names a switch this list does not cover.
@@ -1284,6 +1284,23 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "bambu-status":
+        from cadagent.manufacturing.devices.bambu.cloud import CloudError, load_session, observe, owned_printers
+        try:
+            session = load_session(args.session)
+            if args.device is not None:
+                result = observe(session, args.device, wait_seconds=args.wait_seconds)
+            else:
+                result = {"printers": [{"device_id": p.device_id, "model": p.model}
+                                       for p in owned_printers(session)]}
+            print(json.dumps(result, indent=2))
+            return 0
+        except CloudError as exc:
+            _err(f"bambu-status: {exc}")
+            return 2
+        except KeyboardInterrupt:
+            _err("bambu-status: interrupted")
+            return 130
     if sub == "init":                                      # makes a project: none needed yet
         try:
             return cmd_init(args)
@@ -1467,6 +1484,10 @@ def build_parser() -> argparse.ArgumentParser:
     mt_p.add_argument("--poses-only", action="store_true", help="Emit required capture angles instead of validating")
     mt_p.add_argument("--output", type=Path, help="Write JSON to a file (default: stdout)")
     mt_p.add_argument("--tolerance-mm", type=float, default=.01, help="Landmark error limit in mm (default: 0.01)")
+    bs_p = sub.add_parser("bambu-status", help="Reuse a private Bambu session to list owned printers or read one printer's status; no physical controls")
+    bs_p.add_argument("--session", type=Path, help="Existing owner-only session file (default: XDG state directory)")
+    bs_p.add_argument("--device", help="Explicit owned device ID; omit to list printers without MQTT queries")
+    bs_p.add_argument("--wait-seconds", type=float, default=30, help="MQTT response wait after connection, at most 60 seconds (default: 30)")
     sf_p = sub.add_parser("snapfit", help="Size and check snap fits declared in a YAML/JSON file (docs/mechanical/compliant.md)")
     sf_p.add_argument("spec", help="file with a 'snaps' list")
     sf_p.add_argument("--output", help="write the full result as JSON")

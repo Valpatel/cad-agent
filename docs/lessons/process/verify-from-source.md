@@ -209,6 +209,9 @@ flowchart TD
 - **Rule:** Read the actual assets through each public domain and compare them with the released source. A current
   version marker or checksum receipt does not prove that a separately cached asset is current. Stable asset URLs
   must revalidate when reused; a source header change does not evict responses already stored elsewhere.
+  Validate a provider setting against the actual zone's plan and read back its saved scope. Configuration success
+  is separate from ordinary delivered-policy and browser acceptance; retain a rejected operation without silently
+  broadening it. [Dated plan-limit incident](../../../.agents/inbox/publish/2026-11-07-cache-policy-needs-plan-and-delivery-evidence.md).
 
 <details>
 <summary>2026-11-06 stylesheet readback, cache policy and authorization limits</summary>

@@ -51,13 +51,13 @@ export function catalogueAudit(report, markdown) {
   const date = new Date(`${report.as_of}T00:00:00Z`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(report.as_of || '') || !Number.isFinite(date.valueOf()) ||
       date.toISOString().slice(0, 10) !== report.as_of) fail('invalid observation date');
-  if (!/^[a-f0-9]{40}$/.test(report.revision || '') || !Array.isArray(report.findings)) fail('missing revision or findings');
-  const header = markdown?.match(/^What cad-agent depends on, vendors and links to, checked on (\d{4}-\d{2}-\d{2}) at revision `([a-f0-9]{12})` \(online checks\)\./m);
+  if (typeof report.revision !== 'string' || !/^[a-f0-9]{40}$/.test(report.revision) || !Array.isArray(report.findings)) fail('missing revision or findings');
+  const header = typeof markdown === 'string' && markdown.match(/^What cad-agent depends on, vendors and links to, checked on (\d{4}-\d{2}-\d{2}) at revision `([a-f0-9]{12})` \(online checks\)\./m);
   if (!header || header[1] !== report.as_of || header[2] !== report.revision.slice(0, 12)) fail('published Markdown date/revision differs from JSON');
   const findings = [];
   const seen = new Set();
   for (const f of report.findings) {
-    if (!f || typeof f.check !== 'string' || typeof f.subject !== 'string' || !/^[a-f0-9]{16}$/.test(f.fp || '') ||
+    if (!f || typeof f.check !== 'string' || typeof f.subject !== 'string' || typeof f.fp !== 'string' || !/^[a-f0-9]{16}$/.test(f.fp) ||
         !['info', 'low', 'medium', 'high', 'critical'].includes(f.severity) ||
         typeof f.title !== 'string' || typeof f.evidence !== 'string' ||
         (f.accepted !== undefined && typeof f.accepted !== 'string')) fail('malformed finding');

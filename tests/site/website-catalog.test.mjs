@@ -74,13 +74,15 @@ test('missing, malformed, offline and mismatched reports cannot silently produce
   const r = auditFixture();
   for (const bad of [undefined, {}, { ...r, schema: 'future/2' }, { ...r, mode: 'offline' },
     { ...r, as_of: '2024-02-30' }, { ...r, as_of: '2024-99-99' }, { ...r, revision: 'main' },
+    { ...r, revision: [r.revision] }, { ...r, revision: 1234 },
     { ...r, findings: null }, { ...r, findings: [null] }, { ...r, findings: [r.findings[0], r.findings[0]] },
     { ...r, findings: [{ ...r.findings[0], accepted: true }] }, { ...r, findings: [{ ...r.findings[0], evidence: {} }] },
+    { ...r, findings: [{ ...r.findings[0], fp: 1234567890123456 }] }, { ...r, findings: [{ ...r.findings[0], fp: ['0123456789abcdef'] }] },
     { ...r, findings: [{ check: 'repo-stale', subject: 'vendor:bad', title: { malformed: true } }] },
     { ...r, findings: [{ ...r.findings[0], subject: 'url:javascript:alert(1)' }] }]) {
     assert.throws(() => catalogueAudit(bad, auditHeader(r)), /security-report\.json/);
   }
-  for (const md of [undefined, '', auditHeader({ ...r, as_of: '2024-02-28' }), auditHeader({ ...r, revision: 'b'.repeat(40) }),
+  for (const md of [undefined, {}, '', auditHeader({ ...r, as_of: '2024-02-28' }), auditHeader({ ...r, revision: 'b'.repeat(40) }),
     auditHeader(r).replace('online checks', 'offline checks')]) assert.throws(() => catalogueAudit(r, md), /Markdown date\/revision/);
   // A new check may be valid elsewhere in the report, but it must be classified before affecting a card.
   for (const check of ['new-url-check', 'repo-new-check', 'constructor', '__proto__']) {

@@ -248,3 +248,7 @@ Independent source review of the initial `9df8faf9` draft planted a malformed no
 fields, contradicting the consumer's rejection contract. Validate every finding's common shape and fingerprint
 before selecting card scope. A malformed non-URL control must fail; a valid non-card finding must still be ignored
 for cards. The passing original build and ten browser cases remain evidence for that earlier head, not the fix.
+
+Additional controls at `627f1489` reproduced JavaScript regex coercion: a numeric 16-digit fingerprint and a
+single-string array both passed the hex-pattern check and propagated the wrong JSON type. Check the string type
+before the pattern, retaining both negative cases. A valid-looking string conversion is not schema validation.

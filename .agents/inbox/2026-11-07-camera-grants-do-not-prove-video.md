@@ -111,3 +111,24 @@ and requires `native_start_failed` with that code; child-process tests require k
 secret-shaped messages to stay hidden. The focused camera/cloud/CLI/layout run passed 103 tests after this change.
 That is offline diagnostic evidence, not a successful second live capture. Preserve failure information sufficient
 to choose the next experiment without weakening private-data boundaries or treating a retry as a diagnosis.
+
+## A prior prototype frame does not qualify a new reader or current preparation
+
+At 02:35:31 UTC on the same date, one diagnostic trial at source `d0435bdeda1c6dd88cc33d748bf1d0c297e3dde2`
+identified `native_open_failed, code -90`. It exited 1 after 22.472 seconds without a frame; source/cache checks
+passed and the unit's control group was empty. [Independent readback](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6716250961).
+The official media player's generic handling of negative errors does not identify this native code's cause.
+
+At 02:42:01 UTC, one subscribe-only preparation observation reused that exact source and cached session. Its
+script SHA-256 was `fee4cbc6089d33e596dd4154d48e20c452fc8782c27864271519f8a3c9fd4449`. It obtained fresh
+status/matched firmware, issued one normal camera grant, and observed a nonretained `liveview.prepare` report
+whose private grant identifier matched exactly: normalized result `unknown`, `err_code: 84033543`, subsequent
+TUTK telemetry `disable`. No native reader ran. The 22.676-second process exited 0 to denote completed observation,
+not camera success; source/cache checks passed and its group was empty. [Independent readback](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6716312332).
+Offline matched-success/failure, wrong-grant and retained-report controls passed before that one observation.
+
+The root cause remains unknown, including whether this explains either earlier native failure. Keep the reader
+draft unqualified and stop blind native retries. The research already requires readiness evidence before a reader;
+generic fresh status and a valid grant do not satisfy that camera-specific requirement. Resolve and demonstrate
+the supported preparation path before treating the new adapter as working. Do not substitute client identity,
+signing workarounds, or a printer configuration change for that missing evidence.

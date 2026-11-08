@@ -44,7 +44,7 @@ The [dated connection evidence](../../../../../docs/research/manufacturing/bambu
 the earlier actual printer observations from this adapter's tests. State/firmware do not establish a clean
 bed, usable camera or successful printing. Other regions and hardware controls are not implemented.
 
-## One private frame — integration under review
+## One private frame — integration not yet working
 
 `bambu-frame` uses the same cached session and fresh ownership/status/version observation, requests one
 normal TUTK grant, and reads one JPEG. The [external reader](../../../../../tools/bambu-camera/README.md)
@@ -66,8 +66,11 @@ reader's dimensions/byte count, then published as a new mode-0600 file. Grant se
 unlinked input file descriptor, not in the command line or logs. The external process group has a 45-second
 deadline and is killed/reaped on completion, error or interruption; HTTP/MQTT have the separate bounds above.
 
-The earlier prototype's P1S frame is not acceptance of this new implementation. Its actual trial and independent
-review are pending in [PR494](https://github.com/Valpatel/cad-agent/pull/494). X1E camera support is unresolved.
+The earlier prototype's P1S frame is not acceptance of this new implementation. Independent source review passed,
+but both actual native trials in [PR494](https://github.com/Valpatel/cad-agent/pull/494) failed without a frame.
+A separate P1S preparation observation matched the requested grant and received error `84033543` with disabled
+TUTK telemetry; the exact cause is unknown. This remains an experimental draft, not a qualified camera path.
+X1E camera support is also unresolved.
 A frame reports `bed_clear: null` and `print_authorized: false`; the command makes neither decision.
 
 | File | Purpose |

@@ -12,6 +12,12 @@ Sparse fields may satisfy that observation; it is not a complete snapshot or pri
 refresh, camera capture, clear-bed verification and job submission are not implemented by this command.
 The existing P1S frame remains evidence from the separate prototype.
 
+The reusable P1S camera draft remains **unqualified as of 2026-11-08**. Both native trials produced no frame;
+the second returned `-90` from `Bambu_Open`. A separate observation received a nonretained preparation report
+matching its exact grant, with error `84033543`, normalized result `unknown`, and disabled TUTK telemetry
+([independent readback](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6716312332)). No reader ran
+in that observation. The exact error cause, and its relationship to the two native failures, remain unknown.
+
 Production work belongs inside the existing [manufacturing hierarchy](../../../software/cadagent/manufacturing/README.md#where-machine-automation-belongs): separate artifact preparation, device adapters, execution and evidence. Bambu is one integration; its cloud protocol must not define the workflow for every machine.
 
 ```mermaid
@@ -30,7 +36,7 @@ flowchart TD
 |---|---|---|
 | Normal cloud login and owned-device listing | Verified | Verified |
 | Fresh status and matched firmware reply | Verified | Verified |
-| Actual decoded cloud camera frame | 1280 × 720 JPEG | Not obtained |
+| Actual decoded cloud camera frame | Earlier prototype: 1280 × 720 JPEG; reusable reader not qualified | Not obtained |
 | Motion, heating, print submission | Not tested | Not tested |
 
 The X1E returned a camera grant, then rejected preparation of that **same grant** with `84033543`. Its camera works in the official app, according to the owner. A grant is therefore insufficient evidence of a working stream. The error's precise meaning in this camera context is not established by the official error tables.

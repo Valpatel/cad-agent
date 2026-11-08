@@ -405,6 +405,78 @@ def _slice_rows(project: CadProject) -> Tuple[Dict[str, Any], Dict[str, Dict[str
     return rep, current, ""
 
 
+def _print_set(project: CadProject, cfg: ReleaseConfig, known: Sequence[str], warnings: List[str]):
+    """A current complete native plate project, never a glob or the per-part slice totals."""
+    from cadagent.manufacturing import plates as P
+    import xml.etree.ElementTree as ET
+
+    path = P.plates_file(project)
+    record_path = path.with_suffix('.json')
+    if not any(p.exists() or p.is_symlink() for p in (path, record_path)):
+        return None
+    try:
+        for p in (path, record_path):
+            if p.is_symlink() or not p.is_file() or not p.resolve().is_relative_to(project.root.resolve()):
+                raise ValueError('project and record must be regular files inside the project')
+        pc = P.plates_config(project, known)
+        if pc is None:
+            raise ValueError('cad.plates is disabled')
+        expected = {n: cfg.quantities.get(n, 1) for n in
+                    (cfg.build.parts if cfg.build else [n for g in cfg.groups for n in g.parts])}
+        if pc.quantities != expected or (not cfg.build and any(g.pick_one for g in cfg.groups)):
+            raise ValueError('plates do not identify the complete released build at its quantities')
+        inputs = P._release_inputs(project, pc)
+        if any(inputs['part_overrides'].values()):
+            raise ValueError('per-part slicer overrides are not represented by this plate exporter')
+        record = json.loads(record_path.read_text())
+        if (not isinstance(record, dict) or record.get('format') != P.MARKER
+                or record.get('file') != path.name or record.get('sha256') != _sha(path)):
+            raise ValueError('plate project does not match its generated record')
+        if record.get('inputs') != inputs:
+            raise ValueError('plate inputs are changed or lack a current input record; run export-3mf again')
+        back = P.read_plates_3mf(path, project.printer.bed_mm)
+        native = back['project_settings']
+        groups = list(dict.fromkeys(pc.filaments[n] for n in pc.parts))
+        if (not isinstance(native, dict) or P.application(native) == P.APPLICATION
+                or any(not isinstance(native.get(k), str) or not native[k].strip()
+                       for k in ('printer_settings_id', 'print_settings_id'))
+                or not isinstance(native.get('filament_settings_id'), list)
+                or len(native['filament_settings_id']) != len(groups)
+                or any(not isinstance(f, str) or not f.strip() for f in native['filament_settings_id'])):
+            raise ValueError('native printer/process/filament settings are missing')
+        keep_out = list(pc.keep_out)
+        area, _ = P.printable_area(native, project.printer.bed_mm)
+        excluded = P._exclude_box(native, area)
+        if excluded:
+            keep_out.append(excluded)
+        problems = P.check_plates(P.as_plates(back), project.printer.bed_mm, pc.gap, pc.margin,
+                                  keep_out=keep_out, quantities=expected, tol=P.POSITION_TOL_MM)
+        if not back['plates'] or back['outside'] or problems:
+            raise ValueError('native plate layout is incomplete or outside the current layout rules')
+        rows = []
+        for plate in back['plates']:
+            if sorted(plate['listed']) != sorted((q['object'], q['instance']) for q in plate['placements']):
+                raise ValueError('native plate lists differ from actual placements')
+            filaments = set()
+            for q in plate['placements']:
+                obj = back['objects'][q['object']]
+                slot = obj['extruder']
+                if not 1 <= slot <= len(groups) or groups[slot - 1] != pc.filaments[q['part']] or abs(q['z_mm']) > 1e-6:
+                    raise ValueError('native filament slot or print orientation differs from the plate inputs')
+                filaments.add(native['filament_settings_id'][slot - 1])
+            if len(filaments) != 1:
+                raise ValueError('a plate does not have one filament group')
+            rows.append({'plate': plate['index'], 'name': plate['name'], 'copies': len(plate['placements']),
+                         'filament': next(iter(filaments)), 'grams': None, 'minutes': None})
+        return {'path': path, 'sha256': record['sha256'], 'inputs': inputs, 'plates': rows,
+                'copies': sum(r['copies'] for r in rows), 'sliced': False, 'gui_verified': False,
+                'scope': cfg.build.title if cfg.build else 'All released parts',
+                'settings': {k: native[k] for k in ('printer_settings_id', 'print_settings_id', 'filament_settings_id')}}
+    except (OSError, ValueError, TypeError, KeyError, IndexError, AttributeError, ET.ParseError, zipfile.BadZipFile) as exc:
+        warnings.append(f'whole print set not linked: {exc}')
+        return None
+
+
 def _hardware_rows(project: CadProject, hardware: Any) -> List[Dict[str, str]]:
     if hardware is None:
         return []
@@ -598,7 +670,8 @@ def _build_entry(cfg: ReleaseConfig, parts: List[Dict[str, Any]]) -> Optional[Di
 
 def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, parts: List[Dict[str, Any]],
           settings: Dict[str, Any], slice_note: str, docs: List[Dict[str, str]], hardware: List[Dict[str, str]],
-          sources: List[str], extra: List[Dict[str, str]], zip_name: Optional[str], git: Dict[str, Any]) -> str:
+          sources: List[str], extra: List[Dict[str, str]], zip_name: Optional[str], git: Dict[str, Any],
+          print_set: Optional[Dict[str, Any]] = None) -> str:
     missing = [p["part"] for p in parts if not p.get("grams")]
     meta = [("Revision", revision)] + ([("Date", date)] if date else [])
     if git.get("commit"):
@@ -641,8 +714,19 @@ def _page(project: CadProject, cfg: ReleaseConfig, revision: str, date: str, par
     toc = ['<a href="#parts">Parts</a>'] + (['<a href="#assembly">Assembly</a>'] if docs else []) \
         + (['<a href="#hardware">Hardware</a>'] if hardware else []) + ['<a href="#source">Source</a>']
     body = [f'<header><h1>{_e(cfg.title)}</h1><ul class="meta">{meta_html}</ul></header>',
-            f'<div class="stats">{stats_html}</div>', settings_html, alert, f'<nav class="toc">{"".join(toc)}</nav>',
-            '<section id="parts">']
+            f'<div class="stats">{stats_html}</div>', settings_html, alert, f'<nav class="toc">{"".join(toc)}</nav>']
+    if print_set:
+        rows = ''.join(f'<tr><td>{r["plate"]}</td><td>{_e(r["name"])}</td><td>{_e(r["filament"])}</td>'
+                       f'<td>{r["copies"]}</td><td>not sliced</td></tr>' for r in print_set['plates'])
+        body.append('<section id="print-set"><h2>Whole print set</h2>'
+                    f'<p><a href="{_u(print_set["href"])}" download>Open the whole print set</a> in Bambu Studio '
+                    f'· {_e(print_set["scope"])} · {print_set["copies"]} copies on {len(print_set["plates"])} plates.</p>'
+                    '<p>Native presets are embedded. Plate time and mass have not been recorded; per-part estimates '
+                    'above are separate. Check profiles and placements in Bambu Studio before slicing. '
+                    'GUI compatibility and physical print quality remain unverified.</p>'
+                    '<div class="tablewrap"><table><tr><th>Plate</th><th>Name</th><th>Filament preset</th>'
+                    '<th>Copies</th><th>Slice result</th></tr>' + rows + '</table></div></section>')
+    body.append('<section id="parts">')
     by_name = {p["part"]: p for p in parts}
     for g in cfg.groups:
         members = [by_name[n] for n in g.parts]
@@ -813,8 +897,14 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                           "minutes": row.get("minutes"), "slicer_flags": flags})
     skipped: List[str] = []
     extra = []
+    print_set = _print_set(project, cfg, list(known), warnings)
+    if print_set:
+        source = print_set.pop('path')
+        print_set['href'] = put(source, f'cad/{source.name}')
     for src in _glob(project.root, cfg.extra_cad, skipped=skipped):
         rel = put(src, f"cad/{src.name}")
+        if print_set and rel == print_set['href']:
+            continue
         extra.append({"name": src.name, "href": rel, "size": _size(src.stat().st_size)})
     hardware = _hardware_rows(project, cfg.hardware)
     sources = []
@@ -884,7 +974,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         docs.append({"title": title, "href": href})
     zip_path = folder.with_name(folder.name + ".zip") if make_zip else None
     (folder / "index.html").write_text(_page(project, cfg, revision, date, parts, settings, slice_note, docs, hardware,
-                                             sources, extra, zip_path.name if zip_path else None, git))
+                                             sources, extra, zip_path.name if zip_path else None, git, print_set))
     copied["index.html"] = folder / "index.html"
     files = {rel: _sha(p) for rel, p in sorted(copied.items())}
     manifest = {"format": MARKER, "project": project.name, "title": cfg.title, "revision": revision, "date": date,
@@ -895,6 +985,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                 "parts": [{k: p[k] for k in ("part", "group", "optional", "pick_one", "quantity", "grams", "minutes")}
                           for p in parts],
                 "build": _build_entry(cfg, parts),
+                "print_set": print_set,
                 "warnings": warnings, "files": files}
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     if zip_path:

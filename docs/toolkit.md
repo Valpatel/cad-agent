@@ -1669,6 +1669,14 @@ DIR`, the zip is `DIR.zip`):
 | `source/<project path>` | the files matched by `include` minus `exclude` |
 | `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `warnings`, and `files` (the sha256 of every file) |
 
+When the generated native plate project and its current input record cover the released parts at their quantities
+(or the explicit `cad.release.build`), the page also links **Open the whole print set**. Its plate table records the
+actual native placements and filament presets, with plate time/mass explicitly unrecorded. Per-part slice estimates
+are not plate results. Changed STL bytes, layout/profile inputs, missing native settings, legacy records without input
+fingerprints or unsupported per-part overrides withhold this link with a warning; ordinary part downloads remain.
+Re-export through the existing `export-3mf` path when inputs change. This does not establish Bambu GUI compatibility,
+printer readiness, physical print quality or the remaining per-plate slicing/override acceptance in #84.
+
 </details>
 
 ```mermaid

@@ -322,3 +322,88 @@ def test_a_part_the_slicer_flagged_keeps_its_numbers_and_says_so(tmp_path):
     lid = card((result.folder / "index.html").read_text(), "lid")
     assert "50.0 g" in lid and "slicer: Long bridging extrusions" in lid
     assert any("lid: sliced, but the slicer flagged it: Long bridging extrusions" in w for w in result.warnings)
+
+
+def native_print_set(tmp_path, release=None):
+    """Real, tiny two-plate 3MF; no CAD kernel, slicer or printer. Settings are TEST-ONLY."""
+    import numpy as np
+    from cadagent.manufacturing import plates as P
+    from cadagent.manufacturing.slicer import part_overrides
+    p = project(tmp_path, release or {"quantities": {"lid": 2}})
+    p.slicer = {"printer": "Fixture printer", "process": "Fixture process", "filament": "Fixture PLA"}
+    p.plates = {"parts": {"lid": {"filament": "Fixture PLA"}, "base": {"filament": "Fixture PETG"}}}
+    vertices = np.array([[0, 0, 0], [10, 0, 0], [0, 10, 0], [0, 0, 10]], dtype=float)
+    faces = np.array([[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]])
+    stl = "solid fixture\n" + "".join("facet normal 0 0 0\nouter loop\n" + "".join(
+        "vertex " + " ".join(map(str, vertices[i])) + "\n" for i in face) + "endloop\nendfacet\n" for face in faces) + "endsolid\n"
+    for name in ("lid", "base"):
+        (p.exports_dir / (name + ".stl")).write_text(stl)
+    cfg = P.plates_config(p, ["lid", "base"])
+    copies = [P.Copy(n, k, P.footprint(vertices), cfg.filaments[n])
+              for n in cfg.parts for k in range(1, cfg.quantities[n] + 1)]
+    layout = P.pack(copies, p.printer.bed_mm, cfg.gap, cfg.margin)
+    settings = {"version": "02.08.04.57", "printer_settings_id": "Fixture printer",
+                "print_settings_id": "Fixture process", "filament_settings_id": ["Fixture PLA", "Fixture PETG"],
+                "printable_area": ["0x0", "256x0", "256x256", "0x256"]}
+    path = P.plates_file(p)
+    P.write_plates_3mf(path, {n: (vertices, faces) for n in cfg.parts}, layout,
+                       bed_xy=p.printer.bed_mm, gap=cfg.gap, margin=cfg.margin,
+                       extruders={"lid": 1, "base": 2}, project_settings=json.dumps(settings).encode())
+    inputs = {"stls": {n: hashlib.sha256((p.exports_dir / (n + ".stl")).read_bytes()).hexdigest() for n in cfg.parts},
+              "parts": cfg.parts, "quantities": cfg.quantities, "filaments": cfg.filaments,
+              "bed_mm": list(p.printer.bed_mm), "gap_mm": cfg.gap, "margin_mm": cfg.margin, "rotate": cfg.rotate,
+              "keep_out_mm": [list(k) for k in cfg.keep_out], "bed_type": cfg.bed_type,
+              "slicer": _settings(p), "part_overrides": {n: part_overrides(p, n) for n in cfg.parts}}
+    record = {"format": P.MARKER, "file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+              "inputs": inputs}
+    path.with_suffix(".json").write_text(json.dumps(record))
+    return p, path, record
+
+
+def test_release_links_the_complete_current_native_print_set(tmp_path):
+    p, source, _ = native_print_set(tmp_path)
+    result = build_release(p, out=tmp_path / "released", date="2026-11-08")
+    page = (result.folder / "index.html").read_text()
+    assert 'href="cad/demo-plates.3mf"' in page and "Open the whole print set" in page
+    assert (result.folder / "cad/demo-plates.3mf").read_bytes() == source.read_bytes()
+    manifest = json.loads((result.folder / "manifest.json").read_text())
+    handoff = manifest["print_set"]
+    assert handoff["copies"] == 3 and len(handoff["plates"]) == 2
+    assert handoff["sliced"] is False and handoff["gui_verified"] is False
+    assert "Plate time and mass have not been recorded" in page
+
+
+@pytest.mark.parametrize('fault', ['stl', 'gap', 'quantity', 'profile', 'part_overrides',
+                                  'legacy_record', 'hash', 'corrupt_native', 'disabled'])
+def test_release_never_rescues_a_stale_whole_set_from_prior_output(tmp_path, fault):
+    p, source, record = native_print_set(tmp_path)
+    out = tmp_path / 'released'
+    build_release(p, out=out, date='2026-11-08')
+    if fault == 'stl':
+        (p.exports_dir / 'lid.stl').write_text('changed mesh bytes')
+    elif fault == 'gap':
+        p.plates['gap_mm'] = 9
+    elif fault == 'quantity':
+        p.release['quantities']['lid'] = 3
+    elif fault == 'profile':
+        p.slicer['process'] = 'Different process'
+    elif fault == 'part_overrides':
+        p.slicer['parts'] = {'lid': {'overrides': {'enable_support': '1'}}}
+    elif fault == 'legacy_record':
+        del record['inputs']
+    elif fault == 'hash':
+        record['sha256'] = '0' * 64
+    elif fault == 'corrupt_native':
+        source.write_bytes(b'not a native project')
+        record['sha256'] = hashlib.sha256(source.read_bytes()).hexdigest()
+    elif fault == 'disabled':
+        p.plates = False
+    source.with_suffix('.json').write_text(json.dumps(record))
+    result = build_release(p, out=out, date='2026-11-08')
+    assert 'Open the whole print set' not in (out / 'index.html').read_text()
+    assert not (out / 'cad/demo-plates.3mf').exists()
+    manifest = json.loads((out / 'manifest.json').read_text())
+    assert manifest['print_set'] is None and 'cad/demo-plates.3mf' not in manifest['files']
+    assert any(w.startswith('whole print set not linked:') for w in result.warnings)
+    with zipfile.ZipFile(result.zip_path) as archive:
+        assert not any(n.endswith('/cad/demo-plates.3mf') for n in archive.namelist())

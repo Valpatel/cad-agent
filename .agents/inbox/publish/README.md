@@ -10,6 +10,8 @@ flowchart LR
 
 | Incident | Lesson |
 | --- | --- |
+| [Outline scroll state](2026-11-08-outline-visibility-needs-scroll-state.md) | Keep an unchanged active entry visible on page scroll; observe actual scroll/frame delivery before strict geometry. |
+| [Whole-set handoff](2026-11-08-release-links-need-current-project-inputs.md) | Link only the current native project; separate plate handoff from per-part estimates. |
 | [Agent guide paths](2026-11-07-agent-guides-need-exact-local-paths.md) | Read full installed instructions when a summary drops requirements; validate the actual skill paths. |
 | [Cache plan and delivery](2026-11-07-cache-policy-needs-plan-and-delivery-evidence.md) | Validate the actual plan and saved scope, then verify ordinary asset responses separately. |
 | [Obfuscated code](2026-11-07-provider-obfuscation-can-change-code.md) | Compare delivered authored literals; a successful response and revision footer can still hide transformed instructions. |

@@ -45,6 +45,7 @@ flowchart TD
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
+| `site-outline.mjs` | Helper: actual scroll/frame readiness, strict marked-entry geometry and same-section/manual-panel regression with a hidden-entry control |
 | `site-motion.mjs` | Helper: rendered reduced-motion hero still and a hidden-drawing negative control |
 | `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |

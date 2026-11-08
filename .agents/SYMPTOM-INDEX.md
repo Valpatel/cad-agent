@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A marked outline entry is outside its panel after the reader scrolls the page | [Observe scroll delivery and preserve same-section visibility](inbox/publish/2026-11-08-outline-visibility-needs-scroll-state.md) |
 | An explicitly empty device selector falls back to listing the account | [Distinguish absence from an invalid selector](inbox/2026-11-07-camera-grants-do-not-prove-video.md#an-explicitly-invalid-selector-must-not-become-a-broader-observation) |
 | A review request remains unanswered while its agent is completed, or an existing exact-source clearance is overlooked | [Start idle reviewers and reuse valid clearances](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#start-idle-reviewers-instead-of-queueing-another-message) |
 | A fetched guide omits report fields, or its skill path still names the old root | [Read the full installed guide and validate its paths](inbox/publish/2026-11-07-agent-guides-need-exact-local-paths.md) |
@@ -27,6 +28,7 @@
 | Copy/layout checks pass while resizing emits `ResizeObserver loop completed with undelivered notifications` | [Collect runtime errors on the actual interaction page](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md) |
 | Chromium dispatches a resize ErrorEvent while Playwright reports no pageerror, or font readiness changes observed geometry | [Collect both error channels and exercise font readiness during delivery](inbox/publish/2026-11-07-resize-checks-need-runtime-errors.md#font-readiness-can-change-geometry-during-observer-delivery) |
 | A resized viewport has old responsive styles, or an automatic navigation fold remains open on a phone | [Read responsive styles after the resize event](inbox/publish/2026-11-07-responsive-style-can-lag-resize.md) |
+| A print release omits the native whole-set project, or a previous bundle could hide changed plate inputs | [Bind the native handoff to current inputs](inbox/publish/2026-11-08-release-links-need-current-project-inputs.md) |
 | A release guard assumes fixed counts or document types, rejects inherited bytes, hits ENOBUFS, or confuses link labels and targets | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
 | A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |

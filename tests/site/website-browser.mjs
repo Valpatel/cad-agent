@@ -16,6 +16,7 @@ import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
+import { outlineEntryState, scrollOutline, sameSectionOutlineProblems } from './site-outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -81,6 +82,7 @@ try {
     ['header', headerProblems],          // painted text can collide even when the flex boxes and page do not overflow
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
+    ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
     ['fourbar', fourbarProblems],        // the four-bar animator on /docs/linkages (#159), below
     ['fanCurve', fanCurveProblems],      // the fan-curve explorer on /docs/fans (#160), below
@@ -218,6 +220,7 @@ try {
           }
         }
         if (route === '/docs/toolkit') {                    // page tree: a column on wide screens, a toggle on phones
+          await settled(page);                         // the component and its styles must exist before reader input
           const nav = page.locator('cad-nav');
           // Nothing jumps while the page loads: the tree is styled and folded from the first paint (kit/nav.css).
           // Settles in every engine: no shift at all is the goal, not a hang, and WebKit has no layout-shift entries.
@@ -230,21 +233,23 @@ try {
           }));
           if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
           if (width >= 1100) {
-            await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight / 2); });
-            await page.waitForTimeout(300);
+            const outlineEvidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-'));
+            const firstScroll = await scrollOutline(page, await page.evaluate(() => document.body.scrollHeight / 2));
+            if (!firstScroll.ready) seen.push(`outline ${firstScroll.stage} was not delivered within 2000 ms`);
             const box = await nav.locator('.cad-nav-panel').boundingBox();
             if (!box || box.y < 0 || box.y > 200) seen.push(`page tree is not in view after scrolling (y=${box?.y})`);
             if (!(await nav.locator('.cad-nav-outline a[aria-current=location]').count())) seen.push('outline does not mark the section being read');
             // The marked entry stays in view inside the panel (the outline sits under the tree, below the panel's fold), even
             // when the reader had scrolled the panel back to its top.
             await nav.locator('.cad-nav-panel').evaluate(p => { p.scrollTop = 0; });
-            await page.evaluate(() => scrollTo(0, document.body.scrollHeight * 0.85));
-            await page.waitForTimeout(300);
-            const inView = await nav.locator('.cad-nav-panel').evaluate(p => {
-              const a = p.querySelector('.cad-nav-outline a[aria-current=location]'), b = p.getBoundingClientRect(), r = a?.getBoundingClientRect();
-              return !!r && r.top >= b.top && r.bottom <= b.bottom;
-            });
-            if (!inView) seen.push('the marked outline entry is out of the panel\'s view');
+            const lastScroll = await scrollOutline(page, await page.evaluate(() => document.body.scrollHeight * 0.85));
+            if (!lastScroll.ready) seen.push(`outline ${lastScroll.stage} was not delivered within 2000 ms`);
+            const marked = await nav.locator('.cad-nav-panel').evaluate(outlineEntryState);
+            await writeFile(path.join(outlineEvidence, 'state.json'), JSON.stringify({ firstScroll, lastScroll, marked }, null, 2) + '\n');
+            if (!marked.inView) {
+              seen.push('the marked outline entry is out of the panel\'s view');
+              await page.screenshot({ path: path.join(outlineEvidence, 'after-measurement.png') });
+            }
             // The last sections can never reach the reading line; following their links, with the site's smooth scrolling,
             // must still mark them once the scroll settles. Scrolling on releases the mark to the reading line.
             await page.evaluate(() => { document.documentElement.style.scrollBehavior = ''; scrollTo({ top: 0, behavior: 'instant' }); });

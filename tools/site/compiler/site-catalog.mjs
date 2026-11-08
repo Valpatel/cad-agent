@@ -57,16 +57,16 @@ export function catalogueAudit(report, markdown) {
   const findings = [];
   const seen = new Set();
   for (const f of report.findings) {
-    if (!f || typeof f.check !== 'string' || typeof f.subject !== 'string') fail('malformed finding');
+    if (!f || typeof f.check !== 'string' || typeof f.subject !== 'string' || !/^[a-f0-9]{16}$/.test(f.fp || '') ||
+        !['info', 'low', 'medium', 'high', 'critical'].includes(f.severity) ||
+        typeof f.title !== 'string' || typeof f.evidence !== 'string' ||
+        (f.accepted !== undefined && typeof f.accepted !== 'string')) fail('malformed finding');
+    if (seen.has(f.fp)) fail('duplicate finding fingerprint');
+    seen.add(f.fp);
     if (!f.subject.startsWith('url:')) continue;
     const rule = Object.hasOwn(AUDIT_CHECKS, f.check) ? AUDIT_CHECKS[f.check] : null;
     const url = auditURL(f.subject.slice(4));
-    if (!url || !/^[a-f0-9]{16}$/.test(f.fp || '') ||
-        !['info', 'low', 'medium', 'high', 'critical'].includes(f.severity) ||
-        typeof f.title !== 'string' || typeof f.evidence !== 'string' ||
-        (f.accepted !== undefined && typeof f.accepted !== 'string')) fail('malformed URL observation');
-    if (seen.has(f.fp)) fail('duplicate finding fingerprint');
-    seen.add(f.fp);
+    if (!url) fail('malformed URL observation');
     const [label, repository] = rule || [null, f.check.startsWith('repo-')];
     const key = repository ? auditRepo(url) : url.href;
     if (key) findings.push({ key, repository, observation: { check: f.check, label, severity: f.severity,

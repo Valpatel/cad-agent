@@ -76,6 +76,7 @@ test('missing, malformed, offline and mismatched reports cannot silently produce
     { ...r, as_of: '2024-02-30' }, { ...r, as_of: '2024-99-99' }, { ...r, revision: 'main' },
     { ...r, findings: null }, { ...r, findings: [null] }, { ...r, findings: [r.findings[0], r.findings[0]] },
     { ...r, findings: [{ ...r.findings[0], accepted: true }] }, { ...r, findings: [{ ...r.findings[0], evidence: {} }] },
+    { ...r, findings: [{ check: 'repo-stale', subject: 'vendor:bad', title: { malformed: true } }] },
     { ...r, findings: [{ ...r.findings[0], subject: 'url:javascript:alert(1)' }] }]) {
     assert.throws(() => catalogueAudit(bad, auditHeader(r)), /security-report\.json/);
   }
@@ -87,6 +88,8 @@ test('missing, malformed, offline and mismatched reports cannot silently produce
     assert.equal(get({ kind: 'project', url: 'https://github.com/unrelated/part' }), null);
     assert.throws(() => get({ kind: 'project', url: 'https://github.com/owner/part' }), /unmapped check/);
   }
+  const unrelated = auditReader(auditFixture('repo-stale', 'vendor:owner/part'));
+  assert.equal(unrelated({ kind: 'project', url: 'https://github.com/owner/part' }), null, 'valid non-card evidence is not guessed from its name');
 });
 
 test('audit evidence is escaped text inside one dated notes fold', () => {

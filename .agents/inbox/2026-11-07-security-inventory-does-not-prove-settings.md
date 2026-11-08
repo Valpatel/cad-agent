@@ -242,3 +242,9 @@ The compiler controls cover identity collisions, stale versus archived observati
 malformed/offline/mismatched reports and escaped text. Whole-site checks still establish actual layout and
 publication. The committed snapshot is not a live recheck, and a card without a matched observation is not a
 safety verdict. This change does not audit the exact installed CI environment or close #154's other limits.
+
+Independent source review of the initial `9df8faf9` draft planted a malformed non-URL finding
+(`repo-stale`, `vendor:bad`, object-valued title). The matcher skipped that subject before validating its common
+fields, contradicting the consumer's rejection contract. Validate every finding's common shape and fingerprint
+before selecting card scope. A malformed non-URL control must fail; a valid non-card finding must still be ignored
+for cards. The passing original build and ten browser cases remain evidence for that earlier head, not the fix.

@@ -434,6 +434,13 @@ def _print_set(project: CadProject, cfg: ReleaseConfig, known: Sequence[str], wa
             raise ValueError('plate project does not match its generated record')
         if record.get('inputs') != inputs:
             raise ValueError('plate inputs are changed or lack a current input record; run export-3mf again')
+        with zipfile.ZipFile(path) as archive:
+            if len(archive.namelist()) != len(set(archive.namelist())):
+                raise ValueError('native project has duplicate archive members')
+            model = ET.fromstring(archive.read('3D/3dmodel.model'))
+        if model.get('unit') != 'millimeter':
+            raise ValueError('native project does not use the exported millimeter units')
+        applications = model.findall(f'{{{P.CORE_NS}}}metadata[@name="Application"]')
         back = P.read_plates_3mf(path, project.printer.bed_mm)
         native = back['project_settings']
         groups = list(dict.fromkeys(pc.filaments[n] for n in pc.parts))
@@ -444,6 +451,8 @@ def _print_set(project: CadProject, cfg: ReleaseConfig, known: Sequence[str], wa
                 or len(native['filament_settings_id']) != len(groups)
                 or any(not isinstance(f, str) or not f.strip() for f in native['filament_settings_id'])):
             raise ValueError('native printer/process/filament settings are missing')
+        if len(applications) != 1 or applications[0].text != P.application(native):
+            raise ValueError('model does not declare the native Bambu project version')
         keep_out = list(pc.keep_out)
         area, _ = P.printable_area(native, project.printer.bed_mm)
         excluded = P._exclude_box(native, area)
@@ -833,6 +842,14 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     folder = (Path(out) if out else root / "release" / f"{_slug(project.name)}-rev{_slug(revision)}").resolve()
     if root == folder or root.is_relative_to(folder):
         raise CadConfigError(f"release folder {folder} would contain the project")
+    skipped: List[str] = []
+    extra_files = _glob(project.root, cfg.extra_cad, skipped=skipped)
+    print_set = _print_set(project, cfg, list(known), warnings)
+    if print_set:
+        source = print_set['path'].resolve()
+        for extra_file in extra_files:
+            if extra_file.name == source.name and extra_file.resolve() != source:
+                raise CadConfigError(f'cad/{source.name}: different source files collide with the whole print set')
     _prepare(folder)
     report, current, slice_note = _slice_rows(project)
     # Recommended settings: cad.slicer when the project names them, else those of a current slice report; never the
@@ -847,6 +864,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         settings = {}
     material = cfg.material or str(settings.get("filament") or "").split(" @")[0]
     copied: Dict[str, Path] = {}
+    destination_sources: Dict[Path, Path] = {}
     origin: Dict[str, str] = {}      # project path -> its copy in the release (rewrites the pages' links)
     limit = cfg.max_file_mb * 1024 * 1024
 
@@ -857,10 +875,16 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         real = src.resolve()
         if not real.is_relative_to(root):
             raise CadConfigError(f"{src}: is outside the project; not released")
+        rel = dst.relative_to(folder).as_posix()
+        if dst in destination_sources:
+            if destination_sources[dst] != real:
+                raise CadConfigError(f'{rel}: different source files collide at one release destination')
+            return rel
         if src.stat().st_size > limit:
             warnings.append(f"{rel} is {_size(src.stat().st_size)} (over cad.release.max_file_mb = {cfg.max_file_mb:g})")
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(real, dst)
+        destination_sources[dst] = real
         copied[rel] = dst
         origin.setdefault(real.relative_to(root).as_posix(), rel)
         return rel
@@ -895,13 +919,11 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             parts.append({"part": name, "group": g.title, "optional": g.optional, "pick_one": g.pick_one, "quantity": cfg.quantities.get(name, 1),
                           "material": material, "files": files, "image": image, "grams": row.get("grams"),
                           "minutes": row.get("minutes"), "slicer_flags": flags})
-    skipped: List[str] = []
     extra = []
-    print_set = _print_set(project, cfg, list(known), warnings)
     if print_set:
         source = print_set.pop('path')
         print_set['href'] = put(source, f'cad/{source.name}')
-    for src in _glob(project.root, cfg.extra_cad, skipped=skipped):
+    for src in extra_files:
         rel = put(src, f"cad/{src.name}")
         if print_set and rel == print_set['href']:
             continue

@@ -324,14 +324,14 @@ def test_a_part_the_slicer_flagged_keeps_its_numbers_and_says_so(tmp_path):
     assert any("lid: sliced, but the slicer flagged it: Long bridging extrusions" in w for w in result.warnings)
 
 
-def native_print_set(tmp_path, release=None):
+def native_print_set(tmp_path, release=None, plate_parts=None):
     """Real, tiny two-plate 3MF; no CAD kernel, slicer or printer. Settings are TEST-ONLY."""
     import numpy as np
     from cadagent.manufacturing import plates as P
     from cadagent.manufacturing.slicer import part_overrides
-    p = project(tmp_path, release or {"quantities": {"lid": 2}})
+    p = project(tmp_path, {"quantities": {"lid": 2}} if release is None else release)
     p.slicer = {"printer": "Fixture printer", "process": "Fixture process", "filament": "Fixture PLA"}
-    p.plates = {"parts": {"lid": {"filament": "Fixture PLA"}, "base": {"filament": "Fixture PETG"}}}
+    p.plates = {"parts": plate_parts or {"lid": {"filament": "Fixture PLA"}, "base": {"filament": "Fixture PETG"}}}
     vertices = np.array([[0, 0, 0], [10, 0, 0], [0, 10, 0], [0, 0, 10]], dtype=float)
     faces = np.array([[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]])
     stl = "solid fixture\n" + "".join("facet normal 0 0 0\nouter loop\n" + "".join(
@@ -342,13 +342,15 @@ def native_print_set(tmp_path, release=None):
     copies = [P.Copy(n, k, P.footprint(vertices), cfg.filaments[n])
               for n in cfg.parts for k in range(1, cfg.quantities[n] + 1)]
     layout = P.pack(copies, p.printer.bed_mm, cfg.gap, cfg.margin)
+    groups = list(dict.fromkeys(cfg.filaments[n] for n in cfg.parts))
     settings = {"version": "02.08.04.57", "printer_settings_id": "Fixture printer",
-                "print_settings_id": "Fixture process", "filament_settings_id": ["Fixture PLA", "Fixture PETG"],
+                "print_settings_id": "Fixture process", "filament_settings_id": groups,
                 "printable_area": ["0x0", "256x0", "256x256", "0x256"]}
     path = P.plates_file(p)
     P.write_plates_3mf(path, {n: (vertices, faces) for n in cfg.parts}, layout,
                        bed_xy=p.printer.bed_mm, gap=cfg.gap, margin=cfg.margin,
-                       extruders={"lid": 1, "base": 2}, project_settings=json.dumps(settings).encode())
+                       extruders={n: groups.index(cfg.filaments[n]) + 1 for n in cfg.parts},
+                       project_settings=json.dumps(settings).encode())
     inputs = {"stls": {n: hashlib.sha256((p.exports_dir / (n + ".stl")).read_bytes()).hexdigest() for n in cfg.parts},
               "parts": cfg.parts, "quantities": cfg.quantities, "filaments": cfg.filaments,
               "bed_mm": list(p.printer.bed_mm), "gap_mm": cfg.gap, "margin_mm": cfg.margin, "rotate": cfg.rotate,
@@ -407,3 +409,125 @@ def test_release_never_rescues_a_stale_whole_set_from_prior_output(tmp_path, fau
     assert any(w.startswith('whole print set not linked:') for w in result.warnings)
     with zipfile.ZipFile(result.zip_path) as archive:
         assert not any(n.endswith('/cad/demo-plates.3mf') for n in archive.namelist())
+
+
+def test_extra_cad_cannot_replace_the_verified_whole_set(tmp_path):
+    p, source, _ = native_print_set(tmp_path)
+    out = tmp_path / 'released'
+    original = build_release(p, out=out, date='2026-11-08')
+    before = {f.relative_to(out).as_posix(): f.read_bytes() for f in out.rglob('*') if f.is_file()}
+    zipped = original.zip_path.read_bytes()
+    (p.root / 'other').mkdir()
+    foreign = p.root / 'other' / source.name
+    foreign.write_bytes(b'not the verified native project')
+    p.release['extra_cad'] = ['other/' + source.name]
+    with pytest.raises(CadConfigError, match='different source|collision'):
+        build_release(p, out=out, date='2026-11-08')
+    assert {f.relative_to(out).as_posix(): f.read_bytes() for f in out.rglob('*') if f.is_file()} == before
+    assert original.zip_path.read_bytes() == zipped
+    manifest = json.loads((out / 'manifest.json').read_text())
+    assert manifest['print_set']['sha256'] == hashlib.sha256((out / 'cad' / source.name).read_bytes()).hexdigest()
+
+
+def test_extra_cad_can_reuse_the_same_verified_source(tmp_path):
+    p, source, _ = native_print_set(tmp_path)
+    p.release['extra_cad'] = ['exports/' + source.name]
+    result = build_release(p, out=tmp_path / 'released', date='2026-11-08')
+    page = (result.folder / 'index.html').read_text()
+    assert page.count('href="cad/demo-plates.3mf"') == 1
+    assert (result.folder / 'cad' / source.name).read_bytes() == source.read_bytes()
+
+
+def test_actual_exporter_native_roundtrip_reaches_release_download(tmp_path, monkeypatch):
+    pytest.importorskip('trimesh')
+    from cadagent.manufacturing import plates as P, slicer
+    p, source, _ = native_print_set(tmp_path)
+    with zipfile.ZipFile(source) as archive:
+        settings = json.loads(archive.read(P.PROJECT_SETTINGS))
+    settings.update(curr_bed_type='Cool Plate', cool_plate_temp=['35', '70'])
+    def no_external(*args, **kwargs):
+        pytest.fail('the native export/release roundtrip must not start a slicer or contact a printer')
+    monkeypatch.setattr(slicer, 'executable', no_external)
+    monkeypatch.setattr(slicer, 'project_settings', no_external)
+    monkeypatch.setattr(slicer, 'slice_part', no_external)
+    exported = P.export_plates(p, known_parts=['lid', 'base'], settings_bytes=json.dumps(settings).encode(),
+                               use_slicer=False, require_project_settings=True)
+    assert exported['read_back'] == {'plates': 2, 'copies': 3}
+    result = build_release(p, out=tmp_path / 'release', date='2026-11-08')
+    page = (result.folder / 'index.html').read_text()
+    assert 'href="cad/demo-plates.3mf"' in page and 'Open the whole print set' in page
+    destination = result.folder / 'cad/demo-plates.3mf'
+    actual = P.read_plates_3mf(destination, p.printer.bed_mm)
+    assert len(actual['plates']) == 2 and sum(len(x['placements']) for x in actual['plates']) == 3
+    assert actual['project_settings'] == settings
+    manifest = json.loads((result.folder / 'manifest.json').read_text())
+    digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+    assert manifest['print_set']['sha256'] == manifest['files']['cad/demo-plates.3mf'] == digest
+    with zipfile.ZipFile(result.zip_path) as archive:
+        assert archive.read('release/cad/demo-plates.3mf') == destination.read_bytes() == source.read_bytes()
+
+
+@pytest.mark.parametrize('fault', ['missing_settings', 'generic_application', 'duplicate_member', 'wrong_units'])
+def test_whole_set_requires_unambiguous_native_project_format(tmp_path, fault):
+    from cadagent.manufacturing import plates as P
+    p, source, record = native_print_set(tmp_path)
+    with zipfile.ZipFile(source) as archive:
+        members = {n: archive.read(n) for n in archive.namelist()}
+    model = '3D/3dmodel.model'
+    if fault == 'missing_settings':
+        del members[P.PROJECT_SETTINGS]
+    elif fault == 'generic_application':
+        assert b'BambuStudio-02.08.04.57' in members[model]
+        members[model] = members[model].replace(b'BambuStudio-02.08.04.57', b'cad-agent')
+    elif fault == 'wrong_units':
+        members[model] = members[model].replace(b'unit="millimeter"', b'unit="centimeter"')
+    with zipfile.ZipFile(source, 'w') as archive:
+        for name, data in members.items():
+            archive.writestr(name, data)
+        if fault == 'duplicate_member':
+            with pytest.warns(UserWarning, match='Duplicate name'):
+                archive.writestr(model, members[model])
+    record['sha256'] = hashlib.sha256(source.read_bytes()).hexdigest()
+    source.with_suffix('.json').write_text(json.dumps(record))
+    result = build_release(p, out=tmp_path / 'release', date='2026-11-08')
+    assert 'Open the whole print set' not in (result.folder / 'index.html').read_text()
+    assert not (result.folder / 'cad' / source.name).exists()
+
+
+def test_plate_subset_is_not_labelled_as_the_whole_release(tmp_path):
+    p, source, _ = native_print_set(tmp_path, plate_parts={'lid': {'filament': 'Fixture PLA'}})
+    result = build_release(p, out=tmp_path / 'release', date='2026-11-08')
+    assert 'Open the whole print set' not in (result.folder / 'index.html').read_text()
+    assert not (result.folder / 'cad' / source.name).exists()
+    assert any('complete released build' in w for w in result.warnings)
+
+
+def test_an_explicit_complete_build_can_exclude_other_release_choices(tmp_path):
+    p, _, _ = native_print_set(tmp_path, release={'build': {'title': 'Selected build', 'parts': ['lid']},
+                                                 'quantities': {'lid': 2}},
+                               plate_parts={'lid': {'filament': 'Fixture PLA'}})
+    result = build_release(p, out=tmp_path / 'release', date='2026-11-08')
+    handoff = json.loads((result.folder / 'manifest.json').read_text())['print_set']
+    assert handoff['scope'] == 'Selected build' and handoff['copies'] == 2
+    assert 'id="part-base"' in (result.folder / 'index.html').read_text()
+
+
+@pytest.mark.parametrize('which', ['project', 'record'])
+def test_whole_set_does_not_follow_external_project_or_record_symlinks(tmp_path, which):
+    p, source, _ = native_print_set(tmp_path)
+    target = source if which == 'project' else source.with_suffix('.json')
+    outside = tmp_path / target.name
+    outside.write_bytes(target.read_bytes())
+    target.unlink()
+    target.symlink_to(outside)
+    result = build_release(p, out=tmp_path / 'release', date='2026-11-08')
+    assert json.loads((result.folder / 'manifest.json').read_text())['print_set'] is None
+    assert not (result.folder / 'cad' / source.name).exists()
+
+
+def test_whole_set_release_bundle_is_reproducible(tmp_path):
+    p, _, _ = native_print_set(tmp_path)
+    result = build_release(p, out=tmp_path / 'release', date='2026-11-08')
+    first = result.zip_path.read_bytes()
+    build_release(p, out=result.folder, date='2026-11-08')
+    assert result.zip_path.read_bytes() == first

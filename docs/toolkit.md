@@ -1663,17 +1663,18 @@ DIR`, the zip is `DIR.zip`):
 | Path | Content |
 |---|---|
 | `index.html` | one standalone page (inline CSS, light and dark, no scripts, opens from `file://`): the release's parts and totals, the recommended print settings (`cad.slicer`, else those of a current slice report; with neither, the page says no slicer settings are configured), then each group of parts (with its own count, mass and time) as cards: thumbnail, quantity, material, notes, mass and time per copy, and the STEP, STL and 3MF; then the assembly pages, the hardware table and the source |
-| `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, plus `extra_cad` |
+| `cad/` | `<part>.step`, `.stl`, `.3mf` from `exports_dir`, the complete current native plate project when verified, plus `extra_cad` |
 | `images/` | the thumbnails |
 | `docs/<project path>` | the `pages`, and the images they link to, at their project paths, so their relative links keep working; links to files the release carries elsewhere (`cad/`, `source/`) are rewritten in the copies; Markdown is also rendered to HTML (with the `markdown` package) |
 | `source/<project path>` | the files matched by `include` minus `exclude` |
-| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `warnings`, and `files` (the sha256 of every file) |
+| `manifest.json` | `format: cad-agent.release/1`, `revision`, `date`, `git` (`commit`, `dirty`, `modified`, `untracked_released`), `slicer`, `parts` (`part`, `group`, `optional`, `pick_one`, `quantity`, `grams`, `minutes`), `build` (`title`, `parts`, `grams`, `minutes`; null without one; `grams` and `minutes` are null while any of its parts is not sliced), `print_set` (current native project, source inputs, profiles and plate handoff; null when unavailable), `warnings`, and `files` (the sha256 of every file) |
 
 When the generated native plate project and its current input record cover the released parts at their quantities
 (or the explicit `cad.release.build`), the page also links **Open the whole print set**. Its plate table records the
 actual native placements and filament presets, with plate time/mass explicitly unrecorded. Per-part slice estimates
 are not plate results. Changed STL bytes, layout/profile inputs, missing native settings, legacy records without input
 fingerprints or unsupported per-part overrides withhold this link with a warning; ordinary part downloads remain.
+Different sources must not flatten onto the same released CAD filename; a repeated reference to the same file is allowed.
 Re-export through the existing `export-3mf` path when inputs change. This does not establish Bambu GUI compatibility,
 printer readiness, physical print quality or the remaining per-plate slicing/override acceptance in #84.
 

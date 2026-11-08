@@ -13,9 +13,12 @@ How to install cad-agent (github.com/Valpatel/cad-agent, MIT) and work with it:
    --extras fea,sim (strength; airflow, topology, renders), robot, explore.
    Fetch pages with curl or your web tool; from Python, send a User-Agent
    header, because the site blocks Python urllib's default one.
-2. Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
+2. After installation, read `~/cad-agent/docs/agent-prompt.txt` in full
+   from the installed checkout before designing. A web summary can omit
+   requirements. Use your chosen checkout if CAD_AGENT_DIR differs.
+   Look before you write code: fetch cad-agent.valpatel.com/llms.txt, then
    the page or catalog/<area>.json it points to (any page also as .md),
-   and `cad-agent <command> --help`. Skills: ~/cad-agent/skills/*/SKILL.md.
+   and `cad-agent <command> --help`. Skills: ~/cad-agent/.agents/skills/*/SKILL.md.
 3. Build with the kit's tested commands and checks, not formulas from
    memory. Start with `cad-agent init my-part` and change it; then
    `cad-agent all` builds, exports and runs every check. Before drawing a

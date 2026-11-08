@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A fetched guide omits report fields, or its skill path still names the old root | [Read the full installed guide and validate its paths](inbox/publish/2026-11-07-agent-guides-need-exact-local-paths.md) |
 | Published package identifiers become email-protection links despite correct source and revision | [Protect authored code and verify delivered text](inbox/publish/2026-11-07-provider-obfuscation-can-change-code.md) |
 | A no-script fold check selects hidden navigation, the inactive theme, or an offscreen summary | [Target the visible article control before ordinary input](inbox/2026-11-07-folder-inventories-need-explicit-owners.md#no-script-fold-checks-need-the-visible-article-control) |
 | A full check is cancelled after a progress percentage with no active test or traceback | [Retain the cap and expose the active test](inbox/publish/2026-11-07-full-test-caps-need-active-case.md) |

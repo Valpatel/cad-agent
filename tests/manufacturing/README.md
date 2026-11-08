@@ -21,6 +21,7 @@ flowchart TD
 |---|---|
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_bambu_cloud.py` | Private cache, fresh ownership, stale/mismatched observations, fixed query shapes, cleanup and optional Paho integration without credentials or device traffic. |
+| `test_bambu_camera.py` | Fixed camera grant, native C ABI/log ownership, complete JPEG decode, private output and real subprocess-group cleanup using synthetic fixtures. |
 | `test_cards.py` | `cadagent.manufacturing.cards`: golden rule and decision cards, the byte budget, citations, planted defects |
 | `test_dfm.py` | `cadagent.manufacturing.dfm`: features against every verified source, the spread reported |
 | `test_experiments.py` | Persistent physical specimen UUID/short-ID lookup, committed source binding, artifact faults and write-once attempt/feedback records |

@@ -22,9 +22,12 @@ from urllib.error import HTTPError, URLError
 from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
 import uuid
 
+from cadagent import __version__
+
 _ORIGIN = "https://api.bambulab.com"
 _PROFILE = "/v1/design-user-service/my/preference"
 _DEVICES = "/v1/iot-service/api/user/bind"
+_CAMERA = "/v1/iot-service/api/user/ttcode"
 _MAX_BYTES = 2_000_000
 _SERIAL = re.compile(r"[A-Za-z0-9_-]{5,64}\Z")
 _UID = re.compile(r"[0-9]{1,30}\Z")
@@ -129,14 +132,20 @@ class _NoRedirect(HTTPRedirectHandler):
         raise CloudError("cloud redirect refused")
 
 
-def _get(session: CloudSession, path: str) -> dict:
+def _request_json(session: CloudSession, path: str, payload: dict | None = None) -> dict:
     session.validate()
-    if path not in {_PROFILE, _DEVICES}:
+    if not ((path in {_PROFILE, _DEVICES} and payload is None)
+            or (path == _CAMERA and isinstance(payload, dict))):
         raise CloudError("unsupported cloud observation endpoint")
+    camera_headers = ({"X-BBL-Client-Name": "cad-agent", "X-BBL-Client-Type": "tool",
+                       "X-BBL-Client-Version": __version__, "X-BBL-OS-Type": "linux"}
+                      if path == _CAMERA else {})
     request = Request(_ORIGIN + path, headers={
         "Authorization": "Bearer " + session.access_token,
         "User-Agent": "cad-agent (owned-printer observation)", "Accept": "application/json",
-    })
+        **({"Content-Type": "application/json"} if payload is not None else {}),
+        **camera_headers,
+    }, data=json.dumps(payload).encode("utf-8") if payload is not None else None)
     opener = build_opener(_NoRedirect(), HTTPSHandler(context=ssl.create_default_context()))
     try:
         with opener.open(request, timeout=10) as response:
@@ -153,6 +162,10 @@ def _get(session: CloudSession, path: str) -> dict:
         raise CloudError(f"cloud observation returned HTTP {exc.code}") from None
     except (URLError, OSError, ValueError):
         raise CloudError("cloud observation failed; no automatic retry") from None
+
+
+def _get(session: CloudSession, path: str) -> dict:
+    return _request_json(session, path)
 
 
 def owned_printers(session: CloudSession) -> tuple[OwnedPrinter, ...]:

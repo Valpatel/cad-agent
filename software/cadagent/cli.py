@@ -21,7 +21,7 @@ from cadagent.project import CadConfigError, CadProject, SourceDateEpochError, S
 SUBCOMMANDS = ("build", "export-3mf", "holes", "check", "report", "package", "serve", "site", "view", "slice", "prusa-view", "webkit", "pcb-check", "all",
                "mcmaster", "catalogue", "compare", "optimise", "dossier", "gates", "review-packet",
                "review-section", "agents", "update", "motion-trace", "release", "snapfit", "inserts", "bearings",
-               "overhangs", "library", "init", "rules", "choose", "bambu-status")
+               "overhangs", "library", "init", "rules", "choose", "bambu-status", "bambu-frame")
 LOG_TAIL_LINES = 20
 # Usage reporting off. Explicit network operations, such as owned-printer observations, are separate from usage
 # reporting. `run_step` sets these in the environment of every project step it runs (and so of
@@ -1284,6 +1284,20 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "cad_command", None)
+    if sub == "bambu-frame":
+        from cadagent.manufacturing.devices.bambu.cloud import CloudError, load_session
+        from cadagent.manufacturing.devices.bambu.camera import capture
+        try:
+            result = capture(load_session(args.session), args.device, media_library=args.media_library,
+                             media_reader=args.media_reader, output=args.output)
+            print(json.dumps(result, indent=2))
+            return 0
+        except CloudError as exc:
+            _err(f"bambu-frame: {exc}")
+            return 2
+        except KeyboardInterrupt:
+            _err("bambu-frame: interrupted")
+            return 130
     if sub == "bambu-status":
         from cadagent.manufacturing.devices.bambu.cloud import CloudError, load_session, observe, owned_printers
         try:
@@ -1488,6 +1502,12 @@ def build_parser() -> argparse.ArgumentParser:
     bs_p.add_argument("--session", type=Path, help="Existing owner-only session file (default: XDG state directory)")
     bs_p.add_argument("--device", help="Explicit owned device ID; omit to list printers without MQTT queries")
     bs_p.add_argument("--wait-seconds", type=float, default=30, help="MQTT response wait after connection, at most 60 seconds (default: 30)")
+    bf_p = sub.add_parser("bambu-frame", help="Capture one private P1S JPEG using a pinned installed media library; no physical controls")
+    bf_p.add_argument("--session", type=Path, help="Existing owner-only session file (default: XDG state directory)")
+    bf_p.add_argument("--device", required=True, help="Explicit owned P1S device ID")
+    bf_p.add_argument("--media-library", required=True, type=Path, help="Already installed libBambuSource.so matching the supported digest")
+    bf_p.add_argument("--media-reader", required=True, type=Path, help="Separate tools/bambu-camera/capture.py program from the reviewed checkout")
+    bf_p.add_argument("--output", required=True, type=Path, help="New absolute JPEG filename in an existing private directory; never overwritten")
     sf_p = sub.add_parser("snapfit", help="Size and check snap fits declared in a YAML/JSON file (docs/mechanical/compliant.md)")
     sf_p.add_argument("spec", help="file with a 'snaps' list")
     sf_p.add_argument("--output", help="write the full result as JSON")

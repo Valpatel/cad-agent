@@ -172,7 +172,7 @@ def _read_jpeg(reader: Path, library: Path, url: str, *, seconds: float = 45) ->
             return data, dimensions
         except cloud.CloudError:
             raise
-        except (OSError, ValueError, TypeError, SyntaxError):
+        except (OSError, ValueError, TypeError, SyntaxError, Image.DecompressionBombError):
             raise cloud.CloudError("camera output did not fully decode as JPEG") from None
 
 

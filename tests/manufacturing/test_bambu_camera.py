@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import sys
 import time
@@ -158,6 +159,11 @@ def test_preflight_and_observation_failures_do_not_request_a_camera_grant(sessio
 def scripted_reader(tmp_path, jpeg, monkeypatch, fault=""):
     path = tmp_path / "reader.py"
     data = jpeg if fault != "corrupt" else b"\xff\xd8not an image\xff\xd9"
+    if fault == "bomb":
+        data = bytearray(data)
+        frame = data.index(b"\xff\xc0")
+        data[frame + 5:frame + 9] = struct.pack(">HH", 65535, 65535)
+        data = bytes(data)
     path.write_text("import json,os,sys\nfrom pathlib import Path\nos.umask(0o077)\n"
                     "out=Path(sys.argv[2])\n"
                     f"data={data!r}\n(out/'frame.jpg').write_bytes(data)\n"
@@ -175,7 +181,7 @@ def test_parent_reopens_and_fully_decodes_the_external_reader_output(tmp_path, j
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux waitid/process groups")
-@pytest.mark.parametrize("fault", ["corrupt", "dimensions", "public", "exit"])
+@pytest.mark.parametrize("fault", ["corrupt", "bomb", "dimensions", "public", "exit"])
 def test_native_success_or_jpeg_markers_alone_are_not_a_verified_frame(tmp_path, jpeg, fault, monkeypatch):
     with pytest.raises(cloud.CloudError):
         K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch, fault), Path("unused"), "TEST-PRIVATE-URL")

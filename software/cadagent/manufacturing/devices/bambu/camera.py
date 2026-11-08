@@ -29,9 +29,15 @@ from packaging.version import Version
 from . import cloud
 
 MEDIA_SHA256 = "4e05f16fa02740fd12f0040b9efc3e70d43446c7a1a877c6a3926ef0758ca7db"
-READER_SHA256 = "b999ba1a5b601d224ef612ee2daa7b02c47dd9c478ae372fdc62e5c646dd4755"
+READER_SHA256 = "063ea29803083bfb95cd9877c9b99da3faba1065430ce36d9a9ce40166969c94"
 _MAX_FRAME = 8 * 1024 * 1024
 _FIRMWARE = re.compile(r"\d+(?:\.\d+){3}\Z")
+_READER_ERRORS = frozenset({
+    "unsupported_native_abi", "native_init_failed", "native_create_failed", "native_open_failed",
+    "native_start_failed", "invalid_stream_count", "not_a_jpeg_stream", "invalid_video_dimensions",
+    "no_video_stream", "native_sample_failed", "invalid_sample_size", "invalid_jpeg_markers",
+    "frame_wait_expired", "input_too_large", "invalid_url", "native_reader_failed",
+})
 
 
 def _media_path(path: Path) -> Path:
@@ -140,7 +146,7 @@ def _read_jpeg(reader: Path, library: Path, url: str, *, seconds: float = 45) ->
                     state = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
                     if state is not None:
                         if state.si_code != os.CLD_EXITED or state.si_status != 0:
-                            raise cloud.CloudError("camera reader failed; no automatic retry")
+                            raise cloud.CloudError(_reader_failure(folder))
                         break
                     if time.monotonic() >= deadline:
                         raise cloud.CloudError("camera reader exceeded its deadline; no automatic retry")
@@ -174,6 +180,24 @@ def _read_jpeg(reader: Path, library: Path, url: str, *, seconds: float = 45) ->
             raise
         except (OSError, ValueError, TypeError, SyntaxError, Image.DecompressionBombError):
             raise cloud.CloudError("camera output did not fully decode as JPEG") from None
+
+
+def _reader_failure(folder: Path) -> str:
+    """Expose only fixed reader stages and a bounded native integer, never raw logs."""
+    message = "camera reader failed"
+    try:
+        receipt = json.loads(_private_bytes(folder / "result.json", 4096))
+        if isinstance(receipt, dict) and receipt.get("ok") is False:
+            stage = receipt.get("error")
+            if isinstance(stage, str) and stage in _READER_ERRORS:
+                message += " (" + stage
+                code = receipt.get("native_code")
+                if type(code) is int and -(2**31) <= code < 2**31:
+                    message += f", code {code}"
+                message += ")"
+    except (cloud.CloudError, ValueError, TypeError):
+        pass
+    return message + "; no automatic retry"
 
 
 def capture(session: cloud.CloudSession, device_id: str, *, media_library: Path,

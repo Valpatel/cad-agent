@@ -89,3 +89,25 @@ maps this sentinel to disabled local liveview. It is not a usable stream URL. Th
 https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6715674199) distinguish this local setting from
 the separate cloud preparation failure. Do not infer an endpoint from a field name or probe a guessed address.
 The observation is dated; no new device request refreshed that setting, and it does not explain `84033543`.
+
+## Preserve a bounded failure stage before deleting private reader output
+
+On 2026-11-08 at 02:30:26 UTC, the first reusable-reader trial at PR494 source
+`4ddd95fc9b6df1bae0c9ea27816e3fcf15754f13` ran once under a transient user unit with a 150-second
+wall limit, 1.5 GiB memory limit and process-group cleanup. The private wrapper's SHA-256 was
+`baac4c735b82cd94a446bc88b8e53faf1ec2bdd955198f7f5aa618d9161cad86`. It loaded the cached session,
+selected one currently owned P1S, and stopped with exit 1 after 13.873 seconds: `camera reader failed;
+no automatic retry`. No frame was produced. Source and cache preservation checks passed; the unit's
+control group was empty. [Independent actual readback](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6716205901).
+
+The native failure's cause remains unknown: the parent replaced every nonzero child result with one generic
+error, then deleted its private temporary receipt. The elapsed time does not identify the failed operation.
+The earlier successful C++ prototype used the same URL encoding and C API sequence; that does not qualify this
+Python reader or prove identical runtime conditions.
+
+The correction exposes only a fixed allowlist of reader stages and a bounded native integer before cleanup,
+never native logs, grant contents or arbitrary child text. A compiled C control now returns 47 from stream start
+and requires `native_start_failed` with that code; child-process tests require known failures to survive and
+secret-shaped messages to stay hidden. The focused camera/cloud/CLI/layout run passed 103 tests after this change.
+That is offline diagnostic evidence, not a successful second live capture. Preserve failure information sufficient
+to choose the next experiment without weakening private-data boundaries or treating a retry as a diagnosis.

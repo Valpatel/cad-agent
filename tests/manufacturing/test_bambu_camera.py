@@ -241,7 +241,8 @@ def test_unreviewed_reader_stops_before_device_queries(session, prepared, monkey
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux native ABI")
-def test_external_reader_uses_real_c_layout_and_frees_native_log_pointer(tmp_path):
+@pytest.mark.parametrize("start_failure", [False, True])
+def test_external_reader_uses_real_c_layout_and_frees_native_log_pointer(tmp_path, start_failure):
     """Independent C producer exercises field offsets and the callback's pointer ownership."""
     cc = shutil.which("cc")
     assert cc, "Linux camera-reader ABI control requires the system C compiler"
@@ -265,7 +266,13 @@ void Bambu_FreeLogMsg(void *p) { free(p); freed=1; }
 void Bambu_SetLogger(void *p, void (*fn)(void*,int,void*), void *ctx) {
     char *message=malloc(24); strcpy(message,"TEST PRIVATE MESSAGE"); fn(ctx,0,message);
 }
-int Bambu_StartStream(void *p, bool video) { return freed && video ? 0 : 9; }
+int Bambu_StartStream(void *p, bool video) {
+#ifdef TEST_START_FAILURE
+    return 47;
+#else
+    return freed && video ? 0 : 9;
+#endif
+}
 int Bambu_GetStreamCount(void *p) { return 1; }
 int Bambu_GetStreamInfo(void *p, int i, Info *out) {
     *out=(Info){.type=0,.sub=1,.width=64,.height=32,.fps=5,.kind=2}; return 0;
@@ -274,13 +281,40 @@ int Bambu_ReadSample(void *p, Sample *out) {
     *out=(Sample){.track=0,.size=sizeof(jpeg),.buffer=jpeg,.time=1234567}; return 0;
 }
 ''')
-    subprocess.run([cc, "-shared", "-fPIC", str(source), "-o", str(library)], check=True, capture_output=True, timeout=15)
+    flags = ["-DTEST_START_FAILURE"] if start_failure else []
+    subprocess.run([cc, "-shared", "-fPIC", *flags, str(source), "-o", str(library)], check=True, capture_output=True, timeout=15)
     out = tmp_path / "private"
     out.mkdir(mode=0o700)
     process = subprocess.run([sys.executable, str(READER), str(library), str(out)],
                              input=b'{"url":"bambu:///tutk?uid=TEST&authkey=TEST&passwd=TEST"}',
                              capture_output=True, timeout=5)
-    assert process.returncode == 0 and b"PRIVATE MESSAGE" not in process.stdout + process.stderr
+    assert b"PRIVATE MESSAGE" not in process.stdout + process.stderr
+    if start_failure:
+        assert process.returncode == 1
+        assert json.loads((out / "result.json").read_text()) == {
+            "ok": False, "error": "native_start_failed", "native_code": 47}
+        assert not (out / "frame.jpg").exists()
+        return
+    assert process.returncode == 0
     assert json.loads((out / "result.json").read_text()) == {"ok": True, "width": 64, "height": 32, "bytes": 4}
     assert (out / "frame.jpg").read_bytes() == b"\xff\xd8\xff\xd9"
     # This verifies the C boundary/candidate bytes only. Parent tests reject this non-decodable JPEG.
+
+
+@pytest.mark.skipif(not LINUX, reason="Linux private reader snapshot")
+@pytest.mark.parametrize("receipt,expected", [
+    ({"ok": False, "error": "native_start_failed", "native_code": 2}, "native_start_failed, code 2"),
+    ({"ok": False, "error": "SECRET camera URL", "native_code": 2}, "camera reader failed;"),
+    ({"ok": False, "error": "native_start_failed", "native_code": "SECRET"}, "native_start_failed)"),
+])
+def test_failed_reader_exposes_only_allowlisted_stage_and_integer(tmp_path, monkeypatch, receipt, expected):
+    pytest.importorskip("PIL.Image")
+    reader = tmp_path / "reader.py"
+    reader.write_text("import os,sys\nfrom pathlib import Path\nos.umask(0o077)\n"
+                      f"(Path(sys.argv[2])/'result.json').write_text({json.dumps(receipt)!r})\n"
+                      "raise SystemExit(1)\n")
+    monkeypatch.setattr(K, "READER_SHA256", hashlib.sha256(reader.read_bytes()).hexdigest())
+    with pytest.raises(cloud.CloudError) as failure:
+        K._read_jpeg(reader, Path("unused"), "TEST-PRIVATE-URL")
+    assert expected in str(failure.value)
+    assert "SECRET" not in str(failure.value) and "PRIVATE" not in str(failure.value)

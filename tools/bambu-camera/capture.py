@@ -43,7 +43,9 @@ class Sample(C.Structure):
 
 
 class ReadError(Exception):
-    pass
+    def __init__(self, message, native_code=None):
+        super().__init__(message)
+        self.native_code = native_code
 
 
 def bind(lib, name, args, result=C.c_int):
@@ -79,21 +81,24 @@ def read_frame(library: str, url: str, output: Path) -> dict:
     tunnel = C.c_void_p()
     initialized = False
     try:
-        if init() != 0:
-            raise ReadError("native_init_failed")
+        code = init()
+        if code != 0:
+            raise ReadError("native_init_failed", code)
         initialized = True
-        if create(C.byref(tunnel), url.encode("ascii")) != 0 or not tunnel:
-            raise ReadError("native_create_failed")
+        code = create(C.byref(tunnel), url.encode("ascii"))
+        if code != 0 or not tunnel:
+            raise ReadError("native_create_failed", code)
         set_logger(tunnel, discard_log, None)
-        if open_stream(tunnel) not in (0, 2):
-            raise ReadError("native_open_failed")
+        code = open_stream(tunnel)
+        if code not in (0, 2):
+            raise ReadError("native_open_failed", code)
         deadline = time.monotonic() + 12
         while True:
             code = start(tunnel, True)
             if code == 0:
                 break
             if code != 2 or time.monotonic() >= deadline:
-                raise ReadError("native_start_failed")
+                raise ReadError("native_start_failed", code)
             time.sleep(0.1)
         tracks = count(tunnel)
         if not 1 <= tracks <= 16:
@@ -119,7 +124,7 @@ def read_frame(library: str, url: str, output: Path) -> dict:
                 time.sleep(0.05)
                 continue
             if code != 0:
-                raise ReadError("native_sample_failed")
+                raise ReadError("native_sample_failed", code)
             if packet.itrack != video[0]:
                 continue
             if not packet.buffer or not 4 <= packet.size <= 8 * 1024 * 1024:
@@ -167,6 +172,8 @@ def main() -> int:
         result["ok"] = True
     except ReadError as exc:
         result["error"] = str(exc)
+        if exc.native_code is not None:
+            result["native_code"] = exc.native_code
     except Exception:
         result["error"] = "native_reader_failed"
     with (out / "result.json").open("x") as handle:

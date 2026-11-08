@@ -1,5 +1,26 @@
 # Validate every current check instance and the actual topic delta
 
+## Start idle reviewers instead of queueing another message
+
+On 2026-11-08 UTC, a CAD release owner sent a new retirement-review request with `collaboration.send_message`.
+The root's `collaboration.list_agents` readback showed the reviewer as `completed`; queuing the message had not
+started a turn. `collaboration.followup_task` started the reviewer, and the retirement subsequently received its
+[actual acceptance](https://github.com/Valpatel/cad-agent/issues/482#issuecomment-6715190512).
+
+The Gyropup owner then waited for an operator response already available as
+[the exact-source clearance](https://github.com/Valpatel/gyropup/issues/8#issuecomment-6715072676). The operator
+had not changed. After recognizing that clearance and rerunning the live preconditions, the owner completed
+the merge and [one-topic retirement](https://github.com/Valpatel/gyropup/pull/264#issuecomment-6715284286).
+
+**Cause and rule:** message delivery, an active review turn, and an existing review verdict are different states.
+Check the agent state before assigning work: start/resume an idle reviewer; use messages for updates to an active
+turn. Read the posted exact-source verdict before requesting another. Preserve independent source review and
+fresh required merge gates, while routine owner checkpoints/readiness/cancellation need no invented extra layer.
+
+**Limits:** the delay was not timed; there was no demonstrated source/ref loss or CI failure caused by this
+dispatch mistake. Starting a reviewer does not establish a pass. A changed artifact or new substantive action
+still needs its applicable independent review. This incident is workflow evidence, not a passing runtime test.
+
 ## Count required names without dropping duplicate check instances
 
 On 2026-11-07 UTC, the first local merge guard for PR442 stopped before any GitHub mutation because it asserted

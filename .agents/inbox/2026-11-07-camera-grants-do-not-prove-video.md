@@ -32,3 +32,23 @@ Run native SDK work in a bounded child with private output. A parent timeout mus
 No motion, heaters, settings, certificate installation or print-start commands were issued. The observations do not qualify autonomous printing or empty-bed detection. The SDK's earlier HTTP-0 / return--11 result had an unknown cause; it did not prove expired credentials. Later fresh-session failure likewise did not reach the cloud request stage.
 
 The reusable method and inspected upstream skills are in [Bambu cloud research](../../docs/research/manufacturing/bambu-cloud.md); the general rule is in [verification and evidence](../../docs/lessons/review/verification-and-evidence.md#prove-each-stage-of-an-external-connection). Exact private scripts/results are retained outside the repository for the current account holder; another machine must use normal sign-in.
+
+## An explicitly invalid selector must not become a broader observation
+
+On 2026-11-08 UTC, independent review of [PR489](https://github.com/Valpatel/cad-agent/pull/489) at
+`fbe3f5d54ec7c75103fbd344ac69ad995400bcf8` exercised `cad-agent bambu-status --device ''` with a synthetic
+session and owned-device provider. It returned exit 0 and the printer list: `if args.device` treated an explicitly
+supplied empty selector as though the option had been omitted. No live account request was needed to reproduce it.
+
+The dispatcher now distinguishes absence with `args.device is not None`, leaving the actual observer's identity
+validator to reject an empty value. `test_explicit_empty_selector_is_not_an_owned_printer_listing` runs the real
+CLI/observer validation, requires exit 2 and no stdout, and fails if ownership listing is reached. The focused
+consumer run after correction passed 40 tests with one optional Paho skip; installed-Paho setup was checked
+separately without a connection. This establishes the selector boundary, not live transport or printer acceptance.
+
+The same review also tested a synthetic cache at `link/sub/session.json`, with `link` an intermediate symlink.
+It loaded successfully although the initial docstring broadly claimed symlinks were not followed. `O_NOFOLLOW`
+on the opened parent protects that final parent entry, not every ancestor used to resolve it. The implementation
+retains final-directory/file descriptor, ownership and mode checks; documentation now names that exact boundary,
+and a regression distinguishes an allowed intermediate ancestor from a rejected final-parent link. No cross-user
+read was demonstrated. Describe the actual credential-path contract rather than generalizing a flag's name.

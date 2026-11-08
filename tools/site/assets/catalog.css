@@ -255,6 +255,8 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
 .card-notes summary{display:inline-flex;align-items:center;min-height:28px;cursor:pointer;color:var(--teal);font-weight:650;font-size:12px}
 .card-notes p{margin:4px 0 0!important;line-height:1.6;color:var(--text-2)}
 .card-notes .policy{font-size:11.5px;color:var(--muted)}
+.card-audit summary{display:flex;flex-wrap:wrap;gap:4px;min-height:44px}
+.card-audit .pill{margin:0}.card-audit p{overflow-wrap:anywhere}
 .see-all{display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;min-height:44px;padding:8px 18px;border-radius:var(--pill);border:1px solid var(--ink);
   background:var(--card);font-size:13px;font-weight:700;text-decoration:none}
 .see-all:hover{background:var(--ink);color:var(--cream)}

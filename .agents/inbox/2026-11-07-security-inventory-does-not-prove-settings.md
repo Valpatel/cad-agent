@@ -215,3 +215,40 @@ response while the service populates; do not repeat the toggle or reinterpret a 
 [Independent outcome acceptance](https://github.com/Valpatel/cad-agent/issues/153#issuecomment-6709230798) covers only
 this single setting and the observed inventory. It does not expand ecosystem update policy, enable automatic
 submission, establish absence of vulnerabilities, or change the audit's unknown-versus-disabled semantics.
+
+## Keep dated report observations separate from adoption decisions
+
+On 2026-11-07, inspection for #154 found that the catalogue compiler did not consume the committed security
+report. `docs/research/security-report.json` recorded 65 findings at revision `d5d746b91f63`, while released main
+was `2445df3c1293`. Five findings matched catalogue URLs: two archived repositories and three old-activity
+observations. Accepted dispositions preserved those warnings in the report, but cards depended on manually
+written notes. An acceptance is not evidence that the observed condition disappeared.
+
+The initial local matcher control produced:
+
+```text
+google/feabench -> Archived
+SadilKhan/Text2CAD -> Activity needs review
+google/feabench-extra -> no matching observation
+```
+
+**Corrective rule:** Carry a report's date, source revision, evidence and accepted disposition with its observation.
+Join repository checks to the exact GitHub owner/repository and page checks to the exact URL; never join by a
+similar name. Keep curated adoption status unchanged. An old push date calls for review, not an abandonment
+claim; HTTP 403 is an incomplete check, not proof that a resource is gone. Bind the linked report page's date and
+revision to the consumed JSON, and reject an unmapped finding on an eligible card instead of silently hiding it.
+
+The compiler controls cover identity collisions, stale versus archived observations, accepted warning retention,
+malformed/offline/mismatched reports and escaped text. Whole-site checks still establish actual layout and
+publication. The committed snapshot is not a live recheck, and a card without a matched observation is not a
+safety verdict. This change does not audit the exact installed CI environment or close #154's other limits.
+
+Independent source review of the initial `9df8faf9` draft planted a malformed non-URL finding
+(`repo-stale`, `vendor:bad`, object-valued title). The matcher skipped that subject before validating its common
+fields, contradicting the consumer's rejection contract. Validate every finding's common shape and fingerprint
+before selecting card scope. A malformed non-URL control must fail; a valid non-card finding must still be ignored
+for cards. The passing original build and ten browser cases remain evidence for that earlier head, not the fix.
+
+Additional controls at `627f1489` reproduced JavaScript regex coercion: a numeric 16-digit fingerprint and a
+single-string array both passed the hex-pattern check and propagated the wrong JSON type. Check the string type
+before the pattern, retaining both negative cases. A valid-looking string conversion is not schema validation.

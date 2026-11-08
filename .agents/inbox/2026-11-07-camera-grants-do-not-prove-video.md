@@ -132,3 +132,24 @@ draft unqualified and stop blind native retries. The research already requires r
 generic fresh status and a valid grant do not satisfy that camera-specific requirement. Resolve and demonstrate
 the supported preparation path before treating the new adapter as working. Do not substitute client identity,
 signing workarounds, or a printer configuration change for that missing evidence.
+
+## A reported local address does not prove a reachable camera endpoint
+
+On 2026-11-08 at 03:26:32 UTC, `python3 cad405-p1s-lan-handshake.py <private-output>`
+(SHA-256 `031ca8a7ae017f59578fac9894d303b1649147cd73015840e3d2111492d3e864`) made one TCP
+connection attempt to the retained owned-P1S address on port 6000. It timed out after three seconds,
+before TLS, authentication or a stream request. The bounded unit exited 1 and left no process group.
+[Independent readback](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6716729742).
+
+At 03:33:38 UTC, `python3 cad405-fresh-network-status.py <private-output>`
+(SHA-256 `8727e2c08b958590de0ea5ad6f019448ded9b63fdc8a20c8745218047da339ed`) reused the reviewed
+status observer at source `4e428762f98e54ff351c942d099b8ad5ec0d4f5d`. Fresh nonretained P1S telemetry
+and a matched firmware reply arrived after two status/version publications. Exactly one private IPv4
+address was reported, matching the retained address; `ipcam.tutk_server` was `disable`. The process
+finished in 2.23 seconds, exited 0, preserved source/cache bytes and left an empty control group.
+It made no local connection, camera-grant request or physical command. Private addresses stay private.
+
+Current telemetry therefore did not support a stale-address explanation for that connection timeout.
+It still does not identify the network failure or establish camera availability. Do not repeat the same
+LAN probe without changed connectivity evidence; keep the supported cloud-preparation investigation
+separate from local reachability. A successful status observation qualifies neither video nor an empty bed.

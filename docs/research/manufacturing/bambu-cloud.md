@@ -1,6 +1,12 @@
 # Bambu cloud: what we have actually proved
 
-An agent can observe a printer without running a new service. On **2026-11-07**, a normal account login, existing Python libraries and the installed Bambu media runtime produced fresh P1S/X1E telemetry and a real P1S camera frame. X1E video remains unresolved. This is a connection experiment, not a shipped printer-control command.
+An agent can observe a printer without running a new service. On **2026-11-07**, a normal account login, existing Python libraries and the installed Bambu media runtime produced fresh P1S/X1E telemetry and a real P1S camera frame. X1E video remains unresolved. These are dated experiment results, not proof of a complete printer-control workflow.
+
+The [read-only adapter](../../../software/cadagent/manufacturing/devices/bambu/README.md) exposes cached-session reuse,
+fresh owned-device listing and a selected printer's status/version query as `cad-agent bambu-status`.
+Its controlled tests exercise those consumers; the earlier printer observations do not count as a live trial of
+the new adapter. Login, refresh, camera capture, clear-bed verification and job submission are not implemented by
+this command. The existing P1S frame remains evidence from the separate prototype.
 
 Production work belongs inside the existing [manufacturing hierarchy](../../../software/cadagent/manufacturing/README.md#where-machine-automation-belongs): separate artifact preparation, device adapters, execution and evidence. Bambu is one integration; its cloud protocol must not define the workflow for every machine.
 
@@ -44,7 +50,7 @@ self-referential commit hash.
 4. Select the camera protocol from actual firmware and the official model compatibility data. Observe status while requesting a normal cloud camera grant. Correlate preparation replies by the grant identifier; timing alone is insufficient.
 5. Start a bounded reader only with readiness evidence. Decode the actual image and inspect it. Preserve unsuccessful stages separately. A URL, byte buffer or successful mock is not a frame.
 
-Keep raw device reports, grants and camera images private. Record dated, sanitized outcomes and exact source identities publicly. These steps describe the reviewed experiment; there is no production CLI that automatically performs them yet.
+Keep raw device reports, grants and camera images private. Record dated, sanitized outcomes and exact source identities publicly. These steps describe the reviewed experiment; the adapter covers account/status observations only.
 
 </details>
 
@@ -52,7 +58,7 @@ Keep raw device reports, grants and camera images private. Record dated, sanitiz
 
 | Source | Useful part and observed limit |
 |---|---|
-| [Bambu Studio](https://github.com/bambulab/BambuStudio/tree/355d71eee5a9ebc794693fe57e63674806019770) | Authoritative request shapes, model compatibility and media ABI. Installed media runtime decoded the P1S frame. Its networking SDK did not establish our fresh local session; that is not a cloud-login failure. |
+| [Bambu Studio](https://github.com/bambulab/BambuStudio/tree/355d71eee5a9ebc794693fe57e63674806019770) | Authoritative request shapes, model compatibility and media ABI. Installed media runtime decoded the P1S frame. The complete cached session was later recognized locally, but SDK HTTP and X1E camera calls remained unsuccessful; local session recognition is a separate boundary. |
 | [Bambuddy](https://github.com/maziggy/bambuddy/blob/75c9c2db740b74d17803c82119803f6ae7088783/backend/app/services/bambu_cloud.py) | Normal account/verification flow informed the successful small probe. No server installation was needed. |
 | [voska's Bambu skill](https://github.com/voska/bambu/blob/72fde5d67e2ceba27d1ef03c9031800f2dca2722/skills/bambu/SKILL.md) | Existing Go CLI and LAN workflow; inspected version does not supply this cloud-camera path. |
 | [Printing Press Bambu skill](https://github.com/mvanhorn/printing-press-library/blob/a672844a2e7dca35b6e0a7828e00d61ecb32302d/library/devices/bambu/SKILL.md) | Read-only local telemetry patterns; inspected version has no cloud camera/control. |

@@ -65,3 +65,27 @@ on the opened parent protects that final parent entry, not every ancestor used t
 retains final-directory/file descriptor, ownership and mode checks; documentation now names that exact boundary,
 and a regression distinguishes an allowed intermediate ancestor from a rejected final-parent link. No cross-user
 read was demonstrated. Describe the actual credential-path contract rather than generalizing a flag's name.
+
+## A named-window render does not prove that desktop input will reach it
+
+On 2026-11-08 UTC, `import -window <Studio-window>` captured the existing Device screen while another
+application covered it. A subsequent `xdotool mousemove --window <Studio-window> ... click 1` targeted a
+desktop coordinate, and a root-window crop then showed the covering application. The attempted selector click
+cannot be attributed to Studio; no X1E selection or camera start was observed. The attempt stopped without
+focusing or relaunching Studio, changing printer settings, or repeating an SDK probe. Private screenshots
+remain private; the [dated finding](https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6715773477)
+preserves the outcome without device identifiers or workspace images.
+
+The cause was conflating a renderable window with the current visible input target. Before coordinate input,
+check the actual desktop surface and target visibility. Window mapping and a fresh window-only capture are
+insufficient. Prefer a separate process for an automated camera reader so it does not operate the shared desktop.
+This is a UI-routing lesson, not evidence of a printer fault or a successful official-client camera connection.
+
+## A camera-address field can hold a disabled sentinel
+
+The same day's read-only inspection of retained 2026-11-07 X1E telemetry found `ipcam.rtsp_url = "disable"`.
+The pinned official `DeviceManager.cpp` at `355d71eee5a9ebc794693fe57e63674806019770`, lines 3682–3685,
+maps this sentinel to disabled local liveview. It is not a usable stream URL. The [finding and primary links](
+https://github.com/Valpatel/cad-agent/issues/405#issuecomment-6715674199) distinguish this local setting from
+the separate cloud preparation failure. Do not infer an endpoint from a field name or probe a guessed address.
+The observation is dated; no new device request refreshed that setting, and it does not explain `84033543`.

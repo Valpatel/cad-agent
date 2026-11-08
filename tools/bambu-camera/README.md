@@ -13,7 +13,7 @@ flowchart LR
     class G,L,J near
 ```
 
-The camera integration is work in progress. A frame does not establish an empty bed or authorize a print. X1E video is not supported by this reader.
+The camera integration is work in progress. The parent checks the reader's source digest and executes a private copy of those verified bytes, so replacing the original path cannot substitute a program that receives the grant. A frame does not establish an empty bed or authorize a print. X1E video is not supported by this reader.
 
 | File | Purpose |
 |---|---|

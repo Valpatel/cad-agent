@@ -29,6 +29,7 @@ from packaging.version import Version
 from . import cloud
 
 MEDIA_SHA256 = "4e05f16fa02740fd12f0040b9efc3e70d43446c7a1a877c6a3926ef0758ca7db"
+READER_SHA256 = "b999ba1a5b601d224ef612ee2daa7b02c47dd9c478ae372fdc62e5c646dd4755"
 _MAX_FRAME = 8 * 1024 * 1024
 _FIRMWARE = re.compile(r"\d+(?:\.\d+){3}\Z")
 
@@ -68,6 +69,28 @@ def _grant(session: cloud.CloudSession, device_id: str, firmware: str) -> str:
     return url
 
 
+def _reader_bytes(path: Path) -> bytes:
+    """Bind the external program to reviewed bytes, not a replaceable pathname."""
+    fd = None
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        info = os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                or not 0 < info.st_size <= 65536):
+            raise cloud.CloudError("external camera reader must be a bounded regular file owned by this user")
+        with os.fdopen(fd, "rb") as handle:
+            fd = None
+            data = handle.read(65537)
+        if hashlib.sha256(data).hexdigest() != READER_SHA256:
+            raise cloud.CloudError("external camera reader does not match the reviewed source digest")
+        return data
+    except OSError:
+        raise cloud.CloudError("cannot read the external camera reader") from None
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
 def _private_bytes(path: Path, limit: int) -> bytes:
     fd = None
     try:
@@ -97,13 +120,18 @@ def _read_jpeg(reader: Path, library: Path, url: str, *, seconds: float = 45) ->
         raise cloud.CloudError("camera reader deadline must be finite and at most 60 seconds")
     with tempfile.TemporaryDirectory(prefix="cad-agent-camera-") as tmp:
         folder = Path(tmp)
+        # Execute exactly the verified bytes even if the caller's source path changes later.
+        script = folder / "reader.py"
+        fd = os.open(script, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(_reader_bytes(reader))
         process = None
         try:
             # An unlinked private file avoids blocking on a child that never reads its input pipe.
             with tempfile.TemporaryFile(dir=folder) as grant_input:
                 grant_input.write(json.dumps({"url": url}).encode("ascii"))
                 grant_input.seek(0)
-                process = subprocess.Popen([sys.executable, str(reader), str(library), str(folder)],
+                process = subprocess.Popen([sys.executable, str(script), str(library), str(folder)],
                                            stdin=grant_input, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                            start_new_session=True)
                 deadline = time.monotonic() + seconds
@@ -167,12 +195,8 @@ def capture(session: cloud.CloudSession, device_id: str, *, media_library: Path,
     if Version(PIL.__version__) < Version("13.0"):
         raise cloud.CloudError("camera capture needs Pillow 13+ (cad-agent[bambu-camera])")
     library = _media_path(media_library)
-    try:
-        reader = Path(media_reader).resolve(strict=True)
-        if not reader.is_file():
-            raise cloud.CloudError("external camera reader must be a regular file")
-    except OSError:
-        raise cloud.CloudError("external camera reader was not found") from None
+    reader = Path(media_reader).absolute()
+    _reader_bytes(reader)  # fail before any account/device request; reread and snapshot before execution
     output = Path(output)
     if not output.is_absolute() or ".." in output.parts:
         raise cloud.CloudError("frame output must be an absolute path without parent traversal")

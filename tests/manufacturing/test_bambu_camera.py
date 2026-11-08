@@ -155,7 +155,7 @@ def test_preflight_and_observation_failures_do_not_request_a_camera_grant(sessio
     assert not grants
 
 
-def scripted_reader(tmp_path, jpeg, fault=""):
+def scripted_reader(tmp_path, jpeg, monkeypatch, fault=""):
     path = tmp_path / "reader.py"
     data = jpeg if fault != "corrupt" else b"\xff\xd8not an image\xff\xd9"
     path.write_text("import json,os,sys\nfrom pathlib import Path\nos.umask(0o077)\n"
@@ -164,31 +164,33 @@ def scripted_reader(tmp_path, jpeg, fault=""):
                     f"(out/'result.json').write_text(json.dumps({{'ok':True,'width':{63 if fault == 'dimensions' else 64},'height':32,'bytes':len(data)}}))\n"
                     + ("(out/'frame.jpg').chmod(0o644)\n" if fault == "public" else "")
                     + ("raise SystemExit(1)\n" if fault == "exit" else ""))
+    monkeypatch.setattr(K, "READER_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
     return path
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux waitid/process groups")
-def test_parent_reopens_and_fully_decodes_the_external_reader_output(tmp_path, jpeg):
-    data, size = K._read_jpeg(scripted_reader(tmp_path, jpeg), Path("unused"), "TEST-PRIVATE-URL")
+def test_parent_reopens_and_fully_decodes_the_external_reader_output(tmp_path, jpeg, monkeypatch):
+    data, size = K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch), Path("unused"), "TEST-PRIVATE-URL")
     assert data == jpeg and size == (64, 32)
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux waitid/process groups")
 @pytest.mark.parametrize("fault", ["corrupt", "dimensions", "public", "exit"])
-def test_native_success_or_jpeg_markers_alone_are_not_a_verified_frame(tmp_path, jpeg, fault):
+def test_native_success_or_jpeg_markers_alone_are_not_a_verified_frame(tmp_path, jpeg, fault, monkeypatch):
     with pytest.raises(cloud.CloudError):
-        K._read_jpeg(scripted_reader(tmp_path, jpeg, fault), Path("unused"), "TEST-PRIVATE-URL")
+        K._read_jpeg(scripted_reader(tmp_path, jpeg, monkeypatch, fault), Path("unused"), "TEST-PRIVATE-URL")
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux waitid/process groups")
 @pytest.mark.parametrize("leader_exits", [False, True])
-def test_native_group_is_stopped_on_timeout_and_when_leader_exits_first(tmp_path, jpeg, leader_exits):
+def test_native_group_is_stopped_on_timeout_and_when_leader_exits_first(tmp_path, jpeg, leader_exits, monkeypatch):
     pidfile = tmp_path / "child.pid"
     reader = tmp_path / "reader.py"
     reader.write_text("import subprocess,sys,time\nfrom pathlib import Path\n"
                       "child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'])\n"
                       f"Path({str(pidfile)!r}).write_text(str(child.pid))\n"
                       + ("raise SystemExit(1)\n" if leader_exits else "time.sleep(60)\n"))
+    monkeypatch.setattr(K, "READER_SHA256", hashlib.sha256(reader.read_bytes()).hexdigest())
     start = time.monotonic()
     with pytest.raises(cloud.CloudError):
         K._read_jpeg(reader, Path("unused"), "TEST-PRIVATE-URL", seconds=.4)
@@ -199,6 +201,37 @@ def test_native_group_is_stopped_on_timeout_and_when_leader_exits_first(tmp_path
     while proc.exists() and proc.read_text().split(")", 1)[1].split()[0] != "Z" and time.monotonic() < deadline:
         time.sleep(.01)
     assert not proc.exists() or proc.read_text().split(")", 1)[1].split()[0] == "Z"
+
+
+@pytest.mark.skipif(not LINUX, reason="Linux private reader snapshot")
+def test_reader_substitution_after_validation_cannot_receive_the_grant(tmp_path, jpeg, monkeypatch):
+    reader = scripted_reader(tmp_path, jpeg, monkeypatch)
+    popen = K.subprocess.Popen
+    def replace_source_then_launch(args, **kwargs):
+        reader.write_text("raise RuntimeError('substituted reader ran')\n")
+        assert Path(args[1]) != reader
+        assert Path(args[1]).stat().st_mode & 0o777 == 0o600
+        return popen(args, **kwargs)
+    monkeypatch.setattr(K.subprocess, "Popen", replace_source_then_launch)
+    data, size = K._read_jpeg(reader, Path("unused"), "TEST-PRIVATE-URL")
+    assert data == jpeg and size == (64, 32)
+
+
+@pytest.mark.skipif(not LINUX, reason="Linux private reader snapshot")
+@pytest.mark.parametrize("fault", ["different-bytes", "symlink", "oversize"])
+def test_unreviewed_reader_stops_before_device_queries(session, prepared, monkeypatch, fault):
+    folder, library, observation, grants = prepared
+    reader = folder / "reader.py"
+    if fault == "symlink":
+        reader.symlink_to(READER)
+    elif fault == "oversize":
+        reader.write_bytes(b"#" * 65537)
+    else:
+        reader.write_text("print('unreviewed script')\n")
+    monkeypatch.setattr(cloud, "observe", lambda *a: pytest.fail("must stop before device query"))
+    with pytest.raises(cloud.CloudError):
+        K.capture(session, "TESTDEVICE", media_library=library, media_reader=reader, output=folder / "frame.jpg")
+    assert not grants
 
 
 @pytest.mark.skipif(not LINUX, reason="Linux native ABI")

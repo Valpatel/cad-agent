@@ -42,6 +42,20 @@ def test_cache_reused_without_writes_or_secret_repr(tmp_path, monkeypatch):
     assert path.read_bytes() == before
 
 
+@pytest.mark.skipif(os.name != "posix", reason="POSIX path/mode policy")
+def test_cache_policy_distinguishes_ancestors_from_final_entries(tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    path = cache(real)
+    link = tmp_path / "link"
+    link.symlink_to(real, target_is_directory=True)
+    assert cloud.load_session(link / "private/session.json").user_id == "123"
+    final_link = tmp_path / "final-link"
+    final_link.symlink_to(path.parent, target_is_directory=True)
+    with pytest.raises(cloud.CloudError):
+        cloud.load_session(final_link / "session.json")
+
+
 @pytest.mark.skipif(os.name != "posix", reason="POSIX modes")
 @pytest.mark.parametrize("fault", ["file-mode", "directory-mode", "symlink", "fifo", "expired", "future", "region", "header", "bool-expiry", "bad-json"])
 def test_unsafe_or_unusable_cache_rejected(tmp_path, fault):

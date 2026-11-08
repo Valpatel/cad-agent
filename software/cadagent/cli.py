@@ -1288,7 +1288,7 @@ def dispatch(args: argparse.Namespace) -> int:
         from cadagent.manufacturing.devices.bambu.cloud import CloudError, load_session, observe, owned_printers
         try:
             session = load_session(args.session)
-            if args.device:
+            if args.device is not None:
                 result = observe(session, args.device, wait_seconds=args.wait_seconds)
             else:
                 result = {"printers": [{"device_id": p.device_id, "model": p.model}

@@ -68,8 +68,10 @@ class OwnedPrinter:
 def load_session(path: Path | None = None) -> CloudSession:
     """Read our existing owner-only POSIX cache; never read a slicer's profile.
 
-    File and directory descriptors avoid following symlinks during the read. The
-    cache is not rewritten/refreshed and passwords are neither needed nor read.
+    The final directory and file are opened without following their own symlinks;
+    their descriptors bind the ownership/mode checks to the objects read. Earlier
+    ancestors use normal OS path resolution and may include symlinks. The cache
+    is not rewritten/refreshed and passwords are neither needed nor read.
     Windows ACL-based storage needs its own implementation; it is not inferred
     from POSIX mode bits.
     """

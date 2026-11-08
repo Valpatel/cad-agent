@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| An explicitly empty device selector falls back to listing the account | [Distinguish absence from an invalid selector](inbox/2026-11-07-camera-grants-do-not-prove-video.md#an-explicitly-invalid-selector-must-not-become-a-broader-observation) |
 | A review request remains unanswered while its agent is completed, or an existing exact-source clearance is overlooked | [Start idle reviewers and reuse valid clearances](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#start-idle-reviewers-instead-of-queueing-another-message) |
 | A fetched guide omits report fields, or its skill path still names the old root | [Read the full installed guide and validate its paths](inbox/publish/2026-11-07-agent-guides-need-exact-local-paths.md) |
 | A cache setting saves on one plan but fails on another, or saved rules are mistaken for delivered-policy proof | [Separate plan support, saved configuration and ordinary delivery](inbox/publish/2026-11-07-cache-policy-needs-plan-and-delivery-evidence.md) |

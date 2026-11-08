@@ -29,3 +29,11 @@ def test_missing_session_fails_without_network(monkeypatch, capsys):
     assert main(["bambu-status"]) == 2
     output = capsys.readouterr()
     assert not output.out and "private cached session" in output.err
+
+
+def test_explicit_empty_selector_is_not_an_owned_printer_listing(monkeypatch, capsys):
+    monkeypatch.setattr(cloud, "load_session", lambda p: object())
+    monkeypatch.setattr(cloud, "owned_printers", lambda s: (_ for _ in ()).throw(AssertionError("must not list")))
+    assert main(["bambu-status", "--device", ""]) == 2
+    output = capsys.readouterr()
+    assert not output.out and "invalid requested printer identity" in output.err

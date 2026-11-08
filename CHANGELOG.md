@@ -9,6 +9,13 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.28.1 (2026-11-08)
+
+**Fixed**
+- The agent quickstart points to the relocated native skills and the full installed guide, so a web summary is not its only instruction source (#282).
+- Record provider cache plan limits and the distinction between saved configuration, delivered asset policy and browser acceptance in the existing verification guidance.
+- Record current-manifest and exact-Markdown preflight guidance for replaying publication checks after repository restructuring.
+
 ## v0.28.0 (2026-11-07)
 
 **New**

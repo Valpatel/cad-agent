@@ -171,10 +171,10 @@ domains:
         scope: FDM, SLA, SLS and MJF parts, from orientation to slicing.
         maturity: tooling
         pages: [docs/research/manufacturing/bambu-cloud.md, docs/examples/numbered-coupons/README.md]
-        cli: [export-3mf, slice, overhangs, prusa-view]
+        cli: [export-3mf, slice, overhangs, prusa-view, bambu-status]
         api: [cadagent.manufacturing.slicer, cadagent.manufacturing.slicer_prusa, cadagent.manufacturing.prusa_view, cadagent.manufacturing.mesh3mf,
               cadagent.manufacturing.plates, cadagent.manufacturing.prusa3mf, cadagent.manufacturing.fit_coupons,
-              cadagent.manufacturing.experiments,
+              cadagent.manufacturing.experiments, cadagent.manufacturing.devices.bambu.cloud,
               cadagent.manufacturing.gcode]
         issues: [84, 99, 242, 246, 247, 248, 253, 405, 409]
         projects: [gyropup, j501-enclosure]

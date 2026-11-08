@@ -23,6 +23,7 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_agentkit.py` | `cad-agent agents install`: which skills and subagents land where (`~/.claude`, `~/.agents/skills`), the move off `~/.codex/skills`, pruning and uninstalling; what each needs, its Needs line, and the notice of what can't be used yet |
 | `test_cli.py` | `cad-agent ...` end to end through `cadagent.cli.main`, on throwaway projects |
+| `test_bambu_status.py` | Explicit cloud-observation dispatch, private-session failure and JSON output without a CAD project or real network. |
 | `test_init.py` | Checkout starter copying and declaration parity; `python tests/cli/test_init.py --wheel-smoke` builds and installs the committed wheel outside the checkout, checks bytes, rejects missing installed starter data, and verifies SDK ESM scope under an explicit CommonJS ancestor once in full CI |
 | `test_deps.py` | A missing heavy dependency raises `MissingDependency` naming the module, never a quiet skip |
 | `test_installer.py` | Checked-entry guards and the real POSIX body with a stand-in uv; explicit manual Windows studies exercise the checked PowerShell 5.1/7 body/uv handoff and separately validate copied instructions/resources and foreign files; an unavailable OS-denial remains unproved. Fast tests do not claim this opt-in proof. |

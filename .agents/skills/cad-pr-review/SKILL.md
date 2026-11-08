@@ -32,7 +32,9 @@ flowchart TD
    the reviewer reads GitHub and the branch, not your session.
 2. **Ask for the review.** In Claude Code, spawn the `cad-pr-reviewer` subagent with the PR URL and the checkout
    path. In Codex, start a separate session with the `cad-pr-reviewer` skill. Give it the PR, not your conclusions:
-   a reviewer told what to find tends to find it.
+   a reviewer told what to find tends to find it. Check that the reviewer is actually running: in Codex team
+   tools, `send_message` only queues a message, while `followup_task` starts an idle/completed agent. Reuse an
+   existing exact-source clearance with fresh required gates; do not wait for a duplicate response.
 3. **Answer every comment on the PR.** Fix it and reply with the commit (`Fixed in <sha>: ...`), or explain why not.
    Then resolve the thread:
 

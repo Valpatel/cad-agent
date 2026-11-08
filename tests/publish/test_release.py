@@ -429,9 +429,13 @@ def test_extra_cad_cannot_replace_the_verified_whole_set(tmp_path):
     assert manifest['print_set']['sha256'] == hashlib.sha256((out / 'cad' / source.name).read_bytes()).hexdigest()
 
 
-def test_extra_cad_can_reuse_the_same_verified_source(tmp_path):
+@pytest.mark.parametrize('alias', [False, True])
+def test_extra_cad_can_reuse_the_same_verified_source(tmp_path, alias):
     p, source, _ = native_print_set(tmp_path)
-    p.release['extra_cad'] = ['exports/' + source.name]
+    if alias:
+        (p.root / 'other').mkdir()
+        (p.root / 'other' / source.name).symlink_to(source)
+    p.release['extra_cad'] = [('other/' if alias else 'exports/') + source.name]
     result = build_release(p, out=tmp_path / 'released', date='2026-11-08')
     page = (result.folder / 'index.html').read_text()
     assert page.count('href="cad/demo-plates.3mf"') == 1

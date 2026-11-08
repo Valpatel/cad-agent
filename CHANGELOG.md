@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.29.0 (2026-11-08)
+
+**New**
+- `cad-agent bambu-status` reuses an existing private Bambu cloud session to list owned printers or obtain fresh status and correlated firmware for one selected device. The optional `bambu` extra supplies MQTT; no service, camera or physical printer control is added.
+
 ## v0.28.2 (2026-11-08)
 
 **Fixed**

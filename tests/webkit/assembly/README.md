@@ -14,6 +14,7 @@ flowchart TD
 | `__init__.py` | Empty test-package marker |
 | `guide.test.mjs` | Pure validator/controller and bounded request counterexamples |
 | `browser.mjs` | Real scene/material/coordinate/loading/lifecycle controls in each browser engine |
+| `release-browser.mjs` | Real extracted ZIP, two frozen fixtures/WIP, pinned local runtime, no-script fallback and corrupted entry/model/mesh controls |
 
 Run through the existing site npm scripts. See the [feature test matrix](../../../docs/practice/assembly-guide-testing.md) for pending versus verified results.
 

@@ -38,6 +38,7 @@ flowchart TD
 | `dotsvg.py` | Graphviz DOT to SVG without Graphviz: a small parser and a layered layout |
 | `site.py`, `site_review.py` | The project site: progress, designs, decisions, documents; review pages, requirements, gates |
 | `release.py` | The print release: a browsable page of printed parts with their CAD files and the source that builds them |
+| [guides.py](guides.py) | Preflight a source-bound assembly guide and freeze its model, mesh and poster dependencies for the print release |
 | `serve.py` | Serves a project over http so pages can hand 3MF files to a slicer |
 
 Related: [package map](../README.md) · [review](../review/README.md) · [web kit](../webkit/README.md) ·

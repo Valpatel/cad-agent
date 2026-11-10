@@ -64,6 +64,9 @@ try {
     assert.ok(await page.evaluate(() => window.__viewer.parts.every(p => p.mesh.position.lengthSq() === 0 && !p.mesh.material.wireframe)));
     assert.equal(await page.getByLabel('Instruction display', { exact: true }).inputValue(), 'solid');
     assert.equal(await page.locator('.guide-explode').isChecked(), false, 'Reset controls describe the actual unexploded scene');
+    assert.equal(await page.getByLabel('Instruction step', { exact: true }).inputValue(), '', 'Reset selects the assembled overview');
+    assert.equal(await page.getByRole('button', { name: 'Previous', exact: true }).isDisabled(), true);
+    await page.getByLabel('Instruction step', { exact: true }).selectOption('screws');
     await page.evaluate(() => window.__viewer.setSelection('screw#2'));
     const appearance = page.getByLabel('Selected part appearance', { exact: true });
     await appearance.selectOption('transparent');

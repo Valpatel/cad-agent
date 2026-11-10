@@ -84,3 +84,11 @@ Evidence: [first capped push job](https://github.com/Valpatel/cad-agent/actions/
 [independent first-cap classification](https://github.com/Valpatel/cad-agent/pull/506#issuecomment-6761546180),
 [official pinned image build](https://github.com/microsoft/playwright/blob/v1.56.1/utils/docker/Dockerfile.noble),
 [official image/version contract](https://github.com/microsoft/playwright/blob/v1.56.1/docs/src/docker.md).
+
+
+The first changed-head container attempt (`5f828bdd`, browser jobs 129699702851 and 129699703068) successfully
+pulled/initialized the image and installed the locked npm packages. Both then failed before rendering/tests at
+`git ls-tree`: Git rejected the host-mounted checkout's ownership inside the container. The correction adds
+`git config --global --add safe.directory "$GITHUB_WORKSPACE"` inside that ephemeral test container, before
+site construction. It trusts only the exact checked-out CI workspace, not `*`, other paths or a workstation
+configuration. Those initial failures remain explicit; the corrected head still needs all actual suites to pass.

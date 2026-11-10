@@ -9,6 +9,15 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.30.0 (2026-11-10)
+
+**New**
+- Optional `cad.release.assembly_guides` packages hash-bound model, mesh and poster
+  inputs with the pinned shared viewer and readable static instructions. Rejected
+  guide inputs preserve an existing release; captured inputs and ZIPs are
+  reproducible. This does not qualify a product's instructions or physical build (#302).
+- Optional hash-bound assembly guides over the existing 3D viewer, with reversible instruction states, selected-part transparency/wireframe, and coherent loading/reset/cleanup. Broader build-package and physical qualification remain separate.
+
 ## v0.29.1 (2026-11-08)
 
 **Fixed**

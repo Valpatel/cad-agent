@@ -6,6 +6,25 @@ fastener engagement or build qualification. Those claims retain their own source
 
 See the [feature testing matrix](assembly-guide-testing.md) and [shared module map](../../software/cadagent/webkit/assembly/README.md).
 
+The arrows follow the reader's calls and verified inputs: the entry binds the guide, the loader checks the model,
+and the controller applies each complete instruction state to the existing viewer.
+
+```mermaid
+flowchart TD
+    E["viewer.html<br/>guide URL and hash"] --> L["loadGuide<br/>verify guide and model"]
+    L --> V["createViewer<br/>verify and load meshes"]
+    L --> C["createGuideController<br/>validate instruction"]
+    V --> S["applyState<br/>parts, pose, materials"]
+    C --> S
+    S --> R["existing stage<br/>draw and pick parts"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class L,C,S here
+    class E,V near
+    class R out
+```
+
 ## Data and identity
 
 A guide uses `schema: cad-agent.assembly-guide/1`. It binds an ordinary view manifest by SHA-256. Every part in

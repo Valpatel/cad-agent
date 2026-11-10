@@ -160,3 +160,20 @@ HTML fails that same membership check; the corrected output passes. No rendering
 repository's locked Markdown consumer. Presence in source and a few surviving rows do not prove the retained
 requirements are still cells. **Limits:** this focused parser proof does not establish browser table layout,
 responsive overflow, full-page rendering, current CI or product feature acceptance; those keep their own checks.
+
+## Judge CI deferral by the actual event and current checks
+
+On 2026-11-10 UTC, PR #509 deferred draft CI with WIP commit markers. Before its final source push, the owner
+read GitHub's [documented skip behavior](https://github.blog/changelog/github-actions-skip-pull-request-and-push-workflows-with-skip-ci/)
+and raised an unproved concern about a later normal-merge push. The coordinator checked an actual counterexample:
+Gyropup main `6a026434f9002d1aecbcea860983fb322e372158` normally incorporated ancestor
+`ea521b0453387a3d6254d121f65dc203b74eca52`, whose subject ends with the skip marker, while that main's ordinary
+push workflows ran. `gh api .../compare/ea521b04...6a026434` reported `status: ahead` and the exact ancestor as
+merge base; [one actual push workflow](https://github.com/Valpatel/gyropup/actions/runs/42785495381) completed
+successfully, while the presentation workflow was still running at the readback.
+
+**Rule:** preserve the WIP history and its exact-source evidence; keep the final head and merge message free of
+skip instructions, and inspect actual push/PR events plus every required current check before integration.
+Do not rewrite source history or invent a CI waiver from a hypothetical event interpretation. **Limits:** this
+normal-merge counterexample does not establish how every direct push behaves, turn a skipped/pending check into
+a pass, or permit integration without the repository's current complete CI and live gates.

@@ -827,3 +827,193 @@ def test_playback_missing_optional_stl_parser_is_a_failure_before_path_queries(t
     report = playback.playback_gate(bundle, binding, breps)
     assert not report["pass"] and "trimesh" in report["checks"][0]["message"]
     assert report["operations"] == []
+
+
+def test_playback_preflight_has_distinct_scope_and_never_calls_insertion(tmp_path, monkeypatch):
+    import cadagent.review.gates.playback as playback
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    binding, breps = playback.bind_playback_geometry(assembly, bundle)
+    events = []
+    monkeypatch.setattr(playback, "run_playback_sequence", lambda *a, **k: pytest.fail("preflight must not run paths"))
+    report = playback.playback_gate(bundle, binding, breps, preflight_only=True, on_progress=events.append)
+    assert report["gate"] == "assembly-playback-preflight" and report["pass"]
+    assert report["limits"]["paths_checked"] is False and report["limits"]["progress_complete"] is True
+    assert report["operations"] == [] and len(report["frames"]) == 3
+    assert report["physical_fit_verified"] is False
+    assert any(c["id"] == "paths" and c["status"] == "warn" for c in report["checks"])
+    assert not [e for e in events if e["event"] in ("pair", "operation")]
+    assert events[-1]["event"] == "preflight" and events[-1]["inputs"] == report["inputs"]
+    phases = [(e.get("phase"), e["state"], e.get("instance")) for e in events if e["event"] == "phase"]
+    for name in ("base", "blocker", "insert"):
+        assert phases.index(("load", "starting", name)) < phases.index(("load", "complete", name))
+        assert phases.index(("frame", "starting", name)) < phases.index(("frame", "complete", name))
+    assert phases.index(("load", "starting", None)) < phases.index(("load", "starting", "base"))
+    assert phases.index(("frame", "starting", None)) < phases.index(("frame", "starting", "base"))
+
+
+def test_playback_progress_events_order_pair_witnesses_and_isolate_mutation():
+    import copy
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+    events = []
+
+    def observer(event):
+        events.append(copy.deepcopy(event))
+        if "result" in event:
+            event["result"].clear()  # callers must not mutate the internal witness/row
+        event["instance"] = "caller mutation"
+
+    result = run_playback_sequence(BoxWorld(boxes), guide, order, on_progress=observer)
+    reference = run_playback_sequence(BoxWorld(boxes), guide, order)
+    assert result["operations"] == reference["operations"]
+    assert [c.to_dict() for c in result["checks"]] == [c.to_dict() for c in reference["checks"]]
+    pairs = [e for e in events if e["event"] == "pair"]
+    assert [(e["operation_index"], e["pair_index"], e["state"]) for e in pairs] == [
+        (1, 0, "starting"), (1, 0, "complete"), (2, 0, "starting"), (2, 0, "complete"),
+        (2, 1, "starting"), (2, 1, "complete")]
+    assert pairs[-1]["result"]["state"] == "blocked" and pairs[-1]["result"]["part"] == "blocker"
+    assert all(e["schema"] == "cad-agent.playback-progress/1" for e in events)
+    json.dumps(events, allow_nan=False)
+
+
+def test_playback_callback_failure_retains_current_blocker_and_stops_later_operations():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+    boxes["later"] = (20, 0, 0, 21, 1, 1)
+    guide["steps"][0]["parts"].append("later")
+    guide["steps"][0]["offsets_mm"]["later"] = [-20, 0, 0]
+    order["stage"].append("later")
+    events = []
+
+    def disk_full(event):
+        events.append(event)
+        if event["event"] == "pair" and event["state"] == "complete" and event["result"]["state"] == "blocked":
+            raise OSError("seeded checkpoint disk full")
+
+    result = run_playback_sequence(BoxWorld(boxes), guide, order, on_progress=disk_full)
+    assert result["complete"] is False
+    assert [r["instance"] for r in result["operations"]] == ["base", "blocker", "insert"]
+    partial = result["operations"][-1]
+    assert partial["complete"] is False and partial["pairs"][-1]["state"] == "blocked"
+    assert partial["pairs"][-1]["part"] == "blocker"
+    assert [c.id for c in result["checks"] if c.status == "fail"] == ["operation:2:insert", "progress"]
+    assert result["checks"][-1].evidence["operation_index"] == 2
+    assert not [e for e in events if e["instance"] == "later"]
+
+
+def test_playback_callback_failure_after_completed_collision_preserves_earlier_check():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+
+    def fail_after_operation(event):
+        if event["event"] == "operation" and event["state"] == "complete" and event["operation_index"] == 2:
+            raise OSError("cannot persist completed operation")
+
+    result = run_playback_sequence(BoxWorld(boxes), guide, order, on_progress=fail_after_operation)
+    assert result["complete"] is False
+    assert result["operations"][-1]["pairs"][-1]["state"] == "blocked"
+    assert [c.id for c in result["checks"] if c.status == "fail"] == ["operation:2:insert", "progress"]
+
+
+def test_playback_preflight_callback_failure_before_native_load_is_explicit_failure(tmp_path, monkeypatch):
+    import cadagent.review.gates.playback as playback
+    bundle, _ = captured_playback_fixture(tmp_path)
+    from cadagent.review.evidence import brep_content_hash
+    model = json.loads(bundle.files["view.json"])
+    breps = {p["name"]: ("synthetic original BREP " + p["name"]).encode() for p in model["parts"]}
+    binding = playback.bind_playback_breps(bundle, breps, producer_hash_platform={"machine": "synthetic"})
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("must stop before native load"))
+
+    def failed_storage(event):
+        if event.get("phase") == "load" and event["state"] == "starting":
+            raise OSError("checkpoint unavailable")
+
+    report = playback.playback_gate(bundle, binding, breps, preflight_only=True, on_progress=failed_storage)
+    assert not report["pass"] and report["gate"] == "assembly-playback-preflight"
+    assert report["limits"]["paths_checked"] is False and report["operations"] == []
+    assert report["checks"][-2]["id"] == "progress" and "checkpoint unavailable" in report["checks"][-2]["message"]
+    assert report["checks"][-2]["evidence"]["phase"] == "load"
+    assert report["inputs"]["binding_digest"]
+
+
+def test_playback_full_gate_callback_failure_keeps_collision_and_partial_evidence(tmp_path):
+    import cadagent.review.gates.playback as playback
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    binding, breps = playback.bind_playback_geometry(assembly, bundle)
+    events = []
+
+    def checkpoint(event):
+        events.append(event)
+        if event["event"] == "pair" and event["state"] == "complete" and event["result"]["state"] == "blocked":
+            raise OSError("cannot flush pair")
+
+    report = playback.playback_gate(bundle, binding, breps, on_progress=checkpoint)
+    assert not report["pass"] and report["limits"]["progress_complete"] is False
+    assert report["limits"]["paths_checked"] is False
+    assert report["operations"][-1]["pairs"][-1]["state"] == "blocked"
+    assert any(c["id"] == "operation:2:insert" and c["status"] == "fail" for c in report["checks"])
+    assert any(c["id"] == "progress" and c["status"] == "fail" for c in report["checks"])
+    assert events[-1]["result"]["state"] == "blocked"
+
+
+def test_playback_default_and_observed_full_results_have_equal_geometry(tmp_path):
+    import cadagent.review.gates.playback as playback
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    binding, breps = playback.bind_playback_geometry(assembly, bundle)
+    plain = playback.playback_gate(bundle, binding, breps)
+    events = []
+    observed = playback.playback_gate(bundle, binding, breps, on_progress=events.append)
+    assert plain["checks"] == observed["checks"] and plain["operations"] == observed["operations"]
+    assert plain["frames"] == observed["frames"] and plain["inputs"] == observed["inputs"]
+    assert "paths_checked" not in plain["limits"] and observed["limits"]["paths_checked"] is True
+    assert plain["pass"] == observed["pass"] is False
+
+
+@pytest.mark.parametrize("kwargs", [{"preflight_only": "yes"}, {"on_progress": False}])
+def test_playback_bad_progress_options_fail_before_native_queries(tmp_path, monkeypatch, kwargs):
+    import cadagent.review.gates.playback as playback
+    bundle, _ = captured_playback_fixture(tmp_path)
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("invalid options must not load CAD"))
+    report = playback.playback_gate(bundle, None, {}, **kwargs)
+    assert not report["pass"] and report["operations"] == []
+
+
+def test_playback_pair_start_callback_failure_keeps_remaining_pair_unchecked_without_query():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+
+    class RecordingWorld(BoxWorld):
+        def __init__(self, boxes):
+            super().__init__(boxes)
+            self.parties = []
+
+        def relate_at(self, key, shift, other):
+            self.parties.append((key, other))
+            return super().relate_at(key, shift, other)
+
+    world = RecordingWorld(boxes)
+
+    def checkpoint(event):
+        if event["event"] == "pair" and event["state"] == "starting" and event["obstacle"] == "blocker":
+            raise OSError("cannot write pair-start checkpoint")
+
+    result = run_playback_sequence(world, guide, order, on_progress=checkpoint)
+    assert result["complete"] is False
+    partial = result["operations"][-1]
+    assert partial["instance"] == "insert" and partial["complete"] is False
+    assert partial["unchecked_pairs"] == ["blocker"] and len(partial["pairs"]) == 1
+    assert ("insert", "blocker") not in world.parties
+    assert result["checks"][-1].id == "progress" and result["checks"][-1].status == "fail"
+
+
+def test_playback_awaitable_callback_cannot_silently_skip_checkpoint_work():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+    world = BoxWorld(boxes)
+
+    async def checkpoint(event):
+        raise OSError("would fail only if awaited")
+
+    result = run_playback_sequence(world, guide, order, on_progress=checkpoint)
+    assert result["complete"] is False and world.queries == 0
+    assert result["checks"][-1].status == "fail" and "must complete synchronously" in result["checks"][-1].message

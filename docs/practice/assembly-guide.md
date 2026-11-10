@@ -251,3 +251,42 @@ physical assembly: the adapter does not simulate gravity, retention, fixtures, t
 compliance. See the [testing and physics follow-through](assembly-guide-testing.md#geometric-playback-validation-follow-through-512).
 
 </details>
+
+## Preflight a native collection and retain progress
+
+<details>
+<summary>Input-only scope, checkpoint events and incomplete runs</summary>
+
+`playback_gate(..., preflight_only=True)` runs the same captured-input, BREP and CAD/STL/model frame checks and
+returns `gate: assembly-playback-preflight`, `limits.paths_checked: false` and no operations. Its input-only pass
+never qualifies an insertion path. A full check remains the default.
+
+The optional synchronous `on_progress(event)` receives isolated `cad-agent.playback-progress/1` JSON snapshots. Phase events
+identify inputs, global and per-instance load/frame work and world-bounds construction. Operation and pair events
+carry `state: starting|complete`, exact step/instance IDs and operation/pair indices; completed events include
+the recorded result. The preflight-complete event binds input digests and frame evidence. Starting events precede
+potentially slow native work, so a capped process can identify its last active phase or pair.
+
+```python
+import json, os
+
+with progress_path.open("x", encoding="utf-8") as stream:
+    def checkpoint(event):
+        stream.write(json.dumps(event, allow_nan=False) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    report = playback_gate(bundle, binding, breps,
+        preflight_only=True, on_progress=checkpoint)
+```
+
+The product owns the fresh output path, durable storage, detached process and external runtime cap. Callback
+exceptions or an unsupported awaitable callback result stop and fail validation. Earlier completed collisions and the current partial operation's recorded
+pairs remain in the final failure report; remaining pairs are explicitly unchecked. A checkpoint failure after
+all geometry queries still fails the run. Mutating a callback snapshot cannot change the checked geometry or
+internal evidence. `run_playback_sequence` accepts the same optional observer for kernel-free consumers.
+
+This is progress reporting, not automatic resumption or a clearance certificate. A killed process may leave only
+the flushed event prefix; uncompleted/unrecorded work remains unchecked. Keep original failures and source/input
+identities when retrying. No output is written by the toolkit unless the caller supplies a callback.
+
+</details>

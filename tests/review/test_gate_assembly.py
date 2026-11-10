@@ -1017,3 +1017,46 @@ def test_playback_awaitable_callback_cannot_silently_skip_checkpoint_work():
     result = run_playback_sequence(world, guide, order, on_progress=checkpoint)
     assert result["complete"] is False and world.queries == 0
     assert result["checks"][-1].status == "fail" and "must complete synchronously" in result["checks"][-1].message
+
+
+@pytest.mark.parametrize("kind", ["generator", "async-generator"])
+def test_playback_lazy_checkpoint_body_never_counts_as_completed_progress(kind):
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data({"stage": ["base", "insert", "blocker"]})
+    world, written = BoxWorld(boxes), []
+
+    def generator(event):
+        written.append(event)
+        yield "saved"
+
+    async def async_generator(event):
+        written.append(event)
+        yield "saved"
+
+    callback = generator if kind == "generator" else async_generator
+    result = run_playback_sequence(world, guide, order, on_progress=callback)
+    assert world.queries == 0 and written == [] and result["complete"] is False
+    assert result["checks"][-1].id == "progress" and result["checks"][-1].status == "fail"
+    assert "without yielding" in result["checks"][-1].message
+
+
+@pytest.mark.parametrize("kind", ["generator", "async-generator"])
+def test_playback_lazy_checkpoint_rejected_by_full_gate_before_native_work(tmp_path, monkeypatch, kind):
+    import cadagent.review.gates.playback as playback
+    bundle, _ = captured_playback_fixture(tmp_path)
+    written = []
+
+    def generator(event):
+        written.append(event)
+        yield "saved"
+
+    async def async_generator(event):
+        written.append(event)
+        yield "saved"
+
+    callback = generator if kind == "generator" else async_generator
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("lazy observer must not start native load"))
+    report = playback.playback_gate(bundle, None, {}, on_progress=callback)
+    assert not report["pass"] and written == [] and report["operations"] == []
+    assert report["limits"]["progress_complete"] is False
+    assert report["checks"][0]["id"] == "progress" and "without yielding" in report["checks"][0]["message"]

@@ -280,7 +280,8 @@ with progress_path.open("x", encoding="utf-8") as stream:
 ```
 
 The product owns the fresh output path, durable storage, detached process and external runtime cap. Callback
-exceptions or an unsupported awaitable callback result stop and fail validation. Earlier completed collisions and the current partial operation's recorded
+exceptions or an unsupported awaitable, generator or async-generator result stop and fail validation.
+Deferred callback bodies are never iterated or awaited by the gate; checkpoint work must finish synchronously. Earlier completed collisions and the current partial operation's recorded
 pairs remain in the final failure report; remaining pairs are explicitly unchecked. A checkpoint failure after
 all geometry queries still fails the run. Mutating a callback snapshot cannot change the checked geometry or
 internal evidence. `run_playback_sequence` accepts the same optional observer for kernel-free consumers.

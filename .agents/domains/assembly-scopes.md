@@ -18,3 +18,8 @@ reject stale or absent bindings before CAD queries. Preserve blocked, unknown an
 an unchecked kernel relation is never a clear path. Support, retention and gravity remain explicit unknowns
 until a separately justified physics scenario exists. See the [playback incident and controls](../inbox/2026-11-10-playback-needs-finite-bound-source-geometry.md)
 and [public API](../../docs/practice/assembly-guide.md#validate-the-trajectories-shown-by-playback).
+
+Recoverable native validation needs completed synchronous checkpoints, not merely callback invocation. Reject
+awaitable, generator and async-generator results before queries proceed; preserve prior collisions and explicit
+unchecked work when storage fails. The caller owns flushed durable progress and external run caps. See the
+[lazy-callback failure and controls](../inbox/2026-11-10-lazy-callbacks-are-not-completed-checkpoints.md).

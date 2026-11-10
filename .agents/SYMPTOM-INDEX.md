@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A checkpoint callback returns a generator/async generator, records no events, yet validation completes | [Reject deferred results under the synchronous checkpoint contract](inbox/2026-11-10-lazy-callbacks-are-not-completed-checkpoints.md) |
 | Playback clips through an earlier arrival, a distant obstacle fails an unused path, or same-named CAD is treated as the displayed mesh | [Bind finite playback paths to the native export and keep unknowns](inbox/2026-11-10-playback-needs-finite-bound-source-geometry.md) |
 | A testing matrix retains its source rows but publishes older requirements as pipe-text paragraphs | [Check contiguous rows and actual Markdown table membership](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#a-feature-matrix-must-stay-a-table-in-the-actual-markdown-consumer) |
 | A clipping test rejects a retained face after its brightness changes | [Use lighting-independent landmarks and off-centre axis/flip mutants](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#clipping-pixels-need-a-lighting-independent-visibility-signal) |

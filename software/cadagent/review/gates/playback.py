@@ -47,11 +47,11 @@ def _emit(callback, event):
         # Round-trip both isolates mutable nested data and rejects unsupported/nonfinite JSON.
         snapshot = json.loads(json.dumps(_jsonable({"schema": PROGRESS_SCHEMA, **event}), allow_nan=False))
         result = callback(snapshot)
-        from inspect import isawaitable, iscoroutine
-        if isawaitable(result):
-            if iscoroutine(result):
+        from inspect import isasyncgen, isawaitable, iscoroutine, isgenerator
+        if isawaitable(result) or isgenerator(result) or isasyncgen(result):
+            if iscoroutine(result) or isgenerator(result):
                 result.close()
-            raise TypeError("on_progress must complete synchronously")
+            raise TypeError("on_progress must complete synchronously without yielding")
     except Exception as exc:
         error = _ProgressError(f"progress callback failed: {type(exc).__name__}: {exc}")
         error.context = {key: event[key] for key in ("event", "phase", "state", "instance", "operation_index",

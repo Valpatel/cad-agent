@@ -27,6 +27,9 @@ for (const [index, version] of [...versions, 'proto'].entries()) {
     ] };
   routes.set(`/${version}/guide.json`, (_, res) => res.end(encode(guide)));
 }
+const legacyShape = cube([0, 0, 0], [10, 20, 30]);
+routes.set('/legacy/small%20part.stl', (_, res) => res.end(legacyShape.bytes));
+routes.set('/legacy/view.json', (_, res) => res.end(encode({ parts: [{ name: 'small part', file: 'small part.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-assembly-guide'; await mkdir(out, { recursive: true });
 const site = await serveWebkit(routes); let browser;
@@ -95,6 +98,8 @@ try {
   assert.equal((await inspect())[0].color, 0xaa0011, 'Legacy colour choice survives explode');
   await page.evaluate(() => window.__viewer.reset()); assert.equal((await inspect())[0].color, 0x487ca8);
   cases.push({ legacy: true });
+  await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/view.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
+  assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacySpacesAndCSSColor: true });
   await visit('proto');
   assert.ok((await inspect()).every(p => p.offset.every(Number.isFinite)), 'prototype-shaped part names retain a zero finite baseline');
   cases.push({ prototypePartName: true });

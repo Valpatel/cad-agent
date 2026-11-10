@@ -89,3 +89,10 @@ test('real Gyropup twelve-step guide retains earlier chapters as visible context
   step.highlight = [step.parts.find(name => !members.includes(name))];
   assert.throws(() => validateGuide(bad, manifest), /Highlighted subassembly/);
 });
+
+test('legacy filenames with spaces and CSS colour names retain their original URL/material contract', () => {
+  const { guide, manifest } = fixture();
+  manifest.parts[0].file = 'small part.stl'; manifest.parts[0].color = 'steelblue';
+  assert.equal(validateView(manifest), manifest);
+  assert.throws(() => validateGuide(guide, manifest), /relative local path|color/);
+});

@@ -18,6 +18,7 @@ flowchart TD
 | File or folder | Purpose |
 |---|---|
 | [cantilever-still.mjs](cantilever-still.mjs) | Snapshot the cantilever example. |
+| [collect-showcase.py](collect-showcase.py) | Bounded no-install, source-pinned candidate collection using the existing product collector and retained CAD runtime; no adoption or publication. |
 | [fan-curve-still.mjs](fan-curve-still.mjs) | Snapshot fan curve data. |
 | [fourbar-still.mjs](fourbar-still.mjs) | Snapshot the four-bar example. |
 | [printed-boss-still.mjs](printed-boss-still.mjs) | Snapshot printed boss geometry. |
@@ -27,3 +28,24 @@ flowchart TD
 | [site-model-poster.mjs](site-model-poster.mjs) | Draw matching model poster/card. |
 | [site-packet-pictures.py](site-packet-pictures.py) | Render delivery packet pictures. |
 | [torsion-snap-still.mjs](torsion-snap-still.mjs) | Snapshot the torsion snap example. |
+
+## Source-bound homepage refresh
+
+`collect-showcase.py --source <exact-cad-agent-commit> --contract-json <reviewed-runtime-contract>` is a maintainer
+fleet entry point around the unchanged `tools/gyropup_showcase.py`. Review the complete immutable source/operator
+packet before a one-shot submission. The contract names an existing retained interpreter/toolkit and whole-tree
+fingerprints; this worker never installs packages or creates a virtualenv. It reads the canonical product collector,
+records the executed source, seals complete candidate JSON/bin bytes before decoding, and independently compares
+producer/product/toolkit/runtime/hardware identities after owned child groups settle. Native work is capped at 600
+seconds, decode at 120 seconds and active work at 1,140 seconds within a 4-CPU/8-GiB/30-minute fleet allocation.
+
+The current packet targets Gyropup's immutable front/rear-pack proposal. Both the former belly model and the proposal
+use the same battery names, so matching names alone proves no movement: the candidate must match the independently
+accepted end-pack bounds and support membership, retain source/leg provenance, and pass the unchanged 400-KiB model
+budget. Unexpected counts or size are findings; do not alter visibility/tessellation to force acceptance.
+
+Candidate generation is not asset adoption. Review actual archived bytes, source bindings, decoded geometry and
+all five final guards first. Then generate the matching poster/card through `site-model-poster.mjs` in an isolated
+candidate, preserving historical pictures and their SOURCE records. Production must wait for incorporation of the
+accepted product CAD source into its protected `main`; a WIP collection is not a latest-published or physically
+qualified model. This work does not change printed legs or establish fit, retention, strength or printer readiness.

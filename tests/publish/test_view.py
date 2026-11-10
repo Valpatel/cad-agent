@@ -228,3 +228,46 @@ def test_showcase_group_policy_preserves_current_members_and_rejects_drift(tmp_p
         with pytest.raises(ValueError, match="outside the product"):
             tool.model(product, "unused", "unused", toolkit, destination)
         assert not destination.exists()
+
+
+def test_showcase_collection_packet_is_import_safe_and_old_pack_names_do_not_prove_position(tmp_path, monkeypatch):
+    import copy
+    import importlib.util
+    import subprocess
+    from pathlib import Path
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Import/identity validation must not launch processes")
+    monkeypatch.setattr(subprocess, "Popen", forbidden)
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location("showcase_collection_packet", root / "tools/site/figures/collect-showcase.py")
+    worker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(worker)
+    assert worker.ROOT is None and worker.OUT is None
+    original = json.loads((root / "tools/site/assets/models/gyropup.json").read_text())
+    # Existing old data already has both pack names: changing the revision/name cannot make its belly placement current.
+    stale = copy.deepcopy(original)
+    stale["source"].update(revision=worker.PRODUCT_SHA, hardware_tree=worker.HARDWARE)
+    for names in stale["source"]["members"].values():
+        names[:] = [n for n in names if n not in worker.RETIRED]
+    stale["source"]["members"]["frame"].extend(sorted(worker.HOLDERS))
+    assert sum(map(len, stale["source"]["members"].values())) == 224
+    with pytest.raises(ValueError, match="Battery placement"):
+        worker.validate_end_packs(stale)
+    current = copy.deepcopy(stale)
+    battery = next(p for p in current["parts"] if p["name"] == "battery")
+    battery["bounds_mm"] = list(worker.BATTERY_BOUNDS)
+    assert worker.validate_end_packs(current)["source_parts"] == 224
+    wrong = copy.deepcopy(current)
+    wrong["source"]["members"]["frame"][0] = "bay_floor"
+    with pytest.raises(ValueError, match="belly enclosure"):
+        worker.validate_end_packs(wrong)
+    # Original identity is rejected as well; no relabelling of its artifact is accepted.
+    with pytest.raises(ValueError):
+        worker.validate_end_packs(original)
+    output = tmp_path / "candidate"
+    output.mkdir()
+    (output / "gyropup.json").write_text("partial output retained")
+    assert set(worker.inventory(output)) == {"gyropup.json"}
+    (output / "alias").symlink_to(output / "gyropup.json")
+    with pytest.raises(ValueError, match="Nonregular"):
+        worker.inventory(output)

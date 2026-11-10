@@ -1,0 +1,2 @@
+**New**
+- `cadagent.simulation.robot.settle_stage` simulates explicitly authored rigid assembly stages with MuJoCo, retaining support contacts, maximum drift/rotation, final speeds, penetration and solver warnings. It rejects false stability from disabled gravity/contact, static monitored bodies, implicit constraints and mesh collision hulls; finite modeled stability does not prove physical assembly readiness (#515).

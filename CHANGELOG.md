@@ -9,6 +9,16 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.32.0 (2026-11-10)
+
+**New**
+- Validate finite ordered assembly-guide paths through the existing insertion engine, with captured guide/mesh hashes and a BREP export binding. Reports retain blocked and undecided pairs and explicitly leave support, retention and physical assembly unverified (#512).
+- `cadagent.simulation.robot.settle_stage` simulates explicitly authored rigid assembly stages with MuJoCo, retaining support contacts, maximum drift/rotation, final speeds, penetration and solver warnings. It rejects false stability from disabled gravity/contact, static monitored bodies, implicit constraints and mesh collision hulls; finite modeled stability does not prove physical assembly readiness (#515).
+- The existing playback gate offers explicit input/frame-only preflight with a distinct verdict scope, plus optional JSON-safe progress before native load/frame and each pair/operation. Checkpoint failures stop and fail the run while preserving recorded collision/partial evidence; default full path behavior is unchanged (#517).
+
+**Fixed**
+- Assembly insertion sweeps retain an explicitly unchecked geometry relation as an unchecked failure, including at the final pose (#512).
+
 ## v0.31.0 (2026-11-10)
 
 **New**

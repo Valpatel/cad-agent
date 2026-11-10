@@ -170,6 +170,13 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   // Actual raster clipping on independent CAD face landmarks, not just a mirrored plane-property assertion.
   const sections = await page.evaluate(() => {
     const v = window.__viewer, s = v.stage; v.reset(); s.stop();
+    // Keep the real physical material and clipping shader, but give this visibility fixture an emissive signal.
+    // Removing another half must not change a retained landmark's shadow and masquerade as missing geometry.
+    for (const [i, part] of v.parts.entries()) {
+      const material = part.mesh.material;
+      material.color.setHex(0); material.emissive.setHex(i ? 0xffaa00 : 0xff00ff);
+      material.emissiveIntensity = 1; material.specularIntensity = 0; material.clearcoat = 0;
+    }
     const names = ['base', 'screw#1', 'screw#2'], gl = s.renderer.getContext(), canvas = s.renderer.domElement;
     const rgb = point => {
       const q = v.parts[0].mesh.position.clone().fromArray(point); v.parts[0].mesh.localToWorld(q); q.project(s.camera);
@@ -182,33 +189,39 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     const rows = [];
     for (const [axis, direction, points, wrongAxis] of [
       ['x', [0.001, -0.001, 1], [[10.5, 10.5, 28], [30.5, 10.5, 28]], 'y'],
-      ['y', [0.001, -0.001, 1], [[20, 5, 8], [20, 25, 8]], 'z'],
-      ['z', [0.001, -1, 0.001], [[10.5, 8, 12], [10.5, 8, 24]], 'x'],
+      ['y', [0.001, -0.001, 1], [[20, 20, 8], [20, 25, 8]], 'z'],
+      ['z', [0.001, -1, 0.001], [[10.5, 8, 18], [10.5, 8, 24]], 'x'],
     ]) {
       v.setSectionPlane({ axis, flipped: false }); v.setSection(1); v.frameParts(names, direction);
       const baseline = sample(points);
-      v.setSection(0.5); const ordinary = sample(points);
+      v.setSection(0.25); const ordinary = sample(points), originalConstant = v.parts[0].mesh.material.clippingPlanes[0].constant;
       v.setSectionPlane({ axis, flipped: true }); const flipped = sample(points);
+      v.parts[0].mesh.material.clippingPlanes[0].constant = originalConstant;
+      const wrongFlip = sample(points); // deliberate normal-only flip: location changes instead of retained side alone
       v.setSectionPlane({ axis: wrongAxis, flipped: false }); const wrong = sample(points);
       const pattern = colors => colors.map((color, i) => distance(color, baseline[i]) < 20);
-      rows.push({ axis, baseline, ordinary, flipped, wrong, ordinaryPattern: pattern(ordinary), flippedPattern: pattern(flipped), wrongPattern: pattern(wrong) });
+      rows.push({ axis, baseline, ordinary, flipped, wrongFlip, wrong, ordinaryPattern: pattern(ordinary), flippedPattern: pattern(flipped), wrongFlipPattern: pattern(wrongFlip), wrongPattern: pattern(wrong) });
     }
     v.setSectionPlane({ axis: 'y', flipped: true }); v.setSection(1);
     const disabled = { ...v.getSectionState(), constant: v.parts[0].mesh.material.clippingPlanes[0].constant };
+    const disabledPattern = sample([[10.5, 8, 18], [10.5, 8, 24]]).map((color, i) => distance(color, rows[2].baseline[i]) < 20);
     const copy = v.getSectionState(); copy.axis = 'z';
     const before = JSON.stringify(v.getSectionState()), invalid = [];
     for (const option of [{ axis: 'oblique' }, { axis: 'constructor' }, { axis: 'x', flipped: 1 }]) {
       try { v.setSectionPlane(option); invalid.push(false); } catch { invalid.push(JSON.stringify(v.getSectionState()) === before); }
     }
     v.reset(); const reset = v.getSectionState(); s.start();
-    return { rows, disabled, invalid, reset };
+    return { rows, disabled, disabledPattern, invalid, reset };
   });
+  await writeFile(`${out}/${engine.name()}-section-pixels.json`, JSON.stringify(sections, null, 2));
   for (const row of sections.rows) {
     assert.deepEqual(row.ordinaryPattern, [true, false], JSON.stringify(row));
     assert.deepEqual(row.flippedPattern, [false, true], JSON.stringify(row));
+    assert.notDeepEqual(row.wrongFlipPattern, [false, true], 'Normal-only flip must fail the actual off-centre pixel control');
     assert.notDeepEqual(row.wrongPattern, [true, false], 'Wrong CAD axis must fail the actual pixel control');
   }
   assert.deepEqual(sections.disabled, { axis: 'y', flipped: true, depth: 1, constant: 1e9 });
+  assert.deepEqual(sections.disabledPattern, [true, true]);
   assert.deepEqual(sections.invalid, [true, true, true]); assert.deepEqual(sections.reset, { axis: 'x', flipped: false, depth: 1 });
   cases.push({ actualOrthogonalClipping: sections });
   // Mount the same shared viewer with optional callbacks, then drive real pointer events over a hard-coded CAD face.

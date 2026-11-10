@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A clipping test rejects a retained face after its brightness changes | [Use lighting-independent landmarks and off-centre axis/flip mutants](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#clipping-pixels-need-a-lighting-independent-visibility-signal) |
 | A reader-ready wait throws because `document.body` is null during navigation | [Treat an unparsed body as not ready](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#readiness-must-wait-through-a-document-without-a-body) |
 | An authored underside view is framed but the camera stays above the assembly | [Check camera direction after orbit constraints](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#authored-camera-directions-must-survive-orbit-constraints) |
 | A reset shows solid meshes but its selectors still say Wireframe or exploded | [Reset the displayed controls with the model](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#a-reset-must-reset-its-controls-as-well-as-its-meshes) |

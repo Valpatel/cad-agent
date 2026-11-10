@@ -24,3 +24,27 @@
 The first local layout/release check of the added note retained 67 passes and two layout failures: the incident
 inbox had reached 21 direct files against its 20-file growth bound. The note moved into the existing publication
 incident folder, with its map and symptom link updated; the growth check and exception list remain unchanged.
+
+
+## Added browser suites need a measured whole-job budget
+
+On 2026-11-10 UTC, PR #505 source `05486eb6`, Chromium run 42763870631/job 129655671803, ended cancelled.
+The check annotation explicitly states `The job has exceeded the maximum execution time of 15m0s`. Job start
+was 05:43:14 UTC; the new portable assembly-release suite started at 05:57:16 (14m02 into the job), and was
+cancelled at 05:58:16. The later diagram suite did not run. No assertion failure was reported.
+
+The actual preceding steps passed: Playwright/dependency installation took 3m26, site unit tests 3m11, site
+browser tests 4m17, catalogue 51s, the new shared guide browser suite 48s, legacy file viewer 57s, and the
+remaining completed setup/build/part-table steps used the balance. The separately completed PR #501 Chromium
+job and both local extracted-ZIP suites had exercised the same reader/portable test bytes; they do not turn
+this cancelled whole job into a pass. The portable suite emitted its summary only after completing, so this
+receipt does not establish which final portable case was active at cancellation.
+
+Correction: the existing two-engine browser job has a bounded 20-minute whole-job budget for its now larger
+workload. Every test command, assertion, engine, dependency and individual test timeout stays unchanged. The
+full Python job retains its separate 30-minute cap and its earlier unknown stall remains unknown. A complete
+new-head browser run is still mandatory; the original cancelled result is retained, and an unchanged retry or
+a successful component study cannot waive it.
+
+Evidence: [cancelled Chromium job](https://github.com/Valpatel/cad-agent/actions/runs/42763870631/job/129655671803),
+[prior same-reader portable source](https://github.com/Valpatel/cad-agent/pull/501).

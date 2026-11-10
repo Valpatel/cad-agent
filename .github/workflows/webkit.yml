@@ -6,11 +6,11 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-24.04
-    # About 7 minutes (#315). Most of it is the site's pages in a real browser (website-browser.mjs, whose page checks
-    # the dark theme, #306, doubled: both themes, more widths) and, in the Chromium job, the build's own tests. Building
-    # the site is a few seconds once the diagram cache below is warm. 15 leaves room for a cold cache and a slow runner;
-    # a hung step must not hold a PR for hours.
-    timeout-minutes: 15
+    # Includes the site, legacy viewers and both new assembly-guide/portable-release suites. PR #505's exact
+    # 15-minute cancellation (run 42763870631) reached the portable suite at 14m02 after successful earlier tests;
+    # Playwright/dependency setup alone took 3m26. Twenty minutes bounds this larger complete workload, including
+    # the final diagram suite, without dropping assertions/engines or changing individual test timeouts.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

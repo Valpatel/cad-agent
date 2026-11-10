@@ -47,6 +47,8 @@ test('manual navigation pauses/restarts selected step; loop preserves exact asse
   for (let i = 0; i < 3; i++) player.tick(0.1);
   assert.equal(player.getState().status, 'playing'); assert.equal(player.getState().progress, 1);
   assert.deepEqual(last(f.viewer).offsets_mm, { 'pin-A': [0, 0, 0], 'pin-B': [0, 0, 0] });
+  player.setLoop(false); assert.equal(player.getState().status, 'ended');
+  player.setLoop(true); player.play(); for (let i = 0; i < 3; i++) player.tick(0.1);
   player.tick(0); assert.equal(player.getState().stepId, 'base');
   f.controller.reset(); assert.equal(player.getState().status, 'paused'); assert.equal(f.controller.current, null);
 });

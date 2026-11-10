@@ -26,6 +26,11 @@ for (const [index, version] of [...versions, 'proto'].entries()) {
       { id: 'screws', title: 'Add both screws', text: `Instruction ${version}: fit both screws.`, subassembly: 'frame', parts: names, highlight: names.slice(1), offsets_mm: { 'screw#1': [0, 0, 25 + index * 5], 'screw#2': [0, 0, 25 + index * 5] }, requires: ['base'], camera: { direction: [0.6, -1, -0.35] } },
     ] };
   routes.set(`/${version}/guide.json`, (_, res) => res.end(encode(guide)));
+  if (version === 'v1') {
+    const framing = structuredClone(guide); framing.model.file = '../v1/view.json';
+    framing.steps[1].offsets_mm['screw#1'] = [120, 0, 25];
+    routes.set('/framing/guide.json', (_, res) => res.end(encode(framing)));
+  }
 }
 const legacyShape = cube([0, 0, 0], [10, 20, 30]);
 routes.set('/legacy/small%20part.stl', (_, res) => res.end(legacyShape.bytes));
@@ -102,7 +107,44 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     await page.mouse.click(...point); assert.ok(await page.evaluate(() => window.__viewer.getState().selected !== null));
     await page.screenshot({ path: `${out}/${engine.name()}-${version}.png` });
     cases.push({ version, snapshot: await page.evaluate(() => window.__guide.guide.snapshot), coordinateDelta: forward[1].world.map((n, axis) => n - before[1].world[axis]), reset: true });
+    const playback = await page.evaluate(async () => {
+      const { createGuidePlayback } = await import('/kit/assembly/guide.js');
+      const player = createGuidePlayback(window.__guide.controller, { durationMs: 400,
+        installOrderByStep: { base: ['base'], screws: ['screw#2', 'screw#1'] }, referenceStepIDs: [] });
+      window.__player = player; player.play(); for (let i = 0; i < 4; i++) player.tick(0.1);
+      player.tick(0.1); return player.getState();
+    });
+    assert.equal(playback.partId, 'screw#2'); assert.equal(playback.progress, 0.25);
+    const moving = await inspect(); assert.deepEqual(moving.map(p => p.visible), [true, false, true]);
+    assert.deepEqual(moving.map(p => p.opacity), [1, 1, 1]);
+    // Independently authored fixture distances: 25/30/35 mm, at 25% installation -> 18.75/22.5/26.25 mm.
+    near(moving[2].world.map((n, axis) => n - before[2].world[axis]), [0, (18.75 + index * 3.75) / 1000, 0]);
+    const paused = await page.evaluate(() => { window.__player.pause(); return window.__viewer.parts[2].mesh.position.toArray(); });
+    await page.evaluate(() => window.__player.tick(100)); assert.deepEqual((await inspect())[2].offset, paused);
+    await page.evaluate(() => { window.__player.play(); for (let i = 0; i < 7; i++) window.__player.tick(0.1); });
+    assert.equal(await page.evaluate(() => window.__player.getState().status), 'ended');
+    const installed = await inspect(); assert.ok(installed.every(p => p.visible && p.offset.every(n => n === 0)));
+    await page.evaluate(() => { window.__guide.controller.applyStep('base'); window.__player.play(); window.__guide.controller.applyStep('screws'); });
+    assert.equal(await page.evaluate(() => window.__player.getState().status), 'paused');
+    await page.evaluate(() => window.__player.dispose()); cases.push({ version, orderedPlaybackWorldPoses: true });
   }
+  await visit('framing');
+  const hiddenFrame = await page.evaluate(async () => {
+    const { createGuidePlayback } = await import('/kit/assembly/guide.js'), THREE = await import('/kit/vendor/three/three.module.min.js');
+    const v = window.__viewer, player = createGuidePlayback(window.__guide.controller, { durationMs: 100,
+      installOrderByStep: { base: ['base'], screws: ['screw#2', 'screw#1'] } });
+    player.play(); player.tick(0.1);
+    const points = () => {
+      const p = v.parts[1], b = new THREE.Box3().setFromObject(p.mesh);
+      return Array.from({ length: 8 }, (_, i) => new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(v.stage.camera)).map(q => [q.x, q.y]);
+    };
+    v.frameParts(['base', 'screw#2'], [0.001, -0.001, 1]); const excludesFuture = points().some(([x, y]) => Math.abs(x) > 1 || Math.abs(y) > 1);
+    v.frameParts(['base', 'screw#1', 'screw#2'], [0.001, -0.001, 1], { includeHidden: true });
+    const included = points().every(([x, y]) => Math.abs(x) <= 1 && Math.abs(y) <= 1);
+    const result = { excludesFuture, included, hidden: !v.parts[1].mesh.visible, offset: v.parts[1].mesh.position.toArray() };
+    player.dispose(); return result;
+  });
+  assert.deepEqual(hiddenFrame, { excludesFuture: true, included: true, hidden: true, offset: [120, 0, 25] }); cases.push({ hiddenFutureFraming: hiddenFrame });
   // Fault controls prove the independent coordinate check detects 1000x units, wrong frame and doubled offsets.
   await visit('v1');
   const underside = await page.evaluate(() => {
@@ -125,6 +167,88 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     for (const offset of [[0, 0, 25000], [0, 25, 0], [0, 0, 50]]) { guide.applyStep('screws'); v.parts[1].mesh.position.fromArray(offset); results.push(!check()); }
     guide.applyStep('screws'); results.push(check()); return results;
   }); assert.deepEqual(rejects, [true, true, true, true]); cases.push({ wrongUnitFrameDoubleOffsetControls: rejects });
+  // Actual raster clipping on independent CAD face landmarks, not just a mirrored plane-property assertion.
+  const sections = await page.evaluate(() => {
+    const v = window.__viewer, s = v.stage; v.reset(); s.stop();
+    const names = ['base', 'screw#1', 'screw#2'], gl = s.renderer.getContext(), canvas = s.renderer.domElement;
+    const rgb = point => {
+      const q = v.parts[0].mesh.position.clone().fromArray(point); v.parts[0].mesh.localToWorld(q); q.project(s.camera);
+      const bytes = new Uint8Array(4);
+      gl.readPixels(Math.floor((q.x + 1) * canvas.width / 2), Math.floor((q.y + 1) * canvas.height / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+      return [...bytes].slice(0, 3);
+    };
+    const sample = points => { s.renderer.render(s.scene, s.camera); return points.map(rgb); };
+    const distance = (a, b) => Math.max(...a.map((n, i) => Math.abs(n - b[i])));
+    const rows = [];
+    for (const [axis, direction, points, wrongAxis] of [
+      ['x', [0.001, -0.001, 1], [[10.5, 10.5, 28], [30.5, 10.5, 28]], 'y'],
+      ['y', [0.001, -0.001, 1], [[20, 5, 8], [20, 25, 8]], 'z'],
+      ['z', [0.001, -1, 0.001], [[10.5, 8, 12], [10.5, 8, 24]], 'x'],
+    ]) {
+      v.setSectionPlane({ axis, flipped: false }); v.setSection(1); v.frameParts(names, direction);
+      const baseline = sample(points);
+      v.setSection(0.5); const ordinary = sample(points);
+      v.setSectionPlane({ axis, flipped: true }); const flipped = sample(points);
+      v.setSectionPlane({ axis: wrongAxis, flipped: false }); const wrong = sample(points);
+      const pattern = colors => colors.map((color, i) => distance(color, baseline[i]) < 20);
+      rows.push({ axis, baseline, ordinary, flipped, wrong, ordinaryPattern: pattern(ordinary), flippedPattern: pattern(flipped), wrongPattern: pattern(wrong) });
+    }
+    v.setSectionPlane({ axis: 'y', flipped: true }); v.setSection(1);
+    const disabled = { ...v.getSectionState(), constant: v.parts[0].mesh.material.clippingPlanes[0].constant };
+    const copy = v.getSectionState(); copy.axis = 'z';
+    const before = JSON.stringify(v.getSectionState()), invalid = [];
+    for (const option of [{ axis: 'oblique' }, { axis: 'constructor' }, { axis: 'x', flipped: 1 }]) {
+      try { v.setSectionPlane(option); invalid.push(false); } catch { invalid.push(JSON.stringify(v.getSectionState()) === before); }
+    }
+    v.reset(); const reset = v.getSectionState(); s.start();
+    return { rows, disabled, invalid, reset };
+  });
+  for (const row of sections.rows) {
+    assert.deepEqual(row.ordinaryPattern, [true, false], JSON.stringify(row));
+    assert.deepEqual(row.flippedPattern, [false, true], JSON.stringify(row));
+    assert.notDeepEqual(row.wrongPattern, [true, false], 'Wrong CAD axis must fail the actual pixel control');
+  }
+  assert.deepEqual(sections.disabled, { axis: 'y', flipped: true, depth: 1, constant: 1e9 });
+  assert.deepEqual(sections.invalid, [true, true, true]); assert.deepEqual(sections.reset, { axis: 'x', flipped: false, depth: 1 });
+  cases.push({ actualOrthogonalClipping: sections });
+  // Mount the same shared viewer with optional callbacks, then drive real pointer events over a hard-coded CAD face.
+  await page.evaluate(async () => {
+    const { createViewer } = await import('/kit/viewer.js'); window.__viewer.dispose(); window.__hoverEvents = []; window.__selectEvents = [];
+    window.__viewer = await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'),
+      manifestUrl: new URL('/v1/view.json', location.href).href, manifest: window.__guide.manifest, guideBound: true,
+      onHover: (name, point) => window.__hoverEvents.push({ name, point }),
+      onSelect: (name, interaction) => window.__selectEvents.push({ name, interaction }) });
+    window.__viewer.stage.controls.enableDamping = false;
+    window.__viewer.frameParts(['base', 'screw#1', 'screw#2'], [0.001, -0.001, 1]);
+  });
+  const hoverPoint = await page.evaluate(() => {
+    const v = window.__viewer, q = v.parts[0].mesh.position.clone().set(10.5, 10.5, 28); v.parts[0].mesh.localToWorld(q); q.project(v.stage.camera);
+    const r = v.stage.renderer.domElement.getBoundingClientRect(); return [r.left + (q.x + 1) * r.width / 2, r.top + (1 - q.y) * r.height / 2];
+  });
+  await page.mouse.move(...hoverPoint); await page.waitForFunction(() => window.__hoverEvents.at(-1)?.name === 'screw#1');
+  await page.mouse.click(...hoverPoint); await page.mouse.click(...hoverPoint);
+  const pointerSelections = await page.evaluate(() => window.__selectEvents);
+  assert.deepEqual(pointerSelections.map(row => row.name), ['screw#1', 'screw#1']);
+  assert.ok(pointerSelections.every(row => row.interaction.pointerType === 'mouse' && Number.isFinite(row.interaction.clientX)));
+  await page.evaluate(() => window.__viewer.setSelection('screw#1')); assert.equal(await page.evaluate(() => window.__selectEvents.length), 2);
+  await page.mouse.move(...hoverPoint); await page.mouse.down(); await page.mouse.move(hoverPoint[0] + 60, hoverPoint[1] + 10, { steps: 4 }); await page.mouse.up();
+  assert.equal(await page.evaluate(() => window.__selectEvents.length), 2, 'Orbit drag cannot select or intercept input');
+  await page.evaluate(() => { const v = window.__viewer; v.frameParts(['base', 'screw#1', 'screw#2'], [0.001, -0.001, 1]); v.parts[1].mesh.parent.visible = false; });
+  await page.mouse.move(hoverPoint[0] + 1, hoverPoint[1]); await page.mouse.click(...hoverPoint);
+  assert.equal(await page.evaluate(() => window.__selectEvents.at(-1).name), null, 'Hidden ancestor is not raycast-pickable');
+  await page.evaluate(() => { window.__viewer.parts[1].mesh.parent.visible = true; });
+  await page.mouse.move(hoverPoint[0] + 2, hoverPoint[1]); await page.waitForFunction(() => window.__hoverEvents.at(-1)?.name === 'screw#1');
+  await page.mouse.move(0, 0); await page.waitForFunction(() => window.__hoverEvents.at(-1)?.name === null);
+  const disposedCallbacks = await page.evaluate(async () => {
+    const v = window.__viewer, canvas = v.stage.renderer.domElement; v.dispose();
+    const before = [window.__hoverEvents.length, window.__selectEvents.length];
+    canvas.dispatchEvent(new PointerEvent('pointermove', { clientX: 50, clientY: 50, pointerType: 'mouse' }));
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { clientX: 50, clientY: 50, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { clientX: 50, clientY: 50, pointerId: 1 }));
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
+    return { before, after: [window.__hoverEvents.length, window.__selectEvents.length] };
+  });
+  assert.deepEqual(disposedCallbacks.before, disposedCallbacks.after); cases.push({ actualHoverSelectionDragHiddenDispose: true });
   // Legacy manifest path and API remain usable.
   await page.goto(`${site.url}/kit/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
   await page.waitForFunction(() => document.body.dataset.ready === '1');
@@ -132,6 +256,15 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.equal(await page.locator('#panel input[type=range]').nth(1).inputValue(), '0.5');
   assert.ok(await page.evaluate(() => window.__viewer.stage.renderer.info.render.calls > 0), 'Ready includes an actual drawn frame');
   assert.equal(await page.evaluate(() => window.__viewer.stage.controls.maxPolarAngle), 1.5, 'Ordinary viewer keeps its existing orbit limit');
+  const unsubscribe = await page.evaluate(async () => {
+    let count = 0; const cb = () => count++, stage = window.__viewer.stage;
+    const first = stage.onFrame(cb), second = stage.onFrame(cb);
+    first(); first(); await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
+    const stillOwned = count > 0; second(); const before = count;
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
+    return { stillOwned, stopped: count === before };
+  });
+  assert.deepEqual(unsubscribe, { stillOwned: true, stopped: true }); cases.push({ frameUnsubscribe: unsubscribe });
   assert.ok((await inspect()).some(p => p.offset.some(n => n !== 0))); await page.evaluate(() => window.__viewer.reset());
   assert.ok((await inspect()).every(p => p.offset.every(n => n === 0)));
   await page.evaluate(() => { const color = document.querySelector('#panel input[type=color]'); color.value = '#aa0011'; color.dispatchEvent(new Event('input')); window.__viewer.setExplode(0.2); });

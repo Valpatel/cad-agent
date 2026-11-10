@@ -66,7 +66,11 @@ export function createPlayback(context, { installOrderByStep, referenceStepIDs =
     },
     pause() { if (status === 'playing') { status = 'paused'; notify(); } return snapshot(); },
     setSpeed(value) { live(); if (!Number.isFinite(value) || value < 0.25 || value > 4) invalid('Invalid playback speed'); speed = value; notify(); return snapshot(); },
-    setLoop(value) { live(); if (typeof value !== 'boolean') invalid('Invalid playback loop'); loop = value; notify(); return snapshot(); },
+    setLoop(value) {
+      live(); if (typeof value !== 'boolean') invalid('Invalid playback loop');
+      loop = value; if (!loop && wrap) { wrap = false; status = 'ended'; }
+      notify(); return snapshot();
+    },
     tick(dtSeconds) {
       if (status === 'disposed') return snapshot();
       if (!Number.isFinite(dtSeconds) || dtSeconds < 0) invalid('Invalid playback frame delta');

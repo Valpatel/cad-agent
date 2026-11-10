@@ -963,7 +963,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 611 folders</summary>
+<summary>software — 612 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1222,6 +1222,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/assembly/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-assembly/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/assembly/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/assembly` |
 
 </details>
 
@@ -1910,7 +1923,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 344 folders</summary>
+<summary>tests — 346 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -1952,7 +1965,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary><code>tests/fixtures/README.md</code> — 328 folders</summary>
+<summary><code>tests/fixtures/README.md</code> — 329 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-fixtures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md)
 
@@ -1961,6 +1974,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tests/fixtures` |
+| `tests/fixtures/assembly-guide` |
 | `tests/fixtures/bambu_templates` |
 | `tests/fixtures/cards` |
 | `tests/fixtures/cfd_runs` |
@@ -2457,6 +2471,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tests/webkit` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/assembly/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-assembly/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/assembly/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/assembly` |
 
 </details>
 

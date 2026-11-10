@@ -31,3 +31,17 @@ PLAYWRIGHT_BROWSER=webkit npm --prefix tools/site run test:assembly-guide
 The guide browser checks contain independent +25 mm CAD-Z → +0.025 m stage-Y expectations and reject wrong-axis,
 1000x-unit and doubled-offset controls. A readable screenshot does not prove the CAD order, insertion path,
 physical fit or build qualification. The initial failure and changed diagnostic must not be rewritten as passes.
+
+## A reset must reset its controls as well as its meshes
+
+The portable release browser run at `a25ecf71` produced usable model views, but inspection of its retained
+Chromium v1 and WebKit v2 images showed an assembled solid model alongside a Wireframe selector and a checked
+Show authored explosion control. The prior assertions inspected mesh properties but omitted these displayed
+values. That limited component result did not establish a coherent user-facing reset.
+
+The shared mount now selects an explicit assembled overview, sets Solid, clears explosion, and disables
+instruction-only display controls until another instruction is chosen. Its component suite checks the actual
+DOM values as well as the real mesh state. Programmatic Explode and Section calls also update their existing
+slider readouts, matching the product viewer's original behavior. Ready includes an actual render and a frame;
+loading text does not disappear before the first usable scene. These corrective browser assertions were added
+before the next run; the old images remain evidence of the mismatch, not a passing reset acceptance.

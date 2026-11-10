@@ -22,7 +22,7 @@ instance identities, not catalogue keys. Steps list complete visible membership 
 authored `offsets_mm`, plain instruction `text`, an optional hash-bound poster and CAD camera direction. A step
 may require earlier step IDs. Subassemblies are named visibility sets, not geometric rigid-body declarations.
 
-This folder and the viewer API are being implemented for the first versioned pilot in Gyropup #266, under
+This optional interface supports the first versioned pilot in Gyropup #266, under
 cad-agent #302. The wider build-package feature remains separate.
 
 [Web kit](../README.md)

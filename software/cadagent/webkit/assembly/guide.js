@@ -36,6 +36,20 @@ export function assetURL(file, base, root) {
   }
   return url;
 }
+/** Ordinary viewers keep URL()/fetch semantics, including root/absolute and external CORS URLs.
+ * Guide data remains relative-only. An explicit assetRoot narrows either mode to the caller's bundle. */
+export function viewAssetURL(file, base, { guide = false, assetRoot } = {}) {
+  if (guide) return assetURL(file, base, assetRoot);
+  if (typeof file !== 'string' || !file.trim() || file.length > 2000 || /[\\\x00-\x1f\x7f]/.test(file)) fail('Invalid model asset URL');
+  const url = new URL(file, base);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) fail('Invalid model asset URL');
+  if (assetRoot) {
+    const root = new URL(assetRoot, base);
+    if (/%(?:2e|2f|5c|00)/i.test(url.pathname) || url.origin !== root.origin
+        || !url.pathname.startsWith(root.pathname.endsWith('/') ? root.pathname : root.pathname + '/')) fail('Asset escapes the bundle');
+  }
+  return url;
+}
 function binding(value, where) {
   keys(value, ['file', 'sha256'], where);
   assetURL(value.file, 'https://guide.invalid/bundle/guide.json');
@@ -53,7 +67,7 @@ export function validateView(manifest, { guide = false } = {}) {
     text(p.name, 'Part name', 200);
     if (names.has(p.name)) fail(`Duplicate model part ${p.name}`);
     names.add(p.name);
-    assetURL(!guide && typeof p.file === 'string' ? p.file.replaceAll(' ', '%20') : p.file, 'https://guide.invalid/view.json');
+    viewAssetURL(p.file, 'https://guide.invalid/view.json', { guide });
     if (!Array.isArray(p.bounds_mm) || p.bounds_mm.length !== 6 || !p.bounds_mm.every(Number.isFinite)
         || p.bounds_mm.some(n => Math.abs(n) > 1e9) || [0, 1, 2].some(i => p.bounds_mm[i] > p.bounds_mm[i + 3])) fail(`Invalid bounds for ${p.name}`);
     if (p.color !== undefined && !(typeof p.color === 'string' && (guide ? /^#[0-9a-f]{6}$/i.test(p.color) : p.color.trim().length > 0 && p.color.length <= 128))
@@ -103,7 +117,8 @@ export async function sha256(bytes) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 /** Deadline includes headers and streamed body. Abort never publishes a late completion. */
-export async function readAsset(url, { signal, fetcher = fetch, timeoutMs = 15000, maxBytes = 128 * 1024 * 1024, expectedHash } = {}) {
+export async function readAsset(url, { signal, fetcher = fetch, timeoutMs = 15000, maxBytes = 128 * 1024 * 1024, expectedHash, redirect = 'error' } = {}) {
+  if (!['error', 'follow'].includes(redirect)) fail('Invalid redirect policy');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || !Number.isSafeInteger(maxBytes) || maxBytes <= 0) fail('Invalid asset limits');
   const controller = new AbortController();
   const abort = () => controller.abort(signal?.reason);
@@ -113,7 +128,7 @@ export async function readAsset(url, { signal, fetcher = fetch, timeoutMs = 1500
   let reader;
   const operation = async () => {
     controller.signal.throwIfAborted();
-    const response = await fetcher(url, { signal: controller.signal, redirect: 'error' });
+    const response = await fetcher(url, { signal: controller.signal, redirect });
     controller.signal.throwIfAborted();
     if (!response.ok) fail(`Asset HTTP ${response.status}`);
     if (Number(response.headers.get('content-length')) > maxBytes) fail('Asset exceeds byte limit');
@@ -147,11 +162,11 @@ export function parseJSON(bytes) {
 }
 export async function loadGuide(url, options = {}) {
   const guideURL = new URL(url, globalThis.location?.href || 'https://guide.invalid/');
-  const guide = parseJSON(await readAsset(guideURL, { ...options, maxBytes: 2 * 1024 * 1024 }));
+  const guide = parseJSON(await readAsset(guideURL, { ...options, redirect: 'error', maxBytes: 2 * 1024 * 1024 }));
   if (!record(guide)) fail('Guide must be an object');
   binding(guide.model, 'Model');
   const manifestUrl = assetURL(guide.model.file, guideURL, options.assetRoot);
-  const manifest = parseJSON(await readAsset(manifestUrl, { ...options, expectedHash: guide.model.sha256, maxBytes: 2 * 1024 * 1024 }));
+  const manifest = parseJSON(await readAsset(manifestUrl, { ...options, redirect: 'error', expectedHash: guide.model.sha256, maxBytes: 2 * 1024 * 1024 }));
   validateGuide(guide, manifest);
   // Validate every referenced URL before the renderer starts fetching mesh data.
   for (const part of manifest.parts) assetURL(part.file, manifestUrl, options.assetRoot);
@@ -164,7 +179,7 @@ export function stepState(guide, id, { explode = 1, mode = 'ghost' } = {}) {
   const step = guide.steps.find(s => s.id === id);
   if (!step) fail(`Unknown instruction step ${id}`);
   return { visible: [...step.parts], highlight: [...step.highlight], mode,
-    offsets_mm: Object.fromEntries(Object.entries(step.offsets_mm).map(([name, v]) => [name, v.map(n => n * explode)])), selected: null, isolate: null };
+    offsets_mm: Object.fromEntries(Object.entries(step.offsets_mm).map(([name, v]) => [name, v.map(n => n * explode)])), selected: null, isolate: null, partModes: {} };
 }
 export function createGuideController(viewer, guide) {
   validateGuide(guide, { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
@@ -183,7 +198,7 @@ export function createGuideController(viewer, guide) {
 }
 /** One complete presentation state. Validation precedes all scene mutation. */
 export function validateState(state, partNames) {
-  keys(state, ['visible', 'highlight', 'mode', 'offsets_mm', 'selected', 'isolate'], 'Viewer state');
+  keys(state, ['visible', 'highlight', 'mode', 'offsets_mm', 'selected', 'isolate', 'partModes'], 'Viewer state');
   const names = new Set(partNames);
   refs(state.visible, names, 'Visible parts'); refs(state.highlight, new Set(state.visible), 'Highlight');
   if (!['solid', 'ghost', 'wireframe'].includes(state.mode)) fail('Invalid display mode');
@@ -191,6 +206,10 @@ export function validateState(state, partNames) {
   for (const value of Object.values(state.offsets_mm)) vec(value, 'CAD offset');
   if (state.selected !== null && (!state.visible.includes(state.selected) || !names.has(state.selected))) fail('Unknown or hidden selection');
   if (state.isolate !== null) refs(state.isolate, new Set(state.visible), 'Isolated parts');
+  if (state.partModes !== undefined) {
+    keys(state.partModes, state.visible, 'Part appearances');
+    if (!Object.values(state.partModes).every(mode => ['solid', 'transparent', 'wireframe'].includes(mode))) fail('Invalid part appearance');
+  }
   if (state.selected !== null && state.isolate !== null && !state.isolate.includes(state.selected)) fail('Selection is outside isolation');
   return state;
 }
@@ -199,29 +218,46 @@ export async function mountGuide({ app, panel, title, guideUrl, expectedHash, si
   if (expectedHash !== undefined && !hashPattern.test(expectedHash)) fail('Invalid guide SHA-256');
   const loaded = await loadGuide(guideUrl, { expectedHash, signal, assetRoot });
   const { createViewer } = await import('../viewer.js');
-  const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, signal, onProgress, assetRoot });
-  let controls;
+  let controls, syncAppearance;
+  const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true, signal, onProgress, assetRoot, onStateChange: () => syncAppearance?.() });
   try {
     const controller = createGuideController(viewer, loaded.guide), guide = loaded.guide;
     controls = document.createElement('section'); controls.className = 'hud-section guide-controls';
-    controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><p class="guide-text"></p><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label>';
+    controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><p class="guide-text"></p><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label><p>Selected: <output class="guide-selection">None</output></p><label>Selected part appearance <select aria-label="Selected part appearance" disabled><option value="">Use scene mode</option><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label>';
     controls.querySelector('.guide-version').textContent = `${guide.snapshot.revision} · ${guide.snapshot.status} · ${guide.snapshot.source_commit.slice(0, 10)}`;
     const select = controls.querySelector('select'), mode = controls.querySelector('[aria-label="Instruction display"]'), explode = controls.querySelector('.guide-explode');
+    const overview = document.createElement('option'); overview.value = ''; overview.textContent = 'Assembled overview'; select.append(overview);
     for (const step of guide.steps) { const option = document.createElement('option'); option.value = step.id; option.textContent = step.title; select.append(option); }
+    const appearance = controls.querySelector('[aria-label="Selected part appearance"]');
+    syncAppearance = () => {
+      const state = viewer.getState(); controls.querySelector('.guide-selection').textContent = state.selected || 'None';
+      appearance.disabled = state.selected === null;
+      appearance.value = state.selected && Object.hasOwn(state.partModes, state.selected) ? state.partModes[state.selected] : '';
+    };
     const lifetime = new AbortController();
     const apply = id => {
+      mode.disabled = false; explode.disabled = false;
       controller.applyStep(id, { mode: mode.value, explode: explode.checked ? 1 : 0 });
       select.value = id; const index = guide.steps.findIndex(step => step.id === id);
       controls.querySelector('.guide-text').textContent = guide.steps[index].text;
       controls.querySelector('[data-action="previous"]').disabled = index === 0;
       controls.querySelector('[data-action="next"]').disabled = index === guide.steps.length - 1;
+      syncAppearance();
     };
     const on = (element, event, fn) => element.addEventListener(event, fn, { signal: lifetime.signal });
-    on(select, 'change', () => apply(select.value)); on(mode, 'change', () => apply(select.value)); on(explode, 'change', () => apply(select.value));
+    on(appearance, 'change', () => { const selected = viewer.getState().selected; if (selected) viewer.setPartMode(selected, appearance.value || null); });
+    on(select, 'change', () => select.value ? apply(select.value) : resetOverview()); on(mode, 'change', () => apply(select.value)); on(explode, 'change', () => apply(select.value));
     for (const [action, delta] of [['previous', -1], ['next', 1]]) on(controls.querySelector(`[data-action="${action}"]`), 'click', () => {
       const index = guide.steps.findIndex(step => step.id === select.value); if (guide.steps[index + delta]) apply(guide.steps[index + delta].id);
     });
-    on(controls.querySelector('[data-action="reset"]'), 'click', () => controller.reset());
+    function resetOverview() {
+      controller.reset(); syncAppearance(); select.value = ''; mode.value = 'solid'; explode.checked = false;
+      mode.disabled = true; explode.disabled = true;
+      controls.querySelector('.guide-text').textContent = 'Assembled view. Choose an instruction to resume.';
+      controls.querySelector('[data-action="previous"]').disabled = true;
+      controls.querySelector('[data-action="next"]').disabled = false;
+    }
+    on(controls.querySelector('[data-action="reset"]'), 'click', resetOverview);
     panel.prepend(controls); apply(guide.steps[0].id);
     const dispose = () => { lifetime.abort(); controls.remove(); controller.dispose(); signal?.removeEventListener('abort', dispose); };
     signal?.addEventListener('abort', dispose, { once: true });

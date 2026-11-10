@@ -32,10 +32,15 @@ routes.set('/legacy/small%20part.stl', (_, res) => res.end(legacyShape.bytes));
 routes.set('/legacy/view.json', (_, res) => res.end(encode({ parts: [{ name: 'small part', file: 'small part.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-assembly-guide'; await mkdir(out, { recursive: true });
-const site = await serveWebkit(routes); let browser;
+const site = await serveWebkit(routes); let browser, cors;
+
 const cases = [], errors = [];
 const near = (actual, expected, tolerance = 1e-6) => actual.forEach((n, i) => assert.ok(Math.abs(n - expected[i]) < tolerance, `${actual} != ${expected}`));
 try {
+  cors = await serveWebkit(new Map([['/part.stl', (_, res) => { res.setHeader('Access-Control-Allow-Origin', '*'); res.end(legacyShape.bytes); }]]));
+  for (const [kind, file] of [['absolute', site.url + '/legacy/small%20part.stl'], ['root', '/legacy/small%20part.stl'], ['cors', cors.url + '/part.stl']]) routes.set(`/legacy/${kind}.json`, (_, res) => res.end(encode({ parts: [{ name: 'Published pan base fixture', file, color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
+routes.set('/legacy/redirect.stl', (_, res) => { res.writeHead(302, { Location: '/legacy/small%20part.stl' }); res.end(); });
+routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name: 'redirect', file: '/legacy/redirect.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
   browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
   const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
@@ -66,9 +71,24 @@ try {
     const direct = await inspect(); assert.deepEqual(direct.map(p => p.offset), forward.map(p => p.offset));
     await page.getByLabel('Instruction display', { exact: true }).selectOption('wireframe'); assert.ok((await inspect()).every(p => p.wireframe));
     await page.getByLabel('Instruction display', { exact: true }).selectOption('solid'); assert.ok((await inspect()).every(p => !p.wireframe && p.opacity === 1));
+    await page.evaluate(() => window.__viewer.setSelection('screw#1'));
+    await page.getByLabel('Selected part appearance', { exact: true }).selectOption('transparent');
+    assert.deepEqual((await inspect()).map(p => p.opacity), [1, 0.2, 1], 'Only the selected new screw becomes transparent');
+    await page.getByLabel('Selected part appearance', { exact: true }).selectOption('wireframe');
+    assert.deepEqual((await inspect()).map(p => p.wireframe), [false, true, false]);
+    await page.getByLabel('Instruction step', { exact: true }).selectOption('base');
+    await page.getByLabel('Instruction step', { exact: true }).selectOption('screws');
+    assert.deepEqual(await page.evaluate(() => window.__viewer.getState().partModes), {});
+    assert.ok((await inspect()).every(p => p.opacity === 1 && !p.wireframe));
     await page.evaluate(() => { const v = window.__viewer; v.setSelection('screw#2'); v.applyState({ ...v.getState(), isolate: ['screw#2'] }); });
     assert.deepEqual((await inspect()).map(p => p.visible), [false, false, true]);
     await page.getByRole('button', { name: 'Assembled', exact: true }).click();
+    assert.equal(await page.getByLabel('Instruction display', { exact: true }).inputValue(), 'solid');
+    assert.equal(await page.locator('.guide-explode').isChecked(), false);
+    assert.equal(await page.getByLabel('Instruction step', { exact: true }).inputValue(), '');
+    assert.equal(await page.getByLabel('Selected part appearance', { exact: true }).isDisabled(), true);
+    assert.deepEqual(await page.evaluate(() => window.__viewer.getState().partModes), {});
+    assert.match(await page.locator('.guide-text').innerText(), /Assembled view/);
     const reset = await inspect(); assert.ok(reset.every(p => p.visible && p.offset.every(n => n === 0) && p.opacity === 1 && !p.wireframe && p.emissive === 0));
     assert.deepEqual(reset.map(p => p.color), before.map(p => p.color));
     // Real picking: project the visible base centre and click its canvas position.
@@ -92,6 +112,9 @@ try {
   // Legacy manifest path and API remain usable.
   await page.goto(`${site.url}/kit/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
   await page.waitForFunction(() => document.body.dataset.ready === '1');
+  assert.equal(await page.locator('#panel input[type=range]').nth(0).inputValue(), '0.5');
+  assert.equal(await page.locator('#panel input[type=range]').nth(1).inputValue(), '0.5');
+  assert.ok(await page.evaluate(() => window.__viewer.stage.renderer.info.render.calls > 0), 'Ready includes an actual drawn frame');
   assert.ok((await inspect()).some(p => p.offset.some(n => n !== 0))); await page.evaluate(() => window.__viewer.reset());
   assert.ok((await inspect()).every(p => p.offset.every(n => n === 0)));
   await page.evaluate(() => { const color = document.querySelector('#panel input[type=color]'); color.value = '#aa0011'; color.dispatchEvent(new Event('input')); window.__viewer.setExplode(0.2); });
@@ -100,6 +123,10 @@ try {
   cases.push({ legacy: true });
   await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/view.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacySpacesAndCSSColor: true });
+  for (const kind of ['absolute', 'root', 'cors', 'redirect']) {
+    await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/${kind}.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
+    assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacyURL: kind });
+  }
   await visit('proto');
   assert.ok((await inspect()).every(p => p.offset.every(Number.isFinite)), 'prototype-shaped part names retain a zero finite baseline');
   cases.push({ prototypePartName: true });
@@ -118,7 +145,7 @@ try {
     window.__pendingApp = document.createElement('div'); window.__pendingPanel = document.createElement('div');
     document.body.append(window.__pendingApp, window.__pendingPanel); window.__pendingAbort = new AbortController();
     window.__pendingResult = 'loading';
-    createViewer({ app: window.__pendingApp, panel: window.__pendingPanel, manifestUrl: '/late/view.json', manifest: window.__guide.manifest, signal: window.__pendingAbort.signal, timeoutMs: 5000 })
+    createViewer({ app: window.__pendingApp, panel: window.__pendingPanel, manifestUrl: '/late/view.json', manifest: { ...window.__guide.manifest, parts: window.__guide.manifest.parts.map(p => ({ ...p, file: new URL('/late/' + p.file, location.href).href })) }, signal: window.__pendingAbort.signal, timeoutMs: 5000 })
       .then(v => { v.dispose(); window.__pendingResult = 'unexpected success'; }, () => { window.__pendingResult = 'aborted'; });
   });
   await downloading; await page.evaluate(() => window.__pendingAbort.abort());
@@ -157,4 +184,4 @@ try {
 } catch (error) {
   for (const context of browser?.contexts() || []) for (const page of context.pages()) { try { await page.screenshot({ path: `${out}/${engine.name()}-failure.png` }); } catch {} }
   await writeFile(`${out}/${engine.name()}-failure.json`, JSON.stringify({ message: error.message, cases, errors }, null, 2)); throw error;
-} finally { await browser?.close(); await site.close(); }
+} finally { try { await browser?.close(); } finally { try { await site.close(); } finally { await cors?.close(); } } }

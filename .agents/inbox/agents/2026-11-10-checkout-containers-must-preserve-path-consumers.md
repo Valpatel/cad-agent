@@ -25,3 +25,26 @@ before retirement or relocation. Preserve ambiguous trees intact, repair exact k
 post-state. Keep current source/runtime identities unchanged during a path move. Historical dirty main checkouts
 remain historical; organization alone does not update or qualify their source. This finite reviewed migration
 does not authorize unrelated deletion or establish browser, CI, release or physical-build acceptance.
+
+## A cross-worktree browser probe needs one Playwright installation
+
+On 2026-11-10 UTC, the first combined publication probe for PRs #504 and
+Valpatel/gyropup#273 imported Playwright through both projects' retained dependency
+providers in one Node process. Startup failed with `Requiring @playwright/test
+second time` before any requested page was rendered. Both providers used the same
+version; version equality did not make two module installations a singleton.
+The failed packet remains a harness failure, not a product-render result.
+
+The corrected probe imported only the toolkit's existing installation and used
+that browser API for both products' owned ephemeral servers. The focused toolkit
+packet completed eight actual Chromium/WebKit, desktop/phone, light/dark cases;
+the changed map measured 276 px with no document overflow or page errors. The
+separate favicon packet also completed its eight real cases. Both owned processes
+closed their browsers/listeners; the shared user preview stayed in place. These
+focused packets do not replace either PR's full current CI.
+
+Rule: when a probe spans retained checkout/dependency providers, load Playwright
+from one chosen installation per Node process. Reuse its browser API or run separate
+processes; do not reinstall, flatten or delete another worktree's provider to hide
+a module-identity collision. Preserve the first error and distinguish failure to
+start the harness from failure of the application under test.

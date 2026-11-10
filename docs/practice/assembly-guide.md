@@ -190,3 +190,104 @@ The existing release publisher owns portable runtime and dependency inclusion. A
 serving for module/fetch APIs; static instructions and illustrations remain its script-free fallback. Static VTK
 and interactive Three pictures share semantic pose, instances, camera direction and authored offsets, not exact
 pixels or identical camera projection.
+
+## Validate the trajectories shown by playback
+
+`cadagent.review.gates.playback` feeds explicit instance order and finite authored offsets into the existing
+assembly insertion engine. It checks every newly arriving instance against all previously installed instances,
+including earlier arrivals within the same guide step. A failed arrival remains in the report while later
+operations are evaluated with their declared installed sets. This diagnoses the authored sequence; a later
+clear operation does not rescue the earlier failure.
+
+<details>
+<summary>Export binding, Python API and interpretation</summary>
+
+The ordinary dossier assembly gate retains its sweep from beyond each obstacle. Playback checks only the actual
+finite segment from `offsets_mm[name]` to the assembled pose. Zero offsets establish no insertion path and warn.
+Offsets remain presentation data unless a producer separately establishes manufacturing intent.
+
+A source-bound check needs the exact BREP inputs as well as the displayed mesh inputs. During the native export,
+use the same `Assembly` source shapes for the guide meshes and the binding helper:
+
+```python
+from cadagent.publish.guides import collect_guides
+from cadagent.review.gates.playback import bind_playback_geometry, playback_gate
+
+bundle = collect_guides(project_root, ["exports/guide/guide.json"])[0]
+# source_assembly is the SAME shape/placement set just used to export the guide meshes.
+binding, breps = bind_playback_geometry(source_assembly, bundle)
+# Persist binding as JSON and breps[name] as BREP bytes beside the export's source/runtime receipt.
+report = playback_gate(bundle, binding, breps,
+    install_order_by_step={"install": ["base", "insert", "cover"]},
+    reference_step_ids=["overview"])
+```
+
+The example IDs must be replaced with the actual guide's complete instance order. Omitting
+`install_order_by_step` reads `guide.source.install_order_by_step`; reference overview IDs remain explicit, just
+as in the browser player. The adapter verifies the guide/model/mesh hashes and every BREP payload hash before path queries. It also
+compares located CAD bounds with the actual captured STL vertices and the model bounds, recording all three.
+`bounds_tolerance_mm` is explicit in the report and restricted to 0..1 mm. Its default 0.5 mm is a gross frame
+screen with slack around the 0.25 mm tessellation used by the reference producer; use the producer's recorded
+linear tessellation tolerance when available. Model bounds may describe exact CAD or mesh vertices, with an
+extra 0.01 mm allowance for two-decimal rounding. This is not a clearance allowance or proof of correspondence;
+coarser geometry should be re-exported rather than disabling the frame check. Missing or stale evidence produces a failing verdict. BREP read-back preserves
+the original content hash from its verified serialized bytes, following the existing geometry-cache convention.
+A producer cannot reconstruct this evidence merely by matching instance names. A frozen older producer can
+emit original BREP bytes through its existing `shape_brep_text` helper while exporting STL, then a newer
+consumer calls `bind_playback_breps(bundle, breps, producer_hash_platform=original_platform,
+placements=original_matrices)` without importing or reserializing those bytes. The original producer platform
+must come from its receipt; the consumer runtime is recorded separately. CAD-to-mesh correspondence is an
+explicit producer declaration; the adapter does not prove that a tessellation mathematically equals its BREP.
+
+`run_playback_sequence(world, guide, order)` supplies kernel-free rule testing through the existing
+`SequenceWorld` interface; it establishes no source identity. `playback_operations` exposes the deterministic
+operation list for consumers and tests. No intended-overlap waiver is inferred. Compound meshes remain one
+instance; use the separately qualified subassembly API for internal assembly and rigid-module claims.
+
+Reports keep per-pair blocked, final-overlap, unknown and sample-budget states, contact witnesses, finite travel,
+exact input hashes, order/options digests and runtime platform. A kernel exception becomes an unknown pair and
+preserves earlier findings. A geometric pass still carries explicit unknown support/stability and unverified
+physical assembly: the adapter does not simulate gravity, retention, fixtures, tools, fastener engagement or
+compliance. See the [testing and physics follow-through](assembly-guide-testing.md#geometric-playback-validation-follow-through-512).
+
+</details>
+
+## Preflight a native collection and retain progress
+
+<details>
+<summary>Input-only scope, checkpoint events and incomplete runs</summary>
+
+`playback_gate(..., preflight_only=True)` runs the same captured-input, BREP and CAD/STL/model frame checks and
+returns `gate: assembly-playback-preflight`, `limits.paths_checked: false` and no operations. Its input-only pass
+never qualifies an insertion path. A full check remains the default.
+
+The optional synchronous `on_progress(event)` receives isolated `cad-agent.playback-progress/1` JSON snapshots. Phase events
+identify inputs, global and per-instance load/frame work and world-bounds construction. Operation and pair events
+carry `state: starting|complete`, exact step/instance IDs and operation/pair indices; completed events include
+the recorded result. The preflight-complete event binds input digests and frame evidence. Starting events precede
+potentially slow native work, so a capped process can identify its last active phase or pair.
+
+```python
+import json, os
+
+with progress_path.open("x", encoding="utf-8") as stream:
+    def checkpoint(event):
+        stream.write(json.dumps(event, allow_nan=False) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    report = playback_gate(bundle, binding, breps,
+        preflight_only=True, on_progress=checkpoint)
+```
+
+The product owns the fresh output path, durable storage, detached process and external runtime cap. Callback
+exceptions or an unsupported awaitable, generator or async-generator result stop and fail validation.
+Deferred callback bodies are never iterated or awaited by the gate; checkpoint work must finish synchronously. Earlier completed collisions and the current partial operation's recorded
+pairs remain in the final failure report; remaining pairs are explicitly unchecked. A checkpoint failure after
+all geometry queries still fails the run. Mutating a callback snapshot cannot change the checked geometry or
+internal evidence. `run_playback_sequence` accepts the same optional observer for kernel-free consumers.
+
+This is progress reporting, not automatic resumption or a clearance certificate. A killed process may leave only
+the flushed event prefix; uncompleted/unrecorded work remains unchecked. Keep original failures and source/input
+identities when retrying. No output is written by the toolkit unless the caller supplies a callback.
+
+</details>

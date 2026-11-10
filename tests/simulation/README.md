@@ -63,7 +63,7 @@ flowchart TD
 | `test_fea_materials.py` | The FEA material table pinned to the data sheets it cites |
 | `test_fea_mesh.py` | Mesh control: local refinement, the mesher's identity, slivers and refusals |
 | `test_fit_mesh.py` | `fit_mesh`: an STL over its face budget comes back under it |
-| `test_robot.py` | Robot export: mass properties, URDF writing and checking |
+| `test_robot.py` | Robot export and explicit assembly-stage physics: mass/inertia, URDF/MJCF, support/freefall/tipping, timestep and false-stability controls |
 | `test_simreport.py` | The simulation report page: comparison words, media and limits |
 | `test_simviz.py` | House framing for simulation pictures |
 | `test_simviz_convergence.py` | `convergence_chart`: the whole run and the values a convergence claim rests on |

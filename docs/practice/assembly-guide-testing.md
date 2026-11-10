@@ -131,3 +131,61 @@ The composed publisher CI also caught the missing visual flows on these two newl
 above follow real loader/controller calls and test consumers; the website visual gate stays unchanged.
 
 </details>
+
+## Geometric playback validation follow-through (#512)
+
+The existing assembly gate is the insertion engine for ordered guide validation. Its ordinary dossier sweep
+starts beyond all obstacles; playback instead needs an explicitly bounded path from each authored offset to
+zero. The default dossier behavior must stay unchanged. Guide navigation, model bytes and mechanical evidence
+need distinct bindings: an STL SHA alone cannot establish that a same-named BREP is the same geometry.
+
+<details>
+<summary>Finite-path acceptance controls, physical limits and retained frame failure</summary>
+
+The first slice adds bounded sweeps and a source-bound Python adapter over the existing gate. A producer records
+the guide/model hashes and each actual BREP content hash and placement when exporting the guide meshes from
+those shapes. Validation compares that frozen binding with the current inputs before any geometric query.
+Missing or stale binding fails visibly. The fixture must include an impossible insertion which becomes clear
+after an explicit order change, a side blocker, a finite path that excludes a distant obstacle, units/frame
+mutations, unknown kernel responses, and sample-budget exhaustion. The original failing report remains evidence.
+
+This checks rigid, straight, finite presentation trajectories against earlier installed geometry. It does not
+assert that explode offsets are authored manufacturing instructions, that a grouped mesh is an internally
+assembled rigid module, or that touching parts are retained. Existing separately qualified subassembly plans
+and fastener/tool gates retain those responsibilities.
+
+Support and stability are explicitly unknown until the producer supplies masses/inertias, stage fixtures,
+retention/connectivity assumptions, gravity, friction/contact settings and collision geometry suitable for the
+existing MuJoCo exporter. A prescribed kinematic path can drive a part through a wall, and convex collision
+hulls can fill bearing bores; neither is a physical assembly proof. A later bounded gravity/settle fixture must
+compare a supported stage with an unsupported/falling stage, record solver inputs and drift/contact evidence,
+and keep insertion, retention and gravity results separate. Long native product runs belong on a compute host.
+
+Independent review reproduced a false pass after changing only the insert's CAD matrix by +100 mm while
+leaving guide/STL/BREP bytes unchanged. The regression now requires a failing world-bounds screen before any
+path query, and separately rejects double-applied placements. Bounds compare actual captured STL vertices,
+located CAD and model metadata with explicit bounded tessellation allowance; matching bounds still do not prove
+complete shape correspondence. Original-BREP byte binding preserves the native producer platform and avoids
+rehashing imported shapes. Nonfinite distances/tolerances, infinite or fractional budgets, and undecided
+refinement midpoints have negative controls.
+
+</details>
+
+## Large native collections need input-only preflight and recoverable progress (#517)
+
+A 233-instance source collection can require 27,028 ordered pairs. Extend the existing playback gate with an
+explicit input-only mode, returning a distinct `assembly-playback-preflight` gate and `paths_checked: false`.
+It must reuse captured-input, BREP-load and actual-world-frame checks without running insertion paths.
+
+<details>
+<summary>Checkpoint ownership, failure evidence and acceptance controls</summary>
+
+An optional progress callback receives isolated JSON-safe phase, per-part load/frame, per-pair and per-operation
+snapshots. Emit before potentially slow native work and after completed evidence. The project wrapper owns
+flushed JSONL storage, external runtime caps and detached execution. A callback/storage failure stops validation
+and produces a failing report retaining earlier collisions and partial current-operation evidence. Progress is
+not a resume or clearance certificate; unrecorded or uncompleted pairs remain unchecked. Defaults retain the
+existing full-check behavior. Prove event order, mutation isolation and failures before native work and after a
+known collision, with the existing box and real CAD fixture.
+
+</details>

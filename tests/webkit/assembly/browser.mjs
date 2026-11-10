@@ -39,7 +39,7 @@ try {
   const visit = async (version, viewport = { width: 1100, height: 800 }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${site.url}/kit/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);
-    await page.waitForFunction(() => document.body.dataset.ready === '1', { timeout: 15000 });
+    await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 15000 });
   };
   const inspect = () => page.evaluate(async () => {
     const THREE = await import('/kit/vendor/three/three.module.min.js'), v = window.__viewer;
@@ -70,6 +70,9 @@ try {
     assert.deepEqual(reset.map(p => p.color), before.map(p => p.color));
     // Real picking: project the visible base centre and click its canvas position.
     const point = await page.evaluate(async () => { const THREE = await import('/kit/vendor/three/three.module.min.js'), v = window.__viewer, p = v.parts[0]; const q = new THREE.Vector3(...p.center.toArray()); p.mesh.localToWorld(q); q.project(v.stage.camera); const r = v.stage.renderer.domElement.getBoundingClientRect(); return [r.left + (q.x + 1) * r.width / 2, r.top + (1 - q.y) * r.height / 2]; });
+    const clickTarget = await page.evaluate(([x, y]) => ({ x, y, element: document.elementFromPoint(x, y)?.tagName }), point);
+    cases.push({ pickingTarget: clickTarget });
+    assert.equal(clickTarget.element, 'CANVAS', 'Projected part must be reachable through the real canvas');
     await page.mouse.click(...point); assert.ok(await page.evaluate(() => window.__viewer.getState().selected !== null));
     await page.screenshot({ path: `${out}/${engine.name()}-${version}.png` });
     cases.push({ version, snapshot: await page.evaluate(() => window.__guide.guide.snapshot), coordinateDelta: forward[1].world.map((n, axis) => n - before[1].world[axis]), reset: true });
@@ -105,6 +108,14 @@ try {
     await visit('v1', viewport); await page.getByRole('button', { name: 'Next', exact: true }).focus(); await page.keyboard.press('Enter');
     assert.equal(await page.getByLabel('Instruction step', { exact: true }).inputValue(), 'screws');
     assert.ok(await page.locator('#app canvas').isVisible());
+    const framed = await page.evaluate(async () => {
+      const THREE = await import('/kit/vendor/three/three.module.min.js'), v = window.__viewer;
+      v.stage.root.updateMatrixWorld(true); const r = v.stage.renderer.domElement.getBoundingClientRect(), header = document.querySelector('#topbar').getBoundingClientRect();
+      const points = v.parts.filter(p => p.mesh.visible).flatMap(p => { const b = new THREE.Box3().setFromObject(p.mesh); return Array.from({ length: 8 }, (_, i) => new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(v.stage.camera)).map(q => [r.left + (q.x + 1) * r.width / 2, r.top + (1 - q.y) * r.height / 2]); });
+      const panel = document.querySelector('#panel').getBoundingClientRect();
+      return { points, top: Math.max(r.top, header.bottom), bottom: Math.min(r.bottom, panel.top > r.top + r.height / 2 ? panel.top : r.bottom), right: panel.left > r.left + r.width / 2 ? panel.left : r.right, left: r.left };
+    });
+    assert.ok(framed.points.every(([x, y]) => x >= framed.left - 1 && x <= framed.right + 1 && y >= framed.top - 1 && y <= framed.bottom + 1), JSON.stringify(framed));
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1); assert.equal(overflow, false);
     await page.screenshot({ path: `${out}/${engine.name()}-${viewport.width}.png` }); cases.push({ viewport, keyboard: true });
   }
@@ -112,5 +123,6 @@ try {
   await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ passed: true, cases, errors }, null, 2));
   console.log(JSON.stringify({ passed: true, engine: engine.name(), cases: cases.length, out }));
 } catch (error) {
+  for (const context of browser?.contexts() || []) for (const page of context.pages()) { try { await page.screenshot({ path: `${out}/${engine.name()}-failure.png` }); } catch {} }
   await writeFile(`${out}/${engine.name()}-failure.json`, JSON.stringify({ message: error.message, cases, errors }, null, 2)); throw error;
 } finally { await browser?.close(); await site.close(); }

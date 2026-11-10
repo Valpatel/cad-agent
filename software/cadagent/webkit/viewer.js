@@ -193,13 +193,20 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     shownReadout(); model.updateMatrixWorld(true);
     return structuredClone(state);
   }
+  function updateInsets() {
+    const a = app.getBoundingClientRect(), p = panel.getBoundingClientRect();
+    const header = title?.closest('header')?.getBoundingClientRect();
+    const vertical = Math.min(a.bottom, p.bottom) - Math.max(a.top, p.top);
+    const horizontal = Math.min(a.right, p.right) - Math.max(a.left, p.left);
+    stage.setInsets({ top: header ? Math.max(0, Math.min(a.height - 1, header.bottom - a.top)) : 0,
+      right: vertical > 0 && horizontal > 0 && p.left > a.left + a.width / 2 ? a.right - p.left : 0,
+      bottom: vertical > 0 && horizontal > 0 && p.top > a.top + a.height / 2 ? a.bottom - p.top : 0 });
+  }
   function frameParts(selected = state.visible, direction) {
     ensureLive();
     validateState({ visible: selected, highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null }, names);
     if (direction) {
       if (!Array.isArray(direction) || direction.length !== 3 || !direction.every(Number.isFinite) || !direction.some(n => n !== 0)) throw new Error('Invalid camera direction');
-      // CAD x/y/z -> stage x/z/-y, exactly once.
-
     }
     model.updateMatrixWorld(true);
     const points = [];
@@ -229,6 +236,9 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     const hit = ray.intersectObjects(parts.filter(p => p.mesh.visible).map(p => p.mesh))[0];
     setSelection(parts.find(p => p.mesh === hit?.object)?.name || null);
   }, { signal: events.signal });
+  updateInsets(); frameParts(state.visible);
+  opening.position.copy(stage.camera.position); opening.target.copy(stage.controls.target);
+  window.addEventListener('resize', () => { if (!disposed) { updateInsets(); frameParts(state.visible); } }, { signal: events.signal });
   stage.start(); clearTimeout(timer);
   onProgress('Model ready');
   return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, reset, dispose };

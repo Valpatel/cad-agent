@@ -240,6 +240,9 @@ def main(argv=None):
                       SHOWCASE_PRODUCT=str(product))
     for key in ('PYTHONPATH', 'PYTHONHOME', 'GIT_CONFIG_COUNT', 'GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE'):
         os.environ.pop(key, None)
+    # Retained jobs are frozen root-owned. Trust only this exact pinned toolkit for read-only Git calls,
+    # never change shared/global configuration or use a wildcard ownership exception.
+    os.environ.update(GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='safe.directory', GIT_CONFIG_VALUE_0=str(toolkit))
     assert not any(k.startswith('GYROPUP_') for k in os.environ)
     assert not os.environ.get('LD_PRELOAD') and not os.environ.get('LD_LIBRARY_PATH')
     assert pwd.getpwuid(os.getuid()).pw_name == contract['slot_user'], 'Wrong retained-runtime sharing slot'

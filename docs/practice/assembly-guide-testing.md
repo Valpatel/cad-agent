@@ -7,14 +7,14 @@ from planned feature acceptance. CAD illustrations and browser presentation are 
 
 | Requirement | Test owner / concrete case | Status at this source checkpoint |
 |---|---|---|
-| Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 26 Node contract tests passed on Node 22; final entry-hash counterexample is included |
+| Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 27 Node contract tests passed on Node 22; final entry-hash counterexample is included |
 | Required model members, repeated screws, unknown/duplicate instances, prerequisites and finite vectors | Same file: invalid guide cases and absolute-state test | Passed in the above Node run |
 | HTTP/body deadline, wrong hash, byte cap, abort, missing/corrupt version | Same file: download failure controls and loadGuide binding | Passed in the above Node run |
 | Absolute direct/backward states, previous/future membership and unchanged source pose | `tests/webkit/assembly/browser.mjs`: each v1/v2/WIP Previous/direct step; assembled reset | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
 | Real highlighted/ghost/wireframe/solid states and visible multipart output | Browser suite: real materials/visibility plus retained screenshots | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
 | CAD units/frame applied exactly once | Browser suite: independently hard-coded +25 mm CAD-Z→+0.025 m stage-Y delta, plus wrong 1000x, wrong-axis and doubled-offset fault controls | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI; expectations do not read guide offsets |
 | Picking, selection and explicit isolation | Browser suite: actual projected canvas click plus two repeated screw identities | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
-| Framing, reset and legacy `?manifest=&explode=&section=` behavior | Browser suite: existing route and API round trip | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
+| Framing, reset and legacy `?manifest=&explode=&section=` behavior, spaced filenames and CSS colours | Browser suite: existing route and API round trip | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
 | Resource teardown and cancelled load | Browser suite: geometry/material dispose events, repeated dispose, no canvas, aborted creation | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
 | Two frozen versions and exact-commit WIP use independent scenes/instructions | Browser suite: differing dimensions, steps, hashes, UUIDs and snapshot IDs | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI; product selector/deep links/progress are Gyropup #266 acceptance |
 | Phone portrait/landscape and keyboard navigation | Browser suite: actual previous/next controls and overflow checks | Chromium and WebKit component suites passed at `e219d2ac`; final portable entry binding awaits release/CI |
@@ -38,7 +38,7 @@ service cleanup. The earlier `65d7dcd9` WebKit picking failure and changed `5fe0
 remain retained failures; camera matrices and overlay fitting were corrected with strict projected-bound checks.
 The final top-guide hash forwarding changes only the portable entry binding; its explicit Node corruption control
 passes, while actual extracted-ZIP valid/corrupt-entry browser acceptance belongs to the release integration.
-The focused existing and new Node suites passed 32 tests; exporter/render/layout/area/packaging checks passed
+The focused existing and new Node suites passed 33 tests; exporter/render/layout/area/packaging checks passed
 138 tests with two optional-extra skips. These counts do not substitute for current-head CI or product acceptance.
 
 The existing `webkit.yml` runs the new browser suite in both engines; it does not waive the existing site,

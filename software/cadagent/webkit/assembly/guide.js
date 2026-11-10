@@ -53,10 +53,10 @@ export function validateView(manifest, { guide = false } = {}) {
     text(p.name, 'Part name', 200);
     if (names.has(p.name)) fail(`Duplicate model part ${p.name}`);
     names.add(p.name);
-    assetURL(p.file, 'https://guide.invalid/view.json');
+    assetURL(!guide && typeof p.file === 'string' ? p.file.replaceAll(' ', '%20') : p.file, 'https://guide.invalid/view.json');
     if (!Array.isArray(p.bounds_mm) || p.bounds_mm.length !== 6 || !p.bounds_mm.every(Number.isFinite)
         || p.bounds_mm.some(n => Math.abs(n) > 1e9) || [0, 1, 2].some(i => p.bounds_mm[i] > p.bounds_mm[i + 3])) fail(`Invalid bounds for ${p.name}`);
-    if (p.color !== undefined && !(typeof p.color === 'string' && /^#[0-9a-f]{6}$/i.test(p.color))
+    if (p.color !== undefined && !(typeof p.color === 'string' && (guide ? /^#[0-9a-f]{6}$/i.test(p.color) : p.color.trim().length > 0 && p.color.length <= 128))
         && !(Number.isInteger(p.color) && p.color >= 0 && p.color <= 0xffffff)) fail(`Invalid color for ${p.name}`);
     if (p.visible !== undefined && typeof p.visible !== 'boolean') fail(`Invalid visibility for ${p.name}`);
     if (p.explode !== undefined && p.explode !== null) vec(p.explode, 'Explode direction', true);

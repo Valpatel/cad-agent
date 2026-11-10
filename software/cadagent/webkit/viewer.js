@@ -41,7 +41,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   let totalBytes = 0, totalTriangles = 0;
   for (const p of manifest.parts) {
     onProgress(`Loading model part ${parts.length + 1} of ${manifest.parts.length}…`);
-    const bytes = await readAsset(assetURL(p.file, base, assetRoot), { signal: lifetime.signal, expectedHash: p.sha256 });
+    const bytes = await readAsset(assetURL(p.file.replaceAll(' ', '%20'), base, assetRoot), { signal: lifetime.signal, expectedHash: p.sha256 });
     totalBytes += bytes.byteLength;
     if (totalBytes > 128 * 1024 * 1024) throw new Error('Assembly exceeds the preview byte limit');
     validateSTL(bytes);

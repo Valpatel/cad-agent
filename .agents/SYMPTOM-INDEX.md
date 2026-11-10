@@ -2,6 +2,10 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A reader-ready wait throws because `document.body` is null during navigation | [Treat an unparsed body as not ready](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#readiness-must-wait-through-a-document-without-a-body) |
+| An authored underside view is framed but the camera stays above the assembly | [Check camera direction after orbit constraints](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#authored-camera-directions-must-survive-orbit-constraints) |
+| A reset shows solid meshes but its selectors still say Wireframe or exploded | [Reset the displayed controls with the model](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#a-reset-must-reset-its-controls-as-well-as-its-meshes) |
+| A reset model looks correct in a later screenshot but its projected click is outside the viewport | [Update camera matrices before synchronous projection and picking](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md) |
 | A marked outline entry is outside its panel after the reader scrolls the page | [Observe scroll delivery and preserve same-section visibility](inbox/publish/2026-11-08-outline-visibility-needs-scroll-state.md) |
 | An explicitly empty device selector falls back to listing the account | [Distinguish absence from an invalid selector](inbox/2026-11-07-camera-grants-do-not-prove-video.md#an-explicitly-invalid-selector-must-not-become-a-broader-observation) |
 | A review request remains unanswered while its agent is completed, or an existing exact-source clearance is overlooked | [Start idle reviewers and reuse valid clearances](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#start-idle-reviewers-instead-of-queueing-another-message) |
@@ -10,6 +14,8 @@
 | Published package identifiers become email-protection links despite correct source and revision | [Protect authored code and verify delivered text](inbox/publish/2026-11-07-provider-obfuscation-can-change-code.md) |
 | A catalogue card hides an accepted archive warning or turns an old push into an abandonment claim | [Keep dated report observations separate from adoption decisions](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#keep-dated-report-observations-separate-from-adoption-decisions) |
 | A no-script fold check selects hidden navigation, the inactive theme, or an offscreen summary | [Target the visible article control before ordinary input](inbox/2026-11-07-folder-inventories-need-explicit-owners.md#no-script-fold-checks-need-the-visible-article-control) |
+| Browser dependency installation consumes the job budget before later suites can run | [Pin the matching preprovisioned browser runtime and retain incomplete attempts](inbox/publish/2026-11-07-full-test-caps-need-active-case.md#provision-browser-dependencies-before-the-test-job) |
+| A newly added browser suite starts near the whole-job deadline and is cancelled before later suites | [Budget the measured complete browser workload](inbox/publish/2026-11-07-full-test-caps-need-active-case.md#added-browser-suites-need-a-measured-whole-job-budget) |
 | A full check is cancelled after a progress percentage with no active test or traceback | [Retain the cap and expose the active test](inbox/publish/2026-11-07-full-test-caps-need-active-case.md) |
 | A normal login works but the exact fresh agent profile is logged out, or initialization omits memory evidence | [Name the normal-login trial boundary](inbox/2026-11-06-agent-discovery-and-resource-boundaries.md#separate-a-normal-login-flow-trial-from-a-clean-user-claim) |
 | Every folder has a declared owner but requested local README maps are still absent | [Check literal entry points and their discovery consumers](inbox/2026-11-07-folder-inventories-need-explicit-owners.md#an-ownership-map-does-not-replace-a-requested-folder-readme) |

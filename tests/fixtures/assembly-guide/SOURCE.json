@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/Valpatel/gyropup",
+  "commit": "822a6ff825bc4264cd057785f1dfa3a485e19ccc",
+  "source_directory": "software/site/assets/build-guides/turret-wip-4866459e2abd/",
+  "files": {
+    "guide.json": "527325638b545f4b77857cabd186e1d08465ee387568c500ca8cd0e62193998d",
+    "view.json": "a1b0827d2526e637dfb129c1f87fb8feb95e45a3de4d8429506662daf3716c11"
+  },
+  "scope": "Contract fixture only; original meshes and rendered illustrations are not copied or qualified by this test."
+}

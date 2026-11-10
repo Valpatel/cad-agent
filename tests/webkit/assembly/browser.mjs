@@ -90,7 +90,11 @@ try {
   await page.goto(`${site.url}/kit/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
   await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.ok((await inspect()).some(p => p.offset.some(n => n !== 0))); await page.evaluate(() => window.__viewer.reset());
-  assert.ok((await inspect()).every(p => p.offset.every(n => n === 0))); cases.push({ legacy: true });
+  assert.ok((await inspect()).every(p => p.offset.every(n => n === 0)));
+  await page.evaluate(() => { const color = document.querySelector('#panel input[type=color]'); color.value = '#aa0011'; color.dispatchEvent(new Event('input')); window.__viewer.setExplode(0.2); });
+  assert.equal((await inspect())[0].color, 0xaa0011, 'Legacy colour choice survives explode');
+  await page.evaluate(() => window.__viewer.reset()); assert.equal((await inspect())[0].color, 0x487ca8);
+  cases.push({ legacy: true });
   await visit('proto');
   assert.ok((await inspect()).every(p => p.offset.every(Number.isFinite)), 'prototype-shaped part names retain a zero finite baseline');
   cases.push({ prototypePartName: true });

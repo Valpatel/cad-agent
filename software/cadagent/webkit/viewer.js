@@ -155,13 +155,14 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
         + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(p.name.replaceAll('_', ' '))}</span>`;
       const [vis, col] = row.querySelectorAll('input');
       vis.onchange = () => { state.visible = vis.checked ? [...new Set([...state.visible, p.name])] : state.visible.filter(n => n !== p.name); visibilityChanged(); syncAll(); };
-      col.oninput = () => p.mesh.material.color.set(col.value);
+      col.oninput = () => { userColors.set(p.name, new THREE.Color(col.value)); p.mesh.material.color.set(col.value); };
       vis.dataset.part = p.name;
       rows.push(vis);
       list.appendChild(row);
     }
     syncAll(); syncGroups.push(syncAll);
   }
+  const userColors = new Map();
   const baseline = new Map(parts.map(p => [p.name, { visible: p.mesh.visible, color: p.mesh.material.color.clone() }]));
   const names = parts.map(p => p.name);
   let state = { visible: parts.filter(p => p.mesh.visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null };
@@ -180,7 +181,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       const m = p.mesh.material, highlighted = next.highlight.includes(p.name);
       p.mesh.visible = next.visible.includes(p.name) && (next.isolate === null || next.isolate.includes(p.name));
       p.mesh.position.fromArray(Object.hasOwn(next.offsets_mm, p.name) ? next.offsets_mm[p.name] : [0, 0, 0]);
-      m.color.copy(baseline.get(p.name).color);
+      m.color.copy(userColors.get(p.name) || baseline.get(p.name).color);
       m.emissive.setHex(next.selected === p.name ? 0x005588 : highlighted ? 0x5a2700 : 0);
       m.wireframe = next.mode === 'wireframe';
       m.opacity = next.mode === 'ghost' && !highlighted ? 0.2 : 1;
@@ -214,15 +215,18 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       const b = new THREE.Box3().setFromObject(p.mesh);
       if (!b.isEmpty()) for (let i = 0; i < 8; i++) points.push(new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
     }
-    if (points.length) return stage.fitView(points, { direction: direction ? new THREE.Vector3(direction[0], direction[2], -direction[1]) : stage.camera.position.clone().sub(stage.controls.target) });
+    if (points.length) {
+      const result = stage.fitView(points, { direction: direction ? new THREE.Vector3(direction[0], direction[2], -direction[1]) : stage.camera.position.clone().sub(stage.controls.target) });
+      stage.camera.updateMatrixWorld(true); return result;
+    }
   }
   function setSelection(name) {
     applyState({ ...state, selected: name }); onSelect(name);
   }
   function reset() {
-    ensureLive();
+    ensureLive(); userColors.clear();
     applyState({ visible: parts.filter(p => baseline.get(p.name).visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null });
-    setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update();
+    setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update(); stage.camera.updateMatrixWorld(true);
   }
   const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
   let down;
@@ -232,6 +236,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
     const rect = canvas.getBoundingClientRect();
     pointer.set(2 * (e.clientX - rect.left) / rect.width - 1, 1 - 2 * (e.clientY - rect.top) / rect.height);
+    stage.camera.updateMatrixWorld(true); model.updateMatrixWorld(true);
     ray.setFromCamera(pointer, stage.camera);
     const hit = ray.intersectObjects(parts.filter(p => p.mesh.visible).map(p => p.mesh))[0];
     setSelection(parts.find(p => p.mesh === hit?.object)?.name || null);

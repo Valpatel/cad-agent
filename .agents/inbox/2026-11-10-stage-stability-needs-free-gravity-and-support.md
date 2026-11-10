@@ -58,3 +58,22 @@ First scope: independent rigid groups, fixed descendants and primitive collision
 retention, internal assembly or fixtures from viewer meshes. A passing finite settle does not establish
 indefinite stability, source-to-product correspondence, tolerance/compliance, fastening or physical readiness.
 Long native product scenarios remain detached compute-host runs with external runtime caps and receipts.
+
+## Independent review found three false passes inside the first contract
+
+The independent GPT-6 review of source `6dfca3d0770ed56b43d83d1b20626c038f2153df` ran all 81 existing
+checks successfully in 8.72 s, then reproduced three actual MuJoCo 3.17.0 counterexamples:
+
+| Counterexample | Original observed result | Corrective rule |
+| --- | --- | --- |
+| 20 mm box starts 0.6 mm into floor, timestep 0.01 s | PASS: reported max penetration 0.4644887776 mm after first step relaxed the initial overlap | Apply the same validity checks and maxima to the initial forward state; retain initial penetration explicitly |
+| Mask-zero undeclared plane or mesh in an explicit contact pair | PASS: omitted fixture carried 0.4905 N, half the body's weight, outside effective collider/type coverage | Reject explicit contact pairs in the first scope; masks alone do not enumerate actual MuJoCo collisions |
+| Captured child MJCF model is attached and includes an uncaptured ambient file | PASS with identical captured inputs but effective mass 0.1 kg then 0.2 kg when only ambient file changed | Reject nested model assets/attachments before compilation; top-level captured filenames do not establish transitive source closure |
+
+Original full reports and reproducer remain in the independent review packet, and the findings are published at
+[initial penetration](https://github.com/Valpatel/cad-agent/pull/516#discussion_r4526817291),
+[explicit pairs](https://github.com/Valpatel/cad-agent/pull/516#discussion_r4526817578) and
+[nested ambient resource](https://github.com/Valpatel/cad-agent/pull/516#discussion_r4526817855).
+The correction retains each concrete counterexample in the existing regression harness. Rejected nested inputs
+still record the captured top-level and asset hashes, but are never compiled. A small trusted top-level parser
+is insufficient if a later native compiler interprets captured bytes as another document with its own imports.

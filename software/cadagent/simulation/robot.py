@@ -773,7 +773,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
     descendants and primitive collision geometry. All fixed colliding fixtures
     are explicitly named. Equality/tendon/controller/mocap and articulated stages
     are unsupported rather than inferred from visual meshes. Model/assets are
-    supplied as captured bytes; includes/plugins and external files are refused.
+    supplied as captured bytes; includes/plugins, nested model assets/attachments,
+    explicit contact pairs and external files are refused.
     A pass predicts only this model for this finite window, not physical assembly.
     """
     from dataclasses import asdict
@@ -784,7 +785,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
         "Rigid free groups, fixed declared fixtures and primitive contact geometry in an explicitly authored "
         "SI MuJoCo model; source masses, inertia, friction, rigidity and fixture realization are producer assumptions.",
         "No controls, articulated joints, equality/tendon constraints, mocap, plugins, aerodynamic forces or "
-        "convex-hull mesh collisions; contact and gravity must remain enabled.",
+        "convex-hull mesh collisions; contact and gravity must remain enabled. Explicit contact pairs and "
+        "nested model assets/attachments are unsupported so mask and byte coverage cannot be bypassed.",
         "Maximum COM/orientation drift is measured over the complete finite window; terminal speed and "
         "a force-bearing contact path to a declared fixed fixture are required for each group.",
         "MuJoCo soft contact penetration, solver settings and timestep affect predictions. A passing finite "
@@ -821,22 +823,26 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
                 raise ValueError("MJCF assets require bounded captured bytes and local names")
         if sum(len(payload) for payload in assets.values()) > 128 * 1024 * 1024:
             raise ValueError("captured MJCF assets exceed the total 128 MiB budget")
+        inputs = {"mjcf_sha256": hashlib.sha256(xml).hexdigest(),
+                  "assets_sha256": {k: hashlib.sha256(v).hexdigest() for k, v in sorted(assets.items())},
+                  "scenario": scenario, "monitored_bodies": list(monitored_bodies),
+                  "fixture_geoms": list(fixture_geoms), "duration_s": duration_s,
+                  "expected_gravity_m_s2": list(expected_gravity), "max_steps": max_steps, "limits": asdict(limits)}
         text = xml.decode("utf-8")
         if "<!DOCTYPE" in text.upper() or "<!ENTITY" in text.upper():
             raise ValueError("MJCF document declarations are unsupported")
         root = ET.fromstring(text)
         if root.tag != "mujoco" or any(e.tag in ("include", "extension", "plugin") for e in root.iter()):
             raise ValueError("self-contained MJCF without includes/plugins is required")
+        if any(e.tag in ("model", "attach") for e in root.iter()):
+            raise ValueError("nested model assets and attachments are unsupported; captured top-level bytes are insufficient")
+        if any(e.tag == "pair" for e in root.iter()):
+            raise ValueError("explicit contact pairs are unsupported; collision masks must cover every physical geom")
         for element in root.iter():
             if any(element.get(key) for key in ("meshdir", "texturedir", "assetdir")):
                 raise ValueError("MJCF asset directory indirection is unsupported")
             if element.get("file") is not None and element.get("file") not in assets:
                 raise ValueError("every MJCF file must be a captured asset")
-        inputs = {"mjcf_sha256": hashlib.sha256(xml).hexdigest(),
-                  "assets_sha256": {k: hashlib.sha256(v).hexdigest() for k, v in sorted(assets.items())},
-                  "scenario": scenario, "monitored_bodies": list(monitored_bodies),
-                  "fixture_geoms": list(fixture_geoms), "duration_s": duration_s,
-                  "expected_gravity_m_s2": list(expected_gravity), "max_steps": max_steps, "limits": asdict(limits)}
         mj = require("mujoco", "assembly stage settling")
         for name in ("control", "passive", "contactfilter", "sensor", "act_dyn", "act_gain", "act_bias"):
             getter = getattr(mj, "get_mjcb_" + name, None)
@@ -904,7 +910,18 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
                          "contype": int(model.geom_contype[g]), "conaffinity": int(model.geom_conaffinity[g])}
                          for g in sorted(active)]}
         data = mj.MjData(model)
+
+        def validate_state():
+            nonlocal warnings
+            warnings = [int(w.number) for w in data.warning]
+            arrays = (data.qpos, data.qvel, data.qacc, data.xpos, data.xquat, data.subtree_com)
+            if (any(warnings) or not all(np.isfinite(v).all() for v in arrays)
+                    or any(not math.isfinite(float(c.dist)) for c in data.contact[:data.ncon])
+                    or abs(float(data.time) - completed * dt) > max(1e-10, completed * dt * 1e-9)):
+                raise ValueError("solver warning, nonfinite state or numerical time reset; settle is undecided")
+
         mj.mj_forward(model, data)
+        validate_state()  # the complete window includes the actual initial forward state
         initial_com = {b: data.subtree_com[b].copy() for b in body_ids}
         initial_q = {b: data.xquat[b].copy() for b in body_ids}
         metrics = {name: {"max_com_translation_mm": 0.0, "max_rotation_deg": 0.0,
@@ -912,15 +929,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
                           "body_inertia_kg_m2": model.body_inertia[b].tolist(),
                           "initial_com_m": initial_com[b].tolist()}
                    for name, b in zip(monitored_bodies, body_ids)}
-        checks.append(Check("inputs", "pass", "explicit captured rigid groups, fixtures and effective gravity accepted"))
-        for step in range(steps):
-            mj.mj_step(model, data)
-            mj.mj_forward(model, data)  # refresh world transforms for the integrated state
-            completed = step + 1
-            warnings = [int(w.number) for w in data.warning]
-            if (any(warnings) or not all(np.isfinite(a).all() for a in (data.qpos, data.qvel, data.qacc, data.xpos))
-                    or abs(float(data.time) - completed * dt) > max(1e-10, completed * dt * 1e-9)):
-                raise ValueError("solver warning, nonfinite state or numerical time reset; settle is undecided")
+
+        def observe_pose():
             for name, b in zip(monitored_bodies, body_ids):
                 row = metrics[name]
                 row["max_com_translation_mm"] = max(row["max_com_translation_mm"],
@@ -934,11 +944,24 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
                     if group in body_ids:
                         name = monitored_bodies[body_ids.index(group)]
                         metrics[name]["max_penetration_mm"] = max(metrics[name]["max_penetration_mm"], depth)
+
+        observe_pose()
+        for row in metrics.values():
+            row["initial_penetration_mm"] = row["max_penetration_mm"]
+        checks.append(Check("inputs", "pass", "explicit captured rigid groups, fixtures and effective gravity accepted"))
+        for step in range(steps):
+            mj.mj_step(model, data)
+            mj.mj_forward(model, data)  # refresh world transforms for the integrated state
+            completed = step + 1
+            validate_state()
+            observe_pose()
         graph = {b: set() for b in body_ids}
         fixture_nodes = {"fixture:" + name for name in fixture_geoms}
         force = np.zeros(6)
         for i, contact in enumerate(data.contact[:data.ncon]):
             mj.mj_contactForce(model, data, i, force)
+            if not np.isfinite(force).all():
+                raise ValueError("nonfinite contact force; settle is undecided")
             geoms = (int(contact.geom1), int(contact.geom2))
             names = [mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, g) for g in geoms]
             contacts.append({"geoms": names, "normal_force_n": float(force[0]),

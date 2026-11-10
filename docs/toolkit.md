@@ -1331,12 +1331,17 @@ report = settle_stage(mjcf_path.read_bytes(),
 Lengths in MJCF are metres; report translation/penetration are mm, rotation is degrees, and speeds are mm/s and
 degrees/s. The window is 0.1..10 seconds, with a default 10,000-step budget. Long product models still run on a
 detached compute host with an external runtime cap and source/runtime receipt. Assets are captured bytes, not
-ambient files; includes, plugins, directory indirection and callbacks are refused. First scope is independent
+ambient files; includes, plugins, nested model assets/attachments, explicit contact pairs, directory indirection
+and callbacks are refused before compilation. First scope is independent
 free rigid groups with fixed descendants and primitive collisions. Articulation, implicit equality/tendon or
 controller retention, mocap, gravity compensation/passive joint holding, aerodynamic forces and mesh/heightfield
 collisions are unsupported. A guide mesh cannot supply mass, rigidity, retention or fixtures by inference.
 
-Zero gravity, disabled contact/constraint solving and static monitored bodies fail before integration. Solver
+Zero gravity, disabled contact/constraint solving and static monitored bodies fail before integration.
+State validity and contact penetration are measured at the initial forward state as well as every integrated
+state, so initial interference cannot disappear from the complete-window maximum after relaxation. Explicit
+contact pairs are unsupported because they bypass geom-mask filtering; nested model assets/attachments are
+unsupported because captured child XML could otherwise load uncaptured transitive resources. Solver
 warnings, nonfinite states or a numerical time reset fail while retaining completed-step/metric evidence.
 Each group must finish within drift/speed limits and have a force-bearing contact path to a declared fixture;
 stacked groups may reach that fixture through each other. A compound rigid group remains a producer assumption,

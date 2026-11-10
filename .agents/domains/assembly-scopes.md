@@ -16,3 +16,9 @@ retain maximum drift/rotation and terminal speeds, and require a force-bearing c
 Reject hidden retention/gravity compensation, callbacks and solver resets as stability proof. Preserve model
 bytes, effective settings and timestep controls; a robust pass/fail classification is not a converged transient.
 See the [stage physics evidence and limits](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md).
+
+A complete settling window includes the initial `mj_forward` state, before contact relaxation. Collision masks
+do not cover explicit MJCF pairs, and captured child XML can itself import ambient files. The first rigid-stage
+API rejects explicit pairs and nested model assets/attachments before compilation; do not count mask-only or
+top-level hash coverage as a complete physics/input boundary. Keep concrete negative fixtures for all three
+independent [false-pass controls](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md#independent-review-found-three-false-passes-inside-the-first-contract).

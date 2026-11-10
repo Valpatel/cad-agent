@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A relaxed stage hides initial penetration, an explicit mask-zero pair adds undeclared support, or captured child MJCF loads an ambient include | [Validate the full time window, collider selection and transitive source boundary](inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md#independent-review-found-three-false-passes-inside-the-first-contract) |
 | A stage has zero drift because gravity is disabled or its parts are fixed, or a coarse contact transient looks converged | [Require free gravity, force-bearing fixtures and numerical controls](inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md) |
 | A testing matrix retains its source rows but publishes older requirements as pipe-text paragraphs | [Check contiguous rows and actual Markdown table membership](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#a-feature-matrix-must-stay-a-table-in-the-actual-markdown-consumer) |
 | A clipping test rejects a retained face after its brightness changes | [Use lighting-independent landmarks and off-centre axis/flip mutants](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#clipping-pixels-need-a-lighting-independent-visibility-signal) |

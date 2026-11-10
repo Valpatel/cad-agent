@@ -458,3 +458,75 @@ def test_stage_records_original_captured_asset_bytes_and_rejects_ambient_callbac
 def test_stage_limits_cannot_hide_drift_with_nonfinite_or_invalid_thresholds(value):
     with pytest.raises(ValueError):
         r.SettleLimits(translation_mm=value)
+
+
+def test_stage_complete_window_retains_initial_penetration_before_relaxation():
+    pytest.importorskip("mujoco")
+    xml = b'''<mujoco><option timestep=".01" gravity="0 0 -9.81"/><worldbody>
+      <geom name="floor" type="plane" size="1 1 .1"/>
+      <body name="loose" pos="0 0 .0094"><freejoint/>
+        <inertial pos="0 0 0" mass=".1" diaginertia=".0000066667 .0000066667 .0000066667"/>
+        <geom name="box" type="box" size=".01 .01 .01"/>
+      </body></worldbody></mujoco>'''
+    report = _stage_settle(xml)
+    assert not report["pass"]
+    row = report["bodies"]["loose"]
+    assert row["initial_penetration_mm"] == pytest.approx(.6)
+    assert row["max_penetration_mm"] >= .6 - 1e-9
+    assert any("max_penetration_mm" in c["message"] for c in report["findings"])
+
+
+@pytest.mark.parametrize("kind", ["plane", "mesh"])
+def test_stage_explicit_mask_zero_contact_pair_cannot_supply_undeclared_support(kind):
+    asset = b'' if kind == "plane" else b'''<asset><mesh name="slab" vertex="-.1 -.1 -.02 .1 -.1 -.02 .1 .1 -.02
+      -.1 .1 -.02 -.1 -.1 0 .1 -.1 0 .1 .1 0 -.1 .1 0"/></asset>'''
+    geom = (b'<geom name="undeclared" type="plane" size="1 1 .1" contype="0" conaffinity="0"/>'
+            if kind == "plane" else b'<geom name="undeclared" type="mesh" mesh="slab" contype="0" conaffinity="0"/>')
+    xml = b'''<mujoco><option timestep=".002" gravity="0 0 -9.81"/>''' + asset + b'''<worldbody>
+      <geom name="floor" type="plane" size="1 1 .1"/>''' + geom + b'''
+      <body name="loose" pos="0 0 .01"><freejoint/>
+        <inertial pos="0 0 0" mass=".1" diaginertia=".0000066667 .0000066667 .0000066667"/>
+        <geom name="box" type="box" size=".01 .01 .01"/>
+      </body></worldbody><contact><pair geom1="box" geom2="undeclared"/></contact></mujoco>'''
+    report = _stage_settle(xml)
+    assert not report["pass"] and "explicit contact pairs" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0 and report["bodies"] == {}
+
+
+def test_stage_nested_model_asset_cannot_read_uncaptured_ambient_includes(tmp_path):
+    import hashlib
+    # The independent original control passed with different effective masses but identical captured input hashes.
+    # Keep the same real MJCF route and change only the uncaptured dependency; reject before native compilation.
+    ambient = tmp_path / "ambient.xml"
+    child = f'<mujoco><include file="{ambient}"/></mujoco>'.encode()
+    xml = b'''<mujoco><option timestep=".002" gravity="0 0 -9.81"/>
+      <asset><model name="child" file="child.xml"/></asset><worldbody>
+      <geom name="floor" type="plane" size="1 1 .1"/>
+      <attach model="child" prefix="attached-"/></worldbody></mujoco>'''
+    reports = []
+    for mass in (".1", ".2"):
+        ambient.write_text(f'''<mujocoinclude><worldbody><body name="loose" pos="0 0 .01"><freejoint/>
+          <inertial pos="0 0 0" mass="{mass}" diaginertia=".0000066667 .0000066667 .0000066667"/>
+          <geom name="box" type="box" size=".01 .01 .01"/>
+          </body></worldbody></mujocoinclude>''')
+        report = r.settle_stage(xml, monitored_bodies=["attached-loose"], fixture_geoms=["floor"],
+                                scenario="Synthetic nested-resource counterexample", assets={"child.xml": child})
+        assert not report["pass"] and "nested model assets" in report["findings"][0]["message"]
+        assert report["completed_steps"] == 0 and report["bodies"] == {}
+        reports.append(report)
+    assert reports[0]["inputs"] == reports[1]["inputs"]
+    assert reports[0]["inputs"]["assets_sha256"]["child.xml"] == hashlib.sha256(child).hexdigest()
+
+
+def test_stage_initial_forward_warnings_are_rejected_before_any_integration(tmp_path, monkeypatch):
+    mj = pytest.importorskip("mujoco")
+    forward = mj.mj_forward
+
+    def initial_warning(model, data):
+        forward(model, data)
+        data.warning[0].number += 1
+
+    monkeypatch.setattr(mj, "mj_forward", initial_warning)
+    report = _stage_settle(_stage_xml(tmp_path))
+    assert not report["pass"] and "solver warning" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0 and report["solver_warning_counts"][0] == 1

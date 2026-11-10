@@ -49,3 +49,31 @@ added only the review-folder owner/route and updated the agent-folder count. Wit
 runtime and unchanged locked dependencies, `node --test tests/site/website-repo-map.test.mjs` then passed
 28 tests, skipped its opt-in real-browser diagram test, and reported 1,041 checked folders. The full CI
 website build and both browser jobs remain required; this local structural pass does not substitute for them.
+
+## Long reference additions need their published-page checks again
+
+On 2026-11-10, corrected-map head `ba8de8cc` passed all 168 website Node cases (167 passed, one skipped),
+then both real browser consumers rejected the extended assembly testing reference page:
+
+```text
+run 42854404651, job 129963362700, browser (chromium)
+walls /docs/practice/assembly-guide-testing: 1530px, 645-2175px; limit 1200px
+run 42854404651, job 129963362158, browser (webkit)
+walls /docs/practice/assembly-guide-testing: 1499px, 644-2143px; limit 1200px
+```
+
+Cause: the finite-path and progress references extended an already folded testing document with a new continuous
+stretch of prose. Existing source, map and Python passes did not establish the rendered reading length. The
+correction keeps both section overviews visible and puts their detailed controls/evidence in named native
+disclosures, preserving every original instruction. No wall threshold, backlog exception or test changes.
+
+A bounded actual Google Chrome 151.0.7922.71 probe imported the existing `site-walls.mjs` measure at 1366×800.
+The immutable pre-correction page measured 1,503 px and failed the unchanged 1,200 px limit; the working-draft
+correction measured 729 px, with its actual diagram rendered. Both new named summaries opened by ordinary clicks
+and exposed the original BREP-binding and callback/storage-failure text. The probe used the existing Node/browser
+and locked dependencies, and explicitly requested client-drawn diagrams; it is a local before/after control,
+not the complete pre-rendered CI build or WebKit verdict. Original CI failures and their artifacts remain visible.
+
+Corrective rule: after extending a published reference page, repeat its rendered-page consumers even when the
+previous version passed. Keep a concise visible overview and accessible detailed references; verify each fold
+opens and retains the engineering limits. Current-head complete browser CI still gates integration.

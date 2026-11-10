@@ -139,6 +139,9 @@ starts beyond all obstacles; playback instead needs an explicitly bounded path f
 zero. The default dossier behavior must stay unchanged. Guide navigation, model bytes and mechanical evidence
 need distinct bindings: an STL SHA alone cannot establish that a same-named BREP is the same geometry.
 
+<details>
+<summary>Finite-path acceptance controls, physical limits and retained frame failure</summary>
+
 The first slice adds bounded sweeps and a source-bound Python adapter over the existing gate. A producer records
 the guide/model hashes and each actual BREP content hash and placement when exporting the guide meshes from
 those shapes. Validation compares that frozen binding with the current inputs before any geometric query.
@@ -166,11 +169,16 @@ complete shape correspondence. Original-BREP byte binding preserves the native p
 rehashing imported shapes. Nonfinite distances/tolerances, infinite or fractional budgets, and undecided
 refinement midpoints have negative controls.
 
+</details>
+
 ## Large native collections need input-only preflight and recoverable progress (#517)
 
 A 233-instance source collection can require 27,028 ordered pairs. Extend the existing playback gate with an
 explicit input-only mode, returning a distinct `assembly-playback-preflight` gate and `paths_checked: false`.
 It must reuse captured-input, BREP-load and actual-world-frame checks without running insertion paths.
+
+<details>
+<summary>Checkpoint ownership, failure evidence and acceptance controls</summary>
 
 An optional progress callback receives isolated JSON-safe phase, per-part load/frame, per-pair and per-operation
 snapshots. Emit before potentially slow native work and after completed evidence. The project wrapper owns
@@ -179,3 +187,5 @@ and produces a failing report retaining earlier collisions and partial current-o
 not a resume or clearance certificate; unrecorded or uncompleted pairs remain unchecked. Defaults retain the
 existing full-check behavior. Prove event order, mutation isolation and failures before native work and after a
 known collision, with the existing box and real CAD fixture.
+
+</details>

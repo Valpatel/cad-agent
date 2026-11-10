@@ -186,10 +186,16 @@ def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
         # what PrusaSlicer's log said (Bambu Studio rows carry none of these)
         if row.get("stability_issues"):
             _say(f"      stability: {', '.join(row['stability_issues'])}")
+        if row.get("stability_checked") is False:
+            _say(f"      {row.get('stability_note') or 'print stability not checked: supports are on'}")
         for level in ("errors", "warnings"):
             for line in row.get(level) or []:
                 if "print stability issues" not in line:      # listed above, by category
                     _say(f"      {level[:-1]}: {line}")
+    unchecked = [n for n, row in rep["parts"].items() if row.get("stability_checked") is False]
+    if unchecked:
+        _say(f"{len(unchecked)} part(s) sliced with supports on, so PrusaSlicer did not check print stability: "
+             f"{', '.join(unchecked)}")
     not_ok = [n for n, row in rep["parts"].items() if row.get("ok") is False and row.get("grams")]
     if not_ok:
         _say(f"{len(not_ok)} part(s) sliced but not ok (a slicer error or print stability issue): {', '.join(not_ok)}")

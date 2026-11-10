@@ -325,6 +325,75 @@ def test_gcode_without_a_weight_says_so(bundle_root, tmp_path, monkeypatch):
     assert r['grams'] is None and 'filament used [g]' in r['error']
 
 
+# --- whether PrusaSlicer looks for stability issues at all (#522) ---
+
+ENFORCERS_ONLY = {'support_material': '1', 'support_material_auto': '0', 'support_material_enforce_layers': '0'}
+
+
+def _threemf(path, model=b'<model/>', config=None):
+    import zipfile
+    with zipfile.ZipFile(path, 'w') as zf:
+        zf.writestr('3D/3dmodel.model', model)
+        if config is not None:
+            zf.writestr('Metadata/Slic3r_PE_model.config', config)
+    return path
+
+
+def test_enforcers_only_with_no_enforcers_is_sliced_with_supports_off(tmp_path):
+    """Prusa's MK4S and XL input-shaper profiles: supports for enforcers only. PrusaSlicer then skips its stability
+    check, so a bare model is sliced with support_material = 0 (the same toolpaths) and the check runs."""
+    cfg, said = slicer_prusa.stability_setup(dict(RESOLVED, **ENFORCERS_ONLY), _threemf(tmp_path / 'm.3mf'))
+    assert cfg['support_material'] == '0' and cfg['support_material_auto'] == '0'
+    assert said['supports'] == 'none' and said['stability_checked'] is True and 'support_material = 0' in said['stability_note']
+    stl = tmp_path / 'm.stl'
+    stl.write_text('solid')
+    assert slicer_prusa.stability_setup(dict(ENFORCERS_ONLY), stl)[1]['stability_checked'] is True
+    # supports already off: nothing changed, nothing to note
+    off = dict(ENFORCERS_ONLY, support_material='0')
+    assert slicer_prusa.stability_setup(off, stl) == (off, {'supports': 'none', 'stability_checked': True,
+                                                            'stability_note': None})
+
+
+@pytest.mark.parametrize('change, model, overrides, supports, why', [
+    ({'support_material_auto': '1'}, b'<model/>', None, 'automatic', 'automatic supports are on'),
+    ({'support_material': '0', 'support_material_enforce_layers': '3'}, b'<model/>', None, 'enforcers only',
+     'support_material_enforce_layers'),
+    ({}, b'<triangle slic3rpe:custom_supports="4"/>', None, 'enforcers only', 'its own support settings'),
+    ({}, b'<model/>', {'support_material': 1}, 'enforcers only', 'support_material is on'),
+])
+def test_supports_that_are_on_are_left_alone_and_the_check_is_recorded_as_not_run(tmp_path, change, model, overrides,
+                                                                                    supports, why):
+    base = {**RESOLVED, **ENFORCERS_ONLY, **change}
+    cfg, said = slicer_prusa.stability_setup(base, _threemf(tmp_path / 'm.3mf', model), overrides)
+    assert cfg == base                                             # the slice is what the profile and the model say
+    assert said['supports'] == supports and said['stability_checked'] is False
+    assert why in said['stability_note'] and 'did not run' in said['stability_note']
+
+
+def test_a_models_own_support_data_is_found_in_its_model_and_config_files(tmp_path):
+    assert not slicer_prusa.model_sets_supports(_threemf(tmp_path / 'bare.3mf', config=b'<config><object id="1"/></config>'))
+    for i, config in enumerate((b'<metadata type="volume" key="volume_type" value="SupportEnforcer"/>',
+                                b'<metadata type="object" key="support_material" value="1"/>')):
+        assert slicer_prusa.model_sets_supports(_threemf(tmp_path / f'own{i}.3mf', config=config))
+    broken = tmp_path / 'broken.3mf'
+    broken.write_text('not a zip')
+    assert slicer_prusa.model_sets_supports(broken)                # unreadable: leave the slice as the profile says
+    assert not slicer_prusa.model_sets_supports(tmp_path / 'part.stl')
+
+
+def test_the_slice_writes_supports_off_and_records_it(bundle_root, tmp_path, monkeypatch):
+    monkeypatch.setattr(slicer_prusa, 'executable', lambda: ['/fake/prusa-slicer'])
+    monkeypatch.setattr(slicer_prusa.subprocess, 'run', fake_run([], resolved=dict(RESOLVED, **ENFORCERS_ONLY)))
+    r = slicer_prusa.slice_part(_threemf(tmp_path / 'm.3mf'), tmp_path / 'w', 'Test MK4S', '0.20mm TEST', 'Test PLA')
+    assert read_ini(tmp_path / 'w' / 'config.ini')['support_material'] == '0'
+    assert r['supports'] == 'none' and r['stability_checked'] is True and r['ok'] is True
+    monkeypatch.setattr(slicer_prusa.subprocess, 'run',
+                        fake_run([], resolved={**RESOLVED, **ENFORCERS_ONLY, 'support_material_auto': '1'}))
+    r = slicer_prusa.slice_part(_threemf(tmp_path / 'm.3mf'), tmp_path / 'w2', 'Test MK4S', '0.20mm TEST', 'Test PLA')
+    assert read_ini(tmp_path / 'w2' / 'config.ini')['support_material'] == '1'
+    assert r['supports'] == 'automatic' and r['stability_checked'] is False and r['ok'] is True
+
+
 # --- what PrusaSlicer's log says ---
 
 LOGS = Path(__file__).resolve().parents[1] / 'fixtures' / 'prusa_logs'
@@ -448,6 +517,25 @@ def test_prusaslicer_names_the_stability_issues_of_an_overhang(home_work):
                                 slicer_prusa.FILAMENTS['pla'], {'support_material': 0, 'support_material_auto': 0})
     assert r['grams'] and r['exit_code'] == 0 and r['ok'] is False, r
     assert 'Long bridging extrusions' in r['stability_issues'], r
+    assert r['supports'] == 'none' and r['stability_checked'] is True and r['stability_note'] is None
+
+
+@pytest.mark.skipif(not _installed(slicer_prusa.PRINTER), reason='PrusaSlicer or its MK4S profile not installed')
+def test_prusaslicer_flags_an_overhang_with_the_stock_profile(home_work):
+    """#522: the stock MK4S profile supports enforcers only, and PrusaSlicer 2.9.6 then says nothing about a plate
+    on two thin posts. With no overrides the slice is made with supports off, so it does; with automatic supports
+    the plate is supported, the check does not run and the row says so."""
+    trimesh = pytest.importorskip('trimesh')
+    stl = home_work / 'overhang.stl'
+    trimesh.util.concatenate([trimesh.creation.box(extents=(4, 4, 20)).apply_translation((0, 0, 10)),
+                              trimesh.creation.box(extents=(4, 4, 20)).apply_translation((25, 25, 10)),
+                              trimesh.creation.box(extents=(60, 60, 2)).apply_translation((0, 0, 21))]).export(str(stl))
+    args = (slicer_prusa.PRINTER, slicer_prusa.PROCESS, slicer_prusa.FILAMENTS['pla'])
+    r = slicer_prusa.slice_part(stl, home_work / 'out', *args, {})
+    assert r['ok'] is False and r['stability_issues'] and r['stability_checked'] is True and r['supports'] == 'none', r
+    r = slicer_prusa.slice_part(stl, home_work / 'auto', *args, {'support_material': 1, 'support_material_auto': 1})
+    assert r['ok'] is True and r['stability_issues'] == [] and r['stability_checked'] is False, r
+    assert r['supports'] == 'automatic' and 'automatic supports are on' in r['stability_note']
 
 
 @pytest.mark.skipif(not _installed(slicer_prusa.PRINTER), reason='PrusaSlicer or its MK4S profile not installed')

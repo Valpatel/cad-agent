@@ -1582,6 +1582,17 @@ Runs `prusa-slicer` (on PATH, or the flatpak `com.prusa3d.PrusaSlicer`).
   do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok. The
   stability check is PrusaSlicer's own heuristic, run with the settings sliced: an ok part can still print badly, and
   turning supports or a brim on may clear an issue rather than fix the geometry.
+- **When the stability check runs:** PrusaSlicer looks for stability issues only with supports off
+  (`support_material = 0` and `support_material_enforce_layers = 0`; seen with 2.9.6). Prusa's input-shaper print
+  profiles, the default `0.20mm SPEED @MK4S 0.4` among them, set supports "for support enforcers only"
+  (`support_material = 1`, `support_material_auto = 0`), and with that an unsupported shelf slices with no warning.
+  So when the profile supports enforcers only, the 3MF carries no support data of its own (painted supports,
+  enforcer or blocker volumes, an object's own support settings) and `cad.slicer.overrides` does not set
+  `support_material`, the part is sliced with `support_material = 0`: the same toolpaths, and the check runs. Each
+  row records `supports` (`none`, `enforcers only` or `automatic`), `stability_checked` and, when something was
+  changed or not checked, `stability_note`. With automatic supports, enforced layers, a model's own supports or an
+  override that turns supports on, the slice is left alone, `stability_checked` is false and `cad-agent slice` says
+  so: `ok` then means only that the part sliced.
 - **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry
   no Bambu Studio project settings for a PrusaSlicer project.
 

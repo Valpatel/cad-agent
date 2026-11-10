@@ -124,12 +124,13 @@ try {
   await page.unroute('**/late/0.stl'); cases.push({ abortedLateLoadRetainsScene: true });
   const teardown = await page.evaluate(async () => {
     const v = window.__viewer; let geometries = 0, materials = 0;
+    const sentinel = document.createElement('p'); sentinel.textContent = 'Caller-owned controls'; document.querySelector('#panel').append(sentinel);
     for (const p of v.parts) { p.mesh.geometry.addEventListener('dispose', () => geometries++); p.mesh.material.addEventListener('dispose', () => materials++); }
     v.dispose(); v.dispose(); let rejected = false; try { v.reset(); } catch { rejected = true; }
     const { createViewer } = await import('/kit/viewer.js'); const controller = new AbortController(); controller.abort();
     let cancelled = false; try { await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'), manifestUrl: '/v1/view.json', signal: controller.signal }); } catch { cancelled = true; }
-    return { geometries, materials, canvases: document.querySelectorAll('#app canvas').length, rejected, cancelled };
-  }); assert.deepEqual(teardown, { geometries: 3, materials: 3, canvases: 0, rejected: true, cancelled: true }); cases.push({ teardown });
+    return { geometries, materials, canvases: document.querySelectorAll('#app canvas').length, rejected, cancelled, callerControlsPreserved: sentinel.isConnected };
+  }); assert.deepEqual(teardown, { geometries: 3, materials: 3, canvases: 0, rejected: true, cancelled: true, callerControlsPreserved: true }); cases.push({ teardown });
   for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
     await visit('v1', viewport); await page.getByRole('button', { name: 'Next', exact: true }).focus(); await page.keyboard.press('Enter');
     assert.equal(await page.getByLabel('Instruction step', { exact: true }).inputValue(), 'screws');

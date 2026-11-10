@@ -1,0 +1,33 @@
+# Camera setters must update matrices before projection and picking
+
+On 2026-11-10 UTC, the first shared assembly-guide component run at `65d7dcd9` passed Chromium but failed the
+WebKit picking assertion after assembled reset. The failure is retained; it did not establish a cause by itself.
+Inspection of the phone image also showed the upper model occluded by the page header. Source dimensions alone
+were insufficient to prove that instructions and geometry were usable together.
+
+The changed framing run at `5fe0132d` retained the projected click target before input. It was outside the viewport
+at x=-278.71, y=786.96, with no element under it, although the later screenshot showed the reset scene. The camera
+position/target setters had changed scene state without synchronously updating `matrixWorldInverse`. Projection
+and raycasting could read the previous camera matrix until the next render frame.
+
+Correction: fit against the real header/panel insets, and update camera/world matrices before synchronous
+projection or picking. Do not add a sleep or converge geometry until it passes. `tests/webkit/assembly/browser.mjs`
+asserts the projected click is actually over the canvas, checks geometry stays outside the phone header/panel,
+and exercises the unchanged actual picking path. The changed `3c4dbe21` WebKit run passed its component cases;
+Chromium framing had also passed at `c01c0ecd`. These are component outcomes, not product or release acceptance.
+
+The same implementation keeps caller-owned panel controls separate from its own wrapper, aborts pending asset
+reads and disposes its own mesh/material resources. Its cleanup regression must prove an unrelated panel control
+survives disposal. A stage's renderer cleanup alone does not establish ownership of every surrounding DOM node.
+
+Commands (existing Node 22 and installed browser context, no dependency installation):
+
+```sh
+node --test tests/webkit/assembly/guide.test.mjs
+PLAYWRIGHT_BROWSER=chromium npm --prefix tools/site run test:assembly-guide
+PLAYWRIGHT_BROWSER=webkit npm --prefix tools/site run test:assembly-guide
+```
+
+The guide browser checks contain independent +25 mm CAD-Z → +0.025 m stage-Y expectations and reject wrong-axis,
+1000x-unit and doubled-offset controls. A readable screenshot does not prove the CAD order, insertion path,
+physical fit or build qualification. The initial failure and changed diagnostic must not be rewritten as passes.

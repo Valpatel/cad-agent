@@ -15,7 +15,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, onSelect = () => {} }) {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
   const lifetime = new AbortController(), parts = [], events = new AbortController();
-  let stage, timer, disposed = false, committed = false;
+  let stage, timer, controlsHost, disposed = false;
   const cancel = () => { lifetime.abort(signal?.reason); dispose(); };
   signal?.addEventListener('abort', cancel, { once: true });
   if (signal?.aborted) cancel();
@@ -25,7 +25,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     disposed = true; lifetime.abort(); events.abort(); signal?.removeEventListener('abort', cancel);
     clearTimeout(timer); stage?.dispose();
     for (const p of parts) { p.mesh.geometry.dispose(); p.mesh.material.dispose(); }
-    if (committed) panel.replaceChildren();
+    controlsHost?.remove();
   }
   try {
   lifetime.signal.throwIfAborted();
@@ -65,7 +65,6 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   lifetime.signal.throwIfAborted();
   onProgress('Preparing the 3D view…');
   if (title) title.textContent = manifest.title ?? 'Model';
-  committed = true;
   // Stand the model on the floor, centred.
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
@@ -96,13 +95,15 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   const xmin = box.min.x, xmax = box.max.x;
   function setSection(f) { if (disposed || !Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid section factor'); clip.constant = f >= 1 ? 1e9 : -(xmin + (xmax - xmin) * f - mid.x); }
 
+  // Own only this wrapper; a product may have other controls in its panel.
+  controlsHost = document.createElement('div'); panel.append(controlsHost);
   // Panel
-  const info = readouts(section(panel, 'Model', { note: `${parts.length} parts` }));
+  const info = readouts(section(controlsHost, 'Model', { note: `${parts.length} parts` }));
   const shownReadout = () => info.set([['size', `${Math.round(size.x * 1000)} × ${Math.round(size.z * 1000)} × ${Math.round(size.y * 1000)} mm`],
                                        ['parts shown', String(parts.filter((p) => p.mesh.visible).length)],
                                        ...(manifest.skipped?.length ? [['not exported', manifest.skipped.join(', '), 'warn']] : [])]);
   shownReadout();
-  const views = section(panel, 'View');
+  const views = section(controlsHost, 'View');
   slider(views, { label: 'Explode', min: 0, max: 1, step: 0.01, value: 0, fmt: (v) => `${Math.round(v * 100)}%`, onInput: setExplode });
   slider(views, { label: 'Section cut', min: 0, max: 1, step: 0.01, value: 1, fmt: (v) => (v >= 1 ? 'off' : `${Math.round(v * 100)}%`), onInput: setSection });
   slider(views, { label: 'Light', min: 0, max: 1, step: 0.01, value: 0.85, fmt: (v) => v.toFixed(2), onInput: (v) => stage.setSceneLight(v) });
@@ -123,7 +124,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   for (const category of categories) {
     const members = parts.filter((p) => (p.category ?? '') === category);
     // a section whose parts all start hidden (a reference board, variants) starts folded
-    const list = section(panel, category || 'Parts', { note: categories.length > 1 ? `${members.length} parts` : 'show · colour',
+    const list = section(controlsHost, category || 'Parts', { note: categories.length > 1 ? `${members.length} parts` : 'show · colour',
                                                        open: categories.length === 1 || members.some((p) => p.mesh.visible) });
     const rows = [];
     let all = null;
@@ -189,7 +190,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     }
     state = nextState;
     // Existing visibility controls reflect programmatic step state too.
-    for (const input of panel.querySelectorAll('input[data-part]')) input.checked = parts.find(p => p.name === input.dataset.part).mesh.visible;
+    for (const input of controlsHost.querySelectorAll('input[data-part]')) input.checked = parts.find(p => p.name === input.dataset.part).mesh.visible;
     syncGroups.forEach(sync => sync());
     shownReadout(); model.updateMatrixWorld(true);
     return structuredClone(state);

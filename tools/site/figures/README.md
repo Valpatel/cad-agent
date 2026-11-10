@@ -31,6 +31,11 @@ flowchart TD
 
 ## Source-bound homepage refresh
 
+Use the existing model collector and matching poster tool; review the source and candidate before adoption.
+
+<details>
+<summary>Collect and verify a source-bound homepage model</summary>
+
 `collect-showcase.py --source <exact-cad-agent-commit> --contract-json <reviewed-runtime-contract>` is a maintainer
 fleet entry point around the unchanged `tools/gyropup_showcase.py`. Review the complete immutable source/operator
 packet before a one-shot submission. The contract names an existing retained interpreter/toolkit and whole-tree
@@ -49,3 +54,5 @@ all five final guards first. Then generate the matching poster/card through `sit
 candidate, preserving historical pictures and their SOURCE records. Production must wait for incorporation of the
 accepted product CAD source into its protected `main`; a WIP collection is not a latest-published or physically
 qualified model. This work does not change printed legs or establish fit, retention, strength or printer readiness.
+
+</details>

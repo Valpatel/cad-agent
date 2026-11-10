@@ -92,3 +92,17 @@ pulled/initialized the image and installed the locked npm packages. Both then fa
 `git config --global --add safe.directory "$GITHUB_WORKSPACE"` inside that ephemeral test container, before
 site construction. It trusts only the exact checked-out CI workspace, not `*`, other paths or a workstation
 configuration. Those initial failures remain explicit; the corrected head still needs all actual suites to pass.
+
+
+The corrected workspace head (`0b6d6ca1`, WebKit job 129700458733) passed the actual website, catalogue,
+assembly-guide, part-table and 32-case legacy file-viewer consumers in the container. `actions/setup-python`
+then selected CPython 3.12.16 under the container's `/__t` toolcache mount, but invoking its `pip` launcher
+failed with `cannot execute: required file not found` (exit 127). The exact launcher's shebang was not retained,
+so a host-only interpreter path is an inference, not a separately proven historical cause. Portable ZIP and
+final diagram consumers remained unrun; no complete lane acceptance follows from those earlier passes.
+
+Use `python -m pip install -e ".[site]"` to invoke pip through the selected interpreter, preserving the same
+package/extras and installer arguments while avoiding the cached launcher boundary. The actual corrected
+container lane must prove interpreter/module startup and the full extracted-ZIP chain; no local installation,
+new Python version, test alteration or additional timeout is introduced. The failed provisioning receipt stays
+retained alongside the earlier checkout-ownership and apt-cap failures.

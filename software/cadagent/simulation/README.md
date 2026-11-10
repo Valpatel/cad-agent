@@ -31,7 +31,7 @@ flowchart TD
 | `fea.py` | Linear-elastic stiffness and strength studies for any CAD part; a printed part's stress against its layers (`layer_check`: a combined or a maximum-stress bond criterion, and how far past the worst corner the stress reaches); the material data each result used; mesh control (local refinement, a finer-mesh check, the mesher and the peak's resolution in each result, slivers and mesher refusals); exports the interactive FEA viewer's data |
 | `cfd.py` | Steady conjugate heat transfer cases for OpenFOAM, written from CAD; each fan's inlet and outlet temperatures weighted by mass flow, and an energy check on every result |
 | `topopt.py` | Topology optimisation with [pyMOTO](https://github.com/aatmdelissen/pyMOTO) (Arnoud Delissen, MIT) |
-| `robot.py` | Mass properties from CAD, links and joints, URDF writing and checking; MJCF with closed loops (`LoopClosure`) |
+| `robot.py` | Mass properties, links/joints, URDF and MJCF with closed loops (`LoopClosure`); explicit primitive rigid-stage gravity/settle checks (`settle_stage`) |
 | [`explore/`](explore/__init__.py) | Pick parts from catalogues, evaluate whole designs, rank the trade-offs (`cad-agent catalogue`, `compare`, `optimise`) |
 | `simviz.py` | Pictures and animations of results with [PyVista](https://github.com/pyvista/pyvista) / VTK, off screen |
 | `simreport.py` | A standalone HTML page: before/after metrics, figures, videos, limits |

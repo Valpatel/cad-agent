@@ -18,3 +18,20 @@ reject stale or absent bindings before CAD queries. Preserve blocked, unknown an
 an unchecked kernel relation is never a clear path. Support, retention and gravity remain explicit unknowns
 until a separately justified physics scenario exists. See the [playback incident and controls](../inbox/2026-11-10-playback-needs-finite-bound-source-geometry.md)
 and [public API](../../docs/practice/assembly-guide.md#validate-the-trajectories-shown-by-playback).
+
+Stage support is a separate scope from insertion and contact. A fixed or zero-gravity model can look stable
+without any supporting fixture. Require explicit free rigid groups and declared fixed primitive fixtures,
+retain maximum drift/rotation and terminal speeds, and require a force-bearing contact path to support.
+Reject hidden retention/gravity compensation, callbacks and solver resets as stability proof. Preserve model
+bytes, effective settings and timestep controls; a robust pass/fail classification is not a converged transient.
+See the [stage physics evidence and limits](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md).
+
+A complete settling window includes the initial `mj_forward` state, before contact relaxation. Collision masks
+do not cover explicit MJCF pairs, and captured child XML can itself import ambient files. The first rigid-stage
+API rejects explicit pairs and nested model assets/attachments before compilation; do not count mask-only or
+top-level hash coverage as a complete physics/input boundary. Keep concrete negative fixtures for all three
+independent [false-pass controls](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md#independent-review-found-three-false-passes-inside-the-first-contract).
+
+Native collider coverage must include object classes: deformable/flex contacts are not ordinary rigid geoms.
+Reject unsupported flexes and non-geom/negative contact IDs before looking up a part or support path; Python
+index `-1` otherwise aliases the last object. Keep the actual [fixed-flex support regression](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md#collider-coverage-includes-object-classes-not-only-rigid-geom-masks).

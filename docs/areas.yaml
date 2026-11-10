@@ -273,6 +273,7 @@ domains:
         maturity: tooling
         priority: [demo]
         api: [cadagent.simulation.robot]
+        issues: [515]
         projects: [gyropup]
       - slug: topology-optimisation
         title: Topology optimisation

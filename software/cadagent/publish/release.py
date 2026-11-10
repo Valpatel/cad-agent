@@ -613,7 +613,9 @@ def _guide_page(bundle) -> str:
     title = snapshot["revision"]
     target = "../" + bundle.identifier + "/project/" + quote(bundle.path, safe="/")
     back = "../" + bundle.identifier + "/index.html"
-    interactive = "../_cadagent/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
+    guide_sha = hashlib.sha256(bundle.files[bundle.path]).hexdigest()
+    interactive = ("../_cadagent/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
+                   + "&sha256=" + guide_sha)
     rows = []
     for step in guide["steps"]:
         poster = step.get("poster")

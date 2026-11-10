@@ -195,6 +195,7 @@ def test_release_contains_distinct_snapshots_runtime_and_static_fallback(tmp_pat
         assert (viewer.parent / selected).resolve() == (result.folder / entry["guide"]).resolve()
         back = parse_qs(urlsplit(link).query)["back"][0]
         assert (viewer.parent / back).resolve() == (result.folder / entry["href"]).resolve()
+        assert parse_qs(urlsplit(link).query)["sha256"] == [entry["sha256"]]
     meshes = [(result.folder / entry["guide"]).parent / "model/lid.stl" for entry in manifest["assembly_guides"]]
     assert len({mesh.read_bytes() for mesh in meshes}) == 3
     # The project and toolkit installation are not needed to retain these bytes.

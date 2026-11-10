@@ -74,6 +74,8 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   model.position.set(-mid.x, -box.min.y, -mid.z);
   const height = Math.max(size.x, size.y, size.z);
   stage = createStage(app, { height: height * 0.8, screenshots: true });
+  // Instructions can inspect the underside; ordinary viewers retain the stage's ground-view orbit limit.
+  if (guideBound) stage.controls.maxPolarAngle = Math.PI;
   stage.renderer.localClippingEnabled = true;
   stage.root.add(holder);
 

@@ -23,7 +23,7 @@ for (const [index, version] of [...versions, 'proto'].entries()) {
   const guide = { schema: 'cad-agent.assembly-guide/1', snapshot: { id: version, revision: version, status: version === 'wip' ? 'wip' : 'released', source_commit: String(index + 1).repeat(40) }, model: { file: 'view.json', sha256: hash(raw) },
     subassemblies: [{ id: 'frame', title: 'Frame', parts: names }], steps: [
       { id: 'base', title: 'Seat base', text: `Instruction ${version}: base only.`, subassembly: 'frame', parts: [names[0]], highlight: [names[0]], offsets_mm: {} },
-      { id: 'screws', title: 'Add both screws', text: `Instruction ${version}: fit both screws.`, subassembly: 'frame', parts: names, highlight: names.slice(1), offsets_mm: { 'screw#1': [0, 0, 25 + index * 5], 'screw#2': [0, 0, 25 + index * 5] }, requires: ['base'], camera: { direction: [0, -1, 0] } },
+      { id: 'screws', title: 'Add both screws', text: `Instruction ${version}: fit both screws.`, subassembly: 'frame', parts: names, highlight: names.slice(1), offsets_mm: { 'screw#1': [0, 0, 25 + index * 5], 'screw#2': [0, 0, 25 + index * 5] }, requires: ['base'], camera: { direction: [0.6, -1, -0.35] } },
     ] };
   routes.set(`/${version}/guide.json`, (_, res) => res.end(encode(guide)));
 }
@@ -62,6 +62,9 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     if (!index) v1UUIDs.push(...before.map(p => p.uuid)); else assert.ok(before.every(p => !v1UUIDs.includes(p.uuid)));
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     const forward = await inspect(); assert.deepEqual(forward.map(p => p.visible), [true, true, true]);
+    // Independent CAD [0.6,-1,-0.35] -> stage [0.6,-0.35,1], including the authored underside view.
+    const expectedDirection = [0.6, -0.35, 1].map(n => n / Math.hypot(0.6, 0.35, 1));
+    near(await page.evaluate(() => { const s = window.__viewer.stage; return s.camera.position.clone().sub(s.controls.target).normalize().toArray(); }), expectedDirection);
     assert.deepEqual(forward.map(p => p.opacity), [0.2, 1, 1]); assert.deepEqual(forward.map(p => p.depthWrite), [false, true, true]);
     // Independent physical expectations, not read back from the guide: CAD +Z is stage +Y and mm -> m once.
     near(forward[1].world.map((n, axis) => n - before[1].world[axis]), [0, 0.025 + index * 0.005, 0]);
@@ -102,6 +105,19 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   }
   // Fault controls prove the independent coordinate check detects 1000x units, wrong frame and doubled offsets.
   await visit('v1');
+  const underside = await page.evaluate(() => {
+    const v = window.__viewer, s = v.stage;
+    const direction = () => s.camera.position.clone().sub(s.controls.target).normalize().toArray();
+    const expected = [0.6, -0.35, 1].map(n => n / Math.hypot(0.6, 0.35, 1));
+    const matches = () => direction().every((n, i) => Math.abs(n - expected[i]) < 1e-6);
+    const normalLimit = s.controls.maxPolarAngle;
+    s.controls.maxPolarAngle = 1.5; window.__guide.controller.applyStep('screws');
+    const oldClampRejected = !matches();
+    s.controls.maxPolarAngle = normalLimit; window.__guide.controller.applyStep('screws');
+    return { oldClampRejected, restored: matches(), direction: direction(), normalLimit };
+  });
+  assert.equal(underside.oldClampRejected, true); assert.equal(underside.restored, true);
+  assert.equal(underside.normalLimit, Math.PI); cases.push({ undersideCamera: underside });
   const rejects = await page.evaluate(() => {
     const v = window.__viewer, guide = window.__guide.controller;
     const check = () => { const p = v.parts[1].mesh.position; return Math.abs(p.x) < 1e-9 && Math.abs(p.y) < 1e-9 && Math.abs(p.z - 25) < 1e-9; };
@@ -115,6 +131,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.equal(await page.locator('#panel input[type=range]').nth(0).inputValue(), '0.5');
   assert.equal(await page.locator('#panel input[type=range]').nth(1).inputValue(), '0.5');
   assert.ok(await page.evaluate(() => window.__viewer.stage.renderer.info.render.calls > 0), 'Ready includes an actual drawn frame');
+  assert.equal(await page.evaluate(() => window.__viewer.stage.controls.maxPolarAngle), 1.5, 'Ordinary viewer keeps its existing orbit limit');
   assert.ok((await inspect()).some(p => p.offset.some(n => n !== 0))); await page.evaluate(() => window.__viewer.reset());
   assert.ok((await inspect()).every(p => p.offset.every(n => n === 0)));
   await page.evaluate(() => { const color = document.querySelector('#panel input[type=color]'); color.value = '#aa0011'; color.dispatchEvent(new Event('input')); window.__viewer.setExplode(0.2); });

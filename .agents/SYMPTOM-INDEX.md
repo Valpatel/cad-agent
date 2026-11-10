@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| An authored underside view is framed but the camera stays above the assembly | [Check camera direction after orbit constraints](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#authored-camera-directions-must-survive-orbit-constraints) |
 | A reset shows solid meshes but its selectors still say Wireframe or exploded | [Reset the displayed controls with the model](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#a-reset-must-reset-its-controls-as-well-as-its-meshes) |
 | A reset model looks correct in a later screenshot but its projected click is outside the viewport | [Update camera matrices before synchronous projection and picking](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md) |
 | A marked outline entry is outside its panel after the reader scrolls the page | [Observe scroll delivery and preserve same-section visibility](inbox/publish/2026-11-08-outline-visibility-needs-scroll-state.md) |

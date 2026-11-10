@@ -56,7 +56,7 @@ separate and may be retained in optional `source` metadata. Intentionally unmode
 by the product's instruction/BOM records, not invented as geometry or silently counted as a modelled instance.
 
 Optional `poster` is `{file, sha256}`; optional camera `direction` is a nonzero CAD-frame vector from the scene
-towards the camera. Unknown guide/step fields, duplicate IDs, unknown instances, bad prerequisites, invalid frame,
+towards the camera. Guide-bound viewers allow underside inspection; ordinary viewers retain the existing stage orbit limit. Unknown guide/step fields, duplicate IDs, unknown instances, bad prerequisites, invalid frame,
 nonfinite vectors and absent mesh hashes reject. Product-specific instruction requirements belong in `source`
 metadata rather than undocumented step keys.
 

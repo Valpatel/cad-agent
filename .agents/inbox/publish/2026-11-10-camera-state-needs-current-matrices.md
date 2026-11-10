@@ -60,3 +60,19 @@ Rule: tests must assert a reset's navigation identity along with its material an
 control values. Do not make a deliberate overview behave like an instruction to
 rescue a test. This portable synthetic-fixture result remains separate from
 real product content, touch controls and physical build acceptance.
+
+## Authored camera directions must survive orbit constraints
+
+On 2026-11-10 UTC, the product's actual turret step 06 requested CAD camera direction `[0.6, -1, -0.35]`,
+which looks up from below the assembly. The preserved stage set `controls.maxPolarAngle = 1.5`; its
+`fitView` calls `controls.update`, so the requested negative stage-Y direction was clamped above horizontal.
+Checking only framed bounds or a readable screenshot did not check the authored view.
+
+Guide-bound viewers now permit the full polar range while ordinary viewers retain their prior limit. The
+component fixture requests that same underside direction, compares the actual camera-minus-target vector to
+the independent normalized stage vector `[0.6, -0.35, 1]`, reinstates the old clamp as a rejecting control, and
+asserts the ordinary viewer still has its original limit. Both existing browser suites passed 19 case rows
+each with zero page errors after the correction. The initial local user-service command failed before test
+startup because it used a relative script path from the service home; the corrected invocation pins both the
+working directory and absolute test path. That setup failure remains separate from the actual test outcomes;
+this presentation correction does not prove tool access or a feasible physical insertion path.

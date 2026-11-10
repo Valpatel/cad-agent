@@ -228,3 +228,54 @@ def test_showcase_group_policy_preserves_current_members_and_rejects_drift(tmp_p
         with pytest.raises(ValueError, match="outside the product"):
             tool.model(product, "unused", "unused", toolkit, destination)
         assert not destination.exists()
+
+
+def test_showcase_collection_packet_is_import_safe_and_old_pack_names_do_not_prove_position(tmp_path, monkeypatch):
+    import copy
+    import importlib.util
+    import subprocess
+    from pathlib import Path
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Import/identity validation must not launch processes")
+    monkeypatch.setattr(subprocess, "Popen", forbidden)
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location("showcase_collection_packet", root / "tools/site/figures/collect-showcase.py")
+    worker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(worker)
+    assert worker.ROOT is None and worker.OUT is None
+    current = json.loads((root / "tools/site/assets/models/gyropup.json").read_text())
+    assert worker.validate_end_packs(current)["source_parts"] == 224
+    # Both old and current models have these pack names. Keep all current identity/member fields,
+    # but plant the actual former belly bounds: a name/revision check alone must not accept it.
+    stale = copy.deepcopy(current)
+    battery = next(p for p in stale["parts"] if p["name"] == "battery")
+    battery["bounds_mm"] = [-153, -43.5, -219.04, 153, 43.5, -122.04]
+    assert sum(map(len, stale["source"]["members"].values())) == 224
+    with pytest.raises(ValueError, match="Battery placement"):
+        worker.validate_end_packs(stale)
+    wrong = copy.deepcopy(current)
+    wrong["source"]["members"]["frame"][0] = "bay_floor"
+    with pytest.raises(ValueError, match="belly enclosure"):
+        worker.validate_end_packs(wrong)
+    wrong_identity = copy.deepcopy(current)
+    wrong_identity["source"]["revision"] = "0" * 40
+    with pytest.raises(ValueError, match="Wrong original end-pack source"):
+        worker.validate_end_packs(wrong_identity)
+    output = tmp_path / "candidate"
+    output.mkdir()
+    (output / "gyropup.json").write_text("partial output retained")
+    assert set(worker.inventory(output)) == {"gyropup.json"}
+    (output / "alias").symlink_to(output / "gyropup.json")
+    with pytest.raises(ValueError, match="Nonregular"):
+        worker.inventory(output)
+    (output / "alias").unlink()
+    # Partial regular output must still be sealable before a later decoder rejects its incomplete contents.
+    import tarfile
+    monkeypatch.setattr(worker, "OUT", tmp_path)
+    monkeypatch.setattr(worker, "results", {})
+    output.rename(tmp_path / "model")
+    members = worker.archive_model()
+    assert set(members) == {"gyropup.json"}
+    with tarfile.open(tmp_path / "model-produced.tgz") as archive:
+        assert archive.getnames() == ["gyropup.json"]
+        assert archive.extractfile("gyropup.json").read() == b"partial output retained"

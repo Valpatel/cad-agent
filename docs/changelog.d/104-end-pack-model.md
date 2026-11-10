@@ -1,0 +1,3 @@
+**Changed**
+- The maintainer homepage-model collection reuses an exact retained CAD runtime without installation, seals candidate bytes before decode checks, and preserves independent source/runtime/hardware guards (#104).
+- The homepage model, matching poster and project card now bind the collected front/rear-pack Gyropup source, with checks rejecting the former belly layout despite its identical battery names. Historical leg illustrations and their source record remain unchanged. Publication requires the accepted product CAD source in protected main; model collection does not establish physical fit or printer readiness (#104).

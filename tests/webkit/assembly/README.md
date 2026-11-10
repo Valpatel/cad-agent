@@ -13,6 +13,7 @@ flowchart TD
 |---|---|
 | `__init__.py` | Empty test-package marker |
 | `guide.test.mjs` | Pure validator/controller and bounded request counterexamples |
+| `playback.test.mjs` | Explicit order, absolute authored poses, bounded timing, pause/loop/navigation and ownership rejection |
 | `browser.mjs` | Real scene/material/coordinate/loading/lifecycle controls in each browser engine |
 | `release-browser.mjs` | Real extracted ZIP, two frozen fixtures/WIP, pinned local runtime, no-script fallback and corrupted entry/model/mesh controls |
 

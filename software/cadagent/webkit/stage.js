@@ -212,7 +212,7 @@ export function createStage(container, opts = {}) {
     const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
     light.current += (light.level - light.current) * (1 - Math.exp(-dt * 4));
     applyLight();
-    for (const cb of callbacks) {
+    for (const cb of [...callbacks]) {
       try { cb(t, dt); } catch (err) {               // one bad callback must not freeze the stage
         if (!cb.failed) { cb.failed = true; console.error(err); document.body.dataset.stageError = String(err?.stack ?? err).slice(0, 500); }
       }
@@ -225,12 +225,17 @@ export function createStage(container, opts = {}) {
   return {
     renderer, scene, camera, controls, root, frame, setInsets, fitView, setPalette,
     setSceneLight(v, immediate = false) { light.level = Math.max(0, Math.min(1, v)); if (immediate) { light.current = light.level; applyLight(); } },
-    onFrame(cb) { callbacks.push(cb); },
+    onFrame(cb) {
+      callbacks.push(cb);
+      let subscribed = true;
+      return () => { if (!subscribed) return; subscribed = false; const index = callbacks.indexOf(cb); if (index !== -1) callbacks.splice(index, 1); };
+    },
     start() { if (!running) { running = true; frameId = requestAnimationFrame(tick); } },
     stop() { running = false; cancelAnimationFrame(frameId); },
     /** Stop, and free the WebGL context, the controls and the canvas (before mounting another stage on the page). */
     dispose() {
       running = false;
+      callbacks.length = 0;
       cancelAnimationFrame(frameId);
       observer.disconnect();
       gestures.abort();

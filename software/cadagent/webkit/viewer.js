@@ -295,6 +295,11 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     cancelAnimationFrame(hoverFrame); hoverFrame = 0;
     if (hovered !== null) { hovered = null; onHover?.(null, { ...hoverPoint }); }
   }
+  // Wheel/orbit and programmatic camera changes invalidate a tooltip's old projected anchor too.
+  for (const event of ['start', 'change']) {
+    stage.controls.addEventListener(event, clearHover);
+    events.signal.addEventListener('abort', () => stage.controls.removeEventListener(event, clearHover), { once: true });
+  }
   canvas.addEventListener('pointerdown', e => { clearHover(); down = e.button === 0 ? [e.clientX, e.clientY, e.pointerId] : null; }, { signal: events.signal });
   canvas.addEventListener('pointerup', e => {
     const origin = down; down = null;

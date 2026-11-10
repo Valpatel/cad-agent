@@ -239,6 +239,9 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     const r = v.stage.renderer.domElement.getBoundingClientRect(); return [r.left + (q.x + 1) * r.width / 2, r.top + (1 - q.y) * r.height / 2];
   });
   await page.mouse.move(...hoverPoint); await page.waitForFunction(() => window.__hoverEvents.at(-1)?.name === 'screw#1');
+  await page.mouse.wheel(0, 30); await page.waitForFunction(() => window.__hoverEvents.at(-1)?.name === null);
+  await page.evaluate(() => window.__viewer.frameParts(['base', 'screw#1', 'screw#2'], [0.001, -0.001, 1]));
+  await page.mouse.move(hoverPoint[0] + 1, hoverPoint[1]); await page.waitForFunction(() => window.__hoverEvents.at(-1)?.name === 'screw#1');
   await page.mouse.click(...hoverPoint); await page.mouse.click(...hoverPoint);
   const pointerSelections = await page.evaluate(() => window.__selectEvents);
   assert.deepEqual(pointerSelections.map(row => row.name), ['screw#1', 'screw#1']);

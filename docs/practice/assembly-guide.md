@@ -52,12 +52,14 @@ import {createViewer} from './kit/viewer.js';
 const loaded = await loadGuide(guideURL, {signal, assetRoot: bundleURL});
 const viewer = await createViewer({app, panel, title,
   manifestUrl: loaded.manifestUrl, manifest: loaded.manifest,
-  signal, onProgress: text => showStatus(text), onSelect: name => showPart(name)});
+  guideBound: true, signal, onProgress: text => showStatus(text), onSelect: name => showPart(name)});
 const instructions = createGuideController(viewer, loaded.guide);
 instructions.applyStep('screws', {explode: 1, mode: 'ghost'});
 ```
 
-`manifest` passes the already hash-verified manifest without a second fetch. Existing `createViewer` callers,
+`manifest` passes the already hash-verified manifest without a second fetch. Guide callers pass `guideBound: true` (the shared `mountGuide` does this). Ordinary viewers retain relative, root-relative and absolute HTTP(S) mesh URLs, including external CORS responses and ordinary fetch redirects. Only an explicit `assetRoot` restricts an ordinary viewer to a bundle; guide references and redirects remain strict. Fetch credentials keep the browser default (`same-origin`).
+
+Existing `createViewer` callers,
 `stage`, `parts`, `setExplode` and `setSection` remain supported. New methods:
 
 | Method | Behavior |
@@ -79,7 +81,7 @@ sequential navigation. No animation or geometry-convergence sleep is required to
 layout. A release must bind the entry itself with `viewer.html?guide=<relative guide URL>&sha256=<guide SHA-256>`. `mountGuide` accepts the same optional `expectedHash`; ad hoc previews may omit it. A changed instruction with unchanged model bytes must still fail the release entry hash. A validated relative `back` query links the portable reader to its release guide.
 
 The existing `viewer.html?guide=<relative guide URL>` uses `mountGuide` for minimal previous/next, direct
-step selection, material mode, assembled reset and instruction text. The ordinary `?manifest=` route is retained.
+step selection, material mode, assembled reset and instruction text. Assembled reset synchronizes the displayed mode and explode/section controls with the mesh state and shows an explicit overview entry. The ordinary `?manifest=` route is retained.
 
 ## Versions and publication
 

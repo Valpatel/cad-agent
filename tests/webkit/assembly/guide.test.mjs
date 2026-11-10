@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { validateGuide, validateView, validateState, stepState, createGuideController, assetURL, readAsset, loadGuide, sha256 } from '../../../software/cadagent/webkit/assembly/guide.js';
+import { validateGuide, validateView, validateState, stepState, createGuideController, assetURL, viewAssetURL, readAsset, loadGuide, sha256 } from '../../../software/cadagent/webkit/assembly/guide.js';
 const H = '1'.repeat(64);
 const fixture = () => ({
   manifest: { units: 'mm', up: 'z', parts: ['base', 'screw#1', 'screw#2'].map((name, i) => ({ name, file: `part-${i}.stl`, color: '#123456', sha256: H, bounds_mm: [0, 0, 0, 10, 20, 30] })) },
@@ -95,4 +95,26 @@ test('legacy filenames with spaces and CSS colour names retain their original UR
   manifest.parts[0].file = 'small part.stl'; manifest.parts[0].color = 'steelblue';
   assert.equal(validateView(manifest), manifest);
   assert.throws(() => validateGuide(guide, manifest), /relative local path|color/);
+});
+
+test('ordinary viewer URL resolution preserves relative/root/absolute HTTP and external CORS paths', () => {
+  const base = 'https://product.invalid/previews/view.json';
+  for (const [file, expected] of [['small part.stl', 'https://product.invalid/previews/small%20part.stl'], ['/exports/part.stl', 'https://product.invalid/exports/part.stl'], ['https://product.invalid/exports/part.stl', 'https://product.invalid/exports/part.stl'], ['https://cdn.invalid/part.stl?v=1', 'https://cdn.invalid/part.stl?v=1']]) {
+    const { manifest, guide } = fixture(); manifest.parts[0].file = file;
+    assert.equal(validateView(manifest), manifest);
+    assert.equal(viewAssetURL(file, base).href, expected);
+    assert.throws(() => validateGuide(guide, manifest), /relative local path/);
+  }
+  assert.throws(() => viewAssetURL('https://cdn.invalid/part.stl', base, { assetRoot: 'https://product.invalid/' }), /escapes/);
+  assert.throws(() => viewAssetURL('/private/part.stl', base, { assetRoot: 'https://product.invalid/previews/' }), /escapes/);
+});
+test('only ordinary fetches opt into redirects; guide loading stays fail-closed', async () => {
+  let policy;
+  await readAsset('https://product.invalid/a', { redirect: 'follow', fetcher: async (_, options) => { policy = options; return new Response('ok'); } });
+  assert.equal(policy.redirect, 'follow'); assert.equal(policy.credentials, undefined);
+  const { guide, manifest } = fixture(), raw = JSON.stringify(manifest);
+  guide.model.sha256 = await sha256(new TextEncoder().encode(raw));
+  const seen = [];
+  await loadGuide('https://product.invalid/guide.json', { redirect: 'follow', fetcher: async (url, options) => { seen.push(options.redirect); return new Response(String(url).endsWith('guide.json') ? JSON.stringify(guide) : raw); } });
+  assert.deepEqual(seen, ['error', 'error']);
 });

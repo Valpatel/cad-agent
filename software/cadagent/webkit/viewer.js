@@ -5,14 +5,15 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { createStage } from './stage.js';
 import { section, slider, toggle, readouts } from './panel.js';
-import { assetURL, readAsset, parseJSON, validateView, validateState } from './assembly/guide.js';
+import { viewAssetURL, readAsset, parseJSON, validateView, validateState } from './assembly/guide.js';
 import { validateSTL, normalizeMesh, MAX_TRIANGLES } from './file-geometry.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /** Existing viewer, with optional validated guide manifests and abortable loading. */
 export async function createViewer({ app, panel, title, manifestUrl, manifest: suppliedManifest,
-    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, onSelect = () => {} }) {
+    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, onSelect = () => {} }) {
+  if (typeof guideBound !== 'boolean') throw new Error('Invalid guide mode');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
   const lifetime = new AbortController(), parts = [], events = new AbortController();
   let stage, timer, controlsHost, disposed = false;
@@ -30,7 +31,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   try {
   lifetime.signal.throwIfAborted();
   onProgress('Downloading the model manifest…');
-  const manifest = structuredClone(validateView(suppliedManifest || parseJSON(await readAsset(manifestUrl, { signal: lifetime.signal, maxBytes: 2 * 1024 * 1024 }))));
+  const manifest = structuredClone(validateView(suppliedManifest || parseJSON(await readAsset(manifestUrl, { signal: lifetime.signal, redirect: guideBound || assetRoot ? 'error' : 'follow', maxBytes: 2 * 1024 * 1024 })), { guide: guideBound }));
   const base = new URL('.', new URL(manifestUrl, location.href));
   // CAD is z-up in mm; the stage is y-up in metres. Baseline placements are baked into the meshes.
   const model = new THREE.Group();
@@ -41,7 +42,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   let totalBytes = 0, totalTriangles = 0;
   for (const p of manifest.parts) {
     onProgress(`Loading model part ${parts.length + 1} of ${manifest.parts.length}…`);
-    const bytes = await readAsset(assetURL(p.file.replaceAll(' ', '%20'), base, assetRoot), { signal: lifetime.signal, expectedHash: p.sha256 });
+    const bytes = await readAsset(viewAssetURL(p.file, base, { guide: guideBound, assetRoot }), { signal: lifetime.signal, expectedHash: p.sha256, redirect: guideBound || assetRoot ? 'error' : 'follow' });
     totalBytes += bytes.byteLength;
     if (totalBytes > 128 * 1024 * 1024) throw new Error('Assembly exceeds the preview byte limit');
     validateSTL(bytes);
@@ -81,9 +82,11 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   parts.forEach((p) => centre.add(p.center));
   centre.divideScalar(Math.max(1, parts.length));
   const span = Math.max(size.x, size.y, size.z) * 1000;
+  let explodeSlider, sectionSlider;
   function setExplode(f) {
     ensureLive();
     if (!Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid explode factor');
+    explodeSlider?.set(f);
     const offsets_mm = Object.fromEntries(parts.map(p => {
       const dir = p.explode ? new THREE.Vector3(...p.explode).normalize() : p.center.clone().sub(centre);
       if (!p.explode) dir.lengthSq() > 1e-6 ? dir.normalize() : dir.set(0, 0, 1);
@@ -93,7 +96,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   }
   // Section cut along CAD x: everything beyond the plane is cut away.
   const xmin = box.min.x, xmax = box.max.x;
-  function setSection(f) { if (disposed || !Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid section factor'); clip.constant = f >= 1 ? 1e9 : -(xmin + (xmax - xmin) * f - mid.x); }
+  function setSection(f) { if (disposed || !Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid section factor'); sectionSlider?.set(f); clip.constant = f >= 1 ? 1e9 : -(xmin + (xmax - xmin) * f - mid.x); }
 
   // Own only this wrapper; a product may have other controls in its panel.
   controlsHost = document.createElement('div'); panel.append(controlsHost);
@@ -104,8 +107,8 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
                                        ...(manifest.skipped?.length ? [['not exported', manifest.skipped.join(', '), 'warn']] : [])]);
   shownReadout();
   const views = section(controlsHost, 'View');
-  slider(views, { label: 'Explode', min: 0, max: 1, step: 0.01, value: 0, fmt: (v) => `${Math.round(v * 100)}%`, onInput: setExplode });
-  slider(views, { label: 'Section cut', min: 0, max: 1, step: 0.01, value: 1, fmt: (v) => (v >= 1 ? 'off' : `${Math.round(v * 100)}%`), onInput: setSection });
+  explodeSlider = slider(views, { label: 'Explode', min: 0, max: 1, step: 0.01, value: 0, fmt: (v) => `${Math.round(v * 100)}%`, onInput: setExplode });
+  sectionSlider = slider(views, { label: 'Section cut', min: 0, max: 1, step: 0.01, value: 1, fmt: (v) => (v >= 1 ? 'off' : `${Math.round(v * 100)}%`), onInput: setSection });
   slider(views, { label: 'Light', min: 0, max: 1, step: 0.01, value: 0.85, fmt: (v) => v.toFixed(2), onInput: (v) => stage.setSceneLight(v) });
   const camRow = document.createElement('div');
   camRow.className = 'hud-chips';
@@ -227,7 +230,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   function reset() {
     ensureLive(); userColors.clear();
     applyState({ visible: parts.filter(p => baseline.get(p.name).visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null });
-    setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update(); stage.camera.updateMatrixWorld(true);
+    explodeSlider?.set(0); setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update(); stage.camera.updateMatrixWorld(true);
   }
   const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
   let down;
@@ -245,7 +248,15 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   updateInsets(); frameParts(state.visible);
   opening.position.copy(stage.camera.position); opening.target.copy(stage.controls.target);
   window.addEventListener('resize', () => { if (!disposed) { updateInsets(); frameParts(state.visible); } }, { signal: events.signal });
-  stage.start(); clearTimeout(timer);
+  stage.start(); stage.renderer.render(stage.scene, stage.camera);
+  await new Promise((resolve, reject) => {
+    let frame;
+    const aborted = () => { cancelAnimationFrame(frame); reject(lifetime.signal.reason); };
+    frame = requestAnimationFrame(() => { lifetime.signal.removeEventListener('abort', aborted); resolve(); });
+    lifetime.signal.addEventListener('abort', aborted, { once: true });
+    if (lifetime.signal.aborted) aborted();
+  });
+  lifetime.signal.throwIfAborted(); clearTimeout(timer);
   onProgress('Model ready');
   return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, reset, dispose };
   } catch (error) { dispose(); throw error; }

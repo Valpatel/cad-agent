@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { validateGuide, validateView, validateState, stepState, createGuideController, assetURL, readAsset, loadGuide, sha256 } from '../../../software/cadagent/webkit/assembly/guide.js';
 const H = '1'.repeat(64);
 const fixture = () => ({
@@ -68,4 +69,19 @@ test('loadGuide binds exact manifest; no failed/missing version is filled from a
   const loaded = await loadGuide('https://host/bundle/docs/guide.json', { fetcher, assetRoot: 'https://host/bundle/' });
   assert.equal(loaded.manifestUrl, 'https://host/bundle/view.json');
   await assert.rejects(loadGuide('https://host/bundle/docs/guide.json', { fetcher: async url => String(url).endsWith('guide.json') ? new Response(JSON.stringify(guide)) : new Response('{}'), assetRoot: 'https://host/bundle/' }), /SHA-256/);
+});
+
+test('real Gyropup twelve-step guide retains earlier chapters as visible context', async () => {
+  const guide = JSON.parse(await readFile(new URL('../../fixtures/assembly-guide/guide.json', import.meta.url)));
+  const manifestBytes = await readFile(new URL('../../fixtures/assembly-guide/view.json', import.meta.url));
+  const manifest = JSON.parse(manifestBytes);
+  assert.equal(await sha256(manifestBytes), guide.model.sha256);
+  validateGuide(guide, manifest);
+  assert.equal(guide.steps.length, 12); assert.equal(manifest.parts.length, 55);
+  const crossChapter = guide.steps.filter(s => s.parts.some(name => !guide.subassemblies.find(g => g.id === s.subassembly).parts.includes(name)));
+  assert.ok(crossChapter.length > 0, 'actual prior-subassembly context is retained');
+  const bad = structuredClone(guide), step = bad.steps.find(s => s.parts.some(name => !bad.subassemblies.find(g => g.id === s.subassembly).parts.includes(name)));
+  const members = bad.subassemblies.find(g => g.id === step.subassembly).parts;
+  step.highlight = [step.parts.find(name => !members.includes(name))];
+  assert.throws(() => validateGuide(bad, manifest), /Highlighted subassembly/);
 });

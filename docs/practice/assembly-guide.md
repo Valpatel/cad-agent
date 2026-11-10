@@ -27,7 +27,7 @@ unchanged assembled mesh. They are illustrative offsets, not certified insertion
 }
 ```
 
-`parts` is the complete visible membership for the step, not a cumulative addition. `highlight` is a subset.
+`parts` is the complete visible membership for the step, not a cumulative addition. It may include already assembled previous chapters. `highlight` is a subset of both visible membership and the active subassembly.
 `requires`, when present, names unique earlier step IDs. Subassembly membership is an explicit visibility set,
 not a joint or rigid-body declaration. Exact mesh names identify repeated instances; catalogue/BOM keys are
 separate and may be retained in optional `source` metadata. Intentionally unmodelled hardware must be disclosed

@@ -179,7 +179,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     for (const p of parts) {
       const m = p.mesh.material, highlighted = next.highlight.includes(p.name);
       p.mesh.visible = next.visible.includes(p.name) && (next.isolate === null || next.isolate.includes(p.name));
-      p.mesh.position.fromArray(next.offsets_mm[p.name] || [0, 0, 0]);
+      p.mesh.position.fromArray(Object.hasOwn(next.offsets_mm, p.name) ? next.offsets_mm[p.name] : [0, 0, 0]);
       m.color.copy(baseline.get(p.name).color);
       m.emissive.setHex(next.selected === p.name ? 0x005588 : highlighted ? 0x5a2700 : 0);
       m.wireframe = next.mode === 'wireframe';

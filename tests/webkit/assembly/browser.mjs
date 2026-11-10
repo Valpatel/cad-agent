@@ -14,15 +14,15 @@ function cube(origin, size) {
   return { bytes, bounds: [...origin, ...origin.map((n, i) => n + size[i])] };
 }
 const routes = new Map(), versions = ['v1', 'v2', 'wip'];
-for (const [index, version] of versions.entries()) {
+for (const [index, version] of [...versions, 'proto'].entries()) {
   const shapes = [cube([0, 0, 0], [40 + index * 10, 30, 8]), cube([8, 8, 8], [5, 5, 20]), cube([28, 8, 8], [5, 5, 20])];
-  const names = ['base', 'screw#1', 'screw#2'];
+  const names = [version === 'proto' ? 'constructor' : 'base', 'screw#1', 'screw#2'];
   shapes.forEach((shape, i) => routes.set(`/${version}/${i}.stl`, (_, res) => res.end(shape.bytes)));
   const manifest = { title: version, units: 'mm', up: 'z', parts: shapes.map((shape, i) => ({ name: names[i], file: `${i}.stl`, sha256: hash(shape.bytes), bounds_mm: shape.bounds, color: ['#487ca8', '#eaa840', '#eaa840'][i] })) };
   const raw = encode(manifest); routes.set(`/${version}/view.json`, (_, res) => res.end(raw));
   const guide = { schema: 'cad-agent.assembly-guide/1', snapshot: { id: version, revision: version, status: version === 'wip' ? 'wip' : 'released', source_commit: String(index + 1).repeat(40) }, model: { file: 'view.json', sha256: hash(raw) },
     subassemblies: [{ id: 'frame', title: 'Frame', parts: names }], steps: [
-      { id: 'base', title: 'Seat base', text: `Instruction ${version}: base only.`, subassembly: 'frame', parts: ['base'], highlight: ['base'], offsets_mm: {} },
+      { id: 'base', title: 'Seat base', text: `Instruction ${version}: base only.`, subassembly: 'frame', parts: [names[0]], highlight: [names[0]], offsets_mm: {} },
       { id: 'screws', title: 'Add both screws', text: `Instruction ${version}: fit both screws.`, subassembly: 'frame', parts: names, highlight: names.slice(1), offsets_mm: { 'screw#1': [0, 0, 25 + index * 5], 'screw#2': [0, 0, 25 + index * 5] }, requires: ['base'], camera: { direction: [0, -1, 0] } },
     ] };
   routes.set(`/${version}/guide.json`, (_, res) => res.end(encode(guide)));
@@ -91,11 +91,33 @@ try {
   await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.ok((await inspect()).some(p => p.offset.some(n => n !== 0))); await page.evaluate(() => window.__viewer.reset());
   assert.ok((await inspect()).every(p => p.offset.every(n => n === 0))); cases.push({ legacy: true });
+  await visit('proto');
+  assert.ok((await inspect()).every(p => p.offset.every(Number.isFinite)), 'prototype-shaped part names retain a zero finite baseline');
+  cases.push({ prototypePartName: true });
   // Corrupted mesh or cancelled/late load never mounts a partial scene.
   await page.route('**/v1/1.stl', route => route.fulfill({ body: Buffer.from('wrong bytes') }));
   await page.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`); await page.getByRole('button', { name: 'Retry model', exact: true }).waitFor();
   assert.equal(await page.locator('#app canvas').count(), 0); assert.match(await page.locator('#panel').innerText(), /SHA-256/);
   await page.unroute('**/v1/1.stl'); await page.getByRole('button', { name: 'Retry model', exact: true }).click(); await page.waitForFunction(() => document.body.dataset.ready === '1');
+  // Abort a held mesh, then release its late response: the retained scene cannot be replaced.
+  const retained = await page.evaluate(() => window.__viewer.parts[0].mesh.uuid);
+  let releaseLate, began;
+  const downloading = new Promise(resolve => { began = resolve; });
+  await page.route('**/late/0.stl', route => { began(); return new Promise(resolve => { releaseLate = async () => { try { await route.fulfill({ body: cube([0, 0, 0], [40, 30, 8]).bytes }); } catch {} resolve(); }; }); });
+  await page.evaluate(async () => {
+    const { createViewer } = await import('/kit/viewer.js');
+    window.__pendingApp = document.createElement('div'); window.__pendingPanel = document.createElement('div');
+    document.body.append(window.__pendingApp, window.__pendingPanel); window.__pendingAbort = new AbortController();
+    window.__pendingResult = 'loading';
+    createViewer({ app: window.__pendingApp, panel: window.__pendingPanel, manifestUrl: '/late/view.json', manifest: window.__guide.manifest, signal: window.__pendingAbort.signal, timeoutMs: 5000 })
+      .then(v => { v.dispose(); window.__pendingResult = 'unexpected success'; }, () => { window.__pendingResult = 'aborted'; });
+  });
+  await downloading; await page.evaluate(() => window.__pendingAbort.abort());
+  await page.waitForFunction(() => window.__pendingResult === 'aborted'); await releaseLate();
+  assert.equal(await page.evaluate(() => window.__viewer.parts[0].mesh.uuid), retained);
+  assert.equal(await page.evaluate(() => window.__pendingApp.querySelectorAll('canvas').length), 0);
+  await page.evaluate(() => { window.__pendingApp.remove(); window.__pendingPanel.remove(); });
+  await page.unroute('**/late/0.stl'); cases.push({ abortedLateLoadRetainsScene: true });
   const teardown = await page.evaluate(async () => {
     const v = window.__viewer; let geometries = 0, materials = 0;
     for (const p of v.parts) { p.mesh.geometry.addEventListener('dispose', () => geometries++); p.mesh.material.addEventListener('dispose', () => materials++); }

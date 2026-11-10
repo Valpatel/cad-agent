@@ -88,7 +88,8 @@ export function validateGuide(guide, manifest) {
     if (seen.has(step.id)) fail('Duplicate step');
     const members = groups.get(step.subassembly);
     if (!members) fail('Unknown step subassembly');
-    refs(step.parts, members, 'Step parts', true); refs(step.highlight, new Set(step.parts), 'Step highlight');
+    refs(step.parts, names, 'Step parts', true); refs(step.highlight, new Set(step.parts), 'Step highlight');
+    refs(step.highlight, members, 'Highlighted subassembly members');
     keys(step.offsets_mm, step.parts, 'Step offsets');
     for (const offset of Object.values(step.offsets_mm)) vec(offset, 'CAD offset');
     if (step.camera !== undefined) { keys(step.camera, ['direction'], 'Camera'); vec(step.camera.direction, 'Camera direction', true); }

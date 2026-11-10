@@ -22,3 +22,7 @@ do not cover explicit MJCF pairs, and captured child XML can itself import ambie
 API rejects explicit pairs and nested model assets/attachments before compilation; do not count mask-only or
 top-level hash coverage as a complete physics/input boundary. Keep concrete negative fixtures for all three
 independent [false-pass controls](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md#independent-review-found-three-false-passes-inside-the-first-contract).
+
+Native collider coverage must include object classes: deformable/flex contacts are not ordinary rigid geoms.
+Reject unsupported flexes and non-geom/negative contact IDs before looking up a part or support path; Python
+index `-1` otherwise aliases the last object. Keep the actual [fixed-flex support regression](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md#collider-coverage-includes-object-classes-not-only-rigid-geom-masks).

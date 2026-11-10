@@ -774,7 +774,7 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
     are explicitly named. Equality/tendon/controller/mocap and articulated stages
     are unsupported rather than inferred from visual meshes. Model/assets are
     supplied as captured bytes; includes/plugins, nested model assets/attachments,
-    explicit contact pairs and external files are refused.
+    explicit contact pairs, deformable/flex colliders and external files are refused.
     A pass predicts only this model for this finite window, not physical assembly.
     """
     from dataclasses import asdict
@@ -786,7 +786,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
         "SI MuJoCo model; source masses, inertia, friction, rigidity and fixture realization are producer assumptions.",
         "No controls, articulated joints, equality/tendon constraints, mocap, plugins, aerodynamic forces or "
         "convex-hull mesh collisions; contact and gravity must remain enabled. Explicit contact pairs and "
-        "nested model assets/attachments are unsupported so mask and byte coverage cannot be bypassed.",
+        "nested model assets/attachments and deformable/flex colliders are unsupported so collider and byte "
+        "coverage cannot be bypassed. Non-geom contact participants are rejected before indexing.",
         "Maximum COM/orientation drift is measured over the complete finite window; terminal speed and "
         "a force-bearing contact path to a declared fixed fixture are required for each group.",
         "MuJoCo soft contact penetration, solver settings and timestep affect predictions. A passing finite "
@@ -834,6 +835,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
         root = ET.fromstring(text)
         if root.tag != "mujoco" or any(e.tag in ("include", "extension", "plugin") for e in root.iter()):
             raise ValueError("self-contained MJCF without includes/plugins is required")
+        if any(e.tag in ("deformable", "flex", "flexcomp") for e in root.iter()):
+            raise ValueError("deformable/flex collision objects are unsupported; only primitive rigid geoms are covered")
         if any(e.tag in ("model", "attach") for e in root.iter()):
             raise ValueError("nested model assets and attachments are unsupported; captured top-level bytes are insufficient")
         if any(e.tag == "pair" for e in root.iter()):
@@ -857,6 +860,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
         steps = math.ceil(duration_s / dt)
         if model.nu or model.neq or model.ntendon or model.nmocap:
             raise ValueError("controllers, equality/tendon constraints and mocap are unsupported")
+        if getattr(model, "nflex", 0):
+            raise ValueError("compiled deformable/flex collisions are unsupported")
         flags = int(model.opt.disableflags)
         if any(flags & int(bit) for bit in (mj.mjtDisableBit.mjDSBL_CONTACT, mj.mjtDisableBit.mjDSBL_GRAVITY,
                                            mj.mjtDisableBit.mjDSBL_CONSTRAINT)):
@@ -915,6 +920,8 @@ def settle_stage(xml: bytes, *, monitored_bodies: Sequence[str], fixture_geoms: 
             nonlocal warnings
             warnings = [int(w.number) for w in data.warning]
             arrays = (data.qpos, data.qvel, data.qacc, data.xpos, data.xquat, data.subtree_com)
+            if any(not 0 <= int(g) < model.ngeom for c in data.contact[:data.ncon] for g in (c.geom1, c.geom2)):
+                raise ValueError("non-geom or out-of-range contact participant is unsupported")
             if (any(warnings) or not all(np.isfinite(v).all() for v in arrays)
                     or any(not math.isfinite(float(c.dist)) for c in data.contact[:data.ncon])
                     or abs(float(data.time) - completed * dt) > max(1e-10, completed * dt * 1e-9)):

@@ -530,3 +530,32 @@ def test_stage_initial_forward_warnings_are_rejected_before_any_integration(tmp_
     report = _stage_settle(_stage_xml(tmp_path))
     assert not report["pass"] and "solver warning" in report["findings"][0]["message"]
     assert report["completed_steps"] == 0 and report["solver_warning_counts"][0] == 1
+
+
+def test_stage_fixed_deformable_flex_cannot_supply_undeclared_support():
+    # Actual MuJoCo counterexample: this fixed flex carried .5886 N and the declared floor .3924 N.
+    xml = b'''<mujoco><option timestep=".002" gravity="0 0 -9.81"/>
+      <deformable><flex name="unlisted" dim="2" radius=".001" body="world"
+        vertex="-1 -1 -.001 1 -1 -.001 1 1 -.001 -1 1 -.001" element="0 1 2 0 2 3"/></deformable>
+      <worldbody><geom name="floor" type="plane" size="1 1 .1"/>
+      <body name="loose" pos="0 0 .01"><freejoint/>
+      <inertial pos="0 0 0" mass=".1" diaginertia=".0000066667 .0000066667 .0000066667"/>
+      <geom name="box" type="box" size=".01 .01 .01"/></body></worldbody></mujoco>'''
+    report = _stage_settle(xml)
+    assert not report["pass"] and "deformable/flex" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0 and report["bodies"] == {}
+
+
+def test_stage_non_geom_contact_id_cannot_alias_the_last_geom(tmp_path, monkeypatch):
+    mj = pytest.importorskip("mujoco")
+    forward = mj.mj_forward
+
+    def non_geom_contact(model, data):
+        forward(model, data)
+        assert data.ncon > 0
+        data.contact[0].geom1 = -1
+
+    monkeypatch.setattr(mj, "mj_forward", non_geom_contact)
+    report = _stage_settle(_stage_xml(tmp_path))
+    assert not report["pass"] and "non-geom or out-of-range" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0 and report["bodies"] == {}

@@ -77,3 +77,19 @@ Original full reports and reproducer remain in the independent review packet, an
 The correction retains each concrete counterexample in the existing regression harness. Rejected nested inputs
 still record the captured top-level and asset hashes, but are never compiled. A small trusted top-level parser
 is insufficient if a later native compiler interprets captured bytes as another document with its own imports.
+
+## Collider coverage includes object classes, not only rigid geom masks
+
+A second independent actual MuJoCo control at corrected source `e320058247dc9f698df4586eb2923306405dd9a9`
+found a fixed 2D deformable flex supplying 0.5886 N while the declared floor supplied 0.3924 N. The initial
+three fixes and all 86 tests passed, but the unsupported flex was absent from rigid geom settings and the API
+still passed. Flex contacts used geom ID `-1`, which silently indexed the last geom/body in Python. The original
+[review](https://github.com/Valpatel/cad-agent/pull/516#discussion_r4526927577) and its actual XML/report remain
+retained independently.
+
+The first-scope correction rejects deformable/flex/flexcomp constructs before compilation and rejects any
+compiled flex object. Shared initial/per-step state validation rejects negative or out-of-range geom contact
+IDs before any indexing, so non-geom contacts cannot be mislabeled as the last rigid body. The actual fixed-flex
+fixture is a regression; a runtime negative-ID control separately exercises the array boundary. A collider audit
+must enumerate native physical object classes and explicit selection routes, not assume every contact belongs
+to a named rigid geom. These guards do not approximate deformable support or expand the supported scope.

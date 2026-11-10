@@ -1332,7 +1332,8 @@ Lengths in MJCF are metres; report translation/penetration are mm, rotation is d
 degrees/s. The window is 0.1..10 seconds, with a default 10,000-step budget. Long product models still run on a
 detached compute host with an external runtime cap and source/runtime receipt. Assets are captured bytes, not
 ambient files; includes, plugins, nested model assets/attachments, explicit contact pairs, directory indirection
-and callbacks are refused before compilation. First scope is independent
+and callbacks are refused before compilation. Deformable/flex collision objects are outside the primitive rigid
+scope and are rejected in both source preflight and compiled-model checks. First scope is independent
 free rigid groups with fixed descendants and primitive collisions. Articulation, implicit equality/tendon or
 controller retention, mocap, gravity compensation/passive joint holding, aerodynamic forces and mesh/heightfield
 collisions are unsupported. A guide mesh cannot supply mass, rigidity, retention or fixtures by inference.

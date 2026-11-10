@@ -24,7 +24,7 @@ const bad = [
   g => g.steps[0].offsets_mm.future = [0, 0, 1], g => g.steps[0].camera = { direction: [0, 0, 0] },
   g => g.model.file = 'https://other.invalid/view.json', g => g.model.file = '/current/view.json',
   g => g.model.file = 'view.json#old', g => g.model.sha256 = 'bad', g => g.steps[0].poster = { file: 'poster.png', sha256: 'bad' },
-  g => g.steps[0].opacity = 0.2,
+  g => g.steps[0].opacity = 0.2, g => g.steps[0].partModes = { base: 'transparent' },
 ];
 for (const [i, mutate] of bad.entries()) test(`invalid guide ${i} fails closed`, () => {
   const { guide, manifest } = fixture(); mutate(guide); assert.throws(() => validateGuide(guide, manifest));
@@ -117,4 +117,12 @@ test('only ordinary fetches opt into redirects; guide loading stays fail-closed'
   const seen = [];
   await loadGuide('https://product.invalid/guide.json', { redirect: 'follow', fetcher: async (url, options) => { seen.push(options.redirect); return new Response(String(url).endsWith('guide.json') ? JSON.stringify(guide) : raw); } });
   assert.deepEqual(seen, ['error', 'error']);
+});
+
+test('per-instance appearances are optional, visible-only and cleared by a new instruction state', () => {
+  const { guide } = fixture(), state = { ...stepState(guide, 'screws'), selected: 'screw#1', partModes: { 'screw#1': 'transparent', 'screw#2': 'wireframe' } };
+  assert.equal(validateState(state, ['base', 'screw#1', 'screw#2']), state);
+  for (const partModes of [null, [], { unknown: 'solid' }, { base: 'ghost' }, { base: false }]) assert.throws(() => validateState({ ...state, partModes }, ['base', 'screw#1', 'screw#2']));
+  assert.throws(() => validateState({ ...stepState(guide, 'base'), partModes: { 'screw#1': 'transparent' } }, ['base', 'screw#1', 'screw#2']));
+  assert.deepEqual(stepState(guide, 'screws').partModes, {});
 });

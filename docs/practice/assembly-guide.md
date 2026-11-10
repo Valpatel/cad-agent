@@ -52,7 +52,7 @@ import {createViewer} from './kit/viewer.js';
 const loaded = await loadGuide(guideURL, {signal, assetRoot: bundleURL});
 const viewer = await createViewer({app, panel, title,
   manifestUrl: loaded.manifestUrl, manifest: loaded.manifest,
-  guideBound: true, signal, onProgress: text => showStatus(text), onSelect: name => showPart(name)});
+  guideBound: true, signal, onProgress: text => showStatus(text), onSelect: name => showPart(name), onStateChange: state => updateControls(state)});
 const instructions = createGuideController(viewer, loaded.guide);
 instructions.applyStep('screws', {explode: 1, mode: 'ghost'});
 ```
@@ -64,12 +64,15 @@ Existing `createViewer` callers,
 
 | Method | Behavior |
 |---|---|
-| `applyState({visible, highlight, mode, offsets_mm, selected, isolate})` | Validates a complete state before mutation; restores authored materials and replaces every offset |
+| `applyState({visible, highlight, mode, offsets_mm, selected, isolate, partModes?})` | Validates a complete state before mutation; restores authored materials and replaces every offset |
 | `getState()` | Returns a copy, not mutable internal state |
 | `setSelection(name)` | Selects a visible part or null and calls `onSelect`; actual canvas picking uses the same method |
+| `setPartMode(name, mode)` | Overrides one visible instance with `solid`, `transparent` or `wireframe`; null restores scene mode |
 | `frameParts(names, direction?)` | Fits current visible world bounds, with optional CAD camera direction |
 | `reset()` | Restores assembled positions, original visibility/materials, section off and opening camera |
 | `dispose()` | Idempotently aborts loading, removes owned events, stops/disposes the stage and disposes model resources |
+
+`partModes` defaults to an empty mapping. Its keys must be visible instances; overrides affect only those parts and clear on reset or a new instruction state. The portable reader exposes one selected-part appearance menu, not one menu per mesh. `onStateChange` lets a product keep its controls synchronized with programmatic state.
 
 `mode` is `solid`, `wireframe` or `ghost`; ghosting makes nonhighlighted installed parts translucent while keeping
 highlighted parts opaque. `isolate` is null or an explicit array of visible names, never a boolean. Selection must

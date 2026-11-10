@@ -12,7 +12,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** Existing viewer, with optional validated guide manifests and abortable loading. */
 export async function createViewer({ app, panel, title, manifestUrl, manifest: suppliedManifest,
-    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, onSelect = () => {} }) {
+    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, onSelect = () => {}, onStateChange = () => {} }) {
   if (typeof guideBound !== 'boolean') throw new Error('Invalid guide mode');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
   const lifetime = new AbortController(), parts = [], events = new AbortController();
@@ -169,10 +169,11 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   const userColors = new Map();
   const baseline = new Map(parts.map(p => [p.name, { visible: p.mesh.visible, color: p.mesh.material.color.clone() }]));
   const names = parts.map(p => p.name);
-  let state = { visible: parts.filter(p => p.mesh.visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null };
+  let state = { visible: parts.filter(p => p.mesh.visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null, partModes: {} };
   const opening = { position: stage.camera.position.clone(), target: stage.controls.target.clone() };
   const ensureLive = () => { if (disposed) throw new Error('Viewer is disposed'); };
   function visibilityChanged() {
+    state.partModes = Object.fromEntries(Object.entries(state.partModes).filter(([name]) => state.visible.includes(name)));
     state.highlight = state.highlight.filter(n => state.visible.includes(n));
     if (!state.visible.includes(state.selected)) state.selected = null;
     if (state.isolate !== null) state.isolate = state.isolate.filter(n => state.visible.includes(n));
@@ -180,15 +181,17 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   }
   function applyState(next) {
     ensureLive(); validateState(next, names);
-    const nextState = structuredClone(next);
+    const nextState = structuredClone({ ...next, partModes: next.partModes ?? {} });
+    const previousSelection = state.selected;
     for (const p of parts) {
       const m = p.mesh.material, highlighted = next.highlight.includes(p.name);
       p.mesh.visible = next.visible.includes(p.name) && (next.isolate === null || next.isolate.includes(p.name));
       p.mesh.position.fromArray(Object.hasOwn(next.offsets_mm, p.name) ? next.offsets_mm[p.name] : [0, 0, 0]);
       m.color.copy(userColors.get(p.name) || baseline.get(p.name).color);
       m.emissive.setHex(next.selected === p.name ? 0x005588 : highlighted ? 0x5a2700 : 0);
-      m.wireframe = next.mode === 'wireframe';
-      m.opacity = next.mode === 'ghost' && !highlighted ? 0.2 : 1;
+      const partMode = Object.hasOwn(nextState.partModes, p.name) ? nextState.partModes[p.name] : null;
+      m.wireframe = partMode ? partMode === 'wireframe' : next.mode === 'wireframe';
+      m.opacity = partMode ? (partMode === 'transparent' ? 0.2 : 1) : next.mode === 'ghost' && !highlighted ? 0.2 : 1;
       m.transparent = m.opacity < 1; m.depthWrite = !m.transparent; m.needsUpdate = true;
     }
     state = nextState;
@@ -196,6 +199,8 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     for (const input of controlsHost.querySelectorAll('input[data-part]')) input.checked = parts.find(p => p.name === input.dataset.part).mesh.visible;
     syncGroups.forEach(sync => sync());
     shownReadout(); model.updateMatrixWorld(true);
+    if (state.selected !== previousSelection) onSelect(state.selected);
+    onStateChange(structuredClone(state));
     return structuredClone(state);
   }
   function updateInsets() {
@@ -225,11 +230,18 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     }
   }
   function setSelection(name) {
-    applyState({ ...state, selected: name }); onSelect(name);
+    applyState({ ...state, selected: name });
+  }
+  function setPartMode(name, mode) {
+    ensureLive();
+    if (!state.visible.includes(name)) throw new Error('Part appearance needs a visible instance');
+    const entries = Object.entries(state.partModes).filter(([key]) => key !== name);
+    if (mode !== null) entries.push([name, mode]);
+    return applyState({ ...state, partModes: Object.fromEntries(entries) });
   }
   function reset() {
     ensureLive(); userColors.clear();
-    applyState({ visible: parts.filter(p => baseline.get(p.name).visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null });
+    applyState({ visible: parts.filter(p => baseline.get(p.name).visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null, partModes: {} });
     explodeSlider?.set(0); setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update(); stage.camera.updateMatrixWorld(true);
   }
   const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
@@ -258,6 +270,6 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   });
   lifetime.signal.throwIfAborted(); clearTimeout(timer);
   onProgress('Model ready');
-  return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, reset, dispose };
+  return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, setPartMode, reset, dispose };
   } catch (error) { dispose(); throw error; }
 }

@@ -23,6 +23,9 @@ flowchart TD
 
 ## Requirement-to-test matrix
 
+<details>
+<summary>Feature cases, owners and verified versus pending acceptance</summary>
+
 | Requirement | Test owner / concrete case | Status at this source checkpoint |
 |---|---|---|
 | Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 31 Node contract tests passed on Node 22; final entry-hash counterexample is included |
@@ -41,6 +44,11 @@ flowchart TD
 | Current recipe/neutral transforms/posters and static/Markdown fallback | Gyropup #266 producer and product tests | Product-owned, pending; no stale turret illustration accepted here |
 | Rapid switch race, progress isolation, no-WebGL fallback, touch/reduced motion, complete requirement UI | Gyropup #266 tests, with shared abort/dispose primitives | Product acceptance still pending; not implied by this shared module |
 
+</details>
+
+<details>
+<summary>Retained corrective failures and current component evidence</summary>
+
 The product's existing ordinary-viewer fixtures also exposed a legacy absolute/root URL regression. Ordinary
 HTTP(S) URL resolution and external CORS/redirect behavior are retained separately from strict guide paths;
 pure and real browser cases passed in both engines at `cdbee23b`. The held ordinary load uses an absolute
@@ -54,7 +62,12 @@ fixture row outside its ownership table. After those fixes, the local structural
 map suite passed 28 tests with one explicit CI-only drawing skip. These failures remain classified separately
 from browser interaction evidence; actual themed map rendering still belongs to current CI.
 
+</details>
+
 ## Commands and CI
+
+<details>
+<summary>Run the existing suites and interpret their evidence</summary>
 
 Use installed Node 22 and the existing `tools/site` npm context:
 
@@ -87,3 +100,5 @@ links, stale print sets and destination collisions; extending guide packaging mu
 
 The composed publisher CI also caught the missing visual flows on these two newly published pages. The diagrams
 above follow real loader/controller calls and test consumers; the website visual gate stays unchanged.
+
+</details>

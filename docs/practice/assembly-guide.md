@@ -27,6 +27,9 @@ flowchart TD
 
 ## Data and identity
 
+<details>
+<summary>Schema, instance identity and asset bindings</summary>
+
 A guide uses `schema: cad-agent.assembly-guide/1`. It binds an ordinary view manifest by SHA-256. Every part in
 that guide-bound manifest must carry its mesh SHA-256; ordinary legacy viewers may omit hashes. Mesh coordinates
 already contain the **assembled placement in CAD millimetres, z-up**. The viewer performs the existing mm→metres,
@@ -63,7 +66,12 @@ the release publisher must validate real filesystem containment, symlinks and co
 replacing a prior release. Browser HTTP redirects are rejected. Never substitute a missing snapshot asset from
 another release or from current WIP.
 
+</details>
+
 ## Existing viewer API and optional controller
+
+<details>
+<summary>Viewer methods, instruction states and portable reader controls</summary>
 
 ```js
 import {loadGuide, createGuideController} from './kit/assembly/guide.js';
@@ -104,6 +112,8 @@ layout. A release must bind the entry itself with `viewer.html?guide=<relative g
 
 The existing `viewer.html?guide=<relative guide URL>` uses `mountGuide` for minimal previous/next, direct
 step selection, material mode, assembled reset and instruction text. Assembled reset synchronizes the displayed mode and explode/section controls with the mesh state and shows an explicit overview entry. The ordinary `?manifest=` route is retained.
+
+</details>
 
 ## Versions and publication
 

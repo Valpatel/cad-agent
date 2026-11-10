@@ -101,6 +101,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -e ".[site]"
+      - run: npm run test:assembly-release
+        working-directory: tools/site
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          PLAYWRIGHT_BROWSER: ${{ matrix.engine }}
       - run: npm run test:diagrams
         working-directory: tools/site
         env:

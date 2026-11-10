@@ -37,7 +37,7 @@ flowchart TD
 | Resource teardown and cancelled load | Browser suite: geometry/material dispose events, repeated dispose, no canvas, aborted creation | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
 | Two frozen versions and exact-commit WIP use independent scenes/instructions | Browser suite: differing dimensions, steps, hashes, UUIDs and snapshot IDs | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate; product selector/deep links/progress are Gyropup #266 acceptance |
 | Phone portrait/landscape and keyboard navigation | Browser suite: actual previous/next controls and overflow checks | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
-| Runtime and complete asset closure in release ZIP; preserve old output on rejection | Separate release integration PR / `tests/publish/test_release.py` | PR #501 owns final runtime and extracted-ZIP acceptance; not implied by this component run |
+| Runtime and complete asset closure in release ZIP; preserve old output on rejection | `tests/publish/test_release_guides.py` and `tests/webkit/assembly/release-browser.mjs` | Publisher tests and actual extracted-ZIP Chromium/WebKit suites passed at `47b07508`; [packaging test plan](../../tests/publish/README.md#assembly-guide-release-test-plan) states exact scope |
 | Current recipe/neutral transforms/posters and static/Markdown fallback | Gyropup #266 producer and product tests | Product-owned, pending; no stale turret illustration accepted here |
 | Rapid switch race, progress isolation, no-WebGL fallback, touch/reduced motion, complete requirement UI | Gyropup #266 tests, with shared abort/dispose primitives | Product acceptance still pending; not implied by this shared module |
 
@@ -72,6 +72,10 @@ The earlier `e219d2ac` pair recorded 13 rows per engine and remains the narrower
 remain retained failures; camera matrices and overlay fitting were corrected with strict projected-bound checks.
 The final top-guide hash forwarding changes only the portable entry binding; its explicit Node corruption control
 passes, while actual extracted-ZIP valid/corrupt-entry browser acceptance belongs to the release integration.
+The composed release suite subsequently passed seven case rows in both engines at `47b07508`, using runtime
+bytes from `cdbee23b`. It removes the original source/release, checks real draw and DOM/material reset, selected
+appearance, corruption refusal and no-script instructions, and allows no outside requests. Synthetic released
+fixtures establish version independence; they are not claims of historical Gyropup releases.
 The focused existing and new Node suites passed 37 tests; exporter/render/layout/area/packaging checks passed
 138 tests with two optional-extra skips. The corrective layout/area/package checks passed 120 tests, and the structural map suite passed 28 with its
 explicit CI-only drawing skip. These counts do not substitute for current-head CI or product acceptance.

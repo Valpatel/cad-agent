@@ -45,3 +45,18 @@ DOM values as well as the real mesh state. Programmatic Explode and Section call
 slider readouts, matching the product viewer's original behavior. Ready includes an actual render and a frame;
 loading text does not disappear before the first usable scene. These corrective browser assertions were added
 before the next run; the old images remain evidence of the mismatch, not a passing reset acceptance.
+
+On 2026-11-10 UTC the changed portable test at `3b7d4f7f` then timed out at
+`Previous` because reset correctly selected the new assembled overview. The test
+had assumed it still occupied the final instruction. Source inspection showed
+the overview deliberately disables Previous and enables Next to start the first
+instruction. Corrective source `47b07508` checks those displayed values, chooses
+an instruction explicitly, then verifies backward navigation and selected-part
+appearance restoration. The actual `test:assembly-release` runs reported
+`{"engine":"chromium","cases":7,"errors":0,"foreign":0}` and the same counts
+for WebKit. Both owned services terminated and their listeners closed.
+
+Rule: tests must assert a reset's navigation identity along with its material and
+control values. Do not make a deliberate overview behave like an instruction to
+rescue a test. This portable synthetic-fixture result remains separate from
+real product content, touch controls and physical build acceptance.

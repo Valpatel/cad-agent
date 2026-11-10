@@ -55,13 +55,15 @@ exercise packaging integrity, not CAD parsing, rendered geometry or physical fit
 | Instance, step and snapshot identities are unambiguous | Unknown parts, hidden highlights, duplicate IDs and forward prerequisites | Implemented |
 | Explode coordinates are finite CAD-mm vectors | NaN and Boolean-vector negatives | Implemented |
 | A rejected guide preserves the old release | Build with a prior release, corrupt each guide dependency, require its files/ZIP unchanged | Implemented |
-| Downloaded guides retain runtime and relative links | Extract ZIP after deleting the source; verify every byte/hash and resolve actual reader query | Fixture checks implemented; first real Chromium check passed, final dual-engine check pending |
+| Downloaded guides retain runtime and relative links | Extract ZIP after deleting the source and original release; verify every byte/hash and use the actual reader query | Chromium and WebKit passed at `47b07508` with the shared `cdbee23b` runtime |
 | Released bytes are reproducible | Two builds of two distinct snapshots, compare all hashes and ZIP bytes | Implemented |
-| The index links the guide and static instructions work without WebGL | Inspect release HTML and fallback step images/text | Implemented structurally; browser/WebGL-off check pending |
+| The index links the guide and static instructions survive disabled JavaScript | Actual generated entry, image decoding and text in a JavaScript-disabled browser context | Both engines passed at `47b07508`; product no-WebGL handling is separate |
 | Python packaging and JavaScript reader accept the same schema | Eleven on-disk fixtures through both actual validators, including cumulative cross-chapter context | Implemented; all eleven pass after shared composition |
+| Reset controls match the scene and selected appearance affects only its instance | Real dropdowns, reset overview, per-instance materials, resume/back/next and override clearing | Both engines passed at `47b07508` |
 
 Focused command: `PYTHONPATH=software pytest -q tests/publish/test_release_guides.py`.
 Normal release regressions: `PYTHONPATH=software pytest -q tests/publish/test_release.py`.
+Repository release-note consumption: `PYTHONPATH=software pytest -q tests/repo/test_cut_release.py`.
 The shared viewer and product specifications own actual multipart render state,
 version switching, phone/keyboard controls, late-load cancellation and disposal.
 Packaging checks alone cannot claim those features work.
@@ -85,3 +87,19 @@ shared reader controls, stage transforms/material reset, static no-script
 diagrams, local-only requests and corrupted guide/model/mesh refusal are checked;
 `finally` closes its browser and listener. Diagrams are labelled synthetic
 plan-view fixtures; real Gyropup posters have separate rendering/source checks.
+
+The latest portable run used actual packaged runtime bytes from shared source
+`cdbee23b` and recorded seven case rows per engine: two distinct synthetic
+releases, WIP, three corruption controls and static no-script fallback. Both
+engines reported zero page errors and zero requests outside the extracted
+bundle. Each scene checked a real draw before ready, selected-part appearance
+independence and reset/step restoration. These checks establish portable viewer
+behavior, not complete Gyropup recipe accuracy or physical assembly.
+
+The first changed portable test at `3b7d4f7f` timed out because it clicked Previous
+from the intentional assembled overview. The corrected test explicitly checks
+that Previous is disabled there and selects an instruction before testing
+backward navigation. This preserves the UI contract instead of changing the
+product to satisfy a faulty test assumption. CI also rejected a malformed
+CHANGELOG fragment; the existing repository release-producer tests now pass
+all 40 cases. Both failed attempts remain separate from the corrected results.

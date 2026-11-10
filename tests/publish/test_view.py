@@ -271,3 +271,14 @@ def test_showcase_collection_packet_is_import_safe_and_old_pack_names_do_not_pro
     (output / "alias").symlink_to(output / "gyropup.json")
     with pytest.raises(ValueError, match="Nonregular"):
         worker.inventory(output)
+    (output / "alias").unlink()
+    # Partial regular output must still be sealable before a later decoder rejects its incomplete contents.
+    import tarfile
+    monkeypatch.setattr(worker, "OUT", tmp_path)
+    monkeypatch.setattr(worker, "results", {})
+    output.rename(tmp_path / "model")
+    members = worker.archive_model()
+    assert set(members) == {"gyropup.json"}
+    with tarfile.open(tmp_path / "model-produced.tgz") as archive:
+        assert archive.getnames() == ["gyropup.json"]
+        assert archive.extractfile("gyropup.json").read() == b"partial output retained"

@@ -44,7 +44,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>.agents — 17 folders</summary>
+<summary>.agents — 18 folders</summary>
 
 <details>
 <summary><code>.agents/README.md</code> — 1 folders</summary>
@@ -121,6 +121,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `.agents/inbox/publish` |
+
+</details>
+
+<details>
+<summary><code>.agents/inbox/review/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-inbox/d-review/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/inbox/review/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/inbox/review` |
 
 </details>
 

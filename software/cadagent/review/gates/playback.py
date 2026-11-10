@@ -11,12 +11,12 @@ import json
 import math
 import posixpath
 from dataclasses import asdict
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from cadagent.publish.guides import GuideBundle
 from cadagent.review.gates.assembly import AccessOptions, AssemblySequenceWorld, SequenceWorld, sweep_pair
 from cadagent.review.gates.relations import Tolerances
-from cadagent.review.gates.verdict import Check, digest_of, verdict
+from cadagent.review.gates.verdict import Check, digest_of, verdict, _jsonable
 
 BINDING_SCHEMA = "cad-agent.playback-geometry/1"
 ASSUMPTIONS = [
@@ -31,6 +31,32 @@ ASSUMPTIONS = [
     "Fastener engagement, tools, retention, internal assembly of compound instances, gravity and support "
     "stability are not checked. Use the separate fastener and qualified-subassembly gates where applicable.",
 ]
+
+
+PROGRESS_SCHEMA = "cad-agent.playback-progress/1"
+
+
+class _ProgressError(RuntimeError):
+    pass
+
+
+def _emit(callback, event):
+    if callback is None:
+        return
+    try:
+        # Round-trip both isolates mutable nested data and rejects unsupported/nonfinite JSON.
+        snapshot = json.loads(json.dumps(_jsonable({"schema": PROGRESS_SCHEMA, **event}), allow_nan=False))
+        result = callback(snapshot)
+        from inspect import isasyncgen, isawaitable, iscoroutine, isgenerator
+        if isawaitable(result) or isgenerator(result) or isasyncgen(result):
+            if iscoroutine(result) or isgenerator(result):
+                result.close()
+            raise TypeError("on_progress must complete synchronously without yielding")
+    except Exception as exc:
+        error = _ProgressError(f"progress callback failed: {type(exc).__name__}: {exc}")
+        error.context = {key: event[key] for key in ("event", "phase", "state", "instance", "operation_index",
+                                                    "pair_index", "obstacle") if key in event}
+        raise error from exc
 
 
 def _sha(data: bytes) -> str:
@@ -116,11 +142,13 @@ def bind_playback_geometry(assembly: Any, bundle: GuideBundle):
 
 
 def _frame_evidence(world: SequenceWorld, bundle: GuideBundle, guide: Mapping[str, Any],
-                    manifest: Mapping[str, Any], tolerance_mm: float, evidence: list):
+                    manifest: Mapping[str, Any], tolerance_mm: float, evidence: list, on_progress=None):
     from io import BytesIO
     import numpy as np
     import trimesh
     for part in manifest["parts"]:
+        phase = {"event": "phase", "phase": "frame", "instance": part["name"]}
+        _emit(on_progress, {**phase, "state": "starting"})
         mesh = trimesh.load(BytesIO(_mesh_bytes(bundle, guide, part)), file_type="stl", force="mesh", process=False)
         if not len(mesh.vertices) or not len(mesh.faces) or not np.isfinite(mesh.vertices).all():
             raise ValueError(f"captured mesh has no finite triangles: {part['name']}")
@@ -135,6 +163,7 @@ def _frame_evidence(world: SequenceWorld, bundle: GuideBundle, guide: Mapping[st
             raise ValueError(f"captured mesh/model world bounds mismatch: {part['name']} ({model_error:.6g} mm)")
         if cad_error > tolerance_mm:
             raise ValueError(f"CAD/mesh world bounds mismatch: {part['name']} ({cad_error:.6g} mm)")
+        _emit(on_progress, {**phase, "state": "complete", "result": evidence[-1]})
 
 
 def _validate_numeric_settings(options: AccessOptions, tol: Tolerances, bounds_tolerance_mm: float):
@@ -192,41 +221,66 @@ def playback_operations(guide: Mapping[str, Any], install_order_by_step: Mapping
 
 def run_playback_sequence(world: SequenceWorld, guide: Mapping[str, Any], install_order_by_step: Mapping[str, Any],
                           *, reference_step_ids: Sequence[str] = (), options: AccessOptions = AccessOptions(),
-                          tol: Tolerances = Tolerances()):
-    """Kernel-free adapter rules. No source/asset identity is established by this lower-level API."""
+                          tol: Tolerances = Tolerances(), on_progress: Callable | None = None):
+    """Kernel-free rules; optional isolated progress. No source identity is established.
+
+    A callback failure stops immediately and returns failing checks plus preserved
+    completed and partial operation evidence (``complete: false``).
+    """
     _validate_numeric_settings(options, tol, 0)
+    if on_progress is not None and not callable(on_progress):
+        raise ValueError("on_progress must be callable or None")
     operations = playback_operations(guide, install_order_by_step, reference_step_ids)
     fitted = {o["instance"] for o in operations}
     if fitted != set(world.names):
         raise ValueError("playback must install the exact geometry instance set")
-    checks, rows = [], []
-    for index, operation in enumerate(operations):
-        name, offset = operation["instance"], operation["offset_mm"]
-        travel = math.sqrt(sum(c * c for c in offset))
-        direction = tuple(-c / travel for c in offset) if travel else (0.0, 0.0, 1.0)
-        pairs = []
-        for other in operation["installed"]:
-            try:
-                pair = sweep_pair(world, name, direction, other, options=options, tol=tol, travel_mm=travel)
-            except Exception as exc:
-                # One undecidable pair must not erase earlier collisions or later operations.
-                pair = {"part": other, "state": "unknown", "error": f"{type(exc).__name__}: {exc}"}
-            pairs.append(pair)
-        failed = [p for p in pairs if p["state"] != "clear"]
-        evidence = {**operation, "operation_index": index, "travel_mm": travel, "pairs": pairs,
-                    "path_checked": bool(travel and operation["installed"]),
-                    "final_pose_checked": bool(operation["installed"])}
-        checks.append(Check(f"operation:{index}:insert", "fail" if failed else "pass",
-                            f"{name}: {len(failed)} blocked or undecided pair(s)" if failed else
-                            f"{name}: no interference found against {len(pairs)} installed instance(s)",
-                            [name] + [p["part"] for p in failed], evidence))
-        if not travel:
-            checks.append(Check(f"operation:{index}:path", "warn", "zero offset: no insertion path declared", [name]))
-        rows.append(evidence)
+    checks, rows, current = [], [], None
+    try:
+        for index, operation in enumerate(operations):
+            name, offset = operation["instance"], operation["offset_mm"]
+            travel = math.sqrt(sum(c * c for c in offset))
+            direction = tuple(-c / travel for c in offset) if travel else (0.0, 0.0, 1.0)
+            pairs = []
+            current = {**operation, "operation_index": index, "travel_mm": travel, "pairs": pairs,
+                       "path_checked": bool(travel and operation["installed"]),
+                       "final_pose_checked": bool(operation["installed"])}
+            context = {"operation_index": index, "step_id": operation["step_id"], "instance": name}
+            _emit(on_progress, {"event": "operation", "state": "starting", **context})
+            for pair_index, other in enumerate(operation["installed"]):
+                pair_context = {"event": "pair", **context, "pair_index": pair_index, "obstacle": other}
+                _emit(on_progress, {**pair_context, "state": "starting"})
+                try:
+                    pair = sweep_pair(world, name, direction, other, options=options, tol=tol, travel_mm=travel)
+                except Exception as exc:
+                    # One undecidable pair must not erase earlier collisions or later operations.
+                    pair = {"part": other, "state": "unknown", "error": f"{type(exc).__name__}: {exc}"}
+                pairs.append(pair)
+                _emit(on_progress, {**pair_context, "state": "complete", "result": pair})
+            failed = [p for p in pairs if p["state"] != "clear"]
+            checks.append(Check(f"operation:{index}:insert", "fail" if failed else "pass",
+                                f"{name}: {len(failed)} blocked or undecided pair(s)" if failed else
+                                f"{name}: no interference found against {len(pairs)} installed instance(s)",
+                                [name] + [p["part"] for p in failed], current))
+            if not travel:
+                checks.append(Check(f"operation:{index}:path", "warn", "zero offset: no insertion path declared", [name]))
+            rows.append(current)
+            current = None
+            _emit(on_progress, {"event": "operation", "state": "complete", **context, "result": rows[-1]})
+    except _ProgressError as exc:
+        if current is not None:
+            current["complete"] = False
+            current["unchecked_pairs"] = current["installed"][len(current["pairs"]):]
+            rows.append(current)
+            failed = [p for p in current["pairs"] if p["state"] != "clear"]
+            checks.append(Check(f"operation:{current['operation_index']}:insert", "fail" if failed else "warn",
+                                "progress interrupted; recorded pair results are partial, remaining pairs unchecked",
+                                [current["instance"]] + [p["part"] for p in failed], current))
+        checks.append(Check("progress", "fail", str(exc), evidence=exc.context))
+        return {"checks": checks, "operations": rows, "complete": False}
     return {"checks": checks, "operations": rows}
 
 
-def _load_world(binding: Mapping[str, Any], breps: Mapping[str, bytes], tol: Tolerances):
+def _load_world(binding: Mapping[str, Any], breps: Mapping[str, bytes], tol: Tolerances, on_progress=None):
     from io import BytesIO
     from OCP.BRep import BRep_Builder
     from OCP.BRepTools import BRepTools
@@ -234,27 +288,41 @@ def _load_world(binding: Mapping[str, Any], breps: Mapping[str, bytes], tol: Tol
     from cadagent.review.gates.relations import Assembly
     assembly = Assembly()
     for name, entry in binding["instances"].items():
+        phase = {"event": "phase", "phase": "load", "instance": name}
+        _emit(on_progress, {**phase, "state": "starting"})
         shape = TopoDS_Shape()
         BRepTools.Read_s(shape, BytesIO(breps[name]), BRep_Builder())
         matrix = entry["matrix"]
         assembly.add(name, shape, location=[matrix[0:4], matrix[4:8], matrix[8:12]],
                      content_hash=entry["shape_sha256"])
-    return AssemblySequenceWorld(assembly, tol)
+        _emit(on_progress, {**phase, "state": "complete"})
+    _emit(on_progress, {"event": "phase", "phase": "world-bounds", "state": "starting"})
+    world = AssemblySequenceWorld(assembly, tol)
+    _emit(on_progress, {"event": "phase", "phase": "world-bounds", "state": "complete"})
+    return world
 
 
 def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps: Mapping[str, bytes], *,
                   install_order_by_step: Mapping[str, Any] | None = None,
                   reference_step_ids: Sequence[str] = (), options: AccessOptions = AccessOptions(),
-                  tol: Tolerances = Tolerances(), bounds_tolerance_mm: float = 0.5):
+                  tol: Tolerances = Tolerances(), bounds_tolerance_mm: float = 0.5,
+                  preflight_only: bool = False, on_progress: Callable | None = None):
     """Source-bound finite playback check over frozen BREP inputs from the guide producer.
 
     collect_guides(root, [guide_path]) supplies the captured bundle. Missing/stale
     geometry evidence produces a failing report before importing or querying CAD.
     No intended-overlap exemptions are inferred from animation or grouped meshes.
+    preflight_only runs the same input/frame checks but returns a DISTINCT gate
+    with paths_checked=false. Optional progress callbacks receive isolated JSON
+    snapshots; their storage failure stops the run and fails the report.
     """
     checks, rows, inputs, stats, frames = [], [], {}, {}, []
+    progress_complete, paths_checked, world = False, False, None
     try:
         from cadagent.review.evidence import brep_content_hash
+        if type(preflight_only) is not bool or (on_progress is not None and not callable(on_progress)):
+            raise ValueError("preflight_only must be boolean and on_progress callable or None")
+        _emit(on_progress, {"event": "phase", "phase": "inputs", "state": "starting"})
         _validate_numeric_settings(options, tol, bounds_tolerance_mm)
         guide, manifest, inputs = _captured(bundle)
         if (not isinstance(binding, Mapping) or binding.get("schema") != BINDING_SCHEMA
@@ -281,22 +349,42 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
                 # Product metadata may carry explicit empty reference entries; the player filters those too.
                 order = {k: v for k, v in order.items() if not (k in reference_step_ids and v == [])}
         # Validate declarations before loading native inputs.
-        playback_operations(guide, order, reference_step_ids)
-        world = _load_world(binding, breps, tol)
-        _frame_evidence(world, bundle, guide, manifest, bounds_tolerance_mm, frames)
-        result = run_playback_sequence(world, guide, order, reference_step_ids=reference_step_ids,
-                                       options=options, tol=tol)
-        checks = [Check("inputs", "pass", "captured guide, mesh and BREP hashes match the producer binding")]
-        checks += result["checks"]
-        rows, stats = result["operations"], world.stats
+        operations = playback_operations(guide, order, reference_step_ids)
+        if {o["instance"] for o in operations} != set(parts):
+            raise ValueError("playback must install the exact geometry instance set")
         from cadagent.review.evidence import hash_platform
         inputs.update(binding_digest=digest_of(binding), install_order_digest=digest_of(order),
                       options_digest=digest_of({**asdict(options), "bounds_tolerance_mm": bounds_tolerance_mm}),
                       tolerances_digest=digest_of(asdict(tol)),
                       reference_step_ids=list(reference_step_ids),
-                      producer_hash_platform=binding.get("hash_platform", {}), runtime_hash_platform=hash_platform())
+                      producer_hash_platform=binding.get("hash_platform", {}))
+        _emit(on_progress, {"event": "phase", "phase": "inputs", "state": "complete", "inputs": inputs})
+        _emit(on_progress, {"event": "phase", "phase": "load", "state": "starting"})
+        inputs["runtime_hash_platform"] = hash_platform()
+        world = _load_world(binding, breps, tol, on_progress)
+        _emit(on_progress, {"event": "phase", "phase": "load", "state": "complete"})
+        _emit(on_progress, {"event": "phase", "phase": "frame", "state": "starting"})
+        _frame_evidence(world, bundle, guide, manifest, bounds_tolerance_mm, frames, on_progress)
+        _emit(on_progress, {"event": "phase", "phase": "frame", "state": "complete"})
+        checks = [Check("inputs", "pass", "captured guide, mesh and BREP hashes match the producer binding")]
+        _emit(on_progress, {"event": "preflight", "state": "complete", "inputs": inputs, "frames": frames})
+        if preflight_only:
+            checks.append(Check("paths", "warn", "input/frame preflight only: no insertion paths checked"))
+            progress_complete = True
+        else:
+            result = run_playback_sequence(world, guide, order, reference_step_ids=reference_step_ids,
+                                           options=options, tol=tol, on_progress=on_progress)
+            checks += result["checks"]
+            rows = result["operations"]
+            progress_complete = result.get("complete", True)
+            paths_checked = progress_complete
+        stats = world.stats
+    except _ProgressError as exc:
+        checks.append(Check("progress", "fail", str(exc), evidence=exc.context))
     except (ValueError, KeyError, TypeError, ImportError, RuntimeError) as exc:
         checks = [Check("inputs", "fail", f"playback validation not completed: {exc}")]
+    if world is not None:
+        stats = world.stats
     checks.append(Check("support-stability", "warn", "unknown: gravity, retention and fixture support not simulated"))
     limits = {**asdict(options), "touch_mm": tol.touch_mm, "overlap_mm3": tol.overlap_mm3,
               "bounds_tolerance_mm": bounds_tolerance_mm, "model_bounds_rounding_allowance_mm": 0.01,
@@ -304,7 +392,13 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
               "physical_assembly_verified": False, "cad_mesh_correspondence": "producer-declared"}
     # Invalid numeric inputs still need a JSON-safe failing report.
     limits = {k: repr(v) if type(v) is float and not math.isfinite(v) else v for k, v in limits.items()}
-    return verdict("assembly-playback", checks, assumptions=ASSUMPTIONS,
+    if preflight_only or on_progress is not None:
+        limits.update(paths_checked=paths_checked, progress_complete=progress_complete)
+    gate = "assembly-playback-preflight" if preflight_only is True else "assembly-playback"
+    assumptions = list(ASSUMPTIONS)
+    if preflight_only is True:
+        assumptions.append("Input/frame preflight only: no insertion pair was evaluated; this is not a clearance verdict.")
+    return verdict(gate, checks, assumptions=assumptions,
                    limits=limits,
                    extra={"operations": rows, "inputs": inputs, "world_stats": stats, "frames": frames,
                           "support_stability": {"status": "unknown", "reason": "no stage physics inputs"}})

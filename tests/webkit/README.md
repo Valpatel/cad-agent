@@ -21,6 +21,7 @@ flowchart TD
 
 | File | What it tests |
 |---|---|
+| [assembly/](assembly/README.md) | Instruction contract, bounded loading and real multipart presentation/lifecycle |
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `webkit-diagrams-browser.mjs` | Real diagram lifecycle/themes/math, hostile labels, and advisory boundaries on hash-bound emitted sanitizer/math inputs |
 | `webkit-fan-curve.test.mjs` | `<cad-fan-curve>` without a browser: every setting gives a point on both curves |

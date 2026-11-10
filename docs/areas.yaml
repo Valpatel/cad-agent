@@ -385,7 +385,7 @@ domains:
         title: Publishing
         scope: Review sites, viewers, releases and this site.
         maturity: tooling
-        pages: [docs/practice/file-viewer.md, docs/practice/style-guide.md, docs/practice/web-diagrams.md, docs/practice/web-parts.md, docs/practice/animated-figures.md, docs/practice/share-badge.md]
+        pages: [docs/practice/assembly-guide.md, docs/practice/assembly-guide-testing.md, docs/practice/file-viewer.md, docs/practice/style-guide.md, docs/practice/web-diagrams.md, docs/practice/web-parts.md, docs/practice/animated-figures.md, docs/practice/share-badge.md]
         cli: [package, release, serve, site, view, webkit]
         api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
               cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,

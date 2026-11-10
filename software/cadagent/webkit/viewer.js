@@ -5,25 +5,54 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { createStage } from './stage.js';
 import { section, slider, toggle, readouts } from './panel.js';
+import { assetURL, readAsset, parseJSON, validateView, validateState } from './assembly/guide.js';
+import { validateSTL, normalizeMesh, MAX_TRIANGLES } from './file-geometry.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/** createViewer({ app, panel, title, manifestUrl }) -> Promise<{ stage, parts, setExplode, setSection }> */
-export async function createViewer({ app, panel, title, manifestUrl }) {
-  const manifest = await (await fetch(manifestUrl)).json();
+/** Existing viewer, with optional validated guide manifests and abortable loading. */
+export async function createViewer({ app, panel, title, manifestUrl, manifest: suppliedManifest,
+    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, onSelect = () => {} }) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
+  const lifetime = new AbortController(), parts = [], events = new AbortController();
+  let stage, timer, disposed = false, committed = false;
+  const cancel = () => { lifetime.abort(signal?.reason); dispose(); };
+  signal?.addEventListener('abort', cancel, { once: true });
+  if (signal?.aborted) cancel();
+  timer = setTimeout(() => lifetime.abort(new Error('Model loading timed out')), timeoutMs);
+  function dispose() {
+    if (disposed) return;
+    disposed = true; lifetime.abort(); events.abort(); signal?.removeEventListener('abort', cancel);
+    clearTimeout(timer); stage?.dispose();
+    for (const p of parts) { p.mesh.geometry.dispose(); p.mesh.material.dispose(); }
+    if (committed) panel.replaceChildren();
+  }
+  try {
+  lifetime.signal.throwIfAborted();
+  onProgress('Downloading the model manifest…');
+  const manifest = structuredClone(validateView(suppliedManifest || parseJSON(await readAsset(manifestUrl, { signal: lifetime.signal, maxBytes: 2 * 1024 * 1024 }))));
   const base = new URL('.', new URL(manifestUrl, location.href));
-  if (title) title.textContent = manifest.title ?? 'Model';
-
-  // CAD is z-up in mm; the stage is y-up in metres.
+  // CAD is z-up in mm; the stage is y-up in metres. Baseline placements are baked into the meshes.
   const model = new THREE.Group();
   model.rotation.x = -Math.PI / 2;
   model.scale.setScalar(0.001);
   const loader = new STLLoader();
   const clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e9);
-  const parts = [];
-  await Promise.all(manifest.parts.map(async (p) => {
-    const geo = loader.parse(await (await fetch(new URL(p.file, base))).arrayBuffer());
-    geo.computeVertexNormals();
+  let totalBytes = 0, totalTriangles = 0;
+  for (const p of manifest.parts) {
+    onProgress(`Loading model part ${parts.length + 1} of ${manifest.parts.length}…`);
+    const bytes = await readAsset(assetURL(p.file, base, assetRoot), { signal: lifetime.signal, expectedHash: p.sha256 });
+    totalBytes += bytes.byteLength;
+    if (totalBytes > 128 * 1024 * 1024) throw new Error('Assembly exceeds the preview byte limit');
+    validateSTL(bytes);
+    const geo = loader.parse(bytes);
+    try {
+      normalizeMesh({ positions: geo.attributes.position?.array, indices: geo.index?.array });
+      totalTriangles += geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3;
+      if (totalTriangles > MAX_TRIANGLES) throw new Error('Assembly exceeds the preview triangle limit');
+      geo.computeVertexNormals();
+      lifetime.signal.throwIfAborted();
+    } catch (error) { geo.dispose(); throw error; }
     const mat = new THREE.MeshPhysicalMaterial({ color: p.color, roughness: 0.55, clearcoat: 0.2, clippingPlanes: [clip], clipShadows: true,
                                                  side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geo, mat);
@@ -32,9 +61,11 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
     model.add(mesh);
     const b = p.bounds_mm;
     parts.push({ ...p, mesh, center: new THREE.Vector3((b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2) });
-  }));
-  parts.sort((a, b) => manifest.parts.findIndex((p) => p.name === a.name) - manifest.parts.findIndex((p) => p.name === b.name));
-
+  }
+  lifetime.signal.throwIfAborted();
+  onProgress('Preparing the 3D view…');
+  if (title) title.textContent = manifest.title ?? 'Model';
+  committed = true;
   // Stand the model on the floor, centred.
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
@@ -42,7 +73,7 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
   holder.add(model);
   model.position.set(-mid.x, -box.min.y, -mid.z);
   const height = Math.max(size.x, size.y, size.z);
-  const stage = createStage(app, { height: height * 0.8, screenshots: true });
+  stage = createStage(app, { height: height * 0.8, screenshots: true });
   stage.renderer.localClippingEnabled = true;
   stage.root.add(holder);
 
@@ -52,15 +83,18 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
   centre.divideScalar(Math.max(1, parts.length));
   const span = Math.max(size.x, size.y, size.z) * 1000;
   function setExplode(f) {
-    for (const p of parts) {
+    ensureLive();
+    if (!Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid explode factor');
+    const offsets_mm = Object.fromEntries(parts.map(p => {
       const dir = p.explode ? new THREE.Vector3(...p.explode).normalize() : p.center.clone().sub(centre);
       if (!p.explode) dir.lengthSq() > 1e-6 ? dir.normalize() : dir.set(0, 0, 1);
-      p.mesh.position.copy(dir.multiplyScalar(f * span * 0.6));
-    }
+      return [p.name, dir.multiplyScalar(f * span * 0.6).toArray()];
+    }));
+    applyState({ ...state, offsets_mm });
   }
   // Section cut along CAD x: everything beyond the plane is cut away.
   const xmin = box.min.x, xmax = box.max.x;
-  function setSection(f) { clip.constant = f >= 1 ? 1e9 : -(xmin + (xmax - xmin) * f - mid.x); }
+  function setSection(f) { if (disposed || !Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid section factor'); clip.constant = f >= 1 ? 1e9 : -(xmin + (xmax - xmin) * f - mid.x); }
 
   // Panel
   const info = readouts(section(panel, 'Model', { note: `${parts.length} parts` }));
@@ -84,6 +118,7 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
   }
   views.appendChild(camRow);
   // Parts list: one section per category (printed parts, bought parts, the board...), each with a show/hide-all box.
+  const syncGroups = [];
   const categories = [...new Set(parts.map((p) => p.category ?? ''))];
   for (const category of categories) {
     const members = parts.filter((p) => (p.category ?? '') === category);
@@ -104,7 +139,10 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
       head.innerHTML = `<input type="checkbox"><span><b>All ${esc((category || 'other parts').toLowerCase())}</b></span>`;
       all = head.querySelector('input');
       all.onchange = () => {
-        members.forEach((p, i) => { p.mesh.visible = all.checked; rows[i].checked = all.checked; });
+        const groupNames = members.map(p => p.name);
+        state.visible = all.checked ? [...new Set([...state.visible, ...groupNames])] : state.visible.filter(n => !groupNames.includes(n));
+        visibilityChanged();
+        members.forEach((p, i) => { rows[i].checked = p.mesh.visible; });
         syncAll();
         shownReadout();
       };
@@ -116,13 +154,84 @@ export async function createViewer({ app, panel, title, manifestUrl }) {
       row.innerHTML = `<input type="checkbox" ${p.mesh.visible ? 'checked' : ''}><input type="color" value="${esc(p.color)}" `
         + `style="width:18px;height:18px;border:0;padding:0;background:none"><span>${esc(p.id ? p.id + ' · ' : '')}${esc(p.name.replaceAll('_', ' '))}</span>`;
       const [vis, col] = row.querySelectorAll('input');
-      vis.onchange = () => { p.mesh.visible = vis.checked; syncAll(); shownReadout(); };
+      vis.onchange = () => { state.visible = vis.checked ? [...new Set([...state.visible, p.name])] : state.visible.filter(n => n !== p.name); visibilityChanged(); syncAll(); };
       col.oninput = () => p.mesh.material.color.set(col.value);
+      vis.dataset.part = p.name;
       rows.push(vis);
       list.appendChild(row);
     }
-    syncAll();
+    syncAll(); syncGroups.push(syncAll);
   }
-  stage.start();
-  return { stage, parts, setExplode, setSection };
+  const baseline = new Map(parts.map(p => [p.name, { visible: p.mesh.visible, color: p.mesh.material.color.clone() }]));
+  const names = parts.map(p => p.name);
+  let state = { visible: parts.filter(p => p.mesh.visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null };
+  const opening = { position: stage.camera.position.clone(), target: stage.controls.target.clone() };
+  const ensureLive = () => { if (disposed) throw new Error('Viewer is disposed'); };
+  function visibilityChanged() {
+    state.highlight = state.highlight.filter(n => state.visible.includes(n));
+    if (!state.visible.includes(state.selected)) state.selected = null;
+    if (state.isolate !== null) state.isolate = state.isolate.filter(n => state.visible.includes(n));
+    applyState(state);
+  }
+  function applyState(next) {
+    ensureLive(); validateState(next, names);
+    const nextState = structuredClone(next);
+    for (const p of parts) {
+      const m = p.mesh.material, highlighted = next.highlight.includes(p.name);
+      p.mesh.visible = next.visible.includes(p.name) && (next.isolate === null || next.isolate.includes(p.name));
+      p.mesh.position.fromArray(next.offsets_mm[p.name] || [0, 0, 0]);
+      m.color.copy(baseline.get(p.name).color);
+      m.emissive.setHex(next.selected === p.name ? 0x005588 : highlighted ? 0x5a2700 : 0);
+      m.wireframe = next.mode === 'wireframe';
+      m.opacity = next.mode === 'ghost' && !highlighted ? 0.2 : 1;
+      m.transparent = m.opacity < 1; m.depthWrite = !m.transparent; m.needsUpdate = true;
+    }
+    state = nextState;
+    // Existing visibility controls reflect programmatic step state too.
+    for (const input of panel.querySelectorAll('input[data-part]')) input.checked = parts.find(p => p.name === input.dataset.part).mesh.visible;
+    syncGroups.forEach(sync => sync());
+    shownReadout(); model.updateMatrixWorld(true);
+    return structuredClone(state);
+  }
+  function frameParts(selected = state.visible, direction) {
+    ensureLive();
+    validateState({ visible: selected, highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null }, names);
+    if (direction) {
+      if (!Array.isArray(direction) || direction.length !== 3 || !direction.every(Number.isFinite) || !direction.some(n => n !== 0)) throw new Error('Invalid camera direction');
+      // CAD x/y/z -> stage x/z/-y, exactly once.
+
+    }
+    model.updateMatrixWorld(true);
+    const points = [];
+    for (const p of parts.filter(p => selected.includes(p.name) && p.mesh.visible)) {
+      const b = new THREE.Box3().setFromObject(p.mesh);
+      if (!b.isEmpty()) for (let i = 0; i < 8; i++) points.push(new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
+    }
+    if (points.length) return stage.fitView(points, { direction: direction ? new THREE.Vector3(direction[0], direction[2], -direction[1]) : stage.camera.position.clone().sub(stage.controls.target) });
+  }
+  function setSelection(name) {
+    applyState({ ...state, selected: name }); onSelect(name);
+  }
+  function reset() {
+    ensureLive();
+    applyState({ visible: parts.filter(p => baseline.get(p.name).visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null });
+    setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update();
+  }
+  const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
+  let down;
+  const canvas = stage.renderer.domElement;
+  canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; }, { signal: events.signal });
+  canvas.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const rect = canvas.getBoundingClientRect();
+    pointer.set(2 * (e.clientX - rect.left) / rect.width - 1, 1 - 2 * (e.clientY - rect.top) / rect.height);
+    ray.setFromCamera(pointer, stage.camera);
+    const hit = ray.intersectObjects(parts.filter(p => p.mesh.visible).map(p => p.mesh))[0];
+    setSelection(parts.find(p => p.mesh === hit?.object)?.name || null);
+  }, { signal: events.signal });
+  stage.start(); clearTimeout(timer);
+  onProgress('Model ready');
+  return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, reset, dispose };
+  } catch (error) { dispose(); throw error; }
 }
+

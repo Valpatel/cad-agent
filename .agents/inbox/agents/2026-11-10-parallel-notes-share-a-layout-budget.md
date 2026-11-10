@@ -28,3 +28,24 @@ providers. All older worktrees/providers remain untouched; only tracked notes in
 After the domain split, the identical combined command passed 290 tests in 54.44 s with only the existing
 webkit-folder warning. A separate relative-link check examined 129 local links across the affected maps and
 moved records, with zero missing targets. Approved playback and physics code/test bytes remained unchanged.
+
+The first CI run of that split found another owning consumer that the local Python/link checks did not cover:
+
+```text
+2026-11-10, PR #518 head 455504c8, browser (chromium), run 42852649686, job 129957194630
+not ok 40 - repository map publishes folder details without flooding the catalogue
+every source-derived owned map needs its actual detail route: actual Set(107), expected Set(108)
+missing: https://cad-agent.valpatel.com/repo/folders/d-.agents/d-inbox/d-review/README
+not ok 127 - the actual repository map and generated inventory are current
+docs/map.md is stale: run site-repo-map.mjs --write
+165 passed, 2 failed, 1 skipped
+```
+
+Cause: adding the owned domain folder also changes the generated public inventory, even though moving its
+incident notes does not change the toolkit runtime. The original failed run remains visible; it is a source
+defect, not a browser startup failure. Run the existing `node tools/site/compiler/site-repo-map.mjs --write`
+after adding or moving owned folders, then check its freshness and published-map consumers. The generator
+added only the review-folder owner/route and updated the agent-folder count. With the existing Node 22
+runtime and unchanged locked dependencies, `node --test tests/site/website-repo-map.test.mjs` then passed
+28 tests, skipped its opt-in real-browser diagram test, and reported 1,041 checked folders. The full CI
+website build and both browser jobs remain required; this local structural pass does not substitute for them.

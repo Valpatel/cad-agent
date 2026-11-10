@@ -609,10 +609,11 @@ def _guide_page(bundle) -> str:
     import posixpath
     from urllib.parse import unquote
     guide = bundle.guide
-    title = guide.get("title", bundle.identifier)
     snapshot = guide["snapshot"]
-    target = "../" + bundle.identifier + "/project/" + bundle.path
-    interactive = "../_cadagent/viewer.html?guide=" + quote(target, safe="")
+    title = snapshot["revision"]
+    target = "../" + bundle.identifier + "/project/" + quote(bundle.path, safe="/")
+    back = "../" + bundle.identifier + "/index.html"
+    interactive = "../_cadagent/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
     rows = []
     for step in guide["steps"]:
         poster = step.get("poster")
@@ -1071,7 +1072,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             at = prefix + "index.html"
             (folder / at).write_text(_guide_page(bundle))
             copied[at] = folder / at
-            docs.append({"title": "Assembly: " + str(bundle.guide.get("title", bundle.identifier)), "href": at})
+            docs.append({"title": "Assembly: " + bundle.guide["snapshot"]["revision"], "href": at})
             guide_entries.append({"id": bundle.identifier, "href": at, "snapshot": bundle.guide["snapshot"],
                                   "guide": prefix + "project/" + bundle.path,
                                   "sha256": hashlib.sha256(bundle.files[bundle.path]).hexdigest()})

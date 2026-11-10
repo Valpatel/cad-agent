@@ -2,7 +2,9 @@
 import hashlib
 import json
 import shutil
+import subprocess
 import zipfile
+from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 import pytest
@@ -28,11 +30,11 @@ def fixture(root, identifier="v1"):
         (folder / "model" / (name + ".stl")).write_bytes(data)
         parts.append({"name": name, "file": name + ".stl", "sha256": digest(data),
                       "bounds_mm": [0, 0, 0, 10, 10, 10], "color": "#ff9900"})
-    model = json.dumps({"parts": parts}).encode()
+    model = json.dumps({"units": "mm", "up": "z", "parts": parts}).encode()
     (folder / "model/view.json").write_bytes(model)
     poster = (identifier + " poster bytes").encode()
     (folder / "step.png").write_bytes(poster)
-    guide = {"schema": "cad-agent.assembly-guide/1", "title": "Fixture guide",
+    guide = {"schema": "cad-agent.assembly-guide/1",
              "snapshot": {"id": identifier, "revision": "fixture-" + identifier, "status": "released",
                           "source_commit": digest(identifier.encode())[:40]},
              "model": {"file": "model/view.json", "sha256": digest(model)},
@@ -77,7 +79,7 @@ def test_missing_or_stale_dependency_is_rejected(tmp_path, kind):
 
 @pytest.mark.parametrize("reference", ["/etc/passwd", "https://example.com/model.json", "//example.com/x",
                                        "model/view.json?latest=1", "model/view.json#x", "../../../../escape.json",
-                                       "%2fetc/passwd", "model%5cview.json", "http://[", "model%zz.json",
+                                       "%2fetc/passwd", "model%2Fview.json", "model%5cview.json", "http://[", "model%zz.json",
                                        "model/%ff.json", "model/\nview.json"])
 def test_unsafe_model_reference_is_rejected(tmp_path, reference):
     path, guide = fixture(tmp_path)
@@ -164,11 +166,14 @@ def test_release_contains_distinct_snapshots_runtime_and_static_fallback(tmp_pat
         assert entry["href"] in (result.folder / "index.html").read_text()
         # Exercise the actual query and relative path the generated link uses.
         import re
-        link = re.search(r'href="([^\"]+)">Open interactive', static).group(1)
+        import html
+        link = html.unescape(re.search(r'href="([^\"]+)">Open interactive', static).group(1))
         viewer = (result.folder / entry["href"]).parent / unquote(urlsplit(link).path)
         assert viewer.resolve() == (result.folder / "guides/_cadagent/viewer.html").resolve()
         selected = parse_qs(urlsplit(link).query)["guide"][0]
         assert (viewer.parent / selected).resolve() == (result.folder / entry["guide"]).resolve()
+        back = parse_qs(urlsplit(link).query)["back"][0]
+        assert (viewer.parent / back).resolve() == (result.folder / entry["href"]).resolve()
     meshes = [(result.folder / entry["guide"]).parent / "model/lid.stl" for entry in manifest["assembly_guides"]]
     assert len({mesh.read_bytes() for mesh in meshes}) == 3
     # The project and toolkit installation are not needed to retain these bytes.
@@ -265,3 +270,51 @@ def test_runtime_failure_preserves_existing_release(tmp_path, runtime, monkeypat
         release.build_release(p, out=output, date="2026-11-09")
     assert first.zip_path.read_bytes() == before
     assert (output / "index.html").read_bytes() == old_index
+
+
+@pytest.mark.parametrize("case", ["valid", "cross-chapter-context", "wrong-group-highlight", "unknown-field",
+                                  "missing-frame", "wrong-up", "encoded-separator", "missing-offsets",
+                                  "missing-highlight", "duplicate-subassembly", "future-step"])
+def test_packaging_and_actual_reader_accept_same_contract(tmp_path, case):
+    """One on-disk fixture goes through both validators, not two hand-written expectations."""
+    reader = Path(__file__).resolve().parents[2] / "software/cadagent/webkit/assembly/guide.js"
+    # This explicit draft dependency disappears after composing shared PR500.
+    if not reader.is_file():
+        pytest.skip("shared assembly reader PR500 not composed yet")
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("reader contract parity needs Node (also exercised by required browser CI)")
+    path, guide = fixture(tmp_path)
+    model_path = path.parent / "model/view.json"
+    model = json.loads(model_path.read_bytes())
+    step = guide["steps"][0]
+    accepted = case in ("valid", "cross-chapter-context")
+    if case in ("cross-chapter-context", "wrong-group-highlight"):
+        guide["subassemblies"] = [{"id": "base", "title": "Base", "parts": ["base"]},
+                                  {"id": "lid", "title": "Lid", "parts": ["lid"]}]
+        step["subassembly"] = "lid"
+        if case == "wrong-group-highlight": step["highlight"] = ["base"]
+    elif case == "unknown-field": guide["title"] = "Unsupported legacy title"
+    elif case == "missing-frame": del model["units"]
+    elif case == "wrong-up": model["up"] = "y"
+    elif case == "encoded-separator": guide["model"]["file"] = "model%2Fview.json"
+    elif case == "missing-offsets": del step["offsets_mm"]
+    elif case == "missing-highlight": del step["highlight"]
+    elif case == "duplicate-subassembly": guide["subassemblies"].append(dict(guide["subassemblies"][0]))
+    elif case == "future-step": step["requires"] = ["later"]
+    model_path.write_text(json.dumps(model))
+    guide["model"]["sha256"] = digest(model_path.read_bytes())
+    path.write_text(json.dumps(guide))
+    try:
+        collect(tmp_path, path)
+        python_accepts = True
+    except CadConfigError:
+        python_accepts = False
+    script = """import fs from 'node:fs'; import {pathToFileURL} from 'node:url';
+      const {validateGuide}=await import(pathToFileURL(process.argv[1]));
+      try { validateGuide(JSON.parse(fs.readFileSync(process.argv[2])),JSON.parse(fs.readFileSync(process.argv[3]))); }
+      catch { process.exitCode=1; }"""
+    actual = subprocess.run([node, "--input-type=module", "-e", script, str(reader), str(path), str(model_path)],
+                            capture_output=True, text=True, timeout=10)
+    assert python_accepts is accepted, case
+    assert (actual.returncode == 0) is accepted, case + ": " + actual.stderr

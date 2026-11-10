@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A patch candidate contains required project changes | [Choose the release level from the complete fragments before cutting](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#required-project-changes-determine-the-release-level-before-cutting) |
 | An extended reference page passes source tests but both browsers reject a long prose stretch | [Remeasure the rendered page and retain accessible detailed references](inbox/agents/2026-11-10-parallel-notes-share-a-layout-budget.md#long-reference-additions-need-their-published-page-checks-again) |
 | Individually green branches combine into a folder over the growth limit | [Recheck the union and split by domain without relaxing the budget](inbox/agents/2026-11-10-parallel-notes-share-a-layout-budget.md) |
 | A checkpoint callback returns a generator/async generator, records no events, yet validation completes | [Reject deferred results under the synchronous checkpoint contract](inbox/review/2026-11-10-lazy-callbacks-are-not-completed-checkpoints.md) |

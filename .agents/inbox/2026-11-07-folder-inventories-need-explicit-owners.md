@@ -129,6 +129,15 @@ The receipt retains both outputs and hashes; this proves input consumption, not 
 
 ## Detailed maps need both desktop fit and a real phone reading path
 
+On 2026-11-10 UTC, PR #504 at `e0cc212d` repeated this failure class: both actual
+browser engines measured its new agent-incident map at 1071px against a 641px
+desktop allowance ([Chromium](https://github.com/Valpatel/cad-agent/actions/runs/42772753537/job/129684144253),
+[WebKit](https://github.com/Valpatel/cad-agent/actions/runs/42772753537/job/129684143820)).
+Structural map checks had passed but did not measure the rendered left-to-right
+chain. The correction arranges the same named nodes and arrows top-down; the
+existing browser limit remains unchanged. Fresh rendered evidence and CI are
+still required before accepting that correction.
+
 The exact `8ecd46cd` Chromium CI job `128510182386` completed all 16 browser parts and failed on real diagram
 widths: 23 newly published folder-map routes exceeded the desktop column, and 76 exceeded a phone width.
 Raw log SHA-256: `6425e21b733e2e00bf6664758941bc91730af3cbfbd6a4545232118224174520`.

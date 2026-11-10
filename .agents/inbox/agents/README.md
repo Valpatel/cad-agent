@@ -4,7 +4,7 @@ Dated evidence for instruction discovery, installation/update consumers and chec
 Use the [symptom index](../../SYMPTOM-INDEX.md) to find the relevant case.
 
 ```mermaid
-flowchart LR
+flowchart TD
     D["discovery + installation"] --> P["path and platform consumers"]
     P --> C["contained checkouts"]
     C --> W["contributor workflow"]

@@ -1306,6 +1306,24 @@ Turns CAD parts into a simulator model with real mass properties:
 - `check_urdf` checks the tree, inertias (positive definite, triangle inequality), mesh files and joint limits.
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
 
+<details>
+<summary>Assembly-stage support simulation acceptance (#515)</summary>
+
+The next additive robot API evaluates an explicitly authored rigid stage under gravity, complementing insertion
+path checks. Its first scope is independent free rigid groups and named fixed primitive fixtures, using the
+existing MuJoCo extra. It must capture the model/assets, effective gravity/contact settings, masses/inertias,
+maximum COM translation and rotation, final speeds, contact support paths, penetration and solver warnings.
+Zero gravity, an implicitly fixed monitored body, disabled contacts or a numerical reset cannot count as stability.
+
+Supported-box, unsupported/freefall, tipping and support-removal fixtures must exercise actual integration;
+a smaller-timestep control must retain the analytic fixture classification. No masses, rigidity, retention or
+fixtures are inferred from a guide mesh. Nonconvex mesh collision hulls cannot stand in for assembly bores.
+An apparent settle only predicts the declared model over the recorded finite time, never physical readiness.
+See [MuJoCo collision semantics](https://mujoco.readthedocs.io/en/stable/computation/#checking) and its
+[step/forward API](https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html#mj-forward).
+
+</details>
+
 ## Simulation and optimisation (standard practice for anything that carries load or heat)
 
 Built on mature open-source tools, never reimplemented: OpenFOAM for airflow and heat, gmsh + scikit-fem for

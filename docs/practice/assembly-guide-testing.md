@@ -165,3 +165,17 @@ located CAD and model metadata with explicit bounded tessellation allowance; mat
 complete shape correspondence. Original-BREP byte binding preserves the native producer platform and avoids
 rehashing imported shapes. Nonfinite distances/tolerances, infinite or fractional budgets, and undecided
 refinement midpoints have negative controls.
+
+## Large native collections need input-only preflight and recoverable progress (#517)
+
+A 233-instance source collection can require 27,028 ordered pairs. Extend the existing playback gate with an
+explicit input-only mode, returning a distinct `assembly-playback-preflight` gate and `paths_checked: false`.
+It must reuse captured-input, BREP-load and actual-world-frame checks without running insertion paths.
+
+An optional progress callback receives isolated JSON-safe phase, per-part load/frame, per-pair and per-operation
+snapshots. Emit before potentially slow native work and after completed evidence. The project wrapper owns
+flushed JSONL storage, external runtime caps and detached execution. A callback/storage failure stops validation
+and produces a failing report retaining earlier collisions and partial current-operation evidence. Progress is
+not a resume or clearance certificate; unrecorded or uncompleted pairs remain unchecked. Defaults retain the
+existing full-check behavior. Prove event order, mutation isolation and failures before native work and after a
+known collision, with the existing box and real CAD fixture.

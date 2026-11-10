@@ -70,14 +70,28 @@ def inventory(root):
             continue
         if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1:
             raise ValueError('Nonregular or hardlinked output: ' + str(path))
-        rows[path.relative_to(root).as_posix()] = {'bytes': st.st_size, 'sha256': sha(path)}
+        rows[path.relative_to(root).as_posix()] = {'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size, 'sha256': sha(path)}
     return rows
 
 
 def tracked(root):
+    files = {}
+    for name in git(root, 'ls-files', '-z').split('\0'):
+        if not name:
+            continue
+        path = root / name
+        st = path.lstat()
+        entry = {'mode': stat.S_IMODE(st.st_mode)}
+        if stat.S_ISREG(st.st_mode):
+            entry.update(kind='file', bytes=st.st_size, sha256=sha(path))
+        elif stat.S_ISLNK(st.st_mode):
+            entry.update(kind='link', target=os.readlink(path))
+        else:
+            raise ValueError('Nonregular tracked source: ' + name)
+        files[name] = entry
     return {'head': git(root, 'rev-parse', 'HEAD'),
             'status': git(root, 'status', '--porcelain', '--untracked-files=all'),
-            'files': {n: sha(root / n) for n in git(root, 'ls-files', '-z').split('\0') if n}}
+            'files': files}
 
 
 def archive_model():

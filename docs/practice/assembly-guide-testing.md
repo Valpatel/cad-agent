@@ -22,6 +22,12 @@ from planned feature acceptance. CAD illustrations and browser presentation are 
 | Current recipe/neutral transforms/posters and static/Markdown fallback | Gyropup #266 producer and product tests | Product-owned, pending; no stale turret illustration accepted here |
 | Rapid switch race, progress isolation, no-WebGL fallback, touch/reduced motion, complete requirement UI | Gyropup #266 tests, with shared abort/dispose primitives | Product acceptance still pending; not implied by this shared module |
 
+The first current-head Chromium CI stopped before component execution on missing parent README links and a
+fixture row outside its ownership table. After those fixes, the local structural suite also exposed a stale
+`docs/map.md`; the unchanged generator refreshed its inventory from 1034 to 1039 folders. The final structural
+map suite passed 28 tests with one explicit CI-only drawing skip. These failures remain classified separately
+from browser interaction evidence; actual themed map rendering still belongs to current CI.
+
 ## Commands and CI
 
 Use installed Node 22 and the existing `tools/site` npm context:

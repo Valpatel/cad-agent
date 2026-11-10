@@ -9,6 +9,16 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.31.0 (2026-11-10)
+
+**New**
+- Extend assembly guides with orthogonal CAD section axes and flip, shared hover/selection interaction callbacks, and explicitly ordered per-instance playback over the existing viewer and frame loop. Preserve scalar section behavior and require authored operation order.
+
+**Changed**
+- Agent and contributor examples keep the canonical checkout and linked worktrees inside one project container,
+  preserving existing owners and dependency paths. The read-only `dev` example now updates its detached HEAD
+  explicitly rather than relying on an absent pull upstream (#503).
+
 ## v0.30.0 (2026-11-10)
 
 **New**

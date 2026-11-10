@@ -48,3 +48,39 @@ a successful component study cannot waive it.
 
 Evidence: [cancelled Chromium job](https://github.com/Valpatel/cad-agent/actions/runs/42763870631/job/129655671803),
 [prior same-reader portable source](https://github.com/Valpatel/cad-agent/pull/501).
+
+
+## Provision browser dependencies before the test job
+
+On 2026-11-10 UTC, PR #506 at `ed74c5e7` retained two actual push WebKit cancellations at the existing
+20-minute cap. Job 129682727629 spent 14m36 in Playwright's dependency/browser install: apt reported
+`Fetched 114 MB in 14min 7s (135 kB/s)`. The website consumer began at 07:15:43 and was cancelled at
+07:21:01; later catalogue, guide, portable-release and diagram suites did not run. The identical-head parallel
+PR WebKit job 129682757230 completed every suite in 9m17, including setup in 34s. That comparison does not
+turn the incomplete push lane into a pass or establish the underlying mirror/network cause.
+
+After independent classification, the sole failed-job-only continuation, job 129690821933, also reached the
+20-minute cap. Dependency/browser installation took 10m47; apt reported `Fetched 114 MB in 10min 16s
+(185 kB/s)`. The website consumer passed in 8m39, then the catalogue consumer was cancelled after 23s;
+all subsequent guide, portable-release and diagram suites remained unrun. There is no third unchanged retry.
+
+Corrective rule: use the official matching Playwright 1.56.1 Noble image with browsers and OS dependencies
+already baked in, pinned by the registry manifest digest. Keep the npm lockfile/library, every test command,
+engine, assertion, individual timeout and 20-minute whole-job cap. Run commands with Bash as before, and key
+the diagram cache by the pinned image identity so drawings from the older runner/font snapshot cannot be
+silently reused. The image replaces the redundant apt/browser install only; the Python setup and extracted-ZIP
+browser chain still have to complete in the actual changed-head CI.
+
+The registry returned image manifest `sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a`
+for `mcr.microsoft.com/playwright:v1.56.1-noble`; its linux/amd64 manifest is
+`sha256:42f02d323c310069b4d54c94bd91a608966a486c3492c48ae0b1cea747ec5ca2`.
+The matching image has a different packaged OS/font snapshot and an approximately 878 MiB compressed download;
+metadata matching is not render acceptance or a network-speed guarantee. No local image install/pull was used.
+Complete current two-engine CI and independent source review are required before integration. Original capped
+runs and missing later suites stay explicit; this change supplies no waiver or product/physical acceptance.
+
+Evidence: [first capped push job](https://github.com/Valpatel/cad-agent/actions/runs/42772311917/job/129682727629),
+[sole continuation](https://github.com/Valpatel/cad-agent/actions/runs/42772311917/job/129690821933),
+[independent first-cap classification](https://github.com/Valpatel/cad-agent/pull/506#issuecomment-6761546180),
+[official pinned image build](https://github.com/microsoft/playwright/blob/v1.56.1/utils/docker/Dockerfile.noble),
+[official image/version contract](https://github.com/microsoft/playwright/blob/v1.56.1/docs/src/docker.md).

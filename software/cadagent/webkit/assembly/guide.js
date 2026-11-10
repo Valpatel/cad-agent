@@ -195,8 +195,9 @@ export function validateState(state, partNames) {
   return state;
 }
 /** Small optional controls used by viewer.html; products can keep their own page composition. */
-export async function mountGuide({ app, panel, title, guideUrl, signal, onProgress = () => {}, assetRoot }) {
-  const loaded = await loadGuide(guideUrl, { signal, assetRoot });
+export async function mountGuide({ app, panel, title, guideUrl, expectedHash, signal, onProgress = () => {}, assetRoot }) {
+  if (expectedHash !== undefined && !hashPattern.test(expectedHash)) fail('Invalid guide SHA-256');
+  const loaded = await loadGuide(guideUrl, { expectedHash, signal, assetRoot });
   const { createViewer } = await import('../viewer.js');
   const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, signal, onProgress, assetRoot });
   let controls;

@@ -39,7 +39,9 @@
   async function load() {
     if (q.has('guide')) {
       const { mountGuide } = await import('./assembly/guide.js');
-      const guide = await mountGuide({ ...args, guideUrl: new URL(q.get('guide'), location.href).href });
+      const expectedHash = q.has('sha256') ? q.get('sha256') : undefined;
+      if (expectedHash !== undefined && !/^[0-9a-f]{64}$/.test(expectedHash)) throw new Error('Invalid guide SHA-256');
+      const guide = await mountGuide({ ...args, expectedHash, guideUrl: new URL(q.get('guide'), location.href).href });
       window.__guide = guide; return guide.viewer;
     }
     return createViewer({ ...args, manifestUrl });

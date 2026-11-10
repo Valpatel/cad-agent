@@ -250,4 +250,3 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, reset, dispose };
   } catch (error) { dispose(); throw error; }
 }
-

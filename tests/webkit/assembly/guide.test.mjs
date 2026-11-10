@@ -68,6 +68,10 @@ test('loadGuide binds exact manifest; no failed/missing version is filled from a
   const fetcher = async url => new Response(String(url).endsWith('guide.json') ? JSON.stringify(guide) : raw);
   const loaded = await loadGuide('https://host/bundle/docs/guide.json', { fetcher, assetRoot: 'https://host/bundle/' });
   assert.equal(loaded.manifestUrl, 'https://host/bundle/view.json');
+  const guideHash = await sha256(new TextEncoder().encode(JSON.stringify(guide)));
+  await loadGuide('https://host/bundle/docs/guide.json', { fetcher, expectedHash: guideHash });
+  const changedGuide = structuredClone(guide); changedGuide.steps[0].text = 'Changed instructions, same meshes';
+  await assert.rejects(loadGuide('https://host/bundle/docs/guide.json', { expectedHash: guideHash, fetcher: async url => new Response(String(url).endsWith('guide.json') ? JSON.stringify(changedGuide) : raw) }), /SHA-256/);
   await assert.rejects(loadGuide('https://host/bundle/docs/guide.json', { fetcher: async url => String(url).endsWith('guide.json') ? new Response(JSON.stringify(guide)) : new Response('{}'), assetRoot: 'https://host/bundle/' }), /SHA-256/);
 });
 

@@ -76,7 +76,9 @@ sequential navigation. No animation or geometry-convergence sleep is required to
 
 `createGuideController(viewer, guide)` returns `applyStep(id, {explode, mode, frame})`, `reset`, `current` and
 `dispose`. `explode` is 0..1 and scales authored offsets only. A product can keep its own version picker and text
-layout. The existing `viewer.html?guide=<relative guide URL>` uses `mountGuide` for minimal previous/next, direct
+layout. A release must bind the entry itself with `viewer.html?guide=<relative guide URL>&sha256=<guide SHA-256>`. `mountGuide` accepts the same optional `expectedHash`; ad hoc previews may omit it. A changed instruction with unchanged model bytes must still fail the release entry hash. A validated relative `back` query links the portable reader to its release guide.
+
+The existing `viewer.html?guide=<relative guide URL>` uses `mountGuide` for minimal previous/next, direct
 step selection, material mode, assembled reset and instruction text. The ordinary `?manifest=` route is retained.
 
 ## Versions and publication

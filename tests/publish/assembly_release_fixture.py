@@ -57,8 +57,8 @@ def main():
             # A labelled plan-view fixture diagram: stage 1 base, stage 2 base
             # plus both screws. Product posters have their own render contract.
             svg = ('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180" viewBox="0 0 240 180">'
-                   '<rect width="240" height="180" fill="#faf9f5"/><rect x="30" y="50" width="180" height="100" rx="8" fill="#477a97"/>'
-                   + ('<circle cx="75" cy="90" r="12" fill="#dca44e"/><circle cx="165" cy="90" r="12" fill="#dca44e"/>' if i else '')
+                   f'<rect width="240" height="180" fill="#faf9f5"/><rect x="30" y="50" width="{(40 + index * 10) * 3}" height="90" rx="8" fill="#477a97"/>'
+                   + ('<circle cx="61.5" cy="81.5" r="7.5" fill="#dca44e"/><circle cx="121.5" cy="81.5" r="7.5" fill="#dca44e"/>' if i else '')
                    + f'<text x="20" y="28" font-size="16">Fixture {identifier}: step {i + 1}</text></svg>').encode()
             poster = f"step-{i + 1}.svg"
             (folder / poster).write_bytes(svg)
@@ -67,7 +67,7 @@ def main():
                           "subassembly": "base" if i == 0 else "fasteners", "parts": names[:1] if i == 0 else names,
                           "highlight": names[:1] if i == 0 else names[1:],
                           "offsets_mm": {} if i == 0 else {n: [0, 0, 25 + index * 5] for n in names[1:]},
-                          "poster": {"file": poster, "sha256": sha(svg)}, "camera": {"direction": [0.6, -1, 0.7]}})
+                          "poster": {"file": poster, "sha256": sha(svg)}, "camera": {"direction": [0.001, 0.001, 1]}})
         guide = {"schema": "cad-agent.assembly-guide/1",
                  "snapshot": {"id": identifier, "revision": "Fixture " + identifier,
                               "status": "wip" if identifier == "wip" else "released", "source_commit": str(index + 1) * 40},

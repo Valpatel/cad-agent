@@ -27,6 +27,7 @@ flowchart TD
 | `test_readme_anim.py` | The animated README figures are what their scenes render to, and safe to embed |
 | `test_release.py` | The print release page: parts, slicer settings and slice state, pick-one groups, totals |
 | `test_release_guides.py` | Guide dependency identity, hash binding, immutable preflight bytes and refusal of unsafe or stale inputs |
+| `assembly_release_fixture.py` | Builds real synthetic guide geometry/releases and extracts a portable ZIP for the persistent browser suite, then removes its source |
 | `test_render.py` | The offscreen renderer makes a captioned PNG (needs vtk and Pillow) |
 | `test_report.py` | `collect()` and `write_report()`: schema 1.0 results; failures never read as passes |
 | `test_reproducible_outputs.py` | The review zip, report pages and the dates they record are byte-reproducible |
@@ -54,9 +55,10 @@ exercise packaging integrity, not CAD parsing, rendered geometry or physical fit
 | Instance, step and snapshot identities are unambiguous | Unknown parts, hidden highlights, duplicate IDs and forward prerequisites | Implemented |
 | Explode coordinates are finite CAD-mm vectors | NaN and Boolean-vector negatives | Implemented |
 | A rejected guide preserves the old release | Build with a prior release, corrupt each guide dependency, require its files/ZIP unchanged | Implemented |
-| Downloaded guides retain runtime and relative links | Extract ZIP after deleting the source; verify every byte/hash and resolve actual reader query | Implemented with runtime fixture; real pinned reader/browser pending |
+| Downloaded guides retain runtime and relative links | Extract ZIP after deleting the source; verify every byte/hash and resolve actual reader query | Fixture checks implemented; first real Chromium check passed, final dual-engine check pending |
 | Released bytes are reproducible | Two builds of two distinct snapshots, compare all hashes and ZIP bytes | Implemented |
 | The index links the guide and static instructions work without WebGL | Inspect release HTML and fallback step images/text | Implemented structurally; browser/WebGL-off check pending |
+| Python packaging and JavaScript reader accept the same schema | Eleven on-disk fixtures through both actual validators, including cumulative cross-chapter context | Implemented; all eleven pass after shared composition |
 
 Focused command: `PYTHONPATH=software pytest -q tests/publish/test_release_guides.py`.
 Normal release regressions: `PYTHONPATH=software pytest -q tests/publish/test_release.py`.
@@ -72,3 +74,14 @@ static instructions and the shared interactive reader; no live-site runtime is
 required. The normal release manifest hashes every copied runtime/data byte.
 The reader requires a local/static HTTP server for browser fetches; static
 instructions and posters also remain directly readable from an extracted ZIP.
+
+Persistent browser command: `npm --prefix tools/site run test:assembly-release`
+(set `PLAYWRIGHT_BROWSER=webkit` for the second engine). The required browser CI
+matrix runs it after installing the ordinary Python site dependencies. The
+test's standalone Python fixture builds two deliberately different releases
+and one exact-source WIP, extracts the real ZIP, and deletes its source project.
+An isolated test-owned HTTP listener serves only those extracted bytes. Actual
+shared reader controls, stage transforms/material reset, static no-script
+diagrams, local-only requests and corrupted guide/model/mesh refusal are checked;
+`finally` closes its browser and listener. Diagrams are labelled synthetic
+plan-view fixtures; real Gyropup posters have separate rendering/source checks.

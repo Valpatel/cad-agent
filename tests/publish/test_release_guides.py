@@ -300,9 +300,7 @@ def test_runtime_failure_preserves_existing_release(tmp_path, runtime, monkeypat
 def test_packaging_and_actual_reader_accept_same_contract(tmp_path, case):
     """One on-disk fixture goes through both validators, not two hand-written expectations."""
     reader = Path(__file__).resolve().parents[2] / "software/cadagent/webkit/assembly/guide.js"
-    # This explicit draft dependency disappears after composing shared PR500.
-    if not reader.is_file():
-        pytest.skip("shared assembly reader PR500 not composed yet")
+    assert reader.is_file(), "shared assembly reader must be shipped with guide release support"
     node = shutil.which("node")
     if not node:
         pytest.skip("reader contract parity needs Node (also exercised by required browser CI)")

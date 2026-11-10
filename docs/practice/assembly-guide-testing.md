@@ -28,6 +28,10 @@ flowchart TD
 
 | Requirement | Test owner / concrete case | Status at this source checkpoint |
 |---|---|---|
+| Orthogonal CAD planes, flip at unchanged plane location, legacy scalar and reset/off | Planned: shared actual browser clipping pixels/landmarks on asymmetric CAD fixtures, wrong-axis/flip controls, invalid input no-mutation | Pending in separate inspection/playback follow-up; not v0.30.0 acceptance |
+| Hover and repeated selection interaction, hidden ancestors, drag/touch/leave/dispose | Planned: actual pointer interactions and callback counts in both engines, hidden-parent and wrong-target negatives | Pending in the same follow-up |
+| Explicit per-instance install order, absolute intermediate poses, speed/pause/loop/manual navigation and unsubscribe | Planned: Node order/timing adversaries plus actual two-engine world transforms on two frozen fixtures and WIP | Pending; no animation/path qualification inferred |
+
 | Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 31 Node contract tests passed on Node 22; final entry-hash counterexample is included |
 | Required model members, repeated screws, unknown/duplicate instances, prerequisites and finite vectors | Same file: invalid guide cases and absolute-state test | Passed in the above Node run |
 | HTTP/body deadline, wrong hash, byte cap, abort, missing/corrupt version | Same file: download failure controls and loadGuide binding | Passed in the above Node run |

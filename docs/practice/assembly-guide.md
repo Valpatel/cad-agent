@@ -115,6 +115,38 @@ step selection, material mode, assembled reset and instruction text. Assembled r
 
 </details>
 
+## Inspection and ordered playback follow-up
+
+<details>
+<summary>Draft API contract — implementation and complete validation pending</summary>
+
+This follow-up is separate from the frozen v0.30.0 delivery. It extends the same viewer, guide controller and
+stage; no second renderer or animation loop is introduced. Until its own reviewed source and complete tests
+land, callers must capability-check the following methods rather than infer their availability from a draft.
+
+- `setSectionPlane({axis: 'x'|'y'|'z', flipped: boolean})` preserves the current normalized depth;
+  `getSectionState()` returns a copy of `{axis, flipped, depth}`. `setSection(depth)` and default CAD-X behavior
+  stay exact. Depth 1 disables the section for either direction. Reset restores X, unflipped, off. CAD axes are
+  explicit; product labels must follow their source frame (the robot uses X forward, Y left, Z up).
+- Optional `onHover(name|null, {clientX, clientY})` shares the click hit resolver, checks all visible ancestors,
+  clears on leave/drag/dispose and is throttled to the existing browser frame cadence. It never intercepts orbit
+  input. A pointer selection supplies optional coordinates/pointer type to `onSelect`; a repeated click on the
+  same selected instance still notifies once. Programmatic unchanged selection remains quiet.
+- `createGuidePlayback(controller, {installOrderByStep, referenceStepIDs, durationMs, onState, onStep})` provides
+  `play`, `pause`, `setSpeed`, `setLoop`, `tick(dtSeconds)`, `getState` and `dispose`. The caller supplies explicit
+  exact instance order; no BOM/manifest order or insertion direction is invented. Complete coverage, duplicates,
+  unknown names and non-monotone installation steps reject. Authored compounds remain one instance.
+
+Each installation begins with previous parts assembled and solid, reveals only the current new instance and
+moves its authored CAD-mm offset absolutely to zero; future installation instances remain hidden. A zero-offset
+foundation stays static. Pause freezes its pose, speed is bounded, oversized frame deltas cannot cause catch-up,
+and looping restarts the ordered presentation. Manual navigation/reset pauses playback and applies the requested
+deterministic controller state. Player callbacks update text/URLs without recursively reapplying the step.
+No procurement or completed-step storage is written. The product owns camera/UI composition; playback uses one
+subscription to the existing `stage.onFrame`, with an unsubscribe path when the player is disposed.
+
+</details>
+
 ## Versions and publication
 
 A released snapshot pins its source, guide, model, BOM, posters and viewer runtime together. `released` describes

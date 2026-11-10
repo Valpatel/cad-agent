@@ -36,6 +36,7 @@ Config ``cad: release:`` (all optional)::
       thumbnail: "{preview}/part-{part}.png"
       extra_cad: [exports/assembly.step]   # more CAD files for cad/
       pages: [ASSEMBLY.md, "docs/assembly/*"]
+      assembly_guides: [exports/guide/guide.json]  # optional hash-bound model, meshes, posters and pinned viewer
       hardware: docs/hardware.csv          # a CSV, or a list of mappings ({item, qty, ...})
       include: ["cad/**", "tools/**", cad-agent.yaml, "requirements*.txt", README.md, "LICENSE*"]
       exclude: ["**/__pycache__/**", "**/*.pyc"]
@@ -70,7 +71,7 @@ CAD_SUFFIXES = (".step", ".stl", ".3mf")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 MARKER = "cad-agent.release/1"
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)
-_KEYS = {"title", "revision", "parts", "groups", "build", "quantities", "material", "notes", "thumbnail", "extra_cad", "pages",
+_KEYS = {"title", "revision", "parts", "groups", "build", "quantities", "material", "notes", "thumbnail", "extra_cad", "pages", "assembly_guides",
          "hardware", "include", "exclude", "max_file_mb", "date"}
 _GROUP_KEYS = {"title", "parts", "note", "optional", "pick_one"}
 
@@ -95,6 +96,7 @@ class ReleaseConfig:
     thumbnail: str = DEFAULT_THUMBNAIL
     extra_cad: List[str] = field(default_factory=list)
     pages: List[str] = field(default_factory=list)
+    assembly_guides: List[str] = field(default_factory=list)
     hardware: Any = None
     include: List[str] = field(default_factory=lambda: list(DEFAULT_INCLUDE))
     exclude: List[str] = field(default_factory=lambda: list(DEFAULT_EXCLUDE))
@@ -235,7 +237,8 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
     if isinstance(max_mb, bool) or not isinstance(max_mb, (int, float)) or max_mb <= 0:
         raise CadConfigError("cad.release.max_file_mb must be a positive number")
     globs = {}
-    for key, default in (("include", DEFAULT_INCLUDE), ("exclude", DEFAULT_EXCLUDE), ("extra_cad", []), ("pages", [])):
+    for key, default in (("include", DEFAULT_INCLUDE), ("exclude", DEFAULT_EXCLUDE), ("extra_cad", []), ("pages", []),
+                         ("assembly_guides", [])):
         values = _strings(raw[key], f"cad.release.{key}", allow_none=False) if key in raw else list(default)
         globs[key] = [_inside(v, f"cad.release.{key}") for v in values]
     return ReleaseConfig(
@@ -250,6 +253,7 @@ def release_config(project: CadProject, known_parts: Sequence[str]) -> ReleaseCo
         thumbnail=thumbnail,
         extra_cad=globs["extra_cad"],
         pages=globs["pages"],
+        assembly_guides=globs["assembly_guides"],
         hardware=hardware,
         include=globs["include"],
         exclude=globs["exclude"],
@@ -582,6 +586,52 @@ def _linked_images(text: str, src_rel: str, root: Path) -> List[str]:
     return out
 
 
+def _guide_runtime() -> Dict[str, bytes]:
+    """Capture the installed, pinned web kit; no dependency on a live website."""
+    from cadagent.publish.site import KIT_DIR
+    required = ("viewer.html", "viewer.js", "stage.js", "assembly/guide.js")
+    if any(not (KIT_DIR / name).is_file() for name in required):
+        raise CadConfigError("assembly guide release needs the shared assembly-guide viewer runtime")
+    files = {}
+    for path in sorted(KIT_DIR.rglob("*")):
+        relative = path.relative_to(KIT_DIR)
+        if "__pycache__" in relative.parts or any(p.startswith(".") for p in relative.parts):
+            continue
+        if path.is_symlink():
+            raise CadConfigError("assembly guide runtime must not contain symlinks")
+        if path.is_file():
+            files[relative.as_posix()] = path.read_bytes()
+    return files
+
+
+def _guide_page(bundle) -> str:
+    """Static instructions are usable even without JavaScript/WebGL."""
+    import posixpath
+    from urllib.parse import unquote
+    guide = bundle.guide
+    title = guide.get("title", bundle.identifier)
+    snapshot = guide["snapshot"]
+    target = "../" + bundle.identifier + "/project/" + bundle.path
+    interactive = "../_cadagent/viewer.html?guide=" + quote(target, safe="")
+    rows = []
+    for step in guide["steps"]:
+        poster = step.get("poster")
+        image = ""
+        if poster:
+            asset = posixpath.normpath(posixpath.join(posixpath.dirname(bundle.path), unquote(poster["file"])))
+            image = f'<img style="max-width:100%;height:auto" src="{_u("project/" + asset)}" alt="{_e(step.get("title", step["id"]))}">'
+        rows.append(f'<section id="{_e(step["id"])}"><h2>{_e(step.get("title", step["id"]))}</h2>'
+                    f'{image}<p style="white-space:pre-line">{_e(step.get("text", ""))}</p></section>')
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<title>{_e(title)}</title><style>{_DOC_CSS}</style></head><body><main class="page">'
+            '<p><a href="../../index.html">← Release</a></p>'
+            f'<h1>{_e(title)}</h1><p>{_e(snapshot["revision"])} · {_e(snapshot["status"])} · '
+            f'<code>{_e(snapshot["source_commit"])}</code></p>'
+            f'<p><a href="{_e(interactive)}">Open interactive 3D instructions</a></p>'
+            + "".join(rows) + '</main></body></html>\n')
+
+
 # ----------------------------------------------------------------------------- page
 
 _CSS = """
@@ -820,6 +870,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
     project's (``--revision``, ``--date``)."""
     from cadagent.publish.report import load_parts
     from cadagent.manufacturing.slicer import _settings
+    from cadagent.publish.guides import collect_guides
 
     known, _ = load_parts(project)
     cfg = release_config(project, list(known))
@@ -844,6 +895,9 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         raise CadConfigError(f"release folder {folder} would contain the project")
     skipped: List[str] = []
     extra_files = _glob(project.root, cfg.extra_cad, skipped=skipped)
+    # Validate and capture every guide dependency before replacing an existing release.
+    guides = collect_guides(root, cfg.assembly_guides)
+    guide_runtime = _guide_runtime() if guides else {}
     print_set = _print_set(project, cfg, list(known), warnings)
     if print_set:
         source = print_set['path'].resolve()
@@ -960,6 +1014,7 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
         others = set((_git(root, "ls-files", "--others", "--exclude-standard", "-z") or "").split("\0")) - {""}
         released = set(sources) | {f.relative_to(project.root).as_posix() for f in page_files} | {
             f.relative_to(project.root).as_posix() for f in _glob(project.root, cfg.extra_cad)}
+        released.update(relative for bundle in guides for relative in bundle.files)
         git["untracked_released"] = sorted(others & released)
         if git["untracked_released"]:
             warnings.append(f"not in git (the commit cannot rebuild them): {', '.join(git['untracked_released'][:5])}"
@@ -994,6 +1049,32 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
             copied[at] = folder / at
             href = at
         docs.append({"title": title, "href": href})
+    guide_entries = []
+    if guides:
+        from cadagent import __version__
+        # These names live in a release-owned subtree and preserve source-relative
+        # URLs. No rewriting of JSON, mesh bytes or old guide inputs is needed.
+        for relative, data in guide_runtime.items():
+            at = "guides/_cadagent/" + relative
+            target = folder / at
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            copied[at] = target
+        for bundle in guides:
+            prefix = "guides/" + bundle.identifier + "/"
+            for relative, data in bundle.files.items():
+                at = prefix + "project/" + relative
+                target = folder / at
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+                copied[at] = target
+            at = prefix + "index.html"
+            (folder / at).write_text(_guide_page(bundle))
+            copied[at] = folder / at
+            docs.append({"title": "Assembly: " + str(bundle.guide.get("title", bundle.identifier)), "href": at})
+            guide_entries.append({"id": bundle.identifier, "href": at, "snapshot": bundle.guide["snapshot"],
+                                  "guide": prefix + "project/" + bundle.path,
+                                  "sha256": hashlib.sha256(bundle.files[bundle.path]).hexdigest()})
     zip_path = folder.with_name(folder.name + ".zip") if make_zip else None
     (folder / "index.html").write_text(_page(project, cfg, revision, date, parts, settings, slice_note, docs, hardware,
                                              sources, extra, zip_path.name if zip_path else None, git, print_set))
@@ -1009,6 +1090,11 @@ def build_release(project: CadProject, out: Optional[Path] = None, make_zip: boo
                 "build": _build_entry(cfg, parts),
                 "print_set": print_set,
                 "warnings": warnings, "files": files}
+    if guides:
+        manifest["assembly_guides"] = guide_entries
+        manifest["guide_runtime"] = {"root": "guides/_cadagent/", "toolkit_version": __version__,
+                                     "files": {name: hashlib.sha256(data).hexdigest()
+                                               for name, data in guide_runtime.items()}}
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     if zip_path:
         _zip(folder, zip_path)

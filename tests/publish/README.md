@@ -53,13 +53,22 @@ exercise packaging integrity, not CAD parsing, rendered geometry or physical fit
 | References stay local and inside the project | External/root/query/fragment/encoded escape and symlink controls | Implemented |
 | Instance, step and snapshot identities are unambiguous | Unknown parts, hidden highlights, duplicate IDs and forward prerequisites | Implemented |
 | Explode coordinates are finite CAD-mm vectors | NaN and Boolean-vector negatives | Implemented |
-| A rejected guide preserves the old release | Build with a prior release, corrupt each guide dependency, require its files/ZIP unchanged | Pending release integration |
-| Downloaded guides retain the actual runtime and relative links | Extract ZIP in a fresh directory and open the pinned reader/model/posters; no current-site requests | Pending shared reader/integration |
-| Released bytes are reproducible | Two builds of two distinct snapshots, compare all hashes and ZIP bytes | Pending release integration |
-| The index links the guide and static instructions work without WebGL | Inspect release HTML and load fallback; check step images/text | Pending release integration |
+| A rejected guide preserves the old release | Build with a prior release, corrupt each guide dependency, require its files/ZIP unchanged | Implemented |
+| Downloaded guides retain runtime and relative links | Extract ZIP after deleting the source; verify every byte/hash and resolve actual reader query | Implemented with runtime fixture; real pinned reader/browser pending |
+| Released bytes are reproducible | Two builds of two distinct snapshots, compare all hashes and ZIP bytes | Implemented |
+| The index links the guide and static instructions work without WebGL | Inspect release HTML and fallback step images/text | Implemented structurally; browser/WebGL-off check pending |
 
 Focused command: `PYTHONPATH=software pytest -q tests/publish/test_release_guides.py`.
 Normal release regressions: `PYTHONPATH=software pytest -q tests/publish/test_release.py`.
 The shared viewer and product specifications own actual multipart render state,
 version switching, phone/keyboard controls, late-load cancellation and disposal.
 Packaging checks alone cannot claim those features work.
+
+Enable this optional packaging path with `cad.release.assembly_guides`, a list of
+project-relative guide JSON paths. The release retains original relative paths
+under each snapshot's `project/` folder and copies the installed web kit once
+under its own relative `guides/_cadagent/` folder. The HTML index links both
+static instructions and the shared interactive reader; no live-site runtime is
+required. The normal release manifest hashes every copied runtime/data byte.
+The reader requires a local/static HTTP server for browser fetches; static
+instructions and posters also remain directly readable from an extracted ZIP.

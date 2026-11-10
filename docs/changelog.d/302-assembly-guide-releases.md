@@ -1,3 +1,4 @@
-Assembly-guide release preflight checks model, mesh and poster hashes and keeps
-the checked bytes together. Interactive release integration is in progress under
-#302; this does not qualify a product's instructions or physical build.
+Optional `cad.release.assembly_guides` packages hash-bound model, mesh and poster
+inputs with the pinned shared viewer and readable static instructions. Rejected
+guide inputs preserve an existing release; captured inputs and ZIPs are
+reproducible. This does not qualify a product's instructions or physical build.

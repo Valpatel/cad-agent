@@ -95,7 +95,7 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
         snapshot = guide.get("snapshot")
         if (guide.get("schema") != SCHEMA or not isinstance(snapshot, dict)
                 or not isinstance(snapshot.get("id"), str) or not _ID.fullmatch(snapshot["id"])
-                or snapshot["id"] in identifiers or snapshot.get("status") not in {"released", "wip"}
+                or snapshot["id"] in identifiers or snapshot.get("status") not in ("released", "wip")
                 or not isinstance(snapshot.get("source_commit"), str)
                 or not re.fullmatch(r"[0-9a-f]{40}", snapshot["source_commit"])
                 or not isinstance(snapshot.get("revision"), str) or not snapshot["revision"]):
@@ -108,6 +108,8 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
         parts = view.get("parts")
         if not isinstance(parts, list) or not parts:
             raise CadConfigError("assembly guide model must contain parts")
+        if view.get("skipped"):
+            raise CadConfigError("assembly guide model must not silently skip geometry")
         names = set()
         for part in parts:
             if (not isinstance(part, dict) or not isinstance(part.get("name"), str) or not part["name"]
@@ -115,13 +117,28 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                 raise CadConfigError("assembly guide model needs unique named instances with sha256")
             names.add(part["name"])
             capture(model_path.parent, part.get("file"), part["sha256"])
+        groups = guide.get("subassemblies")
+        if not isinstance(groups, list) or not groups:
+            raise CadConfigError("assembly guide must contain subassemblies")
+        group_ids = set()
+        for group in groups:
+            if (not isinstance(group, dict) or not isinstance(group.get("id"), str)
+                    or not _ID.fullmatch(group["id"]) or group["id"] in group_ids
+                    or not isinstance(group.get("parts"), list)
+                    or any(not isinstance(n, str) or n not in names for n in group["parts"])
+                    or len(set(group["parts"])) != len(group["parts"])):
+                raise CadConfigError("assembly guide needs unique subassemblies with known instances")
+            group_ids.add(group["id"])
         steps = guide.get("steps")
         if not isinstance(steps, list) or not steps:
             raise CadConfigError("assembly guide must contain steps")
         seen = set()
         for step in steps:
             if (not isinstance(step, dict) or not isinstance(step.get("id"), str)
-                    or not _ID.fullmatch(step["id"]) or step["id"] in seen):
+                    or not _ID.fullmatch(step["id"]) or step["id"] in seen
+                    or not isinstance(step.get("subassembly"), str) or step["subassembly"] not in group_ids
+                    or not isinstance(step.get("title"), str) or not step["title"]
+                    or not isinstance(step.get("text"), str)):
                 raise CadConfigError("assembly guide needs unique stable step ids")
             for field in ("parts", "highlight"):
                 values = step.get(field, [] if field == "highlight" else None)
@@ -140,6 +157,13 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                 if (not isinstance(vector, list) or len(vector) != 3
                         or any(type(n) not in (int, float) or not math.isfinite(n) for n in vector)):
                     raise CadConfigError("assembly guide offsets must be finite CAD-mm vectors")
+            camera = step.get("camera")
+            if camera is not None:
+                direction = camera.get("direction") if isinstance(camera, dict) else None
+                if (not isinstance(direction, list) or len(direction) != 3
+                        or any(type(n) not in (int, float) or not math.isfinite(n) for n in direction)
+                        or not any(direction)):
+                    raise CadConfigError("assembly guide camera needs a finite nonzero CAD direction")
             poster = step.get("poster")
             if poster is not None:
                 if not isinstance(poster, dict) or not isinstance(poster.get("sha256"), str):

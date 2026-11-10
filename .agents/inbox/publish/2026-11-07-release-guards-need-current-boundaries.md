@@ -161,6 +161,11 @@ repository's locked Markdown consumer. Presence in source and a few surviving ro
 requirements are still cells. **Limits:** this focused parser proof does not establish browser table layout,
 responsive overflow, full-page rendering, current CI or product feature acceptance; those keep their own checks.
 
+The same review round caught a broad documentation replacement that retargeted a historical 18-case paragraph
+from `cdbee23b` to the newer `a259f46c` 26-case label. The original 18-case attribution was restored; the new
+26-case result stays in its separate dated paragraph. Keep counts paired with their actual source receipts;
+updating a current coverage matrix must not relabel historical runs.
+
 ## Judge CI deferral by the actual event and current checks
 
 On 2026-11-10 UTC, PR #509 deferred draft CI with WIP commit markers. Before its final source push, the owner

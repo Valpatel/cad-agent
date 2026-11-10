@@ -97,7 +97,7 @@ PLAYWRIGHT_BROWSER=chromium npm --prefix tools/site run test:assembly-guide
 PLAYWRIGHT_BROWSER=webkit npm --prefix tools/site run test:assembly-guide
 ```
 
-The per-instance corrective multipart suites at `a259f46c` (26 cases per engine) recorded 18 case rows per engine, zero page errors, and terminal
+The per-instance corrective multipart suites at `cdbee23b` recorded 18 case rows per engine, zero page errors, and terminal
 owned service cleanup. They include selected-instance appearance and actual reset-control assertions, ordinary
 absolute/root/CORS/redirect loads, slider readouts, first-frame readiness and abort-after-late-response controls.
 The earlier `e219d2ac` pair recorded 13 rows per engine and remains the narrower historical result. The final

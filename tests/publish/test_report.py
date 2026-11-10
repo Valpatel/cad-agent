@@ -206,6 +206,9 @@ def test_slicer_run_only_for_current_slices(tmp_path):
     path.write_text(json.dumps(rep))
     results = report.collect(project)
     assert results["slicer_run"] is True and "12.5 g" in results["footer_meta"]["slicer"]
+    sliced = rows(results, "cad-slicer")                 # a row per sliced part; a row without `ok` passes on its grams
+    assert {n: r["status"] for n, r in sliced.items()} == {"box": "pass", "lid": "pass"} and results["pass"]
+    assert sliced["box"]["message"] == "6 g · 30 min"
     # a different profile, a missing part or an empty report is not a current slice
     for bad in ({**rep, "process": "0.28mm Draft"}, {**rep, "parts": {"box": rep["parts"]["box"]}}, {**rep, "parts": {}}):
         path.write_text(json.dumps(bad))
@@ -214,3 +217,43 @@ def test_slicer_run_only_for_current_slices(tmp_path):
     (root / "exports" / "lid.3mf").write_text("changed after slicing")
     results = report.collect(project)
     assert results["slicer_run"] is False and results["footer_meta"]["slicer"] == "slicer not run"
+    assert all(f["feature_id"] != "cad-slicer" for f in results["features"])   # no current slice: no rows, no failure
+
+
+def test_a_part_the_slicer_flagged_fails_the_report(tmp_path):
+    """#520: `ok: false` in a current slice report is a failing row, so `check`, `report` and `all` exit 1."""
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings
+    root = make_project(tmp_path, checks_yaml="  slicer: {engine: prusa}\n")
+    project = load_project(root)
+    sha = {n: hashlib.sha256((root / "exports" / f"{n}.3mf").read_bytes()).hexdigest() for n in ("box", "lid")}
+    parts = {"box": {"grams": 6.0, "minutes": 30, "sha256": sha["box"], "ok": True,
+                     "warnings": ["a thin wall"], "errors": [], "stability_issues": []},
+             "lid": {"grams": 4.0, "minutes": 12.5, "sha256": sha["lid"], "ok": False, "errors": [],
+                     "warnings": ["Detected print stability issues:", "Consider enabling supports."],
+                     "stability_issues": ["Floating bridge anchors", "Long bridging extrusions"]}}
+    rep = {"slicer": "PrusaSlicer (command line)", **_settings(project), "engine": "prusa", "total_grams": 10.0,
+           "total_hours": 0.7, "parts": parts}
+    path = root / "exports" / "slice-report.json"
+    path.write_text(json.dumps(rep))
+    results = report.collect(project)
+    sliced = rows(results, "cad-slicer")
+    assert sliced["box"] == {"name": "box", "status": "pass", "message": "6 g · 30 min · 1 slicer warning(s)"}
+    lid = sliced["lid"]
+    assert lid["status"] == "fail" and results["pass"] is False and results["slicer_run"] is True
+    assert lid["message"] == ("flagged by the slicer: print stability: Floating bridge anchors, Long bridging "
+                              "extrusions; Consider enabling supports. · 4 g · 12.5 min")
+    assert "NOT OK, flagged by the slicer: lid" in results["footer_meta"]["slicer"]
+    assert next(f for f in results["features"] if f["feature_id"] == "cad-slicer")["feature_title"] == \
+        "Slicer · PrusaSlicer (command line)"
+    # a row that only failed (no grams, an error) fails with the error; fixing every row clears the report
+    parts["lid"] = {"error": "lid.3mf not found", "sha256": sha["lid"], "ok": False}
+    path.write_text(json.dumps(rep))
+    assert report.collect(project)["slicer_run"] is False        # a row without grams is not a current slice
+    parts["lid"] = {"grams": 4.0, "minutes": 12.5, "sha256": sha["lid"], "ok": False, "error": "exit code 1"}
+    path.write_text(json.dumps(rep))
+    lid = rows(report.collect(project), "cad-slicer")["lid"]
+    assert lid["status"] == "fail" and lid["error"] == "exit code 1"
+    parts["lid"] = dict(parts["box"], sha256=sha["lid"])
+    path.write_text(json.dumps(rep))
+    assert report.collect(project)["pass"] is True

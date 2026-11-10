@@ -1307,19 +1307,52 @@ Turns CAD parts into a simulator model with real mass properties:
   text-to-cad's `cadgen urdf validate` is a second, independent validator.
 
 <details>
-<summary>Assembly-stage support simulation acceptance (#515)</summary>
+<summary>Assembly-stage support and drift with MuJoCo</summary>
 
-The next additive robot API evaluates an explicitly authored rigid stage under gravity, complementing insertion
-path checks. Its first scope is independent free rigid groups and named fixed primitive fixtures, using the
-existing MuJoCo extra. It must capture the model/assets, effective gravity/contact settings, masses/inertias,
-maximum COM translation and rotation, final speeds, contact support paths, penetration and solver warnings.
-Zero gravity, an implicitly fixed monitored body, disabled contacts or a numerical reset cannot count as stability.
+`settle_stage` evaluates an explicitly authored rigid stage under gravity, complementing insertion path checks.
+It accepts captured MJCF bytes, an explicit scenario description, all dynamic free root groups and all fixed
+colliding fixture geoms. It integrates without controls and returns an assumption-bearing verdict with exact
+model/assets hashes, effective physics settings, group mass/COM/inertia, maximum translation/rotation and
+penetration, final speeds, contact support paths and solver warning counts.
 
-Supported-box, unsupported/freefall, tipping and support-removal fixtures must exercise actual integration;
-a smaller-timestep control must retain the analytic fixture classification. No masses, rigidity, retention or
-fixtures are inferred from a guide mesh. Nonconvex mesh collision hulls cannot stand in for assembly bores.
-An apparent settle only predicts the declared model over the recorded finite time, never physical readiness.
-See [MuJoCo collision semantics](https://mujoco.readthedocs.io/en/stable/computation/#checking) and its
+```python
+from cadagent.simulation.robot import settle_stage, SettleLimits
+
+report = settle_stage(mjcf_path.read_bytes(),
+    monitored_bodies=["loose_module"], fixture_geoms=["bench"],
+    scenario="Source-bound module on the declared bench; masses and friction are estimates",
+    assets=captured_asset_bytes, duration_s=1.0,
+    expected_gravity=(0, 0, -9.81),
+    limits=SettleLimits(translation_mm=0.5, rotation_deg=1.0,
+                        linear_speed_mm_s=1.0, angular_speed_deg_s=1.0,
+                        penetration_mm=0.5))
+```
+
+Lengths in MJCF are metres; report translation/penetration are mm, rotation is degrees, and speeds are mm/s and
+degrees/s. The window is 0.1..10 seconds, with a default 10,000-step budget. Long product models still run on a
+detached compute host with an external runtime cap and source/runtime receipt. Assets are captured bytes, not
+ambient files; includes, plugins, directory indirection and callbacks are refused. First scope is independent
+free rigid groups with fixed descendants and primitive collisions. Articulation, implicit equality/tendon or
+controller retention, mocap, gravity compensation/passive joint holding, aerodynamic forces and mesh/heightfield
+collisions are unsupported. A guide mesh cannot supply mass, rigidity, retention or fixtures by inference.
+
+Zero gravity, disabled contact/constraint solving and static monitored bodies fail before integration. Solver
+warnings, nonfinite states or a numerical time reset fail while retaining completed-step/metric evidence.
+Each group must finish within drift/speed limits and have a force-bearing contact path to a declared fixture;
+stacked groups may reach that fixture through each other. A compound rigid group remains a producer assumption,
+which needs separately checked internal assembly and retention.
+
+The analytic 20 mm, 0.1 kg cube control on 2026-11-10 (MuJoCo 3.17.0) carried 0.981 N in floor contacts and stayed
+within the 0.5 mm criterion. Removing support produced 4914.81 mm freefall and 9810 mm/s final speed after one
+second; moving its COM outside a narrow pedestal produced tipping. Refinement exposed transient sensitivity:
+peak soft-contact drift was 0.17513 mm at 2 ms, 0.11440 mm at 1 ms, 0.10775542 mm at 0.5 ms and 0.10775543 mm at
+0.25 ms. The initial 0.05 mm coarse-to-fine bound failed by 0.01073 mm; the regression retains three refinement
+levels rather than claiming the 2 ms peak converged. Final penetration was about 0.10775542 mm and normal force
+balanced weight throughout the refinement series. These are fixture results, not product evidence.
+
+A passing finite settle predicts only the declared model over its recorded time. It does not establish indefinite
+stability, insertion clearance, fastening, compliance, strength or physical readiness. See
+[MuJoCo collision semantics](https://mujoco.readthedocs.io/en/stable/computation/#checking) and its
 [step/forward API](https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html#mj-forward).
 
 </details>

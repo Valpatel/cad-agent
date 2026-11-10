@@ -9,3 +9,10 @@ Module service is conditional on explicit removed parent keys. Retaining fastene
 Resolve every explicit service target before collapsing members into parent modules. A member key or owner alias cannot be forwarded to a parent view that no longer contains it; reject unsupported member teardown, unknown names and fastener-only requests before geometry. Supported parent aliases need a service check for each resolved instance. A service-enabled green verdict with no evidence for the requested operation is not qualification.
 
 Keep a positive fixture where internal tool access clears off the parent but fails in the final surrounding base, an attached-screw-only insertion blocker, an external retainer tool blocker, and a later bumper that blocks conditional withdrawal. Structural mistakes must fail before geometry is offered as a pass. Existing single-part behavior remains a regression. See the [incident and validation](../inbox/2026-10-29-preassembly-needs-its-own-obstacle-scope.md).
+
+Stage support is a separate scope from insertion and contact. A fixed or zero-gravity model can look stable
+without any supporting fixture. Require explicit free rigid groups and declared fixed primitive fixtures,
+retain maximum drift/rotation and terminal speeds, and require a force-bearing contact path to support.
+Reject hidden retention/gravity compensation, callbacks and solver resets as stability proof. Preserve model
+bytes, effective settings and timestep controls; a robust pass/fail classification is not a converged transient.
+See the [stage physics evidence and limits](../inbox/2026-11-10-stage-stability-needs-free-gravity-and-support.md).

@@ -267,3 +267,194 @@ def test_a_closed_loop_is_accepted_at_any_home_angle_and_size(tmp_path, scale):
         links, joints, loop, _ = _fourbar(*(v * scale for v in (0.04, 0.12, 0.08, 0.10)), home_deg=home + 0.123456)
         assert r.loop_gaps(links, joints, [loop])["pin"] < 1e-12 * scale
         r.write_mjcf(tmp_path / "x.xml", "x", links, joints, floating=False, floor=False, loops=[loop])
+
+
+def _stage_xml(tmp_path, *, floor=True, floating=True, timestep=.002, offset_x=0, pedestal=False):
+    link = r.Link("loose", r.box_body(.1, (.02, .02, .02), center=(offset_x, 0, .03 if pedestal else .01)),
+                  collisions=[r.Collision("box", (.02, .02, .02), xyz=(offset_x, 0, .03 if pedestal else .01), name="loose_geom")])
+    path = r.write_mjcf(tmp_path / "stage.xml", "analytic stage", [link], [], floor=floor,
+                        floating=floating, timestep=timestep)
+    root = ET.parse(path).getroot()
+    if pedestal:
+        ET.SubElement(root.find("worldbody"), "geom", name="pedestal", type="box", size=".005 .02 .01", pos="0 0 .01")
+    return ET.tostring(root)
+
+
+def _stage_settle(xml, fixtures=("floor",), **kwargs):
+    return r.settle_stage(xml, monitored_bodies=["loose"], fixture_geoms=list(fixtures),
+                          scenario="Analytic synthetic fixture; no physical product qualification", **kwargs)
+
+
+def test_stage_supported_box_stays_put_and_contact_force_balances_weight(tmp_path):
+    pytest.importorskip("mujoco")
+    report = _stage_settle(_stage_xml(tmp_path))
+    assert report["pass"], report["findings"]
+    row = report["bodies"]["loose"]
+    assert row["max_com_translation_mm"] < .2 and row["max_rotation_deg"] < 1e-3
+    assert row["supported_by"] == ["fixture:floor"]
+    assert sum(c["normal_force_n"] for c in report["final_contacts"]) == pytest.approx(.981, rel=.02)
+    assert report["completed_steps"] == 500 and report["solver_warning_counts"] and not any(report["solver_warning_counts"])
+    assert report["physical_fit_verified"] is False and not report["limits"]["physical_assembly_verified"]
+    assert report["effective_settings"]["rigid_bodies"][0]["mass_kg"] == .1
+
+
+def test_stage_supported_classification_and_force_balance_survive_smaller_timestep(tmp_path):
+    pytest.importorskip("mujoco")
+    a = _stage_settle(_stage_xml(tmp_path, timestep=.002))
+    b = _stage_settle(_stage_xml(tmp_path, timestep=.001))
+    c = _stage_settle(_stage_xml(tmp_path, timestep=.0005))
+    assert a["pass"] and b["pass"] and c["pass"]
+    assert b["completed_steps"] == 1000 and c["completed_steps"] == 2000
+    # The coarse .002 s transient overshoots by .0607 mm versus .001 s; do not call it converged.
+    # The next refinement changes the peak by less than .02 mm, well below the .5 mm classification criterion.
+    assert abs(b["bodies"]["loose"]["max_com_translation_mm"] - c["bodies"]["loose"]["max_com_translation_mm"]) < .02
+    assert sum(c["normal_force_n"] for c in b["final_contacts"]) == pytest.approx(.981, rel=.02)
+    assert a["inputs"]["mjcf_sha256"] != b["inputs"]["mjcf_sha256"]
+
+
+def test_stage_support_removal_produces_analytic_freefall_and_preserves_failed_report(tmp_path):
+    pytest.importorskip("mujoco")
+    failed = _stage_settle(_stage_xml(tmp_path, floor=False), fixtures=())
+    assert not failed["pass"]
+    row = failed["bodies"]["loose"]
+    assert row["max_com_translation_mm"] == pytest.approx(4914.81, abs=.01)
+    assert row["final_linear_speed_mm_s"] == pytest.approx(9810, abs=.01)
+    assert row["supported_by"] == []
+    assert failed["completed_steps"] == 500 and not any(failed["solver_warning_counts"])
+    supported = _stage_settle(_stage_xml(tmp_path))
+    assert supported["pass"] and failed["bodies"]["loose"] == row
+    assert failed["inputs"]["mjcf_sha256"] != supported["inputs"]["mjcf_sha256"]
+
+
+def test_stage_box_tips_when_its_com_is_outside_a_real_narrow_support(tmp_path):
+    pytest.importorskip("mujoco")
+    stable = _stage_settle(_stage_xml(tmp_path, floor=False, pedestal=True), fixtures=("pedestal",))
+    tipped = _stage_settle(_stage_xml(tmp_path, floor=False, pedestal=True, offset_x=.014), fixtures=("pedestal",))
+    assert stable["pass"], stable["findings"]
+    assert not tipped["pass"] and tipped["bodies"]["loose"]["max_rotation_deg"] > 30
+    assert tipped["bodies"]["loose"]["max_com_translation_mm"] > 100
+
+
+@pytest.mark.parametrize("mutation, text", [
+    (lambda root: root.find("option").set("gravity", "0 0 0"), "gravity differs"),
+    (lambda root: ET.SubElement(root.find("option"), "flag", contact="disable"), "must be enabled"),
+    (lambda root: ET.SubElement(root.find("option"), "flag", gravity="disable"), "must be enabled"),
+    (lambda root: ET.SubElement(root.find("option"), "flag", constraint="disable"), "must be enabled"),
+    (lambda root: root.find("worldbody/body").remove(root.find("worldbody/body/freejoint")), "static bodies"),
+    (lambda root: root.find("worldbody/body").set("gravcomp", "1"), "gravity compensation"),
+    (lambda root: ET.SubElement(ET.SubElement(root, "equality"), "weld", body1="loose"), "equality/tendon"),
+    (lambda root: ET.SubElement(root, "include", file="ambient.xml"), "without includes"),
+    (lambda root: ET.SubElement(root.find("asset"), "mesh", name="external", file="ambient.stl"), "captured asset"),
+])
+def test_stage_false_stability_and_ambient_input_controls_reject_before_integration(tmp_path, mutation, text):
+    pytest.importorskip("mujoco")
+    root = ET.fromstring(_stage_xml(tmp_path))
+    mutation(root)
+    report = _stage_settle(ET.tostring(root))
+    assert not report["pass"] and text in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0 and report["inputs"]["mjcf_sha256"]
+
+
+@pytest.mark.parametrize("fixtures", [(), ("unknown",), ("floor", "loose_geom")])
+def test_stage_requires_exact_explicit_fixed_fixture_coverage(tmp_path, fixtures):
+    pytest.importorskip("mujoco")
+    report = _stage_settle(_stage_xml(tmp_path), fixtures=fixtures)
+    assert not report["pass"] and report["completed_steps"] == 0
+
+
+def test_stage_stacked_free_groups_need_a_force_path_through_each_other_to_the_fixture(tmp_path):
+    import copy
+    pytest.importorskip("mujoco")
+    root = ET.fromstring(_stage_xml(tmp_path))
+    upper = copy.deepcopy(root.find("worldbody/body"))
+    upper.set("name", "upper"); upper.set("pos", "0 0 .02")
+    upper.find("freejoint").set("name", "upper_free")
+    upper.find("geom").set("name", "upper_geom")
+    root.find("worldbody").append(upper)
+    report = r.settle_stage(ET.tostring(root), monitored_bodies=["loose", "upper"], fixture_geoms=["floor"],
+                            scenario="Synthetic stacked independent rigid bodies")
+    assert report["pass"], report["findings"]
+    assert report["bodies"]["upper"]["supported_by"] == ["fixture:floor"]
+    assert report["bodies"]["loose"]["supported_by"] == ["fixture:floor"]
+    missing = _stage_settle(ET.tostring(root))
+    assert not missing["pass"] and "cover every dynamic" in missing["findings"][0]["message"]
+
+
+def test_stage_solver_warning_or_reset_cannot_become_an_apparent_stage_settle(tmp_path, monkeypatch):
+    mj = pytest.importorskip("mujoco")
+    original = mj.mj_step
+
+    def warning(model, data):
+        original(model, data)
+        data.warning[0].number += 1
+
+    monkeypatch.setattr(mj, "mj_step", warning)
+    report = _stage_settle(_stage_xml(tmp_path))
+    assert not report["pass"] and "solver warning" in report["findings"][-1]["message"]
+    assert report["completed_steps"] == 1 and report["solver_warning_counts"][0] == 1
+    assert report["bodies"]["loose"]["initial_com_m"] == [0, 0, .01]
+
+    def reset(model, data):
+        original(model, data)
+        data.time = 0
+
+    monkeypatch.setattr(mj, "mj_step", reset)
+    report = _stage_settle(_stage_xml(tmp_path))
+    assert not report["pass"] and "time reset" in report["findings"][-1]["message"]
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -1, .01, 11])
+def test_stage_invalid_duration_is_a_json_safe_failure_without_optional_simulator(value):
+    import json
+    report = _stage_settle(b"<mujoco/>", duration_s=value)
+    assert not report["pass"] and report["completed_steps"] == 0
+    json.dumps(report, allow_nan=False)
+
+
+def test_stage_undeclared_mesh_collision_cannot_fill_a_bore_and_claim_support(tmp_path):
+    pytest.importorskip("mujoco")
+    root = ET.fromstring(_stage_xml(tmp_path))
+    ET.SubElement(root.find("asset"), "mesh", name="tetra", vertex="0 0 0  .01 0 0  0 .01 0  0 0 .01")
+    geom = root.find("worldbody/body/geom")
+    geom.set("type", "mesh"); geom.set("mesh", "tetra"); geom.attrib.pop("size")
+    report = _stage_settle(ET.tostring(root))
+    assert not report["pass"] and "mesh hulls" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0
+
+
+def test_stage_missing_optional_simulator_and_insufficient_budget_stay_unchecked(tmp_path, monkeypatch):
+    from cadagent._deps import MissingDependency
+    original = r.require
+
+    def missing(module, purpose):
+        if module == "mujoco":
+            raise MissingDependency("optional simulator unavailable")
+        return original(module, purpose)
+
+    monkeypatch.setattr(r, "require", missing)
+    report = _stage_settle(b"<mujoco/>")
+    assert not report["pass"] and "unavailable" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0
+    monkeypatch.setattr(r, "require", original)
+    pytest.importorskip("mujoco")
+    report = _stage_settle(_stage_xml(tmp_path), max_steps=10)
+    assert not report["pass"] and "step budget" in report["findings"][0]["message"]
+    assert report["completed_steps"] == 0
+
+
+def test_stage_records_original_captured_asset_bytes_and_rejects_ambient_callbacks(tmp_path, monkeypatch):
+    import hashlib
+    mj = pytest.importorskip("mujoco")
+    asset = b"synthetic ancillary provenance only"
+    report = _stage_settle(_stage_xml(tmp_path), assets={"provenance.txt": asset})
+    assert report["pass"] and report["inputs"]["assets_sha256"] == {"provenance.txt": hashlib.sha256(asset).hexdigest()}
+    monkeypatch.setattr(mj, "get_mjcb_passive", lambda: object())
+    rejected = _stage_settle(_stage_xml(tmp_path))
+    assert not rejected["pass"] and "ambient MuJoCo callbacks" in rejected["findings"][0]["message"]
+    assert rejected["completed_steps"] == 0
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -1, True])
+def test_stage_limits_cannot_hide_drift_with_nonfinite_or_invalid_thresholds(value):
+    with pytest.raises(ValueError):
+        r.SettleLimits(translation_mm=value)

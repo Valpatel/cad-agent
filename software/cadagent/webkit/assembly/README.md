@@ -15,6 +15,7 @@ flowchart TD
 | File | Responsibility |
 |---|---|
 | `guide.js` | Strict guide/view validation, bounded asset reads and absolute step controller |
+| `playback.js` | Optional explicit instance order and absolute installation timing; caller supplies stage ticks |
 
 The contract is `cad-agent.assembly-guide/1`. A guide binds one model manifest by relative file and SHA-256;
 its snapshot names an ID, revision, `released` or `wip` status and exact source commit. Part names are exact mesh

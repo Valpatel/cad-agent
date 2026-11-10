@@ -98,3 +98,22 @@ every navigation timing.
 
 Evidence: [promotion WebKit job](https://github.com/Valpatel/cad-agent/actions/runs/42767803019/job/129668309116),
 [dev-push WebKit job](https://github.com/Valpatel/cad-agent/actions/runs/42767708398/job/129668005951).
+
+## Clipping pixels need a lighting-independent visibility signal
+
+On 2026-11-10 UTC, PR #509 source `8fefeeff` ran the real shared Chromium component suite under a bounded
+180-second, two-CPU, 3 GiB user service. Actual playback world poses passed for two frozen fixtures and WIP,
+and hidden-future framing passed its omitted-member negative. The run then failed its Y-plane flip observer:
+a retained blue face changed from `[55,136,186]` to `[125,183,217]`, while a clipped landmark showed floor color
+`[43,78,81]`. The observer required RGB closeness to a shaded baseline. That result does not establish a wrong
+plane or a root cause for the lighting change; later hover/legacy cases and WebKit were unrun. Owned browser,
+server and cgroup processes were gone at exit; the failed receipt and screenshot remain retained.
+
+Corrective rule: a clipping visibility fixture must separate geometry retention from brightness/shadow changes.
+Keep the real physical material, renderer, geometry and clipping planes, but give its landmarks distinct emissive
+signals with diffuse/specular contributions disabled for that diagnostic. Keep the same strict pixel-distance
+threshold. Exercise off-centre cuts, all three source CAD axes, a flip that preserves plane location, and actual
+wrong-axis and normal-only-flip mutants; a midpoint alone cannot detect a missing constant negation. Save the
+whole pixel table before assertions. This fixture tests clipping visibility, not the product's material lighting.
+The ordinary material/appearance and full legacy tests remain separate; no complete feature or physical
+acceptance follows until actual corrected two-engine suites pass.

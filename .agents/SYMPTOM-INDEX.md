@@ -2,6 +2,8 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A testing matrix retains its source rows but publishes older requirements as pipe-text paragraphs | [Check contiguous rows and actual Markdown table membership](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#a-feature-matrix-must-stay-a-table-in-the-actual-markdown-consumer) |
+| A clipping test rejects a retained face after its brightness changes | [Use lighting-independent landmarks and off-centre axis/flip mutants](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#clipping-pixels-need-a-lighting-independent-visibility-signal) |
 | Project checkout siblings accumulate, or moving a clean worktree breaks an environment/import | [Preserve every checkout path consumer](inbox/agents/2026-11-10-checkout-containers-must-preserve-path-consumers.md) |
 | A cross-worktree browser probe throws `Requiring @playwright/test second time` before rendering | [Use one Playwright installation per probe process](inbox/agents/2026-11-10-checkout-containers-must-preserve-path-consumers.md#a-cross-worktree-browser-probe-needs-one-playwright-installation) |
 | A reader-ready wait throws because `document.body` is null during navigation | [Treat an unparsed body as not ready](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#readiness-must-wait-through-a-document-without-a-body) |

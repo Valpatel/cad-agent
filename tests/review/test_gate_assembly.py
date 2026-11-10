@@ -468,3 +468,240 @@ def test_registry_build_with_a_diagonal_entry_and_the_verdict_files(tmp_path):
     # an unchanged rerun reads the cache
     again = assembly_from_build(result, cache=cache)
     assert again["world_stats"]["kernel_queries"] == 0 and again["world_stats"]["cache_hits"] > 0
+
+
+# Ordered guide playback reuses the insertion sweep, with a finite authored start.
+def test_finite_playback_path_excludes_an_obstacle_beyond_its_start_and_keeps_default():
+    world = BoxWorld({"moving": (0, 0, 0, 1, 1, 1), "far": (8, 0, 0, 9, 1, 1)})
+    assert sweep_pair(world, "moving", (-1, 0, 0), "far")["state"] == "blocked"
+    finite = sweep_pair(world, "moving", (-1, 0, 0), "far", travel_mm=3)
+    assert finite["state"] == "clear" and finite["travel_mm"] == 3
+    assert finite["gap_lower_bound_mm"] == 4
+
+
+@pytest.mark.parametrize("travel", [-1, float("nan"), float("inf"), True, "3"])
+def test_finite_playback_travel_rejects_invalid_distance(travel):
+    with pytest.raises(ValueError, match="finite nonnegative"):
+        sweep_pair(BoxWorld(BOXES), "card", (0, 0, -1), "cover", travel_mm=travel)
+
+
+def playback_fixture_data(order=None):
+    from cadagent.review.gates.playback import playback_operations
+    boxes = {"base": (-10, -10, -2, 10, 10, 0), "blocker": (2, -2, 0, 4, 2, 4),
+             "insert": (0, -1, 0, 1, 1, 3)}
+    guide = {"steps": [{"id": "stage", "parts": list(boxes),
+                         "offsets_mm": {"blocker": [0, 0, 6], "insert": [6, 0, 0]}}]}
+    order = {"stage": ["base", "blocker", "insert"]} if order is None else order
+    assert len(playback_operations(guide, order)) == 3
+    return boxes, guide, order
+
+
+def test_playback_same_step_explicit_order_changes_actual_blocking_geometry():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+    failed = run_playback_sequence(BoxWorld(boxes), guide, order)
+    assert [c.id for c in failed["checks"] if c.status == "fail"] == ["operation:2:insert"]
+    hit = failed["operations"][2]["pairs"][1]
+    assert hit["part"] == "blocker" and hit["state"] == "blocked" and hit["overlap_mm3"] > 0
+    assert 0 < hit["first_contact_mm"][1] < 6
+    corrected = run_playback_sequence(BoxWorld(boxes), guide, {"stage": ["base", "insert", "blocker"]})
+    assert not [c for c in corrected["checks"] if c.status == "fail"]
+    assert corrected["operations"][1]["installed"] == ["base"]
+    assert corrected["operations"][2]["installed"] == ["base", "insert"]
+    assert failed["operations"][2]["pairs"][1] == hit  # original finding is not rewritten
+
+
+@pytest.mark.parametrize("order", [{}, {"stage": ["base", "insert"]},
+                                    {"stage": ["base", "insert", "insert"]},
+                                    {"stage": ["base", "blocker", "unknown"]},
+                                    {"stage": ["base", "blocker", "insert"], "bad": []}])
+def test_playback_requires_complete_explicit_instance_order_before_geometry(order):
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, _ = playback_fixture_data()
+    world = BoxWorld(boxes)
+    with pytest.raises(ValueError):
+        run_playback_sequence(world, guide, order)
+    assert world.queries == 0
+
+
+def test_playback_reference_step_and_nonmonotone_membership_match_player_contract():
+    from cadagent.review.gates.playback import playback_operations
+    boxes, guide, order = playback_fixture_data()
+    overview = {"id": "overview", "parts": list(boxes), "offsets_mm": {}}
+    guide["steps"].insert(0, overview)
+    assert len(playback_operations(guide, order, ["overview"])) == 3
+    with pytest.raises(ValueError, match="cover each new"):
+        playback_operations(guide, order)
+    guide["steps"].append({"id": "later", "parts": ["base"], "offsets_mm": {}})
+    with pytest.raises(ValueError, match="monotone"):
+        playback_operations(guide, {**order, "later": []}, ["overview"])
+
+
+def test_playback_unknown_and_budget_remain_failed_witnesses():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+
+    class UnknownWorld(BoxWorld):
+        def relate_at(self, key, shift, other):
+            if key == "insert" and other == "blocker":
+                return Relation(key, other, "unknown", error="seeded kernel failure")
+            return super().relate_at(key, shift, other)
+
+    result = run_playback_sequence(UnknownWorld(boxes), guide, order)
+    pair = result["operations"][2]["pairs"][1]
+    assert pair["state"] == "unknown" and pair["error"] == "seeded kernel failure"
+    assert result["checks"][-1].status == "fail"
+    result = run_playback_sequence(BoxWorld(boxes), guide, order, options=AccessOptions(max_samples=1))
+    assert any(p["state"] == "unchecked" for o in result["operations"] for p in o["pairs"])
+    assert any(c.status == "fail" for c in result["checks"])
+
+
+def captured_playback_fixture(tmp_path, *, native=False):
+    """Source fixture: meshes and BREP binding come from the same in-memory CAD shapes."""
+    import hashlib
+    from cadagent.publish.guides import collect_guides
+    boxes, minimal, order = playback_fixture_data()
+    assembly = None
+    parts = []
+    if native:
+        cq = pytest.importorskip("cadquery")
+        from cadagent.review.gates.relations import Assembly
+        assembly = Assembly()
+    for name, bounds in boxes.items():
+        path = tmp_path / (name + ".stl")
+        if native:
+            lo, size = bounds[:3], [bounds[i + 3] - bounds[i] for i in range(3)]
+            shape = cq.Workplane("XY").box(*size, centered=False).translate(lo).val()
+            assembly.add(name, shape)
+            cq.exporters.export(shape, str(path))
+        else:
+            path.write_bytes(("fixture mesh " + name).encode())
+        parts.append({"name": name, "file": path.name, "bounds_mm": list(bounds),
+                      "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+    model_path = tmp_path / "view.json"
+    model_path.write_text(json.dumps({"units": "mm", "up": "z", "parts": parts}))
+    guide = {"schema": "cad-agent.assembly-guide/1",
+             "snapshot": {"id": "fixture", "revision": "side insertion", "status": "wip", "source_commit": "a" * 40},
+             "model": {"file": "view.json", "sha256": hashlib.sha256(model_path.read_bytes()).hexdigest()},
+             "subassemblies": [{"id": "assembly", "title": "Assembly", "parts": list(boxes)}],
+             "steps": [{**minimal["steps"][0], "title": "Install parts", "subassembly": "assembly",
+                        "highlight": list(boxes), "text": "Fixture with side insertion."}],
+             "source": {"install_order_by_step": order}}
+    (tmp_path / "guide.json").write_text(json.dumps(guide))
+    return collect_guides(tmp_path, ["guide.json"])[0], assembly
+
+
+def test_playback_missing_binding_fails_before_optional_cad_import(tmp_path, monkeypatch):
+    import cadagent.review.gates.playback as playback
+    bundle, _ = captured_playback_fixture(tmp_path)
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("must reject before native load"))
+    report = playback.playback_gate(bundle, None, {})
+    assert not report["pass"] and "missing or stale" in report["checks"][0]["message"]
+    assert report["operations"] == [] and report["support_stability"]["status"] == "unknown"
+    assert report["physical_fit_verified"] is False
+
+
+def test_real_cad_source_bound_playback_keeps_blocked_and_corrected_order(tmp_path):
+    from cadagent.review.gates.playback import bind_playback_geometry, playback_gate
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    binding, breps = bind_playback_geometry(assembly, bundle)
+    blocked = playback_gate(bundle, binding, breps)
+    assert not blocked["pass"], blocked
+    pair = blocked["operations"][2]["pairs"][1]
+    assert pair["state"] == "blocked" and pair["overlap_mm3"] > 0
+    corrected = playback_gate(bundle, binding, breps,
+                              install_order_by_step={"stage": ["base", "insert", "blocker"]})
+    assert corrected["pass"], corrected["findings"]
+    assert corrected["status"] == "warn"  # support and zero-offset insertion remain unverified
+    assert blocked["inputs"]["install_order_digest"] != corrected["inputs"]["install_order_digest"]
+    assert blocked["inputs"]["guide_sha256"] == corrected["inputs"]["guide_sha256"]
+    assert blocked["operations"][2]["pairs"][1] == pair
+    assert not corrected["limits"]["physical_assembly_verified"]
+
+
+@pytest.mark.parametrize("mutation, message", [
+    (lambda b, p: b.update(source_commit="b" * 40), "missing or stale"),
+    (lambda b, p: b.update(model_sha256="0" * 64), "missing or stale"),
+    (lambda b, p: p.update(insert=p["insert"] + b"changed"), "stale BREP/mesh"),
+    (lambda b, p: b["instances"]["insert"].update(mesh_sha256="0" * 64), "stale BREP/mesh"),
+    (lambda b, p: b["instances"].pop("insert"), "exact guide instance"),
+    (lambda b, p: b["instances"]["insert"].update(matrix=[1] * 11), "invalid CAD placement"),
+])
+def test_playback_stale_native_inputs_reject_before_queries(tmp_path, monkeypatch, mutation, message):
+    import cadagent.review.gates.playback as playback
+    # Fake BREP bytes suffice: a successful identity check has not imported CAD yet.
+    from cadagent.review.evidence import brep_content_hash
+    bundle, _ = captured_playback_fixture(tmp_path)
+    guide, model, inputs = playback._captured(bundle)
+    breps = {p["name"]: ("brep " + p["name"]).encode() for p in model["parts"]}
+    binding = {"schema": playback.BINDING_SCHEMA, **inputs, "instances": {
+        p["name"]: {"brep_sha256": playback._sha(breps[p["name"]]),
+                    "shape_sha256": brep_content_hash(breps[p["name"]]), "mesh_sha256": p["sha256"],
+                    "matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]} for p in model["parts"]}}
+    mutation(binding, breps)
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("must reject before native load"))
+    report = playback.playback_gate(bundle, binding, breps)
+    assert not report["pass"] and message in report["checks"][0]["message"]
+
+
+def test_playback_query_exception_preserves_previous_collisions_and_later_operations():
+    from cadagent.review.gates.playback import run_playback_sequence
+    boxes, guide, order = playback_fixture_data()
+    boxes["later"] = (20, 0, 0, 21, 1, 1)
+    guide["steps"][0]["parts"].append("later")
+    guide["steps"][0]["offsets_mm"]["later"] = [-20, 0, 0]
+    order["stage"].append("later")
+
+    class BrokenWorld(BoxWorld):
+        def relate_at(self, key, shift, other):
+            if key == "later" and other == "blocker":
+                raise RuntimeError("seeded native exception")
+            return super().relate_at(key, shift, other)
+
+    result = run_playback_sequence(BrokenWorld(boxes), guide, order)
+    assert result["operations"][2]["pairs"][1]["state"] == "blocked"
+    assert result["operations"][3]["pairs"][1] == {
+        "part": "blocker", "state": "unknown", "error": "RuntimeError: seeded native exception"}
+    assert [c.id for c in result["checks"] if c.status == "fail"] == ["operation:2:insert", "operation:3:insert"]
+
+
+def test_unchecked_relation_is_never_treated_as_clear_at_seat_or_on_path():
+    class UncheckedWorld(BoxWorld):
+        def relate_at(self, key, shift, other):
+            if any(shift):
+                return Relation(key, other, "unchecked", error="not computed")
+            return super().relate_at(key, shift, other)
+
+    boxes = {"moving": (0, 0, 0, 1, 1, 1), "side": (2, 0, 0, 3, 1, 1)}
+    world = UncheckedWorld(boxes)
+    assert sweep_pair(world, "moving", (-1, 0, 0), "side", travel_mm=4)["state"] == "unchecked"
+    world.relate_at = lambda key, shift, other: Relation(key, other, "unchecked", error="seat not computed")
+    assert sweep_pair(world, "moving", (-1, 0, 0), "side", travel_mm=4)["state"] == "unchecked"
+
+
+@pytest.mark.parametrize("mutation, message", [
+    (lambda b: b["view.json"].replace(b'"units": "mm"', b'"units": "m"'), "hash mismatch"),
+    (lambda b: b["insert.stl"] + b"stale", "mesh hash mismatch"),
+])
+def test_playback_rechecks_captured_model_and_mesh_bytes(tmp_path, mutation, message):
+    from cadagent.review.gates.playback import playback_gate
+    bundle, _ = captured_playback_fixture(tmp_path)
+    name = "view.json" if message == "hash mismatch" else "insert.stl"
+    bundle.files[name] = mutation(bundle.files)
+    report = playback_gate(bundle, None, {})
+    assert not report["pass"] and message in report["checks"][0]["message"]
+
+
+@pytest.mark.parametrize("field, value", [("units", "m"), ("up", "y")])
+def test_playback_non_mm_or_z_up_model_rejected_even_with_rebound_hash(tmp_path, field, value):
+    import hashlib
+    from cadagent.review.gates.playback import playback_gate
+    bundle, _ = captured_playback_fixture(tmp_path)
+    model = json.loads(bundle.files["view.json"])
+    model[field] = value
+    bundle.files["view.json"] = json.dumps(model).encode()
+    guide = json.loads(bundle.files["guide.json"])
+    guide["model"]["sha256"] = hashlib.sha256(bundle.files["view.json"]).hexdigest()
+    bundle.files["guide.json"] = json.dumps(guide).encode()
+    report = playback_gate(bundle, None, {})
+    assert not report["pass"] and "mm/z-up" in report["checks"][0]["message"]

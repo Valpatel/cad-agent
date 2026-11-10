@@ -273,7 +273,7 @@ def _r(x: Optional[float], digits: int = 4) -> Optional[float]:
 
 def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
                options: AccessOptions = AccessOptions(), tol: Tolerances = Tolerances(),
-               seat: bool = True) -> Dict[str, Any]:
+               seat: bool = True, travel_mm: Optional[float] = None) -> Dict[str, Any]:
     """Move ``key`` in along ``direction`` (a unit vector: the way it travels to its seat) from beyond ``other``'s
     box to its seat, and report what it meets.
 
@@ -286,12 +286,17 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
     ``blocked`` (shares volume on the way: ``first_contact_mm`` = [last clear s, first hit s] after bisection,
     ``overlap_mm3`` and its centroid at the hit, the closest points at the clear side), ``seat`` (shares volume
     at its seat), ``unknown`` (the kernel could not decide a sample) or ``unchecked`` (over ``max_samples``).
-    ``seat=False`` leaves the seat (s = 0) out: the service check pulls a part out past parts fitted later."""
+    ``seat=False`` leaves the seat (s = 0) out: the service check pulls a part out past parts fitted later.
+    ``travel_mm`` optionally bounds the path to exactly that finite, nonnegative distance before the seat,
+    for an authored playback offset. None retains the ordinary from-beyond-the-obstacle sweep."""
+    if travel_mm is not None and (type(travel_mm) not in (int, float) or not math.isfinite(travel_mm)
+                                  or travel_mm < 0):
+        raise ValueError("travel_mm must be a finite nonnegative distance or None")
     back = tuple(-c for c in direction)
     pb, qb = world.box(key), world.box(other)
     p_lo, _ = _extent(pb, back)
     _, q_hi = _extent(qb, back)
-    travel = max(q_hi - p_lo, 0.0) + options.margin_mm
+    travel = max(q_hi - p_lo, 0.0) + options.margin_mm if travel_mm is None else travel_mm
     out: Dict[str, Any] = {"part": other, "travel_mm": _r(travel)}
     swept = tuple(min(pb[i], pb[i] + travel * back[i % 3]) if i < 3 else max(pb[i], pb[i] + travel * back[i % 3])
                   for i in range(6))
@@ -317,8 +322,8 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
     if seat:
         rel0 = world.relate_at(key, (0.0, 0.0, 0.0), other)
         samples += 1
-        if rel0.state == "unknown":
-            out.update(state="unknown", at_mm=0.0, error=rel0.error, samples=samples)
+        if rel0.state in ("unknown", "unchecked"):
+            out.update(state=rel0.state, at_mm=0.0, error=rel0.error, samples=samples)
             return out
         if rel0.interferes:
             out.update(state="seat", overlap_mm3=rel0.overlap_mm3, samples=samples,
@@ -344,8 +349,8 @@ def sweep_pair(world: SequenceWorld, key: str, direction: Vec, other: str, *,
         else:                           # within reach of contact: measure exactly
             rel = world.relate_at(key, shift, other)
             samples += 1
-            if rel.state == "unknown":
-                out.update(state="unknown", at_mm=_r(s), error=rel.error, samples=samples)
+            if rel.state in ("unknown", "unchecked"):
+                out.update(state=rel.state, at_mm=_r(s), error=rel.error, samples=samples)
                 return out
             if rel.interferes:
                 out.update(_onset(world, key, back, other, s, prev, rel, prev_rel, options))

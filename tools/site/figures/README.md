@@ -55,4 +55,10 @@ candidate, preserving historical pictures and their SOURCE records. Production m
 accepted product CAD source into its protected `main`; a WIP collection is not a latest-published or physically
 qualified model. This work does not change printed legs or establish fit, retention, strength or printer readiness.
 
+The current candidate records product commit `3a40891962b0b0a04625e070700f1d130bea3c7b`, collected by producer
+`b33efacc628488d10a387d071f607b18f9ae0161` before the documentation-only follow-up. The
+[model and complete-fetch review](https://github.com/Valpatel/cad-agent/issues/104#issuecomment-6776922469) and
+[single poster/card review](https://github.com/Valpatel/cad-agent/pull/528#issuecomment-6777335339) cover their stated
+candidate artifacts. Their source bindings remain those executed revisions, not the later adoption commit.
+
 </details>

@@ -243,27 +243,24 @@ def test_showcase_collection_packet_is_import_safe_and_old_pack_names_do_not_pro
     worker = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(worker)
     assert worker.ROOT is None and worker.OUT is None
-    original = json.loads((root / "tools/site/assets/models/gyropup.json").read_text())
-    # Existing old data already has both pack names: changing the revision/name cannot make its belly placement current.
-    stale = copy.deepcopy(original)
-    stale["source"].update(revision=worker.PRODUCT_SHA, hardware_tree=worker.HARDWARE)
-    for names in stale["source"]["members"].values():
-        names[:] = [n for n in names if n not in worker.RETIRED]
-    stale["source"]["members"]["frame"].extend(sorted(worker.HOLDERS))
+    current = json.loads((root / "tools/site/assets/models/gyropup.json").read_text())
+    assert worker.validate_end_packs(current)["source_parts"] == 224
+    # Both old and current models have these pack names. Keep all current identity/member fields,
+    # but plant the actual former belly bounds: a name/revision check alone must not accept it.
+    stale = copy.deepcopy(current)
+    battery = next(p for p in stale["parts"] if p["name"] == "battery")
+    battery["bounds_mm"] = [-153, -43.5, -219.04, 153, 43.5, -122.04]
     assert sum(map(len, stale["source"]["members"].values())) == 224
     with pytest.raises(ValueError, match="Battery placement"):
         worker.validate_end_packs(stale)
-    current = copy.deepcopy(stale)
-    battery = next(p for p in current["parts"] if p["name"] == "battery")
-    battery["bounds_mm"] = list(worker.BATTERY_BOUNDS)
-    assert worker.validate_end_packs(current)["source_parts"] == 224
     wrong = copy.deepcopy(current)
     wrong["source"]["members"]["frame"][0] = "bay_floor"
     with pytest.raises(ValueError, match="belly enclosure"):
         worker.validate_end_packs(wrong)
-    # Original identity is rejected as well; no relabelling of its artifact is accepted.
-    with pytest.raises(ValueError):
-        worker.validate_end_packs(original)
+    wrong_identity = copy.deepcopy(current)
+    wrong_identity["source"]["revision"] = "0" * 40
+    with pytest.raises(ValueError, match="Wrong original end-pack source"):
+        worker.validate_end_packs(wrong_identity)
     output = tmp_path / "candidate"
     output.mkdir()
     (output / "gyropup.json").write_text("partial output retained")

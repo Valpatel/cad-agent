@@ -389,7 +389,7 @@ domains:
         cli: [package, release, serve, site, view, webkit]
         api: [cadagent.publish.site, cadagent.publish.site_review, cadagent.publish.report, cadagent.publish.htmlreport,
               cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,
-              cadagent.publish.release, cadagent.publish.anim]
+              cadagent.publish.release, cadagent.publish.guides, cadagent.publish.anim]
         issues: [104, 141, 181]
       - slug: evaluation
         title: Evaluation

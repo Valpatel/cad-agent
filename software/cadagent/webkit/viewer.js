@@ -12,11 +12,12 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** Existing viewer, with optional validated guide manifests and abortable loading. */
 export async function createViewer({ app, panel, title, manifestUrl, manifest: suppliedManifest,
-    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, onSelect = () => {}, onStateChange = () => {} }) {
+    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, onSelect = () => {}, onHover, onStateChange = () => {} }) {
   if (typeof guideBound !== 'boolean') throw new Error('Invalid guide mode');
+  if (onHover !== undefined && typeof onHover !== 'function') throw new Error('Invalid hover callback');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
   const lifetime = new AbortController(), parts = [], events = new AbortController();
-  let stage, timer, controlsHost, disposed = false;
+  let stage, timer, controlsHost, disposed = false, hoverFrame = 0, hovered = null, hoverPoint;
   const cancel = () => { lifetime.abort(signal?.reason); dispose(); };
   signal?.addEventListener('abort', cancel, { once: true });
   if (signal?.aborted) cancel();
@@ -24,9 +25,12 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   function dispose() {
     if (disposed) return;
     disposed = true; lifetime.abort(); events.abort(); signal?.removeEventListener('abort', cancel);
+    cancelAnimationFrame(hoverFrame); hoverFrame = 0;
+    const clearSelectionHint = hovered !== null; hovered = null;
     clearTimeout(timer); stage?.dispose();
     for (const p of parts) { p.mesh.geometry.dispose(); p.mesh.material.dispose(); }
     controlsHost?.remove();
+    if (clearSelectionHint) onHover?.(null, { ...hoverPoint });
   }
   try {
   lifetime.signal.throwIfAborted();
@@ -97,8 +101,30 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     applyState({ ...state, offsets_mm });
   }
   // Section cut along CAD x: everything beyond the plane is cut away.
-  const xmin = box.min.x, xmax = box.max.x;
-  function setSection(f) { if (disposed || !Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid section factor'); sectionSlider?.set(f); clip.constant = f >= 1 ? 1e9 : -(xmin + (xmax - xmin) * f - mid.x); }
+  let sectionState = { axis: 'x', flipped: false, depth: 1 };
+  const sectionAxes = { x: [1, 0, 0], y: [0, 0, -1], z: [0, 1, 0] };
+  // Fixed assembled bounds after the existing CAD-mm -> stage conversion and centering.
+  const sectionBounds = { x: [box.min.x - mid.x, box.max.x - mid.x],
+    y: [mid.z - box.max.z, mid.z - box.min.z], z: [0, box.max.y - box.min.y] };
+  function updateSection() {
+    const { axis, flipped, depth } = sectionState, [low, high] = sectionBounds[axis];
+    const point = axis === 'x' ? -(box.min.x + (box.max.x - box.min.x) * depth - mid.x) : low + (high - low) * (1 - depth);
+    clip.normal.fromArray(sectionAxes[axis]).multiplyScalar(flipped ? 1 : -1);
+    // Off stays off for either retained side. Otherwise negate BOTH terms when flipping the same plane.
+    clip.constant = depth >= 1 ? 1e9 : point * (flipped ? -1 : 1);
+    clearHover();
+  }
+  function setSection(f) {
+    ensureLive();
+    if (!Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid section factor');
+    sectionState.depth = f; sectionSlider?.set(f); updateSection();
+  }
+  function setSectionPlane({ axis, flipped = false } = {}) {
+    ensureLive();
+    if (!Object.hasOwn(sectionAxes, axis) || typeof flipped !== 'boolean') throw new Error('Invalid section plane');
+    sectionState = { ...sectionState, axis, flipped }; updateSection();
+    return { ...sectionState };
+  }
 
   // Own only this wrapper; a product may have other controls in its panel.
   controlsHost = document.createElement('div'); panel.append(controlsHost);
@@ -181,7 +207,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     if (state.isolate !== null) state.isolate = state.isolate.filter(n => state.visible.includes(n));
     applyState(state);
   }
-  function applyState(next) {
+  function applyState(next, interaction) {
     ensureLive(); validateState(next, names);
     const nextState = structuredClone({ ...next, partModes: next.partModes ?? {} });
     const previousSelection = state.selected;
@@ -201,7 +227,8 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     for (const input of controlsHost.querySelectorAll('input[data-part]')) input.checked = parts.find(p => p.name === input.dataset.part).mesh.visible;
     syncGroups.forEach(sync => sync());
     shownReadout(); model.updateMatrixWorld(true);
-    if (state.selected !== previousSelection) onSelect(state.selected);
+    if (hovered !== null && !parts.some(p => p.name === hovered && pickable(p.mesh))) clearHover();
+    if (state.selected !== previousSelection) onSelect(state.selected, interaction);
     onStateChange(structuredClone(state));
     return structuredClone(state);
   }
@@ -214,15 +241,16 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       right: vertical > 0 && horizontal > 0 && p.left > a.left + a.width / 2 ? a.right - p.left : 0,
       bottom: vertical > 0 && horizontal > 0 && p.top > a.top + a.height / 2 ? a.bottom - p.top : 0 });
   }
-  function frameParts(selected = state.visible, direction) {
+  function frameParts(selected = state.visible, direction, { includeHidden = false } = {}) {
     ensureLive();
+    if (typeof includeHidden !== 'boolean') throw new Error('Invalid hidden-part framing option');
     validateState({ visible: selected, highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null }, names);
     if (direction) {
       if (!Array.isArray(direction) || direction.length !== 3 || !direction.every(Number.isFinite) || !direction.some(n => n !== 0)) throw new Error('Invalid camera direction');
     }
     model.updateMatrixWorld(true);
     const points = [];
-    for (const p of parts.filter(p => selected.includes(p.name) && p.mesh.visible)) {
+    for (const p of parts.filter(p => selected.includes(p.name) && (includeHidden || p.mesh.visible))) {
       const b = new THREE.Box3().setFromObject(p.mesh);
       if (!b.isEmpty()) for (let i = 0; i < 8; i++) points.push(new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
     }
@@ -231,8 +259,10 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
       stage.camera.updateMatrixWorld(true); return result;
     }
   }
-  function setSelection(name) {
-    applyState({ ...state, selected: name });
+  function setSelection(name, interaction) {
+    const previous = state.selected;
+    applyState({ ...state, selected: name }, interaction);
+    if (name === previous && interaction) onSelect(name, interaction);
   }
   function setPartMode(name, mode) {
     ensureLive();
@@ -244,21 +274,49 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   function reset() {
     ensureLive(); userColors.clear();
     applyState({ visible: parts.filter(p => baseline.get(p.name).visible).map(p => p.name), highlight: [], mode: 'solid', offsets_mm: {}, selected: null, isolate: null, partModes: {} });
-    explodeSlider?.set(0); setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update(); stage.camera.updateMatrixWorld(true);
+    explodeSlider?.set(0); setSectionPlane({ axis: 'x', flipped: false }); setSection(1); stage.camera.position.copy(opening.position); stage.controls.target.copy(opening.target); stage.controls.update(); stage.camera.updateMatrixWorld(true);
   }
   const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
   let down;
   const canvas = stage.renderer.domElement;
-  canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; }, { signal: events.signal });
-  canvas.addEventListener('pointerup', e => {
-    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+  function pickable(mesh) {
+    for (let object = mesh; object; object = object.parent) if (!object.visible) return false;
+    return true;
+  }
+  function pickAt({ clientX, clientY }) {
     const rect = canvas.getBoundingClientRect();
-    pointer.set(2 * (e.clientX - rect.left) / rect.width - 1, 1 - 2 * (e.clientY - rect.top) / rect.height);
-    stage.camera.updateMatrixWorld(true); model.updateMatrixWorld(true);
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    pointer.set(2 * (clientX - rect.left) / rect.width - 1, 1 - 2 * (clientY - rect.top) / rect.height);
+    stage.camera.updateMatrixWorld(true); stage.root.updateMatrixWorld(true);
     ray.setFromCamera(pointer, stage.camera);
-    const hit = ray.intersectObjects(parts.filter(p => p.mesh.visible).map(p => p.mesh))[0];
-    setSelection(parts.find(p => p.mesh === hit?.object)?.name || null);
+    const hit = ray.intersectObjects(parts.filter(p => pickable(p.mesh)).map(p => p.mesh))
+      .find(intersection => clip.distanceToPoint(intersection.point) >= 0);
+    return parts.find(p => p.mesh === hit?.object)?.name || null;
+  }
+  function clearHover() {
+    cancelAnimationFrame(hoverFrame); hoverFrame = 0;
+    if (hovered !== null) { hovered = null; onHover?.(null, { ...hoverPoint }); }
+  }
+  // Wheel/orbit and programmatic camera changes invalidate a tooltip's old projected anchor too.
+  for (const event of ['start', 'change']) {
+    stage.controls.addEventListener(event, clearHover);
+    events.signal.addEventListener('abort', () => stage.controls.removeEventListener(event, clearHover), { once: true });
+  }
+  canvas.addEventListener('pointerdown', e => { clearHover(); down = e.button === 0 ? [e.clientX, e.clientY, e.pointerId] : null; }, { signal: events.signal });
+  canvas.addEventListener('pointerup', e => {
+    const origin = down; down = null;
+    if (!origin || origin[2] !== e.pointerId || Math.hypot(e.clientX - origin[0], e.clientY - origin[1]) > 5) return;
+    setSelection(pickAt(e), { clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType });
   }, { signal: events.signal });
+  for (const name of ['pointerleave', 'pointercancel']) canvas.addEventListener(name, () => { down = null; clearHover(); }, { signal: events.signal });
+  if (onHover) canvas.addEventListener('pointermove', e => {
+    if (down || e.buttons || e.pointerType === 'touch') { clearHover(); return; }
+    hoverPoint = { clientX: e.clientX, clientY: e.clientY };
+    if (!hoverFrame) hoverFrame = requestAnimationFrame(() => {
+      hoverFrame = 0; if (disposed || down) return;
+      hovered = pickAt(hoverPoint); onHover(hovered, { ...hoverPoint });
+    });
+  }, { passive: true, signal: events.signal });
   updateInsets(); frameParts(state.visible);
   opening.position.copy(stage.camera.position); opening.target.copy(stage.controls.target);
   window.addEventListener('resize', () => { if (!disposed) { updateInsets(); frameParts(state.visible); } }, { signal: events.signal });
@@ -272,6 +330,6 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   });
   lifetime.signal.throwIfAborted(); clearTimeout(timer);
   onProgress('Model ready');
-  return { stage, parts, setExplode, setSection, applyState, getState: () => structuredClone(state), frameParts, setSelection, setPartMode, reset, dispose };
+  return { stage, parts, setExplode, setSection, setSectionPlane, getSectionState: () => ({ ...sectionState }), applyState, getState: () => structuredClone(state), frameParts, setSelection, setPartMode, reset, dispose };
   } catch (error) { dispose(); throw error; }
 }

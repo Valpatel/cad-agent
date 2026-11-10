@@ -1,4 +1,5 @@
 /** Optional instructions for the existing viewer. Geometry is already assembled, mm / z-up. */
+import { createPlayback } from './playback.js';
 export const GUIDE_SCHEMA = 'cad-agent.assembly-guide/1';
 const hashPattern = /^[0-9a-f]{64}$/;
 const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
@@ -183,18 +184,42 @@ export function stepState(guide, id, { explode = 1, mode = 'ghost' } = {}) {
 }
 export function createGuideController(viewer, guide) {
   validateGuide(guide, { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
-  let current = null;
+  guide = structuredClone(guide);
+  let current = null, disposed = false, player;
+  const navigation = new Set(), live = () => { if (disposed) fail('Guide controller is disposed'); };
+  const notify = event => { for (const listener of [...navigation]) listener(event); };
+  function applyStep(id, { frame = true, ...options } = {}, manual = true) {
+    live();
+    const state = stepState(guide, id, options), step = guide.steps.find(s => s.id === id);
+    if (manual) notify({ type: 'step', id });
+    viewer.applyState(state);
+    if (frame) viewer.frameParts(step.parts, step.camera?.direction);
+    current = id; return state;
+  }
   return {
     get current() { return current; },
-    applyStep(id, { frame = true, ...options } = {}) {
-      const state = stepState(guide, id, options), step = guide.steps.find(s => s.id === id);
-      viewer.applyState(state);
-      if (frame) viewer.frameParts(step.parts, step.camera?.direction);
-      current = id; return state;
+    applyStep(id, options) { return applyStep(id, options); },
+    reset() { live(); notify({ type: 'reset' }); viewer.reset(); current = null; },
+    createPlayback(options) {
+      live();
+      if (player && player.getState().status !== 'disposed') fail('Guide controller already has a playback owner');
+      player = createPlayback({ guide, viewer, current: () => current, setCurrent: id => { current = id; },
+        commitStep: id => applyStep(id, { explode: 0, mode: 'solid', frame: false }, false),
+        subscribeNavigation(listener) { navigation.add(listener); return () => navigation.delete(listener); } }, options);
+      return player;
     },
-    reset() { viewer.reset(); current = null; },
-    dispose() { current = null; viewer.dispose(); },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      try { notify({ type: 'dispose' }); }
+      finally { navigation.clear(); current = null; viewer.dispose(); }
+    },
   };
+}
+/** Optional player over a shared guide controller; the caller supplies the existing stage's frame ticks. */
+export function createGuidePlayback(controller, options) {
+  if (typeof controller?.createPlayback !== 'function') fail('Playback needs a shared guide controller');
+  return controller.createPlayback(options);
 }
 /** One complete presentation state. Validation precedes all scene mutation. */
 export function validateState(state, partNames) {

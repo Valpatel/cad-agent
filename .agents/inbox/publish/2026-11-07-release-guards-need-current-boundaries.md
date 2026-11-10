@@ -140,3 +140,45 @@ and byte equality requirements.
 prove fresh-user agent discovery, every browser interaction or physical CAD quality. The ordinary 18-asset cache
 policy receipt remains separate from the route/header smoke; no new source/provider behavior was needed to fix
 the false H1 assertion.
+
+## A feature matrix must stay a table in the actual Markdown consumer
+
+On 2026-11-10 UTC, independent review of PR #509 source `a259f46c` found a blank line between three new
+requirement rows and the retained guide matrix. The source still contained every requirement. The installed
+locked Marked 16.4.1 consumer, under Node 22.23.4, emitted only four `<tr>` rows (header plus three new rows);
+`Strict guide schema` was instead in a `<p>| ...` pipe-text paragraph. `strictSchemaIsPipeParagraph` was true
+and `strictSchemaIsTableCell` false. This was a documentation publication regression, not a viewer failure.
+
+The focused command used `createRequire(.../tools/site/package.json)('marked').marked.parse(...)` on
+`docs/practice/assembly-guide-testing.md`, counted emitted rows, and inspected actual table-cell membership.
+Removing the blank separator restored one contiguous matrix: the same consumer emitted 20 `<tr>` rows,
+`strictSchemaIsPipeParagraph: false`, and `strictSchemaIsTableCell: true`. Orthogonal-plane, hover, playback,
+strict-schema, resource-teardown and portable-ZIP requirements all appeared as table cells. The retained old
+HTML fails that same membership check; the corrected output passes. No rendering threshold or framework changed.
+
+**Rule:** when extending a GFM matrix, keep its rows contiguous and verify semantic membership through the
+repository's locked Markdown consumer. Presence in source and a few surviving rows do not prove the retained
+requirements are still cells. **Limits:** this focused parser proof does not establish browser table layout,
+responsive overflow, full-page rendering, current CI or product feature acceptance; those keep their own checks.
+
+The same review round caught a broad documentation replacement that retargeted a historical 18-case paragraph
+from `cdbee23b` to the newer `a259f46c` 26-case label. The original 18-case attribution was restored; the new
+26-case result stays in its separate dated paragraph. Keep counts paired with their actual source receipts;
+updating a current coverage matrix must not relabel historical runs.
+
+## Judge CI deferral by the actual event and current checks
+
+On 2026-11-10 UTC, PR #509 deferred draft CI with WIP commit markers. Before its final source push, the owner
+read GitHub's [documented skip behavior](https://github.blog/changelog/github-actions-skip-pull-request-and-push-workflows-with-skip-ci/)
+and raised an unproved concern about a later normal-merge push. The coordinator checked an actual counterexample:
+Gyropup main `6a026434f9002d1aecbcea860983fb322e372158` normally incorporated ancestor
+`ea521b0453387a3d6254d121f65dc203b74eca52`, whose subject ends with the skip marker, while that main's ordinary
+push workflows ran. `gh api .../compare/ea521b04...6a026434` reported `status: ahead` and the exact ancestor as
+merge base; [one actual push workflow](https://github.com/Valpatel/gyropup/actions/runs/42785495381) completed
+successfully, while the presentation workflow was still running at the readback.
+
+**Rule:** preserve the WIP history and its exact-source evidence; keep the final head and merge message free of
+skip instructions, and inspect actual push/PR events plus every required current check before integration.
+Do not rewrite source history or invent a CI waiver from a hypothetical event interpretation. **Limits:** this
+normal-merge counterexample does not establish how every direct push behaves, turn a skipped/pending check into
+a pass, or permit integration without the repository's current complete CI and live gates.

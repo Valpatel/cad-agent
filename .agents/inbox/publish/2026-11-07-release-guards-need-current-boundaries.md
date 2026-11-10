@@ -182,3 +182,21 @@ skip instructions, and inspect actual push/PR events plus every required current
 Do not rewrite source history or invent a CI waiver from a hypothetical event interpretation. **Limits:** this
 normal-merge counterexample does not establish how every direct push behaves, turn a skipped/pending check into
 a pass, or permit integration without the repository's current complete CI and live gates.
+
+## Required project changes determine the release level before cutting
+
+2026-11-10 UTC: `tools/cut_release.py --patch` produced candidate `821625fe` with version `0.32.1`,
+while its folded #520 fragment explicitly contained **Projects must change**: current flagged slices now make
+`check`, `report` and `all` exit 1. Independent PR #530 review `5849100011` blocked the candidate under
+CONTRIBUTING's minor-release policy. The initial patch instruction was mistaken; the producer accepted the
+requested bump and did not decide semantic release policy. No v0.32.1 tag or production release was created.
+
+Corrective rule: read the complete pending fragments before selecting the bump. Required project changes or a
+new feature select minor even when another included change is a model/site fix. Correct a pre-publication
+candidate with a normal follow-up commit, preserve its original attempt and all previously released history,
+and compare against the existing producer's pure minor result from the exact pre-cut inputs. Do not rerun a cut
+on the already dated candidate and manufacture a phantom released version.
+
+The corrected v0.33.0 metadata matches that pure pre-cut minor projection; the folded bullets, v0.32.0 history,
+source and five adopted model assets remain unchanged. This comparison and focused release checks do not
+replace fresh exact-head CI/review, nor lift the separate accepted-Gyropup-CAD protected-main production hold.

@@ -9,7 +9,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
-## v0.32.1 (2026-11-10)
+## v0.33.0 (2026-11-10)
 
 **Changed**
 - The maintainer homepage-model collection reuses an exact retained CAD runtime without installation, seals candidate bytes before decode checks, and preserves independent source/runtime/hardware guards (#104).

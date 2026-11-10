@@ -20,6 +20,7 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
   `exports/slice-report.json`: a slicer error or a print-stability issue PrusaSlicer names) is now a failing row in a
   new "Slicer" feature (`cad-slicer`), with the slicer's own words. Before, it was footer text only and the report
   still passed. Each sliced part that is ok gets a passing row with its grams and minutes (#520).
+- The homepage model maintenance guide now describes the front and rear battery envelopes shown by the collected Gyropup CAD and records their remaining physical qualification limits (#104).
 
 **Projects must change**
 - A project that runs `cad-agent slice` and has a flagged part now gets exit 1 from `check`, `report` and `all` until

@@ -247,8 +247,17 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.deepEqual(pointerSelections.map(row => row.name), ['screw#1', 'screw#1']);
   assert.ok(pointerSelections.every(row => row.interaction.pointerType === 'mouse' && Number.isFinite(row.interaction.clientX)));
   await page.evaluate(() => window.__viewer.setSelection('screw#1')); assert.equal(await page.evaluate(() => window.__selectEvents.length), 2);
+  const clippedPoint = await page.evaluate(() => {
+    const v = window.__viewer; v.setSection(0.25);
+    const q = v.parts[0].mesh.position.clone().set(30.5, 10.5, 28); v.parts[0].mesh.localToWorld(q); q.project(v.stage.camera);
+    const r = v.stage.renderer.domElement.getBoundingClientRect(); return [r.left + (q.x + 1) * r.width / 2, r.top + (1 - q.y) * r.height / 2];
+  });
+  await page.mouse.move(...clippedPoint); await page.mouse.click(...clippedPoint);
+  assert.equal(await page.evaluate(() => window.__selectEvents.at(-1).name), null, 'A ray hit discarded by the actual section cannot select an invisible surface');
+  await page.evaluate(() => { window.__viewer.setSection(1); window.__viewer.setSelection('screw#1'); });
+  const selectionsBeforeDrag = await page.evaluate(() => window.__selectEvents.length);
   await page.mouse.move(...hoverPoint); await page.mouse.down(); await page.mouse.move(hoverPoint[0] + 60, hoverPoint[1] + 10, { steps: 4 }); await page.mouse.up();
-  assert.equal(await page.evaluate(() => window.__selectEvents.length), 2, 'Orbit drag cannot select or intercept input');
+  assert.equal(await page.evaluate(() => window.__selectEvents.length), selectionsBeforeDrag, 'Orbit drag cannot select or intercept input');
   await page.evaluate(() => { const v = window.__viewer; v.frameParts(['base', 'screw#1', 'screw#2'], [0.001, -0.001, 1]); v.parts[1].mesh.parent.visible = false; });
   await page.mouse.move(hoverPoint[0] + 1, hoverPoint[1]); await page.mouse.click(...hoverPoint);
   assert.equal(await page.evaluate(() => window.__selectEvents.at(-1).name), null, 'Hidden ancestor is not raycast-pickable');

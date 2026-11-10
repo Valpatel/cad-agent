@@ -112,6 +112,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     clip.normal.fromArray(sectionAxes[axis]).multiplyScalar(flipped ? 1 : -1);
     // Off stays off for either retained side. Otherwise negate BOTH terms when flipping the same plane.
     clip.constant = depth >= 1 ? 1e9 : point * (flipped ? -1 : 1);
+    clearHover();
   }
   function setSection(f) {
     ensureLive();
@@ -288,7 +289,8 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     pointer.set(2 * (clientX - rect.left) / rect.width - 1, 1 - 2 * (clientY - rect.top) / rect.height);
     stage.camera.updateMatrixWorld(true); stage.root.updateMatrixWorld(true);
     ray.setFromCamera(pointer, stage.camera);
-    const hit = ray.intersectObjects(parts.filter(p => pickable(p.mesh)).map(p => p.mesh))[0];
+    const hit = ray.intersectObjects(parts.filter(p => pickable(p.mesh)).map(p => p.mesh))
+      .find(intersection => clip.distanceToPoint(intersection.point) >= 0);
     return parts.find(p => p.mesh === hit?.object)?.name || null;
   }
   function clearHover() {

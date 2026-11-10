@@ -363,7 +363,7 @@ domains:
         maturity: tooling
         pages: [docs/practice/design-process-plan.md, docs/practice/dossier.md, docs/practice/gates.md, docs/practice/review-packet.md, docs/practice/volume-precision.md, docs/research/agent-workflow/design-workflows.md]
         cli: [init, build, check, report, all, dossier, gates, review-packet, review-section]
-        api: [cadagent.review.gates, cadagent.review.dossier, cadagent.review.packet]
+        api: [cadagent.review.gates, cadagent.review.gates.playback, cadagent.review.dossier, cadagent.review.packet]
         skills: [design-process]
         issues: [40, 41, 97]
       - slug: review-and-evidence

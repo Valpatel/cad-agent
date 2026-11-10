@@ -9,3 +9,12 @@ Module service is conditional on explicit removed parent keys. Retaining fastene
 Resolve every explicit service target before collapsing members into parent modules. A member key or owner alias cannot be forwarded to a parent view that no longer contains it; reject unsupported member teardown, unknown names and fastener-only requests before geometry. Supported parent aliases need a service check for each resolved instance. A service-enabled green verdict with no evidence for the requested operation is not qualification.
 
 Keep a positive fixture where internal tool access clears off the parent but fails in the final surrounding base, an attached-screw-only insertion blocker, an external retainer tool blocker, and a later bumper that blocks conditional withdrawal. Structural mistakes must fail before geometry is offered as a pass. Existing single-part behavior remains a regression. See the [incident and validation](../inbox/2026-10-29-preassembly-needs-its-own-obstacle-scope.md).
+
+Playback adds another distinct scope: its finite authored translation and exact within-step instance order.
+Use the existing insertion sweep with explicit finite travel; the ordinary from-beyond-obstacles sweep can
+flag a blocker which the displayed part never reaches. Matching mesh and CAD names is not geometry provenance.
+Record BREP bytes, placements, guide/model/mesh hashes and source closure from the same native export, and
+reject stale or absent bindings before CAD queries. Preserve blocked, unknown and budget-exhausted pairs;
+an unchecked kernel relation is never a clear path. Support, retention and gravity remain explicit unknowns
+until a separately justified physics scenario exists. See the [playback incident and controls](../inbox/2026-11-10-playback-needs-finite-bound-source-geometry.md)
+and [public API](../../docs/practice/assembly-guide.md#validate-the-trajectories-shown-by-playback).

@@ -46,6 +46,7 @@ try {
     await page.getByRole('link', { name: 'Open interactive 3D instructions' }).click();
     await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 20000 });
     assert.equal(await page.locator('canvas').count(), 1);
+    assert.ok(await page.evaluate(() => window.__viewer.stage.renderer.info.render.calls > 0), 'Ready follows a real first draw');
     const before = await page.evaluate(() => window.__viewer.parts.map(p => ({ visible: p.mesh.visible, position: p.mesh.position.toArray() })));
     assert.deepEqual(before.map(p => p.visible), [true, false, false]);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -61,10 +62,26 @@ try {
     assert.ok(await page.evaluate(() => window.__viewer.parts.every(p => p.mesh.material.wireframe)));
     await page.getByRole('button', { name: 'Assembled', exact: true }).click();
     assert.ok(await page.evaluate(() => window.__viewer.parts.every(p => p.mesh.position.lengthSq() === 0 && !p.mesh.material.wireframe)));
+    assert.equal(await page.getByLabel('Instruction display', { exact: true }).inputValue(), 'solid');
+    assert.equal(await page.locator('.guide-explode').isChecked(), false, 'Reset controls describe the actual unexploded scene');
+    await page.evaluate(() => window.__viewer.setSelection('screw#2'));
+    const appearance = page.getByLabel('Selected part appearance', { exact: true });
+    await appearance.selectOption('transparent');
+    const selectedMaterials = await page.evaluate(() => window.__viewer.parts.map(p => ({ opacity: p.mesh.material.opacity, depthWrite: p.mesh.material.depthWrite })));
+    assert.equal(selectedMaterials[0].opacity, 1); assert.equal(selectedMaterials[1].opacity, 1);
+    assert.ok(selectedMaterials[2].opacity < 1 && !selectedMaterials[2].depthWrite);
+    await appearance.selectOption('wireframe');
+    assert.deepEqual(await page.evaluate(() => window.__viewer.parts.map(p => p.mesh.material.wireframe)), [false, false, true]);
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    assert.deepEqual(await page.evaluate(() => window.__viewer.getState().partModes), {});
+    assert.equal(await appearance.isDisabled(), true);
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    assert.ok(await page.evaluate(() => window.__viewer.parts.every(p => !p.mesh.material.wireframe && p.mesh.material.opacity === 1)));
     await page.screenshot({ path: path.join(out, `${engine.name()}-extracted-${entry.id}.png`) });
     await page.getByRole('link', { name: 'Build guide', exact: true }).click();
     assert.equal(new URL(page.url()).pathname, '/' + entry.href);
-    cases.push({ snapshot: entry.id, staticDiagrams: 2, exactEntryHash: true, realReader: true, noSourceFallback: true });
+    cases.push({ snapshot: entry.id, staticDiagrams: 2, exactEntryHash: true, realReader: true, noSourceFallback: true,
+                 resetControlsMatchScene: true, selectedPartModesIndependentAndRestored: true, firstDrawBeforeReady: true });
   }
   // Deliberately valid changed prose with the same model must fail the entry binding.
   const first = manifest.assembly_guides[0], file = path.join(root, first.guide);

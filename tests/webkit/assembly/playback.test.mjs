@@ -91,3 +91,26 @@ test('controller has one player owner; disposal unsubscribes without owning view
   assert.equal(replacement.getState().status, 'disposed'); assert.equal(f.viewer.disposed, true);
   assert.throws(() => f.controller.applyStep('pins'), /disposed/);
 });
+test('prototype-shaped exact instance names keep their own authored offsets', () => {
+  for (const special of ['constructor', '__proto__']) {
+    const f = fixture();
+    for (const p of f.viewer.parts) if (p.name === 'pin-B') p.name = special;
+    f.guide.subassemblies[0].parts = ['foundation', 'pin-A', special];
+    for (const step of f.guide.steps) {
+      step.parts = step.parts.map(name => name === 'pin-B' ? special : name);
+      step.highlight = step.highlight.map(name => name === 'pin-B' ? special : name);
+      step.offsets_mm = Object.fromEntries(Object.entries(step.offsets_mm).map(([name, offset]) => [name === 'pin-B' ? special : name, offset]));
+    }
+    const controller = createGuideController(f.viewer, f.guide);
+    const player = createGuidePlayback(controller, { ...f.options, installOrderByStep: { base: ['foundation'], pins: [special, 'pin-A'] } });
+    player.play(); for (let i = 0; i < 5; i++) player.tick(0.1);
+    assert.ok(Object.hasOwn(last(f.viewer).offsets_mm, special));
+    assert.deepEqual(last(f.viewer).offsets_mm[special], [0, 0, 30]);
+    assert.equal(Object.getPrototypeOf(last(f.viewer).offsets_mm), Object.prototype);
+  }
+});
+test('controller disposal still releases the viewer if a player observer throws', () => {
+  const f = fixture(); createGuidePlayback(f.controller, { ...f.options, onState: state => { if (state.status === 'disposed') throw new Error('observer failure'); } });
+  assert.throws(() => f.controller.dispose(), /observer failure/); assert.equal(f.viewer.disposed, true);
+  f.controller.dispose();
+});

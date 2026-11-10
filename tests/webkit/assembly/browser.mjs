@@ -274,6 +274,24 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     return { before, after: [window.__hoverEvents.length, window.__selectEvents.length] };
   });
   assert.deepEqual(disposedCallbacks.before, disposedCallbacks.after); cases.push({ actualHoverSelectionDragHiddenDispose: true });
+  const touchContext = await browser.newContext({ viewport: { width: 1100, height: 800 }, hasTouch: true });
+  const touchPage = await touchContext.newPage(); touchPage.on('pageerror', error => errors.push(error.message));
+  await touchPage.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`);
+  await touchPage.waitForFunction(() => document.body?.dataset.ready === '1', null, { timeout: 15000 });
+  const touchPoint = await touchPage.evaluate(async () => {
+    const loaded = window.__guide; loaded.dispose();
+    const { createViewer } = await import('/kit/viewer.js'); window.__touchSelections = []; window.__touchHovers = [];
+    const v = window.__viewer = await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'),
+      manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true,
+      onSelect: (name, interaction) => window.__touchSelections.push({ name, interaction }), onHover: name => window.__touchHovers.push(name) });
+    v.frameParts(['base', 'screw#1', 'screw#2'], [0.001, -0.001, 1]);
+    const q = v.parts[0].mesh.position.clone().set(10.5, 10.5, 28); v.parts[0].mesh.localToWorld(q); q.project(v.stage.camera);
+    const r = v.stage.renderer.domElement.getBoundingClientRect(); return [r.left + (q.x + 1) * r.width / 2, r.top + (1 - q.y) * r.height / 2];
+  });
+  await touchPage.touchscreen.tap(...touchPoint);
+  assert.deepEqual(await touchPage.evaluate(() => window.__touchSelections.map(row => [row.name, row.interaction.pointerType])), [['screw#1', 'touch']]);
+  assert.deepEqual(await touchPage.evaluate(() => window.__touchHovers), [], 'Touch selects without a synthetic hover tooltip');
+  await touchPage.evaluate(() => window.__viewer.dispose()); await touchContext.close(); cases.push({ nativeTouchSelection: true });
   // Legacy manifest path and API remain usable.
   await page.goto(`${site.url}/kit/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
   await page.waitForFunction(() => document.body.dataset.ready === '1');
@@ -304,7 +322,16 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   }
   await visit('proto');
   assert.ok((await inspect()).every(p => p.offset.every(Number.isFinite)), 'prototype-shaped part names retain a zero finite baseline');
-  cases.push({ prototypePartName: true });
+  const prototypePlayback = await page.evaluate(async () => {
+    const { createGuidePlayback } = await import('/kit/assembly/guide.js');
+    const player = createGuidePlayback(window.__guide.controller, { durationMs: 100,
+      installOrderByStep: { base: ['constructor'], screws: ['screw#2', 'screw#1'] } });
+    player.play(); player.tick(0.1); player.tick(0.05);
+    const result = { foundation: window.__viewer.parts[0].mesh.position.toArray(), moving: window.__viewer.parts[2].mesh.position.toArray() };
+    player.dispose(); return result;
+  });
+  assert.deepEqual(prototypePlayback, { foundation: [0, 0, 0], moving: [0, 0, 20] });
+  cases.push({ prototypePartName: true, prototypePlayback });
   // Corrupted mesh or cancelled/late load never mounts a partial scene.
   await page.route('**/v1/1.stl', route => route.fulfill({ body: Buffer.from('wrong bytes') }));
   await page.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`); await page.getByRole('button', { name: 'Retry model', exact: true }).waitFor();

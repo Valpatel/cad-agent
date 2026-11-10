@@ -140,3 +140,23 @@ and byte equality requirements.
 prove fresh-user agent discovery, every browser interaction or physical CAD quality. The ordinary 18-asset cache
 policy receipt remains separate from the route/header smoke; no new source/provider behavior was needed to fix
 the false H1 assertion.
+
+## A feature matrix must stay a table in the actual Markdown consumer
+
+On 2026-11-10 UTC, independent review of PR #509 source `a259f46c` found a blank line between three new
+requirement rows and the retained guide matrix. The source still contained every requirement. The installed
+locked Marked 16.4.1 consumer, under Node 22.23.4, emitted only four `<tr>` rows (header plus three new rows);
+`Strict guide schema` was instead in a `<p>| ...` pipe-text paragraph. `strictSchemaIsPipeParagraph` was true
+and `strictSchemaIsTableCell` false. This was a documentation publication regression, not a viewer failure.
+
+The focused command used `createRequire(.../tools/site/package.json)('marked').marked.parse(...)` on
+`docs/practice/assembly-guide-testing.md`, counted emitted rows, and inspected actual table-cell membership.
+Removing the blank separator restored one contiguous matrix: the same consumer emitted 20 `<tr>` rows,
+`strictSchemaIsPipeParagraph: false`, and `strictSchemaIsTableCell: true`. Orthogonal-plane, hover, playback,
+strict-schema, resource-teardown and portable-ZIP requirements all appeared as table cells. The retained old
+HTML fails that same membership check; the corrected output passes. No rendering threshold or framework changed.
+
+**Rule:** when extending a GFM matrix, keep its rows contiguous and verify semantic membership through the
+repository's locked Markdown consumer. Presence in source and a few surviving rows do not prove the retained
+requirements are still cells. **Limits:** this focused parser proof does not establish browser table layout,
+responsive overflow, full-page rendering, current CI or product feature acceptance; those keep their own checks.

@@ -28,23 +28,22 @@ flowchart TD
 
 | Requirement | Test owner / concrete case | Status at this source checkpoint |
 |---|---|---|
-| Orthogonal CAD planes, flip at unchanged plane location, legacy scalar and reset/off | Planned: shared actual browser clipping pixels/landmarks on asymmetric CAD fixtures, wrong-axis/flip controls, invalid input no-mutation | Pending in separate inspection/playback follow-up; not v0.30.0 acceptance |
-| Hover and repeated selection interaction, hidden ancestors, drag/touch/leave/dispose | Planned: actual pointer interactions and callback counts in both engines, hidden-parent and wrong-target negatives | Pending in the same follow-up |
-| Explicit per-instance install order, absolute intermediate poses, speed/pause/loop/manual navigation and unsubscribe | Planned: Node order/timing adversaries plus actual two-engine world transforms on two frozen fixtures and WIP | Pending; no animation/path qualification inferred |
-
-| Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 31 Node contract tests passed on Node 22; final entry-hash counterexample is included |
+| Orthogonal CAD planes, flip at unchanged plane location, legacy scalar and reset/off | `browser.mjs`: emissive landmarks through the real clipping shader; off-centre X/Y/Z cuts, wrong-axis and normal-only-flip mutants, off/reset/invalid-state controls | Actual Chromium and WebKit passed in the 26-case component run at `a259f46c`; current composed CI/review/publication remain separate |
+| Hover and repeated selection interaction, hidden ancestors, drag/touch/leave/dispose | `browser.mjs`: real mouse hover/click/repeat, orbit/wheel, clipped-surface and hidden-parent negatives, leave and disposed callbacks; native touchscreen tap in its own touch context | Mouse controls passed in both 26-case local runs at `a259f46c`; native-touch extension is enforced by current two-engine CI; product popover placement/list-focus metadata remain product-owned |
+| Explicit per-instance install order, absolute intermediate poses, speed/pause/loop/manual navigation and unsubscribe | `playback.test.mjs`: B-before-A, exact order coverage, time/speed/pause/loop/manual controls, prototype names, owner/disposal failures; `browser.mjs`: actual 18.75/22.5/26.25 mm intermediate world deltas and hidden-future framing/negative | 38 Node contracts include 31 guide contracts and seven playback cases; both actual 26-case browser runs passed ordinary fixture poses; strengthened prototype/native-touch cases require current CI. No physical insertion-path claim |
+| Strict guide schema, snapshot identity, explicit mm/z-up and per-instance mesh hashes | `tests/webkit/assembly/guide.test.mjs`: legacy versus guide manifest; invalid guide cases; duplicate mesh/frame/hash cases | 38 total Node contracts passed on Node 22, including 31 guide cases; final entry-hash counterexample is retained |
 | Required model members, repeated screws, unknown/duplicate instances, prerequisites and finite vectors | Same file: invalid guide cases and absolute-state test | Passed in the above Node run |
 | HTTP/body deadline, wrong hash, byte cap, abort, missing/corrupt version | Same file: download failure controls and loadGuide binding | Passed in the above Node run |
-| Absolute direct/backward states, previous/future membership and unchanged source pose | `tests/webkit/assembly/browser.mjs`: each v1/v2/WIP Previous/direct step; assembled reset | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
-| Selected-instance transparent/wireframe override, unrelated meshes unchanged, clear-on-new-step/reset | Node visible-only/invalid appearance controls plus browser selected-screw DOM/material assertions | Node and both actual browser suites passed at `cdbee23b` |
-| Real highlighted/ghost/wireframe/solid states and visible multipart output | Browser suite: real materials/visibility plus retained screenshots | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
-| CAD units/frame applied exactly once | Browser suite: independently hard-coded +25 mm CAD-Z→+0.025 m stage-Y delta, plus wrong 1000x, wrong-axis and doubled-offset fault controls | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate; expectations do not read guide offsets |
+| Absolute direct/backward states, previous/future membership and unchanged source pose | `tests/webkit/assembly/browser.mjs`: each v1/v2/WIP Previous/direct step; assembled reset | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Selected-instance transparent/wireframe override, unrelated meshes unchanged, clear-on-new-step/reset | Node visible-only/invalid appearance controls plus browser selected-screw DOM/material assertions | Node and both actual browser suites passed at `a259f46c` (26 cases per engine) |
+| Real highlighted/ghost/wireframe/solid states and visible multipart output | Browser suite: real materials/visibility plus retained screenshots | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| CAD units/frame applied exactly once | Browser suite: independently hard-coded +25 mm CAD-Z→+0.025 m stage-Y delta, plus wrong 1000x, wrong-axis and doubled-offset fault controls | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate; expectations do not read guide offsets |
 | Authored underside camera direction, with ordinary orbit behavior retained | Browser suite: independent CAD direction and actual camera-target vector; restored old clamp must reject | Both actual engines passed the underside vector and old-clamp rejection; ordinary limit retained; current CI required |
-| Picking, selection and explicit isolation | Browser suite: actual projected canvas click plus two repeated screw identities | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
-| Framing, reset and legacy `?manifest=&explode=&section=` behavior, spaced filenames, CSS colours, absolute/root/CORS URLs and ordinary redirects | Browser suite: existing route and API round trip | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
-| Resource teardown and cancelled load | Browser suite: geometry/material dispose events, repeated dispose, no canvas, aborted creation | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
-| Two frozen versions and exact-commit WIP use independent scenes/instructions | Browser suite: differing dimensions, steps, hashes, UUIDs and snapshot IDs | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate; product selector/deep links/progress are Gyropup #266 acceptance |
-| Phone portrait/landscape and keyboard navigation | Browser suite: actual previous/next controls and overflow checks | Chromium and WebKit component suites passed at `cdbee23b`; portable release acceptance is separate |
+| Picking, selection and explicit isolation | Browser suite: actual projected canvas click plus two repeated screw identities | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Framing, reset and legacy `?manifest=&explode=&section=` behavior, spaced filenames, CSS colours, absolute/root/CORS URLs and ordinary redirects | Browser suite: existing route and API round trip | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Resource teardown and cancelled load | Browser suite: geometry/material dispose events, repeated dispose, no canvas, aborted creation | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
+| Two frozen versions and exact-commit WIP use independent scenes/instructions | Browser suite: differing dimensions, steps, hashes, UUIDs and snapshot IDs | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate; product selector/deep links/progress are Gyropup #266 acceptance |
+| Phone portrait/landscape and keyboard navigation | Browser suite: actual previous/next controls and overflow checks | Chromium and WebKit component suites passed at `a259f46c` (26 cases per engine); portable release acceptance is separate |
 | Runtime and complete asset closure in release ZIP; preserve old output on rejection | `tests/publish/test_release_guides.py` and `tests/webkit/assembly/release-browser.mjs` | Publisher tests and actual extracted-ZIP Chromium/WebKit suites passed at `47b07508`; [packaging test plan](../../tests/publish/README.md#assembly-guide-release-test-plan) states exact scope |
 | Current recipe/neutral transforms/posters and static/Markdown fallback | Gyropup #266 producer and product tests | Product-owned, pending; no stale turret illustration accepted here |
 | Rapid switch race, progress isolation, no-WebGL fallback, touch/reduced motion, complete requirement UI | Gyropup #266 tests, with shared abort/dispose primitives | Product acceptance still pending; not implied by this shared module |
@@ -54,12 +53,21 @@ flowchart TD
 <details>
 <summary>Retained corrective failures and current component evidence</summary>
 
+
+The first new clipping observer run at `8fefeeff` failed after a retained blue surface changed brightness from
+`[55,136,186]` to `[125,183,217]`; later hover cases and WebKit were unrun. Its failed receipt remains retained.
+The corrected fixture keeps the real physical material/clipping shader but uses emissive diagnostic landmarks,
+retains the same RGB-distance threshold, and rejects wrong-axis and normal-only flips at off-centre cuts. Both
+actual 26-case engines then passed at `a259f46c`, including the existing legacy scenarios. That local packet does
+not substitute for current composed CI, the later native-touch/prototype additions, release ZIP or product UI
+acceptance. The parser-only matrix correction below likewise is not a browser-render acceptance.
+
 The product's existing ordinary-viewer fixtures also exposed a legacy absolute/root URL regression. Ordinary
 HTTP(S) URL resolution and external CORS/redirect behavior are retained separately from strict guide paths;
-pure and real browser cases passed in both engines at `cdbee23b`. The held ordinary load uses an absolute
+pure and real browser cases passed in both engines at `a259f46c` (26 cases per engine). The held ordinary load uses an absolute
 mesh URL. Programmatic slider readouts and first-usable-frame readiness are reconciled with the existing product
 viewer. The portable reader's assembled reset now synchronizes mode/explosion/section labels, with actual DOM
-assertions in the component suite; both engines passed these corrective cases at `cdbee23b`.
+assertions in the component suite; both engines passed these corrective cases at `a259f46c` (26 cases per engine).
 
 The rendered WebKit CI at `ca70ce09` also rejected uninterrupted design/testing-page stretches of 2810/1332 px.
 Native disclosures now keep schema/API/reference evidence available without that initial wall. A bounded actual
@@ -89,7 +97,7 @@ PLAYWRIGHT_BROWSER=chromium npm --prefix tools/site run test:assembly-guide
 PLAYWRIGHT_BROWSER=webkit npm --prefix tools/site run test:assembly-guide
 ```
 
-The per-instance corrective multipart suites at `cdbee23b` recorded 18 case rows per engine, zero page errors, and terminal
+The per-instance corrective multipart suites at `a259f46c` (26 cases per engine) recorded 18 case rows per engine, zero page errors, and terminal
 owned service cleanup. They include selected-instance appearance and actual reset-control assertions, ordinary
 absolute/root/CORS/redirect loads, slider readouts, first-frame readiness and abort-after-late-response controls.
 The earlier `e219d2ac` pair recorded 13 rows per engine and remains the narrower historical result. The final

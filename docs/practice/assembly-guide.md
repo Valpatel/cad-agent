@@ -95,7 +95,7 @@ Existing `createViewer` callers,
 | `getState()` | Returns a copy, not mutable internal state |
 | `setSelection(name)` | Selects a visible part or null and calls `onSelect`; actual canvas picking uses the same method |
 | `setPartMode(name, mode)` | Overrides one visible instance with `solid`, `transparent` or `wireframe`; null restores scene mode |
-| `frameParts(names, direction?)` | Fits current visible world bounds, with optional CAD camera direction |
+| `frameParts(names, direction?, {includeHidden: false}?)` | Fits visible world bounds by default; explicit hidden-future framing uses stored authored poses without drawing them |
 | `reset()` | Restores assembled positions, original visibility/materials, section off and opening camera |
 | `dispose()` | Idempotently aborts loading, removes owned events, stops/disposes the stage and disposes model resources |
 
@@ -118,22 +118,23 @@ step selection, material mode, assembled reset and instruction text. Assembled r
 ## Inspection and ordered playback follow-up
 
 <details>
-<summary>Draft API contract — implementation and complete validation pending</summary>
+<summary>Orthogonal inspection, shared pointer events and explicit installation order</summary>
 
-This follow-up is separate from the frozen v0.30.0 delivery. It extends the same viewer, guide controller and
-stage; no second renderer or animation loop is introduced. Until its own reviewed source and complete tests
-land, callers must capability-check the following methods rather than infer their availability from a draft.
+These optional methods extend the same viewer, guide controller and stage. They are a separate follow-up to
+v0.30.0; a product must pin their published source and capability-check an older imported runtime. Current
+source/CI/release acceptance is tracked in PR #509; component evidence is listed in the testing matrix.
 
 - `setSectionPlane({axis: 'x'|'y'|'z', flipped: boolean})` preserves the current normalized depth;
   `getSectionState()` returns a copy of `{axis, flipped, depth}`. `setSection(depth)` and default CAD-X behavior
   stay exact. Depth 1 disables the section for either direction. Reset restores X, unflipped, off. CAD axes are
   explicit; product labels must follow their source frame (the robot uses X forward, Y left, Z up).
 - Optional `onHover(name|null, {clientX, clientY})` shares the click hit resolver, checks all visible ancestors,
-  clears on leave/drag/dispose and is throttled to the existing browser frame cadence. It never intercepts orbit
+  excludes section-discarded ray hits, clears on orbit/wheel/leave/dispose and is throttled to the existing browser frame cadence. It never intercepts orbit
   input. A pointer selection supplies optional coordinates/pointer type to `onSelect`; a repeated click on the
   same selected instance still notifies once. Programmatic unchanged selection remains quiet.
 - `createGuidePlayback(controller, {installOrderByStep, referenceStepIDs, durationMs, onState, onStep})` provides
-  `play`, `pause`, `setSpeed`, `setLoop`, `tick(dtSeconds)`, `getState` and `dispose`. The caller supplies explicit
+  `play`, `pause`, `setSpeed`, `setLoop`, `tick(dtSeconds)`, `getState` and `dispose`. `tick` receives seconds, clamps a delta to 0.1s, and speed is 0.25..4;
+  `durationMs` is 100..60000 per instance. Status is `idle`, `playing`, `paused`, `ended` or `disposed`. The caller supplies explicit
   exact instance order; no BOM/manifest order or insertion direction is invented. Complete coverage, duplicates,
   unknown names and non-monotone installation steps reject. Authored compounds remain one instance.
 
@@ -142,8 +143,35 @@ moves its authored CAD-mm offset absolutely to zero; future installation instanc
 foundation stays static. Pause freezes its pose, speed is bounded, oversized frame deltas cannot cause catch-up,
 and looping restarts the ordered presentation. Manual navigation/reset pauses playback and applies the requested
 deterministic controller state. Player callbacks update text/URLs without recursively reapplying the step.
-No procurement or completed-step storage is written. The product owns camera/UI composition; playback uses one
-subscription to the existing `stage.onFrame`, with an unsubscribe path when the player is disposed.
+`onStep(id, {partId, operationIndex})` fires once per operation change, including a repeated step ID for the next
+instance. `onState` receives a copy with status, step/part IDs, operation index, elapsed milliseconds, normalized
+progress, speed and loop. Terminal Play restarts the first installation; a manually selected installation starts
+that step with its prior assembled baseline, and an explicit reference overview starts the first installation.
+Only one player can own a controller at a time; disposing the controller also disposes its player. No procurement
+or completed-step storage is written.
+
+The product owns camera/UI composition. `frameParts(names, direction, {includeHidden: true})` can frame all future
+step instances at their retained authored offsets without showing them; the default remains visible-only.
+Subscribe once to the existing stage, then unsubscribe before discarding a player. The product explicitly pauses
+for manual view/list actions, hidden-page and reduced-motion changes; pointer metadata distinguishes a real pick
+from a programmatic selection clear.
+
+```js
+import {createGuidePlayback} from './kit/assembly/guide.js';
+const player = createGuidePlayback(instructions, {
+  referenceStepIDs: [],
+  installOrderByStep: {screws: ['base', 'screw#2', 'screw#1']},
+  durationMs: 1000,
+  onStep: (id, operation) => showInstruction(id, operation.partId),
+});
+const untick = viewer.stage.onFrame((_time, dtSeconds) => player.tick(dtSeconds));
+// User controls call player.play(), pause(), setSpeed() and setLoop().
+// Teardown while keeping the viewer alive:
+untick(); player.dispose();
+```
+
+The order and reference IDs in this example must exist in the caller's actual guide. This is illustrative
+presentation, not inferred physical assembly order, collision avoidance or a certified insertion trajectory.
 
 </details>
 

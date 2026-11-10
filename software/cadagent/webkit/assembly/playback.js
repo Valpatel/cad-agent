@@ -21,7 +21,7 @@ export function createPlayback(context, { installOrderByStep, referenceStepIDs =
       invalid('Installation order must cover each new instance exactly once');
     const installed = [...prior];
     for (const name of order) {
-      operations.push({ step, name, installed: [...installed], offset: [...(step.offsets_mm[name] || [0, 0, 0])] });
+      operations.push({ step, name, installed: [...installed], offset: [...(Object.hasOwn(step.offsets_mm, name) ? step.offsets_mm[name] : [0, 0, 0])] });
       installed.push(name);
     }
     prior = [...step.parts];
@@ -36,12 +36,12 @@ export function createPlayback(context, { installOrderByStep, referenceStepIDs =
   function present() {
     const op = operations[cursor], progress = Math.min(1, elapsedMs / durationMs);
     // Future instances keep their authored transforms for includeHidden framing, but are never drawn early.
-    const offsets_mm = Object.fromEntries(Object.entries(op.step.offsets_mm).map(([name, offset]) => [name, [...offset]]));
-    for (const name of op.installed) offsets_mm[name] = [0, 0, 0];
-    offsets_mm[op.name] = op.offset.map(value => value * (1 - progress));
+    const offsets = new Map(Object.entries(op.step.offsets_mm).map(([name, offset]) => [name, [...offset]]));
+    for (const name of op.installed) offsets.set(name, [0, 0, 0]);
+    offsets.set(op.name, op.offset.map(value => value * (1 - progress)));
     context.setCurrent(op.step.id);
     context.viewer.applyState({ visible: [...op.installed, op.name], highlight: [op.name], mode: 'solid',
-      offsets_mm, selected: null, isolate: null, partModes: {} });
+      offsets_mm: Object.fromEntries(offsets), selected: null, isolate: null, partModes: {} });
   }
   function begin(index) {
     cursor = index; elapsedMs = 0; restart = false; wrap = false; present();

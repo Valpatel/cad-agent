@@ -24,3 +24,5 @@ may require earlier step IDs. Subassemblies are named visibility sets, not geome
 
 This folder and the viewer API are being implemented for the first versioned pilot in Gyropup #266, under
 cad-agent #302. The wider build-package feature remains separate.
+
+[Web kit](../README.md)

@@ -16,3 +16,5 @@ flowchart TD
 | `browser.mjs` | Real scene/material/coordinate/loading/lifecycle controls in each browser engine |
 
 Run through the existing site npm scripts. See the [feature test matrix](../../../docs/practice/assembly-guide-testing.md) for pending versus verified results.
+
+[Browser tests](../README.md)

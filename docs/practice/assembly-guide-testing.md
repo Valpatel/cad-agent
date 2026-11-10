@@ -98,7 +98,10 @@ passes, while actual extracted-ZIP valid/corrupt-entry browser acceptance belong
 The composed release suite subsequently passed seven case rows in both engines at `47b07508`, using runtime
 bytes from `cdbee23b`. It removes the original source/release, checks real draw and DOM/material reset, selected
 appearance, corruption refusal and no-script instructions, and allows no outside requests. Synthetic released
-fixtures establish version independence; they are not claims of historical Gyropup releases.
+fixtures establish version independence; they are not claims of historical Gyropup releases. The final-runtime
+portable pair with `d0d13ee3` subsequently passed seven cases per engine, including the independent underside
+camera vector, zero page errors/foreign requests and owned cleanup. The publisher reference wall was folded
+after its actual CI failure and measured 265/264 px against the unchanged 1200 px bound.
 The focused existing and new Node suites passed 37 tests; exporter/render/layout/area/packaging checks passed
 138 tests with two optional-extra skips. The corrective layout/area/package checks passed 120 tests, and the structural map suite passed 28 with its
 explicit CI-only drawing skip. These counts do not substitute for current-head CI or product acceptance.

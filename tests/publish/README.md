@@ -41,6 +41,9 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 
 ## Assembly guide release test plan
 
+<details>
+<summary>Portable guide requirements, commands and retained evidence</summary>
+
 This is the packaging portion of the versioned assembly-guide test specification
 ([cad-agent #302](https://github.com/Valpatel/cad-agent/issues/302),
 [Gyropup #266](https://github.com/Valpatel/gyropup/issues/266)). It accompanies
@@ -96,6 +99,13 @@ bundle. Each scene checked a real draw before ready, selected-part appearance
 independence and reset/step restoration. These checks establish portable viewer
 behavior, not complete Gyropup recipe accuracy or physical assembly.
 
+The final-runtime local runs with shared `d0d13ee3` also passed seven cases in each engine, with zero page errors
+and foreign requests. They additionally compare the packaged camera-target vector to an independently specified
+underside direction. The original source and release folders were removed before browser access. Both owned
+units and the separate two-engine documentation probe terminated with no remaining tasks. The latter measured
+the newly folded publisher reference at 265/264 px (Chromium/WebKit) against the unchanged 1200 px wall limit;
+the old 2052/2015 px CI failures remain failures. Current composed-head CI remains required.
+
 The first changed portable test at `3b7d4f7f` timed out because it clicked Previous
 from the intentional assembled overview. The corrected test explicitly checks
 that Previous is disabled there and selects an instruction before testing
@@ -103,3 +113,5 @@ backward navigation. This preserves the UI contract instead of changing the
 product to satisfy a faulty test assumption. CI also rejected a malformed
 CHANGELOG fragment; the existing repository release-producer tests now pass
 all 40 cases. Both failed attempts remain separate from the corrected results.
+
+</details>

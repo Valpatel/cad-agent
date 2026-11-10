@@ -58,6 +58,13 @@ try {
     assert.deepEqual(after.map(p => p.visible), [true, true, true]);
     assert.deepEqual(after[1].position, [0, 0, 25 + index * 5]);
     assert.equal(after[0].opacity, 0.2);
+    const underside = await page.evaluate(() => {
+      const v = window.__viewer, s = v.stage;
+      v.frameParts(v.getState().visible, [0.6, -1, -0.35]);
+      return s.camera.position.clone().sub(s.controls.target).normalize().toArray();
+    });
+    const expectedDirection = [0.6, -0.35, 1].map(n => n / Math.hypot(0.6, 0.35, 1));
+    underside.forEach((n, axis) => assert.ok(Math.abs(n - expectedDirection[axis]) < 1e-6, 'Packaged runtime retains underside camera direction'));
     await page.getByLabel('Instruction display', { exact: true }).selectOption('wireframe');
     assert.ok(await page.evaluate(() => window.__viewer.parts.every(p => p.mesh.material.wireframe)));
     await page.getByRole('button', { name: 'Assembled', exact: true }).click();
@@ -84,7 +91,7 @@ try {
     await page.getByRole('link', { name: 'Build guide', exact: true }).click();
     assert.equal(new URL(page.url()).pathname, '/' + entry.href);
     cases.push({ snapshot: entry.id, staticDiagrams: 2, exactEntryHash: true, realReader: true, noSourceFallback: true,
-                 resetControlsMatchScene: true, selectedPartModesIndependentAndRestored: true, firstDrawBeforeReady: true });
+                 resetControlsMatchScene: true, selectedPartModesIndependentAndRestored: true, firstDrawBeforeReady: true, undersideDirection: underside });
   }
   // Deliberately valid changed prose with the same model must fail the entry binding.
   const first = manifest.assembly_guides[0], file = path.join(root, first.guide);

@@ -22,6 +22,13 @@ _HASH = re.compile(r"[0-9a-f]{64}")
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 
+def _finite(value: Any) -> bool:
+    try:
+        return type(value) in (int, float) and math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 @dataclass
 class GuideBundle:
     identifier: str
@@ -43,13 +50,18 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
         files: Dict[str, bytes] = {}
 
         def capture(base: Path, reference: Any, expected: Any = None) -> tuple[Path, bytes]:
-            if not isinstance(reference, str) or not reference or "\\" in reference:
+            if (not isinstance(reference, str) or not reference or "\\" in reference
+                    or any(ord(c) < 32 or ord(c) == 127 for c in reference)
+                    or re.search(r"%(?![0-9A-Fa-f]{2})", reference)):
                 raise CadConfigError("assembly guide needs a relative file reference")
-            parsed = urlsplit(reference)
+            try:
+                parsed = urlsplit(reference)
+                decoded = unquote(reference, errors="strict")
+            except (ValueError, UnicodeError):
+                raise CadConfigError("invalid assembly guide file reference") from None
             if (parsed.scheme or parsed.netloc or parsed.query or parsed.fragment
                     or reference.startswith(("/", "~")) or "?" in reference or "#" in reference):
                 raise CadConfigError("assembly guide references must be local relative paths without query/fragment")
-            decoded = unquote(reference)
             if "\0" in decoded or "\\" in decoded or Path(decoded).is_absolute():
                 raise CadConfigError("invalid assembly guide file reference")
             lexical = base / decoded
@@ -155,13 +167,13 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                 raise CadConfigError("assembly guide offsets must refer to visible instances")
             for vector in offsets.values():
                 if (not isinstance(vector, list) or len(vector) != 3
-                        or any(type(n) not in (int, float) or not math.isfinite(n) for n in vector)):
+                        or not all(_finite(n) for n in vector)):
                     raise CadConfigError("assembly guide offsets must be finite CAD-mm vectors")
             camera = step.get("camera")
             if camera is not None:
                 direction = camera.get("direction") if isinstance(camera, dict) else None
                 if (not isinstance(direction, list) or len(direction) != 3
-                        or any(type(n) not in (int, float) or not math.isfinite(n) for n in direction)
+                        or not all(_finite(n) for n in direction)
                         or not any(direction)):
                     raise CadConfigError("assembly guide camera needs a finite nonzero CAD direction")
             poster = step.get("poster")

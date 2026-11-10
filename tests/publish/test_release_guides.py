@@ -12,6 +12,8 @@ from cadagent.publish.guides import collect_guides
 from cadagent.publish import release
 from .test_release import project
 
+REAL_GUIDE_RUNTIME = release._guide_runtime
+
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
@@ -75,7 +77,8 @@ def test_missing_or_stale_dependency_is_rejected(tmp_path, kind):
 
 @pytest.mark.parametrize("reference", ["/etc/passwd", "https://example.com/model.json", "//example.com/x",
                                        "model/view.json?latest=1", "model/view.json#x", "../../../../escape.json",
-                                       "%2fetc/passwd", "model%5cview.json"])
+                                       "%2fetc/passwd", "model%5cview.json", "http://[", "model%zz.json",
+                                       "model/%ff.json", "model/\nview.json"])
 def test_unsafe_model_reference_is_rejected(tmp_path, reference):
     path, guide = fixture(tmp_path)
     guide["model"]["file"] = reference
@@ -86,7 +89,7 @@ def test_unsafe_model_reference_is_rejected(tmp_path, reference):
 
 @pytest.mark.parametrize("edit", ["duplicate-step", "unknown-part", "hidden-highlight", "future-prerequisite",
                                   "nonfinite-offset", "boolean-offset", "escaping-id", "missing-commit",
-                                  "unknown-subassembly", "zero-camera", "malformed-status"])
+                                  "unknown-subassembly", "zero-camera", "malformed-status", "overflow-offset"])
 def test_invalid_instruction_identity_is_rejected(tmp_path, edit):
     path, guide = fixture(tmp_path)
     step = guide["steps"][0]
@@ -101,6 +104,7 @@ def test_invalid_instruction_identity_is_rejected(tmp_path, edit):
     elif edit == "unknown-subassembly": step["subassembly"] = "missing"
     elif edit == "zero-camera": step["camera"] = {"direction": [0, 0, 0]}
     elif edit == "malformed-status": guide["snapshot"]["status"] = []
+    elif edit == "overflow-offset": step["offsets_mm"]["lid"] = [0, 10 ** 1000, 0]
     path.write_text(json.dumps(guide))
     with pytest.raises(CadConfigError):
         collect(tmp_path, path)
@@ -225,3 +229,39 @@ def test_model_cannot_silently_skip_an_instance(tmp_path):
     path.write_text(json.dumps(guide))
     with pytest.raises(CadConfigError, match="skip geometry"):
         collect(tmp_path, path)
+
+
+def test_runtime_copies_resources_and_refuses_missing_reader_or_symlinks(tmp_path, monkeypatch):
+    from cadagent.publish import site
+    kit = tmp_path / "kit"
+    files = ["viewer.html", "viewer.js", "stage.js", "assembly/guide.js", "vendor/three/three.module.min.js",
+             "hud.css", "vendor/NOTICE.txt", "__pycache__/unused.pyc"]
+    for name in files:
+        path = kit / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(name)
+    monkeypatch.setattr(site, "KIT_DIR", kit)
+    captured = REAL_GUIDE_RUNTIME()
+    assert set(captured) == set(files) - {"__pycache__/unused.pyc"}
+    (kit / "assembly/guide.js").unlink()
+    with pytest.raises(CadConfigError, match="runtime"):
+        REAL_GUIDE_RUNTIME()
+    (kit / "assembly/guide.js").write_text("guide")
+    (kit / "leak.txt").symlink_to(kit / "hud.css")
+    with pytest.raises(CadConfigError, match="symlinks"):
+        REAL_GUIDE_RUNTIME()
+
+
+def test_runtime_failure_preserves_existing_release(tmp_path, runtime, monkeypatch):
+    p, _ = release_project(tmp_path)
+    output = tmp_path / "release"
+    first = release.build_release(p, out=output, date="2026-11-09")
+    before = first.zip_path.read_bytes()
+    old_index = (output / "index.html").read_bytes()
+    def unavailable():
+        raise CadConfigError("assembly runtime unavailable")
+    monkeypatch.setattr(release, "_guide_runtime", unavailable)
+    with pytest.raises(CadConfigError, match="runtime"):
+        release.build_release(p, out=output, date="2026-11-09")
+    assert first.zip_path.read_bytes() == before
+    assert (output / "index.html").read_bytes() == old_index

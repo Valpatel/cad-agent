@@ -1579,7 +1579,8 @@ Runs `prusa-slicer` (on PATH, or the flatpak `com.prusa3d.PrusaSlicer`).
   `benign_log_lines` (a count of lines that say nothing about the print: a multi-tool printer's "SupportSpotsGenerator
   does not currently handle different materials" and Arachne's "Detected … Voronoi … rotated back and forth"), `log`
   and `ok`: true only with exit code 0, G-code written and no error or stability issue. Other warnings are listed but
-  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok. The
+  do not fail a part. `cad-agent slice` prints them under each part and exits 1 when any part is not ok, and while
+  that slice report is current `cad-agent check`, `report` and `all` show a failing "Slicer" row for the part. The
   stability check is PrusaSlicer's own heuristic, run with the settings sliced: an ok part can still print badly, and
   turning supports or a brim on may clear an issue rather than fix the geometry.
 - **Limits:** the flatpak cannot read `/tmp`, so keep the project under your home folder. `export-3mf` plates carry

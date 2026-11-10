@@ -74,11 +74,13 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    skills in [`.agents/skills/`](../.agents/skills), and the open-source libraries and agent skills outside them. Under "Considered
    existing tools" in the PR, name each candidate and whether you adopted it, wrapped it, borrowed from it or passed
    on it, and why. Write our own only for the gap, and credit what you use.
-2. **Worktree from `dev`.** Never edit a checkout another session may be using:
+2. **Worktree from `dev`.** Keep one project container: `repo/` for the canonical checkout, `worktrees/<topic>/`
+   for linked checkouts. Inspect `git worktree list` first and reuse an existing owned tree where appropriate.
+   Never edit a checkout another session may be using. Run this example from the canonical `repo/` checkout:
    ```bash
    git fetch origin
-   git worktree add --no-track ../cad-agent-<topic> -b feat/<topic> origin/dev
-   cd ../cad-agent-<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
+   git worktree add --no-track ../worktrees/<topic> -b feat/<topic> origin/dev
+   cd ../worktrees/<topic> && git push -u origin feat/<topic>     # the branch tracks itself, not dev
    ```
 3. **Commit and push** small, focused changes with tests (in `tests/<domain>/`: [where files go](#where-files-go)) as you go, not in one batch at the end. Keep the package generic: anything specific to one
    product stays in that product's repository. A new docs or research page, `cad-agent` command, skill, agent or
@@ -98,7 +100,9 @@ follow `cad-work-tracking`: an issue per change, an early draft PR with `Closes 
    the verdict marker that the `review` gate reads. The author answers or fixes each comment and resolves it.
 7. **Merge** into `dev` (squash or merge commit). Then, before removing the worktree, repoint anything installed
    from it: `pip show -f cad-agent` (or the `direct_url.json` it lists) in each project venv tells you where
-   `cadagent` comes from. Reinstall those from the `dev` checkout below, then `git worktree remove ../cad-agent-<topic>`.
+   `cadagent` comes from. Repoint those to the reviewed `dev` checkout below, verify imports and other path consumers,
+   then run `git worktree remove ../worktrees/<topic>` from the canonical `repo/` checkout. Preserve dirty, untracked,
+   ignored and unincorporated work; do not force removal or delete an active provider just to reduce folder count.
 
 ## Where files go
 
@@ -134,8 +138,10 @@ folder comes when one gets cluttered (the growth rule in [AGENTS.md](../AGENTS.m
 
 ## Using cad-agent from a project
 - **Released:** a checkout of `main` (or a tag), installed editable: `pip install -e "<checkout>[cad,fea]"`.
-- **Latest reviewed:** a dedicated worktree that only tracks `origin/dev` (`git worktree add ../cad-agent-dev origin/dev`,
-  updated with `git -C ../cad-agent-dev pull --ff-only`). Never edit in it.
+- **Latest reviewed:** from the canonical `repo/` checkout, create a dedicated read-only tree with
+  `git worktree add --detach ../worktrees/dev origin/dev`. Update it with `git fetch origin` followed by
+  `git -C ../worktrees/dev merge --ff-only origin/dev`. Detached trees have no branch upstream for an implicit pull.
+  Reuse a verified existing integration tree instead of creating duplicates. Never edit in it.
 - **A feature under test:** that feature's worktree, while its PR is open. Say so in the PR.
 
 A project that needs a new toolkit feature opens a cad-agent PR for it; it does not patch its local copy.

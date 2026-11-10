@@ -39,6 +39,10 @@ flowchart TD
 2. **Branch from the integration branch and push it at once.** Follow the repo's AGENTS.md / CONTRIBUTING.md: in
    cad-agent that is a `feat/<topic>` worktree from `origin/dev`; in a product repo, often `dev`. Push before you
    have much to push (`git push -u origin <branch>`), so the branch exists remotely from the start.
+   Keep the canonical checkout in the project's `repo/` and linked trees in `worktrees/<topic>/`; use the
+   contributor guide's commands from their stated checkout context. Reuse an existing owned tree rather than
+   scatter project-name-prefixed siblings around the workspace. Moving existing trees requires coordinated
+   writer/process and import-path checks; a path convention is not authorization to discard their contents.
 3. **Open a draft PR early** with `Closes #<issue>` in the body: `gh pr create --draft --base <base>`. List in it
    what is still missing. CI on a draft may fail; say why in the PR.
 4. **Commit and push in clean chunks.** One coherent change per commit (it builds, its message says what and why),

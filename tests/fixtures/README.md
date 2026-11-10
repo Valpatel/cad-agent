@@ -67,3 +67,5 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 | [gcode/](gcode/) | Recorded G-code examples for parsing controls. |
 | [prusa_config/](prusa_config/) | Synthetic/recorded Prusa configuration fixtures. |
 | [prusa_logs/](prusa_logs/) | Recorded-format Prusa log fixtures. |
+
+| [assembly-guide/](assembly-guide/README.md) | Real cross-chapter guide and model-manifest contract from the pinned Gyropup pilot |

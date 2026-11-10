@@ -29,3 +29,5 @@ flowchart TD
 |---|---|
 | [volume-precision.md](volume-precision.md) | Solid validity, units and aggregate numerical precision. |
 | [web-diagrams.md](web-diagrams.md) | Shared browser diagram renderer and fallback limits. |
+| [assembly-guide.md](assembly-guide.md) | Optional version-bound assembly instructions over the shared viewer |
+| [assembly-guide-testing.md](assembly-guide-testing.md) | Requirement-to-test matrix and pending/verified acceptance |

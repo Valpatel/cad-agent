@@ -113,7 +113,11 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
             if len(data) > 2 * 1024 * 1024:
                 raise CadConfigError("assembly guide JSON exceeds the reader's 2 MiB limit")
             try:
-                value = json.loads(data)
+                def non_json_constant(value):
+                    raise ValueError("non-JSON numeric constant")
+                value = json.loads(data, parse_constant=non_json_constant)
+                # Static instruction output must also be valid UTF-8.
+                json.dumps(value, ensure_ascii=False).encode("utf-8")
             except (ValueError, UnicodeError):
                 raise CadConfigError("invalid assembly guide JSON") from None
             if not isinstance(value, dict):
@@ -213,13 +217,13 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                 if not _vector(vector):
                     raise CadConfigError("assembly guide offsets must be finite CAD-mm vectors")
             camera = step.get("camera")
-            if camera is not None:
+            if "camera" in step:
                 _fields(camera, ("direction",), "camera")
                 direction = camera.get("direction") if isinstance(camera, dict) else None
                 if not _vector(direction, True):
                     raise CadConfigError("assembly guide camera needs a finite nonzero CAD direction")
             poster = step.get("poster")
-            if poster is not None:
+            if "poster" in step:
                 _fields(poster, ("file", "sha256"), "poster binding")
                 if not isinstance(poster, dict) or not isinstance(poster.get("sha256"), str):
                     raise CadConfigError("assembly guide poster needs file and sha256")

@@ -112,6 +112,27 @@ def test_invalid_instruction_identity_is_rejected(tmp_path, edit):
         collect(tmp_path, path)
 
 
+@pytest.mark.parametrize("field", ["camera", "poster"])
+def test_present_optional_binding_cannot_be_null(tmp_path, field):
+    path, guide = fixture(tmp_path)
+    guide["steps"][0][field] = None
+    path.write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError):
+        collect(tmp_path, path)
+
+
+def test_nonstandard_json_and_unpaired_surrogate_reject_before_static_output(tmp_path):
+    path, guide = fixture(tmp_path)
+    guide["source"] = {"invalid": float("inf")}
+    path.write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError, match="invalid assembly guide JSON"):
+        collect(tmp_path, path)
+    guide["source"] = {"invalid": "\ud800"}
+    path.write_text(json.dumps(guide))
+    with pytest.raises(CadConfigError, match="invalid assembly guide JSON"):
+        collect(tmp_path, path)
+
+
 def test_duplicate_snapshot_ids_are_rejected(tmp_path):
     path, _ = fixture(tmp_path)
     with pytest.raises(CadConfigError, match="unique snapshot"):

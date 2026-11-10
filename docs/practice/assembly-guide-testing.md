@@ -157,3 +157,11 @@ existing MuJoCo exporter. A prescribed kinematic path can drive a part through a
 hulls can fill bearing bores; neither is a physical assembly proof. A later bounded gravity/settle fixture must
 compare a supported stage with an unsupported/falling stage, record solver inputs and drift/contact evidence,
 and keep insertion, retention and gravity results separate. Long native product runs belong on a compute host.
+
+Independent review reproduced a false pass after changing only the insert's CAD matrix by +100 mm while
+leaving guide/STL/BREP bytes unchanged. The regression now requires a failing world-bounds screen before any
+path query, and separately rejects double-applied placements. Bounds compare actual captured STL vertices,
+located CAD and model metadata with explicit bounded tessellation allowance; matching bounds still do not prove
+complete shape correspondence. Original-BREP byte binding preserves the native producer platform and avoids
+rehashing imported shapes. Nonfinite distances/tolerances, infinite or fractional budgets, and undecided
+refinement midpoints have negative controls.

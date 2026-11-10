@@ -41,3 +41,13 @@ the existing near-contact sample limitations. It has no inferred overlap exempti
 fastener/tool proof, tolerance stack or physical qualification. Support, fixture retention and gravity are
 unknown until explicit, source-bound physics inputs justify their own check. Native product export and long
 validation runs use a compute host; this bounded fixture result is not a whole-robot clearance result.
+
+## Independent review: hashes alone did not reject an inconsistent placement
+
+On 2026-11-10 an independent reviewer ran the real fixture, retained its blocked result, then changed only
+`binding["instances"]["insert"]["matrix"][3] += 100`. The initial adapter reported a pass despite unchanged
+guide, mesh and BREP bytes ([review](https://github.com/Valpatel/cad-agent/pull/513#discussion_r4526495305)).
+The check had moved the CAD away from the displayed geometry. The correction compares located exact CAD,
+actual captured STL vertices and model bounds before path queries, with a bounded explicit tessellation
+allowance. A stale-shift and a double-applied-placement mutant must both fail. This is a gross frame screen,
+not proof of shape/tessellation equivalence; the original producer declaration remains a stated limit.

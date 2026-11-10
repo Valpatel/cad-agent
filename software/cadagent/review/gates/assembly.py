@@ -96,12 +96,18 @@ class AccessOptions:
     missing_direction: str = "warn"    # a step with no direction: "warn" or "fail"
 
     def __post_init__(self):
-        for f in fields(self):
-            v = getattr(self, f.name)
-            if isinstance(v, (int, float)) and not isinstance(v, bool) and v < 0:
-                raise ValueError(f"AccessOptions.{f.name} must be non-negative, got {v!r}")
+        for name in ("max_step_mm", "margin_mm"):
+            v = getattr(self, name)
+            if type(v) not in (int, float) or not math.isfinite(v) or v < 0:
+                raise ValueError(f"AccessOptions.{name} must be finite and non-negative")
+        for name in ("refine_steps", "max_samples"):
+            v = getattr(self, name)
+            if type(v) is not int or v < 0:
+                raise ValueError(f"AccessOptions.{name} must be a non-negative integer")
         if self.max_step_mm <= 0:
             raise ValueError("AccessOptions.max_step_mm must be positive")
+        if type(self.tool_access) is not bool:
+            raise ValueError("AccessOptions.tool_access must be boolean")
         if self.missing_direction not in ("warn", "fail"):
             raise ValueError("AccessOptions.missing_direction must be 'warn' or 'fail'")
 
@@ -378,7 +384,7 @@ def _onset(world: SequenceWorld, key: str, back: Vec, other: str, hit: float, cl
             mid = (hit + clear) / 2
             rel = world.relate_at(key, tuple(mid * c for c in back), other)
             n += 1
-            if rel.state == "unknown":
+            if rel.state in ("unknown", "unchecked"):
                 break
             if rel.interferes:
                 hit, hit_rel = mid, rel

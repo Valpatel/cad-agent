@@ -224,10 +224,19 @@ report = playback_gate(bundle, binding, breps,
 
 The example IDs must be replaced with the actual guide's complete instance order. Omitting
 `install_order_by_step` reads `guide.source.install_order_by_step`; reference overview IDs remain explicit, just
-as in the browser player. The adapter verifies the guide/model/mesh hashes and every BREP payload hash and
-placement before native queries. Missing or stale evidence produces a failing verdict. BREP read-back preserves
+as in the browser player. The adapter verifies the guide/model/mesh hashes and every BREP payload hash before path queries. It also
+compares located CAD bounds with the actual captured STL vertices and the model bounds, recording all three.
+`bounds_tolerance_mm` is explicit in the report and restricted to 0..1 mm. Its default 0.5 mm is a gross frame
+screen with slack around the 0.25 mm tessellation used by the reference producer; use the producer's recorded
+linear tessellation tolerance when available. Model bounds may describe exact CAD or mesh vertices, with an
+extra 0.01 mm allowance for two-decimal rounding. This is not a clearance allowance or proof of correspondence;
+coarser geometry should be re-exported rather than disabling the frame check. Missing or stale evidence produces a failing verdict. BREP read-back preserves
 the original content hash from its verified serialized bytes, following the existing geometry-cache convention.
-A producer cannot reconstruct this evidence merely by matching instance names. CAD-to-mesh correspondence is an
+A producer cannot reconstruct this evidence merely by matching instance names. A frozen older producer can
+emit original BREP bytes through its existing `shape_brep_text` helper while exporting STL, then a newer
+consumer calls `bind_playback_breps(bundle, breps, producer_hash_platform=original_platform,
+placements=original_matrices)` without importing or reserializing those bytes. The original producer platform
+must come from its receipt; the consumer runtime is recorded separately. CAD-to-mesh correspondence is an
 explicit producer declaration; the adapter does not prove that a tessellation mathematically equals its BREP.
 
 `run_playback_sequence(world, guide, order)` supplies kernel-free rule testing through the existing

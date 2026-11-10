@@ -705,3 +705,125 @@ def test_playback_non_mm_or_z_up_model_rejected_even_with_rebound_hash(tmp_path,
     bundle.files["guide.json"] = json.dumps(guide).encode()
     report = playback_gate(bundle, None, {})
     assert not report["pass"] and "mm/z-up" in report["checks"][0]["message"]
+
+
+@pytest.mark.parametrize("name,value", [("max_step_mm", float("nan")), ("margin_mm", float("inf")),
+                                       ("max_samples", float("inf")), ("refine_steps", .5),
+                                       ("max_samples", True), ("tool_access", "false")])
+def test_insertion_options_reject_nonfinite_or_nonintegral_budgets(name, value):
+    with pytest.raises(ValueError):
+        AccessOptions(**{name: value})
+
+
+def test_unchecked_onset_midpoint_never_becomes_a_clear_contact_bracket():
+    from cadagent.review.gates.assembly import _onset
+
+    class MidpointWorld(BoxWorld):
+        def relate_at(self, key, shift, other):
+            return Relation(key, other, "unchecked", error="midpoint unavailable")
+
+    world = MidpointWorld({"moving": (0, 0, 0, 1, 1, 1), "side": (2, 0, 0, 3, 1, 1)})
+    hit = Relation("moving", "side", "overlapping", overlap_mm3=.5)
+    clear = Relation("moving", "side", "apart", gap_mm=1)
+    result = _onset(world, "moving", (1, 0, 0), "side", 1, 4, hit, clear, AccessOptions())
+    assert result["state"] == "blocked" and result["first_contact_mm"] == [4, 1]
+    assert result["clear_gap_mm"] == 1 and result["refine_samples"] == 1
+
+
+def test_original_brep_binder_preserves_bytes_and_producer_platform_without_native_import(tmp_path):
+    from cadagent.review.gates.playback import bind_playback_breps
+    from cadagent.review.evidence import brep_content_hash
+    import hashlib
+    bundle, _ = captured_playback_fixture(tmp_path)
+    breps = {p["name"]: ("original BREP " + p["name"]).encode() for p in json.loads(bundle.files["view.json"])["parts"]}
+    platform = {"machine": "aarch64", "ocp": "original producer runtime"}
+    binding = bind_playback_breps(bundle, breps, producer_hash_platform=platform)
+    assert binding["hash_platform"] == platform
+    for name, payload in breps.items():
+        entry = binding["instances"][name]
+        assert entry["brep_sha256"] == hashlib.sha256(payload).hexdigest()
+        assert entry["shape_sha256"] == brep_content_hash(payload)
+        assert entry["matrix"] == [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]
+
+
+@pytest.mark.parametrize("kind", ["shift", "double-applied"])
+def test_real_playback_rejects_stale_or_double_applied_placement_before_path_queries(tmp_path, monkeypatch, kind):
+    import cadagent.review.gates.playback as playback
+    from cadagent.review.gates.relations import Assembly
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    if kind == "double-applied":
+        cq = pytest.importorskip("cadquery")
+        local = Assembly()
+        for name in assembly.names:
+            # Same world geometry, now represented as local shape + one authored placement.
+            shape = cq.Shape(assembly[name].shape).translate((-7, 0, 0))
+            local.add(name, shape, location=(7, 0, 0))
+        binding, breps = playback.bind_playback_geometry(local, bundle)
+        positive = playback.playback_gate(bundle, binding, breps,
+                                          install_order_by_step={"stage": ["base", "insert", "blocker"]})
+        assert positive["pass"], positive["findings"]
+        binding["instances"]["insert"]["matrix"][3] *= 2
+    else:
+        binding, breps = playback.bind_playback_geometry(assembly, bundle)
+        original = playback.playback_gate(bundle, binding, breps)
+        assert not original["pass"] and original["operations"][2]["pairs"][1]["state"] == "blocked"
+        binding["instances"]["insert"]["matrix"][3] += 100
+    monkeypatch.setattr(playback, "run_playback_sequence", lambda *a, **k: pytest.fail("reject before paths"))
+    report = playback.playback_gate(bundle, binding, breps)
+    assert not report["pass"] and "CAD/mesh world bounds mismatch: insert" in report["checks"][0]["message"]
+    assert report["operations"] == []
+    assert report["frames"][-1]["instance"] == "insert"
+    assert report["frames"][-1]["cad_mesh_max_error_mm"] >= 7
+
+
+@pytest.mark.parametrize("bounds_tolerance", [float("nan"), float("inf"), -1, 1.001, True])
+def test_playback_invalid_bounds_tolerance_fails_before_native_load(tmp_path, monkeypatch, bounds_tolerance):
+    import cadagent.review.gates.playback as playback
+    bundle, _ = captured_playback_fixture(tmp_path)
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("reject before native load"))
+    report = playback.playback_gate(bundle, None, {}, bounds_tolerance_mm=bounds_tolerance)
+    assert not report["pass"] and "bounds_tolerance_mm" in report["checks"][0]["message"]
+    json.dumps(report, allow_nan=False)
+
+
+def test_playback_invalid_relation_tolerance_fails_before_native_load(tmp_path, monkeypatch):
+    import cadagent.review.gates.playback as playback
+    bundle, _ = captured_playback_fixture(tmp_path)
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("reject before native load"))
+    report = playback.playback_gate(bundle, None, {}, tol=Tolerances(touch_mm=float("nan")))
+    assert not report["pass"] and "must be finite" in report["checks"][0]["message"]
+    json.dumps(report, allow_nan=False)
+
+
+def test_default_metadata_filters_only_empty_explicit_reference_order(tmp_path):
+    from cadagent.review.gates.playback import bind_playback_geometry, playback_gate
+    from cadagent.publish.guides import collect_guides
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    guide = json.loads(bundle.files["guide.json"])
+    guide["steps"].insert(0, {**guide["steps"][0], "id": "overview"})
+    guide["source"]["install_order_by_step"]["overview"] = []
+    (tmp_path / "guide.json").write_text(json.dumps(guide))
+    bundle = collect_guides(tmp_path, ["guide.json"])[0]
+    binding, breps = bind_playback_geometry(assembly, bundle)
+    report = playback_gate(bundle, binding, breps, reference_step_ids=["overview"])
+    assert report["operations"][2]["pairs"][1]["state"] == "blocked"  # reached the real path check
+    explicit = playback_gate(bundle, binding, breps, reference_step_ids=["overview"],
+                              install_order_by_step=guide["source"]["install_order_by_step"])
+    assert not explicit["pass"] and "reference installation order" in explicit["checks"][0]["message"]
+    guide["source"]["install_order_by_step"]["overview"] = ["base"]
+    (tmp_path / "guide.json").write_text(json.dumps(guide))
+    bundle = collect_guides(tmp_path, ["guide.json"])[0]
+    binding, breps = bind_playback_geometry(assembly, bundle)
+    nonempty = playback_gate(bundle, binding, breps, reference_step_ids=["overview"])
+    assert not nonempty["pass"] and "reference installation order" in nonempty["checks"][0]["message"]
+
+
+def test_playback_missing_optional_stl_parser_is_a_failure_before_path_queries(tmp_path, monkeypatch):
+    import cadagent.review.gates.playback as playback
+    bundle, assembly = captured_playback_fixture(tmp_path, native=True)
+    binding, breps = playback.bind_playback_geometry(assembly, bundle)
+    monkeypatch.setitem(sys.modules, "trimesh", None)
+    monkeypatch.setattr(playback, "run_playback_sequence", lambda *a, **k: pytest.fail("no path without mesh frame"))
+    report = playback.playback_gate(bundle, binding, breps)
+    assert not report["pass"] and "trimesh" in report["checks"][0]["message"]
+    assert report["operations"] == []

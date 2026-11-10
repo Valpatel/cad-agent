@@ -16,6 +16,8 @@ const built = JSON.parse(execFileSync(process.env.PYTHON || 'python3', ['tests/p
 }));
 const root = built.root, manifest = JSON.parse(await readFile(path.join(root, 'manifest.json')));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+// A clicked navigation can expose its new document before its body is parsed.
+const readerReady = () => document.body?.dataset.ready === '1';
 for (const [name, expected] of Object.entries(manifest.files)) assert.equal(hash(await readFile(path.join(root, name))), expected, name);
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
 const server = createServer(async (req, res) => {
@@ -37,6 +39,23 @@ try {
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (!request.url().startsWith(base + '/') && !request.url().startsWith('data:')) foreign.push(request.url()); });
+  // Actual missing-body regression: absence and ready=0 must keep polling, ready=1 must resolve.
+  await page.setContent('<!doctype html><html><head></head><body></body></html>');
+  const oldPredicateThrows = await page.evaluate(() => {
+    document.body.remove();
+    try { void (document.body.dataset.ready === '1'); return false; } catch { return true; }
+  });
+  assert.equal(oldPredicateThrows, true);
+  assert.equal(await page.evaluate(readerReady), false);
+  const waitingForReader = page.waitForFunction(readerReady, null, { timeout: 20000 });
+  await page.evaluate(() => {
+    const body = document.createElement('body'); body.dataset.ready = '0'; document.documentElement.append(body);
+  });
+  assert.equal(await page.evaluate(readerReady), false, 'A parsed but unready body must not pass');
+  await page.evaluate(() => { document.body.dataset.ready = '1'; });
+  await waitingForReader;
+  assert.equal(await page.evaluate(readerReady), true);
+  cases.push({ missingBodyWaits: true, unreadyBodyWaits: true, readyBodyResolves: true, oldPredicateThrows });
   for (const [index, entry] of manifest.assembly_guides.entries()) {
     await page.goto(base + '/' + entry.href);
     assert.match(await page.locator('main').innerText(), new RegExp(`Fixture ${entry.id}`));
@@ -44,7 +63,7 @@ try {
     const link = await page.getByRole('link', { name: 'Open interactive 3D instructions' }).getAttribute('href');
     assert.equal(new URL(link, page.url()).searchParams.get('sha256'), entry.sha256);
     await page.getByRole('link', { name: 'Open interactive 3D instructions' }).click();
-    await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 20000 });
+    await page.waitForFunction(readerReady, null, { timeout: 20000 });
     assert.equal(await page.locator('canvas').count(), 1);
     assert.ok(await page.evaluate(() => window.__viewer.stage.renderer.info.render.calls > 0), 'Ready follows a real first draw');
     const before = await page.evaluate(() => window.__viewer.parts.map(p => ({ visible: p.mesh.visible, position: p.mesh.position.toArray() })));

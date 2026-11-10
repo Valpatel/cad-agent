@@ -62,6 +62,7 @@ exercise packaging integrity, not CAD parsing, rendered geometry or physical fit
 | Released bytes are reproducible | Two builds of two distinct snapshots, compare all hashes and ZIP bytes | Implemented |
 | The index links the guide and static instructions survive disabled JavaScript | Actual generated entry, image decoding and text in a JavaScript-disabled browser context | Both engines passed at `47b07508`; product no-WebGL handling is separate |
 | Python packaging and JavaScript reader accept the same schema | Eleven on-disk fixtures through both actual validators, including cumulative cross-chapter context | Implemented; all eleven pass after shared composition |
+| Navigation readiness tolerates an absent body but requires the exact ready signal | Browser removes body, rejects ready `0`, then supplies ready `1`; old predicate must throw | Both local engines passed eight cases including this control; current corrective-head CI required |
 | Reset controls match the scene and selected appearance affects only its instance | Real dropdowns, reset overview, per-instance materials, resume/back/next and override clearing | Both engines passed at `47b07508` |
 
 Focused command: `PYTHONPATH=software pytest -q tests/publish/test_release_guides.py`.

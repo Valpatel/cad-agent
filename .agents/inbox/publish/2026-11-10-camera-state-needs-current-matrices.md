@@ -76,3 +76,25 @@ each with zero page errors after the correction. The initial local user-service 
 startup because it used a relative script path from the service home; the corrected invocation pins both the
 working directory and absolute test path. That setup failure remains separate from the actual test outcomes;
 this presentation correction does not prove tool access or a feasible physical insertion path.
+
+
+## Readiness must wait through a document without a body
+
+On 2026-11-10 UTC, both main-promotion WebKit jobs for PR #506 failed in
+`tests/webkit/assembly/release-browser.mjs:47`: `TypeError: null is not an object (evaluating 'document.body.dataset')`.
+The jobs were 129668309116 (run 42767803019) and 129668005951 (run 42767708398). All preceding suites passed.
+After clicking the interactive reader link, the test polled `document.body.dataset.ready === '1'`; a document
+without its body cannot satisfy readiness, but dereferencing it threw instead of continuing to wait. This is a
+readiness-predicate defect, not evidence that the reader had become ready or that its model was invalid.
+
+The predicate now returns false when the body is absent, and still requires the exact ready value `1`. The
+original 20-second ready wait, geometry/material/hash assertions and corruption negatives remain. An actual
+browser control removes a document's body, proves the old predicate throws, verifies both absence and ready `0`
+are false, then delivers a ready `1` body and requires the real wait to resolve. It uses no sleep or geometry
+retry. Reader/runtime/data bytes are unchanged; the failed promotion receipts remain failures and fresh current
+CI is still required. Both corrected local engines passed eight cases with zero page errors/foreign requests,
+including the absent/unready/ready body control. The source release's earlier passing browser jobs did not cover
+every navigation timing.
+
+Evidence: [promotion WebKit job](https://github.com/Valpatel/cad-agent/actions/runs/42767803019/job/129668309116),
+[dev-push WebKit job](https://github.com/Valpatel/cad-agent/actions/runs/42767708398/job/129668005951).

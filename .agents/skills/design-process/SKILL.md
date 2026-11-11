@@ -73,6 +73,12 @@ Add the rest when it is known, not before: `material` with `wall_mm` when the pr
 the joint is chosen, `contains` when the part holds something, `loads` when the analysis is set up, `checks` naming
 the gates and checks that verify it. Leave `status:` out: it is computed. The lint asks for what is missing.
 
+For each separate fastener, clip or bracket, record why an integral alternative was rejected. Keep part necessity
+separate from handling/insertion difficulty. For tolerance-dependent choices, record the assembly criterion,
+contributors and statistical assumptions before accepting an RSS claim. Use the dossier's
+[part-necessity and tolerance review prompts](../../../docs/practice/dossier.md#the-reviewer-pass); the general
+DFA worksheet and tolerance stack-up helper remain deferred under #40.
+
 **Before you draw a feature, get its card and design to it.** The cards hold the referenced design practice, so you
 do not have to recall it, in one call and about 2 KB:
 

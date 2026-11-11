@@ -19,6 +19,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   const toolbar = node('div', undefined, 'cad-table-tools');
   toolbar.setAttribute('aria-label', `${label} controls`);
   const count = node('span', undefined, 'cad-table-count'); count.setAttribute('role', 'status');
+  let matchedRows = rows;
   let query = '', sorted = null, direction = 1;
   const original = new Map(rows.map((row, index) => [row, index])), buttons = [], checks = [];
   const searchText = new Map(rows.map(row => [row, row.textContent.toLocaleLowerCase()]));
@@ -91,6 +92,34 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
     }
     select.value = col ? `${sorted}:${direction}` : '';
   }
+  const snapshot = (scope = 'matched') => {
+    if (!['all', 'matched'].includes(scope)) throw new Error('Checklist scope must be all or matched.');
+    const selected = scope === 'all' ? rows : matchedRows;
+    const columns = [...head.cells].map((th, index) => ({ index, label: buttons.find(item => item.index === index)?.title || th.textContent.trim() })).filter(col => head.cells[col.index].dataset.print !== 'omit');
+    return { label, project: printable?.project || '', revision: printable?.revision || '', notice: printable?.notice || '', scope,
+      total: rows.length, query: scope === 'matched' ? query : '', columns: ['Part ID', ...columns.map(col => col.label)],
+      rows: selected.map(row => [row.dataset.partKey || row.dataset.partLabel || '', ...columns.map(col => {
+        const cell = row.cells[col.index], check = cell?.querySelector('input[type=checkbox]');
+        return check ? (check.checked ? '☑' : '☐') : (cell?.textContent.trim() || '—');
+      })]) };
+  };
+  if (printable) {
+    const printScope = node('select'); printScope.setAttribute('aria-label', `Checklist scope for ${label}`);
+    for (const [value, title] of [['matched', 'Matching parts (all pages)'], ['all', 'All parts']]) { const option = node('option', title); option.value = value; printScope.append(option); }
+    const printLabel = node('label'); printLabel.append(node('span', 'Checklist'), printScope);
+    const printButton = node('button', 'Print checklist'); printButton.type = 'button';
+    const printMessage = node('span'); printMessage.setAttribute('role', 'status');
+    printButton.addEventListener('click', () => {
+      const data = snapshot(printScope.value);
+      if (!data.rows.length) { printMessage.textContent = 'No matching parts to print.'; return; }
+      const target = window.open('', '_blank');
+      if (!target) { printMessage.textContent = 'Allow a new tab to open the printable checklist.'; return; }
+      target.opener = null;
+      renderPartChecklist(target.document, data);
+      printMessage.textContent = `Opened checklist: ${data.rows.length} of ${data.total} parts.`;
+    });
+    toolbar.append(printLabel, printButton, printMessage);
+  }
   apply();
   const api = { table, toolbar, dispose() {
     unsubscribe?.(); toolbar.remove(); for (const item of checks) item.cell.remove(); for (const th of statusesHead) th.remove();
@@ -131,4 +160,22 @@ export function mountProgressTools(host, tracker) {
   });
   box.append(message, exportButton, importButton, file, receipt); host.append(box);
   return { element: box, dispose() { disposed = true; ++importGeneration; unsubscribe(); box.remove(); } };
+}
+
+// Build a separate print document; never hide or mutate the live table to print it.
+export function renderPartChecklist(doc, data) {
+  const make = (tag, text) => { const element = doc.createElement(tag); if (text !== undefined) element.textContent = text; return element; };
+  doc.documentElement.lang = 'en'; doc.head.replaceChildren(); doc.body.replaceChildren();
+  doc.head.append(make('title', `${data.label} · checklist`));
+  const viewport = make('meta'); viewport.name = 'viewport'; viewport.content = 'width=device-width, initial-scale=1'; doc.head.append(viewport);
+  const style = make('style', `@page{margin:12mm}*{box-sizing:border-box}body{font:11pt/1.4 system-ui,sans-serif;color:#111;background:white;margin:20px}h1{font-size:20pt;margin-bottom:8px}p{overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt}th,td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}button{font:inherit;padding:10px;margin-bottom:12px}@media print{body{margin:0}button{display:none}}`); doc.head.append(style);
+  const print = make('button', 'Print / Save PDF'); print.type = 'button'; print.onclick = () => doc.defaultView.print();
+  doc.body.append(print, make('h1', data.label), make('p', `${data.project || 'Project unspecified'} · Revision: ${data.revision || 'unavailable'}`),
+    make('p', `${data.scope === 'all' ? 'All parts' : 'Matching parts, all pages'}: ${data.rows.length} of ${data.total}${data.query ? ` · Search: ${data.query}` : ''}`));
+  if (data.notice) doc.body.append(make('p', data.notice));
+  const table = make('table'), head = make('thead'), headers = make('tr'), body = make('tbody');
+  for (const title of ['Done', ...data.columns]) { const th = make('th', title); th.scope = 'col'; headers.append(th); }
+  head.append(headers); table.append(head, body);
+  for (const values of data.rows) { const row = make('tr'); for (const value of ['☐', ...values]) row.append(make('td', value)); body.append(row); }
+  doc.body.append(table);
 }

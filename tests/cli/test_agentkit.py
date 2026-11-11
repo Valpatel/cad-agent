@@ -21,7 +21,7 @@ def test_real_kit_is_valid():
     root = agentkit.kit_root()
     found = {(i.kind, i.name) for i in agentkit.items(root)}
     assert found == {('skill', name) for name in ('cad-motion-validation', 'cad-pr-review', 'cad-remote-runs',
-                     'cad-supply-chain', 'cad-work-tracking', 'design-process', 'mcmaster-parts', 'sheet-metal-hardware')} | \
+                     'cad-supply-chain', 'cad-work-tracking', 'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware')} | \
                     {('agent', 'cad-pr-reviewer'), ('agent', 'cad-resume')}
     for item in agentkit.items(root):
         if item.kind == 'agent':      # the generated Codex skill parses and keeps the description

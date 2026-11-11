@@ -205,7 +205,11 @@ def test_it_installs_then_a_second_run_updates(world):
     assert calls == [f"tool install --quiet --force --editable --python 3.12 {kit}[cad]"]
     skills = sorted(p.name for p in (home / ".claude" / "skills").iterdir())
     expected = sorted(p.parent.name for p in (kit / ".agents/skills").glob("*/SKILL.md"))
-    assert len(expected) == 8 and skills == expected
+    assert set(expected) == {
+        "cad-motion-validation", "cad-pr-review", "cad-remote-runs", "cad-supply-chain",
+        "cad-work-tracking", "design-process", "mcmaster-parts", "pem-fastener-selection", "sheet-metal-hardware",
+    }
+    assert skills == expected
     assert (kit / "software/cadagent/cli.py").is_file()
     assert (home / ".claude" / "skills" / "design-process").resolve() == kit / ".agents/skills/design-process"
     assert {p.name for p in (home / ".agents" / "skills").iterdir()} >= set(skills), "the same skills for the other agents"
@@ -595,7 +599,11 @@ foreign=home/'.claude/skills/foreign/SKILL.md';foreign.parent.mkdir(parents=True
 result=agentkit.install(home,root)
 assert not result['conflicts'] and result['done'] and all(x.startswith(('copy ','generate ')) for x in result['done']),result
 skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=[p for p in (root/'.agents/agents').glob('*.md') if p.name!='README.md']
-assert len(skills)==8 and len(roles)==2
+assert {p.parent.name for p in skills} == {
+    'cad-motion-validation', 'cad-pr-review', 'cad-remote-runs', 'cad-supply-chain',
+    'cad-work-tracking', 'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware',
+}
+assert {p.stem for p in roles} == {'cad-pr-reviewer', 'cad-resume'}
 for src in skills:
     target=home/'.claude/skills'/src.parent.name
     assert not target.is_symlink() and (target/'SKILL.md').read_bytes()==src.read_bytes()
@@ -723,7 +731,8 @@ def test_actual_windows_copy_content_resources_and_foreign_files(tmp_path):
                 assert not shared.is_symlink() and (shared / 'SKILL.md').read_text() == expected[item.name]['generated']
         assert foreign.read_bytes() == original_foreign
         assert {p.name for p in (home / '.agents/skills').iterdir()} == {i.name for i in items}
-        result.update(ok=True, claude_skills=8, claude_roles=2, shared_skills=10,
+        result.update(ok=True, claude_skills=sum(i.kind == 'skill' for i in items),
+                      claude_roles=sum(i.kind == 'agent' for i in items), shared_skills=len(items),
                       copied_resource_files=sum(len(expected[i.name]) for i in items if i.kind == 'skill'),
                       unrelated_foreign_unchanged=True, same_name_foreign_unchanged=True,
                       source_removed='only owned disposable fixture', automatic_denial=False)

@@ -2914,6 +2914,7 @@ sources:
     terms: cited by page with the values as facts; the PDF, its tables and figures are never copied (PEM's terms of use allow personal, non-commercial use only)
     areas: [sheet-metal, pem-hardware, fasteners]
     used_for:
+      - docs/research/manufacturing/pem-micro-fasteners.md
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/process-profiles.md
@@ -3469,17 +3470,25 @@ sources:
 
   - id: pem-fastener-guide
     title: The Design Engineer's Fastener Guide
+    aliases: [pem-design-engineers-fastener-guide-2022, pem-fastener-guide-2022]
     authors: []
     org: PennEngineering (PEM)
     year: 2022
     url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/09/Fastener-Guide_9-02-22.pdf
     access: free
     terms: cited and summarised, never copied
-    areas: [pem-hardware, fasteners]
-    used_for: [docs/research/manufacturing/sheet-metal-guides.md]
+    areas: [pem-hardware, fasteners, fasteners-and-hardware, sheet-metal]
+    used_for:
+      - docs/research/manufacturing/sheet-metal-guides.md
+      - docs/research/manufacturing/pem-micro-fasteners.md
+      - .agents/skills/pem-fastener-selection/SKILL.md
     verified: >-
       2026-11-01: downloaded the 20-page PDF (the download-centre page asks for a form; the direct link does not)
       and skimmed it. A general overview of fastening methods; no rule is taken from it.
+      2026-11-11: read all 20 PDF pages via manufacturer PDF extraction, adding full-document depth to the prior skim
+      rather than a new source identity. Industry overview, family mechanisms and application routing; no universal
+      hole, edge or hardness table. Filename dates 2022-09-02; no edition date inferred beyond that. No application
+      qualification or independent corroboration was added.
 
   - id: pem-terms-of-use
     title: Terms of Use

@@ -211,6 +211,9 @@ This covers laser SLA (Formlabs Form 2 and Form 3, Protolabs, Materialise) and m
 Prusa SL1, and printers sliced in ELEGOO SatelLite or Lychee). Formlabs runs the same tests on three printers, which
 shows how much a resin rule depends on the machine:
 
+<details>
+<summary>Formlabs printer comparison: walls, overhangs, bridges, detail, clearance and holes</summary>
+
 | Formlabs test | Form 2 (laser) | Form 3 / 3B (laser) | Form 4 (MSLA) |
 |---|---|---|---|
 | Minimum wall, supported or unsupported | 0.4 mm | 0.2 mm | 0.2 mm |
@@ -221,6 +224,8 @@ shows how much a resin rule depends on the machine:
 | Hole; drain hole for an enclosed cavity | 0.8 mm; 3.5 mm | 0.5 mm; 2.5 mm | 0.5 mm; 0.75 mm |
 | Test resin and layer | Clear, 100 µm | Clear, 100 µm | Grey, 50 µm |
 | Source | [Formlabs, Form 2][formlabs-form2-design-specs] | [Formlabs, Form 3][formlabs-form3-design-specs] | [Formlabs, Form 4 guide][formlabs-form4-design-guide] |
+
+</details>
 
 <img src="../../img/research/process-resin-overhangs.svg" alt="Range chart of the longest unsupported overhang and bridge each resin printer or service allows: overhangs of 2 to 5 mm, bridges of 21 to 29 mm on Formlabs printers" width="680">
 

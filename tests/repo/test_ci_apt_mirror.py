@@ -23,6 +23,7 @@ Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 """
 FALLBACKS = "https://archive.ubuntu.com/ubuntu/\tpriority:2\nhttps://security.ubuntu.com/ubuntu/\tpriority:3\n"
 ORIGINAL = "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
+CORRECTED = ORIGINAL.replace(mirror.AZURE, mirror.PREFERRED)
 
 
 class MirrorTests(unittest.TestCase):
@@ -36,9 +37,9 @@ class MirrorTests(unittest.TestCase):
 
     def test_hosted_runner_failover_and_idempotence_preserve_sources(self):
         mirror.configure(self.path, self.source)
-        self.assertEqual(self.path.read_text(), FALLBACKS)
+        self.assertEqual(self.path.read_text(), CORRECTED)
         mirror.configure(self.path, self.source)
-        self.assertEqual(self.path.read_text(), FALLBACKS)
+        self.assertEqual(self.path.read_text(), CORRECTED)
         self.assertEqual(self.source.read_text(), SOURCE)
 
     def test_unknown_mirror_entries_fail_without_mutation(self):
@@ -46,7 +47,9 @@ class MirrorTests(unittest.TestCase):
                    ORIGINAL.replace("priority:2", "priority:garbage"),
                    ORIGINAL.replace("priority:3", "priority:2"),
                    ORIGINAL.replace("https://archive.ubuntu.com", "https://other.example"),
-                   ORIGINAL + FALLBACKS, ORIGINAL.replace(FALLBACKS, "")]
+                   ORIGINAL + FALLBACKS, ORIGINAL.replace(FALLBACKS, ""),
+                   CORRECTED.replace("priority:1", "priority:99"),
+                   CORRECTED + ORIGINAL.splitlines(keepends=True)[0]]
         for mutant in mutants:
             with self.subTest(mutant=mutant):
                 self.path.write_text(mutant)
@@ -84,7 +87,7 @@ class MirrorTests(unittest.TestCase):
         producer = first + "Enabled: yes\n\n" + second
         self.source.write_text(producer)
         mirror.configure(self.path, self.source)
-        self.assertEqual(self.path.read_text(), FALLBACKS)
+        self.assertEqual(self.path.read_text(), CORRECTED)
         self.assertEqual(self.source.read_text(), producer)
 
     def test_runner_release_profile_is_derived_and_rejects_other_images(self):
@@ -98,7 +101,7 @@ class MirrorTests(unittest.TestCase):
         original = "# mirror note\n\n" + ORIGINAL
         self.path.write_text(original)
         mirror.configure(self.path, self.source)
-        self.assertEqual(self.path.read_text(), "# mirror note\n\n" + FALLBACKS)
+        self.assertEqual(self.path.read_text(), "# mirror note\n\n" + CORRECTED)
 
 
 @unittest.skipUnless(shutil.which("apt-get"), "requires the existing apt transport; never installs packages")

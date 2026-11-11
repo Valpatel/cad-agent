@@ -63,7 +63,7 @@ jobs:
         timeout-minutes: 14   # worst case 3 x (90 + 90 + 10 + 60) s = 12.5 min
         run: |
           # Hosted Ubuntu sources use mirror+file:/etc/apt/apt-mirrors.txt.
-          # Drop the stalled Azure HTTP entry; retain the image's Canonical HTTPS fallbacks.
+          # Prefer a registered HTTPS mirror outside Canonical DNS; retain its HTTPS fallbacks.
           sudo python3 tools/ci/apt_mirror.py
           # Fail one stalled transport promptly so the mirror method can reach its next HTTPS fallback.
           # The three outer attempts already provide retries; keep both existing 90-second process caps.

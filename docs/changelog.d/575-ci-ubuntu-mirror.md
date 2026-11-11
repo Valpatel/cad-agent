@@ -1,2 +1,2 @@
 **Fixed**
-- Full CI provisioning uses the hosted runner's existing Canonical HTTPS mirror fallbacks with bounded transport failover when a mirror stalls; dependency packages, signature verification and required tests remain unchanged (#576).
+- Full CI provisioning prefers a registered HTTPS Ubuntu mirror outside Canonical's DNS during an outage, retaining Canonical fallbacks, Ubuntu archive signature checks, dependency packages and all required tests (#576).

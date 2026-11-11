@@ -97,3 +97,47 @@ checks 320/360/1100/1366 pixels in both themes. The natural drawing is 196 pixel
 wide, with 658 pixels available at 1100 and no page overflow. That local check
 uses client drawing; normal prerendered publication and both CI engines remain
 separate required acceptance evidence.
+
+
+## A Canonical DNS outage needs a different registered mirror hostname
+
+The 0ce30bbb full job 130659597482 still failed provisioning, now explicitly
+reporting `Temporary failure resolving 'archive.ubuntu.com'` while Microsoft
+indexes succeeded. The five-second transport settings were not a DNS repair;
+per-URI DNS waits still took about twenty seconds and all three outer attempts
+exhausted their process caps. No timeout values were tuned again.
+
+On 2026-11-11, the independently fetched [Canonical RSS](https://status.canonical.com/rss)
+reported `DNS - Major Outage` dated 14:26 UTC; parent receipt SHA-256
+`628c7cf1a9b885d0a15b7872d5235923c6068a8888b4867086cd1a9a7f89329b`.
+[runner-images #15296](https://github.com/actions/runner-images/issues/15296)
+also reports contemporaneous Ubuntu DNS failures while unrelated services work.
+Older archive/security Operational timestamps do not contradict a newer DNS outage.
+
+The [Ubuntu Official Archive Mirrors listing](https://launchpad.net/ubuntu/+archivemirrors)
+links Pilot Fiber's HTTPS base `https://mirror.pilotfiber.com/ubuntu/` and its
+[registration](https://launchpad.net/ubuntu/+mirror/mirror.pilotfiber.com-archive).
+Direct Launchpad fetches timed out during the outage; the retrieved primary listing
+is cached evidence of registration, not a fresh probe/status guarantee. Enzu was
+considered but rejected when noble metadata returned 404. Pilot's direct HTTPS
+metadata was fetched successfully for all four noble suites and verified with the
+existing `/usr/share/keyrings/ubuntu-archive-keyring.gpg`, signer fingerprint
+`F6ECB3762474EDA9D21B7022871920D1991BC93C`:
+
+```text
+2026-11-11 UTC: curl -fsSL --max-time 20 https://mirror.pilotfiber.com/ubuntu/dists/<suite>/InRelease
+2026-11-11 UTC: gpgv --keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg <downloaded-InRelease>
+noble: good Ubuntu signature; immutable base dated 2024-04-25
+noble-updates: good Ubuntu signature; Date 2026-11-11 05:14:56 UTC
+noble-backports: good Ubuntu signature; Date 2026-11-10 07:35:30 UTC
+noble-security: good Ubuntu signature; Date 2026-11-11 07:35:28 UTC
+```
+
+The helper now replaces only the validated Azure priority-1 URL with that registered
+HTTPS base; Canonical archive/security priorities 2/3 and every source/signature
+setting remain. Only the exact original and exact corrected profiles are accepted,
+including idempotence and altered-preferred-mirror negative controls. There is no
+OS DNS modification, address pinning, TLS/signature bypass, dependency change or
+failed-job rerun. This workstation readback does not establish hosted-runner
+reachability: new normal CI must still provision, import all extras and execute
+the full suite, and both browser jobs must pass before any merge.

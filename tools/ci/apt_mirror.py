@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Correct only the pinned hosted Ubuntu runner apt mirror/source contract.
 
-Keep Canonical HTTPS fallbacks and all source/signature settings; reject unknown
+Prefer the registered Pilot Fiber HTTPS mirror outside Canonical's DNS failure
+scope. Keep Canonical fallbacks and all source/signature settings; reject unknown
 mirror priorities or an inactive mirror file before writing anything.
 """
 from pathlib import Path
@@ -12,7 +13,9 @@ AZURE = "http://azure.archive.ubuntu.com/ubuntu/"
 ARCHIVE = "https://archive.ubuntu.com/ubuntu/"
 SECURITY = "https://security.ubuntu.com/ubuntu/"
 MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
-EXPECTED = {AZURE: "priority:1", ARCHIVE: "priority:2", SECURITY: "priority:3"}
+# Ubuntu Official Archive Mirrors: /ubuntu/+mirror/mirror.pilotfiber.com-archive.
+PREFERRED = "https://mirror.pilotfiber.com/ubuntu/"
+EXPECTED = {AZURE: "priority:1", PREFERRED: "priority:1", ARCHIVE: "priority:2", SECURITY: "priority:3"}
 
 
 def runner_codename(release: dict) -> str:
@@ -71,13 +74,14 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
         if len(tokens) != 2 or EXPECTED.get(tokens[0]) != tokens[1] or tokens[0] in seen:
             raise ValueError("unexpected hosted runner mirror entry or priority")
         seen.add(tokens[0])
-    if seen not in ({AZURE, ARCHIVE, SECURITY}, {ARCHIVE, SECURITY}):
+    if seen not in ({AZURE, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
         raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks")
     validate_source(source.read_text(), codename)
-    updated = "".join(line for line in lines if not line.strip() or line.split()[0] != AZURE)
+    updated = "".join(line.replace(AZURE, PREFERRED, 1) if line.strip() and line.split()[0] == AZURE else line
+                      for line in lines)
     if updated != original:
         path.write_text(updated)
-    print("Ubuntu apt source uses verified mirror list; Azure HTTP entry absent")
+    print("Ubuntu apt source/profile verified; registered HTTPS mirror preferred, Canonical fallbacks retained")
 
 
 if __name__ == "__main__":

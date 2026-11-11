@@ -243,8 +243,8 @@ provisioning timeout before imports/tests cannot establish feature correctness.
 **Rule:** classify the failed phase using the actual log and correct the source
 path before collecting new normal CI evidence; never call a provisioning timeout
 a passed feature test or bypass the required job. The narrow helper removes the
-exact stalled Azure HTTP mirror entry, requires the runner's existing Canonical
-HTTPS archive and preserves source/signature settings, dependencies and all
+exact stalled Azure HTTP mirror entry with a registered independent HTTPS mirror,
+requires the runner's existing Canonical HTTPS archive and preserves source/signature settings, dependencies and all
 existing failure conditions. Unknown layouts fail closed.
 
 This correction is specific to the hosted Ubuntu mirror-list layout. It does not

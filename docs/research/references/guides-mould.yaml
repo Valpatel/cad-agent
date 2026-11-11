@@ -359,10 +359,12 @@ sources:
 - id: fictiv-how-to-design-snap-fit-components
   kind: guide
   category: manufacturing-guides
-  title: 'Fictiv: How to Design Snap-Fit Components'
-  authors: []
+  title: How to Design Snap Fit Components
+  authors:
+  - Tessa Axsom
+  - David Willson
   org: Fictiv
-  year: null
+  year: 2025
   url: https://www.fictiv.com/articles/how-to-design-snap-fit-components
   access: free
   terms: cited and summarised, never copied
@@ -383,18 +385,23 @@ sources:
   process_groups:
   - mould
   evidence:
-    class: snippet-only
-    numbers: unknown
+    class: read
+    numbers: claimed
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: '12-minute Fictiv article on snap-fit component design; only title and read time shown. Note: Title only; content
-    unseen.'
-  used_for: []
+  summary: Vendor guidance separates brief assembly bending from sustained load and repeated operation. Numerical strain tables
+    lack grade-specific printed-test provenance.
+  used_for:
+  - docs/mechanical/compliant.md
   imported: 9ac41c6122e7d4d4
+  verified: '2026-11-10: read technical body dated 2025-10-17: geometry/equations, strain table, taper discussion, four failure
+    modes and process DFM. Inspected beam drawing and thickness-taper chart. Primary web text readable; raw-page fetch returned
+    403 and rendered math was not verified. Extracted force/symbol discrepancies are cross-checked against original BASF Figure
+    IV-3; no vendor numerical table adopted. Linked calculators, manuals and other figures not fully audited.'
 - id: bayer-materialscience-snap-fit-joints-for-plastics-a-design
   kind: guide
   category: manufacturing-guides
@@ -595,11 +602,13 @@ sources:
 - id: fictiv-design-guide-for-living-hinges-fictiv
   kind: guide
   category: manufacturing-guides
-  title: Design Guide for Living Hinges (Fictiv)
-  authors: []
+  title: 'Living Hinge Design: How to Design a Living Hinge'
+  authors:
+  - Sunny Sahota
+  - David Willson
   org: Fictiv
-  year: null
-  url: https://www.fictiv.com/?p=1242
+  year: 2025
+  url: https://www.fictiv.com/articles/how-to-design-living-hinges
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -613,13 +622,14 @@ sources:
   areas:
   - moulded-part-design
   - snap-fits
+  - living-hinges
   processes:
   - injection
   - snap-fit
   process_groups:
   - mould
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -630,11 +640,19 @@ sources:
   claims:
   - text: Hinge thickness T = H/5 to H/8, H being adjoining wall thickness
     status: unconfirmed
-    evidence: Search for H/5 to H/8 found no source stating that ratio; others give absolute 0.2-0.5 mm (0.007-0.015 in).
-  summary: 'Living hinge sizing relative to adjoining wall; may need molding in open position. Note: Page title was only a
-    read-time label; attribution from URL.'
-  used_for: []
+    evidence: '2026-11-10: Hinge Thickness states this ratio. It is a vendor starting rule; no independent fatigue or printed-process
+      validation is supplied.'
+  summary: Process-specific hinge guidance distinguishes moulded production from printed geometry prototypes. Its cycle estimates
+    are not qualification results.
+  used_for:
+  - docs/mechanical/compliant.md
   imported: 71df523890da0074
+  mirrors:
+  - https://www.fictiv.com/?p=1242
+  verified: '2026-11-10: read technical body dated 2025-12-03: dimensions/equations, design practices, moulding, casting,
+    printing, comparison, lifetime and FAQs; inspected polypropylene hinge drawing. Primary web retrieval, not a whole-page
+    byte archive. Linked resin data and other figures not fully audited; no reported test protocol reproduced. Moulded lifetime
+    and printed-cycle assurances are not physical qualification.'
 - id: plasticstoday-by-design-polypropylene-part-design-part-2
   kind: guide
   category: manufacturing-guides

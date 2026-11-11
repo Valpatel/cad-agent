@@ -3647,6 +3647,58 @@ sources:
       guideline ranges requiring defined friction conditions, not a universal coefficient. Read the Bossard reproduction,
       not the paid VDI standard. PDF SHA-256 209fb09a34a4bb84fe7f83d3cc991bad970c2ae6fd237dc056f1f9fdfe51c71d.'
 
+  - id: basf-snapfit-manual
+    kind: guide
+    category: manufacturing-guides
+    title: Snap-Fit Design Manual
+    authors: []
+    org: BASF Corporation
+    year: 2007
+    url: https://stuff.mit.edu/afs/athena/course/2/2.75/resources/random/Snap-Fit%20Design%20Manual.pdf
+    access: free
+    terms: cited and summarised, never copied or redistributed
+    licence:
+      spdx: null
+      class: proprietary
+      read: false
+      note: Manufacturer-authored PDF hosted by MIT; copyright 2007 is printed. Redistribution licence not reviewed; no source
+        file or figure copied.
+    reuse:
+      text: cite-only
+      geometry: none
+    areas:
+    - snap-fits
+    - moulded-part-design
+    processes:
+    - snap-fit
+    - injection
+    process_groups:
+    - mould
+    evidence:
+      class: read
+      numbers: claimed
+      tested: unknown
+      authority: primary
+    confidence:
+      level: low
+      estimate: 0.4
+      sources: 1
+    verified: '2026-11-10: recovered the 24-page 2007-copyright manufacturer original from MIT course archive. Read cover, Part
+      III PDF pp.8-9, Part IV pp.11-15, Part VI pp.20-21 and final attribution/guidance notice. Visually inspected Figure IV-3
+      and root/retention diagrams. Remaining: Q-curve digitisation, worked-example reproduction, Parts I-II/V, cited experimental
+      papers and licence. The old web.mit.edu URL returned unrelated HTML; this reading does not verify the separate Scribd
+      upload.'
+    summary: Original snap-fit guidance distinguishes conditioning, wall compliance, relaxation and fatigue assumptions. Reading
+      it does not qualify a printed material or implement its Q-factor method.
+    archive:
+      sha256: 4b85dcb2b7eda8d2e4f997465886fa6874a8358126447a1063d8be149213c8f8
+      kind: pdf
+      fetched: '2026-11-10'
+      redistribute: false
+    used_for:
+    - docs/mechanical/compliant.md
+    - docs/research/compliant-mechanisms.md
+
 # -------------------------------------------------------------------------------------------------------------------
 # Named but not yet read, or read but not yet found online. Not citable until someone reads it and moves it up;
 # code that cites one is a known gap (check() warns, tests/review/test_references.py pins how many).
@@ -3656,11 +3708,6 @@ unverified:
     title: Snap-Fit Joints for Plastics - A Design Guide (Covestro-branded edition)
     org: Covestro LLC
     why: A copy was supplied by the project owner (docs/research/compliant-mechanisms.md [COV]); no public URL was found.
-
-  - id: basf-snapfit-manual
-    title: BASF Snap-Fit Design Manual
-    org: BASF
-    why: Only unofficial copies exist; the strain tables are images (docs/research/compliant-mechanisms.md).
 
   - id: celanese-snapfit
     title: Snap Fits (Celanese/Ticona design guide)

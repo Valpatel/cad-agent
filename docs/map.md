@@ -44,7 +44,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>.agents — 18 folders</summary>
+<summary>.agents — 19 folders</summary>
 
 <details>
 <summary><code>.agents/README.md</code> — 1 folders</summary>
@@ -264,6 +264,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `.agents/skills/mcmaster-parts` |
+
+</details>
+
+<details>
+<summary><code>.agents/skills/pem-fastener-selection/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-.agents/d-skills/d-pem-fastener-selection/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/pem-fastener-selection/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `.agents/skills/pem-fastener-selection` |
 
 </details>
 

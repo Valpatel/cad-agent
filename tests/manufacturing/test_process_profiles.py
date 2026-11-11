@@ -384,3 +384,75 @@ def test_three_full_reads_keep_identity_and_remove_unsupported_import_claims():
         assert path in ref.data["used_for"]
         assert not ref.data.get("claims"), "do not re-import unsupported snippet claims"
         assert "2026-11-11" in ref.data["verified"]
+
+
+def _stratasys_source_examples():
+    """Use our published source-review examples, not a parallel manufacturing solver."""
+    blocks = re.findall(r"```python\n(.*?)\n```", PAGE.read_text(), re.S)
+    assert len(blocks) == 2
+    namespace = {}
+    for block in blocks:
+        exec(compile(block, str(PAGE), "exec"), namespace)
+    return namespace
+
+
+def test_stratasys_layer_example_preserves_the_table_exception_and_units():
+    from decimal import Decimal as D
+    f = _stratasys_source_examples()["selected_fdm_wall_in"]
+    assert f("0.010") == D("0.040")
+    assert f("0.020") == D("0.100")
+    assert f("0.020") != 4 * D("0.020")  # planted universal-multiplier substitution
+    assert f("0.010") * D("25.4") == D("1.016")
+    assert f("0.010") * D("25.4") != D("1.00")  # printed rounded mm is distinct
+    for unknown in ("0.007", "0", "NaN", "Infinity"):
+        with pytest.raises(ValueError, match="unlisted example"):
+            f(unknown)
+
+
+def test_stratasys_clearance_is_an_unresolved_observation_not_a_repaired_decimal():
+    from decimal import Decimal as D
+    f = _stratasys_source_examples()["fdm_clearance_observation"]
+    row = f("0.013")
+    assert row["state"] == "unresolved-confirm-supplier"
+    assert row["as_printed_in"] == D("0.13")
+    assert row["as_printed_in"] != D("0.013")
+    with pytest.raises(ValueError):
+        f("0.010")
+
+
+def test_stratasys_sls_conflict_survives_the_floor_and_lap_is_not_a_moving_gap():
+    from decimal import Decimal as D
+    examples = _stratasys_source_examples()
+    f = examples["sls_tolerance_observations_in"]
+    row = f("10")
+    assert row["state"] == "unresolved-conflicting-source"
+    assert (row["page_3"], row["page_10"]) == (D("0.020"), D("0.030"))
+    assert (row["page_3"] * D("25.4"), row["page_10"] * D("25.4")) == (D("0.508"), D("0.762"))
+    small = f("1")
+    assert small["page_3"] == small["page_10"] == D("0.015")
+    assert small["state"] == "unresolved-conflicting-source", "equal floors do not resolve the source"
+    for bad in ("0", "-1", "NaN", "Infinity"):
+        with pytest.raises(ValueError, match="finite"):
+            f(bad)
+    lap = examples["selected_sls_lap_example"]()
+    assert lap["state"] == "unqualified-SLS-bonded-lap-example"
+    assert lap["overlap_mm"] == (D("6"), D("10"))
+    assert lap["adhesive_gap_exact_mm"] == D("0.254")
+    assert lap["as_printed_gap_mm"] == D("0.3")
+    assert "moving_gap_mm" not in lap
+
+
+def test_two_stratasys_reads_do_not_create_ids_or_automatic_cross_process_rules(data):
+    reg = load_registry()
+    pairs = (("sd-fdm-2025", "stratasys-direct-stratasys-fdm-design-guide-stratasys-direct"),
+             ("sd-sls-2023", "stratasys-direct-sls-design-guide-2023"))
+    ids = {key for _, key in pairs}
+    for alias, key in pairs:
+        ref = reg.resolve(alias)
+        assert ref.id == key and ref.kind == "source" and alias not in reg.entries
+        assert ref.data["evidence"]["class"] == "read"
+        assert ref.data["confidence"] == {"level": "low", "estimate": 0.4, "sources": 1}
+        assert "docs/research/manufacturing/process-profiles.md" in ref.data["used_for"]
+    assert not any(rule["source"] in ids for rule in data["rules"]), "unresolved observations are not new automatic gates"
+    mjf = next(r for r in data["rules"] if r["id"] == "mjf-tolerance-stratasys")
+    assert mjf["source"] == "stratasys-direct-mjf-design-guide", "SLS must not replace the separate MJF source"

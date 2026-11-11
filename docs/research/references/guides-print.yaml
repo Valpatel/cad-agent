@@ -53,7 +53,7 @@ sources:
   title: Stratasys FDM Design Guide (Stratasys Direct, 2025)
   authors: []
   org: Stratasys Direct
-  year: null
+  year: 2025
   url: https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_sdm_fdm_0725a.pdf
   access: free
   terms: cited and summarised, never copied
@@ -72,28 +72,39 @@ sources:
   process_groups:
   - print
   evidence:
-    class: snippet-only
-    numbers: claimed
-    tested: unknown
+    class: read
+    numbers: some
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
   claims:
-  - text: Recommended minimum wall is generally 4x the layer/slice thickness, e.g. 0.040 in for 0.010 in layers.
+  - text: 'General four-times layer guidance includes a table exception: 0.020-inch layer recommends 0.100-inch wall.'
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Current FDM design guide tying minimum wall thickness to slice thickness. Note: Hole table not seen in snippets.'
-  used_for: []
+    evidence: '2026-11-11: PDF p.5 table and footnote visually checked; retain selected supplier rows and case-by-case qualifications.'
+  - text: PDF p.8 lists 0.13-inch clearance for 0.013-inch layers; applicable value requires supplier confirmation.
+    status: unconfirmed
+    evidence: '2026-11-11: exact printed bullet visually inspected. No corrected decimal or universal clearance rule inferred.'
+  summary: Supplier-specific FDM layer-table exceptions and unresolved assembly clearance require source-aware review; heated-chamber/support/post-processing
+    context is not a desktop-printer or strength qualification.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
   imported: 8ccda528bfb870be
+  aliases:
+  - sd-fdm-2025
+  verified: '2026-11-11: downloaded exact manufacturer PDF and read all 10 pages. Visually inspected pp.3,5-9 numerical tables,
+    diagrams and footnotes. Printed DG_SDM_FDM_0725, copyright 2025; metadata 2025-07-16. SHA256 4c92aa8d7d3f51383bd8d8d5ac6aa5463b5aa7eb6ed59663073eefa85b96a495.
+    The general 4x wall prose has a 5x table row; p.8 clearance 0.13 in at layer 0.013 in remains unresolved, not silently
+    corrected. No manufactured part or linked datasheet checked.'
 - id: stratasys-direct-sls-design-guide-2023
   kind: guide
   category: manufacturing-guides
   title: Stratasys Direct SLS Design Guide (2023)
   authors: []
   org: Stratasys Direct
-  year: null
+  year: 2023
   url: https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_sls_stratasys_direct_04192023.pdf
   access: free
   terms: cited and summarised, never copied
@@ -112,22 +123,31 @@ sources:
   process_groups:
   - print
   evidence:
-    class: snippet-only
-    numbers: claimed
-    tested: unknown
+    class: read
+    numbers: some
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
   claims:
-  - text: Min SLS wall 1.0 mm; keep walls at or below 3.0 mm to limit shrink distortion; tolerance +/-0.015 in.
-    status: unconfirmed
-    evidence: No second source checked.
-  summary: 'SLS nylon rules: tolerance, minimum wall, shrinkage distortion limit and hole shrink in large blocks. Note: Minimum
-    hole diameter not seen in this snippet.'
-  used_for: []
+  - text: Tolerance floor 0.015 inch has different proportional slopes:0.002in/in onp.3 versus0.003in/in onp.10, which also
+      prints0.1mm/mm.
+    status: conflicting
+    evidence: '2026-11-11: both pages visually inspected. Preserve original values and units; supplier resolution required
+      before choosing a specification.'
+  summary: Nylon SLS wall and bonded-lap guidance is scoped to this service; unresolved tolerance expressions remain visible
+    and are not borrowed from MJF or treated as a manufacturing acceptance gate.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
   imported: 808a5a78f448fc96
+  aliases:
+  - sd-sls-2023
+  verified: '2026-11-11: downloaded exact manufacturer PDF and read all 12 pages. Visually inspected pp.3-5,7-11 numerical
+    tables, diagrams and qualifications. Printed DG_LS_Stratasys_Direct_04192023, copyright 2023; modified 2023-04-19. SHA256
+    e0278ce3f12d17400e41f8320384d7cabd4b0b0c2c33c4cea3f78bb3df27ddcb. Tolerance slopes p.3/p.10 conflict and p.10 metric expression
+    is inconsistent; no definitive slope inferred. Linked datasheets and physical joints/fuel applications not checked.'
 - id: additive-manufacturing-media-stratasys-direct-laser-sintered
   kind: guide
   category: manufacturing-guides

@@ -21,7 +21,7 @@ flowchart TD
     class P out
 ```
 
-Before exporting a bent part, use the [bend-file review](../../../docs/research/manufacturing/sheet-metal-file-and-hole-review.md) for supplier angle conventions and software-specific bend lines. Read the chosen material/thickness limits rather than assuming a universal flange formula. [ref:sendcutsend-designing-for-online-sheet-metal-bending] [ref:sendcutsend-step-by-step-guide-to-sheet-metal-bending]
+Before exporting a bent part, use the [bend-file review](../../../docs/research/manufacturing/sheet-metal-file-and-hole-review.md) for supplier angle conventions and software-specific bend lines. Read the chosen material/thickness limits rather than assuming a universal flange formula. [ref:scs-bend-files] [ref:scs-bend-steps]
 
 ## Steps
 

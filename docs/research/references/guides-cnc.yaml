@@ -304,6 +304,7 @@ sources:
     with its thread depth.'
   used_for: []
 - id: protolabs-cnc-hole-design-through-blind-tapped-and-more
+  aliases: [protolabs-hole-guide]
   kind: guide
   category: manufacturing-guides
   title: 'CNC hole design: through, blind, tapped and more'

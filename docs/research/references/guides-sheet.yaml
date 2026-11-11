@@ -7,6 +7,7 @@ schema: 2
 title: 'Manufacturing and design guides: Sheet metal and laser'
 sources:
 - id: sendcutsend-designing-for-online-sheet-metal-bending
+  aliases: [scs-bend-files]
   kind: guide
   category: manufacturing-guides
   title: Designing for Online Sheet Metal Bending Services
@@ -51,6 +52,7 @@ sources:
     Linked calculators/material tables and embedded videos not claimed read.'
 
 - id: sendcutsend-step-by-step-guide-to-sheet-metal-bending
+  aliases: [scs-bend-steps]
   kind: guide
   category: manufacturing-guides
   title: Step By Step Guide To Sheet Metal Bending

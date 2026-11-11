@@ -316,8 +316,10 @@ def test_three_full_reads_keep_identity_and_remove_unsupported_import_claims():
            "sendcutsend-step-by-step-guide-to-sheet-metal-bending",
            "protolabs-cnc-hole-design-through-blind-tapped-and-more")
     path = "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
-    for key in ids:
+    aliases = ("scs-bend-files", "scs-bend-steps", "protolabs-hole-guide")
+    for key, alias in zip(ids, aliases):
         ref = reg.resolve(key)
+        assert reg.resolve(alias).id == key
         assert ref.id == key and ref.kind == "source"
         assert ref.data["evidence"]["class"] == "read"
         assert path in ref.data["used_for"]

@@ -12,15 +12,15 @@ flowchart TD
 
 ## Bend callouts need a named angle convention
 
-SendCutSend's design guide illustrates bend callouts of 130° and 45° for enclosed angles of 50° and 135°. Label the convention rather than copying an enclosed angle into a bend callout. Its flat-pattern illustration is one particular aluminium example, not a general deduction table. Use the selected material/thickness radius and K-factor for air bending; the article does not establish a universal flange limit. [ref:sendcutsend-designing-for-online-sheet-metal-bending]
+SendCutSend's design guide illustrates bend callouts of 130° and 45° for enclosed angles of 50° and 135°. Label the convention rather than copying an enclosed angle into a bend callout. Its flat-pattern illustration is one particular aluminium example, not a general deduction table. Use the selected material/thickness radius and K-factor for air bending; the article does not establish a universal flange limit. [ref:scs-bend-files]
 
-The later step-by-step article distinguishes software and file format: SolidWorks DXF requires a dashed centreline rather than Hidden; Illustrator AI uses a separate bend-line colour. Inspect the exported representation. Its flange limits defer to material/thickness data: the imported `max(0.500 inch, 4 × thickness)` claim was not supported by this reading. Both articles share a publisher and do not independently corroborate one another. [ref:sendcutsend-step-by-step-guide-to-sheet-metal-bending]
+The later step-by-step article distinguishes software and file format: SolidWorks DXF requires a dashed centreline rather than Hidden; Illustrator AI uses a separate bend-line colour. Inspect the exported representation. Its flange limits defer to material/thickness data: the imported `max(0.500 inch, 4 × thickness)` claim was not supported by this reading. Both articles share a publisher and do not independently corroborate one another. [ref:scs-bend-steps]
 
 ## Inspect the recess, not just the pilot
 
-Protolabs distinguishes cylindrical counterbores for socket heads from conical countersinks matching a flat-head screw's angle. Its edge review includes the largest recess diameter. In a **derived containment example**, an 8 mm recess centred 3 mm from an edge overhangs by 1 mm even though a 4 mm pilot fits. This establishes containment only, not an acceptable strength-based edge distance. [ref:protolabs-cnc-hole-design-through-blind-tapped-and-more]
+Protolabs distinguishes cylindrical counterbores for socket heads from conical countersinks matching a flat-head screw's angle. Its edge review includes the largest recess diameter. In a **derived containment example**, an 8 mm recess centred 3 mm from an edge overhangs by 1 mm even though a 4 mm pilot fits. This establishes containment only, not an acceptable strength-based edge distance. [ref:protolabs-hole-guide]
 
-A 4 mm hole extending 28 mm is beyond the article's roughly six-diameter review trigger. Request a manufacturability check; do not turn the advisory into a prohibition or a promise of two-sided machining. The article supplies no numerical blind-thread tool allowance or FDM hole correction. Keep a blind hole where the opposite surface must remain intact, and specify a countersink angle rather than assuming all screws use 90°. [ref:protolabs-cnc-hole-design-through-blind-tapped-and-more]
+A 4 mm hole extending 28 mm is beyond the article's roughly six-diameter review trigger. Request a manufacturability check; do not turn the advisory into a prohibition or a promise of two-sided machining. The article supplies no numerical blind-thread tool allowance or FDM hole correction. Keep a blind hole where the opposite surface must remain intact, and specify a countersink angle rather than assuming all screws use 90°. [ref:protolabs-hole-guide]
 
 <details>
 <summary>Executable review illustrations and negative controls</summary>

@@ -69,8 +69,8 @@ def _round_tube(diameter: float, wall: float) -> Tuple[float, float]:
     return d, t
 
 
-_SHARP = ("sharp corners and one wall thickness all round: a rolled or formed tube has rounded corners, so its "
-          "handbook value is a few per cent lower; use the maker's table for a bought section")
+_SHARP = ("sharp corners and one wall thickness all round: a rolled or formed tube has rounded corners and often a "
+          "design wall under its nominal, so its handbook value is lower; use the maker's table for a bought section")
 _TUBE = ("a plain concentric tube of one wall thickness (use the wall as made: a welded tube's design wall is thinner "
          "than its nominal)")
 _NO_BUCKLE = ("the section's shape is taken to hold: no local buckling or crushing of a thin wall, which governs before "

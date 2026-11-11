@@ -62,9 +62,15 @@ jobs:
       - name: System libraries for the gmsh, VTK and MuJoCo wheels
         timeout-minutes: 14   # worst case 3 x (90 + 90 + 10 + 60) s = 12.5 min
         run: |
+          # Hosted Ubuntu sources use mirror+file:/etc/apt/apt-mirrors.txt.
+          # Prefer a registered HTTPS mirror outside Canonical DNS; retain its HTTPS fallbacks.
+          sudo python3 tools/ci/apt_mirror.py
+          # Fail one stalled transport promptly so the mirror method can reach its next HTTPS fallback.
+          # The three outer attempts already provide retries; keep both existing 90-second process caps.
+          apt_options=(-o Acquire::Retries=0 -o Acquire::http::Timeout=5 -o Acquire::https::Timeout=5)
           for try in 1 2 3; do
-            sudo timeout 90 apt-get update -q &&
-              sudo timeout 90 apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1 &&
+            sudo timeout 90 apt-get "${apt_options[@]}" update -q &&
+              sudo timeout 90 apt-get "${apt_options[@]}" install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1 &&
               exit 0
             echo "apt try $try failed or timed out; retrying"; sleep 10
             sudo timeout 60 dpkg --configure -a || true   # a timeout inside dpkg leaves it "interrupted": finish it first

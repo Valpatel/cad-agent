@@ -58,3 +58,31 @@ boundary and independently derives public records and totals from committed YAML
 readback proves delivered membership and source fields, not reading depth, browser interaction, physical
 qualification or the inclusion of internal-only records. Do not weaken those checks or promote a source to make
 a public count match an internal one.
+
+
+## Search source identity before counting another document
+
+On 2026-11-11 Pacific, the read-only follow-up to PR #574 at `35bf1477` found that its added overview record duplicated an existing core source. Earlier registry checks passed with 839 internal entries and 517 catalogued records, while public membership was reported as 810 records / 293 read / 517 catalogued. Those counts correctly counted IDs but overcounted one document.
+
+Dated command/output evidence (2026-11-11; no vendor files copied):
+
+```text
+Complete PDF-URL inventory over refs.load().entries (urlsplit(url).path ends with .pdf):
+https://www.pemnet.com/wp-content/uploads/sites/2/2022/09/Fastener-Guide_9-02-22.pdf
+  pem-fastener-guide (source, core)
+  pem-design-engineers-fastener-guide-2022 (source, guides-sheet.yaml)
+Only this exact PDF URL was duplicated in the current registry.
+
+Core record reading evidence:
+2026-11-01: downloaded the 20-page PDF and skimmed it; no rule taken from it.
+New reading evidence:
+2026-11-11: all 20 PDF pages read; industry overview, not a universal numerical design table.
+```
+
+**Cause.** The author relied on a truncated publisher/keyword search and did not complete an exact-URL search across core and shards. The validator enforced unique IDs and aliases, not unique PDF locators. A deeper reading was therefore incorrectly represented as a new document, and the public-ID membership test did not catch the semantic duplication.
+
+**Correction and rule.** Keep `pem-fastener-guide` canonical, preserve both dated scopes, and retain the newer long/short names as aliases. Merge the schema-2 metadata through the existing extension mechanism. Before adding a document, search the complete URL/title/alias inventory without truncating the relevant matches. The registry now rejects two effective read/catalogued records sharing an exact PDF URL, with a seeded core/shard duplicate and successful one-source extension control in `tests/review/test_references.py`. A real-registry regression verifies both aliases, both reading scopes and a single source identity. Record source-depth improvement separately from new-document or validated-evidence counts.
+
+**Corrected scope.** Against baseline `295bac01`, this batch adds only the CE guide as a new document: internal 837→838; public 808→809; read 291→292; catalogued 517 unchanged. The overview receives a deeper reading, not another source or independent corroboration. No whole-family B guide is promoted from a BS-440-2 part page.
+
+**Limits.** Exact URL equality does not discover redirects, mirror URLs, alternate query strings, same-content copies or edition changes. Different URLs are not proof of distinct documents. The guard makes no network requests and does not normalize URLs; edition and reading-scope reconciliation still requires human/source review. Source identity and reading depth do not establish physical qualification. Prior erroneous counts remain in PR/checkpoint history with this correction, not silently rewritten as successful knowledge gain.

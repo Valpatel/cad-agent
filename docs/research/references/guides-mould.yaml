@@ -1847,3 +1847,248 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 122823DH. PDF SHA-256 ae2ba57b3cc2ab01c975a179b8519f7b79e4f5aa85306bc563822b08ad3e877b.
     Selected scope is shim/release/removal and reassembly planning. No numerical shell, cure or thermal claim adopted; ratio
     retained solely for source reconciliation. SDS and physical trial not performed.'
+- id: smoothon-cup-test-faq
+  kind: guide
+  category: manufacturing-guides
+  title: Is there an easy way to test if a product is working properly?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/182/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Use a product-compatible batch control alongside the actual prepared-surface observation; retain the conditions
+      and failure location.
+    status: unconfirmed
+    evidence: 'FAQ describes A+B-only tests in disposable polyethylene, excluding Styrofoam/PVC. It concludes surface contamination
+      more categorically than this guidance adopts: differing mass, temperature, geometry, mixing and exposure remain potential
+      confounders. No universal test container or causal diagnosis established.'
+  summary: A batch-only cup observation can be compared with application behaviour. A cured control does not by itself prove
+    one contaminant or eliminate differences between control and application conditions.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read entire article and disclaimer; source bytes rechecked against study
+    checkpoint 6787139471. HTML SHA-256 3903d2fa4ea3b6bc5b716cde657a057089c48ec77f9aeb6a1a87a26e178c02bd. No displayed revision.
+    No cup test or interface trial performed.'
+- id: smoothon-no-cure-faq
+  kind: guide
+  category: manufacturing-guides
+  title: Why didn't my mold rubber cure?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/129/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Record whether failure is throughout the batch or at the master interface, together with mixing and temperature
+      conditions.
+    status: unconfirmed
+    evidence: Inadequate Mixing, Cold Material or Work Area, and Cure Inhibition sections. Interface tackiness with a cured
+      exterior is a useful observation, not proof of a single cause or a universal cure schedule.
+  summary: Troubleshooting distinguishes mixing, cold material/workpiece and interface inhibition. These are candidate explanations
+    to investigate, not a diagnosis from appearance alone.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all main sections and disclaimer; linked mixing/cold-weather articles
+    not read in this batch. HTML SHA-256 cd07c472b739ace9ae3673c4a473c1422d93c3c088f2856edeaaaaa6663c9c21 matches study checkpoint
+    6787139471. No displayed revision; no physical trial.'
+- id: smoothon-cure-inhibition-faq
+  kind: guide
+  category: manufacturing-guides
+  title: What is cure inhibition?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/104/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Inspect the rubber/master interface and preparation dryness separately from bulk cure, and consult the exact rubber
+      bulletin before choosing mitigation.
+    status: unconfirmed
+    evidence: Experiencing Inhibition, Inhibition from Sealing Agents and Applying Rubber Into/Over Rubber sections. No general
+      sealer cure, universal drying time or exemption from a selected product substrate exclusion is supported here.
+  summary: Interface cure failure and insufficiently dried sealer/release are separate review topics. The guide defers rubber
+    compatibility to product bulletins; generic mitigation or drying intervals are not universal.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all three article sections and disclaimer; embedded video unviewed.
+    HTML SHA-256 d71090043897aa6769117a4549a7ff672010f33b1ccef052f0eeb415dbc01422 matches study checkpoint 6787139471. No
+    displayed revision; generic chemistry/solvent-delay claims not adopted across products.'
+- id: smoothon-inhibit-x-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Inhibit X technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/INHIBIT_X_INHIBIT_STOPPER_FOR_PLATINUMS.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Inhibit X can bond platinum silicone unless the specified release preparation follows the dried treatment; a representative
+      compatibility test remains necessary.
+    status: unconfirmed
+    evidence: Preparation/Application. Bulletin discusses treatment over sulfur/tin-related surfaces, while rubber bulletins
+      may exclude them; this does not authorize overriding the chosen rubber or qualifying an exceptional combination.
+  summary: Platinum-silicone inhibition treatment is distinct from release preparation and may itself promote adhesion. It
+    does not establish compatibility for every master or override a selected rubber exclusion.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete one-page bulletin; printed code 030724DH. PDF SHA-256 d586d76977c997cbca89ae7195b9bf1951277ba76252668143855e9b19b8f593
+    rechecked against study checkpoint 6787139471. Selected qualitative treatment/release distinction only; no coat-count
+    recipe adopted. SDS and physical trial not performed.'
+- id: smoothon-xtc3d-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: XTC-3D technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/XTC3D_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Compare mass/thin-film cure endpoints separately and use the bulletin release preparation on cured coating before
+      applying mould rubber.
+    status: unconfirmed
+    evidence: Preparation, Extending Working Time, Applying, Curing and Making Molds of Models Coated with XTC-3D. No bulk-control
+      result establishes interface compatibility or unchanged dimensions.
+  - text: The accelerated-cure text pairs 150 F with 60 C inconsistently.
+    status: conflicting
+    evidence: p.2 Curing. The mismatch is retained unresolved; no corrected value or accelerated schedule is adopted or encoded.
+      Earlier study arithmetic is only a unit check, not a process validation.
+  summary: Printed-part coating has distinct mass/thin-film cure behaviour and requires release preparation before applying
+    mould rubber. Coating can change the master surface; no universal print-resin compatibility or thermal schedule follows.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; code 091724PA. PDF SHA-256 955f9a0dcfa83a194e4e6b8baa09bd155dbec1b3dfc2efbb4336e3d02cc5a3cf
+    rechecked against study checkpoint 6787139471. Scope is endpoints, coating/release and source limits; no mix, solvent,
+    thickness or heating recipe adopted. SDS and physical trial not performed.'

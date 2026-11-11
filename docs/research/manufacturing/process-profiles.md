@@ -788,6 +788,31 @@ printed-mould procedure. Exact source coverage and queued studies remain in #552
 
 </details>
 
+<details>
+<summary>Compare batch cure with the prepared-master interface</summary>
+
+When investigating a cure problem, keep a batch control and a coupon of the actual prepared master as separate
+observations. Follow the selected material's mixing, container and cure instructions. Label the product/lot,
+mixed mass and container geometry, mixing history, material/master/ambient temperatures, surface preparation,
+elapsed time and failure location. Inspect bulk cure and the rubber/master interface at the specified endpoint.
+[ref:smoothon-cup-test-faq] [ref:smoothon-no-cure-faq]
+
+A control that cures while the interface remains uncured supports investigating the application; it does not
+identify one contaminant. Differences in mass, temperature, mix distribution and exposure still need checking.
+Uniformly uncured material, interface-only tackiness and cured material that sticks during removal are different
+observations, not interchangeable diagnoses.
+[ref:smoothon-cup-test-faq] [ref:smoothon-no-cure-faq] [ref:smoothon-cure-inhibition-faq]
+
+Include coatings and inhibition treatments in the material chain. Drying, chemical cure and release are separate:
+Inhibit X can itself promote adhesion without its specified release treatment; cured XTC-3D coating also needs
+the bulletin's release preparation before mould rubber is applied. Check changed detail and dimensions rather than
+assuming the coated master still matches its nominal CAD surface. A generic mitigation does not override the
+chosen rubber's exclusions. These are observation prompts, not a proven cause, universal recipe or cure schedule;
+the unresolved temperature wording and remaining coverage stay in the source records and #552.
+[ref:smoothon-cure-inhibition-faq] [ref:smoothon-inhibit-x-bulletin] [ref:smoothon-xtc3d-bulletin]
+
+</details>
+
 ## 9. What this changes in cad-agent
 
 What reads the YAML today (solid) and what is planned to (dashed):

@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A successful Prusa slice shows only grams/time although its stability check did not run | [Retain the explicit unchecked state and recorded reason in visible reports](inbox/2026-11-10-slice-success-needs-stability-disclosure.md) |
 | A patch candidate contains required project changes | [Choose the release level from the complete fragments before cutting](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#required-project-changes-determine-the-release-level-before-cutting) |
 | An extended reference page passes source tests but both browsers reject a long prose stretch | [Remeasure the rendered page and retain accessible detailed references](inbox/agents/2026-11-10-parallel-notes-share-a-layout-budget.md#long-reference-additions-need-their-published-page-checks-again) |
 | Individually green branches combine into a folder over the growth limit | [Recheck the union and split by domain without relaxing the budget](inbox/agents/2026-11-10-parallel-notes-share-a-layout-budget.md) |
@@ -88,7 +89,7 @@
 | Skills initialize successfully but copied guide links fail, or repository and global names appear twice | [Discovery names and resource containment](inbox/agents/2026-11-06-agent-discovery-and-resource-boundaries.md) |
 | A review extraction unexpectedly executes an operational command | [Assignments and definitions are not a side-effect boundary](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md#a-reviewer-extraction-can-execute-mutation-assignments) |
 | Posting a review comment replaces an issue or PR description | [Target the comment resource and verify the actual write](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md#a-comment-must-target-the-comment-resource) |
-| A precheck exits nonzero but a later state-changing command still runs | [Failed prechecks must stop mutations](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md) |
+| A precheck exits nonzero but a later state-changing command still runs, or its successful exit hides a failed fixed-count guard | [Persist preflight evidence and stop dependent mutations](inbox/2026-11-06-failed-prechecks-must-stop-mutations.md#a-successful-merge-does-not-make-a-failed-auxiliary-preflight-pass) |
 | A documented technique breaks while its API tests stay green | [Execute the canonical technique](inbox/2026-11-06-source-selection-must-not-pass-empty.md#execute-the-canonical-technique-not-only-its-underlying-apis) |
 | A moved-source check selects no package files, or a child imports another editable checkout | [Nonempty source selection and import origin](inbox/2026-11-06-source-selection-must-not-pass-empty.md) |
 | A publication check accepts a changed catalogue ID or a wrong origin with the same path | [Complete public identities and preserved served namespaces](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-the-complete-publication-identity) |

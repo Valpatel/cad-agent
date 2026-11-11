@@ -58,3 +58,44 @@ content boundary. This was a metadata-resource selection error, not a demonstrat
 ref change was part of the incident. Product checks, merge gates and publication remain separate. No live destructive
 regression is justified for this CLI-selection mistake; the existing reviewer role and publication playbook carry
 the procedure.
+
+## A successful merge does not make a failed auxiliary preflight pass
+
+**Recurrence, 2026-11-11 UTC:** The coordinator's auxiliary PR531 preflight asserted
+`len(statusCheckRollup) == 20` and raised `AssertionError`. A separate next shell line still invoked
+`gh pr merge`; that command exited 0, masking the preceding failure. This operator sequence is retained as
+reported incident evidence; GitHub cannot reconstruct its local shell exit propagation.
+
+Independent read-only GitHub readback at `2026-11-11T01:42:39Z` used:
+
+```text
+gh pr view 531 --repo Valpatel/cad-agent --json headRefOid,mergeCommit,mergedAt,statusCheckRollup,url
+gh api repos/Valpatel/cad-agent/issues/531/timeline --paginate
+gh run view 42939737859 --repo Valpatel/cad-agent --json event,headSha,createdAt,updatedAt,jobs
+```
+
+Actual head was `6fc79219a2ee313a728b26f05641561a4685f71d`. The `ready_for_review` event occurred at
+`01:32:49Z`; the additional `pull_request_target` Gates run started at `01:32:52Z`, and its successful
+`gates` job completed at `01:33:06Z`. The rollup contained **21 successful instances**, all completed or
+posted before the `01:39:22Z` merge to `92fd8cf6156566d1291ec43bc00d7377f94e8dbe`.
+[PR531](https://github.com/Valpatel/cad-agent/pull/531) and
+[the additional run](https://github.com/Valpatel/cad-agent/actions/runs/42939737859) support that timing.
+No failing required gate was bypassed; the failed auxiliary assertion and unsafe caller are real failures.
+This repeats the existing [duplicate-check lesson](publish/2026-11-07-release-guards-need-current-boundaries.md#count-required-names-without-dropping-duplicate-check-instances).
+
+**Cause:** A total-count assumption rejected an additional successful wrapper instance. Independent shell
+lines then allowed a mutation after a failed dependency, and the last exit code hid the first failure.
+The assertion's mistaken premise did not authorize ignoring its nonzero result.
+
+**Corrective rule:** Identify required contexts and their expected source/head, require their successful states,
+and inspect every applicable current check instance, including duplicates. Do not accept an absent required
+context or discard an unsuccessful duplicate to meet a name/count expectation. Persist the exact preflight
+inputs, checked identities, live-gate output and exit status before mutation. Put all assertions and the
+mutation inside the same checked program, using checked subprocess calls, or launch mutation separately only
+after inspecting the preflight's actual zero exit and receipt. Never append mutation to an unchecked multiline
+shell sequence. Preserve the original failure and resulting state for independent disposition.
+
+**Limits:** This is an operational documentation correction, not a new gate implementation, a release cut,
+or proof that every operator is now fail-closed. The GitHub readback verifies states and timing, while the
+coordinator supplies the local assertion/fallthrough evidence. Current CI, independent exact-head review and
+live repository gates remain separate requirements; publication is not established by merge success.

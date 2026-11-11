@@ -421,7 +421,9 @@ def slice_project(project, parts=None) -> dict:
     names, or a mapping of name to ``{overrides: {...}}``, the part's own settings on top of ``overrides``.
 
     A PrusaSlicer row also carries what PrusaSlicer's log said (``warnings``, ``errors``, ``stability_issues``,
-    ``benign_log_lines``, ``log``) and ``ok``: exit code 0, G-code written and no error or stability issue. The
+    ``benign_log_lines``, ``log``) and ``ok``: exit code 0, G-code written and no error or stability issue, with
+    ``stability_checked``: false when supports were on, so PrusaSlicer did not look for stability issues
+    (``slicer_prusa.stability_setup``; ``stability_note`` says why, ``supports`` what was sliced with). The
     report passes only when every row is ok; a Bambu Studio row is ok when it has grams. Slicing some parts keeps only
     the old rows that are still current (``_row_current``), so ``pass`` is about the rows in the report: a part left
     out of it is not sliced, and ``current_report`` is None until every expected part is in."""
@@ -458,6 +460,9 @@ def slice_project(project, parts=None) -> dict:
             rows[name]['part_overrides'] = own
         if engine == 'prusa':
             rows[name].update({k: r.get(k) for k in ('warnings', 'errors', 'stability_issues', 'benign_log_lines')})
+            # whether PrusaSlicer looked for stability issues at all (it does not with supports on): an older
+            # report has no such keys
+            rows[name].update({k: r[k] for k in ('supports', 'stability_checked', 'stability_note') if k in r})
             log = r.get('log')
             if log and Path(log).resolve().is_relative_to(project.root.resolve()):
                 log = str(Path(log).resolve().relative_to(project.root.resolve()))

@@ -287,6 +287,9 @@ def slicer_feature(sliced: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]
             facts.append(f"{row['grams']:g} g")
         if row.get("minutes") is not None:
             facts.append(f"{row['minutes']:g} min")
+        if sliced.get("engine") == "prusa" and row.get("stability_checked") is False:
+            note = row.get("stability_note")
+            facts.append("stability not checked" + (f": {note}" if note else ""))
         if _row_ok(row):
             said = [f"{len(row['warnings'])} slicer warning(s)"] if row.get("warnings") else []
             checks.append(_row(name, True, " · ".join(facts + said)))

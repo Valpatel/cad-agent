@@ -240,7 +240,9 @@ def test_slicer_run_only_for_current_slices(tmp_path):
 
 
 @pytest.mark.parametrize('changed', ['model', 'settings', 'part-overrides', 'missing-part', 'no-grams',
-                                     'bad-json', 'bad-shape', 'bad-parts', 'bad-row', 'bad-total', 'bad-grams', 'unreadable'])
+                                     'bad-json', 'bad-shape', 'bad-parts', 'bad-row', 'bad-total', 'bad-grams', 'unreadable',
+                                     'missing-slicer', 'numeric-slicer', 'empty-slicer', 'bad-warnings', 'string-warnings',
+                                     'bad-errors', 'bad-stability-issues', 'nonstring-stability-issue'])
 def test_stale_or_invalid_slice_cannot_turn_a_previous_failure_green(tmp_path, changed):
     import hashlib
     from cadagent.manufacturing.slicer import _settings, current_report
@@ -274,6 +276,17 @@ def test_stale_or_invalid_slice_cannot_turn_a_previous_failure_green(tmp_path, c
         data['total_grams'] = 'unknown'
     elif changed == 'bad-grams':
         data['parts']['box']['grams'] = 'unknown'
+    elif changed == 'missing-slicer':
+        del data['slicer']
+    elif changed == 'numeric-slicer':
+        data['slicer'] = 1
+    elif changed == 'empty-slicer':
+        data['slicer'] = ''
+    elif changed in ('bad-warnings', 'string-warnings', 'bad-errors', 'bad-stability-issues', 'nonstring-stability-issue'):
+        field, value = {'bad-warnings': ('warnings', 5), 'string-warnings': ('warnings', 'one warning'),
+                        'bad-errors': ('errors', {}), 'bad-stability-issues': ('stability_issues', 5),
+                        'nonstring-stability-issue': ('stability_issues', [1])}[changed]
+        data['parts']['box'][field] = value
     if changed == 'unreadable':
         path.unlink()
         path.mkdir()
@@ -291,12 +304,53 @@ def test_stale_or_invalid_slice_cannot_turn_a_previous_failure_green(tmp_path, c
     if path.is_dir():
         path.rmdir()
     data = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'total_grams': 8, 'total_hours': 0.5,
-            'parts': {name: {'grams': 4, 'ok': True, 'part_overrides':
+            'parts': {name: {'grams': 4, 'ok': True, 'exit_code': 0, 'return_code': 0, 'part_overrides':
                              ((project.slicer.get('parts') or {}).get(name) or {}).get('overrides', {}),
                              'sha256': hashlib.sha256((project.exports_dir / f'{name}.3mf').read_bytes()).hexdigest()}
                       for name in ('box', 'lid')}}
     path.write_text(json.dumps(data))
     assert report.collect(project)['pass'] and current_report(project) is not None
+
+
+@pytest.mark.parametrize('status,passed,reason', [
+    ({}, True, None),                                      # genuine old Bambu row
+    ({'ok': True, 'exit_code': 0, 'return_code': 0}, True, None),
+    ({'ok': True}, False, 'exit_code is missing'),
+    ({'exit_code': 0, 'return_code': 0}, False, 'ok is not true'),
+    ({'ok': True, 'exit_code': 239, 'return_code': 0}, False, 'exit_code 239'),
+    ({'ok': True, 'exit_code': 0, 'return_code': -17}, False, 'return_code -17'),
+    ({'exit_code': 239, 'return_code': 0}, False, 'exit_code 239'),
+    ({'exit_code': 0, 'return_code': -17}, False, 'return_code -17'),
+    ({'ok': True, 'exit_code': 0, 'return_code': None}, False, 'return_code None'),
+    ({'exit_code': 0, 'return_code': None}, False, 'return_code None'),
+    ({'ok': True, 'exit_code': None, 'return_code': 0}, False, 'exit_code None'),
+    ({'ok': True, 'exit_code': 0, 'return_code': '0'}, False, "return_code '0'"),
+    ({'ok': True, 'exit_code': False, 'return_code': 0}, False, 'exit_code False'),
+    ({'ok': 'true', 'exit_code': 0, 'return_code': 0}, False, 'ok is not true'),
+])
+def test_persisted_bambu_status_cannot_override_its_codes(tmp_path, status, passed, reason):
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings, current_report
+    project = load_project(make_project(tmp_path))
+    path = project.exports_dir / 'slice-report.json'
+    data = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'total_grams': 8, 'total_hours': 0.5,
+            'parts': {name: {'grams': 4, 'minutes': 15,
+                             'sha256': hashlib.sha256((project.exports_dir / f'{name}.3mf').read_bytes()).hexdigest()}
+                      for name in ('box', 'lid')}}
+    data['parts']['lid'].update(status, error='retained producer text')
+    path.write_text(json.dumps(data))
+    assert current_report(project) == data                # source currency is distinct from slicer success
+    collected = report.collect(project)
+    json_path, html_path, actual = report.write_report(project)
+    check = rows(actual, 'cad-slicer')['lid']
+    assert actual['pass'] is passed and actual['slicer_run'] is True and not actual['physical_fit_verified']
+    assert check['status'] == ('pass' if passed else 'fail')
+    assert rows(json.loads(json_path.read_text()), 'cad-slicer') == rows(collected, 'cad-slicer')
+    assert json.loads(path.read_text()) == data            # validation does not erase the recorded status
+    if reason:
+        assert reason in check['error'] and 'retained producer text' in check['error']
+        from html import escape
+        assert escape(reason) in html_path.read_text()
 
 
 def test_a_part_the_slicer_flagged_fails_the_report(tmp_path):

@@ -108,17 +108,38 @@ def test_check_exit_code_follows_the_results(tmp_path, capsys):
 
 
 @pytest.mark.parametrize('command', ['check', 'report', 'all'])
-def test_persisted_invalid_slice_fails_check_report_and_all(tmp_path, monkeypatch, capsys, command):
+@pytest.mark.parametrize('invalid', ['json', 'missing-slicer', 'numeric-slicer', 'warnings', 'code', 'code-without-ok'])
+def test_persisted_invalid_slice_fails_check_report_and_all(tmp_path, monkeypatch, capsys, command, invalid):
     from cadagent import cli
+    import hashlib
+    from cadagent.project import load_project
+    from cadagent.manufacturing.slicer import _settings
     root = make_project(tmp_path)
     # Keep the all orchestration and real report; replace the unrelated build/native/package steps.
     for name in ('cmd_build', 'cmd_export_3mf', 'cmd_holes', 'cmd_package'):
         monkeypatch.setattr(cli, name, lambda project, args: 0)
-    (root / 'exports/slice-report.json').write_text('{')
+    path = root / 'exports/slice-report.json'
+    data = {'slicer': 'Bambu Studio (command line)', **_settings(load_project(root)),
+            'total_grams': 8, 'total_hours': 0.5,
+            'parts': {name: {'grams': 4, 'ok': True, 'exit_code': 0, 'return_code': 0,
+                             'sha256': hashlib.sha256((root / 'exports' / f'{name}.3mf').read_bytes()).hexdigest()}
+                      for name in ('box', 'lid')}}
+    if invalid == 'missing-slicer':
+        del data['slicer']
+    elif invalid == 'numeric-slicer':
+        data['slicer'] = 1
+    elif invalid == 'warnings':
+        data['parts']['lid']['warnings'] = 5
+    elif invalid in ('code', 'code-without-ok'):
+        data['parts']['lid']['return_code'] = -17
+        if invalid == 'code-without-ok':
+            del data['parts']['lid']['ok']
+    path.write_text('{' if invalid == 'json' else json.dumps(data))
     assert main([command, '--project', str(root)]) == 1
     output = capsys.readouterr().out
-    assert 'slice again with cad-agent slice' in output and 'slicer not run' not in output
-    (root / 'exports/slice-report.json').unlink()
+    assert 'FAIL' in output and 'slicer not run' not in output
+    assert ('return_code -17' if invalid in ('code', 'code-without-ok') else 'slice again with cad-agent slice') in output
+    path.unlink()
     assert main([command, '--project', str(root)]) == 0
 
 def test_report_and_package(tmp_path, capsys):

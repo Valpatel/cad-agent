@@ -275,7 +275,7 @@ def slicer_feature(sliced: Optional[Dict[str, Any]], problem: Optional[str] = No
     exists: slicing stays optional, and the footer says "slicer not run".
 
     A row says what the slicer reported for its profile. It does not prove the part prints."""
-    from cadagent.manufacturing.slicer import _row_ok
+    from cadagent.manufacturing.slicer import _bambu_status_errors, _row_ok
 
     if problem:
         message = f'{problem}; slice again with cad-agent slice'
@@ -283,6 +283,7 @@ def slicer_feature(sliced: Optional[Dict[str, Any]], problem: Optional[str] = No
                 "checks": [_row("slice report", False, message, message)]}
     if not sliced:
         return None
+    engine = sliced.get('engine', 'bambu')
     checks = []
     for name, row in sorted((sliced.get("parts") or {}).items()):
         row = row if isinstance(row, dict) else {}
@@ -294,7 +295,7 @@ def slicer_feature(sliced: Optional[Dict[str, Any]], problem: Optional[str] = No
         if sliced.get("engine") == "prusa" and row.get("stability_checked") is False:
             note = row.get("stability_note")
             facts.append("stability not checked" + (f": {note}" if note else ""))
-        if _row_ok(row):
+        if _row_ok(row, engine):
             said = [f"{len(row['warnings'])} slicer warning(s)"] if row.get("warnings") else []
             checks.append(_row(name, True, " · ".join(facts + said)))
             continue
@@ -303,8 +304,11 @@ def slicer_feature(sliced: Optional[Dict[str, Any]], problem: Optional[str] = No
                 if "print stability issues" not in str(line)]      # listed above, by category
         if row.get("error"):
             why.append(str(row["error"]))
-        why += [f"{key} {row[key]}" for key in ("exit_code", "return_code")
-                if row.get(key) is not None and row[key] != 0]
+        if engine == 'bambu':
+            why += _bambu_status_errors(row)
+        else:
+            why += [f"{key} {row[key]}" for key in ("exit_code", "return_code")
+                    if row.get(key) is not None and row[key] != 0]
         why = why or ["the slicer did not report the part as ok"]
         checks.append(_row(name, False, " · ".join(["flagged by the slicer: " + "; ".join(why)] + facts),
                            "\n".join(why)))

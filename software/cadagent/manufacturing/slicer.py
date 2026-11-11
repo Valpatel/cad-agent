@@ -417,8 +417,27 @@ def _expected_parts(project) -> List[str]:
     return list(cfg.get('parts') or known)
 
 
-def _row_ok(row: dict) -> bool:
-    """A report row's explicit ``ok``; historical rows without it retain the grams fallback."""
+def _bambu_status_errors(row: dict) -> List[str]:
+    """Only genuine historical rows lack both explicit status and retained codes."""
+    if not any(key in row for key in ('ok', 'exit_code', 'return_code')):
+        return []
+    errors = []
+    if row.get('ok') is not True:
+        errors.append('ok is not true')
+    for key in ('exit_code', 'return_code'):
+        if key not in row:
+            errors.append(f'{key} is missing (expected integer zero)')
+        elif type(row[key]) is not int or row[key] != 0:
+            errors.append(f'{key} {row[key]!r} (expected integer zero)')
+    return errors
+
+
+def _row_ok(row: dict, engine: str = 'bambu') -> bool:
+    """New Bambu rows need consistent status/codes; genuine old rows retain the grams fallback.
+
+    Prusa's explicit ``ok`` has its own producer contract, without Bambu's two-code requirement."""
+    if engine == 'bambu':
+        return bool(row.get('grams')) and not _bambu_status_errors(row)
     return row['ok'] is True if 'ok' in row else bool(row.get('grams'))
 
 
@@ -490,7 +509,7 @@ def slice_project(project, parts=None) -> dict:
         exe = str(Path(exe).resolve())
     out = {'slicer': f"{ENGINE_NAMES[engine]} (command line)", **st, 'slicer_executable': exe,
            'parts': rows, 'total_grams': round(total_g, 1), 'total_hours': round(total_min / 60, 2),
-           'pass': bool(rows) and all(_row_ok(v) for v in rows.values()),
+           'pass': bool(rows) and all(_row_ok(v, engine) for v in rows.values()),
            'note': 'Slicer estimates for one copy of each part with the stated profile; supports off unless the profile turns them on.'}
     path.write_text(json.dumps(out, indent=2) + '\n')
     out['path'] = str(path)
@@ -511,6 +530,8 @@ def report_status(project) -> Tuple[Optional[dict], Optional[str]]:
         return None, 'slice report is unreadable or invalid JSON'
     if not isinstance(rep, dict) or not isinstance(rep.get('parts'), dict):
         return None, 'slice report has invalid parts data'
+    if not isinstance(rep.get('slicer'), str) or not rep['slicer'].strip():
+        return None, 'slice report has invalid slicer metadata'
     if not rep['parts'] or set(rep['parts']) != set(_expected_parts(project)):
         return None, 'slice report is incomplete or its expected parts changed'
     different = settings_differ(rep, project)
@@ -524,6 +545,11 @@ def report_status(project) -> Tuple[Optional[dict], Optional[str]]:
         return None, 'slice report source files are unreadable'
     if outdated:
         return None, 'slice report is stale or incomplete for: ' + ', '.join(sorted(outdated))
+    for name, row in rep['parts'].items():
+        for key in ('warnings', 'errors', 'stability_issues'):
+            value = row.get(key)
+            if value is not None and (not isinstance(value, list) or not all(isinstance(v, str) for v in value)):
+                return None, f'slice report has invalid {key} for: {name} (expected a list of strings)'
     return rep, None
 
 

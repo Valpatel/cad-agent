@@ -1533,7 +1533,8 @@ print badly, and a slice does not prove a part prints or fits.
 
 New Bambu rows retain `exit_code`, `return_code` and explicit `ok`: success needs grams and both integer codes
 zero. Missing or invalid result codes cannot establish a new success. Bambu's `error_string` can say `Success.`;
-the text is kept as `error` and does not decide success. Historical reports without `ok` retain the grams fallback.
+the text is kept as `error` and does not decide success. Historical rows without `ok` or either code field retain
+the grams fallback. Retained codes must agree with explicit success; deleting `ok` cannot erase a known failure.
 
 Slicing remains optional when `exports/slice-report.json` is absent. Once a report exists, `check`, `report` and
 `all` fail visibly if it is stale, incomplete or unreadable, with a reason and `cad-agent slice` as the next action.

@@ -331,8 +331,9 @@ def test_bambu_codes_survive_parser_project_and_visible_report(tmp_path, monkeyp
         assert rows(results, 'cad-slicer')['box']['status'] == ('pass' if ok else 'fail')
         for key, code in (('exit_code', exit_code), ('return_code', return_code)):
             if code not in (None, 0):
-                assert f'{key} {code}' in rows(results, 'cad-slicer')['box']['message']
-                assert f'{key} {code}' in html_path.read_text()
+                from html import escape
+                assert f'{key} {code!r}' in rows(results, 'cad-slicer')['box']['message']
+                assert escape(f'{key} {code!r}') in html_path.read_text()
 
 
 def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):

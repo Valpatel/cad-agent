@@ -86,7 +86,7 @@ outside it is cropped.
 | `cut-fastener-<name>` | `cut` | per group of fasteners with one catalogue key and one clamped part | a plane containing the first screw's axis: head, stack and thread (the fastener gate measures every screw; alike screws need one look) |
 | `exploded` | `exploded` | when steps fit section parts | each part moved back out along its step's direction, later steps further; fasteners back out along their own axis from where their install step's part went |
 | `access-from-<side>` | `access` | per distinct fastener axis direction | looking along the screws' advance from the tool's side (`top`, `bottom`, `front` = −Y, `back`, `left`, `right`, or the rounded vector), with neighbouring parts opaque since they can block the tool |
-| `pose-<interface>-min`, `-max` | `pose` | per ranged joint whose moving part is in the section | the moving body at each end of its declared range |
+| `pose-<interface>-min`, `-max` | `pose` | per ranged joint whose moving part is in the section, or which drives a joint (`follows`) whose moving part is | the moving body at each end of its declared range. Joints that follow it are drawn at their driven values in the same view (`pose.moves`: each joint that moves, innermost first, with its value, axis and the instance keys it carries) and get no pose views of their own; the ratio is declared, not solved |
 | `findings` | `findings` | when a failing or warning finding has a witness point | `solid-iso` with a numbered callout at each witness |
 
 ## `manifest.json`

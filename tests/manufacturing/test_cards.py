@@ -461,8 +461,19 @@ def test_pem_cards_keep_families_and_printed_materials_separate():
         name = f"pem-{family}-m2"
         card = cards.card(name, process="sheet-metal")
         rendered = cards.render_card(card)
-        assert rendered.count("[ref:pem-consumer-electronics-design-guide-2021]") == 3
-        assert "conf low" in rendered and "geometry screening only" in rendered
+        canonical = "pem-consumer-electronics-design-guide-2021"
+        # The short display key must still identify this exact read manufacturer source.
+        emitted = cards.REF.findall(rendered)
+        assert emitted == ["pem-ce-guide-2021"] * 3
+        reg = cards.registry()
+        assert all(reg.resolve(key).id == canonical and reg.resolve(key).kind == "source" for key in emitted)
+        assert reg.resolve(emitted[0]).data["evidence"]["class"] == "read"
+        assert {row["rule"] for row in card["lines"]} == {
+            f"sm-pem-{family}-m2-{feature}" for feature in ("sheet", "hole", "edge")
+        }
+        assert len(card["lines"]) == 3
+        assert all(row["source"] == canonical and row["confidence"] == "low" for row in card["lines"])
+        assert rendered.count("conf low") == 3 and "geometry screening only" in rendered
         assert f"sm-pem-{'msofs' if family == 'mso4' else 'mso4'}" not in rendered
         # A process filter must not publish these sheet dimensions as FDM rules.
         polymer = cards.card(name, process="fdm", material="petg")

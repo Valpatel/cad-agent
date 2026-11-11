@@ -12,6 +12,25 @@ Search found [nonempty source selection and import origin](../2026-11-06-source-
 
 **Limits:** these receipts establish the named Node/Chrome consumer and actual tested pages. They do not establish every browser, platform or future cache contents. The subsequent production build used its own separately recorded Chrome156 runtime.
 
+## Site checks also need an explicit runtime
+
+**Recurrence, 2026-11-10 local date (#557):** integration head
+`0d1a1e20e4b6bb427f56d613a91c527348b505ad` initially used ambient Node20.20.2 for
+`node tools/site/compiler/site-repo-map.mjs --check`. The existing guard returned
+`repo-map needs the existing Node 22 site runtime`. The combined pure reference/repo-map suite on that runtime
+finished with 42 passed, 1 failed and 1 explicit opt-in browser-diagram skip. This was a runtime-selection failure,
+not a source-record or owner-map defect.
+
+Binding the already installed Node22.23.4, without installation or guard changes, made the standalone check report
+1041 folders with owners and relative destinations checked. The complete corrected pure suite then passed
+43 tests with the same one opt-in browser skip on that head. The invocation was
+`CAD_AGENT_REPO_MAP_DIAGRAMS=0 <existing-Node22> --test tests/site/website-references.test.mjs tests/site/website-repo-map.test.mjs`,
+with the same existing runtime directory first on `PATH` for child processes.
+
+**Rule and limits:** apply the explicit-runtime preflight to local site consumers too. Preserve the failed attempt
+separately, and rerun the complete affected command with the required existing runtime. These pure checks do not
+measure a rendered page's reading budget or replace the repository's browser CI. No local browser campaign ran.
+
 ## Count browser worker tasks before removing the cgroup
 
 **Evidence, 2026-11-07 UTC (#463):** a local study ran the unchanged README motion and header parts together in their original two lanes, under a four-CPU quota, 2 GiB memory cap and 256-task cap. Both initial pages reported `Page crashed`. At 19:25:11.862 UTC the kernel recorded a fork rejection by the pids controller in that exact owned unit, before the page-crash events. The original 16-file failure receipt and native protocol records remain retained ([independent failure disposition](https://github.com/Valpatel/cad-agent/issues/463#issuecomment-6712030363)). This was a local fixture limit, not evidence of the earlier CI README networkidle timeout's cause.

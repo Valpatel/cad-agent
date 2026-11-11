@@ -257,3 +257,46 @@ def test_a_part_the_slicer_flagged_fails_the_report(tmp_path):
     parts["lid"] = dict(parts["box"], sha256=sha["lid"])
     path.write_text(json.dumps(rep))
     assert report.collect(project)["pass"] is True
+
+
+@pytest.mark.parametrize("checked,note", [
+    (False, "automatic supports are on"), (False, None), (True, "checked with supports off"), (None, None),
+])
+@pytest.mark.parametrize("flagged", [False, True])
+def test_prusa_report_shows_unchecked_stability_without_changing_status(tmp_path, checked, note, flagged):
+    """A current Prusa slice can pass without a stability check; the visible row must disclose that limit."""
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings
+
+    root = make_project(tmp_path, checks_yaml="  slicer: {engine: prusa}\n")
+    project = load_project(root)
+    parts = {name: {"grams": 4.0, "minutes": 12.5, "ok": not flagged,
+                    "sha256": hashlib.sha256((root / "exports" / f"{name}.3mf").read_bytes()).hexdigest(),
+                    "stability_issues": ["Floating bridge anchors"] if flagged else []}
+             for name in ("box", "lid")}
+    for part in parts.values():
+        if checked is not None:  # reports predating the field do not establish whether the check ran
+            part["stability_checked"] = checked
+        if note is not None:
+            part["stability_note"] = note
+    sliced = {"slicer": "PrusaSlicer (command line)", **_settings(project), "engine": "prusa",
+              "total_grams": 8.0, "total_hours": 0.4, "parts": parts}
+    (root / "exports" / "slice-report.json").write_text(json.dumps(sliced))
+    json_path, html_path, results = report.write_report(project)
+    actual = rows(results, "cad-slicer")
+    assert results["slicer_run"] is True and results["pass"] is (not flagged)
+    assert rows(json.loads(json_path.read_text()), "cad-slicer") == actual
+    for row in actual.values():
+        assert row["status"] == ("fail" if flagged else "pass")
+        assert "4 g · 12.5 min" in row["message"]
+        assert ("stability not checked" in row["message"]) is (checked is False)
+        if checked is False and note:
+            assert f"stability not checked: {note}" in row["message"]
+        if checked is not False and note:
+            assert note not in row["message"]
+        if flagged:
+            assert "flagged by the slicer: print stability: Floating bridge anchors" in row["message"]
+            assert row["error"] == "print stability: Floating bridge anchors"
+    assert ("stability not checked" in html_path.read_text()) is (checked is False)
+    if checked is False and note:
+        assert f"stability not checked: {note}" in html_path.read_text()

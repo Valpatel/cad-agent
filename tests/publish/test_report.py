@@ -226,15 +226,131 @@ def test_slicer_run_only_for_current_slices(tmp_path):
     sliced = rows(results, "cad-slicer")                 # a row per sliced part; a row without `ok` passes on its grams
     assert {n: r["status"] for n, r in sliced.items()} == {"box": "pass", "lid": "pass"} and results["pass"]
     assert sliced["box"]["message"] == "6 g · 30 min"
-    # a different profile, a missing part or an empty report is not a current slice
+    # A persisted, outdated/incomplete report fails visibly; slicer_run still means current.
     for bad in ({**rep, "process": "0.28mm Draft"}, {**rep, "parts": {"box": rep["parts"]["box"]}}, {**rep, "parts": {}}):
         path.write_text(json.dumps(bad))
-        assert report.collect(project)["slicer_run"] is False
+        stale = report.collect(project)
+        assert stale["slicer_run"] is False and stale["pass"] is False
+        assert rows(stale, "cad-slicer")["slice report"]["status"] == "fail"
     path.write_text(json.dumps(rep))
     (root / "exports" / "lid.3mf").write_text("changed after slicing")
     results = report.collect(project)
-    assert results["slicer_run"] is False and results["footer_meta"]["slicer"] == "slicer not run"
-    assert all(f["feature_id"] != "cad-slicer" for f in results["features"])   # no current slice: no rows, no failure
+    assert results["slicer_run"] is False and results["pass"] is False
+    assert "slice again" in results["footer_meta"]["slicer"] and "slicer not run" not in results["footer_meta"]["slicer"]
+
+
+@pytest.mark.parametrize('changed', ['model', 'settings', 'part-overrides', 'missing-part', 'no-grams',
+                                     'bad-json', 'bad-shape', 'bad-parts', 'bad-row', 'bad-total', 'bad-grams', 'unreadable',
+                                     'missing-slicer', 'numeric-slicer', 'empty-slicer', 'bad-warnings', 'string-warnings',
+                                     'bad-errors', 'bad-stability-issues', 'nonstring-stability-issue'])
+def test_stale_or_invalid_slice_cannot_turn_a_previous_failure_green(tmp_path, changed):
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings, current_report
+    project = load_project(make_project(tmp_path))
+    path = project.exports_dir / 'slice-report.json'
+    absent = report.collect(project)
+    assert absent['pass'] and not absent['slicer_run'] and absent['footer_meta']['slicer'] == 'slicer not run'
+    data = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'total_grams': 8, 'total_hours': 0.5,
+            'parts': {name: {'grams': 4, 'minutes': 15, 'ok': False, 'error': 'controlled prior failure',
+                             'sha256': hashlib.sha256((project.exports_dir / f'{name}.3mf').read_bytes()).hexdigest()}
+                      for name in ('box', 'lid')}}
+    path.write_text(json.dumps(data))
+    assert not report.collect(project)['pass']
+    if changed == 'model':
+        (project.exports_dir / 'box.3mf').write_text('rebuilt')
+    elif changed == 'settings':
+        project.slicer = {'overrides': {'wall_loops': '5'}}
+    elif changed == 'part-overrides':
+        project.slicer = {'parts': {'box': {'overrides': {'brim_width': '8'}}, 'lid': None}}
+    elif changed == 'missing-part':
+        del data['parts']['box']
+    elif changed == 'no-grams':
+        del data['parts']['box']['grams']
+    elif changed == 'bad-shape':
+        data = []
+    elif changed == 'bad-parts':
+        data['parts'] = ['box', 'lid']
+    elif changed == 'bad-row':
+        data['parts']['box'] = None
+    elif changed == 'bad-total':
+        data['total_grams'] = 'unknown'
+    elif changed == 'bad-grams':
+        data['parts']['box']['grams'] = 'unknown'
+    elif changed == 'missing-slicer':
+        del data['slicer']
+    elif changed == 'numeric-slicer':
+        data['slicer'] = 1
+    elif changed == 'empty-slicer':
+        data['slicer'] = ''
+    elif changed in ('bad-warnings', 'string-warnings', 'bad-errors', 'bad-stability-issues', 'nonstring-stability-issue'):
+        field, value = {'bad-warnings': ('warnings', 5), 'string-warnings': ('warnings', 'one warning'),
+                        'bad-errors': ('errors', {}), 'bad-stability-issues': ('stability_issues', 5),
+                        'nonstring-stability-issue': ('stability_issues', [1])}[changed]
+        data['parts']['box'][field] = value
+    if changed == 'unreadable':
+        path.unlink()
+        path.mkdir()
+    else:
+        path.write_text('{' if changed == 'bad-json' else json.dumps(data))
+    assert current_report(project) is None
+    json_path, html_path, actual = report.write_report(project)
+    check = rows(actual, 'cad-slicer')['slice report']
+    assert check['status'] == 'fail' and 'slice again' in check['message']
+    assert actual['pass'] is False and actual['slicer_run'] is False and actual['physical_fit_verified'] is False
+    assert 'slicer not run' not in actual['footer_meta']['slicer']
+    assert rows(json.loads(json_path.read_text()), 'cad-slicer') == rows(actual, 'cad-slicer')
+    assert check['message'] in html_path.read_text()
+    # A corrected current report clears the stale failure without changing optional slicing.
+    if path.is_dir():
+        path.rmdir()
+    data = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'total_grams': 8, 'total_hours': 0.5,
+            'parts': {name: {'grams': 4, 'ok': True, 'exit_code': 0, 'return_code': 0, 'part_overrides':
+                             ((project.slicer.get('parts') or {}).get(name) or {}).get('overrides', {}),
+                             'sha256': hashlib.sha256((project.exports_dir / f'{name}.3mf').read_bytes()).hexdigest()}
+                      for name in ('box', 'lid')}}
+    path.write_text(json.dumps(data))
+    assert report.collect(project)['pass'] and current_report(project) is not None
+
+
+@pytest.mark.parametrize('status,passed,reason', [
+    ({}, True, None),                                      # genuine old Bambu row
+    ({'ok': True, 'exit_code': 0, 'return_code': 0}, True, None),
+    ({'ok': True}, False, 'exit_code is missing'),
+    ({'exit_code': 0, 'return_code': 0}, False, 'ok is not true'),
+    ({'ok': True, 'exit_code': 239, 'return_code': 0}, False, 'exit_code 239'),
+    ({'ok': True, 'exit_code': 0, 'return_code': -17}, False, 'return_code -17'),
+    ({'exit_code': 239, 'return_code': 0}, False, 'exit_code 239'),
+    ({'exit_code': 0, 'return_code': -17}, False, 'return_code -17'),
+    ({'ok': True, 'exit_code': 0, 'return_code': None}, False, 'return_code None'),
+    ({'exit_code': 0, 'return_code': None}, False, 'return_code None'),
+    ({'ok': True, 'exit_code': None, 'return_code': 0}, False, 'exit_code None'),
+    ({'ok': True, 'exit_code': 0, 'return_code': '0'}, False, "return_code '0'"),
+    ({'ok': True, 'exit_code': False, 'return_code': 0}, False, 'exit_code False'),
+    ({'ok': 'true', 'exit_code': 0, 'return_code': 0}, False, 'ok is not true'),
+])
+def test_persisted_bambu_status_cannot_override_its_codes(tmp_path, status, passed, reason):
+    import hashlib
+    from cadagent.manufacturing.slicer import _settings, current_report
+    project = load_project(make_project(tmp_path))
+    path = project.exports_dir / 'slice-report.json'
+    data = {'slicer': 'Bambu Studio (command line)', **_settings(project), 'total_grams': 8, 'total_hours': 0.5,
+            'parts': {name: {'grams': 4, 'minutes': 15,
+                             'sha256': hashlib.sha256((project.exports_dir / f'{name}.3mf').read_bytes()).hexdigest()}
+                      for name in ('box', 'lid')}}
+    data['parts']['lid'].update(status, error='retained producer text')
+    path.write_text(json.dumps(data))
+    assert current_report(project) == data                # source currency is distinct from slicer success
+    collected = report.collect(project)
+    json_path, html_path, actual = report.write_report(project)
+    check = rows(actual, 'cad-slicer')['lid']
+    assert actual['pass'] is passed and actual['slicer_run'] is True and not actual['physical_fit_verified']
+    assert check['status'] == ('pass' if passed else 'fail')
+    assert rows(json.loads(json_path.read_text()), 'cad-slicer') == rows(collected, 'cad-slicer')
+    assert json.loads(path.read_text()) == data            # validation does not erase the recorded status
+    if reason:
+        assert reason in check['error'] and 'retained producer text' in check['error']
+        from html import escape
+        assert escape(reason) in html_path.read_text()
 
 
 def test_a_part_the_slicer_flagged_fails_the_report(tmp_path):

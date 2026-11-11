@@ -1081,13 +1081,13 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Approximate straight wheel travel reduces pitch coupling; torsion springs assist hips while active control
-    balances the robot. Prototype experiments do not establish power-off stability.
+  summary: Approximate straight wheel travel reduces pitch coupling; torsion springs assist hips while active control balances
+    the robot. Prototype experiments do not establish power-off stability.
   used_for:
   - docs/mechanical/linkages.md
   imported: 848ced91992f2862
-  verified: '2026-11-10: read arXiv v1 (2020-05-23), sections II-VII, pp. 2-6: mechanism, assumptions, control,
-    experiments and experimental-feature limits. No controller reproduction, physical test or cited-source audit.'
+  verified: '2026-11-10: read arXiv v1 (2020-05-23), sections II-VII, pp. 2-6: mechanism, assumptions, control, experiments
+    and experimental-feature limits. No controller reproduction, physical test or cited-source audit.'
   claims:
   - text: Upright balance uses active control; sideways fall recovery is excluded.
     status: unconfirmed
@@ -3090,8 +3090,8 @@ sources:
     spdx: Apache-2.0
     class: open
     read: false
-    note: Read root Apache-2.0 text and README licence scope at 94735fbe; wheel_tire has a CC-BY-4.0 exception whose
-      licence terms were not reviewed. No source files or meshes copied; retain per-asset attribution on reuse.
+    note: Read root Apache-2.0 text and README licence scope at 94735fbe; wheel_tire has a CC-BY-4.0 exception whose licence
+      terms were not reviewed. No source files or meshes copied; retain per-asset attribution on reuse.
   reuse:
     text: cite-only
     geometry: study-only
@@ -3111,8 +3111,8 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: URDF/Xacro model with explicit stator/rotor ownership, sensor conventions and cause-labelled limits.
-    Selected inertial inputs include measurements and estimates; reading these files does not validate dynamics.
+  summary: URDF/Xacro model with explicit stator/rotor ownership, sensor conventions and cause-labelled limits. Selected inertial
+    inputs include measurements and estimates; reading these files does not validate dynamics.
   assessment:
     built: replicated
     supply: specialty
@@ -3126,8 +3126,7 @@ sources:
     answers:
       engine: URDF/Xacro for Pinocchio and others; derived from Upkie CAD and mjbots meshes
       real: Used with the real Upkie robot per linked project; no validation here
-    caveat: Serial wheel-leg model; selected Xacro and linked conventions read, not a complete geometry or dynamics
-      audit.
+    caveat: Serial wheel-leg model; selected Xacro and linked conventions read, not a complete geometry or dynamics audit.
     assessed:
       date: '2026-11-02'
       from: readme
@@ -3135,10 +3134,9 @@ sources:
   - docs/mechanical/rendered-motion.md
   - .agents/skills/cad-motion-validation/references/trace-protocol.md
   imported: 951c1a7cdab8e467
-  verified: '2026-11-10: read README, CITATION.cff, LICENSE, meshes/wheel_tire/README.md, xacro/left_leg.xacro and
-    xacro/utils/virtual_link.xacro at 94735fbe6137276a41de0ff4cc04d2e533fa9e33; linked docs/kinematics.md (frames,
-    limits, conventions) at upkie/upkie 68bf2c6bc097140cce40b6893b548d73a0fe7a95 (published docs 13.1.0). Right
-    leg, torso, add-ons, mesh accuracy, loaders and hardware remain unvalidated.'
+  verified: '2026-11-10: read README, CITATION.cff, LICENSE, meshes/wheel_tire/README.md, xacro/left_leg.xacro and xacro/utils/virtual_link.xacro
+    at 94735fbe6137276a41de0ff4cc04d2e533fa9e33; linked docs/kinematics.md (frames, limits, conventions) at upkie/upkie 68bf2c6bc097140cce40b6893b548d73a0fe7a95
+    (published docs 13.1.0). Right leg, torso, add-ons, mesh accuracy, loaders and hardware remain unvalidated.'
   claims:
   - text: Ankle anchor frames attach to stators; motor joint axes account for the controller's sign convention.
     status: unconfirmed

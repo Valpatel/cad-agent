@@ -149,7 +149,10 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
    - `encoded` when a profile rule (`rules`) and a tested check (`checks`) carry it.
 
    Fix `year`, `authors`, `kind` and `summary` from the page: no snippet-era note stays. Edit the record where it
-   is; the importer keeps it from now on (see above). A source the map lacks goes in the group's shard as a new
+   is; the importer keeps it from now on (see above). Preserve the importer's YAML layout using
+   `tools/import_refmap.py`'s `dump`, including its string representer and line width. The health updater requires
+   an exact parse/dump round-trip before it can edit a shard; valid YAML alone does not preserve that ability.
+   Run `python -m pytest -q tests/repo/test_references_health_apply.py` after editing a shard. A source the map lacks goes in the group's shard as a new
    record, read, with its `verified` note.
 6. **Leave the rest as they are.** A record you could not read stays `snippet-only`. Name it and the reason (403,
    429, `robots.txt`, a bot check, a script-only page, a moved page) in the PR body, not in the shard. Raw link health

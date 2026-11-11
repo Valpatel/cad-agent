@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| Registry validation passes but the health updater reports a shard is not editable | [Use the importer's canonical writer and test the exact round-trip](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md) |
 | A successful Prusa slice shows only grams/time although its stability check did not run | [Retain the explicit unchecked state and recorded reason in visible reports](inbox/2026-11-10-slice-success-needs-stability-disclosure.md) |
 | A patch candidate contains required project changes | [Choose the release level from the complete fragments before cutting](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#required-project-changes-determine-the-release-level-before-cutting) |
 | An extended reference page passes source tests but both browsers reject a long prose stretch | [Remeasure the rendered page and retain accessible detailed references](inbox/agents/2026-11-10-parallel-notes-share-a-layout-budget.md#long-reference-additions-need-their-published-page-checks-again) |

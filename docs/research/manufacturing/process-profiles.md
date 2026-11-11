@@ -226,6 +226,11 @@ shows how much a resin rule depends on the machine:
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: overhang-length-max` and `compare: bridge-max` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
 
+Compare each supplier's resin, printer and resolution before applying a dimension. Hollowing and drainage values also depend on cleaning and support removal.
+
+<details>
+<summary>Resin supplier comparison: tolerance, detail, clearance, hollowing and drainage</summary>
+
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
 | Tolerance, by feature size | ±0.15 % to 30 mm (floor ±0.02 mm); ±0.2 % to 80 mm (floor ±0.06); ±0.3 % to 150 mm (floor ±0.15) | Form 4 generation, Grey resin at 100 µm, three printers | [Formlabs][formlabs-form4-design-guide] |
@@ -251,6 +256,8 @@ shows how much a resin rule depends on the machine:
 | Hollow shell; drain holes | ≥ 1 mm (the tool's floor); ≥ 2 | SL1, SL1S (MSLA) | [Prusa Research][prusa-hollowing-kb] |
 | Hollow wall; drain hole | 1–3 mm; 2–6 mm across, ≥ 2 at the lowest point | ELEGOO SatelLite | [ELEGOO][elegoo-satellite-hollowing] |
 | Hollow wall | 2.5 mm default; 1.5–2 mm miniatures; 3–4 mm strong parts | Lychee Slicer | [Mango3D (Lychee Slicer)][lychee-voxels-hollowing] |
+
+</details>
 
 <img src="../../img/research/process-escape-holes.svg" alt="Range chart of the smallest drain or escape hole for a hollow print each source asks for: 0.75 mm on a Form 4, 5 mm in HP cleaning guidance, and 10 mm to pull supports out" width="680">
 

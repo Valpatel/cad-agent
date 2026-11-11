@@ -274,6 +274,65 @@ def test_planted_defect_an_applied_by_that_only_shares_a_module():
     assert _reads(inserts, "fdm-insert-hole-cad-offset-cnckitchen")
 
 
+def _mould_review_example():
+    """Exercise our original source-bounded illustrations, not vendor code."""
+    path = ROOT / "docs/research/manufacturing/moulding-wall-bond-and-release-review.md"
+    blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    assert len(blocks) == 1
+    namespace = {}
+    exec(compile(blocks[0], str(path), "exec"), namespace)
+    return namespace
+
+
+def test_mould_wall_examples_preserve_inch_units_and_material_selection():
+    f = _mould_review_example()["wall_range_mm"]
+    assert f("ABS") == pytest.approx((1.143, 3.556))
+    assert f("polycarbonate") == pytest.approx((1.016, 3.81))
+    # Planted snippet/unconverted-unit/material substitutions must not reproduce ABS.
+    assert f("ABS") != pytest.approx((0.040, 0.140))
+    assert f("ABS") != pytest.approx((1.016, 3.556))
+    assert f("ABS") != pytest.approx(f("polycarbonate"))
+    for unknown in ("FDM ABS", "unknown", "glass-filled nylon"):
+        with pytest.raises(ValueError, match="consult"):
+            f(unknown)
+
+
+def test_mould_bond_candidates_preserve_grade_direction_and_retention():
+    f = _mould_review_example()["bond_route"]
+    assert f("Texin 983-000000", "ABS Lustran") == "chemical-candidate-qualify"
+    assert f("Santoprene 101-87", "ABS Lustran") == "mechanical-retention-review"
+    # A table dash, an unknown grade and the reversed layer direction are all unlisted.
+    for over, sub in (("Elastosil 3003/30 A/B", "ABS Lustran"), ("TPU", "ABS Lustran"),
+                      ("ABS Lustran", "Texin 983-000000"), ("Texin 983-000000", "ABS")):
+        assert f(over, sub) == "unlisted-consult"
+
+
+def test_mould_release_example_never_turns_missing_assumptions_into_approval():
+    f = _mould_review_example()["release_review"]
+    case = dict(feature_required=True, pull_named=True, method="bump-off", brittle=True, qualified=False)
+    assert f(**case) == "do not approve unqualified brittle deformation"
+    assert f(**{**case, "pull_named": False}) == "name pull direction and parting line"
+    assert f(**{**case, "brittle": False}) == "do not approve unqualified deformation"
+    assert f(**{**case, "qualified": True}) == "toolmaker review required"
+    assert f(**{**case, "method": "side-action"}) == "toolmaker review required"
+    assert f(**{**case, "feature_required": False}) == "consider removing unnecessary undercut"
+
+
+def test_three_mould_reads_preserve_identity_and_remove_the_universal_snippet():
+    reg = load_registry()
+    pairs = (("pl-mould-walls", "protolabs-injection-molding-wall-thickness-guidelines"),
+             ("pl-overmould", "protolabs-designing-for-overmolding-design-tip"),
+             ("fictiv-mould-undercuts", "fictiv-injection-molding-undercuts"))
+    for alias, canonical in pairs:
+        ref = reg.resolve(alias)
+        assert ref.id == canonical and ref.kind == "source"
+        assert alias not in reg.entries, "a short citation is not another document"
+        assert ref.data["evidence"]["class"] == "read"
+        assert ref.data["confidence"] == {"level": "low", "estimate": 0.4, "sources": 1}
+        assert not ref.data.get("claims"), "do not silently verify imported snippet claims"
+        assert "docs/research/manufacturing/moulding-wall-bond-and-release-review.md" in ref.data["used_for"]
+
+
 def _bend_hole_example():
     """Run our published, self-contained illustration, never vendor code."""
     path = ROOT / "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"

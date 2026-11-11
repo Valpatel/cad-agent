@@ -15,6 +15,7 @@ flowchart TD
 
 | Topic | Start here |
 |---|---|
+| Moulding review | [Walls, bonding and part release](moulding-wall-bond-and-release-review.md) |
 | Process rules | [Profiles and confidence](process-profiles.md) |
 | Printer observation | [Bambu cloud evidence and existing skills](bambu-cloud.md) |
 | PEM micro-fasteners | [Family selection and qualified evidence](pem-micro-fasteners.md) |

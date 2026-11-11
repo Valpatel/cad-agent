@@ -106,6 +106,8 @@
 | A release preserves historical notes but its current introduction still links to a moved directory | [Check current navigation outside released history](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-current-navigation-outside-released-history) |
 
 | A retirement preflight fetches despite remote-only scope, or mandatory Python checks disappear under optimization | [Enforce retirement boundaries under optimized Python](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#enforce-retirement-boundaries-under-optimized-python) |
+| Gates fail before any job while the CLI suggests a workflow-file issue | [Inspect actual startup annotations](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#inspect-actual-startup-annotations-before-a-bounded-recovery) |
+| A merge rejects locally refreshed passing gates because the expected app did not post them | [Keep local live verification separate from Actions-owned statuses](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#local-live-verification-must-not-post-actions-owned-statuses) |
 
 | A phone page overflows despite valid source links and bounded diagrams | [Short display aliases preserve source identity](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#short-display-aliases-preserve-source-identity-on-narrow-pages) |
 

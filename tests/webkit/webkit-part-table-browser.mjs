@@ -6,7 +6,7 @@ const html = `<!doctype html><html lang="en"><meta name="viewport" content="widt
 <tr data-part-key="a" data-part-label="Bolt 10"><td>Bolt 10</td><td data-sort-value="2">2 pieces</td><td data-sort-value="10">$10.00</td></tr>
 <tr data-part-key="b" data-part-label="Bolt 2"><td>Bolt 2</td><td data-sort-value="10">10 pieces</td><td data-sort-value="2">$2.00</td></tr>
 <tr data-part-key="c" data-part-label="Plate"><td>Plate</td><td data-sort-value="">Not specified</td><td data-sort-value="">Not priced</td></tr>
-<tr data-part-key="d" data-part-label="Rod"><td>Rod</td><td data-sort-value="1">1 piece</td><td data-sort-value="2">$2.00</td></tr>
+<tr data-part-key="d" data-part-label="Rod"><td>Rod</td><td data-sort-value="1">1 piece<small>buy one length<br>cut 4 per length</small></td><td data-sort-value="2">$2.00<small>per piece</small></td></tr>
 </tbody><tfoot><tr><td>Total</td><td>13 known pieces</td><td>$14 known</td></tr></tfoot></table></div></main><script type="module">
 import {createPartTracker} from '/kit/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/part-table.js';
 window.tracker=createPartTracker({project:'fixture'});window.progressTools=mountProgressTools(document.getElementById('progress'),tracker);
@@ -22,6 +22,7 @@ try {
   const ids = () => page.locator('tbody tr').evaluateAll(rows => rows.map(row => row.dataset.partKey));
   await page.goto(site.url + '/fixture?pagination'); await page.waitForFunction(() => document.body.dataset.ready === 'true');
   const snap = scope => page.evaluate(scope => window.tableAPI.snapshot(scope), scope);
+  const annotated=(await snap('all')).rows.find(row=>row[0]==='d');assert.equal(annotated[2],'1 piece\nbuy one length\ncut 4 per length');assert.equal(annotated[3],'$2.00\nper piece');
   assert.equal((await snap('matched')).rows.length, 4, 'pagination must not truncate printable matches');
   await page.getByRole('button', {name:'Next page of Assembly parts'}).click();
   await page.getByRole('checkbox', {name:'Ordered: Plate',exact:true}).check();
@@ -29,9 +30,9 @@ try {
   const checklist = page.waitForEvent('popup');
   await page.getByRole('button', {name:'Print checklist',exact:true}).click();
   const printed = await checklist; await printed.waitForLoadState();
-  assert.equal(await printed.locator('tbody tr').count(), 4);
+  assert.equal(await printed.locator('tbody tr[data-print-part]').count(), 4);
   assert.match(await printed.locator('body').textContent(), /Fixture project.*fixture-v1/);
-  assert.match(await printed.locator('tbody tr').nth(2).textContent(), /☑/);
+  assert.match(await printed.locator('tbody tr[data-print-part]').nth(2).textContent(), /☑/);
   assert.equal(await page.locator('tbody tr[hidden]').count(), 2);
   assert.equal(await page.locator('tbody').innerHTML(), beforePrint, 'printing preserves live rows, page and checklist state');
   await printed.evaluate(async ({url,data}) => {
@@ -47,10 +48,28 @@ try {
     const compact=await printed.locator('th,td[data-print-kind=number],td[data-print-kind=status]').evaluateAll(cells=>cells.map(cell=>{const range=document.createRange();range.selectNodeContents(cell);const lines=[...range.getClientRects()],box=cell.getBoundingClientRect();return {text:cell.textContent,lines:lines.length,within:lines.every(line=>line.left>=box.left&&line.right<=box.right)};}));
     assert.ok(compact.every(cell=>cell.lines===1&&cell.within),JSON.stringify(compact.filter(cell=>cell.lines!==1||!cell.within)));
     if(engine===chromium)await printed.pdf({path:`${out}/checklist-${format}.pdf`,format,landscape,printBackground:true});
-    const layout=await printed.evaluate(()=>({headers:getComputedStyle(document.querySelector('thead')).display,rows:[...document.querySelectorAll('tbody tr')].length,overflow:document.documentElement.scrollWidth>innerWidth}));
+    const layout=await printed.evaluate(()=>({headers:getComputedStyle(document.querySelector('thead')).display,rows:[...document.querySelectorAll('tbody tr[data-print-part]')].length,overflow:document.documentElement.scrollWidth>innerWidth}));
     assert.equal(layout.headers,'table-header-group');assert.equal(layout.rows,75);assert.equal(layout.overflow,false);
   }
   await printed.screenshot({path:`${out}/checklist-print.png`,fullPage:true});
+  // Dense BOM cells carry procurement annotations; their nowrap minima must not
+  // starve IDs/names into one-character columns or force a row across a sheet.
+  const rich={label:'Annotated procurement list',project:'Fixture project',revision:'rich-v1',notice:'Model export pending remains a per-part warning',scope:'all',total:40,
+    columns:['Part ID','Part','Supplier part number','Quantity needed','Unit price','Order cost','Alternates','Ordered','In hand'],
+    columnTypes:['text','text','text','number','number','number','text','status','status'],
+    rows:Array.from({length:40},(_,i)=>[`rich-${String(i+1).padStart(3,'0')}`,'Tapped linear shaft with threaded ends and full source-specific assembly description — Model export pending','6649K433 — primary supplier', '12 — buy 2 packs of 10, cut 4 per length','$9.60 — $0.096 per piece','$19.20 — used $11.52',`Sourcing record ${String(i+1).padStart(3,'0')} — `+'Source alternative retains the recorded procurement limits. '.repeat(15),'☑','☐'])};
+  await printed.evaluate(async({url,data})=>{const {renderPartChecklist}=await import(url);renderPartChecklist(document,data);},{url:site.url+'/kit/part-table.js',data:rich});
+  for(const format of ['A4','Letter']){
+    const width=(format==='A4'?297:279.4)-24,height=(format==='A4'?210:215.9)-24;
+    await printed.setViewportSize({width:Math.floor(width/25.4*96),height:900});
+    const layout=await printed.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,rows:[...document.querySelectorAll('tbody tr[data-print-part]')].map(row=>({id:row.cells[1].textContent,height:row.parentElement.getBoundingClientRect().height,nameWidth:row.cells[2].getBoundingClientRect().width})),cells:[...document.querySelectorAll('td[data-print-kind=number],td[data-print-kind=status]')].map(cell=>{const range=document.createRange();range.selectNodeContents(cell);const b=cell.getBoundingClientRect();return {text:cell.textContent,within:[...range.getClientRects()].every(r=>r.left>=b.left&&r.right<=b.right)};})}));
+    assert.equal(layout.overflow,false);assert.ok(layout.rows.every(row=>row.height<=height/25.4*96&&row.nameWidth>=100));assert.ok(layout.cells.every(cell=>cell.within));
+    assert.deepEqual(await printed.locator('tbody tr[data-print-part]').evaluateAll(rows=>rows.map(row=>[...row.cells].slice(1).map(cell=>cell.textContent))),rich.rows.map(row=>row.map((value,index)=>index===6?'See note below':value)));
+    assert.equal(await printed.locator('.cad-print-note').count(),40);
+    const groups=await printed.locator('tbody').evaluateAll(bodies=>bodies.map(body=>({key:body.dataset.printKey,id:body.querySelector('[data-print-part]').cells[1].textContent,note:body.querySelector('[data-print-column=Alternates]').textContent})));
+    assert.deepEqual(groups.map(group=>[group.key,group.id,group.note]),rich.rows.map(row=>[row[0],row[0],'Alternates: '+row[6]]));
+    if(engine===chromium)await printed.pdf({path:`${out}/rich-${format}.pdf`,format,landscape:true,printBackground:true});
+  }
   await printed.close();
   await page.getByRole('searchbox').fill('bolt');
   assert.equal((await snap('matched')).rows.length, 2);

@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A full procurement BOM retains every ID but prints hundreds of pages with one-character name columns | [Budget annotated numeric columns and inspect actual readable rows](inbox/2026-11-11-annotated-numbers-need-print-column-budgets.md) |
 | Bambu grams or persisted `ok` hide failure codes, malformed slice metadata crashes formatting, or stale evidence becomes "slicer not run" | [Preserve producer codes and distinguish optional absence from stale evidence](inbox/2026-11-11-slice-status-needs-codes-and-currency.md) |
 | A pure site test reaches a browser-capable build helper without a retained execution log | [Inspect transitive rendering and use the existing client-diagram build contract](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#a-pure-site-test-can-reach-a-browser-capable-build-helper) |
 | A pure repo-map/site suite fails with `needs the existing Node 22 site runtime` | [Bind the installed runtime for the parent and child processes](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#site-checks-also-need-an-explicit-runtime) |

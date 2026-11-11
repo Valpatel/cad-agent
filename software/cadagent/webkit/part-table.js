@@ -110,7 +110,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
         buttons.find(item => item.index === col.index)?.type || (rows.some(row => row.cells[col.index]?.hasAttribute('data-sort-value')) ? 'number' : 'text'))],
       rows: selected.map(row => [row.dataset.partKey || row.dataset.partLabel || '', ...columns.map(col => {
         const cell = row.cells[col.index], check = cell?.querySelector('input[type=checkbox]');
-        return check ? (check.checked ? '☑' : '☐') : (cell?.dataset.printValue ?? cell?.textContent.trim() ?? '—');
+        return check ? (check.checked ? '☑' : '☐') : (cell?.dataset.printValue ?? printableCellText(cell));
       })]) };
   };
   if (printable) {
@@ -172,6 +172,20 @@ export function mountProgressTools(host, tracker) {
   return { element: box, dispose() { disposed = true; ++importGeneration; unsubscribe(); box.remove(); } };
 }
 
+// Preserve semantic annotation boundaries even for rows hidden by pagination.
+// innerText would discard off-page rows, while textContent concatenates block notes.
+function printableCellText(cell) {
+  if (!cell) return '—';
+  const text = node => {
+    if (node.nodeType === 3) return node.textContent;
+    if (node.nodeType !== 1 || node.hidden || node.getAttribute('aria-hidden') === 'true') return '';
+    if (node.tagName === 'BR') return '\n';
+    const value = [...node.childNodes].map(text).join('');
+    return /^(SMALL|P|DIV|LI|DETAILS|SUMMARY)$/.test(node.tagName) ? '\n' + value + '\n' : value;
+  };
+  return [...cell.childNodes].map(text).join('').replace(/[ \t]*\n[ \t]*/g, '\n').replace(/\n{2,}/g, '\n').trim();
+}
+
 // Build a separate print document; never hide or mutate the live table to print it.
 export function renderPartChecklist(doc, data) {
   const make = (tag, text) => { const element = doc.createElement(tag); if (text !== undefined) element.textContent = text; return element; };
@@ -182,22 +196,36 @@ export function renderPartChecklist(doc, data) {
   // widths keep whole numbers/short headers intact; names and IDs take the rest.
   const landscape = data.columns.length + 1 >= 8;
   doc.body.dataset.printOrientation = landscape ? 'landscape' : 'portrait';
-  const style = make('style', `@page{margin:12mm;${landscape ? 'size:landscape' : ''}}*{box-sizing:border-box}body{font:11pt/1.4 system-ui,sans-serif;color:#111;background:white;margin:20px}h1{font-size:20pt;margin-bottom:8px}p{overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:auto;font-size:9pt}th,td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{white-space:nowrap;overflow-wrap:normal}th[data-print-kind=number],td[data-print-kind=number],th[data-print-kind=status],td[data-print-kind=status]{white-space:nowrap;overflow-wrap:normal;width:1%}thead{display:table-header-group}tr{break-inside:avoid}button{font:inherit;padding:10px;margin-bottom:12px}@media print{body{margin:0}button{display:none}}`); doc.head.append(style);
+  const style = make('style', `@page{margin:12mm;${landscape ? 'size:landscape' : ''}}*{box-sizing:border-box}body{font:11pt/1.4 system-ui,sans-serif;color:#111;background:white;margin:20px}h1{font-size:20pt;margin-bottom:8px}p{overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:auto;font-size:9pt}th,td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{white-space:normal;overflow-wrap:normal}td[data-print-kind=text]{min-width:8ch}td:nth-child(2){min-width:10ch}td[data-print-primary]{min-width:18ch}td[data-print-kind=number]{white-space:normal;overflow-wrap:normal;width:1%}th[data-print-kind=status],td[data-print-kind=status],td[data-print-compact]{white-space:nowrap;overflow-wrap:normal;width:1%}thead{display:table-header-group}tbody,tr{break-inside:avoid}.cad-print-note p{margin:3px 0;line-height:1.35}button{font:inherit;padding:10px;margin-bottom:12px}@media print{body{margin:0}button{display:none}}`); doc.head.append(style);
   const print = make('button', 'Print / Save PDF'); print.type = 'button'; print.onclick = () => doc.defaultView.print();
   doc.body.append(print, make('h1', data.label), make('p', `${data.project || 'Project unspecified'} · Revision: ${data.revision || 'unavailable'}`),
     make('p', `${data.scope === 'all' ? 'All parts' : 'Matching parts, all pages'}: ${data.rows.length} of ${data.total}${data.query ? ` · Search: ${data.query}` : ''}`));
   if (data.notice) doc.body.append(make('p', data.notice));
-  const table = make('table'), head = make('thead'), headers = make('tr'), body = make('tbody');
+  const table = make('table'), head = make('thead'), headers = make('tr');
   const kinds = ['status', ...data.columns.map((_,index) => {
     if (['number','status'].includes(data.columnTypes?.[index])) return data.columnTypes[index];
     return 'text';
   })];
-  for (const [index,title] of ['Done', ...data.columns].entries()) { const th = make('th', title); th.scope = 'col'; th.dataset.printKind=kinds[index]; headers.append(th); }
-  head.append(headers); table.append(head, body);
+  const titles = ['Done', ...data.columns];
+  const primary = kinds.findIndex((kind,index) => index > 1 && kind === 'text');
+  // Long supporting prose belongs beneath its part, at the full sheet width.
+  // Keep identity/name, numeric values and status fields in the ordinary grid.
+  const columns = titles.map((_,index) => index);
+  const longNote = (value,index) => kinds[index] === 'text' && index > 1 && index !== primary && String(value ?? '').length > 240;
+  for (const index of columns) { const th = make('th', titles[index]); th.scope = 'col'; th.dataset.printKind=kinds[index]; headers.append(th); }
+  head.append(headers); table.append(head);
+  const scalar = /^[+-]?(?:[$€£¥]\s*)?(?:\d[\d,.]*|\.\d+)%?$|^[—–-]$/u;
   for (const values of data.rows) {
-    const row = make('tr');
-    for (const [index,value] of ['☐', ...values].entries()) { const cell=make('td', value); cell.dataset.printKind=kinds[index]; row.append(cell); }
+    const body = make('tbody'), row = make('tr'), fields = ['☐', ...values]; row.dataset.printPart='';body.dataset.printKey=String(values[0]??'');
+    const notes=columns.filter(index=>longNote(fields[index],index));
+    for (const index of columns) { const value=fields[index],cell=make('td',notes.includes(index)?'See note below':value); cell.dataset.printKind=kinds[index]; if(index===primary)cell.dataset.printPrimary=''; if(kinds[index]==='number'&&scalar.test(String(value).trim()))cell.dataset.printCompact=''; row.append(cell); }
     body.append(row);
+    if (notes.length) {
+      const noteRow=make('tr'),cell=make('td');cell.colSpan=columns.length;cell.className='cad-print-note';
+      for(const index of notes){const p=make('p');p.dataset.printColumn=titles[index];p.append(make('strong',titles[index]+': '),doc.createTextNode(fields[index]??''));cell.append(p);}
+      noteRow.append(cell);body.append(noteRow);
+    }
+    table.append(body);
   }
   doc.body.append(table);
 }

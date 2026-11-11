@@ -733,6 +733,9 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
 
 ## Shop-made silicone moulds: plan the batch and test the interface
 
+<details>
+<summary>Material quantities, mix basis and prepared-master compatibility</summary>
+
 Before preparing a mould, record the exact rubber and casting material, master printing process/resin, surface
 finish, sealer and release agent in the design dossier. Separate the volume to fill from the combined mixed mass,
 then split that mass using the selected product's **weight** ratio. A volume ratio is a different instruction.
@@ -755,6 +758,8 @@ in its registry entry; recompute dimensions and conversions rather than copying 
 These are planning and experiment prompts. No casting calculator, profile limit, physical fit/strength result,
 mould life, or safety certification is added by this reading batch. Remaining source coverage is tracked in #552.
 [ref:smoothon-sla-inhibition-faq] [ref:smoothon-oomoo-bulletin] [ref:smoothon-quantity-faq]
+
+</details>
 
 ## 9. What this changes in cad-agent
 

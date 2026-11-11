@@ -813,6 +813,36 @@ the unresolved temperature wording and remaining coverage stay in the source rec
 
 </details>
 
+<details>
+<summary>Select material and investigate trapped air separately</summary>
+
+For a printed compliant-part master, distinguish the master, mould rubber and casting material. Record Shore
+scale and value, viscosity, working time and removal path separately. Equal hardness does not imply equal flow,
+tear behaviour or cast-latch function. Compare exact grades in their bulletins; generic viscosity bands do not
+override a product's no-vacuum guidance or casting-material exclusions.
+[ref:smoothon-shore-hardness-guide] [ref:smoothon-viscosity-guide] [ref:smoothon-technical-charts]
+[ref:smoothon-mold-max-bulletin] [ref:smoothon-dragon-skin-nv-bulletin]
+
+Record bubble location and mixing, master/base, porosity, moisture and release history. Entrapped mixing air,
+air displaced from beneath a master and moisture-related urethane foaming need different investigations.
+A low-viscosity or no-vacuum label does not establish a void-free part. Generic vacuum notation and cure/demould
+endpoints remain source-specific; they are not equipment-sizing or cure rules.
+[ref:smoothon-rubber-bubbles-faq] [ref:smoothon-resin-bubbles-faq]
+[ref:smoothon-silicone-vacuum-faq] [ref:smoothon-slow-deair-faq] [ref:smoothon-smooth-cast-300-bulletin]
+
+Vacuum preparation and pressure during cure are different interventions. Pressure can distort voids in the rubber
+or collapse a hollow master; it does not remove urethane moisture sensitivity. Use only the actual commercial
+chamber's instructions and limits. The overview/manual pressure conflict needs manufacturer clarification, and a
+marketing capability is no permission to exceed the manual. Improvised vessels are excluded. Gel, handling strength
+and full cure are distinct endpoints; generic compressor tips do not override chamber instructions.
+[ref:smoothon-pressure-casting-faq] [ref:smoothon-pressure-hold-faq]
+[ref:smoothon-blue-pressure-chamber-guide] [ref:smoothon-pressure-chamber-overview]
+
+These are experiment-review questions, not pressure, vacuum, additive or thermal recipes. No physical void,
+removal, fit, strength or safety qualification was performed; exact conflicts and remaining coverage stay in #552.
+
+</details>
+
 ## 9. What this changes in cad-agent
 
 What reads the YAML today (solid) and what is planned to (dashed):

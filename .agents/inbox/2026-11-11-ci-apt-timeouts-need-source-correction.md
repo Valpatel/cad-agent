@@ -45,3 +45,18 @@ the observed mirror/source boundary, not a complete apt configuration validator.
 The original Chromium run also exposed missing tool/test ownership table entries.
 The helper was moved under the actual growth split `tools/ci/`, with a mapped
 README, and the test's existing README table now owns the regression harness.
+
+
+A second review control showed that merely nonempty source fields accepted
+`Types: deb-src`, `Suites: jammy`, `Signed-By: /tmp/other.gpg` and `Enabled: maybe`.
+Temporary-file controls reproduced all four against 5758b085. The guard now
+checks the workflow's actual Ubuntu 24.04/noble OS identity, derives the four
+expected suite names from that codename and verifies complete nonoverlapping
+suite coverage, `Types: deb`, the four default components, the Ubuntu archive
+keyring and Enabled absent/yes. It rejects extra fields rather than treating a
+partial parse as a known profile. Combined and producer-style split stanzas are
+accepted without source mutation; altered values fail before mirror mutation.
+The source field profile is grounded in Canonical's
+[pinned cloud-init producer template](https://github.com/canonical/cloud-init/blob/179c69886be4c8e7e93bf22c34e97bf03e142b22/templates/sources.list.ubuntu.deb822.tmpl),
+with runner URIs transformed by the pinned runner configuration above. This
+supports only the named workflow image/profile, not arbitrary apt installations.

@@ -10,6 +10,7 @@ flowchart LR
 
 | Incident | Lesson |
 | --- | --- |
+| [Procurement print columns](2026-11-11-annotated-numbers-need-print-column-budgets.md) | Preserve numeric tokens and same-part long notes without starving printable identities/names. |
 | [Camera matrices](2026-11-10-camera-state-needs-current-matrices.md) | Update synchronous camera matrices before projection/picking and fit outside real overlays. |
 | [Outline scroll state](2026-11-08-outline-visibility-needs-scroll-state.md) | Keep an unchanged active entry visible on page scroll; observe actual scroll/frame delivery before strict geometry. |
 | [Whole-set handoff](2026-11-08-release-links-need-current-project-inputs.md) | Link only the current native project; separate plate handoff from per-part estimates. |

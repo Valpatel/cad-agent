@@ -64,7 +64,7 @@ jobs:
         run: |
           # Hosted Ubuntu sources use mirror+file:/etc/apt/apt-mirrors.txt.
           # Drop the stalled Azure HTTP entry; retain the image's Canonical HTTPS fallbacks.
-          sudo python3 tools/ci_apt_mirror.py
+          sudo python3 tools/ci/apt_mirror.py
           for try in 1 2 3; do
             sudo timeout 90 apt-get update -q &&
               sudo timeout 90 apt-get install -yq --no-install-recommends libglu1-mesa libxrender1 libxcursor1 libxft2 libxinerama1 libgl1 libegl1 &&

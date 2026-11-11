@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-SPEC = importlib.util.spec_from_file_location("ci_apt_mirror", Path(__file__).resolve().parents[2] / "tools/ci_apt_mirror.py")
+SPEC = importlib.util.spec_from_file_location("ci_apt_mirror", Path(__file__).resolve().parents[2] / "tools/ci/apt_mirror.py")
 mirror = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mirror)
 

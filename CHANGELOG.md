@@ -9,6 +9,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.34.2 (2026-11-11)
+
+**Changed**
+- Linkage and rendered-motion reviews now include source-backed questions about wheel-leg balance, contact states, sensor bases, motor signs and the causes of joint limits. The Ascento paper and selected Upkie model documentation are marked read with explicit remaining coverage; this adds no dynamics or passive-stability certification (#545).
+- Dossier and design-process reviews now prompt separate-part justification, handling/insertion review and explicit tolerance assumptions, based on bounded readings of Nicholas P. Dewhurst and Fritz Scholz. The general DFA worksheet and statistical stack-up helper remain deferred (#547).
+
 ## v0.34.1 (2026-11-11)
 
 **Fixed**

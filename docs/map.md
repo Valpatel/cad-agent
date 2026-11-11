@@ -2503,7 +2503,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tools — 10 folders</summary>
+<summary>tools — 11 folders</summary>
 
 <details>
 <summary><code>tools/README.md</code> — 1 folders</summary>
@@ -2528,6 +2528,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tools/anim` |
+
+</details>
+
+<details>
+<summary><code>tools/ci/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-ci/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/ci/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/ci` |
 
 </details>
 

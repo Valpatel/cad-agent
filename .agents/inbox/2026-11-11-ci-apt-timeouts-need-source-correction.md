@@ -26,3 +26,22 @@ and tests remain separate gates. `python3 tests/repo/test_ci_apt_mirror.py` pass
 
 Durable explanation: [process lesson](../../docs/lessons/process/agent-process.md#correct-a-failing-ci-mirror-before-retrying-the-same-provisioning-path).
 Tracking: #575, PR #576.
+
+
+## Verify priorities and active source use before declaring the mirror corrected
+
+Independent review reproduced false success on the initial helper with Azure
+`priority:99` and archive `priority:garbage`. On 2026-11-11 a temporary-file control
+against the prior committed helper reproduced both successes. A dormant mirror
+list also cannot prove apt uses it. The correction now requires the pinned three
+URL/priority pairs (or their already-corrected two-fallback form), rejects missing,
+duplicate, extra and malformed entries, and verifies active Ubuntu deb822 source
+stanzas reference exactly `mirror+file:/etc/apt/apt-mirrors.txt` before any write.
+Source files are read without mutation. Fixture controls reject a direct Azure or
+archive source, disabled/comment-only source, and missing signature field; all
+failure controls preserve both inputs byte-for-byte. This is a narrow guard for
+the observed mirror/source boundary, not a complete apt configuration validator.
+
+The original Chromium run also exposed missing tool/test ownership table entries.
+The helper was moved under the actual growth split `tools/ci/`, with a mapped
+README, and the test's existing README table now owns the regression harness.

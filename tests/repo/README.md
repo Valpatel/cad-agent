@@ -53,6 +53,7 @@ flowchart TD
 | `test_agent_prompt.py` | What people paste and agents read (`docs/agent-prompt.txt`): the README opens with the install commands and the paste-in line, in about 125 words; its commands and report fields hold, and `tools/quickstart_eval.py` grades runs honestly |
 | `test_fetch_user_agent.py` | Every Python fetch in `src/` and `tools/` sends its own User-Agent (the site's CDN blocks urllib's default), and agents are told the same |
 | `test_areas.py` | `docs/areas.yaml`, the topic tree: it parses, and everything it names exists and is placed |
+| `test_ci_apt_mirror.py` | Hosted runner mirror priorities and active source use; reject unknown layouts before mutation |
 | `test_ci_gates.py` | The merge gates in `tools/ci_gates.py`: branch flow, review verdicts, release versions |
 | `test_cut_release.py` | `tools/cut_release.py`: the release-branch edits, checked against CI's release gate |
 | `test_layout.py` | Where files go: no flat tests, no new top-level folders, folders split as they grow |

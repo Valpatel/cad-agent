@@ -11,6 +11,6 @@ flowchart LR
 
 | File | Purpose |
 | --- | --- |
-| [apt_mirror.py](apt_mirror.py) | Remove the exact stalled Azure HTTP mirror entry while retaining existing Canonical HTTPS sources and apt signature checks. |
+| [apt_mirror.py](apt_mirror.py) | Remove the exact stalled Azure HTTP mirror entry after validating pinned priorities and active mirror-file sources; retain Canonical HTTPS fallbacks and apt signature checks. |
 
 [Tools](../README.md)

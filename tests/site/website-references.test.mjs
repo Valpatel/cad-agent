@@ -298,3 +298,21 @@ test('the reference pages\' stylesheet sets colours only through the site\'s tok
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
   assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
 });
+
+test('moulding review aliases publish the same three full-read source identities', async () => {
+  const page = await text('research/manufacturing/moulding-wall-bond-and-release-review.html');
+  const pairs = [
+    ['pl-mould-walls', 'protolabs-injection-molding-wall-thickness-guidelines'],
+    ['pl-overmould', 'protolabs-designing-for-overmolding-design-tip'],
+    ['fictiv-mould-undercuts', 'fictiv-injection-molding-undercuts'],
+  ];
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of pairs) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'citation alias is not another document');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).status, 'source');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+});

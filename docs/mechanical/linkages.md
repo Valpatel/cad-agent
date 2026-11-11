@@ -126,6 +126,18 @@ solver's angles to 1e-4°. A [motion-trace](rendered-motion.md) contract declare
 sampled together and its other joints solved, and a renderer that leaves the loop open or assembles it the other way
 fails.
 
+## Reviewing a wheel-leg design
+
+Klemm, Morra, Salzmann and colleagues' *Ascento* paper uses a linkage to approximate wheel travel through the
+centre of mass, reducing pitch coupling. Its springs unload the hips; upright balance still needs active wheel
+control. The simplified dynamics fix leg geometry and neglect slip, delay and joint losses; gains vary with height.
+Fall recovery also depends on the resting contacts, with sideways recovery excluded. [ref:ascento-a-two-wheeled-jumping-robot]
+
+For a candidate design, use the existing sweeps to inspect the wheel path and branch limits, then record separately
+the mass configuration, spring/load assumptions, controller operating range and recoverable contact states. A loop
+that closes does not establish power-off passive stability or recovery. These are review questions derived from the paper,
+not an implementation or reproduction of its controller.
+
 ## Limits
 
 - **Rigid links on ideal pins, planar, position only.** No velocity, acceleration, force, dynamics or joint clearance.

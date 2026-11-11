@@ -34,8 +34,8 @@ rows:
     are not run by dfm.check.
   draft_issue:
     title: Add boss-to-boss spacing and per-material self-tap pilot sizes
-    body: printed_boss covers DELTA PT only. Add boss spacing, gusset and a pilot-hole table by filament/resin (Bossard 1.8-2.5
-      mm wall, RapidDirect 80% pilot) and let dfm.check judge im-boss-* rules.
+    body: printed_boss covers DELTA PT only. Add boss spacing, gusset and a pilot-hole table by filament/resin (RapidDirect 80% pilot remains to be checked; the current
+      Bossard article does not corroborate the imported wall dimension) and let dfm.check judge im-boss-* rules.
     posted: false
 - id: ca-3-minimum-wall-and-feature-size-fdm-sla
   number: '3'

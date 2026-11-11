@@ -363,8 +363,8 @@ sources:
   process_groups:
   - inserts
   evidence:
-    class: snippet-only
-    numbers: some
+    class: read
+    numbers: none
     tested: 'no'
     authority: primary
   confidence:
@@ -372,14 +372,23 @@ sources:
     estimate: 0.4
     sources: 1
   claims:
-  - text: Material around hole 1.8-2.5 mm thick
+  - text: Choose the screw family for the plastic chemistry; a steel tapping profile is not a generic plastic fastening specification.
     status: unconfirmed
-    evidence: No search result mentioned a 1.8-2.5 mm wall; sources give boss wall as 40-60% of nominal or defer to testing
-      (Pencom).
-  summary: 'Why plastic needs special thread profiles; low-torque forming screw; boss material thickness advice. Note: Snippet
-    only'
-  used_for: []
+    evidence: 'Sections What Are Self-Tapping Screws? and How to Choose: the supplier generally associates thread forming
+      with thermoplastics and thread cutting with thermosets. This does not qualify a particular printed resin or provide
+      joint capacity.'
+  summary: Qualitative plastic screw-family selection and supplier product claims; no numerical boss wall, pilot size, tightening
+    torque or load rating. Not a quantitative design guide.
+  used_for:
+  - docs/research/process-profiles.yaml
+  - docs/research/manufacturing/process-profiles.md
+  - .agents/skills/design-process/SKILL.md
   imported: 990542db4fa51100
+  verified: '2026-11-11: Fully read article from What Are Self-Tapping Screws? through Advice on Fastener Use, including ecosyn
+    plast claim list; inspected screw photograph. No engineering tables or dimensional diagrams, displayed edition or publication
+    date. HTML SHA-256 b5b250c9101e26eec7852dfe0e8603ba3c6ed9f894b6374dbf2b86410b8b3871. The imported 1.8–2.5 mm wall assertion
+    was not corroborated in this current article snapshot; this does not establish whether it appeared historically. No coupon,
+    FDM validation, performance verification or licence review.'
 - id: e-z-lok-brochure-2026
   kind: guide
   category: manufacturing-guides

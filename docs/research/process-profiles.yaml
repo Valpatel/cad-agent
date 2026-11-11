@@ -5478,8 +5478,8 @@ decisions:
         needs: [insert_fits]
         choose: thread-forming-screw
         because:
-          - assembled once, a self-tapping screw is the quick one-off method [ref:hubs-3dp-threaded-fasteners];
-            thread-cutting screws suit one-time assembly [ref:covestro-screws]
+          - assembled once, a self-tapping screw is a quick one-off method [ref:hubs-3dp-threaded-fasteners];
+            forming generally suits thermoplastics, cutting thermosets [ref:bossard-fastening-technology-self-tapping-screws-for-plastic]
           - an M3 screw driven straight into a print pulled out about as hard as a heat-set insert (about 120 kg)
             [ref:embedded-inserts]
         rules: [fdm-self-tap-engagement-hubs, fdm-thread-wall-min-hubs]
@@ -5488,7 +5488,8 @@ decisions:
           [ref:embedded-inserts]
         gap: "the screw's own pull-out is not computed: the insert's capacity ({insert_fits.allowed_n} N allowed) stands in, on
           one M3 test where screw and insert pulled out alike at about 120 kg, with no margin [ref:embedded-inserts];
-          test the screw in your material"
+          test the screw in your material. Bossard provides no printed-joint capacity or wall dimension
+          [ref:bossard-fastening-technology-self-tapping-screws-for-plastic]"
 
 shop_tables:
   - id: sendcutsend-5052-and-mild-steel

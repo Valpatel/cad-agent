@@ -49,7 +49,7 @@ sources:
   title: Injection Molding Wall Thickness Guidelines (improving part design with uniform wall thickness)
   authors: []
   org: Protolabs
-  year: null
+  year: 2017
   url: https://www.protolabs.com/resources/design-tips/improving-part-design-with-uniform-wall-thickness/
   access: free
   terms: cited and summarised, never copied
@@ -68,7 +68,7 @@ sources:
   process_groups:
   - mould
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: primary
@@ -76,21 +76,24 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: General wall thickness range 0.040-0.140 (units unconfirmed in snippet)
-    status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Protolabs tip on uniform walls; search summary cited a general wall range and sink/void risk in thick sections.
-    Note: Units not shown in snippet.'
-  used_for: []
+  summary: Material-specific injection-moulding wall ranges and secondary rib/boss proportions guide supplier review; unit
+    conversion does not qualify a resin grade or FDM part.
+  used_for:
+  - docs/research/manufacturing/moulding-wall-bond-and-release-review.md
   imported: 0a7310f14ec1ebb6
+  aliases:
+  - pl-mould-walls
+  verified: '2026-11-11: read complete article and FAQ; visually checked all 13 wall-table rows in inches and original rib
+    figure at source resolution. HTML SHA256 eee820adb5c02c9f4beadc7c54b80a1dd9fd8fd8818b19b11c0869fc6e706f49. Material-specific
+    ABS/PC ranges replace the unsupported imported universal range. Metadata dated2017-04-14; linked guides/material datasheets
+    not claimed read.'
 - id: protolabs-designing-for-overmolding-design-tip
   kind: guide
   category: manufacturing-guides
   title: Designing for Overmolding (Design Tip)
   authors: []
   org: Protolabs
-  year: null
+  year: 2017
   url: https://www.protolabs.com/resources/design-tips/designing-for-overmolding/
   access: free
   terms: cited and summarised, never copied
@@ -109,7 +112,7 @@ sources:
   process_groups:
   - mould
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: primary
@@ -117,14 +120,17 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: Overmold material thickness less than or equal to that of the substrate below it
-    status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Overmold thickness should not exceed substrate thickness; raised substrate edge can protect the shut-off edge
-    from peeling. Note: Snippet via search summary.'
-  used_for: []
+  summary: Overmould geometry, grade-specific chemical/mechanical retention and thermal-process review are distinct; thickness
+    compliance proves neither adhesion nor qualified peel strength.
+  used_for:
+  - docs/research/manufacturing/moulding-wall-bond-and-release-review.md
   imported: 009c7671cd7c68a1
+  aliases:
+  - pl-overmould
+  verified: '2026-11-11: read complete article; visually checked original interlock figure and 9x6 grade-specific compatibility
+    table/legend at source resolution. HTML SHA256 db025432acae71b6f6e2652f63e89335fd1b2ad9d2ef042390d8e75dcff0cc3e. Overlay<=substrate
+    guidance is present; no measured peel benefit inferred. Metadata dated2017-07-25; material datasheets/actual process qualification
+    not checked.'
 - id: xometry-design-guide-injection-molding
   kind: guide
   category: manufacturing-guides
@@ -286,9 +292,10 @@ sources:
   kind: guide
   category: manufacturing-guides
   title: 'Fictiv: Injection Molding Undercuts'
-  authors: []
+  authors:
+  - Steve Melito
   org: Fictiv
-  year: null
+  year: 2022
   url: https://www.fictiv.com/articles/injection-molding-undercuts
   access: free
   terms: cited and summarised, never copied
@@ -307,18 +314,24 @@ sources:
   process_groups:
   - mould
   evidence:
-    class: snippet-only
-    numbers: none
+    class: read
+    numbers: some
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Undercut best practice; DFM review flags unnecessary undercuts and suggests simpler, cheaper alternatives; parting
-    line adjustment mentioned. Note: Fictiv gate content not found in results.'
-  used_for: []
+  summary: Undercut release choices preserve essential features while considering parting lines, side actions, deformation,
+    hand loads and secondary operations; no automatic ejection or brittle bump-off approval.
+  used_for:
+  - docs/research/manufacturing/moulding-wall-bond-and-release-review.md
   imported: 04da33262ce066ba
+  aliases:
+  - fictiv-mould-undercuts
+  verified: '2026-11-11: read complete accessible article through concluding DFM section and visually inspected all four source-resolution
+    part photographs. HTML SHA256 b87dd3e88726bdca3e1bbc8a3a65f2c1973f508ee9f626f474788f8839959d8d. Author Steve Melito; publication
+    metadata2022-12-08. Photos supply no dimensions; linked articles and strain/ejection qualification not checked.'
 - id: fictiv-injection-molding-design-guide
   kind: guide
   category: manufacturing-guides

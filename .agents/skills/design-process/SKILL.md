@@ -96,6 +96,8 @@ A material-family preference does not fill a missing capacity model or qualify a
 
 For a finished bearing seat or other precision interface, use the [manufacturer interface studies](../../../docs/research/manufacturing/joint-interfaces.md) before choosing a tolerance code. Confirm the loaded ring, material and post-finish dimensions; the worked cases are source-bound screening, not assembly qualification.
 
+For injection-moulded walls, overmoulds or trapped features, use the [wall, bond and release review](../../../docs/research/manufacturing/moulding-wall-bond-and-release-review.md). Preserve resin grades and units, separate chemical bonding from mechanical retention, and name the pull direction before asking for supplier DFM. Its examples do not qualify FDM parts, peel strength or ejection.
+
 Hold the MUST lines on their non-negotiable side; a MUST line's wiggle says which side, if any, is free. Use a
 guideline's wiggle room to make the part cheaper or simpler unless a function needs it tight. Where a card prints `?`
 or `gap:`, no source covers that point, so record your own call as a decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded

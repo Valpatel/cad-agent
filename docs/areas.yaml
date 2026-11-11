@@ -150,7 +150,7 @@ domains:
         title: Mould design
         scope: Parts designed for moulding, and the moulds themselves.
         maturity: idea
-        pages: [docs/research/manufacturing/process-profiles.md]
+        pages: [docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/moulding-wall-bond-and-release-review.md]
         issues: [99]
         topics:
           - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}

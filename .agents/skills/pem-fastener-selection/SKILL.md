@@ -7,6 +7,16 @@ description: Use when selecting a PEM or microPEM attachment family for thin met
 
 Read [the sourced family comparison and worked example](../../../docs/research/manufacturing/pem-micro-fasteners.md). It identifies the exact 2022 overview and 2021 consumer-electronics guide, their coverage, conflicting headlines and unfinished current-drawing checks. Its read evidence is not physical qualification.
 
+```mermaid
+flowchart TD
+    M["Base + top material<br/>ductility and service"] --> F["Select retention mechanism"]
+    F --> C["Exact family card<br/>worst-case dimensions"]
+    C --> I["Tool access + seating endpoint"]
+    I --> Q["Candidate, unqualified<br/>application coupon plan"]
+    class C,I here
+    class Q out
+```
+
 1. Record base and top materials separately, ductility, measured hardness, sheet/stack thickness intervals, hole manufacturing process, required access and service removal. A PCB or printed plastic is not a ductile sheet just because a press fits.
 2. Route by retention mechanism using the comparison. Distinguish a cold-flow self-clinch from a broached interference attachment, a flared fastener and a solder joint. Do not transfer hardness, hole or load figures across those families.
 3. For the scoped M2 standoffs, run `cad-agent rules pem-mso4-m2` and `cad-agent rules pem-msofs-m2`. Compare worst-case dimensions with each separate card. Never combine their limits into one generic M2 rule. A geometric candidate still needs the exact current part drawing and supplier installation tooling.

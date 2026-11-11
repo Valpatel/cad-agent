@@ -2,6 +2,23 @@
 
 The two user-selected guides serve different purposes. The 2022 *Design Engineers Fastener Guide* is an industry overview; the consumer-electronics PDF contains family tables, installation drawings and qualified performance data. Read both as manufacturer guidance, not as proof that a purchased part or printed assembly works. [ref:pem-design-engineers-fastener-guide-2022] [ref:pem-consumer-electronics-design-guide-2021]
 
+```mermaid
+flowchart LR
+    P["Parent material + required service"] --> D["Ductile sheet"]
+    P --> B["Brittle plastic or casting"]
+    P --> PCB["PCB assembly"]
+    D --> C["Self-clinch<br/>host flows into undercut"]
+    P --> F["Flare in panel<br/>fastener deforms"]
+    B --> T["Broach or SI insert<br/>qualify parent material"]
+    PCB --> S["SMT<br/>qualify solder process"]
+    C --> Q["Exact family limits<br/>then application tests"]
+    F --> Q
+    T --> Q
+    S --> Q
+    class C,F,T,S here
+    class Q out
+```
+
 ## What was read
 
 Read on 2026-11-11: all 20 PDF pages of the first guide, and all 16 PDF pages of the consumer-electronics guide (printed pages 1–31, many as facing-page spreads). The latter URL says October 2021; its last page says **July 2021**. Identify it by both strings and SHA-256 `396c9d3c1172c2d0bda54e2ac9fc452798febaa5551b28aa37030f8db4c1c2f7`. This reading includes the full extracted text and visual inspection of the selected dimension/material/installation spreads (PDF pages7,10,12,14); it does not include linked videos, every current product drawing, or outside application certification. No vendor PDF or image is redistributed.

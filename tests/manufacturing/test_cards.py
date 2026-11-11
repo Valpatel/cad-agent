@@ -438,7 +438,7 @@ def test_pem_micro_standoff_worked_shield_screen_and_tolerance_controls():
     def rejected(family, dimensions):
         failures = set()
         for feature, (actual_min, actual_max) in dimensions.items():
-            limit = profile.verified_rule(f"sheet-pem-{family}-m2-{feature}").limit()
+            limit = profile.verified_rule(f"sm-pem-{family}-m2-{feature}").limit()
             if ((limit.min is not None and actual_min < limit.min)
                     or (limit.max is not None and actual_max > limit.max)):
                 failures.add(feature)
@@ -463,7 +463,7 @@ def test_pem_cards_keep_families_and_printed_materials_separate():
         rendered = cards.render_card(card)
         assert rendered.count("[ref:pem-consumer-electronics-design-guide-2021]") == 3
         assert "conf low" in rendered and "geometry screening only" in rendered
-        assert f"sheet-pem-{'msofs' if family == 'mso4' else 'mso4'}" not in rendered
+        assert f"sm-pem-{'msofs' if family == 'mso4' else 'mso4'}" not in rendered
         # A process filter must not publish these sheet dimensions as FDM rules.
         polymer = cards.card(name, process="fdm", material="petg")
-        assert "sheet-pem-" not in cards.render_card(polymer)
+        assert "sm-pem-" not in cards.render_card(polymer)

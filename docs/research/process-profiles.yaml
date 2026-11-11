@@ -5267,7 +5267,7 @@ rules:
 # ================================================================== cards and decisions (#323 phase 7b)
 # A card is a feature's rules (`cad-agent rules <feature>`), or one of these, which gather rules across features by
 # their `cards:` field. Each name here is only a title; the lines come from the rules.
-  - id: sheet-pem-mso4-m2-sheet
+  - id: sm-pem-mso4-m2-sheet
     process: sheet-metal
     feature: pem-mso4-m2
     quantity: minimum sheet thickness
@@ -5282,7 +5282,7 @@ rules:
     strictness: guideline
     wiggle: No extrapolation beyond the table; confirm the current exact drawing
     cost: Different hole preparation and installation tooling for each family
-  - id: sheet-pem-mso4-m2-hole
+  - id: sm-pem-mso4-m2-hole
     process: sheet-metal
     feature: pem-mso4-m2
     quantity: mounting hole diameter
@@ -5299,7 +5299,7 @@ rules:
     strictness: guideline
     wiggle: No extrapolation beyond the table; confirm the current exact drawing
     cost: Different hole preparation and installation tooling for each family
-  - id: sheet-pem-mso4-m2-edge
+  - id: sm-pem-mso4-m2-edge
     process: sheet-metal
     feature: pem-mso4-m2
     quantity: hole center to sheet edge
@@ -5314,7 +5314,7 @@ rules:
     strictness: guideline
     wiggle: No extrapolation beyond the table; confirm the current exact drawing
     cost: Different hole preparation and installation tooling for each family
-  - id: sheet-pem-msofs-m2-sheet
+  - id: sm-pem-msofs-m2-sheet
     process: sheet-metal
     feature: pem-msofs-m2
     quantity: standard sheet thickness window
@@ -5332,7 +5332,7 @@ rules:
     wiggle: No extrapolation beyond the table; confirm the current exact drawing
     cost: Different hole preparation and installation tooling for each family
     note: The p.19 headline says no minimum sheet thickness; this row retains the standard metric table window.
-  - id: sheet-pem-msofs-m2-hole
+  - id: sm-pem-msofs-m2-hole
     process: sheet-metal
     feature: pem-msofs-m2
     quantity: mounting hole diameter
@@ -5350,7 +5350,7 @@ rules:
     wiggle: No extrapolation beyond the table; confirm the current exact drawing
     cost: Different hole preparation and installation tooling for each family
     note: The p.19 headline says no minimum sheet thickness; this row retains the standard metric table window.
-  - id: sheet-pem-msofs-m2-edge
+  - id: sm-pem-msofs-m2-edge
     process: sheet-metal
     feature: pem-msofs-m2
     quantity: hole center to sheet edge

@@ -5,7 +5,11 @@ runs nothing. Features:
 
 * ``cad-parts``: one row per printable part — valid CAD, exactly one solid,
   watertight STL, within the printer bed. Evidence: ``preview/part-<name>.png``.
-* ``cad-print-files``: STL, 3MF and STEP present for every part.
+* ``cad-print-files``: STL, 3MF and STEP present for every printed part.
+* A part made another way (a dossier card's ``material.process`` or ``cad: part_process:`` names welded fabrication,
+  cut sheet, machining, moulding or a bought part; ``cadagent.manufacturing.process.part_processes``) is a **skip**
+  row with the reason in both features: not checked is a skip, never a pass, and a skip does not say the part can be
+  made. A part nobody declared is printed.
 * ``cad-checks``: one row per configured check, from its ``pass_key``.
 * ``cad-links``: local links in ``html_pages`` resolve.
 * ``cad-dossier`` (only with ``cad: dossier:``): the dossier lint, one row per error and one per section with its
@@ -145,12 +149,28 @@ def holes_feature(project: CadProject) -> Dict[str, Any]:
             checks.append(_row(label, True, f"{holes.describe_count(row)} clear{ex}{ld}", ""))
     return {"feature_id": "cad-holes", "feature_title": "Holes clear", "checks": checks}
 
+def _not_printed_row(project: CadProject, part: str, how: Any, report_dir: Optional[Path] = None) -> Dict[str, Any]:
+    """The row of a part the print pipeline leaves out: a skip with the reason, never a pass (#577, as #526)."""
+    row: Dict[str, Any] = {"name": project.part_label(part), "status": "skip", "message": how.skip_reason}
+    image = project.preview_dir / f"part-{part}.png"
+    if report_dir is not None and image.is_file():
+        row["evidence"] = {"type": "screenshot", "path": _rel(image, report_dir), "title": project.part_label(part)}
+    return row
+
 def parts_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:
+    from cadagent.manufacturing.process import PART_PROCESS_DEFAULT, part_processes
+
     parts, error = load_parts(project)
-    checks = (
-        [_row("parts file", False, "no part results; run the build", error)]
-        if error else [_part_row(project, p, info, report_dir) for p, info in parts.items()]
-    )
+    if error:
+        checks = [_row("parts file", False, "no part results; run the build", error)]
+    else:
+        how = part_processes(project, parts)
+        checks = [_part_row(project, p, info, report_dir) if how[p].printed
+                  else _not_printed_row(project, p, how[p], report_dir) for p, info in parts.items()]
+        for name in project.part_process:       # a mistyped part name must not leave its part in the wrong pipeline
+            if name != PART_PROCESS_DEFAULT and name not in parts:
+                why = f"cad.part_process names {name!r}, which is not a part in {project.parts_file.name}"
+                checks.append(_row(f"cad.part_process: {name}", False, why, why))
     return {"feature_id": "cad-parts", "feature_title": "Printed parts", "checks": checks}
 
 def print_files_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]:
@@ -158,8 +178,13 @@ def print_files_feature(project: CadProject, report_dir: Path) -> Dict[str, Any]
     if error:
         return {"feature_id": "cad-print-files", "feature_title": "Print files",
                 "checks": [_row("parts file", False, "no part list", error)]}
+    from cadagent.manufacturing.process import part_processes
+    how = part_processes(project, parts)
     checks = []
     for part in parts:
+        if not how[part].printed:
+            checks.append(_not_printed_row(project, part, how[part]))
+            continue
         files = {ext: project.exports_dir / f"{part}.{ext}" for ext in PRINT_FORMATS}
         missing = [str(p.relative_to(project.root)) for p in files.values() if not p.is_file()]
         ok = not missing
@@ -418,6 +443,7 @@ _DOWNLOADS_CSS = (
     ".vcad-dl td,.vcad-dl th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#dde5eb);vertical-align:middle}"
     ".vcad-dl img{width:110px;border-radius:6px;background:var(--surface-2,#f3f5f7);display:block}"
     ".vcad-dl a{font-weight:600}.vcad-dl .vcad-missing{color:var(--fail,#b3261e)}"
+    ".vcad-dl .vcad-na{color:var(--muted,#5b6770)}"
 )
 
 # Upgrades the slicer links in place when the page is served over http(s); the
@@ -439,11 +465,15 @@ def downloads_snippet(
 
     Paths are relative to ``page_dir`` (default ``preview_dir``), so the snippet
     can be dropped into any page of the project. Missing files are shown as
-    missing, not linked. The Bambu Studio link only works when the page is
+    missing, not linked. A part that is not printed (``cadagent.manufacturing.process.part_processes``) links the
+    files it has and shows a dash, not "missing", for the rest. The Bambu Studio link only works when the page is
     served over http (``cad-agent serve``); from file:// it downloads the 3MF.
     """
+    from cadagent.manufacturing.process import part_processes
+
     page_dir = Path(page_dir or project.preview_dir)
     names = list(parts) if parts is not None else list(load_parts(project)[0])
+    how = part_processes(project, names)
     esc = _html.escape
     rows = []
     for part in names:
@@ -458,6 +488,7 @@ def downloads_snippet(
             cells.append(
                 f'<td><a href="{esc(_rel(path, page_dir))}" download>{ext.upper()}</a></td>'
                 if path.is_file() else f'<td><span class="vcad-missing">{ext.upper()} missing</span></td>'
+                if how[part].printed else '<td><span class="vcad-na" title="not a printed part">–</span></td>'
             )
         three_mf = project.exports_dir / f"{part}.3mf"
         slicer = (
@@ -470,6 +501,9 @@ def downloads_snippet(
         '<section class="vcad-downloads"><h2>Print files</h2>'
         f"<style>{_DOWNLOADS_CSS}</style>"
         '<p>STL and 3MF are in print orientation (3MF centred on the bed); STEP is in assembly coordinates.</p>'
+        + ('<p>A dash marks a part that is not printed (welded, cut, machined, moulded or bought): the print '
+           'pipeline does not check it or write print files for it.</p>'
+           if any(not h.printed for h in how.values()) else '') +
         '<table class="vcad-dl"><thead><tr><th></th><th>Part</th><th>STL</th><th>3MF</th><th>STEP</th><th>Slicer</th></tr></thead>'
         f"<tbody>{''.join(rows)}</tbody></table>"
         f"<script>{_DOWNLOADS_JS}</script></section>"

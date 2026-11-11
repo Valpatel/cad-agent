@@ -410,11 +410,17 @@ def _nonnegative_number(value) -> bool:
     return type(value) in (int, float) and math.isfinite(value) and value >= 0
 
 
+class NothingToSlice(ValueError):
+    """No part was named and the project has no printed part (#577)."""
+
+
 def _expected_parts(project) -> List[str]:
+    """``cad.slicer.parts`` when given, else every printed part (``manufacturing.process.printed_parts``, #577)."""
+    from cadagent.manufacturing.process import printed_parts
     from cadagent.publish.report import load_parts
     cfg = dict(project.slicer or {})
     known, _ = load_parts(project)
-    return list(cfg.get('parts') or known)
+    return list(cfg.get('parts') or printed_parts(project, known))
 
 
 def _bambu_status_errors(row: dict) -> List[str]:
@@ -447,7 +453,8 @@ def slice_project(project, parts=None) -> dict:
     report can tell a stale result from a current one.
 
     ``cad.slicer`` keys (all optional): engine, printer, process, filament (``pla``, ``petg`` or a profile name),
-    overrides (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default all): a list of
+    overrides (process settings, e.g. ``{wall_loops: "3"}``), parts (the parts to slice; default every printed
+    part, so one a dossier card or ``cad: part_process:`` says is made another way is left out): a list of
     names, or a mapping of name to ``{overrides: {...}}``, the part's own settings on top of ``overrides``.
 
     A PrusaSlicer row also carries what PrusaSlicer's log said (``warnings``, ``errors``, ``stability_issues``,
@@ -464,7 +471,10 @@ def slice_project(project, parts=None) -> dict:
     known, error = load_parts(project)
     if error:
         raise FileNotFoundError(error)
-    names = list(parts or cfg.get('parts') or known)
+    names = list(parts or _expected_parts(project))
+    if not names:       # every part is made another way: an empty report would read as a failed slice
+        raise NothingToSlice("no printed part to slice: every part is made another way (a dossier card's "
+                             "material.process or cad.part_process); name a part to slice it anyway")
     st, engine = _settings(project), engine_of(project)
     work = project.root / 'build' / 'slicer'
     path = project.exports_dir / 'slice-report.json'

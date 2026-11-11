@@ -46,6 +46,7 @@ from __future__ import annotations
 import ast
 import math
 import os
+import re
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from pathlib import Path
@@ -647,3 +648,105 @@ def load(path: Any = None) -> Profiles:
 def profile(process: str, path: Any = None) -> Profile:
     """One process's profile: ``fdm``, ``sla``, ``sls``, ``mjf``, ``injection-moulding``, ``sheet-metal`` or ``cnc``."""
     return load(path)[process]
+
+
+# ------------------------------------------------------------ how each part of a project is made (#577)
+#
+# The print pipeline (the report's "Printed parts" and "Print files" rows, `export-3mf`, the build plates, the slicer's
+# default part list, the overhang screen) applies to printed parts only. A process is read from free text (a dossier
+# card's ``material.process``) or a name (``cad: part_process:``): additive words first, then the names below.
+
+# The additive words: a part made by one of these is printed. (The dossier lint's ``wall-undeclared`` uses the same.)
+ADDITIVE_RE = re.compile(r"\b(?:fdm|fff|sla|sls|mjf|dlp|polyjet|additive)\b|\b3d[ -]?print", re.I)
+
+# The routes that are not printing: name -> (what a report row calls it, the words that mean it). ``sheet-metal``,
+# ``cnc`` and ``injection-moulding`` are the data file's processes; ``weldment`` and ``purchased`` name routes it has no
+# rules for, so there is no profile or rule card for them. Order decides the name when a text matches several.
+NOT_PRINTED: Dict[str, Tuple[str, "re.Pattern[str]"]] = {
+    "purchased": ("bought, not made", re.compile(
+        r"\b(?:purchas\w*|bought|buy|off[- ]the[- ]shelf|cots)\b", re.I)),
+    "weldment": ("welded fabrication", re.compile(r"\bweld\w*", re.I)),
+    "sheet-metal": ("cut or bent sheet or plate", re.compile(
+        r"\bsheet[- ]?metal\b|\b(?:laser|plasma|water[- ]?jet|flame|oxy|saw|hand)[- ]?cut\b|\bcut[- ](?:plate|sheet)\b",
+        re.I)),
+    "cnc": ("machined", re.compile(r"\b(?:cnc|machin\w*|mill(?:ed|ing)|turn(?:ed|ing)|lathe)\b", re.I)),
+    "injection-moulding": ("injection moulded", re.compile(r"\binjection\b|\bmou?ld\w*", re.I)),
+}
+PART_PROCESS_DEFAULT = "*"      # the ``cad: part_process:`` key for every part nothing else names
+
+
+def process_route(text: Any) -> Optional[str]:
+    """How a process named in words is made: ``"additive"``, a ``NOT_PRINTED`` name, or None when the words name no
+    process this module knows. Additive words win (``FDM, then machined`` is a printed part)."""
+    words = str(text or "")
+    if ADDITIVE_RE.search(words):
+        return "additive"
+    for name, (_, pattern) in NOT_PRINTED.items():
+        if pattern.search(words):
+            return name
+    return None
+
+
+def known_process_names() -> List[str]:
+    """The names ``cad: part_process:`` documents (any text ``process_route`` reads is accepted too)."""
+    return ["fdm", "sla", "sls", "mjf", *sorted(NOT_PRINTED)]
+
+
+@dataclass(frozen=True)
+class PartProcess:
+    """How one part is made, and who said so. ``printed`` is True unless a declaration names a ``NOT_PRINTED`` route:
+    a part nobody declared, and one whose words name no known process, stay in the print pipeline."""
+    part: str
+    route: Optional[str] = None     # "additive", a NOT_PRINTED name, or None (undeclared or not recognised)
+    declared: str = ""              # the words as written
+    source: str = ""                # where they were written; "" when nothing declares the part
+
+    @property
+    def printed(self) -> bool:
+        return self.route not in NOT_PRINTED
+
+    @property
+    def skip_reason(self) -> str:
+        """The report's words for a part the print pipeline leaves out. Not a verdict on the part."""
+        what = NOT_PRINTED[self.route][0] if self.route in NOT_PRINTED else "not printed"
+        return (f"not checked by the print pipeline: {what} ({self.source} {self.declared!r}); "
+                "no check here says this part can be made")
+
+
+def part_processes(project: Any, parts: Iterable[str]) -> Dict[str, PartProcess]:
+    """``{part: PartProcess}`` for a project's parts. For each part, the first of:
+
+    1. its dossier card's ``material.process`` (``cad: dossier:``; the card whose id is the part's name);
+    2. ``cad: part_process: {<part>: <process>}`` in ``cad-agent.yaml``;
+    3. ``cad: part_process: {"*": <process>}``, the project's default;
+    4. nothing: the part is printed, as every part was before a process could be declared.
+
+    Reads files only. A dossier that does not load declares nothing here (the dossier lint reports it)."""
+    cards: Dict[str, Any] = {}
+    if getattr(project, "dossier", None):
+        from cadagent.review.dossier.load import DossierError, load_project_dossier
+        try:
+            cards = load_project_dossier(project, strict=False).parts
+        except (DossierError, OSError, AttributeError):
+            cards = {}
+    config = dict(getattr(project, "part_process", None) or {})
+    out: Dict[str, PartProcess] = {}
+    for part in parts:
+        card = cards.get(part)
+        said = (card.material.process if card is not None and card.material else "").strip()
+        if said:
+            source = "dossier material.process"
+        elif part in config:
+            said, source = config[part], "cad.part_process"
+        elif PART_PROCESS_DEFAULT in config:
+            said, source = config[PART_PROCESS_DEFAULT], f"cad.part_process {PART_PROCESS_DEFAULT!r}"
+        else:
+            out[part] = PartProcess(part)
+            continue
+        out[part] = PartProcess(part, process_route(said), said, source)
+    return out
+
+
+def printed_parts(project: Any, parts: Iterable[str]) -> List[str]:
+    """The parts the print pipeline applies to, in the order given (``part_processes``)."""
+    return [p for p, how in part_processes(project, parts).items() if how.printed]

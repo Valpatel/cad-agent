@@ -864,7 +864,10 @@ def _number(raw: Dict[str, Any], key: str, default: float) -> float:
 
 def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]:
     """Parse ``cad.plates`` (None when it is ``false``). The parts default to ``cad.release.build``, else every part
-    the release lists; quantities to ``cad.release.quantities``, else 1; filaments to ``cad.slicer.filament``."""
+    the release lists, less the parts that are not printed (``manufacturing.process.printed_parts``, #577; None when
+    that leaves none); quantities to ``cad.release.quantities``, else 1; filaments to ``cad.slicer.filament``.
+    Parts listed in ``cad.plates.parts`` are laid out as listed."""
+    from cadagent.manufacturing.process import printed_parts
     from cadagent.manufacturing.slicer import FILAMENTS, _settings
     from cadagent.project import CadConfigError
     from cadagent.publish.release import release_config
@@ -907,6 +910,13 @@ def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]
             if loose:
                 warnings.append(f"the plates hold every part of the pick-one or optional groups {loose}; set "
                                 "cad.release.build or cad.plates.parts to print one build")
+        made = printed_parts(project, parts)
+        if len(made) < len(parts):
+            left = [p for p in parts if p not in made]
+            if not made:
+                return None
+            warnings.append(f"not printed, left off the plates: {', '.join(left)}")
+            parts = made
     elif isinstance(spec, list) and spec and all(isinstance(p, str) for p in spec):
         parts = list(spec)
     elif isinstance(spec, dict) and spec:
@@ -1082,7 +1092,7 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     cfg = plates_config(project, known_parts)
     if cfg is None:
         if require_project_settings:
-            raise PlatesError('project settings required, but cad.plates is false')
+            raise PlatesError('project settings required, but cad.plates is false or no part is printed')
         return None
     bed = project.printer.bed_mm
     if not bed:

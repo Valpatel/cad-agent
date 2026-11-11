@@ -7,12 +7,14 @@ schema: 2
 title: 'Manufacturing and design guides: Sheet metal and laser'
 sources:
 - id: sendcutsend-designing-for-online-sheet-metal-bending
+  aliases:
+  - scs-bend-files
   kind: guide
   category: manufacturing-guides
   title: Designing for Online Sheet Metal Bending Services
   authors: []
   org: SendCutSend
-  year: null
+  year: 2022
   url: https://sendcutsend.com/blog/designing-for-bending-and-forming/
   access: free
   terms: cited and summarised, never copied
@@ -32,25 +34,32 @@ sources:
   process_groups:
   - sheet
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
-    tested: unknown
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Bending design guidance from an online laser and bending service; snippet showed title only. Note: Content not
-    shown; title-level read.'
-  used_for: []
+  summary: Supplier bend-angle convention, file preparation and material-specific air-bend setup; angle examples are not enclosed-angle
+    callouts or universal bend limits.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
+  - .agents/skills/sheet-metal-hardware/SKILL.md
   imported: 6494949c1148bd68
+  verified: '2026-11-11: read the complete 2022-11-01 article through its preflight checklist; visually inspected the supplier
+    angle and flat-pattern diagrams. HTML SHA256 2b44274e65f01072cd227a57ac2c41ac0831ea99096371b22400fe75ad02537b. Linked
+    calculators/material tables and embedded videos not claimed read.'
 - id: sendcutsend-step-by-step-guide-to-sheet-metal-bending
+  aliases:
+  - scs-bend-steps
   kind: guide
   category: manufacturing-guides
   title: Step By Step Guide To Sheet Metal Bending
   authors: []
   org: SendCutSend
-  year: null
+  year: 2024
   url: https://sendcutsend.com/blog/step-by-step-guide-to-sheet-metal-bending/
   access: free
   terms: cited and summarised, never copied
@@ -70,23 +79,23 @@ sources:
   process_groups:
   - sheet
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
-    tested: unknown
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: Minimum flange 0.500 in or 4x material thickness, whichever is greater
-    status: corroborated
-    evidence: A fabrication guide (Fabcon-type result) says start at 4x thickness; other sources say 2-4x depending on material.
-      0.500 in figure not seen elsewhere.
-  summary: 'Step-by-step bending guide; snippets cite minimum flange and fixed per-material bend radius and K-factor. Note:
-    Snippet came via search summary, not page text.'
-  used_for: []
+  summary: Supplier-specific bend-file conventions and review sequence; flange limits, radius and K-factor require the chosen
+    material/thickness data, not a universal flange formula.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
+  - .agents/skills/sheet-metal-hardware/SKILL.md
   imported: 2071fc0e28348484
+  verified: '2026-11-11: read the complete four-stage 2024-05-31 article, software/format table and preflight checklist; visually
+    checked corner-relief image and table text. HTML SHA256 29d55858f6814ef608ff7aeb6e4c1c66702d7012446ff12f55dbb40b09c4d478.
+    Linked pages/videos not claimed read. Imported universal flange claim absent from this article; removed.'
 - id: sendcutsend-can-sendcutsend-bend-parts-with-a-custom-bend
   kind: guide
   category: manufacturing-guides

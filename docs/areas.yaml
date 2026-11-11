@@ -183,6 +183,7 @@ domains:
           - {slug: resin-and-powder, title: Resin and powder, scope: "SLA/MSLA, SLS and MJF design rules.", maturity: idea, issues: [99]}
       - slug: cnc-machining
         title: CNC machining
+        pages: [docs/research/manufacturing/sheet-metal-file-and-hole-review.md]
         scope: Milled and turned parts.
         maturity: idea
         issues: [99]
@@ -201,6 +202,7 @@ domains:
           - docs/process-checks.md
           - docs/research/fea-and-process-tools.md
           - docs/research/manufacturing/sheet-metal-guides.md
+          - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
           - docs/research/manufacturing/sheet-metal.md
           - docs/research/manufacturing/sheet-metal-joining.md
           - docs/sheet-metal-hardware.md

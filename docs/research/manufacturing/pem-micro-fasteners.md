@@ -95,7 +95,7 @@ not qualification of a manufacturing process or resin. For actual pin length 1.5
 stack 0.50 ±0.03 mm, engagement spans 0.91–1.09 mm. A blind base-hole depth 1.40 ±0.05 mm clears the
 worst-case card requirement of 1.34 mm. A 1.30 ±0.05 mm blind hole fails. A top stack 0.64 ±0.01 mm stays
 below the catalogue’s nominal top-sheet maximum yet fails the minimum engagement at a tolerance corner.
-Top-sheet and base-panel holes are different; do not swap them. [ref:pem-ce-guide-2021]
+Top-sheet and base-panel holes are different; do not swap them. Read the signed headers: the top hole has a symmetric tolerance, while the base-panel hole permits undersize only. [ref:pem-ce-guide-2021]
 
 CE p.24 installs TackSert with parallel punch/anvil surfaces until its head contacts the top sheet. The adjacent
 TS4 adhesive/reinstallation instructions are a different family. Installation force is not retention capacity.

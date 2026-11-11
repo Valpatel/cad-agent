@@ -1597,7 +1597,10 @@ sources:
     M2-length300 and TKA/TK4-10-150 geometry only, with source-table golden boundaries, tolerance corners and planted dimension/family/process
     defects in tests/manufacturing/test_cards.py. These reproduce software screens, not installation, strength or physical
     retention. Additional visual checks printed pp.15,18,24,30. The 30-test-point average footnote on p.30 is for SMTSO, not
-    MSIA/MSIB.'
+    MSIA/MSIB. 2026-11-11 review correction: independently checked magnified printed p.15/PDF p.8 signed headers. TKA/TK4
+    top 1.3 ±0.05 mm is 1.25–1.35; base 1.0 -0.05 mm is 0.95–1.00. Earlier unpublished intervals incorrectly transferred/omitted
+    header tolerances; their matching tests were insufficient. Corrected source-header fixtures accept both lower corners
+    and reject oversize/wrong-family TS4 cases. No physical qualification follows.'
   summary: Family-specific microPEM guide. Exact named geometry is encoded with applied software tests; performance tables
     and installation outcomes remain unqualified for an application. No general printed-material, joint-strength or physical
     validation.

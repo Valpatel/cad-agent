@@ -109,3 +109,32 @@ Check the real narrow page, disclosures and both themes; do not weaken overflow 
 **Limits:** the three aliases change display and discovery only, not source count, evidence, dimensions or physical
 qualification. The targeted Chrome receipt and normal new-head CI cover their stated viewports/engines; they do not
 claim every reference page, browser or viewport has been examined. Licensed source PDFs remain outside the repo.
+
+## Bind signed table headers to the exact fastener family before deriving a window
+
+On 2026-11-11, independent source review [5864880242](https://github.com/Valpatel/cad-agent/pull/588#pullrequestreview-5864880242)
+blocked unpublished PR588 at `6d2a81fb`. The exact PEM CE PDF (SHA256
+`396c9d3c1172c2d0bda54e2ac9fc452798febaa5551b28aa37030f8db4c1c2f7`), printed p.15/PDF p.8, has
+TKA/TK4 top-sheet hole nominal 1.3 mm **±0.05** and base-panel hole nominal 1.0 mm **−0.05** only.
+The encoded windows were instead 1.30–1.35 and 1.00–1.025 mm. Thus valid lower corners were rejected and an
+oversize base hole was accepted. The review's [base](https://github.com/Valpatel/cad-agent/pull/588#discussion_r4542827663)
+and [top](https://github.com/Valpatel/cad-agent/pull/588#discussion_r4542828374) findings retain the evidence.
+A new magnified render of that exact table confirmed the signed headers. No erroneous window was published to main.
+
+**Cause:** nominal cells were not bound carefully enough to their own signed header and family. A tolerance from
+the neighboring TS4 table was carried into TackSert, and the top-hole minus side was omitted. The test goldens
+copied those derived intervals, so the focused tests passed the same wrong transcription. Reading a full PDF,
+viewing a small spread, passing tests and an intended evidence class did not establish source fidelity.
+
+**Correction and rule:** record the exact family, nominal cell and signed tolerance before deriving endpoints;
+retain those words in `as_printed`. The existing applied test now derives its independent expectation from the
+nominal/plus/minus header fixture, accepts base/top lower corners 0.95/1.25 and upper corners 1.00/1.35,
+rejects just-outside values and the former 1.025 mm base hole, and rejects the adjacent TS4 upper corner 1.015 mm.
+Use both source-bound positive boundaries and wrong-family negatives. An independent source comparison still
+matters: matching goldens alone can repeat the author's mistaken reading.
+
+**Limits:** this is a correction to two geometry windows, not a universal signed-tolerance parser or a new approval
+system. The source's other family-specific footnotes, installation conditions and application qualification remain
+separate. The CE encoded claim must be judged on corrected source-bound software proof; no strength or physical
+validation is created by correcting a transcription. Existing failed review/CI and old passing-but-insufficient
+receipts remain distinct from the corrected-head checks.

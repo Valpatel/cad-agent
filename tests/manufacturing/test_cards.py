@@ -8,6 +8,7 @@ import itertools
 import json
 import os
 from dataclasses import replace
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -530,8 +531,24 @@ def test_tacksert_150_actual_length_and_entire_top_stack_govern_blind_hole():
     p = pp.profile("cnc")
     get = lambda name: p.verified_rule("cnc-pem-tka-tk4-10-150-" + name)
     assert (get("length").limit().min, get("length").limit().max) == (1.44, 1.56)
-    assert (get("base-hole").limit().min, get("base-hole").limit().max) == (1.0, 1.025)
-    assert (get("top-hole").limit().min, get("top-hole").limit().max) == (1.3, 1.35)
+    # Independent source-header fixture, CE printed p.15 TKA/TK4 (not the neighboring TS4 table):
+    # base nominal 1.0, minus .05 / plus 0; top nominal 1.3, symmetric ±.05 mm.
+    signed_headers = {"base-hole": ("1.0", ".05", "0"), "top-hole": ("1.3", ".05", ".05")}
+    for key, (nominal, minus, plus) in signed_headers.items():
+        nominal, minus, plus = map(Decimal, (nominal, minus, plus))
+        independent_window = (float(nominal - minus), float(nominal + plus))
+        limit = get(key).limit()
+        assert (limit.min, limit.max) == pytest.approx(independent_window)
+    def rejected_holes(base, top):
+        return {key for key, actual in {"base-hole": base, "top-hole": top}.items()
+                if actual < get(key).limit().min or actual > get(key).limit().max}
+    assert not rejected_holes(.95, 1.25), "both valid source lower corners must remain accepted"
+    assert not rejected_holes(1.00, 1.35), "both valid upper corners must remain accepted"
+    assert rejected_holes(.9499, 1.2499) == {"base-hole", "top-hole"}
+    assert rejected_holes(1.0001, 1.3501) == {"base-hole", "top-hole"}
+    assert rejected_holes(1.025, 1.30) == {"base-hole"}, "the previously accepted oversize base hole must fail"
+    adjacent_ts4_upper = float(Decimal(".99") + Decimal(".025"))
+    assert rejected_holes(adjacent_ts4_upper, 1.30) == {"base-hole"}, "the adjacent TS4 upper tolerance cannot govern TackSert"
     assert (get("edge").limit().min, get("boss").limit().min) == (1.18, 2.36)
     def screen(top, blind_depth_min):
         failures = set()

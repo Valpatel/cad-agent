@@ -77,3 +77,6 @@ not the complete pre-rendered CI build or WebKit verdict. Original CI failures a
 Corrective rule: after extending a published reference page, repeat its rendered-page consumers even when the
 previous version passed. Keep a concise visible overview and accessible detailed references; verify each fold
 opens and retains the engineering limits. Current-head complete browser CI still gates integration.
+
+
+On2026-11-11, printable-checklist PR573 reconciled reviewed CI/PEM dev0ba1bc70 and pure layout/areas reported2 failures/27 passes: the union put21 files directly in `.agents/inbox/`. The new print-layout incident moved with `git mv` into the existing publication domain (20 files after the move), and its symptom/owner links were updated. No growth limit or exception list changed. Check the resulting union after integration, even when each original branch passed its own layout gate.

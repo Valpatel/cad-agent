@@ -5,7 +5,7 @@ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'bas
 const mounted = new WeakMap();
 const node = (tag, text, className) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; };
 
-export function enhancePartTable(table, { label = table.caption?.textContent || 'Parts', tracker, statuses = [], searchable = true } = {}) {
+export function enhancePartTable(table, { label = table.caption?.textContent || 'Parts', tracker, statuses = [], searchable = true, pageSize = 0, printable } = {}) {
   if (mounted.has(table)) return mounted.get(table);
   const body = table.tBodies[0], head = table.tHead?.rows[0];
   if (!body || !head) throw new Error('A part table needs a header and body.');
@@ -19,14 +19,18 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   const toolbar = node('div', undefined, 'cad-table-tools');
   toolbar.setAttribute('aria-label', `${label} controls`);
   const count = node('span', undefined, 'cad-table-count'); count.setAttribute('role', 'status');
-  let query = '', sorted = null, direction = 1;
+  let matchedRows = rows, orderedRows = rows;
+  let query = '', sorted = null, direction = 1, page = 0, filter = () => true;
+  const pagination=node('nav',undefined,'cad-table-pagination');pagination.setAttribute('aria-label',`${label} pages`);
+  const previousPage=node('button','←'),nextPage=node('button','→'),pageCount=node('span');previousPage.type=nextPage.type='button';previousPage.setAttribute('aria-label',`Previous page of ${label}`);nextPage.setAttribute('aria-label',`Next page of ${label}`);
+  previousPage.onclick=()=>{page--;apply();};nextPage.onclick=()=>{page++;apply();};pagination.append(previousPage,pageCount,nextPage);
   const original = new Map(rows.map((row, index) => [row, index])), buttons = [], checks = [];
   const searchText = new Map(rows.map(row => [row, row.textContent.toLocaleLowerCase()]));
   let input;
   if (searchable) {
     const searchLabel = node('label', undefined, 'cad-table-search'); searchLabel.append(node('span', 'Find a part'));
     input = node('input'); input.type = 'search'; input.placeholder = `Search ${label.toLocaleLowerCase()}`; input.setAttribute('aria-label', `Search ${label}`);
-    input.addEventListener('input', () => { query = input.value.trim().toLocaleLowerCase(); apply(); });
+    input.addEventListener('input', () => { query = input.value.trim().toLocaleLowerCase(); page=0; apply(); });
     searchLabel.append(input); toolbar.append(searchLabel);
   }
   const selectLabel = node('label', undefined, 'cad-table-sort'); selectLabel.append(node('span', 'Sort by'));
@@ -49,7 +53,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   selectLabel.append(select); if (buttons.length) toolbar.append(selectLabel); toolbar.append(count);
   // The toolbar belongs outside a horizontally scrolling wrapper when one exists.
   const wrapper = table.parentElement?.classList.contains('cad-table-scroll') ? table.parentElement : table;
-  wrapper.before(toolbar);
+  wrapper.before(toolbar);if(pageSize)wrapper.after(pagination);
   const statusesHead = [];
   if (tracker) for (const status of statuses) {
     const th = node('th', status.label); th.scope = 'col'; th.className = 'cad-status-heading'; head.append(th); statusesHead.push(th);
@@ -81,8 +85,13 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
       return direction * (col.type === 'number' ? av - bv : collator.compare(av, bv)) || original.get(a) - original.get(b);
     });
     const fixed = [...body.rows].find(row => row.hasAttribute('data-fixed')) || null;
-    for (const row of ordered) { row.hidden = !!query && !searchText.get(row).includes(query); body.insertBefore(row, fixed); }
-    count.textContent = `${rows.filter(row => !row.hidden).length} of ${rows.length} parts`;
+    const matched=ordered.filter(row=>(!query||searchText.get(row).includes(query))&&filter(row));
+    orderedRows = ordered; matchedRows = matched;
+    const pages=pageSize?Math.max(1,Math.ceil(matched.length/pageSize)):1;page=Math.max(0,Math.min(page,pages-1));
+    const shown=new Set(pageSize?matched.slice(page*pageSize,(page+1)*pageSize):matched);
+    for (const row of ordered) { row.hidden = !shown.has(row); body.insertBefore(row, fixed); }
+    count.textContent = `${matched.length} of ${rows.length} parts`;
+    pageCount.textContent=`Page ${page+1} of ${pages}`;previousPage.disabled=page===0;nextPage.disabled=page>=pages-1;pagination.hidden=!pageSize||pages===1;
     for (const item of buttons) {
       const active = item.index === sorted;
       item.th.setAttribute('aria-sort', active ? direction === 1 ? 'ascending' : 'descending' : 'none');
@@ -91,9 +100,39 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
     }
     select.value = col ? `${sorted}:${direction}` : '';
   }
+  const snapshot = (scope = 'matched') => {
+    if (!['all', 'matched'].includes(scope)) throw new Error('Checklist scope must be all or matched.');
+    const selected = scope === 'all' ? orderedRows : matchedRows;
+    const columns = [...head.cells].map((th, index) => ({ index, label: buttons.find(item => item.index === index)?.title || th.textContent.trim() })).filter(col => head.cells[col.index].dataset.print !== 'omit');
+    return { label, project: printable?.project || '', revision: printable?.revision || '', notice: printable?.notice || '', scope,
+      total: rows.length, query: scope === 'matched' ? query : '', columns: ['Part ID', ...columns.map(col => col.label)],
+      columnTypes: ['text', ...columns.map(col => head.cells[col.index].classList.contains('cad-status-heading') ? 'status' :
+        buttons.find(item => item.index === col.index)?.type || (rows.some(row => row.cells[col.index]?.hasAttribute('data-sort-value')) ? 'number' : 'text'))],
+      rows: selected.map(row => [row.dataset.partKey || row.dataset.partLabel || '', ...columns.map(col => {
+        const cell = row.cells[col.index], check = cell?.querySelector('input[type=checkbox]');
+        return check ? (check.checked ? '☑' : '☐') : (cell?.dataset.printValue ?? printableCellText(cell));
+      })]) };
+  };
+  if (printable) {
+    const printScope = node('select'); printScope.setAttribute('aria-label', `Checklist scope for ${label}`);
+    for (const [value, title] of [['matched', 'Matching parts (all pages)'], ['all', 'All parts']]) { const option = node('option', title); option.value = value; printScope.append(option); }
+    const printLabel = node('label'); printLabel.append(node('span', 'Checklist'), printScope);
+    const printButton = node('button', 'Print checklist'); printButton.type = 'button'; printButton.style.minHeight = '44px';
+    const printMessage = node('span'); printMessage.setAttribute('role', 'status');
+    printButton.addEventListener('click', () => {
+      const data = snapshot(printScope.value);
+      if (!data.rows.length) { printMessage.textContent = 'No matching parts to print.'; return; }
+      const target = window.open('', '_blank');
+      if (!target) { printMessage.textContent = 'Allow a new tab to open the printable checklist.'; return; }
+      target.opener = null;
+      renderPartChecklist(target.document, data);
+      printMessage.textContent = `Opened checklist: ${data.rows.length} of ${data.total} parts.`;
+    });
+    toolbar.append(printLabel, printButton, printMessage);
+  }
   apply();
-  const api = { table, toolbar, dispose() {
-    unsubscribe?.(); toolbar.remove(); for (const item of checks) item.cell.remove(); for (const th of statusesHead) th.remove();
+  const api = { table, toolbar, snapshot, setFilter(predicate){filter=predicate;page=0;apply();}, dispose() {
+    unsubscribe?.(); toolbar.remove();pagination.remove(); for (const item of checks) item.cell.remove(); for (const th of statusesHead) th.remove();
     for (const item of buttons) { item.th.textContent = item.title; item.th.removeAttribute('aria-sort'); }
     const fixed = [...body.rows].find(row => row.hasAttribute('data-fixed')) || null;
     for (const row of rows) { row.hidden = false; body.insertBefore(row, fixed); }
@@ -131,4 +170,62 @@ export function mountProgressTools(host, tracker) {
   });
   box.append(message, exportButton, importButton, file, receipt); host.append(box);
   return { element: box, dispose() { disposed = true; ++importGeneration; unsubscribe(); box.remove(); } };
+}
+
+// Preserve semantic annotation boundaries even for rows hidden by pagination.
+// innerText would discard off-page rows, while textContent concatenates block notes.
+function printableCellText(cell) {
+  if (!cell) return '—';
+  const text = node => {
+    if (node.nodeType === 3) return node.textContent;
+    if (node.nodeType !== 1 || node.hidden || node.getAttribute('aria-hidden') === 'true') return '';
+    if (node.tagName === 'BR') return '\n';
+    const value = [...node.childNodes].map(text).join('');
+    return /^(SMALL|P|DIV|LI|DETAILS|SUMMARY)$/.test(node.tagName) ? '\n' + value + '\n' : value;
+  };
+  return [...cell.childNodes].map(text).join('').replace(/[ \t]*\n[ \t]*/g, '\n').replace(/\n{2,}/g, '\n').trim();
+}
+
+// Build a separate print document; never hide or mutate the live table to print it.
+export function renderPartChecklist(doc, data) {
+  const make = (tag, text) => { const element = doc.createElement(tag); if (text !== undefined) element.textContent = text; return element; };
+  doc.documentElement.lang = 'en'; doc.head.replaceChildren(); doc.body.replaceChildren();
+  doc.head.append(make('title', `${data.label} · checklist`));
+  const viewport = make('meta'); viewport.name = 'viewport'; viewport.content = 'width=device-width, initial-scale=1'; doc.head.append(viewport);
+  // Wide lists retain the chosen paper size but use landscape. Intrinsic compact
+  // widths keep whole numbers/short headers intact; names and IDs take the rest.
+  const landscape = data.columns.length + 1 >= 8;
+  doc.body.dataset.printOrientation = landscape ? 'landscape' : 'portrait';
+  const style = make('style', `@page{margin:12mm;${landscape ? 'size:landscape' : ''}}*{box-sizing:border-box}body{font:11pt/1.4 system-ui,sans-serif;color:#111;background:white;margin:20px}h1{font-size:20pt;margin-bottom:8px}p{overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:auto;font-size:9pt}th,td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{white-space:normal;overflow-wrap:normal}td[data-print-kind=text]{min-width:8ch}td:nth-child(2){min-width:10ch}td[data-print-primary]{min-width:18ch}td[data-print-kind=number]{white-space:normal;overflow-wrap:normal;width:1%}th[data-print-kind=status],td[data-print-kind=status],td[data-print-compact]{white-space:nowrap;overflow-wrap:normal;width:1%}thead{display:table-header-group}tbody,tr{break-inside:avoid}.cad-print-note p{margin:3px 0;line-height:1.35}button{font:inherit;padding:10px;margin-bottom:12px}@media print{body{margin:0}button{display:none}}`); doc.head.append(style);
+  const print = make('button', 'Print / Save PDF'); print.type = 'button'; print.onclick = () => doc.defaultView.print();
+  doc.body.append(print, make('h1', data.label), make('p', `${data.project || 'Project unspecified'} · Revision: ${data.revision || 'unavailable'}`),
+    make('p', `${data.scope === 'all' ? 'All parts' : 'Matching parts, all pages'}: ${data.rows.length} of ${data.total}${data.query ? ` · Search: ${data.query}` : ''}`));
+  if (data.notice) doc.body.append(make('p', data.notice));
+  const table = make('table'), head = make('thead'), headers = make('tr');
+  const kinds = ['status', ...data.columns.map((_,index) => {
+    if (['number','status'].includes(data.columnTypes?.[index])) return data.columnTypes[index];
+    return 'text';
+  })];
+  const titles = ['Done', ...data.columns];
+  const primary = kinds.findIndex((kind,index) => index > 1 && kind === 'text');
+  // Long supporting prose belongs beneath its part, at the full sheet width.
+  // Keep identity/name, numeric values and status fields in the ordinary grid.
+  const columns = titles.map((_,index) => index);
+  const longNote = (value,index) => kinds[index] === 'text' && index > 1 && index !== primary && String(value ?? '').length > 240;
+  for (const index of columns) { const th = make('th', titles[index]); th.scope = 'col'; th.dataset.printKind=kinds[index]; headers.append(th); }
+  head.append(headers); table.append(head);
+  const scalar = /^[+-]?(?:[$€£¥]\s*)?(?:\d[\d,.]*|\.\d+)%?$|^[—–-]$/u;
+  for (const values of data.rows) {
+    const body = make('tbody'), row = make('tr'), fields = ['☐', ...values]; row.dataset.printPart='';body.dataset.printKey=String(values[0]??'');
+    const notes=columns.filter(index=>longNote(fields[index],index));
+    for (const index of columns) { const value=fields[index],cell=make('td',notes.includes(index)?'See note below':value); cell.dataset.printKind=kinds[index]; if(index===primary)cell.dataset.printPrimary=''; if(kinds[index]==='number'&&scalar.test(String(value).trim()))cell.dataset.printCompact=''; row.append(cell); }
+    body.append(row);
+    if (notes.length) {
+      const noteRow=make('tr'),cell=make('td');cell.colSpan=columns.length;cell.className='cad-print-note';
+      for(const index of notes){const p=make('p');p.dataset.printColumn=titles[index];p.append(make('strong',titles[index]+': '),doc.createTextNode(fields[index]??''));cell.append(p);}
+      noteRow.append(cell);body.append(noteRow);
+    }
+    table.append(body);
+  }
+  doc.body.append(table);
 }

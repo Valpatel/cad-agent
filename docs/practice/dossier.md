@@ -672,8 +672,8 @@ cost allowance for this design. [ref:boothroyd-dewhurst-inc-boothroyd-dewhurst-d
 For a tolerance-dependent decision, name the assembly criterion, datum/direction, signed sensitivities and whether
 each tolerance is a half-width or full range. Scholz's worst-case bound presumes in-range contributors; RSS also
 needs justified stable, centred, independent variation and a distribution/standard-deviation model. Same-process
-parts and shared temperature changes can violate independence; radial error at zero cannot be linearised by
-ordinary derivatives. [ref:university-of-washington-scholz-tolerance-stack-up-analysis]
+parts and shared temperature changes can violate independence; radial distance at zero offset has no ordinary
+linearisation. [ref:university-of-washington-scholz-tolerance-stack-up-analysis]
 
 Put these assumptions and unresolved evidence in the existing decisions and reviewer findings. These are manual
 review prompts: #40's general DFA worksheet and tolerance stack-up helper remain deferred. The existing

@@ -491,8 +491,8 @@ sources:
     spdx: null
     class: proprietary
     read: false
-    note: Primary document read; redistribution terms not reviewed. Cited and paraphrased only; no PDF, slide or
-      timing table copied.
+    note: Primary document read; redistribution terms not reviewed. Cited and paraphrased only; no PDF, slide or timing table
+      copied.
   reuse:
     text: cite-only
     geometry: none
@@ -511,14 +511,14 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Separate-part necessity and handling/insertion difficulty are distinct review questions. Reported cost
-    reductions are case-specific, not promised savings.
+  summary: Separate-part necessity and handling/insertion difficulty are distinct review questions. Reported cost reductions
+    are case-specific, not promised savings.
   used_for:
   - docs/practice/dossier.md
   imported: a896354f0e42b132
-  verified: '2026-11-10: read 2019-10-01 presentation, PDF pp. 24-29: DFA decisions, motor assembly, necessity,
-    handling/insertion, analysis slide and baseline/redesign workflow. Remaining: pp. 1-23 and 30-68; no proprietary
-    timing-table or cost-model reproduction.'
+  verified: '2026-11-10: read 2019-10-01 presentation, PDF pp. 24-29: DFA decisions, motor assembly, necessity, handling/insertion,
+    analysis slide and baseline/redesign workflow. Remaining: pp. 1-23 and 30-68; no proprietary timing-table or cost-model
+    reproduction.'
   archive:
     sha256: 42f774b4cefe0b52bf0bea4f7b8e48cbd9ed9d26b8d5651b5a0a7a588d4b148c
     kind: pdf
@@ -622,8 +622,8 @@ sources:
     spdx: null
     class: proprietary
     read: false
-    note: Primary document read; redistribution terms not reviewed. Cited and paraphrased only; no PDF, slide or
-      timing table copied.
+    note: Primary document read; redistribution terms not reviewed. Cited and paraphrased only; no PDF, slide or timing table
+      copied.
   reuse:
     text: cite-only
     geometry: none
@@ -642,14 +642,14 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Linear worst-case bounds and RSS rest on different assumptions. Independence, centring and the relation
-    between tolerance and standard deviation need explicit evidence.
+  summary: Linear worst-case bounds and RSS rest on different assumptions. Independence, centring and the relation between
+    tolerance and standard deviation need explicit evidence.
   used_for:
   - docs/practice/dossier.md
   imported: 8f8ecc45bfed808a
-  verified: '2026-11-10: read November 1995 original review, sections 1-4.1, PDF pp. 3-14: notation, linearity limits,
-    arithmetic endpoints and normal-variation RSS assumptions/derivation. Remaining: sections 4.2-5, risk and mean-shift
-    treatments; no process-capability measurement or general calculator implemented.'
+  verified: '2026-11-10: read November 1995 original review, sections 1-4.1, PDF pp. 3-14: notation, linearity limits, arithmetic
+    endpoints and normal-variation RSS assumptions/derivation. Remaining: sections 4.2-5, risk and mean-shift treatments;
+    no process-capability measurement or general calculator implemented.'
   archive:
     sha256: bfbd990d986f0c8aebf38296af4b1ebe050b29a61f5b05bb7c2911ec37d34009
     kind: pdf

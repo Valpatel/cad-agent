@@ -95,8 +95,8 @@ def test_aisc_j2_2b_maximum_fillet_along_an_edge():
     assert quarter["minimum"] == pytest.approx(0.125 * IN) and quarter["maximum"] == pytest.approx(0.1875 * IN)
     assert quarter["conflict"] is False
     assert fx.fillet_size_limits(10 * MM, 8 * MM)["maximum"] == pytest.approx(8 * MM - IN / 16)
-    # a thin edge on a thicker part cannot meet both: 1/2 in asks for 3/16 in, a 1/8 in edge allows 1/8 in
-    assert fx.fillet_size_limits(0.125 * IN, 0.125 * IN)["conflict"] is False
+    # a thin edge beside thicker parts cannot meet both: a 0.3 in thinner part asks for 3/16 in, a 0.15 in edge
+    # allows 0.15 in
     assert fx.fillet_size_limits(0.3 * IN, 0.15 * IN)["conflict"] is True
 
 

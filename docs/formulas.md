@@ -163,9 +163,9 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `rivet_shear_force`, `bearing_force` | a riveted joint's rivets in shear, n m τ π d² / 4, and its holes in bearing, n d t σbr | MIL-HDBK-5J, 8.1.2 and 8.1.2.1 (Tables 8.1.2(b) and 8.1.2.1(a)) | static; a blind rivet's shear is its maker's rating, not its alloy's |
 | `tearing_force`, `solid_sheet_force`, `lap_joint` | the sheet torn between holes, (p − d) t σt, the solid sheet p t σt, and a lap joint's strength (the least mode) and efficiency, per pitch | Abbud, *Riveted Joints* lecture notes (Al-Mustaqbal University College), checked on its Problem 2 | rivets in shear only; the single lap's bending is not modelled; tearing at the first row |
 | `fillet_throat`, `fillet_throat_area`, `fillet_throat_stress` | an equal-leg fillet weld: throat 0.707 h, area 0.707 h l, and a direct load's stress on the throat, F / (0.707 h l) | AISC 360-16, Section J2.2a; Shigley 10th ed., Chapter 9, "Butt and Fillet Welds" | static; a sound weld with the leg as drawn; the load through the group's centroid |
-| `fillet_size_limits` | the least leg for the thinner part joined (3, 5, 6, 8 mm) and the largest along an edge | AISC 360-16, Table J2.4 and Section J2.2b(b) | the table's SI column; says nothing about burn-through |
-| `weld_line_parallel`, `weld_line_box`, `weld_line_circle` | a weld group as a line: its length and unit second moments Iu (about x and y) and Ju, for two parallel welds, a rectangle all round and a circle all round | Shigley 10th ed., Chapter 9, Tables 9-1 and 9-2 | the weld as a line at the joint; one leg size |
-| `weld_group_stress` | the throat stress at the critical point from shear, axial load, bending about two axes and torque: V / A, M c / I and T r / J added as vectors | Shigley 10th ed., Chapter 9, "Stresses in Welded Joints in Torsion" and "in Bending" (Example 9-4) | static, elastic; every load at the centroid; the whole resultant taken as shear |
+| `fillet_size_limits` | the least leg for the thinner part joined (1/8, 3/16, 1/4, 5/16 in) and the largest along a lapped edge | AISC 360-16, Table J2.4 and Section J2.2b(b) | the table's inch column, converted exactly; says nothing about burn-through |
+| `weld_line_parallel`, `weld_line_box`, `weld_line_circle` | a weld group as a line: its length and unit second moments Iu (about x and y) and Ju, for two parallel welds, a rectangle all round and a circle all round | Shigley 10th ed., Chapter 9, Tables 9-1 and 9-2 | the weld as a line at the joint; one leg size; on a plate or a stiff part, not on another tube's face |
+| `weld_group_stress` | the throat stress at the critical point from shear, axial load, bending about two axes and torque: V / A, M c / I and T r / J added as vectors | Shigley 10th ed., Chapter 9, "Stresses in Welded Joints in Torsion" and "in Bending" (Example 9-4) | static, elastic; every load at the centroid; shear spread evenly over the length; the whole resultant taken as shear; not for a tube welded to another tube's face |
 | `weld_metal_strength` | what the throat may carry: 0.60 FEXX times φ = 0.75 (LRFD) or over Ω = 2.00 (ASD) | AISC 360-16, Section J2.4(a) and Table J2.5 | steel, matching filler metal; no directional increase |
 | `base_metal_shear_strength` | what the metal beside the weld may carry per unit length: the lower of 0.60 Fy t (φ 1.00, Ω 1.50) and 0.60 Fu t (φ 0.75, Ω 2.00) | AISC 360-16, Section J4.2, Eqs. (J4-3) and (J4-4) | the metal as it is beside the weld; heat-affected-zone softening not covered |
 | `fillet_weld_check` | a throat stress against both, kept apart: the weld metal's ratio, the base metal's ratio, and which governs | AISC 360-16, Section J2.4(a), Eqs. (J2-2) and (J2-3) | a pass has only the specification's factor; not proof that the weld is sound |
@@ -225,8 +225,19 @@ beside the weld, both from AISC 360-16 [ref:aisc-360-16]. Choose `"lrfd"` with f
 service loads; the result names the method and the factor it used.
 
 The directional strength increase that AISC allows for a fillet loaded across its axis is left out. Packer and Sun
-found it unsafe for fillet welds to the ends of rectangular tubes [ref:packer-sun-2015-hss-fillet], and without it
-every result here is on the safe side.
+found it unsafe for fillet welds to the ends of rectangular tubes [ref:packer-sun-2015-hss-fillet]. Leaving it out
+is the cautious choice for the direction of the load on the throat; it does not make up for anything in the lists
+below.
+
+Where the line method itself stops:
+
+- **A tube welded to another tube's face.** The method loads the whole perimeter, which holds on a plate or a part
+  stiff enough to pass the load evenly. The face of a hollow section is flexible, so the load crowds to the corners
+  and only part of the weld works. AISC 360-16 Section K5 gives effective weld lengths for that case, and the full
+  perimeter used here is unconservative.
+- **Shear is spread evenly over the whole length**, as Shigley does. The elastic peak in the welds that run along
+  the force is about twice that on a square or round tube. With bending present the corner governs and this hardly
+  matters; a short stub loaded mostly in shear is under-read, and relies on the weld's ductility.
 
 What these functions do not cover:
 
@@ -237,8 +248,8 @@ What these functions do not cover:
 - **The heat-affected zone.** Cold-worked or heat-treated steel, and any aluminium, is softer beside a weld. Give
   the base metal's strength as it is there.
 - **Residual stress and distortion.**
-- **Burn-through of a thin wall.** `fillet_size_limits` gives the specification's least and largest leg. It does not
-  show that a 3 mm wall takes the heat.
+- **Burn-through of a thin wall.** `fillet_size_limits` gives the specification's least leg, and the largest along
+  a lapped edge. It does not show that a 3 mm wall takes the heat.
 
 A calculation that passes does not prove that a weld made by a hobbyist is sound. Break a test piece welded the same
 way, and inspect the real joint.
@@ -288,7 +299,7 @@ in the test.
   - Equilibrium: the weld's forces, summed with their moments, return every applied force and moment.
   - The critical point against a search of the whole weld.
   - AISC 360-16's Table J2.5 and Section J4.2 factors, Table J2.4's minimum sizes, and the Steel Tube Institute's
-    full-capacity fillet on a rectangular tube (throat 2 Fy t / FEXX, a 3/4 in leg in its example).
+    full-capacity fillet: a 3/4 in leg develops its example's rectangular tube wall and 11/16 in does not.
 - **Linkages.**
   - Loop closure, and an independent circle-intersection construction, at every input angle.
   - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.

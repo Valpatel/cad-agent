@@ -37,10 +37,13 @@ BASE_YIELDING = {"stress_over_strength": 0.60, "phi": 1.00, "omega": 1.50}
 BASE_RUPTURE = {"stress_over_strength": 0.60, "phi": 0.75, "omega": 2.00}
 METHODS = {"lrfd": "factored loads against phi times the nominal strength (load and resistance factor design)",
            "asd": "service loads against the nominal strength over Omega (allowable strength design)"}
-# Table J2.4, SI column: the thinner part joined up to (m), and the least leg (m). Over the last limit, 8 mm.
-MINIMUM_LEG = ((6e-3, 3e-3), (13e-3, 5e-3), (19e-3, 6e-3), (math.inf, 8e-3))
-EDGE_FULL_THICKNESS_BELOW = 6e-3      # Section J2.2b(b): along an edge thinner than this the leg may equal the edge
-EDGE_MARGIN = 2e-3                    # and at or above it the leg stops this far short of the edge
+# Table J2.4, inch column converted exactly: the thinner part joined up to (m), and the least leg (m): 1/8, 3/16,
+# 1/4 and 5/16 in for parts to 1/4, 1/2, 3/4 in and over. The table's SI column (3, 5, 6, 8 mm at 6, 13, 19 mm) rounds
+# these, and its rounding contradicts itself on inch stock: a 1/4 in part would need 5 mm and be allowed 4.35 mm.
+_IN = 0.0254
+MINIMUM_LEG = ((_IN / 4, _IN / 8), (_IN / 2, 3 * _IN / 16), (3 * _IN / 4, _IN / 4), (math.inf, 5 * _IN / 16))
+EDGE_FULL_THICKNESS_BELOW = _IN / 4   # Section J2.2b(b): along an edge thinner than this the leg may equal the edge
+EDGE_MARGIN = _IN / 16                # and at or above it the leg stops this far short of the edge
 PATTERNS = ("parallel", "box", "circle")
 _CIRCLE_SAMPLES = 720
 
@@ -52,6 +55,12 @@ _EQUAL_LEG = "equal legs between faces at a right angle; a concave or unequal we
 _LINE = ("the weld as a line of no width at the joint line, linear elastic: the throat's own width and the legs' "
          "offset from the line are left out, and so is the reserve an eccentric group has past first yield (the "
          "instantaneous-centre method)")
+_RIGID = ("the member is welded to a plate or a part stiff enough to load the whole weld: on the flexible face of "
+          "another tube the load crowds to the corners and only part of the length works (AISC 360-16 Section K5 "
+          "gives effective lengths), so the full perimeter used here is unconservative there")
+_EVEN_SHEAR = ("a shear force is spread evenly over the whole length, as Shigley does, which leans on the weld's "
+               "ductility: the elastic peak in the welds that run along the force is higher (about twice, on a square "
+               "or round tube), so a short stub loaded mostly in shear is under-read")
 _AS_SHEAR = ("the whole resultant is carried as shear on the throat whatever its direction, which is conservative; "
              "the directional strength increase of AISC 360-16 J2.4(b) is not used (tests found it unsafe on welds to "
              "the ends of rectangular tubes)")
@@ -74,7 +83,7 @@ def _number(name: str, v: Any) -> float:
 
 
 def _method(method: str) -> str:
-    if method not in METHODS:
+    if not isinstance(method, str) or method not in METHODS:
         raise ValueError(f"method must be one of {sorted(METHODS)}: {METHODS}")
     return method
 
@@ -122,25 +131,29 @@ def fillet_throat_stress(force: float, leg: float, length: float) -> float:
 
 
 @formula(units={"thinner_thickness": "m (the thinner of the two parts joined)",
-                "edge_thickness": "m (the part along whose edge the weld runs, such as a tube's wall at its end; "
-                                  "None when the weld is not along an edge)"},
-         returns="dict: minimum (the least leg, m), maximum (the largest leg along that edge, m, or None), and "
-                 "conflict (true when the least exceeds the largest: the specification's rules cannot both be met)",
-         limits=("the SI column of AISC's table, whose steps are 6, 13 and 19 mm (its inch column steps at 1/4, 1/2 "
-                 "and 3/4 in)", "the least leg is for heat input, in a single pass, and the load may need more; it "
-                 "does not show that a thin wall takes the heat without burning through", _MATCHING),
+                "edge_thickness": "m (the part along whose edge the weld runs, as on the end of a lapped plate; None "
+                                  "when the weld is not along an edge: a tube's end on a plate is a tee joint, and its "
+                                  "wall does not cap the leg)"},
+         returns="dict: minimum (the least leg, m), maximum (the largest leg along that edge, m, or None) and conflict "
+                 "(true when the least exceeds the largest)",
+         limits=("the inch column of AISC's table converted exactly (1/8, 3/16, 1/4, 5/16 in for the thinner part to "
+                 "1/4, 1/2, 3/4 in and over); its SI column rounds these to 3, 5, 6, 8 mm at 6, 13, 19 mm",
+                 "the least leg is for heat input, in a single pass, and the load may need more; it does not show that "
+                 "a thin wall takes the heat without burning through", "the largest leg along an edge may be exceeded "
+                 "where the drawing calls for the weld to be built out to full throat (J2.2b(b)), which this leaves "
+                 "out", _MATCHING),
          source=cite("aisc-360-16", "Table J2.4 (minimum size of fillet welds) and Section J2.2b(b) (maximum size "
                      "along an edge)"))
 def fillet_size_limits(thinner_thickness: float, edge_thickness: Optional[float] = None) -> Dict[str, Any]:
-    """The least fillet leg AISC allows on parts of this thickness, and the largest along an edge: 3, 5, 6 or 8 mm for
-    the thinner part up to 6, 13, 19 mm or more; along an edge under 6 mm thick no more than the edge, and from 6 mm
-    the edge less 2 mm."""
+    """The least fillet leg AISC allows on parts of this thickness, and the largest along an edge: 1/8, 3/16, 1/4 or
+    5/16 in (3.2, 4.8, 6.4, 7.9 mm) for the thinner part up to 1/4, 1/2, 3/4 in or more; along an edge under 1/4 in
+    thick no more than the edge, and from 1/4 in the edge less 1/16 in (1.6 mm)."""
     t = _positive("thinner_thickness", thinner_thickness)
-    minimum = next(leg for limit, leg in MINIMUM_LEG if t <= limit * (1.0 + 1e-9))     # 13 * 1e-3 is "13 mm inclusive"
+    minimum = next(leg for limit, leg in MINIMUM_LEG if t <= limit * (1.0 + 1e-9))     # "to 1/4 in inclusive"
     maximum = None
     if edge_thickness is not None:
         e = _positive("edge_thickness", edge_thickness)
-        maximum = e if e < EDGE_FULL_THICKNESS_BELOW else e - EDGE_MARGIN
+        maximum = e if e < EDGE_FULL_THICKNESS_BELOW * (1.0 - 1e-9) else e - EDGE_MARGIN
     return {"minimum": minimum, "maximum": maximum, "conflict": maximum is not None and minimum > maximum}
 
 
@@ -157,7 +170,7 @@ _GROUP_RETURNS = ("dict: pattern, its dimensions, length (all the weld, m), iu_x
 
 @formula(units={"length": "m (each of the two welds, which run parallel to y)",
                 "spacing": "m (between the two welds, measured along x)"},
-         returns=_GROUP_RETURNS, limits=(_LINE, "two equal welds, opposite each other"),
+         returns=_GROUP_RETURNS, limits=(_LINE, _RIGID, "two equal welds, opposite each other"),
          source=cite("shigley", "Chapter 9, Table 9-1 (torsional properties of fillet welds), weld 2: Ju = d (3 b^2 + "
                      "d^2) / 6; Table 9-2 (bending properties of fillet welds), welds 2 and 3: Iu = d^3 / 6 and b "
                      "d^2 / 2"))
@@ -171,7 +184,7 @@ def weld_line_parallel(length: float, spacing: float) -> Dict[str, Any]:
 @formula(units={"width": "m (the rectangle's side along x, at the weld's root: the tube's outside)",
                 "depth": "m (its side along y)"},
          returns=_GROUP_RETURNS,
-         limits=(_LINE, "welded all round with one leg size; sharp corners (a tube's corner radius shortens the weld "
+         limits=(_LINE, _RIGID, "welded all round with one leg size; sharp corners (a tube's corner radius shortens the weld "
                  "a little, and the corners of a formed tube are where a weld is hardest to make well)"),
          source=cite("shigley", "Chapter 9, Table 9-1, weld 5: Ju = (b + d)^3 / 6; Table 9-2, weld 6: Iu = d^2 (3 b "
                      "+ d) / 6"))
@@ -183,7 +196,7 @@ def weld_line_box(width: float, depth: float) -> Dict[str, Any]:
 
 
 @formula(units={"diameter": "m (of the weld's root circle: the tube's or boss's outside)"}, returns=_GROUP_RETURNS,
-         limits=(_LINE, "welded all round with one leg size"),
+         limits=(_LINE, _RIGID, "welded all round with one leg size"),
          source=cite("shigley", "Chapter 9, Table 9-1, weld 6: Ju = 2 pi r^3; Table 9-2, weld 9: Iu = pi r^3"))
 def weld_line_circle(diameter: float) -> Dict[str, Any]:
     """A circle of radius r welded all round (a round tube or a pin boss on a plate), as a line: Iu = pi r^3 about any
@@ -207,7 +220,8 @@ def _norm(v: Tuple[float, float, float]) -> float:
 
 def _critical_point(g: Mapping[str, Any], loads: Tuple[float, ...]) -> Tuple[float, float]:
     """Where the resultant is largest. Each component is linear in x and y, so on a straight weld the resultant's
-    square is convex and peaks at an end: the candidates are the ends (the corners). A circle is searched."""
+    square is convex and peaks at an end: the candidates are the ends (the corners). A circle is searched: 720
+    samples, then every peak among them refined."""
     if g["pattern"] == "circle":
         r = g["diameter"] / 2.0
 
@@ -215,13 +229,19 @@ def _critical_point(g: Mapping[str, Any], loads: Tuple[float, ...]) -> Tuple[flo
             return _norm(_line_force(g, loads, r * math.cos(angle), r * math.sin(angle)))
 
         step = 2.0 * math.pi / _CIRCLE_SAMPLES
-        best = max(range(_CIRCLE_SAMPLES), key=lambda i: at(i * step)) * step
-        lo, hi = best - step, best + step
-        for _ in range(80):                                   # ternary search inside the two neighbouring samples
-            a, b = lo + (hi - lo) / 3.0, hi - (hi - lo) / 3.0
-            lo, hi = (a, hi) if at(a) < at(b) else (lo, b)
-        angle = (lo + hi) / 2.0
-        return r * math.cos(angle), r * math.sin(angle)
+        values = [at(i * step) for i in range(_CIRCLE_SAMPLES)]
+        best, best_value = 0.0, values[0]
+        for i, v in enumerate(values):                        # refine every peak of the samples, then take the highest
+            if v < values[i - 1] or v < values[(i + 1) % _CIRCLE_SAMPLES]:
+                continue
+            lo, hi = (i - 1) * step, (i + 1) * step
+            for _ in range(60):                               # ternary search between the two neighbouring samples
+                a, b = lo + (hi - lo) / 3.0, hi - (hi - lo) / 3.0
+                lo, hi = (a, hi) if at(a) < at(b) else (lo, b)
+            angle = (lo + hi) / 2.0
+            if at(angle) >= best_value:
+                best, best_value = angle, at(angle)
+        return r * math.cos(best), r * math.sin(best)
     half_x = (g["spacing"] if g["pattern"] == "parallel" else g["width"]) / 2.0
     half_y = (g["weld_length"] if g["pattern"] == "parallel" else g["depth"]) / 2.0
     corners: List[Tuple[float, float]] = [(sx * half_x, sy * half_y) for sx in (1.0, -1.0) for sy in (1.0, -1.0)]
@@ -229,14 +249,22 @@ def _critical_point(g: Mapping[str, Any], loads: Tuple[float, ...]) -> Tuple[flo
 
 
 def _checked_group(group: Any) -> Dict[str, Any]:
-    needs = {"parallel": ("weld_length", "spacing"), "box": ("width", "depth"), "circle": ("diameter",)}
-    if not isinstance(group, Mapping) or group.get("pattern") not in needs:
+    """The group rebuilt from its pattern and dimensions, so a dict edited by the caller cannot carry properties
+    that no longer belong to its shape; it is refused when they disagree."""
+    builders = {"parallel": (weld_line_parallel, ("weld_length", "spacing")), "box": (weld_line_box, ("width", "depth")),
+                "circle": (weld_line_circle, ("diameter",))}
+    if not isinstance(group, Mapping) or not isinstance(group.get("pattern"), str) or group["pattern"] not in builders:
         raise ValueError(f"group must be the dict from weld_line_parallel, weld_line_box or weld_line_circle "
                          f"(patterns {PATTERNS}), not {group!r}")
-    out = dict(group)
-    for key in needs[out["pattern"]] + ("length", "iu_x", "iu_y", "ju"):
-        out[key] = _positive(f"group[{key!r}]", out.get(key))
-    return out
+    build, dims = builders[group["pattern"]]
+    fresh = build(*(_positive(f"group[{key!r}]", group.get(key)) for key in dims))
+    for key in ("length", "iu_x", "iu_y", "ju"):
+        given = group.get(key, fresh[key])
+        if isinstance(given, bool) or not isinstance(given, (int, float)) or not math.isclose(given, fresh[key],
+                                                                                              rel_tol=1e-9):
+            raise ValueError(f"group[{key!r}] is {given!r}, but a {group['pattern']} of these dimensions has "
+                             f"{fresh[key]!r}: build the group with weld_line_{group['pattern']} and do not edit it")
+    return fresh
 
 
 @formula(units={"group": "dict from weld_line_parallel, weld_line_box or weld_line_circle",
@@ -248,7 +276,7 @@ def _checked_group(group: Any) -> Dict[str, Any]:
                  "secondary (the moments' and the torque's stress at the critical point, Pa), stress (their vector "
                  "sum on the throat at the critical point, Pa), force_per_length (that resultant per unit of weld, "
                  "N/m) and point ([x, y] of the critical point, m)",
-         limits=(_STATIC, _SOUND, _LINE, _AS_SHEAR, "every load acts at the group's centroid: move an offset force "
+         limits=(_STATIC, _SOUND, _LINE, _RIGID, _EVEN_SHEAR, _AS_SHEAR, "every load acts at the group's centroid: move an offset force "
                  "there and add its moment (force times arm) yourself; compression is counted like tension, though "
                  "a fitted member bears on the plate", _EQUAL_LEG),
          source=cite("shigley", "Chapter 9, 'Stresses in Welded Joints in Torsion' and 'Stresses in Welded Joints in "
@@ -266,6 +294,8 @@ def weld_group_stress(group: Mapping[str, Any], leg: float, shear_x: float = 0.0
                                                    ("moment_x", moment_x), ("moment_y", moment_y), ("torque", torque)))
     x, y = _critical_point(g, loads)
     resultant = _norm(_line_force(g, loads, x, y))
+    if not math.isfinite(resultant):
+        raise ValueError("the loads are too large to add up: the resultant overflows")
     primary = _norm(_line_force(g, loads[:3] + (0.0, 0.0, 0.0), x, y))
     secondary = _norm(_line_force(g, (0.0, 0.0, 0.0) + loads[3:], x, y))
     return {"throat": throat, "throat_area": throat * g["length"], "primary": primary / throat,

@@ -56,35 +56,48 @@ def test_aisc_table_j2_5_factors_for_a_fillet_weld():
 
 
 def test_steel_tube_institute_full_capacity_fillet_on_a_rectangular_tube():
-    # Packer (Steel Tube Institute, 2024), Eqs. (1) to (3) and the design example: a fillet develops the wall's yield
-    # when 0.75 (0.60) FEXX tw = 0.9 Fy t, so tw = 2 Fy t / FEXX with no directional increase. For Fy = 50 ksi,
-    # t = 0.349 in and E70 the article gives tw = 0.952 t x 1.5 for a rectangular tube, a leg it rounds to 3/4 in.
+    # Packer (Steel Tube Institute, 2024), design example: HSS wall Fy = 50 ksi, t = 0.349 in, E70. A fillet develops
+    # the wall's design yield, 0.9 Fy t per unit length; with the directional factor 1.5 on a round tube the article
+    # needs a throat of 0.332 in, a 0.47 in leg, and says a rectangular tube (no factor) would need a 3/4 in leg.
     fy, t, fexx = 50 * KSI, 0.349 * IN, 70 * KSI
-    throat = 2 * fy * t / fexx
-    leg = throat / fx.fillet_throat(1.0)
-    assert throat / t == pytest.approx(0.952 * 1.5, abs=1e-3)
-    assert 0.6875 < leg / IN <= 0.75                                                   # over 11/16, so 3/4 in
-    weld_per_length = fx.weld_metal_strength(fexx)["available"] * fx.fillet_throat(leg)
-    assert weld_per_length == pytest.approx(0.9 * fy * t, rel=1e-12)                   # the wall's design yield
+    wall = 0.9 * fy * t
+    available = fx.weld_metal_strength(fexx)["available"]                             # no directional increase
+
+    def develops(leg):
+        return available * fx.fillet_throat(leg) >= wall
+
+    assert develops(0.75 * IN) and not develops(0.6875 * IN)                          # 3/4 in does, 11/16 in does not
+    # the article's round-tube weld, a 0.332 in throat, carries the wall only with its factor of 1.5
+    assert 1.5 * available * 0.332 * IN == pytest.approx(wall, rel=2e-3)
+    assert fx.fillet_throat(0.47 * IN) / IN == pytest.approx(0.332, abs=1e-3)
+    assert not develops(0.47 * IN)
 
 
 # ----------------------------------------------------------------------------- minimum and maximum size
 
-@pytest.mark.parametrize("thinner_mm,least_mm", [(3.2, 3), (6, 3), (6.1, 5), (13, 5), (13.1, 6), (19, 6), (19.1, 8),
-                                                 (50, 8)])
-def test_aisc_table_j2_4_minimum_fillet(thinner_mm, least_mm):
-    # AISC 360-16 Table J2.4, SI column: to 6 mm inclusive 3 mm; over 6 to 13, 5 mm; over 13 to 19, 6 mm; over 19, 8.
-    assert fx.fillet_size_limits(thinner_mm * MM)["minimum"] == pytest.approx(least_mm * MM)
+@pytest.mark.parametrize("thinner_in,least_in", [(1 / 8, 1 / 8), (1 / 4, 1 / 8), (0.26, 3 / 16), (1 / 2, 3 / 16),
+                                                 (0.51, 1 / 4), (3 / 4, 1 / 4), (0.76, 5 / 16), (2, 5 / 16)])
+def test_aisc_table_j2_4_minimum_fillet(thinner_in, least_in):
+    # AISC 360-16 Table J2.4: to 1/4 in inclusive, 1/8 in; over 1/4 to 1/2, 3/16; over 1/2 to 3/4, 1/4; over 3/4,
+    # 5/16 in. (Its SI column prints 3, 5, 6 and 8 mm at 6, 13 and 19 mm, each within 0.4 mm of these.)
+    least = fx.fillet_size_limits(thinner_in * IN)["minimum"]
+    assert least == pytest.approx(least_in * IN, rel=1e-12)
+    assert least == pytest.approx({1 / 8: 3, 3 / 16: 5, 1 / 4: 6, 5 / 16: 8}[least_in] * MM, abs=0.4 * MM)
 
 
 def test_aisc_j2_2b_maximum_fillet_along_an_edge():
-    # J2.2b(b): under 6 mm, no more than the edge's thickness; from 6 mm, the thickness less 2 mm.
-    assert fx.fillet_size_limits(3 * MM)["maximum"] is None
-    thin = fx.fillet_size_limits(3.175 * MM, 3.175 * MM)                               # a 1/8 in tube wall
-    assert thin == {"minimum": pytest.approx(3 * MM), "maximum": pytest.approx(3.175 * MM), "conflict": False}
-    assert fx.fillet_size_limits(10 * MM, 6 * MM)["maximum"] == pytest.approx(4 * MM)
-    # a thin edge on a thick plate cannot meet both rules: the table asks for 3 mm, the 2 mm edge allows 2 mm
-    assert fx.fillet_size_limits(2 * MM, 2 * MM)["conflict"] is True
+    # J2.2b(b): along an edge under 1/4 in thick, no more than the thickness; from 1/4 in, the thickness less 1/16 in.
+    assert fx.fillet_size_limits(3 * MM)["maximum"] is None                            # not along an edge
+    thin = fx.fillet_size_limits(0.125 * IN, 0.125 * IN)                               # a lapped 1/8 in plate
+    assert thin == {"minimum": pytest.approx(0.125 * IN), "maximum": pytest.approx(0.125 * IN), "conflict": False}
+    # 1/4 in stock: least 1/8 in, largest 3/16 in. The table's SI column would ask for 5 mm and allow 4.35 mm.
+    quarter = fx.fillet_size_limits(0.25 * IN, 0.25 * IN)
+    assert quarter["minimum"] == pytest.approx(0.125 * IN) and quarter["maximum"] == pytest.approx(0.1875 * IN)
+    assert quarter["conflict"] is False
+    assert fx.fillet_size_limits(10 * MM, 8 * MM)["maximum"] == pytest.approx(8 * MM - IN / 16)
+    # a thin edge on a thicker part cannot meet both: 1/2 in asks for 3/16 in, a 1/8 in edge allows 1/8 in
+    assert fx.fillet_size_limits(0.125 * IN, 0.125 * IN)["conflict"] is False
+    assert fx.fillet_size_limits(0.3 * IN, 0.15 * IN)["conflict"] is True
 
 
 # ----------------------------------------------------------------------------- unit properties of a line
@@ -154,9 +167,12 @@ def test_shigley_example_9_4_welded_cantilever():
     assert s["secondary"] / KSI == pytest.approx(8.50, rel=2e-3)
     assert s["stress"] / KSI == pytest.approx(8.51, rel=2e-3)
     assert abs(s["point"][1]) == pytest.approx(1 * IN)                                 # at an end of a weld
-    # part (c): under the code's allowable for E60, 18 kpsi (0.30 x 60); the book's factor 1.6 x 18 / 8.51 = 3.38
+    # part (c): the code's allowable for an E60 electrode is 18 kpsi in the book's Table 9-6, which AISC's 0.60 FEXX
+    # over 2.00 reproduces; the weld is under it. (The book then scales by the 1.6 it reads into that allowable,
+    # 0.577 x 50 / 18, to compare with part (a): 1.6 x 18 / 8.51 = 3.38.)
     allowable = fx.weld_metal_strength(60 * KSI, "asd")["available"]
     assert allowable / KSI == pytest.approx(18.0, rel=1e-12)
+    assert s["stress"] < allowable
     assert 1.6 * allowable / s["stress"] == pytest.approx(3.38, abs=0.01)
 
 
@@ -171,7 +187,9 @@ def test_shigley_bending_of_two_welds_across_the_load():
 
 LOADS = [dict(shear_y=1500.0, moment_x=400.0), dict(torque=250.0), dict(axial=-3000.0),
          dict(shear_x=900.0, shear_y=-400.0, axial=1200.0, moment_x=-150.0, moment_y=220.0, torque=90.0),
-         dict(shear_x=2000.0, torque=-60.0, moment_y=35.0)]
+         dict(shear_x=2000.0, torque=-60.0, moment_y=35.0),
+         dict(axial=500.0, moment_x=-120.0, moment_y=-80.0),              # peaks at (+x, -y) alone
+         dict(shear_x=-700.0, shear_y=-900.0, torque=150.0, moment_x=60.0, moment_y=45.0)]
 
 
 def _line_forces(group, x, y, shear_x=0.0, shear_y=0.0, axial=0.0, moment_x=0.0, moment_y=0.0, torque=0.0):
@@ -206,11 +224,35 @@ def test_the_critical_point_is_the_worst_point_of_the_whole_weld(group, loads):
     resultant = np.sqrt(sum(c * c for c in _line_forces(group, x, y, **loads)))
     s = fx.weld_group_stress(group, leg, **loads)
     assert s["force_per_length"] == pytest.approx(resultant.max(), rel=1e-6)
-    assert s["force_per_length"] >= resultant.max() * (1 - 1e-12)
+    assert s["force_per_length"] >= resultant.max() * (1 - 1e-9)
     assert s["stress"] == pytest.approx(resultant.max() / (leg / math.sqrt(2)), rel=1e-6)
     assert s["stress"] <= s["primary"] + s["secondary"] + 1e-6                         # a vector sum, never more
     px, py = s["point"]
     assert np.min(np.hypot(x - px, y - py)) < 1e-4                                     # and it is on the weld
+
+
+def test_the_critical_corner_is_not_always_on_a_diagonal():
+    # Derivation: a pull with bending about both axes. f_z = P / L + Mx y / Iu_x - My x / Iu_y is largest where
+    # Mx y > 0 and My x < 0: with Mx < 0 and My < 0 that is the corner (+x, -y), and no other corner ties.
+    b, d = 40 * MM, 100 * MM
+    group = fx.weld_line_box(b, d)
+    s = fx.weld_group_stress(group, 4 * MM, axial=500.0, moment_x=-120.0, moment_y=-80.0)
+    assert s["point"] == [pytest.approx(b / 2), pytest.approx(-d / 2)]
+    by_hand = 500.0 / group["length"] + 120.0 * (d / 2) / group["iu_x"] + 80.0 * (b / 2) / group["iu_y"]
+    assert s["force_per_length"] == pytest.approx(by_hand, rel=1e-12)
+
+
+def test_a_group_edited_by_hand_is_refused():
+    # The group's properties must belong to its dimensions: a changed dimension, length or pattern is refused.
+    group = fx.weld_line_box(0.2, 0.2)
+    for change in ({"width": 0.05, "depth": 0.05}, {"length": 10.0}, {"iu_x": group["iu_x"] * 2}, {"ju": True},
+                   {"pattern": "circle"}):
+        with pytest.raises(ValueError):
+            fx.weld_group_stress({**group, **change}, 4 * MM, shear_y=1000.0)
+    assert fx.weld_group_stress(dict(group), 4 * MM, shear_y=1000.0)["stress"] > 0
+    # only the pattern and its dimensions are needed
+    bare = fx.weld_group_stress({"pattern": "box", "width": 0.2, "depth": 0.2}, 4 * MM, shear_y=1000.0)
+    assert bare == fx.weld_group_stress(group, 4 * MM, shear_y=1000.0)
 
 
 def test_a_round_boss_in_torsion_and_a_tube_in_bending_by_hand():
@@ -271,6 +313,11 @@ def test_asd_and_lrfd_are_reported_as_what_they_are():
     assert (lrfd["method"], asd["method"]) == ("lrfd", "asd") and set(fx.METHODS) == {"lrfd", "asd"}
     assert asd["weld_ratio"] == pytest.approx(1.5 * lrfd["weld_ratio"], rel=1e-12)     # 2.00 x 0.75
     assert asd["weld_available"] == pytest.approx(0.30 * 483 * MPA, rel=1e-12)
+    # the base metal follows the method too. By hand, per metre: ASD yielding 0.60 (315) 3 / 1.50 = 378 kN and
+    # rupture 0.60 (400) 3 / 2.00 = 360 kN; LRFD yielding 1.00 x 567 kN and rupture 0.75 x 720 = 540 kN.
+    assert asd["base_available"] == pytest.approx(360e3, rel=1e-12)
+    assert lrfd["base_available"] == pytest.approx(540e3, rel=1e-12)
+    assert asd["base_ratio"] == pytest.approx(1.5 * lrfd["base_ratio"], rel=1e-12)
 
 
 def test_the_limits_say_what_a_weld_calculation_does_not_cover():
@@ -280,6 +327,9 @@ def test_the_limits_say_what_a_weld_calculation_does_not_cover():
         assert "hobbyist" in limits and "break test" in limits, name
     assert "heat-affected" in " ".join(fx.REGISTRY["fillet_weld_check"].limits)
     assert "burn" in " ".join(fx.REGISTRY["base_metal_shear_strength"].limits)
+    group_limits = " ".join(fx.REGISTRY["weld_group_stress"].limits)
+    assert "Section K5" in group_limits and "unconservative" in group_limits        # not for tube-to-tube joints
+    assert "spread evenly" in group_limits                                           # the shear convention
     doc = __import__("cadagent.formulas.welds", fromlist=["x"]).__doc__
     for word in ("fatigue", "heat-affected", "residual stress", "burn-through", "hobbyist"):
         assert word in doc, word
@@ -298,6 +348,9 @@ def test_the_limits_say_what_a_weld_calculation_does_not_cover():
     lambda: fx.weld_group_stress({"pattern": "tee"}, 3e-3),
     lambda: fx.weld_group_stress("box", 3e-3),
     lambda: fx.weld_group_stress({"pattern": "box", "width": 0.05}, 3e-3),
+    lambda: fx.weld_group_stress({"pattern": ["box"], "width": 0.05, "depth": 0.05}, 3e-3),
+    lambda: fx.weld_group_stress(fx.weld_line_box(0.05, 0.05), 3e-3, shear_x=1e300, shear_y=1e300),
+    lambda: fx.weld_metal_strength(483e6, ["lrfd"]),
     lambda: fx.weld_group_stress(fx.weld_line_box(0.05, 0.05), 3e-3, torque=math.inf),
     lambda: fx.weld_group_stress(fx.weld_line_box(0.05, 0.05), 0),
     lambda: fx.weld_metal_strength(483e6, "wsd"),

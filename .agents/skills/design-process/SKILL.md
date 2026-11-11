@@ -94,6 +94,8 @@ do not have to recall it, in one call and about 2 KB:
 For plastic screw selection, read the [family-selection example and limits](../../../docs/research/manufacturing/process-profiles.md#select-the-screw-family-before-sizing-the-boss).
 A material-family preference does not fill a missing capacity model or qualify a printed resin; retain the card’s warnings.
 
+For a finished bearing seat or other precision interface, use the [manufacturer interface studies](../../../docs/research/manufacturing/joint-interfaces.md) before choosing a tolerance code. Confirm the loaded ring, material and post-finish dimensions; the worked cases are source-bound screening, not assembly qualification.
+
 Hold the MUST lines on their non-negotiable side; a MUST line's wiggle says which side, if any, is free. Use a
 guideline's wiggle room to make the part cheaper or simpler unless a function needs it tight. Where a card prints `?`
 or `gap:`, no source covers that point, so record your own call as a decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded

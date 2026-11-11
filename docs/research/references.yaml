@@ -1669,6 +1669,8 @@ sources:
       2026-11-01: the edition, authors and ISBN checked against the Open Library record. The registry records
       the edition only: cadagent.formulas names the section and case of each formula it takes, and
       tests/formulas/test_formulas.py checks them against worked examples or derivations written out there.
+      2026-11-11 (#578): the hollow rectangle and hollow circle that beams.py cites to Table A.1 were not read in
+      the book either; their tests are derivations (integration over the wall, the solid less the hole).
 
   - id: shigley
     title: Shigley's Mechanical Engineering Design, 10th edition
@@ -3277,7 +3279,7 @@ sources:
     url: https://www.aisc.org/globalassets/aisc/publications/standards/a360-16-spec-and-commentary.pdf
     access: free
     terms: cited by section, table and equation; never copied, not redistributed
-    areas: [welds, formulas, steel]
+    areas: [fasteners-and-hardware, metals, welds, formulas]
     used_for:
       - software/cadagent/formulas/_registry.py
       - software/cadagent/formulas/welds.py
@@ -3289,14 +3291,18 @@ sources:
       university course mirror, https://enme.umd.edu/~ccfu/ref/a360-16-spec-and-commentary.pdf. Read: Section J2.2a
       (the effective throat of a fillet weld is the shortest distance from the root to the face of the diagrammatic
       weld; the effective area is the effective length times it); Table J2.4 (minimum fillet for the thinner part
-      joined: to 6 mm, 3 mm; over 6 to 13, 5 mm; over 13 to 19, 6 mm; over 19, 8 mm); Section J2.2b(b) to (d)
-      (maximum size along an edge, the four-leg minimum length, the reduction past 100 legs); Section J2.4(a), Eqs.
+      joined: to 1/4 in (6 mm), 1/8 in (3 mm); over 1/4 to 1/2 in (13 mm), 3/16 in (5 mm); over 1/2 to 3/4 in (19
+      mm), 1/4 in (6 mm); over 3/4 in, 5/16 in (8 mm)); Section J2.2b(b) to (d) (along an edge under 1/4 in (6 mm)
+      thick no more than the thickness, from 1/4 in the thickness less 1/16 in (2 mm) unless built out; the four-leg
+      minimum length; the reduction past 100 legs); Section J2.4(a), Eqs.
       (J2-2) and (J2-3), and J2.4(b), Eqs. (J2-4) and (J2-5), the directional increase; Table J2.5 (fillet welds,
       shear: weld 0.60 FEXX on the effective area with phi 0.75 and Omega 2.00, base metal governed by J4, filler
       metal equal to or less than matching, one level greater permitted); Section J4.2, Eqs. (J4-3) and (J4-4)
       (shear yielding 0.60 Fy Agv, phi 1.00, Omega 1.50; shear rupture 0.60 Fu Anv, phi 0.75, Omega 2.00); and the
       Commentary on J2.4 (the base metal's shear planes lie clear of the fusion area and go by the parts'
-      thicknesses). Not read: the AISC Steel Construction Manual and its Design Examples, so none of their
+      thicknesses); and the Commentary on K5 (the face of a hollow section is flexible, so load across a weld to it
+      is far from even, and Table K5.1 gives effective weld properties: the table itself was not read). Not read:
+      the AISC Steel Construction Manual and its Design Examples, so none of their
       tabulated values is used. The 2022 edition renumbers the fillet equations; this entry is the 2016 one.
 
   - id: shigley-9e-welding-slides
@@ -3307,7 +3313,7 @@ sources:
     url: https://people.iut.ac.ir/sites/default/files/users/badrossamay/course_files/mech_eng_welding.pdf
     access: free
     terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers are used as test vectors
-    areas: [welds, formulas]
+    areas: [fasteners-and-hardware, welds, formulas]
     used_for:
       - tests/formulas/test_weld_formulas.py
     verified: >-
@@ -3331,7 +3337,7 @@ sources:
     url: https://eis.hu.edu.jo/acuploads/10526/CH%209.pdf
     access: free
     terms: cited and summarised with attribution, never copied
-    areas: [welds, formulas]
+    areas: [fasteners-and-hardware, welds, formulas]
     used_for:
       - tests/formulas/test_weld_formulas.py
     verified: >-
@@ -3350,7 +3356,7 @@ sources:
     url: https://steeltubeinstitute.org/wp-content/uploads/2020/09/HSS_Article_DesignFilletWelds_RectangularHSS_0615_060120.pdf
     access: free
     terms: cited and summarised with attribution, never copied
-    areas: [welds, tubes]
+    areas: [fasteners-and-hardware, metals, welds, tubes]
     used_for:
       - docs/formulas.md
     verified: >-
@@ -3369,7 +3375,7 @@ sources:
     url: https://steeltubeinstitute.org/wp-content/uploads/2024/12/STI_Full-Capacity-Weld-Article_112224.pdf
     access: free
     terms: cited and summarised with attribution, never copied; the design example's inputs and answers are used as test vectors
-    areas: [welds, tubes]
+    areas: [fasteners-and-hardware, metals, welds, tubes]
     used_for:
       - tests/formulas/test_weld_formulas.py
     verified: >-

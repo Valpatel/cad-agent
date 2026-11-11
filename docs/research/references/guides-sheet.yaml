@@ -1521,6 +1521,8 @@ sources:
   summary: 'FreeCAD sheet metal workbench: bends and unfolding to flat pattern.'
   imported: c429ce58ac3d361e
 - id: pem-design-engineers-fastener-guide-2022
+  aliases:
+  - pem-fastener-guide-2022
   kind: guide
   category: manufacturing-guides
   title: The Design Engineers Fastener Guide
@@ -1563,6 +1565,8 @@ sources:
   summary: Industry overview separating self-clinching, broaching, flaring, plastic inserts and surface mount attachment;
     application examples do not replace exact family drawings.
 - id: pem-consumer-electronics-design-guide-2021
+  aliases:
+  - pem-ce-guide-2021
   kind: guide
   category: manufacturing-guides
   title: PEM Consumer Electronics Fastening Design Standards

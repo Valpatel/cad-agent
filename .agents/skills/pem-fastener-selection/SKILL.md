@@ -9,9 +9,9 @@ Read [the sourced family comparison and worked example](../../../docs/research/m
 
 ```mermaid
 flowchart TD
-    M["Base + top material<br/>ductility and service"] --> F["Select retention mechanism"]
+    M["Base + top material<br/>ductility and service"] --> F["Select retention<br/>mechanism"]
     F --> C["Exact family card<br/>worst-case dimensions"]
-    C --> I["Tool access + seating endpoint"]
+    C --> I["Tool access<br/>+ seating endpoint"]
     I --> Q["Candidate, unqualified<br/>application coupon plan"]
     class C,I here
     class Q out

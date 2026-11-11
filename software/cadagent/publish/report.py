@@ -125,8 +125,8 @@ def holes_feature(project: CadProject) -> Dict[str, Any]:
         label = project.part_label(part)
         if row is None:
             checks.append(_row(label, False, f"hole check {why}", why))
-        elif row.get("skipped"):
-            checks.append(_row(label, True, f"not checked: {row['skipped']}", ""))
+        elif row.get("skipped"):      # cad.holes.skip: not checked is a skip, never a pass (#526)
+            checks.append({"name": label, "status": "skip", "message": f"not checked: {row['skipped']}"})
         elif row.get("error"):
             checks.append(_row(label, False, f"hole check failed to run: {row['error']}", row["error"]))
         elif row.get("findings"):

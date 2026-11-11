@@ -2,7 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
-| A pure site test unexpectedly runs a local browser through its build helper | [Inspect transitive rendering and use the existing client-diagram build contract](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#a-pure-site-test-can-invoke-a-browser-through-its-build-helper) |
+| A pure site test reaches a browser-capable build helper without a retained execution log | [Inspect transitive rendering and use the existing client-diagram build contract](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#a-pure-site-test-can-reach-a-browser-capable-build-helper) |
 | A pure repo-map/site suite fails with `needs the existing Node 22 site runtime` | [Bind the installed runtime for the parent and child processes](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#site-checks-also-need-an-explicit-runtime) |
 | Public reference totals differ from the internal registry, or a readback expects internal-only entries | [Derive public membership from the exact committed sources](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#derive-public-reference-membership-before-comparing-publication-counts) |
 | Registry validation passes but the health updater reports a shard is not editable | [Use the importer's canonical writer and test the exact round-trip](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md) |

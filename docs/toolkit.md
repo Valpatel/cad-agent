@@ -175,6 +175,17 @@ cad:
     sensor_bracket: fdm
 ```
 
+- **A skipped part's rows are skips, never passes**, with the reason: `not checked by the print pipeline: welded
+  fabrication (dossier material.process 'welded steel tube'); no check here says this part can be made`. The skip
+  count goes up and the pass count does not.
+- **What a skip does not say.** cad-agent has no weld, cut-list or purchasing check behind these names, and no rule
+  cards for `weldment` or `purchased`. A skip means the print checks do not apply. It does not mean the part is valid
+  CAD, fits a machine, can be welded or cut, or can be bought. "Holes clear", the integrity gates and the project's
+  own `cad: checks:` still run on every part.
+
+<details>
+<summary>The words that name each process, and what is left out for a skipped part</summary>
+
 | Process | Words that mean it | The print pipeline |
 |---|---|---|
 | printed | `fdm`, `fff`, `sla`, `sls`, `mjf`, `dlp`, `polyjet`, `additive`, `3D printed`, any `print`, `printed`, `printing` | applies, exactly as before |
@@ -191,13 +202,6 @@ cad:
   there the part stays in the print pipeline, where its rows fail and show it. In `cad: part_process:` such words are
   a config error, and an entry for a name that is not a part is a failing row, so a typo is never read as "printed"
   or lost.
-- **A skipped part's rows are skips, never passes**, with the reason: `not checked by the print pipeline: welded
-  fabrication (dossier material.process 'welded steel tube'); no check here says this part can be made`. The skip
-  count goes up and the pass count does not.
-- **What a skip does not say.** cad-agent has no weld, cut-list or purchasing check behind these names, and no rule
-  cards for `weldment` or `purchased`. A skip means the print checks do not apply. It does not mean the part is valid
-  CAD, fits a machine, can be welded or cut, or can be bought. "Holes clear", the integrity gates and the project's
-  own `cad: checks:` still run on every part.
 - **What is left out for a skipped part:** its `<part>.3mf`, its place on the default build plates, its row in the
   default slice and in the overhang screen, and the "missing" marks in the report's download table (a dash instead).
   A part named in `cad.plates.parts`, in `cad.slicer.parts` or on the command line is handled as named.
@@ -206,6 +210,8 @@ cad:
   named in a note. The download table still marks a missing STEP: STEP is for CAD review, whatever makes the part.
 - **Not covered yet:** `cad-agent release` is a print release and still lists every part by default; name the printed
   parts in `cad.release.parts` or `groups`.
+
+</details>
 
 ### Checked booleans (`cadagent.geometry`)
 

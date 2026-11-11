@@ -9,6 +9,7 @@ stops being valid, and its source by author, title, edition and section:
 - heat-set inserts (pull-out, torque-out, the clamp path, the most to tighten) and compression limiters (proof load,
   stack, press fit, a clamped member's stiffness, the preload kept);
 - riveted lap joints (shear, bearing, tearing, efficiency);
+- fillet welds under static load (throat, a weld group as a line, weld-metal and base-metal strength);
 - four-bar and five-bar linkages;
 - rolling bearings: rating life, equivalent loads, static safety, duty cycles and oscillation limits;
 - conduction, film resistance, fans in series and parallel, fan operating points and the stall region.
@@ -80,6 +81,7 @@ flowchart TD
 | `inserts.py` | A heat-set insert's displaced melt and the pocket below it, its pull-out and torque-out as a sheared knurl, where the screw's clamp goes (seat, through the insert, or jack-out) and the most to tighten it |
 | `limiters.py` | Proof load, stress on an annulus, a limiter's stack against the plastic, the plastic's share when it is short, a clamped member's frustum stiffness, press-fit pressure and force, and the preload a joint keeps when its plastic relaxes |
 | `rivets.py` | A riveted lap joint per pitch: rivet shear, bearing, tearing between holes, the solid sheet, and the joint's strength and efficiency |
+| `welds.py` | A fillet weld's throat, area and direct stress; a weld group as a line (two parallel welds, a rectangle or a circle all round) under shear, axial load, bending and torque; AISC 360-16's weld-metal and base-metal strengths, checked apart; the least and largest leg |
 | `linkages.py` | Grashof class and inversion, four-bar angles from the input angle, transmission angle, the input's limits; a five-bar's tip, crank angles and singularities |
 | [`bearings.py`](bearings.py) | Rolling-bearing rating life, equivalent loads, static safety, duty cycles, oscillation factors and Hertz contact; source-worked examples above and [model limits](../../../docs/mechanical/bearings.md#limits) |
 | `thermal.py` | Wall and film resistance, wall heat flow, straight-line fan curve, system coefficient, fans in series and parallel, fan operating point, stall flow |
@@ -88,6 +90,8 @@ A closed form is not proof of fit or strength. Each result holds only within the
 is weaker across its layers than any isotropic formula assumes. Test the part.
 Bearing life is a statistic for a group, not a promise for one bearing; lubrication/contamination life modification
 and small-angle wear are not predicted by these models.
+The weld functions are for static load on a sound weld: they leave out fatigue, weld quality, heat-affected-zone
+softening, residual stress and burn-through, and a pass does not show that a hobbyist's weld is sound.
 
 Related: [package map](../README.md) · [compliant features](../mechanical/README.md) ·
 [formulas reference](../../../docs/formulas.md)

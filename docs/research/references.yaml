@@ -1686,12 +1686,18 @@ sources:
       - software/cadagent/formulas/limiters.py
       - software/cadagent/formulas/screws.py
       - software/cadagent/formulas/springs.py
+      - software/cadagent/formulas/welds.py
       - software/cadagent/mechanical/printed_joints.py
+      - docs/formulas.md
     verified: >-
       2026-11-01: the title and ISBN checked against the Open Library record (it gives the printing year 2014;
       the book's copyright year is 2015, as cadagent.formulas cites it). The sections are cited where they are
       used: cadagent.formulas, and cadagent.mechanical.printed_joints under its keys shigley-shear (Section
       8-12), shigley-beam (Sections 3-9 to 3-11) and shigley-torque (Section 8-8, Eq. 8-27, Table 8-15).
+      2026-11-11 (#578): Chapter 9 (welds) was not opened in the book. cadagent.formulas.welds cites its sections
+      by title and its Tables 9-1 and 9-2 and Examples 9-1, 9-2 and 9-4 as two opened sources give them: the
+      publisher's slides for the 9th edition (shigley-9e-welding-slides) and class notes on the 10th
+      (hijazi-shigley-ch9).
 
   - id: shigley-8e
     title: Shigley's Mechanical Engineering Design, 8th edition
@@ -3260,6 +3266,118 @@ sources:
       the double-riveted joint at 65 mm pitch gives Pt 32 400 N, Ps 56 556 N, Pc 43 200 N, P 46 800 N and 69.2 %.
       The notes follow the standard textbook treatment (their Problem 2 resembles a worked example in Khurmi and
       Gupta, A Textbook of Machine Design, which was not opened here, so it is not cited).
+
+  # ---------------------------------------------------------------- welded joints (#578)
+
+  - id: aisc-360-16
+    title: "ANSI/AISC 360-16: Specification for Structural Steel Buildings"
+    authors: []
+    org: American Institute of Steel Construction
+    year: 2016
+    url: https://www.aisc.org/globalassets/aisc/publications/standards/a360-16-spec-and-commentary.pdf
+    access: free
+    terms: cited by section, table and equation; never copied, not redistributed
+    areas: [welds, formulas, steel]
+    used_for:
+      - software/cadagent/formulas/_registry.py
+      - software/cadagent/formulas/welds.py
+      - tests/formulas/test_weld_formulas.py
+      - docs/formulas.md
+    verified: >-
+      2026-11-11: read for #578 in the edition dated July 7, 2016 (the specification with its commentary, 676 PDF
+      pages). The publisher's URL above answered 403 to the reading client, so the same file was read from a
+      university course mirror, https://enme.umd.edu/~ccfu/ref/a360-16-spec-and-commentary.pdf. Read: Section J2.2a
+      (the effective throat of a fillet weld is the shortest distance from the root to the face of the diagrammatic
+      weld; the effective area is the effective length times it); Table J2.4 (minimum fillet for the thinner part
+      joined: to 6 mm, 3 mm; over 6 to 13, 5 mm; over 13 to 19, 6 mm; over 19, 8 mm); Section J2.2b(b) to (d)
+      (maximum size along an edge, the four-leg minimum length, the reduction past 100 legs); Section J2.4(a), Eqs.
+      (J2-2) and (J2-3), and J2.4(b), Eqs. (J2-4) and (J2-5), the directional increase; Table J2.5 (fillet welds,
+      shear: weld 0.60 FEXX on the effective area with phi 0.75 and Omega 2.00, base metal governed by J4, filler
+      metal equal to or less than matching, one level greater permitted); Section J4.2, Eqs. (J4-3) and (J4-4)
+      (shear yielding 0.60 Fy Agv, phi 1.00, Omega 1.50; shear rupture 0.60 Fu Anv, phi 0.75, Omega 2.00); and the
+      Commentary on J2.4 (the base metal's shear planes lie clear of the fusion area and go by the parts'
+      thicknesses). Not read: the AISC Steel Construction Manual and its Design Examples, so none of their
+      tabulated values is used. The 2022 edition renumbers the fillet equations; this entry is the 2016 one.
+
+  - id: shigley-9e-welding-slides
+    title: "Lecture Slides: Welding (Shigley's Mechanical Engineering Design, 9th edition, Chapter 9)"
+    authors: []
+    org: The McGraw-Hill Companies
+    year: 2012
+    url: https://people.iut.ac.ir/sites/default/files/users/badrossamay/course_files/mech_eng_welding.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers are used as test vectors
+    areas: [welds, formulas]
+    used_for:
+      - tests/formulas/test_weld_formulas.py
+    verified: >-
+      2026-11-11: opened the 28-page PDF (the publisher's slides, copyright 2012, as a course at Isfahan University
+      of Technology hosts them). The tables and examples are images, read by eye. Table 9-1 (torsional properties
+      of fillet welds): weld 1, A = 0.707 h d, Ju = d^3 / 12; weld 2 (two parallel welds), A = 1.414 h d, Ju =
+      d (3 b^2 + d^2) / 6; weld 5 (a rectangle), A = 1.414 h (b + d), Ju = (b + d)^3 / 6; weld 6 (a circle),
+      A = 1.414 pi h r, Ju = 2 pi r^3. Table 9-2 (bending properties): weld 2, Iu = d^3 / 6; weld 3, Iu = b d^2 / 2;
+      weld 6 (a rectangle), Iu = d^2 (3 b + d) / 6; weld 9 (a circle), Iu = pi r^3. Fig. 9-17: tau'' = 1.414 M /
+      (b d h). Example 9-2: a 3/8 in E70 fillet carries 5.57 kip per inch, F = 22.28 kip on 4 in. Example 9-4: a
+      3/8 by 2 in bar, 3/8 in fillets on its 2 in sides, 500 lbf at 6 in: A = 1.06 in^2, Iu = 1.33 in^3, I = 0.353
+      in^4, tau' = 0.472, tau'' = 8.50, tau = 8.51 kpsi; 18 kpsi allowable for E6010 and a factor of 3.38. These are
+      the 9th edition's; cadagent.formulas cites the 10th (the entry shigley), whose chapter the class notes
+      hijazi-shigley-ch9 follow under the same headings, table and example numbers.
+
+  - id: hijazi-shigley-ch9
+    title: "CH 9: Design of Permanent Joints (class notes on Shigley's Mechanical Engineering Design, 10th edition)"
+    authors: [Ala Hijazi]
+    org: The Hashemite University
+    year: null
+    url: https://eis.hu.edu.jo/acuploads/10526/CH%209.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied
+    areas: [welds, formulas]
+    used_for:
+      - tests/formulas/test_weld_formulas.py
+    verified: >-
+      2026-11-11: opened the 6-page PDF. Its headings follow the 10th edition's Chapter 9: Butt and Fillet Welds
+      (the load taken wholly as shear on the smallest throat, tau = 1.414 F / (h l), in tension and in shear);
+      Stresses in Welded Joints in Torsion (primary shear V / A, secondary M r / J, Table 9-1, J = 0.707 h Ju,
+      Example 9-1); Stresses in Welded Joints in Bending (M c / I, Table 9-2, I = 0.707 h Iu); The Strength of
+      Welded Joints (the parent metal near a weld taken as hot rolled; Examples 9-2 and 9-4). It names the
+      sections by title, not by number, so cadagent.formulas cites them by title.
+
+  - id: packer-sun-2015-hss-fillet
+    title: Design of Fillet Welds to Rectangular HSS
+    authors: [Jeffrey A. Packer, Min Sun]
+    org: Steel Tube Institute
+    year: 2015
+    url: https://steeltubeinstitute.org/wp-content/uploads/2020/09/HSS_Article_DesignFilletWelds_RectangularHSS_0615_060120.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied
+    areas: [welds, tubes]
+    used_for:
+      - docs/formulas.md
+    verified: >-
+      2026-11-11: opened the 4-page article (June 2015). Read: the directional strength increase of AISC 360
+      J2.4 comes from tests of lap splices in shear; welds to a hollow section are one-sided, so a wall in tension
+      bends the weld about its axis and opens the root; in tests of rectangular HSS welded to rigid end plates the
+      increase gave predictions without enough safety margin, so the weld metal's nominal stress should be 0.60
+      FEXX per Table J2.5, and without the increase the AISC equations were adequately safe; the AISC effective
+      throat is conservative against the measured failure planes.
+
+  - id: packer-2024-full-capacity-welds
+    title: "Full-Capacity Welds: CJP vs. Fillet vs. Fillet-Reinforced PJP"
+    authors: [Jeffrey A. Packer]
+    org: Steel Tube Institute
+    year: 2024
+    url: https://steeltubeinstitute.org/wp-content/uploads/2024/12/STI_Full-Capacity-Weld-Article_112224.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied; the design example's inputs and answers are used as test vectors
+    areas: [welds, tubes]
+    used_for:
+      - tests/formulas/test_weld_formulas.py
+    verified: >-
+      2026-11-11: opened the 7-page article (November 18, 2024; it works to AISC 360-22). Read Eqs. (1) to (3): a
+      fillet develops the HSS wall's yield when 0.75 (0.60) FEXX tw kds = 0.9 Fy t, so tw = 2 Fy t / (FEXX kds),
+      with kds = 1.0 for welds to the ends of rectangular HSS in tension; and the design example (HSS 7.000 x
+      0.375, Fy 50 ksi, t 0.349 in, E70): tw = 0.952 t = 0.332 in and a 0.47 in leg with kds = 1.5 on the round
+      tube, and a 3/4 in leg had the tube been rectangular.
 
   # ---------------------------------------------------------------- tolerance and joint references (#283)
 

@@ -54,7 +54,7 @@ def test_sources_are_cited_by_edition_not_quoted():
         elif key in ("freudenstein", "gosselin", "goncalves", "hamrock-brewe", "menck-2024"):  # papers: a journal, a year
             assert re.search(r"Transactions|Proceedings|Science \d+", ref) and re.search(r"\b(19|20)\d\d\b", ref), key
         elif key in ("covestro-screws", "covestro-joining", "bulten", "spirol-inserts", "skf-2018",
-                     "nsk-e728", "mil-hdbk-5j"):                                   # a dated edition
+                     "nsk-e728", "mil-hdbk-5j", "aisc-360-16"):                    # a dated edition
             assert re.search(r"\b20\d\d-\d\d(-\d\d)?\b", ref), key
         elif key in ("nophead-polyholes", "reprap-arc-compensation"):          # web pages: posted or last edited
             assert re.search(r"\b20\d\d-\d\d-\d\d\b", ref), key

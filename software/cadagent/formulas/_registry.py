@@ -47,6 +47,8 @@ SOURCES: Dict[str, str] = {
                    "Structures, edition 2003-01-31 (superseded by MMPDS)",
     "abbud-riveted-joints": "L. H. Abbud, Riveted Joints, Mechanical Engineering Design lecture notes, Al-Mustaqbal "
                             "University College (lecture PDF MUCLecture_2023_1147353)",
+    "aisc-360-16": "American Institute of Steel Construction, ANSI/AISC 360-16, Specification for Structural Steel "
+                   "Buildings, edition 2016-07-07",
     "hamrock-brewe": "B. J. Hamrock and D. E. Brewe, Simplified solution for stresses and deformations, Journal of "
                      "Lubrication Technology, Transactions of the ASME 105 (1983) 171-177",
 }

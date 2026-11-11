@@ -677,7 +677,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         lo, hi = sorted((law.of(d.lo), law.of(d.hi)))
         j.dofs[0] = replace(j.dofs[0], lo=lo, hi=hi)
         unit = j.dofs[0].unit
-        row = {"joint": jid, **j.follows.to_dict(), "driver": law.joint, "driver_multiplier": law.multiplier,
+        # ``follows`` is the joint it was declared to follow; ``driver`` is the sampled joint that ends up moving
+        # it (they differ when it follows a follower), with the composed multiplier and offset
+        row = {"joint": jid, "follows": j.follows.joint, "multiplier": j.follows.multiplier,
+               "offset": j.follows.offset, "driver": law.joint, "driver_multiplier": law.multiplier,
                "driver_offset": law.offset, "unit": unit, "driver_unit": d.unit,
                "range": [round(lo, 6), round(hi, 6)], "declared_range": list(j.declared) if j.declared else None,
                "law": _law(jid, j.follows, unit, js[j.follows.joint].dofs[0].unit)}
@@ -901,25 +904,34 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                                    "samples": c, "declared_samples": a.samples, "step": round(a.step(c), 6)}
             if a.kind == "rotate":
                 row["max_radius_mm"] = round(radius[a.joint], 3)
-                travel = math.radians(a.step(c)) * radius[a.joint]
+                own = {a.joint: math.radians(a.step(c)) * radius[a.joint]}
             else:
-                travel = a.step(c)
+                own = {a.joint: a.step(c)}
             drives = []
-            for f in followers[a.joint]:            # a follower's own motion adds to what its driver carries it by
+            for f in followers[a.joint]:
                 fd = js[f].dofs[0]
                 frow: Dict[str, Any] = {"joint": f, "axis": fd.kind, "unit": fd.unit, "range": driven[f]["range"],
                                         "step": round(abs(eff[f].multiplier) * a.step(c), 6)}
                 if fd.kind == "rotate":
                     frow["max_radius_mm"] = round(radius[f], 3)
-                    own = math.radians(frow["step"]) * radius[f]
+                    own[f] = math.radians(frow["step"]) * radius[f]
                 else:
-                    own = frow["step"]
-                frow["max_travel_per_step_mm"] = round(own, 3)
-                travel += own
+                    own[f] = frow["step"]
+                frow["max_travel_per_step_mm"] = round(own[f], 3)
                 drives.append(frow)
             if drives:
                 row["drives"] = drives
-            row["max_travel_per_step_mm"] = round(travel, 3)
+
+            def travel(x: Optional[str]) -> float:
+                """A body's travel per step: its joint's own, plus that of each joint moving with this axis that
+                carries it (a follower riding on its driver adds to it; one beside it does not)."""
+                total = 0.0
+                while x is not None:
+                    total += own.get(x, 0.0)
+                    x = parent.get(x)
+                return total
+
+            row["max_travel_per_step_mm"] = round(max(travel(x) for x in own), 3)
             density.append(row)
         failed = bool(collisions or unknown or (strict_contacts and contacts))
         text = "; ".join(f"{d['joint']} {d['range'][0]:g}..{d['range'][1]:g} {d['unit']} in {d['samples']} samples "
@@ -1000,9 +1012,18 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                                 f"combine=[[...]] to sample them together", [near[1], near[2]],
                                 {"groups": [x, y], "box_distance_mm": round(near[0], 6)}))
             not_checked.append(f"{x} with {y}: combined poses (sampled separately)")
-    closed = {jid for jid in js if js[jid].closes}
+    measured = set()                    # joints whose value moves a part some closes point names
+    for jid in js:
+        for c in js[jid].closes:
+            measured.add(jid)
+            bodies = {world.body(k) for part in c.parts for k in _keys(names, part)}
+            for other in [o for o, bs in body_of_joint.items() if set(bs) & bodies]:
+                cur: Optional[str] = other
+                while cur is not None:
+                    measured.add(cur)
+                    cur = parent.get(cur)
     for jid in sorted(driven):
-        if not closed & {jid, driven[jid]["joint"], driven[jid]["driver"]}:
+        if jid not in measured:
             not_checked.append(f"loop closure of {driven[jid]['law']}: the ratio is declared, not solved, and no "
                                "closes point measures it")
     limits = {"touch_mm": tol.touch_mm, "overlap_mm3": tol.overlap_mm3, "near_mm": tol.near_mm,

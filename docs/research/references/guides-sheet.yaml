@@ -7,7 +7,8 @@ schema: 2
 title: 'Manufacturing and design guides: Sheet metal and laser'
 sources:
 - id: sendcutsend-designing-for-online-sheet-metal-bending
-  aliases: [scs-bend-files]
+  aliases:
+  - scs-bend-files
   kind: guide
   category: manufacturing-guides
   title: Designing for Online Sheet Metal Bending Services
@@ -41,18 +42,18 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Supplier bend-angle convention, file preparation and material-specific air-bend setup; angle examples
-    are not enclosed-angle callouts or universal bend limits.
+  summary: Supplier bend-angle convention, file preparation and material-specific air-bend setup; angle examples are not enclosed-angle
+    callouts or universal bend limits.
   used_for:
   - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
   - .agents/skills/sheet-metal-hardware/SKILL.md
   imported: 6494949c1148bd68
-  verified: '2026-11-11: read the complete 2022-11-01 article through its preflight checklist; visually inspected
-    the supplier angle and flat-pattern diagrams. HTML SHA256 2b44274e65f01072cd227a57ac2c41ac0831ea99096371b22400fe75ad02537b.
-    Linked calculators/material tables and embedded videos not claimed read.'
-
+  verified: '2026-11-11: read the complete 2022-11-01 article through its preflight checklist; visually inspected the supplier
+    angle and flat-pattern diagrams. HTML SHA256 2b44274e65f01072cd227a57ac2c41ac0831ea99096371b22400fe75ad02537b. Linked
+    calculators/material tables and embedded videos not claimed read.'
 - id: sendcutsend-step-by-step-guide-to-sheet-metal-bending
-  aliases: [scs-bend-steps]
+  aliases:
+  - scs-bend-steps
   kind: guide
   category: manufacturing-guides
   title: Step By Step Guide To Sheet Metal Bending
@@ -86,16 +87,15 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Supplier-specific bend-file conventions and review sequence; flange limits, radius and K-factor require
-    the chosen material/thickness data, not a universal flange formula.
+  summary: Supplier-specific bend-file conventions and review sequence; flange limits, radius and K-factor require the chosen
+    material/thickness data, not a universal flange formula.
   used_for:
   - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
   - .agents/skills/sheet-metal-hardware/SKILL.md
   imported: 2071fc0e28348484
-  verified: '2026-11-11: read the complete four-stage 2024-05-31 article, software/format table and preflight checklist;
-    visually checked corner-relief image and table text. HTML SHA256 29d55858f6814ef608ff7aeb6e4c1c66702d7012446ff12f55dbb40b09c4d478.
+  verified: '2026-11-11: read the complete four-stage 2024-05-31 article, software/format table and preflight checklist; visually
+    checked corner-relief image and table text. HTML SHA256 29d55858f6814ef608ff7aeb6e4c1c66702d7012446ff12f55dbb40b09c4d478.
     Linked pages/videos not claimed read. Imported universal flange claim absent from this article; removed.'
-
 - id: sendcutsend-can-sendcutsend-bend-parts-with-a-custom-bend
   kind: guide
   category: manufacturing-guides

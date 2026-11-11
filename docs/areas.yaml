@@ -150,7 +150,7 @@ domains:
         title: Mould design
         scope: Parts designed for moulding, and the moulds themselves.
         maturity: idea
-        pages: [docs/research/manufacturing/process-profiles.md]
+        pages: [docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/moulding-wall-bond-and-release-review.md]
         issues: [99]
         topics:
           - {slug: moulded-part-design, title: Moulded-part design, scope: "Walls, draft, ribs, bosses, gates and sink.", maturity: idea, issues: [99]}
@@ -160,7 +160,7 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
-    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md]
+    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md, docs/research/manufacturing/joint-interfaces.md]
     cli: [rules, choose]
     api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm, cadagent.manufacturing.cards]
     uses: [cadagent.mechanical.compliant.allowables, cadagent.mechanical.inserts, cadagent.review.references]
@@ -183,6 +183,7 @@ domains:
           - {slug: resin-and-powder, title: Resin and powder, scope: "SLA/MSLA, SLS and MJF design rules.", maturity: idea, issues: [99]}
       - slug: cnc-machining
         title: CNC machining
+        pages: [docs/research/manufacturing/sheet-metal-file-and-hole-review.md]
         scope: Milled and turned parts.
         maturity: idea
         issues: [99]
@@ -201,6 +202,7 @@ domains:
           - docs/process-checks.md
           - docs/research/fea-and-process-tools.md
           - docs/research/manufacturing/sheet-metal-guides.md
+          - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
           - docs/research/manufacturing/sheet-metal.md
           - docs/research/manufacturing/sheet-metal-joining.md
           - docs/sheet-metal-hardware.md

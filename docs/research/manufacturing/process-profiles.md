@@ -135,6 +135,19 @@ springs, hinges) lies in the build plate's plane, and bending across the layers 
 
 *A still of the [screw-boss explorer](../../mechanical/screw-bosses.md), a kit demo, drawn by `tools/site/figures/printed-boss-still.mjs` from the demo's own code (`cadagent.formulas`), on a worked example: a self-tapping DELTA PT 30 screw in a printed PLA boss. The page's explorer changes the screw, the boss and the filament.*
 
+### Select the screw family before sizing the boss
+
+Bossard’s [plastic-screw article][ref:bossard-fastening-technology-self-tapping-screws-for-plastic] is qualitative guidance;
+its current reading does not supply the imported wall-thickness assertion. See the record for snapshot and historical limits.
+Use the existing `choose joining` card for the decision and preserve its missing-capacity or proxy warnings.
+The family distinction lives in the card data, not a new dimensional rule.
+
+For a **10 N, one-assembly** screening example, `injection-moulding` with `abs` or `thermoset` stays **not decided**:
+there is no calibrated capacity model. `sla` keeps the glued-insert choice and its unchecked-load gap; the general
+thermoset discussion does not authorize cutting threads in a brittle SLA part. `fdm` with `pla` returns a forming
+screw with an explicit insert-capacity proxy warning, not a screw pull-out rating. None of these outcomes establishes
+fit, strength or repeated-assembly life. Follow the [boss test plan](../../mechanical/screw-bosses.md) for that joint.
+
 ### Where the FDM sources disagree
 
 - **Minimum wall: 0.45 to 1.5 mm.** Prusa's 0.45 mm is one perimeter, the physical floor; Protolabs Network's 0.8 mm

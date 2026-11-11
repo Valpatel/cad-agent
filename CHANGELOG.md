@@ -9,6 +9,39 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.36.2 (2026-11-11)
+
+**New**
+- Read three existing manufacturer guides and add bounded bend-file and CNC-hole review examples, with supplier angle conventions and recess-aware edge checks (#589).
+- Read three existing moulding guides and add source-bounded wall, bond and release review examples, preserving material-specific inch ranges and grade-specific retention limits (#591).
+
+**Changed**
+- Read three existing supplier guides on anodizing and bearing fits, correct source identities and unsupported imported claims, and connect their bounded examples to the design workflow. No new source IDs or physical qualification.
+- Extend the existing rule cards with exact MSIA/MSIB M2-length300 and TackSert10-150 geometry/tolerance examples, approximate anodize planning values and the source-bound6203 steel-seat example. CE geometry evidence is software-encoded; performance and physical outcomes remain unqualified.
+- Publication guidance distinguishes actual zero-job startup annotations from CLI heuristics and keeps local live verification separate from Actions-owned gate statuses.
+
+**Fixed**
+- Remove unsupported imported universal flange and two-sided hole-machining claims; material-specific flange limits and deep-hole review remain qualified (#589).
+- Replace an unsupported universal wall-thickness snippet range with exact material-specific reading boundaries; do not infer chemical bonding or ejection qualification from geometry alone (#591).
+
+## v0.36.1 (2026-11-11)
+
+**Fixed**
+- Read the existing Bossard plastic-screw article, correct an unsupported imported wall-thickness assertion, and expose limited screw-family guidance through the joining card and design-process skill. Preserve missing-capacity and printed-joint proxy warnings; no new dimensional or strength rating.
+
+## v0.36.0 (2026-11-11)
+
+**New**
+- Add a sourced PEM and microPEM family-selection skill, a deeper reading of the existing PEM overview and a new consumer-electronics guide reading, and separate M2 self-clinching/flaring geometry cards with a tolerance-screening example and explicit qualification limits.
+- Reject separate reference identities sharing one exact PDF URL; retain aliases and dated reading scopes on the canonical source.
+- Part tables can open full or matching printable checklists with project/revision context, stable part IDs and saved status marks, including matches across pages (#514). Plain numbers/status marks retain whole tokens; annotated procurement values wrap and long supporting notes stay grouped beneath their part; dense lists use landscape on the selected paper size.
+
+**Fixed**
+- Full CI provisioning prefers a registered HTTPS Ubuntu mirror outside Canonical's DNS during an outage, retaining Canonical fallbacks, Ubuntu archive signature checks, dependency packages and all required tests (#576).
+
+**Projects must change**
+- Opt in with the existing `enhancePartTable` API’s `printable` context; source tables, sorting and trackers remain compatible.
+
 ## v0.35.0 (2026-11-11)
 
 **Fixed**

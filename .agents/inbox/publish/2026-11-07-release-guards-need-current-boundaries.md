@@ -200,3 +200,74 @@ on the already dated candidate and manufacture a phantom released version.
 The corrected v0.33.0 metadata matches that pure pre-cut minor projection; the folded bullets, v0.32.0 history,
 source and five adopted model assets remain unchanged. This comparison and focused release checks do not
 replace fresh exact-head CI/review, nor lift the separate accepted-Gyropup-CAD protected-main production hold.
+
+## Enforce retirement boundaries under optimized Python
+
+On 2026-11-11 UTC, independent review rejected the first v0.36.0 retirement operator before any deletion:
+its read-only preflight included `git fetch`, which could update local tracking refs/tags, and mandatory
+checks used Python `assert`, which optimization can remove. The initial operator SHA-256 was
+`c81c831e999180bea59be8c4da93ad99d0c6d3b20831d5ed2907fbff50e3bda7`.
+The [preserved incident](https://github.com/Valpatel/cad-agent/issues/575#issuecomment-6804632248)
+records the command/output evidence and correction. Only preflight ran; no remote deletion was attempted.
+
+**Cause:** debug assertions stood in for runtime enforcement, and a broad ref refresh crossed the declared
+remote-only boundary. Treat fetch as a local ref mutation even when it is routine preparation elsewhere.
+
+**Correction:** use explicit raise-based runtime checks, existing local objects for ancestry and fresh read-only
+remote-tip queries. The corrected operator SHA-256 was
+`3706174cc37f6f71ff9f70d9be6546a37c85191a1abe2cfc76ae8edcfd7eb2e4`.
+`python3 -O <operator>` passed read-only preflight; an optimized wrong-main control raised
+`Remote main/tag/tips changed` before creating an attempt marker or making a mutation. Review then
+[passed the exact corrected operator](https://github.com/Valpatel/cad-agent/pull/585#issuecomment-6804642460).
+A private exclusive-create attempt marker was flushed and fsynced before the single network attempt.
+Atomic exact-tip deletion leases used the verified anonymous repository URL to preserve local tracking refs.
+The [completed receipt](https://github.com/Valpatel/cad-agent/issues/575#issuecomment-6804679296)
+records four retired refs; unrelated refs and every local worktree/provider remained intact.
+
+**Rule:** mandatory operational checks must survive `-O` and `PYTHONOPTIMIZE`. Exercise optimized negative
+controls without an operational write path. Declare the mutation boundary, reserve one attempt durably, and
+use atomic compare-and-swap leases against the reviewed exact remote tips. An attempted or uncertain result
+spends the marker; inspect actual remote state and obtain a fresh disposition rather than blindly retrying.
+
+**Limits:** these controls establish only that operator's preflight and bounded retirement, not a reusable
+retirement tool, current remote state or public-site acceptance. Do not rerun the completed operator. No local
+cleanup, credential expansion, unrelated branch deletion or later publication follows from that receipt.
+
+## Inspect actual startup annotations before a bounded recovery
+
+2026-11-11 UTC: Gates runs 43096357358 and 43095592509 ended `startup_failure` with zero jobs/check-runs.
+`gh run view` suggested a likely workflow-file issue; actual GitHub annotations instead reported internal
+platform errors on unchanged dev workflow `958199ca`. That CLI explanation was a heuristic, not a diagnosis.
+[Independent review](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6806750962) authorized one
+recovery request per exact existing run. Both requests were accepted at 20:49 UTC. Fresh API and uncached page
+reads at 20:55:21 showed startup failure again, updated at 20:53:08 and 20:52:32, with zero jobs. The API still
+reported `run_attempt: 1`; an incremented attempt number was not observed. Fresh annotation request IDs were
+`EDA8:4FD43:5E98E3:6526A6:6AF4D4D6` and `EDAC:1AB973:5F4BB7:65D6ED:6AF4D4D8`; cached reads showed old IDs.
+No further retry occurred. No source tests were retried by this recovery or claimed to have passed.
+
+**Rule:** inspect the actual annotation and exact run/workflow/head identity before classifying a startup
+failure. Preserve original and recovery outcomes separately. A bounded infrastructure recovery does not
+authorize repeated retries or waive normal checks. Fresh evidence matters when cached annotation IDs lag.
+
+**Limits:** these annotations establish those startup errors, not the cause of all queued workflows or a general
+service diagnosis. Later necessary source integrations and their new CI runs were separate work.
+
+## Local live verification must not post Actions-owned statuses
+
+2026-11-11 UTC: all source checks for PR592 passed and local live gates recognized the exact-head independent
+review. The coordinator incorrectly ran local `all --post` to refresh a stale review status. GitHub rejected
+the merge: required `cad-gates/dev/branch-flow` and `cad-gates/dev/review` were not set by the expected app.
+No merge or ruleset change occurred at that rejection. The existing `tools/ci_gates.py` docstring already says
+the local just-before-merge invocation runs **without `--post`**; the workflow owns posting.
+
+One normal review-state Actions refresh, run43102319513, passed. The final preflight checked all current
+checks, exact remote dev/head, resolved threads and live gates without `--post`; PR592 then merged at
+`219766e8`. The rejection and correction are retained in the
+[delivery checkpoint](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6807390375).
+
+**Rule:** run local live verification without `--post`; use the existing Actions review refresh for app-bound
+statuses. A locally posted success cannot satisfy that expected-app requirement. Preserve a rejected merge as
+a rejection rather than treating later success as proof that the first preflight was sufficient.
+
+**Limits:** this was an operator invocation error. The expected-app rule correctly prevented the merge; no
+source defect, new automation feature or policy exception was needed.

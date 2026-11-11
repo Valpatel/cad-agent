@@ -298,3 +298,56 @@ test('the reference pages\' stylesheet sets colours only through the site\'s tok
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
   assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
 });
+
+
+test('short joint-interface citations retain the three canonical document identities', async () => {
+  const names = {
+    'omw-anodizing': 'omw-corp-understanding-and-specifying-anodizing',
+    'nsk-ti-0001': 'nsk-bearing-shaft-and-housing-tolerance-nsk-technical',
+    'general-bearing-fits': 'skf-shaft-and-housing-fits-skf-catalog-excerpt',
+  };
+  const page = await text('research/manufacturing/joint-interfaces.html');
+  for (const [alias, canonical] of Object.entries(names)) {
+    assert.equal(refs.aliases.get(alias), canonical);
+    assert.equal(refs.records.has(alias), false, 'a short display key must not add a document');
+    assert.ok(page.includes(`href="${model.home(canonical)}"`), `${alias}: citation links to its existing row`);
+    assert.ok(page.includes(`>${alias}</a>`), `${alias}: actual displayed citation is short`);
+    assert.ok(!page.includes(`>${canonical}</a>`), `${canonical}: no unbreakable long citation badge`);
+  }
+});
+
+test('moulding review aliases publish the same three full-read source identities', async () => {
+  const page = await text('research/manufacturing/moulding-wall-bond-and-release-review.html');
+  const pairs = [
+    ['pl-mould-walls', 'protolabs-injection-molding-wall-thickness-guidelines'],
+    ['pl-overmould', 'protolabs-designing-for-overmolding-design-tip'],
+    ['fictiv-mould-undercuts', 'fictiv-injection-molding-undercuts'],
+  ];
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of pairs) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'citation alias is not another document');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).status, 'source');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+});
+
+test('bend-file and CNC-hole short citations retain the exact full-read identities', async () => {
+  const page = await text('research/manufacturing/sheet-metal-file-and-hole-review.html');
+  const pairs = [
+    ['scs-bend-files', 'sendcutsend-designing-for-online-sheet-metal-bending'],
+    ['scs-bend-steps', 'sendcutsend-step-by-step-guide-to-sheet-metal-bending'],
+    ['protolabs-hole-guide', 'protolabs-cnc-hole-design-through-blind-tapped-and-more'],
+  ];
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of pairs) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'short citation is not another source');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).status, 'source');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+});

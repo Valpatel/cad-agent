@@ -9,6 +9,21 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.36.2 (2026-11-11)
+
+**New**
+- Read three existing manufacturer guides and add bounded bend-file and CNC-hole review examples, with supplier angle conventions and recess-aware edge checks (#589).
+- Read three existing moulding guides and add source-bounded wall, bond and release review examples, preserving material-specific inch ranges and grade-specific retention limits (#591).
+
+**Changed**
+- Read three existing supplier guides on anodizing and bearing fits, correct source identities and unsupported imported claims, and connect their bounded examples to the design workflow. No new source IDs or physical qualification.
+- Extend the existing rule cards with exact MSIA/MSIB M2-length300 and TackSert10-150 geometry/tolerance examples, approximate anodize planning values and the source-bound6203 steel-seat example. CE geometry evidence is software-encoded; performance and physical outcomes remain unqualified.
+- Publication guidance distinguishes actual zero-job startup annotations from CLI heuristics and keeps local live verification separate from Actions-owned gate statuses.
+
+**Fixed**
+- Remove unsupported imported universal flange and two-sided hole-machining claims; material-specific flange limits and deep-hole review remain qualified (#589).
+- Replace an unsupported universal wall-thickness snippet range with exact material-specific reading boundaries; do not infer chemical bonding or ejection qualification from geometry alone (#591).
+
 ## v0.36.1 (2026-11-11)
 
 **Fixed**

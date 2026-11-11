@@ -15,9 +15,12 @@ flowchart TD
 
 | Topic | Start here |
 |---|---|
+| Moulding review | [Walls, bonding and part release](moulding-wall-bond-and-release-review.md) |
 | Process rules | [Profiles and confidence](process-profiles.md) |
 | Printer observation | [Bambu cloud evidence and existing skills](bambu-cloud.md) |
+| Joint interfaces | [Finish allowance, bearing fits and source boundaries](joint-interfaces.md) |
 | PEM micro-fasteners | [Family selection and qualified evidence](pem-micro-fasteners.md) |
+| Bend files and CNC holes | [Supplier conventions and bounded examples](sheet-metal-file-and-hole-review.md) |
 | Sheet metal | [Survey](sheet-metal.md), [expert guides](sheet-metal-guides.md), [joining](sheet-metal-joining.md) |
 
 [Research map](../README.md) · [Process checks](../../process-checks.md) · [Sheet-metal hardware](../../sheet-metal-hardware.md)

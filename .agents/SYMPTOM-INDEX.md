@@ -2,12 +2,14 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A short source-reading entrance leaves a skill workflow over the reading-wall budget | [Measure the whole skill route and disclose complete workflow detail](inbox/agents/2026-11-10-reading-batches-need-the-release-and-page-consumers.md#skill-entrances-need-the-whole-workflow-reading-check) |
 | `walls /docs/web-parts` exceeds 1200 px after a print API reference grows | [Keep printing actions visible and fold long API contracts](inbox/publish/2026-11-11-annotated-numbers-need-print-column-budgets.md#keep-printing-actions-visible-and-fold-long-api-contracts) |
 | A full procurement BOM retains every ID but prints hundreds of pages with one-character name columns | [Budget annotated numeric columns and inspect actual readable rows](inbox/publish/2026-11-11-annotated-numbers-need-print-column-budgets.md) |
 | Full CI times out three times at Azure HTTP apt provisioning before extras/tests | [Correct the failing apt source before collecting fresh CI evidence](inbox/2026-11-11-ci-apt-timeouts-need-source-correction.md) |
 | Bambu grams or persisted `ok` hide failure codes, malformed slice metadata crashes formatting, or stale evidence becomes "slicer not run" | [Preserve producer codes and distinguish optional absence from stale evidence](inbox/2026-11-11-slice-status-needs-codes-and-currency.md) |
 | A pure site test reaches a browser-capable build helper without a retained execution log | [Inspect transitive rendering and use the existing client-diagram build contract](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#a-pure-site-test-can-reach-a-browser-capable-build-helper) |
 | A pure repo-map/site suite fails with `needs the existing Node 22 site runtime` | [Bind the installed runtime for the parent and child processes](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#site-checks-also-need-an-explicit-runtime) |
+| Imported flange or deep-hole assertions survive a full read although absent from the exact article | [Re-read imported claims before promotion](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#re-read-imported-claims-against-the-exact-current-source-before-promotion) |
 | A deeper reading adds a second source ID for an already-read PDF, inflating public document counts | [Search exact source identity and preserve dated scopes](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#search-source-identity-before-counting-another-document) |
 | Public reference totals differ from the internal registry, or a readback expects internal-only entries | [Derive public membership from the exact committed sources](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#derive-public-reference-membership-before-comparing-publication-counts) |
 | Registry validation passes but the health updater reports a shard is not editable | [Use the importer's canonical writer and test the exact round-trip](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md) |
@@ -106,6 +108,12 @@
 | A release preserves historical notes but its current introduction still links to a moved directory | [Check current navigation outside released history](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-current-navigation-outside-released-history) |
 
 | A retirement preflight fetches despite remote-only scope, or mandatory Python checks disappear under optimization | [Enforce retirement boundaries under optimized Python](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#enforce-retirement-boundaries-under-optimized-python) |
+| Gates fail before any job while the CLI suggests a workflow-file issue | [Inspect actual startup annotations](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#inspect-actual-startup-annotations-before-a-bounded-recovery) |
+| A merge rejects locally refreshed passing gates because the expected app did not post them | [Keep local live verification separate from Actions-owned statuses](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#local-live-verification-must-not-post-actions-owned-statuses) |
+
+| A phone page overflows despite valid source links and bounded diagrams | [Short display aliases preserve source identity](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#short-display-aliases-preserve-source-identity-on-narrow-pages) |
+
+| A manufacturer-table golden passes while the source uses a different signed tolerance or family column | [Bind signed headers to the exact fastener family](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#bind-signed-table-headers-to-the-exact-fastener-family-before-deriving-a-window) |
 
 - [Rendered motion needs an independent frame](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md): compare rendered transforms with independent joint intent.
 - [Folder inventories need NUL-safe names and explicit owners](inbox/2026-11-07-folder-inventories-need-explicit-owners.md): quoted paths, grouped maps and installer prompt namespaces; do not infer defect counts or add blanket README exceptions.

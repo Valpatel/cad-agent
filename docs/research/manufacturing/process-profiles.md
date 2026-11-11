@@ -169,6 +169,42 @@ fit, strength or repeated-assembly life. Follow the [boss test plan](../../mecha
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the FDM `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 50 mm. A test redraws it and fails if the committed chart differs.*
 
+### Stratasys FDM table and clearance review
+
+Use the supplier's layer row rather than a universal multiplier. Its assembly-clearance wording remains unresolved; the examples below do not replace the other suppliers' profiles. [ref:sd-fdm-2025]
+
+<details>
+<summary>Layer-table exception, printed clearance and bounded FDM examples</summary>
+
+The July 2025 guide's p.5 generally recommends a wall four times the slice thickness, but its 0.020-inch layer row gives a 0.100-inch wall: five times, not four. A selected 0.010-inch row gives a 0.040-inch wall. That converts exactly to 1.016 mm, while the PDF prints rounded 1.00 mm. Retain both presentations and the footnote's case-by-case exception; do not extrapolate to an unlisted setting. [ref:sd-fdm-2025]
+
+On p.8, 0.013-inch layers visibly pair with **0.13-inch clearance**. This is a source observation requiring supplier confirmation, not permission to silently change it to 0.013 inch or adopt it as a universal moving gap. Heated chambers, soluble supports and supplier programming constrain the guide. It gives no fixed hole-compensation offset; critical holes need agreed drawing/post-processing requirements. The p.9 insert-wall wording needs a defined datum before a radial or diametral calculation. No hinge-cycle or strength qualification follows. [ref:sd-fdm-2025]
+
+These original, self-contained review illustrations are tested by the existing process-profile harness, not installed as toolkit APIs or manufacturing checks:
+
+```python
+from decimal import Decimal as D
+
+
+def selected_fdm_wall_in(layer_in):
+    examples = {D("0.010"): D("0.040"), D("0.020"): D("0.100")}
+    key = D(str(layer_in))
+    if not key.is_finite() or key not in examples:
+        raise ValueError("unlisted example: consult the source and supplier")
+    return examples[key]
+
+
+def fdm_clearance_observation(layer_in):
+    key = D(str(layer_in))
+    if not key.is_finite() or key != D("0.013"):
+        raise ValueError("not the selected unresolved source observation")
+    return {"state": "unresolved-confirm-supplier", "as_printed_in": D("0.13")}
+```
+
+A lookup of the two selected rows is not the complete supplier table. The unresolved observation grants no clearance acceptance.
+
+</details>
+
 ## 3. SLA and MSLA (resin)
 
 This covers laser SLA (Formlabs Form 2 and Form 3, Protolabs, Materialise) and masked SLA on an LCD (Formlabs Form 4,
@@ -336,6 +372,53 @@ From Protolabs Network:
 <img src="../../img/research/process-powder-tolerance.svg" alt="Chart of the tolerance each SLS and MJF source gives on a 25 mm dimension: 0.2 to 0.42 mm, with HP's own Z figure the widest" width="680">
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the SLS and MJF `compare: tolerance` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31, each evaluated at 25 mm. A test redraws it and fails if the committed chart differs.*
+
+### Stratasys SLS source conflicts and lap joints
+
+Keep this nylon-service guidance separate from MJF. Its tolerance conflict must remain visible even where two formulas happen to produce the same small-part value. [ref:sd-sls-2023]
+
+<details>
+<summary>Conflicting tolerance slopes, lap-joint scope and SLS examples</summary>
+
+The 2023 guide's p.3 gives a tolerance floor of ±0.015 inch with a proportional term of ±0.002 inch/inch; p.10 instead prints ±0.003 inch/inch and a dimensionally inconsistent 0.1 mm/mm. At 10 inches the two inch expressions give ±0.020 and ±0.030 inch, respectively: derived 0.508 and 0.762 mm. Preserve the unresolved conflict and obtain the applicable supplier specification; neither expression becomes a definitive profile rule here. [ref:sd-sls-2023]
+
+The inherited 1–3 mm wall guidance is present on pp.5/10, scoped to this service's nylon production and hoop-shrink concerns. For a **derived 2 mm wall example**, p.8's 3–5-times lap overlap gives 6–10 mm. Its adhesive gap is 0.010 inch, exactly 0.254 mm, printed rounded 0.3 mm. This is a bonded lap, not a moving-part clearance. Resin, adhesive, preparation, temperature and prototypes still govern. Tank-only cleanout, wall and radius values on p.11 are not generic SLS-hole limits or a fuel/seal qualification. [ref:sd-sls-2023]
+
+```python
+from decimal import Decimal as D
+
+
+def sls_tolerance_observations_in(length_in):
+    length = D(str(length_in))
+    if not length.is_finite() or length <= 0:
+        raise ValueError("positive finite inch length required")
+    return {
+        "state": "unresolved-conflicting-source",
+        "page_3": max(D("0.015"), D("0.002") * length),
+        "page_10": max(D("0.015"), D("0.003") * length),
+    }
+
+
+def selected_sls_lap_example():
+    wall_mm = D("2")
+    return {
+        "state": "unqualified-SLS-bonded-lap-example",
+        "overlap_mm": (3 * wall_mm, 5 * wall_mm),
+        "adhesive_gap_exact_mm": D("0.010") * D("25.4"),
+        "as_printed_gap_mm": D("0.3"),
+    }
+```
+
+A matching floor at one length does not resolve the conflicting slopes, and the lap arithmetic predicts no joint load capacity.
+
+**Full-reading receipt, 2026-11-11.** All 10 FDM and 12 SLS pages were read, including closing qualifications. Visual checks covered FDM pp.3,5–9 and SLS pp.3–5,7–11, with numerical tables, diagrams and footnotes. The printed document codes are `DG_SDM_FDM_0725` and `DG_LS_Stratasys_Direct_04192023`. Exact PDF hashes:
+
+- FDM: `4c92aa8d7d3f51383bd8d8d5ac6aa5463b5aa7eb6ed59663073eefa85b96a495`
+- SLS: `e0278ce3f12d17400e41f8320384d7cabd4b0b0c2c33c4cea3f78bb3df27ddcb`
+
+The [dated full-source handoff](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6807874352) preserves URLs, edition scope and inherited-claim audit. No linked data sheets, manufactured specimens or application qualifications were checked. Manufacturer artwork stays outside the repository. These are two existing records promoted to read/primary/low, with no new identity or encoded/measured evidence.
+
+</details>
 
 ## 5. HP Multi Jet Fusion
 

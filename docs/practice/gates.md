@@ -695,14 +695,6 @@ arms of a parallelogram turn together and the link they carry keeps its attitude
 linkage is checked in poses it can never take, and reports collisions that are not there. Declare the dependent
 joint with `follows`, in the spirit of URDF's `<mimic>`:
 
-```python
-joint("I-lower", parts=("lower_arm", "tower"), axis=Axis(LOWER_PIVOT, UP), range_deg=(0, 60))        # sampled
-joint("I-upper", parts=("upper_arm", "tower"), axis=Axis(UPPER_PIVOT, UP), follows="I-lower")        # = I-lower
-joint("I-cradle", parts=("cradle", "lower_arm"), axis=Axis(LOWER_PIN, UP), follows=("I-lower", -1),  # = -I-lower
-      closes={"parts": ("cradle", "upper_arm"), "at": UPPER_PIN})
-# by hand: {"kind": "revolute", "moving": ..., "fixed": ..., "axis": ..., "follows": ("I-lower", -1), "closes": [...]}
-```
-
 ```mermaid
 flowchart TD
     L["I-lower<br/>sampled over its range"] -->|"× 1"| U["I-upper<br/>driven, not sampled"]
@@ -715,6 +707,14 @@ flowchart TD
     class U,C,P here
     class L near
     class K out
+```
+
+```python
+joint("I-lower", parts=("lower_arm", "tower"), axis=Axis(LOWER_PIVOT, UP), range_deg=(0, 60))        # sampled
+joint("I-upper", parts=("upper_arm", "tower"), axis=Axis(UPPER_PIVOT, UP), follows="I-lower")        # = I-lower
+joint("I-cradle", parts=("cradle", "lower_arm"), axis=Axis(LOWER_PIN, UP), follows=("I-lower", -1),  # = -I-lower
+      closes={"parts": ("cradle", "upper_arm"), "at": UPPER_PIN})
+# by hand: {"kind": "revolute", "moving": ..., "fixed": ..., "axis": ..., "follows": ("I-lower", -1), "closes": [...]}
 ```
 
 Only the driver is sampled; each follower takes `multiplier × the driver's value + offset` about its own axis in

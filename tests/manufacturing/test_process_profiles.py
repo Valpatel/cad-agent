@@ -272,3 +272,54 @@ def test_planted_defect_an_applied_by_that_only_shares_a_module():
     assert not _reads(inserts.hole_design, "fdm-insert-hole-cad-offset-cnckitchen")
     assert _reads(inserts.printed_hole, "fdm-insert-hole-cad-offset-cnckitchen")
     assert _reads(inserts, "fdm-insert-hole-cad-offset-cnckitchen")
+
+
+def _bend_hole_example():
+    """Run our published, self-contained illustration, never vendor code."""
+    path = ROOT / "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
+    blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    assert len(blocks) == 1
+    namespace = {}
+    exec(compile(blocks[0], str(path), "exec"), namespace)
+    return namespace
+
+
+def test_bend_callout_preserves_source_convention_and_refuses_unknown():
+    f = _bend_hole_example()["bend_callout"]
+    # Supplier diagram: these are bend callouts, not the enclosed angles.
+    assert f(50, "enclosed") == 130
+    assert f(135, "enclosed") == 45
+    assert f(130, "supplier-bend") == 130
+    with pytest.raises(ValueError, match="convention"):
+        f(50, "unknown")
+    for bad in (0, 180, -1, float("nan"), float("inf")):
+        with pytest.raises(ValueError):
+            f(bad, "enclosed")
+
+
+def test_hole_edge_example_detects_recess_that_pilot_alone_misses():
+    f = _bend_hole_example()["edge_margin"]
+    assert f(4, 8, 3) == -1
+    assert f(4, 4, 3) == 1  # planted pilot-only substitution loses the overhang
+    assert f(4, 8, 4) == 0  # containment boundary, not a strength pass
+    assert f(4, 8, 5) == 1
+    with pytest.raises(ValueError, match="smaller"):
+        f(8, 4, 3)
+    for bad in (0, -1, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite"):
+            f(4, bad, 3)
+
+
+def test_three_full_reads_keep_identity_and_remove_unsupported_import_claims():
+    reg = load_registry()
+    ids = ("sendcutsend-designing-for-online-sheet-metal-bending",
+           "sendcutsend-step-by-step-guide-to-sheet-metal-bending",
+           "protolabs-cnc-hole-design-through-blind-tapped-and-more")
+    path = "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
+    for key in ids:
+        ref = reg.resolve(key)
+        assert ref.id == key and ref.kind == "source"
+        assert ref.data["evidence"]["class"] == "read"
+        assert path in ref.data["used_for"]
+        assert not ref.data.get("claims"), "do not re-import unsupported snippet claims"
+        assert "2026-11-11" in ref.data["verified"]

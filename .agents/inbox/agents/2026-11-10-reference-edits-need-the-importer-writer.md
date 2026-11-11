@@ -60,6 +60,18 @@ qualification or the inclusion of internal-only records. Do not weaken those che
 a public count match an internal one.
 
 
+## Re-read imported claims against the exact current source before promotion
+
+2026-11-11, [#589](https://github.com/Valpatel/cad-agent/issues/589): full reads of two SendCutSend articles and the Protolabs CNC-hole article exposed unsupported imported claim fragments. The live step-by-step bending guide defers flange limits to material/thickness data; it does not state the imported `max(0.500 inch, 4t)` limit. The current hole article says depth beyond roughly six diameters deserves review; it does not give the imported two-sided-machining recommendation. Dated full-read/visual/digest receipts are recorded in #323 comments6805460913 and6805534112.
+
+Evidence: exact primary URLs returned200 on2026-11-11, and the saved HTML SHA-256 values are `29d55858f6814ef608ff7aeb6e4c1c66702d7012446ff12f55dbb40b09c4d478` (step-by-step) and `639cef92ba4b07ab4c626831cc0f19ec0430c3d5d6c2a4b48fea4a77760282c7` (hole article). Reading and source-table/diagram inspection support the qualified guidance, not the extra imported fragments. The regression harness exercises original convention/containment examples and rejects reintroducing claims into these three promoted records.
+
+Cause: source snippets and other publishers' summaries were attached to an identity without establishing that each assertion occurs in that exact article. A same-publisher article is not independent corroboration.
+
+Corrective rule: on promotion, compare each inherited claim to the exact read URL/edition. Remove absent assertions or locate and separately verify their actual source; never carry them forward as verified just because the record changes from catalogued to read. Retain the dated reading boundary, original identity/provenance and advisory language. Do not convert review triggers into universal numerical gates.
+
+Limits: absence from the current article does not prove the assertion never appeared historically or is universally false. These reads do not qualify FDM parts, strength, supplier acceptance or current external specifications. No duplicate identity or physical/encoded evidence is added by reading alone.
+
 ## Search source identity before counting another document
 
 On 2026-11-11 Pacific, the read-only follow-up to PR #574 at `35bf1477` found that its added overview record duplicated an existing core source. Earlier registry checks passed with 839 internal entries and 517 catalogued records, while public membership was reported as 810 records / 293 read / 517 catalogued. Those counts correctly counted IDs but overcounted one document.

@@ -1040,18 +1040,31 @@ sources:
 - id: ascento-a-two-wheeled-jumping-robot
   kind: paper
   category: design-guides
-  title: 'Ascento: a two-wheeled jumping robot'
-  authors: []
-  org: arxiv.org
-  year: null
-  url: https://arxiv.org/pdf/2005.11435
+  title: 'Ascento: A Two-Wheeled Jumping Robot'
+  authors:
+  - Victor Klemm
+  - Alessandro Morra
+  - Ciro Salzmann
+  - Florian Tschopp
+  - Karen Bodie
+  - Lionel Gulich
+  - Nicola Küng
+  - Dominik Mannhart
+  - Corentin Pfister
+  - Marcus Vierneisel
+  - Florian Weber
+  - Robin Deuber
+  - Roland Siegwart
+  org: Autonomous Systems Lab, ETH Zurich
+  year: 2020
+  url: https://arxiv.org/pdf/2005.11435v1
   access: free
   terms: cited and summarised, never copied
   licence:
     spdx: null
     class: unclear
     read: false
-    note: The map states 'paper'; the licence text was not read.
+    note: Preprint read; redistribution terms not reviewed. Cite and study only; no paper or geometry copied.
   reuse:
     text: cite-only
     geometry: none
@@ -1060,15 +1073,25 @@ sources:
   domains:
   - wheel
   evidence:
-    class: snippet-only
-    numbers: unknown
+    class: read
+    numbers: claimed
+    tested: 'yes'
+    authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Four-link wheel-leg with parallel elastic jumping.
-  used_for: []
+  summary: Approximate straight wheel travel reduces pitch coupling; torsion springs assist hips while active control
+    balances the robot. Prototype experiments do not establish power-off stability.
+  used_for:
+  - docs/mechanical/linkages.md
   imported: 848ced91992f2862
+  verified: '2026-11-10: read arXiv v1 (2020-05-23), sections II-VII, pp. 2-6: mechanism, assumptions, control,
+    experiments and experimental-feature limits. No controller reproduction, physical test or cited-source audit.'
+  claims:
+  - text: Upright balance uses active control; sideways fall recovery is excluded.
+    status: unconfirmed
+    evidence: Sections IV-A and IV-C, pp. 4-5. Source authors' results; not independently reproduced here.
 - id: upkie-hackaday-log
   kind: article
   category: design-guides
@@ -3054,9 +3077,11 @@ sources:
 - id: upkie-upkie-description
   kind: project
   category: simulation-and-control
-  title: upkie_description
-  authors: []
-  org: upkie
+  title: Upkie wheeled biped description
+  authors:
+  - Stéphane Caron
+  - Valentin Tordjman--Levavasseur
+  org: Upkie contributors
   year: null
   url: https://github.com/upkie/upkie_description
   access: free
@@ -3065,10 +3090,11 @@ sources:
     spdx: Apache-2.0
     class: open
     read: false
-    note: The map states 'Apache-2.0'; the licence text was not read.
+    note: Read root Apache-2.0 text and README licence scope at 94735fbe; wheel_tire has a CC-BY-4.0 exception whose
+      licence terms were not reviewed. No source files or meshes copied; retain per-asset attribution on reuse.
   reuse:
     text: cite-only
-    geometry: adapt-with-attribution
+    geometry: study-only
   areas:
   - wheels-and-driving
   - motion-and-dynamics
@@ -3077,13 +3103,16 @@ sources:
   process_groups:
   - print
   evidence:
-    class: snippet-only
-    numbers: none
+    class: read
+    numbers: some
+    tested: 'no'
+    authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: URDF and Xacro descriptions for Upkie wheeled bipeds
+  summary: URDF/Xacro model with explicit stator/rotor ownership, sensor conventions and cause-labelled limits.
+    Selected inertial inputs include measurements and estimates; reading these files does not validate dynamics.
   assessment:
     built: replicated
     supply: specialty
@@ -3097,12 +3126,23 @@ sources:
     answers:
       engine: URDF/Xacro for Pinocchio and others; derived from Upkie CAD and mjbots meshes
       real: Used with the real Upkie robot per linked project; no validation here
-    caveat: Model is a wheeled biped with mjbots actuators, not five-bar legs; README states no numbers.
+    caveat: Serial wheel-leg model; selected Xacro and linked conventions read, not a complete geometry or dynamics
+      audit.
     assessed:
       date: '2026-11-02'
       from: readme
-  used_for: []
+  used_for:
+  - docs/mechanical/rendered-motion.md
+  - .agents/skills/cad-motion-validation/references/trace-protocol.md
   imported: 951c1a7cdab8e467
+  verified: '2026-11-10: read README, CITATION.cff, LICENSE, meshes/wheel_tire/README.md, xacro/left_leg.xacro and
+    xacro/utils/virtual_link.xacro at 94735fbe6137276a41de0ff4cc04d2e533fa9e33; linked docs/kinematics.md (frames,
+    limits, conventions) at upkie/upkie 68bf2c6bc097140cce40b6893b548d73a0fe7a95 (published docs 13.1.0). Right
+    leg, torso, add-ons, mesh accuracy, loaders and hardware remain unvalidated.'
+  claims:
+  - text: Ankle anchor frames attach to stators; motor joint axes account for the controller's sign convention.
+    status: unconfirmed
+    evidence: Linked kinematics Frames and Model conventions; left_leg.xacro fixed anchors and negative-z axes.
 - id: limxdynamics-tron1-mujoco-sim
   kind: project
   category: simulation-and-control

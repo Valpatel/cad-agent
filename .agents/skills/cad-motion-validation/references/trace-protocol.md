@@ -16,6 +16,19 @@ An axis passing through the origin, a symmetric wheel, or a screenshot at zero d
 Use offset datums, landmarks on and off the shaft, all moving components, and stationary housings. A motor housing
 belongs to the support's joint, while its rotor may belong to a shaft joint. Names alone cannot establish ownership.
 
+For an imported robot description, make a frame/limit inventory before deriving the contract:
+
+- Identify sensor, estimator, model and renderer bases independently; record each basis conversion and motor sign.
+- Distinguish a stator anchor, a rotating wheel frame and the actual contact geometry. A named contact frame need
+  not lie on the collision surface.
+- Record why each limit exists: cable travel, self-contact, a continuous rating, a short peak or a software choice.
+- Before a separate dynamics study, label mass/inertia inputs as measured, calculated, estimated or artificial.
+
+These review prompts come from Caron and Tordjman--Levavasseur's
+[Upkie description](https://github.com/upkie/upkie_description/tree/94735fbe6137276a41de0ff4cc04d2e533fa9e33)
+and its linked [kinematics documentation](https://github.com/upkie/upkie/blob/68bf2c6bc097140cce40b6893b548d73a0fe7a95/docs/kinematics.md),
+read on 2026-11-10. They do not prescribe Upkie's values for another robot or validate its dynamics.
+
 Contract JSON (the example is one shaft and a fixed mount):
 
 ```json

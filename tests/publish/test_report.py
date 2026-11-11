@@ -433,3 +433,99 @@ def test_prusa_report_shows_unchecked_stability_without_changing_status(tmp_path
     assert ("stability not checked" in html_path.read_text()) is (checked is False)
     if checked is False and note:
         assert f"stability not checked: {note}" in html_path.read_text()
+
+
+# ------------------------------------------------------------- parts that are not printed (#577)
+
+MIXED = {"box": dict(GOOD), "lid": dict(GOOD), "frame": {"cad_valid": True, "solid_count": 4, "watertight": False,
+                                                         "print_bounds_mm": [2680.0, 2040.0, 575.0]},
+         "motor": dict(GOOD)}
+MIXED_YAML = "  part_process: {frame: weldment, motor: purchased, lid: fdm}\n"
+
+
+def mixed_project(root: Path) -> Path:
+    make_project(root, parts=MIXED, checks_yaml=MIXED_YAML)
+    for name in ("frame", "motor"):             # a welded frame and a bought motor have no print files
+        for ext in ("stl", "3mf"):
+            (root / "exports" / f"{name}.{ext}").unlink()
+    (root / "exports" / "motor.step").unlink()
+    (root / "exports" / "hole-checks.json").write_text(json.dumps({"parts": {}}))
+    return root
+
+
+def test_a_project_that_declares_no_process_reports_as_before(tmp_path):
+    """Backwards compatible: without a declaration every part is printed, and the same parts fail as they did."""
+    make_project(tmp_path, parts=MIXED)
+    for ext in ("stl", "3mf"):
+        (tmp_path / "exports" / f"frame.{ext}").unlink()
+    got = report.collect(load_project(tmp_path))
+    assert {n: r["status"] for n, r in rows(got, "cad-parts").items()} == {
+        "P1 · box": "pass", "lid": "pass", "frame": "fail", "motor": "pass"}
+    assert rows(got, "cad-print-files")["frame"]["status"] == "fail" and got["pass"] is False
+    assert "not printed" not in report.downloads_snippet(load_project(tmp_path))
+
+
+def test_a_part_made_another_way_is_a_skip_with_the_reason_never_a_pass(tmp_path):
+    project = load_project(mixed_project(tmp_path))
+    got = report.collect(project)
+    assert_schema(got)
+    parts, files = rows(got, "cad-parts"), rows(got, "cad-print-files")
+    for feature in (parts, files):
+        assert {n: r["status"] for n, r in feature.items()} == {
+            "P1 · box": "pass", "lid": "pass", "frame": "skip", "motor": "skip"}
+    assert parts["frame"]["message"] == files["frame"]["message"] == (
+        "not checked by the print pipeline: welded fabrication (cad.part_process 'weldment'); "
+        "no check here says this part can be made")
+    assert "bought, not made (cad.part_process 'purchased')" in files["motor"]["message"]
+    # the frame is too big for the bed, in four solids and not watertight: none of that is asked of a weldment
+    assert not [c for f in ("cad-parts", "cad-print-files") for c in rows(got, f).values() if c["status"] == "fail"]
+    counts = report.summarize({"features": [f for f in got["features"]
+                                            if f["feature_id"] in ("cad-parts", "cad-print-files")]})
+    assert counts == {"pass": 4, "fail": 0, "skip": 4}          # a skip adds nothing to the passes
+
+
+def test_a_printed_part_in_a_mixed_project_is_still_checked(tmp_path):
+    root = mixed_project(tmp_path)
+    (root / "exports" / "lid.3mf").unlink()                     # lid is declared fdm
+    parts = dict(MIXED, box={**GOOD, "watertight": False})
+    (root / "exports" / "geometry-checks.json").write_text(json.dumps(parts))
+    got = report.collect(load_project(root))
+    assert rows(got, "cad-print-files")["lid"]["status"] == "fail"
+    assert rows(got, "cad-parts")["P1 · box"]["status"] == "fail" and got["pass"] is False
+
+
+def test_the_dossier_card_names_the_process(tmp_path):
+    root = make_project(tmp_path, parts=MIXED, checks_yaml="  dossier: dossier/project.yaml\n")
+    (root / "dossier").mkdir()
+    (root / "dossier" / "project.yaml").write_text(textwrap.dedent("""\
+        title: demo
+        sections:
+          - id: S1
+            title: Frame
+            parts:
+              - {id: frame, function: carry, material: {name: S235, process: welded steel tube}}
+              - {id: motor, function: drive, material: {name: bought, process: purchased}}
+              - {id: lid, function: cover, material: {name: PETG, process: FDM, wall_mm: 2}}
+        """))
+    got = report.collect(load_project(root))
+    parts = rows(got, "cad-parts")
+    assert {n: r["status"] for n, r in parts.items()} == {
+        "P1 · box": "pass", "lid": "pass", "frame": "skip", "motor": "skip"}
+    assert "welded fabrication (dossier material.process 'welded steel tube')" in parts["frame"]["message"]
+
+
+def test_a_part_process_entry_for_no_part_fails(tmp_path):
+    """A mistyped part name would leave its part in the print pipeline without a word."""
+    make_project(tmp_path, checks_yaml='  part_process: {"*": fdm, ldi: purchased}\n')
+    got = report.collect(load_project(tmp_path))
+    row = rows(got, "cad-parts")["cad.part_process: ldi"]
+    assert row["status"] == "fail" and "'ldi', which is not a part" in row["message"] and got["pass"] is False
+
+
+def test_downloads_show_a_dash_not_missing_for_a_part_that_is_not_printed(tmp_path):
+    root = mixed_project(tmp_path)
+    (root / "exports" / "lid.stl").unlink()
+    page = report.downloads_snippet(load_project(root), page_dir=root / "docs")
+    assert page.count('class="vcad-na"') == 3 + 2       # the motor's three files, the frame's STL and 3MF
+    assert 'href="../exports/frame.step"' in page and "A dash marks a part that is not printed" in page
+    assert page.count('class="vcad-missing"') == 1 + 3  # the lid's STL (a printed part), three parts with no render

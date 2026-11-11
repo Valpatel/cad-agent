@@ -503,3 +503,34 @@ def test_a_prusa_part_that_is_not_ok_fails_the_report(tmp_path, monkeypatch):
     assert 'NOT OK, flagged by the slicer: lid' in collect(project)['footer_meta']['slicer']
     said['lid'] = said['box']
     assert slicer.slice_project(project, ['lid'])['pass']                  # re-slicing the part alone clears it
+
+
+def test_only_printed_parts_are_sliced_by_default(tmp_path, monkeypatch):
+    """#577: a part a declaration says is welded or bought is not sliced, and a current report needs no row for it."""
+    import pathlib
+    from tests.publish.test_report import make_project
+    from cadagent.project import load_project
+    root = make_project(tmp_path / 'proj', checks_yaml='  part_process: {lid: purchased}\n')
+    project = load_project(root)
+    assert slicer._expected_parts(project) == ['box']
+    seen = []
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/true')
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.append(pathlib.Path(m).stem)
+                        or {'grams': 5.0, 'minutes': 10.0, 'ok': True, 'exit_code': 0, 'return_code': 0})
+    rep = slicer.slice_project(project)
+    assert seen == ['box'] and set(rep['parts']) == {'box'} and rep['pass'] is True
+    assert slicer.current_report(project) is not None
+    slicer.slice_project(project, ['lid'])                 # a part named on the command line is sliced as asked
+    assert seen == ['box', 'lid']
+    project.slicer = {'parts': ['box', 'lid']}             # and so is one cad.slicer.parts lists
+    assert slicer._expected_parts(project) == ['box', 'lid']
+
+
+def test_slicing_a_project_with_no_printed_part_says_so(tmp_path, monkeypatch):
+    from tests.publish.test_report import make_project
+    from cadagent.project import load_project
+    project = load_project(make_project(tmp_path / 'proj', checks_yaml='  part_process: {"*": weldment}\n'))
+    monkeypatch.setattr(slicer, 'executable', lambda: '/bin/true')
+    with pytest.raises(slicer.NothingToSlice, match='no printed part to slice'):
+        slicer.slice_project(project)
+    assert not (project.exports_dir / 'slice-report.json').exists()

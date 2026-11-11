@@ -146,7 +146,8 @@ def test_skip_missing_step_config_binding_partial_runs_and_out(tmp_path):
     cfg.write_text(cfg.read_text() + "  holes:\n    skip: {gasket: printed in TPU without fastener holes}\n")
     assert main(["holes", "--project", str(root)]) == 0
     rows = {c["name"]: c for c in holes_feature(load_project(root))["checks"]}
-    assert all(c["status"] == "pass" for c in rows.values()) and "TPU" in rows["gasket"]["message"]
+    assert {n: c["status"] for n, c in rows.items()} == {**{n: "pass" for n in rows}, "gasket": "skip"}   # not checked (#526)
+    assert "TPU" in rows["gasket"]["message"]
     (root / "exports/lid.step").unlink()
     rows = {c["name"]: c for c in holes_feature(load_project(root))["checks"]}
     assert rows["lid"]["status"] == "fail" and "not found" in rows["lid"]["message"]

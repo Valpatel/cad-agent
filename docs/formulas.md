@@ -1,7 +1,8 @@
 # Engineering formulas
 
-`cadagent.formulas` holds the closed-form equations that 3D-printed mechanisms keep needing: beams and snap arms,
-torsion bars, springs, screws, four-bar and five-bar linkages, wall conduction and fan operating points. Agents call it from Python
+`cadagent.formulas` holds the closed-form equations that mechanisms and frames keep needing: beams, tube sections and
+snap arms, torsion bars, springs, screws, riveted joints, fillet welds, four-bar and five-bar linkages, wall
+conduction and fan operating points. Agents call it from Python
 instead of re-deriving the equations. The website's demonstrations call a browser port of the same functions, and the
 two are tested against one set of golden vectors, so a demo never shows a number an agent would not get. Every
 function states its SI units and its validity limits, and cites its source by author, title, edition and section.
@@ -54,6 +55,9 @@ in a printed boss).
   deflections, contact or plastic strain, use FEA (`cadagent.simulation.fea`) and a test.
 - **Screws.** Torque gives preload to about ±25 % even with a known nut factor; in plastic the factor is unknown
   until measured. Thread stripping assumes even load sharing, which real threads do not have.
+- **Welds.** Static load only, on a sound weld, of a member on a plate or a stiff part. [Fillet welds](#fillet-welds)
+  says what the weld functions leave out: fatigue, weld quality, the heat-affected zone, residual stress,
+  burn-through and tube-to-tube joints.
 
 ## Why it is built, not adopted
 
@@ -92,7 +96,7 @@ How the sources, the Python, the golden vectors and the browser port connect:
 
 ```mermaid
 flowchart TD
-    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton · Bulten<br/>Incropera · White · ISO 68-1, 898-1"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
+    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton · Bulten<br/>Incropera · White · ISO 68-1, 898-1 · AISC 360-16"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
     C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
@@ -111,11 +115,13 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 84 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 110 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
 | `rect_second_moment` | I = b h³ / 12 | Roark 8th ed., Table A.1 | solid rectangle |
+| `hollow_rect_second_moment`, `hollow_rect_section_modulus` | a box tube: I = (b h³ − (b − 2t)(h − 2t)³) / 12 and S = I / (h / 2) | Roark 8th ed., Table A.1 (hollow rectangle) | sharp corners, one wall all round: a formed tube's handbook value is lower; no local buckling |
+| `round_tube_second_moment`, `round_tube_section_modulus` | a round tube: I = π (D⁴ − d⁴) / 64 and S = I / (D / 2) | Roark 8th ed., Table A.1 (hollow circle) | concentric, the wall as made; no local buckling |
 | `cantilever_tip_deflection` | y = F L³ / 3 E I | Roark 8th ed., Table 8.1, case 1a | Euler–Bernoulli, small deflection |
 | `beam_stiffness` | 3, 12, 48, 192 E I / L³ (cantilever, guided, simply supported, fixed–fixed) | Roark 8th ed., Table 8.1 | point load; slender beam |
 | `cantilever_shape` | the deflected curve, constant or tapered arm | Roark 8th ed., Section 8.1, integrated exactly | end load |
@@ -157,6 +163,13 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `arc_path_radius`, `arc_printed_diameter` | where a perimeter's path must run for a small hole to print to size, (t + √(t² + 4R²)) / 2, and the hole an uncompensated path leaves, √(D² − t²) | RepRap wiki, *Arc Compensation* (2015), its area balance; tests reproduce its table | a floor on the shrink: Nophead found corner cutting adds more |
 | `rivet_shear_force`, `bearing_force` | a riveted joint's rivets in shear, n m τ π d² / 4, and its holes in bearing, n d t σbr | MIL-HDBK-5J, 8.1.2 and 8.1.2.1 (Tables 8.1.2(b) and 8.1.2.1(a)) | static; a blind rivet's shear is its maker's rating, not its alloy's |
 | `tearing_force`, `solid_sheet_force`, `lap_joint` | the sheet torn between holes, (p − d) t σt, the solid sheet p t σt, and a lap joint's strength (the least mode) and efficiency, per pitch | Abbud, *Riveted Joints* lecture notes (Al-Mustaqbal University College), checked on its Problem 2 | rivets in shear only; the single lap's bending is not modelled; tearing at the first row |
+| `fillet_throat`, `fillet_throat_area`, `fillet_throat_stress` | an equal-leg fillet weld: throat 0.707 h, area 0.707 h l, and a direct load's stress on the throat, F / (0.707 h l) | AISC 360-16, Section J2.2a; Shigley 10th ed., Chapter 9, "Butt and Fillet Welds" | static; a sound weld with the leg as drawn; the load through the group's centroid |
+| `fillet_size_limits` | the least leg for the thinner part joined (1/8, 3/16, 1/4, 5/16 in) and the largest along a lapped edge | AISC 360-16, Table J2.4 and Section J2.2b(b) | the table's inch column, converted exactly; says nothing about burn-through |
+| `weld_line_parallel`, `weld_line_box`, `weld_line_circle` | a weld group as a line: its length and unit second moments Iu (about x and y) and Ju, for two parallel welds, a rectangle all round and a circle all round | Shigley 10th ed., Chapter 9, Tables 9-1 and 9-2 | the weld as a line at the joint; one leg size; on a plate or a stiff part, not on another tube's face |
+| `weld_group_stress` | the throat stress at the critical point from shear, axial load, bending about two axes and torque: V / A, M c / I and T r / J added as vectors | Shigley 10th ed., Chapter 9, "Stresses in Welded Joints in Torsion" and "in Bending" (Example 9-4) | static, elastic; every load at the centroid; shear spread evenly over the length; the whole resultant taken as shear; not for a tube welded to another tube's face |
+| `weld_metal_strength` | what the throat may carry: 0.60 FEXX times φ = 0.75 (LRFD) or over Ω = 2.00 (ASD) | AISC 360-16, Section J2.4(a) and Table J2.5 | steel, matching filler metal; no directional increase |
+| `base_metal_shear_strength` | what the metal beside the weld may carry per unit length: the lower of 0.60 Fy t (φ 1.00, Ω 1.50) and 0.60 Fu t (φ 0.75, Ω 2.00) | AISC 360-16, Section J4.2, Eqs. (J4-3) and (J4-4) | the metal as it is beside the weld; heat-affected-zone softening not covered |
+| `fillet_weld_check` | a throat stress against both, kept apart: the weld metal's ratio, the base metal's ratio, and which governs | AISC 360-16, Section J2.4(a), Eqs. (J2-2) and (J2-3) | a pass has only the specification's factor; not proof that the weld is sound |
 | `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
@@ -193,6 +206,73 @@ fx.preload_from_torque(torque=0.5, diameter=0.003)                # 833 N with K
 fx.fan_operating_point(fx.fan_curve_line(15.2, 0.0108), k=2e6)   # flow, pressure, stability
 ```
 
+### Fillet welds
+
+A square tube welded all round to a plate, under a bending moment and a shear force:
+
+```python
+group = fx.weld_line_box(width=0.0508, depth=0.0508)              # the tube's outside, 2 x 2 in
+s = fx.weld_group_stress(group, leg=0.003, shear_y=1500, moment_x=400)   # 54.9 MPa on the throat at a corner
+fx.fillet_weld_check(s["stress"], leg=0.003, electrode_strength=483e6, thickness=0.0032,
+                     yield_strength=315e6, tensile_strength=400e6, method="asd")   # weld 0.38, base 0.30
+```
+
+Arrows: each function's result is the next one's input.
+
+```mermaid
+flowchart TD
+    G["weld_line_box<br/>weld_line_parallel<br/>weld_line_circle<br/>the weld as a line"] --> S["weld_group_stress<br/>loads at the centroid"]
+    S -->|"throat stress, Pa"| C["fillet_weld_check<br/>lrfd or asd"]
+    W["weld_metal_strength<br/>0.60 FEXX, Table J2.5"] --> C
+    B["base_metal_shear_strength<br/>0.60 Fy, 0.60 Fu, J4.2"] --> C
+    W ~~~ B
+    C --> R["weld ratio · base ratio<br/>kept apart, which governs"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class G,S,C,W,B here
+    class R out
+```
+
+The group lies in the x-y plane with its centroid at the origin, and z runs along the welded member. Loads act at
+the centroid: move an offset force there and add its moment. `weld_group_stress` uses the line method of Shigley's
+Chapter 9 [ref:shigley]: every point of the weld gets a force per unit length from each load, the forces add as
+vectors, and the whole resultant goes on the throat as shear. `fillet_weld_check` compares that stress with the weld
+metal's strength and, apart from it, the weld's force per unit length with the base metal's shear strength beside
+the weld, both from AISC 360-16 [ref:aisc-360-16]. Choose `"lrfd"` with factored loads or `"asd"` with service
+loads; the result names the method.
+
+**These checks are for static load on a sound weld, of a member on a plate or a stiff part.** They do not cover
+fatigue, weld quality, the heat-affected zone, residual stress, burn-through of a thin wall, or a tube welded to
+another tube's face. A calculation that passes does not prove that a weld made by a hobbyist is sound: break a test
+piece welded the same way, and inspect the real joint.
+
+<details>
+<summary>What each of those limits means, and two choices the method makes</summary>
+
+- **Fatigue.** A welded joint under repeated load fails far below its static strength. A frame that is driven,
+  shaken or loaded in cycles needs a fatigue assessment, which is not here.
+- **Weld quality.** The strengths assume full fusion at the root, the leg as drawn, and no porosity, cracks or
+  undercut. Nothing here measures that.
+- **The heat-affected zone.** Cold-worked or heat-treated steel, and any aluminium, is softer beside a weld. Give
+  the base metal's strength as it is there.
+- **Residual stress and distortion.**
+- **Burn-through of a thin wall.** `fillet_size_limits` gives the specification's least leg, and the largest along
+  a lapped edge. It does not show that a 3 mm wall takes the heat.
+- **A tube welded to another tube's face.** The method loads the whole perimeter, which holds on a plate or a part
+  stiff enough to pass the load evenly. The face of a hollow section is flexible, so the load crowds to the corners
+  and only part of the weld works. AISC 360-16 Section K5 gives effective weld lengths for that case, and the full
+  perimeter used here is unconservative.
+- **Shear is spread evenly over the whole length**, as Shigley does. The elastic peak in the welds that run along
+  the force is about twice that on a square or round tube. With bending present the corner governs and this hardly
+  matters; a short stub loaded mostly in shear is under-read, and relies on the weld's ductility.
+- **No directional strength increase.** AISC allows more on a fillet loaded across its axis. Packer and Sun found
+  that unsafe for fillet welds to the ends of rectangular tubes [ref:packer-sun-2015-hss-fillet], so it is left
+  out. That is the cautious choice for the direction of the load on the throat only; it does not make up for
+  anything else in this list.
+
+</details>
+
 In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
 `cantileverStrainProfile`, `fourbarAngles`, `fanOperatingPoint` and the others in the golden vectors) in the same SI
 units. `kit/formulas-data.js` carries the demos' data: the printed filaments, and the fan curves of
@@ -204,12 +284,14 @@ units. `kit/formulas-data.js` carries the demos' data: the printed filaments, an
 in the test.
 
 <details>
-<summary>What each family is tested against: beams, torsion, springs, screws, riveted joints, linkages, heat and air</summary>
+<summary>What each family is tested against: beams, torsion, springs, screws, riveted joints, welds, linkages, heat and air</summary>
 
 - **Beams.**
   - Beam stiffness by the direct stiffness method.
   - The tapered-arm curves by numerical integration, and the Covestro Table 1 factors as the exact integrals rounded.
   - Example I of the guide in SI units, and agreement with `cad-agent snapfit` to 1e-12.
+  - Hollow rectangles and round tubes by integrating over the wall, as the solid less the hole, and a thin ring
+    against π r³ t. A derivation only: no handbook table was opened.
 - **Torsion.**
   - Rectangular sections against the Saint-Venant series (within 0.5 %, the worst at aspect 1.145), and against the
     tabulated coefficients in Shigley, Section 3-12.
@@ -227,6 +309,16 @@ in the test.
 - **Riveted joints** (`tests/formulas/test_rivet_formulas.py`).
   - MIL-HDBK-5J's tabulated single shear of a 1/8 in 5056 rivet (363 lb) and unit bearing at 100 ksi, t 0.040 in (514 lb).
   - Both joints of Abbud's Problem 2, mode by mode, with their efficiencies, 60 % and 69.2 %.
+- **Fillet welds** (`tests/formulas/test_weld_formulas.py`).
+  - Shigley's Example 9-4, a welded cantilever: primary 0.472, secondary 8.50 and resultant 8.51 kpsi, within the
+    0.2 % the book's three-figure rounding leaves. Its Example 9-2: 5.57 kip per inch for a 3/8 in E70 fillet, which
+    is AISC's 0.60 FEXX over 2.00. Both were read in the publisher's lecture slides for the 9th edition and checked
+    against class notes on the 10th; the book itself was not opened.
+  - The unit properties as Tables 9-1 and 9-2 print them, and by integrating along the line.
+  - Equilibrium: the weld's forces, summed with their moments, return every applied force and moment.
+  - The critical point against a search of the whole weld.
+  - AISC 360-16's Table J2.5 and Section J4.2 factors, Table J2.4's minimum sizes, and the Steel Tube Institute's
+    full-capacity fillet: a 3/4 in leg develops its example's rectangular tube wall and 11/16 in does not.
 - **Linkages.**
   - Loop closure, and an independent circle-intersection construction, at every input angle.
   - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.

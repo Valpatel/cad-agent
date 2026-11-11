@@ -658,6 +658,9 @@ def profile(process: str, path: Any = None) -> Profile:
 
 # The additive words: a part made by one of these is printed. (The dossier lint's ``wall-undeclared`` uses the same.)
 ADDITIVE_RE = re.compile(r"\b(?:fdm|fff|sla|sls|mjf|dlp|polyjet|additive)\b|\b3d[ -]?print", re.I)
+# Any other "print" word keeps a part in the print pipeline too (``printed PETG, bore machined after``): when the
+# words are unclear the part is checked, not skipped.
+_PRINT_WORD_RE = re.compile(r"\bprint(?:s|ed|ing)?\b", re.I)
 
 # The routes that are not printing: name -> (what a report row calls it, the words that mean it). ``sheet-metal``,
 # ``cnc`` and ``injection-moulding`` are the data file's processes; ``weldment`` and ``purchased`` name routes it has no
@@ -666,7 +669,7 @@ NOT_PRINTED: Dict[str, Tuple[str, "re.Pattern[str]"]] = {
     "purchased": ("bought, not made", re.compile(
         r"\b(?:purchas\w*|bought|buy|off[- ]the[- ]shelf|cots)\b", re.I)),
     "weldment": ("welded fabrication", re.compile(r"\bweld\w*", re.I)),
-    "sheet-metal": ("cut or bent sheet or plate", re.compile(
+    "sheet-metal": ("cut or bent sheet, plate or stock", re.compile(
         r"\bsheet[- ]?metal\b|\b(?:laser|plasma|water[- ]?jet|flame|oxy|saw|hand)[- ]?cut\b|\bcut[- ](?:plate|sheet)\b",
         re.I)),
     "cnc": ("machined", re.compile(r"\b(?:cnc|machin\w*|mill(?:ed|ing)|turn(?:ed|ing)|lathe)\b", re.I)),
@@ -677,9 +680,10 @@ PART_PROCESS_DEFAULT = "*"      # the ``cad: part_process:`` key for every part 
 
 def process_route(text: Any) -> Optional[str]:
     """How a process named in words is made: ``"additive"``, a ``NOT_PRINTED`` name, or None when the words name no
-    process this module knows. Additive words win (``FDM, then machined`` is a printed part)."""
+    process this module knows. Additive and "print" words win (``FDM, then machined`` is a printed part). Words are
+    matched, not parsed: ``not welded`` reads as welded, so write what the part is, not what it is not."""
     words = str(text or "")
-    if ADDITIVE_RE.search(words):
+    if ADDITIVE_RE.search(words) or _PRINT_WORD_RE.search(words):
         return "additive"
     for name, (_, pattern) in NOT_PRINTED.items():
         if pattern.search(words):
@@ -716,10 +720,12 @@ class PartProcess:
 def part_processes(project: Any, parts: Iterable[str]) -> Dict[str, PartProcess]:
     """``{part: PartProcess}`` for a project's parts. For each part, the first of:
 
-    1. its dossier card's ``material.process`` (``cad: dossier:``; the card whose id is the part's name);
+    1. its dossier card's ``material.process`` (``cad: dossier:``; the card whose id is the part's name), when its
+       words name a process ``process_route`` reads;
     2. ``cad: part_process: {<part>: <process>}`` in ``cad-agent.yaml``;
     3. ``cad: part_process: {"*": <process>}``, the project's default;
-    4. nothing: the part is printed, as every part was before a process could be declared.
+    4. nothing: the part is printed, as every part was before a process could be declared (a card's unread words
+       are kept in ``declared``).
 
     Reads files only. A dossier that does not load declares nothing here (the dossier lint reports it)."""
     cards: Dict[str, Any] = {}
@@ -734,14 +740,14 @@ def part_processes(project: Any, parts: Iterable[str]) -> Dict[str, PartProcess]
     for part in parts:
         card = cards.get(part)
         said = (card.material.process if card is not None and card.material else "").strip()
-        if said:
+        if said and process_route(said) is not None:
             source = "dossier material.process"
         elif part in config:
             said, source = config[part], "cad.part_process"
         elif PART_PROCESS_DEFAULT in config:
             said, source = config[PART_PROCESS_DEFAULT], f"cad.part_process {PART_PROCESS_DEFAULT!r}"
-        else:
-            out[part] = PartProcess(part)
+        else:       # nothing declared, or a card whose words name no known process: printed
+            out[part] = PartProcess(part, None, said, "dossier material.process" if said else "")
             continue
         out[part] = PartProcess(part, process_route(said), said, source)
     return out

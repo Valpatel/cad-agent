@@ -292,7 +292,9 @@ def test_sqrt_and_cos_take_one_argument_and_refuse_a_negative_root():
     ("hand cut plate", "sheet-metal"), ("waterjet cut", "sheet-metal"), ("plasma-cut", "sheet-metal"),
     ("cnc", "cnc"), ("CNC milled", "cnc"), ("machined 6061", "cnc"), ("turned on a lathe", "cnc"),
     ("injection-moulding", "injection-moulding"), ("injection molded", "injection-moulding"),
-    ("", None), (None, None), ("casting", None), ("printed", None), ("build plate", None),
+    ("printed PETG, bore machined after", "additive"), ("PETG print with purchased inserts", "additive"),
+    ("printed", "additive"),                            # any "print" word keeps the part in the print pipeline
+    ("", None), (None, None), ("casting", None), ("build plate", None), ("MSLA", None),
     ("fused filament fabrication", None),               # not a welded "fabrication": unknown, so it stays printed
 ])
 def test_process_route_reads_the_documented_words(words, route):
@@ -349,15 +351,19 @@ def test_part_process_config_names_parts_and_a_default(tmp_path):
 def test_the_dossier_card_is_read_first_and_the_config_fills_the_gaps(tmp_path):
     project = _project(tmp_path, '  dossier: dossier/project.yaml\n'
                                  '  part_process: {chassis: fdm, bracket: sheet-metal, extra: purchased}\n', DOSSIER)
+    cast = _project(tmp_path, '  dossier: dossier/project.yaml\n  part_process: {knob: purchased}\n')
+    knob = pp.part_processes(cast, ["knob"])["knob"]       # a card whose words name no process: the config decides
+    assert (knob.route, knob.source, knob.declared) == ("purchased", "cad.part_process", "purchased")
     how = pp.part_processes(project, ["chassis", "battery", "lid", "bracket", "knob", "extra", "loose"])
     assert {p: h.route for p, h in how.items()} == {
         "chassis": "weldment",          # the card wins over cad.part_process
         "battery": "purchased", "lid": "additive",
         "bracket": "sheet-metal",       # a card with no process: the config names it
-        "knob": None,                   # words no process matches: stays in the print pipeline
+        "knob": None,                   # words no process matches and no config entry: stays in the print pipeline
         "extra": "purchased",           # no card
         "loose": None}
     assert how["chassis"].source == "dossier material.process" and how["chassis"].declared == "welded steel tube"
+    assert (how["knob"].declared, how["knob"].source) == ("casting", "dossier material.process")
     assert [p for p, h in how.items() if h.printed] == ["lid", "knob", "loose"]
 
 

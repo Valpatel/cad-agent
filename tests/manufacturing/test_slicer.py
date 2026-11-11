@@ -534,3 +534,8 @@ def test_slicing_a_project_with_no_printed_part_says_so(tmp_path, monkeypatch):
     with pytest.raises(slicer.NothingToSlice, match='no printed part to slice'):
         slicer.slice_project(project)
     assert not (project.exports_dir / 'slice-report.json').exists()
+    # a report from when a part was printed does not apply now, and is not a failure nobody can clear by slicing
+    (project.exports_dir / 'slice-report.json').write_text('{"slicer": "x", "parts": {"box": {"grams": 1}}}')
+    assert slicer.report_status(project) == (None, None)
+    project.part_process = {}                              # with a printed part it is stale, as before
+    assert slicer.report_status(project)[1] == 'slice report is incomplete or its expected parts changed'

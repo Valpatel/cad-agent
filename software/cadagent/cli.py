@@ -142,6 +142,9 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     others = [p for p in parts if p not in printed]
     if others:
         _say(f"  not printed, no print files written: {', '.join(others)}")
+        old = [f"{p}.3mf" for p in others if (project.exports_dir / f"{p}.3mf").is_file()]
+        if old:                                 # written when the part was printed: not this run's, and not deleted
+            _say(f"  note: left in {project.exports_dir.name}/ from an earlier run, not checked: {', '.join(old)}")
     if not printed:
         from cadagent.manufacturing.plates import _remove_outputs, plates_file
         _remove_outputs(plates_file(project))   # a plates file from when a part was printed is stale now

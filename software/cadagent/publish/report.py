@@ -466,7 +466,7 @@ def downloads_snippet(
     Paths are relative to ``page_dir`` (default ``preview_dir``), so the snippet
     can be dropped into any page of the project. Missing files are shown as
     missing, not linked. A part that is not printed (``cadagent.manufacturing.process.part_processes``) links the
-    files it has and shows a dash, not "missing", for the rest. The Bambu Studio link only works when the page is
+    files it has and shows a dash, not "missing", for an absent STL or 3MF. The Bambu Studio link only works when the page is
     served over http (``cad-agent serve``); from file:// it downloads the 3MF.
     """
     from cadagent.manufacturing.process import part_processes
@@ -488,7 +488,8 @@ def downloads_snippet(
             cells.append(
                 f'<td><a href="{esc(_rel(path, page_dir))}" download>{ext.upper()}</a></td>'
                 if path.is_file() else f'<td><span class="vcad-missing">{ext.upper()} missing</span></td>'
-                if how[part].printed else '<td><span class="vcad-na" title="not a printed part">–</span></td>'
+                if how[part].printed or ext == "step"      # STEP is for CAD review, whatever makes the part
+                else '<td><span class="vcad-na" title="not a printed part">–</span></td>'
             )
         three_mf = project.exports_dir / f"{part}.3mf"
         slicer = (

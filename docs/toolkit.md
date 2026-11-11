@@ -162,7 +162,7 @@ flowchart TD
 
 For each part, the first of these decides (`cadagent.manufacturing.process.part_processes`):
 
-1. the dossier card's `material.process` ([dossier](practice/dossier.md)), for the card whose id is the part's name;
+1. the dossier card's `material.process` ([dossier](practice/dossier.md)), for the card whose id is the part's name, when its words name a process in the table below;
 2. `cad: part_process: {<part>: <process>}` in `cad-agent.yaml`, for a project without a dossier or a card without a process;
 3. `cad: part_process: {"*": <process>}`, the project's default;
 4. nothing: the part is printed, as every part was before. A project that declares nothing is unchanged.
@@ -177,7 +177,7 @@ cad:
 
 | Process | Words that mean it | The print pipeline |
 |---|---|---|
-| printed | `fdm`, `fff`, `sla`, `sls`, `mjf`, `dlp`, `polyjet`, `additive`, `3D printed` | applies, exactly as before |
+| printed | `fdm`, `fff`, `sla`, `sls`, `mjf`, `dlp`, `polyjet`, `additive`, `3D printed`, any `print`, `printed`, `printing` | applies, exactly as before |
 | `weldment` | `welded ...`, `weldment` | skips the part |
 | `purchased` | `purchased`, `bought`, `off-the-shelf`, `COTS` | skips the part |
 | `sheet-metal` | `sheet metal`, `laser-cut`, `plasma-cut`, `waterjet-cut`, `saw-cut`, `hand-cut`, `cut plate` | skips the part |
@@ -185,10 +185,12 @@ cad:
 | `injection-moulding` | `injection ...`, `moulded`, `molded` | skips the part |
 
 - **The words are read from free text**, so a dossier card may say `welded steel tube` or `laser-cut 6 mm plate`.
-  Additive words win: `FDM, then machined` is a printed part.
-- **Words that match nothing** (`casting`) leave a dossier card's part in the print pipeline, where its rows fail and
-  show it. In `cad: part_process:` they are a config error, and an entry for a name that is not a part is a failing
-  row, so a typo is never read as "printed" or lost.
+  Printing words win: `FDM, then machined` and `printed PETG with purchased inserts` are printed parts. The words
+  are matched, not parsed (`not welded` reads as welded), so write what the part is.
+- **Words that match nothing** (`casting`) on a dossier card pass the decision to `cad: part_process:`; with no entry
+  there the part stays in the print pipeline, where its rows fail and show it. In `cad: part_process:` such words are
+  a config error, and an entry for a name that is not a part is a failing row, so a typo is never read as "printed"
+  or lost.
 - **A skipped part's rows are skips, never passes**, with the reason: `not checked by the print pipeline: welded
   fabrication (dossier material.process 'welded steel tube'); no check here says this part can be made`. The skip
   count goes up and the pass count does not.
@@ -199,7 +201,9 @@ cad:
 - **What is left out for a skipped part:** its `<part>.3mf`, its place on the default build plates, its row in the
   default slice and in the overhang screen, and the "missing" marks in the report's download table (a dash instead).
   A part named in `cad.plates.parts`, in `cad.slicer.parts` or on the command line is handled as named.
-  When no part is printed, `export-3mf` writes nothing and exits 0, and needs no `cad.printer.bed_mm`.
+  When no part is printed, `export-3mf` writes nothing and exits 0, and needs no `cad.printer.bed_mm`; a slice
+  report from when a part was printed no longer counts. A `<part>.3mf` an earlier run wrote is left in place and
+  named in a note. The download table still marks a missing STEP: STEP is for CAD review, whatever makes the part.
 - **Not covered yet:** `cad-agent release` is a print release and still lists every part by default; name the printed
   parts in `cad.release.parts` or `groups`.
 

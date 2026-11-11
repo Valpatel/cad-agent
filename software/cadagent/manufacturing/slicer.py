@@ -542,7 +542,12 @@ def report_status(project) -> Tuple[Optional[dict], Optional[str]]:
         return None, 'slice report has invalid parts data'
     if not isinstance(rep.get('slicer'), str) or not rep['slicer'].strip():
         return None, 'slice report has invalid slicer metadata'
-    if not rep['parts'] or set(rep['parts']) != set(_expected_parts(project)):
+    expected = _expected_parts(project)
+    if not expected:
+        from cadagent.publish.report import load_parts
+        if load_parts(project)[0]:      # parts, none of them printed (#577): a report from when one was does not apply
+            return None, None
+    if not rep['parts'] or set(rep['parts']) != set(expected):
         return None, 'slice report is incomplete or its expected parts changed'
     different = settings_differ(rep, project)
     if different:

@@ -526,6 +526,7 @@ def test_downloads_show_a_dash_not_missing_for_a_part_that_is_not_printed(tmp_pa
     root = mixed_project(tmp_path)
     (root / "exports" / "lid.stl").unlink()
     page = report.downloads_snippet(load_project(root), page_dir=root / "docs")
-    assert page.count('class="vcad-na"') == 3 + 2       # the motor's three files, the frame's STL and 3MF
+    assert page.count('class="vcad-na"') == 2 + 2       # the STL and 3MF of the motor and of the frame
     assert 'href="../exports/frame.step"' in page and "A dash marks a part that is not printed" in page
-    assert page.count('class="vcad-missing"') == 1 + 3  # the lid's STL (a printed part), three parts with no render
+    assert "STEP missing" in page                       # the motor's STEP: for CAD review, whatever makes the part
+    assert page.count('class="vcad-missing"') == 2 + 3  # that and the lid's STL (printed), three parts with no render

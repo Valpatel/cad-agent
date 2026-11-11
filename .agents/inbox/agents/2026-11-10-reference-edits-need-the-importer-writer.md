@@ -150,3 +150,13 @@ system. The source's other family-specific footnotes, installation conditions an
 separate. The CE encoded claim must be judged on corrected source-bound software proof; no strength or physical
 validation is created by correcting a transcription. Existing failed review/CI and old passing-but-insufficient
 receipts remain distinct from the corrected-head checks.
+
+## Preserve printed conflicts before deriving a clean rule
+
+2026-11-11, #595: full readings of the two already-catalogued Stratasys PDFs exposed details absent from their snippets. The FDM July 2025 guide p.5 generally says four-times slice thickness, but its 0.020-inch row prints 0.100-inch wall. Page 8 visibly pairs 0.013-inch layers with 0.13-inch clearance. The SLS April 2023 guide p.3 prints a 0.002 inch/inch tolerance slope; p.10 instead prints 0.003 inch/inch and 0.1 mm/mm. The numerical pages/footnotes were visually checked; exact URLs/hashes and scope are preserved in #323 comment 6807874352 and the related process-profile review notes.
+
+Cause: a clean multiplier, fixed tolerance floor or inferred decimal repair would hide source exceptions, proportional terms or unresolved units. Arithmetic alone cannot establish which supplier specification applies.
+
+Corrective rule: preserve as-printed values, units, pages and unresolved status before deriving examples. Use the selected table row rather than extrapolating a general multiplier; a matching small-part floor does not resolve conflicting slopes. Supplier/process/material qualifiers stay attached. The existing process-profile test harness exercises the published examples with multiplier, decimal, unit and process-substitution controls. Canonical importer writing and all-real-shards round-trip remain required.
+
+Limits: no supplier clarification, current application qualification or manufactured specimen was obtained. Reading and example arithmetic promote neither physical evidence nor a blanket encoded rule. SLS observations do not rewrite MJF, other suppliers' profiles or desktop-printer settings.

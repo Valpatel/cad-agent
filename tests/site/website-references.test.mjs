@@ -351,3 +351,21 @@ test('bend-file and CNC-hole short citations retain the exact full-read identiti
     assert.ok(page.includes(`>${alias}</a>`), alias);
   }
 });
+
+test('Stratasys review aliases keep two existing identities and unresolved evidence scope', async () => {
+  const page = await text('research/process-profiles.html');
+  const records = (await json('catalog/references/records.json')).records;
+  for (const [alias, id] of [
+    ['sd-fdm-2025', 'stratasys-direct-stratasys-fdm-design-guide-stratasys-direct'],
+    ['sd-sls-2023', 'stratasys-direct-sls-design-guide-2023'],
+  ]) {
+    assert.equal(refs.aliases.get(alias), id);
+    assert.equal(refs.records.has(alias), false, 'short citation is not another document');
+    assert.equal(records.filter(r => r.id === id).length, 1);
+    assert.equal(records.find(r => r.id === id).evidence, 'read');
+    assert.ok(page.includes(`href="${model.home(id)}"`), id);
+    assert.ok(page.includes(`>${alias}</a>`), alias);
+  }
+  assert.match(page, /unresolved-conflicting-source/);
+  assert.match(page, /unresolved-confirm-supplier/);
+});

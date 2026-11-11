@@ -232,3 +232,29 @@ See [pytest's thread-dump contract](https://docs.pytest.org/en/stable/how-to/fai
   interrupted stages are never counted as passes.
 
 </details>
+
+
+## Correct a failing CI mirror before retrying the same provisioning path
+
+On 2026-11-11, `gh api repos/Valpatel/cad-agent/actions/jobs/130638645274/logs`
+showed three bounded apt update attempts timing out at the hosted Ubuntu runner's
+`http://azure.archive.ubuntu.com/ubuntu` endpoint. The job exited 1 before the
+heavy dependency installation or tests. The log also showed
+`file:/etc/apt/apt-mirrors.txt Mirrorlist`. Repeating this job would repeat the same
+first mirror rather than establish meaningful feature validation.
+
+The runner image's [source configuration](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh)
+puts Azure HTTP at priority 1, Canonical HTTPS archive at priority 2 and HTTPS
+security at priority 3. The correction removes only that exact Azure entry,
+requires the existing Canonical HTTPS archive, and preserves apt source stanzas,
+Ubuntu signature verification, packages, timeouts and every test. Unknown mirror
+layouts fail closed. `python3 tests/repo/test_ci_apt_mirror.py` checks the known
+layout, idempotence, preservation and a missing expected fallback.
+
+**Rule:** classify the failed phase using the actual log and correct the source
+path before collecting new normal CI evidence; never call a provisioning timeout
+a passed feature test or bypass the required job. This correction is specific to
+the hosted Ubuntu mirror-list layout; it does not establish runner network health
+or promise that Canonical endpoints cannot fail.
+
+**Source:** #575; failed #573 full job 130638645274; runner image configuration above.

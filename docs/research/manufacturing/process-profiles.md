@@ -731,6 +731,31 @@ D below is the tool or hole diameter. Two pages here are by named engineers at X
   the YAML keeps the mm value and says so.
 - **Standards.** Protolabs names ISO 2768-1 (general tolerances) as its default. It is paid and was not read.
 
+## Shop-made silicone moulds: plan the batch and test the interface
+
+Before preparing a mould, record the exact rubber and casting material, master printing process/resin, surface
+finish, sealer and release agent in the design dossier. Separate the volume to fill from the combined mixed mass,
+then split that mass using the selected product's **weight** ratio. A volume ratio is a different instruction.
+Use the current technical bulletin for the product's yield, mix basis and working/cure conditions; the calculator
+hub supplies estimates and a separate waste allowance, not a mould-performance qualification.
+[ref:smoothon-mold-calculators] [ref:smoothon-quantity-faq] [ref:smoothon-oomoo-bulletin]
+[ref:smoothon-mold-star-bulletin]
+
+Treat sealing, release and cure compatibility as separate questions. A sealer fills or isolates a surface; a release
+agent helps separate it. A generic material chart does not establish compatibility for an SLA resin. Run a small
+test on the actual prepared master, including its recesses and coating, and inspect the rubber/master interface
+after the product's specified cure. Record tackiness, uncured material, release damage and surface-detail changes
+before committing a full batch. A release coating alone does not demonstrate that cure inhibition is solved.
+[ref:smoothon-sealers-releases] [ref:smoothon-sla-inhibition-faq] [ref:smoothon-mold-star-bulletin]
+
+Resolve general-guide conflicts with the product bulletin and a representative trial. Smooth-On's SLA FAQ
+generalises that tin silicones need weighing and vacuum degassing; its OOMOO bulletin describes a tin silicone
+measured by volume without required degassing. The quantity FAQ also has arithmetic/unit inconsistencies, recorded
+in its registry entry; recompute dimensions and conversions rather than copying its worked answers.
+These are planning and experiment prompts. No casting calculator, profile limit, physical fit/strength result,
+mould life, or safety certification is added by this reading batch. Remaining source coverage is tracked in #552.
+[ref:smoothon-sla-inhibition-faq] [ref:smoothon-oomoo-bulletin] [ref:smoothon-quantity-faq]
+
 ## 9. What this changes in cad-agent
 
 What reads the YAML today (solid) and what is planned to (dashed):

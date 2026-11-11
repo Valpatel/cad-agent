@@ -221,10 +221,11 @@ Arrows: each function's result is the next one's input.
 
 ```mermaid
 flowchart TD
-    G["weld_line_box · _parallel · _circle<br/>the weld as a line"] --> S["weld_group_stress<br/>loads at the centroid"]
+    G["weld_line_box<br/>weld_line_parallel<br/>weld_line_circle<br/>the weld as a line"] --> S["weld_group_stress<br/>loads at the centroid"]
     S -->|"throat stress, Pa"| C["fillet_weld_check<br/>lrfd or asd"]
     W["weld_metal_strength<br/>0.60 FEXX, Table J2.5"] --> C
     B["base_metal_shear_strength<br/>0.60 Fy, 0.60 Fu, J4.2"] --> C
+    W ~~~ B
     C --> R["weld ratio · base ratio<br/>kept apart, which governs"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

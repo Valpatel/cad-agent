@@ -421,9 +421,10 @@ class Registry:
         if law is None and ("deg" in need and rdeg is None or "mm" in need and rmm is None):
             raise RegistryError(f"joint {interface!r} ({kind}) needs " + " and ".join(
                 {"deg": "range_deg", "mm": "range_mm"}[u] for u in need))
-        if kind in ("revolute", "slider") and (rmm if kind == "revolute" else rdeg) is not None:
-            raise RegistryError(f"joint {interface!r} ({kind}) takes " + ("range_deg, not range_mm"
-                                if kind == "revolute" else "range_mm, not range_deg"))
+        if law is not None and (rmm if kind == "revolute" else rdeg) is not None:
+            # the range a driven joint declares is the one its computed values are checked against: in its own unit
+            raise RegistryError(f"joint {interface!r} ({kind}) follows {law.joint}: its range is " +
+                                ("range_deg, not range_mm" if kind == "revolute" else "range_mm, not range_deg"))
         if kind == "fixed" and (rdeg or rmm):
             raise RegistryError(f"joint {interface!r} is fixed and cannot have a range")
         if samples is not None and (isinstance(samples, bool) or not isinstance(samples, int) or samples < 2):

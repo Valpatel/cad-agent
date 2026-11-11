@@ -9,6 +9,19 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.37.0 (2026-11-11)
+
+**New**
+- `cadagent.formulas` checks fillet welds under static load (#578): `fillet_throat`, `fillet_throat_area` and `fillet_throat_stress` for one weld; `weld_line_parallel`, `weld_line_box` and `weld_line_circle` with `weld_group_stress` for a weld group treated as a line under shear, axial load, bending and torque (a tube or a boss welded all round to a plate); and `weld_metal_strength`, `base_metal_shear_strength` and `fillet_weld_check` for the strength AISC 360-16 allows, the weld metal and the base metal apart, by LRFD or ASD. `fillet_size_limits` gives the specification's least and largest leg. They leave out fatigue, weld quality, heat-affected-zone softening, residual stress and burn-through: a pass does not show that a weld is sound.
+- `cadagent.formulas` has the second moment and section modulus of hollow rectangular and round tube sections: `hollow_rect_second_moment`, `hollow_rect_section_modulus`, `round_tube_second_moment` and `round_tube_section_modulus` (#578). Sharp corners and one wall thickness: use the maker's table for a bought section.
+- Read two existing Stratasys FDM/SLS guides and extend printing review guidance with a supplier layer-table exception, explicit unresolved clearance/tolerance conflicts and scoped lap-joint examples (#595).
+
+**Changed**
+- Publication guidance verifies actual figures alongside source counters and uses structured deployment completion fields instead of presentation labels.
+
+**Fixed**
+- Qualify imported printing snippets rather than treating a general layer multiplier or fixed tolerance floor as a universal manufacturing rule (#595).
+
 ## v0.36.2 (2026-11-11)
 
 **New**

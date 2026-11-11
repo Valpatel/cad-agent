@@ -194,6 +194,23 @@ def test_report_rejects_changed_source_and_artifact(tmp_path):
         assert result['status'] == 'fail' and 'stale' in result['message']
 
 
+def test_a_part_in_holes_skip_is_a_skip_row_not_a_pass(tmp_path):
+    """#526: `cad.holes.skip` leaves a part unchecked, so its row must not add to the pass count."""
+    root = make_project(tmp_path, checks_yaml="  holes: {skip: {lid: printed in TPU without fastener holes}}\n")
+    path = root / "exports" / "hole-checks.json"
+    data = json.loads(path.read_text())
+    before = report.summarize(report.collect(load_project(root)))        # both parts checked and clear
+    data["parts"]["lid"] = {"pass": True, "skipped": "printed in TPU without fastener holes"}   # as `cad-agent holes` writes it
+    path.write_text(json.dumps(data))
+    results = report.collect(load_project(root))
+    holes = rows(results, "cad-holes")
+    assert holes["lid"] == {"name": "lid", "status": "skip",
+                            "message": "not checked: printed in TPU without fastener holes"}
+    assert holes["P1 · box"]["status"] == "pass" and results["pass"] is True
+    after = report.summarize(results)
+    assert (after["pass"], after["skip"], after["fail"]) == (before["pass"] - 1, before["skip"] + 1, 0)
+
+
 def test_slicer_run_only_for_current_slices(tmp_path):
     import hashlib
     root = make_project(tmp_path)

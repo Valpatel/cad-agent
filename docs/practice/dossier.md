@@ -661,6 +661,27 @@ problems = validate_record(record)       # [Problem(code, message)]: the record 
 problems = check_record(record, dossier=d, geometry=geo, packet=manifest, packet_stale=None, section_status="gated")
 ```
 
+<details>
+<summary>Part necessity and tolerance claims</summary>
+
+Dewhurst separates part necessity from handling/insertion difficulty. Record why a part must remain separate,
+then inspect size, symmetry, alignment and tangling. For each fastener, clip or bracket, compare an integral
+alternative and retain the reason for the choice. The presentation's redesign savings are case results, not a
+cost allowance for this design. [ref:boothroyd-dewhurst-inc-boothroyd-dewhurst-dfma-presentation]
+
+For a tolerance-dependent decision, name the assembly criterion, datum/direction, signed sensitivities and whether
+each tolerance is a half-width or full range. Scholz's worst-case bound presumes in-range contributors; RSS also
+needs justified stable, centred, independent variation and a distribution/standard-deviation model. Same-process
+parts and shared temperature changes can violate independence; radial error at zero cannot be linearised by
+ordinary derivatives. [ref:university-of-washington-scholz-tolerance-stack-up-analysis]
+
+Put these assumptions and unresolved evidence in the existing decisions and reviewer findings. These are manual
+review prompts: #40's general DFA worksheet and tolerance stack-up helper remain deferred. The existing
+[`limiter_stack`](../formulas.md#what-it-computes) covers only a limiter/plastic pair with symmetric tolerances;
+it does not implement a general statistical stack-up or establish manufacturing capability.
+
+</details>
+
 ### The bundle
 
 `exports/review-bundle/<section>/` (or `--bundle-dir`; a directory that is not empty and holds no `bundle.json` is

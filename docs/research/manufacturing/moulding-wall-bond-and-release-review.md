@@ -21,11 +21,19 @@ Its FAQ and rib drawing clarify that roughly 40–60% concerns secondary ribs/bo
 
 Protolabs recommends an overlay no thicker than its underlying substrate. A 1 mm overlay over a 2 mm substrate meets that geometric recommendation but proves no bond. Its table distinguishes particular grades: Texin 983-000000 TPU over ABS Lustran is a chemical-bond candidate; Santoprene 101-87 TPV over that ABS calls for mechanical retention. Unlisted pairs require consultation. [ref:pl-overmould]
 
+<details>
+<summary>Bond-table limits and thermal-process questions</summary>
+
 The interlock drawing illustrates ways to retain an overlay. The table's C/M distinction is not a measured peel-strength claim, and a dash is not a demonstrated incompatibility. Confirm the actual processing window and substrate thermal resistance; the article's generic melting-temperature sentence must not become a universal rule for thermosetting LSR. Keep the overlay flush or slightly recessed as described, without claiming an unmeasured peel benefit. [ref:pl-overmould]
+
+</details>
 
 ## Preserve the required feature and plan its release
 
 Fictiv describes parting-line changes, side actions, bump-offs, shutoffs, hand loads and secondary machining. Selection depends on geometry, resin, quantity and cost. An essential lateral port needs a release or machining plan; deleting it to avoid an undercut fails the functional requirement. Bump-off needs deformation without damage, not merely a convenient radius. [ref:fictiv-mould-undercuts]
+
+<details>
+<summary>Release-strategy review cases and missing evidence</summary>
 
 | Review situation | What remains unresolved |
 |---|---|
@@ -34,6 +42,8 @@ Fictiv describes parting-line changes, side actions, bump-offs, shutoffs, hand l
 | Sliding-shutoff draft is quoted for an unrelated feature | Reject the scope transfer; no universal draft angle follows. |
 
 The source photographs illustrate features, not dimensions or strain capacity. The article is accessible in full; the old “gated content unseen” note no longer describes this reading. [ref:fictiv-mould-undercuts]
+
+</details>
 
 <details>
 <summary>Executable unit, grade and release-assumption illustrations</summary>

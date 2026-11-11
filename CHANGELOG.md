@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.34.4 (2026-11-11)
+
+**New**
+- Add bounded Smooth-On source readings and cited planning prompts for mould/core/support-shell removal, registration and interface-specific release; no new calculator or validated manufacturing procedure (#552).
+
 ## v0.34.3 (2026-11-11)
 
 **New**

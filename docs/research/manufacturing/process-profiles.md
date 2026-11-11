@@ -761,6 +761,33 @@ mould life, or safety certification is added by this reading batch. Remaining so
 
 </details>
 
+<details>
+<summary>Plan removable moulds, cores and support shells</summary>
+
+Before choosing a parting line, describe how to remove the master, each core or plug, the flexible mould and
+every rigid support-shell segment, then how to reassemble them for casting. Check undercuts and through-openings
+for mechanical lock. A flexible glove mould and its rigid shell can need different separations; a seam hidden on
+the back is an appearance choice, not evidence of easy removal.
+[ref:smoothon-hollow-model-tutorial] [ref:smoothon-mould-architecture-booklet]
+
+Distinguish containment from registration and support. Record which features locate the rubber, shell and core;
+which seams must retain liquid; and how the assembly remains aligned while closing. In a trial, inspect leakage,
+flash, core movement, shell distortion and damage during removal separately. The booklet's air bleeders for filling
+rubber beneath a prebuilt shell are not a validated resin-casting vent design.
+[ref:smoothon-hollow-model-tutorial] [ref:smoothon-mould-architecture-booklet]
+
+Name each release interface: master/rubber, new silicone/cured silicone, shell/rubber or shell/shell. Use the exact
+material bulletin for that interface and test the prepared combination; a release suitable for one interface does
+not establish another. Preserve detail and dryness observations. Original Plasti-Paste and Plasti-Paste II are
+different products; the hollow-model tutorial mixes recipe values, so do not transfer its recipe between them.
+[ref:smoothon-silicone-release-faq] [ref:smoothon-ease-release-bulletin]
+[ref:smoothon-plasti-paste-bulletin] [ref:smoothon-plasti-paste-ii-bulletin] [ref:smoothon-hollow-model-tutorial]
+
+These are planning prompts from bounded readings, not an automated parting-line, vent or shell design, or a tested
+printed-mould procedure. Exact source coverage and queued studies remain in #552.
+
+</details>
+
 ## 9. What this changes in cad-agent
 
 What reads the YAML today (solid) and what is planned to (dashed):

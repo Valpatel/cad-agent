@@ -1556,3 +1556,294 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both PDF pages and table; printed code 011024DH retained without interpreting
     date format. Quantitative capture limited to Mold Star 30, other grades not adopted. PDF SHA-256 d74fa585f9b48229fb72aaa9e92c09d809caacd5401bb6257bff469ea6a09bbf.
     SDS, additives and physical trial not performed.'
+- id: smoothon-hollow-model-tutorial
+  kind: guide
+  category: manufacturing-guides
+  title: How To Make a Brush-On Mold of a 3D Hollow Model
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tutorials/advanced-mold-making-technique-brush-mold-3d-hollow-model/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Plan separate removal and registration of cores, flexible rubber and support-shell pieces to avoid mechanical lock.
+    status: unconfirmed
+    evidence: Steps 6 and 9-13; shell parting shims, core-holder alignment and removal sequence for this concrete example;
+      not an automated or proven general geometry method.
+  - text: The tutorial uses different volume ratios under the same Plasti-Paste name.
+    status: conflicting
+    evidence: Step 5 gives 1A:3B, step 7 gives 1A:2B. smoothon-plasti-paste-bulletin specifies original 1:3 volume / 41:100
+      weight; smoothon-plasti-paste-ii-bulletin specifies II 1:2 volume / 62:100 weight. Variant confusion is possible, not
+      proven. Values retained only as conflicting source evidence; no recipe or numeric rule adopted.
+  summary: Concrete puma example separates mouth core, hollow-space plug, flexible mould and rigid shell. Removal/reassembly
+    and parting are geometry-specific; its mixed Plasti-Paste recipe values are not adopted.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read overview and steps 1-13 text. Only step-6 photo dscn3673.jpg and step-11
+    photo dsc_0058.jpg inspected; other frames remain unexamined. HTML SHA-256 7439841c0daf1b5f6307c85ea617e23c015d266fc4f0663acd0193f9a02f1cb6.
+    No displayed revision. Source pins and limits in issue 552 checkpoint 6787097539; no printed-master trial.'
+- id: smoothon-mould-architecture-booklet
+  kind: guide
+  category: manufacturing-guides
+  title: How-To Booklet (selected mould architecture sections)
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/howtobooklet
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Plan shell segment removal independently from the flexible rubber seam, and provide registration for reassembly.
+    status: unconfirmed
+    evidence: Printed pp.8-10 and 13-14; undercut/reverse-draft examples and keyed shell halves. No shell strength, fit or
+      life test reproduced.
+  - text: Illustrated bleeders let air escape while rubber fills the space formerly occupied by clay below a prebuilt shell.
+    status: unconfirmed
+    evidence: Printed p.8 text and diagram; not evidence for a resin-casting vent number, size, flow model or location.
+  summary: Selected architecture pages distinguish flexible-mould cuts, shell segmentation, keys and removable cores. Illustrated
+    rubber-fill bleeders do not qualify resin-casting vents or printed tooling.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Ingested reading scope only printed pp.8-10 and 13-14 (PDF pages 9-11 and
+    14-15); printed p.8 diagram inspected. Other chapters and historical recipes are not adopted. PDF SHA-256 aa451174b661f35c9c67912b4da99754b6afa71099bbd1c0355076a3926fea4d.
+    No revision inferred from PDF title. Later p.3 study remains queued separately in issue 552.'
+- id: smoothon-silicone-release-faq
+  kind: guide
+  category: manufacturing-guides
+  title: How do I release silicone from silicone?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/94/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Do not assume new silicone will release from cured silicone; test the exact silicone/release combination.
+    status: unconfirmed
+    evidence: Article names two-part moulds and silicone casting, Ease Release 200 and alternatives; directs a small-scale
+      test. Does not override a particular silicone bulletin exclusion.
+  summary: Silicone-on-silicone release requires an interface-specific release choice and representative test. Optional homemade
+    formulations are not adopted across silicone chemistries.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all article text and disclaimer. HTML SHA-256 1bd05cc1c78a73ff8d2e673b79506cae0e02870206e70d687bcdc6994bad9260.
+    No displayed revision. No silicone combination, substitute release or coating-detail effect reproduced.'
+- id: smoothon-ease-release-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Ease Release 200 and 205 technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/er200.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Select sealing and release for the actual surface and mould material, retaining the aerosol/liquid product distinction.
+    status: unconfirmed
+    evidence: Preparation/application section; porous models may require sealer first, with the mould material technical bulletin
+      governing. Small suitability test recommended.
+  summary: Release bulletin distinguishes aerosol 200 from liquid 205 and defers to the mould material bulletin for porous-surface
+    sealing. Interface preparation does not establish cure compatibility.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 121423DH. PDF SHA-256 89af7557c31dcefffd2fc1f3f2611bf16312690648fef64fd47be72d71312ce5.
+    This batch adopts only qualitative interface/application distinctions; no universal coat amount or drying interval. SDS
+    and physical trial not performed.'
+- id: smoothon-plasti-paste-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Plasti-Paste technical bulletin (original product)
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/PLASTI-PASTE_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: A multi-piece original Plasti-Paste shell needs its own shim, release and reassembly plan because it bonds to itself
+      and other surfaces.
+    status: unconfirmed
+    evidence: Preparation, Applying a Release Agent, Making A Two Piece Shell and Curing sections. Original product identifies
+      1A:3B by volume / 41A:100B by weight; do not substitute II or adopt tutorial values. No numerical process, strength
+      or thermal limit encoded.
+  summary: Original Plasti-Paste support-shell bulletin describes adhesion, release barriers and multi-piece shell assembly.
+    It is distinct from Plasti-Paste II; no shell strength or thickness rule is adopted.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 122823DH. PDF SHA-256 e706590fc95642d54ee67ff165e447b0698d83d494b63357c4f55707ee90cfe9.
+    Selected scope is shim/release/removal and reassembly planning. Ratio recorded only to resolve the hollow-model tutorial
+    conflict, not as an engineering rule. SDS and physical trial not performed.'
+- id: smoothon-plasti-paste-ii-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Plasti-Paste II technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/Plasti-Paste-II_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Keep Plasti-Paste II separate from the original product when planning shell interfaces and assembly.
+    status: unconfirmed
+    evidence: Overview, Applying a Release Agent and Making A Two Piece Shell. II identifies 1A:2B by volume / 62A:100B by
+      weight; these are source-conflict evidence, not permission to transfer a recipe or predict shell properties.
+  summary: Separate Plasti-Paste II formulation for support shells; retains its own release and multi-piece assembly requirements.
+    Product-family similarity does not establish interchangeable processing or properties.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; printed code 122823DH. PDF SHA-256 ae2ba57b3cc2ab01c975a179b8519f7b79e4f5aa85306bc563822b08ad3e877b.
+    Selected scope is shim/release/removal and reassembly planning. No numerical shell, cure or thermal claim adopted; ratio
+    retained solely for source reconciliation. SDS and physical trial not performed.'

@@ -298,3 +298,20 @@ test('the reference pages\' stylesheet sets colours only through the site\'s tok
   const used = [...css.matchAll(/var\(--([\w-]+)/g)].map(m => m[1]);
   assert.deepEqual([...new Set(used.filter(t => !tokens.has(t)))], [], 'every token exists in web/site.css');
 });
+
+
+test('short joint-interface citations retain the three canonical document identities', async () => {
+  const names = {
+    'omw-anodizing': 'omw-corp-understanding-and-specifying-anodizing',
+    'nsk-ti-0001': 'nsk-bearing-shaft-and-housing-tolerance-nsk-technical',
+    'general-bearing-fits': 'skf-shaft-and-housing-fits-skf-catalog-excerpt',
+  };
+  const page = await text('research/manufacturing/joint-interfaces.html');
+  for (const [alias, canonical] of Object.entries(names)) {
+    assert.equal(refs.aliases.get(alias), canonical);
+    assert.equal(refs.records.has(alias), false, 'a short display key must not add a document');
+    assert.ok(page.includes(`href="${model.home(canonical)}"`), `${alias}: citation links to its existing row`);
+    assert.ok(page.includes(`>${alias}</a>`), `${alias}: actual displayed citation is short`);
+    assert.ok(!page.includes(`>${canonical}</a>`), `${canonical}: no unbreakable long citation badge`);
+  }
+});

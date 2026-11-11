@@ -443,6 +443,8 @@ sources:
     Redirect to www.nsk.com preserves the exact path. No publication date inferred from PDF metadata; no dimensional fit table,
     assembly test or physical life validation. The imported maximum-interference 7/10000 claim was attributed to a different
     Americas article and is not corroborated by this exact document; no claim about historical content is made.'
+  aliases:
+  - nsk-ti-0001
 - id: skf-shaft-and-housing-fits-skf-catalog-excerpt
   kind: guide
   category: manufacturing-guides
@@ -488,6 +490,8 @@ sources:
     loads and radial clearance. Visually checked PDF pp.2–4 (printed pp.32–34), including mixed-unit captions and footnotes.
     Shaft table attributes ABMA1995; no current revision or publication date inferred from metadata. SHA256 922639535be9b33e16d1554ad38640217b55d717f517ed2c52b48b0786e5aa39.
     Host is SKF media; document names General Bearing. No assembly, current applicability or physical life validation.'
+  aliases:
+  - general-bearing-fits
 - id: boothroyd-dewhurst-inc-boothroyd-dewhurst-dfma-presentation
   kind: guide
   category: manufacturing-guides

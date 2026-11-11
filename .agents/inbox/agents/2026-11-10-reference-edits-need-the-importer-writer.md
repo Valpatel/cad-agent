@@ -86,3 +86,26 @@ New reading evidence:
 **Corrected scope.** Against baseline `295bac01`, this batch adds only the CE guide as a new document: internal 837→838; public 808→809; read 291→292; catalogued 517 unchanged. The overview receives a deeper reading, not another source or independent corroboration. No whole-family B guide is promoted from a BS-440-2 part page.
 
 **Limits.** Exact URL equality does not discover redirects, mirror URLs, alternate query strings, same-content copies or edition changes. Different URLs are not proof of distinct documents. The guard makes no network requests and does not normalize URLs; edition and reading-scope reconciliation still requires human/source review. Source identity and reading depth do not establish physical qualification. Prior erroneous counts remain in PR/checkpoint history with this correction, not silently rewritten as successful knowledge gain.
+
+## Short display aliases preserve source identity on narrow pages
+
+On 2026-11-11, the existing reference/card/site checks passed for the next joint-interface batch, but a targeted
+installed-Chrome check at 320 px found `document: 423` and rejected `page overflow`. Its DOM receipt identified
+three `.ref-cite` badges: the OMW, NSK and General Bearing canonical source keys. The longest badge reached
+423.25 px. The checker used the existing preview server, diagram bounds and `site-walls.mjs`; this was actual
+rendered overflow, not a source-text estimate. The failed screenshot/receipt remains with PR588's validation history.
+
+**Cause:** long canonical IDs were used as unbreakable displayed citation badges. A passing link/identity test and
+an otherwise responsive table/diagram did not bound the rendered badge. The first full local site receipt also used
+`--client-diagrams` output with tests requiring normal drawn output; its three producer-policy failures were retained.
+The identical source head then passed 84 site checks with one explicit browser skip under the normal producer policy.
+That source pass did not establish phone layout.
+
+**Correction and rule:** preserve each exact document ID and URL; give a long visible citation a short alias on that
+same record, and use it in prose. Do not add another record or rename the source to fix its badge. The existing
+reference harness must check alias resolution, one canonical document and the actual rendered short label/link.
+Check the real narrow page, disclosures and both themes; do not weaken overflow or reading-wall thresholds.
+
+**Limits:** the three aliases change display and discovery only, not source count, evidence, dimensions or physical
+qualification. The targeted Chrome receipt and normal new-head CI cover their stated viewports/engines; they do not
+claim every reference page, browser or viewport has been examined. Licensed source PDFs remain outside the repo.

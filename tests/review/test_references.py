@@ -705,8 +705,10 @@ def test_joint_interface_readings_preserve_exact_documents_without_numerical_cla
         "nsk-bearing-shaft-and-housing-tolerance-nsk-technical": "483ccd47d9861016207a1724ddbf02fd7018cc14a0590388bcd8fdc231da78f8",
         "skf-shaft-and-housing-fits-skf-catalog-excerpt": "922639535be9b33e16d1554ad38640217b55d717f517ed2c52b48b0786e5aa39",
     }
+    aliases = {'omw-corp-understanding-and-specifying-anodizing': 'omw-anodizing', 'nsk-bearing-shaft-and-housing-tolerance-nsk-technical': 'nsk-ti-0001', 'skf-shaft-and-housing-fits-skf-catalog-excerpt': 'general-bearing-fits'}
     for key, digest in sources.items():
         ref = registry.resolve(key)
+        assert registry.resolve(aliases[key]) is ref
         assert ref.kind == "source" and ref.evidence_class == "read"
         assert ref.data["evidence"]["tested"] == "no" and digest in ref.data["verified"]
         assert sum(r.data.get("url") == ref.data["url"] for r in registry.entries.values()) == 1

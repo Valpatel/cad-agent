@@ -24,7 +24,7 @@ For a finisher-confirmed planning scenario, run `cad-agent rules anodize-plannin
 
 Negative review controls: reject a calculation that uses the full oxide thickness as outward buildup, changes a bore in the outside-growth direction, applies a two-wall allowance to only one treated surface, or silently treats the illustrative half-growth value as a universal Type II value. OMW's corner sketch on p.10 recommends relieving very sharp corners (it quotes 0.015 inch); treat that as supplier guidance requiring confirmation, not a universal minimum-radius check.
 
-[Source: OMW][ref:omw-corp-understanding-and-specifying-anodizing]
+[Source: OMW][ref:omw-anodizing]
 
 </details>
 
@@ -44,7 +44,7 @@ Before selecting actual dimensions, review load magnitude, thermal/material diff
 
 A bounded decision-test set can check the three table rows and reject missing load classification, a motor/conveyor row reversal, or a numerical fit-code result generated without a dimensional tolerance source. Such tests reproduce the qualitative table only; they do not validate a bearing assembly.
 
-[Source: NSK][ref:nsk-bearing-shaft-and-housing-tolerance-nsk-technical]
+[Source: NSK][ref:nsk-ti-0001]
 
 <details>
 <summary>General Bearing 6203 example: inch deviations and material limits</summary>
@@ -57,7 +57,7 @@ The deviation columns are **inches**, although diameter bands also show millimet
 
 The light-load ball-bearing shaft h5 branch includes d = 18 mm; the next branch above 18 mm uses j6 subject to its accuracy note. The shaft footnote assumes solid steel, and housing guidance assumes cast iron/steel with non-ferrous exceptions. A hollow shaft, polymer, split housing, different loading or different bearing cannot silently inherit this case. This is no FDM interference or bearing-life qualification.
 
-[Source: General Bearing excerpt][ref:skf-shaft-and-housing-fits-skf-catalog-excerpt]
+[Source: General Bearing excerpt][ref:general-bearing-fits]
 
 </details>
 

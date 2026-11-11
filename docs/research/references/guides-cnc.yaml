@@ -1158,6 +1158,8 @@ sources:
     PDF pp.2,3,10 for coating-vs-buildup diagram, dimensional fractions/masking and corner/callout diagram. Copyright2014;
     PDF creation2016 does not establish a new edition. SHA2566171af22375e7f1ce338f20389ff7f4ce565941164792eee454a1c06daed5436.
     No finisher process qualification or current standard revision verification.'
+  aliases:
+  - omw-anodizing
 - id: nasa-prc-5006-anodize-process-requirements
   kind: standard
   category: manufacturing-guides

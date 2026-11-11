@@ -91,6 +91,9 @@ do not have to recall it, in one call and about 2 KB:
   `--load` is required. If the card says "not decided", give what it names as missing, or size the joint yourself
   from a test or a cited source and record that as a decision.
 
+For plastic screw selection, read the [family-selection example and limits](../../../docs/research/manufacturing/process-profiles.md#select-the-screw-family-before-sizing-the-boss).
+A material-family preference does not fill a missing capacity model or qualify a printed resin; retain the card’s warnings.
+
 Hold the MUST lines on their non-negotiable side; a MUST line's wiggle says which side, if any, is free. Use a
 guideline's wiggle room to make the part cheaper or simpler unless a function needs it tight. Where a card prints `?`
 or `gap:`, no source covers that point, so record your own call as a decision with its `why`. Put the card's rule ids in that decision. The gates and checks then enforce the encoded

@@ -2906,6 +2906,7 @@ sources:
     terms: cited by page with the values as facts; the PDF, its tables and figures are never copied (PEM's terms of use allow personal, non-commercial use only)
     areas: [sheet-metal, pem-hardware, fasteners]
     used_for:
+      - docs/research/manufacturing/pem-micro-fasteners.md
       - docs/research/manufacturing/sheet-metal-guides.md
       - docs/research/process-profiles.yaml
       - docs/research/manufacturing/process-profiles.md

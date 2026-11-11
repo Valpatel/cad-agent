@@ -1520,3 +1520,96 @@ sources:
     sources: 1
   summary: 'FreeCAD sheet metal workbench: bends and unfolding to flat pattern.'
   imported: c429ce58ac3d361e
+- id: pem-design-engineers-fastener-guide-2022
+  kind: guide
+  category: manufacturing-guides
+  title: The Design Engineers Fastener Guide
+  authors: []
+  org: PennEngineering (PEM)
+  year: 2022
+  url: https://www.pemnet.com/wp-content/uploads/sites/2/2022/09/Fastener-Guide_9-02-22.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Copyrighted manufacturer guide; no redistribution permission established. Cited and summarised only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - fasteners-and-hardware
+  - sheet-metal
+  processes:
+  - fasteners
+  process_groups:
+  - sheet
+  - inserts
+  evidence:
+    class: read
+    numbers: some
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  used_for:
+  - docs/research/manufacturing/pem-micro-fasteners.md
+  - .agents/skills/pem-fastener-selection/SKILL.md
+  verified: '2026-11-11: read all 20 PDF pages via manufacturer PDF extraction. Industry overview, family mechanisms and application
+    routing; no universal hole, edge or hardness table. Filename dates 2022-09-02; no edition date inferred beyond that.'
+  summary: Industry overview separating self-clinching, broaching, flaring, plastic inserts and surface mount attachment;
+    application examples do not replace exact family drawings.
+- id: pem-consumer-electronics-design-guide-2021
+  kind: guide
+  category: manufacturing-guides
+  title: PEM Consumer Electronics Fastening Design Standards
+  authors: []
+  org: PennEngineering (PEM)
+  year: 2021
+  url: https://info.pemnet.com/hubfs/CE%20Design%20Guide/Consumer%20Electronics%20Fastening%20Design%20Guide%20Oct%202021.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Copyrighted manufacturer guide; no redistribution permission established. Cited and summarised only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - fasteners-and-hardware
+  - sheet-metal
+  processes:
+  - fasteners
+  process_groups:
+  - sheet
+  - inserts
+  evidence:
+    class: read
+    numbers: some
+    tested: 'yes'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  used_for:
+  - docs/research/manufacturing/pem-micro-fasteners.md
+  - .agents/skills/pem-fastener-selection/SKILL.md
+  - docs/research/process-profiles.yaml
+  verified: '2026-11-11: downloaded and read all 16 PDF pages (printed pp.1-31), including family tables, installation and
+    performance qualifications. Visually inspected PDF spreads 7,10,12,14 (printed pp.12-13,18-19,22-23,26-27). Filename Oct2021;
+    final footer July2021. SHA256 396c9d3c1172c2d0bda54e2ac9fc452798febaa5551b28aa37030f8db4c1c2f7. Linked videos/current
+    drawings not read; no application validation.'
+  summary: Family-specific microPEM dimensions, materials, installation endpoints and qualified average test results. MSO4
+    self-clinching and MSOFS flaring M2 geometry is exposed as read-only rule cards; this does not qualify printed materials
+    or joint strength.
+  claims:
+  - text: MSOFS standard metric rows list 0.2-0.3 mm sheet despite a no-minimum-thickness headline
+    status: conflicting
+    evidence: '2026-11-11: visually read printed p.19 headline, metric table and alternative thinner-sheet illustrations.
+      Keep standard rows scoped; consult PEM for thinner/custom solutions.'

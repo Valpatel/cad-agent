@@ -125,10 +125,10 @@ domains:
         title: Fasteners, bought hardware and assembly
         scope: Screws, inserts and other bought parts, and getting them in and out.
         maturity: tooling
-        pages: [docs/mechanical/subassembly-insertion.md]
+        pages: [docs/mechanical/subassembly-insertion.md, docs/research/manufacturing/pem-micro-fasteners.md]
         cli: [holes, mcmaster]
         api: [cadagent.mechanical.fasteners, cadagent.mechanical.holes, cadagent.mechanical.mcmaster]
-        skills: [mcmaster-parts]
+        skills: [mcmaster-parts, pem-fastener-selection]
         issues: [46]
         topics:
           - {slug: fasteners, title: Fasteners, scope: "Screw stacks, engagement, bottoming and hole clearance.", maturity: tooling}

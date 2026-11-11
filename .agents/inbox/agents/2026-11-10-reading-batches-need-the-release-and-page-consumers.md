@@ -1,5 +1,24 @@
 # Reading batches need the real release and whole-page consumers
 
+## Published reading counts need their visible figures
+
+2026-11-11 UTC: the first v0.36.2 publication verifier checked 19 JSON/document routes but omitted the actual
+References and Experts pages. Independent review then found that a semantic-only graph comparator accepted
+an SVG with `display:none`. The corrected finite verifier covered 21 routes per domain and rejected 29
+planted identity, stale-label, hidden-figure, missing-path, zero-size and cropped-graph cases. Both domains
+matched the fresh actual-main producer at `b30ee4b2`; the visible graphs showed 302 read and 507 catalogued
+records ([public proof](https://github.com/Valpatel/cad-agent/pull/594#issuecomment-6809038090),
+[review finding](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6808260828)).
+
+**Rule:** verify the published figures and data against the actual producer. Preserve visibility and drawing
+markup in the comparison; labels alone cannot establish that a graph remains drawn. Full figure/SVG byte
+equality was appropriate for this controlled render. A future renderer or font change needs an explicitly
+justified comparison with negative controls; it does not justify broadly discarding styles, shapes or size.
+Keep a dated historical coverage figure distinct from live reading counters.
+
+**Limits:** these checks establish served markup and source identity, not universal browser paint behavior,
+physical manufacturing qualification or an unconditional byte-equality rule for every future renderer.
+
 Date: 2026-11-10 Pacific / 2026-11-11 UTC. This repeats the existing
 [release and reading regression lesson](../2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions),
 not a new check or exemption.

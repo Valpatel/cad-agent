@@ -211,9 +211,6 @@ This covers laser SLA (Formlabs Form 2 and Form 3, Protolabs, Materialise) and m
 Prusa SL1, and printers sliced in ELEGOO SatelLite or Lychee). Formlabs runs the same tests on three printers, which
 shows how much a resin rule depends on the machine:
 
-<details>
-<summary>Formlabs printer comparison: walls, overhangs, bridges, detail, clearance and holes</summary>
-
 | Formlabs test | Form 2 (laser) | Form 3 / 3B (laser) | Form 4 (MSLA) |
 |---|---|---|---|
 | Minimum wall, supported or unsupported | 0.4 mm | 0.2 mm | 0.2 mm |
@@ -225,16 +222,9 @@ shows how much a resin rule depends on the machine:
 | Test resin and layer | Clear, 100 µm | Clear, 100 µm | Grey, 50 µm |
 | Source | [Formlabs, Form 2][formlabs-form2-design-specs] | [Formlabs, Form 3][formlabs-form3-design-specs] | [Formlabs, Form 4 guide][formlabs-form4-design-guide] |
 
-</details>
-
 <img src="../../img/research/process-resin-overhangs.svg" alt="Range chart of the longest unsupported overhang and bridge each resin printer or service allows: overhangs of 2 to 5 mm, bridges of 21 to 29 mm on Formlabs printers" width="680">
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: overhang-length-max` and `compare: bridge-max` rules in [`process-profiles.yaml`](../process-profiles.yaml), on published sources read 2026-10-31. A test redraws it and fails if the committed chart differs.*
-
-Compare each supplier's resin, printer and resolution before applying a dimension. Hollowing and drainage values also depend on cleaning and support removal.
-
-<details>
-<summary>Resin supplier comparison: tolerance, detail, clearance, hollowing and drainage</summary>
 
 | Rule | Value | Applies when | Source |
 |---|---|---|---|
@@ -262,8 +252,6 @@ Compare each supplier's resin, printer and resolution before applying a dimensio
 | Hollow wall; drain hole | 1–3 mm; 2–6 mm across, ≥ 2 at the lowest point | ELEGOO SatelLite | [ELEGOO][elegoo-satellite-hollowing] |
 | Hollow wall | 2.5 mm default; 1.5–2 mm miniatures; 3–4 mm strong parts | Lychee Slicer | [Mango3D (Lychee Slicer)][lychee-voxels-hollowing] |
 
-</details>
-
 <img src="../../img/research/process-escape-holes.svg" alt="Range chart of the smallest drain or escape hole for a hollow print each source asks for: 0.75 mm on a Form 4, 5 mm in HP cleaning guidance, and 10 mm to pull supports out" width="680">
 
 *Diagram drawn by `tools/figures/process_profile_figures.py` from the `compare: escape-hole` rules in [`process-profiles.yaml`](../process-profiles.yaml), with each source's own conditions and reading date. A test redraws it and fails if the committed chart differs.*
@@ -290,6 +278,11 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
 
 ### Where the resin sources disagree
 
+Keep the printer, resin and test conditions with each comparison; matching the process name alone does not resolve conflicting values.
+
+<details>
+<summary>Resin source differences: printers, drainage, walls, overhangs and tolerance</summary>
+
 - **Protolabs Network's numbers are Formlabs' Form 2 numbers.** Its 19° overhang, 21 mm bridge, 0.4 mm engraving and
   0.8 mm hole all match the Form 2 sheet (and so do its 3.5 mm drain hole and 0.4 mm supported wall); Form 3 and
   Form 4 are finer on almost every line. That may also explain its own 0.5 against 0.8 mm hole. A profile should
@@ -308,6 +301,8 @@ From Protolabs Network's [SLA guide][hubs-sla-design]:
   100 µm against Grey at 50 µm); the YAML keeps both, each with its test.
 - **Protolabs' high-resolution X-Y feature** prints 0.005 in beside 0.1016 mm; 0.005 in is 0.127 mm. The YAML uses
   the normal-resolution row only.
+
+</details>
 
 ## 4. SLS (polymer powder bed)
 

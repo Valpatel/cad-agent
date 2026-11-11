@@ -15,6 +15,8 @@ flowchart TD
 
 The two user-selected guides serve different purposes. The 2022 *Design Engineers Fastener Guide* is an industry overview; the consumer-electronics PDF contains family tables, installation drawings and qualified performance data. Read both as manufacturer guidance, not as proof that a purchased part or printed assembly works. [ref:pem-fastener-guide-2022] [ref:pem-ce-guide-2021]
 
+The existing `pem-fastener-guide` record logged a 2026-11-01 skim; this full reading extends that same source.
+
 Read on 2026-11-11: all 20 PDF pages of the first guide, and all 16 PDF pages of the consumer-electronics guide (printed pages 1–31, many as facing-page spreads). The latter URL says October 2021; its last page says **July 2021**. Identify it by both strings and this SHA-256:
 
 ```text

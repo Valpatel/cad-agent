@@ -1,6 +1,6 @@
 ---
 name: pem-fastener-selection
-description: Select a PEM or microPEM attachment family for thin metal, plastic or PCB assemblies, especially when choosing between self-clinching, flaring, broaching, SI inserts and surface mount parts. Screen family-specific limits and plan installation/retention qualification before selecting exact hardware.
+description: Use when selecting a PEM or microPEM attachment family for thin metal, plastic or PCB assemblies, especially when choosing between self-clinching, flaring, broaching, SI inserts and surface mount parts. Screen family-specific limits and plan installation/retention qualification before selecting exact hardware.
 ---
 
 # Choose the mechanism before the part

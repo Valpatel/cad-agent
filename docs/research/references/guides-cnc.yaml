@@ -304,12 +304,14 @@ sources:
     with its thread depth.'
   used_for: []
 - id: protolabs-cnc-hole-design-through-blind-tapped-and-more
+  aliases:
+  - protolabs-hole-guide
   kind: guide
   category: manufacturing-guides
   title: 'CNC hole design: through, blind, tapped and more'
   authors: []
   org: Protolabs
-  year: null
+  year: 2026
   url: https://www.protolabs.com/en-gb/resources/blog/cnc-hole-design-through-blind-tapped-and-more/
   access: free
   terms: cited and summarised, never copied
@@ -329,7 +331,7 @@ sources:
   process_groups:
   - cnc
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
     tested: 'no'
     authority: primary
@@ -337,13 +339,14 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: Holes deeper than six diameters are challenging; may need machining from both sides.
-    status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Hole design blog; snippet shows depth limit tied to end mill length. Note: Snippet only'
-  used_for: []
+  summary: Choose hole features by fastener and function, review the largest recess at an edge, and request manufacturability
+    review for deep holes; roughly six diameters is an advisory trigger, not a machining prohibition.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
   imported: b82eb0a468475791
+  verified: '2026-11-11: read complete 2026-08-20 article and FAQ; visually inspected live six-row feature-selection table
+    and both part photos. HTML SHA256 639cef92ba4b07ab4c626831cc0f19ec0430c3d5d6c2a4b48fea4a77760282c7. Photos provide no
+    dimensions; linked guides not claimed read. The imported two-sided-machining suggestion is not in this article; removed.'
 - id: protolabs-how-to-reduce-cnc-machining-costs-protolabs-design
   kind: guide
   category: manufacturing-guides

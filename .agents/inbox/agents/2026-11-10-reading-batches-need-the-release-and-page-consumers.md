@@ -46,3 +46,19 @@ After correction, the full cut-release suite plus registry/importer/health/healt
 passed **312 tests** with the existing webkit-folder warning. The actual fragment parser accepts the `New`
 section, repository-map freshness passes, and experts remain current. Source-byte comparisons retain the
 reviewed registry and every planning sentence; only the disclosure wrapper is added.
+
+## Skill entrances need the whole workflow reading check
+
+2026-11-11 UTC, #590 integrated source `c0b678ca`: normal WebKit run43103204961/job130799702528 passed100 pure checks, then its actual whole-page consumer reported:
+
+```text
+website-browser.mjs:723
+walls /skills/sheet-metal-hardware/SKILL: 1208px with nothing to look at,
+977-2186px, after "Bent sheet with clinch hardware and rivets"; limit1200px
+```
+
+This proves a reading-wall regression on that exact integrated route, not that the merge operation caused it. The skill's source-reading entrance preceded a long existing six-step workflow; selected source tests did not measure their combined rendered stretch.
+
+Correction: retain the entrance and a visible ordered-action summary, and put the complete original workflow in a named native disclosure. Every step, source citation, call specimen, verdict warning and physical limit stays available. The existing1200px threshold and global styles remain unchanged. Measure the actual affected route, including phone containment and opened disclosures, rather than shaving a few pixels from the wording.
+
+Local Chromium route evidence and its source digest are checkpointed with the correction; the existing local WebKit executable was absent, so Chromium cannot claim the hosted WebKit criterion has passed. Preserve the observed failure and require fresh normal exact-head WebKit CI plus independent review. No installed runtime, source-reading scope or physical qualification changes follow from this presentation correction.

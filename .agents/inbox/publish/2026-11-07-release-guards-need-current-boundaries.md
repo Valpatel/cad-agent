@@ -200,3 +200,35 @@ on the already dated candidate and manufacture a phantom released version.
 The corrected v0.33.0 metadata matches that pure pre-cut minor projection; the folded bullets, v0.32.0 history,
 source and five adopted model assets remain unchanged. This comparison and focused release checks do not
 replace fresh exact-head CI/review, nor lift the separate accepted-Gyropup-CAD protected-main production hold.
+
+## Enforce retirement boundaries under optimized Python
+
+On 2026-11-11 UTC, independent review rejected the first v0.36.0 retirement operator before any deletion:
+its read-only preflight included `git fetch`, which could update local tracking refs/tags, and mandatory
+checks used Python `assert`, which optimization can remove. The initial operator SHA-256 was
+`c81c831e999180bea59be8c4da93ad99d0c6d3b20831d5ed2907fbff50e3bda7`.
+The [preserved incident](https://github.com/Valpatel/cad-agent/issues/575#issuecomment-6804632248)
+records the command/output evidence and correction. Only preflight ran; no remote deletion was attempted.
+
+**Cause:** debug assertions stood in for runtime enforcement, and a broad ref refresh crossed the declared
+remote-only boundary. Treat fetch as a local ref mutation even when it is routine preparation elsewhere.
+
+**Correction:** use explicit raise-based runtime checks, existing local objects for ancestry and fresh read-only
+remote-tip queries. The corrected operator SHA-256 was
+`3706174cc37f6f71ff9f70d9be6546a37c85191a1abe2cfc76ae8edcfd7eb2e4`.
+`python3 -O <operator>` passed read-only preflight; an optimized wrong-main control raised
+`Remote main/tag/tips changed` before creating an attempt marker or making a mutation. Review then
+[passed the exact corrected operator](https://github.com/Valpatel/cad-agent/pull/585#issuecomment-6804642460).
+A private exclusive-create attempt marker was flushed and fsynced before the single network attempt.
+Atomic exact-tip deletion leases used the verified anonymous repository URL to preserve local tracking refs.
+The [completed receipt](https://github.com/Valpatel/cad-agent/issues/575#issuecomment-6804679296)
+records four retired refs; unrelated refs and every local worktree/provider remained intact.
+
+**Rule:** mandatory operational checks must survive `-O` and `PYTHONOPTIMIZE`. Exercise optimized negative
+controls without an operational write path. Declare the mutation boundary, reserve one attempt durably, and
+use atomic compare-and-swap leases against the reviewed exact remote tips. An attempted or uncertain result
+spends the marker; inspect actual remote state and obtain a fresh disposition rather than blindly retrying.
+
+**Limits:** these controls establish only that operator's preflight and bounded retirement, not a reusable
+retirement tool, current remote state or public-site acceptance. Do not rerun the completed operator. No local
+cleanup, credential expansion, unrelated branch deletion or later publication follows from that receipt.

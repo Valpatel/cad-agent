@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.36.1 (2026-11-11)
+
+**Fixed**
+- Read the existing Bossard plastic-screw article, correct an unsupported imported wall-thickness assertion, and expose limited screw-family guidance through the joining card and design-process skill. Preserve missing-capacity and printed-joint proxy warnings; no new dimensional or strength rating.
+
 ## v0.36.0 (2026-11-11)
 
 **New**

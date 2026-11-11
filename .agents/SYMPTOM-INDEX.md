@@ -105,5 +105,7 @@
 | A publication check accepts a changed catalogue ID or a wrong origin with the same path | [Complete public identities and preserved served namespaces](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-the-complete-publication-identity) |
 | A release preserves historical notes but its current introduction still links to a moved directory | [Check current navigation outside released history](inbox/2026-11-06-source-selection-must-not-pass-empty.md#check-current-navigation-outside-released-history) |
 
+| A retirement preflight fetches despite remote-only scope, or mandatory Python checks disappear under optimization | [Enforce retirement boundaries under optimized Python](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#enforce-retirement-boundaries-under-optimized-python) |
+
 - [Rendered motion needs an independent frame](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md): compare rendered transforms with independent joint intent.
 - [Folder inventories need NUL-safe names and explicit owners](inbox/2026-11-07-folder-inventories-need-explicit-owners.md): quoted paths, grouped maps and installer prompt namespaces; do not infer defect counts or add blanket README exceptions.

@@ -1531,11 +1531,6 @@ row is told from a current one. A PrusaSlicer row also keeps what PrusaSlicer's 
 PrusaSlicer reports an error or a print stability issue. That is PrusaSlicer's own heuristic: an ok part can still
 print badly, and a slice does not prove a part prints or fits.
 
-New Bambu rows retain `exit_code`, `return_code` and explicit `ok`: success needs grams and both integer codes
-zero. Missing or invalid result codes cannot establish a new success. Bambu's `error_string` can say `Success.`;
-the text is kept as `error` and does not decide success. Historical rows without `ok` or either code field retain
-the grams fallback. Retained codes must agree with explicit success; deleting `ok` cannot erase a known failure.
-
 Slicing remains optional when `exports/slice-report.json` is absent. Once a report exists, `check`, `report` and
 `all` fail visibly if it is stale, incomplete or unreadable, with a reason and `cad-agent slice` as the next action.
 After changing a sliced 3MF, profiles or part overrides, slice again before verification; a partial slice must
@@ -1543,7 +1538,12 @@ leave every expected part current. `slicer_run` stays false until the report is 
 report currency and the slicer's status, not physical fit or print quality.
 
 <details>
-<summary>Bambu Studio profiles, and the <code>cad.slicer</code> keys</summary>
+<summary>Bambu Studio status codes, profiles, and the <code>cad.slicer</code> keys</summary>
+
+New Bambu rows retain `exit_code`, `return_code` and explicit `ok`: success needs grams and both integer codes
+zero. Missing or invalid result codes cannot establish a new success. Bambu's `error_string` can say `Success.`;
+the text is kept as `error` and does not decide success. Historical rows without `ok` or either code field retain
+the grams fallback. Retained codes must agree with explicit success; deleting `ok` cannot erase a known failure.
 
 Bambu Studio's system
 profiles resolve `inherits`, then ordered `include` templates, then explicit child settings (unresolved profiles

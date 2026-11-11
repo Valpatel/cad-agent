@@ -94,6 +94,32 @@ python -m pytest -q tests/manufacturing/test_slicer.py tests/publish/test_report
 status fields together. An omitted success flag is not historical compatibility when failure codes remain.
 Earlier-head CI and this independent review remain separate evidence; a new source head requires fresh review/CI.
 
+## New status-reference prose exceeded the existing toolkit reading budget
+
+The corrected `3159c83f6185ee24dc20fd8ebd76ac818dbdba73` source passed independent status review, then both
+normal browser consumers rejected its toolkit page on 2026-11-11 UTC:
+
+```text
+run 43010919723, chromium job 130490021751:
+walls /docs/toolkit: 1210px, 42917-44127px, after "Topology optimisation"; limit 1200px
+run 43010919723, webkit job 130490022151:
+walls /docs/toolkit: 1208px, 42852-44061px, after "Topology optimisation"; limit 1200px
+```
+
+The actual compiled page places the topology output before Pictures/animations and Real grams. The new visible
+Bambu status-field paragraph extended that continuous stretch before the next real output. Runtime code did not
+change layout; its added API reference prose did. Earlier expected negative-control output was not this failure.
+
+The correction moves that paragraph unchanged into the existing native Bambu disclosure and names status codes
+in its summary. The Real grams heading/anchor and visible stale-report rerun requirement stay in place; no prose,
+engineering limit, visual threshold or picture is removed or substituted. Existing page-reading guidance applies
+([prior incident](agents/2026-11-10-parallel-notes-share-a-layout-budget.md#long-reference-additions-need-their-published-page-checks-again)).
+
+Pure validation uses Node 22 with the existing matching locked dependencies and explicit `--client-diagrams`,
+retaining the build log and reading the actual generated HTML/Markdown through `CAD_AGENT_SITE`. This checks
+document structure, discoverability and anchors; it does not measure the corrected browser wall. Normal new-head
+Chromium/WebKit CI remains required. No local browser, renderer, native slicer or cloud action is implied.
+
 **Limits:** failed-but-grams cases are controlled regressions, not observed native Bambu failures. Retained native
 artifacts and current upstream source characterize the code/text contract, not every Bambu version or output shape.
 No printer, cloud service, camera, desktop app or heavy job was used. Report currency and slicer success do not prove

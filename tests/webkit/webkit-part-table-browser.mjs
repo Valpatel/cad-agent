@@ -10,7 +10,7 @@ const html = `<!doctype html><html lang="en"><meta name="viewport" content="widt
 </tbody><tfoot><tr><td>Total</td><td>13 known pieces</td><td>$14 known</td></tr></tfoot></table></div></main><script type="module">
 import {createPartTracker} from '/kit/part-tracker.js';import {enhancePartTable,mountProgressTools} from '/kit/part-table.js';
 window.tracker=createPartTracker({project:'fixture'});window.progressTools=mountProgressTools(document.getElementById('progress'),tracker);
-window.tableAPI=enhancePartTable(document.getElementById('parts'),{tracker,statuses:[{id:'ordered',label:'Ordered'},{id:'inHand',label:'In hand'}]});document.body.dataset.ready='true';
+window.tableAPI=enhancePartTable(document.getElementById('parts'),{printable:{project:'Fixture project',revision:'fixture-v1',notice:'Unqualified fixture'},pageSize:location.search?'2':0,tracker,statuses:[{id:'ordered',label:'Ordered'},{id:'inHand',label:'In hand'}]});document.body.dataset.ready='true';
 </script></html>`;
 const site = await serveWebkit(new Map([['/fixture', (_req, res) => { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(html); }]]));
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
@@ -20,6 +20,49 @@ try {
   const context = await browser.newContext(), page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
   const visit = async page => { await page.goto(site.url + '/fixture'); await page.waitForFunction(() => document.body.dataset.ready === 'true'); };
   const ids = () => page.locator('tbody tr').evaluateAll(rows => rows.map(row => row.dataset.partKey));
+  await page.goto(site.url + '/fixture?pagination'); await page.waitForFunction(() => document.body.dataset.ready === 'true');
+  const snap = scope => page.evaluate(scope => window.tableAPI.snapshot(scope), scope);
+  assert.equal((await snap('matched')).rows.length, 4, 'pagination must not truncate printable matches');
+  await page.getByRole('button', {name:'Next page of Assembly parts'}).click();
+  await page.getByRole('checkbox', {name:'Ordered: Plate',exact:true}).check();
+  const beforePrint = await page.locator('tbody').innerHTML();
+  const checklist = page.waitForEvent('popup');
+  await page.getByRole('button', {name:'Print checklist',exact:true}).click();
+  const printed = await checklist; await printed.waitForLoadState();
+  assert.equal(await printed.locator('tbody tr').count(), 4);
+  assert.match(await printed.locator('body').textContent(), /Fixture project.*fixture-v1/);
+  assert.match(await printed.locator('tbody tr').nth(2).textContent(), /☑/);
+  assert.equal(await page.locator('tbody tr[hidden]').count(), 2);
+  assert.equal(await page.locator('tbody').innerHTML(), beforePrint, 'printing preserves live rows, page and checklist state');
+  await printed.evaluate(async ({url,data}) => {
+    const {renderPartChecklist}=await import(url);
+    data.rows=Array.from({length:75},(_,i)=>[`part-${String(i+1).padStart(3,'0')}`,`Long assembly component ${i+1} with source-specific description`,String(i+1),'$2.00','☑','☐']);data.total=75;
+    renderPartChecklist(document,data);
+  }, {url:site.url+'/kit/part-table.js',data:await snap('all')});
+  await printed.emulateMedia({media:'print'});
+  for (const format of ['A4','Letter']) {
+    if(engine===chromium)await printed.pdf({path:`${out}/checklist-${format}.pdf`,format,printBackground:true});
+    const layout=await printed.evaluate(()=>({headers:getComputedStyle(document.querySelector('thead')).display,rows:[...document.querySelectorAll('tbody tr')].length,overflow:document.documentElement.scrollWidth>innerWidth}));
+    assert.equal(layout.headers,'table-header-group');assert.equal(layout.rows,75);assert.equal(layout.overflow,false);
+  }
+  await printed.screenshot({path:`${out}/checklist-print.png`,fullPage:true});
+  await printed.close();
+  await page.getByRole('searchbox').fill('bolt');
+  assert.equal((await snap('matched')).rows.length, 2);
+  assert.equal((await snap('all')).rows.length, 4);
+  await page.evaluate(() => window.tableAPI.setFilter(row => row.dataset.partKey !== 'b'));
+  assert.deepEqual((await snap('matched')).rows.map(row=>row[0]), ['a']);
+  assert.equal((await snap('all')).rows.length, 4);
+  await page.evaluate(() => window.tableAPI.setFilter(() => true));
+  await assert.rejects(()=>snap('visible'), /Checklist scope/);
+  await page.getByRole('searchbox').fill('no matching part');
+  await page.getByRole('button', {name:'Print checklist',exact:true}).click();
+  assert.match(await page.locator('.cad-table-tools').textContent(), /No matching parts to print/);
+  await page.getByRole('searchbox').fill('');
+  await page.evaluate(() => {window.openOriginal=window.open;window.open=()=>null;});
+  await page.getByRole('button', {name:'Print checklist',exact:true}).click();
+  assert.match(await page.locator('.cad-table-tools').textContent(), /Allow a new tab/);
+  await page.evaluate(() => {window.open=window.openOriginal;});
   await visit(page);
   await page.getByRole('button', { name: 'Cost: sort ascending', exact: true }).click(); assert.deepEqual(await ids(), ['b', 'd', 'a', 'c']);
   assert.equal(await page.locator('th').nth(2).getAttribute('aria-sort'), 'ascending');

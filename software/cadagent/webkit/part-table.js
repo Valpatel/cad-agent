@@ -5,7 +5,7 @@ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'bas
 const mounted = new WeakMap();
 const node = (tag, text, className) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; };
 
-export function enhancePartTable(table, { label = table.caption?.textContent || 'Parts', tracker, statuses = [], searchable = true } = {}) {
+export function enhancePartTable(table, { label = table.caption?.textContent || 'Parts', tracker, statuses = [], searchable = true, pageSize = 0, printable } = {}) {
   if (mounted.has(table)) return mounted.get(table);
   const body = table.tBodies[0], head = table.tHead?.rows[0];
   if (!body || !head) throw new Error('A part table needs a header and body.');
@@ -20,14 +20,17 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   toolbar.setAttribute('aria-label', `${label} controls`);
   const count = node('span', undefined, 'cad-table-count'); count.setAttribute('role', 'status');
   let matchedRows = rows;
-  let query = '', sorted = null, direction = 1;
+  let query = '', sorted = null, direction = 1, page = 0, filter = () => true;
+  const pagination=node('nav',undefined,'cad-table-pagination');pagination.setAttribute('aria-label',`${label} pages`);
+  const previousPage=node('button','←'),nextPage=node('button','→'),pageCount=node('span');previousPage.type=nextPage.type='button';previousPage.setAttribute('aria-label',`Previous page of ${label}`);nextPage.setAttribute('aria-label',`Next page of ${label}`);
+  previousPage.onclick=()=>{page--;apply();};nextPage.onclick=()=>{page++;apply();};pagination.append(previousPage,pageCount,nextPage);
   const original = new Map(rows.map((row, index) => [row, index])), buttons = [], checks = [];
   const searchText = new Map(rows.map(row => [row, row.textContent.toLocaleLowerCase()]));
   let input;
   if (searchable) {
     const searchLabel = node('label', undefined, 'cad-table-search'); searchLabel.append(node('span', 'Find a part'));
     input = node('input'); input.type = 'search'; input.placeholder = `Search ${label.toLocaleLowerCase()}`; input.setAttribute('aria-label', `Search ${label}`);
-    input.addEventListener('input', () => { query = input.value.trim().toLocaleLowerCase(); apply(); });
+    input.addEventListener('input', () => { query = input.value.trim().toLocaleLowerCase(); page=0; apply(); });
     searchLabel.append(input); toolbar.append(searchLabel);
   }
   const selectLabel = node('label', undefined, 'cad-table-sort'); selectLabel.append(node('span', 'Sort by'));
@@ -50,7 +53,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   selectLabel.append(select); if (buttons.length) toolbar.append(selectLabel); toolbar.append(count);
   // The toolbar belongs outside a horizontally scrolling wrapper when one exists.
   const wrapper = table.parentElement?.classList.contains('cad-table-scroll') ? table.parentElement : table;
-  wrapper.before(toolbar);
+  wrapper.before(toolbar);if(pageSize)wrapper.after(pagination);
   const statusesHead = [];
   if (tracker) for (const status of statuses) {
     const th = node('th', status.label); th.scope = 'col'; th.className = 'cad-status-heading'; head.append(th); statusesHead.push(th);
@@ -82,8 +85,13 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
       return direction * (col.type === 'number' ? av - bv : collator.compare(av, bv)) || original.get(a) - original.get(b);
     });
     const fixed = [...body.rows].find(row => row.hasAttribute('data-fixed')) || null;
-    for (const row of ordered) { row.hidden = !!query && !searchText.get(row).includes(query); body.insertBefore(row, fixed); }
-    count.textContent = `${rows.filter(row => !row.hidden).length} of ${rows.length} parts`;
+    const matched=ordered.filter(row=>(!query||searchText.get(row).includes(query))&&filter(row));
+    matchedRows = matched;
+    const pages=pageSize?Math.max(1,Math.ceil(matched.length/pageSize)):1;page=Math.max(0,Math.min(page,pages-1));
+    const shown=new Set(pageSize?matched.slice(page*pageSize,(page+1)*pageSize):matched);
+    for (const row of ordered) { row.hidden = !shown.has(row); body.insertBefore(row, fixed); }
+    count.textContent = `${matched.length} of ${rows.length} parts`;
+    pageCount.textContent=`Page ${page+1} of ${pages}`;previousPage.disabled=page===0;nextPage.disabled=page>=pages-1;pagination.hidden=!pageSize||pages===1;
     for (const item of buttons) {
       const active = item.index === sorted;
       item.th.setAttribute('aria-sort', active ? direction === 1 ? 'ascending' : 'descending' : 'none');
@@ -121,8 +129,8 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
     toolbar.append(printLabel, printButton, printMessage);
   }
   apply();
-  const api = { table, toolbar, dispose() {
-    unsubscribe?.(); toolbar.remove(); for (const item of checks) item.cell.remove(); for (const th of statusesHead) th.remove();
+  const api = { table, toolbar, snapshot, setFilter(predicate){filter=predicate;page=0;apply();}, dispose() {
+    unsubscribe?.(); toolbar.remove();pagination.remove(); for (const item of checks) item.cell.remove(); for (const th of statusesHead) th.remove();
     for (const item of buttons) { item.th.textContent = item.title; item.th.removeAttribute('aria-sort'); }
     const fixed = [...body.rows].find(row => row.hasAttribute('data-fixed')) || null;
     for (const row of rows) { row.hidden = false; body.insertBefore(row, fixed); }

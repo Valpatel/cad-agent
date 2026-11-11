@@ -703,6 +703,26 @@ joint("I-cradle", parts=("cradle", "lower_arm"), axis=Axis(LOWER_PIN, UP), follo
 # by hand: {"kind": "revolute", "moving": ..., "fixed": ..., "axis": ..., "follows": ("I-lower", -1), "closes": [...]}
 ```
 
+```mermaid
+flowchart TD
+    L["I-lower<br/>sampled over its range"] -->|"× 1"| U["I-upper<br/>driven, not sampled"]
+    L -->|"× -1"| C["I-cradle<br/>driven, not sampled"]
+    U & C --> P["every pose: all three placed,<br/>moving parts checked<br/>against the rest"]
+    P --> K["closes point, cradle<br/>on upper arm: its two<br/>copies still together?"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class U,C,P here
+    class L near
+    class K out
+```
+
+Only the driver is sampled; each follower takes `multiplier × the driver's value + offset` about its own axis in
+every pose, and a `closes` point measures whether the declared values keep the loop together.
+
+<details>
+<summary>Driven joints in full: the law, sampling, ranges, which joints, the verdict, closes points</summary>
+
 - **The law.** `follows` is a joint id, `(id, multiplier)`, `(id, multiplier, offset)` or `{joint, multiplier,
   offset}`. The follower's value is `multiplier × the driver's value + offset`, measured as every joint's is: from
   the pose the model was built in, about the follower's own axis, right-handed about its direction. Two parallel
@@ -738,6 +758,8 @@ joint("I-cradle", parts=("cradle", "lower_arm"), axis=Axis(LOWER_PIN, UP), follo
 - **The closing pin in the dossier.** The pin gets no `joint()` of its own: its part already has the joint that
   moves it, and two joints cannot drive one body. Give its interface the kind `contact` (a mechanism kind would
   ask for a joint), name it with `closes`, and list the pair in the `intended_contacts` of the joints that move it.
+
+</details>
 
 **What a driven joint does not do.** The ratio is the author's kinematic assumption. The gate does not solve loop
 closure: it does not derive the follower's value from the link lengths, and a linear law is exact only for

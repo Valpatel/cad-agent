@@ -753,8 +753,9 @@ every pose, and a `closes` point measures whether the declared values keep the l
   copies come more than `tol_mm` apart at any sampled pose, naming the pose and the distance. A wrong multiplier,
   a reversed axis or links of unequal length show up there. The point is measured in every group that moves either
   part, whichever joint states it (a `fixed` joint may). A point that can measure nothing fails rather than
-  passing: both parts in one body, neither part moved by a sampled joint, a part that is missing, or a part whose
-  instances lie in several bodies (name the instance key). The verdict lists every point under `closures`.
+  passing: both parts in one body, neither part moved by a sampled joint, a point on the axis of the only joint
+  between its two parts, a part that is missing, or a part whose instances lie in several bodies (name the instance
+  key). Those are the cases the gate recognises; a point that happens not to move for another reason still passes. The verdict lists every point under `closures`.
 - **The closing pin in the dossier.** The pin gets no `joint()` of its own: its part already has the joint that
   moves it, and two joints cannot drive one body. Give its interface the kind `contact` (a mechanism kind would
   ask for a joint), name it with `closes`, and list the pair in the `intended_contacts` of the joints that move it.

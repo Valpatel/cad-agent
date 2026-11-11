@@ -1111,10 +1111,15 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
             if j.get(role) not in known:
                 add("unknown-part", f"joint {iid!r} {role} part {j.get(role)!r} is not a part", w)
         from cadagent.review.gates.motion import Closure, Follow
-        try:                                # any spelling the motion gate reads; a malformed one is its to report
-            pins, law = Closure.coerce_all(j.get("closes")), Follow.coerce(j.get("follows"))
+        pins, law = [], None                # any spelling the motion gate reads; a malformed one is its to report
+        try:
+            pins = Closure.coerce_all(j.get("closes"))
         except (ValueError, TypeError):
-            pins, law = [], None
+            pass
+        try:
+            law = Follow.coerce(j.get("follows"))
+        except (ValueError, TypeError):
+            pass
         instance_keys = {str(i.get("key")) for info in parts.values() for i in (info.get("instances") or [])}
         for c in pins:
             for name in c.parts:

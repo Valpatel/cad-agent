@@ -819,7 +819,10 @@ def test_the_join_names_a_follower_whose_driver_is_missing_from_a_hand_written_r
         geo["joints"]["I9"]["closes"] = {"parts": ["hopper_flap", "ghost"], "at": [0, 0, 0]}
         assert sorted(i.code for i in join(d, geo)) == ["unknown-joint", "unknown-part"]
     geo["joints"]["I9"].update(follows=["I-gone", "twice"], closes=[{"parts": ["hopper_flap", "ball#3"], "at": [0, 0, 0]}])
-    assert join(d, geo) == []
+    assert [i.code for i in join(d, geo)] == ["unknown-part"]         # a malformed follows does not hide the pin
+    geo["joints"]["I9"].update(follows="I-gone", closes=7)             # a malformed closes does not hide the driver
+    assert [i.code for i in join(d, geo)] == ["unknown-joint"]
+    geo["joints"]["I9"]["closes"] = [{"parts": ["hopper_flap", "ball#3"], "at": [0, 0, 0]}]
     geo["parts"]["ball"]["instances"] = [{"key": "ball#3"}]
     geo["joints"]["I9"]["follows"] = None
     assert join(d, geo) == []                               # an instance key is a place for a point

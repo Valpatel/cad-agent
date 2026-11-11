@@ -1038,6 +1038,22 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         cid = closure_ids[(jid, n)]
         crow: Dict[str, Any] = {"id": cid, "joint": jid, **c.to_dict()}
         at = ", ".join(_fmt(v) for v in c.at)
+        between: set = set()            # the joints that carry one of the two parts and not the other
+        if (jid, n) in closure_bodies:
+            above = []
+            for body in closure_bodies[(jid, n)]:
+                chain = set()
+                for cur in [o for o, bs in body_of_joint.items() if body in bs]:
+                    while cur is not None:
+                        chain.add(cur)
+                        cur = parent.get(cur)
+                above.append(chain)
+            between = above[0] ^ above[1]
+            only = js[next(iter(between))] if len(between) == 1 else None
+            if only is not None and only.kind == "revolute" and \
+                    _radius(tuple(c.at) * 2, only.origin, only.direction) < 1e-6:
+                closure_problem[(jid, n)] = (f"the point lies on the axis of {only.id}, the only joint between the "
+                                             "two, so it cannot come apart and measures nothing")
         if (jid, n) in closure_problem or (jid, n) not in apart:
             why = closure_problem.get((jid, n)) or "no sampled joint moves either part, so the point measures nothing"
             crow["status"] = "fail"
@@ -1055,15 +1071,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                 msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share stays within "
                          f"{worst:.3g} mm over {count} poses (limit {c.tol_mm:g} mm)")
             checks.append(Check(cid, crow["status"], msg_c, list(c.parts), crow))
-            above = []                  # the joints that carry each part: one on both sides moves the two together
-            for b in closure_bodies[(jid, n)]:
-                chain = set()
-                for cur in [o for o, bs in body_of_joint.items() if b in bs]:
-                    while cur is not None:
-                        chain.add(cur)
-                        cur = parent.get(cur)
-                above.append(chain)
-            measured |= above[0] ^ above[1]
+            measured |= between         # a joint carrying both parts moves them together: not measured
         closure_rows_all.append(crow)
     for jid in sorted(driven):
         if jid not in measured:

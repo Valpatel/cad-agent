@@ -781,6 +781,17 @@ def test_a_real_collision_along_the_coupled_path_is_still_found():
     assert onset["clear"] - 0.1 <= hit <= onset["hit"] + 0.1, (onset, hit)
 
 
+def test_a_closes_point_on_the_axis_of_the_only_joint_between_its_parts_is_refused():
+    """The cradle's own pivot on the lower arm stays one point whatever the cradle's ratio: it measures nothing."""
+    from cadagent.review.gates.motion import motion_gate
+    for at in ((100, 0, 0), (100, 5, 0)):
+        pivot = {"parts": ("cradle", "lower_arm"), "at": at}
+        v = motion_gate(_lift(stop=False), _lift_joints(20, coupled=True, cradle=3, closes=pivot), default_samples=3)
+        f = finding(v, "closure:I-cradle:cradle|lower_arm")
+        assert f["status"] == "fail" and "lies on the axis of I-cradle, the only joint between the two" in f["message"]
+        assert any(n.startswith("loop closure of I-cradle = 3 × I-lower") for n in v["not_checked"])
+
+
 def test_a_wrong_ratio_pulls_the_closing_pin_apart():
     """The cradle declared to turn with the lower arm, not against it: the pin it shares with the upper arm, which
     the declaration never solved, is pulled apart, and the closes point says by how much."""

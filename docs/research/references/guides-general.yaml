@@ -477,12 +477,13 @@ sources:
   used_for: []
   imported: b255be1cef6d2881
 - id: boothroyd-dewhurst-inc-boothroyd-dewhurst-dfma-presentation
-  kind: paper
+  kind: guide
   category: manufacturing-guides
-  title: Boothroyd Dewhurst DFMA presentation (Dewhurst, DFMA forum 2019)
-  authors: []
+  title: 'Design for Manufacture and Assembly: History, an overview, and a design story'
+  authors:
+  - Nicholas P. Dewhurst
   org: Boothroyd Dewhurst Inc.
-  year: null
+  year: 2019
   url: https://www.dfma.com/forum/2019pdf/dewhurstpres.pdf
   access: free
   terms: cited and summarised, never copied
@@ -490,7 +491,8 @@ sources:
     spdx: null
     class: proprietary
     read: false
-    note: A publisher's page; its terms were not read. Cited, never copied.
+    note: Primary document read; redistribution terms not reviewed. Cited and paraphrased only; no PDF, slide or timing table
+      copied.
   reuse:
     text: cite-only
     geometry: none
@@ -501,18 +503,27 @@ sources:
   process_groups:
   - general
   evidence:
-    class: snippet-only
+    class: read
     numbers: some
-    tested: unknown
+    tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'DFMA method from its originators; part-count reduction and assembly time estimation. Note: Seen as search result
-    only; content not read'
-  used_for: []
+  summary: Separate-part necessity and handling/insertion difficulty are distinct review questions. Reported cost reductions
+    are case-specific, not promised savings.
+  used_for:
+  - docs/practice/dossier.md
   imported: a896354f0e42b132
+  verified: '2026-11-10: read 2019-10-01 presentation, PDF pp. 24-29: DFA decisions, motor assembly, necessity, handling/insertion,
+    analysis slide and baseline/redesign workflow. Remaining: pp. 1-23 and 30-68; no proprietary timing-table or cost-model
+    reproduction.'
+  archive:
+    sha256: 42f774b4cefe0b52bf0bea4f7b8e48cbd9ed9d26b8d5651b5a0a7a588d4b148c
+    kind: pdf
+    fetched: '2026-11-10'
+    redistribute: false
 - id: wevolver-dfma-explained-wevolver
   kind: guide
   category: manufacturing-guides
@@ -599,10 +610,11 @@ sources:
 - id: university-of-washington-scholz-tolerance-stack-up-analysis
   kind: paper
   category: manufacturing-guides
-  title: 'Scholz: Tolerance stack-up analysis (Boeing review, UW copy)'
-  authors: []
-  org: University of Washington (F. Scholz, Boeing)
-  year: null
+  title: 'Tolerance Stack Analysis Methods: A Critical Review'
+  authors:
+  - Fritz Scholz
+  org: Boeing Information & Support Services, Research and Technology
+  year: 1995
   url: https://faculty.washington.edu/fscholz/DATAFILES498B2008/TOLSTACK.pdf
   access: free
   terms: cited and summarised, never copied
@@ -610,7 +622,8 @@ sources:
     spdx: null
     class: proprietary
     read: false
-    note: A publisher's page; its terms were not read. Cited, never copied.
+    note: Primary document read; redistribution terms not reviewed. Cited and paraphrased only; no PDF, slide or timing table
+      copied.
   reuse:
     text: cite-only
     geometry: none
@@ -621,18 +634,27 @@ sources:
   process_groups:
   - general
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
-    authority: reference
+    authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Rigorous review of arithmetic and statistical stack-up methods and their assumptions. Note: Only table of contents
-    seen'
-  used_for: []
+  summary: Linear worst-case bounds and RSS rest on different assumptions. Independence, centring and the relation between
+    tolerance and standard deviation need explicit evidence.
+  used_for:
+  - docs/practice/dossier.md
   imported: 8f8ecc45bfed808a
+  verified: '2026-11-10: read November 1995 original review, sections 1-4.1, PDF pp. 3-14: notation, linearity limits, arithmetic
+    endpoints and normal-variation RSS assumptions/derivation. Remaining: sections 4.2-5, risk and mean-shift treatments;
+    no process-capability measurement or general calculator implemented.'
+  archive:
+    sha256: bfbd990d986f0c8aebf38296af4b1ebe050b29a61f5b05bb7c2911ec37d34009
+    kind: pdf
+    fetched: '2026-11-10'
+    redistribute: false
 - id: xometry-injection-molding-vs-3d-printing-break-even
   kind: guide
   category: manufacturing-guides

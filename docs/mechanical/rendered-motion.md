@@ -32,3 +32,8 @@ independent renderer, B its offset-pivot defect; the poses, errors and verdicts 
 A closed loop, such as a four-bar or a five-bar leg, is declared under `loops` on top of the joint tree. Its inputs are
 sampled together, its other joints are solved, and each sample's loop must close where the solver closes it. See the
 protocol, and [Linkages](linkages.md) for the solver.
+
+For imported robot models, the protocol also inventories sensor/model bases, motor signs, contact frames and the
+causes of joint limits before constructing a trace. Caron and Tordjman--Levavasseur's Upkie description is the worked
+source for these review questions; this reading covers its conventions and selected Xacro files, not a validation of
+the whole robot. [ref:upkie-upkie-description]

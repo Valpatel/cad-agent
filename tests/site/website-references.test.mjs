@@ -180,6 +180,23 @@ test('[ref:<id>] in a page links to the record and the source; code, links and u
   assert.deepEqual(bare, []);
 });
 
+test('the deeper PEM overview reading publishes one canonical source and resolves both newer names', async () => {
+  const canonical = 'pem-fastener-guide';
+  for (const alias of ['pem-design-engineers-fastener-guide-2022', 'pem-fastener-guide-2022']) {
+    assert.equal(refs.aliases.get(alias), canonical);
+    assert.equal(model.home(alias), model.home(canonical));
+    assert.equal(refs.records.has(alias), false, 'an alias is not another published document');
+  }
+  const area = await json('catalog/references/fasteners-and-hardware.json');
+  const matching = area.records.filter(r => r.url === refs.records.get(canonical).url);
+  assert.deepEqual(matching.map(r => r.id), [canonical]);
+  assert.match(matching[0].verified, /2026-11-01:.*skimmed/s);
+  assert.match(matching[0].verified, /2026-11-11:.*all 20 PDF pages/s);
+  const page = await text('research/manufacturing/pem-micro-fasteners.html');
+  assert.ok(page.includes(`href="${model.home(canonical)}"`), 'the actual guide citation targets the canonical row');
+  assert.ok(!page.includes('#pem-design-engineers-fastener-guide-2022"'));
+});
+
 test('Markdown twins link [ref:] tags to the records\' pages; code is left alone', () => {
   const md = `A [ref:pem-handbook] rule.\n\n\`[ref:pem-handbook]\`\n\n\`\`\`\n[ref:pem-handbook]\n\`\`\`\n[ref:pem-handbook](kept)\n[see [ref:pem-handbook]](https://x) [[ref:pem-handbook]](https://y)\n`;
   const page = model.home('pem-handbook').slice(1).split('#')[0];

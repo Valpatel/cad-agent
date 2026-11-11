@@ -15,3 +15,5 @@ Read [the sourced family comparison and worked example](../../../docs/research/m
 6. Deliver a short candidate record: exact family/part and source edition/page; dimensions that fit and fail; material/process unknowns; tooling/seat checks; required load/cycles; and a coupon qualification plan. Separate installation force, tightening torque and destructive retention results. Manufacturer averages are not design allowables. Stop at “candidate, unqualified” if no applicable application evidence exists.
 
 Keep numerical limits in the process profiles and cards, not in this skill. Custom parts and unsupported sizes require current supplier drawings. Creating a candidate does not authorize purchases, installation or product geometry changes.
+
+[Skill resource map](README.md)

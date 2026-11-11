@@ -425,32 +425,38 @@ def stability_setup(cfg: Dict[str, str], model: Path, overrides: Optional[dict] 
 
     Returns the configuration to slice with and what to record:
 
-    * supports for enforcers only, no enforced layers, a model with no support data of its own, and no
-      ``support_material`` override: nothing would be supported, so the slice is made with ``support_material = 0``
-      (the same toolpaths) and the check runs. ``supports``: ``none``.
-    * supports off already: unchanged. ``supports``: ``none``.
-    * anything else (automatic supports, enforced layers, a model with painted supports, an explicit override that
-      turns them on): unchanged, and ``stability_checked`` is False with the reason in ``stability_note``.
+    * a model with support data of its own (``model_sets_supports``): unchanged, and ``stability_checked`` is False
+      whatever the profile says. An object's own ``support_material`` or ``support_material_enforce_layers`` wins
+      over the profile's (PrusaSlicer 2.9.6, ``PrintObject.cpp``), and PrusaSlicer skips the check for an object
+      that has supports, so the profile alone cannot say the check ran. The object's settings are not resolved here.
+    * supports for enforcers only, no enforced layers, a bare model, and no ``support_material`` override: nothing
+      would be supported, so the slice is made with ``support_material = 0`` (the same toolpaths) and the check
+      runs. ``supports``: ``none``.
+    * supports off, a bare model: unchanged. ``supports``: ``none``.
+    * anything else (automatic supports, enforced layers, an explicit override that turns them on): unchanged, and
+      ``stability_checked`` is False with the reason in ``stability_note``.
     """
     cfg = dict(cfg)
     material, auto = _on(cfg, 'support_material'), _on(cfg, 'support_material_auto')
-    enforced, painted = _on(cfg, 'support_material_enforce_layers'), model_sets_supports(model)
+    enforced, own = _on(cfg, 'support_material_enforce_layers'), model_sets_supports(model)
     chosen = 'support_material' in (overrides or {})
     note = None
-    if material and not auto and not enforced and not painted and not chosen:
+    if material and not auto and not enforced and not own and not chosen:
         cfg['support_material'] = '0'
         material = False
         note = ('the profile supports enforcers only and the model has none: sliced with support_material = 0, the '
                 'same toolpaths, so PrusaSlicer runs its print-stability check')
-    if not material and not enforced:
+    if not material and not enforced and not own:
         return cfg, {'supports': 'none', 'stability_checked': True, 'stability_note': note}
+    supports = 'automatic' if material and auto else 'enforcers only' if material or enforced else 'set in the model'
     why = ('automatic supports are on' if material and auto else
            'the first support_material_enforce_layers layers are supported' if enforced and not material else
-           "the model carries its own support settings" if painted and not chosen else
+           'the model carries its own support settings (painted supports, enforcer or blocker volumes, or an '
+           "object's own support settings), which are not resolved here and can turn supports on for an object" if own else
            'support_material is on (enforcers only)')
-    return cfg, {'supports': 'automatic' if material and auto else 'enforcers only', 'stability_checked': False,
-                 'stability_note': f"PrusaSlicer's print-stability check did not run: {why}; a part that needs "
-                                   'supports it does not get is not flagged'}
+    return cfg, {'supports': supports, 'stability_checked': False,
+                 'stability_note': f"PrusaSlicer's print-stability check is not known to have run: {why}; a part that "
+                                   'needs supports it does not get may not be flagged'}
 
 
 def slice_part(model, workdir, printer: str, process: str, filament: str, overrides: Optional[dict] = None,

@@ -6,10 +6,11 @@
   `support_material = 0`: the same toolpaths, and PrusaSlicer looks (#522).
 
 **New**
-- PrusaSlicer slice rows record `supports` (`none`, `enforcers only` or `automatic`), `stability_checked` and
-  `stability_note`. With automatic supports, enforced layers, a model's own supports or an override that turns
-  supports on, the slice is left alone, `stability_checked` is false and `cad-agent slice` says the check did not
-  run: `ok` then means only that the part sliced (#522).
+- PrusaSlicer slice rows record `supports` (`none`, `enforcers only`, `automatic` or `set in the model`),
+  `stability_checked` and `stability_note`. With automatic supports, enforced layers, an override that turns supports
+  on, or a 3MF that carries support data of its own (whatever the profile says), the slice is left alone,
+  `stability_checked` is false and `cad-agent slice` says the check is not known to have run: `ok` then means only
+  that the part sliced (#522).
 
 **Projects must change**
 - PrusaSlicer projects on a stock MK4S or XL input-shaper profile: slice again. A part with unsupported overhangs

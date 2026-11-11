@@ -367,7 +367,28 @@ def test_supports_that_are_on_are_left_alone_and_the_check_is_recorded_as_not_ru
     cfg, said = slicer_prusa.stability_setup(base, _threemf(tmp_path / 'm.3mf', model), overrides)
     assert cfg == base                                             # the slice is what the profile and the model say
     assert said['supports'] == supports and said['stability_checked'] is False
-    assert why in said['stability_note'] and 'did not run' in said['stability_note']
+    assert why in said['stability_note'] and 'not known to have run' in said['stability_note']
+
+
+OBJECT_SUPPORTS = b'<config><object id="1"><metadata type="object" key="support_material" value="1"/></object></config>'
+OBJECT_ENFORCED = (b'<config><object id="1"><metadata type="object" key="support_material_enforce_layers" value="3"/>'
+                   b'</object></config>')
+
+
+@pytest.mark.parametrize('profile', [{'support_material': '0'}, {}], ids=['profile supports off', 'enforcers only'])
+@pytest.mark.parametrize('model, config', [(b'<model/>', OBJECT_SUPPORTS), (b'<model/>', OBJECT_ENFORCED),
+                                           (b'<triangle slic3rpe:custom_supports="4"/>', None)],
+                         ids=['object supports on', 'object enforced layers', 'painted supports'])
+def test_a_models_own_supports_are_never_reported_as_checked(tmp_path, profile, model, config):
+    """PR #525's review: an object's own support settings win over the profile's (PrusaSlicer 2.9.6), and PrusaSlicer
+    skips the stability check for an object with supports. With the profile's supports off, the first version said
+    `supports: none, stability_checked: true` for such a 3MF. The object's settings are not resolved, so the check
+    is reported as not known to have run, and the slice is left as it is."""
+    base = {**RESOLVED, **ENFORCERS_ONLY, **profile}
+    cfg, said = slicer_prusa.stability_setup(base, _threemf(tmp_path / 'm.3mf', model, config))
+    assert cfg == base
+    assert said['stability_checked'] is False and 'its own support settings' in said['stability_note']
+    assert said['supports'] == ('set in the model' if profile else 'enforcers only')
 
 
 def test_a_models_own_support_data_is_found_in_its_model_and_config_files(tmp_path):

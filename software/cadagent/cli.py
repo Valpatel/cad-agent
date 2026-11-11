@@ -194,7 +194,7 @@ def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
                     _say(f"      {level[:-1]}: {line}")
     unchecked = [n for n, row in rep["parts"].items() if row.get("stability_checked") is False]
     if unchecked:
-        _say(f"{len(unchecked)} part(s) sliced with supports on, so PrusaSlicer did not check print stability: "
+        _say(f"{len(unchecked)} part(s) whose print stability PrusaSlicer is not known to have checked (supports): "
              f"{', '.join(unchecked)}")
     not_ok = [n for n, row in rep["parts"].items() if row.get("ok") is False and row.get("grams")]
     if not_ok:

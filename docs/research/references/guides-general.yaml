@@ -481,6 +481,7 @@ sources:
     source.
   used_for:
   - docs/research/manufacturing/joint-interfaces.md
+  - docs/research/process-profiles.yaml
   imported: b255be1cef6d2881
   claims: []
   verified: '2026-11-11: Read all seven PDF pages, printed pp.31–37, including lubrication, fits/tables/example, life/equivalent

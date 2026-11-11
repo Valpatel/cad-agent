@@ -1,6 +1,6 @@
 # PEM micro-fasteners: select the attachment mechanism first
 
-Choose the attachment mechanism from the parent material and required service. The M2 shield example below screens geometry; an exact drawing, installation tooling and application tests still govern the joint.
+Choose the attachment mechanism from the parent material and required service. Open the plastic-joint examples below for scoped MSIA/MSIB and TackSert cards. The M2 shield example below screens geometry; an exact drawing, installation tooling and application tests still govern the joint.
 
 ```mermaid
 flowchart TD
@@ -79,9 +79,36 @@ For an experiment, predeclare the required loads and service cycles from the pro
 </details>
 
 <details>
+<summary id="plastic-joints-msiamsib-and-tacksert-worked-screens">Plastic joints: MSIA/MSIB and TackSert worked screens</summary>
+
+**MSIA/MSIB M2, length code 300.** Run `cad-agent rules pem-msia-msib-m2-300 --process injection-moulding --material abs`
+(or `pc`). This is a post-mould geometry-screening route, not evidence that the test sheets were injection moulded.
+The guide’s wall footnote is specifically tied to ABS/polycarbonate; its performance tests used heat-staked flat
+sheets. No FDM, temperature/dwell recipe or strength is qualified. For an illustrative hole 2.875 ±0.025 mm,
+depth 3.85 ±0.05 mm and explicitly measured wall 1.65 ±0.05 mm, every tolerance corner fits the length-300
+card. The same depth cannot serve length400; a widened hole or thinner wall is rejected. Do not infer a toleranced
+boss outside diameter from the nominal sketch without resolving its wall datum. [ref:pem-ce-guide-2021]
+
+**TKA/TK4-10-150 TackSert, blind base hole.** Use the separate `pem-tka-tk4-10-150` and
+`pem-tka-tk4-10-150-stack` cards with `--process cnc`; that route represents machined mounting-hole preparation,
+not qualification of a manufacturing process or resin. For actual pin length 1.50 ±0.06 mm and **entire** top-sheet
+stack 0.50 ±0.03 mm, engagement spans 0.91–1.09 mm. A blind base-hole depth 1.40 ±0.05 mm clears the
+worst-case card requirement of 1.34 mm. A 1.30 ±0.05 mm blind hole fails. A top stack 0.64 ±0.01 mm stays
+below the catalogue’s nominal top-sheet maximum yet fails the minimum engagement at a tolerance corner.
+Top-sheet and base-panel holes are different; do not swap them. [ref:pem-ce-guide-2021]
+
+CE p.24 installs TackSert with parallel punch/anvil surfaces until its head contacts the top sheet. The adjacent
+TS4 adhesive/reinstallation instructions are a different family. Installation force is not retention capacity.
+The p.30 30-test-point average footnote belongs to **SMTSO**, not MSIA/MSIB. These applied software tests reproduce
+geometry only. The CE record’s scoped `encoded` status and derived medium confidence refer to that reproducible
+geometry; performance and physical outcomes remain unqualified.
+
+</details>
+
+<details>
 <summary>Other detailed findings and unfinished source checks</summary>
 
-CE p.18 gives separate insert hole depth, diameter, wall and style by thread/length; p.30's MSIA/MSIB tests used heat-staked flat ABS/PC sheet. Do not convert those tests to printed pullout capacity. CE p.15 defines TackSert engagement as length minus top-sheet thickness and distinguishes blind-hole depth from through-sheet protrusion. Those families deserve a separate numerical batch before a checker is added.
+The numerical plastic-joint screens above are limited to their exact families. Current drawings, installation temperature/dwell and application qualification remain unresolved; no printed pullout capacity is inferred.
 
 CE p.30's SMTSO results name the board, oven, paste, stencil and sample count. The extraction says “RF-4”; do not silently rewrite it to FR-4 or infer qualification of another laminate. Reel tape width also differs between pp.20 and27. Resolve those details against the exact current SMT datasheet before use; this batch encodes neither. Current product revisions, independent corroboration and physical qualification remain unfinished.
 

@@ -467,13 +467,13 @@ def test_pem_cards_keep_families_and_printed_materials_separate():
         assert emitted == ["pem-ce-guide-2021"] * 3
         reg = cards.registry()
         assert all(reg.resolve(key).id == canonical and reg.resolve(key).kind == "source" for key in emitted)
-        assert reg.resolve(emitted[0]).data["evidence"]["class"] == "read"
+        assert reg.resolve(emitted[0]).data["evidence"]["class"] == "encoded"
         assert {row["rule"] for row in card["lines"]} == {
             f"sm-pem-{family}-m2-{feature}" for feature in ("sheet", "hole", "edge")
         }
         assert len(card["lines"]) == 3
-        assert all(row["source"] == canonical and row["confidence"] == "low" for row in card["lines"])
-        assert rendered.count("conf low") == 3 and "geometry screening only" in rendered
+        assert all(row["source"] == canonical and row["confidence"] == "medium" for row in card["lines"])
+        assert rendered.count("conf medium") == 3 and "geometry screening only" in rendered
         assert f"sm-pem-{'msofs' if family == 'mso4' else 'mso4'}" not in rendered
         # A process filter must not publish these sheet dimensions as FDM rules.
         polymer = cards.card(name, process="fdm", material="petg")
@@ -504,3 +504,97 @@ def test_plastic_screw_family_guidance_does_not_supply_a_missing_joint_rating(ca
     assert "screw's own pull-out is not computed" in text and "insert's capacity" in text
     assert "no printed-joint capacity or wall dimension" in text
     assert not any(rule.source == source for rule in pp.load().rules()), "a qualitative article cannot create numerical rules"
+
+
+def test_msia_msib_m2_300_source_bound_interval_screen():
+    p = pp.profile("injection-moulding")
+    rules = {k: p.verified_rule("im-pem-msia-msib-m2-300-" + k).limit() for k in ("hole", "depth", "wall")}
+    # CE p.18 exact M2/length300 row, not the longer length400 row.
+    assert (rules["hole"].min, rules["hole"].max, rules["depth"].min, rules["wall"].min) == (2.85, 2.90, 3.77, 1.6)
+    def rejects(hole, depth, wall):
+        return {k for k, span in dict(hole=hole, depth=depth, wall=wall).items()
+                if any((rules[k].min is not None and x < rules[k].min - 1e-12)
+                       or (rules[k].max is not None and x > rules[k].max + 1e-12) for x in span)}
+    assert not rejects((2.85, 2.90), (3.80, 3.90), (1.60, 1.70))
+    assert rejects((2.84, 2.91), (3.76, 3.90), (1.55, 1.65)) == {"hole", "depth", "wall"}
+    for material in ("abs", "pc"):
+        assert len(cards.card("pem-msia-msib-m2-300", process="injection-moulding", material=material)["lines"]) == 3
+    for process, material in (("fdm", "pla"), ("sla", "resin"), ("injection-moulding", "pa")):
+        assert cards.card("pem-msia-msib-m2-300", process=process, material=material)["lines"] == []
+    with pytest.raises(cards.CardError):
+        cards.card("pem-msia-msib-m2-400")  # no silent reuse of 3.77 mm where the source requires 4.77 mm
+
+
+def test_tacksert_150_actual_length_and_entire_top_stack_govern_blind_hole():
+    """CE pp.15/24: tolerance corners, not TS4's adhesive/reinstallation procedure."""
+    p = pp.profile("cnc")
+    get = lambda name: p.verified_rule("cnc-pem-tka-tk4-10-150-" + name)
+    assert (get("length").limit().min, get("length").limit().max) == (1.44, 1.56)
+    assert (get("base-hole").limit().min, get("base-hole").limit().max) == (1.0, 1.025)
+    assert (get("top-hole").limit().min, get("top-hole").limit().max) == (1.3, 1.35)
+    assert (get("edge").limit().min, get("boss").limit().min) == (1.18, 2.36)
+    def screen(top, blind_depth_min):
+        failures = set()
+        for length, top_stack in itertools.product((get("length").limit().min, get("length").limit().max), top):
+            engagement = length - top_stack
+            if engagement < get("engagement").limit().min - 1e-12:
+                failures.add("engagement")
+            if blind_depth_min < get("blind-depth").limit(L=length, T=top_stack).min - 1e-12:
+                failures.add("blind-depth")
+        return failures
+    assert screen((.47, .53), 1.35) == set()  # DOE .91–1.09; worst blind depth requirement 1.34
+    assert screen((.47, .53), 1.25) == {"blind-depth"}
+    assert screen((.63, .65), 1.50) == {"engagement"}  # nominal top stack under .7, but worst DOE .79 < .8
+    text = cards.render_card(cards.card("pem-tka-tk4-10-150-stack", process="cnc"))
+    assert "entire top stack" in text and "L-T+0.25" in text
+    assert "88" not in text and "adhesive" not in text, "adjacent TS4 rules must not leak into TackSert"
+    for process in ("fdm", "sla"):
+        assert cards.card("pem-tka-tk4-10-150-stack", process=process)["lines"] == []
+
+
+def test_anodize_planning_values_are_not_dimensional_pass_limits():
+    p = pp.profile("cnc")
+    ii = p.verified_rule("cnc-anodize-ii-outward-omw").limit(D=.0508)
+    iii = p.verified_rule("cnc-anodize-iii-outward-omw").limit(D=.0508)
+    assert iii.value == pytest.approx(.0254) and ii.value == pytest.approx(.0508 / 3)
+    assert ii.min is ii.max is iii.min is iii.max is None  # no guaranteed min/max allowance from this guide
+    # A finisher-agreed illustrative TypeIII layer .002in: a coated bore shrinks on two walls.
+    after = lambda coated_faces: 10.0 - coated_faces * iii.value
+    assert after(2) == pytest.approx(9.9492) and after(0) == 10.0 and after(1) == pytest.approx(9.9746)
+    assert after(2) != pytest.approx(10.0 + 2 * iii.value)  # wrong direction
+    assert after(2) != pytest.approx(10.0 - 2 * .0508)  # whole oxide thickness is not outward growth
+    text = cards.render_card(cards.card("anodize-planning-growth", process="cnc"))
+    assert "planning estimate" in text and "confirm with finisher" in text and "masked" in text
+
+
+def test_general_bearing_6203_example_uses_inch_deviations_not_a_generic_fit_selector():
+    p = pp.profile("cnc")
+    shaft = p.verified_rule("cnc-bearing-6203-example-shaft").limit()
+    housing = p.verified_rule("cnc-bearing-6203-example-housing").limit()
+    # Printed pp.32–34: exact nominal dimensions plus converted deviation columns, not rounded inch absolutes.
+    assert (shaft.min, shaft.max) == pytest.approx((17 - .0003 * 25.4, 17))
+    assert (housing.min, housing.max) == pytest.approx((40, 40 + .0006 * 25.4))
+    assert shaft.min == pytest.approx(16.99238) and housing.max == pytest.approx(40.01524)
+    assert shaft.min != pytest.approx(17 - .0003), "the numerical deviation column is inches, not millimetres"
+    assert housing.max != pytest.approx(40 + .0006)
+    assert .6690 * 25.4 != pytest.approx(shaft.min), "the source's rounded absolute example is distinct"
+    assert 16.99 < shaft.min and 40.016 > housing.max  # planted out-of-range seat dimensions
+    text = cards.render_card(cards.card("bearing-6203-source-example", process="cnc", material="steel"))
+    assert "Exact 17/40 mm" in text and "Not a generic fit selector" in text
+    for process, material in (("fdm", "pla"), ("cnc", "aluminium"), ("cnc", "polymer")):
+        assert cards.card("bearing-6203-source-example", process=process, material=material)["lines"] == []
+
+
+def test_ce_exact_m2_standoff_table_boundaries_back_the_geometry_evidence_scope():
+    p = pp.profile("sheet-metal")
+    expected = {"mso4": ((.3, None), (3.18, 3.23), (3., None)),
+                "msofs": ((.2, .3), (3.5, 3.55), (2., None))}
+    for family, golden in expected.items():
+        got = [p.verified_rule(f"sm-pem-{family}-m2-{f}").limit() for f in ("sheet", "hole", "edge")]
+        assert [(r.min, r.max) for r in got] == list(golden)  # CE printed pp.12/19
+    reg = cards.registry()
+    ref = reg.resolve("pem-ce-guide-2021")
+    assert ref.evidence_class == "encoded" and ref.data["evidence"]["authority"] == "primary"
+    assert set(ref.data["rules"]) == {r.id for r in pp.load().rules() if r.source == ref.id}
+    assert "manufacturing.cards.card" in ref.data["checks"]
+    assert any(c["status"] == "unconfirmed" and "performance" in c["text"] for c in ref.data["claims"])

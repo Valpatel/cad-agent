@@ -1152,6 +1152,7 @@ sources:
     no universal tolerance or physical validation.
   used_for:
   - docs/research/manufacturing/joint-interfaces.md
+  - docs/research/process-profiles.yaml
   imported: 32c20d14ae5d6368
   verified: '2026-11-11: downloaded exact manufacturer PDF and read all 13 pages from layout extraction. Visually checked
     PDF pp.2,3,10 for coating-vs-buildup diagram, dimensional fractions/masking and corner/callout diagram. Copyright2014;

@@ -20,6 +20,8 @@ For drawing review, identify tight holes, fine threads and sliding interfaces, t
 
 A **derived arithmetic illustration**, not a measured result: assume the finisher agrees a Type III layer thickness of 0.002 inch and outward buildup of exactly half. Each treated wall projects 0.001 inch = 0.0254 mm. Two opposed outside surfaces increase their span by 0.0508 mm; a bore coated on both sides loses 0.0508 mm of diameter. An initially 10.0000 mm bore would become 9.9492 mm under these assumptions. Masked walls must not receive this modeled allowance. Etching, process scatter and dimensional tolerances still require separate agreement.
 
+For a finisher-confirmed planning scenario, run `cad-agent rules anodize-planning-growth --process cnc`. Its values are approximate assumptions, with no min/max pass limits.
+
 Negative review controls: reject a calculation that uses the full oxide thickness as outward buildup, changes a bore in the outside-growth direction, applies a two-wall allowance to only one treated surface, or silently treats the illustrative half-growth value as a universal Type II value. OMW's corner sketch on p.10 recommends relieving very sharp corners (it quotes 0.015 inch); treat that as supplier guidance requiring confirmation, not a universal minimum-radius check.
 
 [Source: OMW][ref:omw-corp-understanding-and-specifying-anodizing]
@@ -48,6 +50,8 @@ A bounded decision-test set can check the three table rows and reject missing lo
 <summary>General Bearing 6203 example: inch deviations and material limits</summary>
 
 The exact seven-page excerpt is General Bearing material hosted on SKF’s media service, not a complete modern SKF catalogue. Its printed p.32 example uses a 17 × 40 × 12 mm 6203 bearing, inner ring rotating, 20 lbf radial load and a cited 2153 lbf dynamic rating. The load ratio is about 0.00929, below its light-load threshold of 0.07 C. The example chooses shaft h5 and housing H6, with outer ring stationary and housing not split axially.
+
+The exact named `cad-agent rules bearing-6203-source-example --process cnc --material steel` card reproduces only this steel-housing subset; it is not a general fit selector.
 
 The deviation columns are **inches**, although diameter bands also show millimetres. For this named example, shaft h5 is +0/−0.0003 inch = +0/−0.00762 mm; housing H6 is +0/+0.0006 inch = +0/+0.01524 mm. The source’s rounded absolute inch dimensions do not convert to exactly the same nominal 17/40 mm, so keep deviations and rounded example dimensions distinct. Bearing-ring tolerances are also needed to determine actual interference.
 

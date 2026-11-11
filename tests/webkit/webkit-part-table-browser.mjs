@@ -65,6 +65,8 @@ try {
   await page.evaluate(() => {window.open=window.openOriginal;});
   await visit(page);
   await page.getByRole('button', { name: 'Cost: sort ascending', exact: true }).click(); assert.deepEqual(await ids(), ['b', 'd', 'a', 'c']);
+  assert.deepEqual((await snap('all')).rows.map(row=>row[0]), ['b','d','a','c']);
+  assert.deepEqual((await snap('matched')).rows.map(row=>row[0]), ['b','d','a','c']);
   assert.equal(await page.locator('th').nth(2).getAttribute('aria-sort'), 'ascending');
   await page.getByRole('checkbox', { name: 'Ordered: Bolt 2', exact: true }).check();
   await page.getByRole('button', { name: 'Cost: sort descending', exact: true }).click(); assert.deepEqual(await ids(), ['a', 'b', 'd', 'c']);

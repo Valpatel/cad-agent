@@ -19,7 +19,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   const toolbar = node('div', undefined, 'cad-table-tools');
   toolbar.setAttribute('aria-label', `${label} controls`);
   const count = node('span', undefined, 'cad-table-count'); count.setAttribute('role', 'status');
-  let matchedRows = rows;
+  let matchedRows = rows, orderedRows = rows;
   let query = '', sorted = null, direction = 1, page = 0, filter = () => true;
   const pagination=node('nav',undefined,'cad-table-pagination');pagination.setAttribute('aria-label',`${label} pages`);
   const previousPage=node('button','←'),nextPage=node('button','→'),pageCount=node('span');previousPage.type=nextPage.type='button';previousPage.setAttribute('aria-label',`Previous page of ${label}`);nextPage.setAttribute('aria-label',`Next page of ${label}`);
@@ -86,7 +86,7 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
     });
     const fixed = [...body.rows].find(row => row.hasAttribute('data-fixed')) || null;
     const matched=ordered.filter(row=>(!query||searchText.get(row).includes(query))&&filter(row));
-    matchedRows = matched;
+    orderedRows = ordered; matchedRows = matched;
     const pages=pageSize?Math.max(1,Math.ceil(matched.length/pageSize)):1;page=Math.max(0,Math.min(page,pages-1));
     const shown=new Set(pageSize?matched.slice(page*pageSize,(page+1)*pageSize):matched);
     for (const row of ordered) { row.hidden = !shown.has(row); body.insertBefore(row, fixed); }
@@ -102,20 +102,20 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
   }
   const snapshot = (scope = 'matched') => {
     if (!['all', 'matched'].includes(scope)) throw new Error('Checklist scope must be all or matched.');
-    const selected = scope === 'all' ? rows : matchedRows;
+    const selected = scope === 'all' ? orderedRows : matchedRows;
     const columns = [...head.cells].map((th, index) => ({ index, label: buttons.find(item => item.index === index)?.title || th.textContent.trim() })).filter(col => head.cells[col.index].dataset.print !== 'omit');
     return { label, project: printable?.project || '', revision: printable?.revision || '', notice: printable?.notice || '', scope,
       total: rows.length, query: scope === 'matched' ? query : '', columns: ['Part ID', ...columns.map(col => col.label)],
       rows: selected.map(row => [row.dataset.partKey || row.dataset.partLabel || '', ...columns.map(col => {
         const cell = row.cells[col.index], check = cell?.querySelector('input[type=checkbox]');
-        return check ? (check.checked ? '☑' : '☐') : (cell?.textContent.trim() || '—');
+        return check ? (check.checked ? '☑' : '☐') : (cell?.dataset.printValue ?? cell?.textContent.trim() ?? '—');
       })]) };
   };
   if (printable) {
     const printScope = node('select'); printScope.setAttribute('aria-label', `Checklist scope for ${label}`);
     for (const [value, title] of [['matched', 'Matching parts (all pages)'], ['all', 'All parts']]) { const option = node('option', title); option.value = value; printScope.append(option); }
     const printLabel = node('label'); printLabel.append(node('span', 'Checklist'), printScope);
-    const printButton = node('button', 'Print checklist'); printButton.type = 'button';
+    const printButton = node('button', 'Print checklist'); printButton.type = 'button'; printButton.style.minHeight = '44px';
     const printMessage = node('span'); printMessage.setAttribute('role', 'status');
     printButton.addEventListener('click', () => {
       const data = snapshot(printScope.value);
@@ -183,7 +183,11 @@ export function renderPartChecklist(doc, data) {
   if (data.notice) doc.body.append(make('p', data.notice));
   const table = make('table'), head = make('thead'), headers = make('tr'), body = make('tbody');
   for (const title of ['Done', ...data.columns]) { const th = make('th', title); th.scope = 'col'; headers.append(th); }
-  head.append(headers); table.append(head, body);
+  const columns = make('colgroup');
+  const weights = [6, ...data.columns.map((title,index) => Math.max(5, Math.min(36, data.rows.reduce((max,row) => Math.max(max,String(row[index] || '').length),title.length))) )];
+  const totalWeight = weights.reduce((sum,value) => sum+value,0);
+  for (const weight of weights) { const col=make('col'); col.style.width=`${100*weight/totalWeight}%`; columns.append(col); }
+  head.append(headers); table.append(columns, head, body);
   for (const values of data.rows) { const row = make('tr'); for (const value of ['☐', ...values]) row.append(make('td', value)); body.append(row); }
   doc.body.append(table);
 }

@@ -1,5 +1,5 @@
 **New**
-- Part tables can open full or matching printable checklists with project/revision context, stable part IDs and saved status marks, including matches across pages (#514).
+- Part tables can open full or matching printable checklists with project/revision context, stable part IDs and saved status marks, including matches across pages (#514). Numeric/status columns and headers retain legible widths; dense lists use landscape on the selected paper size.
 
 **Projects must change**
 - Opt in with the existing `enhancePartTable` API’s `printable` context; source tables, sorting and trackers remain compatible.

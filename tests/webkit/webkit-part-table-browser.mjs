@@ -41,7 +41,12 @@ try {
   }, {url:site.url+'/kit/part-table.js',data:await snap('all')});
   await printed.emulateMedia({media:'print'});
   for (const format of ['A4','Letter']) {
-    if(engine===chromium)await printed.pdf({path:`${out}/checklist-${format}.pdf`,format,printBackground:true});
+    const landscape=await printed.evaluate(()=>document.body.dataset.printOrientation==='landscape');
+    const paperWidth=(landscape?(format==='A4'?297:279.4):(format==='A4'?210:215.9))-24;
+    await printed.setViewportSize({width:Math.floor(paperWidth/25.4*96),height:900});
+    const compact=await printed.locator('th,td[data-print-kind=number],td[data-print-kind=status]').evaluateAll(cells=>cells.map(cell=>{const range=document.createRange();range.selectNodeContents(cell);const lines=[...range.getClientRects()],box=cell.getBoundingClientRect();return {text:cell.textContent,lines:lines.length,within:lines.every(line=>line.left>=box.left&&line.right<=box.right)};}));
+    assert.ok(compact.every(cell=>cell.lines===1&&cell.within),JSON.stringify(compact.filter(cell=>cell.lines!==1||!cell.within)));
+    if(engine===chromium)await printed.pdf({path:`${out}/checklist-${format}.pdf`,format,landscape,printBackground:true});
     const layout=await printed.evaluate(()=>({headers:getComputedStyle(document.querySelector('thead')).display,rows:[...document.querySelectorAll('tbody tr')].length,overflow:document.documentElement.scrollWidth>innerWidth}));
     assert.equal(layout.headers,'table-header-group');assert.equal(layout.rows,75);assert.equal(layout.overflow,false);
   }

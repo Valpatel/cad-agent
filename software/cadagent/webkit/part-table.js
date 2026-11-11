@@ -106,6 +106,8 @@ export function enhancePartTable(table, { label = table.caption?.textContent || 
     const columns = [...head.cells].map((th, index) => ({ index, label: buttons.find(item => item.index === index)?.title || th.textContent.trim() })).filter(col => head.cells[col.index].dataset.print !== 'omit');
     return { label, project: printable?.project || '', revision: printable?.revision || '', notice: printable?.notice || '', scope,
       total: rows.length, query: scope === 'matched' ? query : '', columns: ['Part ID', ...columns.map(col => col.label)],
+      columnTypes: ['text', ...columns.map(col => head.cells[col.index].classList.contains('cad-status-heading') ? 'status' :
+        buttons.find(item => item.index === col.index)?.type || (rows.some(row => row.cells[col.index]?.hasAttribute('data-sort-value')) ? 'number' : 'text'))],
       rows: selected.map(row => [row.dataset.partKey || row.dataset.partLabel || '', ...columns.map(col => {
         const cell = row.cells[col.index], check = cell?.querySelector('input[type=checkbox]');
         return check ? (check.checked ? '☑' : '☐') : (cell?.dataset.printValue ?? cell?.textContent.trim() ?? '—');
@@ -176,18 +178,26 @@ export function renderPartChecklist(doc, data) {
   doc.documentElement.lang = 'en'; doc.head.replaceChildren(); doc.body.replaceChildren();
   doc.head.append(make('title', `${data.label} · checklist`));
   const viewport = make('meta'); viewport.name = 'viewport'; viewport.content = 'width=device-width, initial-scale=1'; doc.head.append(viewport);
-  const style = make('style', `@page{margin:12mm}*{box-sizing:border-box}body{font:11pt/1.4 system-ui,sans-serif;color:#111;background:white;margin:20px}h1{font-size:20pt;margin-bottom:8px}p{overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt}th,td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}button{font:inherit;padding:10px;margin-bottom:12px}@media print{body{margin:0}button{display:none}}`); doc.head.append(style);
+  // Wide lists retain the chosen paper size but use landscape. Intrinsic compact
+  // widths keep whole numbers/short headers intact; names and IDs take the rest.
+  const landscape = data.columns.length + 1 >= 8;
+  doc.body.dataset.printOrientation = landscape ? 'landscape' : 'portrait';
+  const style = make('style', `@page{margin:12mm;${landscape ? 'size:landscape' : ''}}*{box-sizing:border-box}body{font:11pt/1.4 system-ui,sans-serif;color:#111;background:white;margin:20px}h1{font-size:20pt;margin-bottom:8px}p{overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:auto;font-size:9pt}th,td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{white-space:nowrap;overflow-wrap:normal}th[data-print-kind=number],td[data-print-kind=number],th[data-print-kind=status],td[data-print-kind=status]{white-space:nowrap;overflow-wrap:normal;width:1%}thead{display:table-header-group}tr{break-inside:avoid}button{font:inherit;padding:10px;margin-bottom:12px}@media print{body{margin:0}button{display:none}}`); doc.head.append(style);
   const print = make('button', 'Print / Save PDF'); print.type = 'button'; print.onclick = () => doc.defaultView.print();
   doc.body.append(print, make('h1', data.label), make('p', `${data.project || 'Project unspecified'} · Revision: ${data.revision || 'unavailable'}`),
     make('p', `${data.scope === 'all' ? 'All parts' : 'Matching parts, all pages'}: ${data.rows.length} of ${data.total}${data.query ? ` · Search: ${data.query}` : ''}`));
   if (data.notice) doc.body.append(make('p', data.notice));
   const table = make('table'), head = make('thead'), headers = make('tr'), body = make('tbody');
-  for (const title of ['Done', ...data.columns]) { const th = make('th', title); th.scope = 'col'; headers.append(th); }
-  const columns = make('colgroup');
-  const weights = [6, ...data.columns.map((title,index) => Math.max(5, Math.min(36, data.rows.reduce((max,row) => Math.max(max,String(row[index] || '').length),title.length))) )];
-  const totalWeight = weights.reduce((sum,value) => sum+value,0);
-  for (const weight of weights) { const col=make('col'); col.style.width=`${100*weight/totalWeight}%`; columns.append(col); }
-  head.append(headers); table.append(columns, head, body);
-  for (const values of data.rows) { const row = make('tr'); for (const value of ['☐', ...values]) row.append(make('td', value)); body.append(row); }
+  const kinds = ['status', ...data.columns.map((_,index) => {
+    if (['number','status'].includes(data.columnTypes?.[index])) return data.columnTypes[index];
+    return 'text';
+  })];
+  for (const [index,title] of ['Done', ...data.columns].entries()) { const th = make('th', title); th.scope = 'col'; th.dataset.printKind=kinds[index]; headers.append(th); }
+  head.append(headers); table.append(head, body);
+  for (const values of data.rows) {
+    const row = make('tr');
+    for (const [index,value] of ['☐', ...values].entries()) { const cell=make('td', value); cell.dataset.printKind=kinds[index]; row.append(cell); }
+    body.append(row);
+  }
   doc.body.append(table);
 }

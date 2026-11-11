@@ -1,6 +1,6 @@
 {
   "name": "cad-agent",
-  "version": "0.34.5",
+  "version": "0.34.6",
   "description": "Mechanical design workflows and independent review agents",
   "license": "MIT",
   "skills": ["./.agents/skills/"],

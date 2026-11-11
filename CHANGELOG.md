@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.34.6 (2026-11-11)
+
+**New**
+- Bounded Smooth-On readings on mould-material selection and bubble investigation, with product-specific limits and unresolved equipment/source conflicts.
+
 ## v0.34.5 (2026-11-11)
 
 **New**

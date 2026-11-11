@@ -229,6 +229,71 @@ def test_joint_cut_and_poses(tmp_path):
     assert hi["fit"]["min"][2] < views["pose-I-arm-min"]["fit"]["min"][2]
 
 
+def _linkage_record():
+    """The demo record with two joints that follow I-arm: the far block riding on the arm, turned back by the
+    arm's angle so that it keeps its attitude, and the balls beside it on the base, turning half as far the other
+    way. Neither is in the arm's section."""
+    rec = record()
+    rec["joints"]["I-far"] = {"kind": "revolute", "moving": "far", "fixed": "arm", "range": [-40, 0], "unit": "deg",
+                              "axis": {"origin": [505, 505, 5], "direction": [0, 1, 0]}, "intended_contacts": [],
+                              "follows": {"joint": "I-arm", "multiplier": -1.0, "offset": 0.0}}
+    rec["joints"]["I-ball"] = {"kind": "revolute", "moving": "ball", "fixed": "base", "range": None, "unit": "deg",
+                               "axis": {"origin": [30, 25, 13], "direction": [0, 1, 0]}, "intended_contacts": [],
+                               "follows": {"joint": "I-arm", "multiplier": -0.5, "offset": 0.0}}
+    return rec
+
+
+def test_a_driven_joint_is_posed_with_its_driver_and_never_alone(tmp_path):
+    m = plan(tmp_path, "S2", rec=_linkage_record())
+    views = {v["id"]: v for v in m["views"]}
+    assert not any(v.startswith(("pose-I-far", "pose-I-ball", "cut-joint-I-ball")) for v in views)
+    hi = views["pose-I-arm-max"]
+    # innermost first: the far block turns on the arm, then the arm carries it; the balls turn on the base
+    assert [(mv["interface"], mv["value"], mv["unit"], mv["keys"]) for mv in hi["pose"]["moves"]] == [
+        ("I-far", -40.0, "deg", ["far"]), ("I-arm", 40, "deg", ["arm", "far"]),
+        ("I-ball", -20.0, "deg", ["ball#0", "ball#1"])]
+    assert hi["pose"]["keys"] == ["arm", "ball#0", "ball#1", "far"] and hi["pose"]["value"] == 40
+    assert hi["caption"].endswith(": I-arm at 40 deg (max of range), with I-far at -40 deg, I-ball at -20 deg")
+    assert "the ratio is declared, not solved" in hi["note"]
+    assert [mv["value"] for mv in views["pose-I-arm-min"]["pose"]["moves"]] == [0.0, 0, 0.0]
+    why = {n["what"]: n["why"] for n in m["not_rendered"]}
+    assert why["poses of joint I-far"] == "it follows joint I-arm and is drawn at its driven value in the poses of I-arm"
+    assert "cut-joint-I-far" in views                       # its axis is still cut where its fixed part is ours
+    # kernel-free framing: the far block, turned back on its own pin and carried 40 deg about +Y round the arm's
+    # pivot (60, ., 10), arrives level
+    lo, hi_ = pk._pose_box(((500, 500, 0), (510, 510, 10)), None, None, 0, None, None, "max", hi["pose"]["moves"], "far")
+    c, s = math.cos(math.radians(40)), math.sin(math.radians(40))
+    assert (hi_[0] - lo[0], hi_[2] - lo[2]) == pytest.approx((10, 10))
+    assert ((lo[0] + hi_[0]) / 2, (lo[2] + hi_[2]) / 2) == pytest.approx((60 + 445 * c - 5 * s, 10 - 445 * s - 5 * c))
+    assert hi["fit"]["min"][2] < -200                       # and the view is framed to hold it there
+    # a section that holds only a follower gets its driver's poses, and no cut of an axis that is not its own
+    for section, cut in (("S0", "cut-joint-I-far"), ("S1", "cut-joint-I-ball")):
+        other = {v["id"]: v for v in plan(tmp_path, section, rec=_linkage_record())["views"]}
+        assert {cut, "pose-I-arm-min", "pose-I-arm-max"} <= set(other) and "cut-joint-I-arm" not in other
+    # without driven joints the plan is what it was: no moves, the same keys and title
+    plain = {v["id"]: v for v in plan(tmp_path, "S2")["views"]}["pose-I-arm-max"]
+    assert "moves" not in plain["pose"] and plain["pose"]["keys"] == ["arm"]
+    assert plain["caption"].endswith(": I-arm at 40 deg (max of range)")
+
+
+def test_a_pose_with_driven_joints_moves_each_shape_through_its_chain():
+    cq = pytest.importorskip("cadquery")
+    moves = [{"interface": "I-lid", "value": -90.0, "unit": "deg", "keys": ["lid"],
+              "axis": {"origin": [10, 0, 0], "direction": [0, 1, 0]}},
+             {"interface": "I-arm", "value": 90, "unit": "deg", "keys": ["arm", "lid"],
+              "axis": {"origin": [0, 0, 0], "direction": [0, 1, 0]}},
+             {"interface": "I-slide", "value": 7.0, "unit": "mm", "keys": ["far"],
+              "axis": {"origin": [0, 0, 0], "direction": [0, 0, 2]}}]
+    pose = {"moves": moves, "keys": ["arm", "far", "lid"]}
+    box = cq.Solid.makeBox(2, 2, 2, cq.Vector(10, 0, 0))
+    centre = lambda shape: tuple(round(c, 6) for c in shape.Center().toTuple())
+    # +90 deg about +Y carries (10, ., 0) to (0, ., -10); the lid, turned back on its own pin first, arrives as a
+    # pure translation of where it started (centre (11, 1, 1) -> (1, 1, -9)), the arm's own shape arrives turned
+    assert centre(pk._posed(box, pose, "lid")) == (1.0, 1.0, -9.0)
+    assert centre(pk._posed(box, pose, "arm")) == (1.0, 1.0, -11.0)
+    assert centre(pk._posed(box, pose, "far")) == (11.0, 1.0, 8.0)
+    assert centre(pk._posed(box, pose, "base")) == (11.0, 1.0, 1.0)
+
 def test_exploded_offsets_follow_the_steps(tmp_path):
     m = plan(tmp_path)
     off = next(v for v in m["views"] if v["id"] == "exploded")["offsets"]

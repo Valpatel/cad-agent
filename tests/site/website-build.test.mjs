@@ -642,7 +642,12 @@ test('every local image has its width and height, so nothing jumps while it load
 test('diagrams in files agents load leave the palette to the site', async () => {
   const sources = selectPages(git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean))
     .filter(p => ['skills', 'agents'].includes(p.section.id)).map(p => p.file);
-  assert.equal(sources.length, 10, 'all eight canonical skills and two roles must reach the palette consumer');
+  assert.deepEqual(new Set(sources), new Set([
+    ...['cad-motion-validation', 'cad-pr-review', 'cad-remote-runs', 'cad-supply-chain', 'cad-work-tracking',
+      'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware']
+      .map(name => `.agents/skills/${name}/SKILL.md`),
+    '.agents/agents/cad-pr-reviewer.md', '.agents/agents/cad-resume.md',
+  ]), 'the exact canonical skills and roles must reach the palette consumer');
   let drawn = 0;
   for (const f of sources) {
     const md = git('show', `HEAD:${f}`);

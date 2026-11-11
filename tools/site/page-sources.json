@@ -288,6 +288,10 @@
       "public": "skills/mcmaster-parts/SKILL.md"
     },
     {
+      "source": ".agents/skills/pem-fastener-selection/SKILL.md",
+      "public": "skills/pem-fastener-selection/SKILL.md"
+    },
+    {
       "source": ".agents/skills/sheet-metal-hardware/SKILL.md",
       "public": "skills/sheet-metal-hardware/SKILL.md"
     },

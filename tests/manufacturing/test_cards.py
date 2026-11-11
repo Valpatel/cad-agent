@@ -425,3 +425,56 @@ def test_json_is_the_same_card(capsys):
         [ln["rule"] for ln in cards.card("insert-hole", process="fdm", material="petg-cf")["lines"]]
     code, out, _ = _run(SAMPLES["choose-joining-fdm-petg-200n-50"] + ["--json"], capsys)
     assert code == 0 and strict(out)["choice"] == "heat-set-insert"
+
+
+def test_pem_micro_standoff_worked_shield_screen_and_tolerance_controls():
+    """CE printed pp.12/19: distinguish cold-flow and flaring standard M2 geometry.
+
+    This screens dimensional intervals only; it does not produce a strength or
+    installation pass. The same nominal part can fail when its tolerance grows.
+    """
+    profile = pp.profile("sheet-metal")
+
+    def rejected(family, dimensions):
+        failures = set()
+        for feature, (actual_min, actual_max) in dimensions.items():
+            limit = profile.verified_rule(f"sm-pem-{family}-m2-{feature}").limit()
+            if ((limit.min is not None and actual_min < limit.min)
+                    or (limit.max is not None and actual_max > limit.max)):
+                failures.add(feature)
+        return failures
+
+    shield = dict(sheet=(0.23, 0.27), hole=(3.51, 3.53), edge=(2.45, 2.55))
+    assert rejected("mso4", shield) == {"sheet", "hole", "edge"}
+    assert rejected("msofs", shield) == set()  # candidate geometry, still unqualified
+    assert rejected("msofs", {**shield, "sheet": (0.19, 0.31)}) == {"sheet"}
+    assert rejected("msofs", {**shield, "hole": (3.49, 3.56)}) == {"hole"}
+    assert rejected("msofs", {**shield, "edge": (1.99, 2.09)}) == {"edge"}
+    # Correct clinch geometry does not become flaring geometry by sharing M2.
+    clinch = dict(sheet=(0.31, 0.35), hole=(3.19, 3.21), edge=(3.05, 3.15))
+    assert rejected("mso4", clinch) == set()
+    assert rejected("msofs", clinch) == {"sheet", "hole"}
+
+
+def test_pem_cards_keep_families_and_printed_materials_separate():
+    for family in ("mso4", "msofs"):
+        name = f"pem-{family}-m2"
+        card = cards.card(name, process="sheet-metal")
+        rendered = cards.render_card(card)
+        canonical = "pem-consumer-electronics-design-guide-2021"
+        # The short display key must still identify this exact read manufacturer source.
+        emitted = cards.REF.findall(rendered)
+        assert emitted == ["pem-ce-guide-2021"] * 3
+        reg = cards.registry()
+        assert all(reg.resolve(key).id == canonical and reg.resolve(key).kind == "source" for key in emitted)
+        assert reg.resolve(emitted[0]).data["evidence"]["class"] == "read"
+        assert {row["rule"] for row in card["lines"]} == {
+            f"sm-pem-{family}-m2-{feature}" for feature in ("sheet", "hole", "edge")
+        }
+        assert len(card["lines"]) == 3
+        assert all(row["source"] == canonical and row["confidence"] == "low" for row in card["lines"])
+        assert rendered.count("conf low") == 3 and "geometry screening only" in rendered
+        assert f"sm-pem-{'msofs' if family == 'mso4' else 'mso4'}" not in rendered
+        # A process filter must not publish these sheet dimensions as FDM rules.
+        polymer = cards.card(name, process="fdm", material="petg")
+        assert "sm-pem-" not in cards.render_card(polymer)

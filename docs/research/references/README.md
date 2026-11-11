@@ -133,7 +133,7 @@ flowchart TD
 
 One process group (or one area) per PR. The first, threaded inserts (#323 phase 7), is the pattern.
 
-1. **List the records.** Take every non-project record whose `processes`, `process_groups` or `areas` name the group,
+1. **List the records.** Search the complete core and shards by exact URL, title and aliases before treating a document as new; preserve earlier dated reading scopes on the existing source. Take every non-project record whose `processes`, `process_groups` or `areas` name the group,
    core entries included, and save the list with each record's `url` and claims.
 2. **Fetch at the source.** Use the real page or PDF, never the snippet. Make at most 1 request a second per host,
    honour `robots.txt`, and give up on a 403 or 429 after one later retry. Keep the downloads in a scratch folder
@@ -179,6 +179,7 @@ One process group (or one area) per PR. The first, threaded inserts (#323 phase 
 - One id across the core file and every shard. An id in two files is a problem, unless the shard's record says
   `extends: true`.
 - A shard holds at most 150 records and 150 KB. Past either, split it by topic slug.
+- One exact PDF URL across the effective read/catalogued entries has one canonical source identity. Reuse aliases or `extends: true` for deeper readings; the checker does not normalize URLs, compare editions or discover mirrors.
 - Every vocabulary value and every area slug resolves. The licence class decides geometry reuse. The ladder's rules
   hold, and a stored `confidence` equals the derived one.
 

@@ -5568,15 +5568,18 @@ rules:
     quantity: approximate outward build-up per treated face; D total oxide thickness
     value: D/3
     units: mm
-    applies: Type II planning estimate only; finisher agrees allowance; OMW pp.2–3
+    applies: Aluminium only; Type II planning estimate only; finisher agrees allowance; OMW pp.2–3
     source: omw-corp-understanding-and-specifying-anodizing
     status: read
     verified: '2026-11-11'
-    when: Type II planning estimate only; finisher agrees allowance; OMW pp.2–3
-    not_when: Etch loss, masked face or supplier-specific allowance; not a tolerance guarantee
+    when: Aluminium only; Type II planning estimate only; finisher agrees allowance; OMW pp.2–3
+    not_when: Other materials; Etch loss, masked face or supplier-specific allowance; not a tolerance guarantee
     strictness: guideline
     wiggle: Approximate value only; min/max deliberately unset; confirm with finisher
     cost: Masking and functional-dimension inspection
+    materials:
+    - aluminium
+    - aluminum
 
   - id: cnc-anodize-iii-outward-omw
     process: cnc
@@ -5584,15 +5587,18 @@ rules:
     quantity: approximate outward build-up per treated face; D total oxide thickness
     value: D/2
     units: mm
-    applies: Type III planning estimate only; finisher agrees allowance; OMW pp.2–3
+    applies: Aluminium only; Type III planning estimate only; finisher agrees allowance; OMW pp.2–3
     source: omw-corp-understanding-and-specifying-anodizing
     status: read
     verified: '2026-11-11'
-    when: Type III planning estimate only; finisher agrees allowance; OMW pp.2–3
-    not_when: Etch loss, masked face or supplier-specific allowance; not a tolerance guarantee
+    when: Aluminium only; Type III planning estimate only; finisher agrees allowance; OMW pp.2–3
+    not_when: Other materials; Etch loss, masked face or supplier-specific allowance; not a tolerance guarantee
     strictness: guideline
     wiggle: Approximate value only; min/max deliberately unset; confirm with finisher
     cost: Masking and functional-dimension inspection
+    materials:
+    - aluminium
+    - aluminum
 
   - id: cnc-bearing-6203-example-shaft
     process: cnc

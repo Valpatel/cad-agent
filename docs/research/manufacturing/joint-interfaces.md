@@ -14,13 +14,13 @@ flowchart TD
 
 protect the functional dimensions
 
-OMW's guide distinguishes oxide-layer thickness from the portion projecting beyond the original surface (PDF pp.2–3). A coating-thickness reading alone does not establish the dimensional buildup. Its approximate outward fractions are one third for Type II and one half for Type III; pretreatment can remove material, and local thickness varies (pp.3–4). Use the anodizer's agreed allowance and inspection plan for precision fits rather than treating either fraction as a guaranteed conversion.
+OMW's aluminium-anodizing guide distinguishes oxide-layer thickness from the portion projecting beyond the original surface (PDF pp.2–3). A coating-thickness reading alone does not establish the dimensional buildup. Its approximate outward fractions are one third for Type II and one half for Type III; pretreatment can remove material, and local thickness varies (pp.3–4). Use the anodizer's agreed allowance and inspection plan for precision fits rather than treating either fraction as a guaranteed conversion.
 
 For drawing review, identify tight holes, fine threads and sliding interfaces, then decide which features require masking. Show acceptable rack-contact locations and process the components before assembly unless the finisher approves a different route (pp.3,10–11). The document's Type II/III and Class 1/2 examples describe a 2014 guide; verify the current governing specification and revision with the supplier. The guide does not establish the latest revision of MIL-A-8625 or its successors.
 
 A **derived arithmetic illustration**, not a measured result: assume the finisher agrees a Type III layer thickness of 0.002 inch and outward buildup of exactly half. Each treated wall projects 0.001 inch = 0.0254 mm. Two opposed outside surfaces increase their span by 0.0508 mm; a bore coated on both sides loses 0.0508 mm of diameter. An initially 10.0000 mm bore would become 9.9492 mm under these assumptions. Masked walls must not receive this modeled allowance. Etching, process scatter and dimensional tolerances still require separate agreement.
 
-For a finisher-confirmed planning scenario, run `cad-agent rules anodize-planning-growth --process cnc`. Its values are approximate assumptions, with no min/max pass limits.
+For a finisher-confirmed planning scenario, run `cad-agent rules anodize-planning-growth --process cnc --material aluminium`. Its values are approximate assumptions, with no min/max pass limits.
 
 Negative review controls: reject a calculation that uses the full oxide thickness as outward buildup, changes a bore in the outside-growth direction, applies a two-wall allowance to only one treated surface, or silently treats the illustrative half-growth value as a universal Type II value. OMW's corner sketch on p.10 recommends relieving very sharp corners (it quotes 0.015 inch); treat that as supplier guidance requiring confirmation, not a universal minimum-radius check.
 

@@ -565,6 +565,11 @@ def test_anodize_planning_values_are_not_dimensional_pass_limits():
     assert after(2) != pytest.approx(10.0 - 2 * .0508)  # whole oxide thickness is not outward growth
     text = cards.render_card(cards.card("anodize-planning-growth", process="cnc"))
     assert "planning estimate" in text and "confirm with finisher" in text and "masked" in text
+    for material in ("aluminium", "aluminum"):
+        assert len(cards.card("anodize-planning-growth", process="cnc", material=material)["lines"]) == 2
+    for material in ("steel", "magnesium", "polymer"):
+        assert cards.card("anodize-planning-growth", process="cnc", material=material)["lines"] == []
+    assert "Aluminium only" in text
 
 
 def test_general_bearing_6203_example_uses_inch_deviations_not_a_generic_fit_selector():

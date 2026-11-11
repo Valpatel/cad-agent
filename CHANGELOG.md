@@ -9,6 +9,19 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.36.0 (2026-11-11)
+
+**New**
+- Add a sourced PEM and microPEM family-selection skill, a deeper reading of the existing PEM overview and a new consumer-electronics guide reading, and separate M2 self-clinching/flaring geometry cards with a tolerance-screening example and explicit qualification limits.
+- Reject separate reference identities sharing one exact PDF URL; retain aliases and dated reading scopes on the canonical source.
+- Part tables can open full or matching printable checklists with project/revision context, stable part IDs and saved status marks, including matches across pages (#514). Plain numbers/status marks retain whole tokens; annotated procurement values wrap and long supporting notes stay grouped beneath their part; dense lists use landscape on the selected paper size.
+
+**Fixed**
+- Full CI provisioning prefers a registered HTTPS Ubuntu mirror outside Canonical's DNS during an outage, retaining Canonical fallbacks, Ubuntu archive signature checks, dependency packages and all required tests (#576).
+
+**Projects must change**
+- Opt in with the existing `enhancePartTable` API’s `printable` context; source tables, sorting and trackers remain compatible.
+
 ## v0.35.0 (2026-11-11)
 
 **Fixed**

@@ -5267,6 +5267,106 @@ rules:
 # ================================================================== cards and decisions (#323 phase 7b)
 # A card is a feature's rules (`cad-agent rules <feature>`), or one of these, which gather rules across features by
 # their `cards:` field. Each name here is only a title; the lines come from the rules.
+  - id: sm-pem-mso4-m2-sheet
+    process: sheet-metal
+    feature: pem-mso4-m2
+    quantity: minimum sheet thickness
+    min: 0.3
+    units: mm
+    applies: PEM MSO4 M2 metric row, length codes 2 and 3; CE guide printed p.12
+    source: pem-consumer-electronics-design-guide-2021
+    status: read
+    verified: 2026-11-11
+    when: Exact listed standard family and metric thread; geometry screening only
+    not_when: Other families, sizes, custom parts or printed polymer; no strength qualification
+    strictness: guideline
+    wiggle: No extrapolation beyond the table; confirm the current exact drawing
+    cost: Different hole preparation and installation tooling for each family
+  - id: sm-pem-mso4-m2-hole
+    process: sheet-metal
+    feature: pem-mso4-m2
+    quantity: mounting hole diameter
+    min: 3.18
+    max: 3.23
+    window: true
+    units: mm
+    applies: PEM MSO4 M2 metric row, length codes 2 and 3; CE guide printed p.12
+    source: pem-consumer-electronics-design-guide-2021
+    status: read
+    verified: 2026-11-11
+    when: Exact listed standard family and metric thread; geometry screening only
+    not_when: Other families, sizes, custom parts or printed polymer; no strength qualification
+    strictness: guideline
+    wiggle: No extrapolation beyond the table; confirm the current exact drawing
+    cost: Different hole preparation and installation tooling for each family
+  - id: sm-pem-mso4-m2-edge
+    process: sheet-metal
+    feature: pem-mso4-m2
+    quantity: hole center to sheet edge
+    min: 3
+    units: mm
+    applies: PEM MSO4 M2 metric row, length codes 2 and 3; CE guide printed p.12
+    source: pem-consumer-electronics-design-guide-2021
+    status: read
+    verified: 2026-11-11
+    when: Exact listed standard family and metric thread; geometry screening only
+    not_when: Other families, sizes, custom parts or printed polymer; no strength qualification
+    strictness: guideline
+    wiggle: No extrapolation beyond the table; confirm the current exact drawing
+    cost: Different hole preparation and installation tooling for each family
+  - id: sm-pem-msofs-m2-sheet
+    process: sheet-metal
+    feature: pem-msofs-m2
+    quantity: standard sheet thickness window
+    min: 0.2
+    max: 0.3
+    window: true
+    units: mm
+    applies: PEM MSOFS M2 metric row, length codes 2 and 3; CE guide printed p.19
+    source: pem-consumer-electronics-design-guide-2021
+    status: read
+    verified: 2026-11-11
+    when: Exact listed standard family and metric thread; geometry screening only
+    not_when: Other families, sizes, custom parts or printed polymer; no strength qualification
+    strictness: guideline
+    wiggle: No extrapolation beyond the table; confirm the current exact drawing
+    cost: Different hole preparation and installation tooling for each family
+    note: The p.19 headline says no minimum sheet thickness; this row retains the standard metric table window.
+  - id: sm-pem-msofs-m2-hole
+    process: sheet-metal
+    feature: pem-msofs-m2
+    quantity: mounting hole diameter
+    min: 3.5
+    max: 3.55
+    window: true
+    units: mm
+    applies: PEM MSOFS M2 metric row, length codes 2 and 3; CE guide printed p.19
+    source: pem-consumer-electronics-design-guide-2021
+    status: read
+    verified: 2026-11-11
+    when: Exact listed standard family and metric thread; geometry screening only
+    not_when: Other families, sizes, custom parts or printed polymer; no strength qualification
+    strictness: guideline
+    wiggle: No extrapolation beyond the table; confirm the current exact drawing
+    cost: Different hole preparation and installation tooling for each family
+    note: The p.19 headline says no minimum sheet thickness; this row retains the standard metric table window.
+  - id: sm-pem-msofs-m2-edge
+    process: sheet-metal
+    feature: pem-msofs-m2
+    quantity: hole center to sheet edge
+    min: 2
+    units: mm
+    applies: PEM MSOFS M2 metric row, length codes 2 and 3; CE guide printed p.19
+    source: pem-consumer-electronics-design-guide-2021
+    status: read
+    verified: 2026-11-11
+    when: Exact listed standard family and metric thread; geometry screening only
+    not_when: Other families, sizes, custom parts or printed polymer; no strength qualification
+    strictness: guideline
+    wiggle: No extrapolation beyond the table; confirm the current exact drawing
+    cost: Different hole preparation and installation tooling for each family
+    note: The p.19 headline says no minimum sheet thickness; this row retains the standard metric table window.
+
 cards:
   insert-hole: the hole a heat-set insert goes in (draw it with printed-hole)
   printed-hole: drawing a hole so it prints to size (undersize, track and mesh)

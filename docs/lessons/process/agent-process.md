@@ -232,3 +232,22 @@ See [pytest's thread-dump contract](https://docs.pytest.org/en/stable/how-to/fai
   interrupted stages are never counted as passes.
 
 </details>
+
+
+## Correct a failing CI mirror before retrying the same provisioning path
+
+The [2026-11-11 incident](../../../.agents/inbox/2026-11-11-ci-apt-timeouts-need-source-correction.md)
+retains the failed full CI log, runner image contract, cause and controls. A
+provisioning timeout before imports/tests cannot establish feature correctness.
+
+**Rule:** classify the failed phase using the actual log and correct the source
+path before collecting new normal CI evidence; never call a provisioning timeout
+a passed feature test or bypass the required job. The narrow helper removes the
+exact stalled Azure HTTP mirror entry with a registered independent HTTPS mirror,
+requires the runner's existing Canonical HTTPS archive and preserves source/signature settings, dependencies and all
+existing failure conditions. Unknown layouts fail closed.
+
+This correction is specific to the hosted Ubuntu mirror-list layout. It does not
+establish runner network health or promise that Canonical endpoints cannot fail.
+The regression harness is `tests/repo/test_ci_apt_mirror.py`; full and browser CI
+remain mandatory independently of its local fixture checks.

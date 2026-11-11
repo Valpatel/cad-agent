@@ -1436,7 +1436,7 @@ def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_subst
     root = checkout(tmp_path)
     expected = {
         "skill:cad-motion-validation", "skill:cad-pr-review", "skill:cad-remote-runs", "skill:cad-supply-chain",
-        "skill:cad-work-tracking", "skill:design-process", "skill:mcmaster-parts", "skill:sheet-metal-hardware",
+        "skill:cad-work-tracking", "skill:design-process", "skill:mcmaster-parts", "skill:pem-fastener-selection", "skill:sheet-metal-hardware",
         "agent:cad-pr-reviewer", "agent:cad-resume",
     }
     def own():
@@ -1448,7 +1448,7 @@ def test_agent_kit_inventory_has_exact_current_nonempty_names_and_no_stale_subst
     assert all(row["file"].startswith(".agents/") for row in rows.values())
     write(root, '.agents/agents/README.md', '# Roles\n\n```sh\nnpx example-unpinned-tool\n```\n')
     rep, mapped = own()
-    assert set(mapped) == expected  # The human map is not an eleventh skill/role.
+    assert set(mapped) == expected  # The human map is not another skill/role.
     assert any(f['subject'] == 'doc:.agents/agents/README.md' for f in rep.findings), \
         'the map must still receive install-advice auditing'
     for row in rows.values():

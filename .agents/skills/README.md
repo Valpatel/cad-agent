@@ -22,6 +22,7 @@ flowchart TD
 | Diagnose moving parts, pivots and coordinate frames | [cad-motion-validation](cad-motion-validation/README.md) · [Instructions](cad-motion-validation/SKILL.md) |
 | Select real bought hardware and its CAD | [mcmaster-parts](mcmaster-parts/README.md) · [Instructions](mcmaster-parts/SKILL.md) |
 | Check clinch hardware and riveted sheet-metal joints | [sheet-metal-hardware](sheet-metal-hardware/README.md) · [Instructions](sheet-metal-hardware/SKILL.md) |
+| Choose a PEM attachment family and qualification plan | [pem-fastener-selection](pem-fastener-selection/README.md) · [Instructions](pem-fastener-selection/SKILL.md) |
 | Audit dependencies, upstreams and resource safety | [cad-supply-chain](cad-supply-chain/README.md) · [Instructions](cad-supply-chain/SKILL.md) |
 | Keep maintainer work recoverable | [cad-work-tracking](cad-work-tracking/README.md) · [Instructions](cad-work-tracking/SKILL.md) |
 | Obtain independent review and answer findings | [cad-pr-review](cad-pr-review/README.md) · [Instructions](cad-pr-review/SKILL.md) |

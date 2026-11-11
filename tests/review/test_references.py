@@ -103,6 +103,19 @@ def test_lookup_resolves_ids_and_aliases(registry):
         registry.resolve("covestro-snapfi")
 
 
+def test_pem_overview_reading_has_one_identity_and_retains_both_scopes(registry):
+    canonical = registry.resolve("pem-fastener-guide")
+    assert canonical.kind == "source"
+    for key in ("pem-design-engineers-fastener-guide-2022", "pem-fastener-guide-2022"):
+        assert registry.resolve(key) is canonical
+    assert "2026-11-01:" in canonical["verified"] and "skimmed" in canonical["verified"]
+    assert "2026-11-11:" in canonical["verified"] and "all 20 PDF pages" in canonical["verified"]
+    assert [ref.id for ref in registry.entries.values() if ref.data.get("url") == canonical["url"]] == [canonical.id]
+    assert {"docs/research/manufacturing/sheet-metal-guides.md",
+            "docs/research/manufacturing/pem-micro-fasteners.md"} <= set(canonical["used_for"])
+    assert canonical.evidence_class == "read"  # More reading is not independent validation.
+
+
 def test_a_citation_names_the_people_and_the_link(registry):
     roark = registry.resolve("roark").citation()
     assert roark.startswith("Warren C. Young, Richard G. Budynas, Ali M. Sadegh, Roark's Formulas")
@@ -347,6 +360,22 @@ def test_an_id_in_two_files_is_reported(tmp_path):
     assert "maker-insert-guide: in docs/research/references/guides-b.yaml and in docs/research/references/guides-a.yaml" in problems
     assert "good-guide: in docs/research/references/guides-c.yaml and in docs/research/references.yaml" in problems
     assert "write `extends: true`" in problems
+
+
+def test_duplicate_exact_pdf_identity_is_refused_but_an_extension_preserves_one_source(tmp_path):
+    url = "https://example.org/design-guide.pdf"
+    core = {**GOOD, "url": url}
+    duplicate = {**GUIDE, "url": url}
+    root = _planted2(tmp_path / "duplicate", {"guides-inserts": _shard([duplicate])}, sources=(core,))
+    problems = "\n".join(_problems(root))
+    assert "good-guide, maker-insert-guide: same exact PDF URL" in problems
+    # Reconcile a deeper reading into the same source; aliases do not add a document.
+    ext = {"id": "good-guide", "extends": True, "aliases": ["maker-insert-guide"], "kind": "guide"}
+    root = _planted2(tmp_path / "extended", {"guides-inserts": _shard([ext])}, sources=(core,))
+    reg = load(root / "docs/research/references.yaml")
+    assert not reg.problems(root)
+    assert reg.resolve("maker-insert-guide") is reg.resolve("good-guide")
+    assert len(reg.of_kind("source")) == 1
 
 
 def test_extends_adds_schema2_fields_to_a_core_entry(tmp_path):

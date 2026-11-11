@@ -47,3 +47,11 @@ The first published-lesson placement at `774adea1` caused a separate whole-page 
 and diagram consumers passed; they did not cover that reading budget. The complete new reference lesson is now
 inside a named disclosure, preserving its heading/link target, rule, checks and evidence. Folding reference text
 is a content correction; the wall threshold and its existing consumer remain unchanged.
+
+## Long citation labels must reflow without losing identity
+
+2026-11-11, #595/#596: the actual `/research/process-profiles` route at 320 px had document scrollWidth 474 px. A clipped-ancestor-aware DOM inspection identified the existing Bossard canonical citation as the uncontained 455.7 px inline span, not the locally scrollable tables. A clean detached dev `22033f13` build reproduced the same 474 px width and exact citation. The new two-source notes did not cause that pre-existing overflow.
+
+Cause: `.ref-cite` forced every complete canonical label onto one line. Correction: allow that existing component to wrap only at phone widths, preserving its full label, record/source links and desktop appearance. No source text, numeric value or reading-wall threshold changes. The ordinary site browser harness checks 320 px light/dark, exact identity and links, desktop one-line layout, and a planted former-nowrap style that must re-expose the overflow.
+
+Limits: this is a citation-component containment fix, not a general table/layout redesign or new source promotion. The related Stratasys batch remains exactly two existing records. Fresh normal Chromium/WebKit CI and independent review still apply.

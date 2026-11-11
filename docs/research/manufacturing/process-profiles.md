@@ -377,6 +377,17 @@ From Protolabs Network:
 
 Keep this nylon-service guidance separate from MJF. Its tolerance conflict must remain visible even where two formulas happen to produce the same small-part value. [ref:sd-sls-2023]
 
+```mermaid
+flowchart TD
+    A["SLS tolerance question"] --> B["p.3: 0.002 inch per inch"]
+    A --> C["p.10: 0.003 inch per inch"]
+    B --> D["Unresolved: ask the supplier"]
+    C --> D
+    E["Bonded lap example"] --> F["Overlap and adhesive gap only"]
+```
+
+*Original source-review diagram: keep the two printed tolerance observations unresolved, and keep bonded-lap arithmetic separate from moving clearance or load capacity.*
+
 <details>
 <summary>Conflicting tolerance slopes, lap-joint scope and SLS examples</summary>
 

@@ -80,3 +80,42 @@ export function plantedStretches(selector, longestStretch) {
 
 /** The expression page.evaluate runs for plantedStretches, with longestStretch passed in. */
 export const plantedScript = () => `(${plantedStretches})(${JSON.stringify(VISUAL)}, ${longestStretch})`;
+
+/** A real long citation must reflow on a phone without shortening the source identity or losing its links. */
+export async function longCitationProblems(browser, base) {
+  const out = [], id = 'bossard-fastening-technology-self-tapping-screws-for-plastic';
+  for (const colorScheme of ['light', 'dark']) {
+    const page = await browser.newPage({ viewport: { width: 320, height: 800 }, colorScheme });
+    try {
+      await page.goto(base + '/research/process-profiles', { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      const link = page.locator('.ref-key').filter({ hasText: id });
+      if (await link.count() !== 1 || await link.textContent() !== id) {
+        out.push(`320px ${colorScheme}: long canonical citation missing or shortened`);
+        continue;
+      }
+      const state = await link.evaluate(a => ({
+        overflow: document.documentElement.scrollWidth > innerWidth + 1,
+        lines: a.getClientRects().length,
+        href: a.getAttribute('href'),
+        source: a.parentElement.querySelector('.ref-out')?.getAttribute('href'),
+      }));
+      if (state.overflow || state.lines < 2) out.push(`320px ${colorScheme}: long citation does not wrap within the page`);
+      if (!state.href?.endsWith('#' + id) || !state.source?.startsWith('https://'))
+        out.push(`320px ${colorScheme}: citation lost its record/source link`);
+      // Negative control: recreate the former component style and require this fixture to expose it.
+      const catchesOldStyle = await link.evaluate(a => {
+        const cite = a.parentElement, old = cite.style.whiteSpace;
+        cite.style.whiteSpace = 'nowrap';
+        const overflow = document.documentElement.scrollWidth > innerWidth + 1;
+        cite.style.whiteSpace = old;
+        return overflow;
+      });
+      if (!catchesOldStyle) out.push(`320px ${colorScheme}: long-citation fixture no longer detects the old nowrap defect`);
+      await page.setViewportSize({ width: 1366, height: 800 });
+      if (await link.evaluate(a => a.getClientRects().length) !== 1)
+        out.push(`1366px ${colorScheme}: desktop citation no longer stays on one line`);
+    } finally { await page.close(); }
+  }
+  return out;
+}

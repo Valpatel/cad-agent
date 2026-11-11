@@ -386,11 +386,9 @@ Keep this nylon-service guidance separate from MJF. Its tolerance conflict must 
 
 ```mermaid
 flowchart TD
-    A["SLS tolerance question"] --> B["p.3: 0.002 inch per inch"]
-    A --> C["p.10: 0.003 inch per inch"]
-    B --> D["Unresolved: ask the supplier"]
-    C --> D
-    E["Bonded lap example"] --> F["Overlap and adhesive gap only"]
+    A["SLS tolerance question<br/>p.3 versus p.10"] --> B["0.002 versus 0.003 inch/inch<br/>Unresolved: ask the supplier"]
+    B ~~~ C["Separate bonded-lap example"]
+    C --> D["Overlap and adhesive gap only<br/>No motion or load prediction"]
 ```
 
 *Original source-review diagram: keep the two printed tolerance observations unresolved, and keep bonded-lap arithmetic separate from moving clearance or load capacity.*

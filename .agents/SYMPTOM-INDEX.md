@@ -2,7 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
-| A full procurement BOM retains every ID but prints hundreds of pages with one-character name columns | [Budget annotated numeric columns and inspect actual readable rows](inbox/2026-11-11-annotated-numbers-need-print-column-budgets.md) |
+| A full procurement BOM retains every ID but prints hundreds of pages with one-character name columns | [Budget annotated numeric columns and inspect actual readable rows](inbox/publish/2026-11-11-annotated-numbers-need-print-column-budgets.md) |
 | Full CI times out three times at Azure HTTP apt provisioning before extras/tests | [Correct the failing apt source before collecting fresh CI evidence](inbox/2026-11-11-ci-apt-timeouts-need-source-correction.md) |
 | Bambu grams or persisted `ok` hide failure codes, malformed slice metadata crashes formatting, or stale evidence becomes "slicer not run" | [Preserve producer codes and distinguish optional absence from stale evidence](inbox/2026-11-11-slice-status-needs-codes-and-currency.md) |
 | A pure site test reaches a browser-capable build helper without a retained execution log | [Inspect transitive rendering and use the existing client-diagram build contract](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#a-pure-site-test-can-reach-a-browser-capable-build-helper) |

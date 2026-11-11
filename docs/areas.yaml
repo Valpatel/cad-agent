@@ -213,6 +213,7 @@ domains:
         title: Mould making
         scope: Short-run moulds made in the shop.
         maturity: idea
+        pages: [docs/research/manufacturing/process-profiles.md]
         topics:
           - {slug: silicone-moulds, title: Silicone moulds, scope: "Printed masters and silicone moulds.", maturity: idea}
           - {slug: urethane-casting, title: Urethane casting, scope: "Casting urethane parts in silicone moulds.", maturity: idea}

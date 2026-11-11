@@ -9,6 +9,15 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.34.3 (2026-11-11)
+
+**New**
+- Read a bounded Smooth-On mold-making source batch and add cited planning prompts for mix basis, material estimates and printed-master compatibility, with product-specific limits and remaining reading tracked in #552.
+
+**Changed**
+- Reference publication guidance now distinguishes public source membership from the internal registry and derives release checks from committed IDs (#323).
+- Printed snap and hinge reviews now distinguish initial fit, dwell and repeated operation, with explicit material conditioning and support geometry. Two Fictiv guides are marked read and the original BASF manual is recovered with bounded coverage; vendor allowables and cycle claims are not manufacturing guarantees (#551).
+
 ## v0.34.2 (2026-11-11)
 
 **Changed**

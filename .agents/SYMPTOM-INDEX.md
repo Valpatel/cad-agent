@@ -2,6 +2,9 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A pure site test reaches a browser-capable build helper without a retained execution log | [Inspect transitive rendering and use the existing client-diagram build contract](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#a-pure-site-test-can-reach-a-browser-capable-build-helper) |
+| A pure repo-map/site suite fails with `needs the existing Node 22 site runtime` | [Bind the installed runtime for the parent and child processes](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#site-checks-also-need-an-explicit-runtime) |
+| Public reference totals differ from the internal registry, or a readback expects internal-only entries | [Derive public membership from the exact committed sources](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#derive-public-reference-membership-before-comparing-publication-counts) |
 | Registry validation passes but the health updater reports a shard is not editable | [Use the importer's canonical writer and test the exact round-trip](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md) |
 | A successful Prusa slice shows only grams/time although its stability check did not run | [Retain the explicit unchecked state and recorded reason in visible reports](inbox/2026-11-10-slice-success-needs-stability-disclosure.md) |
 | A patch candidate contains required project changes | [Choose the release level from the complete fragments before cutting](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#required-project-changes-determine-the-release-level-before-cutting) |
@@ -52,6 +55,7 @@
 | A release guard assumes fixed counts or document types, rejects inherited bytes, hits ENOBUFS, or confuses link labels and targets | [Use the current check and source boundaries](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md) |
 | A maintainer-only npm hook exception also accepts the same version in a production context | [Bind hook acceptances to the owning manifest](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#bind-an-accepted-install-hook-to-its-owning-package-context) |
 | A new fragment fails before its first section, or added reference prose exceeds the page budget | [Run the real release and whole-page consumers](inbox/2026-11-07-security-inventory-does-not-prove-settings.md#existing-ci-also-caught-release-and-reading-regressions) |
+| A source-reading batch repeats the missing fragment heading and page-length failure despite registry checks | [Exercise the changed release and page consumers](inbox/agents/2026-11-10-reading-batches-need-the-release-and-page-consumers.md) |
 | A public probe fails before launch because ambient Node or a default browser cache differs | [Bind existing publication runtimes explicitly](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md) |
 | A local concurrent browser crashes while the owned pids controller rejects a fork | [Count browser worker tasks before removing the cgroup](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#count-browser-worker-tasks-before-removing-the-cgroup) |
 | A tracked SOURCE JSON gets404 at an assumed website route | [Use the producer's actual source-record namespace](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md) |

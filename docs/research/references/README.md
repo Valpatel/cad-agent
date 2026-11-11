@@ -199,6 +199,12 @@ mistake of each kind.
 - `[ref:<id>]` in any page links to the record's row and to the source;
 - `docs/practice/experts.md` is generated from the read sources.
 
+Public membership is core `sources` plus non-extension shard records; `extends: true` augments a core source.
+Core `unverified` and `uncited` entries stay internal (`loadReferences().others`) and have no public reference page.
+Derive publication IDs and totals from the exact committed revision, with core sources read and shard status set
+by the evidence ladder. Compare the complete public ID set as well as counts; the internal registry total is a
+different inventory. `tests/site/website-references.test.mjs` checks this boundary and the published records.
+
 After changing a record, run `node tools/site/compiler/site-references.mjs --experts` and commit `docs/practice/experts.md`
 (`tests/site/website-references.test.mjs` fails until it is current). A record whose `areas` match no slug is listed on
 `/references/unplaced`. That count may only fall.

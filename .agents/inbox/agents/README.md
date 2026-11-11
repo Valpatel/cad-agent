@@ -13,6 +13,7 @@ flowchart TD
 
 | File | Lesson |
 | --- | --- |
+| [Reading consumers](2026-11-10-reading-batches-need-the-release-and-page-consumers.md) | Source-reading batches still require the real fragment parser and whole-page layout consumer; preserve failures and reuse existing guards. |
 | [Reference serialization](2026-11-10-reference-edits-need-the-importer-writer.md) | Registry validity and health-updater editability are separate contracts; use the canonical importer writer. |
 | [Discovery boundaries](2026-11-06-agent-discovery-and-resource-boundaries.md) | Exact installed resources, supported checkout names and scoped harness evidence. |
 | [Platform markers](2026-11-07-platform-markers-must-reach-update-consumers.md) | Installation requirements must reach every real update consumer. |

@@ -359,10 +359,12 @@ sources:
 - id: fictiv-how-to-design-snap-fit-components
   kind: guide
   category: manufacturing-guides
-  title: 'Fictiv: How to Design Snap-Fit Components'
-  authors: []
+  title: How to Design Snap Fit Components
+  authors:
+  - Tessa Axsom
+  - David Willson
   org: Fictiv
-  year: null
+  year: 2025
   url: https://www.fictiv.com/articles/how-to-design-snap-fit-components
   access: free
   terms: cited and summarised, never copied
@@ -383,18 +385,23 @@ sources:
   process_groups:
   - mould
   evidence:
-    class: snippet-only
-    numbers: unknown
+    class: read
+    numbers: claimed
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: '12-minute Fictiv article on snap-fit component design; only title and read time shown. Note: Title only; content
-    unseen.'
-  used_for: []
+  summary: Vendor guidance separates brief assembly bending from sustained load and repeated operation. Numerical strain tables
+    lack grade-specific printed-test provenance.
+  used_for:
+  - docs/mechanical/compliant.md
   imported: 9ac41c6122e7d4d4
+  verified: '2026-11-10: read technical body dated 2025-10-17: geometry/equations, strain table, taper discussion, four failure
+    modes and process DFM. Inspected beam drawing and thickness-taper chart. Primary web text readable; raw-page fetch returned
+    403 and rendered math was not verified. Extracted force/symbol discrepancies are cross-checked against original BASF Figure
+    IV-3; no vendor numerical table adopted. Linked calculators, manuals and other figures not fully audited.'
 - id: bayer-materialscience-snap-fit-joints-for-plastics-a-design
   kind: guide
   category: manufacturing-guides
@@ -595,11 +602,13 @@ sources:
 - id: fictiv-design-guide-for-living-hinges-fictiv
   kind: guide
   category: manufacturing-guides
-  title: Design Guide for Living Hinges (Fictiv)
-  authors: []
+  title: 'Living Hinge Design: How to Design a Living Hinge'
+  authors:
+  - Sunny Sahota
+  - David Willson
   org: Fictiv
-  year: null
-  url: https://www.fictiv.com/?p=1242
+  year: 2025
+  url: https://www.fictiv.com/articles/how-to-design-living-hinges
   access: free
   terms: cited and summarised, never copied
   licence:
@@ -613,13 +622,14 @@ sources:
   areas:
   - moulded-part-design
   - snap-fits
+  - living-hinges
   processes:
   - injection
   - snap-fit
   process_groups:
   - mould
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -630,11 +640,19 @@ sources:
   claims:
   - text: Hinge thickness T = H/5 to H/8, H being adjoining wall thickness
     status: unconfirmed
-    evidence: Search for H/5 to H/8 found no source stating that ratio; others give absolute 0.2-0.5 mm (0.007-0.015 in).
-  summary: 'Living hinge sizing relative to adjoining wall; may need molding in open position. Note: Page title was only a
-    read-time label; attribution from URL.'
-  used_for: []
+    evidence: '2026-11-10: Hinge Thickness states this ratio. It is a vendor starting rule; no independent fatigue or printed-process
+      validation is supplied.'
+  summary: Process-specific hinge guidance distinguishes moulded production from printed geometry prototypes. Its cycle estimates
+    are not qualification results.
+  used_for:
+  - docs/mechanical/compliant.md
   imported: 71df523890da0074
+  mirrors:
+  - https://www.fictiv.com/?p=1242
+  verified: '2026-11-10: read technical body dated 2025-12-03: dimensions/equations, design practices, moulding, casting,
+    printing, comparison, lifetime and FAQs; inspected polypropylene hinge drawing. Primary web retrieval, not a whole-page
+    byte archive. Linked resin data and other figures not fully audited; no reported test protocol reproduced. Moulded lifetime
+    and printed-cycle assurances are not physical qualification.'
 - id: plasticstoday-by-design-polypropylene-part-design-part-2
   kind: guide
   category: manufacturing-guides
@@ -1197,3 +1215,344 @@ sources:
   summary: Living hinges break the uniform-wall rule; flow restriction causes a pressure drop beyond the hinge, so gate placement
     matters.
   imported: 4b08c4af8cfa6006
+- id: smoothon-mold-calculators
+  kind: guide
+  category: manufacturing-guides
+  title: Mold Making and Casting Calculators
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/calculators/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: The hub suggests a separate 5-10% waste allowance for material left on mixing tools/containers.
+    status: unconfirmed
+    evidence: Accounting for Waste; vendor estimate, not a universal allowance or verified loss rate.
+  summary: Planning estimators distinguish poured volume, brush-on/coating area and thickness, yield, and by-weight component
+    splitting. Estimates are not application qualification.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read estimator labels, units, disclaimer and waste note; did not execute
+    or validate interactive calculator code or its product dataset. HTML SHA-256 ea6336156fde47af9204c1789725209c0e3ae39a2eef2a1f51d453e855b019b0.
+    No revision displayed.'
+- id: smoothon-reference-guides
+  kind: guide
+  category: manufacturing-guides
+  title: Reference Guides
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/content/guides/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  summary: Discovery hub for specification charts, Shore hardness, viscosity, adhesive surface preparation, coverage, sealers/releases
+    and application certifications. Linked sources are not all read.
+  used_for: []
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read hub headings/descriptions only; subsequent reading limited to the separately
+    registered sealers/releases guide. Other linked guides remain inventoried for future reading in issue 552. HTML SHA-256
+    d1684c0f5a4e5d5b8cc9257ae20c8a2ef47e05f9a815f54571449a83993740dc. No revision displayed.'
+- id: smoothon-sealers-releases
+  kind: guide
+  category: manufacturing-guides
+  title: Sealer and Release Agent Reference Guide
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/page/sealers-releases/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Choose sealer/release by rubber and master; this general chart defers to the product technical bulletin.
+    status: unconfirmed
+    evidence: Both chart introductions and silicone general-information section; no representative master tested.
+  summary: Separate polyurethane/silicone charts distinguish sealing from releasing. Product bulletins govern; printed-master
+    process and coating must be retained rather than assuming hard-plastic compatibility.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both HTML tables, footnotes and general-information sections. PDF companion
+    not read. HTML SHA-256 a8b08cf2b62e35cef8e5493b0e7c6cf62a2c865f473151f9ec0aeca5c5033eb0. No revision displayed.'
+- id: smoothon-quantity-faq
+  kind: guide
+  category: manufacturing-guides
+  title: How much mold rubber do I need?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/52/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Poured material mass is required fill volume divided by the selected rubber specific volume; combined A+B mass precedes
+      component splitting.
+    status: unconfirmed
+    evidence: Poured steps 1-5; recomputation confirms 64-27=37 in^3 and 37/27.7=1.33574 lb. The prose reverses the subtraction
+      label. Its 606.31 cm^3 / 0.962 cm^3/g gives 630.26 g, inconsistent with 1.33574 lb = 605.88 g. Do not adopt paired answers.
+  - text: The brush-on worked metric volume and mass are inconsistent with its inch calculation.
+    status: unconfirmed
+    evidence: 45 in^2 x 0.375 in = 16.875 in^3 = 276.5317 cm^3; 16.88/23.7 = 0.71224 lb = 323.06 g, not the printed 290.3
+      cm^3 and 247 g. Rounded layer conversions do not repair this. Example is not an encoded rule.
+  summary: Estimate poured fill as box minus displaced master volume, then divide by product-specific volume-per-mass yield.
+    Brush-on area-times-thickness is approximate; several printed answers/conversions are inconsistent.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read poured, shell and brush-on sections plus disclaimer. HTML SHA-256 d217326ee73e16d5dcb37fe3cb901c06c7682af3e544cb06d1c37500faed2ffe.
+    No revision displayed. Independent arithmetic in issue 552; no live estimator validation.'
+- id: smoothon-sla-inhibition-faq
+  kind: guide
+  category: manufacturing-guides
+  title: My silicone rubber mold did not cure against my SLA 3D printed model - what went wrong?
+  authors:
+  - Phil Avery
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/210/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: A fully post-cured SLA master still needs rubber-specific sealer/release selection and a small-scale suitability
+      test.
+    status: unconfirmed
+    evidence: Preparation and compatibility table; opaque/shadowed regions and coating texture are relevant. No resin or coating
+      combination reproduced.
+  - text: The tin section broadly requires a gram scale and vacuum degassing.
+    status: conflicting
+    evidence: 'Conflicts with smoothon-oomoo-bulletin: OOMOO is tin-cured, equal-volume mixing, and does not require vacuum
+      degassing. Same publisher, not independent corroboration; product bulletin governs.'
+  summary: SLA master preparation and sealer/release compatibility depend on the exact rubber and complete UV exposure. Generic
+    tin-silicone handling statements conflict with the OOMOO bulletin; a representative compatibility test remains necessary.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read platinum preparation, entire compatibility table, tin section and disclaimer.
+    Named guide developer Phil Avery. HTML SHA-256 02b875b0ccdafa25ded94f01035d5891e615257bbb0d06528e0d82dc3486bc6f. No revision
+    or particular SLA resin/UV irradiance supplied; its exposure duration is not adopted as a universal cure schedule.'
+- id: smoothon-oomoo-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: OOMOO Series technical bulletin (25 and 30)
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/OOMOO_25_30_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: OOMOO 30 is 1A:1B by volume, 100A:130B by weight; density 1.34 g/cc, specific volume 20.6 in^3/lb; pot life 30 min,
+      demould 6 h at 73 F/23 C.
+    status: unconfirmed
+    evidence: pp.1-2 technical table/cure sections; property values measured after 7 days at 73 F/23 C. No cure below 65 F/18
+      C. Bulletin gives optional additional 4 h post-cure at 150 F/65 C and cooling before use. Specific volume/density are
+      rounded; not measured here.
+  - text: OOMOO does not require vacuum degassing; test for inhibition and select release for the material cast.
+    status: unconfirmed
+    evidence: pp.1-2; sulfur clays/latex can inhibit. Bulletin describes limited tear strength for simple block moulds. No
+      safety certification or life guarantee inferred.
+  summary: Product-specific tin-cure block-mould bulletin; equal volumes are unequal masses. Preparation, cure inhibition,
+    release, mixing and cure instructions do not establish other silicones or a master combination.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both PDF pages, technical table and processing sections; printed code
+    120823DH retained without interpreting date format. PDF SHA-256 6ebb58816b22bd44e0187637796253d6587164858525e988e0fa8577f03c7d50.
+    SDS and physical trial not performed.'
+- id: smoothon-mold-star-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Mold Star 15, 16 and 30 technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/MOLD_STAR_15_16_30_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Mold Star 30 is 1A:1B by volume, 100A:96B by weight; density 1.12 g/cc, specific volume 24.7 in^3/lb; pot life 45
+      min, demould 6 h at 73 F/23 C.
+    status: unconfirmed
+    evidence: pp.1-2; property values measured after 7 days at 73 F/23 C; no cure below 65 F/18 C. Does not define equal masses
+      or another grade. Rounded density/yield not independently measured.
+  - text: These grades are not brush-on rubbers and will not cure on sulfur-containing surfaces even with sealer.
+    status: unconfirmed
+    evidence: p.1 overview/preparation; latex, some woods and newly cast resins can inhibit; a small compatibility test is
+      recommended.
+  summary: Platinum-cure product bulletin with distinct grade-specific ratios, working times and cure limits. Sulfur inhibition
+    is not cured by sealing; representative master testing is advised.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both PDF pages and table; printed code 011024DH retained without interpreting
+    date format. Quantitative capture limited to Mold Star 30, other grades not adopted. PDF SHA-256 d74fa585f9b48229fb72aaa9e92c09d809caacd5401bb6257bff469ea6a09bbf.
+    SDS, additives and physical trial not performed.'

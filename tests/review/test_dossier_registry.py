@@ -712,6 +712,9 @@ def test_a_driven_joint_is_checked_where_it_is_declared():
             ({"follows": "I1", "kind": "slider", "range_deg": (0, 5)}, "its range is range_mm, not range_deg"),
             ({"range_deg": (0, 1), "closes": {"parts": ("a", "a"), "at": (0, 0, 0)}}, "closes names two different parts"),
             ({"range_deg": (0, 1), "closes": [{"parts": ("a", "b")}]}, r"closes is \{parts"),
+            ({"range_deg": (0, 1), "closes": {"parts": "ab", "at": (0, 0, 0)}}, r"closes is \{parts"),
+            ({"follows": "I1", "samples": 9}, "is not sampled: set samples on the joint that drives it"),
+            ({"follows": "I1", "kind": "hinge"}, "kind 'hinge'"),
             ({"range_deg": (0, 1), "closes": 7}, "joint 'I5'")):
         with pytest.raises(RegistryError, match=match):
             reg.joint("I5", **{"parts": ("f", "b"), "axis": z, **kwargs})
@@ -810,3 +813,13 @@ def test_the_join_names_a_follower_whose_driver_is_missing_from_a_hand_written_r
     issues = sorted((i.code, i.message) for i in join(d, geo))
     assert issues == [("unknown-joint", "joint 'I9' follows 'I-gone', which is not a declared joint"),
                       ("unknown-part", "joint 'I9' closes 'ghost', which is not a part")]
+    # every spelling the motion gate reads is read here too; a malformed one is the gate's to report, not a crash
+    for spelling in ("I-gone", ["I-gone", -1], ("I-gone", 2, 5)):
+        geo["joints"]["I9"]["follows"] = spelling
+        geo["joints"]["I9"]["closes"] = {"parts": ["hopper_flap", "ghost"], "at": [0, 0, 0]}
+        assert sorted(i.code for i in join(d, geo)) == ["unknown-joint", "unknown-part"]
+    geo["joints"]["I9"].update(follows=["I-gone", "twice"], closes=[{"parts": ["hopper_flap", "ball#3"], "at": [0, 0, 0]}])
+    assert join(d, geo) == []
+    geo["parts"]["ball"]["instances"] = [{"key": "ball#3"}]
+    geo["joints"]["I9"]["follows"] = None
+    assert join(d, geo) == []                               # an instance key is a place for a point

@@ -405,13 +405,16 @@ class Registry:
             Closure.coerce_all([{**c, "at": (0, 0, 0)} if callable(c.get("at")) else c for c in pins])
         except (ValueError, TypeError) as exc:
             raise RegistryError(f"joint {interface!r}: {exc}") from None
+        if kind not in JOINT_KINDS:
+            raise RegistryError(f"joint {interface!r}: kind {kind!r}; one of {', '.join(JOINT_KINDS)}")
         if law is not None and kind not in DRIVABLE:
             raise RegistryError(f"joint {interface!r}: a {kind} joint cannot follow another (only "
                                 f"{' and '.join(DRIVABLE)} joints can)")
         if law is not None and law.joint == interface:
             raise RegistryError(f"joint {interface!r} follows itself")
-        if kind not in JOINT_KINDS:
-            raise RegistryError(f"joint {interface!r}: kind {kind!r}; one of {', '.join(JOINT_KINDS)}")
+        if law is not None and samples is not None:
+            raise RegistryError(f"joint {interface!r} follows {law.joint} and is not sampled: set samples on the "
+                                "joint that drives it")
         parts = list(parts)
         if len(parts) != 2 or parts[0] == parts[1]:
             raise RegistryError(f"joint {interface!r}: parts must be (moving, fixed), got {parts!r}")
@@ -1107,13 +1110,18 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
         for role in ("moving", "fixed"):
             if j.get(role) not in known:
                 add("unknown-part", f"joint {iid!r} {role} part {j.get(role)!r} is not a part", w)
-        for c in j.get("closes") or []:
-            for name in c.get("parts") or []:
-                if name not in known:
+        from cadagent.review.gates.motion import Closure, Follow
+        try:                                # any spelling the motion gate reads; a malformed one is its to report
+            pins, law = Closure.coerce_all(j.get("closes")), Follow.coerce(j.get("follows"))
+        except (ValueError, TypeError):
+            pins, law = [], None
+        instance_keys = {str(i.get("key")) for info in parts.values() for i in (info.get("instances") or [])}
+        for c in pins:
+            for name in c.parts:
+                if name not in known and name not in instance_keys:
                     add("unknown-part", f"joint {iid!r} closes {name!r}, which is not a part", w)
-        driver = (j.get("follows") or {}).get("joint")
-        if driver is not None and driver not in joints:
-            add("unknown-joint", f"joint {iid!r} follows {driver!r}, which is not a declared joint", w)
+        if law is not None and law.joint not in joints:
+            add("unknown-joint", f"joint {iid!r} follows {law.joint!r}, which is not a declared joint", w)
         iface = dossier.interfaces.get(iid)
         if iface is None:
             add("joint-without-interface", f"joint {iid!r} realises no interface of that id in the dossier", w)

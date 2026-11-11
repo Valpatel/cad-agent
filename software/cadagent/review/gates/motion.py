@@ -295,7 +295,7 @@ class Closure:
                 out.append(item)
                 continue
             if not isinstance(item, Mapping) or set(item) - {"parts", "at", "tol_mm"} or \
-                    not {"parts", "at"} <= set(item):
+                    not {"parts", "at"} <= set(item) or isinstance(item["parts"], str):
                 raise ValueError(f"closes is {{parts: (a, b), at: (x, y, z), tol_mm}}, got {item!r}")
             at = item["at"]
             if hasattr(at, "origin"):               # an Axis: its origin is the point
@@ -575,9 +575,15 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     js: Dict[str, Joint] = {}
     body_of_joint: Dict[str, List[str]] = {}
     eff, follow_errors = resolve_follows(joints)       # {follower: its law from the joint that is sampled}
+    closures: List[Tuple[str, int, Closure]] = []
     for jid in sorted(joints):
         raw = joints[jid]
         kind = str(raw.get("kind") or "revolute")
+        try:                                # a closes point is measured whatever the kind of the joint that states it
+            closures += [(jid, n, c) for n, c in enumerate(Closure.coerce_all(raw.get("closes")))]
+        except ValueError as exc:
+            checks.append(Check(f"joint:{jid}", "fail", f"joint {jid}: {exc}", [str(raw.get("moving") or "")]))
+            continue
         if jid in follow_errors:
             checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} cannot be driven: {follow_errors[jid]}",
                                 [str(raw.get("moving") or "")]))
@@ -599,6 +605,9 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} ({kind}) has no range to sample",
                                 [j.moving]))
             continue
+        if j.follows is not None and (samples.get(jid) is not None or raw.get("samples") is not None):
+            checks.append(Check(f"samples:{jid}", "warn", f"joint {jid} follows {j.follows.joint} and is not sampled: "
+                                f"its samples are ignored (set them on the joint that drives it)", [j.moving]))
         for d in j.dofs:
             if d.hi == d.lo and j.follows is None:
                 checks.append(Check(f"range:{jid}:{d.unit}", "warn", f"joint {jid}'s {d.unit} range is "
@@ -772,6 +781,30 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     for k in names:
         body_keys.setdefault(world.body(k), []).append(k)
 
+    # -- closes points: the body that carries each of the two parts, or why the point cannot be measured
+    closure_ids = {(jid, n): f"closure:{jid}:{_pair_id(*c.parts)}" + (f"#{n + 1}" if sum(
+        1 for j2, _, c2 in closures if j2 == jid and set(c2.parts) == set(c.parts)) > 1 else "")
+        for jid, n, c in closures}
+    closure_bodies: Dict[Tuple[str, int], List[str]] = {}
+    closure_problem: Dict[Tuple[str, int], str] = {}
+    for jid, n, c in closures:
+        found: List[str] = []
+        for part in c.parts:
+            bs = sorted({world.body(k) for k in _keys(names, part)})
+            if not bs:
+                closure_problem[(jid, n)] = f"{part} is not in the assembly"
+            elif len(bs) > 1:
+                closure_problem[(jid, n)] = (f"{part} has instances in several bodies ({', '.join(bs)}): name the "
+                                             "instance the point is on")
+            else:
+                found.append(bs[0])
+        if (jid, n) not in closure_problem and found[0] == found[1]:
+            closure_problem[(jid, n)] = (f"both are in one body ({found[0]}), so the point cannot come apart and "
+                                         "measures nothing")
+        if (jid, n) not in closure_problem:
+            closure_bodies[(jid, n)] = found
+    apart: Dict[Tuple[str, int], Tuple[float, str, str, int]] = {}      # the worst over every group: mm, pose, group
+
     # -- sample and query
     group_rows: List[Dict[str, Any]] = []
     swept: Dict[str, Dict[str, Tuple[float, ...]]] = {}
@@ -816,8 +849,10 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         carried = {x: [(jj, k) for jj in g.joints if _carries(parent, x, jj)
                        for b in body_of_joint[jj] for k in body_keys.get(b, [])] for x in sorted(turning)}
         radius = {x: 0.0 for x in carried}
-        closures = [(jid, n, c) for jid in g.joints for n, c in enumerate(js[jid].closes)]
-        apart: Dict[Tuple[str, int], Tuple[float, str]] = {}
+        # a closes point is measured in every group that moves either of its parts, whichever joint states it
+        closures_g = [(jid, n, c) for jid, n, c in closures
+                      if set(closure_bodies.get((jid, n), ())) & set(moving_bodies_g)]
+        apart_g: Dict[Tuple[str, int], Tuple[float, str]] = {}
         pair_rows: Dict[Tuple[str, str], List[Tuple[int, Relation]]] = {}
         min_box: Dict[str, Any] = {}
         pose_mats: Dict[str, Dict[str, Tuple[float, ...]]] = {}
@@ -830,13 +865,11 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                 for jj, k in rows_c:
                     rel = carried_rel(vmap, j.id, jj)
                     radius[x] = max(radius[x], _radius(moved_box(world.box(k), rel), j.origin, j.direction))
-            for jid, n, c in closures:                # the shared point, carried by each part's body
-                ends = [_keys(names, part) for part in c.parts]
-                if all(ends):
-                    pa, pb = (_apply(mats.get(world.body(ks[0]), IDENTITY), c.at) for ks in ends)
-                    d = math.dist(pa, pb)
-                    if (jid, n) not in apart or d > apart[(jid, n)][0]:
-                        apart[(jid, n)] = (d, _label(g, vals))
+            for jid, n, c in closures_g:              # the shared point, carried by each part's body
+                pa, pb = (_apply(mats.get(b, IDENTITY), c.at) for b in closure_bodies[(jid, n)])
+                d = math.dist(pa, pb)
+                if (jid, n) not in apart_g or d > apart_g[(jid, n)][0]:
+                    apart_g[(jid, n)] = (d, _label(g, vals))
             boxes = {k: moved_box(world.box(k), mats.get(world.body(k), IDENTITY)) for k in names}
             for k in moving_keys:
                 swept.setdefault(g.id, {})[k] = _union(swept.get(g.id, {}).get(k), boxes[k])
@@ -941,29 +974,15 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         if group_driven:
             text += "; driven, not sampled: " + ", ".join(d["law"] for d in group_driven)
         closure_rows = []
-        for jid, n, c in closures:
-            cid = f"closure:{jid}:{_pair_id(*c.parts)}" + (f"#{n + 1}" if sum(
-                1 for j2, _, c2 in closures if j2 == jid and set(c2.parts) == set(c.parts)) > 1 else "")
-            crow: Dict[str, Any] = {"id": cid, "joint": jid, **c.to_dict()}
-            if (jid, n) not in apart:
-                missing = [part for part in c.parts if not _keys(names, part)]
-                crow["status"] = "fail"
-                checks.append(Check(cid, "fail", f"joint {jid} closes {c.parts[0]} on {c.parts[1]}, but "
-                                    f"{' and '.join(missing)} is not in the assembly", list(c.parts), crow))
+        for jid, n, c in closures_g:
+            worst, pose = apart_g[(jid, n)]
+            closure_rows.append({"id": closure_ids[(jid, n)], "joint": jid, **c.to_dict(),
+                                 "max_apart_mm": round(worst, 6), "worst_pose": pose, "poses": len(poses),
+                                 "status": "fail" if worst > c.tol_mm else "pass"})
+            if (jid, n) not in apart or worst > apart[(jid, n)][0]:
+                apart[(jid, n)] = (worst, pose, g.id, apart.get((jid, n), (0, "", "", 0))[3] + len(poses))
             else:
-                worst, pose = apart[(jid, n)]
-                crow.update(max_apart_mm=round(worst, 6), worst_pose=pose, poses=len(poses),
-                            status="fail" if worst > c.tol_mm else "pass")
-                at = ", ".join(_fmt(v) for v in c.at)
-                if worst > c.tol_mm:
-                    msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share comes {worst:.4g} mm apart "
-                             f"at {pose} (over {c.tol_mm:g} mm): the declared joint values do not keep the loop "
-                             f"closed, so check the follows multipliers, the axis directions and the link geometry")
-                else:
-                    msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share stays within "
-                             f"{worst:.3g} mm over {len(poses)} poses (limit {c.tol_mm:g} mm)")
-                checks.append(Check(cid, crow["status"], msg_c, list(c.parts), crow))
-            closure_rows.append(crow)
+                apart[(jid, n)] = apart[(jid, n)][:3] + (apart[(jid, n)][3] + len(poses),)
         if collisions:
             msg = f"{g.id}: {len(collisions)} colliding pair(s) over {len(poses)} poses ({text})"
         elif unknown:
@@ -1012,16 +1031,40 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                                 f"combine=[[...]] to sample them together", [near[1], near[2]],
                                 {"groups": [x, y], "box_distance_mm": round(near[0], 6)}))
             not_checked.append(f"{x} with {y}: combined poses (sampled separately)")
-    measured = set()                    # joints whose value moves a part some closes point names
-    for jid in js:
-        for c in js[jid].closes:
-            measured.add(jid)
-            bodies = {world.body(k) for part in c.parts for k in _keys(names, part)}
-            for other in [o for o, bs in body_of_joint.items() if set(bs) & bodies]:
-                cur: Optional[str] = other
-                while cur is not None:
-                    measured.add(cur)
-                    cur = parent.get(cur)
+    # -- closes points: one check each, over every group that moved one of its parts
+    closure_rows_all: List[Dict[str, Any]] = []
+    measured = set()                    # joints between the two parts of a measured point: their values move it apart
+    for jid, n, c in closures:
+        cid = closure_ids[(jid, n)]
+        crow: Dict[str, Any] = {"id": cid, "joint": jid, **c.to_dict()}
+        at = ", ".join(_fmt(v) for v in c.at)
+        if (jid, n) in closure_problem or (jid, n) not in apart:
+            why = closure_problem.get((jid, n)) or "no sampled joint moves either part, so the point measures nothing"
+            crow["status"] = "fail"
+            checks.append(Check(cid, "fail", f"joint {jid} closes {c.parts[0]} on {c.parts[1]} at ({at}), but {why}",
+                                list(c.parts), crow))
+        else:
+            worst, pose, gid, count = apart[(jid, n)]
+            crow.update(max_apart_mm=round(worst, 6), worst_pose=pose, group=gid, poses=count,
+                        status="fail" if worst > c.tol_mm else "pass")
+            if worst > c.tol_mm:
+                msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share comes {worst:.4g} mm apart "
+                         f"at {pose} (over {c.tol_mm:g} mm): the declared joint values do not keep the loop "
+                         f"closed, so check the follows multipliers, the axis directions and the link geometry")
+            else:
+                msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share stays within "
+                         f"{worst:.3g} mm over {count} poses (limit {c.tol_mm:g} mm)")
+            checks.append(Check(cid, crow["status"], msg_c, list(c.parts), crow))
+            above = []                  # the joints that carry each part: one on both sides moves the two together
+            for b in closure_bodies[(jid, n)]:
+                chain = set()
+                for cur in [o for o, bs in body_of_joint.items() if b in bs]:
+                    while cur is not None:
+                        chain.add(cur)
+                        cur = parent.get(cur)
+                above.append(chain)
+            measured |= above[0] ^ above[1]
+        closure_rows_all.append(crow)
     for jid in sorted(driven):
         if jid not in measured:
             not_checked.append(f"loop closure of {driven[jid]['law']}: the ratio is declared, not solved, and no "
@@ -1035,7 +1078,8 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
              "pair_queries": candidates_total,
              **world.stats, "seconds": round(time.perf_counter() - t0, 3)}
     return verdict(GATE, checks, assumptions=ASSUMPTIONS, limits=limits, exclusions=excl,
-                   extra={"groups": group_rows, "driven": driven, "not_checked": not_checked, "stats": stats})
+                   extra={"groups": group_rows, "driven": driven, "closures": closure_rows_all,
+                          "not_checked": not_checked, "stats": stats})
 
 
 def _carries(parent: Mapping[str, Optional[str]], ancestor: str, jid: str) -> bool:

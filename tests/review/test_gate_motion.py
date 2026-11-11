@@ -505,6 +505,63 @@ def test_a_closes_point_measures_whether_the_declared_ratio_keeps_the_loop_toget
             Closure.coerce_all(wrong)
 
 
+def test_a_closes_point_is_measured_wherever_its_parts_move_and_refused_when_it_can_measure_nothing():
+    """Review of #582: the point is carried by its parts, not by the joint that happens to state it."""
+    boxes = {**TRAIN, "gate": (90, 0, 0, 95, 10, 20), "hook": (22, 0, 0, 24, 10, 5), "badge": (0, 0, 10, 4, 4, 12)}
+    bodies = {"hook": "front"}                                    # the hook is fastened to the front carriage
+    pin = {"parts": ("front", "rear"), "at": (11, 5, 5)}
+    train = {"J-rear": slider("rear", "rail", (0, 20)),
+             "J-front": {**slider("front", "rail", None), "follows": ("J-rear", 0.5)}}
+    # stated on a free joint of another group, and on a fixed joint: still measured in the group that moves it
+    for holder in ({"J-gate": {**slider("gate", "rail", (0, 3)), "closes": pin}},
+                   {"J-badge": {"kind": "fixed", "moving": "badge", "fixed": "rear",
+                                "axis": ((0, 0, 0), (0, 0, 1)), "closes": [pin]}}):
+        v = run_motion(BoxWorld(boxes, bodies), {**train, **holder})
+        jid = next(iter(holder))
+        f = finding(v, f"closure:{jid}:front|rear")
+        assert f["status"] == "fail" and f["evidence"]["max_apart_mm"] == pytest.approx(10.0)
+        assert f["evidence"]["group"] == "J-front+J-rear" and v["closures"][0]["worst_pose"] == "J-rear=20mm"
+        assert v["not_checked"] == [] or all("loop closure" not in n for n in v["not_checked"])
+    # two parts of one body, and two parts nothing moves: neither measures anything, and neither hides the ratio
+    one_body = run_motion(BoxWorld(boxes, bodies), {**train, "J-front": {
+        **train["J-front"], "closes": {"parts": ("front", "hook"), "at": (22, 5, 2)}}})
+    assert "both are in one body (front)" in finding(one_body, "closure:J-front:front|hook")["message"]
+    still = run_motion(BoxWorld(boxes, bodies), {**train, "J-front": {
+        **train["J-front"], "closes": {"parts": ("rail", "wall"), "at": (45, 5, 0)}}})
+    assert "no sampled joint moves either part" in finding(still, "closure:J-front:rail|wall")["message"]
+    for v in (one_body, still):
+        assert not v["pass"] and v["not_checked"] == ["loop closure of J-front = 0.5 × J-rear: the ratio is declared, "
+                                                      "not solved, and no closes point measures it"]
+    # a driven joint that carries both parts moves them together: the point says nothing about its ratio
+    stack = {"base": (0, 0, -2, 100, 10, 0), "sled": (0, 0, 0, 40, 10, 2), "p": (0, 0, 2, 10, 10, 6),
+             "q": (12, 0, 2, 22, 10, 6), "lead": (60, 0, 0, 70, 10, 5)}
+    v = run_motion(BoxWorld(stack), {
+        "A": slider("lead", "base", (0, 10)), "D": {**slider("sled", "base", None), "follows": ("A", 0.37)},
+        "P": slider("p", "sled", (0, 1), direction=(0, 0, 1)),
+        "Q": {**slider("q", "sled", None, direction=(0, 0, 1)), "follows": "P",
+              "closes": {"parts": ("p", "q"), "at": (11, 5, 4)}}})
+    assert v["closures"][0]["status"] == "pass"
+    assert v["not_checked"] == ["loop closure of D = 0.37 × A: the ratio is declared, not solved, and no closes "
+                                "point measures it"]                    # Q's ratio is measured, D's is not
+    # a part with instances in several bodies has no one place for the point
+    multi = {**TRAIN, "bolt#0": (2, 2, 10, 4, 4, 12), "bolt#1": (14, 2, 10, 16, 4, 12)}
+    v = run_motion(BoxWorld(multi, {"bolt#0": "rear", "bolt#1": "front"}), {**train, "J-front": {
+        **train["J-front"], "closes": {"parts": ("bolt", "rail"), "at": (3, 3, 10)}}})
+    assert "bolt has instances in several bodies (front, rear)" in finding(v, "closure:J-front:bolt|rail")["message"]
+    with pytest.raises(ValueError):
+        Closure.coerce_all({"parts": "ab", "at": (0, 0, 0)})
+
+
+def test_samples_on_a_driven_joint_are_ignored_with_a_warning():
+    joints = {"J-rear": slider("rear", "rail", (0, 5)),
+              "J-front": {**slider("front", "rail", None), "follows": "J-rear", "samples": 40}}
+    v = run_motion(BoxWorld(TRAIN), joints)
+    assert v["pass"] and v["groups"][0]["poses"] == 12
+    assert finding(v, "samples:J-front")["status"] == "warn"
+    joints["J-front"].pop("samples")
+    assert finding(run_motion(BoxWorld(TRAIN), joints, samples={"J-front": 40}), "samples:J-front")
+
+
 # ----------------------------------------------------------------------------- on CadQuery solids
 
 def _cq():

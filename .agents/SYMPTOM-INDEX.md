@@ -107,5 +107,9 @@
 
 | A retirement preflight fetches despite remote-only scope, or mandatory Python checks disappear under optimization | [Enforce retirement boundaries under optimized Python](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#enforce-retirement-boundaries-under-optimized-python) |
 
+| A phone page overflows despite valid source links and bounded diagrams | [Short display aliases preserve source identity](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#short-display-aliases-preserve-source-identity-on-narrow-pages) |
+
+| A manufacturer-table golden passes while the source uses a different signed tolerance or family column | [Bind signed headers to the exact fastener family](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#bind-signed-table-headers-to-the-exact-fastener-family-before-deriving-a-window) |
+
 - [Rendered motion needs an independent frame](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md): compare rendered transforms with independent joint intent.
 - [Folder inventories need NUL-safe names and explicit owners](inbox/2026-11-07-folder-inventories-need-explicit-owners.md): quoted paths, grouped maps and installer prompt namespaces; do not infer defect counts or add blanket README exceptions.

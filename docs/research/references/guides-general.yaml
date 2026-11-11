@@ -423,28 +423,34 @@ sources:
   process_groups:
   - general
   evidence:
-    class: snippet-only
-    numbers: some
+    class: read
+    numbers: none
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  claims:
-  - text: Keep max interference below about 7/10,000 of shaft diameter (Americas insight)
-    status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Fit guidance: heavier loads need more interference; avoid tight outer-ring fit in split housings. Note: Figure
-    from a related NSK insight page'
-  used_for: []
+  claims: []
+  summary: Qualitative bearing-fit selection by loaded-ring rotation, including the reversed conveyor-roller case and indeterminate-load
+    case; material, thermal, load and housing effects constrain the choice. The schematic fit-code figure gives no numerical
+    tolerance values.
+  used_for:
+  - docs/research/manufacturing/joint-interfaces.md
   imported: 2e585131cfccb2fb
+  verified: '2026-11-11: downloaded exact manufacturer PDF, Ref TI/E/0001, and read both pages. Visually inspected PDFp.2
+    Table1 rotating-inner/rotating-outer/indeterminate load cases and schematic fit-code figure. SHA256483ccd47d9861016207a1724ddbf02fd7018cc14a0590388bcd8fdc231da78f8.
+    Redirect to www.nsk.com preserves the exact path. No publication date inferred from PDF metadata; no dimensional fit table,
+    assembly test or physical life validation. The imported maximum-interference 7/10000 claim was attributed to a different
+    Americas article and is not corroborated by this exact document; no claim about historical content is made.'
+  aliases:
+  - nsk-ti-0001
 - id: skf-shaft-and-housing-fits-skf-catalog-excerpt
   kind: guide
   category: manufacturing-guides
-  title: Shaft and housing fits (SKF catalog excerpt)
+  title: 'General Bearing technical excerpt: fits, lubrication and life (SKF-hosted)'
   authors: []
-  org: SKF
+  org: General Bearing Corporation (SKF-hosted excerpt)
   year: null
   url: https://cdn.skfmediahub.skf.com/api/public/0941f795342272f4/pdf_preview_medium/0941f795342272f4_pdf_preview_medium.pdf
   access: free
@@ -464,18 +470,28 @@ sources:
   process_groups:
   - general
   evidence:
-    class: snippet-only
-    numbers: claimed
+    class: read
+    numbers: some
     tested: 'no'
     authority: primary
   confidence:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Tables for shaft and housing fit selection of metric radial bearings; clearance versus interference depends on
-    which ring rotates. Note: Table values not visible in snippet'
-  used_for: []
+  summary: Seven-page General Bearing excerpt, not a complete or current universal SKF catalogue. Its 6203 example and inch
+    deviation tables illustrate a scoped steel-shaft/housing fit; unsupported materials, loads and dimensions require another
+    source.
+  used_for:
+  - docs/research/manufacturing/joint-interfaces.md
+  - docs/research/process-profiles.yaml
   imported: b255be1cef6d2881
+  claims: []
+  verified: '2026-11-11: Read all seven PDF pages, printed pp.31–37, including lubrication, fits/tables/example, life/equivalent
+    loads and radial clearance. Visually checked PDF pp.2–4 (printed pp.32–34), including mixed-unit captions and footnotes.
+    Shaft table attributes ABMA1995; no current revision or publication date inferred from metadata. SHA256 922639535be9b33e16d1554ad38640217b55d717f517ed2c52b48b0786e5aa39.
+    Host is SKF media; document names General Bearing. No assembly, current applicability or physical life validation.'
+  aliases:
+  - general-bearing-fits
 - id: boothroyd-dewhurst-inc-boothroyd-dewhurst-dfma-presentation
   kind: guide
   category: manufacturing-guides

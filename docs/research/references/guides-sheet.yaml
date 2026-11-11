@@ -1577,27 +1577,63 @@ sources:
   - sheet
   - inserts
   evidence:
-    class: read
+    class: encoded
     numbers: some
     tested: 'yes'
     authority: primary
   confidence:
-    level: low
-    estimate: 0.4
+    level: medium
+    estimate: 0.7
     sources: 1
   used_for:
   - docs/research/manufacturing/pem-micro-fasteners.md
   - .agents/skills/pem-fastener-selection/SKILL.md
   - docs/research/process-profiles.yaml
+  - tests/manufacturing/test_cards.py
   verified: '2026-11-11: downloaded and read all 16 PDF pages (printed pp.1-31), including family tables, installation and
     performance qualifications. Visually inspected PDF spreads 7,10,12,14 (printed pp.12-13,18-19,22-23,26-27). Filename Oct2021;
     final footer July2021. SHA256 396c9d3c1172c2d0bda54e2ac9fc452798febaa5551b28aa37030f8db4c1c2f7. Linked videos/current
-    drawings not read; no application validation.'
-  summary: Family-specific microPEM dimensions, materials, installation endpoints and qualified average test results. MSO4
-    self-clinching and MSOFS flaring M2 geometry is exposed as read-only rule cards; this does not qualify printed materials
-    or joint strength.
+    drawings not read; no application validation. 2026-11-11 scoped encoding audit: exact listed MSO4/MSOFS M2, MSIA/MSIB
+    M2-length300 and TKA/TK4-10-150 geometry only, with source-table golden boundaries, tolerance corners and planted dimension/family/process
+    defects in tests/manufacturing/test_cards.py. These reproduce software screens, not installation, strength or physical
+    retention. Additional visual checks printed pp.15,18,24,30. The 30-test-point average footnote on p.30 is for SMTSO, not
+    MSIA/MSIB. 2026-11-11 review correction: independently checked magnified printed p.15/PDF p.8 signed headers. TKA/TK4
+    top 1.3 ±0.05 mm is 1.25–1.35; base 1.0 -0.05 mm is 0.95–1.00. Earlier unpublished intervals incorrectly transferred/omitted
+    header tolerances; their matching tests were insufficient. Corrected source-header fixtures accept both lower corners
+    and reject oversize/wrong-family TS4 cases. No physical qualification follows.'
+  summary: Family-specific microPEM guide. Exact named geometry is encoded with applied software tests; performance tables
+    and installation outcomes remain unqualified for an application. No general printed-material, joint-strength or physical
+    validation.
   claims:
   - text: MSOFS standard metric rows list 0.2-0.3 mm sheet despite a no-minimum-thickness headline
     status: conflicting
     evidence: '2026-11-11: visually read printed p.19 headline, metric table and alternative thinner-sheet illustrations.
       Keep standard rows scoped; consult PEM for thinner/custom solutions.'
+  - text: Only the rules-listed exact-family geometry and tolerance calculations are software encoded.
+    status: encoded
+    evidence: CE printed pp.12,15,18,19 and named applied cases in tests/manufacturing/test_cards.py; boundary and planted-defect
+      controls use manufacturing.cards.card. This does not encode every guide claim.
+  - text: Manufacturer performance tables do not establish application strength or physical qualification.
+    status: unconfirmed
+    evidence: Material, setup and family-specific footnotes remain governing; installation forces are not retention allowables
+      and p.30 torque-out is measured without clamp load.
+  rules:
+  - sm-pem-mso4-m2-sheet
+  - sm-pem-mso4-m2-hole
+  - sm-pem-mso4-m2-edge
+  - sm-pem-msofs-m2-sheet
+  - sm-pem-msofs-m2-hole
+  - sm-pem-msofs-m2-edge
+  - im-pem-msia-msib-m2-300-hole
+  - im-pem-msia-msib-m2-300-depth
+  - im-pem-msia-msib-m2-300-wall
+  - cnc-pem-tka-tk4-10-150-base-hole
+  - cnc-pem-tka-tk4-10-150-top-hole
+  - cnc-pem-tka-tk4-10-150-edge
+  - cnc-pem-tka-tk4-10-150-boss
+  - cnc-pem-tka-tk4-10-150-length
+  - cnc-pem-tka-tk4-10-150-top-stack
+  - cnc-pem-tka-tk4-10-150-engagement
+  - cnc-pem-tka-tk4-10-150-blind-depth
+  checks:
+  - manufacturing.cards.card

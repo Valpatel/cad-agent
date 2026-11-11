@@ -160,7 +160,7 @@ domains:
     title: Manufacturing
     scope: Turning a design into a part, process by process.
     maturity: tooling
-    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md]
+    pages: [docs/process-checks.md, docs/research/manufacturing/process-profiles.md, docs/research/manufacturing/README.md, docs/research/manufacturing/joint-interfaces.md]
     cli: [rules, choose]
     api: [cadagent.manufacturing.process, cadagent.manufacturing.dfm, cadagent.manufacturing.cards]
     uses: [cadagent.mechanical.compliant.allowables, cadagent.mechanical.inserts, cadagent.review.references]

@@ -37,3 +37,13 @@ def test_explicit_empty_selector_is_not_an_owned_printer_listing(monkeypatch, ca
     assert main(["bambu-status", "--device", ""]) == 2
     output = capsys.readouterr()
     assert not output.out and "invalid requested printer identity" in output.err
+
+
+def test_frame_setup_failure_does_not_emit_success_or_query_a_printer(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(cloud, "load_session", lambda p: object())
+    monkeypatch.setattr(cloud, "observe", lambda *a: (_ for _ in ()).throw(AssertionError("must not query")))
+    output = tmp_path / "frame.jpg"
+    assert main(["bambu-frame", "--device", "TESTDEVICE", "--media-library", str(tmp_path / "missing.so"),
+                 "--media-reader", str(tmp_path / "missing.py"), "--output", str(output)]) == 2
+    captured = capsys.readouterr()
+    assert not captured.out and "bambu-frame:" in captured.err and not output.exists()

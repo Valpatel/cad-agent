@@ -65,6 +65,7 @@ flowchart TD
 | Transcript mining | [mining/](mining/README.md); private transcripts → reviewed, sourced lessons |
 | Supply-chain maintenance | [resource_audit.py](resource_audit.py), [vendor_sync.py](vendor_sync.py), [weekly procedure](../docs/practice/weekly-upstream-update.md) |
 | Fixed-dependency Mermaid rebuild | [mermaid/](mermaid/README.md): isolated maintainer dependencies, derived browser bytes, input provenance and notices |
+| External P1S camera reader | [bambu-camera/](bambu-camera/README.md): separately licensed one-frame reader for an installed media runtime; integration in progress |
 | Release and review gates | [cut_release.py](cut_release.py), [ci_gates.py](ci_gates.py); [contributor workflow](../.github/CONTRIBUTING.md) |
 | Quickstart evaluation | [quickstart_eval.py](quickstart_eval.py); grades transcript/file evidence, not physical quality |
 

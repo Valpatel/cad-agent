@@ -2,7 +2,7 @@
 
 Closed-form engineering equations that every domain keeps needing. Each one gives its SI units, the limits where it
 stops being valid, and its source by author, title, edition and section:
-- beams and snap arms;
+- beams, hollow rectangular and round tube sections, and snap arms;
 - torsion bars;
 - coil springs;
 - screw preload and thread strip;
@@ -73,7 +73,7 @@ flowchart TD
 | Module | What it computes |
 |---|---|
 | `_registry.py` | The registry: every public function's units, limits and source; `catalogue()` lists them |
-| `beams.py` | Second moment, cantilever deflection and shape, strain profile, tapered arms, snap-arm strain and force |
+| `beams.py` | Second moment of a rectangle, second moment and section modulus of hollow rectangular and round tube sections, cantilever deflection and shape, strain profile, tapered arms, snap-arm strain and force |
 | `torsion.py` | Torsion constants and shear stress of round and rectangular bars, torsion-bar twist and stiffness, the peak shear strain of a twisted rectangle and a torsion-bar snap against the Covestro allowable |
 | `springs.py` | Coil-spring index, Bergsträsser factor, rate and shear stress |
 | `screws.py` | Tensile stress area, nut factor (any flank angle), preload from torque and back, thread shear areas and strip force, the thread's radial push and the boss's hoop stress, and a thread-forming screw in a plastic boss against Covestro's torque window |

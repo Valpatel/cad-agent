@@ -103,6 +103,61 @@ def test_cantilever_tip_deflection_is_the_cantilever_stiffness():
         fx.beam_stiffness(E, I, L, "hinged")
 
 
+@pytest.mark.parametrize("b,h,t", [(50.8 * MM, 50.8 * MM, 3.175 * MM), (40 * MM, 80 * MM, 4 * MM),
+                                   (100 * MM, 30 * MM, 2 * MM)])
+def test_hollow_rectangle_matches_integration_over_its_walls(b, h, t):
+    # Derivation: I = integral of y^2 dA over the wall alone, strip by strip. Across the depth the section is b wide
+    # in the two flanges and 2 t wide in the webs, and a strip of width w from y1 to y2 gives w (y2^3 - y1^3) / 3.
+    strips = [(-h / 2, -h / 2 + t, b), (-h / 2 + t, h / 2 - t, 2 * t), (h / 2 - t, h / 2, b)]
+    inertia = sum(w * (y2 ** 3 - y1 ** 3) / 3 for y1, y2, w in strips)
+    assert fx.hollow_rect_second_moment(b, h, t) == pytest.approx(inertia, rel=1e-12)
+    assert fx.hollow_rect_section_modulus(b, h, t) == pytest.approx(inertia / (h / 2), rel=1e-12)
+    # the same by the midpoint rule on a grid that lands on the walls' edges
+    n = 4000 * round(h / t) if abs(h / t - round(h / t)) < 1e-9 else 0
+    if n:
+        y = (np.arange(n) + 0.5) / n * h - h / 2
+        wide = np.where(np.abs(y) > h / 2 - t, b, 2 * t)
+        assert float((y * y * wide).sum() * h / n) == pytest.approx(inertia, rel=1e-6)
+    # and it is the solid rectangle less the hole, which nears the solid as the hole closes
+    assert fx.hollow_rect_second_moment(b, h, t) == pytest.approx(
+        fx.rect_second_moment(b, h) - fx.rect_second_moment(b - 2 * t, h - 2 * t), rel=1e-12)
+    nearly_solid = fx.hollow_rect_second_moment(b, h, min(b, h) / 2 * (1 - 1e-9))
+    assert nearly_solid == pytest.approx(fx.rect_second_moment(b, h), rel=1e-6)
+
+
+@pytest.mark.parametrize("d,t", [(48.3 * MM, 3.2 * MM), (25.4 * MM, 1.65 * MM), (60 * MM, 12 * MM)])
+def test_round_tube_matches_integration_over_its_wall(d, t):
+    # Derivation: I about a diameter = integral of (r sin a)^2 r dr da over the annulus (midpoint rule on r; the
+    # angle integrates to pi exactly).
+    n = 200000
+    r = d / 2 - t + (np.arange(n) + 0.5) / n * t
+    inertia = float(math.pi * (r ** 3).sum() * t / n)
+    assert fx.round_tube_second_moment(d, t) == pytest.approx(inertia, rel=1e-8)
+    assert fx.round_tube_section_modulus(d, t) == pytest.approx(inertia / (d / 2), rel=1e-8)
+    # the hollow shaft's torsion constant is the polar moment, twice the second moment about a diameter
+    assert fx.torsion_constant_round(d / 2, d / 2 - t) == pytest.approx(2 * fx.round_tube_second_moment(d, t), rel=1e-12)
+
+
+def test_a_thin_round_tube_nears_pi_r_cubed_t():
+    # Derivation: a thin ring of mean radius r has I = pi r^3 t; the exact form differs by (t / 2r)^2.
+    d, t = 100 * MM, 0.1 * MM
+    r = (d - t) / 2
+    assert fx.round_tube_second_moment(d, t) == pytest.approx(math.pi * r ** 3 * t, rel=1e-5)
+
+
+@pytest.mark.parametrize("call", [
+    lambda: fx.hollow_rect_second_moment(50 * MM, 50 * MM, 25 * MM),      # no hole left
+    lambda: fx.hollow_rect_section_modulus(50 * MM, 20 * MM, 10 * MM),
+    lambda: fx.hollow_rect_second_moment(50 * MM, -50 * MM, 3 * MM),
+    lambda: fx.round_tube_second_moment(50 * MM, 25 * MM),
+    lambda: fx.round_tube_section_modulus(0, 1 * MM),
+    lambda: fx.round_tube_second_moment(50 * MM, math.nan),
+])
+def test_hollow_sections_refuse_a_wall_that_leaves_no_hole(call):
+    with pytest.raises(ValueError):
+        call()
+
+
 def _numerical_shape(design, n=40000):
     """Derivation: integrate y'' = M / (E I(x)) twice from a clamped root (trapezoid rule) for an end load."""
     x = np.linspace(0.0, 1.0, n + 1)

@@ -24,7 +24,9 @@ from cadagent.formulas.bearings import (CLEARANCES, DEEP_GROOVE_TABLE, RELIABILI
                                         static_rating_iso76, static_safety, stribeck_ball_load, varying_load_mean)
 from cadagent.formulas.beams import (DESIGNS, SUPPORTS, beam_stiffness, cantilever_shape, cantilever_strain_profile,
                                      cantilever_taper_factor, cantilever_thickness_profile, cantilever_tip_deflection,
-                                     rect_second_moment, snap_arm, snap_deflection_force, snap_root_strain)
+                                     hollow_rect_second_moment, hollow_rect_section_modulus, rect_second_moment,
+                                     round_tube_second_moment, round_tube_section_modulus, snap_arm,
+                                     snap_deflection_force, snap_root_strain)
 from cadagent.formulas.inserts import (arc_path_radius, arc_printed_diameter, facet_diameter, insert_clamp_path,
                                        insert_displaced_volume, insert_limited_torque, insert_shear_force,
                                        insert_shear_torque, overflow_volume, polyhole)

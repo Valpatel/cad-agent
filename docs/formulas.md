@@ -111,11 +111,13 @@ flowchart TD
 SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A strain is a fraction (0.02 = 2 %).
 
 <details>
-<summary>All 84 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
+<summary>All 99 functions in <code>catalogue()</code>: what each computes, its source and where it is valid</summary>
 
 | Function | What | Source | Valid within |
 |---|---|---|---|
 | `rect_second_moment` | I = b h³ / 12 | Roark 8th ed., Table A.1 | solid rectangle |
+| `hollow_rect_second_moment`, `hollow_rect_section_modulus` | a box tube: I = (b h³ − (b − 2t)(h − 2t)³) / 12 and S = I / (h / 2) | Roark 8th ed., Table A.1 (hollow rectangle) | sharp corners, one wall all round: a formed tube's handbook value is lower; no local buckling |
+| `round_tube_second_moment`, `round_tube_section_modulus` | a round tube: I = π (D⁴ − d⁴) / 64 and S = I / (D / 2) | Roark 8th ed., Table A.1 (hollow circle) | concentric, the wall as made; no local buckling |
 | `cantilever_tip_deflection` | y = F L³ / 3 E I | Roark 8th ed., Table 8.1, case 1a | Euler–Bernoulli, small deflection |
 | `beam_stiffness` | 3, 12, 48, 192 E I / L³ (cantilever, guided, simply supported, fixed–fixed) | Roark 8th ed., Table 8.1 | point load; slender beam |
 | `cantilever_shape` | the deflected curve, constant or tapered arm | Roark 8th ed., Section 8.1, integrated exactly | end load |
@@ -210,6 +212,8 @@ in the test.
   - Beam stiffness by the direct stiffness method.
   - The tapered-arm curves by numerical integration, and the Covestro Table 1 factors as the exact integrals rounded.
   - Example I of the guide in SI units, and agreement with `cad-agent snapfit` to 1e-12.
+  - Hollow rectangles and round tubes by integrating over the wall, as the solid less the hole, and a thin ring
+    against π r³ t. A derivation only: no handbook table was opened.
 - **Torsion.**
   - Rectangular sections against the Saint-Venant series (within 0.5 %, the worst at aspect 1.145), and against the
     tabulated coefficients in Shigley, Section 3-12.

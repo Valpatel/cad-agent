@@ -4,9 +4,11 @@ Small runner provisioning corrections live here as the tools root reaches its gr
 The release and review entry points remain in the parent directory.
 
 ```mermaid
-flowchart LR
-    W["CI full job"] --> M["apt_mirror.py"]
-    M --> A["runner Canonical HTTPS fallbacks"]
+flowchart TD
+    W["Full CI"] --> M["Check mirrors"]
+    M --> A["HTTPS fallbacks"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    class W,M,A here
 ```
 
 | File | Purpose |

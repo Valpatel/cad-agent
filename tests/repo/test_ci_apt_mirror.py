@@ -3,6 +3,14 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+import http.server
+import threading
+import subprocess
+import shutil
+import os
+import re
+import shlex
+import time
 
 SPEC = importlib.util.spec_from_file_location("ci_apt_mirror", Path(__file__).resolve().parents[2] / "tools/ci/apt_mirror.py")
 mirror = importlib.util.module_from_spec(SPEC)
@@ -91,6 +99,59 @@ class MirrorTests(unittest.TestCase):
         self.path.write_text(original)
         mirror.configure(self.path, self.source)
         self.assertEqual(self.path.read_text(), "# mirror note\n\n" + FALLBACKS)
+
+
+@unittest.skipUnless(shutil.which("apt-get"), "requires the existing apt transport; never installs packages")
+class TransportTests(unittest.TestCase):
+    def test_workflow_transport_reaches_fallback_and_still_rejects_unsigned_metadata(self):
+        import pwd  # this test is skipped on platforms without apt
+        requests = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                requests.append((self.server.stall, self.path))
+                if self.server.stall:
+                    time.sleep(20)
+                    return
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"not-signed-metadata\n")
+
+            def log_message(self, *args):
+                pass
+
+        servers = []
+        try:
+            for stall in (True, False):
+                server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+                server.stall = stall
+                threading.Thread(target=server.serve_forever, daemon=True).start()
+                servers.append(server)
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "lists/partial").mkdir(parents=True)
+                (root / "cache").mkdir()
+                mirrors = root / "mirrors.txt"
+                mirrors.write_text("".join(f"http://127.0.0.1:{server.server_port}/\tpriority:{i + 1}\n"
+                                           for i, server in enumerate(servers)))
+                source = root / "source.list"
+                source.write_text(f"deb [signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] mirror+file:{mirrors} control main\n")
+                workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
+                options = shlex.split(re.search(r"apt_options=\(([^)]*)\)", workflow)[1])
+                # All state/cache/source paths are temporary; this only downloads loopback index metadata.
+                command = ["apt-get", "-o", f"Dir::Etc::sourcelist={source}", "-o", "Dir::Etc::sourceparts=-",
+                           "-o", f"Dir::State::lists={root}/lists", "-o", f"Dir::Cache={root}/cache",
+                           "-o", f"APT::Sandbox::User={pwd.getpwuid(os.getuid()).pw_name}",
+                           "-o", "Acquire::http::Proxy::127.0.0.1=DIRECT",
+                           *options, "update"]
+                result = subprocess.run(command, text=True, capture_output=True, timeout=25)
+                self.assertTrue(any(not stalled for stalled, _ in requests), result.stdout + result.stderr)
+                self.assertEqual(result.returncode, 100, result.stdout + result.stderr)
+                self.assertIn("not signed", result.stderr)
+        finally:
+            for server in servers:
+                server.shutdown()
+                server.server_close()
 
 
 if __name__ == "__main__":

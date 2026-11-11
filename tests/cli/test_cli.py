@@ -106,6 +106,21 @@ def test_check_exit_code_follows_the_results(tmp_path, capsys):
     assert main(["check", "--project", str(root)]) == 1
     assert "FAIL" in capsys.readouterr().out
 
+
+@pytest.mark.parametrize('command', ['check', 'report', 'all'])
+def test_persisted_invalid_slice_fails_check_report_and_all(tmp_path, monkeypatch, capsys, command):
+    from cadagent import cli
+    root = make_project(tmp_path)
+    # Keep the all orchestration and real report; replace the unrelated build/native/package steps.
+    for name in ('cmd_build', 'cmd_export_3mf', 'cmd_holes', 'cmd_package'):
+        monkeypatch.setattr(cli, name, lambda project, args: 0)
+    (root / 'exports/slice-report.json').write_text('{')
+    assert main([command, '--project', str(root)]) == 1
+    output = capsys.readouterr().out
+    assert 'slice again with cad-agent slice' in output and 'slicer not run' not in output
+    (root / 'exports/slice-report.json').unlink()
+    assert main([command, '--project', str(root)]) == 0
+
 def test_report_and_package(tmp_path, capsys):
     root = make_project(tmp_path)
     with open(root / "cad-agent.yaml", "a") as fh:

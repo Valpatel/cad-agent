@@ -288,6 +288,53 @@ def test_cube_smoke_uses_fresh_snap_workspaces(tmp_path, monkeypatch, outcome):
     assert len(workspaces) == 2
 
 
+@pytest.mark.parametrize('exit_code,return_code,grams,ok', [
+    (0, 0, 3.5, True), (7, 0, 3.5, False), (0, -13, 3.5, False),
+    (7, -13, 3.5, False), (0, None, 3.5, False), (0, '0', 3.5, False),
+    (0, False, 3.5, False), (0, 0, 0, False),
+])
+def test_bambu_codes_survive_parser_project_and_visible_report(tmp_path, monkeypatch, exit_code, return_code, grams, ok):
+    """Plausible grams cannot override either failure code; real Bambu success text is nonempty."""
+    from types import SimpleNamespace
+    from tests.publish.test_report import make_project, rows
+    from cadagent.project import load_project
+    from cadagent.publish.report import write_report
+
+    project = load_project(make_project(tmp_path / 'project'))
+    real_run = slicer.subprocess.run
+    monkeypatch.setattr(slicer, 'executable', lambda: '/controlled/BambuStudio')
+    monkeypatch.setattr(slicer, 'resolve_profile', lambda kind, name: {'settings': {'name': name}, 'files': {}})
+
+    def run(cmd, **kwargs):
+        out = Path(cmd[cmd.index('--outputdir') + 1])
+        data = {'error_string': 'Success.' if return_code == 0 else 'Controlled failure',
+                'sliced_plates': [{'filaments': [{'total_used_g': grams}], 'total_predication': 60}]}
+        if return_code is not None:
+            data['return_code'] = return_code
+        (out / 'result.json').write_text(json.dumps(data))
+        return SimpleNamespace(returncode=exit_code, stdout='', stderr='')
+
+    monkeypatch.setattr(slicer.subprocess, 'run', run)
+    sliced = slicer.slice_project(project)
+    assert sliced['pass'] is ok
+    persisted = json.loads((project.exports_dir / 'slice-report.json').read_text())
+    for row in persisted['parts'].values():
+        assert row['ok'] is ok and row['exit_code'] == exit_code and row['return_code'] == return_code
+        assert row['error'] == ('Success.' if return_code == 0 else 'Controlled failure')
+    summary = json.loads((project.root / 'build/slicer/box/result-summary.json').read_text())
+    assert summary['ok'] is ok
+    monkeypatch.setattr(slicer.subprocess, 'run', real_run)
+    json_path, html_path, results = write_report(project)
+    assert results['pass'] is ok and results['physical_fit_verified'] is False
+    assert rows(json.loads(json_path.read_text()), 'cad-slicer') == rows(results, 'cad-slicer')
+    if grams:
+        assert rows(results, 'cad-slicer')['box']['status'] == ('pass' if ok else 'fail')
+        for key, code in (('exit_code', exit_code), ('return_code', return_code)):
+            if code not in (None, 0):
+                assert f'{key} {code}' in rows(results, 'cad-slicer')['box']['message']
+                assert f'{key} {code}' in html_path.read_text()
+
+
 def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):
     import pathlib
     from tests.publish.test_report import make_project
@@ -307,7 +354,8 @@ def test_work_folder_guard_and_partial_reslice(tmp_path, monkeypatch):
     root = make_project(tmp_path / 'proj')
     project = load_project(root)
     grams = {'box': 5.0, 'lid': 7.0}
-    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: {'grams': grams[pathlib.Path(m).stem], 'minutes': 10.0})
+    monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: {'grams': grams[pathlib.Path(m).stem], 'minutes': 10.0,
+                                                            'ok': True, 'exit_code': 0, 'return_code': 0})
     full = slicer.slice_project(project)
     assert set(full['parts']) == {'box', 'lid'} and full['total_grams'] == 12.0
     grams['box'] = 4.0
@@ -415,11 +463,11 @@ def test_part_overrides_go_on_top_and_are_part_of_a_rows_identity(tmp_path, monk
     seen = {}
     monkeypatch.setattr(slicer, 'executable', lambda: '/bin/true')
     monkeypatch.setattr(slicer, 'slice_part', lambda m, **kw: seen.update({pathlib.Path(m).stem: kw['overrides']})
-                        or {'grams': 5.0, 'minutes': 10.0})
+                        or {'grams': 5.0, 'minutes': 10.0, 'ok': True, 'exit_code': 0, 'return_code': 0})
     rep = slicer.slice_project(project)
     assert seen == {'box': {'wall_loops': '3', 'brim_width': '8'}, 'lid': {'wall_loops': '3', 'brim_width': '0'}}
     assert rep['parts']['box']['part_overrides'] == {'brim_width': '8'}
-    assert 'part_overrides' not in rep['parts']['lid'] and 'ok' not in rep['parts']['lid']   # Bambu rows as before
+    assert 'part_overrides' not in rep['parts']['lid'] and rep['parts']['lid']['ok'] is True
     assert rep['pass'] and slicer.current_report(project) is not None
     project.slicer['parts']['box']['overrides']['brim_width'] = '10'      # the box's row is stale now
     assert slicer.current_report(project) is None

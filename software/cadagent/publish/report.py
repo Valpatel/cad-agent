@@ -13,9 +13,9 @@ runs nothing. Features:
 * ``cad-gates`` (only with ``cad: dossier:`` or ``cad: gates:``): one row per integrity gate from
   ``exports/gates/<gate>.json``; a missing, stale (inputs differ from the current geometry record, declarations or
   options) or failing verdict fails, a gate with nothing to check is a skip (``cadagent.review.gates.run.gate_rows``).
-* ``cad-slicer`` (only with a current ``exports/slice-report.json``, ``cad-agent slice``): one row per sliced part;
+* ``cad-slicer`` (with ``exports/slice-report.json``, ``cad-agent slice``): one row per current sliced part;
   a part the slicer did not report as ok (an error, or a print-stability issue PrusaSlicer names) fails. Without a
-  current slice report there is no such feature and the footer says "slicer not run": slicing is optional.
+  slice report there is no such feature: slicing is optional. A persisted stale or invalid report fails visibly.
 
 A missing file, missing key or non-boolean verdict is a failure, never a pass.
 Evidence paths are relative to ``docs_dir``, where the HTML report is written.
@@ -268,15 +268,19 @@ def gates_feature(project: CadProject, report_dir: Path) -> Optional[Dict[str, A
         checks = [{"name": "gates", "status": "skip", "message": "no gate applies"}]
     return {"feature_id": "cad-gates", "feature_title": "Integrity gates", "checks": checks}
 
-def slicer_feature(sliced: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def slicer_feature(sliced: Optional[Dict[str, Any]], problem: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """The current slice report (``cadagent.manufacturing.slicer.current_report``) as report rows, one per sliced
     part: pass when the slicer's row is ok, fail with the slicer's own words when it is not (an error, a non-zero
-    exit, a print-stability issue). None when there is no current slice report: slicing stays optional, and the
-    footer says "slicer not run".
+    exit, a print-stability issue). A persisted stale/invalid report fails with a rerun action. None when no report
+    exists: slicing stays optional, and the footer says "slicer not run".
 
     A row says what the slicer reported for its profile. It does not prove the part prints."""
     from cadagent.manufacturing.slicer import _row_ok
 
+    if problem:
+        message = f'{problem}; slice again with cad-agent slice'
+        return {"feature_id": "cad-slicer", "feature_title": "Slicer · report needs a new slice",
+                "checks": [_row("slice report", False, message, message)]}
     if not sliced:
         return None
     checks = []
@@ -299,6 +303,8 @@ def slicer_feature(sliced: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]
                 if "print stability issues" not in str(line)]      # listed above, by category
         if row.get("error"):
             why.append(str(row["error"]))
+        why += [f"{key} {row[key]}" for key in ("exit_code", "return_code")
+                if row.get(key) is not None and row[key] != 0]
         why = why or ["the slicer did not report the part as ok"]
         checks.append(_row(name, False, " · ".join(["flagged by the slicer: " + "; ".join(why)] + facts),
                            "\n".join(why)))
@@ -321,17 +327,18 @@ def collect(project: CadProject) -> Dict[str, Any]:
     dossier = dossier_feature(project)
     if dossier is not None:
         features.append(dossier)
-    from cadagent.manufacturing.slicer import current_report
-    sliced = current_report(project)
-    slicing = slicer_feature(sliced)
+    from cadagent.manufacturing.slicer import report_status
+    sliced, slice_problem = report_status(project)
+    slicing = slicer_feature(sliced, slice_problem)
     if slicing is not None:      # a part the slicer flagged fails the report, not only its footer (#520)
         features.append(slicing)
     counts = summarize({"features": features})
     revision = project.resolve_revision()
     slicer_text = (f"sliced ({sliced['slicer']}): {sliced['total_grams']} g, {sliced['total_hours']} h for "
-                   f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else "slicer not run"
+                   f"{len(sliced['parts'])} part(s), {sliced['process']}, {sliced['filament']}") if sliced else (
+                       f"{slice_problem}; slice again with cad-agent slice" if slice_problem else "slicer not run")
     flagged = sorted(c["name"] for c in (slicing or {}).get("checks", []) if c["status"] == "fail")
-    if flagged:      # the slicer said these may print badly: the grams stand, the part is not fine
+    if flagged and sliced:      # the slicer said these may print badly: the grams stand, the part is not fine
         slicer_text += f"; NOT OK, flagged by the slicer: {', '.join(flagged)}"
     return {
         "schema_version": SCHEMA_VERSION,

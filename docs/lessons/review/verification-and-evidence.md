@@ -101,6 +101,10 @@ flowchart TD
 ### Never claim what was not tested, and make the checks strict
 - **Rule:** Every report states what was not verified (physical fit, slicer, thermal, airflow, loads). A check passes
   only on an explicit true. A missing file or key is a failure.
+  Keep optional absence distinct from stale retained evidence: after a slice report exists, changed inputs or an
+  unreadable report require a new slice, rather than a green "never sliced" result. Preserve producer failure codes
+  even when measurements are present; Bambu's nonempty `Success.` text is not a failure code
+  ([status evidence](../../../.agents/inbox/2026-11-11-slice-status-needs-codes-and-currency.md)).
 - **Incident:** The Rev 0.5 report opened with "nothing has been printed, run through a slicer, or test-fitted". The
   hex chamfer report said "the airflow gain is untested". The Bambu link was reported as found in the binary but not
   tested. `assembly-checks.json` carries `physical_fit_verified: false`. The shared CAD report "always records

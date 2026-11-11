@@ -45,6 +45,20 @@ test('the site\'s Gyropup model decodes whole, matches its checksum and sits whe
   const members = Object.values(source.members).flat();
   assert.equal(new Set(members).size, members.length, 'each source part has one recorded group');
   assert.ok(Object.values(source.members).every(names => names.length > 0));
+  // This source-bound homepage fixture must show the accepted front/rear packs, not the former belly enclosure.
+  assert.equal(source.revision, '3a40891962b0b0a04625e070700f1d130bea3c7b', 'the end-pack fixture records its actual source');
+  assert.equal(parts.length, 32, 'the accepted model has 32 visible groups');
+  assert.equal(members.length, 224, 'the accepted source has 224 unique parts');
+  for (const name of ['end_pack_holder_front', 'end_pack_holder_rear', 'end_foot_front', 'end_foot_rear'])
+    assert.ok(members.includes(name), `${name}: current end-pack support is present`);
+  for (const name of ['adapter_plate_front', 'adapter_plate_rear', 'bay_door_front', 'bay_door_rear', 'bay_floor',
+    'bay_rail_l', 'bay_rail_r', 'bay_side_l', 'bay_side_r', 'bay_skid_1', 'bay_skid_2', 'bay_skid_3', 'bay_skid_4'])
+    assert.ok(!members.includes(name), `${name}: retired belly enclosure is absent`);
+  assert.deepEqual(source.members.battery.slice().sort(), ['item.battery_front', 'item.battery_rear']);
+  const battery = model.parts.find(p => p.name === 'battery');
+  const acceptedBattery = [-286.775, -48.5, -87.04, 286.775, 48.5, 49.96];
+  assert.ok(battery && battery.bounds_mm.every((v, k) => Math.abs(v - acceptedBattery[k]) < 0.02),
+    'battery placement matches the accepted front/rear packs, not the old belly');
   const { banner } = JSON.parse(await readFile(path.join(root, 'docs/img/gyropup/SOURCE.json'), 'utf8'));
   assert.equal(banner.revision, source.revision, 'project card and interactive model describe one source');
   for (const [file, sha] of [['tools/site/assets/models/gyropup.json', banner.model_sha256],

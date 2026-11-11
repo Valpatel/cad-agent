@@ -478,3 +478,29 @@ def test_pem_cards_keep_families_and_printed_materials_separate():
         # A process filter must not publish these sheet dimensions as FDM rules.
         polymer = cards.card(name, process="fdm", material="petg")
         assert "sm-pem-" not in cards.render_card(polymer)
+
+
+def test_plastic_screw_family_guidance_does_not_supply_a_missing_joint_rating(capsys):
+    """A family preference is not a capacity model: apply the same 10 N case to four processes."""
+    source = "bossard-fastening-technology-self-tapping-screws-for-plastic"
+    for material in ("abs", "thermoset"):
+        code, out, err = _run(["choose", "joining", "--process", "injection-moulding", "--material", material,
+                               "--load", "10", "--cycles", "1", "--json"], capsys)
+        assert code == 0 and not err
+        result = json.loads(out)
+        assert result["choice"] is None and not result["decided"]
+        assert result["facts"]["insert_fits"] is None
+        assert "no capacity model for injection-moulding" in result["missing"]["insert_fits"]
+
+    sla = cards.choose("joining", process="sla", material="resin", load=10, cycles=1)
+    assert sla["choice"] == "glued-insert" and sla["facts"]["insert_fits"] is None
+    assert any("load is not checked" in gap for gap in sla["gaps"])
+    assert source not in cards.render_choice(sla), "general thermoset advice does not authorize cutting a brittle SLA part"
+
+    pla = cards.choose("joining", process="fdm", material="pla", load=10, cycles=1)
+    assert pla["choice"] == "thread-forming-screw"
+    text = cards.render_choice(pla)
+    assert f"[ref:{source}]" in text and "forming generally suits thermoplastics, cutting thermosets" in text
+    assert "screw's own pull-out is not computed" in text and "insert's capacity" in text
+    assert "no printed-joint capacity or wall dimension" in text
+    assert not any(rule.source == source for rule in pp.load().rules()), "a qualitative article cannot create numerical rules"

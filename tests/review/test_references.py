@@ -682,3 +682,18 @@ def test_the_coverage_rows_keep_their_drafts_unposted(registry):
     assert drafts and all(d["posted"] is False or (isinstance(d["posted"], int) and not isinstance(d["posted"], bool))
                           for d in drafts)
     assert {w["group"] for w in registry.coverage["wanted"]} == set(registry.vocab["process_group"])
+
+
+def test_bossard_reading_preserves_identity_and_historical_claim_limit(registry):
+    key = "bossard-fastening-technology-self-tapping-screws-for-plastic"
+    ref = registry.resolve(key)
+    assert ref.kind == "source" and ref.data["evidence"]["class"] == "read"
+    assert ref.data["evidence"]["numbers"] == "none" and ref.data["evidence"]["tested"] == "no"
+    assert ref.data["url"] == "https://www.bossard.com.cn/cn-en/knowledge-hub/inspiration/blog/self-tapping-screws-plastic/"
+    assert sum(r.data.get("url") == ref.data["url"] for r in registry.entries.values()) == 1
+    note = ref.data["verified"]
+    assert "2026-11-11" in note and "b5b250c9101e26eec7852dfe0e8603ba3c6ed9f894b6374dbf2b86410b8b3871" in note
+    assert "not corroborated" in note and "historically" in note
+    assert not any("1.8" in str(claim) or "2.5" in str(claim) for claim in ref.data["claims"])
+    draft = next(r for r in registry.coverage["rows"] if r["id"] == "ca-2-screw-boss-wall-spacing-self-tapping")["draft_issue"]
+    assert "1.8-2.5" not in draft["body"], "the uncorroborated dimension must not survive as actionable backlog advice"

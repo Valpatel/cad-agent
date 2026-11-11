@@ -25,6 +25,11 @@ Before exporting a bent part, use the [bend-file review](../../../docs/research/
 
 ## Steps
 
+Run the checks in order: select the sheet, check bends and nearby holes, place clinch hardware, check riveted seams, then price accepted parts. Keep every verdict and its source before ordering.
+
+<details>
+<summary>Six checks: material, bends, nearby holes, clinch placement, riveted seams and cost</summary>
+
 1. **Pick the sheet.** Use 5052-H32 aluminium or mild (cold-rolled) steel, 1.0 to 3.2 mm. Both take the cheap
    zinc-plated steel clinch parts. Stainless sheet takes none of the listed parts; it needs PEM's SP, FH4 or SO4 types.
 2. **Check the bends** with `cadagent.manufacturing.sheet_metal.check_bends`. Give the flanges to the outside, the
@@ -48,6 +53,8 @@ Before exporting a bent part, use the [bend-file review](../../../docs/research/
    - Match the rivet's metal to the sheet: aluminium in aluminium, steel or stainless in steel.
 6. **Price it** with `cadagent.mechanical.sheet_hardware.cost`. It gives loose parts, whole packs, and the shop's
    price to press the parts in, each from a dated public price. Re-read the seller's page before buying.
+
+</details>
 
 <details>
 <summary>The six steps as calls, on a 1.6 mm 5052 U channel riveted to a 1.6 mm plate</summary>

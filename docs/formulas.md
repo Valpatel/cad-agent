@@ -55,8 +55,9 @@ in a printed boss).
   deflections, contact or plastic strain, use FEA (`cadagent.simulation.fea`) and a test.
 - **Screws.** Torque gives preload to about ±25 % even with a known nut factor; in plastic the factor is unknown
   until measured. Thread stripping assumes even load sharing, which real threads do not have.
-- **Welds.** Static load only, on a sound weld. See [Fillet welds](#fillet-welds) for what the weld functions leave
-  out: fatigue, weld quality, the heat-affected zone, residual stress and burn-through.
+- **Welds.** Static load only, on a sound weld, of a member on a plate or a stiff part. [Fillet welds](#fillet-welds)
+  says what the weld functions leave out: fatigue, weld quality, the heat-affected zone, residual stress,
+  burn-through and tube-to-tube joints.
 
 ## Why it is built, not adopted
 
@@ -216,30 +217,37 @@ fx.fillet_weld_check(s["stress"], leg=0.003, electrode_strength=483e6, thickness
                      yield_strength=315e6, tensile_strength=400e6, method="asd")   # weld 0.38, base 0.30
 ```
 
+Arrows: each function's result is the next one's input.
+
+```mermaid
+flowchart TD
+    G["weld_line_box · _parallel · _circle<br/>the weld as a line"] --> S["weld_group_stress<br/>loads at the centroid"]
+    S -->|"throat stress, Pa"| C["fillet_weld_check<br/>lrfd or asd"]
+    W["weld_metal_strength<br/>0.60 FEXX, Table J2.5"] --> C
+    B["base_metal_shear_strength<br/>0.60 Fy, 0.60 Fu, J4.2"] --> C
+    C --> R["weld ratio · base ratio<br/>kept apart, which governs"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class G,S,C,W,B here
+    class R out
+```
+
 The group lies in the x-y plane with its centroid at the origin, and z runs along the welded member. Loads act at
 the centroid: move an offset force there and add its moment. `weld_group_stress` uses the line method of Shigley's
 Chapter 9 [ref:shigley]: every point of the weld gets a force per unit length from each load, the forces add as
-vectors, and the whole resultant goes on the throat as shear. `fillet_weld_check` then compares that stress with the
-weld metal's strength and, apart from it, the weld's force per unit length with the base metal's shear strength
-beside the weld, both from AISC 360-16 [ref:aisc-360-16]. Choose `"lrfd"` with factored loads or `"asd"` with
-service loads; the result names the method and the factor it used.
+vectors, and the whole resultant goes on the throat as shear. `fillet_weld_check` compares that stress with the weld
+metal's strength and, apart from it, the weld's force per unit length with the base metal's shear strength beside
+the weld, both from AISC 360-16 [ref:aisc-360-16]. Choose `"lrfd"` with factored loads or `"asd"` with service
+loads; the result names the method.
 
-The directional strength increase that AISC allows for a fillet loaded across its axis is left out. Packer and Sun
-found it unsafe for fillet welds to the ends of rectangular tubes [ref:packer-sun-2015-hss-fillet]. Leaving it out
-is the cautious choice for the direction of the load on the throat; it does not make up for anything in the lists
-below.
+**These checks are for static load on a sound weld, of a member on a plate or a stiff part.** They do not cover
+fatigue, weld quality, the heat-affected zone, residual stress, burn-through of a thin wall, or a tube welded to
+another tube's face. A calculation that passes does not prove that a weld made by a hobbyist is sound: break a test
+piece welded the same way, and inspect the real joint.
 
-Where the line method itself stops:
-
-- **A tube welded to another tube's face.** The method loads the whole perimeter, which holds on a plate or a part
-  stiff enough to pass the load evenly. The face of a hollow section is flexible, so the load crowds to the corners
-  and only part of the weld works. AISC 360-16 Section K5 gives effective weld lengths for that case, and the full
-  perimeter used here is unconservative.
-- **Shear is spread evenly over the whole length**, as Shigley does. The elastic peak in the welds that run along
-  the force is about twice that on a square or round tube. With bending present the corner governs and this hardly
-  matters; a short stub loaded mostly in shear is under-read, and relies on the weld's ductility.
-
-What these functions do not cover:
+<details>
+<summary>What each of those limits means, and two choices the method makes</summary>
 
 - **Fatigue.** A welded joint under repeated load fails far below its static strength. A frame that is driven,
   shaken or loaded in cycles needs a fatigue assessment, which is not here.
@@ -250,9 +258,19 @@ What these functions do not cover:
 - **Residual stress and distortion.**
 - **Burn-through of a thin wall.** `fillet_size_limits` gives the specification's least leg, and the largest along
   a lapped edge. It does not show that a 3 mm wall takes the heat.
+- **A tube welded to another tube's face.** The method loads the whole perimeter, which holds on a plate or a part
+  stiff enough to pass the load evenly. The face of a hollow section is flexible, so the load crowds to the corners
+  and only part of the weld works. AISC 360-16 Section K5 gives effective weld lengths for that case, and the full
+  perimeter used here is unconservative.
+- **Shear is spread evenly over the whole length**, as Shigley does. The elastic peak in the welds that run along
+  the force is about twice that on a square or round tube. With bending present the corner governs and this hardly
+  matters; a short stub loaded mostly in shear is under-read, and relies on the weld's ductility.
+- **No directional strength increase.** AISC allows more on a fillet loaded across its axis. Packer and Sun found
+  that unsafe for fillet welds to the ends of rectangular tubes [ref:packer-sun-2015-hss-fillet], so it is left
+  out. That is the cautious choice for the direction of the load on the throat only; it does not make up for
+  anything else in this list.
 
-A calculation that passes does not prove that a weld made by a hobbyist is sound. Break a test piece welded the same
-way, and inspect the real joint.
+</details>
 
 In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
 `cantileverStrainProfile`, `fourbarAngles`, `fanOperatingPoint` and the others in the golden vectors) in the same SI

@@ -2092,3 +2092,724 @@ sources:
   verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages; code 091724PA. PDF SHA-256 955f9a0dcfa83a194e4e6b8baa09bd155dbec1b3dfc2efbb4336e3d02cc5a3cf
     rechecked against study checkpoint 6787139471. Scope is endpoints, coating/release and source limits; no mix, solvent,
     thickness or heating recipe adopted. SDS and physical trial not performed.'
+- id: smoothon-shore-hardness-guide
+  kind: guide
+  category: manufacturing-guides
+  title: Durometer Shore Hardness Scale
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/page/durometer-shore-hardness-scale/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Record the Shore scale as well as its value, and review master and casting removal separately from the functional
+      requirements of a cast part.
+    status: unconfirmed
+    evidence: Measurement and mould-maker sections. The illustrative sculpture/paving-stone choices are not universal hardness
+      thresholds, modulus estimates or tear/strength allowables.
+  summary: Shore scales describe indentation resistance. Mould-removal geometry matters when selecting rubber; a hardness
+    designation alone does not establish casting function or a compliant latch design.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete main article and visually inspected associated durometerchart.png
+    (SHA-256 cdc0ad24862fb116ca2887fa92c7fb15409c96853c40f480fafad2bcc7a5a4ab). No displayed revision; linked printable PDF
+    not read. HTML SHA-256 b7f60665b8026a455e77ad7d0b78ed9e3afdeb1ff977edc6e7949aa478d6cc29. Source rechecked against queued
+    study; no physical trial or equipment inspection.'
+- id: smoothon-viscosity-guide
+  kind: guide
+  category: manufacturing-guides
+  title: What is Viscosity? Complete Guide to Fluid Viscosity
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/page/viscosity-scale/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Treat the generic viscosity bands and degassing thresholds as orientation, not requirements that override the selected
+      grade.
+    status: conflicting
+    evidence: For Mold Making calls 5,000–15,000 cPs medium/requiring vacuum and 15,000+ brush-on/non-sag; Critical Guidelines
+      uses 15,000+ for rubber vacuuming. Dragon Skin 10 NV is 6,000 cps without vacuum for most applications; Mold Max 10
+      is pourable at 15,000 cps. Boundary/application differences remain explicit.
+  - text: Temperature and additives can change flow and other properties; do not transfer the guide's generic thinning/thickening
+      suggestions across grades.
+    status: unconfirmed
+    evidence: Why Temperature Matters and Common Viscosity Questions. No warming, additive percentage, pump or cure recipe
+      adopted; use matching product instructions and representative compatibility evidence.
+  summary: Viscosity, application method and air-management guidance require the exact product bulletin. Generic bands conflict
+    with selected pourable/no-vacuum products and are not process-selection rules.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all main article sections, tables and FAQ text. No displayed revision.
+    Linked printable chart, selection tools and videos not read; generic additive recipes not adopted. HTML SHA-256 82f901a89870da78301bd28d1f6417df26206bb57bbb56a1015a2f04726342bd.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-technical-charts
+  kind: guide
+  category: manufacturing-guides
+  title: Technical Specification Charts
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/charts/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Equal Shore A designations do not imply equal flow, tear data, working time or suitability for a cast latch.
+    status: unconfirmed
+    evidence: Read column headers/disclaimer and Mold Max 10 and Dragon Skin 10 NV rows only. Selected rows report 10A for
+      both, but 15,000 versus 6,000 cps and Die B tear 100 versus 90 pli. These publisher values are not independently measured
+      or functional design allowables.
+  summary: Selected chart rows help compare two nominally 10A mould rubbers; exact bulletins retain grade, mix basis, working
+    time and conditioning context. The chart index is not a read claim for all products.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read chart headers/disclaimer and only Mold Max 10 and Dragon Skin 10 NV
+    rows; other product rows and printable PDFs remain unstudied. No displayed revision. HTML SHA-256 96224cf9cd72338f7803d8aa2aeed2f960c6183f5ede83b919c40991f048ef4a.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-mold-max-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Mold Max Series technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/Mold_Max_Series_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Keep Mold Max 10 mix basis, working time and conditioning attached to its selected properties.
+    status: unconfirmed
+    evidence: 'p.1 technical overview: Mold Max 10, 100A:10B by weight, 15,000 cps, 1.15 g/cc, 24.1 cu.in./lb, 10A, 45-minute
+      pot life, Die B tear 100 pli and elongation 529%. Values measured after seven days at 73 F/23 C except shrinkage. No
+      conversion to latch strength, life or stiffness.'
+  - text: Preserve the table cure time and prose demould instruction as different stated endpoints.
+    status: conflicting
+    evidence: 'p.1 Cure Time: 24 hours; p.2 Curing/Post Curing: overnight, at least 16 hours at 73 F/23 C before demoulding.
+      No universal schedule selected; post-cure/accelerator/thinner instructions not adopted.'
+  - text: Check the prepared master and exact grade before applying sealer, release or a viscosity modification.
+    status: unconfirmed
+    evidence: Preparation recommends a small compatibility test; vacuum degassing is recommended. Pouring is supported for
+      unmodified rubber. THI-VEX compatibility excludes 40/60; generic viscosity or mitigation wording does not override grade
+      exclusions.
+  summary: Tin-cure Mold Max processing is grade-specific and uses a weight ratio. Mold Max 10 is pourable despite the generic
+    viscosity guide; table cure and prose demould endpoints differ.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages, including selected Mold Max 10 table row and processing
+    sections; visually checked p.1 table. Printed code 120723DH. Other-grade properties, additive/thermal recipes and linked
+    bulletins not promoted; SDS unread. PDF SHA-256 b6709ac04a2359ec4336b6cb1f533cadeae8482f7e24901bf6a496b14998492c. Source
+    rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-dragon-skin-nv-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Dragon Skin NV Series technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/DRAGON_SKIN_NV_SERIES_TB.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Keep Dragon Skin 10 NV distinct from other Dragon Skin grades and from generic medium-viscosity vacuum guidance.
+    status: conflicting
+    evidence: 'p.1 technical overview: 10 NV is 10A, 6,000 cps, 1A:1B by volume or weight, 1.07 g/cc, 25.8 cu.in./lb, 15-minute
+      pot life and 75-minute cure. Die B tear 90 pli and elongation 663%; values after seven days at 73 F/23 C. Overview says
+      vacuum is unnecessary for most applications; this conflicts with the generic 5,000–15,000 cPs band requiring vacuum,
+      not a guarantee of void-free moulds.'
+  - text: Exclude casting other tin- or platinum-cure silicones into Dragon Skin 10 NV despite generic silicone release language
+      elsewhere.
+    status: unconfirmed
+    evidence: p.1 Product Overview explicitly excludes those casting materials; p.2 release/mixing language does not establish
+      an exception. Preparation lists inhibition risks and calls for a small compatibility test; no universal printed-resin/coating
+      compatibility follows.
+  summary: Dragon Skin 10 NV is a low-viscosity platinum silicone with product-specific no-vacuum guidance. It is not a mould
+    for casting other tin- or platinum-cure silicones.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages and visually checked p.1 table. Printed code 040825PA. Quantitative
+    capture limited to 10 NV; other NV grades, skin/food certifications, SDS and linked resources not examined or qualified.
+    PDF SHA-256 f56ed934c433f7e3dbd66a93eee098b672560e888e21c0a01b7d9862b79b3554. Source rechecked against queued study; no
+    physical trial or equipment inspection.'
+- id: smoothon-silicone-vacuum-faq
+  kind: guide
+  category: manufacturing-guides
+  title: Do I have to vacuum de-gas the silicone rubber?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/111/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Check the selected silicone bulletin before deciding whether vacuum preparation is needed.
+    status: unconfirmed
+    evidence: Whole answer/options/disclaimer. FAQ says above 15,000 centipoise, while the generic viscosity guide includes
+      the boundary. Its named low-viscosity alternatives and pump suggestions are not universal compatibility, tear or air-free
+      guarantees; no equipment specification adopted.
+  summary: Thicker silicones may retain mixing air; the FAQ distinguishes low-viscosity alternatives and defers suitability
+    to product instructions. Its pump suggestions do not size or qualify equipment.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete answer, options and disclaimer. No displayed revision. Linked
+    FAQs, videos, product bulletins and SDS not read through this page. HTML SHA-256 8fd0e512a8939b969b5735fca361459927880005dbbb595b0ada9ed4ad5be49b.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-slow-deair-faq
+  kind: guide
+  category: manufacturing-guides
+  title: Why does my silicone take so long to de-air?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/114/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Retain the FAQ vacuum notation without treating the paired units as an exact equivalence.
+    status: conflicting
+    evidence: Minimum Vacuum Pump Rating pairs 29 inches of mercury with -1 Bar and 8 CFM. Absolute/gauge reference and measurement
+      conditions are not specified; the rounded pairing is not an exact conversion, sizing rule or diagnosis from slow de-airing
+      alone.
+  summary: Slow de-airing is a troubleshooting observation, not proof of one cause. The source vacuum notation is insufficient
+    for an exact unit conversion or equipment-selection rule.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read entire short answer and disclaimer. No displayed revision. Vacuum level,
+    elapsed time and equipment performance not measured. HTML SHA-256 77b9a87a54229571fc15db16280cb39dfb962e15a1c6f7cec56a587bfedd69bf.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-rubber-bubbles-faq
+  kind: guide
+  category: manufacturing-guides
+  title: Why are there bubbles on the surface of my rubber mold?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/85/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Record where bubbles occur and the master, base sealing, porosity, mixing and application history before choosing
+      a remedy.
+    status: unconfirmed
+    evidence: Read urethane surface/bulk bubbles, large displaced-air bubbles, Highly Porous Models, Bubbles in Silicone Rubber
+      Mold and brush-on sections. Generic vent and coat-count examples are not validated vent geometry or a universal coat
+      recipe for printed masters.
+  summary: Bubble location can suggest mixing air, displaced air beneath a master, porous-master air or application problems.
+    Urethane moisture sensitivity and silicone de-airing are distinct investigations.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read all main question/answer sections and disclaimer. No displayed revision.
+    Linked resources and product-specific coat/additive procedures not adopted. HTML SHA-256 d65198ea0078ed4e90288b3fdb5a67eb0a458c23dffea62e1cbf9ca07584de09.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-resin-bubbles-faq
+  kind: guide
+  category: manufacturing-guides
+  title: How can I avoid bubbles in my casting?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/131/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Track urethane storage, moisture exposure, filler/tool condition and release application separately from mixed-in
+      air.
+    status: unconfirmed
+    evidence: All Common Sources of Moisture sections plus excess-release paragraph. No universal humidity, filler-drying
+      or release recipe adopted.
+  - text: The filler-drying example pairs 150 F and 60 C inconsistently.
+    status: conflicting
+    evidence: Adding Fillers section. Values retained unresolved; no corrected thermal schedule or filler-baking instruction
+      is encoded. A unit check would not validate suitability or safe processing.
+  summary: Urethane resin bubbles can arise from moisture in the environment, fillers, tools or opened containers; excess
+    release can resemble small bubbles. Pressure does not establish that moisture compatibility is solved.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read whole article and disclaimer. No displayed revision. Linked cup test
+    already has its own earlier record; filler products, gas blanket and SDS not read here. HTML SHA-256 75dc3302147726b8bf8d9cec719bb3df3ce271ce80472076054dd72f10ef98d8.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-pressure-casting-faq
+  kind: guide
+  category: manufacturing-guides
+  title: What is pressure casting? Will it completely eliminate bubbles?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/156/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Review mould preparation history, hollow-master collapse risk and dry air before contemplating pressure casting.
+    status: unconfirmed
+    evidence: How Pressure Casting Works, Making the Mold Under Pressure and Important Notices. Source warns to use commercial
+      pressure chambers only; no improvised vessel, rating or operating recipe is endorsed. Its bubble-free claim is not physical
+      evidence of absent internal voids or qualified strength.
+  - text: Pressure-hold endpoints differ across FAQ and product instructions and must not be collapsed to one schedule.
+    status: conflicting
+    evidence: FAQ uses 60 psi until resin gels; FAQ 8 says cure or handling strength time, while Smooth-Cast 300 bulletin
+      specifies full cure. This record preserves wording, not a generic pressure or hold-time rule.
+  summary: Pressure casting and vacuum preparation are different interventions. Pressure can affect voids in rubber and collapse
+    a hollow master; urethane moisture sensitivity remains relevant.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read entire article, Important Notices and disclaimer. No displayed revision.
+    No pressure/vacuum run, internal-void inspection or equipment certification. HTML SHA-256 e164d057b39d3b4dd7e5f1ea76720689033dd646628ad7fd735a55b286a83579.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-pressure-hold-faq
+  kind: guide
+  category: manufacturing-guides
+  title: How long should I keep a material under pressure?
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/support/faq/8/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: none
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Distinguish gel, cure, handling strength and the actual chamber connection instructions.
+    status: conflicting
+    evidence: 'Whole answer/disclaimer: hold through cure or handling strength, versus FAQ 156 until gel and Smooth-Cast bulletin
+      full cure. Generic tip suggests a chamber retaining pressure without compressor on; Blue Pressure Chamber Guide step
+      10 instead says keep air supply connected until material fully cures. No generalized disconnect or hold-time procedure
+      adopted.'
+  summary: Bubbles may reappear if pressure is released while material is too soft. Cure/handling-strength wording and a generic
+    compressor tip do not supersede exact material and chamber instructions.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read complete short answer, pro tip and disclaimer. No displayed revision.
+    No endpoint or chamber behaviour physically verified. HTML SHA-256 ed75099662488a2c520c135e01f89c5d47579d76fd9452bb1e7541afb73973f7.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-smooth-cast-300-bulletin
+  kind: datasheet
+  category: manufacturing-guides
+  title: Smooth-Cast 300 Series technical bulletin
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/Smooth-Cast_300q,_300,_305___310.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Keep Smooth-Cast 300 processing values attached to the grade and stated conditions.
+    status: unconfirmed
+    evidence: 'p.1: 80 cps, 1A:1B by volume or 100A:90B by weight, three-minute pot life and ten-minute table cure at 73 F/23
+      C depending on mass. p.2: 7–10 minutes depending on mass/configuration, with thin/low-mass casts taking longer. Series
+      says vacuum is unnecessary; p.2 recommends pressure for best results, specifies 60 PSI for full cure and warns about
+      moisture/exotherm. No universal procedure or functional strength claim adopted.'
+  - text: Keep room-temperature demould wording, full cure and post-cure as different endpoints.
+    status: unconfirmed
+    evidence: p.2 Pouring, Curing and Performance. Exact material and equipment instructions govern; no thermal or pressure
+      recipe transferred to another resin or mould.
+  summary: Low-viscosity Smooth-Cast 300 has distinct volume and weight mix bases, a short working window and mass-dependent
+    cure. No required vacuum does not mean zero bubbles or qualified cast-latch properties.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages and visually checked p.1 table. Printed code 031824DH. Quantitative
+    capture limited to 300; 300Q/305/310 properties, post-cure recipe, SDS and linked 65D bulletin not promoted. PDF SHA-256
+    c9e5013db0f3fd27571f597a58b946440db7de1e19cbaa198f02e537db7c6e30. Source rechecked against queued study; no physical trial
+    or equipment inspection.'
+- id: smoothon-blue-pressure-chamber-guide
+  kind: guide
+  category: manufacturing-guides
+  title: Blue Pressure Chamber Guide (2021 filename)
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/tb/files/BLUE%20Pressure_Chamber_Guide_2021.pdf
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Use the actual commercial chamber instructions and condition; do not alter the tank or relief valve, and fully relieve
+      pressure before opening.
+    status: unconfirmed
+    evidence: p.1 explosion warning and steps 9–12; p.2 warning. Manual says do not exceed 60 psi (4.14 bar), keep air supply
+      connected until full cure and check gauge zero before opening. These are source-specific warnings, not an operating
+      packet or evidence of equipment condition.
+  - text: The manual's do-not-exceed pressure conflicts with the product page capability statement.
+    status: conflicting
+    evidence: Both pages limit recommended pressure to 60 psi; product overview says it can be pressurized to 80 psi. Capability
+      marketing is not authorization to exceed the manual. No actual unit, rating plate or variant matched; manufacturer clarification
+      remains needed. The illustrated 100% bubble-free assertion is not accepted as a tested guarantee.
+  summary: The illustrated chamber manual states a maximum recommended working pressure and specific venting/connection instructions.
+    These apply to that equipment and do not rate another vessel.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read both pages including captions, warnings and warranty; visually inspected
+    p.1 warning/gauge diagrams in prior study. Filename says 2021; no separate printed revision found. Other photos not examined
+    for assembly details; no hardware inspection. PDF SHA-256 f2a610e1514f59ebe66527622c54e3cb0cd12940b8d42d2748282c7650552a67.
+    Source rechecked against queued study; no physical trial or equipment inspection.'
+- id: smoothon-pressure-chamber-overview
+  kind: guide
+  category: manufacturing-guides
+  title: Pressure Chamber product overview
+  authors: []
+  org: Smooth-On
+  year: null
+  url: https://www.smooth-on.com/products/pressure-chamber/
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Publisher material; licence terms not read. Summaries and links only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - mould-making
+  - silicone-moulds
+  - urethane-casting
+  processes:
+  - casting
+  process_groups:
+  - mould
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Resolve the overview/manual pressure conflict with the manufacturer for the actual equipment before use.
+    status: conflicting
+    evidence: Overview recommends 60 psi and says can be pressurized to 80 psi, while the linked Blue Pressure Chamber Guide
+      says do not exceed 60 psi. Preserve both claims; no blanket maximum, equipment purchase recommendation or operating
+      authorization follows.
+  summary: The overview supplies conflicting pressure wording relative to its linked manual. Product marketing does not establish
+    an operating limit, safety rating or bubble-free result.
+  used_for:
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-10 Pacific (2026-11-11 UTC): Read overview, features and documentation-link target. No displayed revision.
+    Gallery, video/how-to article, SDS and certifications unviewed; dimensions and advertised bubble-free outcome not qualified.
+    HTML SHA-256 1d2a29ccfda89632664a92651ada0e7b4329bb5ed1c8a07677fa7cdaf60a8fc2. Source rechecked against queued study;
+    no physical trial or equipment inspection.'

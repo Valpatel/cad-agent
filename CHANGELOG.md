@@ -9,6 +9,33 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.33.0 (2026-11-10)
+
+**Changed**
+- The maintainer homepage-model collection reuses an exact retained CAD runtime without installation, seals candidate bytes before decode checks, and preserves independent source/runtime/hardware guards (#104).
+- The homepage model, matching poster and project card now bind the collected front/rear-pack Gyropup source, with checks rejecting the former belly layout despite its identical battery names. Historical leg illustrations and their source record remain unchanged. Publication requires the accepted product CAD source in protected main; model collection does not establish physical fit or printer readiness (#104).
+
+**Fixed**
+- `cad-agent check`, `report` and `all`: a part the slicer did not report as ok (`ok: false` in a current
+  `exports/slice-report.json`: a slicer error or a print-stability issue PrusaSlicer names) is now a failing row in a
+  new "Slicer" feature (`cad-slicer`), with the slicer's own words. Before, it was footer text only and the report
+  still passed. Each sliced part that is ok gets a passing row with its grams and minutes (#520).
+- The homepage model maintenance guide now describes the front and rear battery envelopes shown by the collected Gyropup CAD and records their remaining physical qualification limits (#104).
+
+**Projects must change**
+- A project that runs `cad-agent slice` and has a flagged part now gets exit 1 from `check`, `report` and `all` until
+  the part is fixed and sliced again. Projects that do not slice, or whose slice report is stale, see no change (#520).
+
+## v0.32.0 (2026-11-10)
+
+**New**
+- Validate finite ordered assembly-guide paths through the existing insertion engine, with captured guide/mesh hashes and a BREP export binding. Reports retain blocked and undecided pairs and explicitly leave support, retention and physical assembly unverified (#512).
+- `cadagent.simulation.robot.settle_stage` simulates explicitly authored rigid assembly stages with MuJoCo, retaining support contacts, maximum drift/rotation, final speeds, penetration and solver warnings. It rejects false stability from disabled gravity/contact, static monitored bodies, implicit constraints and mesh collision hulls; finite modeled stability does not prove physical assembly readiness (#515).
+- The existing playback gate offers explicit input/frame-only preflight with a distinct verdict scope, plus optional JSON-safe progress before native load/frame and each pair/operation. Checkpoint failures stop and fail the run while preserving recorded collision/partial evidence; default full path behavior is unchanged (#517).
+
+**Fixed**
+- Assembly insertion sweeps retain an explicitly unchecked geometry relation as an unchecked failure, including at the final pose (#512).
+
 ## v0.31.0 (2026-11-10)
 
 **New**

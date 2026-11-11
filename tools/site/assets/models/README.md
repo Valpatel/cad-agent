@@ -1,6 +1,8 @@
 # Homepage model bundle
 
-Packed model and matching poster consumed by the homepage viewer. Source collection and provenance remain in docs/img/gyropup/SOURCE.json.
+The homepage viewer uses this packed model and its matching poster. The model
+metadata records the CAD source revision and input hashes. The source record
+links the banner to those same model and poster bytes.
 
 ```mermaid
 flowchart TD
@@ -20,4 +22,8 @@ flowchart TD
 
 [Parent map](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/README.md)
 
-[Recorded producer](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/gyropup/SOURCE.json). The current battery placement remains underbody; no relocation or physical-motion claim.
+The collected Gyropup CAD shows one work-in-progress battery envelope at the
+front and one at the rear. Physical fit, insertion and removal clearance,
+retention, and load qualification remain open.
+
+[Current model and historical illustration source record](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/gyropup/SOURCE.json)

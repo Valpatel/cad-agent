@@ -31,6 +31,32 @@ with the same existing runtime directory first on `PATH` for child processes.
 separately, and rerun the complete affected command with the required existing runtime. These pure checks do not
 measure a rendered page's reading budget or replace the repository's browser CI. No local browser campaign ran.
 
+## A pure site test can reach a browser-capable build helper
+
+**Evidence, 2026-11-11 UTC (#558):** the release worker ran
+`CAD_AGENT_REPO_MAP_DIAGRAMS=0 <existing-Node22> --test tests/site/website-references.test.mjs tests/site/website-repo-map.test.mjs`.
+The first launch stopped before testing with missing `yaml` and `marked` packages in the new owned worktree.
+After comparing the existing provider's lockfile and linking its dependencies without installing or changing the
+provider, the complete suite passed 43 tests with one opt-in diagram-test skip in 77.76 seconds.
+However, `website-references.test.mjs` calls `builtSite()`, whose default `build-site.mjs` invocation can prerender
+Mermaid diagrams through headless Chromium. The helper removed its temporary output and captured build log after
+the run. Newly observed local cache files led the worker to infer a browser launch; that inference was not
+established by the retained evidence and is corrected here while the original wording remains in Git history.
+The evidence proves a browser-capable transitive default build path and passing source/JSON assertions. It does
+not prove whether Chrome launched, which browser version ran, or descendant cleanup. No rendered validation or
+confirmed browser absence is claimed.
+
+**Cause and rule.** Disabling the repo-map diagram test does not disable the reference suite's browser-capable
+build helper. The worker overlooked that transitive path despite a no-local-browser constraint. When that
+constraint applies, prepare the committed-HEAD site with `build-site.mjs --client-diagrams`, preserve its log beside
+the output, and pass it through the existing `CAD_AGENT_SITE` contract. The explicit client-diagram path skips
+browser launch. Inspect runtime/dependency requirements before launch and reuse compatible existing dependencies;
+do not install into a shared provider.
+
+**Limits.** A pure test result does not establish whether a browser process ran, or prove rendered layout,
+interaction behavior or descendant cleanup. Preserve the build log instead of reconstructing execution from cache
+contents. Source/JSON checks do not replace the required browser CI.
+
 ## Count browser worker tasks before removing the cgroup
 
 **Evidence, 2026-11-07 UTC (#463):** a local study ran the unchanged README motion and header parts together in their original two lanes, under a four-CPU quota, 2 GiB memory cap and 256-task cap. Both initial pages reported `Page crashed`. At 19:25:11.862 UTC the kernel recorded a fork rejection by the pids controller in that exact owned unit, before the page-crash events. The original 16-file failure receipt and native protocol records remain retained ([independent failure disposition](https://github.com/Valpatel/cad-agent/issues/463#issuecomment-6712030363)). This was a local fixture limit, not evidence of the earlier CI README networkidle timeout's cause.

@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A pure repo-map/site suite fails with `needs the existing Node 22 site runtime` | [Bind the installed runtime for the parent and child processes](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#site-checks-also-need-an-explicit-runtime) |
 | Registry validation passes but the health updater reports a shard is not editable | [Use the importer's canonical writer and test the exact round-trip](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md) |
 | A successful Prusa slice shows only grams/time although its stability check did not run | [Retain the explicit unchecked state and recorded reason in visible reports](inbox/2026-11-10-slice-success-needs-stability-disclosure.md) |
 | A patch candidate contains required project changes | [Choose the release level from the complete fragments before cutting](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#required-project-changes-determine-the-release-level-before-cutting) |

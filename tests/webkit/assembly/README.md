@@ -20,3 +20,8 @@ flowchart TD
 Run through the existing site npm scripts. See the [feature test matrix](../../../docs/practice/assembly-guide-testing.md) for pending versus verified results.
 
 [Browser tests](../README.md)
+
+`ASSEMBLY_PLAN_ONLY=1` runs only the eleven native serial-plan cases through the existing server and cleanup.
+They cover the detailed and packed consumers, actual world-vertex witnesses, absolute seeks/reversal/reset,
+mid-animation mini-button reversal, source-axis/order mutants, stale/duplicate-partition refusal and phone/reduced-motion controls.
+Use an already installed Playwright runtime via `PLAYWRIGHT_BROWSERS_PATH`; no dependency install is required.

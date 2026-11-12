@@ -330,6 +330,7 @@ class Dossier:
     interface_declarations: Dict[str, List[Interface]] = field(default_factory=dict)
     decisions: Dict[str, Decision] = field(default_factory=dict)
     assembly: List[AssemblyStep] = field(default_factory=list)
+    assembly_plan: Optional[Dict[str, Any]] = None  # canonical serial intent, separately source-bound
     gates: GateConfig = field(default_factory=GateConfig)
     findings: List[Issue] = field(default_factory=list)    # warnings: unknown keys, interface conflicts
     errors: List[Issue] = field(default_factory=list)      # only when loaded with strict=False

@@ -224,7 +224,8 @@ def _planes(values, width: int) -> bytes:
 
 
 def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors: Optional[Dict[str, str]] = None,
-              source: Optional[Dict[str, Any]] = None, view: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+              source: Optional[Dict[str, Any]] = None, view: Optional[Dict[str, float]] = None,
+              assembly_plan: Optional[Path] = None) -> Dict[str, Any]:
     """Pack a ``cad-agent view`` export (view.json and its STLs) into one small model for a web page.
 
     Writes ``<out>.json`` (the parts, their colours and where each lives in the binary) and ``<out>.bin``, gzip-
@@ -248,6 +249,23 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
 
     manifest = Path(manifest)
     exported = json.loads(manifest.read_text())
+    plan_bytes = None
+    if assembly_plan is not None:
+        from cadagent.review.dossier.plan import normalize_plan
+        source_parts = exported.get("parts")
+        if (not isinstance(source_parts, list) or not 1 <= len(source_parts) <= 2000
+                or any(not isinstance(part, dict) or not isinstance(part.get("name"), str)
+                       or not part["name"].strip() or len(part["name"]) > 200 for part in source_parts)):
+            raise ValueError("assembly plan requires 1..2000 named source instances")
+        names = [part["name"] for part in source_parts]
+        # Validate the ORIGINAL list: a hash map would erase an earlier duplicate partition.
+        if len(set(names)) != len(names):
+            raise ValueError("assembly plan requires unique source instance names")
+        plan_bytes = Path(assembly_plan).read_bytes()
+        normalize_plan(json.loads(plan_bytes), mesh_hashes={p["name"]: hashlib.sha256(
+            (manifest.parent / p["file"]).read_bytes()).hexdigest() for p in exported["parts"]})
+        if exported.get("units") != "mm" or exported.get("up") != "z" or exported.get("skipped"):
+            raise ValueError("assembly plan requires complete mm/z-up source view")
     meshes = [(part, *_weld(_read_stl(manifest.parent / part["file"]))) for part in exported["parts"]]
     used = [v for _, v, _ in meshes if len(v)]
     every = np.concatenate(used) if used else np.zeros((1, 3), np.float32)
@@ -261,6 +279,8 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
         fresh = np.maximum.accumulate(np.concatenate([[-1], corners]))[:-1] + 1     # the next new vertex at each corner
         bits = 16 if len(vertices) < 0x10000 else 32       # a corner's code reaches the vertex count
         entry = {k: part[k] for k in ("name", "id", "category", "visible", "explode", "bounds_mm") if part.get(k) not in (None, "")}
+        if plan_bytes is not None:
+            entry["source_mesh_sha256"] = hashlib.sha256((manifest.parent / part["file"]).read_bytes()).hexdigest()
         entry.update(color=(colors or {}).get(part["name"], part["color"]), vertices=len(vertices), triangles=len(faces),
                      offset=len(blob), index_bits=bits)
         for axis in range(3):
@@ -282,6 +302,12 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
              "bin": bin_path.name, "encoding": "gzip", "bytes": len(packed), "raw_bytes": len(blob),
              "sha256": hashlib.sha256(packed).hexdigest(), "triangles": sum(p["triangles"] for p in parts),
              "source": source or {}, **({"view": dict(view)} if view else {}), "parts": parts}
+    if plan_bytes is not None:
+        plan_path = (Path(assembly_plan) if Path(assembly_plan).resolve().parent == out.parent.resolve()
+                     else out.parent / f"{out.name}.assembly-plan.json")
+        if plan_path.resolve() != Path(assembly_plan).resolve():
+            plan_path.write_bytes(plan_bytes)
+        model["assembly_plan"] = {"file": plan_path.name, "sha256": hashlib.sha256(plan_bytes).hexdigest()}
     json_path.write_text(json.dumps(model, indent=1) + "\n")
     return model
 

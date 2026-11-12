@@ -189,3 +189,79 @@ existing full-check behavior. Prove event order, mutation isolation and failures
 known collision, with the existing box and real CAD fixture.
 
 </details>
+
+## Canonical serial-plan acceptance (#542)
+
+The native rail bench shares one plan across mini and detailed viewers. Acceptance pairs finite geometry/tool
+blockers with independent source landmarks and actual rendered world vertices. Results stay source-scoped;
+physical qualification is separate.
+
+<details>
+<summary>Contract controls, receipt commands and source-scoped results</summary>
+
+The first slice uses one small native base/rail/plate/lid/fastener fixture in both detailed and mini
+consumers. Source-derived noncoplanar mesh landmarks and actual rendered world matrices are independent
+of the evaluator. Required controls cover a mid-segment obstacle despite clear endpoints, future parked
+occupancy, attached-fastener-only collision, wrong axis/order, units/parent errors, stale source/export,
+ordinary-driver obstruction, and unavailable/unsupported tool work. Forward/reverse equivalence, segment
+boundaries, direct seeks, reset and repeated reversals are checked without resampling rest transforms.
+
+Contract tests cover exact IDs, duplicate membership, dependencies/cycles, finite nonzero segments and
+unsupported rotation/concurrency/process fields. Publication tests require both consumers to bind the same
+plan hash and reject stale bytes. Native checks retain pair/segment witnesses and finite sampling settings;
+browser checks observe vertices through actual current world matrices, never requested offsets alone.
+Current implementation/evidence is tracked in the #542 slice PR; this matrix is acceptance work, not a
+statement that these cases or any product build have passed.
+
+The native fixture lives in `tests/fixtures/assembly-plan/`; its generator emits the same plan bytes for both
+consumers. `ASSEMBLY_PLAN_ONLY=1` selects eleven bounded cases in the existing browser harness. Receipts include
+source/mesh/renderer/harness hashes, actual world-vertex captures for four noncoplanar source corners per
+instance, engine version, console/page errors, and a 320 px/DPR2 reduced-motion screenshot. The independent
+oracle derives piecewise plate/roof locations from the source bench datums, not the suspect path. Source-bound
+Python checks reject tooling shrinkage; unknown tool declarations and positive unmeasured tool allowance
+cannot become clear. Source and tests must be pushed before acceptance capture. Current-head CI and separate
+review remain required even after a local packet passes.
+
+For a reproducible compact native receipt, call
+`write_serial_native_receipt(output_path, exact_head_sha)` from `tests.review.test_gate_assembly` with the existing
+CAD Python and `PYTHONPATH=software`. It regenerates original BREP inputs in a temporary directory, captures
+both directions and retains actual pair/contact witnesses for the thin, attached-fastener and ordinary-handle
+controls. The tool control has clear engaged/start envelopes and a first blocked/last clear approach bracket;
+the alternative lid route is recorded. Browser receipts remain separate actual-scene observations. The legacy
+J501 poster receipt may also need regeneration after shared renderer edits; that still frame validates only
+its existing illustrative consumer and is never assembly-plan evidence.
+
+At source `6c5e3647`, the bounded native fixture passed nine cases in both actual Chromium and WebKit with zero
+page/console errors. Its retained [historical receipt](https://github.com/Valpatel/cad-agent/blob/9b819b9a69f49bc37a6692dd3e00b0e081109a83/tests/fixtures/assembly-plan/acceptance.json) includes source,
+mesh, runtime and harness hashes, noncoplanar world-vertex samples, native first-contact witnesses, and an
+ordinary-handle obstruction with clear start/engaged poses and a 21→20 mm last-clear/first-blocked approach
+bracket. The matching phone screenshot is retained beside the fixture. Independent review and final CI remain
+separate; these results establish no J501/Gyropup assembly path or physical build qualification.
+
+
+Independent review of `9b819b9a` found that map normalization could hide an earlier duplicate partition while
+packing/rendering all six entries against five source IDs. This blocked-head failure is preserved beside the
+fixture and remains distinct from its older passing nine-case traces. Exporter and actual mini-browser
+controls now prepend both a genuine plate copy and a rail renamed `plate`, preserving original plan/bin
+hashes. Both must reject the original list before packing output or allocating a scene; exact map keys alone
+are insufficient. Renewed current-source receipts and separate review are required for the correction.
+
+
+After the duplicate-partition correction and integration of accepted dev `fac4da61`, source `31cdf630` passed
+**eleven cases in both Chromium and WebKit**, with zero page/console errors. Both original-list duplicate
+controls now refuse with no canvas, controls, part count or explode API; the independent second valid mini
+still loads. Receipts bind their exact recorded source, renderer/harness/mesh hashes, actual world-vertex
+observations and freshly regenerated native witnesses.
+The original blocked-head failure remains retained and is never relabeled as a passing capture. Independent
+exact-head review and full CI remain required.
+
+
+Later hosted CI at `e9b5faf9` still failed the missing-optional-CadQuery boundary and generated-map freshness;
+those real failures and the superseded cancellations remain in `ci-failure-e9b5faf9.json`, not as passes.
+Correction source `d1ca1514` guards the first optional import and regenerates the canonical map. Local checks
+report 15 pure cases passed / two native cases skipped with CadQuery unavailable, 17 passed with CAD installed,
+and 28 ownership/freshness cases passed / one separate CI-only diagram case skipped. Its renewed
+[current receipt](../../tests/fixtures/assembly-plan/acceptance.json) also records eleven actual cases per engine
+with zero page/console errors. Required hosted CI and fresh independent review remain separate acceptance.
+
+</details>

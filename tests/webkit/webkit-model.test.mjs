@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
-import { decodeModel, inflate, partLabel } from '../../software/cadagent/webkit/model.js';
+import { decodeModel, inflate, partLabel, planMeshHashes } from '../../software/cadagent/webkit/model.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const load = async (json) => {
@@ -162,4 +162,16 @@ test('J501 poster is bound to the actual source and shared renderer', async () =
   assert.equal(receipt.poster.canvases, 1);
   assert.equal(receipt.poster.controls, 1);
   assert.equal(receipt.poster.explode_and_reset, true);
+});
+
+
+test('plan partition binding rejects duplicates on the original list before map normalization', async () => {
+  const model = JSON.parse(await readFile(path.join(root,'tests/fixtures/assembly-plan/mini.json'),'utf8'));
+  const hashes = planMeshHashes(model.parts);
+  assert.equal(Object.keys(hashes).length,5);
+  for (const source of ['plate','rail']) {
+    const extra = {...model.parts.find(p=>p.name===source),name:'plate'};
+    assert.throws(()=>planMeshHashes([extra,...model.parts]),/unique source instance names/);
+  }
+  for (const parts of [null,[],[{}],[{name:''}],[{name:3}]]) assert.throws(()=>planMeshHashes(parts),/named source instances/);
 });

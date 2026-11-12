@@ -72,10 +72,16 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(compactReferences.every(s=>!s.includes('result-details')&&!s.includes('result-cover')));
  const n=model.items.length;
  // Dated before/after: c301 Explore 856890 B / 132119 gzip; creator/original links 941750 B / 147813 gzip.
- // Only raw absolute headroom changes: 700 B/reference, per-item, gzip and DOM guards remain unchanged.
- assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<1000000,'700 bytes/result plus fixed shell; 1 MB raw cap includes direct original destinations');
- assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
- assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
+ // Accepted source now has 815 references and 1201 results: actual 942605 B versus base 890700 B.
+ // New original destinations share an 80 B/canonical-reference aggregate allowance: 955900 B total.
+ // Keep 700 B/reference, the base 700 B/result, gzip and DOM guards; no summaries/details added to references.
+ const rawBytes=Buffer.byteLength(html),gzipBytes=gzipSync(html).length,tags=(html.match(/<[a-z][^>]*>/g)||[]).length;
+ assert.ok(rawBytes<50000+n*700+model.source_counts.reference_records*80,'base 700 bytes/result plus shell and 80 bytes/reference original-link allowance');
+ assert.ok(rawBytes<1000000,'1 MB absolute raw cap');
+ assert.ok(gzipBytes<20000+n*110,'110 gzip bytes/result plus shell');
+ assert.ok(gzipBytes<180000,'180 kB absolute gzip cap');
+ assert.ok(tags<800+n*5,'compact result DOM plus fixed shell');
+ assert.ok(tags<9000,'9000-tag absolute cap');
 });
 
 test('generated pitfall destinations are unique and hostile text is inert',()=>{

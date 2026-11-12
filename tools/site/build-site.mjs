@@ -16,7 +16,8 @@ import path from 'node:path';
 import { marked } from 'marked';
 import YAML from 'yaml';
 import { snapDemo } from './compiler/snap-demo.mjs';
-import { buildCatalog } from './compiler/site-catalog.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
+import { buildCatalog } from './compiler/site-catalog.mjs';
+import { prepareDiscoveryPage, discoveryModel, discoveryHTML } from './compiler/site-discovery.mjs';            // the catalogue page, catalog.json, catalog/*.json and covers
 import { sanitize, safeUrl, rewriteUrls, imageSize } from './compiler/site-html.mjs';   // allowlist sanitizer for rendered Markdown
 import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         // Mermaid blocks drawn into finished figures, at build time
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
@@ -53,7 +54,7 @@ const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
-const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/catalog-art.mjs',
+const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/site-discovery.mjs', 'tools/site/compiler/catalog-art.mjs',
   'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '../..');
 const toolsDirty = TOOLS.filter(t => {
@@ -174,8 +175,7 @@ if (commands.length !== parserCount) throw new Error(`read ${commands.length} of
 // The catalogue itself is built after the pages (it uses their figures): see `buildCatalog` below.
 
 // ----------------------------------------------------------------------------- HTML frame
-const NAV = [['/catalog', 'Catalogue', true], ['/docs/toolkit', 'Tools', true], ['/research/landscape', 'Landscape'],
-  ['/references', 'References'], ['/docs/common-issues', 'Pitfalls'], ['/docs/agent-workflow', 'For agents']];
+const NAV = [['/explore', 'Explore', true], ['/docs/toolkit', 'Toolkit', true], ['/docs/agent-workflow', 'For agents']];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
 const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
 const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="Feedback"><div><p class="feedback-title">Help us improve!</p>
@@ -202,7 +202,7 @@ ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Mark
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page"><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
 <nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
-<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${body}</main>
+<main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${current === '/catalog' || current.startsWith('/references') || current === '/docs/common-issues' || current === '/research/landscape' ? `<p class="discovery-context"><a href="/explore${current.startsWith('/references') ? '?kind=references' + (current.split('/')[2] ? '&amp;area=' + encodeURIComponent(current.split('/')[2]) : '') : current === '/docs/common-issues' ? '?kind=lessons' : current === '/research/landscape' ? '?kind=external' : ''}">← Explore all knowledge${current.startsWith('/references') ? ' · search sources across topics' : current === '/docs/common-issues' ? ' · search individual lessons and pitfalls' : ''}</a></p>` : ''}${body}</main>
 <footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
 <div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script><!--/email_off--></body></html>`;
@@ -326,6 +326,7 @@ for (const p of allPages) {
   // One-click copy on every code block (not on diagram sources, which render as pictures).
   html = html.replace(/<pre>(<code(?! class="language-mermaid")[\s\S]*?<\/pre>)/g, '<cad-copy><pre>$1</cad-copy>');
   html = await placeVisuals(p.file, fold(html));
+  html = prepareDiscoveryPage(p, html);
   if (p.parent && !pageFiles.has(p.parent)) throw new Error(`folder map ${p.file}: parent ${p.parent} is not published`);
   const entrance = p.section === 'folder-maps'
     ? `<a href="/docs/map">Repository map</a> · <a href="${esc(pageURL(p.parent))}">Parent folder</a>`
@@ -387,6 +388,17 @@ const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)READM
 await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
   description: `${catalog.items.length} open-source projects, libraries, benchmarks, demos, tools, guides and lessons for agentic CAD, by area of hardware design.`,
   css: ['/kit/gallery.css', '/web/catalog.css'] }));
+
+// A derived search view: no new source identity and no mutation of the catalogue/reference machine feeds.
+const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN, revision, pageURL });
+await writeFile(path.join(out, 'catalog/discovery.json'), JSON.stringify(discovery) + '\n');
+await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
+  description: 'Find tools, guides, practical lessons and reference records by topic.',
+  body: discoveryHTML(discovery, { areas: YAML.parse(await read('docs/areas.yaml')) }),
+  md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
+await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
+  + '- [Catalogue and compatibility filters](/catalog)\n- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
+  + 'Derived search metadata: /catalog/discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
 // CAD_AGENT_REFERENCES_HEALTH: the weekly link check's JSON (its references-health artifact), to show each record's
@@ -678,7 +690,7 @@ await writeFile(path.join(out, '_headers'), [
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-  ['/', '/catalog', ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
+  ['/', '/explore', '/catalog', ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // For agents and the tests: which pages still have nothing to look at.

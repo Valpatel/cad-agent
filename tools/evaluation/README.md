@@ -4,7 +4,8 @@
 
 Its whole-checkout kit access is legacy smoke-test behavior. New controlled CAD studies need the
 [planned subject boundary and qualification tests](../../docs/practice/standard-evaluation.md#planned-cad-design-evaluations);
-the proposed optional adapter is not implemented or qualified yet.
+the optional adapter implementation is tracked in
+[#647](https://github.com/Valpatel/cad-agent/issues/647). Runtime qualification is not established yet.
 
 ```mermaid
 flowchart TD

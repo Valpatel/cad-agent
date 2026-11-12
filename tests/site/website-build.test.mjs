@@ -1,3 +1,4 @@
+import {topicSprite} from '../../tools/site/compiler/site-explore-shell.mjs';
 // Build cad-agent.valpatel.com into a temporary folder from HEAD and check what would be published.
 import test from 'node:test';
 import { YAML } from './npm-context.mjs';
@@ -39,7 +40,9 @@ test('only committed files are published, byte for byte', async () => {
   const prefix = 'tools/site/assets/';
   const sources = git('ls-tree', '-r', '-z', '--name-only', 'HEAD', prefix).split('\0').filter(f => f && f !== prefix + 'README.md');
   const assets = new Map(sources.map(f => ['web/' + f.slice(prefix.length), f]));
-  const webOut = files.filter(f => f.startsWith('web/') && f !== 'web/snap-demo.css');
+  const generated=new Map([['web/topic-icons.svg',topicSprite(YAML.parse(git('show','HEAD:docs/areas.yaml')))]]);
+  for(const [file,expected] of generated)assert.equal(await readFile(path.join(out,file),'utf8'),expected,'generated topic art matches committed taxonomy');
+  const webOut = files.filter(f => f.startsWith('web/') && f !== 'web/snap-demo.css' && !generated.has(f));
   assert.deepEqual(webOut.sort(), [...assets.keys()].sort());
   for (const [publicFile, source] of assets) assert.ok((await readFile(path.join(out, publicFile))).equals(execFileSync('git', ['show', `HEAD:${source}`], { cwd: root })), publicFile);
 });
@@ -208,11 +211,11 @@ test('home, README and agent indexes reach the canonical checked installers (#27
 });
 
 test('pages say when they were last updated and how to give feedback', async () => {
-  const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
-  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'docs/lessons/process/verify-from-source.md').trim();
-  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay}">`));
+  const commitDay = git('show', '-s', '--format=%cI', 'HEAD').trim();
+  const lessonDay = git('log', '-1', '--format=%cI', 'HEAD', '--', 'docs/lessons/process/verify-from-source.md').trim();
+  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay.replace(/[+]/g,'\\+')}">`));
   const lesson = await readFile(path.join(out, 'lessons/process/verify-from-source.html'), 'utf8');
-  assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay}">`), 'a page shows its own last change');
+  assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay.replace(/[+]/g,'\\+')}">`), 'a page shows its own last change');
   const fb = lesson.match(/<aside class="feedback"[\s\S]*?<\/aside>/)?.[0];
   assert.ok(fb, 'doc pages end with the feedback box');
   const href = fb.match(/href="([^"]+)"/)[1].replace(/&amp;/g, '&');
@@ -474,16 +477,18 @@ test('doc pages carry the page tree, with this page marked', async () => {
   // Written out in full, so the first paint is final and it works without script: a landmark, the fold (a native
   // <details>, closed: phones open it with or without nav.js), the filter, and this page's outline (every h2/h3 with an
   // id) under it, again in the right-hand column.
-  assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Pages and contents"/);
+  assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Explore topics and pages"/);
   assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
-  assert.match(nav, /^<details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents<\/summary><div class="cad-nav-panel">/);
+  assert.match(nav, /^<details class="cad-nav-fold"><summary class="cad-nav-toggle">Explore topics<\/summary><div class="cad-nav-panel">/);
   assert.match(nav, /<\/div><\/details>$/, 'the fold holds the whole panel and nothing else');
-  assert.doesNotMatch(nav, /<button/, 'no toggle that needs the script');
-  assert.match(nav, /<div class="cad-nav-panel"><input type="search" class="cad-nav-filter"/);
+  assert.doesNotMatch(nav, /<button[^>]*class="cad-nav-toggle"/, 'tree toggle remains native');
+  assert.match(nav, /<form class="explore-nav-search" action="\/explore" role="search">/);
+  assert.match(nav, /<button type="submit">Search<\/button>/);
+  assert.match(nav, /<input type="search" class="cad-nav-filter" disabled/);
   const article = toolkit.match(/<article class="prose">([\s\S]*?)<\/article>/)[1];
   const heads = [...article.matchAll(/<h[23] id="([^"]+)">/g)].map(m => m[1]);
   const listed = list => [...list.matchAll(/<a href="#([^"]+)">/g)].map(m => decodeURIComponent(m[1]));
-  const inTree = nav.match(/aria-current="page">[^<]*<\/a><ol class="cad-nav-outline"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
+  const inTree = nav.match(/<div class="explore-mobile-outline">[\s\S]*?<ol class="cad-nav-outline"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
   assert.deepEqual(listed(inTree ?? ''), heads, 'the outline under the current page lists every h2/h3');
   const rail = toolkit.match(/<nav class="doc-rail" aria-labelledby="rail-title">([\s\S]*?)<\/nav>/)?.[1];
   assert.deepEqual(listed(rail ?? ''), heads, 'the right-hand outline lists every h2/h3');
@@ -492,7 +497,7 @@ test('doc pages carry the page tree, with this page marked', async () => {
   assert.match(toolkit, /<div class="doc-main" id="main:content" tabindex="-1">/);
   // The rail is named once, by its visible title; the outline in the tree keeps its own name inside "Pages and contents".
   assert.match(toolkit, /<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page<\/p><ol class="cad-nav-outline cad-nav-rail">/);
-  assert.match(toolkit, /aria-current="page">[^<]*<\/a><ol class="cad-nav-outline" aria-label="On this page">/);
+  assert.match(toolkit, /<div class="explore-mobile-outline"><p>On this page<\/p><ol class="cad-nav-outline" aria-label="On this page">/);
 });
 
 // Owner (2026-10-31): "make sure every page has some interesting diagrams, animations, renders etc, don't make them

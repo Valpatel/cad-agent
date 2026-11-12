@@ -141,8 +141,13 @@ export const TINT = {
 export const glyphFor = slug => GLYPHS[slug] || GLYPHS[DOMAIN_GLYPH[slug]] || GLYPHS.unplaced;
 
 /** One <symbol> per glyph, for the page to <use> (the area tree's icons). */
-export const glyphSprite = slugs => `<svg class="glyph-sprite" width="0" height="0" aria-hidden="true" focusable="false"><defs>${slugs
-  .map(s => `<symbol id="g-${s}" viewBox="0 0 100 100">${glyphFor(s).replaceAll('class="a"', 'style="stroke:var(--glyph-accent,#bd3a12)"')}</symbol>`).join('')}</defs></svg>`;
+export const glyphSprite = (slugs, artFor = glyphFor) => {
+  const first=new Map();
+  return `<svg class="glyph-sprite" width="0" height="0" aria-hidden="true" focusable="false"><defs>${[...new Set(slugs)].map(s=>{
+    const body=artFor(s),prior=first.get(body);if(!prior)first.set(body,s);
+    return `<symbol id="g-${s}" viewBox="0 0 100 100">${prior?`<use href="#g-${prior}"/>`:body.replaceAll('class="a"','style="stroke:var(--glyph-accent,#bd3a12)"')}</symbol>`;
+  }).join('')}</defs></svg>`;
+};
 
 const frame = (tint, body, label) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">
 <defs><linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tint[0]}"/><stop offset="1" stop-color="${tint[1]}"/></linearGradient>

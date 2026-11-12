@@ -13,7 +13,7 @@ import path from 'node:path';
 import { YAML } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import {
-  CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
+  creatorText, originalUrl, CORE, DIR, EXPERTS, LADDER, NOT_SHARDS, UNPLACED, areaOf, isRead, areaTree, barChart, expertsMarkdown, linkTags, loadReferences, mdTags, referenceModel,
   referenceJson, referenceSite, healthOf,
 } from '../../tools/site/compiler/site-references.mjs';
 
@@ -368,4 +368,37 @@ test('Stratasys review aliases keep two existing identities and unresolved evide
   }
   assert.match(page, /unresolved-conflicting-source/);
   assert.match(page, /unresolved-confirm-supplier/);
+});
+
+
+test('creator credit retains people and organisation without inventing or repeating names', () => {
+  assert.equal(creatorText({authors:['  Ada Lovelace ', 'ada lovelace'],org:'Example Lab'}), 'Ada Lovelace · Example Lab');
+  assert.equal(creatorText({authors:['Ada'],org:' ada '}), 'Ada');
+  assert.equal(creatorText({authors:['Ada']}), 'Ada');
+  assert.equal(creatorText({org:'Example Lab'}), 'Example Lab');
+  assert.equal(creatorText({}), '');
+  assert.equal(creatorText({authors:[null,{},' Ada '],org:{bad:true}}), 'Ada');
+});
+
+test('original links preserve query parameters and reject unsafe destinations', () => {
+  const url='https://example.com/document?dlpdf=t&part=92160A227#specs';
+  assert.equal(originalUrl(url),url);
+  for(const unsafe of ['javascript:alert(1)','data:text/html,x','//example.com/x','/local','https://user:password@example.com/x','https://'])
+    assert.equal(originalUrl(unsafe),null,unsafe);
+});
+
+test('reference HTML Markdown and citation tooltips credit named people alongside their publisher', async () => {
+  const source={id:'credit-example',title:'A useful study',org:'Example Lab',authors:['Ada Lovelace'],url:'https://example.com/original?dlpdf=t&part=1',areas:['fdm'],verified:'2026-11-12 read'};
+  const m=referenceModel(await fake({[CORE]:JSON.stringify({sources:[source]})}),{domains:[{slug:'manufacturing',title:'Manufacturing',areas:[{slug:'3d-printing',title:'3D printing',topics:[{slug:'fdm'}]}]}]});
+  const site=referenceSite(m,{ORIGIN,revision:'r',built:'b',feedbackBox:()=>''});
+  const area=site.pages.find(p=>p.url==='/references/3d-printing');
+  assert.ok(area.body.includes('Ada Lovelace · Example Lab'));
+  assert.ok(area.body.includes('href="https://example.com/original?dlpdf=t&amp;part=1"'));
+  assert.ok(area.body.includes('Read original'));
+  assert.ok(site.pages[0].body.includes('No sponsorships, partnerships or paid placements'));
+  assert.ok(site.pages[0].body.includes('Meet the creators'));
+  assert.ok(area.markdown.includes('Ada Lovelace · Example Lab'));
+  assert.ok(area.markdown.includes('— Read original'));
+  assert.match(linkTags('[ref:credit-example]',m),/title="A useful study, Ada Lovelace · Example Lab/);
+  assert.match(area.body,/data-text="[^"]*ada lovelace/,'people are searchable even when org is recorded');
 });

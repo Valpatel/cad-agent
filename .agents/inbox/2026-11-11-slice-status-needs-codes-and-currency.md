@@ -124,3 +124,91 @@ Chromium/WebKit CI remains required. No local browser, renderer, native slicer o
 artifacts and current upstream source characterize the code/text contract, not every Bambu version or output shape.
 No printer, cloud service, camera, desktop app or heavy job was used. Report currency and slicer success do not prove
 physical fit, print quality, strength or that an unchecked stability diagnostic ran.
+
+## Unchanged mesh bytes do not keep a print result in scope
+
+On 2026-11-12 UTC, maintainer follow-through reproduced the [independent PR #580 finding](https://github.com/Valpatel/cad-agent/pull/580#discussion_r4542284869) on the original
+`a5a1455d77142d75843391fe8808b0edfc4499fd` implementation merged into accepted dev. A partial overhang run checked
+the old STL hash and screen settings before resolving which parts were still printed. Changing only a part's
+manufacturing declaration therefore kept its obsolete print result in the next partial report.
+
+Three regression cases use real small STL meshes and the real CLI: a per-part `purchased` declaration, a project
+default of `weldment` with a printed exception, and a dossier `cnc` declaration overriding a printed config entry.
+Before the correction, with unchanged STL bytes:
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider \
+  tests/geometry/test_overhang_regions.py -k partial_overhang_run --tb=short
+3 failed, 7 deselected
+assert {'box', 'lid'} == {'box'}  # obsolete lid remained in each case
+```
+
+The existing process resolver now selects current printed parts before carry-forward. Only their unchanged rows
+can survive; explicitly named parts still run afresh, including nonprinted parts requested for diagnosis. The
+same regression also verifies that such an explicit result is dropped on the next partial run where it is not
+requested. Existing controls retain unchanged printed rows and invalidate changed settings or mesh bytes.
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider tests/geometry/test_overhang_regions.py
+10 passed in 0.66s
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider \
+  tests/geometry/test_overhang_regions.py tests/manufacturing/test_process.py \
+  tests/manufacturing/test_slicer.py tests/manufacturing/test_plates.py tests/publish/test_report.py \
+  tests/cli/test_cli.py tests/cli/test_project.py tests/repo/test_layout.py tests/repo/test_areas.py \
+  tests/repo/test_private_names.py \
+  -k 'not slices_a_cube and not bambu_studio_slices_each_plate_as_laid_out and not torsion_declaration_actual_all_in_existing_starter'
+382 passed, 3 deselected, 1 warning in 16.95s
+```
+
+The existing Python dependency provider was used without installation. The warning is the existing webkit folder
+growth advisory. The three deselections are native slicer/full CAD runs, not successful qualification claims.
+
+**Corrective rule:** retained results must still belong to the current check scope as well as matching content and
+settings. Process changes are relevant evidence changes even when exported geometry is byte-identical.
+
+**Limits:** these are real CLI/mesh checks and controlled temporary projects, not a physical build or a new native
+slice. Skipping print checks does not establish that another process can manufacture the part. No product geometry,
+printer, cloud service or heavy CAD job was changed or run.
+
+## An inapplicable default does not bypass the export contract
+
+Independent GPT-6 [review 5880524438](https://github.com/Valpatel/cad-agent/pull/632#pullrequestreview-5880524438)
+blocked `cb4481d2` on 2026-11-12 UTC despite the focused checks above. The inherited all-nonprinted early return
+ignored `cad.plates.parts`, and directly removed prior owned plate files before reporting a strict settings failure.
+The normal plate exporter already owned both explicit selection and transactional preservation, but was bypassed.
+
+New actual-CLI controls before correction covered list/mapping selections in both strict and ordinary export modes,
+plus prior outputs written by the real small-mesh plate exporter with `use_slicer=False`:
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider tests/manufacturing/test_plates.py \
+  -k 'nonprinted_parts_explicitly or no_printed_parts_preserve' --tb=short
+5 failed, 1 passed, 83 deselected in 0.81s
+```
+
+The strict failure lost all three owned prior files (`.3mf`, `.svg`, `.json`); ordinary cleanup of those same stale
+files was the passing control. Explicit selections either produced no plate file or wrongly returned failure.
+The correction routes the empty standalone-print case through the existing plate exporter. That owner resolves
+the plate selection before requiring its optional mesh dependency, so an empty default still needs neither a bed
+nor trimesh. Existing strict staging protects prior outputs; ordinary invalidation keeps its established behavior.
+The new tests read back actual exported 3MF placements and quantities using controlled settings bytes, and compare
+all prior output bytes after strict rejection.
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider \
+  tests/manufacturing/test_plates.py tests/cli/test_cli.py \
+  -k 'nonprinted_parts_explicitly or no_printed_parts_preserve or all_finishes_on_a_project_with_no_printed_part or strict_project_command or strict_plate_publication' --tb=short
+33 passed, 108 deselected in 1.02s
+```
+
+Repeating the focused geometry/process/slicer/plates/report/CLI/config/repository command recorded above after
+these corrections gave `388 passed, 3 deselected, 1 warning in 12.51s`; the same native-run exclusions and existing
+folder warning apply.
+
+**Corrective rule:** a high-level default-scope shortcut must not bypass explicit user selections or the operation's
+existing transaction. Keep those decisions with their established owner and exercise the actual caller, including
+real owned previous outputs rather than only foreign/unrecognized placeholder files.
+
+**Limits:** settings production is controlled test data, not a native Bambu run or GUI acceptance. No real printer,
+product geometry or user export was touched. Earlier passing tests and the blocked review remain evidence of the
+missing cases, not substitutes for new-source review and CI.

@@ -29,3 +29,5 @@ if (document.querySelector('cad-printed-boss')) import('/kit/printed-boss.js').c
 // A 3D model (the home page's Gyropup): the element waits for the page to load and come into view before it fetches
 // three.js and the model, so the poster is all the first paint needs.
 if (document.querySelector('cad-model')) import('/kit/model.js').catch(() => {});
+// Rich entry details are an enhancement of compact Explore results; the existing JSON feed is authoritative.
+if (document.querySelector('details[data-catalogue-id]')) import('/web/discovery.js').catch(() => {});

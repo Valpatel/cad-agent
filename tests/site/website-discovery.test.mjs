@@ -54,19 +54,25 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(html.includes('Source: Not yet read'));
  assert.ok(html.includes('Outside-tool adoption'));
  assert.ok(html.includes('value="candidate"'));
- assert.ok(html.includes('Full catalogue'));
+ assert.ok(!html.includes('Full catalogue'));
+ assert.ok(html.includes('Entry type')&&html.includes('Licence')&&html.includes('Has a working example'));
+ assert.doesNotMatch(html, /class="mat-dots"|<legend>Maturity/);
  assert.ok(html.includes('About these results'));
- assert.match(html, /<details class="discover-group" data-group="references"/);
+ assert.match(html, /<details class="discover-group" id="references" data-group="references"/);
  assert.ok(!/<details class="discover-group"[^>]*\bopen/.test(html), 'no-script groups start collapsed');
  assert.ok(html.includes('/discovery.json'));
  assert.ok(!/<li data-item[^>]*><a href="https:\/\/cad-agent.valpatel.com/.test(html), 'local result clicks stay on the reviewed producer');
  assert.ok(!/<img[^>]*src="https?:/.test(html), 'site-owned images stay same-origin under real CSP');
  assert.match(html, /<\/span> <span class="result-summary">/, 'title/summary remain separate search words');
  // Budget is for compact links/search metadata, not a second full reference table or article copies.
+ const compactReferences=[...html.matchAll(/<li data-item id="reference:[\s\S]*?<\/li>/g)].map(m=>m[0]);
+ assert.equal(compactReferences.length,model.source_counts.reference_records);
+ assert.ok(compactReferences.reduce((n,s)=>n+Buffer.byteLength(s),0)<model.source_counts.reference_records*700,'reference projection remains compact; richer catalogue details are not copied onto sources');
+ assert.ok(compactReferences.every(s=>!s.includes('result-details')&&!s.includes('result-cover')));
  const n=model.items.length;
- assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<1200000,'700 bytes/result plus fixed shell; absolute safety cap');
+ assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<900000,'compact search links plus bounded catalogue details; original absolute safety cap');
  assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
- assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
+ assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact sources plus explicit catalogue detail/link allowance; absolute safety cap');
 });
 
 test('generated pitfall destinations are unique and hostile text is inert',()=>{

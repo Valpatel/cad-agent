@@ -345,7 +345,7 @@ for (const p of allPages) {
   // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
   const outline = (cls, label) => heads.length < 2 ? '' : `<ol class="cad-nav-outline${cls}"${label ? ' aria-label="On this page"' : ''}>${heads.map(h =>
     `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
-  const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file)});
+  const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file),outlineHTML:outline('',true)});
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
   docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);

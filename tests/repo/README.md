@@ -76,6 +76,5 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 | [test_markdown_images.py](test_markdown_images.py) | Committed Markdown image destinations. |
 | [test_references_health.py](test_references_health.py) | Reference registry health and maintenance layout. |
 | [test_references_health_apply.py](test_references_health_apply.py) | Reference-health patch application controls. |
-
 | [test_standard_eval.py](test_standard_eval.py) | Versioned analytical manifests, references, defect controls, artifact boundaries and run-record ingestion. |
 | [test_standard_eval_runner.py](test_standard_eval_runner.py) | CLI adapter flags, observed metrics, normal completion, launch errors, timeouts and owned-group settlement using inert processes. |

@@ -25,7 +25,7 @@
  * - facets: checkboxes (several values, any of them matches) and `data-facet` links (one value), matched against the
  *   card's space-separated `data-<name>` tokens; facets combine with AND. Counts in `[data-count]` (inside the
  *   control) and `[data-count-of="name:value"]` show what each choice would leave, given the others;
- * - search over `data-text` (each word matches the start of a word), sorting by `data-sort-<option value>` (numbers or
+ * - search over `data-text` (or visible text), plus optional `data-search-extra` metadata (each word matches the start of a word), sorting by `data-sort-<option value>` (numbers or
  *   text, `data-dir="desc"` on the option; empty values last, ties in the page's order);
  * - the overview (no tab): the first `limit` cards of each group, a `[data-gallery-more]` link when there are more;
  *   the page writes `data-over` on the cards past the limit in its own order, so the first paint already matches;
@@ -162,7 +162,7 @@ export class CadGallery extends Base {
     this.results = $('[data-gallery-results]');
     this.#items = $$('[data-item]').map((el, index) => ({
       el, index, tab: el.closest('[data-group]')?.dataset.group || '', list: el.parentElement,
-      text: (el.dataset.text || el.textContent).toLowerCase(),
+      text: [(el.dataset.text || el.textContent), el.dataset.searchExtra || ''].join(' ').toLowerCase(),
       facets: Object.fromEntries(this.facetNames.map(n => [n, new Set(words(el.getAttribute(`data-${n}`)))])),
       sort: Object.fromEntries([...el.attributes].filter(a => a.name.startsWith('data-sort-')).map(a => [a.name.slice(10), a.value])),
     }));

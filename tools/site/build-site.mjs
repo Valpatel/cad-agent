@@ -397,7 +397,7 @@ await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', curren
   body: discoveryHTML(discovery, { areas: YAML.parse(await read('docs/areas.yaml')) }),
   md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
 await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
-  + '- [Catalogue and compatibility filters](/catalog)\n- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
+  + '- [Full catalogue](/catalog)\n- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
   + 'Derived search metadata: /catalog/discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
@@ -543,7 +543,7 @@ const landing = `<div class="wrap"><section class="hero hero-3d">
 <p class="intro-sub">cad-agent is a free toolkit your AI assistant installs in one line. It helps the AI design real, physical things, check them for problems before anything is made, and, with your OK, share what it learns as a pull request, so every AI that uses it gets better at building for people.</p></div>
 <figure class="hero-model"><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:${poster.width}/${poster.height}"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="${poster.width}" height="${poster.height}" fetchpriority="high" alt="Gyropup, a wheel-legged robot with a foam-ball turret"></cad-model>
 <figcaption><span><b>Gyropup</b>, the current CAD assembly${heroModel.source?.left_out?.length ? ' (internal parts and fasteners hidden)' : ''}.</span><span><a href="https://gyropup.com">gyropup.com</a> · <a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">CAD source</a> · MIT · drag to turn</span></figcaption></figure>
-<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="/catalog">Browse the catalogue</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
+<div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Copy this to your agent <span>↓</span></a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div>
 </div>
 </section></div>
 ${useCard}
@@ -691,7 +691,7 @@ await writeFile(path.join(out, '_headers'), [
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
   ['/', '/explore', '/catalog', ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
-await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/catalog">catalogue</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
+await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/explore">Explore search</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // For agents and the tests: which pages still have nothing to look at.
 const noVisual = [...visuals].filter(([, n]) => !n).map(([f]) => f).sort();

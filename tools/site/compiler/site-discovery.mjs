@@ -31,7 +31,7 @@ export function discoveryModel({ catalog, pages, references: m, ORIGIN, revision
     const group = c.kind === 'demo' ? 'demos' : ['project', 'library', 'benchmark'].includes(c.kind) ? 'external' : c.kind === 'lesson' ? 'lessons' : 'guides';
     add({ id: 'catalogue:' + c.id, source_id: c.id, collection: 'catalogue', group, title: c.name, kind: c.kind,
       url: c.doc || c.url, summary: short(c.what || c.summary), areas: c.areas, adoption: c.status, area_maturity: c.maturity,
-      cover: c.cover, search: text([c.name, c.what, c.notes, c.policy, c.license, headings].filter(Boolean).join(' ')) });
+      cover: c.cover, search: text([c.notes, c.policy, c.license, headings].filter(Boolean).join(' ')) });
   }
   let sections = 0;
   for (const p of pages) {
@@ -43,13 +43,13 @@ export function discoveryModel({ catalog, pages, references: m, ORIGIN, revision
         const h = heads[i], body = p.html.slice(h.index + h[0].length, heads[i + 1]?.index ?? p.html.length);
         add({ id: `section:${owner.id}:${h[1]}`, source_id: owner.id, collection: 'section', group: 'lessons', kind: 'Lesson entry',
           title: text(h[2]), summary: short(body), url: owner.url + '#' + h[1], areas: owner.areas,
-          search: text([h[2], p.title, short(body, 900)].join(' ')) }); sections++;
+          search: text([p.title, short(body, 600)].join(' ')) }); sections++;
       }
     }
     if (p.file === 'docs/practice/common-issues.md') for (const row of p.html.matchAll(/<tr id="(issue-[^"]+)">\s*<td\b[^>]*>([\s\S]*?)<\/td>([\s\S]*?)<\/tr>/g)) {
       add({ id: `pitfall:${row[1]}`, source_id: owner.id, collection: 'section', group: 'lessons', kind: 'Review pitfall',
         title: short(row[2], 135), summary: short(row[3]), url: owner.url + '#' + row[1], areas: owner.areas,
-        search: text([row[2], short(row[3], 900)].join(' ')) }); sections++;
+        search: text([row[2], short(row[3], 600)].join(' ')) }); sections++;
     }
   }
   for (const r of m.refs.records.values()) {
@@ -57,7 +57,7 @@ export function discoveryModel({ catalog, pages, references: m, ORIGIN, revision
     add({ id: 'reference:' + r.id, source_id: r.id, collection: 'reference', group: 'references', kind: 'Source record', title: r.title || r.id,
       summary: short(r.summary), url: ORIGIN + m.home(r.id), source_url: safeLink(r.url), areas: m.placed.get(r.id), aliases,
       evidence: evidenceOf(r) || 'snippet-only', confidence: confidenceOf(r).level, status: r.status,
-      search: text([r.id, ...aliases, r.title, r.org, short(r.summary, 500), ...(r.processes || []), ...(r.claims || []).map(c => short(c.text, 180))].filter(Boolean).join(' ')) });
+      search: text([r.id, ...aliases, r.org, short(r.summary, 160), ...(r.processes || [])].filter(Boolean).join(' ')) });
   }
   const ids = items.map(x => x.id); if (new Set(ids).size !== ids.length) throw new Error('duplicate discovery identity');
   return { schema: 'cad-agent-discovery/1', revision, origin: ORIGIN,
@@ -73,7 +73,7 @@ export function discoveryHTML(model, { areas }) {
   const label = item => item.collection === 'reference'
     ? `Source: ${item.status === 'catalogued' ? 'Not yet read' : 'Read'} · Evidence: ${item.evidence.replaceAll('-', ' ')} · Confidence: ${item.confidence}`
     : item.collection === 'section' ? item.kind : item.group === 'external' ? `Adoption: ${item.adoption}` : item.kind === 'tool' ? 'Command' : item.kind;
-  const row = (item, i) => `<li data-item id="${esc(item.id)}" data-area="${esc(topicsOf(item).join(' '))}" data-evidence="${esc(item.evidence || '')}" data-adoption="${esc(item.adoption || '')}" data-sort-az="${esc(item.title.toLowerCase())}" data-text="${esc([item.title, item.search, ...(item.areas || []).map(a => titles.get(a))].join(' ').toLowerCase())}"${i >= 3 ? ' data-over' : ''}><a href="${esc(item.url)}"><span class="result-title">${esc(item.title)}</span><span class="result-summary">${esc(item.summary)}</span></a><span class="result-meta">${esc(label(item))}</span></li>`;
+  const row = (item, i) => `<li data-item id="${esc(item.id)}" data-area="${esc(topicsOf(item).join(' '))}" data-evidence="${esc(item.evidence || '')}" data-adoption="${esc(item.adoption || '')}" data-sort-az="${esc(item.title.toLowerCase())}" data-search-extra="${esc([item.search, ...(item.areas || []).map(a => titles.get(a))].join(' '))}"${i >= 3 ? ' data-over' : ''}><a href="${esc(item.url)}"><span class="result-title">${esc(item.title)}</span>${item.collection === 'reference' ? '' : `<span class="result-summary">${esc(item.summary)}</span>`}</a><span class="result-meta">${esc(label(item))}</span></li>`;
   const topic = (slug, title) => `<a href="/explore?area=${esc(slug)}" data-gallery-link data-facet="area" data-value="${esc(slug)}">${esc(title)} <span data-count></span></a>`;
   const topicTree = areas.domains.map(d => `<details><summary>${esc(d.title)}</summary>${topic(d.slug, 'All ' + d.title)}${(d.areas || []).map(a => topic(a.slug, a.title)).join('')}</details>`).join('');
   const demoItems = model.items.filter(x => x.group === 'demos').slice(0, 3);
@@ -86,9 +86,9 @@ export function discoveryHTML(model, { areas }) {
 <section class="discover-topics" aria-label="Explore by topic">${areas.domains.map(d => `<a href="/explore?area=${esc(d.slug)}" data-gallery-link data-facet="area" data-value="${esc(d.slug)}" data-tone="${esc(d.slug)}"><svg class="glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#g-${esc(d.slug)}"/></svg><b>${esc(d.title)}</b><span>${esc(short(d.scope, 100))}</span></a>`).join('')}</section>
 <section class="discover-demos" aria-label="Try a working example">${demoItems.map(d => `<a href="${esc(d.url)}"><img src="${esc(d.cover)}" alt="" width="400" height="225" loading="lazy"><b>${esc(d.title)}</b><span>Try or watch →</span></a>`).join('')}</section>
 <div class="discover-layout"><aside><details class="discover-refine"><summary>Topics and filters</summary><nav aria-label="Topics">${topicTree}${topic('unplaced', 'Not yet placed')}${topic('cross-cutting', 'Across all areas')}</nav>
-<form data-gallery-filters><fieldset><legend>Source evidence</legend>${['snippet-only','read','verified-at-source','encoded','measured'].map(x => option('evidence', x, x.replaceAll('-', ' '))).join('')}</fieldset><fieldset><legend>Outside-tool adoption</legend>${['trial','adopted','used','reference','unverified','rejected'].map(x => option('adoption', x, x)).join('')}</fieldset></form></details><p class="discover-deeper">Deeper views<br><a href="/catalog">Catalogue &amp; compatibility filters</a><a href="/docs/toolkit">Command &amp; Python API manual</a><a href="/references">Reference evidence &amp; coverage</a><a href="/docs/common-issues">Review checklist</a><a href="/research/landscape">Tool landscape &amp; comparisons</a></p></aside>
+<form data-gallery-filters><fieldset><legend>Source evidence</legend>${['snippet-only','read','verified-at-source','encoded','measured'].map(x => option('evidence', x, x.replaceAll('-', ' '))).join('')}</fieldset><fieldset><legend>Outside-tool adoption</legend>${[...new Set(model.items.filter(x => x.group === 'external').map(x => x.adoption))].sort().map(x => option('adoption', x, x)).join('')}</fieldset></form></details><p class="discover-deeper">Deeper views<br><a href="/catalog">Full catalogue</a><a href="/docs/toolkit">Command &amp; Python API manual</a><a href="/references">Reference evidence &amp; coverage</a><a href="/docs/common-issues">Review checklist</a><a href="/research/landscape">Tool landscape &amp; comparisons</a></p></aside>
 <div id="discover-results" data-gallery-results><nav class="discover-tabs" data-gallery-tabs aria-label="Result types"><a href="#discover-results" data-tab="">All</a>${GROUPS.map(([key,title]) => `<a href="?kind=${key}#discover-results" data-tab="${key}">${title} <span data-count></span></a>`).join('')}</nav>
-<div class="discover-status"><p role="status" aria-live="polite" data-gallery-status>${model.items.length} search links</p><button type="button" data-gallery-clear data-gallery-js>Clear search and filters</button><label data-gallery-js>Sort <select data-gallery-sort><option value="featured">Recommended</option><option value="az">A–Z</option></select></label></div><div data-gallery-chips aria-label="Active filters"></div><p data-gallery-empty hidden>No matches. Try fewer words or clear the filters.</p>
+<div class="discover-status"><p role="status" aria-live="polite" data-gallery-status>${model.items.length} search links</p><button type="button" data-gallery-clear data-gallery-js>Clear search and filters</button><label data-gallery-js>Sort <select data-gallery-sort><option value="featured">By type</option><option value="az">A–Z</option></select></label></div><div data-gallery-chips aria-label="Active filters"></div><p data-gallery-empty hidden>No matches. Try fewer words or clear the filters.</p>
 ${GROUPS.map(([key,title]) => { const list = model.items.filter(x => x.group === key); return `<section data-group="${key}" data-more><h2>${title} <span data-group-count>${list.length}</span></h2><ul class="discover-results">${list.map(row).join('')}</ul><a href="/explore?kind=${key}" data-gallery-link data-gallery-more data-gallery-js>See all <span data-group-count>${list.length}</span> ${title.toLowerCase()} →</a></section>`; }).join('')}
 <p class="discover-scope">${model.source_counts.catalogue_entries} catalogue entries · ${model.source_counts.reference_records} reference records · ${model.source_counts.lesson_and_pitfall_sections} lesson and pitfall sections. These are search links with different roles, not additional independent sources.</p><p class="discover-scope">Adoption describes our use of an outside tool. Evidence describes checking of a source. Area maturity describes a topic, not a validation of each result. <a href="/catalog/discovery.json">Discovery JSON</a></p></div></div></cad-gallery>`;
 }

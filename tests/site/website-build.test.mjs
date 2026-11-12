@@ -316,10 +316,15 @@ test('catalogue statuses are honest', async () => {
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
   for (const [, cmd] of index.matchAll(/<code>cad-agent ([a-z0-9-]+)<\/code>/g))
     assert.ok(catalog.items.some(i => i.name === `cad-agent ${cmd}`), `landing page names cad-agent ${cmd}, which does not exist`);
-  const { source } = JSON.parse(await readFile(path.join(out, 'web/models/gyropup.json'), 'utf8'));
-  const modelFigure = index.match(/<figure class="hero-model">[\s\S]*?<\/figure>/)?.[0] || '';
-  assert.ok(modelFigure.includes(`href="${source.repo}/tree/${source.revision}"`), 'the displayed assembly links its actual immutable CAD source');
-  assert.ok(!modelFigure.includes('exported from its STEP files'), 'the current collector does not read historical STEP exports');
+  const showcases = index.match(/<section class="section built-with"[^>]*>[\s\S]*?<\/section>/)?.[0] || '';
+  const articles = [...showcases.matchAll(/<article>[\s\S]*?<\/article>/g)].map(m => m[0]);
+  for (const name of ['gyropup','j501']) {
+    const { source } = JSON.parse(await readFile(path.join(out, `web/models/${name}.json`), 'utf8'));
+    const article = articles.find(a => a.includes(`src="/web/models/${name}.json"`));
+    assert.ok(article, `the displayed ${name} model has its own project article`);
+    assert.ok(article.includes(`href="${source.repo}/tree/${source.revision}"`), `the displayed ${name} assembly links its actual immutable CAD source`);
+    assert.ok(!article.includes('exported from its STEP files'), 'do not relabel historical engineering exports as current collector evidence');
+  }
   for (const i of catalog.items.filter(i => i.type === 'upstream')) assert.ok(i.summary, `${i.name} has no summary`);
 });
 
@@ -584,13 +589,18 @@ test('a link to a folder opens its README page', async () => {
   assert.match(await readFile(path.join(out, 'lessons/README.md'), 'utf8'), /\]\(process\/README\.md\)/, 'the Markdown twin too');
 });
 
-test('every lesson page has a diagram, and the home page counts lessons, not pages', async () => {
+test('every lesson page has a diagram, and the home page links to knowledge without counter cards', async () => {
   const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
   assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
   for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /<figure class="cad-diagram"|class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
   const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'docs/lessons/*/*.md', ':!docs/lessons/*/README.md').split('\n').filter(Boolean).length;
   assert.ok(rules > 50);
-  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
+  const home = await readFile(path.join(out, 'index.html'), 'utf8');
+  assert.doesNotMatch(home, /mission-num|Skills your agents|not built yet|fit-cmd/);
+  assert.match(home, /href="\/explore"/);
+  assert.match(home, /id="built-with"/);
+  assert.equal((home.match(/<cad-model /g) || []).length, 2);
+  assert.match(home, /src="\/docs\/img\/hero\/learning-loop\.svg"/);
 });
 
 test('a moved source stub uses public redirect identity and every invalid target or rule fails', async () => {

@@ -16,7 +16,7 @@ import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './site-motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems } from './site-outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './site-walls.mjs';
 
@@ -111,8 +111,7 @@ try {
         // fire DOMContentLoaded before they arrive and lay out an unstyled box no reader sees). three.js and the model only
         // start after the load event, so this is still the poster.
         if (route === '/') await page.addInitScript(() => addEventListener('load', () => {
-          const r = document.querySelector('cad-model')?.getBoundingClientRect();
-          window.__posterBox = r && [r.width, r.height];
+          window.__posterBoxes = [...document.querySelectorAll('cad-model')].map(el => { const r = el.getBoundingClientRect(); return [r.width, r.height]; });
         }, { once: true }));
         const res = await page.goto(base + route, { waitUntil: 'networkidle' });
         if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
@@ -130,22 +129,20 @@ try {
         if (route === '/') {
           const names = await page.evaluate(() => document.getAnimations().map(a => a.animationName).filter(n => n?.startsWith('snap-')));
           if (names.length < 4) seen.push(`hero animations running: ${names.join(', ') || 'none'}`);
-          // The 3D Gyropup (#179): it becomes the live model, fetches three.js and the model only after the page has
-          // loaded (the poster is all the first paint needs), and nothing moves when it swaps in.
-          const ready = await page.waitForFunction(() => ['ready', 'error'].includes(document.querySelector('cad-model')?.dataset.state), null, { timeout: 20000 })
-            .then(() => page.evaluate(() => { const el = document.querySelector('cad-model'); return el.dataset.state === 'ready' ? 'ready' : el.dataset.error; }))
-            .catch(() => 'never left the poster');
-          if (ready !== 'ready') seen.push(`3D model: ${ready}`);
-          const late = await page.evaluate(() => {
-            const loaded = performance.getEntriesByType('navigation')[0].loadEventStart;
-            return performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\//.test(r.name) && !/\.webp$/.test(r.name) && r.startTime < loaded).map(r => r.name);
-          });
-          if (late.length) seen.push(`3D model fetched before the page loaded: ${late.join(', ')}`);
-          // The live model takes exactly the poster's box (a font arriving may move it, never resize it), and the page
-          // as a whole shifts no more than the page tree's limit.
-          const box = await page.evaluate(() => { const r = document.querySelector('cad-model').getBoundingClientRect(); return { now: [r.width, r.height], first: window.__posterBox }; });
-          if (!box.first || Math.abs(box.now[0] - box.first[0]) > 0.5 || Math.abs(box.now[1] - box.first[1]) > 0.5)
-            seen.push(`the 3D model's box changed from ${box.first?.map(Math.round)} to ${box.now.map(Math.round)}`);
+          // Both real project views remain deferred while the reader is at the learning hero.
+          const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).map(r => r.name));
+          if (early.length) seen.push(`model payload fetched at hero before a project was approached: ${early.join(', ')}`);
+          const models = page.locator('cad-model');
+          if (await models.count() !== 2) seen.push('Built with cad-agent needs both real project viewers');
+          let ready = 'ready';
+          for (let i = 0; i < await models.count(); i++) {
+            await models.nth(i).evaluate(el => { document.documentElement.style.scrollBehavior = 'auto'; el.scrollIntoView({block:'center'}); });
+            const state = await page.waitForFunction(n => ['ready', 'error'].includes(document.querySelectorAll('cad-model')[n]?.dataset.state), i, {timeout:20000})
+              .then(() => models.nth(i).evaluate(el => el.dataset.state === 'ready' ? 'ready' : el.dataset.error)).catch(() => 'never left the poster');
+            if (state !== 'ready') { ready = state; seen.push(`project viewer ${i}: ${state}`); }
+            const box = await models.nth(i).evaluate((el,n) => { const r=el.getBoundingClientRect(); return {now:[r.width,r.height],first:window.__posterBoxes?.[n]}; }, i);
+            if (!box.first || box.now.some((v,k) => Math.abs(v-box.first[k])>.5)) seen.push(`project viewer ${i} resized when its poster became 3D`);
+          }
           // The shift at every width, each with what moved, so a CI log says what it was and where any shift comes from.
           const { shift, moved, measured = true } = await page.evaluate(() => new Promise(done => {
             if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [], measured: false });
@@ -164,12 +161,12 @@ try {
           else if (measured) console.log(`  ${width}px /: layout shift ${shift.toFixed(3)}${moved.length ? `, under the 0.05 limit: ${moved.join(' | ')}` : ''}`);
           // Scrolled away, it draws nothing, even when the tab is hidden and shown again (#182 review).
           if (ready === 'ready') {
-            await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight); });
+            await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
             await page.waitForTimeout(400);
-            const before = await page.evaluate(() => { document.dispatchEvent(new Event('visibilitychange')); return document.querySelector('cad-model').frames; });
+            const before = await page.evaluate(() => { document.dispatchEvent(new Event('visibilitychange')); return [...document.querySelectorAll('cad-model')].map(el => el.frames); });
             await page.waitForTimeout(800);
-            const drawn = await page.evaluate(n => document.querySelector('cad-model').frames - n, before);
-            if (drawn > 1) seen.push(`the 3D model drew ${drawn} frames off screen after the tab came back`);
+            const drawn = await page.evaluate(ns => [...document.querySelectorAll('cad-model')].map((el,i) => el.frames-ns[i]), before);
+            if (drawn.some(n => n > 1)) seen.push(`project viewers drew ${drawn.join(', ')} frames off screen after the tab came back`);
           }
         }
         if (route === '/catalog' && width === 1366) {
@@ -508,6 +505,10 @@ try {
       }
       return problems;
     }],
+    ['homepage model lifecycle', () => homepageModelProblems(browser, base)],
+    ['learning image motion', () => learningPictureProblems(browser, base)],
+    ['late model allocation rollback', () => homepageLateDrawProblems(browser, base)],
+    ['computed image reduced motion', () => resultImageMotionProblems(browser, base)],
     ['reduced motion', async () => {
       const problems = [];
       const reduced = await browser.newPage({ reducedMotion: 'reduce' });
@@ -516,8 +517,11 @@ try {
       const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
       if (still) problems.push(`reduced motion: ${still} hero animations still running`);
       // The model stands still (no turntable, so no Pause button) until the reader drags it.
-      await reduced.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 })
-        .catch(() => problems.push('reduced motion: the 3D model did not load'));
+      for (const model of await reduced.locator('cad-model').all()) {
+        await model.evaluate(el => { document.documentElement.style.scrollBehavior='auto'; el.scrollIntoView({block:'center'}); });
+        await reduced.waitForFunction(src => document.querySelector(`cad-model[src="${src}"]`)?.dataset.state === 'ready', await model.getAttribute('src'), {timeout:20000})
+          .catch(() => problems.push('reduced motion: a project viewer did not load'));
+      }
       const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
       if (turning) problems.push('reduced motion: the 3D model turns by itself');
       await reduced.close();

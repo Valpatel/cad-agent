@@ -76,3 +76,44 @@ contents. Source/JSON checks do not replace the required browser CI.
 **Limits:** this records one concrete catalogue fixture and a scheduling/evidence boundary. It neither proves every pure suite launches a browser nor replaces execution logs, owned-process accounting, final browser CI or actual layout checks.
 
 **Selection/output check, #599:** a later attempted negative-lookahead `--test-name-pattern` exclusion still executed the hostile-registry case; retained TAP reported that case at 14.4 seconds and 58 functional passes. The selection command therefore did not establish the intended execution boundary. Do not infer an exclusion from a regex argument: verify the actual executed/skipped names. Prefer a small positive selection, or an explicit `--test-skip-pattern` verified against listing, and reserve/cap any run whose transitive producer can still execute. No repeat was run merely to prove the selector; the normal CI security case remains unchanged.
+
+## Bound Git's thread fanout inside capped site producers
+
+**Evidence, 2026-11-12 UTC, #605 / #606:** the explicitly client-diagram prototype
+producer ran under `TasksMax=32`, 1.5 GiB and a 90-second limit. The compiler's
+existing `git grep` test-function count failed with `fatal: grep: failed to create
+thread: Resource temporarily unavailable`. This was a process/thread creation
+failure before a valid producer completed, not a diagram, CAD or site-content
+result. The prior output was retained as failed.
+
+The same source and caps completed in 13.39 seconds when the producer environment
+set `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=grep.threads GIT_CONFIG_VALUE_0=2`. It wrote
+97 editorial pages with zero missing visuals and explicitly left all 284 diagrams
+to the client. No browser was launched by that producer.
+
+**Rule:** inspect the actual failing child and bound Git's hardware-based worker
+fanout per process when running a known `git grep` consumer under a task cap. Do
+not change global/repository Git configuration or raise the cap blindly. Preserve
+existing environment config entries if composing this setting into a caller that
+already uses `GIT_CONFIG_COUNT`.
+
+**Limits:** two Git grep workers were enough for this particular prototype's
+existing count operation. This is not a universal build/browser task budget and
+says nothing about subsequent browser rendering or simulation success.
+
+
+## Human preview URLs need a pinned port across restarts
+
+On 2026-11-12 UTC during #605, restarting the owned preview originally launched
+with `--port 0` moved its ephemeral listener from 44387 to 34429. The promised
+local URL then failed with `curl` exit 7 and the owned headed browser showed
+`ERR_CONNECTION_REFUSED`. This was a local listener/URL mismatch, not a provider,
+DNS or source-compile failure.
+
+The coordinator replaced only its owned preview server with explicit
+`--port 44387`, reloaded headers/CSP from the new producer, verified its HTTP
+version identity `1ee6f8a1`, and then recovered only its owned headed window.
+A user-facing preview link must pin its port across server restarts; check the
+actual HTTP identity before opening or refreshing the headed browser. A successful
+build or a still-open window does not prove that the promised listener exists.
+No unrelated server, browser or public routing configuration was changed.

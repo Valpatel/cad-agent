@@ -1,0 +1,29 @@
+{
+  "utc": "2026-11-12T05:11:55Z",
+  "repository": "https://github.com/Seeed-Studio/OSHW-Jetson-Series",
+  "revision": "c982ee71b305aabd0c1c7c1caac38122e63cd9e1",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha": "2cb7e9a3553d32625495610c2379ec9dce29de8e",
+      "size": 11365,
+      "url": "https://raw.githubusercontent.com/Seeed-Studio/OSHW-Jetson-Series/c982ee71b305aabd0c1c7c1caac38122e63cd9e1/LICENSE",
+      "sha256": "c82cae7efbcc3930ed0bf1de6e80800319c225f292c9e0976fe8eec460f5468d",
+      "git_blob_verified": true
+    },
+    {
+      "path": "reServer Jetson carrier board/reServer Industrial J501/3D Model/RESERVER_AGX_ORIN_CARRIER_BOARD.stp.gz",
+      "sha": "928859ac617fe838a63c36a893bf0bea34989ed1",
+      "size": 18754541,
+      "url": "https://raw.githubusercontent.com/Seeed-Studio/OSHW-Jetson-Series/c982ee71b305aabd0c1c7c1caac38122e63cd9e1/reServer%20Jetson%20carrier%20board/reServer%20Industrial%20J501/3D%20Model/RESERVER_AGX_ORIN_CARRIER_BOARD.stp.gz",
+      "sha256": "31f62b712e019da753f40bfd571f4b61f8d35bc23ae50c9b19c9eaeed8f32867",
+      "git_blob_verified": true
+    }
+  ],
+  "board": {
+    "inflated_bytes": 165651837,
+    "inflated_sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+    "local_sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+    "identical_to_local": true
+  }
+}

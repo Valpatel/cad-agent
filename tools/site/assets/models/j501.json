@@ -1,0 +1,1206 @@
+{
+ "schema": "cad-agent-model/1",
+ "title": "reServer J501 / Jetson AGX Orin enclosure",
+ "units": "mm",
+ "up": "z",
+ "box_mm": [
+  -19.6,
+  5.5,
+  -0.0,
+  225.5,
+  186.5,
+  102.8
+ ],
+ "quant": 65535,
+ "bin": "j501.bin",
+ "encoding": "gzip",
+ "bytes": 806153,
+ "raw_bytes": 2459748,
+ "sha256": "98809a6dc573b81d0d75efbd005db69139ca8585fa36e7da5f778ae4e4a93f63",
+ "triangles": 279522,
+ "source": {
+  "repo": "https://github.com/mvalancy/j501-agx-orin",
+  "revision": "97d7c7e46e11d5d52c4c15879dbe09deac07057c",
+  "captured_geometry_revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
+  "cad_tree": "19f3491aa5188b0067b1318b7d07d1b409bdf63d",
+  "collection_context": "Legacy captured assembly meshes have no embedded export producer revision. Their CAD source tree equals incorporated main; no new CAD regeneration claimed. Optional antenna context generated separately by the incorporated source recipe.",
+  "generator": {
+   "file": "tools/site/figures/pack-j501.py",
+   "sha256": "a0b26f5bcc760ce5c3d6e122d3fc67953e739b2b3851316ffbd922acb241c6d7"
+  },
+  "board_geometry_check": {
+   "source": "references/hardware/carrier-full.stl",
+   "sha256": "172655f9f53db2b72669edd3148dc57274f6e51ceb7de0d14cba64b63e138e7d",
+   "offset_mm": [
+    15,
+    15,
+    20
+   ],
+   "max_allowed_coordinate_difference_mm": 2e-05
+  },
+  "manifest": {
+   "file": "exports/view/view.json",
+   "sha256": "9981d20d2786ea3890b2730a91ef71acffb39533ab0e8c1dece61dc5526968df"
+  },
+  "inputs": {
+   "captured-view/base.stl": {
+    "sha256": "16a806d911976f22e1f4b03102af3d0e4aa9e8a5e8757417ede786f762059abc",
+    "bytes": 3873684
+   },
+   "captured-view/cover.stl": {
+    "sha256": "fc5ba05b817cc60755b4d01a61c23ab64a6bb5f4f6274f37a8ea3a05e0bfda8f",
+    "bytes": 1803884
+   },
+   "captured-view/front_no_gmsl.stl": {
+    "sha256": "4134b0f54a0423e586e1e3d94bd588081107de21a89132cae494ae3751b7a501",
+    "bytes": 923284
+   },
+   "captured-view/rear_io.stl": {
+    "sha256": "8283cc5bc7443ae5f73c692faecde5035d5d83c27b4b288974b2092f32b277ae",
+    "bytes": 979184
+   },
+   "captured-view/side_hatch.stl": {
+    "sha256": "fb99ea195753296cf44ba7b6a0a14f659cd81a21239beda9f3644005a28392d2",
+    "bytes": 42684
+   },
+   "captured-view/chimney_cap.stl": {
+    "sha256": "df52a0426e206474dae5f221117430b1bd84c7ad0920433d0d9a316e96d9a584",
+    "bytes": 16684
+   },
+   "captured-view/spreader.stl": {
+    "sha256": "1f968cf36019c4a63ca067fda08220e44d310b8289cca7bb762c33ccfa9d79e6",
+    "bytes": 52484
+   },
+   "captured-view/spacers.stl": {
+    "sha256": "f9c5a99cbad57ad4923828b42163418fc3056d0651eb0c654ab687d72bd74039",
+    "bytes": 100884
+   },
+   "captured-view/cold_plate.stl": {
+    "sha256": "df58ba2f6ad65b8ee48ddabca850397cb7919f55a00ef696dfc623edd23a6f0d",
+    "bytes": 684
+   },
+   "captured-view/heat_pipes.stl": {
+    "sha256": "545323931dc0f301b0d2afe832bebf7c4d978b514d2a90bb48db438bdea08cf2",
+    "bytes": 1101584
+   },
+   "captured-view/fins.stl": {
+    "sha256": "d451b0c3c8f3fe71488242ae4ff58e643890b82c781b24ff0ec54c9b5fcc0e94",
+    "bytes": 29484
+   },
+   "captured-view/mount_ears.stl": {
+    "sha256": "f7889585b589b486a05d9f1155b3dfa08b1075e7cabc0c40abc0e33fdad53b5d",
+    "bytes": 96884
+   },
+   "captured-view/fan_frame.stl": {
+    "sha256": "80673c0f5d682e7cdd2f05af095d86345bfa2066f34e342b89d2da515129d5e8",
+    "bytes": 14284
+   },
+   "captured-view/fan_rotor.stl": {
+    "sha256": "42f463c150da9a827553d2a0b218bcd3e42247cc9214a4c38eefa56a6fcfebf7",
+    "bytes": 80884
+   },
+   "captured-view/carrier_board.stl": {
+    "sha256": "7edeee5e695d553395340e11ce5e760595a1f12373dd6731a3d9a5b87f214561",
+    "bytes": 42283834
+   },
+   "captured-view/lid_screws.stl": {
+    "sha256": "d6d19644b6adff7d2ba0393f0821ded4c478476c5e479a5858073339fd39609e",
+    "bytes": 507684
+   },
+   "captured-view/board_screws.stl": {
+    "sha256": "b5397bb82abb82eedd0d0eb0d6c018c8663a1be36e723a843e70cc3755736606",
+    "bytes": 256484
+   },
+   "captured-view/cooler_tiedown_screws.stl": {
+    "sha256": "da9d95858939fdac35471e2677b4e4300f324caefc2fc3250dcf85e82007ed76",
+    "bytes": 130484
+   },
+   "captured-view/antenna_bulkheads.stl": {
+    "sha256": "9cc0322818d2b56a05235a0ba1d712b7ab863d986051217eaadbcf328f938c03",
+    "bytes": 251284
+   },
+   "incorporated-original-context/cell_1_antenna.stl": {
+    "sha256": "311b7ba6660994508ef0df35534256f3f53be2a323dfe7c3556661f9044dec17",
+    "bytes": 57484
+   },
+   "incorporated-original-context/cell_2_antenna.stl": {
+    "sha256": "1f81a6ccfdc025d197d9e203840142fdd1caffd807298deb4377277f179ebaee",
+    "bytes": 57484
+   },
+   "incorporated-original-context/wifi_1_antenna.stl": {
+    "sha256": "4aa970157d32ba071915cc1ab6986a5dff23013f5356c9609446d36aff078679",
+    "bytes": 57484
+   },
+   "incorporated-original-context/wifi_2_antenna.stl": {
+    "sha256": "6d66d8cf6f2231c32bdf513e3e98a43cd3ce3dd55cb097fcf40b8936f07173c6",
+    "bytes": 57484
+   }
+  },
+  "display_only": {
+   "method": "0.4 mm vertex-cell centroid clustering; degenerate display triangles omitted",
+   "limits": "Render-only simplification, not dimension or fit evidence; lid fitted initially; use Explode to inspect the real board. Original optional antenna shapes are not RF, purchase, manufacturing or physical-fit evidence.",
+   "parts": {
+    "base": {
+     "original_triangles": 77472,
+     "display_triangles": 49288,
+     "max_vertex_move_mm": 0.36442596861170534,
+     "source_bounds_mm": [
+      -0.02,
+      5.48,
+      -0.02,
+      206.02,
+      186.52,
+      76.5
+     ]
+    },
+    "cover": {
+     "original_triangles": 36076,
+     "display_triangles": 25062,
+     "max_vertex_move_mm": 0.3607911993132807,
+     "source_bounds_mm": [
+      -0.05,
+      5.45,
+      71.98,
+      206.05,
+      186.55,
+      97.05
+     ]
+    },
+    "front_no_gmsl": {
+     "original_triangles": 18464,
+     "display_triangles": 8586,
+     "max_vertex_move_mm": 0.3686879449985113,
+     "source_bounds_mm": [
+      10.25,
+      8.23,
+      4.0,
+      195.75,
+      11.26,
+      71.8
+     ]
+    },
+    "rear_io": {
+     "original_triangles": 19582,
+     "display_triangles": 8890,
+     "max_vertex_move_mm": 0.3741056773939522,
+     "source_bounds_mm": [
+      10.25,
+      178.35,
+      4.0,
+      195.75,
+      183.77,
+      71.8
+     ]
+    },
+    "side_hatch": {
+     "original_triangles": 852,
+     "display_triangles": 492,
+     "max_vertex_move_mm": 0.23065322216756287,
+     "source_bounds_mm": [
+      202.0,
+      75.2,
+      11.2,
+      206.0,
+      118.8,
+      71.8
+     ]
+    },
+    "chimney_cap": {
+     "original_triangles": 332,
+     "display_triangles": 188,
+     "max_vertex_move_mm": 0.2500228734313747,
+     "source_bounds_mm": [
+      13.5,
+      28.8,
+      -0.0,
+      30.0,
+      65.7,
+      4.0
+     ]
+    },
+    "spreader": {
+     "original_triangles": 1048,
+     "display_triangles": 488,
+     "max_vertex_move_mm": 0.19185742118508275,
+     "source_bounds_mm": [
+      55.5,
+      40.0,
+      41.26,
+      155.5,
+      150.0,
+      55.26
+     ]
+    },
+    "spacers": {
+     "original_triangles": 2016,
+     "display_triangles": 944,
+     "max_vertex_move_mm": 0.23430391772871711,
+     "source_bounds_mm": [
+      57.0,
+      64.0,
+      43.26,
+      153.0,
+      147.0,
+      50.06
+     ]
+    },
+    "cold_plate": {
+     "original_triangles": 12,
+     "display_triangles": 12,
+     "max_vertex_move_mm": 0.0,
+     "source_bounds_mm": [
+      83.0,
+      76.5,
+      43.26,
+      127.0,
+      134.5,
+      48.26
+     ]
+    },
+    "heat_pipes": {
+     "original_triangles": 22030,
+     "display_triangles": 17422,
+     "max_vertex_move_mm": 0.2430000174493242,
+     "source_bounds_mm": [
+      53.98,
+      78.48,
+      43.74,
+      156.02,
+      132.52,
+      73.58
+     ]
+    },
+    "fins": {
+     "original_triangles": 588,
+     "display_triangles": 540,
+     "max_vertex_move_mm": 0.21000366210938637,
+     "source_bounds_mm": [
+      63.0,
+      59.0,
+      48.26,
+      147.35,
+      152.0,
+      76.56
+     ]
+    },
+    "mount_ears": {
+     "original_triangles": 1936,
+     "display_triangles": 1272,
+     "max_vertex_move_mm": 0.24980078049669713,
+     "source_bounds_mm": [
+      55.0,
+      62.0,
+      50.05,
+      155.0,
+      149.0,
+      51.56
+     ]
+    },
+    "fan_frame": {
+     "original_triangles": 284,
+     "display_triangles": 284,
+     "max_vertex_move_mm": 0.0,
+     "source_bounds_mm": [
+      59.0,
+      59.5,
+      76.5,
+      151.0,
+      151.5,
+      91.61
+     ]
+    },
+    "fan_rotor": {
+     "original_triangles": 1616,
+     "display_triangles": 1616,
+     "max_vertex_move_mm": 0.0,
+     "source_bounds_mm": [
+      61.12,
+      61.61,
+      77.54,
+      148.1,
+      148.29,
+      91.58
+     ]
+    },
+    "carrier_board": {
+     "original_triangles": 845675,
+     "display_triangles": 144890,
+     "max_vertex_move_mm": 0.39440961399445446,
+     "source_bounds_mm": [
+      15.0,
+      11.62,
+      13.5,
+      191.35,
+      180.5,
+      38.01
+     ]
+    },
+    "lid_screws": {
+     "original_triangles": 10152,
+     "display_triangles": 6864,
+     "max_vertex_move_mm": 0.2826686844283411,
+     "source_bounds_mm": [
+      -7.0,
+      27.25,
+      57.4,
+      213.0,
+      164.75,
+      81.0
+     ]
+    },
+    "board_screws": {
+     "original_triangles": 5128,
+     "display_triangles": 2696,
+     "max_vertex_move_mm": 0.30926969313525426,
+     "source_bounds_mm": [
+      27.15,
+      28.65,
+      9.99,
+      182.85,
+      164.35,
+      23.23
+     ]
+    },
+    "cooler_tiedown_screws": {
+     "original_triangles": 2608,
+     "display_triangles": 1708,
+     "max_vertex_move_mm": 0.31792080317665555,
+     "source_bounds_mm": [
+      55.61,
+      62.61,
+      11.23,
+      154.39,
+      148.39,
+      46.26
+     ]
+    },
+    "antenna_bulkheads": {
+     "original_triangles": 5024,
+     "display_triangles": 4032,
+     "max_vertex_move_mm": 0.2677536681321141,
+     "source_bounds_mm": [
+      -7.0,
+      41.88,
+      57.4,
+      213.0,
+      150.12,
+      66.61
+     ]
+    },
+    "cell_1_antenna": {
+     "original_triangles": 1148,
+     "display_triangles": 1020,
+     "max_vertex_move_mm": 0.20750413330397036,
+     "source_bounds_mm": [
+      208.5,
+      42.5,
+      58.0,
+      225.5,
+      50.5,
+      102.80000305175781
+     ]
+    },
+    "cell_2_antenna": {
+     "original_triangles": 1148,
+     "display_triangles": 1020,
+     "max_vertex_move_mm": 0.20750413330397036,
+     "source_bounds_mm": [
+      208.5,
+      141.5,
+      58.0,
+      225.5,
+      149.5,
+      102.80000305175781
+     ]
+    },
+    "wifi_1_antenna": {
+     "original_triangles": 1148,
+     "display_triangles": 1104,
+     "max_vertex_move_mm": 0.18477210312986175,
+     "source_bounds_mm": [
+      -19.600000381469727,
+      42.599998474121094,
+      58.099998474121094,
+      -2.5,
+      50.400001525878906,
+      84.0999984741211
+     ]
+    },
+    "wifi_2_antenna": {
+     "original_triangles": 1148,
+     "display_triangles": 1104,
+     "max_vertex_move_mm": 0.18477210312986175,
+     "source_bounds_mm": [
+      -19.600000381469727,
+      141.60000610351562,
+      58.099998474121094,
+      -2.5,
+      149.39999389648438,
+      84.0999984741211
+     ]
+    }
+   }
+  },
+  "board_reference": {
+   "utc": "2026-11-12T05:11:55Z",
+   "repository": "https://github.com/Seeed-Studio/OSHW-Jetson-Series",
+   "revision": "c982ee71b305aabd0c1c7c1caac38122e63cd9e1",
+   "files": [
+    {
+     "path": "LICENSE",
+     "sha": "2cb7e9a3553d32625495610c2379ec9dce29de8e",
+     "size": 11365,
+     "url": "https://raw.githubusercontent.com/Seeed-Studio/OSHW-Jetson-Series/c982ee71b305aabd0c1c7c1caac38122e63cd9e1/LICENSE",
+     "sha256": "c82cae7efbcc3930ed0bf1de6e80800319c225f292c9e0976fe8eec460f5468d",
+     "git_blob_verified": true
+    },
+    {
+     "path": "reServer Jetson carrier board/reServer Industrial J501/3D Model/RESERVER_AGX_ORIN_CARRIER_BOARD.stp.gz",
+     "sha": "928859ac617fe838a63c36a893bf0bea34989ed1",
+     "size": 18754541,
+     "url": "https://raw.githubusercontent.com/Seeed-Studio/OSHW-Jetson-Series/c982ee71b305aabd0c1c7c1caac38122e63cd9e1/reServer%20Jetson%20carrier%20board/reServer%20Industrial%20J501/3D%20Model/RESERVER_AGX_ORIN_CARRIER_BOARD.stp.gz",
+     "sha256": "31f62b712e019da753f40bfd571f4b61f8d35bc23ae50c9b19c9eaeed8f32867",
+     "git_blob_verified": true
+    }
+   ],
+   "board": {
+    "inflated_bytes": 165651837,
+    "inflated_sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+    "local_sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+    "identical_to_local": true
+   }
+  },
+  "omitted_parts": {
+   "agx_module": "Separate NVIDIA vendor mesh omitted: no independent redistribution basis established."
+  },
+  "antenna_context": {
+   "manifest_sha256": "29f03cb10d9e3c026fba59de38159267c7eb261e0216ff36d03a460c2b179868",
+   "manifest": {
+    "schema": "j501-original-showcase-context-v2",
+    "units": "mm",
+    "coordinate_frame": "existing enclosure assembly; no lid/part transforms changed",
+    "source_sha256": {
+     "cad/parameters.json": "891a32c46accbe08481b5f00448df6029af71164db0ac2bb7b7c6794e9b3a51a",
+     "cad/hardware.py": "281d3a6053d8dfb153a9bab52151abba7495994778bafb632d89c709a4961b0d",
+     "tools/showcase_antennas.py": "eed4b24f644b45aba135da0bffea9fc4307f10b63cae2cfff4d98ff28504cd1b",
+     "tools/showcase-antenna-reference.json": "7a074d869cb8d734c907d620f9c7aabe42186f00e3b33d0a59382d27fcf08c4f",
+     "tools/showcase-cellular-reference.json": "f32e949b1784a2e455cf407e1a0a7f42d269bfba783ab1861d681ab0efae96b7"
+    },
+    "recipe_revision_sha256": "eed4b24f644b45aba135da0bffea9fc4307f10b63cae2cfff4d98ff28504cd1b",
+    "mechanical_reference": {
+     "manufacturer": "TE Connectivity / Linx",
+     "mpn": "ANT-2.4-CW-RAH-RPS",
+     "te_part": "L9000025-01",
+     "checked_utc": "2026-11-12",
+     "product_url": "https://www.te.com/en/product-L9000025-01.html",
+     "drawing": {
+      "number": "C-ANT-2.4-CW-RAH-CCC",
+      "revision": "B",
+      "url": "https://www.te.com/commerce/DocumentDelivery/DDEController?Action=srchrtrv&DocFormat=pdf&DocLang=English&DocNm=C-ANT-2.4-CW-RAH-CCC&DocType=Customer+Drawing&PartCntxt=L9000025-01",
+      "private_reference_sha256": "6c76c93d3db2d94cdafaa403773f4469f890160fc3396510f08322bdd3ad065b",
+      "dimensions_mm": {
+       "housing_datum": 25.6,
+       "lateral_extent": 17.1,
+       "upper_diameter": 7.4,
+       "connector_diameter": 7.8,
+       "connector_axial_length": 8.1,
+       "base_datum": 7.0
+      }
+     },
+     "datasheet": {
+      "url": "https://www.te.com/commerce/DocumentDelivery/DDEController?Action=srchrtrv&DocFormat=pdf&DocLang=English&DocNm=L9000025-01&DocType=Data+Sheet&PartCntxt=L9000025-01",
+      "private_reference_sha256": "aa3572733a970854894ef385b32f392de035ccfc1de300134cfac08cdee5410e",
+      "upper_segment_mm": 18.6,
+      "base_mm": 7.0,
+      "datum_note": "18.6 upper segment + 7 base = 25.6 housing; connector below housing is separate. Older datasheet connector dimension differs; use drawing B for cited mechanical facts."
+     },
+     "rights": "Proprietary reference files stay untracked. Original geometric recipe uses numerical facts only; no vendor CAD, PDF, image, logo, markings or tessellation redistributed."
+    },
+    "cellular_reference": {
+     "manufacturer": "Taoglas",
+     "mpn": "TG.22.0152",
+     "role": "proposed compact cellular visual reference only; not selected build hardware",
+     "checked_utc": "2026-11-12",
+     "datasheet_url": "https://www.taoglas.com/datasheets/TG.22.0152.pdf",
+     "document": "SPE-11-8-112/E/SS",
+     "private_reference_sha256": "02043b24baef5c8ee43238535d3c45f19dcf77f72ee8a47923fc2453e7a5414c",
+     "connector": "RP-SMA(M) fixed right angle; drawing detail SMA(M) RA RP, 1/4-36UNS-2B",
+     "mechanical_drawing_page": 5,
+     "dimensions_mm": {
+      "overall_height": 44.8,
+      "overall_height_tolerance": 2.0,
+      "housing_length": 38.0,
+      "housing_length_tolerance": 2.0,
+      "lateral_extent": 17.0,
+      "lateral_tolerance": 0.5,
+      "housing_diameter": 7.8,
+      "housing_diameter_tolerance": 0.3,
+      "connector_axial_length": 8.4,
+      "connector_length_tolerance": 0.3,
+      "connector_hex_across_flats": 8.0
+     },
+     "manufacturer_band_description": "GSM/DCS/PCS/UMTS/CDMA/GPRS/EDGE/HSPA, 800-2200 MHz; older penta-band cellular reference, not an LTE/5G qualification",
+     "limits": [
+      "installed modem and radio band requirements remain unknown/unselected",
+      "not an assertion of LTE/5G, low-band, ground-plane, pigtail or MIMO suitability",
+      "no connector engagement, physical fit, collision or RF qualification",
+      "not a purchase recommendation; existing purchase BOM remains unchanged"
+     ],
+     "rights": "Manufacturer datasheet retained privately; only cited numerical facts and original simplified geometry are tracked. No vendor PDF, image, CAD, tessellation, logo or markings redistributed."
+    },
+    "optional": true,
+    "display_only": true,
+    "printable": false,
+    "purchase_bom": false,
+    "physical_fit_verified": false,
+    "rf_qualified": false,
+    "seating_assumption": "coupling planes on visual nut outer faces, X=-2.5 / W+2.5; washer .5 + nut 2 from cad/hardware.py; no mating thread detail",
+    "representation": "original closed 32-sided swept tubes; per-part illustrative elbow/shoulder/flat tip; black color including coupling; no markings, threads, pins, internals or vendor mesh",
+    "limits": [
+     "not manufacturing geometry",
+     "not a connector fit or collision qualification",
+     "not radio, band, ground-plane, pigtail or MIMO selection",
+     "bulkhead sites unchanged; fitted lid stays in existing position",
+     "cellular reference is older penta-band 800-2200 MHz, not LTE/5G or installed-modem qualification",
+     "25.6 mm housing datum is not the complete generated envelope"
+    ],
+    "parts": [
+     {
+      "name": "cell_1_antenna",
+      "file": "cell_1_antenna.stl",
+      "sha256": "311b7ba6660994508ef0df35534256f3f53be2a323dfe7c3556661f9044dec17",
+      "bounds_mm": [
+       [
+        208.5,
+        42.5,
+        58.0
+       ],
+       [
+        225.5,
+        50.5,
+        102.80000305175781
+       ]
+      ],
+      "triangles": 1148,
+      "color": [
+       0.06,
+       0.065,
+       0.075
+      ],
+      "category": "context",
+      "visible": true,
+      "optional": true,
+      "display_only": true,
+      "reference_key": "cellular_reference",
+      "representation": "original circularized 8 mm coupling, illustrative 4.7 mm bend and flat tip; no hex corners/threads/contact/markings; approximately 17x8x44.8 mm generated envelope, separate from vendor tolerances",
+      "mount": {
+       "label": "CELL 1",
+       "origin_mm": [
+        208.5,
+        46.5,
+        62.0
+       ],
+       "outward_axis": [
+        1,
+        0,
+        0
+       ],
+       "up_axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "name": "cell_2_antenna",
+      "file": "cell_2_antenna.stl",
+      "sha256": "1f81a6ccfdc025d197d9e203840142fdd1caffd807298deb4377277f179ebaee",
+      "bounds_mm": [
+       [
+        208.5,
+        141.5,
+        58.0
+       ],
+       [
+        225.5,
+        149.5,
+        102.80000305175781
+       ]
+      ],
+      "triangles": 1148,
+      "color": [
+       0.06,
+       0.065,
+       0.075
+      ],
+      "category": "context",
+      "visible": true,
+      "optional": true,
+      "display_only": true,
+      "reference_key": "cellular_reference",
+      "representation": "original circularized 8 mm coupling, illustrative 4.7 mm bend and flat tip; no hex corners/threads/contact/markings; approximately 17x8x44.8 mm generated envelope, separate from vendor tolerances",
+      "mount": {
+       "label": "CELL 2",
+       "origin_mm": [
+        208.5,
+        145.5,
+        62.0
+       ],
+       "outward_axis": [
+        1,
+        0,
+        0
+       ],
+       "up_axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "name": "wifi_1_antenna",
+      "file": "wifi_1_antenna.stl",
+      "sha256": "4aa970157d32ba071915cc1ab6986a5dff23013f5356c9609446d36aff078679",
+      "bounds_mm": [
+       [
+        -19.600000381469727,
+        42.599998474121094,
+        58.099998474121094
+       ],
+       [
+        -2.5,
+        50.400001525878906,
+        84.0999984741211
+       ]
+      ],
+      "triangles": 1148,
+      "color": [
+       0.06,
+       0.065,
+       0.075
+      ],
+      "category": "context",
+      "visible": true,
+      "optional": true,
+      "display_only": true,
+      "reference_key": "mechanical_reference",
+      "representation": "unchanged original Wi-Fi approximation; approximately 17.1x7.8x26 mm envelope",
+      "mount": {
+       "label": "WIFI 1",
+       "origin_mm": [
+        -2.5,
+        46.5,
+        62.0
+       ],
+       "outward_axis": [
+        -1,
+        0,
+        0
+       ],
+       "up_axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "name": "wifi_2_antenna",
+      "file": "wifi_2_antenna.stl",
+      "sha256": "6d66d8cf6f2231c32bdf513e3e98a43cd3ce3dd55cb097fcf40b8936f07173c6",
+      "bounds_mm": [
+       [
+        -19.600000381469727,
+        141.60000610351562,
+        58.099998474121094
+       ],
+       [
+        -2.5,
+        149.39999389648438,
+        84.0999984741211
+       ]
+      ],
+      "triangles": 1148,
+      "color": [
+       0.06,
+       0.065,
+       0.075
+      ],
+      "category": "context",
+      "visible": true,
+      "optional": true,
+      "display_only": true,
+      "reference_key": "mechanical_reference",
+      "representation": "unchanged original Wi-Fi approximation; approximately 17.1x7.8x26 mm envelope",
+      "mount": {
+       "label": "WIFI 2",
+       "origin_mm": [
+        -2.5,
+        145.5,
+        62.0
+       ],
+       "outward_axis": [
+        -1,
+        0,
+        0
+       ],
+       "up_axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ "view": {
+  "azimuth": 0,
+  "elevation": 38
+ },
+ "parts": [
+  {
+   "name": "base",
+   "id": "P1",
+   "category": "Printed parts",
+   "visible": true,
+   "bounds_mm": [
+    -0.02,
+    5.48,
+    -0.02,
+    206.02,
+    186.52,
+    76.5
+   ],
+   "color": "#2f343c",
+   "vertices": 24427,
+   "triangles": 49288,
+   "offset": 0,
+   "index_bits": 16
+  },
+  {
+   "name": "cover",
+   "id": "P2",
+   "category": "Printed parts",
+   "visible": true,
+   "bounds_mm": [
+    -0.05,
+    5.45,
+    71.98,
+    206.05,
+    186.55,
+    97.05
+   ],
+   "color": "#3b3f46",
+   "vertices": 12035,
+   "triangles": 25062,
+   "offset": 442290,
+   "index_bits": 16
+  },
+  {
+   "name": "front_no_gmsl",
+   "id": "P4",
+   "category": "Printed parts",
+   "visible": true,
+   "bounds_mm": [
+    10.25,
+    8.23,
+    4.0,
+    195.75,
+    11.26,
+    71.8
+   ],
+   "color": "#8a9099",
+   "vertices": 4226,
+   "triangles": 8586,
+   "offset": 664872,
+   "index_bits": 16
+  },
+  {
+   "name": "rear_io",
+   "id": "P5",
+   "category": "Printed parts",
+   "visible": true,
+   "bounds_mm": [
+    10.25,
+    178.35,
+    4.0,
+    195.75,
+    183.77,
+    71.8
+   ],
+   "color": "#8a9099",
+   "vertices": 4376,
+   "triangles": 8890,
+   "offset": 741744,
+   "index_bits": 16
+  },
+  {
+   "name": "side_hatch",
+   "id": "P10",
+   "category": "Printed parts",
+   "visible": true,
+   "bounds_mm": [
+    202.0,
+    75.2,
+    11.2,
+    206.0,
+    118.8,
+    71.8
+   ],
+   "color": "#8a9099",
+   "vertices": 238,
+   "triangles": 492,
+   "offset": 821340,
+   "index_bits": 16
+  },
+  {
+   "name": "chimney_cap",
+   "id": "P18",
+   "category": "Printed parts",
+   "visible": true,
+   "bounds_mm": [
+    13.5,
+    28.8,
+    -0.0,
+    30.0,
+    65.7,
+    4.0
+   ],
+   "color": "#5aa9e6",
+   "vertices": 96,
+   "triangles": 188,
+   "offset": 825720,
+   "index_bits": 16
+  },
+  {
+   "name": "spreader",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    55.5,
+    40.0,
+    41.26,
+    155.5,
+    150.0,
+    55.26
+   ],
+   "color": "#bb743e",
+   "vertices": 240,
+   "triangles": 488,
+   "offset": 827424,
+   "index_bits": 16
+  },
+  {
+   "name": "spacers",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    57.0,
+    64.0,
+    43.26,
+    153.0,
+    147.0,
+    50.06
+   ],
+   "color": "#d9b062",
+   "vertices": 472,
+   "triangles": 944,
+   "offset": 831792,
+   "index_bits": 16
+  },
+  {
+   "name": "cold_plate",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    83.0,
+    76.5,
+    43.26,
+    127.0,
+    134.5,
+    48.26
+   ],
+   "color": "#c98a5a",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 840288,
+   "index_bits": 16
+  },
+  {
+   "name": "heat_pipes",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    53.98,
+    78.48,
+    43.74,
+    156.02,
+    132.52,
+    73.58
+   ],
+   "color": "#d4b896",
+   "vertices": 8721,
+   "triangles": 17422,
+   "offset": 840408,
+   "index_bits": 16
+  },
+  {
+   "name": "fins",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    63.0,
+    59.0,
+    48.26,
+    147.35,
+    152.0,
+    76.56
+   ],
+   "color": "#929ca3",
+   "vertices": 368,
+   "triangles": 540,
+   "offset": 997266,
+   "index_bits": 16
+  },
+  {
+   "name": "mount_ears",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    55.0,
+    62.0,
+    50.05,
+    155.0,
+    149.0,
+    51.56
+   ],
+   "color": "#ac9e8b",
+   "vertices": 636,
+   "triangles": 1272,
+   "offset": 1002714,
+   "index_bits": 16
+  },
+  {
+   "name": "fan_frame",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    59.0,
+    59.5,
+    76.5,
+    151.0,
+    151.5,
+    91.61
+   ],
+   "color": "#303b46",
+   "vertices": 142,
+   "triangles": 284,
+   "offset": 1014162,
+   "index_bits": 16
+  },
+  {
+   "name": "fan_rotor",
+   "category": "Cooler (reComputer mini J501)",
+   "visible": true,
+   "bounds_mm": [
+    61.12,
+    61.61,
+    77.54,
+    148.1,
+    148.29,
+    91.58
+   ],
+   "color": "#111a23",
+   "vertices": 828,
+   "triangles": 1616,
+   "offset": 1016718,
+   "index_bits": 16
+  },
+  {
+   "name": "carrier_board",
+   "category": "Carrier board and module",
+   "visible": true,
+   "bounds_mm": [
+    15.0,
+    11.62,
+    13.5,
+    191.35,
+    180.5,
+    38.01
+   ],
+   "color": "#2f6b4f",
+   "vertices": 64153,
+   "triangles": 144890,
+   "offset": 1031382,
+   "index_bits": 16
+  },
+  {
+   "name": "lid_screws",
+   "category": "Screws and hardware",
+   "visible": true,
+   "bounds_mm": [
+    -7.0,
+    27.25,
+    57.4,
+    213.0,
+    164.75,
+    81.0
+   ],
+   "color": "#b8bec6",
+   "vertices": 3236,
+   "triangles": 6864,
+   "offset": 2285640,
+   "index_bits": 16
+  },
+  {
+   "name": "board_screws",
+   "category": "Screws and hardware",
+   "visible": true,
+   "bounds_mm": [
+    27.15,
+    28.65,
+    9.99,
+    182.85,
+    164.35,
+    23.23
+   ],
+   "color": "#c9a227",
+   "vertices": 1356,
+   "triangles": 2696,
+   "offset": 2346240,
+   "index_bits": 16
+  },
+  {
+   "name": "cooler_tiedown_screws",
+   "category": "Screws and hardware",
+   "visible": true,
+   "bounds_mm": [
+    55.61,
+    62.61,
+    11.23,
+    154.39,
+    148.39,
+    46.26
+   ],
+   "color": "#b8bec6",
+   "vertices": 862,
+   "triangles": 1708,
+   "offset": 2370552,
+   "index_bits": 16
+  },
+  {
+   "name": "antenna_bulkheads",
+   "category": "Screws and hardware",
+   "visible": true,
+   "bounds_mm": [
+    -7.0,
+    41.88,
+    57.4,
+    213.0,
+    150.12,
+    66.61
+   ],
+   "color": "#c9a227",
+   "vertices": 1884,
+   "triangles": 4032,
+   "offset": 2385972,
+   "index_bits": 16
+  },
+  {
+   "name": "cell_1_antenna",
+   "category": "context",
+   "visible": true,
+   "explode": [
+    1,
+    0,
+    0
+   ],
+   "bounds_mm": [
+    208.5,
+    42.5,
+    58.0,
+    225.5,
+    50.5,
+    102.80000305175781
+   ],
+   "color": "#0f1113",
+   "vertices": 512,
+   "triangles": 1020,
+   "offset": 2421468,
+   "index_bits": 16
+  },
+  {
+   "name": "cell_2_antenna",
+   "category": "context",
+   "visible": true,
+   "explode": [
+    1,
+    0,
+    0
+   ],
+   "bounds_mm": [
+    208.5,
+    141.5,
+    58.0,
+    225.5,
+    149.5,
+    102.80000305175781
+   ],
+   "color": "#0f1113",
+   "vertices": 512,
+   "triangles": 1020,
+   "offset": 2430660,
+   "index_bits": 16
+  },
+  {
+   "name": "wifi_1_antenna",
+   "category": "context",
+   "visible": true,
+   "explode": [
+    -1,
+    0,
+    0
+   ],
+   "bounds_mm": [
+    -19.600000381469727,
+    42.599998474121094,
+    58.099998474121094,
+    -2.5,
+    50.400001525878906,
+    84.0999984741211
+   ],
+   "color": "#0f1113",
+   "vertices": 554,
+   "triangles": 1104,
+   "offset": 2439852,
+   "index_bits": 16
+  },
+  {
+   "name": "wifi_2_antenna",
+   "category": "context",
+   "visible": true,
+   "explode": [
+    -1,
+    0,
+    0
+   ],
+   "bounds_mm": [
+    -19.600000381469727,
+    141.60000610351562,
+    58.099998474121094,
+    -2.5,
+    149.39999389648438,
+    84.0999984741211
+   ],
+   "color": "#0f1113",
+   "vertices": 554,
+   "triangles": 1104,
+   "offset": 2449800,
+   "index_bits": 16
+  }
+ ]
+}

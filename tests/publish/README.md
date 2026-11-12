@@ -23,6 +23,7 @@ flowchart TD
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `test_anim_convergence.py` | The animated mesh-convergence figure, drawn from its committed scene |
 | `test_anim_snapfit.py` | The animated snap-fit figure, drawn from the snap-fit calculator |
+| [test_homepage_art.py](test_homepage_art.py) | Recorded homepage sample values, failed solver criteria and conceptual hero still-state contract |
 | `test_htmlreport.py` | `canonical_status` never upgrades to pass; `render_page` shows every row |
 | `test_readme_anim.py` | The animated README figures are what their scenes render to, and safe to embed |
 | `test_release.py` | The print release page: parts, slicer settings and slice state, pick-one groups, totals |

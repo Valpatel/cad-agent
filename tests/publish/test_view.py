@@ -279,3 +279,16 @@ def test_showcase_collection_packet_is_import_safe_and_old_pack_names_do_not_pro
     with tarfile.open(tmp_path / "model-produced.tgz") as archive:
         assert archive.getnames() == ["gyropup.json"]
         assert archive.extractfile("gyropup.json").read() == b"partial output retained"
+
+
+def test_j501_source_rgb_conversion_rejects_invalid_material_channels():
+    """Product context uses normalized RGB; the display consumer requires CSS color."""
+    import runpy
+    from pathlib import Path
+    convert = runpy.run_path(str(Path(__file__).resolve().parents[2] / 'tools/site/figures/pack-j501.py'))['css_rgb']
+    assert convert([.06, .065, .075]) == '#0f1113'
+    assert convert([0, 1, 0]) == '#00ff00'
+    for invalid in [[0, 0], [0, 0, 0, 0], [-.1, 0, 0], [0, 1.1, 0],
+                    [float('nan'), 0, 0], [float('inf'), 0, 0], [True, 0, 0], '#000000', ['0', 0, 0]]:
+        with pytest.raises(RuntimeError, match='finite normalized RGB'):
+            convert(invalid)

@@ -114,16 +114,23 @@ export class CadNav extends HTMLElement {
    * its sticky top to the end of <cad-nav> or of the window, whichever comes first (nav.css's 16px gap below kept). */
   #room(panel, signal) {
     let queued = false;
+    const controls = panel.querySelector(':scope > [data-nav-controls]');
     const fit = () => {
       queued = false;
       const style = getComputedStyle(panel);
-      if (style.position !== 'sticky') { panel.style.maxHeight = ''; return; }
+      if (style.position !== 'sticky') { panel.style.maxHeight = ''; panel.style.scrollPaddingTop = ''; return; }
+      // Native/automation scrollIntoView must leave links below the actual sticky controls, too.
+      if (controls) panel.style.scrollPaddingTop = `${Math.ceil(controls.getBoundingClientRect().height) + 16}px`;
       const end = Math.min(innerHeight, this.getBoundingClientRect().bottom);
       const room = Math.floor(end - (parseFloat(style.top) || 0) - 16);
       panel.style.maxHeight = `${Math.max(room, 120)}px`;        // a few links at least, on a very short window
     };
     const queue = () => { if (!queued) { queued = true; requestAnimationFrame(fit); } };
     fit();
+    if (controls) {
+      const size = new ResizeObserver(queue); size.observe(controls);
+      signal.addEventListener('abort', () => size.disconnect(), { once: true });
+    }
     addEventListener('scroll', queue, { passive: true, signal });
     addEventListener('resize', queue, { passive: true, signal });
   }

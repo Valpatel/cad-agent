@@ -169,6 +169,9 @@ export async function readerBoundaryProblems(browser, base) {
         const negative=await snapshot(page);states.push({negative});
         if(!(negative.article<before.article&&negative.panel>0))problems.push('reader boundary: old scroll-chain control did not reproduce the trap');
       }
+      await scrollOutline(page,await page.evaluate(()=>document.documentElement.scrollHeight));await quiet(page);
+      const bottom=await page.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};return {host:rect(document.querySelector('cad-nav')),panel:rect(document.querySelector('.cad-nav-panel')),controls:rect(document.querySelector('[data-nav-controls]')),header:rect(document.querySelector('.site-header'))};});states.push({viewport,bottom});
+      if(bottom.controls.top<bottom.header.bottom||bottom.controls.bottom>viewport.height||bottom.panel.height<bottom.controls.height+44)problems.push('reader boundary: footer leaves controls or links without room '+JSON.stringify(bottom));
     }finally{await page.close();}
   }
   for(const javaScriptEnabled of [true,false]){
@@ -181,4 +184,42 @@ export async function readerBoundaryProblems(browser, base) {
   }
   await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));
   console.log('Reader boundary evidence: '+evidence);return problems;
+}
+
+/** Keep the actual last/last/middle outline-click journey, including the engine's own click autoscroll.
+ * Also align a link natively at the panel's start: its center must clear the real sticky header. */
+export async function readerOutlineClickProblems(browser, base) {
+  const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-click-'));
+  const page=await browser.newPage({viewport:{width:1366,height:800}});
+  const settle=()=>page.evaluate(()=>new Promise(done=>{
+    let last=-1,still=0;const tick=()=>{if(scrollY===last){if(++still>15)return done();}else{still=0;last=scrollY;}requestAnimationFrame(tick);};tick();setTimeout(done,10000);
+  }));
+  const state=link=>link.evaluate(a=>{
+    const p=a.closest('.cad-nav-panel'),r=a.getBoundingClientRect(),c=p.querySelector('[data-nav-controls]').getBoundingClientRect();
+    return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
+  });
+  try{
+    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
+    await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight*.85));
+    await page.evaluate(()=>{document.documentElement.style.scrollBehavior='';scrollTo({top:0,behavior:'instant'});});
+    const links=page.locator('cad-nav .cad-nav-outline a');
+    for(const link of [links.nth((await links.count())-2),links.last()]){
+      await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await link.click();await settle();
+      if(await link.getAttribute('aria-current')!=='location')problems.push('reader click: smooth jump not marked');
+    }
+    await page.evaluate(()=>document.documentElement.style.scrollBehavior='auto');
+    const middle=links.nth(Math.floor((await links.count())/2));await middle.click();await settle();states.push({realMiddleClick:await state(middle)});
+    // Remove only the new inset: native start alignment must reproduce a link underneath the sticky controls.
+    const panel=page.locator('.cad-nav-panel'),padding=await panel.evaluate(p=>p.style.scrollPaddingTop);
+    await panel.evaluate(p=>p.style.scrollPaddingTop='0px');await middle.evaluate(a=>a.scrollIntoView({block:'start',behavior:'instant'}));
+    const negative=await state(middle);states.push({negative});if(negative.hit)problems.push('reader click: zero-inset header coverage control was not rejected');
+    await panel.evaluate((p,value)=>p.style.scrollPaddingTop=value,padding);await middle.evaluate(a=>a.scrollIntoView({block:'start',behavior:'instant'}));
+    const corrected=await state(middle);states.push({corrected});if(!corrected.hit||parseFloat(corrected.padding)<corrected.controlsHeight)problems.push('reader click: link remains beneath sticky controls');
+    await middle.click();await settle();
+  }finally{
+    await page.screenshot({path:path.join(evidence,'final.png')});await page.close();
+    await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader click evidence: '+evidence);
+  }
+  return problems;
 }

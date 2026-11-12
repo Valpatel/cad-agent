@@ -7,12 +7,14 @@ private directory; execute only version/help and offline frozen exports.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
 import tarfile
+import tempfile
 from urllib.request import HTTPSHandler, ProxyHandler, build_opener
 
 INSPECT_REVISION = 'ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8'
@@ -35,6 +37,13 @@ SOURCE_HASHES = {
     'uv.lock': '51e5c7e02907eddb299da012cc1a141ef9054f544300a19ee1f862d169da497c',
     'CONTRIBUTING.md': '772f6f756d7dfad60a54355987ebdb229709feb4700503a98983098beb130b9f',
 }
+MAX_TAR_BYTES = 128_000_000
+
+
+def metadata_limits():
+    import resource
+    resource.setrlimit(resource.RLIMIT_FSIZE, (2_000_000, 2_000_000))
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
 
 def digest(path):
@@ -61,23 +70,37 @@ def download(url, path, expected, limit):
 
 def extract_uv(archive, destination):
     prefix = 'uv-x86_64-unknown-linux-gnu'
-    found, total = {}, 0
-    with tarfile.open(archive, 'r:gz') as tar:
-        for member in tar:
-            if member.isdir() and member.name.rstrip('/') == prefix:
-                continue
-            if member.name not in (prefix + '/uv', prefix + '/uvx') or not member.isfile():
-                raise ValueError('unexpected uv archive member/type')
-            name = Path(member.name).name
-            if name in found or not 0 < member.size <= 80_000_000:
-                raise ValueError('duplicate or oversized uv archive member')
-            total += member.size
-            if total > 128_000_000:
-                raise ValueError('uv extraction exceeds byte bound')
-            data = tar.extractfile(member).read(member.size + 1)
-            if len(data) != member.size:
-                raise ValueError('truncated uv archive member')
-            found[name] = data
+    found, seen, size = {}, set(), 0
+    # Bound every decompressed byte, including PAX/GNU headers and padding,
+    # before tarfile parses metadata that may otherwise allocate without a cap.
+    with tempfile.TemporaryFile(dir=Path(archive).parent) as unpacked:
+        with gzip.open(archive, 'rb') as compressed:
+            while True:
+                data = compressed.read(min(65536, MAX_TAR_BYTES-size+1))
+                if not data:
+                    break
+                size += len(data)
+                if size > MAX_TAR_BYTES:
+                    raise ValueError('decompressed uv archive exceeds byte bound')
+                unpacked.write(data)
+        unpacked.seek(0)
+        with tarfile.open(fileobj=unpacked, mode='r:', ignore_zeros=True) as tar:
+            for member in tar:
+                canonical = member.name.rstrip('/')
+                if canonical in seen or len(seen) >= 3:
+                    raise ValueError('duplicate or excessive uv archive members')
+                seen.add(canonical)
+                if member.isdir() and canonical == prefix:
+                    continue
+                if member.name not in (prefix + '/uv', prefix + '/uvx') or not member.isfile():
+                    raise ValueError('unexpected uv archive member/type')
+                name = Path(member.name).name
+                if not 0 < member.size <= 80_000_000:
+                    raise ValueError('oversized uv archive member')
+                data = tar.extractfile(member).read(member.size + 1)
+                if len(data) != member.size:
+                    raise ValueError('truncated uv archive member')
+                found[name] = data
     if set(found) != {'uv', 'uvx'}:
         raise ValueError('expected exactly uv and uvx binaries')
     destination.mkdir(mode=0o700)
@@ -85,6 +108,41 @@ def extract_uv(archive, destination):
         with (destination / name).open('xb') as out:
             out.write(data)
         (destination / name).chmod(0o500)
+
+
+def metadata_command(work, index, argv, source, env, timeout=15):
+    """Retain failure evidence after group settlement, including timeouts."""
+    stdout, stderr = work / f'{index}.stdout', work / f'{index}.stderr'
+    runner.write_json(work / f'{index}.invocation.json', dict(argv=argv, timeout_seconds=timeout))
+    code, timed_out, error, child, settled = None, False, None, None, None
+    with stdout.open('xb') as out, stderr.open('xb') as err:
+        os.chmod(stdout, 0o600)
+        os.chmod(stderr, 0o600)
+        try:
+            child = subprocess.Popen(argv, env=env, cwd=source, stdout=out, stderr=err,
+                                     start_new_session=True, preexec_fn=metadata_limits)
+            try:
+                code = child.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                timed_out = True
+            finally:
+                try:
+                    runner.settle_group(child)
+                    code = child.wait(timeout=5)
+                    settled = runner.group_gone(child.pid)
+                except (OSError, subprocess.SubprocessError) as exc:
+                    error = f'{type(exc).__name__}: {exc}'
+                    settled = False
+        except (OSError, subprocess.SubprocessError) as exc:
+            error = f'{type(exc).__name__}: {exc}'
+    hashes = {name: digest(source / name) if (source / name).is_file() else None for name in SOURCE_HASHES}
+    receipt = dict(argv=argv, exit_code=code, timed_out=timed_out, error=error, group_settled=settled,
+                   pid=child.pid if child else None,
+                   stdout_sha256=digest(stdout), stderr_sha256=digest(stderr), source_sha256=hashes)
+    runner.write_json(work / f'{index}.receipt.json', receipt)
+    if code != 0 or timed_out or error or settled is not True or hashes != SOURCE_HASHES:
+        raise ValueError(f'metadata command {index} failed; retain its receipt, do not retry setup')
+    return receipt
 
 
 def probe(work):
@@ -124,27 +182,11 @@ def probe(work):
            'PYTHONDONTWRITEBYTECODE': '1'}
     receipts = []
     for index, argv in enumerate(commands):
-        stdout, stderr = work / f'{index}.stdout', work / f'{index}.stderr'
         # Metadata-only commands cannot invoke dependency builds: no project
         # source was fetched, no sync/install command or model is available.
-        with stdout.open('xb') as out, stderr.open('xb') as err:
-            os.chmod(stdout, 0o600)
-            os.chmod(stderr, 0o600)
-            with subprocess.Popen(argv, env=env, cwd=source, stdout=out, stderr=err,
-                                  start_new_session=True) as child:
-                try:
-                    code = child.wait(timeout=15)
-                finally:
-                    runner.settle_group(child)
-                    child.wait(timeout=5)
-        receipts.append(dict(argv=argv, exit_code=code, stdout_sha256=digest(stdout), stderr_sha256=digest(stderr)))
-        runner.write_json(work / f'{index}.receipt.json', receipts[-1])
-        if code != 0:
-            raise ValueError(f'metadata command {index} failed; retain its receipt, do not retry setup')
-        if index == 0 and not stdout.read_text().startswith('uv 0.13.4 '):
+        receipts.append(metadata_command(work, index, argv, source, env))
+        if index == 0 and not (work / '0.stdout').read_text().startswith('uv 0.13.4 '):
             raise ValueError('verified artifact reports an unexpected version')
-        if any(digest(source / name) != expected for name, expected in SOURCE_HASHES.items()):
-            raise ValueError('pinned source/lock changed during metadata export')
     artifacts = {name: dict(sha256=digest(work / name), bytes=(work / name).stat().st_size)
                  for name in ('base.requirements.txt', 'dev-extra.requirements.txt')}
     result = dict(phase=1, upstream_revision=INSPECT_REVISION, uv_sha256=UV_HASH, exports=artifacts,

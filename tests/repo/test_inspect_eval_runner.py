@@ -301,6 +301,48 @@ def test_phase1_uv_extraction_whitelist_prevents_executing_unexpected_members(tm
     with pytest.raises(ValueError, match='member/type'):
         probe.extract_uv(path, tmp_path / 'bad')
     assert not (tmp_path / 'escape').exists()
+    packed([(prefix.rstrip('/'), tarfile.DIRTYPE), (prefix.rstrip('/'), tarfile.DIRTYPE),
+            (prefix + 'uv', tarfile.REGTYPE), (prefix + 'uvx', tarfile.REGTYPE)])
+    with pytest.raises(ValueError, match='duplicate or excessive'):
+        probe.extract_uv(path, tmp_path / 'duplicate')
+    assert not (tmp_path / 'duplicate').exists()
+
+
+def test_phase1_bounds_decompressed_headers_before_tar_parsing(tmp_path, monkeypatch):
+    import gzip
+    path = tmp_path / 'uv.tar.gz'
+    with gzip.open(path, 'wb') as out:
+        out.write(b'x' * 10000)
+    monkeypatch.setattr(probe, 'MAX_TAR_BYTES', 9999)
+    with pytest.raises(ValueError, match='decompressed uv archive exceeds'):
+        probe.extract_uv(path, tmp_path / 'bad')
+    assert not (tmp_path / 'bad').exists()
+
+
+@pytest.mark.skipif(sys.platform != 'linux', reason='POSIX owned-group metadata probe')
+def test_phase1_actual_timeout_retains_invocation_failure_and_settlement(tmp_path, monkeypatch):
+    monkeypatch.setattr(probe, 'SOURCE_HASHES', {})
+    command = [sys.executable, '-c', 'import time; print("partial",flush=True); time.sleep(60)']
+    with pytest.raises(ValueError, match='retain its receipt'):
+        probe.metadata_command(tmp_path, 0, command, tmp_path, {'PATH': '/usr/bin:/bin'}, timeout=.1)
+    invocation = json.loads((tmp_path / '0.invocation.json').read_text())
+    receipt = json.loads((tmp_path / '0.receipt.json').read_text())
+    assert invocation['argv'] == command and receipt['argv'] == command
+    assert receipt['timed_out'] is True and receipt['group_settled'] is True
+    assert receipt['exit_code'] != 0
+    assert receipt['stdout_sha256'] == adapter.sha256((tmp_path / '0.stdout').read_bytes())
+    assert (tmp_path / '0.stdout').read_text() == 'partial\n'
+    with pytest.raises(ProcessLookupError):
+        os.kill(receipt['pid'], 0)
+
+
+def test_phase1_missing_executable_still_records_failure(tmp_path, monkeypatch):
+    monkeypatch.setattr(probe, 'SOURCE_HASHES', {})
+    with pytest.raises(ValueError, match='retain its receipt'):
+        probe.metadata_command(tmp_path, 0, ['/absent/uv'], tmp_path, {'PATH': '/usr/bin:/bin'})
+    receipt = json.loads((tmp_path / '0.receipt.json').read_text())
+    assert receipt['exit_code'] is None and receipt['pid'] is None
+    assert 'FileNotFoundError' in receipt['error'] and receipt['group_settled'] is None
 
 
 @pytest.mark.skipif(os.environ.get('CAD_EVAL_INSPECT_WIRE') != '1',

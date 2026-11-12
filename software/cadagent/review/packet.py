@@ -608,6 +608,17 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
     body_of = moving_bodies(rec.joints, rec.fasteners, grounded)
     laws, _ = resolve_follows(rec.joints)               # {driven joint: its law from the joint that is sampled}
 
+    # Use the gate's home convention (zero clamped to the declared range), including root-driver homes
+    # outside zero. A composed follower law already names the independent root driver.
+    homes = {x: min(max(0.0, float(jx["range"][0])), float(jx["range"][1]))
+             for x, jx in rec.joints.items()
+             if jx.get("kind") in ("revolute", "slider", "cylindrical") and isinstance(jx.get("range"), list)
+             and len(jx["range"]) == 2 and x not in laws}
+
+    home_slides = {x: min(max(0.0, float(jx["range_mm"][0])), float(jx["range_mm"][1]))
+                   for x, jx in rec.joints.items() if jx.get("kind") == "cylindrical"
+                   and isinstance(jx.get("range_mm"), list) and len(jx["range_mm"]) == 2}
+
     def touches(jid: str) -> bool:
         moving, fixed = rec.joints[jid].get("moving"), rec.joints[jid].get("fixed")
         body = {n for n, b in body_of.items() if b == moving} | ({moving} if moving else set())
@@ -644,9 +655,12 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
             continue
         carried = _carried(jid, rec.joints, body_of)
         keys_moving = sorted({k for name in carried for k in rec.keys_of(name)})
-        # joints that follow this one are drawn with it. Each has an axis, or the pose would show a linkage that
+        # Every follower is drawn: those of this driver use its sampled value; the others hold their driver home.
+        # Include nonzero held driver/ancestor moves so follower frames compose in the assembly frame.
+        # Each has an axis, or the pose would show a linkage that
         # the record cannot place; the innermost joint (the one carried by the most others) is applied first.
-        chain = [f for f in driven if _vec((rec.joints[f].get("axis") or {}).get("origin"))
+        chain = [f for f in (set(laws) | {x for x, h in homes.items() if laws and (h != 0 or home_slides.get(x, 0) != 0) and x != jid})
+                 if _vec((rec.joints[f].get("axis") or {}).get("origin"))
                  and _vec((rec.joints[f].get("axis") or {}).get("direction"), nonzero=True)]
         carried_by = {x: _carried(x, rec.joints, body_of) for x in [jid] + chain}
         order = sorted([jid] + chain, key=lambda x: (-sum(1 for y in carried_by if y != x and
@@ -662,17 +676,24 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
                 moves = []
                 for x in order:
                     jx = rec.joints[x]
-                    moves.append({"interface": x, "value": value if x == jid else round(laws[x].of(float(value)), 6),
+                    moves.append({"interface": x, "value": value if x == jid else round(
+                                      laws[x].of(float(value) if laws[x].joint == jid else homes.get(laws[x].joint, 0.0))
+                                      if x in laws else homes[x], 6),
                                   "unit": jx.get("unit") or ("mm" if jx.get("kind") == "slider" else "deg"),
                                   "axis": {"origin": _r(jx["axis"]["origin"]), "direction": _r(jx["axis"]["direction"])},
                                   "keys": sorted({k for name in carried_by[x] for k in rec.keys_of(name)})})
+                for mv in moves:
+                    if mv["interface"] in home_slides:
+                        mv["slide_mm"] = home_slides[mv["interface"]]
+                if "slide_mm" in pose:
+                    next(mv for mv in moves if mv["interface"] == jid)["slide_mm"] = pose["slide_mm"]
                 pose["moves"] = moves
                 pose["keys"] = sorted({k for mv in moves for k in mv["keys"]})
                 pose["body"] = sorted({name for x in order for name in carried_by[x]})
                 with_ = ", ".join(f"{mv['interface']} at {mv['value']:g} {mv['unit']}" for mv in moves
                                   if mv["interface"] != jid)
                 title += f", with {with_}"
-                text += (f", with the joints that follow it at their driven values ({with_}; the ratio is declared, "
+                text += (f", with driven and held joints at their declared values ({with_}; the ratio is declared, "
                          "not solved)")
             moved_boxes = [_pose_box(rec.box(k), origin, d, value, unit, j.get("range_mm"), end, pose.get("moves"), k)
                            for k in pose["keys"]]
@@ -805,6 +826,8 @@ def _pose_box(b: Optional[Box], origin: Sequence[float], d: Sequence[float], val
                 u, o, v = _unit(mv["axis"]["direction"]), mv["axis"]["origin"], float(mv["value"])
                 pts = ([[p[i] + u[i] * v for i in range(3)] for p in pts] if mv["unit"] == "mm"
                        else [rotate_point(p, o, u, v) for p in pts])
+                if mv.get("slide_mm"):
+                    pts = [[p[i] + u[i] * float(mv["slide_mm"]) for i in range(3)] for p in pts]
         return _box_of(pts)
     u = _unit(d)
     if unit == "mm":
@@ -1042,7 +1065,7 @@ def _posed(shape: Any, pose: Mapping[str, Any], key: Optional[str] = None) -> An
     if pose.get("moves"):
         for mv in pose["moves"]:
             if key in mv["keys"]:
-                shape = _posed(shape, {k: mv[k] for k in ("axis", "value", "unit")})
+                shape = _posed(shape, {k: mv[k] for k in ("axis", "value", "unit", "slide_mm") if k in mv})
         return shape
     axis = pose["axis"]
     o, d = cq.Vector(*axis["origin"]), cq.Vector(*axis["direction"])

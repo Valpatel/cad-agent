@@ -859,7 +859,9 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         for pi, vals in enumerate(poses):
             vmap = values_of(vals)
             mats = world_mats(vmap)
-            pose_mats[_label(g, vals)] = {b: mats[b] for b in moving_bodies_g}
+            # Containment needs the same complete physical pose as collision/closure checks.
+            # Active bodies still select declarations, but inactive followers may have nonzero home offsets.
+            pose_mats[_label(g, vals)] = mats
             for x, rows_c in carried.items():         # how far the carried parts reach from this axis, in this pose
                 j = js[x]
                 for jj, k in rows_c:

@@ -803,3 +803,34 @@ def test_a_wrong_ratio_pulls_the_closing_pin_apart():
     assert f["status"] == "fail" and f["evidence"]["max_apart_mm"] == pytest.approx(
         2 * 50 * math.sin(math.radians(20)), abs=1e-3)
     assert finding(v, "follows:I-cradle")["status"] == "fail"           # and 0..20 deg leaves its declared -20..0
+
+
+def test_containment_keeps_other_groups_follower_home_offset():
+    cq = _cq()
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.containment import containment_gate
+    from cadagent.review.gates.motion import motion_gate
+    asm = Assembly()
+    asm.add("base", cq.Solid.makeBox(1, 1, 1, cq.Vector(-20, 0, 0)))
+    asm.add("driver", cq.Solid.makeBox(1, 1, 1, cq.Vector(-10, 0, 0)))
+    cavity = cq.Solid.makeBox(4, 4, 4, cq.Vector(9, -1, -1))
+    asm.add("container", cq.Solid.makeBox(6, 6, 6, cq.Vector(8, -2, -2)).cut(cavity))
+    asm.add_cavity("void", cavity, part="container")
+    asm.add("follower", cq.Solid.makeBox(.5, .5, .5))
+    joints = {"C": slider("container", "base", (0, 1)),
+              "D": slider("driver", "base", (0, 1)),
+              "F": {**slider("follower", "base", None), "follows": ("D", 1, 10)}}
+    decls = [{"container": "container", "cavity": "void", "what": "follower", "count": 1}]
+    # Independent assembly-frame oracle: explicitly translate both bodies at all four endpoint combinations.
+    def tx(x):
+        return [[1, 0, 0, x], [0, 1, 0, 0], [0, 0, 1, 0]]
+    poses = {f"C{c}D{d}": {"container": tx(c), "follower": tx(10+d)}
+             for c in (0, 1) for d in (0, 1)}
+    oracle = containment_gate(asm, decls, poses=poses, support="off")
+    assert oracle["pass"], oracle["findings"]
+    wrong = containment_gate(asm, decls, poses={"missing-offset": {"container": tx(1)}}, support="off")
+    assert not wrong["pass"]                       # dropping F's offset is observable, not a vacuous fixture
+    v = motion_gate(asm, joints, default_samples=2, contains=decls,
+                    containment_options={"support": "off"})
+    checks = [c for c in v["checks"] if c["id"].startswith("containment@C/") and c["id"].endswith(":inside")]
+    assert len(checks) == 2 and all(c["status"] == "pass" for c in checks), checks

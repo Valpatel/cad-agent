@@ -6,3 +6,6 @@
 **Changed**
 - The review packet draws a driven joint with its driver: the driver's range-end views carry `pose.moves` (every joint that moves, innermost first) and a follower gets no range-end views of its own. Packets of projects without driven joints are unchanged (#581).
 - The geometry record's joints carry `follows` and `closes` only where declared, so existing records keep their digests; a driven joint without a range has `"range": null` (#581).
+
+**Fixed**
+- Containment and packet range-end views retain followers’ nonzero home offsets while another independent group moves. Packet poses also retain held scalar driver frames and cylindrical slide travel when composed with driven moves (#581).

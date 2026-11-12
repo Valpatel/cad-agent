@@ -560,3 +560,82 @@ def test_partial_render_keeps_current_images(bench_packets):
     m = pk.review_packet("S-bracket", root=root, size=(520, 360), only=["solid-iso"])
     assert [v["id"] for v in m["views"] if v["file"]] == ["solid-iso"] and m["render"] == {"size": [520, 360]}
     assert sorted(p.name for p in (root / "exports" / "review" / "S-bracket").glob("*.png")) == ["solid-iso.png"]
+
+
+@pytest.mark.parametrize("driver_range, fixed, law_value, expected", [
+    ([0, 1], "base", 10, 10), ([2, 3], "base", 12, 12), ([-3, -2], "base", 8, 8),
+    ([2, 3], "lid", 12, 14)])
+def test_independent_pose_preserves_follower_home_offset(tmp_path, driver_range, fixed, law_value, expected):
+    rec = record()
+    rec["joints"] = {
+        "C": {"kind": "slider", "moving": "hopper", "fixed": "base", "range": [0, 1], "unit": "mm",
+              "axis": {"origin": [3, 4, 5], "direction": [1, 0, 0]}},
+        "D": {"kind": "slider", "moving": "lid", "fixed": "base", "range": driver_range, "unit": "mm",
+              "axis": {"origin": [7, 8, 9], "direction": [1, 0, 0]}},
+        "F": {"kind": "slider", "moving": "ball", "fixed": fixed, "range": None, "unit": "mm",
+              "axis": {"origin": [11, 12, 13], "direction": [1, 0, 0]},
+              "follows": {"joint": "D", "multiplier": 1, "offset": 10}}}
+    views = {v["id"]: v for v in plan(tmp_path, "S1", rec=rec)["views"]}
+    for end in ("min", "max"):
+        pose = views[f"pose-C-{end}"]["pose"]
+        moves = pose.get("moves", [])
+        follower = next((mv for mv in moves if mv["interface"] == "F"), None)
+        assert follower is not None and follower["value"] == law_value
+        # Four noncoplanar landmarks in the assembly frame; hand-computed translation, not follower resolver.
+        for p in ((20, 20, 8), (21, 20, 8), (20, 22, 8), (20, 20, 11)):
+            box = (p, p)
+            actual, _ = pk._pose_box(box, None, None, 0, None, None, end, moves, "ball#0")
+            assert actual == pytest.approx((p[0]+expected, p[1], p[2]))
+            assert actual != pytest.approx(p)     # omitted offset is the negative control
+
+
+def test_independent_pose_applies_follower_offset_to_native_shape(tmp_path):
+    # Reuse the landmark fixture's plan through a minimal record, but check actual CAD shape placement separately.
+    cq = pytest.importorskip("cadquery")
+    rec = _linkage_record()
+    rec["joints"]["C"] = {"kind": "slider", "moving": "hopper", "fixed": "base", "range": [0, 1],
+                           "unit": "mm", "axis": {"origin": [3, 4, 5], "direction": [1, 0, 0]}}
+    rec["joints"]["I-ball"]["follows"]["offset"] = 15
+    pose = next(v["pose"] for v in plan(tmp_path, "S1", rec=rec)["views"] if v["id"] == "pose-C-max")
+    # Held I-arm=0 gives the ball +15deg around its own offset Y axis at (30,25,13).
+    for p in ((30,25,13), (31,25,13), (30,27,13), (30,25,16)):
+        actual = pk._posed(cq.Vertex.makeVertex(*p), pose, "ball#0").Center().toTuple()
+        a = math.radians(15)
+        expected = (30+(p[0]-30)*math.cos(a)+(p[2]-13)*math.sin(a), p[1],
+                    13-(p[0]-30)*math.sin(a)+(p[2]-13)*math.cos(a))
+        assert actual == pytest.approx(expected)
+
+
+def test_independent_cylindrical_pose_keeps_slide_with_other_followers(tmp_path):
+    rec = _linkage_record()
+    rec["joints"]["C"] = {"kind": "cylindrical", "moving": "hopper", "fixed": "base", "range": [0, 90],
+                           "range_mm": [2, 7], "unit": "deg",
+                           "axis": {"origin": [0, 0, 0], "direction": [0, 0, 1]}}
+    views = {v["id"]: v for v in plan(tmp_path, "S1", rec=rec)["views"]}
+    for end, expected in (("min", (1, 0, 2)), ("max", (0, 1, 7))):
+        pose = views[f"pose-C-{end}"]["pose"]
+        actual, _ = pk._pose_box(((1, 0, 0), (1, 0, 0)), None, None, 0, None, None, end,
+                                 pose["moves"], "hopper")
+        assert actual == pytest.approx(expected)
+        cq = pytest.importorskip("cadquery")
+        assert pk._posed(cq.Vertex.makeVertex(1, 0, 0), pose, "hopper").Center().toTuple() == pytest.approx(expected)
+
+
+def test_inactive_cylindrical_parent_carries_offset_follower(tmp_path):
+    rec = _linkage_record()
+    rec["joints"]["C"] = {"kind": "slider", "moving": "hopper", "fixed": "base", "range": [0, 1],
+                           "unit": "mm", "axis": {"origin": [0, 0, 0], "direction": [1, 0, 0]}}
+    rec["joints"]["P"] = {"kind": "cylindrical", "moving": "lid", "fixed": "base", "range": [90, 100],
+                           "range_mm": [2, 3], "unit": "deg",
+                           "axis": {"origin": [0, 0, 0], "direction": [0, 0, 1]}}
+    rec["joints"]["I-ball"].update(kind="slider", fixed="lid", unit="mm",
+        axis={"origin": [0, 0, 0], "direction": [1, 0, 0]},
+        follows={"joint": "I-arm", "multiplier": 1, "offset": 10})
+    pose = next(v["pose"] for v in plan(tmp_path, "S1", rec=rec)["views"] if v["id"] == "pose-C-max")
+    # First +10 X locally; then +90 Z in the held parent frame; finally +2 Z slide.
+    for p in ((1,2,3), (2,2,3), (1,4,3), (1,2,6)):
+        expected = (-p[1], p[0]+10, p[2]+2)
+        actual, _ = pk._pose_box((p,p), None, None, 0, None, None, "max", pose["moves"], "ball#0")
+        assert actual == pytest.approx(expected)
+        cq = pytest.importorskip("cadquery")
+        assert pk._posed(cq.Vertex.makeVertex(*p), pose, "ball#0").Center().toTuple() == pytest.approx(expected)

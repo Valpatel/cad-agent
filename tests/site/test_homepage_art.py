@@ -36,4 +36,4 @@ def test_learning_hero_has_readable_still_and_no_integration_or_physics_claim():
         assert 'prefers-reduced-motion:reduce' in svg
         assert 'Human-reviewed' in svg or 'HUMAN REVIEW' in svg
         assert 'not a hardware simulation or automatic model training' in svg
-        assert 'MANUFACTURER GUIDE' in svg and 'Source, edition, limits' in svg
+        assert 'MANUFACTURER GUIDE' in svg and 'source, edition, limits' in svg.lower()

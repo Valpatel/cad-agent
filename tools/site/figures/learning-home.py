@@ -9,51 +9,53 @@ OUT=ROOT/'docs/img/hero'
 FONT='Inter,system-ui,sans-serif'
 def text(x,y,s,size=22,cls='',anchor='start'):
  return f'<text x="{x}" y="{y}" font-size="{size}" class="{cls}" text-anchor="{anchor}">{escape(s)}</text>'
-def hero(mobile=False):
- w,h=(720,1590) if mobile else (1440,790)
- panels=[(28,150),(28,610),(28,1070)] if mobile else [(36,140),(512,140),(988,140)]
- pw,ph=(664,420) if mobile else (416,480)
- s=f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-labelledby="title desc"><title id="title">From shared evidence to better hardware</title><desc id="desc">Examples and manufacturer guides enter a messy knowledge graph, become organized topics and cited rules, then inform design, checks, simulation and printing. Results return through human-reviewed contributions. Conceptual process illustration, not a hardware simulation or automatic model training.</desc><defs><pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#233549" stroke-width="1"/></pattern><linearGradient id="panel" x2="0.6" y2="1"><stop stop-color="#142439"/><stop offset="1" stop-color="#0b1625"/></linearGradient><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#79e5d0"/></marker></defs><style>text{{font-family:{FONT};fill:#edf4f8}}.muted{{fill:#a9bbcd}}.cyan{{fill:#79e5d0}}.amber{{fill:#ffcb83}}.mono{{font-family:ui-monospace,monospace}}.wire{{fill:none;stroke:#79e5d0;stroke-width:2;stroke-dasharray:5 9;animation:flow 4s linear infinite}}.node{{fill:#0c2634;stroke:#79e5d0;stroke-width:2}}.pulse{{animation:pulse 6s ease-in-out infinite}}.trace{{fill:none;stroke:#79e5d0;stroke-width:3;stroke-dasharray:900;animation:trace 9s ease-in-out infinite}}@keyframes flow{{to{{stroke-dashoffset:-140}}}}@keyframes pulse{{0%,100%{{opacity:.35}}50%{{opacity:1}}}}@keyframes trace{{0%{{stroke-dashoffset:900}}55%,100%{{stroke-dashoffset:0}}}}@media(prefers-reduced-motion:reduce){{*{{animation:none!important}}.trace{{stroke-dashoffset:0}}.pulse{{opacity:1}}}}</style><rect width="100%" height="100%" rx="28" fill="#091422"/><rect width="100%" height="100%" rx="28" fill="url(#grid)" opacity=".6"/>'''
- s+=text(38,58,'YOUR NEED. SHARED KNOWLEDGE. BETTER HARDWARE.',22,'cyan mono')+text(38,100,'Anyone. Any useful thing.',32)
- labels=[('01','START WITH A NEED','Learn from examples and original guides.'),('02','ORGANIZE','Topics. Provenance. Cited rules.'),('03','BUILD + LEARN','Design → check → make → report.')]
- for i,((x,y),(n,label,sub)) in enumerate(zip(panels,labels)):
-  s+=f'<g transform="translate({x} {y})"><rect width="{pw}" height="{ph}" rx="20" fill="url(#panel)" stroke="#314459"/>'+text(24,40,n,19,'amber mono')+text(68,40,label,23)+text(24,77,sub,20,'muted')
-  if i==0:
-   cw=220 if mobile else 250
-   for k,(a,b,c) in enumerate([('YOUR NEED','A useful thing','A person sets the requirements'),('MANUFACTURER GUIDE','PEM · Covestro','Source, edition, limits')]):
-    yy=108+k*142;s+=f'<g transform="translate(28 {yy})"><path d="M0 0H{cw-32}L{cw} 30V120H0Z" fill="#1e3046" stroke="#738ba4"/><path d="M{cw-32} 0V30H{cw}" fill="none" stroke="#738ba4"/>'+text(16,31,a,16,'cyan mono')+text(16,65,b,23)+text(16,93,c,14,'muted')+'</g>'
-   s+=text(28,ph-24,'Real examples + checks guide the AI.',17,'muted')
-   xx=360 if mobile else 338
-   s+=f'<g transform="translate({xx-14} 110)"><circle cx="14" cy="0" r="13" fill="none" stroke="#edf4f8" stroke-width="3"/><path d="M-6 52V32q20-30 40 0v20M-6 35l-12 22M34 35l12 22" fill="none" stroke="#edf4f8" stroke-width="3"/></g>'
-   for j in range(7):s+=f'<circle cx="{xx}" cy="{200+j*25}" r="{4+j%3}" fill="#ffcb83" class="pulse" style="animation-delay:{j*.4}s"/>'
-   s+=f'<path class="wire" d="M{cw+36} 200H{pw-20}"/>'
-  elif i==1:
-   # Left: unstructured links. Right: a stable cited tree, not an evidence score.
-   pts=[(32,145),(105,111),(174,166),(48,238),(144,265),(82,340),(201,332),(220,210)]
-   for j,(a,b) in enumerate(pts):
-    for k in [j+2,j+3]:
-     c,d=pts[k%len(pts)];s+=f'<path d="M{a} {b}L{c} {d}" stroke="#62768e" stroke-width="1" opacity=".55"/>'
-   for j,(a,b) in enumerate(pts):s+=f'<circle cx="{a}" cy="{b}" r="{5+j%3}" fill="#ffcb83" opacity=".8"/>'
-   sx=330 if mobile else 290
-   s+=f'<path class="trace" d="M{sx} 130V320M{sx} 180h-35v60M{sx} 180h45v60M{sx} 280h45v60"/>'
-   for a,b in [(sx,130),(sx-35,240),(sx+45,240),(sx+45,340)]:s+=f'<rect class="node" x="{a-12}" y="{b-12}" width="24" height="24" rx="5"/>'
-   if mobile:
-    s+=text(415,150,'TOPIC TREE',21,'cyan')+text(415,210,'Source-linked',21)+text(415,245,'Material limits',21)+text(415,280,'Worked examples',21)+text(415,315,'Rule + test',21)
-   else:s+=text(24,420,'Messy inputs → reusable knowledge',18,'muted')
-  else:
-   ox=32; yy=112
-   for j,(label,detail) in enumerate([('DESIGN','real CAD'),('CHECK','fit + access'),('SIMULATE','stated assumptions'),('MAKE','reviewed release')]):
-    px=ox+(j%2)*(300 if mobile else 190);py=yy+(j//2)*120
-    s+=f'<g transform="translate({px} {py})"><rect width="{276 if mobile else 166}" height="96" rx="12" fill="#172d3e" stroke="#496479"/>'+text(14,34,label,20,'cyan mono')+text(14,65,detail,16,'muted')+'</g>'
-   s+=text(26,395,'Useful objects. Honest feedback. Better next time.',16,'amber')
-  s+='</g>'
- if mobile:
-  for y in [580,1040]:s+=f'<path class="wire" d="M360 {y-6}v28" marker-end="url(#arrow)"/>'
-  s+=text(360,1540,'Human-reviewed feedback → the next design',21,'cyan','middle')
- else:
-  for x in [462,938]:s+=f'<path class="wire" d="M{x} 380h36" marker-end="url(#arrow)"/>'
-  s+='<path class="wire" d="M1200 640v55H240v-55" marker-end="url(#arrow)"/>'+text(720,741,'RESULTS → HUMAN REVIEW → SHARED IMPROVEMENT',22,'cyan mono','middle')
+def cinematic_hero(mobile=False):
+ w,h=(1000,1000) if mobile else (1440,820)
+ # Composed scene, not boxes: human at a bench, useful objects and an evolving memory overhead.
+ person=(30,380) if mobile else (90,250)
+ bench=(185,410,.92) if mobile else (480,240,1)
+ network=(365,80) if mobile else (685,55)
+ docs=(55,75) if mobile else (300,105)
+ s=f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-labelledby="title desc"><title id="title">Your idea becomes something useful — and helps the next person</title><desc id="desc">A person brings an idea to an AI-assisted engineering workbench. Real examples and a MANUFACTURER GUIDE contribute source, edition, limits. A messy knowledge lattice organizes into a topic tree. Wireframe objects become an enclosure, bracket and thermal device, checked before making. Human-reviewed feedback returns to improve the next design. Original conceptual artwork, not a hardware simulation or automatic model training.</desc><defs><radialGradient id="space"><stop stop-color="#1d3c51"/><stop offset="1" stop-color="#08131f"/></radialGradient><linearGradient id="glass" x2="1" y2="1"><stop stop-color="#3d8897" stop-opacity=".45"/><stop offset="1" stop-color="#0d263c" stop-opacity=".8"/></linearGradient><linearGradient id="metal"><stop stop-color="#cae2e5"/><stop offset="1" stop-color="#477786"/></linearGradient><radialGradient id="idea"><stop stop-color="#fff3c7"/><stop offset=".3" stop-color="#ffc879"/><stop offset="1" stop-color="#d88c31" stop-opacity="0"/></radialGradient><filter id="glow"><feGaussianBlur stdDeviation="5"/></filter><pattern id="grid" width="70" height="70" patternUnits="userSpaceOnUse"><path d="M70 0H0V70" fill="none" stroke="#73b7bb" stroke-opacity=".1"/></pattern></defs><style>text{{font-family:Inter,system-ui,sans-serif;fill:#d8e9ee}}.flow{{stroke-dasharray:3 13;animation:current 6s linear infinite}}.draw{{stroke-dasharray:1400;animation:draw 14s ease-in-out infinite}}.solid{{animation:solid 14s ease-in-out infinite}}.lid{{animation:assemble 14s ease-in-out infinite}}.orb{{animation:breathe 5s ease-in-out infinite}}.still{{display:none}}@keyframes current{{to{{stroke-dashoffset:-192}}}}@keyframes draw{{0%,10%{{stroke-dashoffset:1400;opacity:.2}}48%,72%{{stroke-dashoffset:0;opacity:1}}95%,100%{{stroke-dashoffset:0;opacity:.25}}}}@keyframes solid{{0%,32%{{opacity:.12}}62%,100%{{opacity:1}}}}@keyframes assemble{{0%,25%{{transform:translateY(-85px)}}62%,82%{{transform:translateY(0)}}100%{{transform:translateY(-85px)}}}}@keyframes breathe{{0%,100%{{opacity:.5}}50%{{opacity:1}}}}@media(prefers-reduced-motion:reduce){{*{{animation:none!important}}.moving{{display:none}}.still{{display:inline}}.solid{{opacity:1}}.draw{{stroke-dashoffset:0;opacity:1}}}}</style><rect width="{w}" height="{h}" rx="30" fill="url(#space)"/><ellipse cx="{w*.58}" cy="{h*.74}" rx="{w*.45}" ry="{h*.28}" fill="#183345" opacity=".45"/><path d="M0 {h*.73}L{w} {h*.57}V{h}H0Z" fill="url(#grid)"/>'''
+ # Quiet depth cues, not filler particles: a technical horizon and a returning feedback orbit.
+ s+=f'<ellipse cx="{w*.58}" cy="{h*.68}" rx="{w*.42}" ry="{h*.23}" fill="none" stroke="#6de3d1" stroke-opacity=".12"/>'
+ s+=f'<path class="flow" d="M{w-90} {h-210}C{w-40} {h-30} 130 {h+30} 125 {h-250}" fill="none" stroke="#edbd74" stroke-width="3"/>'
+ s+=f'<path class="flow" d="M{person[0]+245} {person[1]+135}Q{w*.35} 90 {network[0]+180} {network[1]+30}" fill="none" stroke="#86dfd2" stroke-width="2" opacity=".5"/>'
+ # Person silhouette, facing the object: warm face/light and a purposeful hand at the workbench.
+ x,y=person
+ s+=f'<g transform="translate({x} {y})"><ellipse cx="88" cy="385" rx="120" ry="24" fill="#020b14" opacity=".55"/><path d="M28 150Q80 112 125 152L160 300 38 320Z" fill="#24495a" stroke="#7197a4" stroke-width="2"/><path d="M45 305L15 402M125 302l38 99" stroke="#314e60" stroke-width="25" stroke-linecap="round"/><path d="M34 166L-5 247 45 285M115 160l72 62 70-40" fill="none" stroke="#648796" stroke-width="24" stroke-linecap="round"/><path d="M226 191l31-10" stroke="#ffd5a3" stroke-width="15" stroke-linecap="round"/><path d="M64 48Q120 20 130 70L122 110 102 136 66 124 50 82Z" fill="#d3a984"/><path d="M46 78Q30 22 83 17q54-12 55 53l-25-20-58 42Z" fill="#152433"/><path d="M70 120l-1 28 35 10 2-30" fill="#ad8067"/><circle cx="246" cy="135" r="52" fill="url(#idea)" class="orb"/><path d="M239 135v-13a10 10 0 1 1 14 0v13m-13 6h12m-9 6h6" fill="none" stroke="#ffe3ad" stroke-width="3"/></g>'
+ # Evidence pages float behind the workbench. They are supporting resources, not the headline.
+ x,y=docs
+ s+=f'<g transform="translate({x} {y}) rotate(-10)"><rect width="130" height="170" rx="9" fill="#172f43" stroke="#809fae"/><path d="M20 30h70M20 48h90M20 66h75M20 120h84M20 137h60" stroke="#7aa3b4" stroke-width="3"/><path d="M22 86l26-12 30 14-28 13Z" fill="none" stroke="#83e0cb" stroke-width="2"/><text x="20" y="158" font-size="12">GUIDES + EXAMPLES</text></g>'
+ # The lattice really changes geometry into a tree, with a useful static final counterpart.
+ nx,ny=network
+ messy=[(0,58),(90,0),(165,90),(245,20),(305,115),(90,165),(215,185),(350,30),(375,185)]
+ tree=[(180,0),(80,65),(280,65),(20,140),(120,140),(230,140),(330,140),(280,215),(380,215)]
+ edges=[(0,1),(0,2),(1,3),(1,4),(2,5),(2,6),(6,7),(6,8)]
+ s+=f'<g transform="translate({nx} {ny})"><g class="moving">'
+ for a,b in edges:
+  ma,mb=messy[a],messy[b];ta,tb=tree[a],tree[b]
+  initial=f'M{ma[0]} {ma[1]}L{mb[0]} {mb[1]}';final=f'M{ta[0]} {ta[1]}L{tb[0]} {tb[1]}'
+  s+=f'<path d="{initial}" stroke="#77d4ce" stroke-width="2" opacity=".7"><animate attributeName="d" values="{initial};{initial};{final};{final};{initial}" keyTimes="0;.15;.5;.85;1" dur="14s" repeatCount="indefinite"/></path>'
+ for j,(m,t) in enumerate(zip(messy,tree)):
+  s+=f'<circle cx="{m[0]}" cy="{m[1]}" r="{7 if j else 12}" fill="{["#ffc879","#7fe6d2"][bool(j)]}" stroke="#c5fff1" stroke-width="1"><animate attributeName="cx" values="{m[0]};{m[0]};{t[0]};{t[0]};{m[0]}" keyTimes="0;.15;.5;.85;1" dur="14s" repeatCount="indefinite"/><animate attributeName="cy" values="{m[1]};{m[1]};{t[1]};{t[1]};{m[1]}" keyTimes="0;.15;.5;.85;1" dur="14s" repeatCount="indefinite"/></circle>'
+ s+='</g><g class="still">'
+ for a,b in edges:s+=f'<path d="M{tree[a][0]} {tree[a][1]}L{tree[b][0]} {tree[b][1]}" stroke="#79e5d0" stroke-width="2"/>'
+ for a,b in tree:s+=f'<circle cx="{a}" cy="{b}" r="7" fill="#79e5d0"/>'
+ s+='</g></g>'
+ # A luminous bench. Source-like geometry stays visibly illustrative, never passed off as product CAD.
+ bx,by,k=bench
+ s+=f'<g transform="translate({bx} {by}) scale({k})"><ellipse cx="380" cy="330" rx="390" ry="105" fill="#6de5d0" opacity=".08" filter="url(#glow)"/><path d="M-20 325L540 215 825 355 230 500Z" fill="#142d3d" stroke="#698b9a" stroke-width="3"/><path d="M230 500v30L825 385v-30M230 530L-20 355v-30" fill="#0b1d2b" stroke="#34596d" stroke-width="2"/><path d="M70 395v180M700 420v130" stroke="#1b3548" stroke-width="28"/>'
+ # Enclosure: real-looking isometric construction, with the board visibly revealed by the moving lid.
+ s+='<g transform="translate(170 120)"><path d="M0 100L220 60 330 120 100 170Z" fill="#2a766c" stroke="#95d7be" stroke-width="2" class="solid"/><g stroke="#e3c77d" stroke-width="3"><path d="M70 105h65v30M170 90v30h60M130 143h80" fill="none"/></g><path d="M115 95l55-10 35 19-55 11Z" fill="#1c2d3a" stroke="#a1b9bd"/><path d="M0 100v105l100 70V170M100 275l230-50V120" fill="url(#glass)" stroke="#84d8dd" stroke-width="2" class="solid"/><g class="lid"><path d="M-8 91L220 42 340 108 100 166Z" fill="url(#metal)" opacity=".85" stroke="#b7eff1" stroke-width="2"/><path d="M32 94l190-40M49 106l190-40M66 118l190-40" stroke="#386b7b" stroke-width="3"/></g><path class="draw" d="M0 100L220 60 330 120 100 170 0 100V205L100 275 330 225V120M100 170v105M0 205l230-45" fill="none" stroke="#a1fff0" stroke-width="3"/></g>'
+ # Two other useful objects: a mounting bracket and a compact finned thermal device.
+ s+='<g transform="translate(535 165)" class="solid"><path d="M0 60L80 42 80-15 112-23V88L0 112Z" fill="url(#metal)" stroke="#c1e7ea" stroke-width="2"/><ellipse cx="32" cy="86" rx="9" ry="5" fill="#183b4d"/><ellipse cx="96" cy="12" rx="5" ry="9" fill="#183b4d"/></g><g transform="translate(70 290)" class="solid"><path d="M0 20L75 4 132 33 54 52Z" fill="#416b7b" stroke="#8ac8ce"/>'
+ for j in range(7):s+=f'<path d="M{j*10} {18-j*2}v-46l55 29v46" fill="#6097a5" stroke="#abdedf" stroke-width="1"/>'
+ s+='</g><path class="flow" d="M-10 330Q300 235 720 350" fill="none" stroke="#8cead5" stroke-width="2"/></g>'
+ s+=f'<g transform="translate({w-240} {h-170})"><circle r="32" fill="#123a39" stroke="#80e9ce" stroke-width="2"/><path d="M-14 0l10 11 21-25" fill="none" stroke="#a5fbe0" stroke-width="5"/></g>'
+ s+=text(42,h-40,'YOUR IDEA. USEFUL HARDWARE. A BETTER NEXT ROUND.',19 if mobile else 22,'')
  return s+'</svg>\n'
+
 def trace_chart():
  source=ROOT/'tests/fixtures/cfd_runs/exhaust-under-opening/postProcessing/domain0/zone_heater/0/volFieldValue.dat'
  samples=[(float(line.split()[0]),float(line.split()[-1])-273.15) for line in source.read_text().splitlines() if line and not line.startswith('#')]
@@ -71,7 +73,7 @@ def balance_chart():
  s+=text(32,372,'Recorded OpenFOAM cases · not a tested cooling guarantee',18)
  return s+'</svg>\n',{'input':str(p.relative_to(ROOT)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'facts':d['facts']}
 if __name__=='__main__':
- for mobile in [False,True]:(OUT/('learning-loop-mobile.svg' if mobile else 'learning-loop.svg')).write_text(hero(mobile))
+ for mobile in [False,True]:(OUT/('learning-loop-mobile.svg' if mobile else 'learning-loop.svg')).write_text(cinematic_hero(mobile))
  records={}
  for name,fn in [('thermal-history',trace_chart),('airflow-balance',balance_chart)]:
   svg,record=fn();(OUT/(name+'.svg')).write_text(svg);records[name]=record

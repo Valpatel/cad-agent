@@ -25,7 +25,7 @@ reel:
   alt: Two recorded cases showing mass flow and heat balance, including the failed ducted case
   href: docs/research/fea-and-process-tools.md
 - img: docs/img/motion/rib-in-counterbore.svg
-  on: fixture-2d
+  'on': fixture-2d
   tool: cad-agent holes
   title: A rib that refills a counterbore
   caption: Two build orders of the same part. A rib added after the holes were cut fills both; the hole check finds
@@ -34,7 +34,7 @@ reel:
     both
   href: docs/practice/common-issues.md
 - img: docs/img/motion/connector-window.svg
-  on: fixture
+  'on': fixture
   tool: cadagent.mechanical.connectors
   title: A port window sized from the mating plug
   caption: An RJ45 plug pushed in. Through a window sized from the jack's box its latch hits the wall; through one
@@ -43,7 +43,7 @@ reel:
     clears the latch
   href: docs/practice/common-issues.md
 - img: docs/img/motion/hinge-sweep.svg
-  on: fixture-2d
+  'on': fixture-2d
   tool: cad-agent gates
   title: When a moving arm first hits the frame
   caption: A seeded fault, the test bench's arm range raised to 60 degrees. Swept in 12 poses, then bisected, contact
@@ -52,7 +52,7 @@ reel:
     and 44.91 degrees
   href: docs/practice/gates.md
 - img: docs/img/motion/module-insertion.svg
-  on: fixture
+  'on': fixture
   tool: cad-agent gates
   title: A module that slides in as one piece
   caption: A carrier and its board checked on their own bench, then inserted into the parent as one rigid body and
@@ -60,7 +60,7 @@ reel:
   alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
   href: docs/mechanical/subassembly-insertion.md
 - img: docs/img/motion/search-front.svg
-  on: example
+  'on': example
   tool: cad-agent optimise
   title: Searching designs by cost and mass
   caption: Sixty seeded trials as they arrive. Four are feasible, and trials 1 and 47 form the Pareto front.

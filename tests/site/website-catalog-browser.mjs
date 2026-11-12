@@ -154,7 +154,7 @@ async function sharedDiscoveryChecks() {
       await page.goForward(); if (await box.inputValue() !== 'disassembly') fail('Explore', 'Forward lost the deliberate query');
     } finally { await done(); }
   }
-  for (const options of [{js:false}, {block:'/kit/gallery.js'}]) {
+  for (const options of [{js:false}, {block:'/kit/gallery.js'}, {block:'/web/site.js'}]) {
     const {page, done} = await open('/explore', {width:320, ...options});
     try {
       if (!(await page.getByRole('link', {name:'Full catalogue',exact:true}).count())) fail('Explore fallback', 'full catalogue link missing');

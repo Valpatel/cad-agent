@@ -12,6 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools/evaluation'))
 import inspect_runner as adapter
+import inspect_runtime_probe as probe
 
 
 def archive(entries):
@@ -114,7 +115,7 @@ class FakeDocker:
         if args[0] == 'compose':
             self.ids = []
         if len(args) > 1 and args[1] == 'ls':
-            return '\n'.join(self.remaining)
+            return '\n'.join((self.ids if args[0] == 'container' else []) + (self.remaining if not self.ids else []))
         return ''
 
     def guard(self, data):
@@ -180,7 +181,7 @@ def test_cleanup_success_exit_is_not_resource_absence_receipt(tmp_path):
     docker.remaining = ['stopped-but-still-present']
     with pytest.raises(ValueError, match='resources remain'):
         adapter.cleanup(work, data, owner, docker)
-    assert docker.calls[0] == ('compose', '--project-name', 'inspect-inert-1', '--file', str(work / 'compose.json'), 'down', '--timeout', '2')
+    assert ('compose', '--project-name', 'inspect-inert-1', '--file', str(work / 'compose.json'), 'down', '--timeout', '2') in docker.calls
     assert ('container', 'ls', '-aq', '--filter', 'label=com.docker.compose.project=inspect-inert-1') in docker.calls
 
 
@@ -193,6 +194,64 @@ def test_host_settlement_must_precede_any_docker_or_artifact_access(tmp_path, mo
     with pytest.raises(ValueError, match='collector still active'):
         adapter.finalize(work, 'cad-eval-test.service')
     assert not (work / 'seal.json').exists()
+
+
+@pytest.mark.parametrize('payload,unit_success,remaining,expected', [
+    (b'qualified', True, [], True), (b'wrong', True, [], False),
+    (b'qualified', False, [], False), (b'qualified', True, ['leftover'], False),
+])
+def test_finalize_accepts_only_settled_correct_cleaned_bytes(tmp_path, monkeypatch, payload, unit_success, remaining, expected):
+    work, data = attempt(tmp_path)
+    data.update(schema='cadagent.inspect-qualification/1', case='normal')
+    (work / 'attempt.json').write_text(json.dumps(data))
+    docker = FakeDocker(work, data)
+    docker.remaining = remaining
+    group = '/docker-' + 'c' * 64 + '.scope'
+    directory = tmp_path / group.lstrip('/')
+    directory.mkdir()
+    (directory / 'memory.events').write_text('oom 0\noom_kill 0\n')
+    (directory / 'cgroup.procs').write_text('')
+    adapter.runner.write_json(work / 'sandbox-owner.json', dict(container='c' * 64, project='inspect-inert-1',
+                             cgroup=group, memory_events={'oom': 0, 'oom_kill': 0}))
+    adapter.runner.write_json(work / 'collection.json', dict(status='success'))
+    host_settled = []
+    def unit_receipt(*args):
+        host_settled.append(True)
+        return dict(unit_success=unit_success)
+    def copied(container):
+        assert host_settled and not docker.state['running'] and docker.state['pid'] == 0
+        return archive([('result.txt', payload, tarfile.REGTYPE)])
+    docker.archive = copied
+    original_stop = adapter.stopped
+    monkeypatch.setattr(adapter, 'stopped', lambda *args: original_stop(*args, cgroup_root=tmp_path))
+    monkeypatch.setattr(adapter.runner, 'unit_receipt', unit_receipt)
+    monkeypatch.setattr(adapter, 'Docker', lambda: docker)
+    result = adapter.finalize(work, 'cad-eval-test.service')
+    assert result['passed'] is expected
+    assert adapter.verify_snapshot(work)['artifacts'][0]['sha256'] == adapter.sha256(payload)
+    assert any(c[0] == 'compose' for c in docker.calls)
+
+
+def test_pretool_failure_recovers_only_owned_resources_without_accepting_output(tmp_path, monkeypatch):
+    work, data = attempt(tmp_path)
+    data.update(schema='cadagent.inspect-qualification/1', case='pretool')
+    (work / 'attempt.json').write_text(json.dumps(data))
+    docker = FakeDocker(work, data)
+    monkeypatch.setattr(adapter.runner, 'unit_receipt', lambda *args: dict(unit_success=False))
+    monkeypatch.setattr(adapter, 'Docker', lambda: docker)
+    result = adapter.finalize(work, 'cad-eval-test.service')
+    assert result['passed'] is False and result['startup_recovered'] is True
+    assert not (work / 'seal.json').exists() and not (work / 'sealed').exists()
+    assert not docker.ids
+
+
+def test_unrecorded_project_resource_prevents_compose_down(tmp_path, monkeypatch):
+    work, data = attempt(tmp_path)
+    docker = FakeDocker(work, data)
+    monkeypatch.setattr(adapter, 'project_resources', lambda *args: dict(container=docker.ids + ['foreign'], network=[], volume=[]))
+    with pytest.raises(ValueError, match='outside the ownership receipt'):
+        adapter.cleanup(work, data, dict(container='c' * 64, project='inspect-inert-1'), docker)
+    assert not any(c[0] == 'compose' for c in docker.calls)
 
 
 @pytest.mark.skipif(sys.platform != 'linux', reason='POSIX streaming subprocess control')
@@ -219,6 +278,30 @@ def test_explicit_qualification_fails_missing_prerequisites(tmp_path):
     assert json.loads(result.stdout)['passed'] is False
 
 
+def test_phase1_uv_extraction_whitelist_prevents_executing_unexpected_members(tmp_path):
+    path = tmp_path / 'uv.tar.gz'
+    def packed(entries):
+        with tarfile.open(path, mode='w:gz') as tar:
+            for name, kind in entries:
+                info = tarfile.TarInfo(name)
+                info.type = kind
+                info.size = 1 if kind == tarfile.REGTYPE else 0
+                info.linkname = '/unrelated/executable'
+                tar.addfile(info, io.BytesIO(b'x') if info.size else None)
+    prefix = 'uv-x86_64-unknown-linux-gnu/'
+    packed([(prefix + 'uv', tarfile.REGTYPE), (prefix + 'uvx', tarfile.REGTYPE)])
+    probe.extract_uv(path, tmp_path / 'tool')
+    assert (tmp_path / 'tool/uv').read_bytes() == b'x'
+    packed([(prefix + 'uv', tarfile.SYMTYPE), (prefix + 'uvx', tarfile.REGTYPE)])
+    with pytest.raises(ValueError, match='member/type'):
+        probe.extract_uv(path, tmp_path / 'bad')
+    assert not (tmp_path / 'bad').exists()
+    packed([(prefix + 'uv', tarfile.REGTYPE), ('../escape', tarfile.REGTYPE)])
+    with pytest.raises(ValueError, match='member/type'):
+        probe.extract_uv(path, tmp_path / 'bad')
+    assert not (tmp_path / 'escape').exists()
+
+
 @pytest.mark.skipif(os.environ.get('CAD_EVAL_INSPECT_WIRE') != '1',
                     reason='optional pinned Inspect/OpenAI SDK environment; enable explicitly after setup review')
 def test_actual_compatible_provider_missing_usage_and_request_counts():
@@ -226,4 +309,4 @@ def test_actual_compatible_provider_missing_usage_and_request_counts():
     assert source, 'explicit pinned Inspect source required'
     adapter.runtime(source)
     result = adapter.wire_qualification()
-    assert result == dict(passed=True, requests=4, missing_usage=None, real_model_called=False)
+    assert result == dict(passed=True, requests=5, missing_usage=None, real_model_called=False)

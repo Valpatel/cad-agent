@@ -219,6 +219,7 @@ def stopped(work, attempt, owner, docker, cgroup_root=Path('/sys/fs/cgroup')):
         raise ValueError('invalid sandbox cgroup receipt')
     directory = Path(cgroup_root) / str(group).lstrip('/')
     events = memory_events(directory / 'memory.events') if (directory / 'memory.events').exists() else None
+    live_processes = len((directory / 'cgroup.procs').read_text().split()) if (directory / 'cgroup.procs').exists() else None
     docker.call('stop', '--time', '2', owner['container'])
     after = owned_state(work, attempt, docker, owner['container'])
     if after['running'] or after['pid'] != 0 or after['restarting'] or after['dead']:
@@ -228,6 +229,7 @@ def stopped(work, attempt, owner, docker, cgroup_root=Path('/sys/fs/cgroup')):
         raise ValueError('sandbox cgroup still has writers')
     return dict(container=owner['container'], stopped=True, cgroup_empty=True,
                 oom_killed=after['oom_killed'], exit_code=after['exit_code'],
+                live_processes_before_stop=live_processes,
                 memory_events_before_stop=events, memory_events_at_start=owner.get('memory_events'))
 
 
@@ -300,14 +302,22 @@ def cleanup(work, attempt, owner, docker):
     state = owned_state(work, attempt, docker, owner['container'])
     if state['running'] or state['pid'] or state['project'] != owner['project']:
         raise ValueError('refuse cleanup before owned container settlement')
+    attempt_read(work, docker)
+    resources = project_resources(docker, owner['project'])
+    if resources != dict(container=[owner['container']], network=[], volume=[]):
+        raise ValueError('project contains resources outside the ownership receipt')
     docker.call('compose', '--project-name', owner['project'], '--file', str(Path(work) / 'compose.json'), 'down', '--timeout', '2')
     # This config declares no networks or volumes. Any project resource remaining
     # is a failure, even when compose down returned success.
-    remaining = {kind: docker.call(kind, 'ls', '-aq' if kind == 'container' else '-q', '--filter', f'label=com.docker.compose.project={owner["project"]}').split()
-                 for kind in ('container', 'network', 'volume')}
+    remaining = project_resources(docker, owner['project'])
     if any(remaining.values()) or docker.containers(attempt['nonce']):
         raise ValueError('owned Compose resources remain after cleanup')
     return dict(project=owner['project'], resources_absent=True)
+
+
+def project_resources(docker, project):
+    return {kind: docker.call(kind, 'ls', '-aq' if kind == 'container' else '-q', '--filter', f'label=com.docker.compose.project={project}').split()
+            for kind in ('container', 'network', 'volume')}
 
 
 def collect(work, image, source, case='normal'):
@@ -339,11 +349,16 @@ def collect(work, image, source, case='normal'):
     @solver
     def ownership():
         async def execute(state, generate):
+            if case == 'pretool':
+                raise ValueError('scripted failure before tool ownership receipt')
             connection = await sandbox().connection()
             owner = capture_ownership(work, attempt, docker)
             actual = docker.call('inspect', connection.container, '--format', '{{.Id}}').strip()
             if actual != owner['container']:
                 raise ValueError('Inspect sandbox connection differs from owned container')
+            if case == 'interrupted':
+                import signal
+                os.kill(os.getpid(), signal.SIGTERM)
             return state
         return execute
 
@@ -352,12 +367,13 @@ def collect(work, image, source, case='normal'):
     sentinel.write_text('synthetic controller answer and credential sentinel\n')
     command = f'set -eu; mkdir -p {OUTPUT}; test ! -e {shlex.quote(str(sentinel))}; test ! -S /var/run/docker.sock; printf qualified > {OUTPUT}/result.txt'
     if case == 'detached':
-        command += f'; python3 -c "import os,time; os.setsid(); time.sleep(60); open(\'{OUTPUT}/late.txt\',\'w\').write(\'late\')" </dev/null >/dev/null 2>&1 &'
+        command += f'; python3 -c "import os,time; os.setsid(); open(\'{OUTPUT}/writer.ready\',\'w\').write(\'ready\'); time.sleep(60); open(\'{OUTPUT}/late.txt\',\'w\').write(\'late\')" </dev/null >/dev/null 2>&1 &'
+        command += f'\nfor i in $(seq 1 100); do test ! -f {OUTPUT}/writer.ready || exit 0; sleep 0.01; done; exit 1'
     elif case == 'timeout':
         command += '; sleep 60'
     elif case == 'oom':
         command += '; python3 -c "x=bytearray(1024*1024*1024)"'
-    elif case != 'normal':
+    elif case not in ('normal', 'pretool', 'interrupted'):
         raise ValueError('unsupported inert qualification case')
     model = get_model('mockllm/model', custom_outputs=[
         ModelOutput.for_tool_call('mockllm', 'bash', {'command': command}, tool_call_id='inert-bash-1'),
@@ -388,8 +404,23 @@ def finalize(work, unit):
         ids = docker.containers(attempt['nonce'])
         if not ids:
             raise ValueError('startup left no owned container; no qualifying output')
-        owner = capture_ownership(work, attempt, docker)
-        recovered = True
+        state = owned_state(work, attempt, docker, ids[0])
+        # Recovery may find a container that already exited before setup. There
+        # is then no trustworthy pre-tool cgroup receipt: clean only these exact
+        # owned resources, and never seal/qualify outputs in the recovery route.
+        docker.call('stop', '--time', '2', ids[0])
+        state = owned_state(work, attempt, docker, ids[0])
+        if state['running'] or state['pid'] or state['restarting'] or state['dead']:
+            raise ValueError('startup recovery could not stop the owned container')
+        owner = dict(container=ids[0], project=state['project'])
+        runner.write_json(work / 'sandbox-recovery.json', dict(**owner, cgroup_settlement='unknown; no output accepted'))
+        cleanup_receipt = cleanup(work, attempt, owner, docker)
+        runner.write_json(work / 'sandbox-cleanup.json', cleanup_receipt)
+        result = dict(schema=attempt['schema'], passed=False, startup_recovered=True,
+                      errors=['no pre-tool ownership receipt; output not accepted'],
+                      physical_fit_verified=False, model_usefulness_measured=False)
+        runner.write_json(work / 'result.json', result)
+        return result
     else:
         owner, recovered = read_json(owner_path), False
     receipt = stopped(work, attempt, owner, docker)
@@ -407,12 +438,17 @@ def finalize(work, unit):
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         errors.append(str(exc))
     collection = read_json(work / 'collection.json') if (work / 'collection.json').exists() else {}
+    before, start = receipt['memory_events_before_stop'], receipt['memory_events_at_start']
+    oom_observed = before['oom_kill'] > start['oom_kill'] if before is not None and start is not None else None
     passed = (not errors and not recovered and unit_state['unit_success'] and not receipt['oom_killed']
-              and collection.get('status') == 'success' and attempt['case'] in ('normal', 'detached'))
+              and oom_observed is False and collection.get('status') == 'success' and attempt['case'] in ('normal', 'detached'))
     if passed:
         verify_snapshot(work)
         passed = (work / 'sealed/result.txt').read_bytes() == b'qualified'
+        if attempt['case'] == 'detached':
+            passed = passed and receipt['live_processes_before_stop'] is not None and receipt['live_processes_before_stop'] > 1 and not (work / 'sealed/late.txt').exists()
     result = dict(schema=attempt['schema'], passed=passed, startup_recovered=recovered, errors=errors,
+                  exec_oom_kill_observed=oom_observed,
                   physical_fit_verified=False, model_usefulness_measured=False)
     runner.write_json(work / 'result.json', result)
     return result
@@ -442,11 +478,11 @@ def wire_qualification():
                 payload = json.loads(self.rfile.read(length))
                 requests.append(payload)
                 index = len(requests)
-                if index > 4:
+                if index > 5:
                     failures.append('unexpected retry/cache request')
                     self.send_error(400)
                     return
-                if index == 4:
+                if index == 5:
                     data = b'{"error":{"message":"scripted failure","type":"server_error"}}'
                     status = 500
                 else:
@@ -503,6 +539,10 @@ def wire_qualification():
             raise ValueError('provider invented missing usage')
         if not third.message.tool_calls or not third.message.tool_calls[0].parse_error:
             raise ValueError('malformed tool arguments were accepted')
+        # An identical request must hit the wire again with cache=False.
+        repeated = await model.generate([ChatMessageUser(content='inert')], tools=tools)
+        if repeated.usage is not None or repeated.message.tool_calls:
+            raise ValueError('unexpected cached result for repeated request')
         try:
             await model.generate([ChatMessageUser(content='server-error')], tools=tools)
         except Exception:
@@ -516,14 +556,14 @@ def wire_qualification():
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
-    if thread.is_alive() or failures or len(requests) != 4:
-        raise ValueError('wire fixture did not settle with exactly four requests')
+    if thread.is_alive() or failures or len(requests) != 5:
+        raise ValueError('wire fixture did not settle with exactly five requests')
     first, second = requests[:2]
     if (first.get('model') != 'inert' or first.get('max_tokens') != 32
             or first.get('tools', [{}])[0].get('function', {}).get('name') != 'bash'
             or not any(m.get('role') == 'tool' and m.get('tool_call_id') == 'wire-1' for m in second.get('messages', []))):
         raise ValueError('actual wire serialization does not match the fixture contract')
-    return dict(passed=True, requests=4, missing_usage=None, real_model_called=False)
+    return dict(passed=True, requests=5, missing_usage=None, real_model_called=False)
 
 
 def main():
@@ -533,7 +573,7 @@ def main():
     parser.add_argument('--image')
     parser.add_argument('--inspect-source', type=Path)
     parser.add_argument('--unit')
-    parser.add_argument('--case', choices=('normal', 'detached', 'timeout', 'oom'), default='normal')
+    parser.add_argument('--case', choices=('normal', 'detached', 'timeout', 'oom', 'pretool', 'interrupted'), default='normal')
     args = parser.parse_args()
     try:
         if args.action == 'collect':

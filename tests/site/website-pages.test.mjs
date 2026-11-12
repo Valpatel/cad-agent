@@ -197,3 +197,118 @@ test('a physical source stub keeps its public redirect identity, and missing or 
   assert.throws(() => validateRedirects([], context), /add "lessons\/03-mechanical-design-rules\.md/);
   assert.throws(() => validateRedirects([[identity, 'docs/lessons/README.md']], context), /change its line/);
 });
+
+// Inert page-probe controls: no browser/site build/model is started by these tests.
+import { EventEmitter } from 'node:events';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { readerBoundaryGoto, readerBoundaryProblems } from './site-outline.mjs';
+
+class ReaderProbePage extends EventEmitter {
+  calls = [];
+  url() { return 'http://user:password@localhost:1234/docs/toolkit?secret=value#private'; }
+  async goto(target, options) { this.calls.push({ target, options }); return this.navigate(); }
+  async evaluate() { this.domCalls = (this.domCalls || 0) + 1; return { readyState: 'interactive', navReady: false,
+    styles: [{ href: this.url(), disabled: false }], fonts: 'loading' }; }
+  async screenshot(options) { this.imageOptions = options; return Buffer.from('inert screenshot control'); }
+}
+const probeRequest = i => ({ url: () => 'http://user:password@localhost:1234/request-' + i + '?secret=value#private',
+  method: () => 'GET', resourceType: () => 'script', failure: () => ({ errorText: 'request failed' }) });
+const probeContext = async t => {
+  const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-reader-inert-'));
+  t.after(() => rm(evidence, { recursive: true, force: true }));
+  return { evidence, viewport: { width: 1440, height: 900 }, states: [{ earlier: 'preserved' }], problems: ['earlier problem'] };
+};
+const noProbeListeners = page => assert.equal(page.eventNames().length, 0, 'every probe listener is detached');
+
+test('reader navigation success preserves exact goto contract without capture or receipt work', async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), response = {};
+  page.navigate = () => response;
+  assert.equal(await readerBoundaryGoto(page, 'http://localhost/docs/toolkit', context), response);
+  assert.deepEqual(page.calls, [{ target: 'http://localhost/docs/toolkit', options: { waitUntil: 'networkidle' } }]);
+  assert.equal(page.domCalls, undefined); assert.equal(page.imageOptions, undefined);
+  assert.deepEqual(await readdir(context.evidence), []); noProbeListeners(page);
+});
+
+test('failed reader navigation writes bounded redacted partial evidence before caller close and rethrows original', async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('Timeout 30000ms at ' + page.url());
+  original.name = 'TimeoutError';
+  page.navigate = () => {
+    const requests = Array.from({ length: 100 }, (_, i) => probeRequest(i));
+    for (const request of requests) {
+      page.emit('request', request);
+      page.emit('response', { url: request.url, status: () => 200, request: () => ({ isNavigationRequest: () => true }) });
+      page.emit('console', { type: () => 'error', text: () => 'pending ' + request.url() + 'x'.repeat(1000) });
+      page.emit('pageerror', new Error('failed ' + request.url()));
+    }
+    page.emit('requestfinished', requests[0]); page.emit('requestfailed', requests[1]);
+    page.emit('domcontentloaded'); throw original;
+  };
+  let closed = false;
+  try { await readerBoundaryGoto(page, page.url(), context); assert.fail('a navigation error became success'); }
+  catch (error) {
+    assert.equal(error, original);
+    const text = await readFile(path.join(context.evidence, 'receipt.json'), 'utf8'), receipt = JSON.parse(text);
+    assert.equal(closed, false, 'partial receipt already exists before caller closes page');
+    assert.deepEqual(receipt.states[0], { earlier: 'preserved' }); assert.deepEqual(receipt.problems, ['earlier problem']);
+    const failure = receipt.states[1].navigationFailure;
+    assert.deepEqual(failure.viewport, context.viewport); assert.equal(failure.javaScriptEnabled, true);
+    assert.equal(failure.pendingCount, 98); assert.equal(failure.pending.length, 22);
+    for (const kind of ['responses', 'console', 'pageerror']) {
+      assert.equal(failure.counts[kind], 100); assert.equal(failure.events[kind].length, 24);
+    }
+    assert.equal(failure.events.failed.length, 1); assert.equal(failure.events.lifecycle[0].name, 'domcontentloaded');
+    assert.equal(failure.dom.readyState, 'interactive'); assert.equal(failure.dom.navReady, false);
+    assert.equal(failure.screenshot, 'navigation-failure.png'); assert.ok(text.length < 40000);
+    assert.doesNotMatch(text, /password|secret|private|user:/);
+    assert.deepEqual(page.imageOptions, { type: 'png', fullPage: false, timeout: 1000 });
+  } finally { closed = true; }
+  noProbeListeners(page);
+});
+
+test('reader capture errors and oversized screenshot do not replace the navigation failure', async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('original navigation');
+  page.navigate = () => { throw original; };
+  page.evaluate = () => { throw new Error('execution context destroyed'); };
+  page.screenshot = async () => Buffer.alloc(2 * 1024 * 1024 + 1);
+  await assert.rejects(readerBoundaryGoto(page, page.url(), context), error => error === original);
+  const receipt = JSON.parse(await readFile(path.join(context.evidence, 'receipt.json'), 'utf8'));
+  assert.match(receipt.states.at(-1).navigationFailure.captureErrors.join(' '), /DOM: execution context destroyed.*exceeded 2 MiB/);
+  assert.equal(receipt.states.at(-1).navigationFailure.screenshot, undefined);
+  assert.deepEqual(await readdir(context.evidence), ['receipt.json']); noProbeListeners(page);
+});
+
+test('a stalled diagnostic DOM read is bounded while the original navigation error remains authoritative', { timeout: 5000 }, async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('original timeout');
+  page.navigate = () => { throw original; }; page.evaluate = () => new Promise(() => {});
+  await assert.rejects(readerBoundaryGoto(page, page.url(), context), error => error === original);
+  const receipt = JSON.parse(await readFile(path.join(context.evidence, 'receipt.json'), 'utf8'));
+  assert.match(receipt.states.at(-1).navigationFailure.captureErrors[0], /exceeded 1000 ms/); noProbeListeners(page);
+});
+
+test('the real reader probe retains partial state before close when post-navigation readiness throws', async t => {
+  const page = new ReaderProbePage(), original = new Error('reader readiness timeout');
+  let evidence, closed = false;
+  t.mock.method(console, 'log', text => { if (text.startsWith('Reader boundary partial evidence: ')) evidence = text.slice('Reader boundary partial evidence: '.length); });
+  t.after(async () => { if (evidence) await rm(evidence, { recursive: true, force: true }); });
+  page.navigate = () => ({}); page.waitForSelector = async () => { throw original; };
+  page.close = async () => {
+    const receipt = JSON.parse(await readFile(path.join(evidence, 'receipt.json'), 'utf8'));
+    assert.equal(receipt.states[0].probeFailure.error.message, original.message);
+    assert.deepEqual(receipt.states[0].probeFailure.viewport, { width: 1440, height: 900 });
+    noProbeListeners(page); closed = true;
+  };
+  await assert.rejects(readerBoundaryProblems({ newPage: async () => page }, 'http://localhost'), error => error === original);
+  assert.equal(closed, true);
+});
+
+test('a disconnected page and unavailable receipt directory never mask the original reader navigation error', async t => {
+  const context = await probeContext(t), page = new ReaderProbePage(), original = new Error('original navigation failure');
+  context.evidence = path.join(context.evidence, 'missing');
+  page.navigate = () => { throw original; }; page.url = () => { throw new Error('disconnected'); };
+  const errors = []; t.mock.method(console, 'error', text => errors.push(text));
+  await assert.rejects(readerBoundaryGoto(page, 'http://localhost/docs/toolkit', context), error => error === original);
+  assert.equal(context.states.at(-1).navigationFailure.currentURL, '[unavailable URL]');
+  assert.equal(errors.length, 1); assert.match(errors[0], /partial receipt unavailable/); noProbeListeners(page);
+});

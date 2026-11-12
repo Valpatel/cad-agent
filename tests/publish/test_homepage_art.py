@@ -71,7 +71,6 @@ def test_learning_hero_uses_the_existing_safe_vector_contract_and_explicit_finis
 
 def test_computation_stills_preserve_the_recorded_sources_and_finished_pose():
     """Explicit stills keep the original authors' final states and numerical evidence."""
-    from cadagent.publish.anim import svg as contract
     figures = json.loads((ROOT / 'docs/img/hero/learning-evidence.json').read_text())['figures']
     stills = figures['result_stills']
     assert len(stills) == 8

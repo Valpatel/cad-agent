@@ -40,3 +40,15 @@ its real carrier-board CAD. Collection will reuse existing assembly-coordinate
 meshes from the clean product checkout, with selected-file hashes and exact source
 revision recorded beside the packed model. Packing is not a CAD rebuild or a
 physical fit qualification. Keep the current Gyropup model/source bytes intact.
+
+## J501 final source-bound display pack
+
+Product main `2f3853ca6f779634e297120ccf1749ace30b9b28` incorporates the
+original optional antenna recipe. The final pack contains 21 visible parts,
+277,482 display triangles and 805,333 compressed bytes. The lid is fitted at the
+opening view; Explode exposes the real carrier PCB. The standalone NVIDIA module
+is omitted. See [attribution and limits](J501-NOTICE.md) and
+[input/recipe/mesh hashes](j501-source.json). The captured enclosure CAD input tree
+equals incorporated main; this is not a claim that the legacy exports were freshly
+regenerated. Antennas are illustrative optional context, not RF, connector-fit or
+manufacturing qualification.

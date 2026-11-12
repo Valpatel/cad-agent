@@ -208,7 +208,7 @@ export async function learningPictureProblems(browser, base) {
 
 
 /** A tiny real packed fixture isolates post-allocation GPU rollback from model size. */
-export async function homepageLateDrawProblems(browser, base) {
+export async function homepageLateDrawProblems(browser, base, receipt = {}) {
   const out=[], errors=[];
   const fixture=JSON.parse(await readFile(new URL('../fixtures/model/two-parts.json',import.meta.url),'utf8'));
   const binary=await readFile(new URL('../fixtures/model/two-parts.bin',import.meta.url));
@@ -236,11 +236,13 @@ export async function homepageLateDrawProblems(browser, base) {
     await page.waitForFunction(()=>document.querySelector('cad-model[src$="gyropup.json"]')?.dataset.state==='ready',null,{timeout:20000});
     const target=page.locator('cad-model[src$="j501.json"]');
     const failed=await target.evaluate(el=>{window.__lateFailedReady=el.ready;const other=document.querySelector('cad-model[src$="gyropup.json"]');window.__lateOtherCanvas=other.querySelector('canvas');return {canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,poster:el.querySelector('img').checkVisibility(),faults:window.__lateDrawFaults};});
+    receipt.failed=failed;
     if(failed.canvases||failed.controls||!failed.poster||failed.faults!==1)out.push('late GPU failure did not roll back to the real poster: '+JSON.stringify(failed));
     await target.getByRole('button',{name:'Retry 3D view'}).click();
     await page.waitForFunction(()=>document.querySelector('cad-model[src$="j501.json"]')?.dataset.state==='ready',null,{timeout:20000});
-    const ready=await target.evaluate(el=>({canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,freshReady:el.ready!==window.__lateFailedReady,error:el.dataset.error,otherUnchanged:document.querySelector('cad-model[src$="gyropup.json"]').querySelector('canvas')===window.__lateOtherCanvas}));
-    if(ready.canvases!==1||ready.controls!==1||!ready.freshReady||ready.error||!ready.otherUnchanged)out.push('late failure retry did not create exactly one independent live view: '+JSON.stringify(ready));
+    const ready=await target.evaluate(el=>({canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,freshReady:el.ready!==window.__lateFailedReady,error:el.dataset.error,otherUnchanged:document.querySelector('cad-model[src$="gyropup.json"]').querySelector('canvas')===window.__lateOtherCanvas,otherReady:document.querySelector('cad-model[src$="gyropup.json"]').dataset.state==='ready',otherControls:document.querySelector('cad-model[src$="gyropup.json"]').querySelectorAll('.cad-model-ui').length}));
+    receipt.recovered=ready;
+    if(ready.canvases!==1||ready.controls!==1||!ready.freshReady||ready.error||!ready.otherUnchanged||!ready.otherReady||ready.otherControls!==1)out.push('late failure retry did not create exactly one independent live view: '+JSON.stringify(ready));
     await page.setViewportSize({width:1000,height:800});
     await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
     await page.waitForTimeout(100);
@@ -251,7 +253,8 @@ export async function homepageLateDrawProblems(browser, base) {
 }
 
 /** Every displayed computed SVG is tested through its real picture consumer. */
-export async function resultImageMotionProblems(browser, base) {
+export async function resultImageMotionProblems(browser, base, receipt = {}) {
+  receipt.images=[];
   const out=[];
   const ctx=await browser.newContext({viewport:{width:1366,height:900},reducedMotion:'reduce'});
   const page=await ctx.newPage();
@@ -264,7 +267,8 @@ export async function resultImageMotionProblems(browser, base) {
       const state=await image.evaluate(el=>({src:el.getAttribute('src'),current:new URL(el.currentSrc).pathname,loaded:el.complete&&el.naturalWidth>0}));
       if(!state.loaded||!state.current.includes('/result-stills/'))out.push('result did not select its finished image: '+JSON.stringify(state));
       const first=await image.screenshot();await page.waitForTimeout(300);const second=await image.screenshot();
-      if(!first.equals(second))out.push('computed image still moves under reduced motion: '+state.src);
+      const stable=first.equals(second);receipt.images.push({...state,stable});
+      if(!stable)out.push('computed image still moves under reduced motion: '+state.src);
     }
   }catch(error){out.push('result image consumer: '+error.message);}
   finally{await ctx.close();}
@@ -277,7 +281,8 @@ export async function resultImageMotionProblems(browser, base) {
     const image=cp.locator('.reel-tile img[src$="thermal-history.svg"]');
     await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
     const first=await image.screenshot();await cp.waitForTimeout(300);const second=await image.screenshot();
-    if(first.equals(second))out.push('moving reduced-image control was not observable; stillness probe is inconclusive');
+    receipt.movingControlObserved=!first.equals(second);
+    if(!receipt.movingControlObserved)out.push('moving reduced-image control was not observable; stillness probe is inconclusive');
   } catch(error){out.push('moving result-image rejection control: '+error.message);}
   finally{await control.close();}
   return out;

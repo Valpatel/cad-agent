@@ -4,7 +4,7 @@
  "units": "mm",
  "up": "z",
  "box_mm": [
-  -7.0,
+  -19.6,
   5.5,
   -0.0,
   213.0,
@@ -14,12 +14,20 @@
  "quant": 65535,
  "bin": "j501.bin",
  "encoding": "gzip",
- "bytes": 1045580,
- "raw_bytes": 2926524,
- "sha256": "4650ff17382594fa96702bf1278a7cd429c04c11dff843fa0aa66a0413096be3",
- "triangles": 333224,
+ "bytes": 805333,
+ "raw_bytes": 2441364,
+ "sha256": "c497bf320f16edee9e3f1a70f881d2ea1e5c36494f66ba107b46029c25c1f478",
+ "triangles": 277482,
  "source": {
-  "collection_context": "Existing exported meshes captured from this clean checkout; the view export has no embedded producer revision. Collection revision is not a claim that CAD was regenerated.",
+  "repo": "https://github.com/mvalancy/j501-agx-orin",
+  "revision": "2f3853ca6f779634e297120ccf1749ace30b9b28",
+  "captured_geometry_revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
+  "cad_tree": "19f3491aa5188b0067b1318b7d07d1b409bdf63d",
+  "collection_context": "Legacy captured assembly meshes have no embedded export producer revision. Their CAD source tree equals incorporated main; no new CAD regeneration claimed. Optional antenna context generated separately by the incorporated source recipe.",
+  "generator": {
+   "file": "tools/site/figures/pack-j501.py",
+   "sha256": "e78f3bb963adb25e70ca0aea484805ed9fcf3844148881b856dbaebe7506b5b6"
+  },
   "board_geometry_check": {
    "source": "references/hardware/carrier-full.stl",
    "sha256": "172655f9f53db2b72669edd3148dc57274f6e51ceb7de0d14cba64b63e138e7d",
@@ -30,97 +38,99 @@
    ],
    "max_allowed_coordinate_difference_mm": 2e-05
   },
-  "repo": "https://github.com/mvalancy/j501-agx-orin",
-  "revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
   "manifest": {
    "file": "exports/view/view.json",
    "sha256": "9981d20d2786ea3890b2730a91ef71acffb39533ab0e8c1dece61dc5526968df"
   },
   "inputs": {
-   "exports/view/base.stl": {
+   "captured-view/base.stl": {
     "sha256": "16a806d911976f22e1f4b03102af3d0e4aa9e8a5e8757417ede786f762059abc",
     "bytes": 3873684
    },
-   "exports/view/cover.stl": {
+   "captured-view/cover.stl": {
     "sha256": "fc5ba05b817cc60755b4d01a61c23ab64a6bb5f4f6274f37a8ea3a05e0bfda8f",
     "bytes": 1803884
    },
-   "exports/view/front_no_gmsl.stl": {
+   "captured-view/front_no_gmsl.stl": {
     "sha256": "4134b0f54a0423e586e1e3d94bd588081107de21a89132cae494ae3751b7a501",
     "bytes": 923284
    },
-   "exports/view/rear_io.stl": {
+   "captured-view/rear_io.stl": {
     "sha256": "8283cc5bc7443ae5f73c692faecde5035d5d83c27b4b288974b2092f32b277ae",
     "bytes": 979184
    },
-   "exports/view/side_hatch.stl": {
+   "captured-view/side_hatch.stl": {
     "sha256": "fb99ea195753296cf44ba7b6a0a14f659cd81a21239beda9f3644005a28392d2",
     "bytes": 42684
    },
-   "exports/view/chimney_cap.stl": {
+   "captured-view/chimney_cap.stl": {
     "sha256": "df52a0426e206474dae5f221117430b1bd84c7ad0920433d0d9a316e96d9a584",
     "bytes": 16684
    },
-   "exports/view/spreader.stl": {
+   "captured-view/spreader.stl": {
     "sha256": "1f968cf36019c4a63ca067fda08220e44d310b8289cca7bb762c33ccfa9d79e6",
     "bytes": 52484
    },
-   "exports/view/spacers.stl": {
+   "captured-view/spacers.stl": {
     "sha256": "f9c5a99cbad57ad4923828b42163418fc3056d0651eb0c654ab687d72bd74039",
     "bytes": 100884
    },
-   "exports/view/cold_plate.stl": {
+   "captured-view/cold_plate.stl": {
     "sha256": "df58ba2f6ad65b8ee48ddabca850397cb7919f55a00ef696dfc623edd23a6f0d",
     "bytes": 684
    },
-   "exports/view/heat_pipes.stl": {
+   "captured-view/heat_pipes.stl": {
     "sha256": "545323931dc0f301b0d2afe832bebf7c4d978b514d2a90bb48db438bdea08cf2",
     "bytes": 1101584
    },
-   "exports/view/fins.stl": {
+   "captured-view/fins.stl": {
     "sha256": "d451b0c3c8f3fe71488242ae4ff58e643890b82c781b24ff0ec54c9b5fcc0e94",
     "bytes": 29484
    },
-   "exports/view/mount_ears.stl": {
+   "captured-view/mount_ears.stl": {
     "sha256": "f7889585b589b486a05d9f1155b3dfa08b1075e7cabc0c40abc0e33fdad53b5d",
     "bytes": 96884
    },
-   "exports/view/fan_frame.stl": {
+   "captured-view/fan_frame.stl": {
     "sha256": "80673c0f5d682e7cdd2f05af095d86345bfa2066f34e342b89d2da515129d5e8",
     "bytes": 14284
    },
-   "exports/view/fan_rotor.stl": {
+   "captured-view/fan_rotor.stl": {
     "sha256": "42f463c150da9a827553d2a0b218bcd3e42247cc9214a4c38eefa56a6fcfebf7",
     "bytes": 80884
    },
-   "exports/view/carrier_board.stl": {
+   "captured-view/carrier_board.stl": {
     "sha256": "7edeee5e695d553395340e11ce5e760595a1f12373dd6731a3d9a5b87f214561",
     "bytes": 42283834
    },
-   "exports/view/agx_module.stl": {
-    "sha256": "de92e892211332b1fdaa59641fcb9c397e53f143abae1a8a736a5f6e33df7d1d",
-    "bytes": 15251334
-   },
-   "exports/view/lid_screws.stl": {
+   "captured-view/lid_screws.stl": {
     "sha256": "d6d19644b6adff7d2ba0393f0821ded4c478476c5e479a5858073339fd39609e",
     "bytes": 507684
    },
-   "exports/view/board_screws.stl": {
+   "captured-view/board_screws.stl": {
     "sha256": "b5397bb82abb82eedd0d0eb0d6c018c8663a1be36e723a843e70cc3755736606",
     "bytes": 256484
    },
-   "exports/view/cooler_tiedown_screws.stl": {
+   "captured-view/cooler_tiedown_screws.stl": {
     "sha256": "da9d95858939fdac35471e2677b4e4300f324caefc2fc3250dcf85e82007ed76",
     "bytes": 130484
    },
-   "exports/view/antenna_bulkheads.stl": {
+   "captured-view/antenna_bulkheads.stl": {
     "sha256": "9cc0322818d2b56a05235a0ba1d712b7ab863d986051217eaadbcf328f938c03",
     "bytes": 251284
+   },
+   "incorporated-original-context/wifi_1_antenna.stl": {
+    "sha256": "4aa970157d32ba071915cc1ab6986a5dff23013f5356c9609446d36aff078679",
+    "bytes": 57484
+   },
+   "incorporated-original-context/wifi_2_antenna.stl": {
+    "sha256": "6d66d8cf6f2231c32bdf513e3e98a43cd3ce3dd55cb097fcf40b8936f07173c6",
+    "bytes": 57484
    }
   },
   "display_only": {
    "method": "0.4 mm vertex-cell centroid clustering; degenerate display triangles omitted",
-   "limits": "Render-only simplification, not dimension or fit evidence; lid hidden initially to reveal board. No CAD reconstruction.",
+   "limits": "Render-only simplification, not dimension or fit evidence; lid fitted initially; use Explode to inspect the real board. Original optional antenna shapes are not RF, purchase, manufacturing or physical-fit evidence.",
    "parts": {
     "base": {
      "original_triangles": 77472,
@@ -317,19 +327,6 @@
       38.01
      ]
     },
-    "agx_module": {
-     "original_triangles": 305025,
-     "display_triangles": 57950,
-     "max_vertex_move_mm": 0.46249767190804353,
-     "source_bounds_mm": [
-      54.99,
-      62.0,
-      24.47,
-      155.0,
-      149.0,
-      40.76
-     ]
-    },
     "lid_screws": {
      "original_triangles": 10152,
      "display_triangles": 6864,
@@ -381,19 +378,221 @@
       150.12,
       66.61
      ]
+    },
+    "wifi_1_antenna": {
+     "original_triangles": 1148,
+     "display_triangles": 1104,
+     "max_vertex_move_mm": 0.18477210312986175,
+     "source_bounds_mm": [
+      -19.600000381469727,
+      42.599998474121094,
+      58.099998474121094,
+      -2.5,
+      50.400001525878906,
+      84.0999984741211
+     ]
+    },
+    "wifi_2_antenna": {
+     "original_triangles": 1148,
+     "display_triangles": 1104,
+     "max_vertex_move_mm": 0.18477210312986175,
+     "source_bounds_mm": [
+      -19.600000381469727,
+      141.60000610351562,
+      58.099998474121094,
+      -2.5,
+      149.39999389648438,
+      84.0999984741211
+     ]
     }
    }
   },
   "board_reference": {
-   "file": "RESERVER_AGX_ORIN_CARRIER_BOARD.stp",
-   "url": "https://files.seeedstudio.com/wiki/reComputer-Jetson/J501/RESERVER_AGX_ORIN_CARRIER_BOARD.stp",
-   "retrieved": "2026-10-23",
-   "sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
-   "id": "S01"
+   "utc": "2026-11-12T05:11:55Z",
+   "repository": "https://github.com/Seeed-Studio/OSHW-Jetson-Series",
+   "revision": "c982ee71b305aabd0c1c7c1caac38122e63cd9e1",
+   "files": [
+    {
+     "path": "LICENSE",
+     "sha": "2cb7e9a3553d32625495610c2379ec9dce29de8e",
+     "size": 11365,
+     "url": "https://raw.githubusercontent.com/Seeed-Studio/OSHW-Jetson-Series/c982ee71b305aabd0c1c7c1caac38122e63cd9e1/LICENSE",
+     "sha256": "c82cae7efbcc3930ed0bf1de6e80800319c225f292c9e0976fe8eec460f5468d",
+     "git_blob_verified": true
+    },
+    {
+     "path": "reServer Jetson carrier board/reServer Industrial J501/3D Model/RESERVER_AGX_ORIN_CARRIER_BOARD.stp.gz",
+     "sha": "928859ac617fe838a63c36a893bf0bea34989ed1",
+     "size": 18754541,
+     "url": "https://raw.githubusercontent.com/Seeed-Studio/OSHW-Jetson-Series/c982ee71b305aabd0c1c7c1caac38122e63cd9e1/reServer%20Jetson%20carrier%20board/reServer%20Industrial%20J501/3D%20Model/RESERVER_AGX_ORIN_CARRIER_BOARD.stp.gz",
+     "sha256": "31f62b712e019da753f40bfd571f4b61f8d35bc23ae50c9b19c9eaeed8f32867",
+     "git_blob_verified": true
+    }
+   ],
+   "board": {
+    "inflated_bytes": 165651837,
+    "inflated_sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+    "local_sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+    "identical_to_local": true
+   }
+  },
+  "omitted_parts": {
+   "agx_module": "Separate NVIDIA vendor mesh omitted: no independent redistribution basis established."
+  },
+  "antenna_context": {
+   "manifest_sha256": "3832f6017fa81a7e9192385b8d264b18fd544c0ededeb1984c2f02652aa66e52",
+   "manifest": {
+    "schema": "j501-original-showcase-context-v1",
+    "units": "mm",
+    "coordinate_frame": "existing enclosure assembly; no lid/part transforms changed",
+    "source_sha256": {
+     "cad/parameters.json": "891a32c46accbe08481b5f00448df6029af71164db0ac2bb7b7c6794e9b3a51a",
+     "cad/hardware.py": "281d3a6053d8dfb153a9bab52151abba7495994778bafb632d89c709a4961b0d",
+     "tools/showcase_antennas.py": "613f400ec1e27c233409949ae64cc6b82cc1da24fd378fdd1e03d4ede3c5c0b6",
+     "tools/showcase-antenna-reference.json": "7a074d869cb8d734c907d620f9c7aabe42186f00e3b33d0a59382d27fcf08c4f"
+    },
+    "recipe_revision_sha256": "613f400ec1e27c233409949ae64cc6b82cc1da24fd378fdd1e03d4ede3c5c0b6",
+    "mechanical_reference": {
+     "manufacturer": "TE Connectivity / Linx",
+     "mpn": "ANT-2.4-CW-RAH-RPS",
+     "te_part": "L9000025-01",
+     "checked_utc": "2026-11-12",
+     "product_url": "https://www.te.com/en/product-L9000025-01.html",
+     "drawing": {
+      "number": "C-ANT-2.4-CW-RAH-CCC",
+      "revision": "B",
+      "url": "https://www.te.com/commerce/DocumentDelivery/DDEController?Action=srchrtrv&DocFormat=pdf&DocLang=English&DocNm=C-ANT-2.4-CW-RAH-CCC&DocType=Customer+Drawing&PartCntxt=L9000025-01",
+      "private_reference_sha256": "6c76c93d3db2d94cdafaa403773f4469f890160fc3396510f08322bdd3ad065b",
+      "dimensions_mm": {
+       "housing_datum": 25.6,
+       "lateral_extent": 17.1,
+       "upper_diameter": 7.4,
+       "connector_diameter": 7.8,
+       "connector_axial_length": 8.1,
+       "base_datum": 7.0
+      }
+     },
+     "datasheet": {
+      "url": "https://www.te.com/commerce/DocumentDelivery/DDEController?Action=srchrtrv&DocFormat=pdf&DocLang=English&DocNm=L9000025-01&DocType=Data+Sheet&PartCntxt=L9000025-01",
+      "private_reference_sha256": "aa3572733a970854894ef385b32f392de035ccfc1de300134cfac08cdee5410e",
+      "upper_segment_mm": 18.6,
+      "base_mm": 7.0,
+      "datum_note": "18.6 upper segment + 7 base = 25.6 housing; connector below housing is separate. Older datasheet connector dimension differs; use drawing B for cited mechanical facts."
+     },
+     "rights": "Proprietary reference files stay untracked. Original geometric recipe uses numerical facts only; no vendor CAD, PDF, image, logo, markings or tessellation redistributed."
+    },
+    "optional": true,
+    "display_only": true,
+    "printable": false,
+    "purchase_bom": false,
+    "physical_fit_verified": false,
+    "rf_qualified": false,
+    "seating_assumption": "coupling plane on visual nut outer face, X=-2.5; washer .5 + nut 2 mirrored from cad/hardware.py; no mating thread detail",
+    "representation": "original closed 32-sided swept tube; illustrative elbow/shoulder/flat tip; black color including coupling; no markings, threads, pins, internals or vendor mesh",
+    "limits": [
+     "not manufacturing geometry",
+     "not a connector fit or collision qualification",
+     "not radio, band, ground-plane, pigtail or MIMO selection",
+     "CELL sites unchanged; fitted lid stays in existing position",
+     "25.6 mm housing datum is not the complete generated envelope"
+    ],
+    "parts": [
+     {
+      "name": "wifi_1_antenna",
+      "file": "wifi_1_antenna.stl",
+      "sha256": "4aa970157d32ba071915cc1ab6986a5dff23013f5356c9609446d36aff078679",
+      "bounds_mm": [
+       [
+        -19.600000381469727,
+        42.599998474121094,
+        58.099998474121094
+       ],
+       [
+        -2.5,
+        50.400001525878906,
+        84.0999984741211
+       ]
+      ],
+      "triangles": 1148,
+      "color": [
+       0.06,
+       0.065,
+       0.075
+      ],
+      "category": "context",
+      "visible": true,
+      "optional": true,
+      "display_only": true,
+      "mount": {
+       "label": "WIFI 1",
+       "origin_mm": [
+        -2.5,
+        46.5,
+        62.0
+       ],
+       "outward_axis": [
+        -1,
+        0,
+        0
+       ],
+       "up_axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     },
+     {
+      "name": "wifi_2_antenna",
+      "file": "wifi_2_antenna.stl",
+      "sha256": "6d66d8cf6f2231c32bdf513e3e98a43cd3ce3dd55cb097fcf40b8936f07173c6",
+      "bounds_mm": [
+       [
+        -19.600000381469727,
+        141.60000610351562,
+        58.099998474121094
+       ],
+       [
+        -2.5,
+        149.39999389648438,
+        84.0999984741211
+       ]
+      ],
+      "triangles": 1148,
+      "color": [
+       0.06,
+       0.065,
+       0.075
+      ],
+      "category": "context",
+      "visible": true,
+      "optional": true,
+      "display_only": true,
+      "mount": {
+       "label": "WIFI 2",
+       "origin_mm": [
+        -2.5,
+        145.5,
+        62.0
+       ],
+       "outward_axis": [
+        -1,
+        0,
+        0
+       ],
+       "up_axis": [
+        0,
+        0,
+        1
+       ]
+      }
+     }
+    ]
+   }
   }
  },
  "view": {
-  "azimuth": 35,
+  "azimuth": -35,
   "elevation": 38
  },
  "parts": [
@@ -420,7 +619,7 @@
    "name": "cover",
    "id": "P2",
    "category": "Printed parts",
-   "visible": false,
+   "visible": true,
    "bounds_mm": [
     -0.05,
     5.45,
@@ -674,24 +873,6 @@
    "index_bits": 16
   },
   {
-   "name": "agx_module",
-   "category": "Carrier board and module",
-   "visible": true,
-   "bounds_mm": [
-    54.99,
-    62.0,
-    24.47,
-    155.0,
-    149.0,
-    40.76
-   ],
-   "color": "#5d6970",
-   "vertices": 26226,
-   "triangles": 57950,
-   "offset": 2285640,
-   "index_bits": 16
-  },
-  {
    "name": "lid_screws",
    "category": "Screws and hardware",
    "visible": true,
@@ -706,7 +887,7 @@
    "color": "#b8bec6",
    "vertices": 3236,
    "triangles": 6864,
-   "offset": 2790696,
+   "offset": 2285640,
    "index_bits": 16
   },
   {
@@ -724,7 +905,7 @@
    "color": "#c9a227",
    "vertices": 1356,
    "triangles": 2696,
-   "offset": 2851296,
+   "offset": 2346240,
    "index_bits": 16
   },
   {
@@ -742,7 +923,7 @@
    "color": "#b8bec6",
    "vertices": 862,
    "triangles": 1708,
-   "offset": 2875608,
+   "offset": 2370552,
    "index_bits": 16
   },
   {
@@ -760,7 +941,53 @@
    "color": "#c9a227",
    "vertices": 1884,
    "triangles": 4032,
-   "offset": 2891028,
+   "offset": 2385972,
+   "index_bits": 16
+  },
+  {
+   "name": "wifi_1_antenna",
+   "category": "context",
+   "visible": true,
+   "explode": [
+    -1,
+    0,
+    0
+   ],
+   "bounds_mm": [
+    -19.600000381469727,
+    42.599998474121094,
+    58.099998474121094,
+    -2.5,
+    50.400001525878906,
+    84.0999984741211
+   ],
+   "color": "#0f1113",
+   "vertices": 554,
+   "triangles": 1104,
+   "offset": 2421468,
+   "index_bits": 16
+  },
+  {
+   "name": "wifi_2_antenna",
+   "category": "context",
+   "visible": true,
+   "explode": [
+    -1,
+    0,
+    0
+   ],
+   "bounds_mm": [
+    -19.600000381469727,
+    141.60000610351562,
+    58.099998474121094,
+    -2.5,
+    149.39999389648438,
+    84.0999984741211
+   ],
+   "color": "#0f1113",
+   "vertices": 554,
+   "triangles": 1104,
+   "offset": 2431416,
    "index_bits": 16
   }
  ]

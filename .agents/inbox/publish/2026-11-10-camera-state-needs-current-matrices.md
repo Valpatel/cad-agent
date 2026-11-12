@@ -138,3 +138,21 @@ identity survives. A resize and visibility change expose abandoned callbacks.
 
 This is an attempted correction pending its actual-browser recheck and independent
 review; no current homepage art, physical design or publication acceptance follows.
+
+## A source material value must match the renderer's color schema
+
+The 2026-11-12 J501 homepage poster check first showed the fitted lid but hid both
+negative-X WiFi antennas behind the enclosure at the inherited +35° view. A second,
+negative-X view exposed both original context shapes, but rendered them white:
+the source manifest's normalized RGB array `[0.06, 0.065, 0.075]` had been passed
+unchanged to a material constructor that consumes a CSS color. Geometry/hash
+checks alone had not exercised this consumer boundary. Both unsuccessful posters
+and their stopped-run logs remain retained with #605; neither establishes visual
+acceptance.
+
+Preserve the source RGB values in provenance, validate exactly three finite numeric
+channels in [0,1], and convert only the display material to CSS `#0f1113`. The
+packed-model contract rejects the original array defect; the existing view tests
+reject malformed channels, NaN, infinity, booleans and out-of-range values. Inspect
+the actual matching opening-view poster as well as numerical geometry. This is
+render-only context, not a new color measurement, physical-fit or RF qualification.

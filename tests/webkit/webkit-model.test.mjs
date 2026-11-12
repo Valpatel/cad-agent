@@ -93,11 +93,37 @@ test('J501 showcase includes the real board mesh with bounded render-only simpli
   assert.ok(model.bytes < 1200 * 1024, 'phone transfer budget: 1.2 MiB');
   assert.ok(model.triangles < 400000, 'render-only triangle budget');
   assert.equal(parts.length, model.parts.length);
+  const materialContract = m => m.parts.forEach(p => assert.match(p.color, /^#[0-9a-f]{6}$/i, p.name+': CSS material color'));
+  materialContract(model);
+  const rawArrayDefect=structuredClone(model);rawArrayDefect.parts.find(p=>p.name==='wifi_1_antenna').color=[.06,.065,.075];
+  assert.throws(()=>materialContract(rawArrayDefect)); // The source-array defect must fail before the renderer silently paints white.
   const board = model.parts.find(p => p.name === 'carrier_board');
   assert.ok(board && board.triangles > 50000, 'detailed source PCB, not an invented box');
   assert.deepEqual(board.bounds_mm, [15, 11.62, 13.5, 191.35, 180.5, 38.01]);
-  assert.match(model.source.board_reference.url, /RESERVER_AGX_ORIN_CARRIER_BOARD\.stp$/);
-  assert.equal(model.source.revision, '240be82ec5420e989dbfad07d76ab62ea3e83a50');
+  assert.equal(model.source.board_reference.repository, 'https://github.com/Seeed-Studio/OSHW-Jetson-Series');
+  assert.equal(model.source.board_reference.board.inflated_sha256, 'a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793');
+  assert.equal(model.source.revision, '2f3853ca6f779634e297120ccf1749ace30b9b28');
+  assert.equal(model.source.captured_geometry_revision, '240be82ec5420e989dbfad07d76ab62ea3e83a50');
+  assert.equal(model.view.azimuth, -35, 'opening view faces the negative-X antenna side');
+  const receipt=JSON.parse(await readFile(path.join(root,'tools/site/assets/models/j501-source.json'),'utf8'));
+  const digest=b=>createHash('sha256').update(b).digest('hex');
+  assert.equal(receipt.poster.model_sha256, digest(await readFile(path.join(root,'tools/site/assets/models/j501.json'))));
+  assert.equal(receipt.poster.renderer_sha256, digest(await readFile(path.join(root,'software/cadagent/webkit/model.js'))));
+  assert.equal(receipt.poster.sha256, digest(await readFile(path.join(root,receipt.poster.file))));
+  assert.equal(model.parts.find(p=>p.name==='cover')?.visible, true, 'lid is fitted in the initial view');
+  assert.ok(!model.parts.some(p=>p.name==='agx_module'), 'unlicensed standalone NVIDIA mesh must not be shipped');
+  assert.equal(model.source.generator.sha256, createHash('sha256').update(await readFile(path.join(root, model.source.generator.file))).digest('hex'), 'pack source identity');
+  const antenna = model.source.antenna_context.manifest;
+  assert.equal(antenna.recipe_revision_sha256, '613f400ec1e27c233409949ae64cc6b82cc1da24fd378fdd1e03d4ede3c5c0b6');
+  assert.equal(antenna.physical_fit_verified, false);
+  assert.equal(antenna.rf_qualified, false);
+  for (const name of ['wifi_1_antenna','wifi_2_antenna']) {
+    const part=model.parts.find(p=>p.name===name);
+    assert.ok(part && part.visible && part.triangles>100, name+': real source-owned context mesh');
+    assert.equal(part.color, '#0f1113', name+': source RGB must be a supported CSS color, not a silently white array');
+    assert.ok(part.bounds_mm[0]<-19 && part.bounds_mm[3]===-2.5, name+': outward-X at existing WiFi mounts');
+    assert.ok(part.bounds_mm[2]>58 && part.bounds_mm[5]>84, name+': upward elbow placement');
+  }
   for (const [name, p] of Object.entries(model.source.display_only.parts)) {
     assert.ok(p.max_vertex_move_mm < .7, name + ': display-only displacement bound');
     assert.ok(p.display_triangles <= p.original_triangles, name);

@@ -19,5 +19,13 @@ recorded in `j501-source.json`.
 
 The enclosure and original project-generated cooler geometry retain their project
 provenance. This board licence does **not** grant rights to separate NVIDIA model
-assets. The standalone `agx_module` vendor part is to be excluded from final public
-showcase adoption unless its own redistribution basis is established.
+assets. The standalone `agx_module` vendor part is omitted from this display pack.
+
+The fitted lid and two optional original antenna display shapes come from product
+main `2f3853ca6f779634e297120ccf1749ace30b9b28`. The antenna recipe uses public
+manufacturer numerical dimensions, with no vendor drawing or vendor mesh copied.
+These optional context parts do not establish RF selection, physical connector fit,
+purchase BOM or print qualification. Their exact source/recipe/artifact hashes and
+placement assumptions are retained in `j501-source.json`. The original captured
+assembly exports have no embedded producer revision; CAD input tree equality binds
+them to this main without claiming a fresh CAD regeneration.

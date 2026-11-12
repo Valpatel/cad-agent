@@ -79,6 +79,20 @@ The photographs establish no dimensional values. Dated source/visual receipts ar
 
 For a removable electronics tray, start with a bent 5052-H32 bracket candidate. Select an actual thickness and its **bending** service specification before drawing flanges. SendCutSend's material page lists services separately for each thickness; a cutting listing does not establish a bending specification. Its broad temper-dependent radius advice is not the stock's radius/K-factor/flange tooling row. The article's thickness counts disagree between its main list and FAQ, so use the selected row rather than a total count. [ref:sendcutsend-5052-h32-aluminum-sheet-metal]
 
+```mermaid
+flowchart TD
+    S["Stock + service row"] --> B["Bends + feature datums"]
+    B --> E["Inspect STEP + flat DXF"]
+    class S here
+    class B near
+    class E out
+```
+
+Keep the datums distinct: `feature_to_bend` uses the feature edge to the bend tangent; clinch placement uses hole centres and its own edge/bend datums. These checks use declared dimensions; inspect the exports separately.
+
+<details>
+<summary>Bracket checks and independent defect controls</summary>
+
 Use the existing [sheet-metal workflow](../../../.agents/skills/sheet-metal-hardware/SKILL.md) in this order:
 
 1. Record the intended shop, alloy/temper, selected stock and supplier row/date. `cadagent.manufacturing.sheet_metal.bend` reports the row/rule provenance for radius, K-factor and allowance; refresh a stale or unavailable row with the supplier before ordering.
@@ -89,15 +103,31 @@ Use the existing [sheet-metal workflow](../../../.agents/skills/sheet-metal-hard
 
 For a Gyropup accessory, first obtain a reviewed attachment-datum and envelope extract from the product's current committed model. Catalogue estimates and a generated electronics bounding box are not measured mounting patterns. This workflow does not change printed legs, qualify the bracket's loads, or establish press-brake sequencing and physical fit.
 
+</details>
+
 ## A simple CNC plate needs a machining-service contract
 
 A first 2.5D example can be a 6061-T6 accessory plate with through holes and one shallow rounded pocket. Keep bearing fits and actuator load paths out of this initial example. SendCutSend's CNC guide asks for one solid STEP at model scale, without modeled threads. For its tapping setup, the model hole uses the thread's major diameter, then the preferred hole is confirmed in the order UI. That is a service convention, **not a machinist's tap-drill recommendation**. The guide distinguishes wall-to-wall corner fillets from wall-to-floor corners; do not apply an “all corners rounded” rule. [ref:sendcutsend-sheet-cnc-machining-design-guidelines]
 
+```mermaid
+flowchart TD
+    C["Confirm service contract"] --> P["Plate + shallow pocket"]
+    P --> I["Measure exported features"]
+    class C here
+    class P near
+    class I out
+```
+
 The guide prints a minimum overall size of 0.5 × 0.5 × 0.5 inches. Its linked [CNC 6061 material FAQ](https://sendcutsend.com/materials/cnc/6061-aluminum/) says the design determines dimensions rather than fixed thickness offerings, and repeats “overall part dimensions.” This supports a service-envelope reading, rather than a universal material thickness. The material page also incorrectly lists 5052 material certificates under its 6061 heading; do not treat those certificates as 6061 qualification. A 6 mm plate needs supplier clarification against the published envelope; a 12.7 mm coupon is not thereby guaranteed accepted. No automatic thin-plate rejection is added. [ref:sendcutsend-sheet-cnc-machining-design-guidelines]
+
+<details>
+<summary>CNC profile APIs and independent defect controls</summary>
 
 Use `cadagent.manufacturing.process.profile('cnc').verified_rule(id).limit(...)` to retrieve a **named, applicable** published rule, retaining its source and variables. For example, `cnc-corner-radius-hubs` uses pocket depth; `cnc-corner-radius-xometry` uses tool diameter. They are different publishers' recommendations, not SendCutSend's tooling contract. `dfm.Feature`/`dfm.check` do not currently offer CNC pocket/corner feature kinds. Those profile equations do not inspect a STEP model.
 
 Before ordering, independently measure one solid, units, through-hole pattern, pocket depth, remaining floor and internal radii, then review tool access from the declared setup. Negative controls should include wrong units, an extra solid, a blind-for-through hole substitution, breached floor, sharp internal corner, mirrored hole coordinates and inaccessible undercut. This is a proposed demo acceptance plan; no CAD, CAM, model-generation or physical trial was run for this source batch. Automatic STEP feature extraction, fixturing and tool-access proof remain gaps.
+
+</details>
 
 <details>
 <summary>Executable service-convention illustrations and controls</summary>

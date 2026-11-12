@@ -13,7 +13,7 @@ function cube(origin, size) {
   faces.forEach((face, i) => face.forEach((vertex, j) => vertices[vertex].forEach((n, k) => bytes.writeFloatLE(n, 84 + 50 * i + 12 + j * 12 + k * 4))));
   return { bytes, bounds: [...origin, ...origin.map((n, i) => n + size[i])] };
 }
-const routes = new Map(), versions = ['v1', 'v2', 'wip'];
+const routes = new Map([['/favicon.ico',(_,res)=>res.writeHead(204).end()]]), versions = ['v1', 'v2', 'wip'];
 for (const [index, version] of [...versions, 'proto'].entries()) {
   const shapes = [cube([0, 0, 0], [40 + index * 10, 30, 8]), cube([8, 8, 8], [5, 5, 20]), cube([28, 8, 8], [5, 5, 20])];
   const names = [version === 'proto' ? 'constructor' : 'base', 'screw#1', 'screw#2'];
@@ -166,7 +166,7 @@ async function serialBrowserChecks(page, browser) {
     packet.cases.push({consumer,case:'stale-plan-refused',radialFallback:false});
   }
   const phone=await browser.newContext({viewport:{width:320,height:700},deviceScaleFactor:2,reducedMotion:'reduce'});
-  const phonePage=await phone.newPage();phonePage.on('pageerror',e=>errors.push(e.message));
+  const phonePage=await phone.newPage();phonePage.on('pageerror',e=>errors.push(e.message));phonePage.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
   try {
     await phonePage.goto(`${site.url}/serial/index.html`);await phonePage.waitForFunction(()=>[...document.querySelectorAll('cad-model')].every(m=>m.dataset.state==='ready'));
     const button=phonePage.getByRole('button',{name:'Explode',exact:true}).first();await button.click();
@@ -175,7 +175,7 @@ async function serialBrowserChecks(page, browser) {
     await phonePage.screenshot({path:`${out}/${engine.name()}-serial-320.png`});
     packet.cases.push({case:'320px-dpr2-reduced-motion-keyboard-static',twoMiniViewers:true});
   } finally {await phone.close();}
-  packet.errors=[...errors];packet.consoleErrors=[...consoleErrors];assert.deepEqual(packet.errors,[]);packet.passed=true;
+  packet.errors=[...errors];packet.consoleErrors=[...consoleErrors];assert.deepEqual(packet.errors,[]);assert.deepEqual(packet.consoleErrors,[]);packet.passed=true;
   await writeFile(`${out}/${engine.name()}-serial-plan.json`,JSON.stringify(packet,null,2));
   cases.push(...packet.cases);
 }

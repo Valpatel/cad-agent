@@ -299,6 +299,9 @@ The first executable scope extends the dossier and playback owners with one opti
 file and SHA-256. Legacy guides remain illustrative. A malformed or stale declared plan fails loading;
 plan-enabled consumers never select radial motion as a fallback.
 
+<details>
+<summary>Bounded mechanical contract and validation limits</summary>
+
 The bounded contract is mm, assembly-home/Z-up, exact source instance identities, fixed context and a
 serial list of rigid translations. Each operation declares an ID, preceding dependencies, moving members,
 finite piecewise-linear offsets from its parked pose to the assembled zero offset, independent intent
@@ -319,6 +322,11 @@ Tools reuse the fastener gate's ordinary axial envelopes and sector swing, with 
 approach/retraction. Insertion, tool access, internal qualification, support and retention/process remain
 separate results; sampled clearance never means physical assembly qualification. No product geometry is
 changed by this slice. Product migration and richer paths require their own acceptance evidence.
+
+</details>
+
+<details>
+<summary>Opt-in schema and existing owner APIs</summary>
 
 The opt-in JSON is authored under dossier `assembly: {plan: ...}` and exported as a separate resource.
 `collect_guides` captures `assembly_plan: {file, sha256}`; `pack_view(..., assembly_plan=Path(...))`
@@ -345,3 +353,5 @@ identity. Public player `seek(0..operationCount)`, `reverse()` and `reset()` are
 assembled home. A loop traverses the same path back and forth, preserving each terminal frame. The existing
 guide policy still clears selection/material overrides on instruction/playback transitions; no new articulation
 owner is introduced. Mini-viewer turns, hover and pointer controls remain owned by that viewer.
+
+</details>

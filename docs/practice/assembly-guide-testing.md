@@ -205,3 +205,12 @@ plan hash and reject stale bytes. Native checks retain pair/segment witnesses an
 browser checks observe vertices through actual current world matrices, never requested offsets alone.
 Current implementation/evidence is tracked in the #542 slice PR; this matrix is acceptance work, not a
 statement that these cases or any product build have passed.
+
+The native fixture lives in `tests/fixtures/assembly-plan/`; its generator emits the same plan bytes for both
+consumers. `ASSEMBLY_PLAN_ONLY=1` selects nine bounded cases in the existing browser harness. Receipts include
+source/mesh/renderer/harness hashes, actual world-vertex captures for four noncoplanar source corners per
+instance, engine version, console/page errors, and a 320 px/DPR2 reduced-motion screenshot. The independent
+oracle derives piecewise plate/roof locations from the source bench datums, not the suspect path. Source-bound
+Python checks reject tooling shrinkage; unknown tool declarations and positive unmeasured tool allowance
+cannot become clear. Source and tests must be pushed before acceptance capture. Current-head CI and separate
+review remain required even after a local packet passes.

@@ -27,6 +27,19 @@ python3 tools/evaluation/standard_eval.py grade --job snapfit-sizing --work /tmp
 python3 tools/evaluation/standard_eval.py ingest-run --job snapfit-sizing --work /tmp/unique-eval-run
 ```
 
+The supported CLI collector runs a complete attempt and retains failures:
+
+```sh
+python3 tools/evaluation/runner.py --job snapfit-sizing --mode bare \
+  --harness codex --model MODEL_ID --work /tmp/another-unique-run
+# Use --harness claude for Claude Code; kit mode also needs --kit and --kit-revision.
+# --python may point to an existing interpreter; the same interpreter is offered in paired runs.
+```
+
+The collector records its version-sensitive argv and actual prompt hash in `invocation.json`, streams stdout to `transcript.jsonl`, retains `stderr.txt`, then writes `metadata.json` and `result.json`. It preserves normal OS login without copying credentials, starts an owned process group, bounds wall time and terminates the owned group before grading. Requested output-token caps and seeds are recorded as unenforced/unknown where the installed CLI exposes no equivalent control. The Codex adapter requests ephemeral execution with user config, project instructions, skill discovery, memories, hooks, plugins, apps, delegation and web search disabled. The Claude adapter requests SafeMode, empty settings sources and MCP configuration, no session persistence, explicit file/shell tools and no permission prompts. These controls depend on the recorded CLI versions. Their presence is not proof of an empty OS-user environment; `fresh_session` remains null unless independently established. Claude SafeMode disables native skill discovery, so kit access uses the explicit checkout path.
+
+Provider usage fields retain their provider meaning. Cached-input and cache-creation tokens are separate collector fields, not an invented common context measurement. Resolved model, success event, malformed transcript lines and session IDs (hashed) are collected when emitted. Kit use remains null until independent review of actual successful tool execution; artifact correctness does not fill that field.
+
 Kit preparation additionally requires `--kit /path/to/clean/released-checkout --kit-revision FULL_40_CHARACTER_SHA`. It verifies HEAD and a clean worktree. The prompt presents this path, its docs, canonical skills and the Python import path explicitly. This is explicit toolkit availability; it does not demonstrate native harness skill discovery. A successful toolkit command or import must be observed in executed tool evidence before a trial can claim toolkit use. Writing code containing an import, printing a command or merely reading documentation is insufficient.
 
 The manifest has exactly these fields:
@@ -65,4 +78,4 @@ The repository's [landscape](../research/landscape.json) records CADGenBench use
 
 `tests/repo/test_standard_eval.py` validates every manifest and all three reference solutions. Negative controls alter length, reported strain, allowable factors, force, fillet and section; collide, overlap, move off-grid or overmove ribs; and mirror, short, omit or duplicate electrical endpoints. Reordered valid nets remain positive. Invalid JSON, duplicate keys, NaN, wrong schemas, symlinks and oversized files fail. Preparation refuses reuse; ingestion preserves unknown metrics and distinguishes an otherwise correct artifact from a timed-out trial.
 
-On 2026-11-12 the focused suite passed 20 focused tests using an existing Python environment, without new packages. All three reference artifacts pass; these controller controls are not fresh model results. Actual CLI trials and any aggregate table are reported separately with model, harness, mode, observed kit use, errors and session limits. A single trial has no useful population pass-rate estimate; do not infer reliability or toolkit benefit from these controls.
+On 2026-11-12 the focused suite passed 25 focused tests using an existing Python environment, without new packages. All three reference artifacts pass; these controller controls are not fresh model results. Actual CLI trials and any aggregate table are reported separately with model, harness, mode, observed kit use, errors and session limits. A single trial has no useful population pass-rate estimate; do not infer reliability or toolkit benefit from these controls.

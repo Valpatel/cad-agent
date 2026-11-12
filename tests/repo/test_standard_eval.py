@@ -123,3 +123,13 @@ def test_run_record_binds_actual_grader_code(tmp_path):
     result=eval.grade('snapfit-sizing',work)
     import hashlib
     assert result['grader_sha256']==hashlib.sha256(Path(eval.__file__).read_bytes()).hexdigest()
+
+
+@pytest.mark.parametrize('change',[{'schema_version':True},{'version':True},{'budget':{'wall_seconds':True,'max_output_tokens':10}},{'output_file':'../answer.json'},{'grader':'arbitrary-script'}])
+def test_manifest_rejects_ambiguous_versions_paths_and_budgets(tmp_path,monkeypatch,change):
+    import shutil
+    corpus=tmp_path/'jobs';shutil.copytree(eval.CORPUS,corpus)
+    manifest=corpus/'snapfit-sizing/job.json'
+    job=eval.read_json(manifest);job.update(change);manifest.write_text(json.dumps(job))
+    monkeypatch.setattr(eval,'CORPUS',corpus)
+    with pytest.raises(ValueError):eval.load_job('snapfit-sizing')

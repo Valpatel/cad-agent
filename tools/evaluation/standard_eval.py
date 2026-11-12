@@ -36,7 +36,9 @@ def load_job(job_id):
     path = CORPUS / job_id
     job = read_json(path / 'job.json')
     required = {'schema_version','id','version','domain','area','grader','task','input_file','output_file','budget','limits'}
-    if set(job) != required or job['schema_version'] != 1 or job['id'] != job_id or job['version'] != 1:
+    if (not isinstance(job, dict) or set(job) != required
+            or type(job['schema_version']) is not int or job['schema_version'] != 1
+            or type(job['version']) is not int or job['version'] != 1 or job['id'] != job_id):
         raise ValueError('unsupported or malformed job manifest')
     if job['grader'] not in GRADERS or job['input_file'] != 'input.json' or job['output_file'] != 'solution.json':
         raise ValueError('unsupported grader or artifact paths')

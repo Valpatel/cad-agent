@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "snapfit-sizing",
+  "version": 1,
+  "domain": "mechanical",
+  "area": "compliant-mechanisms",
+  "grader": "snapfit-v1",
+  "task": "Work only in the current project. Do not ask questions, install packages, post messages, or push changes. Read input.json. Write exactly one JSON object to solution.json using the specified schema. You may use Python or other tools already available. Do not merely describe a proposed result. Size a uniform rectangular cantilever snap arm for the supplied analytical model. Select the SHORTEST permitted length satisfying root strain <= allowable_single * repeated_factor * process_factor. Use the specified deflection factor exactly (the rounded design-guide coefficient). Thickness and width are fixed. Compute root strain = deflection * thickness / (deflection_factor * length^2); hook force = width * thickness^2 / 6 * secant_mpa * root_strain / length. Set root fillet radius to the minimum satisfying both radius_min_mm and radius_ratio * thickness. Output keys length_mm, thickness_mm, width_mm, root_radius_mm, root_strain, allowable_strain, hook_force_n. This is a small-deflection calculation, not a physical strength claim.",
+  "input_file": "input.json",
+  "output_file": "solution.json",
+  "budget": {
+    "wall_seconds": 180,
+    "max_output_tokens": 4000
+  },
+  "limits": "Analytical declarations only; no physical, CAD-kernel, manufacturing or electrical safety validation."
+}

@@ -1962,7 +1962,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 346 folders</summary>
+<summary>tests — 351 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -2004,7 +2004,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary><code>tests/fixtures/README.md</code> — 329 folders</summary>
+<summary><code>tests/fixtures/README.md</code> — 334 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-fixtures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md)
 
@@ -2326,6 +2326,11 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | `tests/fixtures/cfd_runs/solids-short-then-full-continuation/postProcessing/plate/T_volAverage_plate` |
 | `tests/fixtures/cfd_runs/solids-short-then-full-continuation/postProcessing/plate/T_volAverage_plate/0` |
 | `tests/fixtures/cfd_runs/solids-short-then-full-continuation/postProcessing/plate/T_volAverage_plate/100` |
+| `tests/fixtures/evaluation` |
+| `tests/fixtures/evaluation/jobs` |
+| `tests/fixtures/evaluation/jobs/connector-breakout` |
+| `tests/fixtures/evaluation/jobs/lid-rib-clearance` |
+| `tests/fixtures/evaluation/jobs/snapfit-sizing` |
 | `tests/fixtures/file-viewer` |
 | `tests/fixtures/gate_bench` |
 | `tests/fixtures/gate_bench/project` |
@@ -2529,7 +2534,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tools — 11 folders</summary>
+<summary>tools — 12 folders</summary>
 
 <details>
 <summary><code>tools/README.md</code> — 1 folders</summary>
@@ -2567,6 +2572,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tools/ci` |
+
+</details>
+
+<details>
+<summary><code>tools/evaluation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tools/d-evaluation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tools/evaluation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tools/evaluation` |
 
 </details>
 

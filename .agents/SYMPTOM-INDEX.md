@@ -113,6 +113,8 @@
 | A retirement preflight fetches despite remote-only scope, or mandatory Python checks disappear under optimization | [Enforce retirement boundaries under optimized Python](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#enforce-retirement-boundaries-under-optimized-python) |
 | Gates fail before any job while the CLI suggests a workflow-file issue | [Inspect actual startup annotations](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#inspect-actual-startup-annotations-before-a-bounded-recovery) |
 | A merge rejects locally refreshed passing gates because the expected app did not post them | [Keep local live verification separate from Actions-owned statuses](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#local-live-verification-must-not-post-actions-owned-statuses) |
+| Reading counters pass while the published graph is stale, missing, hidden or cropped | [Verify the visible figures and data](inbox/agents/2026-11-10-reading-batches-need-the-release-and-page-consumers.md#published-reading-counts-need-their-visible-figures) |
+| Wrangler's deployment Status changes from Active to an age string | [Use structured deployment completion fields](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#deployment-completion-needs-structured-stage-status) |
 
 | A phone page overflows despite valid source links and bounded diagrams | [Short display aliases preserve source identity](inbox/agents/2026-11-10-reference-edits-need-the-importer-writer.md#short-display-aliases-preserve-source-identity-on-narrow-pages) |
 

@@ -271,3 +271,19 @@ a rejection rather than treating later success as proof that the first preflight
 
 **Limits:** this was an operator invocation error. The expected-app rule correctly prevented the merge; no
 source defect, new automation feature or policy exception was needed.
+
+## Deployment completion needs structured stage status
+
+2026-11-11 UTC: a v0.36.2 pre-HTTP guard expected the literal `Active` in Wrangler 4.86.0's JSON deployment
+table and stopped when it became `10 minutes ago`. No official-domain request had run. Inspection of the
+installed CLI showed that `Active` title-cases an active stage; a relative age is returned only for a successful
+stage with `ended_on`. The table is a presentation view, not the structured API schema. A read-only request
+using the same refreshed credentials confirmed the exact main commit, production environment and completed
+`deploy` stage (`success`, ended 22:37:54 UTC) before the approved readback
+([checkpoint](https://github.com/Valpatel/cad-agent/issues/323#issuecomment-6809109150)).
+
+**Rule:** bind deployment readiness to structured commit, environment, stage status and completion fields.
+Do not infer completion from a presentation label or parse its age as a new status vocabulary.
+
+**Limits:** this corrected a preflight assumption; no failed public verification was waived, and no account,
+permission or deployment setting changed. It does not replace normal CI or the actual publication readback.

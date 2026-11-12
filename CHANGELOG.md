@@ -9,6 +9,33 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.39.0 (2026-11-12)
+
+**New**
+- A per-part manufacturing process, so a project that mixes printed parts with welded, cut, machined, moulded or bought ones is checked honestly. A dossier card's `material.process` (free text, such as `welded steel tube` or `purchased`) or the new `cad: part_process: {<part>: <process>, "*": <default>}` in `cad-agent.yaml` says how a part is made (`cadagent.manufacturing.process.part_processes`; names `weldment`, `purchased`, `sheet-metal`, `cnc`, `injection-moulding`). A part that is not printed gets skip rows with the reason in the report's "Printed parts" and "Print files" (never a pass), and `export-3mf`, the default build plates, the default slice list, `cad-agent overhangs` and the report's download table leave it out, so `cad-agent all` finishes on a machine with no printed part. A skip means the print checks do not apply; it does not say the part can be made ([toolkit.md](https://cad-agent.valpatel.com/docs/toolkit#parts-that-are-not-printed), #577).
+- `joint(..., follows=(driver, multiplier, offset))` declares a driven joint, in the spirit of URDF's `mimic`: the motion gate samples only the driver and poses the follower at `multiplier × driver + offset` about its own axis in every pose, alone, in chains and in `combine` grids. A one-degree-of-freedom linkage (a parallelogram lift, geared arms) is checked along its path, not as a grid of free joints that reports collisions between poses it can never take. The same key works in `dossier_items()` and in the joint mapping `motion_gate` accepts (#581).
+- `joint(..., closes={"parts": (a, b), "at": point, "tol_mm": 0.1})` names a point two parts share (the pin that closes a loop). The motion gate fails `closure:<joint>:<a>|<b>` when the sampled poses pull it more than `tol_mm` apart, and when the point can measure nothing (both parts in one body, neither part moved). The ratio of a driven joint is the author's declaration: the gate does not solve loop closure, and a driven joint that no `closes` point measures is listed in `not_checked` (#581).
+- The motion verdict has `driven` (which joints were driven, by which joint, with what law and over which values), `closures`, a `follows:<id>` check that fails when a follower leaves the range it declares, and `stats.driven_joints`. A driver that is not declared, followers in a loop and kinds that cannot follow are a `RegistryError` at the build and a `joint:<id>` failure in the gate; the dossier lint reports `unknown-joint` for a hand-written record (#581).
+- Added concise independent-curation guidance: appreciation and original-source links do not imply sponsorships, partnerships or paid placements.
+
+**Changed**
+- A dossier card whose `material.process` already names a non-additive process (for example `CNC` or `sheet metal`) now gets skip rows in "Printed parts" and "Print files" instead of print checks, and no 3MF, plate place or default slice row (#577).
+- The review packet draws a driven joint with its driver: the driver's range-end views carry `pose.moves` (every joint that moves, innermost first) and a follower gets no range-end views of its own. Packets of projects without driven joints are unchanged (#581).
+- The geometry record's joints carry `follows` and `closes` only where declared, so existing records keep their digests; a driven joint without a range has `"range": null` (#581).
+- Mined Anthropic's Claude for Manufacturing as a pinned knowledge and skill-structure reference: credited variant-preflight guidance in existing Explore/design workflows and a source-to-procedure method for our own harness-independent skills. Preserve evidence, handoffs and testing limits; no upstream plugin, scripts or connectors are included.
+- PowerShell installer-guard timeouts retain bounded fixture phase evidence without changing their deadline, checksum checks or failure verdict. This diagnostic does not explain or fix the earlier silent timeout (#640).
+- The homepage agent setup diagram fills the prompt's width, and its six agent badges align in an even responsive grid (#642).
+
+**Fixed**
+- A partial `overhangs PART` run discards old results for parts that are no longer printed, even when their STL bytes are unchanged. An explicitly named nonprinted part is still screened afresh; it is not silently carried into later partial runs (#577, #580).
+- With no printed parts, `export-3mf` still honors explicit diagnostic plate selections, and a rejected strict project export preserves prior plate files through the existing transactional exporter (#632).
+- Containment and packet range-end views retain followers’ nonzero home offsets while another independent group moves. Packet poses also retain held scalar driver frames and cylindrical slide travel when composed with driven moves (#581).
+- Hosted Ubuntu CI accepts the observed `us-east-2.ec2.archive.ubuntu.com` mirror profile and replaces its priority-one endpoint with the existing registered HTTPS mirror. Strict source/keyring/fallback checks remain in place; successful logs identify the recognized input profile.
+- Reference credits now retain known people alongside organisations in discovery, tables, Markdown and citation tooltips; author search and direct original-work links preserve the existing source identities and checking limits.
+
+**Projects must change**
+- Nothing for a project that declares no process: every part is printed, as before. A project that wrote a non-additive `material.process` on a card and still prints that part corrects the card's process (the card is read before `cad: part_process:`) (#577).
+
 ## v0.38.1 (2026-11-12)
 
 **New**

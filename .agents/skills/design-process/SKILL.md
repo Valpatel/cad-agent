@@ -40,6 +40,10 @@ References: [`docs/practice/dossier.md`](../../../docs/practice/dossier.md) (the
   `cad-remote-runs` skill, where installed). Where agents share a workstation, one `nice`d job at a time.
 - **No project yet?** `cad-agent init <dir>` copies the starter box (a box and lid on four M3 heat-set inserts, wired
   for `cad-agent all`). Change it rather than writing `cad-agent.yaml` and the scripts by hand.
+- **Comparing variants?** Follow the [Explore preflight](../../../docs/explore.md#before-a-variant-batch): probe a
+  parameter in an isolated copy and measure its intended geometry before a batch. Reuse the existing evaluator,
+  constraints and Pareto comparison; keep failed trials and unknown values. The preflight is an agent procedure,
+  not an automatic geometry validator.
 - **Set `CAD_AGENT_ACTOR`** to your session id. Builds record it; a reviewer's sign-off is refused when it equals the
   build's.
 
@@ -169,7 +173,10 @@ Fix in this order, rerunning after each group (a fix early in the list often cle
 3. **Containment**: contents outside their cavity, contents in the container's wall.
 4. **Fasteners**: seat, stack, holes, engagement, tip, length, then tool access.
 5. **Assembly access**: coverage, then blocked insertions and tools at their steps.
-6. **Motion**: collisions over each joint's range.
+6. **Motion**: collisions over each joint's range. In a linkage with one degree of freedom (a parallelogram, geared
+   arms), give each dependent joint `follows=(driver, multiplier)` and name the closing pin with `closes=`, or the
+   gate samples poses the linkage cannot take ([driven joints](../../../docs/practice/gates.md#motion-range-interference-cadagentreviewgatesmotion));
+   the ratio is your declaration, not a solved loop.
 7. **Wall**, then the **lint's status rules** (decisions, traces, checks).
 
 Then the standard part checks, which every project runs whether or not it has a dossier: `cad-agent holes` (every

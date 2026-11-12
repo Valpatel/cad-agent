@@ -14,7 +14,7 @@ const model=await json('discovery.json'),catalog=await json('catalog.json'),refs
 const refIndex=await json('catalog/references/index.json');
 const fullSources=new Map((await Promise.all(refIndex.areas.map(a=>json(new URL(a.json).pathname.slice(1))))).flatMap(a=>a.records.map(r=>[r.id,r])));
 const html=await readFile(path.join(site.dir,'explore.html'),'utf8');
-const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test([x.title,x.summary,x.source_id,x.search].join(' ').toLowerCase())));
+const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test(model.search_fields.map(field=>x[field]||'').join(' ').toLowerCase())));
 
 test('derived identities cover every catalogue entry and canonical source exactly once without rewriting their roles',()=>{
  assert.equal(model.schema,'cad-agent-discovery/1');
@@ -71,9 +71,17 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(compactReferences.reduce((n,s)=>n+Buffer.byteLength(s),0)<model.source_counts.reference_records*700,'reference projection remains compact; richer catalogue details are not copied onto sources');
  assert.ok(compactReferences.every(s=>!s.includes('result-details')&&!s.includes('result-cover')));
  const n=model.items.length;
- assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<900000,'700 bytes/result plus fixed shell; absolute safety cap');
- assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
- assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
+ // Dated before/after: c301 Explore 856890 B / 132119 gzip; creator/original links 941750 B / 147813 gzip.
+ // Accepted source now has 815 references and 1201 results: actual 942605 B versus base 890700 B.
+ // New original destinations share an 80 B/canonical-reference aggregate allowance: 955900 B total.
+ // Keep 700 B/reference, the base 700 B/result, gzip and DOM guards; no summaries/details added to references.
+ const rawBytes=Buffer.byteLength(html),gzipBytes=gzipSync(html).length,tags=(html.match(/<[a-z][^>]*>/g)||[]).length;
+ assert.ok(rawBytes<50000+n*700+model.source_counts.reference_records*80,'base 700 bytes/result plus shell and 80 bytes/reference original-link allowance');
+ assert.ok(rawBytes<1000000,'1 MB absolute raw cap');
+ assert.ok(gzipBytes<20000+n*110,'110 gzip bytes/result plus shell');
+ assert.ok(gzipBytes<180000,'180 kB absolute gzip cap');
+ assert.ok(tags<800+n*5,'compact result DOM plus fixed shell');
+ assert.ok(tags<9000,'9000-tag absolute cap');
 });
 
 test('generated pitfall destinations are unique and hostile text is inert',()=>{
@@ -155,4 +163,48 @@ test('legacy catalogue descriptions escape canonical plain text without passing 
  assert.ok(html.includes('A literal &lt;img src=x onerror=alert(2)&gt; and &lt;script&gt;alert(2)&lt;/script&gt; description'));
  assert.doesNotMatch(html,/<img src=x|<script>alert/);
  assert.equal(JSON.stringify(projection),before,'legacy rendering does not mutate discovery projection semantics');
+});
+
+
+test('shared reference rows credit creators and link originals without copying full records',()=>{
+ const record={id:'credit-example',title:'Original study',authors:['Ada Example'],org:'Example Lab',url:'https://example.com/source?dlpdf=t&part=1',summary:'A practical source',status:'source',evidence:{class:'read'}};
+ const references={refs:{records:new Map([[record.id,record]]),aliases:new Map()},placed:new Map([[record.id,['fasteners']]]),home:id=>'/references/fasteners#'+id};
+ const areas={domains:[{slug:'mechanical',title:'Mechanical',areas:[{slug:'fasteners',title:'Fasteners'}]}],maturity:[]};
+ const input={catalog:{items:[]},pages:[],references,ORIGIN:'https://cad-agent.valpatel.com',revision:'r',pageURL:()=>''};
+ const m=discoveryModel(input),item=m.items[0];
+ assert.equal(item.creator,'Ada Example · Example Lab');
+ assert.ok(m.search_fields.includes('creator'));
+ assert.ok(m.search_fields.map(k=>item[k]||'').join(' ').includes('Ada Example'));
+ assert.ok(!item.search.includes('Ada Example'),'visible creator is not duplicated in hidden search metadata');
+ const html=discoveryHTML(m,{areas,catalog:input.catalog});
+ assert.match(html,/Ada Example · Example Lab · <a href="https:\/\/example.com\/source\?dlpdf=t&amp;part=1">Read original<\/a>/);
+ assert.ok(!html.includes('result-details'));
+ assert.equal(m.source_counts.reference_records,1);
+ record.authors=['<img src=x onerror=alert(1)>'];record.url='javascript:alert(1)';
+ const unsafe=discoveryHTML(discoveryModel(input),{areas,catalog:input.catalog});
+ assert.ok(unsafe.includes('&lt;img src=x onerror=alert(1)&gt;'));
+ assert.doesNotMatch(unsafe,/<img src=x|href="javascript:/);
+});
+
+
+test('outside original links survive legacy group remapping without guessed creator metadata',()=>{
+ const areas={domains:[{slug:'mechanical',title:'Mechanical',areas:[{slug:'fasteners',title:'Fasteners'}]}],maturity:[]};
+ const references={refs:{records:new Map(),aliases:new Map()},placed:new Map(),home:()=>''};
+ for(const kind of ['project','library','benchmark']){
+  const entry={id:kind+'-example',kind,name:'known-owner/example',url:'https://example.com/project?view=full&x=1',areas:['fasteners'],status:'reference',cover:'/cover.svg'};
+  const catalog={items:[entry]},m=discoveryModel({catalog,pages:[],references,ORIGIN:'https://cad-agent.valpatel.com',revision:'r',pageURL:()=>''});
+  assert.equal(m.items[0].creator,undefined,'no creator inferred from URL or repository identity');
+  for(const legacy of [false,true]){
+   const html=discoveryHTML(m,{areas,catalog,legacy});
+   const label=kind==='benchmark'?'Visit original':'Visit project';
+   assert.ok(html.includes('href="https://example.com/project?view=full&amp;x=1">'+label+'</a>'),kind+' legacy='+legacy);
+  }
+ }
+});
+
+test('every recorded author remains searchable alongside their organisation',()=>{
+ for(const source of fullSources.values())for(const author of source.authors||[]){
+  if(typeof author!=='string'||!author.trim())continue;
+  assert.ok(query(author).some(item=>item.collection==='reference'&&item.source_id===source.id),source.id+': '+author);
+ }
 });

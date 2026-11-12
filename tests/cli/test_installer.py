@@ -152,12 +152,58 @@ os.execv('/bin/sh',['sh',str(file),'--help'])
             assert "Installer checksum mismatch" in result.stderr
 
 
+def _powershell_receipt(path, fields):
+    """Only fixture field names and a bounded version may leave these owned JSON files."""
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(1025)
+    except FileNotFoundError:
+        return {"state": "missing"}
+    except OSError:
+        return {"state": "unreadable"}
+    if len(raw) > 1024:
+        return {"state": "oversized"}
+    try:
+        data = json.loads(raw.decode("utf-8-sig"))
+    except (ValueError, UnicodeError):
+        return {"state": "malformed"}
+    if not isinstance(data, dict) or any(key in data and not isinstance(data[key], kind) for key, kind in fields.items()):
+        return {"state": "malformed"}
+    present = sorted(set(data) & set(fields))
+    result = {"state": "complete" if set(present) == set(fields) else "partial", "fields": present}
+    if "powershell_version" in present:
+        if not re.fullmatch(r"[0-9A-Za-z.+-]{1,64}", data["powershell_version"]):
+            return {"state": "malformed"}
+        result["powershell_version"] = data["powershell_version"]
+    return result
+
+
+def _powershell_timeout_evidence(error, entered, downloaded, handed):
+    size = lambda value: len(value.encode("utf-8") if isinstance(value, str) else value or b"")
+    return {"event": "checked-powershell-timeout", "timeout_seconds": 20,
+            "stdout_bytes": size(error.output), "stderr_bytes": size(error.stderr),
+            "receipts": {"entered": _powershell_receipt(entered, {"powershell_version": str}),
+                         "download": _powershell_receipt(downloaded, {"uri": str, "output": str}),
+                         "handoff": _powershell_receipt(handed, {"sha256": str, "noProfile": bool, "policy": str})}}
+
+
+def _run_powershell_guard(script, entered, downloaded, handed):
+    try:
+        return subprocess.run(["pwsh", "-NoProfile", "-File", str(script)], capture_output=True, text=True, timeout=20)
+    except subprocess.TimeoutExpired as error:
+        try:
+            print(json.dumps(_powershell_timeout_evidence(error, entered, downloaded, handed), sort_keys=True), file=sys.stderr)
+        except Exception:
+            pass  # Evidence must never replace the original guard failure.
+        raise
+
+
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell (pwsh) is not installed")
 @pytest.mark.parametrize("outcome", ["good", "corrupt", "download-failed", "child-failed"])
 def test_actual_powershell_guide_checks_before_process_handoff(tmp_path, outcome):
     """Real PowerShell/hash/try-finally, inert downloader and child sink; no network or real installation."""
     quote = lambda value: "'" + str(value).replace("'", "''") + "'"
-    downloaded, handed = tmp_path / "download.json", tmp_path / "handoff.json"
+    entered, downloaded, handed = (tmp_path / name for name in ("entered.json", "download.json", "handoff.json"))
     payload = tmp_path / "source.ps1"
     payload.write_bytes(_snapshot_bytes(PS1))
     sink = tmp_path / "child.ps1"
@@ -167,6 +213,7 @@ def test_actual_powershell_guide_checks_before_process_handoff(tmp_path, outcome
                     f"Set-Content -LiteralPath {quote(handed)}\n"
                     f"$global:LASTEXITCODE = {7 if outcome == 'child-failed' else 0}\n")
     prefix = f'''
+[IO.File]::WriteAllText({quote(entered)}, ('{{"powershell_version":"' + $PSVersionTable.PSVersion.ToString() + '"}}'))
 function Invoke-WebRequest {{
   param([string]$Uri, [string]$OutFile, [switch]$UseBasicParsing, [string]$ErrorAction)
   @{{uri=$Uri; output=$OutFile}} | ConvertTo-Json -Compress | Set-Content -LiteralPath {quote(downloaded)}
@@ -178,7 +225,8 @@ function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} 
 '''
     script = tmp_path / "checked.ps1"
     script.write_text(prefix + _checked_block("powershell"))
-    result = subprocess.run(["pwsh", "-NoProfile", "-File", str(script)], capture_output=True, text=True, timeout=20)
+    result = _run_powershell_guard(script, entered, downloaded, handed)
+    assert _powershell_receipt(entered, {"powershell_version": str})["state"] == "complete"
     download = json.loads(downloaded.read_text(encoding="utf-8-sig"))
     assert not Path(download["output"]).exists(), "finally cleans the downloaded script"
     assert re.search(r"/[a-f0-9]{40}/tools/site/assets/install\.ps1$", download["uri"])
@@ -192,6 +240,98 @@ function Get-Process {{ param([int]$Id) [pscustomobject]@{{Path={quote(sink)}}} 
         assert result.returncode != 0 and not handed.exists(), "failed input never reaches a child process"
         if outcome == "corrupt":
             assert "Installer checksum mismatch" in result.stderr
+
+
+@pytest.mark.parametrize("phase, state", [("missing", "missing"), ("partial", "partial"),
+                                         ("malformed", "malformed"), ("oversized", "oversized"),
+                                         ("unreadable", "unreadable")])
+def test_powershell_timeout_reports_bounded_receipt_states_and_preserves_exception(tmp_path, monkeypatch, capsys,
+                                                                                 phase, state):
+    entered, downloaded, handed = (tmp_path / name for name in ("entered.json", "download.json", "handoff.json"))
+    entered.write_text(json.dumps({"powershell_version": "7.6.10", "unreported": "private-entry"}))
+    if phase == "partial":
+        downloaded.write_text(json.dumps({"uri": "private-uri", "unreported": "private-value"}))
+    elif phase == "malformed":
+        downloaded.write_text('{"uri": "private-unfinished')
+    elif phase == "oversized":
+        downloaded.write_text("private-oversized" * 1000)
+    elif phase == "unreadable":
+        downloaded.mkdir()
+    error = subprocess.TimeoutExpired(["pwsh"], 20, output=b"private-output", stderr="private-error")
+    calls = []
+
+    def timeout(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    script = tmp_path / "checked.ps1"
+    with pytest.raises(subprocess.TimeoutExpired) as caught:
+        _run_powershell_guard(script, entered, downloaded, handed)
+    assert caught.value is error
+    assert calls == [((["pwsh", "-NoProfile", "-File", str(script)],),
+                     {"capture_output": True, "text": True, "timeout": 20})]
+    output = capsys.readouterr()
+    assert output.out == "" and "private" not in output.err
+    evidence = json.loads(output.err)
+    assert evidence["event"] == "checked-powershell-timeout" and evidence["timeout_seconds"] == 20
+    assert evidence["stdout_bytes"] == len(b"private-output") and evidence["stderr_bytes"] == len(b"private-error")
+    assert evidence["receipts"]["entered"] == {"state": "complete", "fields": ["powershell_version"],
+                                               "powershell_version": "7.6.10"}
+    assert evidence["receipts"]["download"]["state"] == state
+    assert evidence["receipts"]["handoff"] == {"state": "missing"}
+    assert len(output.err) < 1024
+
+
+def test_powershell_timeout_reports_entry_absence_and_handoff_without_claiming_completion(tmp_path, monkeypatch, capsys):
+    entered, downloaded, handed = (tmp_path / name for name in ("entered.json", "download.json", "handoff.json"))
+    downloaded.write_bytes(b'\xef\xbb\xbf' + json.dumps({"uri": "private-uri", "output": "private-path"}).encode())
+    handed.write_text(json.dumps({"sha256": "private-hash", "noProfile": True, "policy": "Bypass"}))
+    error = subprocess.TimeoutExpired(["pwsh"], 20)
+
+    def timeout(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    with pytest.raises(subprocess.TimeoutExpired) as caught:
+        _run_powershell_guard(tmp_path / "checked.ps1", entered, downloaded, handed)
+    assert caught.value is error
+    text = capsys.readouterr().err
+    assert "private" not in text
+    evidence = json.loads(text)
+    assert evidence["receipts"]["entered"] == {"state": "missing"}
+    assert evidence["receipts"]["download"]["state"] == evidence["receipts"]["handoff"]["state"] == "complete"
+    assert evidence["stdout_bytes"] == evidence["stderr_bytes"] == 0
+
+
+@pytest.mark.parametrize("failure", ["collector", "stderr"])
+def test_powershell_timeout_diagnostic_failure_cannot_mask_the_original(tmp_path, monkeypatch, capsys, failure):
+    error = subprocess.TimeoutExpired(["pwsh"], 20)
+
+    def timeout(*args, **kwargs):
+        raise error
+
+    def broken(*args):
+        raise OSError("diagnostic unavailable")
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    if failure == "collector":
+        monkeypatch.setattr(sys.modules[__name__], "_powershell_timeout_evidence", broken)
+    else:
+        class BrokenStream:
+            write = broken
+        monkeypatch.setattr(sys, "stderr", BrokenStream())
+    with pytest.raises(subprocess.TimeoutExpired) as caught:
+        _run_powershell_guard(tmp_path / "checked.ps1", *(tmp_path / name for name in ("entry", "download", "handoff")))
+    assert caught.value is error
+    assert capsys.readouterr() == ("", "")
+
+
+def test_powershell_guard_success_is_silent_and_keeps_the_process_result(tmp_path, monkeypatch, capsys):
+    result = subprocess.CompletedProcess(["pwsh"], 0, "unchanged stdout", "unchanged stderr")
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: result)
+    assert _run_powershell_guard(tmp_path / "checked.ps1", *(tmp_path / name for name in ("entry", "download", "handoff"))) is result
+    assert capsys.readouterr() == ("", "")
 
 
 def test_it_installs_then_a_second_run_updates(world):

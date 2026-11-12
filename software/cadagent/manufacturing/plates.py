@@ -864,7 +864,10 @@ def _number(raw: Dict[str, Any], key: str, default: float) -> float:
 
 def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]:
     """Parse ``cad.plates`` (None when it is ``false``). The parts default to ``cad.release.build``, else every part
-    the release lists; quantities to ``cad.release.quantities``, else 1; filaments to ``cad.slicer.filament``."""
+    the release lists, less the parts that are not printed (``manufacturing.process.printed_parts``, #577; None when
+    that leaves none); quantities to ``cad.release.quantities``, else 1; filaments to ``cad.slicer.filament``.
+    Parts listed in ``cad.plates.parts`` are laid out as listed."""
+    from cadagent.manufacturing.process import printed_parts
     from cadagent.manufacturing.slicer import FILAMENTS, _settings
     from cadagent.project import CadConfigError
     from cadagent.publish.release import release_config
@@ -907,6 +910,13 @@ def plates_config(project, known_parts: Sequence[str]) -> Optional[PlatesConfig]
             if loose:
                 warnings.append(f"the plates hold every part of the pick-one or optional groups {loose}; set "
                                 "cad.release.build or cad.plates.parts to print one build")
+        made = printed_parts(project, parts)
+        if len(made) < len(parts):
+            left = [p for p in parts if p not in made]
+            if not made:
+                return None
+            warnings.append(f"not printed, left off the plates: {', '.join(left)}")
+            parts = made
     elif isinstance(spec, list) and spec and all(isinstance(p, str) for p in spec):
         parts = list(spec)
     elif isinstance(spec, dict) and spec:
@@ -1014,7 +1024,8 @@ def _remove_outputs(path: Path) -> None:
 def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings_bytes: Optional[bytes] = None,
                   use_slicer: bool = True, require_project_settings: bool = False) -> Optional[Dict[str, Any]]:
     """Write ``<name>-plates.3mf`` (verified), ``<name>-plates.json`` (the layout) and ``<name>-plates.svg`` (the
-    plates from above) into ``exports_dir``; None when ``cad.plates`` is false. The project settings are
+    plates from above) into ``exports_dir``; None when ``cad.plates`` is false or the default selection has no
+    printed parts. Explicit ``cad.plates.parts`` selections remain eligible. The project settings are
     ``settings_bytes`` when given, else Bambu Studio's for ``cad.slicer`` when it is installed and ``use_slicer``,
     else left out (the record and the warnings say so: Bambu Studio then opens the file on one plate). A printer,
     process or filament that Bambu Studio has no profile for is a ``CadConfigError``.
@@ -1071,7 +1082,6 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     from cadagent.manufacturing import slicer
     from cadagent.publish.report import load_parts
 
-    trimesh = require("trimesh", "build plates (STL loading)")
     if known_parts is None:
         known, error = load_parts(project)
         if error:
@@ -1082,8 +1092,9 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     cfg = plates_config(project, known_parts)
     if cfg is None:
         if require_project_settings:
-            raise PlatesError('project settings required, but cad.plates is false')
+            raise PlatesError('project settings required, but cad.plates is false or no part is printed')
         return None
+    trimesh = require("trimesh", "build plates (STL loading)")
     bed = project.printer.bed_mm
     if not bed:
         raise PlatesError("cad.printer.bed_mm is required to lay out build plates")

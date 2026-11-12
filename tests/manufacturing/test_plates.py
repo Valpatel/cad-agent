@@ -567,6 +567,54 @@ def test_strict_project_command_writes_native_settings_and_final_destinations(tm
     assert not any(p.name.startswith('.demo-plates-') for p in (root / 'exports').iterdir())
 
 
+@pytest.mark.parametrize('strict', [False, True])
+@pytest.mark.parametrize('selection, quantity', [('[box]', 1), ('{box: {quantity: 2}}', 2)])
+def test_nonprinted_parts_explicitly_selected_for_plates_are_exported(tmp_path, monkeypatch, strict,
+                                                                    selection, quantity):
+    """An explicit diagnostic plate remains a real export even when no standalone part is printed."""
+    from cadagent.cli import main
+    root = stl_project(tmp_path, '  part_process: {"*": purchased}\n'
+                       f'  plates: {{parts: {selection}}}\n')
+    exports = root / 'exports'
+    per_part = {p.name: p.read_bytes() for p in exports.glob('*.3mf')}
+    native = settings_bytes(printer_settings_id=slicer.PRINTER, print_settings_id=slicer.PROCESS,
+                            filament_settings_id=[slicer.FILAMENTS['pla']])
+    monkeypatch.setattr(slicer, 'executable', lambda: '/controlled/BambuStudio')
+    monkeypatch.setattr(slicer, 'project_settings', lambda *a, **kw: native)
+    args = ['export-3mf', '--project', str(root)] + (['--require-project-settings'] if strict else [])
+    assert main(args) == 0
+    record = json.loads((exports / 'demo-plates.json').read_text())
+    assert record['quantities'] == {'box': quantity}
+    back = P.read_plates_3mf(exports / 'demo-plates.3mf')
+    assert sum(len(plate['placements']) for plate in back['plates']) == quantity
+    assert back['project_settings'] == json.loads(native)
+    assert all((exports / name).read_bytes() == value for name, value in per_part.items())
+
+
+@pytest.mark.parametrize('strict', [False, True])
+def test_no_printed_parts_preserve_prior_owned_plate_outputs_on_strict_failure(tmp_path, monkeypatch,
+                                                                           capsys, strict):
+    from cadagent.cli import main
+    from cadagent.project import load_project
+    root = stl_project(tmp_path)
+    exports = root / 'exports'
+    monkeypatch.setattr(slicer, 'executable', lambda: None)
+    P.export_plates(load_project(root), use_slicer=False)  # real, format-marked outputs owned by the existing tool
+    plate_names = {'demo-plates.3mf', 'demo-plates.svg', 'demo-plates.json'}
+    before = {p.name: p.read_bytes() for p in exports.iterdir()}
+    assert plate_names <= set(before)
+    config = root / 'cad-agent.yaml'
+    config.write_text(config.read_text() + '  part_process: {"*": weldment}\n')
+    args = ['export-3mf', '--project', str(root)] + (['--require-project-settings'] if strict else [])
+    assert main(args) == (1 if strict else 0)
+    after = {p.name: p.read_bytes() for p in exports.iterdir()}
+    if strict:
+        assert 'plates: FAILED:' in capsys.readouterr().out
+        assert after == before
+    else:
+        assert after == {name: value for name, value in before.items() if name not in plate_names}
+
+
 def test_strict_plate_publication_rolls_back_an_interrupted_replacement(tmp_path, monkeypatch):
     import os
     from cadagent.project import load_project

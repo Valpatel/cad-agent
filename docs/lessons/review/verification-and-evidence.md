@@ -105,6 +105,10 @@ flowchart TD
   unreadable report require a new slice, rather than a green "never sliced" result. Preserve producer failure codes
   even when measurements are present; Bambu's nonempty `Success.` text is not a failure code
   ([status evidence](../../../.agents/inbox/2026-11-11-slice-status-needs-codes-and-currency.md)).
+  Recheck a retained result's applicability too: unchanged STL bytes do not keep a print check in scope after a
+  manufacturing-process change ([process-transition evidence](../../../.agents/inbox/2026-11-11-slice-status-needs-codes-and-currency.md#unchanged-mesh-bytes-do-not-keep-a-print-result-in-scope)).
+  Filtering defaults must still respect explicit selections and strict export preservation; use the established
+  exporter rather than bypassing its transaction ([caller evidence](../../../.agents/inbox/2026-11-11-slice-status-needs-codes-and-currency.md#an-inapplicable-default-does-not-bypass-the-export-contract)).
 - **Incident:** The Rev 0.5 report opened with "nothing has been printed, run through a slicer, or test-fitted". The
   hex chamfer report said "the airflow gain is untested". The Bambu link was reported as found in the binary but not
   tested. `assembly-checks.json` carries `physical_fit_verified: false`. The shared CAD report "always records

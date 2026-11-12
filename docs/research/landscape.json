@@ -3,6 +3,28 @@
  "method": "gh api repos/OWNER/REPO for stars, licence and push date; README/manifest/source for capabilities; 'unverified' marks claims not checked in source",
  "projects": [
   {
+   "name": "anthropics/claude-plugins-official",
+   "url": "https://github.com/anthropics/claude-plugins-official/tree/9bd776d78d956bd68520efe67ac6422a76f811f8/plugins/claude-for-manufacturing",
+   "license_spdx": "Apache-2.0",
+   "stars": 47028,
+   "last_push": "2026-11-12",
+   "clients": [
+    "claude-code (documented, untested here)",
+    "claude-cowork (documented, untested here)"
+   ],
+   "kernel": "Fusion desktop for design-space-explore; no CAD backend needed for trade-study-report",
+   "processes": [
+    "manufacturing workflow and design review"
+   ],
+   "dfm_rules_cited": "not a validated DFM rule engine; bounded design-skill source study",
+   "materials_cost": "reads plant records or exports; quote accuracy not evaluated here",
+   "render_feedback": "not evaluated here",
+   "drawings": "not evaluated here",
+   "vendor_integration": "one declared local Fusion MCP; Microsoft 365, Oracle NetSuite and Infor M3 separately configured",
+   "evals": "no plugin execution or model-performance evaluation in this intake",
+   "notes": "Claude for Manufacturing 1.0.0, checked 2026-11-12 at 9bd776d78d956bd68520efe67ac6422a76f811f8: 17 skill entry points. Reference implementation marked not actively maintained. Read design/trade-study skills, inspection-to-CAPA workflow, shared handoff rules and selected quality-contract/investigation sections; not an audit of all skills. Knowledge and structure reference for our own portable skills and existing Explore preflight, not plugin adoption. No upstream plugin, code or connectors imported; no runtime compatibility claim. Stars/push date are for the whole directory repository, not this plugin."
+  },
+  {
    "name": "earthtojake/text-to-cad",
    "url": "https://github.com/earthtojake/text-to-cad",
    "license_spdx": "MIT",

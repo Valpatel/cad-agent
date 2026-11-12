@@ -9,7 +9,9 @@ import {searchPatterns} from '../../software/cadagent/webkit/gallery.js';
 import {discoveryModel,discoveryHTML,prepareDiscoveryPage} from '../../tools/site/compiler/site-discovery.mjs';
 const site=await builtSite('cad-agent-discovery-site-');test.after(()=>site.done());
 const json=async f=>JSON.parse(await readFile(path.join(site.dir,f),'utf8'));
-const model=await json('catalog/discovery.json'),catalog=await json('catalog.json'),refs=await json('catalog/references/records.json');
+const model=await json('discovery.json'),catalog=await json('catalog.json'),refs=await json('catalog/references/records.json');
+const refIndex=await json('catalog/references/index.json');
+const fullSources=new Map((await Promise.all(refIndex.areas.map(a=>json(new URL(a.json).pathname.slice(1))))).flatMap(a=>a.records.map(r=>[r.id,r])));
 const html=await readFile(path.join(site.dir,'explore.html'),'utf8');
 const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test([x.title,x.summary,x.search].join(' ').toLowerCase())));
 
@@ -21,7 +23,7 @@ test('derived identities cover every catalogue entry and canonical source exactl
  assert.equal(model.source_counts.catalogue_entries,catalog.items.length);
  assert.equal(model.source_counts.reference_records,sources.length);
  for(const c of catalog.items){const x=model.items.filter(x=>x.collection==='catalogue'&&x.source_id===c.id);assert.equal(x.length,1,c.id);assert.equal(x[0].adoption,c.status);assert.equal(x[0].area_maturity,c.maturity);assert.equal(x[0].url,c.doc||c.url);}
- for(const r of sources){const x=model.items.filter(x=>x.collection==='reference'&&x.source_id===r.id);assert.equal(x.length,1,r.id);assert.equal(x[0].evidence,r.evidence_class);assert.equal(x[0].status,r.status);assert.equal(x[0].confidence,r.confidence.level);assert.ok(x[0].url.endsWith('#'+r.id));assert.equal(x[0].adoption,undefined);assert.equal(x[0].area_maturity,undefined);}
+ for(const r of sources){const x=model.items.filter(x=>x.collection==='reference'&&x.source_id===r.id);assert.equal(x.length,1,r.id);assert.equal(x[0].evidence,r.evidence);assert.equal(x[0].status,r.status);assert.equal(x[0].confidence,fullSources.get(r.id).confidence.level);assert.ok(x[0].url.endsWith('#'+r.id));assert.equal(x[0].adoption,undefined);assert.equal(x[0].area_maturity,undefined);}
 });
 
 test('real body incidents, canonical IDs, aliases and unplaced sources have useful exact destinations',()=>{
@@ -31,6 +33,8 @@ test('real body incidents, canonical IDs, aliases and unplaced sources have usef
  assert.ok(query('snap fits').some(x=>x.url.endsWith('/docs/compliant')));
  for(const q of ['pem-consumer-electronics-design-guide-2021','pem-ce-guide-2021'])assert.ok(query(q).some(x=>x.url.endsWith('/references/fasteners-and-hardware#pem-consumer-electronics-design-guide-2021')));
  assert.ok(query('abbud-riveted-joints').some(x=>x.url.endsWith('/references/unplaced#abbud-riveted-joints')));
+ const seat=model.items.find(x=>x.url.endsWith('#move-the-head-seat-to-reach-a-standard-screw-length'));
+ assert.match(seat.summary,/If the computed length/);assert.doesNotMatch(seat.summary,/What happened|Incident:/);
  assert.deepEqual(query('zz-no-such-fixture-599'),[]);
 });
 
@@ -50,7 +54,12 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(html.includes('Outside-tool adoption'));
  assert.ok(html.includes('value="candidate"'));
  assert.ok(html.includes('Full catalogue'));
- assert.ok(html.includes('/catalog/discovery.json'));
+ assert.ok(html.includes('About these results'));
+ assert.match(html, /<details class="discover-group" data-group="references"/);
+ assert.ok(!/<details class="discover-group"[^>]*\bopen/.test(html), 'no-script groups start collapsed');
+ assert.ok(html.includes('/discovery.json'));
+ assert.ok(!/<img[^>]*src="https?:/.test(html), 'site-owned images stay same-origin under real CSP');
+ assert.match(html, /<\/span> <span class="result-summary">/, 'title/summary remain separate search words');
  // Budget is for compact links/search metadata, not a second full reference table or article copies.
  assert.ok(Buffer.byteLength(html)<900000,'initial HTML must remain compact');
  assert.ok(gzipSync(html).length<140000,'initial gzip budget');

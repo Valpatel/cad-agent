@@ -391,14 +391,14 @@ await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body
 
 // A derived search view: no new source identity and no mutation of the catalogue/reference machine feeds.
 const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN, revision, pageURL });
-await writeFile(path.join(out, 'catalog/discovery.json'), JSON.stringify(discovery) + '\n');
+await writeFile(path.join(out, 'discovery.json'), JSON.stringify(discovery) + '\n');
 await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
   description: 'Find tools, guides, practical lessons and reference records by topic.',
   body: discoveryHTML(discovery, { areas: YAML.parse(await read('docs/areas.yaml')) }),
   md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
 await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
   + '- [Full catalogue](/catalog)\n- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
-  + 'Derived search metadata: /catalog/discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
+  + 'Derived search metadata: /discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
 // CAD_AGENT_REFERENCES_HEALTH: the weekly link check's JSON (its references-health artifact), to show each record's

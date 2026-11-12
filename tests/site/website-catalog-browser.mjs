@@ -33,8 +33,8 @@ const fail = (where, what) => problems.push(`${where}: ${what}`);
 
 // `init`: a script to run before the page's own (to break something on purpose); `fails`: a page error it causes;
 // `forced`: 'active' emulates forced colours (Windows High Contrast and the like).
-async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none' } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced });
+async function open(route, { width = 1366, height = 900, js = true, motion = 'no-preference', block = null, init = null, fails = null, forced = 'none', color = 'light' } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, javaScriptEnabled: js, reducedMotion: motion, forcedColors: forced, colorScheme: color });
   const page = await context.newPage();
   const seen = [];
   if (block) await page.route(`**${block}`, r => r.abort());
@@ -106,7 +106,58 @@ const firstResultTop = page => page.evaluate(() => {
   return el ? Math.round(el.getBoundingClientRect().top) : null;
 });
 
+// Shared Explore uses the existing gallery, with compact source/incident links and the same browser/runtime gates.
+async function sharedDiscoveryChecks() {
+  const cases = [
+    ['counterbores', '/docs/common-issues#issue-'],
+    ['disassembly', '/lessons/process/user-intent-and-requirements#treat-doesnt-block-disassembly-as-a-hard-requirement'],
+    ['snap fits', '/docs/compliant'],
+    ['pem-consumer-electronics-design-guide-2021', '/references/fasteners-and-hardware#pem-consumer-electronics-design-guide-2021'],
+    ['pem-ce-guide-2021', '/references/fasteners-and-hardware#pem-consumer-electronics-design-guide-2021'],
+    ['abbud-riveted-joints', '/references/unplaced#abbud-riveted-joints'],
+  ];
+  for (const width of [320, 1366]) for (const color of ['light', 'dark']) {
+    const {page, done} = await open('/explore', {width, color});
+    try {
+      const box = page.getByRole('searchbox', {name: 'Search everything'});
+      const images = await page.locator('.discover-demos img').evaluateAll(xs => xs.map(x => ({src:x.getAttribute('src'),loaded:x.complete && x.naturalWidth>0})));
+      if (images.length !== 3 || images.some(x => !x.loaded || !x.src.startsWith('/'))) fail('Explore images', JSON.stringify(images));
+      const start = await box.boundingBox();
+      if (!start || start.y > 400) fail('Explore', `${width}px ${color}: search starts below the first view`);
+      const before = await page.evaluate(() => ({height: document.documentElement.scrollHeight, nodes: document.querySelectorAll('*').length,
+        visible: [...document.querySelectorAll('[data-item]')].filter(x => x.checkVisibility()).length}));
+      if (before.height > 7000 || before.nodes > 7300 || before.visible > 15) fail('Explore', `${width}px ${color}: unbounded default ${JSON.stringify(before)}`);
+      for (const [q, href] of cases) {
+        await box.fill(q);
+        await page.waitForFunction(needle => [...document.querySelectorAll('[data-item] a')].some(a => a.closest('[data-item]').checkVisibility() && new URL(a.href).pathname.concat(new URL(a.href).hash).startsWith(needle)), href);
+        if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail('Explore', `${width}px ${color}: ${q} overflows`);
+      }
+      await box.fill('agentcad');
+      const roles = await page.locator('[data-item]').evaluateAll(xs => xs.filter(x => x.checkVisibility()).map(x => x.textContent));
+      if (!roles.some(x => x.includes('Adoption: candidate')) || !roles.some(x => x.includes('Source: Read'))) fail('Explore', 'shared-URL adoption and evidence roles disappeared');
+      await box.fill('zz-no-such-fixture-599');
+      if ((await visible(page)).length || !await page.getByText('No matches. Try fewer words or clear the filters.', {exact:true}).isVisible()) fail('Explore', 'empty query retains stale matches or hides recovery');
+      await page.getByRole('button', {name:'Clear search and filters'}).click();
+      if (await box.inputValue() || !(await visible(page)).length) fail('Explore', 'clear does not recover');
+      for (const q of ['counterbores','disassembly']) { await page.getByRole('link', {name:q,exact:true}).click(); await page.waitForURL(u => u.searchParams.get('q') === q); }
+      await page.goBack(); if (await box.inputValue() !== 'counterbores') fail('Explore', 'Back lost the deliberate query');
+      await page.goForward(); if (await box.inputValue() !== 'disassembly') fail('Explore', 'Forward lost the deliberate query');
+    } finally { await done(); }
+  }
+  for (const options of [{js:false}, {block:'/kit/gallery.js'}]) {
+    const {page, done} = await open('/explore', {width:320, ...options});
+    try {
+      if (!(await page.getByRole('link', {name:'Full catalogue',exact:true}).count())) fail('Explore fallback', 'full catalogue link missing');
+      if (await page.getByRole('searchbox').isVisible()) fail('Explore fallback', 'non-working search remains visible');
+      if (await page.locator('[data-gallery-tabs]').isVisible() || await page.getByRole('checkbox').first().isVisible()) fail('Explore fallback', 'non-working type/topic filters remain visible');
+      await page.locator('details[data-group=references] > summary').click();
+      if (!await page.locator('a[href$="/references/unplaced#abbud-riveted-joints"]').isVisible()) fail('Explore fallback', 'unplaced source link is not browsable through its native group');
+    } finally { await done(); }
+  }
+}
+
 try {
+  await sharedDiscoveryChecks();
   // Without script: every entry shows, grouped by kind, and nothing that needs script is offered.
   {
     const { page, done } = await open('/catalog', { js: false });

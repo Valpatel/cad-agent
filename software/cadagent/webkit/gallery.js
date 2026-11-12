@@ -313,6 +313,8 @@ export class CadGallery extends Base {
     let shown = 0;
     for (const it of this.#items) { it.visible = matches(it, s, patterns); if (it.visible) shown++; it.el.hidden = !it.visible; }
     for (const g of this.groups) {
+      // Native collapsed groups are the compact no-script fallback; enhance only opted-in views.
+      if (this.hasAttribute('data-open-groups') && g.localName === 'details') g.open = true;
       const its = [...g.querySelectorAll('[data-item]')].map(el => this.#items.find(it => it.el === el)).filter(Boolean);
       let n = 0;
       for (const it of its) { if (it.visible) n++; it.el.toggleAttribute('data-over', overview && it.visible && n > this.limit); }

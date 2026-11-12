@@ -1,13 +1,13 @@
 {
   "source": {
     "repo": "https://github.com/mvalancy/j501-agx-orin",
-    "revision": "2f3853ca6f779634e297120ccf1749ace30b9b28",
+    "revision": "97d7c7e46e11d5d52c4c15879dbe09deac07057c",
     "captured_geometry_revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
     "cad_tree": "19f3491aa5188b0067b1318b7d07d1b409bdf63d",
     "collection_context": "Legacy captured assembly meshes have no embedded export producer revision. Their CAD source tree equals incorporated main; no new CAD regeneration claimed. Optional antenna context generated separately by the incorporated source recipe.",
     "generator": {
       "file": "tools/site/figures/pack-j501.py",
-      "sha256": "e78f3bb963adb25e70ca0aea484805ed9fcf3844148881b856dbaebe7506b5b6"
+      "sha256": "a0b26f5bcc760ce5c3d6e122d3fc67953e739b2b3851316ffbd922acb241c6d7"
     },
     "board_geometry_check": {
       "source": "references/hardware/carrier-full.stl",
@@ -99,6 +99,14 @@
       "captured-view/antenna_bulkheads.stl": {
         "sha256": "9cc0322818d2b56a05235a0ba1d712b7ab863d986051217eaadbcf328f938c03",
         "bytes": 251284
+      },
+      "incorporated-original-context/cell_1_antenna.stl": {
+        "sha256": "311b7ba6660994508ef0df35534256f3f53be2a323dfe7c3556661f9044dec17",
+        "bytes": 57484
+      },
+      "incorporated-original-context/cell_2_antenna.stl": {
+        "sha256": "1f81a6ccfdc025d197d9e203840142fdd1caffd807298deb4377277f179ebaee",
+        "bytes": 57484
       },
       "incorporated-original-context/wifi_1_antenna.stl": {
         "sha256": "4aa970157d32ba071915cc1ab6986a5dff23013f5356c9609446d36aff078679",
@@ -360,6 +368,32 @@
             66.61
           ]
         },
+        "cell_1_antenna": {
+          "original_triangles": 1148,
+          "display_triangles": 1020,
+          "max_vertex_move_mm": 0.20750413330397036,
+          "source_bounds_mm": [
+            208.5,
+            42.5,
+            58,
+            225.5,
+            50.5,
+            102.80000305175781
+          ]
+        },
+        "cell_2_antenna": {
+          "original_triangles": 1148,
+          "display_triangles": 1020,
+          "max_vertex_move_mm": 0.20750413330397036,
+          "source_bounds_mm": [
+            208.5,
+            141.5,
+            58,
+            225.5,
+            149.5,
+            102.80000305175781
+          ]
+        },
         "wifi_1_antenna": {
           "original_triangles": 1148,
           "display_triangles": 1104,
@@ -421,18 +455,19 @@
       "agx_module": "Separate NVIDIA vendor mesh omitted: no independent redistribution basis established."
     },
     "antenna_context": {
-      "manifest_sha256": "3832f6017fa81a7e9192385b8d264b18fd544c0ededeb1984c2f02652aa66e52",
+      "manifest_sha256": "29f03cb10d9e3c026fba59de38159267c7eb261e0216ff36d03a460c2b179868",
       "manifest": {
-        "schema": "j501-original-showcase-context-v1",
+        "schema": "j501-original-showcase-context-v2",
         "units": "mm",
         "coordinate_frame": "existing enclosure assembly; no lid/part transforms changed",
         "source_sha256": {
           "cad/parameters.json": "891a32c46accbe08481b5f00448df6029af71164db0ac2bb7b7c6794e9b3a51a",
           "cad/hardware.py": "281d3a6053d8dfb153a9bab52151abba7495994778bafb632d89c709a4961b0d",
-          "tools/showcase_antennas.py": "613f400ec1e27c233409949ae64cc6b82cc1da24fd378fdd1e03d4ede3c5c0b6",
-          "tools/showcase-antenna-reference.json": "7a074d869cb8d734c907d620f9c7aabe42186f00e3b33d0a59382d27fcf08c4f"
+          "tools/showcase_antennas.py": "eed4b24f644b45aba135da0bffea9fc4307f10b63cae2cfff4d98ff28504cd1b",
+          "tools/showcase-antenna-reference.json": "7a074d869cb8d734c907d620f9c7aabe42186f00e3b33d0a59382d27fcf08c4f",
+          "tools/showcase-cellular-reference.json": "f32e949b1784a2e455cf407e1a0a7f42d269bfba783ab1861d681ab0efae96b7"
         },
-        "recipe_revision_sha256": "613f400ec1e27c233409949ae64cc6b82cc1da24fd378fdd1e03d4ede3c5c0b6",
+        "recipe_revision_sha256": "eed4b24f644b45aba135da0bffea9fc4307f10b63cae2cfff4d98ff28504cd1b",
         "mechanical_reference": {
           "manufacturer": "TE Connectivity / Linx",
           "mpn": "ANT-2.4-CW-RAH-RPS",
@@ -462,22 +497,149 @@
           },
           "rights": "Proprietary reference files stay untracked. Original geometric recipe uses numerical facts only; no vendor CAD, PDF, image, logo, markings or tessellation redistributed."
         },
+        "cellular_reference": {
+          "manufacturer": "Taoglas",
+          "mpn": "TG.22.0152",
+          "role": "proposed compact cellular visual reference only; not selected build hardware",
+          "checked_utc": "2026-11-12",
+          "datasheet_url": "https://www.taoglas.com/datasheets/TG.22.0152.pdf",
+          "document": "SPE-11-8-112/E/SS",
+          "private_reference_sha256": "02043b24baef5c8ee43238535d3c45f19dcf77f72ee8a47923fc2453e7a5414c",
+          "connector": "RP-SMA(M) fixed right angle; drawing detail SMA(M) RA RP, 1/4-36UNS-2B",
+          "mechanical_drawing_page": 5,
+          "dimensions_mm": {
+            "overall_height": 44.8,
+            "overall_height_tolerance": 2,
+            "housing_length": 38,
+            "housing_length_tolerance": 2,
+            "lateral_extent": 17,
+            "lateral_tolerance": 0.5,
+            "housing_diameter": 7.8,
+            "housing_diameter_tolerance": 0.3,
+            "connector_axial_length": 8.4,
+            "connector_length_tolerance": 0.3,
+            "connector_hex_across_flats": 8
+          },
+          "manufacturer_band_description": "GSM/DCS/PCS/UMTS/CDMA/GPRS/EDGE/HSPA, 800-2200 MHz; older penta-band cellular reference, not an LTE/5G qualification",
+          "limits": [
+            "installed modem and radio band requirements remain unknown/unselected",
+            "not an assertion of LTE/5G, low-band, ground-plane, pigtail or MIMO suitability",
+            "no connector engagement, physical fit, collision or RF qualification",
+            "not a purchase recommendation; existing purchase BOM remains unchanged"
+          ],
+          "rights": "Manufacturer datasheet retained privately; only cited numerical facts and original simplified geometry are tracked. No vendor PDF, image, CAD, tessellation, logo or markings redistributed."
+        },
         "optional": true,
         "display_only": true,
         "printable": false,
         "purchase_bom": false,
         "physical_fit_verified": false,
         "rf_qualified": false,
-        "seating_assumption": "coupling plane on visual nut outer face, X=-2.5; washer .5 + nut 2 mirrored from cad/hardware.py; no mating thread detail",
-        "representation": "original closed 32-sided swept tube; illustrative elbow/shoulder/flat tip; black color including coupling; no markings, threads, pins, internals or vendor mesh",
+        "seating_assumption": "coupling planes on visual nut outer faces, X=-2.5 / W+2.5; washer .5 + nut 2 from cad/hardware.py; no mating thread detail",
+        "representation": "original closed 32-sided swept tubes; per-part illustrative elbow/shoulder/flat tip; black color including coupling; no markings, threads, pins, internals or vendor mesh",
         "limits": [
           "not manufacturing geometry",
           "not a connector fit or collision qualification",
           "not radio, band, ground-plane, pigtail or MIMO selection",
-          "CELL sites unchanged; fitted lid stays in existing position",
+          "bulkhead sites unchanged; fitted lid stays in existing position",
+          "cellular reference is older penta-band 800-2200 MHz, not LTE/5G or installed-modem qualification",
           "25.6 mm housing datum is not the complete generated envelope"
         ],
         "parts": [
+          {
+            "name": "cell_1_antenna",
+            "file": "cell_1_antenna.stl",
+            "sha256": "311b7ba6660994508ef0df35534256f3f53be2a323dfe7c3556661f9044dec17",
+            "bounds_mm": [
+              [
+                208.5,
+                42.5,
+                58
+              ],
+              [
+                225.5,
+                50.5,
+                102.80000305175781
+              ]
+            ],
+            "triangles": 1148,
+            "color": [
+              0.06,
+              0.065,
+              0.075
+            ],
+            "category": "context",
+            "visible": true,
+            "optional": true,
+            "display_only": true,
+            "reference_key": "cellular_reference",
+            "representation": "original circularized 8 mm coupling, illustrative 4.7 mm bend and flat tip; no hex corners/threads/contact/markings; approximately 17x8x44.8 mm generated envelope, separate from vendor tolerances",
+            "mount": {
+              "label": "CELL 1",
+              "origin_mm": [
+                208.5,
+                46.5,
+                62
+              ],
+              "outward_axis": [
+                1,
+                0,
+                0
+              ],
+              "up_axis": [
+                0,
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "name": "cell_2_antenna",
+            "file": "cell_2_antenna.stl",
+            "sha256": "1f81a6ccfdc025d197d9e203840142fdd1caffd807298deb4377277f179ebaee",
+            "bounds_mm": [
+              [
+                208.5,
+                141.5,
+                58
+              ],
+              [
+                225.5,
+                149.5,
+                102.80000305175781
+              ]
+            ],
+            "triangles": 1148,
+            "color": [
+              0.06,
+              0.065,
+              0.075
+            ],
+            "category": "context",
+            "visible": true,
+            "optional": true,
+            "display_only": true,
+            "reference_key": "cellular_reference",
+            "representation": "original circularized 8 mm coupling, illustrative 4.7 mm bend and flat tip; no hex corners/threads/contact/markings; approximately 17x8x44.8 mm generated envelope, separate from vendor tolerances",
+            "mount": {
+              "label": "CELL 2",
+              "origin_mm": [
+                208.5,
+                145.5,
+                62
+              ],
+              "outward_axis": [
+                1,
+                0,
+                0
+              ],
+              "up_axis": [
+                0,
+                0,
+                1
+              ]
+            }
+          },
           {
             "name": "wifi_1_antenna",
             "file": "wifi_1_antenna.stl",
@@ -504,6 +666,8 @@
             "visible": true,
             "optional": true,
             "display_only": true,
+            "reference_key": "mechanical_reference",
+            "representation": "unchanged original Wi-Fi approximation; approximately 17.1x7.8x26 mm envelope",
             "mount": {
               "label": "WIFI 1",
               "origin_mm": [
@@ -549,6 +713,8 @@
             "visible": true,
             "optional": true,
             "display_only": true,
+            "reference_key": "mechanical_reference",
+            "representation": "unchanged original Wi-Fi approximation; approximately 17.1x7.8x26 mm envelope",
             "mount": {
               "label": "WIFI 2",
               "origin_mm": [
@@ -572,17 +738,21 @@
       }
     }
   },
-  "model_sha256": "5289b79c61a617dd8a59ef7a556cc70d541f3728780104f3aa195f0f5392fe14",
-  "binary_sha256": "c497bf320f16edee9e3f1a70f881d2ea1e5c36494f66ba107b46029c25c1f478",
-  "triangles": 277482,
-  "bytes": 805333,
+  "model_sha256": "1e5e76ac3d1064cf076b11bbc504fb057b80a232b10fe5b4c9e5a80147dffa2e",
+  "binary_sha256": "98809a6dc573b81d0d75efbd005db69139ca8585fa36e7da5f778ae4e4a93f63",
+  "triangles": 279522,
+  "bytes": 806153,
   "poster": {
     "file": "tools/site/assets/models/j501.webp",
-    "sha256": "25af6c377c161c3823261846dbff08f476946228672bc0854c5f7d595b071833",
+    "sha256": "e9b6d121f078bc65756f75ed484e7cd6e72c7746f61e53cc0ae1fd7d1832aa84",
     "width": 1200,
     "height": 1200,
-    "model_sha256": "5289b79c61a617dd8a59ef7a556cc70d541f3728780104f3aa195f0f5392fe14",
+    "model_sha256": "1e5e76ac3d1064cf076b11bbc504fb057b80a232b10fe5b4c9e5a80147dffa2e",
     "renderer_sha256": "929264890b5619e2172398121b4f67fd4b58f8420b9acbec9548aaab6edd2590",
+    "actual_parts": 23,
+    "canvases": 1,
+    "controls": 1,
+    "explode_and_reset": true,
     "method": "shared cad-model snapshot at its recorded opening view, turn=0"
   }
 }

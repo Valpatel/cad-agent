@@ -55,12 +55,13 @@ try {
     server.stdout.on('data', d => { const m = String(d).match(/http:\/\/[\d.]+:\d+/); if (m) ok(m[0]); });
     server.on('exit', c => fail(new Error(`preview server exited ${c}`)));
   });
-  const page = await browser.newPage({ viewport: { width: 700, height: 700 } });
+  const page = await browser.newPage({ viewport: { width: 700, height: 700 }, reducedMotion: 'reduce' });
   page.on('pageerror', e => { throw e; });
   await page.goto(base + '/', { waitUntil: 'load' });
   const posters = {};
   for (const name of MODELS) {
-    const url = await page.evaluate(async ({ name, size }) => {
+    const expectedParts = JSON.parse(await readFile(path.join(root,'tools/site/assets/models',`${name}.json`),'utf8')).parts.length;
+    const frame = await page.evaluate(async ({ name, size, expectedParts }) => {
       document.body.replaceChildren();
       const el = Object.assign(document.createElement('cad-model'), { style: 'width:600px;aspect-ratio:1/1' });
       el.setAttribute('src', `/web/models/${name}.json`);
@@ -70,8 +71,20 @@ try {
       await customElements.whenDefined('cad-model');
       await el.ready;
       if (el.dataset.state !== 'ready') throw new Error(`${name}: ${el.dataset.error}`);
-      return el.snapshot(size, size, 'image/webp', 0.9);
-    }, { name, size: SIZE });
+      const canvases=el.querySelectorAll('canvas').length, controls=el.querySelectorAll('.cad-model-ui').length;
+      if(el.stats.parts!==expectedParts || canvases!==1 || controls!==1)throw Error('Real viewer inventory or allocation disagrees');
+      let exploded=null;
+      if(name==='j501') {
+        const button=[...el.querySelectorAll('button')].find(b=>b.textContent==='Explode');
+        button.click();if(button.getAttribute('aria-pressed')!=='true')throw Error('Explode did not activate');
+        exploded=el.snapshot(600,600,'image/webp',.9);
+        button.click();if(button.getAttribute('aria-pressed')!=='false')throw Error('Assembled reset did not activate');
+      }
+      return {url:el.snapshot(size,size,'image/webp',.9),stats:el.stats,canvases,controls,exploded};
+    }, { name, size: SIZE, expectedParts });
+    const url=frame.url;
+    if(frame.exploded)await writeFile('/tmp/cad606-j501-final-exploded.webp',Buffer.from(frame.exploded.split(',')[1],'base64'));
+    console.log(JSON.stringify({model:name,actual_viewer:frame.stats,canvases:frame.canvases,controls:frame.controls,explode_and_reset:!!frame.exploded}));
     const bytes = Buffer.from(url.split(',')[1], 'base64');
     if (bytes.toString('latin1', 8, 12) !== 'WEBP') throw new Error(`${name}: the browser did not encode WebP`);
     await writeFile(path.join(root, 'tools/site/assets/models', `${name}.webp`), bytes);
@@ -83,6 +96,7 @@ try {
       record.poster = {file:'tools/site/assets/models/j501.webp',sha256:createHash('sha256').update(bytes).digest('hex'),width:SIZE,height:SIZE,
         model_sha256:createHash('sha256').update(await readFile(path.join(root,'tools/site/assets/models/j501.json'))).digest('hex'),
         renderer_sha256:createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit/model.js'))).digest('hex'),
+        actual_parts:frame.stats.parts,canvases:frame.canvases,controls:frame.controls,explode_and_reset:!!frame.exploded,
         method:'shared cad-model snapshot at its recorded opening view, turn=0'};
       await writeFile(file,JSON.stringify(record,null,2)+'\n');
     }

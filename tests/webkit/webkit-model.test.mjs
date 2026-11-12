@@ -102,19 +102,15 @@ test('J501 showcase includes the real board mesh with bounded render-only simpli
   assert.deepEqual(board.bounds_mm, [15, 11.62, 13.5, 191.35, 180.5, 38.01]);
   assert.equal(model.source.board_reference.repository, 'https://github.com/Seeed-Studio/OSHW-Jetson-Series');
   assert.equal(model.source.board_reference.board.inflated_sha256, 'a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793');
-  assert.equal(model.source.revision, '2f3853ca6f779634e297120ccf1749ace30b9b28');
+  assert.equal(model.source.revision, '97d7c7e46e11d5d52c4c15879dbe09deac07057c');
   assert.equal(model.source.captured_geometry_revision, '240be82ec5420e989dbfad07d76ab62ea3e83a50');
-  assert.equal(model.view.azimuth, -35, 'opening view faces the negative-X antenna side');
-  const receipt=JSON.parse(await readFile(path.join(root,'tools/site/assets/models/j501-source.json'),'utf8'));
-  const digest=b=>createHash('sha256').update(b).digest('hex');
-  assert.equal(receipt.poster.model_sha256, digest(await readFile(path.join(root,'tools/site/assets/models/j501.json'))));
-  assert.equal(receipt.poster.renderer_sha256, digest(await readFile(path.join(root,'software/cadagent/webkit/model.js'))));
-  assert.equal(receipt.poster.sha256, digest(await readFile(path.join(root,receipt.poster.file))));
+  assert.equal(model.view.azimuth, 0, 'opening view frames both opposite antenna sides');
+  assert.equal(model.parts.length, 23, 'complete source-bound showcase inventory');
   assert.equal(model.parts.find(p=>p.name==='cover')?.visible, true, 'lid is fitted in the initial view');
   assert.ok(!model.parts.some(p=>p.name==='agx_module'), 'unlicensed standalone NVIDIA mesh must not be shipped');
   assert.equal(model.source.generator.sha256, createHash('sha256').update(await readFile(path.join(root, model.source.generator.file))).digest('hex'), 'pack source identity');
   const antenna = model.source.antenna_context.manifest;
-  assert.equal(antenna.recipe_revision_sha256, '613f400ec1e27c233409949ae64cc6b82cc1da24fd378fdd1e03d4ede3c5c0b6');
+  assert.equal(antenna.recipe_revision_sha256, 'eed4b24f644b45aba135da0bffea9fc4307f10b63cae2cfff4d98ff28504cd1b');
   assert.equal(antenna.physical_fit_verified, false);
   assert.equal(antenna.rf_qualified, false);
   for (const name of ['wifi_1_antenna','wifi_2_antenna']) {
@@ -123,6 +119,16 @@ test('J501 showcase includes the real board mesh with bounded render-only simpli
     assert.equal(part.color, '#0f1113', name+': source RGB must be a supported CSS color, not a silently white array');
     assert.ok(part.bounds_mm[0]<-19 && part.bounds_mm[3]===-2.5, name+': outward-X at existing WiFi mounts');
     assert.ok(part.bounds_mm[2]>58 && part.bounds_mm[5]>84, name+': upward elbow placement');
+  }
+  assert.equal(antenna.cellular_reference.mpn, 'TG.22.0152');
+  assert.match(antenna.cellular_reference.manufacturer_band_description, /not an LTE\/5G qualification/);
+  for (const name of ['cell_1_antenna','cell_2_antenna']) {
+    const part=model.parts.find(p=>p.name===name);
+    assert.ok(part && part.visible && part.triangles>100, name+': source-owned opposite context mesh');
+    assert.equal(part.color, '#0f1113');
+    assert.deepEqual(part.explode, [1,0,0], name+': outward positive-X explosion');
+    assert.ok(part.bounds_mm[0]===208.5 && part.bounds_mm[3]===225.5, name+': existing CELL mount outer planes');
+    assert.ok(part.bounds_mm[2]===58 && Math.abs(part.bounds_mm[5]-102.8)<.001, name+': source cellular envelope');
   }
   for (const [name, p] of Object.entries(model.source.display_only.parts)) {
     assert.ok(p.max_vertex_move_mm < .7, name + ': display-only displacement bound');
@@ -144,4 +150,16 @@ test('loading counts actual received bytes without mixing compressed and decoded
     assert.ok(progress.every(([n,total])=>total===null||n<=total));
   }
   await assert.rejects(modelBytes(new Response('bad',{status:503})), /HTTP 503/);
+});
+
+test('J501 poster is bound to the actual source and shared renderer', async () => {
+  const receipt=JSON.parse(await readFile(path.join(root,'tools/site/assets/models/j501-source.json'),'utf8'));
+  const digest=b=>createHash('sha256').update(b).digest('hex');
+  assert.equal(receipt.poster.model_sha256, digest(await readFile(path.join(root,'tools/site/assets/models/j501.json'))));
+  assert.equal(receipt.poster.renderer_sha256, digest(await readFile(path.join(root,'software/cadagent/webkit/model.js'))));
+  assert.equal(receipt.poster.sha256, digest(await readFile(path.join(root,receipt.poster.file))));
+  assert.equal(receipt.poster.actual_parts, 23);
+  assert.equal(receipt.poster.canvases, 1);
+  assert.equal(receipt.poster.controls, 1);
+  assert.equal(receipt.poster.explode_and_reset, true);
 });

@@ -43,9 +43,9 @@ physical fit qualification. Keep the current Gyropup model/source bytes intact.
 
 ## J501 final source-bound display pack
 
-Product main `2f3853ca6f779634e297120ccf1749ace30b9b28` incorporates the
-original optional antenna recipe. The final pack contains 21 visible parts,
-277,482 display triangles and 805,333 compressed bytes. The lid is fitted at the
+Product main `97d7c7e46e11d5d52c4c15879dbe09deac07057c` incorporates the
+original optional four-antenna recipe. The final pack contains 23 visible parts,
+279,522 display triangles and 806,153 compressed bytes. The lid is fitted at the
 opening view; Explode exposes the real carrier PCB. The standalone NVIDIA module
 is omitted. See [attribution and limits](J501-NOTICE.md) and
 [input/recipe/mesh hashes](j501-source.json). The captured enclosure CAD input tree

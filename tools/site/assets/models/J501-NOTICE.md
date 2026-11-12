@@ -21,11 +21,15 @@ The enclosure and original project-generated cooler geometry retain their projec
 provenance. This board licence does **not** grant rights to separate NVIDIA model
 assets. The standalone `agx_module` vendor part is omitted from this display pack.
 
-The fitted lid and two optional original antenna display shapes come from product
-main `2f3853ca6f779634e297120ccf1749ace30b9b28`. The antenna recipe uses public
+The fitted lid and four optional original antenna display shapes come from product
+main `97d7c7e46e11d5d52c4c15879dbe09deac07057c`. The antenna recipe uses public
 manufacturer numerical dimensions, with no vendor drawing or vendor mesh copied.
 These optional context parts do not establish RF selection, physical connector fit,
 purchase BOM or print qualification. Their exact source/recipe/artifact hashes and
 placement assumptions are retained in `j501-source.json`. The original captured
 assembly exports have no embedded producer revision; CAD input tree equality binds
 them to this main without claiming a fresh CAD regeneration.
+
+The opposite CELL pair uses the separately cited Taoglas TG.22.0152 mechanical
+reference. Its older 800–2200 MHz penta-band description is not an LTE/5G or
+installed-modem qualification. Neither reference is a selected purchase part.

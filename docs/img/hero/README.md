@@ -128,3 +128,18 @@ preference (the existing image-consumer lesson applies). Preserve that failed
 receipt. The next producer selects explicit generated finished desktop/mobile
 stills in the parent picture, tests real pixels twice, and rejects a deliberately
 animated still. The hero now uses the existing CSS-only safe-vector contract.
+
+### Whole-style reset: cinematic sci-fi workshop
+
+The owner rejected the entire prior human/robot cartoon style as sloppy and then
+explicitly selected **cinematic sci-fi workshop**. Stop incremental edits to that
+illustration; none of its captures is art acceptance. The replacement is authored
+in `tools/site/figures/workshop_scene.py`: one consistent projected diorama,
+graphite precision machinery, articulated maker arms, a warm foreground human
+hand/input station and a physically mounted luminous design core. The eight-second
+story constructs a successor machine, probes its access, receives human feedback,
+revises the joint/reinforcement, and shares the improved design with a second
+anchored station. No portraits, floating paper or random particles. Review the
+new storyboard poses before presenting a new headed prototype as improved art.
+Evidence-backed computation cards, real model sources and loader fixes remain
+separate requirements and are preserved.

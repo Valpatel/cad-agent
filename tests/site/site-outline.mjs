@@ -130,3 +130,118 @@ export const lowContrast = (page, only = null) => page.evaluate(only => {
     }
     return [...new Set(low)];
   }, only);
+
+/** Actual wheel input at the reader tree's upper boundary must not chain into an article scroll,
+ * whose correctly preserved section tracker would otherwise pull the tree away from its search fields. */
+export async function readerBoundaryProblems(browser, base) {
+  const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-boundary-'));
+  const snapshot=page=>page.evaluate(()=>{
+    const p=document.querySelector('.cad-nav-panel'),s=document.querySelector('.explore-nav-search'),r=s.getBoundingClientRect();
+    return {article:scrollY,panel:p.scrollTop,searchTop:r.top,searchBottom:r.bottom,contain:getComputedStyle(p).overscrollBehaviorY,current:[...document.querySelectorAll('.cad-nav-outline a[aria-current=location]')].map(a=>a.hash)};
+  });
+  const quiet=page=>page.evaluate(()=>new Promise(resolve=>{
+    let prior='',same=0;const until=setTimeout(()=>resolve(false),2000);
+    const tick=()=>{const p=document.querySelector('.cad-nav-panel'),now=scrollY+':'+p.scrollTop;if(now===prior)same++;else same=0;prior=now;if(same>=12){clearTimeout(until);resolve(true);}else requestAnimationFrame(tick);};requestAnimationFrame(tick);
+  }));
+  for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
+    const page=await browser.newPage({viewport});
+    try{
+      await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+      await scrollOutline(page,6000);await quiet(page);
+      const initial=await snapshot(page);if(!initial.current.length)problems.push('reader boundary: no active article heading at '+JSON.stringify(viewport));
+      const panel=page.locator('.cad-nav-panel');const box=await panel.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+Math.min(150,box.height/2));
+      await page.mouse.wheel(0,-10000);await page.waitForFunction(()=>document.querySelector('.cad-nav-panel').scrollTop===0);await quiet(page);
+      const before=await snapshot(page);await page.mouse.wheel(0,-300);if(!await quiet(page))problems.push('reader boundary: input never settled');const after=await snapshot(page);
+      states.push({viewport,initial,before,after});
+      if(after.article!==before.article||after.panel!==0||after.searchTop<0||after.searchBottom>viewport.height)problems.push('reader boundary: lost search '+JSON.stringify({viewport,before,after}));
+      // A keyboard user can still reach and type in the global search field at the top.
+      const search=page.getByRole('searchbox',{name:'Search all knowledge'});
+      const exposed=await search.evaluate(el=>{const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===el;});
+      const labelExposed=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
+      if(!exposed||!labelExposed)problems.push('reader boundary: global search is covered');
+      await search.click();await search.fill('counterbores');if(await search.inputValue()!=='counterbores')problems.push('reader boundary: search input inaccessible');
+      if(viewport.width===1440&&viewport.height===900){
+        const cover=await page.addStyleTag({content:'cad-nav [data-nav-controls]{position:static!important}cad-nav .cad-nav-panel::before{display:block!important}'});
+        const covered=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return !el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
+        states.push({legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected');await cover.evaluate(el=>el.remove());
+        await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:auto!important}'});
+        await page.mouse.move(box.x+box.width/2,box.y+150);await page.mouse.wheel(0,-300);await page.waitForFunction(y=>scrollY<y,before.article);await quiet(page);
+        const negative=await snapshot(page);states.push({negative});
+        if(!(negative.article<before.article&&negative.panel>0))problems.push('reader boundary: old scroll-chain control did not reproduce the trap');
+      }
+      await scrollOutline(page,await page.evaluate(()=>document.documentElement.scrollHeight));await quiet(page);
+      const bottom=await page.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};return {host:rect(document.querySelector('cad-nav')),panel:rect(document.querySelector('.cad-nav-panel')),controls:rect(document.querySelector('[data-nav-controls]')),header:rect(document.querySelector('.site-header'))};});states.push({viewport,bottom});
+      if(bottom.controls.top<bottom.header.bottom||bottom.controls.bottom>viewport.height||bottom.panel.height<bottom.controls.height+44)problems.push('reader boundary: footer leaves controls or links without room '+JSON.stringify(bottom));
+    }finally{await page.close();}
+  }
+  for(const javaScriptEnabled of [true,false]){
+    const page=await browser.newPage({viewport:{width:390,height:844},javaScriptEnabled});
+    try{
+      await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.locator('.cad-nav-toggle').click();
+      const mode=await page.locator('.cad-nav-panel').evaluate(p=>({position:getComputedStyle(p).position,overflow:getComputedStyle(p).overflowY,contain:getComputedStyle(p).overscrollBehaviorY}));states.push({mobile:javaScriptEnabled,mode});
+      if(mode.position!=='static'||mode.overflow!=='visible'||mode.contain!=='auto')problems.push('reader boundary: mobile native page scrolling changed');
+    }finally{await page.close();}
+  }
+  await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));
+  console.log('Reader boundary evidence: '+evidence);return problems;
+}
+
+/** Keep the actual last/last/middle outline-click journey, including the engine's own click autoscroll.
+ * Also align a link natively at the panel's start: its center must clear the real sticky header. */
+export async function readerOutlineClickProblems(browser, base) {
+  const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-click-'));
+  const page=await browser.newPage({viewport:{width:1366,height:800}});
+  const settle=()=>page.evaluate(()=>new Promise(done=>{
+    let last=-1,still=0;const tick=()=>{if(scrollY===last){if(++still>15)return done();}else{still=0;last=scrollY;}requestAnimationFrame(tick);};tick();setTimeout(done,10000);
+  }));
+  const state=(link,alignment=null)=>link.evaluate((a,mode)=>{
+    // Capture the native alignment in the same task: queued tracking must not undo the planted CSS first.
+    if(mode==='zero'){const style=document.createElement('style');style.id='reader-zero-inset-control';style.textContent='cad-nav .cad-nav-panel{scroll-padding-top:0!important}';document.head.append(style);}
+    if(mode==='restored')document.getElementById('reader-zero-inset-control')?.remove();
+    if(mode)a.scrollIntoView({block:'start',behavior:'instant'});
+    const p=a.closest('.cad-nav-panel'),r=a.getBoundingClientRect(),c=p.querySelector('[data-nav-controls]').getBoundingClientRect();
+    return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
+  },alignment);
+  try{
+    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
+    await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight*.85));
+    await page.evaluate(()=>{document.documentElement.style.scrollBehavior='';scrollTo({top:0,behavior:'instant'});});
+    const links=page.locator('cad-nav .cad-nav-outline a');
+    for(const link of [links.nth((await links.count())-2),links.last()]){
+      await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await link.click();await settle();
+      if(await link.getAttribute('aria-current')!=='location')problems.push('reader click: smooth jump not marked');
+    }
+    await page.evaluate(()=>document.documentElement.style.scrollBehavior='auto');
+    const middle=links.nth(Math.floor((await links.count())/2));await middle.click();await settle();states.push({realMiddleClick:await state(middle)});
+    // Remove only the new inset: native start alignment must reproduce a link underneath the sticky controls.
+    const negative=await state(middle,'zero');states.push({negative});if(negative.hit)problems.push('reader click: zero-inset header coverage control was not rejected');
+    const corrected=await state(middle,'restored');states.push({corrected});if(!corrected.hit||parseFloat(corrected.padding)<corrected.controlsHeight)problems.push('reader click: link remains beneath sticky controls');
+    await middle.click();await settle();
+  }finally{
+    await page.screenshot({path:path.join(evidence,'final.png')});await page.close();
+    await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader click evidence: '+evidence);
+  }
+  return problems;
+}
+
+/** A fitting desktop tree must not become a wheel dead zone; containment follows actual overflow after edits. */
+export async function readerOverflowProblems(browser, base) {
+  const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-overflow-'));
+  const page=await browser.newPage({viewport:{width:1920,height:1080}});
+  const state=()=>page.locator('.cad-nav-panel').evaluate(p=>({fits:p.scrollHeight<=p.clientHeight+1,height:p.clientHeight,content:p.scrollHeight,contain:getComputedStyle(p).overscrollBehaviorY,position:getComputedStyle(p).position,measured:p.hasAttribute('data-scrollable'),article:scrollY}));
+  const current=()=>page.waitForFunction(()=>{const p=document.querySelector('.cad-nav-panel'),s=getComputedStyle(p);return s.position==='sticky'?(p.hasAttribute('data-scrollable')===(p.scrollHeight>p.clientHeight+1)):!p.hasAttribute('data-scrollable');});
+  try{
+    await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+    const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});await current();
+    const folded=await state();states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
+    const old=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:contain!important}'});const planted=await state();states.push({blanketContainRejected:planted.fits&&planted.contain!=='auto'});if(!(planted.fits&&planted.contain!=='auto'))problems.push('reader overflow: old blanket-contain control not rejected');await old.evaluate(el=>el.remove());
+    const box=await panel.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+60);await page.mouse.wheel(0,300);await page.waitForTimeout(400);
+    const wheel=await state();states.push({wheel});if(wheel.article<100)problems.push('reader overflow: actual wheel over fitting tree does not scroll article');
+    await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});await current();const expanded=await state();states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');
+    await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');await current();const filtered=await state();states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
+    await page.setViewportSize({width:1440,height:600});await current();const short=await state();states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
+    await page.setViewportSize({width:390,height:844});await current();const mobile=await state();states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
+  }finally{await page.close();await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader overflow evidence: '+evidence);}
+  return problems;
+}

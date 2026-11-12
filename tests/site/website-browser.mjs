@@ -17,7 +17,7 @@ import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
 import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './site-motion.mjs';
-import { outlineEntryState, scrollOutline, sameSectionOutlineProblems } from './site-outline.mjs';
+import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './site-outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -85,6 +85,7 @@ try {
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
+    ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base), ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
     ['fourbar', fourbarProblems],        // the four-bar animator on /docs/linkages (#159), below
     ['fanCurve', fanCurveProblems],      // the fan-curve explorer on /docs/fans (#160), below
@@ -2287,9 +2288,11 @@ async function foldProblems() {
 /** Jumps through the outline on a big screen (2560 x 1440, /docs/explore, the site's smooth scrolling), with the input
  * a desktop browser would give simulated, since headless browsers will not let a real wheel interrupt a smooth scroll
  * (#123 review 4):
- * - a wheel over the rail or the tree partway through the jump, and the page scroll it makes, releases it: the mark
+ * - a wheel over the rail partway through the jump, and the page scroll it makes, releases it: the mark
  *   follows the reading line, not the heading the reader turned away from;
  * - a wheel that only scrolls the tree (it can still scroll that way) leaves the jump marked;
+ * - actual wheel containment at the tree boundary is tested by readerBoundaryProblems; a sidebar wheel no longer
+ *   physically chains into the parent, so synthesizing it followed by forced article scroll would invent input;
  * - a jump whose scroll stalls for 300 ms partway (a frame slow to paint, #158) still marks its heading once it lands. */
 async function jumpProblems() {
   const out = [];
@@ -2319,7 +2322,7 @@ async function jumpProblems() {
     document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top + scrollY > 5000));
   if (far < 0) { await page.close(); return ['2560px /docs/explore: no heading 5000 px down, so the jump checks test nothing']; }
   const target = rail.nth(far), id = decodeURIComponent((await target.getAttribute('href')).slice(1)), name = await target.textContent();
-  for (const [where, sel] of [['rail', '.doc-rail a[href="#' + encodeURIComponent(id) + '"]'], ['tree', 'cad-nav a[aria-current=page]']]) {
+  for (const [where, sel] of [['rail', '.doc-rail a[href="#' + encodeURIComponent(id) + '"]']]) {
     await page.evaluate(() => { scrollTo({ top: 0, behavior: 'instant' }); document.querySelector('cad-nav .cad-nav-panel').scrollTop = 0; });
     await settle();
     await target.click();

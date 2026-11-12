@@ -8,6 +8,8 @@ plastic under the head and the limiter, and says how much of the clamp the joint
 on every joint in a file. **The strengths are a shear model calibrated to published pull-out tests, so a result is a
 starting point to test, not a rating. The coupon plan at the end says how to measure it.**
 
+**Learn from the original experiments.** We recommend Stefan Hermann’s [CNC Kitchen insert articles and videos](https://www.cnckitchen.com/blog/tips-and-tricks-for-heat-set-inserts) alongside this summary. For recovery, [read his removal tutorial](https://www.cnckitchen.com/blog/how-to-use-our-threaded-insert-removal-tool) or [watch the creator’s original video](https://www.youtube.com/watch?v=abA5hrbXfBw); the source explains and demonstrates the method better than a parts list alone.
+
 <img src="../img/inserts/section.svg" alt="Section of a printed boss with a M3 heat-set insert (McMaster-Carr 94459A140): hole 4.20 mm, 6.7 mm deep, wall 2.7 mm" width="960" height="386">
 
 ## Check a joint
@@ -340,6 +342,46 @@ Each cell is five specimens with the predicted value next to it, so a test can c
 Record the filament, the printer settings, the hole as printed, the iron, the insert's height afterwards, the room
 and the failure mode. Pull at 2 mm/min with a reaction plate that clears the boss. Read a clamp's preload at 0, 1 h,
 24 h and 168 h, then after 24 h at 50 °C.
+
+## Recover inserts before discarding a print
+
+**Preferred tool (owner preference): [CNC Kitchen Insert Removal Tool V2 for M2, M2.5 and M3](https://cnckitchenus.store/products/insert-removal-tool-for-m2-m2-5-m3).** This preference is not a measured comparison with other extractors. The current product still links the original V1 demonstration; keep its version separate from the [2025 tutorial](https://www.cnckitchen.com/blog/how-to-use-our-threaded-insert-removal-tool). Its cautions require an iron able to withstand tensile loading, adequate heat soak and gentle extraction. No V2 speed claim is adopted.
+
+```mermaid
+flowchart TD
+    I["Identify polymer + insert"] --> R["Recover with matched tool"]
+    R --> S["Separate + inspect"]
+    S --> T["Prototype reuse: re-test"]
+    class I here
+    class R near
+    class S,T out
+```
+
+The original method heats a screw engaged in the insert and pulls through that screw; its heating example is not a universal temperature/time recipe. Follow the actual tool, iron and polymer instructions. Let the hardware cool before handling. Keep recovered inserts labelled by original polymer: residual PLA is a reason not to assume reuse in PETG. Hermann limits uncertain recovered hardware to prototypes/noncritical uses; this page supplies no reused-insert strength rating. Separate metal from the rejected print, then check the intended recycler’s material/contamination rules—removing an insert alone does not establish recycling acceptance. [ref:cnckitchen-insert-removal-2025]
+
+<details>
+<summary>Exact McMaster extraction-tip alternatives and source limits</summary>
+
+The [McMaster heat-set insert extraction-tip category](https://www.mcmaster.com/products/heat-set-insert-extraction-tips/) lists these alternatives. Match the insert’s **thread and pitch**, plus the iron/tool interface; the shared 1/4-inch shank does not establish fit in a particular soldering iron. These are extraction tools, not installation tips or helical screw extractors.
+
+| Insert thread | Extraction-tip part |
+|---|---|
+| M2.5 × 0.45 | [92160A225](https://www.mcmaster.com/92160A225/) |
+| M3 × 0.5 | [92160A227](https://www.mcmaster.com/92160A227/) |
+| M4 × 0.7 | [92160A229](https://www.mcmaster.com/92160A229/) |
+| M5 × 0.8 | [92160A231](https://www.mcmaster.com/92160A231/) |
+| M6 × 1 | [92160A233](https://www.mcmaster.com/92160A233/) |
+
+The primary category was independently inspected on 2026-11-12; each listed row has a 1/4-inch shank. No M2 extraction row was observed in this family; this is not a claim that McMaster never stocks one. Masked price placeholders are not quotations. No purchase, compatibility test, manufacturer CAD download or tool placement is claimed for these workshop tools.
+
+</details>
+
+<details>
+<summary>Removal-source versions and reading receipt</summary>
+
+CNC Kitchen’s original article is dated 2025-01-06. Its embedded video and the V2 product’s linked demonstration name the older method; the current product title names V2. Complete article and product description/cautions were read on 2026-11-12, but the video and product photographs were not studied as test evidence. Original HTML SHA-256: tutorial `921cf2f55cc93168b415efee21326df7c207189cc54d4badce4773155e804a02`; product `7cd1d0e561eb639a8b65a73ad892c69133731411108e47bdd4b55c837e6961f7`. No media or article text is republished. Exact iron compatibility, recovered joint capacity and recycling acceptance remain untested. The product is a version cross-check, not independent corroboration or a second document-count promotion.
+
+</details>
 
 ## Limits
 

@@ -133,6 +133,8 @@ with blanks for the measured size and the fit) and the plan. Print the coupons i
 pin, bushing, bearing or insert in each hole, and `from_coupon(fit, cad_mm)` gives the offset to draw the part's
 holes with. Print them again when the printer, the filament or the slicer settings change.
 
+After an insert-fit experiment, use the [recovery guidance and CNC Kitchen’s original demonstration](inserts.md#recover-inserts-before-discarding-a-print) to separate hardware from rejected coupons. Record new versus recovered hardware, origin polymer and residue condition with the coupon result; do not silently mix reused inserts into a calibration for new ones. This is a recommended experiment record, not a new schema or an automatic reuse/strength check.
+
 ## From Python
 
 ```python

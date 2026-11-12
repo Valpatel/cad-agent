@@ -1,5 +1,33 @@
 # Source selection must not pass empty or import a different checkout
 
+## A silent PowerShell timeout needs its phase receipts
+
+On 2026-11-12, PR #636 at `0c16abe2375d11243819731c185184408d76eb85` failed
+[core 3.12 job 131447117175](https://github.com/Valpatel/cad-agent/actions/runs/43293915828/job/131447117175):
+
+```text
+test_actual_powershell_guide_checks_before_process_handoff[good]
+subprocess.TimeoutExpired: pwsh ... timed out after 20 seconds
+stdout_seq = [], stderr_seq = []
+1 failed, 3548 passed, 369 skipped, 24 subtests passed
+```
+
+The failed Ubuntu image was `20261111.370.1` (its published manifest advertises PowerShell 7.6.10).
+The same-run full job explicitly passed all four PowerShell cases on `20261101.360.1` (advertised 7.6.9),
+and the Windows guard selection passed. The installer test, checked guide and workflow were unchanged.
+This is an observed runtime/image boundary, not a diagnosis. The old job never reported whether its existing
+download and handoff JSON receipts were present, so even the reached phase remains unknown.
+
+**Rule:** retain bounded failure-only evidence at the existing subprocess boundary. A tiny inert-fixture entry
+receipt identifies script entry and the executing PowerShell version; existing download and handoff receipts
+bound later phases. Report only allowlisted receipt states and partial-output sizes. Preserve the same timeout
+exception if evidence collection itself fails, and keep successful execution silent. Never infer that a missing
+receipt proves a startup cause, increase a deadline from this observation, or replace the real checked guide.
+
+**Limits:** #640 is diagnostic work, not a fix for PowerShell startup or the old #636 failure. The fixtures perform
+no network download or real installation. Local synthetic controls do not execute PowerShell; local missing-runtime
+skips cannot replace the ordinary Windows/Linux CI consumers. Fresh exact-head normal CI remains required.
+
 ## Verify the installer at every actual entrance
 
 On 2026-11-07, issue322's real report flagged two instructions that pipe a mutable download into a shell.

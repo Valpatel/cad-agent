@@ -530,6 +530,8 @@ def run_plan_sequence(world: SequenceWorld, plan, *, options: AccessOptions = Ac
                 from cadagent.review.gates.fasteners import axial_tool_path
                 spec, axis = specs[ref["fastener"]]
                 try:
+                    if hasattr(world, "tool_sweeps"):
+                        world.tool_sweeps += 1
                     result = axial_tool_path(world.staged(tool_offsets), spec, axis, ref["tool"],
                         (tools or {}).get(ref["tool"]), world.names, ref["approach_mm"],
                         max_step_mm=options.max_step_mm, max_samples=options.max_samples, tol=tol)

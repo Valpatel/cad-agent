@@ -9,7 +9,7 @@
   },
   "fixed": ["base","rail"],
   "operations": [
-    {"id":"plate","type":"translate","members":["plate","fastener"],"requires":[],"path_mm":[[20,0,25],[0,0,25],[0,0,0]],"intent":"fixture source: plate translates above open rail channel, then descends between x=-6 and x=6 walls; fastener stays attached","tools":[{"fastener":"fastener","tool":"ordinary-driver","approach_mm":10}]},
+    {"id":"plate","type":"translate","members":["plate","fastener"],"requires":[],"path_mm":[[20,0,25],[0,0,25],[0,0,0]],"intent":"fixture source: plate translates above open rail channel, then descends between x=-6 and x=6 walls; fastener stays attached","tools":[{"fastener":"fastener","tool":"ordinary-driver","approach_mm":30}]},
     {"id":"lid","type":"translate","members":["lid"],"requires":["plate"],"path_mm":[[35,0,20],[0,0,20],[0,0,0]],"intent":"fixture source: roof closes z=13 only after plate insertion and axial driver withdrawal","tools":[]}
   ],
   "tool": {"ordinary":true,"identity":"ordinary straight hex driver: 2 mm shaft, 10 mm handle (synthetic bounded bench dimensions)","drive":"hex-test","segments":[{"d":2,"length":6},{"d":10,"length":12}],"swing":{"radius":5,"at":8,"thickness":2,"min_deg":60,"sectors":12}}

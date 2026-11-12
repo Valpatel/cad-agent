@@ -5,7 +5,7 @@
  "clearance_mm": 0,
  "source": {
   "revision": "1111111111111111111111111111111111111111",
-  "closure_sha256": "3b945f0ff67aa4dcaf81ad29d3d842b2e0f5058ec4086c9c1a9be5b01091ea33",
+  "closure_sha256": "14e248efd32601adaac010215b7d6fd00eb13d27cb790eb36ff0e2b59f1fbe73",
   "producer": "native assembly-plan bench/1",
   "tooling_sha256": "37760c740735ace1844f3bdc547264e61dfbb5166462c677aac65f41bdf2f114",
   "instances": {
@@ -136,7 +136,7 @@
     {
      "fastener": "fastener",
      "tool": "ordinary-driver",
-     "approach_mm": 10
+     "approach_mm": 30
     }
    ]
   },

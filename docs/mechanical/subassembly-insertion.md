@@ -63,4 +63,11 @@ removal at the identical occupied stage. Neither an internal pair assumption nor
 waive an earlier wall crossing. Unsupported process inverses and nested/concurrent motion are rejected.
 The tiny native fixture in `tests/fixtures/assembly-plan/` is a shared consumer and clearance regression,
 not evidence about any product or actual bought hardware. Its ordinary driver obstruction control preserves
-the full envelope and checks an alternative lid route, as recorded in the [control lesson](../../.agents/inbox/review/2026-11-12-tool-control-must-clear-later-component-paths.md).
+the full envelope and checks an alternative lid route, as recorded in the [assembly-access lesson](../lessons/mechanical/fasteners-and-assembly-access.md#separate-tool-approach-obstructions-from-component-path-obstructions).
+
+
+![Source-defined rail bench with finite plate and roof paths and two separate obstruction controls](../img/motion/assembly-plan-bench.svg)
+
+*Illustration from `tests/fixtures/assembly-plan/fixture.json`, drawn by `tools/figures/motion_figures.py`:
+source datums and authored waypoints, with separate negative controls. It is not a clearance measurement;
+`playback_gate` and actual world-vertex browser captures provide separate finite evidence.*

@@ -1212,8 +1212,9 @@ def test_native_serial_tool_approach_obstruction_and_stale_source_controls(tmp_p
     result = playback.run_plan_sequence(AssemblySequenceWorld(assembly), plan, fastener_specs=[spec], tools={"ordinary-driver":tool})
     assert all(r["insertion"] == "sampled-clear" for r in result["operations"])
     access = result["operations"][0]["tools"][0]
-    assert access["state"] == "blocked" and access["first_blocked_mm"] == 10
-    assert any(p["part"] == "blocker" for p in access["samples"][0]["blocked"])
+    assert access["state"] == "blocked" and access["first_blocked_mm"] == 20 and access["last_clear_mm"] == 21
+    assert access["samples"][0]["clear"]
+    assert any(p["part"] == "blocker" for p in access["samples"][-1]["blocked"])
     from cadagent.review.gates.fasteners import tool_access
     stage = AssemblySequenceWorld(assembly).staged({n:[0,0,0] if n != "lid" else [35,0,20] for n in assembly.names})
     assert tool_access(stage,spec,0,"ordinary-driver",tool,stage.names)["clear"]

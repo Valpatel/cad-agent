@@ -1,0 +1,63 @@
+{
+  "x_min_mm": 2,
+  "x_max_mm": 58,
+  "y_min_mm": 2,
+  "y_max_mm": 38,
+  "rib_width_mm": 2,
+  "rib_height_mm": 3,
+  "original_centers_y_mm": [
+    8,
+    32
+  ],
+  "center_grid_mm": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37
+  ],
+  "counterbores": [
+    {
+      "x_mm": 8,
+      "y_mm": 8,
+      "radius_mm": 3
+    },
+    {
+      "x_mm": 50,
+      "y_mm": 32,
+      "radius_mm": 3
+    }
+  ],
+  "clearance_mm": 1,
+  "rib_gap_mm": 2
+}

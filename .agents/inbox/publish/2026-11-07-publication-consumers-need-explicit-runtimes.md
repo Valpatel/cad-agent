@@ -57,6 +57,20 @@ do not install into a shared provider.
 interaction behavior or descendant cleanup. Preserve the build log instead of reconstructing execution from cache
 contents. Source/JSON checks do not replace the required browser CI.
 
+**Recurrence, 2026-11-12 UTC, #610 / PR #611:** at `be4dd6f3`, the author ran
+`node --test tests/site/website-references.test.mjs` under ambient Node20.20.2 without
+`CAD_AGENT_SITE`, `--client-diagrams` or a resource cap. The transitive default
+`builtSite()` producer completed; TAP reported 20 passing tests in 83.54 seconds.
+The helper removed its temporary build/log. A subsequent process snapshot found
+the three observed owned test/build PIDs absent. This establishes neither zero
+browser launches nor rendered validation or complete descendant accounting. No
+local browser rerun was used to repair that evidence. The author also initially
+ran the map suite under Node20: its explicit runtime guard failed; with existing
+Node22.23.4 first on PATH, the complete map suite passed 28 with one explicit diagram
+skip at README-only correction `34648aa5` (1044 folders). The cause and corrective
+rule are the transitive-producer/runtime rules above; normal hosted browser CI is
+still required. No runtime, dependency, browser or guard was changed.
+
 ## Count browser worker tasks before removing the cgroup
 
 **Evidence, 2026-11-07 UTC (#463):** a local study ran the unchanged README motion and header parts together in their original two lanes, under a four-CPU quota, 2 GiB memory cap and 256-task cap. Both initial pages reported `Page crashed`. At 19:25:11.862 UTC the kernel recorded a fork rejection by the pids controller in that exact owned unit, before the page-crash events. The original 16-file failure receipt and native protocol records remain retained ([independent failure disposition](https://github.com/Valpatel/cad-agent/issues/463#issuecomment-6712030363)). This was a local fixture limit, not evidence of the earlier CI README networkidle timeout's cause.

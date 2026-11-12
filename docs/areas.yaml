@@ -398,5 +398,6 @@ domains:
       - slug: evaluation
         title: Evaluation
         scope: Standard jobs and graders that measure models, harnesses and our tooling.
-        maturity: idea
-        issues: [39, 142, 143]
+        maturity: tooling
+        pages: [docs/practice/standard-evaluation.md]
+        issues: [39, 142, 143, 612]

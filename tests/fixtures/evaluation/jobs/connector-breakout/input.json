@@ -1,0 +1,44 @@
+{
+  "j1_mating_face_left_to_right": [
+    {
+      "pin": "1",
+      "signal": "VBUS"
+    },
+    {
+      "pin": "2",
+      "signal": "GND"
+    },
+    {
+      "pin": "3",
+      "signal": "TX"
+    },
+    {
+      "pin": "4",
+      "signal": "RX"
+    }
+  ],
+  "j2_wire_side_left_to_right": [
+    {
+      "pin": "4",
+      "signal": "RX"
+    },
+    {
+      "pin": "3",
+      "signal": "TX"
+    },
+    {
+      "pin": "2",
+      "signal": "GND"
+    },
+    {
+      "pin": "1",
+      "signal": "VBUS"
+    }
+  ],
+  "testpoints": {
+    "VBUS": "TP1.1",
+    "GND": "TP2.1",
+    "TX": "TP3.1",
+    "RX": "TP4.1"
+  }
+}

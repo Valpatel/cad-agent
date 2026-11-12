@@ -349,9 +349,9 @@ and the failure mode. Pull at 2 mm/min with a reaction plate that clears the bos
 
 ```mermaid
 flowchart TD
-    I["Identify polymer + insert"] --> R["Recover with matched tool"]
+    I["Material + insert"] --> R["Matched tool"]
     R --> S["Separate + inspect"]
-    S --> T["Prototype reuse: re-test"]
+    S --> T["Re-test for reuse"]
     class I here
     class R near
     class S,T out
@@ -372,7 +372,7 @@ The [McMaster heat-set insert extraction-tip category](https://www.mcmaster.com/
 | M5 × 0.8 | [92160A231](https://www.mcmaster.com/92160A231/) |
 | M6 × 1 | [92160A233](https://www.mcmaster.com/92160A233/) |
 
-The primary category was independently inspected on 2026-11-12; each listed row has a 1/4-inch shank. No M2 extraction row was observed in this family; this is not a claim that McMaster never stocks one. Masked price placeholders are not quotations. No purchase, compatibility test, manufacturer CAD download or tool placement is claimed for these workshop tools.
+The primary category was independently inspected on 2026-11-12; each listed row has a 1/4-inch shank. No M2 extraction row was observed in this family; this is not a claim that McMaster never stocks one. Part links are navigational: individual product-detail specifications were not independently obtained. Masked price placeholders are not quotations. No purchase, compatibility test, manufacturer CAD download or tool placement is claimed for these workshop tools.
 
 </details>
 

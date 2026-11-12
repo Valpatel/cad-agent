@@ -9,3 +9,10 @@ flowchart LR
     W --> G[grade / ingest-run]
     J --> G
 ```
+
+## File ownership
+
+| File | Purpose |
+|---|---|
+| [standard_eval.py](standard_eval.py) | Validate the corpus, prepare subject inputs, independently grade artifacts and ingest run metadata. |
+| [runner.py](runner.py) | Start fresh Codex or Claude CLI conversations with version-bound context controls, collect transcripts and settle the owned process group before grading. |

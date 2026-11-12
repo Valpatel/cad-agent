@@ -83,6 +83,7 @@ card. Model updates leave historical FEA pictures and their evidence untouched.
 | File or folder | Purpose |
 |---|---|
 | [cfd_fan_figure.py](cfd_fan_figure.py) | Draw recorded fan/CFD study data. |
+| [evaluation/](evaluation/README.md) | Prepare analytical jobs, run fresh CLI subjects and independently grade recorded artifacts. |
 | [explore_charts.py](explore_charts.py) | Draw exploration comparison charts. |
 | [fea_layer_figure.py](fea_layer_figure.py) | Draw layered-material study evidence. |
 | [fea_mesh_figure.py](fea_mesh_figure.py) | Draw mesh-convergence study evidence. |
@@ -96,4 +97,3 @@ card. Model updates leave historical FEA pictures and their evidence untouched.
 | [security_scan.py](security_scan.py) | Repository security scanning entry point. |
 | [volume_probe.py](volume_probe.py) | Record geometric volume precision evidence. |
 
-[Evaluation controllers](evaluation/README.md) prepare and independently grade the analytical starter jobs.

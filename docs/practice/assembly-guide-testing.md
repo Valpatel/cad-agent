@@ -243,7 +243,16 @@ are insufficient. Renewed current-source receipts and separate review are requir
 After the duplicate-partition correction and integration of accepted dev `fac4da61`, source `31cdf630` passed
 **eleven cases in both Chromium and WebKit**, with zero page/console errors. Both original-list duplicate
 controls now refuse with no canvas, controls, part count or explode API; the independent second valid mini
-still loads. The renewed [current receipt](../../tests/fixtures/assembly-plan/acceptance.json) binds that source,
-its renderer/harness/mesh hashes, actual world-vertex observations and freshly regenerated native witnesses.
+still loads. Receipts bind their exact recorded source, renderer/harness/mesh hashes, actual world-vertex
+observations and freshly regenerated native witnesses.
 The original blocked-head failure remains retained and is never relabeled as a passing capture. Independent
 exact-head review and full CI remain required.
+
+
+Later hosted CI at `e9b5faf9` still failed the missing-optional-CadQuery boundary and generated-map freshness;
+those real failures and the superseded cancellations remain in `ci-failure-e9b5faf9.json`, not as passes.
+Correction source `d1ca1514` guards the first optional import and regenerates the canonical map. Local checks
+report 15 pure cases passed / two native cases skipped with CadQuery unavailable, 17 passed with CAD installed,
+and 28 ownership/freshness cases passed / one separate CI-only diagram case skipped. Its renewed
+[current receipt](../../tests/fixtures/assembly-plan/acceptance.json) also records eleven actual cases per engine
+with zero page/console errors. Required hosted CI and fresh independent review remain separate acceptance.

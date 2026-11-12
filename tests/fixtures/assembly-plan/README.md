@@ -25,6 +25,7 @@ Support, retention, threaded engagement and rigid-module internal qualification 
 | Retained evidence | Scope |
 |---|---|
 | `acceptance.json` | Native source-bound forward/reverse summaries, actual thin/attached/tool obstruction witnesses, and both engines' actual world-vertex traces at source revision `d1ca1514` (including original-list duplicate refusal). |
+| `reading-witness.json` | Original 27c hosted documentation/reader failures and bounded source-scoped reading measurements; not full browser acceptance. |
 | `ci-failure-e9b5faf9.json` | Original cancelled CI instances and actual missing-optional-CAD/stale-map failures at e9b5; NOT PASS. |
 | `partition-failure-9b819b9a.json` | Independently reproduced blocked-head exporter/actual-Chromium duplicate-ID acceptance; preserved failure evidence, not a passing receipt. |
 | `webkit-320.png` | Actual two-mini scene at 320 px, DPR2, reduced motion, keyboard focus; not a clearance witness. |

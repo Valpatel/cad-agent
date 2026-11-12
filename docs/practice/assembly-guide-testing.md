@@ -192,6 +192,13 @@ known collision, with the existing box and real CAD fixture.
 
 ## Canonical serial-plan acceptance (#542)
 
+The native rail bench shares one plan across mini and detailed viewers. Acceptance pairs finite geometry/tool
+blockers with independent source landmarks and actual rendered world vertices. Results stay source-scoped;
+physical qualification is separate.
+
+<details>
+<summary>Contract controls, receipt commands and source-scoped results</summary>
+
 The first slice uses one small native base/rail/plate/lid/fastener fixture in both detailed and mini
 consumers. Source-derived noncoplanar mesh landmarks and actual rendered world matrices are independent
 of the evaluator. Required controls cover a mid-segment obstacle despite clear endpoints, future parked
@@ -256,3 +263,5 @@ report 15 pure cases passed / two native cases skipped with CadQuery unavailable
 and 28 ownership/freshness cases passed / one separate CI-only diagram case skipped. Its renewed
 [current receipt](../../tests/fixtures/assembly-plan/acceptance.json) also records eleven actual cases per engine
 with zero page/console errors. Required hosted CI and fresh independent review remain separate acceptance.
+
+</details>

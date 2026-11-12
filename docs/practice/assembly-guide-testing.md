@@ -214,3 +214,12 @@ oracle derives piecewise plate/roof locations from the source bench datums, not 
 Python checks reject tooling shrinkage; unknown tool declarations and positive unmeasured tool allowance
 cannot become clear. Source and tests must be pushed before acceptance capture. Current-head CI and separate
 review remain required even after a local packet passes.
+
+For a reproducible compact native receipt, call
+`write_serial_native_receipt(output_path, exact_head_sha)` from `tests.review.test_gate_assembly` with the existing
+CAD Python and `PYTHONPATH=software`. It regenerates original BREP inputs in a temporary directory, captures
+both directions and retains actual pair/contact witnesses for the thin, attached-fastener and ordinary-handle
+controls. The tool control has clear engaged/start envelopes and a first blocked/last clear approach bracket;
+the alternative lid route is recorded. Browser receipts remain separate actual-scene observations. The legacy
+J501 poster receipt may also need regeneration after shared renderer edits; that still frame validates only
+its existing illustrative consumer and is never assembly-plan evidence.

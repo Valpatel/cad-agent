@@ -1226,3 +1226,49 @@ def test_native_serial_tool_approach_obstruction_and_stale_source_controls(tmp_p
         stale = {**binding, field: "0"*64}
         report = playback.playback_gate(bundle, stale, breps)
         assert not report["pass"] and "stale assembly plan source" in report["checks"][0]["message"]
+
+
+def write_serial_native_receipt(path, revision):
+    """Bounded evidence collector for this test bench; called explicitly, outside ordinary pytest execution."""
+    import hashlib
+    import tempfile
+    import cadquery as cq
+    from cadagent.review.gates.playback import playback_gate, run_plan_sequence
+    from cadagent.review.gates.assembly import AssemblySequenceWorld
+    from cadagent.review.gates.relations import Assembly
+    from cadagent.review.gates.fasteners import tool_access
+    with tempfile.TemporaryDirectory() as temporary:
+        assembly, bundle, binding, breps, spec, tool = native_serial_fixture(Path(temporary))
+        positive = []
+        for reverse in (False, True):
+            report = playback_gate(bundle, binding, breps, tools={"ordinary-driver":tool}, fastener_specs=[spec], reverse=reverse)
+            assert report["pass"], report["findings"]
+            positive.append({"direction":"remove" if reverse else "install", "inputs":report["inputs"],
+                "world_stats":report["world_stats"], "operations":[{k:r[k] for k in
+                ("id","insertion","tool_access","internal_qualification","support","retention_process")} for r in report["operations"]]})
+        controls = []
+        for name, box in [("thin-intermediate",[-4,-4,16,8,8,.2]),("attached-fastener-only",[9.5,-.5,29,.2,1,.2]),
+                          ("ordinary-handle-approach",[3,-1,31,1,2,1])]:
+            native = Assembly({n:assembly.shape(n) for n in assembly.names})
+            native.add("blocker",cq.Solid.makeBox(*box[3:],cq.Vector(*box[:3])))
+            plan = serial_plan_fixture()
+            plan["fixed"].append("blocker")
+            plan["source"]["instances"]["blocker"] = dict(plan["source"]["instances"]["base"])
+            if name == "ordinary-handle-approach":
+                plan["operations"][1]["path_mm"] = [[35,0,20],[35,0,0],[0,0,0]]
+            report = run_plan_sequence(AssemblySequenceWorld(native),plan,tools={"ordinary-driver":tool},fastener_specs=[spec])
+            failures = [{"operation":r["id"],**p} for r in report["operations"] for p in r["pairs"] if p["part"]=="blocker" and p["state"]!="clear"]
+            row = {"id":name,"blocker_box_mm":box,"component_states":[r["insertion"] for r in report["operations"]],"witnesses":failures}
+            if name == "ordinary-handle-approach":
+                occupied = {n:[0,0,0] if n!="lid" else [35,0,20] for n in native.names}
+                engaged = tool_access(AssemblySequenceWorld(native).staged(occupied),spec,0,"ordinary-driver",tool,native.names)
+                access = report["operations"][0]["tools"][0]
+                assert engaged["clear"] and access["state"]=="blocked" and all(r["insertion"]=="sampled-clear" for r in report["operations"])
+                row.update(engaged_clear=True,tool=access,lid_path_mm=plan["operations"][1]["path_mm"])
+            else:
+                assert failures
+            controls.append(row)
+        receipt = {"source_revision":revision,"plan_sha256":hashlib.sha256((PLAN_FIXTURE/"plan.json").read_bytes()).hexdigest(),
+            "test_file_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),"positive":positive,"controls":controls,
+            "limits":"Finite sampled rigid geometry and ordinary axial envelopes. Source correspondence producer-declared; internal qualification, hands, support, retention and physical build unknown."}
+        Path(path).write_text(json.dumps(receipt,separators=(",",":"))+"\n")

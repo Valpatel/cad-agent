@@ -10,6 +10,7 @@ import json
 import re
 import sys
 import platform
+import hashlib
 from urllib.parse import urlsplit
 
 AZURE = "http://azure.archive.ubuntu.com/ubuntu/"
@@ -51,6 +52,52 @@ def runner_codename(release: dict) -> str:
     if (release.get("ID"), release.get("VERSION_ID"), release.get("VERSION_CODENAME")) != ("ubuntu", "24.04", "noble"):
         raise ValueError("expected the workflow's Ubuntu 24.04 noble runner")
     return release["VERSION_CODENAME"]
+
+
+def source_profile(text: str) -> str:
+    """Failure evidence only: bounded known fields, no credentials or arbitrary values."""
+    visible_paths = {"/etc/apt/apt-mirrors.txt", "/etc/apt/mirrors/ubuntu.list",
+                     "/etc/apt/mirrors/ubuntu.sources"}  # Visibility, NOT accepted source URIs.
+    words = {"types": {"deb", "deb-src"}, "suites": {"noble", "noble-updates", "noble-backports", "noble-security"},
+             "components": {"main", "universe", "restricted", "multiverse"},
+             "enabled": {"yes", "no"}, "trusted": {"yes", "no"}}
+    result = {"sha256": hashlib.sha256(text.encode()).hexdigest(), "fields": [], "truncated": False}
+    current = None
+    for number, line in enumerate(text.splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        continuation = line[0].isspace() and current is not None
+        if continuation:
+            key, value = current, line.strip()
+        else:
+            key, separator, value = line.partition(":")
+            key = key.lower() if separator else "<malformed-field>"
+            current = key
+        tokens = value.split()
+        values = []
+        for token in tokens[:8]:
+            if key == "uris":
+                try:
+                    uri = urlsplit(token)
+                    if uri.scheme in ("file", "mirror+file"):
+                        values.append(uri.scheme + ":" + (uri.path if uri.path in visible_paths else "<other-path>"))
+                    else:
+                        profile = json.loads(mirror_profile(token + " priority:1"))
+                        values.append(profile[0]["uri"] if profile else "<malformed-uri>")
+                except ValueError:
+                    values.append("<malformed-uri>")
+            elif key == "signed-by":
+                values.append(token if token == "/usr/share/keyrings/ubuntu-archive-keyring.gpg" else "<other-keyring>")
+            elif key in words:
+                values.append(token if token in words[key] else "<other-value>")
+        record = {"line": number, "field": key if key in {*words, "uris", "signed-by"} else "<other-field>",
+                  "continuation": bool(continuation), "tokens": len(tokens), "values": values}
+        candidate = {**result, "fields": result["fields"] + [record]}
+        if len(result["fields"]) == 24 or len(json.dumps(candidate)) > 8000:
+            result["truncated"] = True
+            break
+        result = candidate
+    return json.dumps(result, sort_keys=True)
 
 
 def validate_source(text: str, codename: str) -> None:
@@ -105,7 +152,12 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
         seen.add(tokens[0])
     if seen not in ({AZURE, ARCHIVE, SECURITY}, {EC2, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
         raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks; observed=" + mirror_profile(original))
-    validate_source(source.read_text(), codename)
+    source_text = source.read_text()
+    try:
+        validate_source(source_text, codename)
+    except ValueError:
+        print("Rejected Ubuntu source; observed=" + source_profile(source_text), file=sys.stderr)
+        raise
     primary = next(uri for uri in (AZURE, EC2, PREFERRED) if uri in seen)
     updated = "".join(line.replace(primary, PREFERRED, 1) if line.strip() and line.split()[0] == primary else line
                       for line in lines)

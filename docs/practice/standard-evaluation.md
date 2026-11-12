@@ -2,9 +2,145 @@
 
 The initial corpus for [#142](https://github.com/Valpatel/cad-agent/issues/142), scoped by [#612](https://github.com/Valpatel/cad-agent/issues/612), measures three small jobs with independently recomputed checks. These are analytical calculations and explicit geometry/connectivity declarations. They do not establish that an agent can produce working CAD or a routed PCB.
 
+## Planned CAD design evaluations
+
+The next question is whether cad-agent helps a local or lower-cost model make better **design decisions backed by
+facts**: joining, materials, dimensions, tolerances and access. The design and testing contract below is proposed;
+no new adapter, native-CAD task or model performance is qualified by it. The existing v1 API and recorded attempts
+remain unchanged. [Architecture study and source audit](https://github.com/Valpatel/cad-agent/issues/142#issuecomment-6831782191).
+
+<details>
+<summary>Reuse decision, execution boundary and compact evidence contract</summary>
+
+| Candidate | Decision |
+|---|---|
+| [Inspect AI, ff0acb3](https://github.com/UKGovernmentBEIS/inspect_ai/tree/ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8) | Provisionally use its existing ReAct agent, providers, sandboxes and logs. Pin a separate evaluation environment; MIT, Python 3.11+. Qualify it with inert controls before adoption; no core dependency, new agent loop or scheduler. |
+| [Harbor, feea734](https://github.com/harbor-framework/harbor/blob/feea734de84bf2479b329dc6315a6d98d1596f4f/src/harbor/trial/trial.py) | Defer until native coding-agent system comparisons are needed. Its separate verifier is useful, but artifact collection before optional service shutdown does not establish settled outputs. Preserve original measurements rather than assuming normalized usage is complete. |
+| [CADGenBench](https://github.com/huggingface/cadgenbench/tree/33304cf771fc5639144b1df9611e347251052cf8), [native FreeCAD verifier](https://github.com/gNucleus-AI/freecad-validator/tree/716159c9fd0cc1d7278c75985623858e3247fa42) | Adapt STEP validity, interface-volume and native-artifact checking techniques after testing their limits. Reference-shape similarity cannot decide whether a different design meets the requirements. |
+
+The proposed flow is: freeze task → prepare subject → execute → stop every writer → seal exports → independently
+grade → publish. Inspect owns execution; cad-agent owns acceptance. An in-session scorer cannot finalize a result.
+Keep exports in a regular directory inside the owned Docker sandbox, with `sandbox_cleanup=False`; writable host
+binds, tmpfs output and premature container removal do not fit this lifecycle. Before tools run, persist attempt
+ownership, Compose project/config identity, immutable container IDs and image digest; record ownership labels for
+startup-failure recovery too. After controller/helper processes settle, stop the owned containers and verify their
+process settlement separately: Docker containers are outside the collector's cgroup. Only then copy a bounded
+archive from the stopped container, reject unsafe entries and seal regular files. Regenerate submitted CAD source
+in a separate capped sandbox; never import it into the controller.
+
+Tear down only the recorded Compose project/config and verify its resources are absent. A successful command is
+not a cleanup receipt: pinned Inspect teardown can warn on failure, and its CLI cleanup also touches orphan cache
+files beyond the named project. The [source/API audit](https://github.com/Valpatel/cad-agent/issues/142#issuecomment-6832295831)
+records these boundaries. Its [sandbox contract](https://inspect.aisi.org.uk/sandboxing.html) still needs actual
+qualification; metadata showing Docker or a cached image exists is insufficient.
+
+**Compare toolkit availability.** Both arms receive the same CAD runtime, raw-source packet, requirements and
+budgets; kit adds cad-agent. Freeze resolved model/weight identity where available, quantization, effort, server
+template, harness, common tools and settings per pair. Unknown identities remain unknown. Randomize and interleave
+arm order, register every attempt before execution, and report observed toolkit use separately. Do not discard
+kit trials that fail to find or use a tool. Live-web research is a later, separately declared condition.
+
+A clean released checkout is not an answer-free subject bundle: it can contain test references, solved reports
+and history. New controlled studies require a hashed allowlist of generic toolkit runtime, docs, skills and
+sources, with controllers, task solutions, held-outs, history and provider credentials inaccessible. Do not mount
+the whole checkout. The historical `59441e75` toolkit predates the shipped corpus; this changes future study
+preparation, not the interpretation of those retained smoke attempts.
+
+Disable result-cache reuse and automatic retry/log cleanup. Every retry gets another attempt ID and remains in
+the denominator. [Inspect token/cost limits](https://inspect.aisi.org.uk/setting-limits.html) are checked at generation boundaries:
+combine per-call output limits with an outer deadline and record requested, enforced and observed limits
+separately. They are not strict billing ceilings. [Retry behavior](https://inspect.aisi.org.uk/eval-sets.html).
+
+Extend `standard_eval.py` through explicit v2 dispatch; reject unsupported schemas and preserve v1 results.
+Reuse `runner.py`'s collect/finalize boundary and the existing evidence and verdict helpers. A canonical run
+manifest binds five groups, rather than parallel reports with independent numbers:
+
+| Group | Retained evidence |
+|---|---|
+| Identity | Experiment, task/version, pair and attempt IDs; task, prompt, input, source-packet and subject-bundle hashes. |
+| Execution | Requested/resolved model, available weight identity, runtime/hardware, settings, limits and actual settlement receipt. |
+| Artifacts | Role, relative identity, media type, byte size and SHA-256 for source, exports, findings and selected media. |
+| Findings | Independent CAD constraints, source applicability, design decisions, observed kit use, failure class and unknowns. |
+| Resources | Elapsed time, provider-native usage, dated API prices and measured compute use; development/review effort separately. Missing values stay null. |
+
+</details>
+
+<details>
+<summary>First experiment: a useful cover, with more than one valid design</summary>
+
+Start with Gyropup's current shell service door. The [pinned source](https://github.com/Valpatel/gyropup/blob/3a40891962b0b0a04625e070700f1d130bea3c7b/hardware/cad/body/body_shell.py)
+defines a 55 × 94 mm aperture and four receivers; extract only the recipient interface and nearby keepouts,
+excluding the existing door solution. Freeze units, frames, hardware, source packet and numeric acceptance bounds
+before trials. A missing or conflicting fact required by a hard check blocks launch. Printed leg geometry stays
+unchanged; this is a computational WIP interface, not a measured assembly.
+
+Require editable CAD, STEP/STL, a small fit coupon and concise source-linked decisions. Allow different material,
+wall, rib and edge choices while preserving the receiver interfaces. Independently inspect reopened exports for
+aperture coverage, hole axes, assembly clearance and screwdriver access; verify print/process claims against
+their applicable source. Two distinct valid reference designs must pass before any model is tested. Physical fit,
+strength and repeated-service durability remain unverified until tested.
+
+Run one matched local bare/kit pilot. Diagnose a specific failure, improve the reusable fact/tool/discovery path,
+then run fresh pairs and a held-out interface variation frozen before that improvement. Publish both/neither,
+kit-only and bare-only outcomes and every failed attempt. A pilot demonstrates feasibility, not reliable uplift.
+Add a lower-cost hosted pair after the local path works; sheet-metal and CNC tasks follow the same contract.
+
+</details>
+
+<details>
+<summary>Testing plan: gates before model trials and publication</summary>
+
+| Gate | Required controls |
+|---|---|
+| Execution | Built-in mock calls exercise real sandbox tools; a scripted loopback HTTP fixture exercises the actual provider adapter's serialization and absent usage. Test malformed calls, timeout/OOM, detached writers, interruption and failed cleanup; denied controller/answer/synthetic-credential reads, traversal and symlink escapes. |
+| Artifacts | Reject missing/oversized/nonregular files, unsafe archives, altered hashes, stale grades, wrong units and invalid solids. Refuse sealing while ownership/settlement is unknown. Prove stable sealed bytes and cleanup that leaves unrelated control resources untouched. Separately cap source regeneration and inspect actual exports. |
+| Design | Two different good designs pass. Wrong hole axes, uncovered aperture, colliding ribs, inadequate declared feature dimensions and obstructed assembly/service paths fail. Similar appearance, volume or subject-reported dimensions cannot substitute. |
+| Facts | Omitted and incompatible material/process sources remain unresolved in the evidence rubric. Correctly identifying the gap earns no hard-design pass. Citation existence alone is insufficient; verify the fact and its applicability. |
+| Transfer | Fresh sessions, frozen held-outs, original failed records and immutable task/grader versions. Report end-to-end success over all registered attempts separately from artifact success among evaluable attempts. |
+| Presentation | Source/hash mutation controls; deterministic SVG regeneration; honest failure labels. Extend existing Chromium/WebKit checks for mobile overflow, focus, contrast, reduced motion, no-JS fallback, broken media and source links. |
+
+Keep exact artifact hashes and CAD/runtime provenance. BREP bytes may differ across OCCT versions or CPU
+architectures; geometric signatures help diagnose this but do not prove complete equivalence or design quality.
+Preserve v1 validation and recorded results with compatibility checks; real sandbox controls are a separate
+qualification gate, not replaceable by mocked cleanup tests.
+
+Inspect's mock model synthesizes usage, so it cannot establish missing-provider-usage handling. Preserve unknowns
+and assert exact request/retry counts through the wire fixture. Use an explicitly selected pinned local image,
+bounded resources and no subject network, secrets or host sockets. Default tests may explicitly skip unavailable
+prerequisites; the qualification command must fail when they are missing. No suitable clean image or Inspect
+runtime has yet been qualified.
+
+</details>
+
+<details>
+<summary>One Explore experience, with small visual evidence</summary>
+
+Extend this existing Evaluation article within the topic tree; preserve routes and the reader layout. Open with
+one comparison SVG, outcome counts and the concrete limitation. Expandable checks, actual CAD downloads and
+opt-in video follow. Derive every displayed number and asset link from the same run manifest; no second dashboard.
+
+Reuse `publish.anim` CAD/SVG/raster/text primitives and the [animated-figure contract](animated-figures.md): a small
+scene extracted from sealed outputs, deterministic rendering, ≤250 KB and a reduced-motion still. Reuse the
+hash-bound assembly guide for actual geometry. Solver videos require actual solver results; ordinary CAD playback
+is presentation. Keep code, compact manifests, selected SVGs and summaries in git. Store bulky CAD/transcripts and
+selected short videos outside git with stable identities, hashes and size limits. No durable evaluation store has
+been demonstrated: select an existing facility and pass retrieval, access, hash and retention checks before
+publication. The existing local package/manifest builder applies only after snapshot validation; expiring CI logs
+are not a durable archive. Retain success and failure evidence equally; only disposable render frames/cache expire
+after verified collection. Raw-source fetch manifests can preserve provenance without redistributing the guides.
+
+</details>
+
+Rollout: qualify the optional adapter with inert controls, freeze the door task and independent references, run
+one local pair, improve a demonstrated gap, then repeat and test transfer. Implementation remains tracked in
+[#142](https://github.com/Valpatel/cad-agent/issues/142); this proposal does not close it.
+
 ## Design
 
 The corpus lives in `tests/fixtures/evaluation/jobs/`, the existing shared-data owner. A job directory contains `job.json`, `input.json` and `reference.json`. Reference solutions and graders stay in the controller checkout. The evaluation subject receives only task text and the input file in a fresh project directory; its output is `solution.json`. Run the subject outside the controller checkout, with a separately pinned released toolkit checkout for kit mode. A subject that reads the controller corpus invalidates the trial. A directory boundary is not OS security isolation: the CLI runs as the existing OS user and can access other paths.
+
+Whole-checkout kit access below is legacy v1 smoke-test behavior, **deprecated for new controlled studies**.
+Those require the qualified subject bundle and access boundary described above.
 
 ```mermaid
 flowchart TD

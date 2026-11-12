@@ -40,6 +40,15 @@ flowchart TD
 
 [Figure index](../README.md) · [Captions and tool inputs](https://github.com/Valpatel/cad-agent/blob/dev/docs/pages.yaml)
 
+## Homepage assets
+
+The current hero is an original looping pixel adventure: robots build, test and
+share knowledge. It is conceptual artwork. Recorded result figures and CAD views
+keep their own source evidence and engineering limits.
+
+<details>
+<summary>Accepted scene, original asset audit and delivery checks</summary>
+
 ## Homepage learning loop — design and evidence plan (#605)
 
 The accepted hero is **an original 16-bit futuristic adventure, with robots building
@@ -103,6 +112,12 @@ uses the product's existing `preview/open.png` as J501's honest interim poster;
 final acceptance requires a matching shared-viewer poster and complete loading,
 reduced-motion, WebGL failure and keyboard evidence.
 
+
+</details>
+
+<details>
+<summary>Rejected and superseded prototype notes (historical)</summary>
+
 ### Rejected art history, 2026-11-11 (superseded by the accepted pixel scene above)
 
 The owner viewed prototype C and rejected its slow/simple lone-person scene:
@@ -151,3 +166,5 @@ anchored station. No portraits, floating paper or random particles. Review the
 new storyboard poses before presenting a new headed prototype as improved art.
 Evidence-backed computation cards, real model sources and loader fixes remain
 separate requirements and are preserved.
+
+</details>

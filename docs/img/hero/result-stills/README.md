@@ -5,9 +5,9 @@ Each is derived from its original authored reduced-motion pose, with animation
 removed. Source values and engineering limits remain those of the original figure.
 
 ```mermaid
-flowchart LR
-    A["recorded / computed figures"] --> B["authored finished pose"]
-    B --> C["parent picture selects still"]
+flowchart TD
+    A["Recorded figure"] --> B["Finished pose"]
+    B --> C["Reduced-motion image"]
 ```
 
 | File | Original evidence |

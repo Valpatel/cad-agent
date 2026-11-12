@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Correct only the pinned hosted Ubuntu runner apt mirror/source contract.
+"""Correct only observed hosted Ubuntu runner apt mirror/source profiles.
 
 Prefer the registered Pilot Fiber HTTPS mirror outside Canonical's DNS failure
 scope. Keep Canonical fallbacks and all source/signature settings; reject unknown
@@ -13,12 +13,16 @@ import platform
 from urllib.parse import urlsplit
 
 AZURE = "http://azure.archive.ubuntu.com/ubuntu/"
+# Captured by the rejection diagnostic in hosted full job 131436221538 (2026-11-12).
+# Exact observed URI only: other regions or cloud-branded hosts are not inferred.
+EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
 ARCHIVE = "https://archive.ubuntu.com/ubuntu/"
 SECURITY = "https://security.ubuntu.com/ubuntu/"
 MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
 # Ubuntu Official Archive Mirrors: /ubuntu/+mirror/mirror.pilotfiber.com-archive.
 PREFERRED = "https://mirror.pilotfiber.com/ubuntu/"
-EXPECTED = {AZURE: "priority:1", PREFERRED: "priority:1", ARCHIVE: "priority:2", SECURITY: "priority:3"}
+EXPECTED = {AZURE: "priority:1", EC2: "priority:1", PREFERRED: "priority:1",
+            ARCHIVE: "priority:2", SECURITY: "priority:3"}
 
 
 def mirror_profile(text: str) -> str:
@@ -99,14 +103,16 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
         if len(tokens) != 2 or EXPECTED.get(tokens[0]) != tokens[1] or tokens[0] in seen:
             raise ValueError("unexpected hosted runner mirror entry or priority; observed=" + mirror_profile(original))
         seen.add(tokens[0])
-    if seen not in ({AZURE, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
+    if seen not in ({AZURE, ARCHIVE, SECURITY}, {EC2, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
         raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks; observed=" + mirror_profile(original))
     validate_source(source.read_text(), codename)
-    updated = "".join(line.replace(AZURE, PREFERRED, 1) if line.strip() and line.split()[0] == AZURE else line
+    primary = next(uri for uri in (AZURE, EC2, PREFERRED) if uri in seen)
+    updated = "".join(line.replace(primary, PREFERRED, 1) if line.strip() and line.split()[0] == primary else line
                       for line in lines)
     if updated != original:
         path.write_text(updated)
-    print("Ubuntu apt source/profile verified; registered HTTPS mirror preferred, Canonical fallbacks retained")
+    print(f"Ubuntu apt source/profile verified (input primary: {primary}); "
+          "registered HTTPS mirror preferred, Canonical fallbacks retained")
 
 
 if __name__ == "__main__":

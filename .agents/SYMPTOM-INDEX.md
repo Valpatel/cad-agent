@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A documentation-only PR passes content checks but its changelog fragment cannot be released | [Validate release inputs as well as the page](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#documentation-changes-still-need-the-release-parser) |
 | The legacy catalogue shows only a quote prefix for a tag-like plain description | [Escape canonical plain text instead of stripping it through an HTML summary](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md#keep-canonical-plain-text-out-of-an-html-summary-extractor) |
 | A dark document outline is readable at rest but its hover uses a pale kit fallback | [Bind the complete shared navigation theme and check interactive states](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md#a-document-rail-needs-the-same-complete-theme-contract-as-its-tree) |
 | A short source-reading entrance leaves a skill workflow over the reading-wall budget | [Measure the whole skill route and disclose complete workflow detail](inbox/agents/2026-11-10-reading-batches-need-the-release-and-page-consumers.md#skill-entrances-need-the-whole-workflow-reading-check) |

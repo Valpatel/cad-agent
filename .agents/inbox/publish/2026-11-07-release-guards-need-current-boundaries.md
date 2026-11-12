@@ -1,5 +1,28 @@
 # Validate every current check instance and the actual topic delta
 
+## Documentation changes still need the release parser
+
+2026-11-12 UTC: PR636 at `ea38ded5720538cbb773b8ae9afad6b45dd27037` passed its focused content checks,
+but normal [core 3.12 job 131442108262](https://github.com/Valpatel/cad-agent/actions/runs/43292456383/job/131442108262)
+reported 1 failed, 3548 passed and 369 skipped. The failure was `test_this_repo_can_be_released`: the authored
+fragment used `### Changed`, while `cut_release.read_fragment` requires `**Changed**`. The exact local command
+`PYTHONPATH=software python -m pytest -q tests/repo/test_cut_release.py::test_this_repo_can_be_released`
+also failed before correction. The content-test selection omitted the existing release parser; this was an author
+error that CI correctly blocked, not a flaky test. Change the fragment, not the parser.
+
+The initial draft's supply-chain job separately rejected a pending report row. Its log named the missing pinned
+Anthropic URL; one finalized body edit supplied the completed online row, and replacement job 131442108235 passed.
+The [receipt](https://github.com/Valpatel/cad-agent/pull/636#issuecomment-6834091302) preserves that earlier failure
+and cancellation. Neither it nor the later parser defect may be counted as a successful superseded run.
+
+**Rule:** even a prose-only change must exercise the actual parser for every new release fragment, alongside its
+content checks. Use the existing [fragment format](../../../docs/changelog.d/README.md) and finish required audit
+rows before waiting for final CI. Extend the existing publication procedure, not the acceptance rules.
+
+**Limits:** these are release-input and description defects. No upstream plugin execution, compatibility test or
+physical CAD claim follows from fixing them. Existing parser tests already cover malformed headings; another
+test mirroring this typo would add no coverage. Fresh exact-head review and normal CI remain required.
+
 ## Start idle reviewers instead of queueing another message
 
 On 2026-11-08 UTC, a CAD release owner sent a new retirement-review request with `collaboration.send_message`.

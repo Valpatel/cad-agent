@@ -144,3 +144,15 @@ test('unillustrated topics reuse nearest ancestor artwork without changing topic
  for(const slug of topicNodes(taxonomy).keys())assert.ok(sprite.includes(`id="g-${slug}"`));
  assert.equal(topicSprite(taxonomy),sprite,'deterministic output');
 });
+
+test('legacy catalogue descriptions escape canonical plain text without passing it through HTML extraction',()=>{
+ const what='A literal <img src=x onerror=alert(2)> and <script>alert(2)</script> description';
+ const c={id:'fixture-literal',kind:'project',type:'upstream',status:'candidate',name:'Literal fixture',what,url:'https://example.test/tool',areas:[],related:[]};
+ const catalog={items:[c]},references={refs:{records:new Map(),aliases:new Map()},placed:new Map()};
+ const projection=discoveryModel({catalog,pages:[],references,ORIGIN:'https://example.test',revision:'fixture',pageURL:()=>'/'});
+ const before=JSON.stringify(projection);
+ const html=discoveryHTML(projection,{areas:{domains:[],maturity:[]},catalog,legacy:true});
+ assert.ok(html.includes('A literal &lt;img src=x onerror=alert(2)&gt; and &lt;script&gt;alert(2)&lt;/script&gt; description'));
+ assert.doesNotMatch(html,/<img src=x|<script>alert/);
+ assert.equal(JSON.stringify(projection),before,'legacy rendering does not mutate discovery projection semantics');
+});

@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 // The catalogue (/catalog, /catalog.json, /catalog/index.json, /catalog/<area>.json), built from HEAD: every entry has
 // a picture of our own and a place in the area map, the JSON files agree with each other and with the page, and the
 // schema-1 fields and old links keep working. Behaviour in browsers: tests/site/website-catalog-browser.mjs.
@@ -5,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { YAML } from './npm-context.mjs';
@@ -406,17 +407,26 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
   // A scratch worktree of HEAD whose registry has one entry with markup in every field the page shows.
   const wt = path.join(tmp, 'wt-hostile'), draft = path.join(tmp, 'draft-hostile');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  let retained=null;
   try {
     const bad = n => `"><img src=x onerror=alert(${n})><script>alert(${n})</script>`;
     const entry = { name: `evil/${bad(1)}`, what: bad(2), areas: ['3d-printing'], url: 'https://github.com/evil/evil', license: bad(3),
       status: 'candidate', policy: bad(4), last_push: bad(5), stars: bad(6) };
     const registry = path.join(wt, 'software/vendor/upstreams/registry.yaml');
     await writeFile(registry, `${await readFile(registry, 'utf8')}\n${YAML.stringify([entry])}`);
-    execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root, stdio: 'pipe' });
+    const landscapeFile=path.join(wt,'docs/research/landscape.json');
+    const landscape=JSON.parse(await readFile(landscapeFile,'utf8'));
+    landscape.projects.push({name:entry.name,url:entry.url,notes:bad(7),license_note:bad(8)});
+    await writeFile(landscapeFile,JSON.stringify(landscape));
+    // This is an HTML/text/attribute/JSON/cover security fixture, not diagram-renderer evidence.
+    const fixtureLog=execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, stdio: 'pipe' }).toString();
+    assert.match(fixtureLog,/0 drawn, \d+ left to the reader's browser/,'the fixture explicitly leaves diagrams to the client');
     const html = await readFile(path.join(draft, 'catalog.html'), 'utf8');
     const got = JSON.parse(await readFile(path.join(draft, 'catalog.json'), 'utf8')).items.find(i => i.type === 'upstream' && i.name === entry.name);
     assert.ok(got, 'the entry is in catalog.json');
     assert.equal(got.what, entry.what, 'JSON keeps the text as written');
+    for(const key of ['name','license','policy','last_push','stars'])assert.equal(got[key],entry[key],`JSON preserves ${key}`);
+    assert.equal(got.notes,bad(7)+' '+bad(8),'JSON keeps notes and licence notes as literal text');
     const card = html.match(new RegExp(`<li data-item[^>]*id="${got.id}"[\\s\\S]*?</li>`))?.[0];
     assert.ok(card, 'the entry has a card');
     // An event handler inside a tag, outside a quoted value, means the text broke out of its attribute.
@@ -427,11 +437,31 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
     }
     assert.match(card, /&lt;img src=x onerror=alert\(2\)&gt;/, 'the what line shows as text');
     assert.match(card, /&lt;img src=x onerror=alert\(1\)&gt;/, 'the name shows as text');
+    for(const n of [3,4,7,8])assert.ok(card.includes(`&lt;img src=x onerror=alert(${n})&gt;`),`licence/policy/notes ${n} remain escaped text`);
+    for(const [attribute,n] of [['data-sort-recent',5],['data-sort-stars',6]])assert.ok(card.includes(`${attribute}="&quot;&gt;&lt;img src=x onerror=alert(${n})&gt;&lt;script&gt;alert(${n})&lt;/script&gt;"`),`${attribute} retains the escaped literal inside quotes`);
     const cover = await readFile(path.join(draft, new URL(got.cover).pathname), 'utf8');
     assert.doesNotMatch(cover, /<img|<script/i, 'raw markup in the cover');
     assert.deepEqual(handlers(cover), [], 'event handlers in the cover');
+    console.log(fixtureLog.split('\n').find(line=>line.includes('Diagrams:')));
+    const evidence=process.env.CAD_AGENT_SECURITY_RECEIPT;
+    if(evidence){
+      assert.ok(path.isAbsolute(evidence)&&evidence.startsWith(path.join(os.tmpdir(),'cad604-security-evidence-')),'diagnostic evidence uses a new private temporary directory');
+      await mkdir(evidence,{recursive:false});
+      const documents={'catalogue.html':html,'row.html':card,'entry.json':JSON.stringify(got,null,2),'cover.svg':cover,'build.log':fixtureLog};
+      const hashes={};for(const [name,body]of Object.entries(documents)){await writeFile(path.join(evidence,name),body);hashes[name]=createHash('sha256').update(body).digest('hex');}
+      retained={directory:evidence,receipt:{status:'pass',head:null,hashes,clientDiagrams:true,securityAssertions:'literal name/what/notes/licence/policy/date/stars; page/row attributes and cover inert; canonical JSON exact',worktreeRemoved:false}};
+      // The receipt is private opt-in evidence, not a substitute for the assertions above.
+      retained.receipt.head=execFileSync('git',['rev-parse','HEAD'],{cwd:root}).toString().trim();
+      await writeFile(path.join(evidence,'receipt.json'),JSON.stringify(retained.receipt,null,2));
+    }
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+    if(retained){
+      assert.ok(!existsSync(wt),'owned fixture checkout removed');
+      assert.ok(!execFileSync('git',['worktree','list','--porcelain'],{cwd:root}).toString().split('\n').includes('worktree '+wt),'owned fixture registration removed');
+      retained.receipt.worktreeRemoved=true;
+      await writeFile(path.join(retained.directory,'receipt.json'),JSON.stringify(retained.receipt,null,2));
+    }
   }
 });
 

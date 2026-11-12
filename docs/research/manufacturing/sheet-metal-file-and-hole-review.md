@@ -81,8 +81,8 @@ For a removable electronics tray, start with a bent 5052-H32 bracket candidate. 
 
 ```mermaid
 flowchart TD
-    S["Stock + service row"] --> B["Bends + feature datums"]
-    B --> E["Inspect STEP + flat DXF"]
+    S["Stock + shop"] --> B["Bends + datums"]
+    B --> E["STEP + flat DXF"]
     class S here
     class B near
     class E out
@@ -111,8 +111,8 @@ A first 2.5D example can be a 6061-T6 accessory plate with through holes and one
 
 ```mermaid
 flowchart TD
-    C["Confirm service contract"] --> P["Plate + shallow pocket"]
-    P --> I["Measure exported features"]
+    C["Service contract"] --> P["Plate + pocket"]
+    P --> I["Measure exports"]
     class C here
     class P near
     class I out

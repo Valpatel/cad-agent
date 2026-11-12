@@ -24,7 +24,7 @@ Support, retention, threaded engagement and rigid-module internal qualification 
 
 | Retained evidence | Scope |
 |---|---|
-| `acceptance.json` | Native source-bound forward/reverse summaries, actual thin/attached/tool obstruction witnesses, and both engines' actual world-vertex traces at source revision `6c5e3647`. |
+| `acceptance.json` | Native source-bound forward/reverse summaries, actual thin/attached/tool obstruction witnesses, and both engines' actual world-vertex traces at source revision `31cdf630` (including original-list duplicate refusal). |
 | `partition-failure-9b819b9a.json` | Independently reproduced blocked-head exporter/actual-Chromium duplicate-ID acceptance; preserved failure evidence, not a passing receipt. |
 | `webkit-320.png` | Actual two-mini scene at 320 px, DPR2, reduced motion, keyboard focus; not a clearance witness. |
 

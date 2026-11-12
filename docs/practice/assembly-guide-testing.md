@@ -207,7 +207,7 @@ Current implementation/evidence is tracked in the #542 slice PR; this matrix is 
 statement that these cases or any product build have passed.
 
 The native fixture lives in `tests/fixtures/assembly-plan/`; its generator emits the same plan bytes for both
-consumers. `ASSEMBLY_PLAN_ONLY=1` selects nine bounded cases in the existing browser harness. Receipts include
+consumers. `ASSEMBLY_PLAN_ONLY=1` selects eleven bounded cases in the existing browser harness. Receipts include
 source/mesh/renderer/harness hashes, actual world-vertex captures for four noncoplanar source corners per
 instance, engine version, console/page errors, and a 320 px/DPR2 reduced-motion screenshot. The independent
 oracle derives piecewise plate/roof locations from the source bench datums, not the suspect path. Source-bound
@@ -225,7 +225,7 @@ J501 poster receipt may also need regeneration after shared renderer edits; that
 its existing illustrative consumer and is never assembly-plan evidence.
 
 At source `6c5e3647`, the bounded native fixture passed nine cases in both actual Chromium and WebKit with zero
-page/console errors. Its retained [receipt](../../tests/fixtures/assembly-plan/acceptance.json) includes source,
+page/console errors. Its retained [historical receipt](https://github.com/Valpatel/cad-agent/blob/9b819b9a69f49bc37a6692dd3e00b0e081109a83/tests/fixtures/assembly-plan/acceptance.json) includes source,
 mesh, runtime and harness hashes, noncoplanar world-vertex samples, native first-contact witnesses, and an
 ordinary-handle obstruction with clear start/engaged poses and a 21→20 mm last-clear/first-blocked approach
 bracket. The matching phone screenshot is retained beside the fixture. Independent review and final CI remain
@@ -238,3 +238,12 @@ fixture and remains distinct from its older passing nine-case traces. Exporter a
 controls now prepend both a genuine plate copy and a rail renamed `plate`, preserving original plan/bin
 hashes. Both must reject the original list before packing output or allocating a scene; exact map keys alone
 are insufficient. Renewed current-source receipts and separate review are required for the correction.
+
+
+After the duplicate-partition correction and integration of accepted dev `fac4da61`, source `31cdf630` passed
+**eleven cases in both Chromium and WebKit**, with zero page/console errors. Both original-list duplicate
+controls now refuse with no canvas, controls, part count or explode API; the independent second valid mini
+still loads. The renewed [current receipt](../../tests/fixtures/assembly-plan/acceptance.json) binds that source,
+its renderer/harness/mesh hashes, actual world-vertex observations and freshly regenerated native witnesses.
+The original blocked-head failure remains retained and is never relabeled as a passing capture. Independent
+exact-head review and full CI remain required.

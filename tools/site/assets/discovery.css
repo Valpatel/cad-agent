@@ -44,3 +44,5 @@ cad-gallery.discovery:not([data-ready]) [data-item][data-over]{display:list-item
 /* A failed navigation module cannot offer a working filter/global-search enhancement. Native page links remain. */
 .explore-nav:not([data-ready]) .explore-nav-search{visibility:hidden}
 @media(scripting:none){.explore-nav-search{display:none}}
+.explore-nav:not([data-ready]) [data-topic-browse]{visibility:hidden}
+@media(scripting:none){.explore-nav [data-topic-browse]{display:none}}

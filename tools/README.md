@@ -96,4 +96,3 @@ card. Model updates leave historical FEA pictures and their evidence untouched.
 | [research_figures.py](research_figures.py) | Draw source-bound research survey figures. |
 | [security_scan.py](security_scan.py) | Repository security scanning entry point. |
 | [volume_probe.py](volume_probe.py) | Record geometric volume precision evidence. |
-

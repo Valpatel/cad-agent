@@ -257,8 +257,8 @@ export async function resultImageMotionProblems(browser, base) {
   const page=await ctx.newPage();
   try {
     await page.goto(base+'/',{waitUntil:'networkidle'});
-    const images=page.locator('.reel-tile picture img');
-    if(await images.count()!==8)out.push('expected the eight real animated result images');
+    const images=page.locator('.reel-tile picture img, .fit-media picture img');
+    if(await images.count()!==11)out.push('expected eight reel images and all three displayed check/simulation images');
     for(const image of await images.all()) {
       await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
       const state=await image.evaluate(el=>({src:el.getAttribute('src'),current:new URL(el.currentSrc).pathname,loaded:el.complete&&el.naturalWidth>0}));

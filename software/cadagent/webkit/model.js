@@ -402,6 +402,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     });
 
     const resize = () => {
+      if (disposed) return;
       const w = this.clientWidth || 1, h = this.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
@@ -413,6 +414,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     let last = performance.now();
     this.frames = 0;                      // frames drawn by the loop (the browser suite checks it stops off screen)
     const tick = now => {
+      if (disposed) return;
       frame = 0;
       this.frames++;
       const dt = Math.min(0.05, (now - last) / 1000);
@@ -429,12 +431,13 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       try { renderer.render(scene, camera); } catch (error) { this.#fail(error); return; }
       if (more && visible) frame = requestAnimationFrame(tick);
     };
-    function request() { if (!frame && visible) { last = performance.now(); frame = requestAnimationFrame(tick); } }
+    function request() { if (!disposed && !frame && visible) { last = performance.now(); frame = requestAnimationFrame(tick); } }
     const sizeObserver = new ResizeObserver(resize); sizeObserver.observe(this);
     disposers.push(() => sizeObserver.disconnect());
     // Frames only while the element is on screen and the tab is showing: either one changing re-decides.
     let onScreen = true;
     const show = () => {
+      if (disposed) return;
       visible = onScreen && document.visibilityState === 'visible';
       if (visible) request(); else if (frame) { cancelAnimationFrame(frame); frame = 0; }
     };

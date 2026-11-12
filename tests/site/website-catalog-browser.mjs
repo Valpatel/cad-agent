@@ -175,9 +175,10 @@ async function detailsChecks(){
    let fetched=0;await page.route('**/catalog.json',route=>{fetched++;const fixture=structuredClone(catalog);if(badRevision)fixture.revision='0'.repeat(40);else{const c=fixture.items.find(x=>x.id==='tool-holes');c.notes='<img src=x onerror=alert(1)> is inert source text';c.how='echo <script>alert(1)</script>';}
     return route.fulfill({contentType:'application/json',body:JSON.stringify(fixture)});});
    if(fetched)fail('details','eager catalogue request');
-   const host=page.locator('details[data-catalogue-id="tool-holes"]');await host.locator('summary').click();
-   if(badRevision){await page.waitForFunction(()=>!document.querySelector('details[data-catalogue-id="tool-holes"]').hasAttribute('data-detail-loading'));if(await host.getAttribute('data-detail-ready')!==null||!await host.locator('[data-detail-fallback]').isVisible())fail('details','stale feed hides fallback or becomes ready');}
-   else{await host.locator('[data-detail-fallback]').waitFor({state:'detached'});if(!await host.textContent().then(t=>t.includes('<img src=x onerror=alert(1)>')))fail('details','notes text lost');if(await host.locator('img[src=x],script').count())fail('details','source metadata became executable');}
+   const host=page.locator('details[data-catalogue-id="tool-holes"]');
+   const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/catalog.json');await host.locator('summary').click();await response;
+   if(badRevision){await page.waitForFunction(()=>{const el=document.querySelector('details[data-catalogue-id="tool-holes"]');return !!el.querySelector('[data-detail-fallback]')&&!el.hasAttribute('data-detail-loading');});if(await host.getAttribute('data-detail-ready')!==null||!await host.locator('[data-detail-fallback]').isVisible())fail('details','stale feed hides fallback or becomes ready');}
+   else{await page.waitForSelector('details[data-catalogue-id="tool-holes"][data-detail-ready]');if(!await host.textContent().then(t=>t.includes('<img src=x onerror=alert(1)>')))fail('details','notes text lost');if(await host.locator('img[src=x],script').count())fail('details','source metadata became executable');}
    if(fetched!==1)fail('details','expected one bounded existing-feed fetch, got '+fetched);
   }finally{await done();}
  }

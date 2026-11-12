@@ -214,6 +214,38 @@ reviews the pull request (code, evidence, docs), which is a different job.
 Reviews of geometry also walk [common-issues.md](common-issues.md): the mistakes that recur in CAD designs, each
 with the check that catches it, or that it needs a look.
 
+<details id="mine-procedures">
+<summary>Turn outside knowledge and procedures into portable skills</summary>
+
+Study a manufacturer's guide, another project's skill or a real build failure for a decision cad-agent can
+improve. Keep one canonical method in this repository; harness wiring exposes that method to an agent.
+
+| Step | What to retain |
+|---|---|
+| Find the existing owner | Search our sources, domain code and skills first. Extend the relevant workflow; a new source does not need a new skill. |
+| Read and bound the claim | Cite the original author, edition or commit, exact reading scope and applicability limits. Separate stated facts, our inferences and observed results. |
+| Define the useful procedure | State when it applies, its inputs, the decision or artifact it produces, and what happens when an input or tool is missing. Keep small tasks reusable; a longer workflow composes them. |
+| Preserve the handoff | Reuse the existing producer/consumer record and version policy. Identify required inputs, optional detail and results that remain useful with stated limits. Preserve source identity, units, unknowns and failed attempts; a receiving skill must not turn absence into success. |
+| Put each detail in its owner | Calculations and validators belong in domain code, facts in cited research, and conditional instructions in linked guides. Keep `SKILL.md` focused on choosing and carrying out the task. Keep harness-specific tool bindings out of the engineering method. |
+| Test the decision | Exercise the actual producer and consumer with a valid example and a relevant defect, such as a missing metric or stale source. For behavioral claims, give a fresh agent the task, skill and raw inputs without the expected answer; check its artifact independently. |
+
+For example, the [variant preflight](../explore.md#before-a-variant-batch) checks that a parameter changes the
+intended geometry before spending a batch. Its skill points to the existing Explore evaluator and records;
+it introduces no second variant format or connector requirement.
+
+Use the [standard evaluation work](standard-evaluation.md) for matched model/harness studies, distinguishing its
+existing analytical runner from the planned CAD runner. Retain failures and the tested environment. A link check
+or readable skill does not establish agent performance, and the
+[source evidence ladder](../research/references/README.md#the-evidence-ladder) still governs promotion. Publish a
+compact result and source link, then improve the owning procedure when an observed failure warrants it.
+
+The separation of small tasks, composed workflows and shared handoff rules is informed by
+[Anthropic's manufacturing reference](../research/agent-workflow/landscape.md). We mine its methods and structure;
+we do not include its plugin, scripts or connectors. A source's account workflow, approval pauses and output style
+are not automatically cad-agent requirements: preserve the user's task, existing authorization and our own contracts.
+
+</details>
+
 ## The workflow in one page
 
 Assume the session ends within 30 minutes: tokens run out, the workstation crashes or is reformatted. GitHub is the

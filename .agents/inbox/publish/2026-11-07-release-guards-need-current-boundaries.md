@@ -1,5 +1,28 @@
 # Validate every current check instance and the actual topic delta
 
+## Documentation changes still need the release parser
+
+2026-11-12 UTC: PR636 at `ea38ded5720538cbb773b8ae9afad6b45dd27037` passed its focused content checks,
+but normal [core 3.12 job 131442108262](https://github.com/Valpatel/cad-agent/actions/runs/43292456383/job/131442108262)
+reported 1 failed, 3548 passed and 369 skipped. The failure was `test_this_repo_can_be_released`: the authored
+fragment used `### Changed`, while `cut_release.read_fragment` requires `**Changed**`. The exact local command
+`PYTHONPATH=software python -m pytest -q tests/repo/test_cut_release.py::test_this_repo_can_be_released`
+also failed before correction. The content-test selection omitted the existing release parser; this was an author
+error that CI correctly blocked, not a flaky test. Change the fragment, not the parser.
+
+The initial draft's supply-chain job separately rejected a pending report row. Its log named the missing pinned
+Anthropic URL; one finalized body edit supplied the completed online row, and replacement job 131442108235 passed.
+The [receipt](https://github.com/Valpatel/cad-agent/pull/636#issuecomment-6834091302) preserves that earlier failure
+and cancellation. Neither it nor the later parser defect may be counted as a successful superseded run.
+
+**Rule:** even a prose-only change must exercise the actual parser for every new release fragment, alongside its
+content checks. Use the existing [fragment format](../../../docs/changelog.d/README.md) and finish required audit
+rows before waiting for final CI. Extend the existing publication procedure, not the acceptance rules.
+
+**Limits:** these are release-input and description defects. No upstream plugin execution, compatibility test or
+physical CAD claim follows from fixing them. Existing parser tests already cover malformed headings; another
+test mirroring this typo would add no coverage. Fresh exact-head review and normal CI remain required.
+
 ## Start idle reviewers instead of queueing another message
 
 On 2026-11-08 UTC, a CAD release owner sent a new retirement-review request with `collaboration.send_message`.
@@ -311,3 +334,86 @@ Inert controls exercise success-without-capture, partial receipt before close, t
 failed/stalled capture and unavailable output without replacing the original error. These are simulated
 page controls, not a browser reproduction or diagnosis of the old failure. Obtain exact-source review
 before a normal diagnostic CI checkpoint; never relabel the original failed job or its skipped parts as passes.
+
+
+## Count current names after reviewed historical exclusions
+
+2026-11-12 UTC: independent review of #643's exact four-instance supersession guard
+found `names.add(name)` before the historical-cancellation skip. No merge had occurred; the
+optimized preflight still rejected the pending browser workflow. The [corrected guard](https://github.com/Valpatel/cad-agent/pull/643#issuecomment-6835704052)
+adds a name only after excluding those exact reviewed historical instances, and independently
+requires the complete replacement CI and original browser job sets to succeed.
+
+**Rule and limits:** a historical canceled wrapper must never satisfy current required-name
+presence. Scope any disposition to immutable head/name/job identities, retain cancellations as
+NOT PASS, and require every other current instance. This was a temporary local guard correction,
+not a CI waiver or permission for a general cancellation filter.
+
+The #643 body edit at `20:40:57Z` restarted source CI: its trigger includes `edited`, not
+`ready_for_review`. Readiness at `20:40:58Z` contributed only to Gates concurrency, which
+handles both events. Keep the three superseded source jobs distinct from the separate canceled
+Gates wrapper; readiness alone did not restart source CI. #644 similarly had one canceled
+Gates wrapper (`131494029147`), separately from its real folded-link failure below.
+
+## Read back the verdict's last non-empty line
+
+2026-11-12 UTC: `gh api repos/Valpatel/cad-agent/pulls/643/reviews` showed review
+`5881799653` starting with its PASS marker and ending with prose. The existing
+`tools/ci_gates.py:marker` contract therefore ignored it. Review `5881856490` repeated the
+unchanged exact-head findings with the marker last, and the normal Actions gate accepted it.
+The same placement mistake affected #636 review `5881697816` at `00f0a4eb`; its later
+exact-head renewal `5881875427` at `d7e572b9` used a parser-validated final marker.
+
+**Cause and rule:** human-readable PASS prose is not a machine-readable verdict. End the posted
+summary with the exact forty-character-head marker as its last non-empty line, read the created
+review back, and validate it with the existing parser before requesting the ordinary Actions
+refresh. `tests/repo/test_ci_gates.py::test_the_marker_must_be_the_last_line` already protects
+this behavior; no new gate or parser relaxation is needed.
+
+**Limits:** the first-marker reviews remain ignored, not retroactive passes. The correction
+changes review formatting, not source, runtime evidence, independent-review scope or required CI.
+
+## Preserve the actual predecessor state after an ancestry merge
+
+2026-11-12 UTC: after corrected #632 merged as `764a73b4`,
+`gh pr view 580 --json state,headRefOid,mergeCommit` reported MERGED with that same merge commit
+and unchanged original tip `a5a1455d`. After corrected #634 merged as `86920258`, #582 likewise
+reported MERGED with unchanged tip `3f6781b6`. Both original tips are ancestors of their accepted
+replacement merges. GitHub had recognized the preserved contribution ancestry automatically.
+An OPEN-only supersession check rejected #580's new state; a subsequent close attempt returned
+"already merged" and made no closure change.
+
+**Rule:** re-read the original PR's exact tip, state and merge commit before supersession work.
+Verify ancestry and record where its blocking findings were corrected; do not reopen or relabel
+an automatically merged predecessor to force an expected workflow. Keep dependent mutations in
+the checked program, or execute them only after inspecting a successful preflight receipt
+([existing fail-closed procedure](../2026-11-06-failed-prechecks-must-stop-mutations.md)).
+
+**Limits:** preserving ancestry is not accepting the original blocked implementation unchanged.
+Remote retirement still requires actual released-main incorporation, fresh exact tips, explicit
+scope and independent review. Local branches, worktrees and providers remain intact.
+
+## Check release links after moving their Markdown consumer
+
+2026-11-12 UTC: #644 Chromium job `131493215897` failed the existing repository-map consumer:
+`CHANGELOG.md: broken relative link ../toolkit.md#parts-that-are-not-printed`.
+The link was valid in accepted `docs/changelog.d/577-part-process.md`, but the unchanged
+canonical cutter copies fragment text into root `CHANGELOG.md`. The destination then escaped
+the repository. The earlier 139 release/parser/layout tests did not exercise this link consumer.
+
+**Correction:** immutable input commit `8cf9c33f45dc6ef2983d5999e2137478cebbe60c` changes only that
+fragment link to `https://cad-agent.valpatel.com/docs/toolkit#parts-that-are-not-printed`.
+The unchanged cutter regenerates all three metadata files from that input. The existing
+`checkMap`/`createPublication` consumer, using `gitFiles`' NUL-delimited inventory and actual
+corrected folded Markdown, returns no problems; planting the original relative destination back
+into that output reproduces exactly the one broken-link error. Failed release tip `3fb7f88e`
+remains ancestry, and the consumed fragment stays deleted.
+
+**Rule:** validate the folded release with the existing structural consumer before pushing:
+`node --test tests/site/website-repo-map.test.mjs` (bind the repository's supported Node runtime;
+the separate owned-diagram rendering check remains CI-only). Use a stable canonical destination
+when a fragment will move; do not repair historical changelog entries or add a broad link rewriter.
+
+**Limits:** this preflight establishes source-link validity, not a public HTTP response, rendered
+browser pass or diagnosis of unrelated failures. The failed source CI and canceled Gates wrapper
+remain separate evidence; corrected exact-head review and all new normal CI are still required.

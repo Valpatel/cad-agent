@@ -78,3 +78,13 @@ not a geometry-based wait, retry until fit, increased timeout or changed applica
 
 Current full built-site CI in both engines remains the acceptance criterion. Local non-reproduction does not
 clear a failed application assertion, establish the historical cause or qualify the rest of a release.
+
+## Migrate the required primary destination without weakening visibility checks
+
+**Evidence, 2026-11-12 UTC, #599/#600:** at `de39921b`, normal Chromium run43136002038/job130911380308 and the same run's WebKit final log rejected 88 header strings: 66 width/theme checks still required `nav a[href="/catalog"]`, 20 route checks still required a catalogue header link, and two hidden-icon baselines contained that same missing-link problem. The approved product header already used Explore at `/explore`. Auditing the complete final assertion found no unrelated error; the icon messages were contaminated baselines, not independent evidence of a new geometry defect.
+
+**Correction and proof:** require the intended primary Explore destination while retaining the legacy catalogue route, all 33 widths, both themes, visibility checks, viewport bounds, four-pixel gaps, hidden-header cases and hidden/escaped-icon controls. Add a planted obsolete-primary-URL control, so a fitting header with the wrong destination still fails. The exact corrected header function passed 76 focused cases; visible-primary checks passed on 22 route/viewport pairs, including both `/explore` and `/catalog`. The owned capped unit completed in 28.2 seconds and was inactive with an empty control group.
+
+**Related image-test assumption:** lazy strip images can be horizontally offscreen on phones. Bring each actual image into view before requiring complete/nonzero natural width, then restore both strip and page scroll before the initial-layout measurement. A separate bounded four-state image check passed, and a deliberately broken displayed asset was rejected. Product lazy loading and CSP were unchanged; no observed WebKit lazy-image defect is claimed. Its owned unit completed in 6.9 seconds and was inactive with an empty control group.
+
+**Rule and limits:** update the intended navigation contract when a reviewed navigation change ships; do not restore obsolete UI, drop visibility/geometry requirements or infer a separate failure from a dirty baseline. These are focused Chromium proofs on the accepted unchanged UI producer, not a full-suite or cross-engine pass. Fresh normal CI in both engines and an independent exact-head review remain required.

@@ -124,8 +124,20 @@ async function sharedDiscoveryChecks() {
     const {page, done} = await open('/explore', {width, color});
     try {
       const box = page.getByRole('searchbox', {name: 'Search everything'});
-      const images = await page.locator('.discover-demos img').evaluateAll(xs => xs.map(x => ({src:x.getAttribute('src'),loaded:x.complete && x.naturalWidth>0})));
+      // Lazy images outside a phone's horizontal strip are checked after they are actually brought into view.
+      const initialScroll = await page.evaluate(() => ({x:scrollX,y:scrollY,strip:document.querySelector('.discover-demos').scrollLeft}));
+      const stripImages = page.locator('.discover-demos img');
+      for (let i=0;i<await stripImages.count();i++) {
+        const image = stripImages.nth(i);await image.scrollIntoViewIfNeeded();
+        const handle = await image.elementHandle();
+        try { await page.waitForFunction(img => img.complete && img.naturalWidth > 0, handle, {timeout:10000}); }
+        catch { fail('Explore images', `${width}px ${color}: displayed image ${i} did not load`); }
+        finally { await handle.dispose(); }
+      }
+      const images = await stripImages.evaluateAll(xs => xs.map(x => ({src:x.getAttribute('src'),loaded:x.complete && x.naturalWidth>0})));
       if (images.length !== 3 || images.some(x => !x.loaded || !x.src.startsWith('/'))) fail('Explore images', JSON.stringify(images));
+      await page.evaluate(saved => {document.querySelector('.discover-demos').scrollLeft=saved.strip;scrollTo({left:saved.x,top:saved.y,behavior:'instant'});}, initialScroll);
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const start = await box.boundingBox();
       if (!start || start.y > 400) fail('Explore', `${width}px ${color}: search starts below the first view`);
       const before = await page.evaluate(() => ({height: document.documentElement.scrollHeight, nodes: document.querySelectorAll('*').length,

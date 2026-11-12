@@ -107,3 +107,16 @@ The reduced-motion composition must show the completed collaboration. A denser
 graph, passing loader tests or earlier screenshots cannot substitute for that
 visual acceptance. The scene stays conceptual, without claiming physical autonomy
 or automatic model training. Review the new source-bound producer headed again.
+
+The owner's subsequent headline is **“Self-improving machines teaching each other
+how to build machines.”** Use that ambition above a concrete description of the
+open-source toolkit, shared knowledge, design tests and human feedback. The scene
+also includes a distinct receiving maker using shared knowledge, not only one
+machine looping into itself. No provider integration or physical autonomy is
+implied by the conceptual art.
+
+J501 final adoption is on hold while the coordinator audits newer remote source
+and derivative-model redistribution. The local `240be82` capture is a legacy
+prototype context, not the latest remote product revision. The requested fitted
+lid and source-backed right-angle antennas must be resolved from the product's
+single source of truth; do not add invented site-only hardware.

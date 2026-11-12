@@ -538,8 +538,8 @@ ${useLoop}
 </div></div></section>`;
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Shared knowledge. Better things.</p>
-<h1>Build what you need.<br><span>Make the next design better.</span></h1>
-<p class="intro">Make useful, carefully checked hardware with AI that learns from each build.</p></div>
+<h1>Self-improving machines.<br><span>Teaching each other<br>how to build machines.</span></h1>
+<p class="intro">cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.</p></div>
 <figure class="learning-art"><picture><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="1000" height="1000"><img src="/docs/img/hero/learning-loop.svg" width="1440" height="640" fetchpriority="high" alt="A person's need flows through examples and manufacturer guides into organized knowledge, then design, checking, simulation and making; human-reviewed feedback improves the next design"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
 </section></div>

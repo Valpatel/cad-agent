@@ -782,7 +782,7 @@ sources:
   - inserts
   evidence:
     class: read
-    numbers: none
+    numbers: claimed
     tested: 'no'
     authority: primary
   confidence:

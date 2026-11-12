@@ -40,6 +40,10 @@ References: [`docs/practice/dossier.md`](../../../docs/practice/dossier.md) (the
   `cad-remote-runs` skill, where installed). Where agents share a workstation, one `nice`d job at a time.
 - **No project yet?** `cad-agent init <dir>` copies the starter box (a box and lid on four M3 heat-set inserts, wired
   for `cad-agent all`). Change it rather than writing `cad-agent.yaml` and the scripts by hand.
+- **Comparing variants?** Follow the [Explore preflight](../../../docs/explore.md#before-a-variant-batch): probe a
+  parameter in an isolated copy and measure its intended geometry before a batch. Reuse the existing evaluator,
+  constraints and Pareto comparison; keep failed trials and unknown values. The preflight is an agent procedure,
+  not an automatic geometry validator.
 - **Set `CAD_AGENT_ACTOR`** to your session id. Builds record it; a reviewer's sign-off is refused when it equals the
   build's.
 

@@ -62,6 +62,28 @@ Not included, on purpose:
 
 ## Configuration
 
+<details>
+<summary>Before a variant batch</summary>
+
+<a id="before-a-variant-batch"></a>
+
+Before spending a batch on a wall thickness, hole spacing or other parameter, make one small change in an isolated
+copy and measure the intended feature after regeneration. An updated parameter dictionary or file hash alone
+does not show that the geometry changed. Keep the base untouched, name external references, and record a failed or
+unchanged probe instead of silently narrowing the requested search. Bound the parameter ranges and trial count
+before starting.
+
+Use the existing evaluator's metrics and checks, with units and source identity. Keep failed trials and unknown
+properties; missing mass is not zero mass. Put hard limits in `constraints` and preference directions in
+`objectives`. The comparison uses Pareto fronts, not a single weighted winner. If a project adds a weighted decision,
+show its normalization and test plausible weights and input uncertainty before naming a winner.
+
+This preflight adapts ideas from Anthropic's [Claude for Manufacturing design skills](research/agent-workflow/landscape.md).
+It is a review procedure, not an automatic geometry-driving check or a Fusion/ERP integration. Existing comparison
+checks do not prove the model regenerated correctly or that a design can be manufactured.
+
+</details>
+
 Everything lives under `cad: explore:` in `cad-agent.yaml`; every key is optional.
 
 ```yaml

@@ -300,6 +300,7 @@ export class CadGallery extends Base {
     const s = this.#state, patterns = searchPatterns(s.q);
     const filtered = !!(patterns.length || Object.keys(s.facets).length);
     const overview = !s.tab;
+    const overviewLimit = !filtered ? Math.max(1, parseInt(this.getAttribute('browse-limit'), 10) || this.limit) : this.limit;
     this.toggleAttribute('data-overview', overview);
     this.toggleAttribute('data-filtered', filtered);
     // Order, then visibility, then the overview's limit per group.
@@ -319,9 +320,9 @@ export class CadGallery extends Base {
       if (this.hasAttribute('data-open-groups') && g.localName === 'details') g.open = true;
       const its = [...g.querySelectorAll('[data-item]')].map(el => this.#items.find(it => it.el === el)).filter(Boolean);
       let n = 0;
-      for (const it of its) { if (it.visible) n++; it.el.toggleAttribute('data-over', overview && it.visible && n > this.limit); }
+      for (const it of its) { if (it.visible) n++; it.el.toggleAttribute('data-over', overview && it.visible && n > overviewLimit); }
       g.hidden = !n || (!!s.tab && g.dataset.group !== s.tab);
-      g.toggleAttribute('data-more', overview && n > this.limit);
+      g.toggleAttribute('data-more', overview && n > overviewLimit);
       for (const c of g.querySelectorAll('[data-group-count]')) c.textContent = n;
     }
     // Controls show the view.

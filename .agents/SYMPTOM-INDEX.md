@@ -3,6 +3,7 @@
 | Symptom | Guidance |
 | --- | --- |
 | A real PowerShell guard exceeds 20 seconds with empty captured output | [Retain bounded phase receipts without changing the guard](inbox/2026-11-06-source-selection-must-not-pass-empty.md#a-silent-powershell-timeout-needs-its-phase-receipts) |
+| Containment or packet poses lose a follower offset while an independent joint moves | [Preserve other followers' home transforms](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md#a-sampled-group-still-needs-other-followers-home-transforms) |
 | The legacy catalogue shows only a quote prefix for a tag-like plain description | [Escape canonical plain text instead of stripping it through an HTML summary](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md#keep-canonical-plain-text-out-of-an-html-summary-extractor) |
 | A dark document outline is readable at rest but its hover uses a pale kit fallback | [Bind the complete shared navigation theme and check interactive states](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md#a-document-rail-needs-the-same-complete-theme-contract-as-its-tree) |
 | A short source-reading entrance leaves a skill workflow over the reading-wall budget | [Measure the whole skill route and disclose complete workflow detail](inbox/agents/2026-11-10-reading-batches-need-the-release-and-page-consumers.md#skill-entrances-need-the-whole-workflow-reading-check) |

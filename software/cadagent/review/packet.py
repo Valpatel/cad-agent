@@ -602,27 +602,51 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
              target=dict(target))
 
     # cuts through joint axes, and poses
+    from cadagent.review.gates.motion import resolve_follows
     from cadagent.review.gates.relations import moving_bodies
     grounded = [n for n, p in rec.parts.items() if p.get("grounded")]
     body_of = moving_bodies(rec.joints, rec.fasteners, grounded)
+    laws, _ = resolve_follows(rec.joints)               # {driven joint: its law from the joint that is sampled}
+
+    # Use the gate's home convention (zero clamped to the declared range), including root-driver homes
+    # outside zero. A composed follower law already names the independent root driver.
+    homes = {x: min(max(0.0, float(jx["range"][0])), float(jx["range"][1]))
+             for x, jx in rec.joints.items()
+             if jx.get("kind") in ("revolute", "slider", "cylindrical") and isinstance(jx.get("range"), list)
+             and len(jx["range"]) == 2 and x not in laws}
+
+    home_slides = {x: min(max(0.0, float(jx["range_mm"][0])), float(jx["range_mm"][1]))
+                   for x, jx in rec.joints.items() if jx.get("kind") == "cylindrical"
+                   and isinstance(jx.get("range_mm"), list) and len(jx["range_mm"]) == 2}
+
+    def touches(jid: str) -> bool:
+        moving, fixed = rec.joints[jid].get("moving"), rec.joints[jid].get("fixed")
+        body = {n for n, b in body_of.items() if b == moving} | ({moving} if moving else set())
+        return bool(({moving, fixed} | body) & (part_set | fast_set))
+
     for jid, j in sorted(rec.joints.items()):
         moving, fixed = j.get("moving"), j.get("fixed")
-        body = {n for n, b in body_of.items() if b == moving} | ({moving} if moving else set())
-        involved = ({moving, fixed} | body) & (part_set | fast_set)
-        if not involved:
+        driven = sorted(f for f, law in laws.items() if law.joint == jid)
+        direct = touches(jid)
+        if not direct and not any(touches(f) for f in driven):    # a driver is posed for its followers' section too
             continue
         axis = j.get("axis") or {}
         origin, d = axis.get("origin"), axis.get("direction")
         if not (_vec(origin) and _vec(d, nonzero=True)):
             not_rendered.append({"what": f"joint {jid}", "why": "no axis in the record"})
             continue
-        n = plane_containing(d)
-        view(f"cut-joint-{jid}", "cut", f"cut through joint {jid}",
-             f"Plane containing the {j.get('kind')} axis of {jid}: {moving} on {fixed}.",
-             [-c for c in n], clip={"origin": _r(origin), "normal": _r(n)},
-             fit=_fit(_grow(_union(rec.box(k) for name in (moving, fixed) for k in rec.keys_of(str(name))),
-                            0.08 * diag)),
-             target={"joint": jid, "moving": moving, "fixed": fixed, "kind": j.get("kind")})
+        if direct:
+            n = plane_containing(d)
+            view(f"cut-joint-{jid}", "cut", f"cut through joint {jid}",
+                 f"Plane containing the {j.get('kind')} axis of {jid}: {moving} on {fixed}.",
+                 [-c for c in n], clip={"origin": _r(origin), "normal": _r(n)},
+                 fit=_fit(_grow(_union(rec.box(k) for name in (moving, fixed) for k in rec.keys_of(str(name))),
+                                0.08 * diag)),
+                 target={"joint": jid, "moving": moving, "fixed": fixed, "kind": j.get("kind")})
+        if jid in laws:                                 # never posed alone: it moves only as its driver does
+            not_rendered.append({"what": f"poses of joint {jid}", "why": f"it follows joint {laws[jid].joint} and "
+                                 f"is drawn at its driven value in the poses of {laws[jid].joint}"})
+            continue
         rng, unit = j.get("range"), j.get("unit")
         if j.get("kind") in ("planar", "ball", "fixed") or not (isinstance(rng, list) and len(rng) == 2):
             if j.get("kind") != "fixed":
@@ -631,17 +655,52 @@ def plan_packet(section: str, record: Mapping[str, Any], dossier: Any = None,
             continue
         carried = _carried(jid, rec.joints, body_of)
         keys_moving = sorted({k for name in carried for k in rec.keys_of(name)})
+        # Every follower is drawn: those of this driver use its sampled value; the others hold their driver home.
+        # Include nonzero held driver/ancestor moves so follower frames compose in the assembly frame.
+        # Each has an axis, or the pose would show a linkage that
+        # the record cannot place; the innermost joint (the one carried by the most others) is applied first.
+        chain = [f for f in (set(laws) | {x for x, h in homes.items() if laws and (h != 0 or home_slides.get(x, 0) != 0) and x != jid})
+                 if _vec((rec.joints[f].get("axis") or {}).get("origin"))
+                 and _vec((rec.joints[f].get("axis") or {}).get("direction"), nonzero=True)]
+        carried_by = {x: _carried(x, rec.joints, body_of) for x in [jid] + chain}
+        order = sorted([jid] + chain, key=lambda x: (-sum(1 for y in carried_by if y != x and
+                                                           rec.joints[x].get("moving") in carried_by[y]), x))
         for end, value in (("min", rng[0]), ("max", rng[1])):
-            moved_boxes = [_pose_box(rec.box(k), origin, d, value, unit, j.get("range_mm"), end) for k in keys_moving]
-            pose_fit = _fit(_grow(_union([sec_box] + moved_boxes + [rec.box(k) for k in rec.keys_of(str(fixed))]),
-                                  0.05 * diag))
             pose = {"interface": jid, "kind": j.get("kind"), "value": value, "unit": unit, "body": sorted(carried),
                     "keys": keys_moving, "axis": {"origin": _r(origin), "direction": _r(d)}}
             if j.get("kind") == "cylindrical" and isinstance(j.get("range_mm"), list):
                 pose["slide_mm"] = j["range_mm"][0 if end == "min" else 1]
+            title = f"{jid} at {value:g} {unit or ''} ({end} of range)".replace("  ", " ")
+            text = f"The moving body at the {end} end of its declared range"
+            if chain:
+                moves = []
+                for x in order:
+                    jx = rec.joints[x]
+                    moves.append({"interface": x, "value": value if x == jid else round(
+                                      laws[x].of(float(value) if laws[x].joint == jid else homes.get(laws[x].joint, 0.0))
+                                      if x in laws else homes[x], 6),
+                                  "unit": jx.get("unit") or ("mm" if jx.get("kind") == "slider" else "deg"),
+                                  "axis": {"origin": _r(jx["axis"]["origin"]), "direction": _r(jx["axis"]["direction"])},
+                                  "keys": sorted({k for name in carried_by[x] for k in rec.keys_of(name)})})
+                for mv in moves:
+                    if mv["interface"] in home_slides:
+                        mv["slide_mm"] = home_slides[mv["interface"]]
+                if "slide_mm" in pose:
+                    next(mv for mv in moves if mv["interface"] == jid)["slide_mm"] = pose["slide_mm"]
+                pose["moves"] = moves
+                pose["keys"] = sorted({k for mv in moves for k in mv["keys"]})
+                pose["body"] = sorted({name for x in order for name in carried_by[x]})
+                with_ = ", ".join(f"{mv['interface']} at {mv['value']:g} {mv['unit']}" for mv in moves
+                                  if mv["interface"] != jid)
+                title += f", with {with_}"
+                text += (f", with driven and held joints at their declared values ({with_}; the ratio is declared, "
+                         "not solved)")
+            moved_boxes = [_pose_box(rec.box(k), origin, d, value, unit, j.get("range_mm"), end, pose.get("moves"), k)
+                           for k in pose["keys"]]
+            pose_fit = _fit(_grow(_union([sec_box] + moved_boxes + [rec.box(k) for k in rec.keys_of(str(fixed))]),
+                                  0.05 * diag))
             contacts = ", ".join("-".join(map(str, p)) for p in j.get("intended_contacts") or []) or "none"
-            view(f"pose-{jid}-{end}", "pose", f"{jid} at {value:g} {unit or ''} ({end} of range)".replace("  ", " "),
-                 f"The moving body at the {end} end of its declared range; declared contacts: {contacts}.",
+            view(f"pose-{jid}-{end}", "pose", title, f"{text}; declared contacts: {contacts}.",
                  "iso", pose=pose, fit=pose_fit, target={"joint": jid, "moving": moving, "fixed": fixed,
                                           "contacts": j.get("intended_contacts") or []})
 
@@ -754,11 +813,22 @@ def dossier_digest(manifest: Mapping[str, Any]) -> str:
 
 
 def _pose_box(b: Optional[Box], origin: Sequence[float], d: Sequence[float], value: float, unit: Any,
-              range_mm: Any, end: str) -> Optional[Box]:
-    """The box of a box's corners moved to a joint pose (kernel-free framing of the pose views)."""
+              range_mm: Any, end: str, moves: Optional[Sequence[Mapping[str, Any]]] = None,
+              key: Optional[str] = None) -> Optional[Box]:
+    """The box of a box's corners moved to a joint pose (kernel-free framing of the pose views). With ``moves``
+    (a pose with driven joints), ``key`` takes each move that lists it, in order."""
     if b is None:
         return None
     pts = _corners(b)
+    if moves:
+        for mv in moves:
+            if key in mv["keys"]:
+                u, o, v = _unit(mv["axis"]["direction"]), mv["axis"]["origin"], float(mv["value"])
+                pts = ([[p[i] + u[i] * v for i in range(3)] for p in pts] if mv["unit"] == "mm"
+                       else [rotate_point(p, o, u, v) for p in pts])
+                if mv.get("slide_mm"):
+                    pts = [[p[i] + u[i] * float(mv["slide_mm"]) for i in range(3)] for p in pts]
+        return _box_of(pts)
     u = _unit(d)
     if unit == "mm":
         pts = [[p[i] + u[i] * float(value) for i in range(3)] for p in pts]
@@ -988,8 +1058,15 @@ def _rgb(hex_color: str, alpha: float = 1.0) -> Tuple[float, float, float, float
     return (int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255, alpha)
 
 
-def _posed(shape: Any, pose: Mapping[str, Any]) -> Any:
+def _posed(shape: Any, pose: Mapping[str, Any], key: Optional[str] = None) -> Any:
+    """``shape`` at ``pose``. A pose with ``moves`` (driven joints) applies to ``key`` each move that lists it, the
+    innermost joint first."""
     cq = __import__("cadquery")
+    if pose.get("moves"):
+        for mv in pose["moves"]:
+            if key in mv["keys"]:
+                shape = _posed(shape, {k: mv[k] for k in ("axis", "value", "unit", "slide_mm") if k in mv})
+        return shape
     axis = pose["axis"]
     o, d = cq.Vector(*axis["origin"]), cq.Vector(*axis["direction"])
     out = shape
@@ -1047,13 +1124,13 @@ def render_views(manifest: Dict[str, Any], result: Any, out_dir: Union[str, Path
         for key in v["keys"]:
             if key not in shapes:
                 continue
-            shp = _posed(shapes[key], pose) if key in moved else shapes[key]
+            shp = _posed(shapes[key], pose, key) if key in moved else shapes[key]
             off = v.get("offsets", {}).get(key, (0.0, 0.0, 0.0))
             items.append((shp, color_of(key, kind), off))
         ctx_alpha = 0.85 if kind == "access" else 0.28
         for key in context:
             if key in shapes and key not in v["keys"]:
-                shp = _posed(shapes[key], pose) if key in moved else shapes[key]
+                shp = _posed(shapes[key], pose, key) if key in moved else shapes[key]
                 items.append((shp, _rgb(CONTEXT_COLOR, ctx_alpha)))
         if kind == "xray":
             for cname, cshape in cavities.items():

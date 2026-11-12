@@ -681,3 +681,148 @@ def test_shared_content_hash_and_hand_over_with_hashes(built):
     reg.cavity("box", "box")(lambda p: cq.Workplane().box(0.5, 0.5, 0.5).val())
     with pytest.raises(RegistryError, match="cavity name 'box'"):
         reg.build({}, root=root, write=False)
+
+
+# ------------------------------------------------------------------------------- driven (mimic) joints (#581)
+
+def test_a_driven_joint_is_checked_where_it_is_declared():
+    """``follows`` and ``closes`` are validated on the call, without a kernel; what needs the whole table (an
+    unknown driver, a loop) waits for the build."""
+    reg, z = Registry(), ((0, 0, 0), (0, 0, 1))
+    reg.joint("I1", parts=("a", "b"), axis=z, range_deg=(0, 30))
+    reg.joint("I2", parts=("c", "b"), axis=z, follows="I1")                              # no range of its own
+    reg.joint("I3", kind="slider", parts=("d", "b"), axis=z, range_mm=(0, 9), follows=("I1", 0.3),
+              closes={"parts": ("d", "c"), "at": lambda p: (0, 0, p["h"]), "tol_mm": 0.5})
+    reg.joint("I4", parts=("e", "b"), axis=z, range_deg=(-35, 5), follows=("I2", -1, 5))
+    assert reg.joints["I2"].follows == {"joint": "I1", "multiplier": 1.0, "offset": 0.0}
+    assert reg.joints["I2"].range is None and reg.joints["I2"].unit == "deg"
+    assert reg.joints["I3"].follows == {"joint": "I1", "multiplier": 0.3, "offset": 0.0}
+    assert reg.joints["I4"].follows == {"joint": "I2", "multiplier": -1.0, "offset": 5.0}
+    assert reg.joints["I1"].follows is None and reg.joints["I1"].closes == []
+    for kwargs, match in (
+            ({"follows": "I9", "kind": "cylindrical", "range_deg": (0, 1), "range_mm": (0, 1)},
+             "a cylindrical joint cannot follow another"),
+            ({"follows": "I9", "kind": "fixed"}, "a fixed joint cannot follow another"),
+            ({"follows": "I9", "kind": "ball"}, "a ball joint cannot follow another"),
+            ({"follows": "I5"}, "follows itself"),
+            ({"follows": ("I1", 0)}, "multiplier 0"),
+            ({"follows": ("I1", "twice")}, r"follows is a joint id, \(joint, multiplier\)"),
+            ({"follows": {"joint": "I1", "ratio": 2}}, r"follows is \{joint, multiplier, offset\}"),
+            ({"follows": "I1", "range_mm": (0, 5)}, "its range is range_deg, not range_mm"),
+            ({"follows": "I1", "kind": "slider", "range_deg": (0, 5)}, "its range is range_mm, not range_deg"),
+            ({"range_deg": (0, 1), "closes": {"parts": ("a", "a"), "at": (0, 0, 0)}}, "closes names two different parts"),
+            ({"range_deg": (0, 1), "closes": [{"parts": ("a", "b")}]}, r"closes is \{parts"),
+            ({"range_deg": (0, 1), "closes": {"parts": "ab", "at": (0, 0, 0)}}, r"closes is \{parts"),
+            ({"follows": "I1", "samples": 9}, "is not sampled: set samples on the joint that drives it"),
+            ({"follows": "I1", "kind": "hinge"}, "kind 'hinge'"),
+            ({"range_deg": (0, 1), "closes": 7}, "joint 'I5'")):
+        with pytest.raises(RegistryError, match=match):
+            reg.joint("I5", **{"parts": ("f", "b"), "axis": z, **kwargs})
+    assert set(reg.joints) == {"I1", "I2", "I3", "I4"}
+    # dossier_items() takes the same keys
+    legacy = Registry()
+    legacy.add_build_items({}, {"joints": [
+        {"interface": "I1", "parts": ("a", "b"), "axis": z, "range_deg": (0, 30)},
+        {"interface": "I2", "parts": ("c", "b"), "axis": z, "follows": ("I1", -1),
+         "closes": [{"parts": ("c", "a"), "at": (1, 2, 3)}]}]})
+    assert legacy.joints["I2"].follows == {"joint": "I1", "multiplier": -1.0, "offset": 0.0}
+    assert legacy.joints["I2"].closes[0]["at"] == (1, 2, 3)
+
+
+def test_a_build_refuses_an_unknown_driver_and_followers_in_a_loop(tmp_path):
+    z = ((0, 0, 0), (0, 0, 1))
+    lost = Registry()
+    lost.joint("I1", parts=("a", "b"), axis=z, follows="I-nowhere")
+    with pytest.raises(RegistryError, match=r"joint 'I1' \(.*\) cannot be driven: it follows 'I-nowhere', which is "
+                                            "not a declared joint"):
+        lost.build({}, root=tmp_path, write=False)
+    loop = Registry()
+    loop.joint("I1", parts=("a", "b"), axis=z, follows="I2")
+    loop.joint("I2", parts=("c", "b"), axis=z, follows=("I3", 2))
+    loop.joint("I3", parts=("d", "b"), axis=z, follows="I1")
+    with pytest.raises(RegistryError, match="joints I1 -> I2 -> I3 -> I1 follow each other in a loop"):
+        loop.build({}, root=tmp_path, write=False)
+    on_cyl = Registry()
+    on_cyl.joint("I1", kind="cylindrical", parts=("a", "b"), axis=z, range_deg=(0, 9), range_mm=(0, 9))
+    on_cyl.joint("I2", parts=("c", "b"), axis=z, follows="I1")
+    with pytest.raises(RegistryError, match="it follows I1, a cylindrical joint"):
+        on_cyl.build({}, root=tmp_path, write=False)
+
+
+def _lift_registry():
+    """The parallelogram lift of tests/review/test_gate_motion.py, declared the way a build script does."""
+    cq = pytest.importorskip("cadquery")
+    reg, up = Registry(), (0, -1, 0)
+    reg.part("tower", grounded=True)(lambda p: cq.Solid.makeBox(20, 10, 70, cq.Vector(-10, -10, -10)))
+    reg.part("lower_arm")(lambda p: cq.Solid.makeBox(110, 5, 10, cq.Vector(-5, 1, -5)))
+    reg.part("upper_arm")(lambda p: cq.Solid.makeBox(110, 5, 10, cq.Vector(-5, 1, p["rise"] - 5)))
+    reg.part("cradle")(lambda p: cq.Solid.makeBox(35, 5, 70, cq.Vector(90, 7, -10)).fuse(
+        cq.Solid.makeBox(13, 6, 70, cq.Vector(112, 1, -10))))
+    reg.joint("I-lower", parts=("lower_arm", "tower"), axis=Axis((0, 0, 0), up), range_deg=(0, 30), samples=5)
+    reg.joint("I-upper", parts=("upper_arm", "tower"), axis=lambda p: Axis((0, 0, p["rise"]), up), follows="I-lower")
+    reg.joint("I-cradle", parts=("cradle", "lower_arm"), axis=Axis((100, 0, 0), up), range_deg=(-30, 0),
+              follows=("I-lower", -1), closes={"parts": ("cradle", "upper_arm"), "at": lambda p: (100, 0, p["rise"])})
+    return reg
+
+
+def test_driven_joints_reach_the_geometry_record_and_every_reader_of_it(tmp_path):
+    from cadagent.review.dossier import load_geometry
+    from cadagent.review.gates import Assembly
+    from cadagent.review.gates.motion import motion_from_build
+    from cadagent.review.gates.relations import moving_bodies
+    result = _lift_registry().build({"rise": 50}, root=tmp_path)
+    geo = json.loads((tmp_path / "exports" / "dossier-geometry.json").read_text())       # plain JSON on disk
+    joints = geo["joints"]
+    assert joints["I-upper"]["follows"] == {"joint": "I-lower", "multiplier": 1.0, "offset": 0.0}
+    assert joints["I-upper"]["range"] is None and joints["I-upper"]["unit"] == "deg"
+    assert joints["I-cradle"]["follows"] == {"joint": "I-lower", "multiplier": -1.0, "offset": 0.0}
+    assert joints["I-cradle"]["range"] == [-30, 0]
+    assert joints["I-cradle"]["closes"] == [{"parts": ["cradle", "upper_arm"], "at": [100.0, 0.0, 50.0], "tol_mm": 0.1}]
+    # a joint that declares neither keeps the record it always had, so records without driven joints keep their digest
+    assert set(joints["I-lower"]) == {"kind", "moving", "fixed", "axis", "range", "unit", "intended_contacts",
+                                      "samples", "declared_at"}
+    assert result.joints["I-cradle"]["closes"] == joints["I-cradle"]["closes"]
+    # body labels are a matter of what is fastened to what: a follower's body is its own, as any joint's is
+    assert moving_bodies(joints, {}, ["tower"]) == {"lower_arm": "lower_arm", "upper_arm": "upper_arm",
+                                                    "cradle": "cradle"}
+    for source in (result, load_geometry(tmp_path / "exports" / "dossier-geometry.json")):
+        asm = Assembly.from_build(source)
+        assert {n: asm[n].body for n in asm.names} == {"tower": "tower", "lower_arm": "lower_arm",
+                                                       "upper_arm": "upper_arm", "cradle": "cradle"}
+        assert asm.joints["I-upper"]["follows"]["joint"] == "I-lower"
+        v = motion_from_build(source)
+        assert v["pass"] and v["findings"] == [], v["findings"]
+        assert v["groups"][0]["poses"] == 5 and sorted(v["driven"]) == ["I-cradle", "I-upper"]
+        assert v["groups"][0]["closures"][0]["status"] == "pass"
+
+
+def test_the_join_names_a_follower_whose_driver_is_missing_from_a_hand_written_record(tmp_path):
+    make_project(tmp_path)
+    d = load_dossier(tmp_path / "dossier" / "project.yaml")
+    part = lambda section, n=1: {"section": section, "count": n, "declared_at": "cad/build.py:7"}
+    geo = {"parts": {"bench_base": part("S1"), "pan_base": part("S1"), "hopper": part("S3"), "ball": part("S3", 8),
+                     "hopper_flap": part("S4")},
+           "cavities": {"hopper_cavity": {"part": "hopper", "declared_at": "cad/build.py:9"}},
+           "joints": {"I9": {"kind": "revolute", "moving": "hopper_flap", "fixed": "hopper",
+                             "follows": {"joint": "I-gone", "multiplier": 1.0, "offset": 0.0},
+                             "closes": [{"parts": ["hopper_flap", "ghost"], "at": [0, 0, 0], "tol_mm": 0.1}],
+                             "declared_at": "cad/build.py:12"}},
+           "fasteners": {"f": {"key": "screw_m3x8", "clamps": "hopper", "into": "pan_base", "via": "I7", "count": 4,
+                               "declared_at": "cad/build.py:20"}},
+           "assembly": {"steps": []}}
+    issues = sorted((i.code, i.message) for i in join(d, geo))
+    assert issues == [("unknown-joint", "joint 'I9' follows 'I-gone', which is not a declared joint"),
+                      ("unknown-part", "joint 'I9' closes 'ghost', which is not a part")]
+    # every spelling the motion gate reads is read here too; a malformed one is the gate's to report, not a crash
+    for spelling in ("I-gone", ["I-gone", -1], ("I-gone", 2, 5)):
+        geo["joints"]["I9"]["follows"] = spelling
+        geo["joints"]["I9"]["closes"] = {"parts": ["hopper_flap", "ghost"], "at": [0, 0, 0]}
+        assert sorted(i.code for i in join(d, geo)) == ["unknown-joint", "unknown-part"]
+    geo["joints"]["I9"].update(follows=["I-gone", "twice"], closes=[{"parts": ["hopper_flap", "ball#3"], "at": [0, 0, 0]}])
+    assert [i.code for i in join(d, geo)] == ["unknown-part"]         # a malformed follows does not hide the pin
+    geo["joints"]["I9"].update(follows="I-gone", closes=7)             # a malformed closes does not hide the driver
+    assert [i.code for i in join(d, geo)] == ["unknown-joint"]
+    geo["joints"]["I9"]["closes"] = [{"parts": ["hopper_flap", "ball#3"], "at": [0, 0, 0]}]
+    geo["parts"]["ball"]["instances"] = [{"key": "ball#3"}]
+    geo["joints"]["I9"]["follows"] = None
+    assert join(d, geo) == []                               # an instance key is a place for a point

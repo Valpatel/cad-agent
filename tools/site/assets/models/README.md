@@ -27,3 +27,9 @@ front and one at the rear. Physical fit, insertion and removal clearance,
 retention, and load qualification remain open.
 
 [Current model and historical illustration source record](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/gyropup/SOURCE.json)
+
+Homepage #605 adds a second independent shared viewer for the J501 enclosure and
+its real carrier-board CAD. Collection will reuse existing assembly-coordinate
+meshes from the clean product checkout, with selected-file hashes and exact source
+revision recorded beside the packed model. Packing is not a CAD rebuild or a
+physical fit qualification. Keep the current Gyropup model/source bytes intact.

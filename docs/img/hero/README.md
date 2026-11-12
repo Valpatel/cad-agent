@@ -31,3 +31,50 @@ flowchart TD
 </details>
 
 [Figure index](../README.md) · [Captions and tool inputs](https://github.com/Valpatel/cad-agent/blob/dev/docs/pages.yaml)
+
+## Homepage learning loop — design and evidence plan (#605)
+
+The new hero is an original vector explanation, not a simulated hardware result. Its
+loop shows authored examples and manufacturer guides entering a messy evidence
+network, being organized into topic trees and cited rules, then design → check →
+simulate → print → feedback. A clear human review gate precedes contributions.
+Hosted agents (including Anthropic's tooling) and local/open models are possible
+clients of the same documented files; their presence is not an integration claim.
+
+Use a dark technical canvas, warm white typography, restrained cyan/amber accents,
+visible source-document shapes and evolving graph geometry. Keep three readable
+stages at phone width; the animation must tell the same story as a useful still.
+No logos, particle-only filler, invented benchmark values or implied autonomous
+self-modification. Reduced motion freezes the complete readable state.
+
+### Asset audit, 2026-11-11
+
+| Existing evidence | Reuse decision and limit |
+|---|---|
+| `docs/img/fea/mesh-convergence.svg`, `tools/fea_mesh_figure.py` | Recorded L-bracket study; animate the existing sampled refinement sequence, not a fresh solver result. Convergence is not physical strength proof. |
+| `docs/img/cfd/SOURCE.json`, `tests/fixtures/cfd_runs/` | Recorded OpenFOAM traces permit temperature/flow/balance plots. Preserve the ducted case's failed energy/steady criteria; flow markers explain direction, not invented CFD particle trajectories. |
+| `docs/img/thermal/fan-curve-explorer.svg` and fan-curve module | Existing operating-point calculation can be animated from the real curve/intersection; do not present a computed operating point as a measurement. |
+| `docs/img/motion/*.svg`, `docs/img/compliant/example-1.svg` | Existing computed fixture/worked-example motion, interference and snap geometry; retain their captions and source pages. |
+| `tools/site/assets/models/gyropup.*` | Current collected assembly with source revision/hashes; move the existing shared viewer below the hero. Historical wheel-link FEA remains separately dated. No printed-leg changes. |
+| J501 clean source `240be82ec5420e989dbfad07d76ab62ea3e83a50` | Audit its existing `exports/view/view.json` and assembly-coordinate STL outputs, including the real carrier-board mesh. Pack these outputs without regenerating CAD. Hash every selected input and preserve source/PCB attribution and fit-prototype limits. |
+
+### Delivery and verification
+
+1. Commit this audit before artwork/code; prototype original hero and evidenced
+   output gallery, remove empty/command-only cards, skills and counter sections.
+2. Reuse `<cad-model>` for independent Gyropup and J501 viewers. Add explicit
+   per-instance loading progress/stage, retained poster, clear failure and retry
+   where safe. No download on initial hero paint; keep independent failure states.
+3. Every displayed computation image must be animated and source-bound in
+   `docs/home.yaml`. Remove cards lacking real visual evidence rather than making
+   decorative results. Thermal/airflow captions state solver/model assumptions.
+4. Pure checks bind input hashes, numbers, source links, SVG XML, animation/still
+   states and removed placeholder content. Browser acceptance covers desktop,
+   phone, reduced motion, both themes, actual image loading, animation bounds,
+   model progress/ready/failure, lazy independent loading and no-script posters.
+5. Coordinate the capped `--client-diagrams` local producer/browser lane with the
+   coordinator before launching. Review the prototype headed before final polish.
+   Normal independent review/CI/release/public acceptance remain required.
+
+The homepage owns the compiler region after `const home`; #603 owns the frame,
+navigation, discovery, catalogue and timestamp regions. No editing another tree.

@@ -139,6 +139,82 @@ my-cad-project/
 | `exports/<name>-plates.svg`, `-plates.json` | seen from above | the plates as a picture, and the layout as data: each copy's place and turn, each plate's filament and surface, the 3MF's sha256 |
 | `<name>.3mf`, `<stem>-NN-<group>.3mf` (PrusaSlicer) | print orientation, placed on the bed | PrusaSlicer projects from `cadagent.manufacturing.prusa3mf`: objects of several volumes, each on its own tool, and the wipe tower's place; one 3MF per plate; read back and verified; byte-reproducible ([PrusaSlicer projects](#prusaslicer-projects-cadagentmanufacturingprusa3mf)) |
 
+### Parts that are not printed
+
+A machine is rarely all printed: a welded frame, cut plate, bought motors and a few printed brackets share one parts
+file. Say how each part is made, and the print pipeline (the report's "Printed parts" and "Print files" rows,
+`export-3mf`, the build plates, `cad-agent slice`'s default part list and `cad-agent overhangs`) applies to the
+printed parts only.
+
+```mermaid
+flowchart TD
+    D["dossier card<br/>material.process"] --> R["how the part is made<br/>part_processes"]
+    C["cad: part_process:<br/>part, then '*'"] --> R
+    R -->|"additive, or nothing declared"| P["print pipeline<br/>checked as before"]
+    R -->|"weldment, purchased, sheet-metal,<br/>cnc, injection-moulding"| S["skip rows with the reason<br/>no print files written"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class R here
+    class D,C near
+    class P,S out
+```
+
+For each part, the first of these decides (`cadagent.manufacturing.process.part_processes`):
+
+1. the dossier card's `material.process` ([dossier](practice/dossier.md)), for the card whose id is the part's name, when its words name a process in the table below;
+2. `cad: part_process: {<part>: <process>}` in `cad-agent.yaml`, for a project without a dossier or a card without a process;
+3. `cad: part_process: {"*": <process>}`, the project's default;
+4. nothing: the part is printed, as every part was before. A project that declares nothing is unchanged.
+
+```yaml
+cad:
+  part_process:
+    "*": weldment          # every part nothing else names
+    drive_motor: purchased
+    sensor_bracket: fdm
+```
+
+- **A skipped part's rows are skips, never passes**, with the reason: `not checked by the print pipeline: welded
+  fabrication (dossier material.process 'welded steel tube'); no check here says this part can be made`. The skip
+  count goes up and the pass count does not.
+- **What a skip does not say.** cad-agent has no weld, cut-list or purchasing check behind these names, and no rule
+  cards for `weldment` or `purchased`. A skip means the print checks do not apply. It does not mean the part is valid
+  CAD, fits a machine, can be welded or cut, or can be bought. "Holes clear", the integrity gates and the project's
+  own `cad: checks:` still run on every part.
+
+<details>
+<summary>The words that name each process, and what is left out for a skipped part</summary>
+
+| Process | Words that mean it | The print pipeline |
+|---|---|---|
+| printed | `fdm`, `fff`, `sla`, `sls`, `mjf`, `dlp`, `polyjet`, `additive`, `3D printed`, any `print`, `printed`, `printing` | applies, exactly as before |
+| `weldment` | `welded ...`, `weldment` | skips the part |
+| `purchased` | `purchased`, `bought`, `off-the-shelf`, `COTS` | skips the part |
+| `sheet-metal` | `sheet metal`, `laser-cut`, `plasma-cut`, `waterjet-cut`, `saw-cut`, `hand-cut`, `cut plate` | skips the part |
+| `cnc` | `cnc`, `machined`, `milled`, `turned`, `lathe` | skips the part |
+| `injection-moulding` | `injection ...`, `moulded`, `molded` | skips the part |
+
+- **The words are read from free text**, so a dossier card may say `welded steel tube` or `laser-cut 6 mm plate`.
+  Printing words win: `FDM, then machined` and `printed PETG with purchased inserts` are printed parts. The words
+  are matched, not parsed (`not welded` reads as welded), so write what the part is.
+- **Words that match nothing** (`casting`) on a dossier card pass the decision to `cad: part_process:`; with no entry
+  there the part stays in the print pipeline, where its rows fail and show it. In `cad: part_process:` such words are
+  a config error, and an entry for a name that is not a part is a failing row, so a typo is never read as "printed"
+  or lost.
+- **What is left out for a skipped part:** its `<part>.3mf`, its place on the default build plates, its row in the
+  default slice and in the overhang screen, and the "missing" marks in the report's download table (a dash instead).
+  A part named in `cad.plates.parts`, in `cad.slicer.parts` or on the command line is handled as named.
+  When no part is printed and no plate parts are explicitly selected, `export-3mf` writes nothing and exits 0,
+  and needs no `cad.printer.bed_mm`. A strict project-settings request fails without replacing prior plate files.
+  Explicit plate selections still use the normal export and validation path; a slice
+  report from when a part was printed no longer counts. A `<part>.3mf` an earlier run wrote is left in place and
+  named in a note. The download table still marks a missing STEP: STEP is for CAD review, whatever makes the part.
+- **Not covered yet:** `cad-agent release` is a print release and still lists every part by default; name the printed
+  parts in `cad.release.parts` or `groups`.
+
+</details>
+
 ### Checked booleans (`cadagent.geometry`)
 
 OpenCASCADE can fail a boolean without raising where faces nearly coincide: a multi-argument fuse of nearly
@@ -226,7 +302,7 @@ plate and slice. This is Gyropup's print set, from its committed STLs and print 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `parts` | `cad.release.build`, else every part the release lists | a list of parts, or a mapping of part to `{quantity, filament}` |
+| `parts` | `cad.release.build`, else every part the release lists, less the [parts that are not printed](#parts-that-are-not-printed) | a list of parts, or a mapping of part to `{quantity, filament}` |
 | quantity | `cad.release.quantities`, else 1 | copies of the part |
 | filament | `cad.slicer.filament` | `pla`, `petg` or a Bambu filament profile name; one filament per plate |
 | `gap_mm`, `margin_mm` | 5, 5 | least distance between two footprints, and from the bed's edge |
@@ -462,6 +538,7 @@ can be renamed: no other file name is read.
 | `steps` | `[]` | `{name, run, log?, timeout_s=1800, needs?}`; `run` is a script relative to the root, run with cwd = root and `CAD_AGENT_PROJECT` set to the root; `log` is a file in `exports_dir`; `needs` names earlier steps |
 | `parts_file` | `exports/geometry-checks.json` | part -> `{cad_valid, solid_count, watertight, print_bounds_mm}` |
 | `part_ids` | `{}` | part -> display id (`P1`) |
+| `part_process` | `{}` | part (or `"*"`, every other part) -> how it is made: `fdm`, `weldment`, `purchased`, `sheet-metal`, `cnc`, ...; a part that is not printed is skipped by the print checks and exports. A dossier card's `material.process` is read first ([parts that are not printed](#parts-that-are-not-printed)) |
 | `checks` | `[]` | `{id, title, file, pass_key="pass", evidence?, links?}`; `pass_key` may be a list (all must be `true`) |
 | `printer` | none | `{name, bed_mm: [x, y, z]}`; parts must fit; 3MF files are centred on it |
 | `package` | none | `{name, include: [globs]}`; zip + `<name>-manifest.json` (sha256) in `exports_dir` |
@@ -553,9 +630,9 @@ after that every step runs, and the exit code says whether anything failed.*
 |---------|------|-----------|
 | `cad-agent init [DIR] [--force]` | copies the starter project ([`docs/examples/starter-box`](examples/starter-box/README.md): a box and lid on four M3 heat-set inserts, `cad-agent.yaml`, `cad/build.py`, `tools/checks.py`) into `DIR` (default: here) and prints the next commands; from a wheel, the copy installed under `<prefix>/share/cad-agent/` | 2 if `DIR` is not empty (`--force` writes the starter's files over it) |
 | `cad-agent build [--from STEP] [--only STEP ...]` | runs steps in order with the project python; per-step timing; stops at the first failure and prints the log tail | 1 on a failed step |
-| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every part in the parts file, then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
+| `cad-agent export-3mf` | `<part>.stl` -> verified, bed-centred `<part>.3mf` for every printed part in the parts file ([parts that are not printed](#parts-that-are-not-printed) are left out), then every printed part on [build plates](#build-plates-cadagentmanufacturingplates) in `<name>-plates.3mf` | 1 on a read-back mismatch, or when the parts cannot be laid out |
 | `cad-agent holes [PART ...]` | checks every hole in every part is clear of material: finds the cylindrical holes and countersinks in `exports/<part>.step` (concave, at least 200° of wall, up to 30 mm across), probes each with a cylinder or cone just inside its wall, and writes `exports/hole-checks.json` bound to each STEP's sha256; `all` runs it and the report's "Holes clear" rows fail on material in a hole, a stale result or a check that did not run (config `cad: holes:`, [below](#holes-clear)) | 1 if a hole has material inside |
-| `cad-agent overhangs [PART ...] [--limit DEG] [--min-area MM2]` | groups each part's (`exports/<part>.stl`, every part in the parts file) downward faces flatter than `--limit` (slope from horizontal, 0° a flat ceiling; default 45°) into connected regions, each with area, bounds, centre and flattest angle, and writes `exports/overhang-screen.json`; a screen, not a slicer: bridges anchored on both sides are listed too ([below](#overhangs-and-bridges-cad-agent-overhangs)) | 1 if a part's STL is missing or unreadable |
+| `cad-agent overhangs [PART ...] [--limit DEG] [--min-area MM2]` | groups each part's (`exports/<part>.stl`, every printed part in the parts file, or the parts named) downward faces flatter than `--limit` (slope from horizontal, 0° a flat ceiling; default 45°) into connected regions, each with area, bounds, centre and flattest angle, and writes `exports/overhang-screen.json`; a screen, not a slicer: bridges anchored on both sides are listed too ([below](#overhangs-and-bridges-cad-agent-overhangs)) | 1 if a part's STL is missing or unreadable |
 | `cad-agent check [--json]` | collects results (no build), prints a table or the results JSON | 1 if any row fails |
 | `cad-agent report [--open]` | writes `exports/cad-agent-results.json` (results schema 1.0) and a standalone `docs/cad-agent-report.html` with inline styles (light and dark) that opens from `file://` | 1 if any row fails |
 | `cad-agent package` | zip + sha256 manifest from `package.include`; the same files give the same zip ([reproducible outputs](#reproducible-outputs)) | 2 on a malformed `SOURCE_DATE_EPOCH` |
@@ -1620,7 +1697,7 @@ cad:
     process: 0.20mm SPEED @XLIS 0.4
     filament: Prusament PLA @XLIS                        # or pla / petg (the MK4S variants)
     overrides: {perimeters: "3", fill_density: "20%"}    # PrusaSlicer names
-    parts:                                               # default: every part, cad.slicer.overrides only
+    parts:                                               # default: every printed part, cad.slicer.overrides only
       tower: {overrides: {brim_width: "10"}}
       link: {overrides: {perimeters: "4", fill_density: "40%"}}
       lid: {}
@@ -1714,7 +1791,8 @@ at what to change: a flat ring left by a cutter's end, a cavity roof, a wall tha
 `downward_area` gives one total, and its `max_angle_deg` is the normal's angle below horizontal (90° minus this
 slope). `cad-agent overhangs` writes `exports/overhang-screen.json` (`version`, `limit_deg`, `min_area_mm2`,
 `parts: {part: {stl, sha256, downward_area_mm2, regions, small_regions, small_area_mm2}}`, or `{error}` for a missing
-or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps the other rows when the settings match.
+or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps other rows only when their STL hashes and
+settings match and their parts are still printed. Explicitly naming a nonprinted part screens it afresh.
 Needs trimesh and scipy (`sim` extra).
 
 </details>

@@ -92,6 +92,7 @@ class CadProject:
     steps: List[Step] = field(default_factory=list)
     parts_file: Path = Path("exports/geometry-checks.json")
     part_ids: Dict[str, str] = field(default_factory=dict)
+    part_process: Dict[str, str] = field(default_factory=dict)   # part (or "*") -> how it is made (manufacturing.process)
     checks: List[Check] = field(default_factory=list)
     printer: Printer = field(default_factory=Printer)
     package: PackageSpec = field(default_factory=PackageSpec)
@@ -157,7 +158,7 @@ def _split_revision_from(spec: str) -> Tuple[str, str]:
 
 _TOP_KEYS = {
     "name", "title", "revision", "revision_from", "python", "exports_dir",
-    "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "checks",
+    "preview_dir", "docs_dir", "steps", "parts_file", "part_ids", "part_process", "checks",
     "printer", "package", "serve", "html_pages", "site", "view", "holes", "slicer", "explore",
     "dossier", "gates", "release", "plates", "cad-agent",
 }
@@ -188,6 +189,18 @@ def _slicer(value: Any) -> Dict[str, Any]:
         raise CadConfigError("cad.slicer.parts must be a list of part names or a mapping of part name to "
                              f"{{overrides: {{...}}}}, got {type(parts).__name__}")
     return slicer
+
+def _part_process(value: Any) -> Dict[str, str]:
+    """``cad: part_process:``, part (or ``"*"``, every part nothing else names) -> the process that makes it. A name
+    ``cadagent.manufacturing.process.process_route`` cannot read is refused here, so a typo is not read as printed."""
+    from cadagent.manufacturing.process import known_process_names, process_route
+    out: Dict[str, str] = {}
+    for part, name in _require_dict(value, "cad.part_process").items():
+        if not isinstance(name, str) or process_route(name) is None:
+            raise CadConfigError(f"cad.part_process.{part}: {name!r} is not a process cad-agent knows; use one of "
+                                 f"{', '.join(known_process_names())}")
+        out[str(part)] = name.strip()
+    return out
 
 def _require_list(value: Any, where: str) -> List[Any]:
     if value is None:
@@ -304,6 +317,7 @@ def from_dict(root: Path, data: Dict[str, Any]) -> CadProject:
         steps=_parse_steps(data.get("steps")),
         parts_file=root / str(data.get("parts_file") or Path(str(data.get("exports_dir", "exports"))) / "geometry-checks.json"),
         part_ids={str(k): str(v) for k, v in _require_dict(data.get("part_ids"), "cad.part_ids").items()},
+        part_process=_part_process(data.get("part_process")),
         checks=_parse_checks(data.get("checks")),
         printer=_parse_printer(data.get("printer")),
         package=PackageSpec(

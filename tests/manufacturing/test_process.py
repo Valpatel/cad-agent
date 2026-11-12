@@ -278,3 +278,96 @@ def test_sqrt_and_cos_take_one_argument_and_refuse_a_negative_root():
     for bad in ("sqrt(D - 5)", "sqrt(D, D)", "cos()"):
         with pytest.raises(ValueError):
             pp.evaluate(bad, {"D": 1.0})
+
+
+# ------------------------------------------------------------------- how each part of a project is made (#577)
+
+@pytest.mark.parametrize("words, route", [
+    ("FDM", "additive"), ("fff", "additive"), ("SLA resin", "additive"), ("MJF PA12", "additive"),
+    ("3D printed", "additive"), ("3d-print", "additive"), ("FDM, then machined", "additive"),   # additive words win
+    ("weldment", "weldment"), ("welded steel tube", "weldment"), ("Welded fabrication", "weldment"),
+    ("purchased", "purchased"), ("bought", "purchased"), ("off-the-shelf gearbox", "purchased"), ("COTS", "purchased"),
+    ("bought, then welded on", "purchased"),            # the first name in NOT_PRINTED that matches
+    ("sheet-metal", "sheet-metal"), ("sheet metal", "sheet-metal"), ("laser-cut 6 mm plate", "sheet-metal"),
+    ("hand cut plate", "sheet-metal"), ("waterjet cut", "sheet-metal"), ("plasma-cut", "sheet-metal"),
+    ("cnc", "cnc"), ("CNC milled", "cnc"), ("machined 6061", "cnc"), ("turned on a lathe", "cnc"),
+    ("injection-moulding", "injection-moulding"), ("injection molded", "injection-moulding"),
+    ("printed PETG, bore machined after", "additive"), ("PETG print with purchased inserts", "additive"),
+    ("printed", "additive"),                            # any "print" word keeps the part in the print pipeline
+    ("", None), (None, None), ("casting", None), ("build plate", None), ("MSLA", None),
+    ("fused filament fabrication", None),               # not a welded "fabrication": unknown, so it stays printed
+])
+def test_process_route_reads_the_documented_words(words, route):
+    assert pp.process_route(words) == route
+
+
+def test_every_documented_process_name_is_read_and_only_the_new_two_lack_a_profile(profiles):
+    for name in pp.known_process_names():
+        assert pp.process_route(name) is not None, name
+    assert set(pp.NOT_PRINTED) - set(profiles.profiles) == {"weldment", "purchased"}    # no rules invented for them
+    assert {n for n in profiles.profiles if pp.process_route(n) is None} == set()
+
+
+def _project(tmp_path, cad="", dossier=None):
+    from cadagent.project import load_project
+    (tmp_path / "cad-agent.yaml").write_text("cad:\n  name: t\n" + cad)
+    if dossier is not None:
+        (tmp_path / "dossier").mkdir()
+        (tmp_path / "dossier" / "project.yaml").write_text(dossier)
+    return load_project(tmp_path)
+
+
+DOSSIER = """\
+title: t
+sections:
+  - id: S1
+    title: Frame
+    parts:
+      - {id: chassis, function: carry, material: {name: S235, process: welded steel tube}}
+      - {id: battery, function: power, material: {name: LiFePO4, process: purchased}}
+      - {id: lid, function: cover, material: {name: PETG, process: FDM, wall_mm: 2}}
+      - {id: bracket, function: hold, material: steel}
+      - {id: knob, function: turn, material: {name: brass, process: casting}}
+"""
+
+
+def test_a_project_that_declares_nothing_prints_every_part(tmp_path):
+    how = pp.part_processes(_project(tmp_path), ["a", "b"])
+    assert [(h.printed, h.route, h.source) for h in how.values()] == [(True, None, "")] * 2
+    assert pp.printed_parts(_project(tmp_path), ["a", "b"]) == ["a", "b"]
+
+
+def test_part_process_config_names_parts_and_a_default(tmp_path):
+    project = _project(tmp_path, '  part_process: {"*": weldment, motor: purchased, lid: fdm}\n')
+    how = pp.part_processes(project, ["chassis", "motor", "lid"])
+    assert (how["chassis"].route, how["chassis"].source) == ("weldment", "cad.part_process '*'")
+    assert (how["motor"].route, how["motor"].source) == ("purchased", "cad.part_process")
+    assert how["lid"].printed and how["lid"].route == "additive"
+    assert pp.printed_parts(project, ["chassis", "motor", "lid"]) == ["lid"]
+    assert how["chassis"].skip_reason == ("not checked by the print pipeline: welded fabrication (cad.part_process "
+                                          "'*' 'weldment'); no check here says this part can be made")
+
+
+def test_the_dossier_card_is_read_first_and_the_config_fills_the_gaps(tmp_path):
+    project = _project(tmp_path, '  dossier: dossier/project.yaml\n'
+                                 '  part_process: {chassis: fdm, bracket: sheet-metal, extra: purchased}\n', DOSSIER)
+    cast = _project(tmp_path, '  dossier: dossier/project.yaml\n  part_process: {knob: purchased}\n')
+    knob = pp.part_processes(cast, ["knob"])["knob"]       # a card whose words name no process: the config decides
+    assert (knob.route, knob.source, knob.declared) == ("purchased", "cad.part_process", "purchased")
+    how = pp.part_processes(project, ["chassis", "battery", "lid", "bracket", "knob", "extra", "loose"])
+    assert {p: h.route for p, h in how.items()} == {
+        "chassis": "weldment",          # the card wins over cad.part_process
+        "battery": "purchased", "lid": "additive",
+        "bracket": "sheet-metal",       # a card with no process: the config names it
+        "knob": None,                   # words no process matches and no config entry: stays in the print pipeline
+        "extra": "purchased",           # no card
+        "loose": None}
+    assert how["chassis"].source == "dossier material.process" and how["chassis"].declared == "welded steel tube"
+    assert (how["knob"].declared, how["knob"].source) == ("casting", "dossier material.process")
+    assert [p for p, h in how.items() if h.printed] == ["lid", "knob", "loose"]
+
+
+def test_a_dossier_that_does_not_load_declares_nothing(tmp_path):
+    project = _project(tmp_path, "  dossier: dossier/project.yaml\n  part_process: {a: purchased}\n", "- not a mapping\n")
+    how = pp.part_processes(project, ["a", "b"])
+    assert not how["a"].printed and how["b"].printed

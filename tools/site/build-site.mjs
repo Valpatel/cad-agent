@@ -1,3 +1,4 @@
+import {topicTree, readerNav, updateTime} from './compiler/site-explore-shell.mjs';
 /** Build cad-agent.valpatel.com into dist/: one static bundle for local preview and Cloudflare Pages.
  *
  * Agent-first: every page has its Markdown source next to it (same path, .md), /llms.txt and /llms-full.txt index
@@ -54,7 +55,7 @@ const head = git('rev-parse', 'HEAD');
 const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
-const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/site-discovery.mjs', 'tools/site/compiler/catalog-art.mjs',
+const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/site-discovery.mjs', 'tools/site/compiler/site-explore-shell.mjs', 'tools/site/compiler/catalog-art.mjs',
   'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '../..');
 const toolsDirty = TOOLS.filter(t => {
@@ -162,7 +163,8 @@ validateRedirects(redirects, { tracked, pageFiles, moved, publicPath });
 // ----------------------------------------------------------------------------- references
 // The reference registry (docs/research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
 // tags in every page as links to the record (tools/site/compiler/site-references.mjs). Records are not catalogue entries.
-const refModel = referenceModel(await loadReferences({ files: tracked, read }), YAML.parse(await read('docs/areas.yaml')));
+const areaTree = YAML.parse(await read('docs/areas.yaml'));
+const refModel = referenceModel(await loadReferences({ files: tracked, read }), areaTree);
 
 // ----------------------------------------------------------------------------- catalogue
 const landscape = JSON.parse(await read('docs/research/landscape.json'));
@@ -203,7 +205,7 @@ ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Mark
 <body class="${page}-page"><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
 <nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
 <main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${current === '/catalog' || current.startsWith('/references') || current === '/docs/common-issues' || current === '/research/landscape' ? `<p class="discovery-context"><a href="/explore${current.startsWith('/references') ? '?kind=references' + (current.split('/')[2] ? '&amp;area=' + encodeURIComponent(current.split('/')[2]) : '') : current === '/docs/common-issues' ? '?kind=lessons' : current === '/research/landscape' ? '?kind=external' : ''}">← Explore all knowledge${current.startsWith('/references') ? ' · search sources across topics' : current === '/docs/common-issues' ? ' · search individual lessons and pitfalls' : ''}</a></p>` : ''}${body}</main>
-<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${isoDay(updated)}">${day(updated)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
+<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${esc(updateTime(updated).datetime)}">${esc(updateTime(updated).label)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
 <div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script><!--/email_off--></body></html>`;
 }
@@ -343,15 +345,9 @@ for (const p of allPages) {
   // The skip link's target is "main:content": slug() drops ":", so no heading id can take it (a "## Content" is "content").
   const outline = (cls, label) => heads.length < 2 ? '' : `<ol class="cad-nav-outline${cls}"${label ? ' aria-label="On this page"' : ''}>${heads.map(h =>
     `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
-  const tree = SECTIONS.map(s => {
-    const list = pages.filter(q => q.section === s.id);
-    if (!list.length) return '';
-    return `<details class="cad-nav-group"${s.id === p.section ? ' open' : ''}><summary>${esc(s.title)}</summary><ul>${list.map(q =>
-      `<li><a href="${esc(pageURL(q.file))}"${q.file === p.file ? ` aria-current="page">${esc(q.title)}</a>${outline('', true)}` : `>${esc(q.title)}</a>`}</li>`).join('')}</ul></details>`;
-  }).join('');
-  const nav = `<cad-nav for=".prose" rail=".doc-rail" role="navigation" aria-label="Pages and contents"><details class="cad-nav-fold"><summary class="cad-nav-toggle">Pages and contents</summary><div class="cad-nav-panel"><input type="search" class="cad-nav-filter" placeholder="Filter pages" aria-label="Filter pages"><p class="cad-nav-empty" role="status"></p>${tree}</div></details></cad-nav>`;
+  const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file)});
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
@@ -394,7 +390,7 @@ const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN,
 await writeFile(path.join(out, 'discovery.json'), JSON.stringify(discovery) + '\n');
 await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
   description: 'Find tools, guides, practical lessons and reference records by topic.',
-  body: discoveryHTML(discovery, { areas: YAML.parse(await read('docs/areas.yaml')) }),
+  body: discoveryHTML(discovery, { areas: areaTree, pages, pageURL, catalog }),
   md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
 await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
   + '- [Full catalogue](/catalog)\n- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'

@@ -9,6 +9,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.37.2 (2026-11-12)
+
+**New**
+- Read guides inside Explore's shared topic hierarchy; browse catalogue capabilities in the same entrance while retaining saved catalogue filters and anchors. Hide area maturity presentation, fix dark outline interaction contrast, and show precise Pacific update times (#603).
+
+**Changed**
+- Reframe the homepage around a person's need, evidence-backed engineering and reviewed feedback, with an original looping 16-bit robot-building adventure, recorded numerical examples and independent real-CAD project views.
+
+**Fixed**
+- Shared `cad-model` loading reports actual transferred bytes, keeps unknown totals indeterminate, creates fresh retry readiness, and rolls back partial GPU allocations before recovery. The homepage adds source-bound J501 enclosure/PCB geometry with fitted lid and four original optional antenna display shapes, with explicit licensing and RF/fit limits.
+
 ## v0.37.1 (2026-11-12)
 
 **New**

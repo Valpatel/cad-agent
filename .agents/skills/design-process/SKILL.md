@@ -91,6 +91,8 @@ do not have to recall it, in one call and about 2 KB:
   `--load` is required. If the card says "not decided", give what it names as missing, or size the joint yourself
   from a test or a cited source and record that as a decision.
 
+For supplier-specific printing settings, inspect the [Stratasys layer-table and unresolved-clearance notes](../../../docs/research/manufacturing/process-profiles.md#stratasys-fdm-table-and-clearance-review) and [SLS tolerance/lap examples](../../../docs/research/manufacturing/process-profiles.md#stratasys-sls-source-conflicts-and-lap-joints). Preserve source conflicts rather than silently repairing a value; other suppliers and processes keep their own profiles.
+
 For plastic screw selection, read the [family-selection example and limits](../../../docs/research/manufacturing/process-profiles.md#select-the-screw-family-before-sizing-the-boss).
 A material-family preference does not fill a missing capacity model or qualify a printed resin; retain the card’s warnings.
 

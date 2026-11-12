@@ -206,6 +206,12 @@ Decisions (`decisions.yaml`, or nested in a section or card):
   section: S3                              #   with the section or part it applies to
 ```
 
+`material.process` says how the part is made, in words: `FDM`, `welded steel tube`, `laser-cut 6 mm plate`,
+`purchased`. It is also what the report and the print exports read: a card whose process is not additive
+(`weldment`, `purchased`, `sheet-metal`, `cnc`, `injection-moulding` and the words that mean them) takes its part out
+of the print pipeline, with skip rows that give the reason. A skip is not a verdict on the part. The words and the
+order of sources are in [toolkit.md](../toolkit.md#parts-that-are-not-printed).
+
 A nested decision takes its scope from where it is written (`section` in a section, `part` in a card); `to_dict()`
 leaves the implied scope out so the card round-trips. The site's `site: decisions:` key keeps working: point it at
 the same file.

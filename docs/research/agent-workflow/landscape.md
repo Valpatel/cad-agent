@@ -11,6 +11,37 @@ Method: stars, SPDX licence and last push come from `gh api repos/OWNER/REPO` on
 repo's README, manifests or source as read. **(u)** = unverified (README claim or third-party page not checked in source).
 Machine-readable copy: [`landscape.json`](../landscape.json).
 
+<details>
+<summary>12 November 2026: Claude for Manufacturing — useful design-review patterns</summary>
+
+Anthropic's [launch article](https://claude.com/resources/articles/claude-for-manufacturing) introduces 17 skills.
+The [published source](https://github.com/anthropics/claude-plugins-official/tree/9bd776d78d956bd68520efe67ac6422a76f811f8/plugins/claude-for-manufacturing)
+contains those 17 entry points, a plugin-local Apache-2.0 licence and a README marking it a reference implementation
+that is not actively maintained. This bounded study read its manifests, design/trade-study skills and their evidence
+contracts; it did not audit every skill or run a connector.
+
+**Four supported services, one declared connector.** The plugin's MCP file declares local Fusion. Microsoft 365,
+Oracle NetSuite and Infor M3 require separate configuration. Its variant skill depends on an open Fusion desktop
+model; its trade-study skill also accepts hand-authored evidence. Claude Code loading is documented upstream;
+Codex loading and live service access remain untested here. Broad claims in its prose about other CAD connectors
+are not an inventory of the wider ecosystem.
+
+| Useful pattern from Anthropic | cad-agent integration decision |
+|---|---|
+| Probe whether a requested parameter changes the intended geometry before generating variants | Add a small clone-and-measure preflight to the [existing Explore workflow](../../explore.md#before-a-variant-batch); no Fusion dependency |
+| Keep failed variants, missing properties, units and source identity in the handoff | Keep our existing evaluation/trial records and source-bound evidence; do not replace them with a parallel manifest |
+| Separate hard requirements from preferences; state criterion direction and measurement basis | Use existing constraints, objectives and Pareto ranking; do not introduce a weighted score that conceals an infeasible design |
+| Challenge subjective weights and stale or incomplete inputs | Review sensitivity explicitly if a project adds a weighted decision; retain unknown values and dated sources |
+
+**Assessment:** candidate for selective reuse of evidence and workflow patterns. No upstream code, scripts, connectors
+or new optimizer were imported. Quotes, machine control and ERP operation are outside this intake. The practical
+preflight is agent guidance, not a new automatic validator; a real model still needs its own geometry witness.
+
+Read Anthropic's original files for the full methods and constraints. This is independent source credit, with no
+sponsorship or partnership. The rest of this survey retains its own dated observations.
+
+</details>
+
 ## 1. Capability matrix
 
 ![Bar chart of GitHub stars for the twelve most-starred projects in the capability matrix, led by ahujasid/mcp-for-blender and earthtojake/text-to-cad](../../img/research/landscape-stars.svg)

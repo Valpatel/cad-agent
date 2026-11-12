@@ -4,6 +4,15 @@
 # GPL/AGPL tools run as external programs only; no-licence / non-commercial projects are ideas only.
 # what: one line on what the project is and does, from its own README or site (2026-10-31); areas: one to three slugs
 # from docs/areas.yaml (a domain only when no area fits). Our assessment stays in status, policy and landscape notes.
+- name: anthropics/claude-plugins-official
+  what: "Anthropic's Claude for Manufacturing: skills for quotes, quality reports, supplier requests and CAD trade studies"
+  areas: [agent-workflow, cad-modelling]
+  url: https://github.com/anthropics/claude-plugins-official/tree/9bd776d78d956bd68520efe67ac6422a76f811f8/plugins/claude-for-manufacturing
+  license: Apache-2.0
+  stars: 47028
+  last_push: 2026-11-12
+  status: candidate
+  policy: "Source study only, checked 2026-11-12; plugin-local Apache-2.0 permits reuse with attribution. Reference implementation marked not actively maintained; no runtime or connectors adopted. Stars and push date describe the whole directory repository."
 - name: earthtojake/text-to-cad
   what: "Agent plugin that writes build123d models, exports STEP, STL and 3MF, runs DFM checks and makes drawings"
   areas: [3d-printing, sheet-metal, cnc-machining]

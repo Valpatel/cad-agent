@@ -38,6 +38,9 @@ contract; neither is taking one green row per name while ignoring another runnin
 non-success and superseded runs under the repository's rules, retain their scope, and run the live review gates
 again immediately before a merge. This was a local guard error, not a failing CI test, and no CI result was waived.
 
+
+On 2026-11-12, a PR #616 body edit at unchanged `fed30ca4` intentionally triggered the workflow's `pull_request: edited` handling: CI run `43272837046` was superseded by normal run `43272914888`. `gh api repos/Valpatel/cad-agent/actions/runs/43272837046/jobs` retained five cancelled instances: mermaid-provenance `131373537135`, core (3.10) `131373537435`, installer-windows `131373537437`, core (3.12) `131373539656`, and full `131373540239`—all **NOT PASS**. The sixth listed job, supply-chain `131373539604`, succeeded and must not be relabelled cancelled. A separate generic gates wrapper job `131373883532` in run `43272915120` was cancelled and superseded by normal dispatch `43272998465`; it is also NOT PASS. The earlier gates workflow `43272830997` was cancelled overall, but its completed job `131373495524` was SUCCESS and retains that result. These are five CI-job cancellations plus one separate gate-wrapper cancellation, not six cancelled CI jobs. The replacement core 3.12 then found a real canonical-shard defect; its core 3.10 peer was fail-fast cancelled. Preserve the supersession and the separate defect, require complete new ordinary checks on the concrete fix, and finish description edits before starting acceptance observation. A body edit is not evidence that a cancelled check passed, nor permission to retry or waive a failure.
+
 ## Compare an integration repair to the current accepted base
 
 During PR441's normal merge of that dev into the previously reviewed source-recovery head, `git diff --cached
@@ -287,3 +290,24 @@ Do not infer completion from a presentation label or parse its age as a new stat
 
 **Limits:** this corrected a preflight assumption; no failed public verification was waived, and no account,
 permission or deployment setting changed. It does not replace normal CI or the actual publication readback.
+
+## Retain reader navigation evidence before closing a failed page
+
+**Evidence, 2026-11-12 UTC, #625 / release #623:** WebKit job 131388834790/run 43277252434 at
+`bae1820c` passed 103 component tests, then `site-outline.mjs:149` timed out after 30000 ms in
+`page.goto('/docs/toolkit', {waitUntil: 'networkidle'})`. Later reader/layout cases did not run.
+Independent inspection of artifact 13971626851 (SHA256
+`0590eca06bedce050975bbc444ffc1cb2e23e9513cefa1d1732134da5f81c85a`) found 248 files but no
+reader-boundary receipt, trace or network state. The failing viewport, HTTP status, pending requests
+and DOM state are unknown. Identical reader/toolkit/runtime source at accepted 616ab and main 6e8 is
+not evidence of a transient cause; the failed generated toolkit HTML was not retained.
+
+**Cause and corrective rule:** the reader probe wrote its receipt only after every viewport, while
+`finally` closed each failed page first. Preserve bounded observations and partial states before close,
+then rethrow the original error. Keep the existing navigation wait/timeout and every readiness/geometry
+predicate. The targeted repair records 24 samples per event kind, 300-character redacted URL/text
+fields, 12 stylesheet entries, at most a 2 MiB viewport screenshot and 1000 ms per diagnostic capture.
+Inert controls exercise success-without-capture, partial receipt before close, truncation/redaction,
+failed/stalled capture and unavailable output without replacing the original error. These are simulated
+page controls, not a browser reproduction or diagnosis of the old failure. Obtain exact-source review
+before a normal diagnostic CI checkpoint; never relabel the original failed job or its skipped parts as passes.

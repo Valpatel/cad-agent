@@ -6,8 +6,11 @@ scope. Keep Canonical fallbacks and all source/signature settings; reject unknow
 mirror priorities or an inactive mirror file before writing anything.
 """
 from pathlib import Path
+import json
+import re
 import sys
 import platform
+from urllib.parse import urlsplit
 
 AZURE = "http://azure.archive.ubuntu.com/ubuntu/"
 ARCHIVE = "https://archive.ubuntu.com/ubuntu/"
@@ -16,6 +19,28 @@ MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
 # Ubuntu Official Archive Mirrors: /ubuntu/+mirror/mirror.pilotfiber.com-archive.
 PREFERRED = "https://mirror.pilotfiber.com/ubuntu/"
 EXPECTED = {AZURE: "priority:1", PREFERRED: "priority:1", ARCHIVE: "priority:2", SECURITY: "priority:3"}
+
+
+def mirror_profile(text: str) -> str:
+    """Bounded rejection evidence: omit credentials, queries and nonstandard paths."""
+    entries = []
+    for number, line in enumerate(text.splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        tokens = line.split()
+        try:
+            url = urlsplit(tokens[0])
+            host = (url.hostname or "<missing-host>")[:253]
+            port = f":{url.port}" if url.port is not None else ""
+            path = url.path if url.path in ("", "/", "/ubuntu", "/ubuntu/") else "<other-path>"
+            uri = f"{url.scheme[:16]}://{host}{port}{path}"
+        except ValueError:
+            uri = "<malformed-uri>"
+        priority = tokens[1] if len(tokens) > 1 and re.fullmatch(r"priority:[0-9]{1,6}", tokens[1]) else "<invalid-priority>"
+        entries.append({"line": number, "uri": uri, "priority": priority, "fields": len(tokens)})
+        if len(entries) == 12:
+            break
+    return json.dumps(entries, sort_keys=True)
 
 
 def runner_codename(release: dict) -> str:
@@ -72,10 +97,10 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
             continue
         tokens = line.split()
         if len(tokens) != 2 or EXPECTED.get(tokens[0]) != tokens[1] or tokens[0] in seen:
-            raise ValueError("unexpected hosted runner mirror entry or priority")
+            raise ValueError("unexpected hosted runner mirror entry or priority; observed=" + mirror_profile(original))
         seen.add(tokens[0])
     if seen not in ({AZURE, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
-        raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks")
+        raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks; observed=" + mirror_profile(original))
     validate_source(source.read_text(), codename)
     updated = "".join(line.replace(AZURE, PREFERRED, 1) if line.strip() and line.split()[0] == AZURE else line
                       for line in lines)

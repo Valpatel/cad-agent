@@ -749,6 +749,8 @@ rules below, divided by the rivet diameter. A test redraws it and fails if the c
 
 ## 8. CNC machining
 
+For a sourced bracket-to-plate workflow, supplier envelope ambiguities, model-hole conventions and independent export checks, use the [manufacturing service review](sheet-metal-file-and-hole-review.md#a-simple-cnc-plate-needs-a-machining-service-contract). It preserves the difference between a service contract and the generic rules below.
+
 D below is the tool or hole diameter. Two pages here are by named engineers at Xometry: Joel Schadegg and Greg Paulsen
 ([10 tips][xometry-cnc-10-tips]) and Dean McClements and Aaron Lichtig ([internal corner radii][xometry-cnc-corner-radii]).
 

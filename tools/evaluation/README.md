@@ -2,6 +2,10 @@
 
 `standard_eval.py` prepares and grades the versioned analytical starter corpus. It does not run subject code while grading. See [design and testing](../../docs/practice/standard-evaluation.md).
 
+Its whole-checkout kit access is legacy smoke-test behavior. New controlled CAD studies need the
+[planned subject boundary and qualification tests](../../docs/practice/standard-evaluation.md#planned-cad-design-evaluations);
+the proposed optional adapter is not implemented or qualified yet.
+
 ```mermaid
 flowchart TD
     J["Job corpus"] --> P["prepare"]

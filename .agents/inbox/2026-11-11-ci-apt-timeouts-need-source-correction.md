@@ -141,3 +141,23 @@ OS DNS modification, address pinning, TLS/signature bypass, dependency change or
 failed-job rerun. This workstation readback does not establish hosted-runner
 reachability: new normal CI must still provision, import all extras and execute
 the full suite, and both browser jobs must pass before any merge.
+
+## Capture the rejected producer profile before changing its allowlist
+
+On 2026-11-12, `gh api repos/Valpatel/cad-agent/actions/jobs/131327824668/logs`
+reported `ValueError: unexpected hosted runner mirror entry or priority` before
+apt, extras or tests in #616. A prior #611 attempt had the same rejection. The
+failed log does not contain the mirror bytes. Its AWS backend/image metadata
+does not establish the rejected entry; the advertised image ref returned 404,
+while the current public producer still showed the original Azure profile.
+The exact cause remains unknown at this checkpoint (#617).
+
+The diagnostic now records line numbers, URI scheme/host/standard Ubuntu path,
+numeric priority and token count on rejection, bounded to twelve entries. It
+omits credentials, query/fragment, nonstandard paths and arbitrary extra fields.
+Tests exercise the actual rejection, confirm both files stay unchanged, and
+plant private strings to check they are absent from the message. Accepted
+profiles, active-source/keyring validation and CI failure conditions are unchanged.
+Use a fresh observed profile to justify a correction; a later pass on another
+runner does not explain or repair this rejection. This diagnostic itself is
+not a provisioning fix or successful full-suite evidence.

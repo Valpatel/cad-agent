@@ -754,3 +754,52 @@ sources:
     sources: 1
   summary: FreeCAD workbench adding and attaching various fasteners to parts.
   imported: b1f4b3569d17825a
+- id: cnckitchen-insert-removal-2025
+  kind: guide
+  category: manufacturing-guides
+  title: How to use our Threaded-Insert Removal Tool
+  authors:
+  - Stefan Hermann
+  org: CNC Kitchen
+  year: 2025
+  url: https://www.cnckitchen.com/blog/how-to-use-our-threaded-insert-removal-tool
+  access: free
+  terms: cited and summarised, never copied
+  licence:
+    spdx: null
+    class: proprietary
+    read: false
+    note: Creator/manufacturer article; licence terms not read. Links and short summaries only.
+  reuse:
+    text: cite-only
+    geometry: none
+  areas:
+  - threaded-inserts
+  - fdm
+  processes:
+  - fdm
+  process_groups:
+  - inserts
+  evidence:
+    class: read
+    numbers: claimed
+    tested: 'no'
+    authority: primary
+  confidence:
+    level: low
+    estimate: 0.4
+    sources: 1
+  claims:
+  - text: Keep recovered inserts segregated by their original polymer; residue makes cross-material reuse uncertain.
+    status: unconfirmed
+    evidence: Reusable Inserts section. No recovered-insert load capacity or cleaning qualification measured here.
+  summary: Original removal tutorial, kept distinct from the current V2 product. Recovery and prototype reuse are separate
+    from joint strength qualification; retain original creator instructions.
+  used_for:
+  - docs/mechanical/inserts.md
+  - docs/mechanical/printed-joints.md
+  verified: '2026-11-12: Read complete article dated 2025-01-06, including preparation, extraction and reuse. Direct HTML
+    21500 bytes, SHA-256 921cf2f55cc93168b415efee21326df7c207189cc54d4badce4773155e804a02. Current US V2 product version cross-check:
+    https://cnckitchenus.store/products/insert-removal-tool-for-m2-m2-5-m3 ; HTML 257766 bytes, SHA-256 7cd1d0e561eb639a8b65a73ad892c69133731411108e47bdd4b55c837e6961f7.
+    V2 product links the original V1 video; no revision-specific performance comparison, video viewing, tool/iron compatibility
+    or physical extraction tested. Product page is not independent corroboration or a second registry identity.'

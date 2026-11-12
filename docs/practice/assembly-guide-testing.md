@@ -223,3 +223,10 @@ controls. The tool control has clear engaged/start envelopes and a first blocked
 the alternative lid route is recorded. Browser receipts remain separate actual-scene observations. The legacy
 J501 poster receipt may also need regeneration after shared renderer edits; that still frame validates only
 its existing illustrative consumer and is never assembly-plan evidence.
+
+At source `6c5e3647`, the bounded native fixture passed nine cases in both actual Chromium and WebKit with zero
+page/console errors. Its retained [receipt](../../tests/fixtures/assembly-plan/acceptance.json) includes source,
+mesh, runtime and harness hashes, noncoplanar world-vertex samples, native first-contact witnesses, and an
+ordinary-handle obstruction with clear start/engaged poses and a 21→20 mm last-clear/first-blocked approach
+bracket. The matching phone screenshot is retained beside the fixture. Independent review and final CI remain
+separate; these results establish no J501/Gyropup assembly path or physical build qualification.

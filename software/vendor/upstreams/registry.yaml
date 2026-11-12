@@ -11,8 +11,8 @@
   license: Apache-2.0
   stars: 47028
   last_push: 2026-11-12
-  status: candidate
-  policy: "Source study only, checked 2026-11-12; plugin-local Apache-2.0 permits reuse with attribution. Reference implementation marked not actively maintained; no runtime or connectors adopted. Stars and push date describe the whole directory repository."
+  status: reference
+  policy: "Knowledge/skill-structure reference only, checked 2026-11-12; plugin-local Apache-2.0 permits reuse with attribution. Mine portable procedures for our existing skills; do not include the plugin, scripts or connectors. Reference implementation marked not actively maintained. Stars and push date describe the whole directory repository."
 - name: earthtojake/text-to-cad
   what: "Agent plugin that writes build123d models, exports STEP, STL and 3MF, runs DFM checks and makes drawings"
   areas: [3d-printing, sheet-metal, cnc-machining]

@@ -30,6 +30,8 @@ flowchart TD
 
 `cad-agent agents install` links the kit into your harness and reports missing requirements; see [the workflow guide](../../docs/practice/agent-workflow.md) before applying maintainer workflows to a project. Skills stay in this folder so harness installation can discover them. New engineering techniques belong in the existing domain code and its tests, with a short skill only when a repeatable workflow needs one.
 
+To mine a guide or another project's skills, follow [source → procedure → tested skill](../../docs/practice/agent-workflow.md#mine-procedures). Reuse our canonical methods and records across harnesses; keep the original source credited and the tested scope explicit.
+
 [Home](../../README.md) · [Guides](../../docs/README.md) · [Research](../../docs/research/README.md) · [Subagents](../agents/) · [Tests](../../tests/README.md)
 
 [Agent kit](../README.md)

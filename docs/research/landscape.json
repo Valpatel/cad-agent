@@ -22,7 +22,7 @@
    "drawings": "not evaluated here",
    "vendor_integration": "one declared local Fusion MCP; Microsoft 365, Oracle NetSuite and Infor M3 separately configured",
    "evals": "no plugin execution or model-performance evaluation in this intake",
-   "notes": "Claude for Manufacturing 1.0.0, checked 2026-11-12 at 9bd776d78d956bd68520efe67ac6422a76f811f8: 17 skill entry points. Reference implementation marked not actively maintained. Read design-space/trade-study skills and evidence contracts, not an audit of all skills. Candidate for evidence/preflight patterns in existing Explore; no code or connectors imported. Codex loading and live services untested. Stars/push date are for the whole directory repository, not this plugin."
+   "notes": "Claude for Manufacturing 1.0.0, checked 2026-11-12 at 9bd776d78d956bd68520efe67ac6422a76f811f8: 17 skill entry points. Reference implementation marked not actively maintained. Read design/trade-study skills, inspection-to-CAPA workflow, shared handoff rules and selected quality-contract/investigation sections; not an audit of all skills. Knowledge and structure reference for our own portable skills and existing Explore preflight, not plugin adoption. No upstream plugin, code or connectors imported; no runtime compatibility claim. Stars/push date are for the whole directory repository, not this plugin."
   },
   {
    "name": "earthtojake/text-to-cad",

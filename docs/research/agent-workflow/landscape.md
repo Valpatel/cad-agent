@@ -17,8 +17,9 @@ Machine-readable copy: [`landscape.json`](../landscape.json).
 Anthropic's [launch article](https://claude.com/resources/articles/claude-for-manufacturing) introduces 17 skills.
 The [published source](https://github.com/anthropics/claude-plugins-official/tree/9bd776d78d956bd68520efe67ac6422a76f811f8/plugins/claude-for-manufacturing)
 contains those 17 entry points, a plugin-local Apache-2.0 licence and a README marking it a reference implementation
-that is not actively maintained. This bounded study read its manifests, design/trade-study skills and their evidence
-contracts; it did not audit every skill or run a connector.
+that is not actively maintained. This bounded study read its manifests, design/trade-study skills, the inspection-to-CAPA
+workflow, shared handoff rules and selected quality-contract/investigation sections; it did not audit every skill
+or run a connector.
 
 **Four supported services, one declared connector.** The plugin's MCP file declares local Fusion. Microsoft 365,
 Oracle NetSuite and Infor M3 require separate configuration. Its variant skill depends on an open Fusion desktop
@@ -32,10 +33,19 @@ are not an inventory of the wider ecosystem.
 | Keep failed variants, missing properties, units and source identity in the handoff | Keep our existing evaluation/trial records and source-bound evidence; do not replace them with a parallel manifest |
 | Separate hard requirements from preferences; state criterion direction and measurement basis | Use existing constraints, objectives and Pareto ranking; do not introduce a weighted score that conceals an infeasible design |
 | Challenge subjective weights and stale or incomplete inputs | Review sensitivity explicitly if a project adds a weighted decision; retain unknown values and dated sources |
+| Separate individual tasks, composed workflows and shared handoff rules | Extend our [source-to-skill procedure](../../practice/agent-workflow.md#mine-procedures) and existing records; keep canonical engineering methods independent of harness bindings |
+| Preserve unresolved inputs and distinguish candidate causes from verified outcomes | Keep unknown and failed states through downstream consumers; validate an improvement with evidence instead of closing a gap in prose |
 
-**Assessment:** candidate for selective reuse of evidence and workflow patterns. No upstream code, scripts, connectors
-or new optimizer were imported. Quotes, machine control and ERP operation are outside this intake. The practical
-preflight is agent guidance, not a new automatic validator; a real model still needs its own geometry witness.
+**Structure worth mining:** its README groups the skills into twelve individual tasks and five composed workflows.
+Shared contracts name the producing and consuming tasks, missing-input behavior, units, provenance and versions.
+That is useful reference material for building our own skills as knowledge accumulates. We retain our existing
+schema/version policies; the source's blanket converter prohibition, account-specific pauses and full-document
+reply rules are not imported as general requirements.
+
+**Assessment:** knowledge and workflow reference, not a plugin adoption. No upstream plugin, code, scripts,
+connectors or new optimizer were imported. Quotes, machine control and ERP operation are outside this intake.
+The practical preflight and skill-authoring procedure are guidance, not new automatic validators; a real model
+still needs its own geometry witness, and a portability claim needs an actual harness evaluation.
 
 Read Anthropic's original files for the full methods and constraints. This is independent source credit, with no
 sponsorship or partnership. The rest of this survey retains its own dated observations.

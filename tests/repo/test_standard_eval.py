@@ -107,3 +107,19 @@ def test_ingest_preserves_unknown_metrics_and_trial_failure(tmp_path):
 def test_kit_must_be_explicit_clean_and_pinned(tmp_path):
     with pytest.raises(ValueError,match='explicit'):eval.prepare('snapfit-sizing','kit',tmp_path/'run')
     with pytest.raises(ValueError,match='pinned'):eval.prepare('snapfit-sizing','kit',tmp_path/'run',ROOT,'wrong')
+
+
+def test_symlinked_project_is_not_an_artifact_directory(tmp_path):
+    work=tmp_path/'run';eval.prepare('snapfit-sizing','bare',work)
+    (work/'project/input.json').unlink();(work/'project').rmdir()
+    external=tmp_path/'external';external.mkdir()
+    (external/'solution.json').write_text(json.dumps(reference('snapfit-sizing')))
+    (work/'project').symlink_to(external,target_is_directory=True)
+    assert not eval.grade('snapfit-sizing',work)['passed']
+
+
+def test_run_record_binds_actual_grader_code(tmp_path):
+    work=tmp_path/'run';eval.prepare('snapfit-sizing','bare',work)
+    result=eval.grade('snapfit-sizing',work)
+    import hashlib
+    assert result['grader_sha256']==hashlib.sha256(Path(eval.__file__).read_bytes()).hexdigest()

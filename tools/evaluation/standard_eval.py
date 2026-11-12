@@ -123,12 +123,13 @@ def grade(job_id, work):
     output = Path(work) / 'project' / job['output_file']
     error = None
     try:
-        if output.is_symlink() or not output.is_file() or output.stat().st_size > 1_000_000:
+        if output.parent.is_symlink() or output.is_symlink() or not output.is_file() or output.stat().st_size > 1_000_000:
             raise ValueError('output missing, symlinked, or exceeds 1 MB')
         checks = grade_solution(job,data,read_json(output))
     except (OSError, ValueError, TypeError, KeyError, OverflowError) as exc:
         checks = {'readable_valid_solution':False}; error = str(exc)
-    return dict(job=job_id,job_version=job['version'],job_sha256=digest(job_id),checks=checks,
+    return dict(job=job_id,job_version=job['version'],job_sha256=digest(job_id),
+                grader_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),checks=checks,
                 passed=bool(checks) and all(checks.values()),error=error,limits=job['limits'])
 
 

@@ -38,7 +38,7 @@ the whole checkout. The historical `59441e75` toolkit predates the shipped corpu
 preparation, not the interpretation of those retained smoke attempts.
 
 Disable result-cache reuse and automatic retry/log cleanup. Every retry gets another attempt ID and remains in
-the denominator. [Inspect limits](https://inspect.aisi.org.uk/setting-limits.html) act at generation boundaries:
+the denominator. [Inspect token/cost limits](https://inspect.aisi.org.uk/setting-limits.html) are checked at generation boundaries:
 combine per-call output limits with an outer deadline and record requested, enforced and observed limits
 separately. They are not strict billing ceilings. [Retry behavior](https://inspect.aisi.org.uk/eval-sets.html).
 

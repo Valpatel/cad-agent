@@ -18,7 +18,10 @@ flowchart TD
 |---|---|
 | [gyropup.json](gyropup.json) | Model structure, part groups, units and binary metadata. |
 | [gyropup.bin](gyropup.bin) | Packed mesh buffers for the exact JSON model. |
-| [j501.json](j501.json) | Packed existing J501 assembly, including the real carrier-board mesh; lid initially hidden. |
+| [J501-BOARD-LICENSE.txt](J501-BOARD-LICENSE.txt) | Apache 2.0 licence for the exact official Seeed carrier-board source. |
+| [j501-board-source.json](j501-board-source.json) | Immutable official-source blob and inflated STEP identity receipt; no raw vendor CAD. |
+| [J501-NOTICE.md](J501-NOTICE.md) | Upstream attribution, display derivative changes and separate NVIDIA omission boundary. |
+| [j501.json](j501.json) | Packed existing J501 assembly, including the real carrier-board mesh; lid mesh included; final default is fitted, with Explode revealing the PCB. |
 | [j501.bin](j501.bin) | Render-only display mesh, 0.4 mm vertex-cell clustering, not manufacturing geometry. |
 | [j501-source.json](j501-source.json) | Input hashes, reference attribution, coordinate proof, collection-context limits and display displacement records. |
 | [j501.webp](j501.webp) | Matching shared-viewer poster at the recorded opening view; hashes and renderer recorded in j501-source.json. |

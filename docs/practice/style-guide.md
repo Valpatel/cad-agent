@@ -117,7 +117,8 @@ flowchart TD
 ## Writing
 
 Plain, short sentences. Say what a thing does and what it assumes, not how good it is. Name sources and people.
-Beside concise takeaways, credit the creator and provide a direct **Read/watch original** link, explaining why the human resource is worth visiting: its methods, data or practical demonstration. Distinguish the creator’s measurements from our checks; the [CNC Kitchen insert-recovery guidance](../mechanical/inserts.md#recover-inserts-before-discarding-a-print) is one example, not a comparative performance ranking.
+Beside concise takeaways, credit known creators and organisations together and provide a direct **Read/watch original** link, explaining why its methods, data or practical demonstration are worth visiting. The [CNC Kitchen recovery guidance](../mechanical/inserts.md#recover-inserts-before-discarding-a-print) is one example; distinguish the creator’s measurements and source licences from our checks. Attribution is independent appreciation: we have no affiliations, sponsorships, partnerships or agreements with listed creators, and do not imply paid placements or endorsement.
+
 
 ## Folder ownership checks
 

@@ -34,6 +34,11 @@ MAX_ARCHIVE = 2_000_000
 MAX_FILES = 16
 MAX_BYTES = 1_000_000
 HEX_ID = re.compile(r'[0-9a-f]{64}')
+CASES = ('normal', 'detached', 'timeout', 'oom', 'pretool', 'interrupted', 'symlink', 'wrong')
+
+
+def controller_hashes():
+    return {Path(p).name: sha256(Path(p).read_bytes()) for p in (__file__, runner.__file__)}
 
 
 def sha256(data):
@@ -333,6 +338,7 @@ def collect(work, image, source, case='normal'):
     runner.write_json(work / 'cgroup.json', dict(path=groups[0]))
     attempt = dict(schema='cadagent.inspect-qualification/1', nonce=nonce, daemon=docker.identity,
                    image=image, runtime=runtime_info, case=case,
+                   controller_sha256=controller_hashes(),
                    compose_sha256=sha256((work / 'compose.json').read_bytes()))
     runner.write_json(work / 'attempt.json', attempt)  # Before Inspect can create resources.
     # Inspect's own Docker subprocesses must use this same daemon. This changes
@@ -373,6 +379,10 @@ def collect(work, image, source, case='normal'):
         command += '; sleep 60'
     elif case == 'oom':
         command += '; python3 -c "x=bytearray(1024*1024*1024)"'
+    elif case == 'symlink':
+        command += f'; ln -s /etc/passwd {OUTPUT}/unsafe'
+    elif case == 'wrong':
+        command += f'; printf wrong > {OUTPUT}/result.txt'
     elif case not in ('normal', 'pretool', 'interrupted'):
         raise ValueError('unsupported inert qualification case')
     model = get_model('mockllm/model', custom_outputs=[
@@ -386,7 +396,9 @@ def collect(work, image, source, case='normal'):
                         retry_on_error=0, task_retry_attempts=0, epochs=1, max_samples=1,
                         time_limit=30, max_tokens=128, max_retries=0, cache=False,
                         log_dir=str(work / 'logs'), log_format='json', display='none')
-    runner.write_json(work / 'collection.json', dict(status=logs[0].status, model='mockllm/model',
+    events = [event.model_dump(mode='json', include={'event', 'id', 'function', 'completed', 'error', 'result'})
+              for sample in (logs[0].samples or []) for event in sample.events if event.event == 'tool']
+    runner.write_json(work / 'collection.json', dict(status=logs[0].status, model='mockllm/model', tool_events=events,
                        usage_source='synthetic; not provider measurement', collector_finished=True))
     return dict(awaiting_external_finalization=True, status=logs[0].status)
 
@@ -442,6 +454,8 @@ def finalize(work, unit):
     oom_observed = before['oom_kill'] > start['oom_kill'] if before is not None and start is not None else None
     passed = (not errors and not recovered and unit_state['unit_success'] and not receipt['oom_killed']
               and oom_observed is False and collection.get('status') == 'success' and attempt['case'] in ('normal', 'detached'))
+    tool_events = collection.get('tool_events', [])
+    passed = passed and len(tool_events) == 1 and tool_events[0].get('completed') is not None and tool_events[0].get('error') is None
     if passed:
         verify_snapshot(work)
         passed = (work / 'sealed/result.txt').read_bytes() == b'qualified'
@@ -452,6 +466,55 @@ def finalize(work, unit):
                   physical_fit_verified=False, model_usefulness_measured=False)
     runner.write_json(work / 'result.json', result)
     return result
+
+
+def qualify(work, source):
+    """Require the complete retained inert control suite, not one happy path."""
+    runtime(source)
+    work = private_root(work)
+    identities, controls = set(), {}
+    for case in CASES:
+        directory = private_root(work / case)
+        attempt = read_json(directory / 'attempt.json')
+        result = read_json(directory / 'result.json')
+        unit = read_json(directory / 'unit-receipt.json')
+        cleanup_state = read_json(directory / 'sandbox-cleanup.json')
+        if (attempt.get('case') != case or attempt.get('runtime', {}).get('revision') != INSPECT_REVISION
+                or attempt.get('controller_sha256') != controller_hashes()
+                or cleanup_state.get('resources_absent') is not True):
+            raise ValueError(f'{case}: incompatible attempt or missing cleanup evidence')
+        identities.add((attempt['image'], attempt['daemon']))
+        if case in ('normal', 'detached'):
+            verify_snapshot(directory)
+            if result.get('passed') is not True or unit.get('unit_success') is not True:
+                raise ValueError(f'{case}: positive control failed')
+        elif result.get('passed') is not False:
+            raise ValueError(f'{case}: wrong output/execution was accepted')
+        if case == 'pretool':
+            if not result.get('startup_recovered') or (directory / 'seal.json').exists():
+                raise ValueError('pretool: recovery incorrectly accepted output')
+        elif case == 'interrupted':
+            if unit.get('unit_success') is not False:
+                raise ValueError('interrupted: no actual unsuccessful service result')
+        elif case == 'oom':
+            if result.get('exec_oom_kill_observed') is not True:
+                raise ValueError('oom: no actual cgroup oom_kill increase observed')
+        elif case == 'timeout':
+            events = read_json(directory / 'collection.json').get('tool_events', [])
+            if not any((event.get('error') or {}).get('type') == 'timeout' for event in events):
+                raise ValueError('timeout: no actual tool timeout observed')
+        elif case == 'symlink':
+            if (directory / 'seal.json').exists() or not any('nonregular' in error for error in result.get('errors', [])):
+                raise ValueError('symlink: unsafe output rejection not established')
+        elif case == 'wrong':
+            verify_snapshot(directory)
+            if (directory / 'sealed/result.txt').read_bytes() != b'wrong':
+                raise ValueError('wrong: no actual incorrect artifact retained')
+        controls[case] = result['passed']
+    if len(identities) != 1:
+        raise ValueError('control suite used different image/daemon identities')
+    return dict(passed=True, controls=controls, provider=wire_qualification(),
+                real_model_called=False, native_cad_qualified=False)
 
 
 def wire_qualification():
@@ -517,11 +580,14 @@ def wire_qualification():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
 
+    models = []
+
     async def exercise():
         config = GenerateConfig(max_retries=0, timeout=3, max_tokens=32, cache=False)
         model = get_model('openai-api/qualification/inert',
                           base_url=f'http://127.0.0.1:{server.server_port}/v1',
                           api_key='inert-synthetic-key', stream=False, responses_api=False, config=config)
+        models.append(model)
         tools = [ToolInfo(name='bash', description='Inert schema only', parameters={
             'type': 'object', 'properties': {'command': {'type': 'string'}}, 'required': ['command'],
         })]
@@ -550,8 +616,15 @@ def wire_qualification():
         else:
             raise ValueError('scripted provider failure was accepted')
 
+    async def exercise_and_close():
+        try:
+            await exercise()
+        finally:
+            for model in models:
+                await model.api.aclose()
+
     try:
-        asyncio.run(exercise())
+        asyncio.run(exercise_and_close())
     finally:
         server.shutdown()
         server.server_close()
@@ -568,12 +641,12 @@ def wire_qualification():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('collect', 'finalize', 'qualify'))
+    parser.add_argument('action', choices=('collect', 'finalize', 'wire', 'qualify'))
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--image')
     parser.add_argument('--inspect-source', type=Path)
     parser.add_argument('--unit')
-    parser.add_argument('--case', choices=('normal', 'detached', 'timeout', 'oom', 'pretool', 'interrupted'), default='normal')
+    parser.add_argument('--case', choices=CASES, default='normal')
     args = parser.parse_args()
     try:
         if args.action == 'collect':
@@ -587,12 +660,11 @@ def main():
         else:
             if not args.inspect_source:
                 parser.error('qualify requires --inspect-source')
-            runtime(args.inspect_source)
-            verify_snapshot(args.work)
-            result = read_json(args.work / 'result.json')
-            if not result['passed']:
-                raise ValueError('sandbox qualification did not pass')
-            result = dict(sandbox=result, provider=wire_qualification())
+            if args.action == 'wire':
+                runtime(args.inspect_source)
+                result = wire_qualification()
+            else:
+                result = qualify(args.work, args.inspect_source)
         print(json.dumps(result, allow_nan=False))
     except (OSError, ValueError, subprocess.SubprocessError, ImportError) as exc:
         print(json.dumps(dict(passed=False, error=str(exc))))

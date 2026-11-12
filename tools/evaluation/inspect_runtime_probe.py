@@ -15,8 +15,15 @@ import subprocess
 import tarfile
 from urllib.request import HTTPSHandler, ProxyHandler, build_opener
 
+INSPECT_REVISION = 'ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8'
+HELPER_HASHES = {
+    'runner.py': 'c20a2799749e3bb56951fb31555c0f29f3052b12b6cbbfc9ac769389669af5bc',
+    'standard_eval.py': '289dc3b4dd30ed403432ae84f0be01da91ea7713f361a04fb5f033766a13bfa8',
+}
+for name, expected in HELPER_HASHES.items():
+    if hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() != expected:
+        raise ValueError('phase-1 process helper differs from reviewed bytes')
 import runner
-from inspect_runner import INSPECT_REVISION, private_root
 
 UV_VERSION = '0.13.4'
 UV_URL = 'https://github.com/astral-sh/uv/releases/download/0.13.4/uv-x86_64-unknown-linux-gnu.tar.gz'
@@ -81,7 +88,13 @@ def extract_uv(archive, destination):
 
 
 def probe(work):
-    work = private_root(work, fresh=True)
+    work = Path(work).absolute()
+    if '..' in work.parts or any(p.is_symlink() for p in (work, *work.parents)):
+        raise ValueError('work path must not contain symlinks/traversal')
+    work.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if any(work.iterdir()):
+        raise ValueError('work must be fresh and empty')
+    work.chmod(0o700)
     source = work / 'source'
     source.mkdir(mode=0o700)
     checksum = work / 'uv.sha256'

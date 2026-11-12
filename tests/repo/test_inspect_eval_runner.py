@@ -213,7 +213,8 @@ def test_finalize_accepts_only_settled_correct_cleaned_bytes(tmp_path, monkeypat
     (directory / 'cgroup.procs').write_text('')
     adapter.runner.write_json(work / 'sandbox-owner.json', dict(container='c' * 64, project='inspect-inert-1',
                              cgroup=group, memory_events={'oom': 0, 'oom_kill': 0}))
-    adapter.runner.write_json(work / 'collection.json', dict(status='success'))
+    adapter.runner.write_json(work / 'collection.json', dict(status='success', tool_events=[
+        dict(id='inert-bash-1', function='bash', completed='retained', error=None)]))
     host_settled = []
     def unit_receipt(*args):
         host_settled.append(True)

@@ -195,3 +195,26 @@ packages are changed by that test. The complete focused apt/release/area/layout 
 a wildcard, a cloud-brand inference or a retry. A successful job on Azure does not prove the EC2 runner ran the
 corrected path. Fresh ordinary CI and its recognized-input log remain separate evidence. Other unobserved profiles
 must still fail with bounded diagnostics, and this correction does not promise all future provisioning succeeds.
+
+
+## Retain the rejected source shape without admitting it
+
+2026-11-12 UTC: release649 full job131538546246 (run43320195481, headf0ae99d6)
+failed before apt/extras/tests at `validate_source`: `active Ubuntu source must use the expected mirror file`.
+The actual Ubuntu source bytes were absent. Raw job-log SHA256:
+`ada6ee7f2157da06e6a79a5f1afe3711b5613177ad07effe1b4ff8e59ab23fd8`.
+Ubuntu24.04.5/image20261111.127.1/AWS us-west-2 metadata does not establish the missing URI or cause.
+The earlier observed mirror-list tuple correction and successful Azure-path runs remain separate evidence.
+
+**Correction and rule:** when the existing source validator rejects, emit bounded known-field and redacted
+URI-shape records plus the input hash, then rethrow the original ValueError before any write or success log.
+Credentials, queries, arbitrary paths/field values and excess data stay hidden; visibility of an alternate
+system path is not acceptance. Keep `validate_source`, mirror priorities, signatures and retry/deadline policy
+unchanged. Independent synthetic configure controls preserve both files/the original error, reject alternate
+source paths, and exercise continuation, malformed input, redaction and output bounds.19 tests and39 subtests
+passed locally; no real rejected runner source was reconstructed or newly admitted.
+
+**Limits and next:** the root cause remains UNKNOWN until a normal authorized diagnostic checkpoint captures
+sufficient actual producer evidence. The original failure is not rerun or waived by adding diagnostics. A
+source/configuration correction needs that evidence, independent review and all new normal CI. Release649
+remains held; no local apt configuration, dependency, workflow or model runtime was changed.

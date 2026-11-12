@@ -1198,7 +1198,7 @@ def test_native_serial_plan_source_bound_forward_reverse_and_ordinary_driver(tmp
 
 
 def test_native_serial_tool_approach_obstruction_and_stale_source_controls(tmp_path, monkeypatch):
-    import cadquery as cq
+    cq = pytest.importorskip("cadquery")
     import cadagent.review.gates.playback as playback
     from cadagent.review.gates.assembly import AssemblySequenceWorld
     assembly, bundle, binding, breps, spec, tool = native_serial_fixture(tmp_path)

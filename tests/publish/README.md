@@ -117,4 +117,3 @@ CHANGELOG fragment; the existing repository release-producer tests now pass
 all 40 cases. Both failed attempts remain separate from the corrected results.
 
 </details>
-

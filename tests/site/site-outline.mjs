@@ -194,10 +194,14 @@ export async function readerOutlineClickProblems(browser, base) {
   const settle=()=>page.evaluate(()=>new Promise(done=>{
     let last=-1,still=0;const tick=()=>{if(scrollY===last){if(++still>15)return done();}else{still=0;last=scrollY;}requestAnimationFrame(tick);};tick();setTimeout(done,10000);
   }));
-  const state=link=>link.evaluate(a=>{
+  const state=(link,alignment=null)=>link.evaluate((a,mode)=>{
+    // Capture the native alignment in the same task: queued tracking must not undo the planted CSS first.
+    if(mode==='zero'){const style=document.createElement('style');style.id='reader-zero-inset-control';style.textContent='cad-nav .cad-nav-panel{scroll-padding-top:0!important}';document.head.append(style);}
+    if(mode==='restored')document.getElementById('reader-zero-inset-control')?.remove();
+    if(mode)a.scrollIntoView({block:'start',behavior:'instant'});
     const p=a.closest('.cad-nav-panel'),r=a.getBoundingClientRect(),c=p.querySelector('[data-nav-controls]').getBoundingClientRect();
     return {target:a.hash,article:scrollY,panel:p.scrollTop,padding:getComputedStyle(p).scrollPaddingTop,controlsHeight:c.height,top:r.top,bottom:r.bottom,controlsBottom:c.bottom,hit:a.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};
-  });
+  },alignment);
   try{
     await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
     await scrollOutline(page,await page.evaluate(()=>document.body.scrollHeight/2));await page.locator('.cad-nav-panel').evaluate(p=>p.scrollTop=0);
@@ -211,11 +215,8 @@ export async function readerOutlineClickProblems(browser, base) {
     await page.evaluate(()=>document.documentElement.style.scrollBehavior='auto');
     const middle=links.nth(Math.floor((await links.count())/2));await middle.click();await settle();states.push({realMiddleClick:await state(middle)});
     // Remove only the new inset: native start alignment must reproduce a link underneath the sticky controls.
-    const panel=page.locator('.cad-nav-panel'),padding=await panel.evaluate(p=>p.style.scrollPaddingTop);
-    await panel.evaluate(p=>p.style.scrollPaddingTop='0px');await middle.evaluate(a=>a.scrollIntoView({block:'start',behavior:'instant'}));
-    const negative=await state(middle);states.push({negative});if(negative.hit)problems.push('reader click: zero-inset header coverage control was not rejected');
-    await panel.evaluate((p,value)=>p.style.scrollPaddingTop=value,padding);await middle.evaluate(a=>a.scrollIntoView({block:'start',behavior:'instant'}));
-    const corrected=await state(middle);states.push({corrected});if(!corrected.hit||parseFloat(corrected.padding)<corrected.controlsHeight)problems.push('reader click: link remains beneath sticky controls');
+    const negative=await state(middle,'zero');states.push({negative});if(negative.hit)problems.push('reader click: zero-inset header coverage control was not rejected');
+    const corrected=await state(middle,'restored');states.push({corrected});if(!corrected.hit||parseFloat(corrected.padding)<corrected.controlsHeight)problems.push('reader click: link remains beneath sticky controls');
     await middle.click();await settle();
   }finally{
     await page.screenshot({path:path.join(evidence,'final.png')});await page.close();

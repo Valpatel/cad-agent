@@ -141,17 +141,14 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     printed = printed_parts(project, parts)     # a part made another way has no print files (#577)
     others = [p for p in parts if p not in printed]
     if others:
-        _say(f"  not printed, no print files written: {', '.join(others)}")
+        _say(f"  not printed, no per-part 3MF written: {', '.join(others)}")
         old = [f"{p}.3mf" for p in others if (project.exports_dir / f"{p}.3mf").is_file()]
         if old:                                 # written when the part was printed: not this run's, and not deleted
             _say(f"  note: left in {project.exports_dir.name}/ from an earlier run, not checked: {', '.join(old)}")
     if not printed:
-        from cadagent.manufacturing.plates import _remove_outputs, plates_file
-        _remove_outputs(plates_file(project))   # a plates file from when a part was printed is stale now
-        _say("no printed part: no 3MF or plates file written")
-        if strict:
-            _say("plates: FAILED: project settings required, but no part is printed")
-        return 1 if strict else 0
+        _say("no printed part: no per-part 3MF written")
+        # The plate owner honors explicit selections and preserves prior outputs on strict failure.
+        return _export_plates(project, list(parts), require_project_settings=strict)
     if not project.printer.bed_mm:
         raise _Unusable("cad.printer.bed_mm is required to centre 3MF files on the bed")
     if strict and _export_plates(project, list(parts), require_project_settings=True):

@@ -468,7 +468,7 @@ def test_export_3mf_leaves_out_a_part_that_is_not_printed(tmp_path, capsys):
     root = _mixed(tmp_path)
     assert main(["export-3mf", "--project", str(root)]) == 0
     out = capsys.readouterr().out
-    assert "not printed, no print files written: frame" in out and "2 3MF file(s) written" in out
+    assert "not printed, no per-part 3MF written: frame" in out and "2 3MF file(s) written" in out
     assert not (root / "exports" / "frame.3mf").exists()
     plates = json.loads((root / "exports" / "demo-plates.json").read_text())
     assert sorted(plates["quantities"]) == ["box", "lid"]
@@ -489,7 +489,7 @@ def test_all_finishes_on_a_project_with_no_printed_part(tmp_path, monkeypatch, c
             (root / "exports" / f"{name}.{ext}").unlink()
     monkeypatch.setitem(sys.modules, "trimesh", None)
     assert main(["export-3mf", "--project", str(root)]) == 0
-    assert "no printed part: no 3MF or plates file written" in capsys.readouterr().out
+    assert "no printed part: no per-part 3MF written" in capsys.readouterr().out
     assert main(["export-3mf", "--project", str(root), "--require-project-settings"]) == 1
     for name in ("cmd_build", "cmd_holes", "cmd_package"):      # unrelated steps; the export and the report are real
         monkeypatch.setattr(cli, name, lambda project, args: 0)

@@ -169,3 +169,46 @@ settings. Process changes are relevant evidence changes even when exported geome
 **Limits:** these are real CLI/mesh checks and controlled temporary projects, not a physical build or a new native
 slice. Skipping print checks does not establish that another process can manufacture the part. No product geometry,
 printer, cloud service or heavy CAD job was changed or run.
+
+## An inapplicable default does not bypass the export contract
+
+Independent GPT-6 [review 5880524438](https://github.com/Valpatel/cad-agent/pull/632#pullrequestreview-5880524438)
+blocked `cb4481d2` on 2026-11-12 UTC despite the focused checks above. The inherited all-nonprinted early return
+ignored `cad.plates.parts`, and directly removed prior owned plate files before reporting a strict settings failure.
+The normal plate exporter already owned both explicit selection and transactional preservation, but was bypassed.
+
+New actual-CLI controls before correction covered list/mapping selections in both strict and ordinary export modes,
+plus prior outputs written by the real small-mesh plate exporter with `use_slicer=False`:
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider tests/manufacturing/test_plates.py \
+  -k 'nonprinted_parts_explicitly or no_printed_parts_preserve' --tb=short
+5 failed, 1 passed, 83 deselected in 0.81s
+```
+
+The strict failure lost all three owned prior files (`.3mf`, `.svg`, `.json`); ordinary cleanup of those same stale
+files was the passing control. Explicit selections either produced no plate file or wrongly returned failure.
+The correction routes the empty standalone-print case through the existing plate exporter. That owner resolves
+the plate selection before requiring its optional mesh dependency, so an empty default still needs neither a bed
+nor trimesh. Existing strict staging protects prior outputs; ordinary invalidation keeps its established behavior.
+The new tests read back actual exported 3MF placements and quantities using controlled settings bytes, and compare
+all prior output bytes after strict rejection.
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider \
+  tests/manufacturing/test_plates.py tests/cli/test_cli.py \
+  -k 'nonprinted_parts_explicitly or no_printed_parts_preserve or all_finishes_on_a_project_with_no_printed_part or strict_project_command or strict_plate_publication' --tb=short
+33 passed, 108 deselected in 1.02s
+```
+
+Repeating the focused geometry/process/slicer/plates/report/CLI/config/repository command recorded above after
+these corrections gave `388 passed, 3 deselected, 1 warning in 12.51s`; the same native-run exclusions and existing
+folder warning apply.
+
+**Corrective rule:** a high-level default-scope shortcut must not bypass explicit user selections or the operation's
+existing transaction. Keep those decisions with their established owner and exercise the actual caller, including
+real owned previous outputs rather than only foreign/unrecognized placeholder files.
+
+**Limits:** settings production is controlled test data, not a native Bambu run or GUI acceptance. No real printer,
+product geometry or user export was touched. Earlier passing tests and the blocked review remain evidence of the
+missing cases, not substitutes for new-source review and CI.

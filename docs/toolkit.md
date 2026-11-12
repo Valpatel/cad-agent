@@ -205,7 +205,9 @@ cad:
 - **What is left out for a skipped part:** its `<part>.3mf`, its place on the default build plates, its row in the
   default slice and in the overhang screen, and the "missing" marks in the report's download table (a dash instead).
   A part named in `cad.plates.parts`, in `cad.slicer.parts` or on the command line is handled as named.
-  When no part is printed, `export-3mf` writes nothing and exits 0, and needs no `cad.printer.bed_mm`; a slice
+  When no part is printed and no plate parts are explicitly selected, `export-3mf` writes nothing and exits 0,
+  and needs no `cad.printer.bed_mm`. A strict project-settings request fails without replacing prior plate files.
+  Explicit plate selections still use the normal export and validation path; a slice
   report from when a part was printed no longer counts. A `<part>.3mf` an earlier run wrote is left in place and
   named in a note. The download table still marks a missing STEP: STEP is for CAD review, whatever makes the part.
 - **Not covered yet:** `cad-agent release` is a print release and still lists every part by default; name the printed

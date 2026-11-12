@@ -1024,7 +1024,8 @@ def _remove_outputs(path: Path) -> None:
 def export_plates(project, known_parts: Optional[Sequence[str]] = None, settings_bytes: Optional[bytes] = None,
                   use_slicer: bool = True, require_project_settings: bool = False) -> Optional[Dict[str, Any]]:
     """Write ``<name>-plates.3mf`` (verified), ``<name>-plates.json`` (the layout) and ``<name>-plates.svg`` (the
-    plates from above) into ``exports_dir``; None when ``cad.plates`` is false. The project settings are
+    plates from above) into ``exports_dir``; None when ``cad.plates`` is false or the default selection has no
+    printed parts. Explicit ``cad.plates.parts`` selections remain eligible. The project settings are
     ``settings_bytes`` when given, else Bambu Studio's for ``cad.slicer`` when it is installed and ``use_slicer``,
     else left out (the record and the warnings say so: Bambu Studio then opens the file on one plate). A printer,
     process or filament that Bambu Studio has no profile for is a ``CadConfigError``.
@@ -1081,7 +1082,6 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
     from cadagent.manufacturing import slicer
     from cadagent.publish.report import load_parts
 
-    trimesh = require("trimesh", "build plates (STL loading)")
     if known_parts is None:
         known, error = load_parts(project)
         if error:
@@ -1094,6 +1094,7 @@ def _export_plates(project, known_parts=None, settings_bytes=None, use_slicer=Tr
         if require_project_settings:
             raise PlatesError('project settings required, but cad.plates is false or no part is printed')
         return None
+    trimesh = require("trimesh", "build plates (STL loading)")
     bed = project.printer.bed_mm
     if not bed:
         raise PlatesError("cad.printer.bed_mm is required to lay out build plates")

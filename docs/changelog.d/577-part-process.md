@@ -6,6 +6,7 @@
 
 **Fixed**
 - A partial `overhangs PART` run discards old results for parts that are no longer printed, even when their STL bytes are unchanged. An explicitly named nonprinted part is still screened afresh; it is not silently carried into later partial runs (#577, #580).
+- With no printed parts, `export-3mf` still honors explicit diagnostic plate selections, and a rejected strict project export preserves prior plate files through the existing transactional exporter (#632).
 
 **Projects must change**
 - Nothing for a project that declares no process: every part is printed, as before. A project that wrote a non-additive `material.process` on a card and still prints that part corrects the card's process (the card is read before `cad: part_process:`) (#577).

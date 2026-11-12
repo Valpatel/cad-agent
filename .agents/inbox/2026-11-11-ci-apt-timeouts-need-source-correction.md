@@ -161,3 +161,37 @@ profiles, active-source/keyring validation and CI failure conditions are unchang
 Use a fresh observed profile to justify a correction; a later pass on another
 runner does not explain or repair this rejection. This diagnostic itself is
 not a provisioning fix or successful full-suite evidence.
+
+## An observed cloud profile is not a wildcard
+
+On 2026-11-12, [full job 131436221538](https://github.com/Valpatel/cad-agent/actions/runs/43290750907/job/131436221538)
+on PR634 finally provided the producer evidence missing from #617. `configure` rejected this profile before apt,
+extras or tests ran:
+
+```text
+http://us-east-2.ec2.archive.ubuntu.com/ubuntu/ priority:1
+https://archive.ubuntu.com/ubuntu/ priority:2
+https://security.ubuntu.com/ubuntu/ priority:3
+```
+
+The URI/priority tuples come from the bounded rejection diagnostic, not a guess based on the cloud host.
+The source file was not logged: isolated replay uses the already-supported noble/source/keyring fixture and
+does not pretend to recover the failed runner's complete filesystem. Before correction,
+`PYTHONPATH=software python -m pytest -q tests/repo/test_ci_apt_mirror.py -k observed_ec2`
+reported **2 failed, 2 passed, 10 deselected, 15 subtests passed**; the exact primary was rejected without writes.
+
+Accept only that additional exact primary URI and priority, with the existing complete Canonical fallback set.
+Replace it with the same registered HTTPS preference used for Azure. Keep active-source, suite, component,
+keyring, duplicate and malformed-input guards unchanged. Report the recognized input primary after validation
+so a future successful hosted run identifies which path it exercised.
+
+Controls cover byte-preserving source/comment/whitespace handling and idempotence, plus rejection without writes
+for another EC2 region, lookalike host, userinfo, query, unobserved scheme/path, wrong priority, mixed/duplicate
+primaries, missing fallbacks, incomplete suites, another keyring, inactive mirror source and `Trusted: yes`.
+The existing loopback apt test still reaches its fallback and rejects unsigned metadata; no system apt files or
+packages are changed by that test. The complete focused apt/release/area/layout suite passed after correction.
+
+**Rule:** use captured producer input to extend an exact recognized profile; do not replace a failed guard with
+a wildcard, a cloud-brand inference or a retry. A successful job on Azure does not prove the EC2 runner ran the
+corrected path. Fresh ordinary CI and its recognized-input log remain separate evidence. Other unobserved profiles
+must still fail with bounded diagnostics, and this correction does not promise all future provisioning succeeds.

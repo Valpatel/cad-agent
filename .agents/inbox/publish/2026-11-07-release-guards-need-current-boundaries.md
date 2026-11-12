@@ -349,6 +349,12 @@ presence. Scope any disposition to immutable head/name/job identities, retain ca
 NOT PASS, and require every other current instance. This was a temporary local guard correction,
 not a CI waiver or permission for a general cancellation filter.
 
+The #643 body edit at `20:40:57Z` restarted source CI: its trigger includes `edited`, not
+`ready_for_review`. Readiness at `20:40:58Z` contributed only to Gates concurrency, which
+handles both events. Keep the three superseded source jobs distinct from the separate canceled
+Gates wrapper; readiness alone did not restart source CI. #644 similarly had one canceled
+Gates wrapper (`131494029147`), separately from its real folded-link failure below.
+
 ## Read back the verdict's last non-empty line
 
 2026-11-12 UTC: `gh api repos/Valpatel/cad-agent/pulls/643/reviews` showed review
@@ -386,3 +392,28 @@ the checked program, or execute them only after inspecting a successful prefligh
 **Limits:** preserving ancestry is not accepting the original blocked implementation unchanged.
 Remote retirement still requires actual released-main incorporation, fresh exact tips, explicit
 scope and independent review. Local branches, worktrees and providers remain intact.
+
+## Check release links after moving their Markdown consumer
+
+2026-11-12 UTC: #644 Chromium job `131493215897` failed the existing repository-map consumer:
+`CHANGELOG.md: broken relative link ../toolkit.md#parts-that-are-not-printed`.
+The link was valid in accepted `docs/changelog.d/577-part-process.md`, but the unchanged
+canonical cutter copies fragment text into root `CHANGELOG.md`. The destination then escaped
+the repository. The earlier 139 release/parser/layout tests did not exercise this link consumer.
+
+**Correction:** immutable input commit `8cf9c33f45dc6ef2983d5999e2137478cebbe60c` changes only that
+fragment link to `https://cad-agent.valpatel.com/docs/toolkit#parts-that-are-not-printed`.
+The unchanged cutter regenerates all three metadata files from that input. The existing
+`checkMap`/`createPublication` consumer, using `gitFiles`' NUL-delimited inventory and actual
+corrected folded Markdown, returns no problems; planting the original relative destination back
+into that output reproduces exactly the one broken-link error. Failed release tip `3fb7f88e`
+remains ancestry, and the consumed fragment stays deleted.
+
+**Rule:** validate the folded release with the existing structural consumer before pushing:
+`node --test tests/site/website-repo-map.test.mjs` (bind the repository's supported Node runtime;
+the separate owned-diagram rendering check remains CI-only). Use a stable canonical destination
+when a fragment will move; do not repair historical changelog entries or add a broad link rewriter.
+
+**Limits:** this preflight establishes source-link validity, not a public HTTP response, rendered
+browser pass or diagnosis of unrelated failures. The failed source CI and canceled Gates wrapper
+remain separate evidence; corrected exact-head review and all new normal CI are still required.

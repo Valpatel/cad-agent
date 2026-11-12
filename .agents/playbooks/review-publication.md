@@ -1,7 +1,7 @@
 # Publishing review evidence without repeatedly restarting CI
 
 1. Inspect workflow triggers and concurrency before diagnosing cancelled checks. For zero-job startup failures, inspect the actual annotation and exact workflow/head before choosing any bounded infrastructure recovery; CLI heuristic explanations and cached annotations are not a diagnosis. Preserve each outcome and do not turn one recovery into a retry loop ([startup evidence](../inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#inspect-actual-startup-annotations-before-a-bounded-recovery)).
-2. Finish the implementation, validation evidence and PR description, then push the final source checkpoint.
+2. Finish the implementation, validation evidence and PR description, then push the final source checkpoint. For a release, run the existing repository-map/link consumer against the folded CHANGELOG before that push ([moved fragment link](../inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#check-release-links-after-moving-their-markdown-consumer)).
    Parse any new changelog fragment with `tests/repo/test_cut_release.py`; ordinary Markdown headings are not
    release-section headings. Supply-chain additions need their actual report rows in the PR body.
 3. While final checks run, append status receipts as comments. In this repo, description edits restart Python CI because `edited` also covers base-branch retargeting.

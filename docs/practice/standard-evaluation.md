@@ -7,15 +7,22 @@ The initial corpus for [#142](https://github.com/Valpatel/cad-agent/issues/142),
 The corpus lives in `tests/fixtures/evaluation/jobs/`, the existing shared-data owner. A job directory contains `job.json`, `input.json` and `reference.json`. Reference solutions and graders stay in the controller checkout. The evaluation subject receives only task text and the input file in a fresh project directory; its output is `solution.json`. Run the subject outside the controller checkout, with a separately pinned released toolkit checkout for kit mode. A subject that reads the controller corpus invalidates the trial. A directory boundary is not OS security isolation: the CLI runs as the existing OS user and can access other paths.
 
 ```mermaid
-flowchart LR
-    C[Controller corpus] --> P[prepare task and input]
-    P --> S[Fresh subject project]
-    K[Separate pinned toolkit] --> S
-    S --> O[solution.json and transcript]
-    O --> G[Independent deterministic grader]
-    C --> G
-    G --> R[JSON run record]
+flowchart TD
+    P["prepare<br/>task and input only"] --> S["Fresh subject project"]
+    K["Pinned toolkit<br/>kit mode only"] --> S
+    S --> O["solution.json<br/>and transcript"]
+    O --> G["Independent grader"]
+    G --> R["JSON run record"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class P,G here
+    class K,S near
+    class O,R out
 ```
+
+<details>
+<summary>Run a trial: commands, service lifecycle and session controls</summary>
 
 `tools/evaluation/standard_eval.py` uses only the Python standard library. Its commands are:
 
@@ -55,6 +62,11 @@ Provider usage fields retain their provider meaning. Cached-input and cache-crea
 
 Kit preparation additionally requires `--kit /path/to/clean/released-checkout --kit-revision FULL_40_CHARACTER_SHA`. It verifies HEAD and a clean worktree. The prompt presents this path, its docs, canonical skills and the Python import path explicitly. This is explicit toolkit availability; it does not demonstrate native harness skill discovery. A successful toolkit command or import must be observed in executed tool evidence before a trial can claim toolkit use. Writing code containing an import, printing a command or merely reading documentation is insufficient.
 
+</details>
+
+<details>
+<summary>Manifest, grading and run-record contracts</summary>
+
 The manifest has exactly these fields:
 
 | Field | Contract |
@@ -73,6 +85,8 @@ The manifest has exactly these fields:
 
 A subject trial must start a new CLI session without resume/history. Bare and kit runs use the same task, numeric budget and inputs; the kit prompt adds the pinned toolkit paragraph requesting discovery and relevant tool use (or a tooling-gap report). Record the exact CLI version, argv with private paths redacted, session controls and their limits. Do not move or copy credentials, change accounts, install dependencies, or repurpose HOME/CODEX_HOME. An ordinary existing login can authorize the fresh session; it does not imply isolation from ambient settings. Preserve errors, partial transcripts and timeout status. Settle the entire service cgroup before grading to avoid accepting artifacts still being changed.
 
+</details>
+
 ## Jobs and what they prove
 
 - `snapfit-sizing`: independently recomputes the rounded guide-model coefficient (0.67), repeated-use/process allowable, minimum valid discrete length, root radius and hook force. The kit's `mechanical.compliant.snapfit` functions can solve this model. No contact, large deflection, creep, fatigue, manufacturing strength or coupon validation is tested.
@@ -83,17 +97,47 @@ These jobs intentionally have complete small inputs. They do not evaluate source
 
 ## Existing tools considered
 
+<details>
+<summary>How this corpus extends the existing evaluators</summary>
+
 The repository's [landscape](../research/landscape.json) records CADGenBench use by agentcad/build123d-mcp and Multi-Agent-CAD's feature benchmark. Those CAD generation suites serve geometry/modeling comparison; this first corpus instead needs explicit design-rule calculations and pin declarations, so their benchmark scores are not imported or presented as equivalent. No fresh external benchmark claims are made here.
 
 `tools/quickstart_eval.py` already grades installer/discovery transcripts. Its separation of observed evidence from subject claims informs the run-record design, but its install flow and HOME/auth routes are not reused. The vendored `kicad-mcp-pro` corpus and task-outcome/geometry/connectivity differential graders are useful for later native PCB jobs; wrapping that service for a four-net declaration would introduce unrelated runtime requirements. Existing snap-fit toolkit formulas remain available to subjects, while the controller independently expresses the published arithmetic to avoid accepting a shared solver bug. No dependencies or vendored code are added.
 
+</details>
+
 ## Testing and initial controls
+
+The tests must reject wrong designs and invalid execution records, as well as accept the known-good references.
+An artifact passing its checks does not by itself establish a usable trial or actual toolkit use.
+
+<details>
+<summary>Negative controls, process teardown and initial test evidence</summary>
 
 `tests/repo/test_standard_eval.py` validates every manifest and all three reference solutions. Negative controls alter length, reported strain, allowable factors, force, fillet and section; collide, overlap, move off-grid or overmove ribs; and mirror, short, omit or duplicate electrical endpoints. Reordered valid nets remain positive. Invalid JSON, duplicate keys, NaN, wrong schemas, symlinks and oversized files fail. Preparation refuses reuse; ingestion preserves unknown metrics and distinguishes an otherwise correct artifact from a timed-out trial. `tests/repo/test_standard_eval_runner.py` checks adapters, transcript accounting, inert real subprocess completion and timeout, plus active/wrong/unknown units and retained terminal failures. The opt-in `CAD_EVAL_SYSTEMD_CONTROL=1` test creates an actual user service with a detached child, proves the child survives the collector, then proves finalization stops it before grading. Default CI skips this service test explicitly; mocked unit tests are not teardown evidence.
 
 On 2026-11-12 the focused suite passed 25 focused tests using an existing Python environment, without new packages. All three reference artifacts pass; these controller controls are not fresh model results. Actual CLI trials and any aggregate table are reported separately with model, harness, mode, observed kit use, errors and session limits. A single trial has no useful population pass-rate estimate; do not infer reliability or toolkit benefit from these controls.
 
+</details>
+
 ## Recorded fresh-agent attempts
+
+The arrows below distinguish API execution from a correct artifact. All three native tasks passed their analytical
+checks; two CLI attempts produced no artifact and remain in the record.
+
+```mermaid
+flowchart TD
+    S["Fresh native Sol tasks"] --> A["Snap-fit<br/>8/8 checks"] & B["Lid ribs<br/>4/4 checks"] & C["Pin graph<br/>4/4 checks"]
+    A & B --> K["Toolkit API calls"]
+    C --> P["Own Python"]
+    K & P --> L["Analytical checks only"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class S near
+    class A,B,C,K,P here
+    class L out
+```
 
 The [2026-11-12 records](https://github.com/Valpatel/cad-agent/blob/main/docs/research/bench/standard-evaluation-2026-11-12.jsonl)
 retain all five attempts and their hashes, outputs, selected tool-call excerpts and limitations. The toolkit was
@@ -108,6 +152,12 @@ provided. Independent graders checked the artifacts after each task completed.
 | Native Sol · snap-fit | 8 checks passed | `rect_section`, `root_strain`, `deflection_force` | 62.8 s |
 | Native Sol · lid ribs | 4 checks passed | `box_distance`, with local enumeration and an analytical cross-check | 112.8 s |
 | Native Sol · connector | 4 checks passed | Documentation inspected; task-specific Python, no toolkit API invoked | 78.5 s |
+
+These native trials had **unenforced budgets and no bare baseline**. They establish neither reliability nor
+a causal toolkit benefit, exported CAD correctness or physical qualification.
+
+<details>
+<summary>Interpret the observations and failed attempts</summary>
 
 The connector subject reported that it did not find an applicable pin/net declaration validator. That is a
 discoverability observation for this input, not proof that the entire toolkit lacks electrical checks. Its output
@@ -124,6 +174,8 @@ were **not enforced**, their effort differed from the CLI pilots, and there was 
 was truncated, so only each new task's own local rollout supplied the audited tool records. All observed commands
 were synchronous and stayed within the task and pinned toolkit. No clean-user isolation, causal toolkit benefit,
 population pass rate, exported CAD correctness or physical qualification follows from these three smoke tasks.
+
+</details>
 
 Next, [#142](https://github.com/Valpatel/cad-agent/issues/142) retains the work on repeatable paired trials in a
 working bounded environment, native CAD/PCB artifacts and source-lookup questions. These observations do not close

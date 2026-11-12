@@ -100,10 +100,12 @@ export class CadNav extends HTMLElement {
       filter.setAttribute('aria-label', 'Filter pages');
       panel.prepend(filter);
     }
+    filter.disabled = false;
     this.#filter(filter, panel, signal);
     this.#room(panel, signal);
     this.#outline(panel, signal);
     this.#reveal(panel, filter);
+    this.toggleAttribute('data-ready',true);
   }
 
   /** On a wide screen the panel sticks below the page's header, inside <cad-nav>, which ends where the page's content
@@ -307,6 +309,26 @@ export class CadNav extends HTMLElement {
       const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
       if (terms.length && !saved) saved = groups.map(g => g.open);
       let shown = 0;
+      if (this.hasAttribute('topic-tree')) {
+        // Topic headings are searchable too; clearing restores even empty topics and prior folds.
+        const titleOf=g=>g.querySelector(':scope > summary')?.textContent.toLowerCase() || '';
+        const ancestors=el=>{const names=[];for(let g=el.closest('details');g&&panel.contains(g);g=g.parentElement?.closest('details'))names.push(titleOf(g));return names.join(' ');};
+        for(const li of [...panel.querySelectorAll('li')].filter(pageItem)){
+          const a=li.querySelector(':scope > a');
+          li.hidden=!terms.every(t=>`${a?.textContent||''} ${ancestors(li)}`.toLowerCase().includes(t));
+          if(!li.hidden)shown++;
+        }
+        for(let i=groups.length-1;i>=0;i--){
+          const group=groups[i];
+          const own=terms.every(t=>ancestors(group).includes(t));
+          const any=own||[...group.querySelectorAll('li')].some(li=>pageItem(li)&&!li.hidden)||[...group.querySelectorAll('details')].some(g=>!g.hidden);
+          group.hidden=terms.length>0&&!any;
+          if(terms.length&&any){group.open=true;shown++;}else if(!terms.length&&saved)group.open=saved[i];
+        }
+        if(!terms.length)saved=null;
+        status.textContent=terms.length&&!shown?`No topics or pages match “${input.value.trim()}”.`:'';
+        return;
+      }
       for (const li of [...panel.querySelectorAll('li')].filter(pageItem)) {
         const a = li.querySelector(':scope > a');
         li.hidden = !terms.every(t => (a?.textContent || li.textContent).toLowerCase().includes(t));

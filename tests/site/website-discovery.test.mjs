@@ -1,3 +1,4 @@
+import {topicNodes,topicTree,topicPlacement,readerNav,updateTime,topicGlyphs,topicSprite} from '../../tools/site/compiler/site-explore-shell.mjs';
 /** Shared discovery uses real producer identities, not a second authored registry or inflated source counts. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -54,17 +55,23 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(html.includes('Source: Not yet read'));
  assert.ok(html.includes('Outside-tool adoption'));
  assert.ok(html.includes('value="candidate"'));
- assert.ok(html.includes('Full catalogue'));
+ assert.ok(!html.includes('Full catalogue'));
+ assert.ok(html.includes('Entry type')&&html.includes('Licence')&&html.includes('Has a working example'));
+ assert.doesNotMatch(html, /class="mat-dots"|<legend>Maturity/);
  assert.ok(html.includes('About these results'));
- assert.match(html, /<details class="discover-group" data-group="references"/);
+ assert.match(html, /<details class="discover-group" id="references" data-group="references"/);
  assert.ok(!/<details class="discover-group"[^>]*\bopen/.test(html), 'no-script groups start collapsed');
  assert.ok(html.includes('/discovery.json'));
  assert.ok(!/<li data-item[^>]*><a href="https:\/\/cad-agent.valpatel.com/.test(html), 'local result clicks stay on the reviewed producer');
  assert.ok(!/<img[^>]*src="https?:/.test(html), 'site-owned images stay same-origin under real CSP');
  assert.match(html, /<\/span> <span class="result-summary">/, 'title/summary remain separate search words');
  // Budget is for compact links/search metadata, not a second full reference table or article copies.
+ const compactReferences=[...html.matchAll(/<li data-item id="reference:[\s\S]*?<\/li>/g)].map(m=>m[0]);
+ assert.equal(compactReferences.length,model.source_counts.reference_records);
+ assert.ok(compactReferences.reduce((n,s)=>n+Buffer.byteLength(s),0)<model.source_counts.reference_records*700,'reference projection remains compact; richer catalogue details are not copied onto sources');
+ assert.ok(compactReferences.every(s=>!s.includes('result-details')&&!s.includes('result-cover')));
  const n=model.items.length;
- assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<1200000,'700 bytes/result plus fixed shell; absolute safety cap');
+ assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<900000,'700 bytes/result plus fixed shell; absolute safety cap');
  assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
  assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
 });
@@ -79,4 +86,73 @@ test('generated pitfall destinations are unique and hostile text is inert',()=>{
  assert.equal(x.items[0].source_url,null);assert.equal(x.items[0].evidence,'snippet-only');
  const body=discoveryHTML(x,{areas:{domains:[]}});assert.doesNotMatch(body,/<img src=x|javascript:|onerror=alert\(1\)>/);assert.ok(body.includes('&lt;img'));
  assert.throws(()=>discoveryModel({catalog:{items:[{id:'bad',url:'javascript:alert(1)',areas:[]}]},pages:[],references:{refs:{records:new Map(),aliases:new Map()}},ORIGIN:'https://example.test',pageURL:()=>'/'}),/unsafe destination/);
+});
+
+// Pure topic-shell/time/detail contracts share this existing discovery owner.
+const areas={domains:[{slug:'mechanical',title:'Mechanical',areas:[{slug:'fasteners',title:'Fasteners',topics:[{slug:'bosses',title:'Bosses',pages:['boss.md']}]}]}]};
+const pages=[{file:'boss.md',title:'A screw boss'},{file:'other.md',title:'Other',section:'guides'}];const pageURL=f=>'/docs/'+f.slice(0,-3);
+test('browse and reader share real nested taxonomy and preserve exact local page destinations',()=>{
+ const nodes=topicNodes(areas);assert.equal(nodes.get('bosses').parent,'fasteners');assert.equal(nodes.get('bosses').domain,'mechanical');
+ const browse=topicTree({areas,pages,pageURL,browse:true}),reader=readerNav({areas,pages,pageURL,current:'/docs/boss'});
+ for(const html of [browse,reader]){for(const id of ['mechanical','fasteners','bosses','cross-cutting'])assert.ok(html.includes('data-topic="'+id+'"'));assert.ok(html.includes('data-topic="bosses"'));assert.doesNotMatch(html,/maturity|mat-dots/);}
+ assert.ok(browse.includes('href="/explore?area=bosses"'));
+ assert.match(reader,/href="\/docs\/boss" aria-current="page"/);assert.match(reader,/action="\/explore"/);assert.ok(reader.includes('name="q"'));
+ assert.ok(reader.includes('data-topic="bosses" data-tone="mechanical" open'));
+ const wrong=readerNav({areas,pages,pageURL,current:'/docs/missing'});assert.doesNotMatch(wrong,/aria-current="page"/);
+});
+test('recorded times display exact seconds in Pacific with DST, preserving full datetime',()=>{
+ const winter=updateTime('2026-11-12T03:04:01+00:00');assert.equal(winter.datetime,'2026-11-12T03:04:01+00:00');assert.match(winter.label,/Nov 11, 2026, 7:04:01 PM PST/);
+ assert.match(updateTime('2026-07-12T03:04:01Z').label,/8:04:01 PM PDT/);
+ const date=updateTime('2026-11-12');assert.equal(date.datetime,'2026-11-12');assert.doesNotMatch(date.label,/PST|PDT|AM|PM/);
+ assert.throws(()=>updateTime('not a time'));assert.throws(()=>updateTime('2026-11-12T03:04'));
+});
+
+test('one placement projection gives every tree page all its browse ancestors and explicit cross-cutting placement',()=>{
+ const placement=topicPlacement({...areas,cross_cutting:{pages:['boss.md']}},pages,pageURL);
+ assert.deepEqual(placement.byPage.get('/docs/boss'),['bosses','cross-cutting']);
+ assert.deepEqual(placement.ancestors(placement.byPage.get('/docs/boss')),['bosses','fasteners','mechanical','cross-cutting']);
+ assert.deepEqual(placement.byPage.get('/docs/other'),['cross-cutting']);
+ const nav=readerNav({areas,pages,pageURL,current:'/docs/boss',outlineHTML:'<ol class="cad-nav-outline"><li><a href="#head">Head</a></li></ol>'});
+ assert.ok(nav.includes('class="explore-mobile-outline"'));assert.ok(nav.includes('href="#head"'));
+});
+
+test('on-demand detail destinations retain local previews and reject executable/credential URLs',async()=>{
+ globalThis.location={origin:'https://preview.example'};
+ try{const {detailURL}=await import('../../tools/site/assets/discovery.js');
+  assert.equal(detailURL('https://cad-agent.valpatel.com/docs/toolkit#holes-clear'),'/docs/toolkit#holes-clear');
+  assert.equal(detailURL('https://github.com/owner/tool'),'https://github.com/owner/tool');
+  assert.equal(detailURL('javascript:alert(1)'),null);assert.equal(detailURL('https://user:pass@example.com'),null);
+ }finally{delete globalThis.location;}
+});
+
+test('glyph sprite preserves every stable symbol while reusing identical artwork',async()=>{
+ const {glyphSprite,glyphFor}=await import('../../tools/site/compiler/catalog-art.mjs');
+ const slugs=['unplaced','fixture-unknown-topic','fixture-other-topic'];const sprite=glyphSprite(slugs);
+ for(const slug of slugs)assert.ok(sprite.includes(`id="g-${slug}"`));
+ assert.equal((sprite.match(/<use href="#g-unplaced"/g)||[]).length,2);
+ assert.ok(glyphFor(slugs[0])===glyphFor(slugs[1]));
+ assert.equal((glyphSprite(['unplaced','unplaced']).match(/<symbol/g)||[]).length,1);
+});
+
+test('unillustrated topics reuse nearest ancestor artwork without changing topic symbol identities',()=>{
+ const taxonomy={domains:[{slug:'mechanical',areas:[{slug:'cad-modelling',topics:[{slug:'motor-mounts'},{slug:'gears'}]},{slug:'fixture-unillustrated-area',topics:[{slug:'fixture-deep-topic'}]}]}]};
+ const art=topicGlyphs(taxonomy);
+ assert.equal(art.get('motor-mounts'),'cad-modelling');assert.equal(art.get('gears'),'gears');
+ assert.equal(art.get('fixture-deep-topic'),'mechanical');assert.equal(art.get('cross-cutting'),'cross-cutting');
+ const sprite=topicSprite(taxonomy);
+ assert.match(sprite,/<symbol id="g-motor-mounts"[^>]*><use href="#g-cad-modelling"\/><\/symbol>/);
+ for(const slug of topicNodes(taxonomy).keys())assert.ok(sprite.includes(`id="g-${slug}"`));
+ assert.equal(topicSprite(taxonomy),sprite,'deterministic output');
+});
+
+test('legacy catalogue descriptions escape canonical plain text without passing it through HTML extraction',()=>{
+ const what='A literal <img src=x onerror=alert(2)> and <script>alert(2)</script> description';
+ const c={id:'fixture-literal',kind:'project',type:'upstream',status:'candidate',name:'Literal fixture',what,url:'https://example.test/tool',areas:[],related:[]};
+ const catalog={items:[c]},references={refs:{records:new Map(),aliases:new Map()},placed:new Map()};
+ const projection=discoveryModel({catalog,pages:[],references,ORIGIN:'https://example.test',revision:'fixture',pageURL:()=>'/'});
+ const before=JSON.stringify(projection);
+ const html=discoveryHTML(projection,{areas:{domains:[],maturity:[]},catalog,legacy:true});
+ assert.ok(html.includes('A literal &lt;img src=x onerror=alert(2)&gt; and &lt;script&gt;alert(2)&lt;/script&gt; description'));
+ assert.doesNotMatch(html,/<img src=x|<script>alert/);
+ assert.equal(JSON.stringify(projection),before,'legacy rendering does not mutate discovery projection semantics');
 });

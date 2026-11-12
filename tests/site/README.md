@@ -45,7 +45,7 @@ flowchart TD
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
-| `site-outline.mjs` | Helper: actual scroll/frame readiness, strict marked-entry geometry and same-section/manual-panel regression with a hidden-entry control |
+| `site-outline.mjs` | Helper: actual scroll/frame readiness, strict marked-entry geometry, shared WCAG predicate and same-section/manual-panel regression with a hidden-entry control |
 | `site-motion.mjs` | Helper: rendered reduced-motion hero still and a hidden-drawing negative control |
 | `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
@@ -53,7 +53,7 @@ flowchart TD
 | `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
 | `website-catalog-browser.mjs` | The catalogue page in a real browser |
-| `website-discovery.test.mjs` | Derived discovery identities, useful section links and payload budget |
+| `website-discovery.test.mjs` | Derived discovery identities, useful section links, shared reader/time/detail contracts and payload budget |
 | `website-catalog.test.mjs` | The catalogue and its JSON files, built from HEAD |
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |

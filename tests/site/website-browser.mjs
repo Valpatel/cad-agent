@@ -1,3 +1,4 @@
+import {lowContrast} from './site-outline.mjs';
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
@@ -172,10 +173,10 @@ try {
           }
         }
         if (route === '/catalog' && width === 1366) {
-          await page.fill('#q', 'zzzz-nothing-matches');
-          if (!/No entries match/.test(await page.textContent('#filter-status'))) seen.push('empty filter result is not announced');
-          await page.fill('#q', 'mit');
-          const hits = await page.$$eval('.group .card:not([hidden])', cs => cs.map(c => c.dataset.text));
+          await page.fill('[data-gallery-search]', 'zzzz-nothing-matches');
+          if (!/No results match/.test(await page.textContent('[data-gallery-status]'))) seen.push('empty filter result is not announced');
+          await page.fill('[data-gallery-search]', 'mit');
+          const hits = await page.$$eval('[data-item]', cs => cs.filter(c=>c.checkVisibility()).map(c=>c.textContent.toLowerCase()+' '+c.getAttribute('data-search-extra')));
           if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
         }
         if (route === REFS) await refsProblems(page, width, seen);
@@ -235,6 +236,15 @@ try {
           if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
           if (width >= 1100) {
             const outlineEvidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-'));
+            // Bounded diagnostics only; mark/scroll readiness and assertions remain unchanged.
+            await page.evaluate(() => {
+              const trace=[];window.__outlineTrace=trace;
+              const save=event=>{trace.push({event,t:performance.now(),y:scrollY,hash:location.hash,current:[...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(a=>a.hash)});if(trace.length>256)trace.shift();};
+              for(const name of ['scroll','scrollend','hashchange','wheel','keydown'])addEventListener(name,()=>save(name),{passive:true});
+              const nav=document.querySelector('cad-nav');
+              nav.addEventListener('click',event=>{if(event.target.closest('.cad-nav-outline a'))save('outline-click');});
+              new MutationObserver(ms=>{if(ms.some(m=>m.attributeName==='aria-current'))save('mark');}).observe(nav,{subtree:true,attributes:true,attributeFilter:['aria-current']});
+            });
             const firstScroll = await scrollOutline(page, await page.evaluate(() => document.body.scrollHeight / 2));
             if (!firstScroll.ready) seen.push(`outline ${firstScroll.stage} was not delivered within 2000 ms`);
             const box = await nav.locator('.cad-nav-panel').boundingBox();
@@ -265,7 +275,20 @@ try {
               await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
               await link.click();
               await settle();
-              if ((await link.getAttribute('aria-current')) !== 'location') seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+              if ((await link.getAttribute('aria-current')) !== 'location') {
+                seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+                const diagnostic=await link.evaluate(a=>{
+                  const id=decodeURIComponent(a.hash.slice(1)),target=document.getElementById(id),root=document.scrollingElement;
+                  if(!target)return {viewport:{width:innerWidth,height:innerHeight},hash:location.hash,scrollY,targetMissing:id,trace:window.__outlineTrace};
+                  const rect=el=>{const r=el?.getBoundingClientRect();return r?{top:r.top,bottom:r.bottom,height:r.height}:null;};
+                  const px=(value,of)=>value.endsWith('%')?parseFloat(value)*of/100:parseFloat(value)||0;
+                  const pad=px(getComputedStyle(root).scrollPaddingTop,root.clientHeight)+px(getComputedStyle(target).scrollMarginTop,0);
+                  const expected=Math.max(0,Math.min(root.scrollHeight-innerHeight,scrollY+target.getBoundingClientRect().top-pad));
+                  return {viewport:{width:innerWidth,height:innerHeight},hash:location.hash,scrollY,maxScroll:root.scrollHeight-innerHeight,target:{id,rect:rect(target)},current:[...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(el=>({href:el.hash,text:el.textContent})),nearby:[...document.querySelectorAll('.prose h2[id],.prose h3[id]')].filter(el=>Math.abs(el.getBoundingClientRect().top-target.getBoundingClientRect().top)<400).map(el=>({id:el.id,rect:rect(el)})),smooth:{css:getComputedStyle(root).scrollBehavior,expectedY:expected,delta:scrollY-expected,lastScrollAgeMs:performance.now()-(window.__outlineTrace.filter(x=>x.event==='scroll').at(-1)?.t||0)},trace:window.__outlineTrace};
+                });
+                await writeFile(path.join(outlineEvidence,'smooth-'+decodeURIComponent((await link.getAttribute('href')).slice(1)).replace(/[^a-z0-9_-]/gi,'-')+'.json'),JSON.stringify(diagnostic,null,2));
+                console.log('outline smooth-scroll failure evidence '+JSON.stringify(diagnostic));
+              }
             }
             // A jump marks its heading until the reader scrolls on: jump to a middle heading, then scroll back until it sits
             // near the bottom of the window (still on screen, below the reading line). The section above is now being read.
@@ -281,11 +304,12 @@ try {
             if ((await middle.getAttribute('aria-current')) === 'location') seen.push(`"${await middle.textContent()}" stays marked after the reader scrolls back`);
             if (!(await nav.locator('.cad-nav-filter').isVisible())) seen.push('the filter is out of view');
             const filter = nav.locator('.cad-nav-filter');
+            const beforeOpen=await nav.locator('details.cad-nav-group[open]').count();
             await filter.fill('zzzz-no-such-page');
-            if (!/No pages match/.test(await nav.locator('.cad-nav-empty').textContent())) seen.push('filter with no match says nothing');
+            if (!/No (?:topics or )?pages match/.test(await nav.locator('.cad-nav-empty').textContent())) seen.push('filter with no match says nothing');
             await filter.press('Escape');
             const open = await nav.locator('details.cad-nav-group[open]').count();
-            if (open !== 1) seen.push(`clearing the filter leaves ${open} groups open (was 1)`);
+            if (open !== beforeOpen) seen.push(`clearing the filter leaves ${open} groups open (was ${beforeOpen})`);
           } else {
             const toggle = nav.locator('.cad-nav-toggle');
             if (!(await toggle.isVisible())) seen.push('no Contents toggle on a narrow screen');
@@ -1660,55 +1684,6 @@ async function themeProblems() {
   // with the translucent ones (and each stop of a gradient) on the way composited over it; skipped where a picture is
   // behind. Colours are resolved by the browser itself (a 1 px canvas), so oklab() and color-mix() read right. Inputs'
   // placeholders are checked against the input, and `extra` (a selector) adds elements whose own text to check.
-  const lowContrast = (page, only = null) => page.evaluate(only => {
-    const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
-    // Each colour is read back from the canvas once, and each element's backdrop worked out once: a page asks for the
-    // same few colours thousands of times, and a canvas read is slow (in WebKit most of all).
-    const seen = new Map(), backdrops = new Map();
-    const rgba = c => { if (seen.has(c)) return seen.get(c); ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; seen.set(c, [d[0], d[1], d[2], d[3] / 255]); return seen.get(c); };
-    const lum = ([r, g, b]) => [r, g, b].map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
-    const ratio = (a, b) => { const [h, l] = [lum(a), lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
-    // What can be behind: a colour, or each stop of a CSS gradient (text must read on all of them); null for a picture.
-    const over = ([r, g, b, a], under) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a));
-    const behind = el => { if (!backdrops.has(el)) backdrops.set(el, backdrop(el)); return backdrops.get(el); };
-    const backdrop = el => {
-      const layers = [];
-      for (let e = el; e; e = e.parentElement) {
-        const cs = getComputedStyle(e), c = rgba(cs.backgroundColor);
-        if (/url\(/.test(cs.backgroundImage)) return null;
-        // a gradient sized to nothing (the catalogue rows' hover sweep, until hovered) is not behind anything yet
-        const stops = cs.backgroundImage === 'none' || /^0(?:%|px)/.test(cs.backgroundSize) ? []
-          : (cs.backgroundImage.match(/(?:rgba?|oklab|oklch|lab|lch|color)\((?:[^()]|\([^()]*\))*\)/g) || []).map(rgba);
-        if (stops.length) layers.push(stops);
-        if (c[3] > 0) layers.push([c]);
-        if (c[3] >= 1 || (stops.length && stops.every(x => x[3] >= 1))) break;
-      }
-      let under = [[255, 255, 255]];
-      for (const layer of layers.reverse()) under = layer.flatMap(c => under.map(u => over(c, u)));
-      return under;
-    };
-    const SKIP = 'svg, img, video, canvas, cad-model, cad-cantilever, cad-fourbar, cad-fan-curve, cad-torsion-snap, cad-printed-boss, .cad-diagram-view, .visually-hidden, .sr, .glyph-sprite, [hidden]';
-    const low = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const name = el => `${el.localName}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''}`;
-    for (const input of only ? [] : document.querySelectorAll('input[placeholder]')) {
-      if (!input.getClientRects().length || input.closest(SKIP)) continue;
-      const bgs = behind(input), fg = rgba(getComputedStyle(input, '::placeholder').color);
-      const c = bgs && Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
-      if (c && c < 4.5) low.push(`${name(input)} placeholder "${input.placeholder.slice(0, 30)}" ${c.toFixed(2)}:1`);
-    }
-    for (let n; (n = walk.nextNode());) {
-      const el = n.parentElement;
-      if (!n.data.trim() || el.closest(SKIP) || (only && !el.closest(only))) continue;
-      const cs = getComputedStyle(el), r = el.getBoundingClientRect();
-      if (!r.width || !r.height || cs.visibility === 'hidden' || +cs.opacity === 0 || !el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true })) continue;
-      const bgs = behind(el);
-      if (!bgs) continue;
-      const fg = rgba(cs.color), c = Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
-      const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700), need = large ? 3 : 4.5;
-      if (c < need) low.push(`${name(el)} "${n.data.trim().slice(0, 30)}" ${c.toFixed(2)}:1`);
-    }
-    return [...new Set(low)];
-  }, only);
   const state = page => page.evaluate(() => ({
     scheme: getComputedStyle(document.documentElement).colorScheme, chosen: document.documentElement.dataset.theme ?? null,
     pressed: document.querySelector('.theme-toggle')?.getAttribute('aria-pressed') ?? null,

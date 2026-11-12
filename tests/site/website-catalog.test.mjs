@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 // The catalogue (/catalog, /catalog.json, /catalog/index.json, /catalog/<area>.json), built from HEAD: every entry has
 // a picture of our own and a place in the area map, the JSON files agree with each other and with the page, and the
 // schema-1 fields and old links keep working. Behaviour in browsers: tests/site/website-catalog-browser.mjs.
@@ -5,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { YAML } from './npm-context.mjs';
@@ -115,7 +116,7 @@ test('the committed report reaches HTML and JSON cards without rewriting curated
   const get = catalogueAudit(report, show('docs/research/security-report.md'));
   for (const item of catalog.items) {
     const expected = get(item);
-    const card = page.match(new RegExp(`<li class="card cat-card"[^>]*id="${item.id}"[\\s\\S]*?</li>`))?.[0];
+    const card = page.match(new RegExp(`<li data-item[^>]*id="${item.id}"[\\s\\S]*?</li>`))?.[0];
     assert.ok(card, item.id);
     if (!expected) {
       assert.equal(item.audit, undefined, item.id);
@@ -329,7 +330,7 @@ test('no outside pictures: covers are our files, and the page and covers load no
     assert.match(m[0], /\salt="[^"]*"/, `no alt: ${m[0]}`);
   }
   // Below the first screen every cover waits until it is near (the strip's first tiles may load at once).
-  const cards = [...page.matchAll(/<li class="card cat-card[\s\S]*?<\/li>/g)].map(m => m[0]);
+  const cards = [...page.matchAll(/<li data-item[\s\S]*?<\/li>/g)].map(m => m[0]);
   for (const c of cards) assert.match(c, /<img [^>]*loading="lazy"/, c.slice(0, 120));
   const covers = (await readdir(path.join(out, 'catalog/covers'), { recursive: true })).filter(f => f.endsWith('.svg'));
   assert.ok(covers.length >= catalog.items.length / 2);
@@ -380,16 +381,17 @@ test('the index and the area files agree with each other and with catalog.json',
 });
 
 test('the page lists every entry once, grouped by kind, readable without script', () => {
-  const cards = [...page.matchAll(/<li class="card cat-card"[^>]*\bid="([^"]+)"[^>]*>/g)];
+  const cards = [...page.matchAll(/<li data-item[^>]*\bid="([^"]+)"[^>]*>/g)];
   assert.deepEqual(cards.map(m => m[1]).sort(), catalog.items.map(i => i.id).sort());
   for (const m of cards) assert.doesNotMatch(m[0], /\shidden\b/, `${m[1]} is hidden in the HTML`);
   assert.match(page, /<cad-gallery\b/);
-  assert.match(page, /<script type="module" src="\/kit\/gallery\.js"><\/script>/);
+  assert.match(page,/browse-limit="1"/,'legacy types use one compact preview each, with every entry still present');
+  assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/);
   assert.doesNotMatch(page, /<script>/, 'no inline script (CSP)');
   // Search, status and the existing browser test's hooks.
-  assert.match(page, /<input [^>]*id="q"/);
-  assert.match(page, /id="filter-status"/);
-  assert.match(page, /<label class="sr" for="q">/);
+  assert.match(page, /<input [^>]*data-gallery-search/);
+  assert.match(page, /data-gallery-status/);
+  assert.match(page, /<label class="discover-search"[^>]*><span>Search everything<\/span>/);
 });
 
 test('old links still land: /catalog#tool style anchors, and every /catalog# link on the site', async () => {
@@ -406,18 +408,27 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
   // A scratch worktree of HEAD whose registry has one entry with markup in every field the page shows.
   const wt = path.join(tmp, 'wt-hostile'), draft = path.join(tmp, 'draft-hostile');
   execFileSync('git', ['worktree', 'add', '--detach', '--quiet', wt, 'HEAD'], { cwd: root });
+  let retained=null;
   try {
     const bad = n => `"><img src=x onerror=alert(${n})><script>alert(${n})</script>`;
     const entry = { name: `evil/${bad(1)}`, what: bad(2), areas: ['3d-printing'], url: 'https://github.com/evil/evil', license: bad(3),
       status: 'candidate', policy: bad(4), last_push: bad(5), stars: bad(6) };
     const registry = path.join(wt, 'software/vendor/upstreams/registry.yaml');
     await writeFile(registry, `${await readFile(registry, 'utf8')}\n${YAML.stringify([entry])}`);
-    execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--out', draft], { cwd: root, stdio: 'pipe' });
+    const landscapeFile=path.join(wt,'docs/research/landscape.json');
+    const landscape=JSON.parse(await readFile(landscapeFile,'utf8'));
+    landscape.projects.push({name:entry.name,url:entry.url,notes:bad(7),license_note:bad(8)});
+    await writeFile(landscapeFile,JSON.stringify(landscape));
+    // This is an HTML/text/attribute/JSON/cover security fixture, not diagram-renderer evidence.
+    const fixtureLog=execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, '--worktree', '--client-diagrams', '--out', draft], { cwd: root, stdio: 'pipe' }).toString();
+    assert.match(fixtureLog,/0 drawn, \d+ left to the reader's browser/,'the fixture explicitly leaves diagrams to the client');
     const html = await readFile(path.join(draft, 'catalog.html'), 'utf8');
     const got = JSON.parse(await readFile(path.join(draft, 'catalog.json'), 'utf8')).items.find(i => i.type === 'upstream' && i.name === entry.name);
     assert.ok(got, 'the entry is in catalog.json');
     assert.equal(got.what, entry.what, 'JSON keeps the text as written');
-    const card = html.match(new RegExp(`<li class="card cat-card"[^>]*id="${got.id}"[\\s\\S]*?</li>`))?.[0];
+    for(const key of ['name','license','policy','last_push','stars'])assert.equal(got[key],entry[key],`JSON preserves ${key}`);
+    assert.equal(got.notes,bad(7)+' '+bad(8),'JSON keeps notes and licence notes as literal text');
+    const card = html.match(new RegExp(`<li data-item[^>]*id="${got.id}"[\\s\\S]*?</li>`))?.[0];
     assert.ok(card, 'the entry has a card');
     // An event handler inside a tag, outside a quoted value, means the text broke out of its attribute.
     const handlers = text => [...text.matchAll(/<[a-zA-Z][^>]*>/g)].map(m => m[0].replace(/"[^"]*"/g, '""')).filter(t => /\son[a-z]+\s*=/i.test(t));
@@ -427,11 +438,31 @@ test('outside data cannot inject markup: a hostile registry entry is text on the
     }
     assert.match(card, /&lt;img src=x onerror=alert\(2\)&gt;/, 'the what line shows as text');
     assert.match(card, /&lt;img src=x onerror=alert\(1\)&gt;/, 'the name shows as text');
+    for(const n of [3,4,7,8])assert.ok(card.includes(`&lt;img src=x onerror=alert(${n})&gt;`),`licence/policy/notes ${n} remain escaped text`);
+    for(const [attribute,n] of [['data-sort-recent',5],['data-sort-stars',6]])assert.ok(card.includes(`${attribute}="&quot;&gt;&lt;img src=x onerror=alert(${n})&gt;&lt;script&gt;alert(${n})&lt;/script&gt;"`),`${attribute} retains the escaped literal inside quotes`);
     const cover = await readFile(path.join(draft, new URL(got.cover).pathname), 'utf8');
     assert.doesNotMatch(cover, /<img|<script/i, 'raw markup in the cover');
     assert.deepEqual(handlers(cover), [], 'event handlers in the cover');
+    console.log(fixtureLog.split('\n').find(line=>line.includes('Diagrams:')));
+    const evidence=process.env.CAD_AGENT_SECURITY_RECEIPT;
+    if(evidence){
+      assert.ok(path.isAbsolute(evidence)&&evidence.startsWith(path.join(os.tmpdir(),'cad604-security-evidence-')),'diagnostic evidence uses a new private temporary directory');
+      await mkdir(evidence,{recursive:false});
+      const documents={'catalogue.html':html,'row.html':card,'entry.json':JSON.stringify(got,null,2),'cover.svg':cover,'build.log':fixtureLog};
+      const hashes={};for(const [name,body]of Object.entries(documents)){await writeFile(path.join(evidence,name),body);hashes[name]=createHash('sha256').update(body).digest('hex');}
+      retained={directory:evidence,receipt:{status:'pass',head:null,hashes,clientDiagrams:true,securityAssertions:'literal name/what/notes/licence/policy/date/stars; page/row attributes and cover inert; canonical JSON exact',worktreeRemoved:false}};
+      // The receipt is private opt-in evidence, not a substitute for the assertions above.
+      retained.receipt.head=execFileSync('git',['rev-parse','HEAD'],{cwd:root}).toString().trim();
+      await writeFile(path.join(evidence,'receipt.json'),JSON.stringify(retained.receipt,null,2));
+    }
   } finally {
     execFileSync('git', ['worktree', 'remove', '--force', wt], { cwd: root });
+    if(retained){
+      assert.ok(!existsSync(wt),'owned fixture checkout removed');
+      assert.ok(!execFileSync('git',['worktree','list','--porcelain'],{cwd:root}).toString().split('\n').includes('worktree '+wt),'owned fixture registration removed');
+      retained.receipt.worktreeRemoved=true;
+      await writeFile(path.join(retained.directory,'receipt.json'),JSON.stringify(retained.receipt,null,2));
+    }
   }
 });
 
@@ -478,56 +509,22 @@ test('every domain and bucket has a tone: the covers\' tints, and an ink that sh
     // the tone and tints are mixed from it (checked in the browser: tests/site/website-catalog-browser.mjs).
     for (const bg of ['#ffffff', t['tint-a'], t['tint-b']]) assert.ok(contrast(t.tone, bg) >= 3, `${slug}: --tone ${t.tone} on ${bg} is ${contrast(t.tone, bg).toFixed(2)}:1 (3 needed)`);
   }
-  // Each domain's panel and the standalone rows carry their tone in the markup.
-  for (const slug of domainSlugs) assert.match(page, new RegExp(`<details class="dom" data-domain="${slug}" data-tone="${slug}"`), `${slug}: panel without its tone`);
-  assert.match(page, /<li data-tone="cross-cutting"><a class="area-link"[^>]*data-value=""/, '"All areas" without a tone');
-  for (const m of page.matchAll(/<li class="bucket"([^>]*)><a [^>]*data-value="([\w-]+)"/g)) assert.equal(m[1], ` data-tone="${m[2]}"`, `bucket ${m[2]} without its tone`);
+  for(const slug of domainSlugs)assert.ok(page.includes(`data-topic="${slug}" data-tone="${slug}"`),slug);
+  assert.ok(page.includes('data-topic="cross-cutting"'));
+
 });
 
-test('the area rail: hover effects only where a pointer hovers, and each domain\'s first row reads "All" with its name for screen readers', () => {
-  const css = show('tools/site/assets/catalog.css');
-  // A :hover rule outside @media(hover:hover) sticks on a touch screen after a tap. Each block is matched whole (one
-  // level of nested braces), so a one-line block cannot swallow the rules after it.
-  const hoverBlocks = [...css.matchAll(/@media\(hover:hover\)\{(?:[^{}]|\{[^{}]*\})*\}/g)].map(m => m[0]);
-  const outside = hoverBlocks.reduce((rest, block) => rest.replace(block, ''), css);
-  for (const sel of ['.area-link:hover', '.area-tree summary:hover', '.key-scale>li:hover']) assert.ok(hoverBlocks.some(b => b.includes(sel)), `${sel} is not in @media(hover:hover)`);
-  const stray = outside.match(/[^{}]*(\.area-link|\.area-tree summary|\.key-scale)[^{}]*:hover[^{}]*\{/)?.[0];
-  assert.equal(stray, undefined, `a rail :hover rule outside @media(hover:hover): ${stray}`);
-  // Its muted names stay readable on the panels, in both themes (the colour is a token of web/site.css).
-  const token = css.match(/\.area-link\[data-maturity=idea\] \.area-name[^{]*\{color:var\(--([\w-]+)\)/)?.[1];
-  const site = show('tools/site/assets/site.css'), set = block => Object.fromEntries([...block.matchAll(/--([\w-]+):(#[0-9a-f]{3,8})/g)].map(m => [m[1], m[2]]));
-  const [light, dark] = [site.match(/:root\{(--cream[^}]*)\}/)[1], site.match(/:root\[data-theme=dark\]\{([^}]*)\}/)[1]].map(set);
-  for (const [name, t] of [['light', light], ['dark', dark]]) {
-    const hex6 = c => c.length === 4 ? '#' + [...c.slice(1)].map(x => x + x).join('') : c;
-    assert.ok(t[token] && contrast(t[token], hex6(t.card)) >= 4.5, `idea names (--${token}) on the ${name} panel: ${t[token]} on ${t.card}`);
+test('Explore taxonomy keeps nested domain/area/topic icons and removes maturity presentation', () => {
+  assert.match(page, /data-topic-tree/);
+  for(const d of areas.domains){
+    assert.ok(page.includes(`data-topic="${d.slug}" data-tone="${d.slug}"`));
+    for(const a of d.areas){assert.ok(page.includes(`data-topic="${a.slug}"`));for(const t of a.topics||[])assert.ok(page.includes(`data-topic="${t.slug}"`));}
   }
-  for (const d of areas.domains) {
-    const name = d.title.replace(/^./, c => c.toLowerCase());
-    // data-label: the chip and the "nothing here" messages name the domain itself, not "All in …"
-    assert.ok(page.includes(`data-value="${d.slug}" data-label="${d.title}"><span class="area-name">All<span class="sr"> in ${name}</span></span>`), `${d.slug}: its first row is not "All" with "in ${name}" for screen readers and its title as its label`);
-  }
-  assert.doesNotMatch(page, /Everything in /);
-});
-
-test('maturity: the key lists every level in docs/areas.yaml, in order, and each bar fills as many steps as its level', () => {
-  const levels = areas.maturity.map(m => m.level);
-  const key = page.match(/<ol class="key-scale"[^>]*>([\s\S]*?)<\/ol>/)?.[1];
-  assert.ok(key, 'no maturity key above the area tree');
-  assert.deepEqual([...key.matchAll(/<span class="key-word">([^<]+)<\/span>/g)].map(m => m[1]), levels);
-  const text = h => h.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" })[e]);
-  assert.deepEqual([...key.matchAll(/<span class="key-means"><span class="sr">: <\/span>([^<]+)<\/span>/g)].map(m => text(m[1])), areas.maturity.map(m => m.means));
-  assert.match(page, /<div class="tree-key"><p class="key-head">[^]*?<a href="\/docs\/vision#maturity-how-an-area-grows">What the levels mean<\/a>/);
-  const bars = [...page.matchAll(/<span class="mat-dots" data-level="(\d)"[^>]*>((?:<i(?: class="on")?><\/i>)*)/g)];
-  assert.ok(bars.length > 40, `only ${bars.length} maturity bars`);
-  for (const [, level, segments] of bars) {
-    assert.equal(segments.match(/<i/g).length, levels.length, 'a bar with the wrong number of steps');
-    assert.equal((segments.match(/class="on"/g) || []).length, Number(level), `a level-${level} bar fills ${(segments.match(/class="on"/g) || []).length} steps`);
-  }
-  // A row's bar says it in words; a bar beside its level's word (filters, cards, the key) stays out of the way.
-  for (const d of areas.domains) for (const a of d.areas) {
-    const n = levels.indexOf(a.maturity) + 1;
-    assert.ok(page.includes(`<span class="sr">maturity ${n} of ${levels.length}, ${a.maturity}</span>`), `${a.slug}: no "maturity ${n} of ${levels.length}" for screen readers`);
-  }
+  assert.doesNotMatch(page,/class="(?:mat-dots|area-maturity|key-scale|tree-key)/);
+  assert.doesNotMatch(page,/<legend>[^<]*[Mm]aturity/);
+  const controls=page.match(/<div hidden>([\s\S]*?)<\/div>/)?.[1]||'';
+  for(const m of areas.maturity)assert.ok(controls.includes(`name="maturity" value="${m.level}"`),'saved legacy maturity filter remains supported');
+  assert.ok(page.includes('value="maturity" data-dir="desc" hidden>Saved area order'));
 });
 
 test('no project is singled out: no Gyropup flag, badge, filter, boost or field (cad-agent is a general toolkit)', () => {

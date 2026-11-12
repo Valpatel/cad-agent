@@ -17,6 +17,7 @@ flowchart TD
 
 | File or folder | Purpose |
 |---|---|
+| [discovery.js](discovery.js) | Enhance catalogue detail disclosures from the revision-bound existing feed. |
 | [discovery.css](discovery.css) | Compact shared Explore search and topic layout. |
 | [catalog.css](catalog.css) | Catalogue layout and reading styles. |
 | [favicon.ico](favicon.ico) | Browser icon. |

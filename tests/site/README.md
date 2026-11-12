@@ -53,6 +53,7 @@ flowchart TD
 | `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |
 | `website-build.test.mjs` | `tools/site/build-site.mjs`: what the build makes, links, redirects and headers |
 | `website-catalog-browser.mjs` | The catalogue page in a real browser |
+| `website-discovery.test.mjs` | Derived discovery identities, useful section links and payload budget |
 | `website-catalog.test.mjs` | The catalogue and its JSON files, built from HEAD |
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
@@ -74,3 +75,5 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 | File | Purpose |
 |---|---|
 | [website-repo-map.test.mjs](website-repo-map.test.mjs) | Actual repository owner/link freshness plus missing-map/table/member/link/index/Unicode controls. |
+
+Shared discovery is derived by `site-discovery.mjs`; `website-discovery.test.mjs` checks real source identities, incident destinations and compact payloads. Browser outcomes run through the existing catalogue browser harness.

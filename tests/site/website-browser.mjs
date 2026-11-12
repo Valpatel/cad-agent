@@ -1,7 +1,7 @@
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
- * the catalogue link or with overlapping visible controls, a hero animation that is not running (or still running under reduced motion), a catalogue
+ * the Explore link or with overlapping visible controls, a hero animation that is not running (or still running under reduced motion), a catalogue
  * filter that hides results without saying so, and a diagram wider than the article column at 1100 px (the narrowest
  * width with the page tree), so no reader has to scroll a diagram sideways on a desktop, a wall of text: a stretch
  * of a page with nothing to look at longer than one and a half screens (tests/site/site-walls.mjs, #179), and diagrams that
@@ -33,7 +33,7 @@ const browser = await engine.launch(launchOptions);
 // A reference area page (#323): the one route with the records' charts, table and filters (a small area, so the
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
-const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
+const ROUTES = ['/', '/explore', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
   '/lessons/mechanical/design-rules', REFS, '/kit/file-viewer', '/missing-page'];
 // /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
 // The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
@@ -123,8 +123,8 @@ try {
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
         if (overflow > 0) seen.push(`scrolls sideways by ${overflow}px`);
         if (!route.startsWith('/kit/')) {
-          const visible = await page.locator('.site-header nav a[href="/catalog"]').isVisible();
-          if (!visible) seen.push('no catalogue link in the header');
+          const visible = await page.locator('.site-header nav a[href="/explore"]').isVisible();
+          if (!visible) seen.push('no Explore link in the header');
         }
         if (route === '/') {
           const names = await page.evaluate(() => document.getAnimations().map(a => a.animationName).filter(n => n?.startsWith('snap-')));
@@ -753,7 +753,7 @@ async function headerProblems() {
           }
           return true;
         };
-        for (const selector of ['.wordmark', 'nav a[href="/catalog"]', 'nav .pill-link', '.theme-toggle']) {
+        for (const selector of ['.wordmark', 'nav a[href="/explore"]', 'nav .pill-link', '.theme-toggle']) {
           if (!shown(document.querySelector('.site-header ' + selector))) out.push(`missing visible ${selector}`);
         }
         const controls = [...document.querySelectorAll('.site-header .wordmark,.site-header nav a,.site-header button')].filter(shown);
@@ -813,6 +813,14 @@ async function headerProblems() {
         const found = await paintedMeasure(String(width));
         problems.push(...found.problems.map(p => `header ${width}px ${colorScheme}: ${p}`));
       }
+      // The primary discovery destination is part of the contract, not merely a box with fitting text.
+      const primary = page.locator('.site-header nav a[href="/explore"]');
+      await primary.evaluate(a => a.setAttribute('href', '/catalog'));
+      try {
+        const wrong = await paintedMeasure('wrong-primary-destination');
+        if (!wrong.problems.includes('missing visible nav a[href="/explore"]'))
+          problems.push(`header ${colorScheme}: an obsolete primary destination was accepted`);
+      } finally { await page.locator('.site-header nav a[href="/catalog"]').evaluate(a => a.setAttribute('href', '/explore')); }
       // A hidden header keeps all its geometry: prove that geometry alone cannot satisfy the visible-control guard.
       for (const [property, value] of [['visibility', 'hidden'], ['opacity', '0']]) {
         const previous = await page.locator('.site-header').evaluate((el, [property, value]) => {
@@ -1647,7 +1655,7 @@ async function refsProblems(page, width, seen) {
  * here: the demos and diagrams have their own checks above. */
 async function themeProblems() {
   const out = [];
-  const ROUTES = ['/', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', REFS, '/missing-page'];
+  const ROUTES = ['/', '/explore', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/lessons/mechanical/design-rules', REFS, '/missing-page'];
   // Every visible text run's contrast against the colour behind it: the first opaque background up its ancestors,
   // with the translucent ones (and each stop of a gradient) on the way composited over it; skipped where a picture is
   // behind. Colours are resolved by the browser itself (a 1 px canvas), so oklab() and color-mix() read right. Inputs'

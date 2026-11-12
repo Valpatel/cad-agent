@@ -20,6 +20,7 @@ flowchart TD
 | [catalog-art.mjs](catalog-art.mjs) | Select catalogue covers and visual summaries. |
 | [repo-map.json](repo-map.json) | Explicit exceptional parent-ownership contracts. |
 | [site-catalog.mjs](site-catalog.mjs) | Build catalogue/index/agent metadata. |
+| [site-discovery.mjs](site-discovery.mjs) | Derive shared search links while retaining catalogue/reference identities. |
 | [site-diagrams.mjs](site-diagrams.mjs) | Draw shared light/dark Mermaid figures. |
 | [site-html.mjs](site-html.mjs) | Sanitize HTML, rewrite destinations and size images. |
 | [site-pages.mjs](site-pages.mjs) | Place source-bound page figures/cards/folds. |

@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.37.1 (2026-11-12)
+
+**New**
+- Explore tools, guides, individual lesson/pitfall sections and all reference records through shared search and topics, with compact defaults and canonical deep links. Existing catalogue/reference feeds, evidence classes and legacy views remain separate (#599).
+
 ## v0.37.0 (2026-11-11)
 
 **New**

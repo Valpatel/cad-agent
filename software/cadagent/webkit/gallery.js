@@ -25,7 +25,8 @@
  * - facets: checkboxes (several values, any of them matches) and `data-facet` links (one value), matched against the
  *   card's space-separated `data-<name>` tokens; facets combine with AND. Counts in `[data-count]` (inside the
  *   control) and `[data-count-of="name:value"]` show what each choice would leave, given the others;
- * - search over `data-text` (each word matches the start of a word), sorting by `data-sort-<option value>` (numbers or
+ * - opt-in `search-ids` also indexes the existing result IDs; `sort-label` derives A–Z from a visible label instead of duplicating it per item;
+ * - search over `data-text` (or visible text), plus optional `data-search-extra` metadata (each word matches the start of a word), sorting by `data-sort-<option value>` (numbers or
  *   text, `data-dir="desc"` on the option; empty values last, ties in the page's order);
  * - the overview (no tab): the first `limit` cards of each group, a `[data-gallery-more]` link when there are more;
  *   the page writes `data-over` on the cards past the limit in its own order, so the first paint already matches;
@@ -160,11 +161,12 @@ export class CadGallery extends Base {
     this.links = $$('a[data-gallery-link]');
     for (const a of this.links) a.dataset.galleryTo ??= a.getAttribute('href');
     this.results = $('[data-gallery-results]');
+    const sortLabel = this.getAttribute('sort-label');
     this.#items = $$('[data-item]').map((el, index) => ({
       el, index, tab: el.closest('[data-group]')?.dataset.group || '', list: el.parentElement,
-      text: (el.dataset.text || el.textContent).toLowerCase(),
+      text: [(el.dataset.text || el.textContent), el.dataset.searchExtra || '', this.hasAttribute('search-ids') ? el.id : ''].join(' ').toLowerCase(),
       facets: Object.fromEntries(this.facetNames.map(n => [n, new Set(words(el.getAttribute(`data-${n}`)))])),
-      sort: Object.fromEntries([...el.attributes].filter(a => a.name.startsWith('data-sort-')).map(a => [a.name.slice(10), a.value])),
+      sort: { ...(sortLabel ? {az: el.querySelector(sortLabel)?.textContent.toLowerCase() || ''} : {}), ...Object.fromEntries([...el.attributes].filter(a => a.name.startsWith('data-sort-')).map(a => [a.name.slice(10), a.value])) },
     }));
     this.#setupTabs(signal);
     this.#state = this.#fromLocation();
@@ -298,6 +300,7 @@ export class CadGallery extends Base {
     const s = this.#state, patterns = searchPatterns(s.q);
     const filtered = !!(patterns.length || Object.keys(s.facets).length);
     const overview = !s.tab;
+    const overviewLimit = !filtered ? Math.max(1, parseInt(this.getAttribute('browse-limit'), 10) || this.limit) : this.limit;
     this.toggleAttribute('data-overview', overview);
     this.toggleAttribute('data-filtered', filtered);
     // Order, then visibility, then the overview's limit per group.
@@ -313,11 +316,13 @@ export class CadGallery extends Base {
     let shown = 0;
     for (const it of this.#items) { it.visible = matches(it, s, patterns); if (it.visible) shown++; it.el.hidden = !it.visible; }
     for (const g of this.groups) {
+      // Native collapsed groups are the compact no-script fallback; enhance only opted-in views.
+      if (this.hasAttribute('data-open-groups') && g.localName === 'details') g.open = true;
       const its = [...g.querySelectorAll('[data-item]')].map(el => this.#items.find(it => it.el === el)).filter(Boolean);
       let n = 0;
-      for (const it of its) { if (it.visible) n++; it.el.toggleAttribute('data-over', overview && it.visible && n > this.limit); }
+      for (const it of its) { if (it.visible) n++; it.el.toggleAttribute('data-over', overview && it.visible && n > overviewLimit); }
       g.hidden = !n || (!!s.tab && g.dataset.group !== s.tab);
-      g.toggleAttribute('data-more', overview && n > this.limit);
+      g.toggleAttribute('data-more', overview && n > overviewLimit);
       for (const c of g.querySelectorAll('[data-group-count]')) c.textContent = n;
     }
     // Controls show the view.

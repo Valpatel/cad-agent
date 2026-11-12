@@ -8,7 +8,8 @@ reel:
     settles near 439 MPa. Convergence is not proof of physical strength.'
   alt: Recorded sharp and filleted L-bracket mesh-refinement sequences and peak stress values
   href: docs/toolkit.md
-- img: docs/img/hero/thermal-history.svg
+- field: docs/img/cfd/fan-faces.webp
+  img: docs/img/hero/thermal-history.svg
   'on': example
   tool: cadagent.simulation.cfd
   title: Watch a thermal solve settle
@@ -16,7 +17,8 @@ reel:
     elapsed seconds. This is a simulation, not a measured hardware temperature.'
   alt: Actual sampled heater-zone temperature history over 1500 iterations
   href: docs/research/fea-and-process-tools.md
-- img: docs/img/hero/airflow-balance.svg
+- field: docs/img/cfd/fan-faces.webp
+  img: docs/img/hero/airflow-balance.svg
   'on': example
   tool: cadagent.simulation.cfd
   title: A flow picture is not enough

@@ -18,6 +18,10 @@ flowchart TD
 |---|---|
 | [gyropup.json](gyropup.json) | Model structure, part groups, units and binary metadata. |
 | [gyropup.bin](gyropup.bin) | Packed mesh buffers for the exact JSON model. |
+| [j501.json](j501.json) | Packed existing J501 assembly, including the real carrier-board mesh; lid initially hidden. |
+| [j501.bin](j501.bin) | Render-only display mesh, 0.4 mm vertex-cell clustering, not manufacturing geometry. |
+| [j501-source.json](j501-source.json) | Input hashes, reference attribution, coordinate proof, collection-context limits and display displacement records. |
+| [j501.webp](j501.webp) | Matching shared-viewer poster at the recorded opening view; hashes and renderer recorded in j501-source.json. |
 | [gyropup.webp](gyropup.webp) | Matching model poster for deferred/no-JavaScript viewing. |
 
 [Parent map](https://github.com/Valpatel/cad-agent/blob/dev/tools/site/assets/README.md)

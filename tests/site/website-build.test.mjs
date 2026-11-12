@@ -579,13 +579,18 @@ test('a link to a folder opens its README page', async () => {
   assert.match(await readFile(path.join(out, 'lessons/README.md'), 'utf8'), /\]\(process\/README\.md\)/, 'the Markdown twin too');
 });
 
-test('every lesson page has a diagram, and the home page counts lessons, not pages', async () => {
+test('every lesson page has a diagram, and the home page links to knowledge without counter cards', async () => {
   const lessons = files.filter(f => /^lessons\/.+\.html$/.test(f));
   assert.ok(lessons.length >= 19, 'the index, six area READMEs and twelve lesson files');
   for (const f of lessons) assert.match(await readFile(path.join(out, f), 'utf8'), /<figure class="cad-diagram"|class="language-mermaid"|<img\b/, `${f} has no diagram or picture`);
   const rules = git('grep', '-h', '-e', '^### ', 'HEAD', '--', 'docs/lessons/*/*.md', ':!docs/lessons/*/README.md').split('\n').filter(Boolean).length;
   assert.ok(rules > 50);
-  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Fill the gaps</span><span class="mission-num">${rules}<`));
+  const home = await readFile(path.join(out, 'index.html'), 'utf8');
+  assert.doesNotMatch(home, /mission-num|Skills your agents|not built yet|fit-cmd/);
+  assert.match(home, /href="\/explore"/);
+  assert.match(home, /id="built-with"/);
+  assert.equal((home.match(/<cad-model /g) || []).length, 2);
+  assert.match(home, /src="\/docs\/img\/hero\/learning-loop\.svg"/);
 });
 
 test('a moved source stub uses public redirect identity and every invalid target or rule fails', async () => {

@@ -20,6 +20,7 @@ flowchart TD
 | [discovery.css](discovery.css) | Compact shared Explore search and topic layout. |
 | [catalog.css](catalog.css) | Catalogue layout and reading styles. |
 | [favicon.ico](favicon.ico) | Browser icon. |
+| [home.css](home.css) | Learning narrative and independently loaded project showcase layout. |
 | [icon.svg](icon.svg) | Original project emblem. |
 | [install.ps1](install.ps1) | PowerShell installer snapshot source. |
 | [install.sh](install.sh) | POSIX installer snapshot source. |

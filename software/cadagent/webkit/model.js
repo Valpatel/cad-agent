@@ -197,6 +197,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
         fetch(src).then(r => modelBytes(r, (n, total) => this.#report('Loading model structure', n, total)))]);
       const model = JSON.parse(new TextDecoder().decode(metadata));
       if (model.schema !== 'cad-agent-model/1') throw new Error(`unknown model schema ${model.schema}`);
+      this.#report('Loading mesh data');
       const bin = await modelBytes(await fetch(new URL(model.bin, src)), (n, total) => this.#report('Loading mesh data', n, total));
       this.#report(`Decoding ${model.parts.length} CAD parts`);
       const parts = decodeModel(model, await inflate(bin));
@@ -209,7 +210,10 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       this.dataset.error = String(err?.message ?? err).slice(0, 300);
       this.#report('3D view unavailable. The source poster remains available.');
       const retry = BUTTON('Retry 3D view'); retry.className = 'cad-model-retry';
-      retry.addEventListener('click', () => { retry.remove(); this.#started = false; this.#start(); }, {once:true});
+      retry.addEventListener('click', () => {
+        retry.remove(); this.ready = new Promise(resolve => { this.#resolve = resolve; });
+        delete this.dataset.error; this.#started = false; this.#start();
+      }, {once:true});
       this.#status.append(retry); this.#resolve(this);
     }
   }

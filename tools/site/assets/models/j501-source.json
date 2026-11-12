@@ -1,5 +1,16 @@
 {
   "source": {
+    "collection_context": "Existing exported meshes captured from this clean checkout; the view export has no embedded producer revision. Collection revision is not a claim that CAD was regenerated.",
+    "board_geometry_check": {
+      "source": "references/hardware/carrier-full.stl",
+      "sha256": "172655f9f53db2b72669edd3148dc57274f6e51ceb7de0d14cba64b63e138e7d",
+      "offset_mm": [
+        15,
+        15,
+        20
+      ],
+      "max_allowed_coordinate_difference_mm": 0.00002
+    },
     "repo": "https://github.com/mvalancy/j501-agx-orin",
     "revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
     "manifest": {
@@ -125,7 +136,7 @@
           "source_bounds_mm": [
             10.25,
             8.23,
-            4.0,
+            4,
             195.75,
             11.26,
             71.8
@@ -138,7 +149,7 @@
           "source_bounds_mm": [
             10.25,
             178.35,
-            4.0,
+            4,
             195.75,
             183.77,
             71.8
@@ -149,10 +160,10 @@
           "display_triangles": 492,
           "max_vertex_move_mm": 0.23065322216756287,
           "source_bounds_mm": [
-            202.0,
+            202,
             75.2,
             11.2,
-            206.0,
+            206,
             118.8,
             71.8
           ]
@@ -164,10 +175,10 @@
           "source_bounds_mm": [
             13.5,
             28.8,
-            -0.0,
-            30.0,
+            0,
+            30,
             65.7,
-            4.0
+            4
           ]
         },
         "spreader": {
@@ -176,10 +187,10 @@
           "max_vertex_move_mm": 0.19185742118508275,
           "source_bounds_mm": [
             55.5,
-            40.0,
+            40,
             41.26,
             155.5,
-            150.0,
+            150,
             55.26
           ]
         },
@@ -188,23 +199,23 @@
           "display_triangles": 944,
           "max_vertex_move_mm": 0.23430391772871711,
           "source_bounds_mm": [
-            57.0,
-            64.0,
+            57,
+            64,
             43.26,
-            153.0,
-            147.0,
+            153,
+            147,
             50.06
           ]
         },
         "cold_plate": {
           "original_triangles": 12,
           "display_triangles": 12,
-          "max_vertex_move_mm": 0.0,
+          "max_vertex_move_mm": 0,
           "source_bounds_mm": [
-            83.0,
+            83,
             76.5,
             43.26,
-            127.0,
+            127,
             134.5,
             48.26
           ]
@@ -227,11 +238,11 @@
           "display_triangles": 540,
           "max_vertex_move_mm": 0.21000366210938637,
           "source_bounds_mm": [
-            63.0,
-            59.0,
+            63,
+            59,
             48.26,
             147.35,
-            152.0,
+            152,
             76.56
           ]
         },
@@ -240,23 +251,23 @@
           "display_triangles": 1272,
           "max_vertex_move_mm": 0.24980078049669713,
           "source_bounds_mm": [
-            55.0,
-            62.0,
+            55,
+            62,
             50.05,
-            155.0,
-            149.0,
+            155,
+            149,
             51.56
           ]
         },
         "fan_frame": {
           "original_triangles": 284,
           "display_triangles": 284,
-          "max_vertex_move_mm": 0.0,
+          "max_vertex_move_mm": 0,
           "source_bounds_mm": [
-            59.0,
+            59,
             59.5,
             76.5,
-            151.0,
+            151,
             151.5,
             91.61
           ]
@@ -264,7 +275,7 @@
         "fan_rotor": {
           "original_triangles": 1616,
           "display_triangles": 1616,
-          "max_vertex_move_mm": 0.0,
+          "max_vertex_move_mm": 0,
           "source_bounds_mm": [
             61.12,
             61.61,
@@ -279,7 +290,7 @@
           "display_triangles": 144890,
           "max_vertex_move_mm": 0.39440961399445446,
           "source_bounds_mm": [
-            15.0,
+            15,
             11.62,
             13.5,
             191.35,
@@ -293,10 +304,10 @@
           "max_vertex_move_mm": 0.46249767190804353,
           "source_bounds_mm": [
             54.99,
-            62.0,
+            62,
             24.47,
-            155.0,
-            149.0,
+            155,
+            149,
             40.76
           ]
         },
@@ -305,12 +316,12 @@
           "display_triangles": 6864,
           "max_vertex_move_mm": 0.2826686844283411,
           "source_bounds_mm": [
-            -7.0,
+            -7,
             27.25,
             57.4,
-            213.0,
+            213,
             164.75,
-            81.0
+            81
           ]
         },
         "board_screws": {
@@ -344,10 +355,10 @@
           "display_triangles": 4032,
           "max_vertex_move_mm": 0.2677536681321141,
           "source_bounds_mm": [
-            -7.0,
+            -7,
             41.88,
             57.4,
-            213.0,
+            213,
             150.12,
             66.61
           ]
@@ -362,8 +373,17 @@
       "id": "S01"
     }
   },
-  "model_sha256": "e0c4bda6f1df4b0471afa2e3f2eecb1b33177940c05c2b2729c4d8ac96e26b85",
+  "model_sha256": "e5be57d5eb363af8018020fa7295227d8b40d5898b9e350c0a7ef0174b5fefd3",
   "binary_sha256": "4650ff17382594fa96702bf1278a7cd429c04c11dff843fa0aa66a0413096be3",
   "triangles": 333224,
-  "bytes": 1045580
+  "bytes": 1045580,
+  "poster": {
+    "file": "tools/site/assets/models/j501.webp",
+    "sha256": "a6e54a3fd9c67fc2cd7fde7289f32806c5ad255766defc7640a9fc299f6e2de5",
+    "width": 1200,
+    "height": 1200,
+    "model_sha256": "e5be57d5eb363af8018020fa7295227d8b40d5898b9e350c0a7ef0174b5fefd3",
+    "renderer_sha256": "bb5c27c1c833a005d76323df37c742fb70263ff16beacbcc78c9eca36b277ed0",
+    "method": "shared cad-model snapshot at its recorded opening view, turn=0"
+  }
 }

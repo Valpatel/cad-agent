@@ -22,6 +22,11 @@ flowchart TD
 
 | File or folder | Purpose |
 |---|---|
+| [learning-loop.svg](learning-loop.svg) | Original conceptual human/idea and engineering-workbench panorama, with reviewed feedback and reduced-motion still state. |
+| [learning-loop-mobile.svg](learning-loop-mobile.svg) | Compact square composition of the same human learning story. |
+| [thermal-history.svg](thermal-history.svg) | Animated actual heater-zone samples from the recorded 20 W box case; iterations, not elapsed seconds. |
+| [airflow-balance.svg](airflow-balance.svg) | Recorded flow and heat-out comparison retaining the failed ducted case. |
+| [learning-evidence.json](learning-evidence.json) | Input hashes, sampled trace count and recorded case facts. |
 | [gyropup-leg.svg](gyropup-leg.svg) | SVG: cad-agent: Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion |
 | [made-with-cad-agent-still.svg](made-with-cad-agent-still.svg) | SVG: Made with cad-agent — still badge |
 | [made-with-cad-agent.svg](made-with-cad-agent.svg) | SVG: Made with cad-agent |

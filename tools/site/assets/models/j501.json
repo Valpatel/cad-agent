@@ -19,6 +19,17 @@
  "sha256": "4650ff17382594fa96702bf1278a7cd429c04c11dff843fa0aa66a0413096be3",
  "triangles": 333224,
  "source": {
+  "collection_context": "Existing exported meshes captured from this clean checkout; the view export has no embedded producer revision. Collection revision is not a claim that CAD was regenerated.",
+  "board_geometry_check": {
+   "source": "references/hardware/carrier-full.stl",
+   "sha256": "172655f9f53db2b72669edd3148dc57274f6e51ceb7de0d14cba64b63e138e7d",
+   "offset_mm": [
+    15,
+    15,
+    20
+   ],
+   "max_allowed_coordinate_difference_mm": 2e-05
+  },
   "repo": "https://github.com/mvalancy/j501-agx-orin",
   "revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
   "manifest": {

@@ -124,3 +124,5 @@
 
 - [Rendered motion needs an independent frame](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md): compare rendered transforms with independent joint intent.
 - [Folder inventories need NUL-safe names and explicit owners](inbox/2026-11-07-folder-inventories-need-explicit-owners.md): quoted paths, grouped maps and installer prompt namespaces; do not infer defect counts or add blanket README exceptions.
+
+- `git grep: failed to create thread` inside a capped site build → [bound Git thread fanout per process](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#bound-gits-thread-fanout-inside-capped-site-producers); preserve caps and failed output, not global Git settings.

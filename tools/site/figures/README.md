@@ -19,6 +19,8 @@ flowchart TD
 |---|---|
 | [cantilever-still.mjs](cantilever-still.mjs) | Snapshot the cantilever example. |
 | [collect-showcase.py](collect-showcase.py) | Bounded no-install, source-pinned candidate collection using the existing product collector and retained CAD runtime; no adoption or publication. |
+| [learning-home.py](learning-home.py) | Draw original conceptual homepage art and source-bound recorded thermal/airflow animations, without a solver. |
+| [pack-j501.py](pack-j501.py) | Hash and pack existing assembly meshes with explicit render-only simplification and a real-board coordinate check. |
 | [fan-curve-still.mjs](fan-curve-still.mjs) | Snapshot fan curve data. |
 | [fourbar-still.mjs](fourbar-still.mjs) | Snapshot the four-bar example. |
 | [printed-boss-still.mjs](printed-boss-still.mjs) | Snapshot printed boss geometry. |

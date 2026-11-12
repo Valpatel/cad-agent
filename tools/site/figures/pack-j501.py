@@ -12,6 +12,10 @@ def collect(product):
  revision=subprocess.check_output(['git','-C',str(product),'rev-parse','HEAD'],text=True).strip()
  if subprocess.check_output(['git','-C',str(product),'status','--porcelain'],text=True).strip():raise RuntimeError('Product checkout must be clean')
  manifest=product/'exports/view/view.json';data=json.loads(manifest.read_bytes());parts=[];inputs={};derived={};cell=.4
+ board_file=product/'references/hardware/carrier-full.stl'
+ board_source=_read_stl(board_file); board_export=_read_stl(manifest.parent/'carrier_board.stl')
+ if board_source.shape != board_export.shape or not np.allclose(board_source+np.array([15,15,20]), board_export, rtol=0, atol=2e-5):
+  raise RuntimeError('Carrier board is not the real source mesh at the configured assembly offset')
  with tempfile.TemporaryDirectory(prefix='cad-j501-pack-') as tmp:
   tmp=Path(tmp)
   for p in data['parts']:
@@ -22,7 +26,7 @@ def collect(product):
    inputs[str(f.relative_to(product))]={'sha256':sha(f),'bytes':f.stat().st_size}
    derived[p['name']]={'original_triangles':len(tri),'display_triangles':len(reduced),'max_vertex_move_mm':float(np.linalg.norm(centres[inverse]-v,axis=1).max()),'source_bounds_mm':p['bounds_mm']}
   if not any(p['name']=='carrier_board' for p in parts):raise RuntimeError('Real carrier board missing')
-  source={'repo':'https://github.com/mvalancy/j501-agx-orin','revision':revision,'manifest':{'file':'exports/view/view.json','sha256':sha(manifest)},'inputs':inputs,'display_only':{'method':'0.4 mm vertex-cell centroid clustering; degenerate display triangles omitted','limits':'Render-only simplification, not dimension or fit evidence; lid hidden initially to reveal board. No CAD reconstruction.','parts':derived},'board_reference':json.loads((product/'references/sources.json').read_bytes())[0]}
+  source={'collection_context':'Existing exported meshes captured from this clean checkout; the view export has no embedded producer revision. Collection revision is not a claim that CAD was regenerated.', 'board_geometry_check':{'source':'references/hardware/carrier-full.stl','sha256':sha(board_file),'offset_mm':[15,15,20],'max_allowed_coordinate_difference_mm':2e-5}, 'repo':'https://github.com/mvalancy/j501-agx-orin','revision':revision,'manifest':{'file':'exports/view/view.json','sha256':sha(manifest)},'inputs':inputs,'display_only':{'method':'0.4 mm vertex-cell centroid clustering; degenerate display triangles omitted','limits':'Render-only simplification, not dimension or fit evidence; lid hidden initially to reveal board. No CAD reconstruction.','parts':derived},'board_reference':json.loads((product/'references/sources.json').read_bytes())[0]}
   (tmp/'view.json').write_text(json.dumps({**data,'parts':parts}))
   out=ROOT/'tools/site/assets/models/j501';m=pack_view(tmp/'view.json',out,source=source,view={'azimuth':35,'elevation':38})
   (out.parent/'j501-source.json').write_text(json.dumps({'source':source,'model_sha256':sha(out.with_suffix('.json')),'binary_sha256':m['sha256'],'triangles':m['triangles'],'bytes':m['bytes']},indent=2)+'\n')

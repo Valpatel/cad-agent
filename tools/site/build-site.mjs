@@ -472,7 +472,7 @@ for (const [i, r] of home.reel.entries()) {
   if (!ON[r.on]) throw new Error(`docs/home.yaml ${at}: on is one of ${Object.keys(ON).join(', ')}`);
   checkNumbers(r, at);
   homeMd.reel.push(`- [${r.title}](${/^https:/.test(r.href) ? r.href : ORIGIN + pageURL(r.href)}): ${r.caption} (\`${r.tool}\`, on ${ON[r.on].replace(/<[^>]+>/g, '')})`);
-  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${await homeImg(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
+  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media${r.field ? ' reel-recorded' : ''}" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${r.field ? `<span class="recorded-field">${await homeImg(r.field, at, ' alt="Recorded thermal field and streamlines for the two fixed solver cases" loading="lazy" decoding="async"')}</span>` : ''}${await homeImg(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
 <p class="reel-tool"><code>${esc(realTool(r.tool, at))}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p><p class="reel-credit">On ${ON[r.on]}</p>
 <span class="visually-hidden">${esc(r.alt)}</span></li>`);
 }
@@ -494,7 +494,7 @@ const fitsTile = async (t, i) => {
   : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
   : step === 0 ? '<span class="fit-media fit-empty">not built yet</span>' : (() => { throw new Error(`docs/home.yaml ${at}: a built block needs an img or a cmd`); })()}
 <span class="fit-title">${esc(t.title)}</span></a><p>${esc(t.does)}</p>
-<p class="ladder" title="${esc(t.why || `the least mature of: ${t.areas.join(', ')}`)}"><span class="visually-hidden">Maturity: </span>${LADDER.map((l, k) => `<span class="rung${k <= step ? ' on' : ''}${k === step ? ' here' : ''}"${k === step ? '' : ' aria-hidden="true"'}>${k === step ? esc(l) : ''}</span>`).join('')}</p></li>`;
+</li>`;
 };
 const upstreamByName = new Map(upstreams.map(u => [u.name, u]));
 const makeChip = (m, i) => {
@@ -539,8 +539,8 @@ ${useLoop}
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Shared knowledge. Better things.</p>
 <h1>Build what you need.<br><span>Make the next design better.</span></h1>
-<p class="intro">Turn your idea into useful, carefully checked hardware — with AI that builds on what came before and helps the next person go further.</p></div>
-<figure class="learning-art"><picture><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg"><img src="/docs/img/hero/learning-loop.svg" width="1440" height="820" fetchpriority="high" alt="A person's need flows through examples and manufacturer guides into organized knowledge, then design, checking, simulation and making; human-reviewed feedback improves the next design"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
+<p class="intro">Make useful, carefully checked hardware with AI that learns from each build.</p></div>
+<figure class="learning-art"><picture><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="1000" height="1000"><img src="/docs/img/hero/learning-loop.svg" width="1440" height="640" fetchpriority="high" alt="A person's need flows through examples and manufacturer guides into organized knowledge, then design, checking, simulation and making; human-reviewed feedback improves the next design"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
 </section></div>
 ${useCard}
@@ -549,7 +549,7 @@ ${useCard}
 <div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Check, simulate,<br><span>explain, measure.</span></h2><p>Real outputs, traceable inputs and explicit limits. Every example opens the method and the evidence behind it.</p></div><div class="fits-ours"><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul></div></section>
 <section class="section built-with" id="built-with"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Useful things made with the toolkit. Turn them around, explore the parts, and follow the projects.</p></div><div class="project-viewers">
 <article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
-<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.png" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
+<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
 </div></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;

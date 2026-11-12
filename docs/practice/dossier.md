@@ -280,14 +280,16 @@ if __name__ == "__main__":
 |---|---|---|
 | `@part(name, section="", *, place=None, grounded=False, free=False, reason="")` | function `(p)` or `()` returning a CadQuery shape, Workplane, Assembly, build123d object or `TopoDS_Shape`; a list for several instances | `place`: a `cq.Location`, an `(x, y, z)` translation, or a list of them (instances); then the function returns the shape in its own frame |
 | `@cavity(part, name)` | function returning one solid | in the part's frame: it follows the part's `place` |
-| `joint(interface, kind="revolute", *, parts=(moving, fixed), axis, range_deg=None, range_mm=None, intended_contacts=(), samples=None)` | `kind`: `fixed`, `revolute` (needs `range_deg`), `slider` (`range_mm`), `cylindrical` (both), `planar`, `ball` | the axis is in assembly coordinates; `axis` may be a function of the parameters |
+| `joint(interface, kind="revolute", *, parts=(moving, fixed), axis, range_deg=None, range_mm=None, intended_contacts=(), samples=None, follows=None, closes=None)` | `kind`: `fixed`, `revolute` (needs `range_deg`), `slider` (`range_mm`), `cylindrical` (both), `planar`, `ball`. `follows`: a joint id, `(id, multiplier)` or `(id, multiplier, offset)`. `closes`: `{"parts": (a, b), "at": point, "tol_mm": 0.1}` or a list | the axis is in assembly coordinates; `axis` may be a function of the parameters. A revolute or slider joint with `follows` is driven (its value is `multiplier × the driver's + offset`, about its own axis) and needs no range; `closes` names a point two parts share. Both are the motion gate's: [driven joints](gates.md#motion-range-interference-cadagentreviewgatesmotion) |
 | `fastener(key, *, clamps, into, at, name="", via="", tool="", length_mm, diameter_mm, thread_start_mm, thread_depth_mm, min_engagement_mm, shape=None)` | `at`: one `Axis` per screw, from the head seat in the direction the screw advances | `thread_start_mm`: seat to first engaged thread; numbers may be functions; `shape` is placed at every axis (McMaster frame: origin on the seat, +Z out of the hole) |
 | `assembly.step(order, fit, onto=None, *, direction="", tool="", fasteners=(), access_check="", note="")` | `direction`: `+X`..`-Z` or `(x, y, z)` | steps may also be written in `project.yaml`; when both exist with the same order they must agree |
 
 </details>
 
 Declarations are checked when they are made (a free part without a reason, a part both grounded and free, a revolute
-joint without a range, an unknown kind, a bad id raise `RegistryError`). The same declaration run twice (a re-import)
+joint without a range, an unknown kind, a bad id, a joint that follows itself or is of a kind that cannot follow raise
+`RegistryError`; a driver that is not declared and followers in a loop are refused at the build, when every joint is
+known). The same declaration run twice (a re-import)
 replaces itself; the same name declared at two places raises. Parts, fasteners and cavities are separate kinds: a
 fastener or cavity named like a part is refused, and fastener names (default `key:clamps-into`) never contain `#`. A
 cavity belongs to a single-instance part (the containment gate must know which container it is).
@@ -335,7 +337,8 @@ def dossier_items():
 
 Every `print_parts()` shape is registered; a part not yet given a section here is still a shape, and the join reports
 it as a shape without a card until its card exists. That list is the migration's to-do list. The same checks apply
-as for decorators (a free part needs a reason; grounded and free together are refused; a joint needs `interface`).
+as for decorators (a free part needs a reason; grounded and free together are refused; a joint needs `interface`,
+and takes `follows` and `closes` as `joint()` does).
 
 ### `exports/dossier-geometry.json`
 
@@ -452,13 +455,19 @@ What each gate reads: connectivity uses `assembly_shapes()`, `grounded` and `fre
 `gates.grounded`/`gates.free_parts` and `contains[].free` in the YAML), the joints and the dossier interfaces;
 containment uses `cavities` and the instances of `contains[].what`; the fastener gate uses `fasteners` (axes, stack
 numbers, placed solids) and the steps; the motion gate uses `joints` (axis, range, `intended_contacts`, `samples`,
-else `gates.motion_samples`); the assembly gate uses the steps. Pair caches key on the recorded hashes.
+else `gates.motion_samples`, and `follows` and `closes` where declared); the assembly gate uses the steps. Pair caches key on the recorded hashes.
 
 What moves with a joint (settled, final): a joint names one `moving` part, and its body is the transitive closure
 from it over `fixed` joints and fastener declarations (the fastener, what it clamps and what it threads into),
 stopped at grounded parts and at any joint's `fixed` part (`cadagent.review.gates.relations.moving_bodies`, used by
 `Assembly.from_build`, the connectivity gate and the motion gate). In a chain, a child joint's `fixed` part is
 therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-range-interference-cadagentreviewgatesmotion).
+
+A driven joint's record adds `"follows": {"joint", "multiplier", "offset"}` (its `range` is `null` when it declares
+none; `unit` is always set), and a joint with closing points adds `"closes": [{"parts", "at", "tol_mm"}]`. A joint
+that declares neither has the record it always had. `follows` changes how the motion gate samples and how the
+review packet poses the range ends (a follower is drawn with its driver, never alone); it does not change which
+parts move with a joint.
 
 ### Joining cards and geometry
 
@@ -477,7 +486,7 @@ therefore its parent's moving part itself; see [`gates.md`](gates.md#motion-rang
 | `contains-count` | error | `contains[].count` differs from the instances the build made |
 | `joint-without-interface`, `joint-parts-mismatch`, `joint-kind-mismatch` | error | a joint with no interface of its id, other parties, or another kind (`fixed` matches any rigid kind) |
 | `interface-without-joint` | error | a mechanism interface (`revolute`, `slider`, ...) with no `@joint` |
-| `unknown-part`, `unknown-interface` | error | a joint, fastener, cavity or step names something that does not exist |
+| `unknown-part`, `unknown-interface`, `unknown-joint` | error | a joint, fastener, cavity or step names something that does not exist; a joint's `closes` names a part, or its `follows` a joint, that is not in the record |
 | `fastener-count` | error | a card's `fasteners[].qty` differs from the axes `fastener()` places |
 | `fastener-not-registered`, `step-fastener-unregistered` | warning | declared in the card or a step, not yet in code |
 | `step-conflict` | error | a step in `project.yaml` and in code with the same order disagree |

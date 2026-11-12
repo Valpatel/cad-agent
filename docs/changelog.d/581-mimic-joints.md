@@ -1,0 +1,11 @@
+**New**
+- `joint(..., follows=(driver, multiplier, offset))` declares a driven joint, in the spirit of URDF's `mimic`: the motion gate samples only the driver and poses the follower at `multiplier × driver + offset` about its own axis in every pose, alone, in chains and in `combine` grids. A one-degree-of-freedom linkage (a parallelogram lift, geared arms) is checked along its path, not as a grid of free joints that reports collisions between poses it can never take. The same key works in `dossier_items()` and in the joint mapping `motion_gate` accepts (#581).
+- `joint(..., closes={"parts": (a, b), "at": point, "tol_mm": 0.1})` names a point two parts share (the pin that closes a loop). The motion gate fails `closure:<joint>:<a>|<b>` when the sampled poses pull it more than `tol_mm` apart, and when the point can measure nothing (both parts in one body, neither part moved). The ratio of a driven joint is the author's declaration: the gate does not solve loop closure, and a driven joint that no `closes` point measures is listed in `not_checked` (#581).
+- The motion verdict has `driven` (which joints were driven, by which joint, with what law and over which values), `closures`, a `follows:<id>` check that fails when a follower leaves the range it declares, and `stats.driven_joints`. A driver that is not declared, followers in a loop and kinds that cannot follow are a `RegistryError` at the build and a `joint:<id>` failure in the gate; the dossier lint reports `unknown-joint` for a hand-written record (#581).
+
+**Changed**
+- The review packet draws a driven joint with its driver: the driver's range-end views carry `pose.moves` (every joint that moves, innermost first) and a follower gets no range-end views of its own. Packets of projects without driven joints are unchanged (#581).
+- The geometry record's joints carry `follows` and `closes` only where declared, so existing records keep their digests; a driven joint without a range has `"range": null` (#581).
+
+**Fixed**
+- Containment and packet range-end views retain followers’ nonzero home offsets while another independent group moves. Packet poses also retain held scalar driver frames and cylindrical slide travel when composed with driven moves (#581).

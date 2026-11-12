@@ -4,5 +4,8 @@
 **Changed**
 - A dossier card whose `material.process` already names a non-additive process (for example `CNC` or `sheet metal`) now gets skip rows in "Printed parts" and "Print files" instead of print checks, and no 3MF, plate place or default slice row (#577).
 
+**Fixed**
+- A partial `overhangs PART` run discards old results for parts that are no longer printed, even when their STL bytes are unchanged. An explicitly named nonprinted part is still screened afresh; it is not silently carried into later partial runs (#577, #580).
+
 **Projects must change**
 - Nothing for a project that declares no process: every part is printed, as before. A project that wrote a non-additive `material.process` on a card and still prints that part corrects the card's process (the card is read before `cad: part_process:`) (#577).

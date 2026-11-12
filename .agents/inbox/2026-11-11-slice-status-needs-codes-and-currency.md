@@ -124,3 +124,48 @@ Chromium/WebKit CI remains required. No local browser, renderer, native slicer o
 artifacts and current upstream source characterize the code/text contract, not every Bambu version or output shape.
 No printer, cloud service, camera, desktop app or heavy job was used. Report currency and slicer success do not prove
 physical fit, print quality, strength or that an unchecked stability diagnostic ran.
+
+## Unchanged mesh bytes do not keep a print result in scope
+
+On 2026-11-12 UTC, maintainer follow-through reproduced the [independent PR #580 finding](https://github.com/Valpatel/cad-agent/pull/580#discussion_r4542284869) on the original
+`a5a1455d77142d75843391fe8808b0edfc4499fd` implementation merged into accepted dev. A partial overhang run checked
+the old STL hash and screen settings before resolving which parts were still printed. Changing only a part's
+manufacturing declaration therefore kept its obsolete print result in the next partial report.
+
+Three regression cases use real small STL meshes and the real CLI: a per-part `purchased` declaration, a project
+default of `weldment` with a printed exception, and a dossier `cnc` declaration overriding a printed config entry.
+Before the correction, with unchanged STL bytes:
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider \
+  tests/geometry/test_overhang_regions.py -k partial_overhang_run --tb=short
+3 failed, 7 deselected
+assert {'box', 'lid'} == {'box'}  # obsolete lid remained in each case
+```
+
+The existing process resolver now selects current printed parts before carry-forward. Only their unchanged rows
+can survive; explicitly named parts still run afresh, including nonprinted parts requested for diagnosis. The
+same regression also verifies that such an explicit result is dropped on the next partial run where it is not
+requested. Existing controls retain unchanged printed rows and invalidate changed settings or mesh bytes.
+
+```text
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider tests/geometry/test_overhang_regions.py
+10 passed in 0.66s
+PYTHONPATH=software python -m pytest -q -p no:cacheprovider \
+  tests/geometry/test_overhang_regions.py tests/manufacturing/test_process.py \
+  tests/manufacturing/test_slicer.py tests/manufacturing/test_plates.py tests/publish/test_report.py \
+  tests/cli/test_cli.py tests/cli/test_project.py tests/repo/test_layout.py tests/repo/test_areas.py \
+  tests/repo/test_private_names.py \
+  -k 'not slices_a_cube and not bambu_studio_slices_each_plate_as_laid_out and not torsion_declaration_actual_all_in_existing_starter'
+382 passed, 3 deselected, 1 warning in 16.95s
+```
+
+The existing Python dependency provider was used without installation. The warning is the existing webkit folder
+growth advisory. The three deselections are native slicer/full CAD runs, not successful qualification claims.
+
+**Corrective rule:** retained results must still belong to the current check scope as well as matching content and
+settings. Process changes are relevant evidence changes even when exported geometry is byte-identical.
+
+**Limits:** these are real CLI/mesh checks and controlled temporary projects, not a physical build or a new native
+slice. Skipping print checks does not establish that another process can manufacture the part. No product geometry,
+printer, cloud service or heavy CAD job was changed or run.

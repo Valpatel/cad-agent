@@ -133,6 +133,48 @@ def test_overhangs_command_writes_the_screen(tmp_path, capsys):
     assert set(json.loads((root / "exports" / "overhang-screen.json").read_text())["parts"]) == {"box"}
 
 
+@pytest.mark.parametrize("declaration, process", [
+    ("part", "purchased"), ("default", "weldment"), ("dossier", "cnc"),
+])
+def test_partial_overhang_run_discards_rows_outside_current_print_scope(tmp_path, declaration, process):
+    """Unchanged mesh bytes do not make an earlier print result applicable after a process change."""
+    import yaml
+    from cadagent.cli import main
+
+    root = _project(tmp_path)
+    args = ["overhangs", "--project", str(root)]
+    screen = root / "exports" / "overhang-screen.json"
+    mesh = (root / "exports" / "lid.stl").read_bytes()
+    assert main(args) == 0
+    assert set(json.loads(screen.read_text())["parts"]) == {"box", "lid"}
+
+    config = root / "cad-agent.yaml"
+    data = yaml.safe_load(config.read_text())
+    if declaration == "part":
+        data["cad"]["part_process"] = {"lid": process}
+    elif declaration == "default":
+        data["cad"]["part_process"] = {"*": process, "box": "fdm"}
+    else:
+        # The dossier's current process wins even over an explicitly printed config entry.
+        data["cad"].update(dossier="dossier.yaml", part_process={"lid": "fdm"})
+        (root / "dossier.yaml").write_text(yaml.safe_dump({
+            "title": "Process transition", "sections": [{"id": "S1", "title": "Lid", "parts": [
+                {"id": "lid", "function": "cover", "material": {"name": "fixture stock", "process": process}},
+            ]}],
+        }))
+    config.write_text(yaml.safe_dump(data))
+
+    assert main(args + ["box"]) == 0
+    assert (root / "exports" / "lid.stl").read_bytes() == mesh
+    assert set(json.loads(screen.read_text())["parts"]) == {"box"}
+    # An explicit diagnostic still screens the bought/fabricated part, but its result is not
+    # silently carried into the next partial run where that part is not requested.
+    assert main(args + ["lid"]) == 0
+    assert set(json.loads(screen.read_text())["parts"]) == {"box", "lid"}
+    assert main(args + ["box"]) == 0
+    assert set(json.loads(screen.read_text())["parts"]) == {"box"}
+
+
 def test_overhangs_command_fails_on_missing_or_unreadable_stls(tmp_path, capsys):
     from cadagent.cli import main
 

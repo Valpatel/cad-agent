@@ -1789,7 +1789,8 @@ at what to change: a flat ring left by a cutter's end, a cavity roof, a wall tha
 `downward_area` gives one total, and its `max_angle_deg` is the normal's angle below horizontal (90° minus this
 slope). `cad-agent overhangs` writes `exports/overhang-screen.json` (`version`, `limit_deg`, `min_area_mm2`,
 `parts: {part: {stl, sha256, downward_area_mm2, regions, small_regions, small_area_mm2}}`, or `{error}` for a missing
-or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps the other rows when the settings match.
+or unreadable STL); `cad-agent overhangs PART` redoes one part and keeps other rows only when their STL hashes and
+settings match and their parts are still printed. Explicitly naming a nonprinted part screens it afresh.
 Needs trimesh and scipy (`sim` extra).
 
 </details>

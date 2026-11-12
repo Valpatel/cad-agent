@@ -12,3 +12,10 @@ the product repository.
 
 A pass covers the declared components and sampled poses under the stated tolerance. It does not certify reference
 truth, actual hardware, complete mesh geometry, continuous motion or collision clearance.
+
+
+A source-bound renderer must validate the original instance/mesh partition list **before** creating any name-keyed
+hash, pose or mesh map. Require unique exact IDs even when duplicate entries reference the same geometry;
+map key equality cannot prove original-list uniqueness. The producer and actual consumer must reject the same
+invalid population before output replacement or geometry allocation. See the
+[duplicate-partition incident and regression](../inbox/review/2026-11-12-source-partitions-need-pre-map-uniqueness.md).

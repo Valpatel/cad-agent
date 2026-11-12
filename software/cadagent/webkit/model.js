@@ -99,6 +99,17 @@ export function decodeModel(model, raw) {
   });
 }
 
+/** Validate the original partition list before any map can discard duplicate source identities. */
+export function planMeshHashes(parts) {
+  if (!Array.isArray(parts) || parts.length < 1 || parts.length > 2000
+      || parts.some(p => !p || typeof p !== 'object' || Array.isArray(p)
+        || typeof p.name !== 'string' || !p.name.trim() || p.name.length > 200))
+    throw new Error('Assembly plan requires 1..2000 named source instances');
+  const names = parts.map(p => p.name);
+  if (new Set(names).size !== names.length) throw new Error('Assembly plan requires unique source instance names');
+  return Object.fromEntries(parts.map(p => [p.name, p.source_mesh_sha256]));
+}
+
 /** Flat-and-smooth shading for CAD: each corner's normal averages the faces around its vertex that meet its own face
  * at less than `crease` radians (area-weighted), so cylinders read round and box edges stay sharp. Returns
  * non-indexed { positions, normals }. */
@@ -201,6 +212,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
         fetch(src).then(r => modelBytes(r, (n, total) => this.#report('Loading model structure', n, total)))]);
       const model = JSON.parse(new TextDecoder().decode(metadata));
       if (model.schema !== 'cad-agent-model/1') throw new Error(`unknown model schema ${model.schema}`);
+      const meshHashes = model.assembly_plan !== undefined ? planMeshHashes(model.parts) : null;
       this.#report('Loading mesh data');
       const bin = await modelBytes(await fetch(new URL(model.bin, src)), (n, total) => this.#report('Loading mesh data', n, total));
       let plan;
@@ -208,7 +220,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
         const binding = model.assembly_plan;
         if (!binding || Object.keys(binding).sort().join(',') !== 'file,sha256' || !/^[0-9a-f]{64}$/.test(binding.sha256)) throw new Error('Invalid assembly plan binding');
         plan = normalizePlan(parseJSON(await readAsset(assetURL(binding.file, src), { expectedHash: binding.sha256, maxBytes: 2 * 1024 * 1024 })),
-          { meshHashes: Object.fromEntries(model.parts.map(p => [p.name, p.source_mesh_sha256])) });
+          { meshHashes });
         if (model.units !== 'mm' || model.up !== 'z' || await sha256(bin) !== model.sha256) throw new Error('Stale plan-enabled packed geometry');
       }
       this.#report(`Decoding ${model.parts.length} CAD parts`);

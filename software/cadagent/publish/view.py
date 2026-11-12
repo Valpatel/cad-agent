@@ -252,6 +252,15 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
     plan_bytes = None
     if assembly_plan is not None:
         from cadagent.review.dossier.plan import normalize_plan
+        source_parts = exported.get("parts")
+        if (not isinstance(source_parts, list) or not 1 <= len(source_parts) <= 2000
+                or any(not isinstance(part, dict) or not isinstance(part.get("name"), str)
+                       or not part["name"].strip() or len(part["name"]) > 200 for part in source_parts)):
+            raise ValueError("assembly plan requires 1..2000 named source instances")
+        names = [part["name"] for part in source_parts]
+        # Validate the ORIGINAL list: a hash map would erase an earlier duplicate partition.
+        if len(set(names)) != len(names):
+            raise ValueError("assembly plan requires unique source instance names")
         plan_bytes = Path(assembly_plan).read_bytes()
         normalize_plan(json.loads(plan_bytes), mesh_hashes={p["name"]: hashlib.sha256(
             (manifest.parent / p["file"]).read_bytes()).hexdigest() for p in exported["parts"]})

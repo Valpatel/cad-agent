@@ -105,6 +105,7 @@
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
 | Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |
 | A restarted local preview link refuses connections | [Pin the human preview port and verify HTTP identity](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#human-preview-urls-need-a-pinned-port-across-restarts) |
+| A source-bound model renders more mesh partitions than source IDs while hash maps still match | [Validate original partition identities before building maps](inbox/review/2026-11-12-source-partitions-need-pre-map-uniqueness.md) |
 | A source RGB material appears white in the packed model | [Validate the renderer color schema](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#a-source-material-value-must-match-the-renderers-color-schema) |
 | A failed 3D view retries with duplicate canvases or controls | [Roll back the whole rendering attempt](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#retry-must-roll-back-the-whole-failed-rendering-attempt) |
 | Old file imports overwrite newer progress or change state after controls are disposed | [Part checklist ownership](domains/web-part-state.md), [reproduced import incident](inbox/2026-10-29-import-ownership-must-survive-file-decoding.md) |

@@ -230,3 +230,11 @@ mesh, runtime and harness hashes, noncoplanar world-vertex samples, native first
 ordinary-handle obstruction with clear start/engaged poses and a 21→20 mm last-clear/first-blocked approach
 bracket. The matching phone screenshot is retained beside the fixture. Independent review and final CI remain
 separate; these results establish no J501/Gyropup assembly path or physical build qualification.
+
+
+Independent review of `9b819b9a` found that map normalization could hide an earlier duplicate partition while
+packing/rendering all six entries against five source IDs. This blocked-head failure is preserved beside the
+fixture and remains distinct from its older passing nine-case traces. Exporter and actual mini-browser
+controls now prepend both a genuine plate copy and a rail renamed `plate`, preserving original plan/bin
+hashes. Both must reject the original list before packing output or allocating a scene; exact map keys alone
+are insufficient. Renewed current-source receipts and separate review are required for the correction.

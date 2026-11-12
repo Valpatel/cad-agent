@@ -41,14 +41,19 @@ const serialFiles = new Map(await Promise.all((await readdir(serialRoot)).filter
 const serialPlan = JSON.parse(serialFiles.get('plan.json')), serialGuide = JSON.parse(serialFiles.get('guide.json')), serialMini = JSON.parse(serialFiles.get('mini.json'));
 assert.equal(serialGuide.assembly_plan.sha256, hash(serialFiles.get('plan.json')));
 assert.deepEqual(serialMini.assembly_plan, serialGuide.assembly_plan);
-for (const variant of ['serial', 'serial-wrong-axis', 'serial-wrong-order', 'serial-stale']) {
+for (const variant of ['serial', 'serial-wrong-axis', 'serial-wrong-order', 'serial-stale', 'serial-duplicate-same', 'serial-duplicate-different']) {
   for (const [name, bytes] of serialFiles) routes.set(`/${variant}/${name}`, (_, res) => res.end(bytes));
   const plan = structuredClone(serialPlan), guide = structuredClone(serialGuide), mini = structuredClone(serialMini);
   if (variant === 'serial-wrong-axis') plan.operations[0].path_mm = [[0,20,25],[0,0,25],[0,0,0]];
   if (variant === 'serial-wrong-order') {
     plan.operations.reverse(); plan.operations[0].requires = []; plan.operations[1].requires = ['lid']; guide.steps.reverse();
   }
-  const bytes = variant === 'serial' ? serialFiles.get('plan.json') : encode(plan);
+  if (variant.startsWith('serial-duplicate-')) {
+    const extra = structuredClone(mini.parts.find(p => p.name === (variant.endsWith('-same') ? 'plate' : 'rail')));
+    extra.name = 'plate'; mini.parts.unshift(extra);
+    assert.equal(mini.parts.length,6); assert.equal(new Set(mini.parts.map(p=>p.name)).size,5);
+  }
+  const bytes = (variant === 'serial' || variant.startsWith('serial-duplicate-')) ? serialFiles.get('plan.json') : encode(plan);
   if (variant !== 'serial-stale') guide.assembly_plan.sha256 = mini.assembly_plan.sha256 = hash(bytes);
   routes.set(`/${variant}/plan.json`, (_, res) => res.end(bytes));
   routes.set(`/${variant}/guide.json`, (_, res) => res.end(encode(guide)));
@@ -170,6 +175,17 @@ async function serialBrowserChecks(page, browser) {
     if(consumer==='guide'){await page.getByRole('button',{name:'Retry model',exact:true}).waitFor();assert.equal(await page.locator('#app canvas').count(),0);}
     else {await page.waitForFunction(()=>document.querySelector('cad-model').dataset.state==='error');assert.match(await page.locator('cad-model').first().getAttribute('data-error'),/SHA-256/);}
     packet.cases.push({consumer,case:'stale-plan-refused',radialFallback:false});
+  }
+  // Preserve real plan/bin identities; only the original partition list is adversarial.
+  for (const variant of ['serial-duplicate-same','serial-duplicate-different']) {
+    await page.goto(`${site.url}/${variant}/index.html`);
+    await page.waitForFunction(()=>{const [bad,good]=document.querySelectorAll('cad-model');return bad.dataset.state==='error'&&good.dataset.state==='ready';});
+    const refusal=await page.evaluate(()=>{const el=document.querySelector('cad-model');return {state:el.dataset.state,error:el.dataset.error,
+      canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,
+      hasExplode:typeof el.setExplode==='function',parts:el.stats?.parts??null};});
+    assert.match(refusal.error,/unique source instance names/);
+    assert.deepEqual({...refusal,error:undefined},{state:'error',error:undefined,canvases:0,controls:0,hasExplode:false,parts:null});
+    packet.cases.push({consumer:'mini',case:variant,refusal});
   }
   const phone=await browser.newContext({viewport:{width:320,height:700},deviceScaleFactor:2,reducedMotion:'reduce'});
   const phonePage=await phone.newPage();phonePage.on('pageerror',e=>errors.push(e.message));phonePage.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});

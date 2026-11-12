@@ -152,6 +152,12 @@ async function serialBrowserChecks(page, browser) {
       }
       await page.evaluate(()=>window.__serialPlayer.reset());checkSerial(await page.evaluate(()=>window.__serialCapture()),2);
     } else {
+      await seek(2);
+      const button=page.getByRole('button',{name:'Explode',exact:true}).first();await button.click();
+      await page.waitForFunction(()=>{const capture=window.__serialCapture();return capture.lid[0][2]>13.01 && capture.plate[0][2]<1.002;});
+      await button.click();assert.equal(await button.getAttribute('aria-pressed'),'false','A second click reverses even before halfway');
+      await page.waitForFunction(()=>{const capture=window.__serialCapture();return Math.abs(capture.lid[0][2]-13)<.002 && Math.abs(capture.lid[0][0]+9)<.002;});
+      checkSerial(await page.evaluate(()=>window.__serialCapture()),2);
       const second=await page.evaluate(()=>{const models=document.querySelectorAll('cad-model');return {frames:models[1].frames,first:models[0].stats.parts,second:models[1].stats.parts};});
       assert.equal(second.first,5);assert.equal(second.second,5);
     }

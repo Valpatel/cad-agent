@@ -471,6 +471,8 @@ def run_plan_sequence(world: SequenceWorld, plan, *, options: AccessOptions = Ac
     from cadagent.review.dossier.plan import normalize_plan, plan_state
     plan = normalize_plan(plan)
     _validate_numeric_settings(options, tol, 0)
+    if not options.tool_access:
+        raise ValueError("canonical plan tool checks cannot be disabled")
     if set(world.names) != set(plan["source"]["instances"]):
         raise ValueError("assembly plan must cover exact geometry instances")
     if type(reverse) is not bool:

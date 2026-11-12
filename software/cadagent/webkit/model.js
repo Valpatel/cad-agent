@@ -413,9 +413,9 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       request();
     });
     apart.addEventListener('click', () => {
-      const to = explode > 0.5 ? 0 : 1;
+      const to = (anim?.to ?? (explode > 0.5 ? 1 : 0)) === 1 ? 0 : 1;
       apart.setAttribute('aria-pressed', String(to === 1));
-      if (reduced()) { setExplode(to); request(); return; }
+      if (reduced()) { anim = null; setExplode(to); request(); return; }
       anim = { from: explode, to, t0: performance.now() };
       request();
     });
@@ -475,7 +475,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const fadeFrame = requestAnimationFrame(() => { if (this.dataset.state === 'ready') this.classList.add('cad-model-live'); });
     disposers.push(() => cancelAnimationFrame(fadeFrame));   // the canvas fades in over the poster
 
-    this.setExplode = f => { setExplode(Math.max(0, Math.min(1, f))); request(); };
+    this.setExplode = f => { anim = null; setExplode(Math.max(0, Math.min(1, f))); apart.setAttribute('aria-pressed', String(f > 0.5)); request(); };
     this.view = (azimuth, elevation) => { view.az = azimuth * deg; view.el = elevation * deg; lastInput = performance.now(); request(); };
     this.snapshot = (width, height, type = 'image/png', quality = 0.9) => {
       const old = [renderer.getPixelRatio(), this.clientWidth, this.clientHeight];

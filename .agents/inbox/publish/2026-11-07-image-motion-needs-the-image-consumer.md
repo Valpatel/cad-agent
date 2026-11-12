@@ -80,3 +80,19 @@ existing actual-image comparison plus planted moving-still rejection control.
 The original failed receipt is retained; a new source-bound browser pass is
 required before claiming recovery. The rule above remains unchanged: inspect the
 actual image consumer, not only the standalone SVG or parent preference.
+
+
+### All displayed computation images need the same protection
+
+The independent #606 review subsequently reproduced motion in the actual thermal
+and first airflow SVG `<img>` consumers despite a reduced-motion page preference
+([retained finding](https://github.com/Valpatel/cad-agent/pull/606#discussion_r4546711511)).
+The correction derives eight finished SVGs from each original author's reduced
+pose and selects them explicitly in both result sections. The `1ee6f8a1` Chromium
+consumer check loaded and pixel-compared all eight reel and three check/simulation
+images: all eleven selected their explicit still and remained stable. A deliberately
+moving response at the selected thermal still URL visibly changed, rejecting the
+false-still control. Source hashes, sampled thermal values, failed airflow balance
+and authored finished poses remain checked separately. The bound receipt SHA-256
+is `e214283145dd51e5a98bf083fdfeafe5fda0a17fd9d4647978b56a6777d76c85`. This finite local check is not WebKit, full-timeline, physical
+qualification or publication acceptance; the original failure remains retained.

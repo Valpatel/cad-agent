@@ -100,3 +100,20 @@ already uses `GIT_CONFIG_COUNT`.
 **Limits:** two Git grep workers were enough for this particular prototype's
 existing count operation. This is not a universal build/browser task budget and
 says nothing about subsequent browser rendering or simulation success.
+
+
+## Human preview URLs need a pinned port across restarts
+
+On 2026-11-12 UTC during #605, restarting the owned preview originally launched
+with `--port 0` moved its ephemeral listener from 44387 to 34429. The promised
+local URL then failed with `curl` exit 7 and the owned headed browser showed
+`ERR_CONNECTION_REFUSED`. This was a local listener/URL mismatch, not a provider,
+DNS or source-compile failure.
+
+The coordinator replaced only its owned preview server with explicit
+`--port 44387`, reloaded headers/CSP from the new producer, verified its HTTP
+version identity `1ee6f8a1`, and then recovered only its owned headed window.
+A user-facing preview link must pin its port across server restarts; check the
+actual HTTP identity before opening or refreshing the headed browser. A successful
+build or a still-open window does not prove that the promised listener exists.
+No unrelated server, browser or public routing configuration was changed.

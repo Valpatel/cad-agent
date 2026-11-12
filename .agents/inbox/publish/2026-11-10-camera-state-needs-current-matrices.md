@@ -136,8 +136,13 @@ the late draw failure into a tiny real packed model, requires zero failed-attemp
 canvases/controls and exactly one after recovery, and checks the other viewer's canvas
 identity survives. A resize and visibility change expose abandoned callbacks.
 
-This is an attempted correction pending its actual-browser recheck and independent
-review; no current homepage art, physical design or publication acceptance follows.
+The source-bound Chromium recheck at `1ee6f8a1` passed: first-draw failure left
+`0 canvas / 0 controls / poster visible`; successful retry left exactly
+`1 canvas / 1 controls`, a fresh readiness promise and no stale error. The other
+viewer retained its original canvas, ready state and one control panel. Resize and
+visibility callbacks produced no runtime error. Receipt SHA-256 `e214283145dd51e5a98bf083fdfeafe5fda0a17fd9d4647978b56a6777d76c85`
+records the positive counts and stopped browser/server cleanup. Independent delta
+review and normal CI remain required; this is not physical or publication acceptance.
 
 ## A source material value must match the renderer's color schema
 

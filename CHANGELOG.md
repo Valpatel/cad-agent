@@ -9,6 +9,14 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.38.0 (2026-11-12)
+
+**New**
+- Added three versioned analytical evaluation jobs with deterministic controller-side graders, passing references, negative controls, fresh workspace preparation and run-record ingestion. These measure declared calculations and graphs; they do not validate physical CAD or PCB safety.
+
+**Changed**
+- PCB fabrication review now distinguishes service, copper side/thickness, finished-hole pad diameters and profiling datums, with two dated manufacturer readings and executable source examples that preserve unknowns and supplier contradictions.
+
 ## v0.37.2 (2026-11-12)
 
 **New**

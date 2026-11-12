@@ -236,6 +236,15 @@ try {
           if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
           if (width >= 1100) {
             const outlineEvidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-'));
+            // Bounded diagnostics only; mark/scroll readiness and assertions remain unchanged.
+            await page.evaluate(() => {
+              const trace=[];window.__outlineTrace=trace;
+              const save=event=>{trace.push({event,t:performance.now(),y:scrollY,hash:location.hash,current:[...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(a=>a.hash)});if(trace.length>256)trace.shift();};
+              for(const name of ['scroll','scrollend','hashchange','wheel','keydown'])addEventListener(name,()=>save(name),{passive:true});
+              const nav=document.querySelector('cad-nav');
+              nav.addEventListener('click',event=>{if(event.target.closest('.cad-nav-outline a'))save('outline-click');});
+              new MutationObserver(ms=>{if(ms.some(m=>m.attributeName==='aria-current'))save('mark');}).observe(nav,{subtree:true,attributes:true,attributeFilter:['aria-current']});
+            });
             const firstScroll = await scrollOutline(page, await page.evaluate(() => document.body.scrollHeight / 2));
             if (!firstScroll.ready) seen.push(`outline ${firstScroll.stage} was not delivered within 2000 ms`);
             const box = await nav.locator('.cad-nav-panel').boundingBox();
@@ -266,7 +275,20 @@ try {
               await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
               await link.click();
               await settle();
-              if ((await link.getAttribute('aria-current')) !== 'location') seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+              if ((await link.getAttribute('aria-current')) !== 'location') {
+                seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+                const diagnostic=await link.evaluate(a=>{
+                  const id=decodeURIComponent(a.hash.slice(1)),target=document.getElementById(id),root=document.scrollingElement;
+                  if(!target)return {viewport:{width:innerWidth,height:innerHeight},hash:location.hash,scrollY,targetMissing:id,trace:window.__outlineTrace};
+                  const rect=el=>{const r=el?.getBoundingClientRect();return r?{top:r.top,bottom:r.bottom,height:r.height}:null;};
+                  const px=(value,of)=>value.endsWith('%')?parseFloat(value)*of/100:parseFloat(value)||0;
+                  const pad=px(getComputedStyle(root).scrollPaddingTop,root.clientHeight)+px(getComputedStyle(target).scrollMarginTop,0);
+                  const expected=Math.max(0,Math.min(root.scrollHeight-innerHeight,scrollY+target.getBoundingClientRect().top-pad));
+                  return {viewport:{width:innerWidth,height:innerHeight},hash:location.hash,scrollY,maxScroll:root.scrollHeight-innerHeight,target:{id,rect:rect(target)},current:[...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(el=>({href:el.hash,text:el.textContent})),nearby:[...document.querySelectorAll('.prose h2[id],.prose h3[id]')].filter(el=>Math.abs(el.getBoundingClientRect().top-target.getBoundingClientRect().top)<400).map(el=>({id:el.id,rect:rect(el)})),smooth:{css:getComputedStyle(root).scrollBehavior,expectedY:expected,delta:scrollY-expected,lastScrollAgeMs:performance.now()-(window.__outlineTrace.filter(x=>x.event==='scroll').at(-1)?.t||0)},trace:window.__outlineTrace};
+                });
+                await writeFile(path.join(outlineEvidence,'smooth-'+decodeURIComponent((await link.getAttribute('href')).slice(1)).replace(/[^a-z0-9_-]/gi,'-')+'.json'),JSON.stringify(diagnostic,null,2));
+                console.log('outline smooth-scroll failure evidence '+JSON.stringify(diagnostic));
+              }
             }
             // A jump marks its heading until the reader scrolls on: jump to a middle heading, then scroll back until it sits
             // near the bottom of the window (still on screen, below the reading line). The section above is now being read.

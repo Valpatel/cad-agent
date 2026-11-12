@@ -46,3 +46,5 @@ cad-gallery.discovery:not([data-ready]) [data-item][data-over]{display:list-item
 @media(scripting:none){.explore-nav-search{display:none}}
 .explore-nav:not([data-ready]) [data-topic-browse]{visibility:hidden}
 @media(scripting:none){.explore-nav [data-topic-browse]{display:none}}
+/* Legacy kind bookmarks retain richer catalogue previews without a text-only overview wall. */
+.discover-results>li>.result-preview-link{float:right;width:140px;margin:0 0 10px 12px}.result-preview{display:block;width:140px;height:105px;object-fit:contain;border-radius:8px;background:var(--soft)}.discover-results>li::after{content:"";display:block;clear:both}

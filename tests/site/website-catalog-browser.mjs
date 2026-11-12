@@ -125,6 +125,19 @@ const areaIndex=JSON.parse(await readFile(path.join(dir,'catalog/index.json'),'u
 const domainFor=new Map(areaIndex.domains.flatMap(d=>(d.areas||[]).map(a=>[a.slug,d.slug])));
 async function nativeGroups(page){for(const d of await page.locator('details[data-group]').all())await d.evaluate(el=>{el.open=true;});}
 async function legacyChecks(){
+ for(const color of ['light','dark']){
+  const {page,done}=await open('/catalog',{width:1100,height:800,color});try{
+   await page.evaluate(()=>document.fonts.ready);
+   const initial=await page.evaluate(()=>({x:scrollX,y:scrollY}));
+   for(const img of await page.locator('[data-item] .result-preview').all())if(await img.isVisible()){
+    await img.scrollIntoViewIfNeeded();await img.evaluate(el=>el.complete&&el.naturalWidth>0?Promise.resolve():el.decode());
+   }
+   await page.evaluate(p=>scrollTo({left:p.x,top:p.y,behavior:'instant'}),initial);
+   const wall=await page.evaluate(longestStretch,VISUAL);if(wall.worst>WALL_LIMIT)fail('legacy reading '+color,JSON.stringify(wall));
+   if((await visible(page)).length!==8)fail('legacy default','expected eight preview rows without hiding full catalogue entries');
+  }finally{await done();}
+ }
+
  // Actual saved filter combinations, derived independently from the immutable public catalogue model.
  const matrix=catalog.items.filter(c=>['tool','project','library','guide','skill','demo'].includes(c.kind)).filter((c,i,a)=>a.findIndex(x=>x.kind===c.kind)===i);
  for(const seed of matrix){

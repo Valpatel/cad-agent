@@ -385,6 +385,7 @@ test('the page lists every entry once, grouped by kind, readable without script'
   assert.deepEqual(cards.map(m => m[1]).sort(), catalog.items.map(i => i.id).sort());
   for (const m of cards) assert.doesNotMatch(m[0], /\shidden\b/, `${m[1]} is hidden in the HTML`);
   assert.match(page, /<cad-gallery\b/);
+  assert.match(page,/browse-limit="1"/,'legacy types use one compact preview each, with every entry still present');
   assert.match(page, /<script type="module" src="\/web\/site\.js"><\/script>/);
   assert.doesNotMatch(page, /<script>/, 'no inline script (CSP)');
   // Search, status and the existing browser test's hooks.

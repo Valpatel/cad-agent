@@ -62,7 +62,7 @@ const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-assembly-guide'; await mkdir(out, { recursive: true });
 const site = await serveWebkit(routes); let browser, cors;
 
-const cases = [], errors = [];
+const cases = [], errors = [], consoleErrors = [];
 const near = (actual, expected, tolerance = 1e-6) => actual.forEach((n, i) => assert.ok(Math.abs(n - expected[i]) < tolerance, `${actual} != ${expected}`));
 // Four noncoplanar corners chosen from native source boxes, never from the motion plan.
 const serialBoxes = JSON.parse(serialFiles.get('fixture.json')).boxes;
@@ -80,7 +80,10 @@ function checkSerial(actual, position, tolerance = .002) {
   for (const [name, points] of Object.entries(expected)) points.forEach((point,i) => point.forEach((n,k) => assert.ok(Math.abs(actual[name][i][k]-n) <= tolerance, `${name} world landmark at ${position}: ${actual[name][i]} != ${point}`)));
 }
 async function serialBrowserChecks(page, browser) {
-  const packet = { sourcePlan: hash(serialFiles.get('plan.json')), cases:[], maxToleranceMm:.002 };
+  const packet = { sourceRevision:process.env.TEST_SOURCE_REVISION || 'unrecorded', engine:engine.name(), browserVersion:browser.version(),
+    sourcePlan:hash(serialFiles.get('plan.json')), fixtureMeshes:Object.fromEntries([...serialFiles].filter(([n])=>n.endsWith('.stl')).map(([n,b])=>[n,hash(b)])),
+    runtimeHashes:Object.fromEntries(await Promise.all(['assembly/playback.js','assembly/guide.js','viewer.js','model.js'].map(async n=>[n,hash(await readFile(new URL('../../../software/cadagent/webkit/'+n,import.meta.url)))]))),
+    harnessSha256:hash(await readFile(new URL(import.meta.url))), cases:[], samples:[], maxToleranceMm:.002 };
   for (const consumer of ['guide','mini']) {
     const open = async variant => {
       await page.goto(consumer === 'guide' ? `${site.url}/kit/viewer.html?guide=/${variant}/guide.json` : `${site.url}/${variant}/index.html`);
@@ -127,7 +130,10 @@ async function serialBrowserChecks(page, browser) {
     };
     await open('serial');
     // Direct/nonmonotone seeks are the same absolute trajectory as reverse elapsed time.
-    for (const position of [2,1.5,1,.5,.25,0,1.5,.25,2]) checkSerial(await seek(position),position);
+    for (const [i,position] of [2,1.5,1,.5,.25,0,1.5,.25,2].entries()) {
+      const actual=await seek(position);checkSerial(actual,position);
+      if(i===1||i===4)packet.samples.push({consumer,position,components:actual});
+    }
     if (consumer === 'guide') {
       const actual = await page.evaluate(() => {
         const p=window.__serialPlayer;p.seek(2);p.reverse();p.play();p.tick(.05);return window.__serialCapture();
@@ -169,7 +175,7 @@ async function serialBrowserChecks(page, browser) {
     await phonePage.screenshot({path:`${out}/${engine.name()}-serial-320.png`});
     packet.cases.push({case:'320px-dpr2-reduced-motion-keyboard-static',twoMiniViewers:true});
   } finally {await phone.close();}
-  packet.errors=[...errors];assert.deepEqual(packet.errors,[]);packet.passed=true;
+  packet.errors=[...errors];packet.consoleErrors=[...consoleErrors];assert.deepEqual(packet.errors,[]);packet.passed=true;
   await writeFile(`${out}/${engine.name()}-serial-plan.json`,JSON.stringify(packet,null,2));
   cases.push(...packet.cases);
 }
@@ -180,7 +186,7 @@ routes.set('/legacy/redirect.stl', (_, res) => { res.writeHead(302, { Location: 
 routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name: 'redirect', file: '/legacy/redirect.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
   browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
-  const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
+  const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message)); page.on('console', message => {if(message.type()==='error')consoleErrors.push(message.text());});
   const visit = async (version, viewport = { width: 1100, height: 800 }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${site.url}/kit/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);

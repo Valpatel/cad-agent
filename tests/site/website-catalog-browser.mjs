@@ -15,6 +15,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
+import { longestStretch, VISUAL, WALL_LIMIT } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const site = await builtSite('cad-agent-catalog-browser-', { stdio: 'inherit' });   // CAD_AGENT_SITE, or a fresh build of HEAD
@@ -110,6 +111,9 @@ const firstResultTop = page => page.evaluate(() => {
 async function sharedDiscoveryChecks() {
   const cases = [
     ['counterbores', '/docs/common-issues#issue-'],
+    ['validate rendered', '/docs/rendered-motion'],
+    ['download McMaster', '/skills/mcmaster-parts/SKILL'],
+    ['twist printed', '/docs/compliant#try-it-the-torsion-snap-explorer'],
     ['disassembly', '/lessons/process/user-intent-and-requirements#treat-doesnt-block-disassembly-as-a-hard-requirement'],
     ['snap fits', '/docs/compliant'],
     ['pem-consumer-electronics-design-guide-2021', '/references/fasteners-and-hardware#pem-consumer-electronics-design-guide-2021'],
@@ -126,12 +130,18 @@ async function sharedDiscoveryChecks() {
       if (!start || start.y > 400) fail('Explore', `${width}px ${color}: search starts below the first view`);
       const before = await page.evaluate(() => ({height: document.documentElement.scrollHeight, nodes: document.querySelectorAll('*').length,
         visible: [...document.querySelectorAll('[data-item]')].filter(x => x.checkVisibility()).length}));
+      if (width >= 1100) { const wall = await page.evaluate(longestStretch, VISUAL); if (wall.worst > WALL_LIMIT) fail('Explore reading', JSON.stringify(wall)); }
       if (before.height > 7000 || before.nodes > 7300 || before.visible > 15) fail('Explore', `${width}px ${color}: unbounded default ${JSON.stringify(before)}`);
       for (const [q, href] of cases) {
         await box.fill(q);
         await page.waitForFunction(needle => [...document.querySelectorAll('[data-item] a')].some(a => a.closest('[data-item]').checkVisibility() && new URL(a.href).pathname.concat(new URL(a.href).hash).startsWith(needle)), href);
         if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail('Explore', `${width}px ${color}: ${q} overflows`);
       }
+      await box.fill('counterbores');
+      const pitfall=page.locator('.discover-results a[href^="/docs/common-issues#issue-"]').first();
+      const target=await pitfall.getAttribute('href');await pitfall.click();
+      if (new URL(page.url()).origin !== base || !await page.locator('[id="'+decodeURIComponent(new URL(page.url()).hash.slice(1))+'"]').isVisible()) fail('Explore local destination', 'pitfall leaves preview or its real anchor stays hidden: '+target);
+      await page.goto(base+'/explore');await page.waitForSelector('cad-gallery[data-ready]');
       await box.fill('agentcad');
       const roles = await page.locator('[data-item]').evaluateAll(xs => xs.filter(x => x.checkVisibility()).map(x => x.textContent));
       if (!roles.some(x => x.includes('Adoption: candidate')) || !roles.some(x => x.includes('Source: Read'))) fail('Explore', 'shared-URL adoption and evidence roles disappeared');

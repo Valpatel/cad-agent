@@ -35,6 +35,7 @@ test('real body incidents, canonical IDs, aliases and unplaced sources have usef
  assert.ok(query('abbud-riveted-joints').some(x=>x.url.endsWith('/references/unplaced#abbud-riveted-joints')));
  const seat=model.items.find(x=>x.url.endsWith('#move-the-head-seat-to-reach-a-standard-screw-length'));
  assert.match(seat.summary,/If the computed length/);assert.doesNotMatch(seat.summary,/What happened|Incident:/);
+ for (const [q,path] of [['validate rendered','/docs/rendered-motion'],['download McMaster','/skills/mcmaster-parts/SKILL'],['twist printed','#try-it-the-torsion-snap-explorer']]) assert.ok(query(q).some(x=>x.url.endsWith(path)),q);
  assert.deepEqual(query('zz-no-such-fixture-599'),[]);
 });
 
@@ -58,6 +59,7 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.match(html, /<details class="discover-group" data-group="references"/);
  assert.ok(!/<details class="discover-group"[^>]*\bopen/.test(html), 'no-script groups start collapsed');
  assert.ok(html.includes('/discovery.json'));
+ assert.ok(!/<li data-item[^>]*><a href="https:\/\/cad-agent.valpatel.com/.test(html), 'local result clicks stay on the reviewed producer');
  assert.ok(!/<img[^>]*src="https?:/.test(html), 'site-owned images stay same-origin under real CSP');
  assert.match(html, /<\/span> <span class="result-summary">/, 'title/summary remain separate search words');
  // Budget is for compact links/search metadata, not a second full reference table or article copies.

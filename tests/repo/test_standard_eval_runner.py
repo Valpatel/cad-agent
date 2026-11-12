@@ -57,6 +57,18 @@ def test_claude_result_error_is_not_a_success(tmp_path):
     assert result['cost_usd'] == .01
 
 
+def test_codex_sandbox_error_survives_a_normal_final_message(tmp_path, monkeypatch):
+    executable = fake_harness(tmp_path, 'sys.stdin.read()\n'
+        'print(json.dumps({"type":"thread.started","thread_id":"control"}))\n'
+        'print(json.dumps({"type":"item.completed","item":{"type":"error","message":"sandbox failed"}}))\n'
+        'print(json.dumps({"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":2}}))\n')
+    monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
+    result = collected_result(monkeypatch, 'snapfit-sizing', 'bare', tmp_path / 'run', 'codex', 'fake')
+    assert result['trial_completed']
+    assert result['collector']['harness_errors'] == 1
+    assert not result['usable_trial']
+
+
 def test_malformed_and_nonfinite_metrics_cannot_be_a_usable_success(tmp_path):
     path = write_rows(tmp_path, [dict(type='turn.completed', usage=dict(input_tokens=float('nan')))])
     path.write_text(path.read_text() + '\nnot JSON\n[]\n')

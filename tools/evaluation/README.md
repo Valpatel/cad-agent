@@ -15,4 +15,4 @@ flowchart LR
 | File | Purpose |
 |---|---|
 | [standard_eval.py](standard_eval.py) | Validate the corpus, prepare subject inputs, independently grade artifacts and ingest run metadata. |
-| [runner.py](runner.py) | Start fresh Codex or Claude CLI conversations with version-bound context controls, collect transcripts and settle the owned process group before grading. |
+| [runner.py](runner.py) | Collect fresh Codex or Claude CLI conversations; finalize outside the retained service only after its cgroup stops, then grade settled artifacts and transcript bytes. |

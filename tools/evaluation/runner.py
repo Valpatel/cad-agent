@@ -60,6 +60,7 @@ def transcript_metrics(path, harness):
     """
     calls, sessions, models, usages = {}, set(), set(), []
     malformed = 0
+    harness_errors = 0
     terminal = False
     for line in path.read_text(errors='replace').splitlines():
         try:
@@ -70,6 +71,8 @@ def transcript_metrics(path, harness):
         if not isinstance(row, dict):
             malformed += 1
             continue
+        if row.get('type') == 'error':
+            harness_errors += 1
         if harness == 'codex':
             if row.get('type') == 'thread.started' and isinstance(row.get('thread_id'), str):
                 sessions.add(row['thread_id'])
@@ -78,6 +81,8 @@ def transcript_metrics(path, harness):
                 if not isinstance(item, dict):
                     malformed += 1
                     continue
+                if item.get('type') == 'error':
+                    harness_errors += 1
                 if item.get('type') in ('command_execution', 'file_change', 'mcp_tool_call', 'web_search'):
                     calls[item.get('id', str(len(calls)))] = item.get('type')
             if row.get('type') == 'turn.completed':
@@ -111,7 +116,7 @@ def transcript_metrics(path, harness):
                 session_count=len(sessions),
                 session_id_sha256=[hashlib.sha256(s.encode()).hexdigest() for s in sorted(sessions)],
                 resolved_model=next(iter(models)) if len(models) == 1 else None,
-                terminal_success_event=terminal, malformed_transcript_lines=malformed)
+                terminal_success_event=terminal, malformed_transcript_lines=malformed, harness_errors=harness_errors)
 
 
 def settle_group(process):
@@ -286,9 +291,10 @@ def finalize(work, unit):
     result = evaluation.ingest_run(prep['job'], work)
     result['usable_trial'] = (receipt['unit_success'] and result['trial_completed']
                               and metadata.get('terminal_success_event') is True
+                              and metadata.get('harness_errors') == 0
                               and metadata.get('malformed_transcript_lines') == 0 and metadata.get('session_count') == 1)
     result['collector'] = {key: metadata.get(key) for key in ('launch_error', 'terminal_success_event',
-                          'malformed_transcript_lines', 'session_count', 'session_id_sha256',
+                          'malformed_transcript_lines', 'harness_errors', 'session_count', 'session_id_sha256',
                           'resolved_model', 'cached_input_tokens', 'cache_creation_input_tokens', 'collector_settled')}
     result['unit'] = receipt
     write_json(work / 'result.json', result)

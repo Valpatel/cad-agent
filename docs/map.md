@@ -334,7 +334,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 50 folders</summary>
+<summary>docs — 51 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -619,6 +619,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `docs/img/hero` |
+
+</details>
+
+<details>
+<summary><code>docs/img/hero/result-stills/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-img/d-hero/d-result-stills/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/img/hero/result-stills/README.md)
+
+- Each folder has its own human map; recorded data retains its producer-owned layout and historical contents.
+
+| Folder |
+|---|
+| `docs/img/hero/result-stills` |
 
 </details>
 

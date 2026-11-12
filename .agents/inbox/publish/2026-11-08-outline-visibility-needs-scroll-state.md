@@ -32,3 +32,31 @@ any later screenshot. No longer sleep an arbitrary 300 ms and assume the page's 
 
 The same-section regression and current full browser CI remain required for the corrected source. This component
 control does not establish the exact timing cause of the original Chromium failure or waive any current check.
+
+## Keep sidebar controls reachable when wheel input reaches the tree edge
+
+On 2026-11-12, the user reported that the toolkit reader's left side could not scroll back to its filters. A bounded actual Chrome probe at 1440×900 and article Y=6000 found the active `print-files` section, panel Y=1305. An upward wheel returned the panel to zero; the next upward wheel chained into the article (Y=5700), and correct section tracking pulled the panel back to Y=1283. At 1600 px the left outline is absent, so the same trap did not occur. Initial current-page reveal also moved the global search above view. The prior DOM/rect checks had not tested this input boundary.
+
+A second screenshot showed an independent layering defect: the old one-filter sticky pseudo-element painted over the newly prepended global search label/input. Viewport geometry alone did not prove the control was usable.
+
+Contain desktop panel overscroll so wheel/touch input at its edge does not chain into an article scroll. Preserve current-section tracking, including the strict same-section regression. Give the global search and tree filter one optional sticky controls block with its own background; suppress the legacy single-filter cover only for that block. Keep the mobile panel static with native page scrolling. The related browser regression uses actual wheel input at 1440/short desktop/1600, hit-tests and clicks the search, exercises mobile script/no-script layout, and plants the former wheel-chain and opaque-cover CSS as independent negative controls. No physical/CAD or full-suite claims follow from the focused evidence.
+
+### A sticky controls block also needs a native scroll-into-view inset
+
+The first wheel-boundary fix at `67f1804b` passed focused Chrome wheel/hit-test controls but failed the hosted WebKit ordinary outline-link click sequence (PR #608): after the last two smooth jumps, the middle “Mating connectors” link auto-scrolled underneath `data-nav-controls`, which intercepted the real click for 30 seconds. The same sequence passed locally in Chrome, so that local engine result did not invalidate the observed WebKit failure.
+
+Measure the actual sticky controls height into the panel's `scroll-padding-top`, including the existing link inset. Recompute on viewport and controls-size changes, and clear it for the static mobile panel. Native scroll-into-view and the component's own marked-entry tracking need the same unobscured reading area. Keep ordinary clicks and all existing limits; add a native start-alignment hit test and reject a planted zero-inset state. The focused Chrome proof is not a WebKit pass; new normal hosted WebKit coverage remains required.
+
+Independent review also identified a stale simulated-input assumption in `jumpProblems`: a synthetic sidebar wheel was followed by forcibly scrolling the article −800 px, although desktop containment now prevents that native scroll chain. Remove only that invented tree-to-parent case. Preserve the rail interruption, sidebar-internal jump, 300 ms stalled-jump and strict same-section checks; the actual wheel boundary plus its old-CSS negative lives in `readerBoundaryProblems`. This is a test-contract correction, not a product relaxation or a claim that an unseen CI failure was observed.
+
+### Destination commit is not destination parsing readiness
+
+On 2026-11-12, PR #608 at `56d23af1` passed the general website-browser suite but its catalogue consumer failed the actual local pitfall anchor check. A bounded four-state trace reproduced the race at 320 px dark: immediately after the real click, the correct local URL/hash was committed, `document.readyState` was still `loading`, and the target table row did not yet exist (count zero). At DOMContentLoaded it existed once and was visible. The other three width/theme states had the row already parsed; all four reached the correct local destination.
+
+Register the exact expected local URL/DOMContentLoaded waiter before clicking, then await visibility of that exact expected anchor. Preserve origin/path/hash and real visibility checks; a missing, wrong or persistently hidden target must still fail. No arbitrary sleep, broader timeout, production repair or “flake” label follows from this observed document-readiness race.
+
+### Contain only a sidebar that actually has a scroll range
+
+Hosted WebKit at `c55e94f3` passed the new reader/click/negative cases but rejected the existing 1920 px fitting-tree wheel test: with all groups folded and `scrollHeight <= clientHeight + 1`, blanket `overscroll-behavior:contain` blocked article scrolling. Chrome had allowed that input, so its focused pass was not proof of the WebKit contract. The existing actual-wheel assertion remains unchanged.
+
+Keep desktop containment conditional on measured overflow using the same one-pixel boundary as `movesPage`. Recompute after resize, controls/content resizing, native folding and filter/DOM visibility changes; disconnect observers on component abort. A fitting desktop panel and the static mobile panel retain `auto`. Preserve overflow-edge containment and current-section tracking. Regression evidence must include fitting-tree real wheel input, overflow→fits→overflow changes, a blanket-contain negative and mobile reset, not just one initial viewport snapshot.

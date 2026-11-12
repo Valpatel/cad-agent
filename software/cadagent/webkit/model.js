@@ -38,6 +38,30 @@ export async function inflate(buffer) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
+/** Browser fetch may decode Content-Encoding while Content-Length describes wire bytes.
+ * Only identity transfers have a comparable total; otherwise progress stays indeterminate. */
+export function transferTotal(response) {
+  const encoding = response.headers.get('content-encoding');
+  const raw = response.headers.get('content-length');
+  const n = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
+  return (!encoding || encoding.toLowerCase() === 'identity') && Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+export async function modelBytes(response, progress = () => {}) {
+  if (!response.ok) throw new Error(`Model data: HTTP ${response.status}`);
+  let total = transferTotal(response), loaded = 0;
+  if (!response.body?.getReader) { const b = new Uint8Array(await response.arrayBuffer()); progress(b.length, null); return b; }
+  const reader = response.body.getReader(), chunks = [];
+  try { for (;;) { const {value, done} = await reader.read(); if (done) break; chunks.push(value); loaded += value.byteLength;
+    if (total && loaded > total) total = null;
+    progress(loaded, total);
+  } } finally { reader.releaseLock(); }
+  if (total !== loaded) total = null;
+  progress(loaded, total);
+  const result = new Uint8Array(loaded); let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }
+  return result;
+}
+
 /** [{ positions: Float32Array (mm, x y z per vertex), index: Uint16Array | Uint32Array }] per part, the inverse of
  * pack_view (cadagent/view.py documents the layout; unpack_model there is the reference the tests compare with). */
 export function decodeModel(model, raw) {
@@ -121,6 +145,10 @@ const BUTTON = (label, pressed) => {
 class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) {
   #started = false;
   #resolve;
+  #status;
+  #meter;
+  #message;
+  #cleanup = null;
   ready = new Promise(r => { this.#resolve = r; });
 
   connectedCallback() {
@@ -146,35 +174,75 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     });
   }
 
+  #report(message, bytes = null, total = null) {
+    if (!this.#status) {
+      this.#status = document.createElement('div'); this.#status.className = 'cad-model-status';
+      this.#status.setAttribute('role', 'status');
+      this.#message = document.createElement('span'); this.#meter = document.createElement('progress');
+      this.#meter.setAttribute('aria-label', 'Model data loading');
+      this.#status.append(this.#message, this.#meter); this.append(this.#status);
+    }
+    this.#message.textContent = message + (bytes === null ? '' : ` · ${(bytes / 1024).toFixed(0)} KiB received`);
+    this.#meter.hidden = this.dataset.state !== 'loading';
+    if (total) { this.#meter.max = total; this.#meter.value = bytes; }
+    else this.#meter.removeAttribute('value');
+  }
+
   async #start() {
     if (this.#started) return;
-    this.#started = true;
-    this.dataset.state = 'loading';
+    this.#started = true; this.dataset.state = 'loading'; this.setAttribute('aria-busy', 'true');
+    this.#report('Preparing 3D viewer');
     try {
       const src = new URL(this.getAttribute('src'), location.href);
-      const [THREE, model] = await Promise.all([import(new URL('vendor/three/three.module.min.js', KIT).href),
-        fetch(src).then(r => { if (!r.ok) throw new Error(`${src.pathname}: HTTP ${r.status}`); return r.json(); })]);
+      const [THREE, metadata] = await Promise.all([import(new URL('vendor/three/three.module.min.js', KIT).href),
+        fetch(src).then(r => modelBytes(r, (n, total) => this.#report('Loading model structure', n, total)))]);
+      const model = JSON.parse(new TextDecoder().decode(metadata));
       if (model.schema !== 'cad-agent-model/1') throw new Error(`unknown model schema ${model.schema}`);
-      const bin = await fetch(new URL(model.bin, src)).then(r => { if (!r.ok) throw new Error(`${model.bin}: HTTP ${r.status}`); return r.arrayBuffer(); });
+      this.#report('Loading mesh data');
+      const bin = await modelBytes(await fetch(new URL(model.bin, src)), (n, total) => this.#report('Loading mesh data', n, total));
+      this.#report(`Decoding ${model.parts.length} CAD parts`);
       const parts = decodeModel(model, await inflate(bin));
+      this.#report(`Preparing ${parts.length} parts for display`);
       this.#build(THREE, model, parts);
-      this.dataset.state = 'ready';
-      this.#resolve(this);
-    } catch (err) {
-      this.dataset.state = 'error';
-      this.dataset.error = String(err?.message ?? err).slice(0, 300);
-      this.#resolve(this);
-    }
+      this.dataset.state = 'ready'; this.setAttribute('aria-busy', 'false');
+      this.#report(`${parts.length} parts ready · drag to turn`); this.#resolve(this);
+    } catch (err) { this.#fail(err); }
+  }
+
+  #fail(err) {
+    if (this.dataset.state === 'error') return;
+    const cleanup = this.#cleanup; this.#cleanup = null;
+    cleanup?.();
+    this.classList.remove('cad-model-live');
+    this.dataset.state = 'error'; this.setAttribute('aria-busy', 'false');
+    this.dataset.error = String(err?.message ?? err).slice(0, 300);
+    this.#report('3D view unavailable. The source poster remains available.');
+    const retry = BUTTON('Retry 3D view'); retry.className = 'cad-model-retry';
+    retry.addEventListener('click', () => {
+      retry.remove(); this.ready = new Promise(resolve => { this.#resolve = resolve; });
+      delete this.dataset.error; this.#started = false; this.#start();
+    }, {once:true});
+    this.#status.append(retry); this.#resolve(this);
   }
 
   #build(THREE, model, decoded) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power', preserveDrawingBuffer: false });
+    // Register resources as soon as allocated: a late first-draw failure must roll back the entire attempt.
+    const disposers = []; let disposed = false;
+    this.#cleanup = () => {
+      if (disposed) return; disposed = true;
+      for (const dispose of disposers.reverse()) { try { dispose(); } catch { /* Preserve the original rendering failure. */ } }
+      for (const name of ['snapshot','view','setExplode','stats']) delete this[name];
+      this.classList.remove('cad-model-live');
+    };
+    disposers.push(() => renderer.forceContextLoss?.(), () => renderer.dispose());
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;           // honours shadow.radius (PCFSoft does not)
     const canvas = renderer.domElement;
+    disposers.push(() => canvas.remove());
     canvas.className = 'cad-model-canvas';
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', `${this.getAttribute('label') || model.title}: a 3D model you can turn by dragging`);
@@ -183,6 +251,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     scene.add(new THREE.HemisphereLight(0xffffff, 0xb9c8c0, 1.6));
     const key = new THREE.DirectionalLight(0xffffff, 2.4);
     key.castShadow = true;
+    disposers.push(() => key.shadow.map?.dispose());
     key.shadow.mapSize.set(2048, 2048);
     key.shadow.radius = 3;
     const fill = new THREE.DirectionalLight(0xdbe9ff, 0.8), rim = new THREE.DirectionalLight(0xffe2c4, 0.9);
@@ -194,10 +263,12 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     model.parts.forEach((part, i) => {
       const { positions, normals } = creasedNormals(decoded[i].positions, decoded[i].index);
       const geo = new THREE.BufferGeometry();
+      disposers.push(() => geo.dispose());
       geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
       geo.computeBoundingSphere();
       const mat = new THREE.MeshStandardMaterial({ color: part.color, roughness: 0.62, metalness: 0.05 });
+      disposers.push(() => mat.dispose());
       const mesh = new THREE.Mesh(geo, mat);
       mesh.castShadow = mesh.receiveShadow = true;
       mesh.visible = part.visible !== false;
@@ -227,6 +298,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const setExplode = f => { explode = f; meshes.forEach((m, i) => m.position.copy(dirs[i]).multiplyScalar(f * reach)); fit(); place(); };
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(radius * 12, radius * 12), new THREE.ShadowMaterial({ opacity: 0.16 }));
+    disposers.push(() => floor.geometry.dispose(), () => floor.material.dispose());
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
@@ -261,8 +333,10 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const speed = num('turn', 10) * deg;
     let turning = !reduced() && speed !== 0;
     let paused = false, drag = null, spin = 0, lastInput = -1e9, hovered = null, anim = null, frame = 0, visible = true;
+    disposers.push(() => { visible = false; if (frame) cancelAnimationFrame(frame); frame = 0; });
     const ui = document.createElement('div');
     ui.className = 'cad-model-ui';
+    disposers.push(() => ui.remove());
     const label = document.createElement('p');
     label.className = 'cad-model-label';
     label.textContent = 'Drag to turn';
@@ -328,6 +402,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     });
 
     const resize = () => {
+      if (disposed) return;
       const w = this.clientWidth || 1, h = this.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
@@ -339,6 +414,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     let last = performance.now();
     this.frames = 0;                      // frames drawn by the loop (the browser suite checks it stops off screen)
     const tick = now => {
+      if (disposed) return;
       frame = 0;
       this.frames++;
       const dt = Math.min(0.05, (now - last) / 1000);
@@ -352,25 +428,33 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       if (!drag && Math.abs(spin) > 0.01) { view.az += spin * dt; spin *= Math.exp(-dt * 4); more = true; }
       if (turning && !paused && !drag && now - lastInput > 4000) { view.az += speed * dt; more = true; }
       place();
-      renderer.render(scene, camera);
+      try { renderer.render(scene, camera); } catch (error) { this.#fail(error); return; }
       if (more && visible) frame = requestAnimationFrame(tick);
     };
-    function request() { if (!frame && visible) { last = performance.now(); frame = requestAnimationFrame(tick); } }
-    new ResizeObserver(resize).observe(this);
+    function request() { if (!disposed && !frame && visible) { last = performance.now(); frame = requestAnimationFrame(tick); } }
+    const sizeObserver = new ResizeObserver(resize); sizeObserver.observe(this);
+    disposers.push(() => sizeObserver.disconnect());
     // Frames only while the element is on screen and the tab is showing: either one changing re-decides.
     let onScreen = true;
     const show = () => {
+      if (disposed) return;
       visible = onScreen && document.visibilityState === 'visible';
       if (visible) request(); else if (frame) { cancelAnimationFrame(frame); frame = 0; }
     };
-    new IntersectionObserver(es => { onScreen = es.at(-1).isIntersecting; show(); }).observe(this);
+    const viewObserver = new IntersectionObserver(es => { onScreen = es.at(-1).isIntersecting; show(); }); viewObserver.observe(this);
+    disposers.push(() => viewObserver.disconnect());
     document.addEventListener('visibilitychange', show);
-    matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', () => { turning = !reduced() && speed !== 0; pause.hidden = !turning; request(); });
+    disposers.push(() => document.removeEventListener('visibilitychange', show));
+    const motionMedia = matchMedia('(prefers-reduced-motion: reduce)');
+    const motionChange = () => { turning = !reduced() && speed !== 0; pause.hidden = !turning; request(); };
+    motionMedia.addEventListener?.('change', motionChange);
+    disposers.push(() => motionMedia.removeEventListener?.('change', motionChange));
 
     this.append(canvas, ui);
     resize();
     renderer.render(scene, camera);
-    requestAnimationFrame(() => this.classList.add('cad-model-live'));   // the canvas fades in over the poster
+    const fadeFrame = requestAnimationFrame(() => { if (this.dataset.state === 'ready') this.classList.add('cad-model-live'); });
+    disposers.push(() => cancelAnimationFrame(fadeFrame));   // the canvas fades in over the poster
 
     this.setExplode = f => { setExplode(Math.max(0, Math.min(1, f))); request(); };
     this.view = (azimuth, elevation) => { view.az = azimuth * deg; view.el = elevation * deg; lastInput = performance.now(); request(); };

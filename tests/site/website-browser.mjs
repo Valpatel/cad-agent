@@ -1,3 +1,4 @@
+import {lowContrast} from './site-outline.mjs';
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without
@@ -15,8 +16,8 @@ import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems } from './site-motion.mjs';
-import { outlineEntryState, scrollOutline, sameSectionOutlineProblems } from './site-outline.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems, homepageLateDrawProblems, resultImageMotionProblems } from './site-motion.mjs';
+import { outlineEntryState, scrollOutline, sameSectionOutlineProblems, readerBoundaryProblems, readerOutlineClickProblems, readerOverflowProblems } from './site-outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './site-walls.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -84,6 +85,7 @@ try {
     ['cantilever', cantileverProblems],  // the snap-arm explorer on /docs/compliant (#137), below
     ['fold', foldProblems],              // the page tree's fold on phones, with and without nav.js (#134)
     ['outline visibility', () => sameSectionOutlineProblems(browser, base)],
+    ['reader scroll boundary', async () => [...await readerBoundaryProblems(browser, base), ...await readerOutlineClickProblems(browser, base), ...await readerOverflowProblems(browser, base)]],
     ['jump', jumpProblems],              // outline jumps: released by the reader's wheel, not by a stall
     ['fourbar', fourbarProblems],        // the four-bar animator on /docs/linkages (#159), below
     ['fanCurve', fanCurveProblems],      // the fan-curve explorer on /docs/fans (#160), below
@@ -110,8 +112,7 @@ try {
         // fire DOMContentLoaded before they arrive and lay out an unstyled box no reader sees). three.js and the model only
         // start after the load event, so this is still the poster.
         if (route === '/') await page.addInitScript(() => addEventListener('load', () => {
-          const r = document.querySelector('cad-model')?.getBoundingClientRect();
-          window.__posterBox = r && [r.width, r.height];
+          window.__posterBoxes = [...document.querySelectorAll('cad-model')].map(el => { const r = el.getBoundingClientRect(); return [r.width, r.height]; });
         }, { once: true }));
         const res = await page.goto(base + route, { waitUntil: 'networkidle' });
         if (route === '/missing-page') { if (res.status() !== 404) seen.push(`status ${res.status()}`); }
@@ -129,22 +130,20 @@ try {
         if (route === '/') {
           const names = await page.evaluate(() => document.getAnimations().map(a => a.animationName).filter(n => n?.startsWith('snap-')));
           if (names.length < 4) seen.push(`hero animations running: ${names.join(', ') || 'none'}`);
-          // The 3D Gyropup (#179): it becomes the live model, fetches three.js and the model only after the page has
-          // loaded (the poster is all the first paint needs), and nothing moves when it swaps in.
-          const ready = await page.waitForFunction(() => ['ready', 'error'].includes(document.querySelector('cad-model')?.dataset.state), null, { timeout: 20000 })
-            .then(() => page.evaluate(() => { const el = document.querySelector('cad-model'); return el.dataset.state === 'ready' ? 'ready' : el.dataset.error; }))
-            .catch(() => 'never left the poster');
-          if (ready !== 'ready') seen.push(`3D model: ${ready}`);
-          const late = await page.evaluate(() => {
-            const loaded = performance.getEntriesByType('navigation')[0].loadEventStart;
-            return performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\//.test(r.name) && !/\.webp$/.test(r.name) && r.startTime < loaded).map(r => r.name);
-          });
-          if (late.length) seen.push(`3D model fetched before the page loaded: ${late.join(', ')}`);
-          // The live model takes exactly the poster's box (a font arriving may move it, never resize it), and the page
-          // as a whole shifts no more than the page tree's limit.
-          const box = await page.evaluate(() => { const r = document.querySelector('cad-model').getBoundingClientRect(); return { now: [r.width, r.height], first: window.__posterBox }; });
-          if (!box.first || Math.abs(box.now[0] - box.first[0]) > 0.5 || Math.abs(box.now[1] - box.first[1]) > 0.5)
-            seen.push(`the 3D model's box changed from ${box.first?.map(Math.round)} to ${box.now.map(Math.round)}`);
+          // Both real project views remain deferred while the reader is at the learning hero.
+          const early = await page.evaluate(() => performance.getEntriesByType('resource').filter(r => /three\.module|\/web\/models\/.*\.(json|bin)/.test(r.name)).map(r => r.name));
+          if (early.length) seen.push(`model payload fetched at hero before a project was approached: ${early.join(', ')}`);
+          const models = page.locator('cad-model');
+          if (await models.count() !== 2) seen.push('Built with cad-agent needs both real project viewers');
+          let ready = 'ready';
+          for (let i = 0; i < await models.count(); i++) {
+            await models.nth(i).evaluate(el => { document.documentElement.style.scrollBehavior = 'auto'; el.scrollIntoView({block:'center'}); });
+            const state = await page.waitForFunction(n => ['ready', 'error'].includes(document.querySelectorAll('cad-model')[n]?.dataset.state), i, {timeout:20000})
+              .then(() => models.nth(i).evaluate(el => el.dataset.state === 'ready' ? 'ready' : el.dataset.error)).catch(() => 'never left the poster');
+            if (state !== 'ready') { ready = state; seen.push(`project viewer ${i}: ${state}`); }
+            const box = await models.nth(i).evaluate((el,n) => { const r=el.getBoundingClientRect(); return {now:[r.width,r.height],first:window.__posterBoxes?.[n]}; }, i);
+            if (!box.first || box.now.some((v,k) => Math.abs(v-box.first[k])>.5)) seen.push(`project viewer ${i} resized when its poster became 3D`);
+          }
           // The shift at every width, each with what moved, so a CI log says what it was and where any shift comes from.
           const { shift, moved, measured = true } = await page.evaluate(() => new Promise(done => {
             if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done({ shift: 0, moved: [], measured: false });
@@ -163,19 +162,19 @@ try {
           else if (measured) console.log(`  ${width}px /: layout shift ${shift.toFixed(3)}${moved.length ? `, under the 0.05 limit: ${moved.join(' | ')}` : ''}`);
           // Scrolled away, it draws nothing, even when the tab is hidden and shown again (#182 review).
           if (ready === 'ready') {
-            await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.body.scrollHeight); });
+            await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
             await page.waitForTimeout(400);
-            const before = await page.evaluate(() => { document.dispatchEvent(new Event('visibilitychange')); return document.querySelector('cad-model').frames; });
+            const before = await page.evaluate(() => { document.dispatchEvent(new Event('visibilitychange')); return [...document.querySelectorAll('cad-model')].map(el => el.frames); });
             await page.waitForTimeout(800);
-            const drawn = await page.evaluate(n => document.querySelector('cad-model').frames - n, before);
-            if (drawn > 1) seen.push(`the 3D model drew ${drawn} frames off screen after the tab came back`);
+            const drawn = await page.evaluate(ns => [...document.querySelectorAll('cad-model')].map((el,i) => el.frames-ns[i]), before);
+            if (drawn.some(n => n > 1)) seen.push(`project viewers drew ${drawn.join(', ')} frames off screen after the tab came back`);
           }
         }
         if (route === '/catalog' && width === 1366) {
-          await page.fill('#q', 'zzzz-nothing-matches');
-          if (!/No entries match/.test(await page.textContent('#filter-status'))) seen.push('empty filter result is not announced');
-          await page.fill('#q', 'mit');
-          const hits = await page.$$eval('.group .card:not([hidden])', cs => cs.map(c => c.dataset.text));
+          await page.fill('[data-gallery-search]', 'zzzz-nothing-matches');
+          if (!/No results match/.test(await page.textContent('[data-gallery-status]'))) seen.push('empty filter result is not announced');
+          await page.fill('[data-gallery-search]', 'mit');
+          const hits = await page.$$eval('[data-item]', cs => cs.filter(c=>c.checkVisibility()).map(c=>c.textContent.toLowerCase()+' '+c.getAttribute('data-search-extra')));
           if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');
         }
         if (route === REFS) await refsProblems(page, width, seen);
@@ -235,6 +234,15 @@ try {
           if (shift > 0.05) seen.push(`layout shifts while loading: ${shift.toFixed(3)}`);
           if (width >= 1100) {
             const outlineEvidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-outline-'));
+            // Bounded diagnostics only; mark/scroll readiness and assertions remain unchanged.
+            await page.evaluate(() => {
+              const trace=[];window.__outlineTrace=trace;
+              const save=event=>{trace.push({event,t:performance.now(),y:scrollY,hash:location.hash,current:[...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(a=>a.hash)});if(trace.length>256)trace.shift();};
+              for(const name of ['scroll','scrollend','hashchange','wheel','keydown'])addEventListener(name,()=>save(name),{passive:true});
+              const nav=document.querySelector('cad-nav');
+              nav.addEventListener('click',event=>{if(event.target.closest('.cad-nav-outline a'))save('outline-click');});
+              new MutationObserver(ms=>{if(ms.some(m=>m.attributeName==='aria-current'))save('mark');}).observe(nav,{subtree:true,attributes:true,attributeFilter:['aria-current']});
+            });
             const firstScroll = await scrollOutline(page, await page.evaluate(() => document.body.scrollHeight / 2));
             if (!firstScroll.ready) seen.push(`outline ${firstScroll.stage} was not delivered within 2000 ms`);
             const box = await nav.locator('.cad-nav-panel').boundingBox();
@@ -265,7 +273,20 @@ try {
               await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
               await link.click();
               await settle();
-              if ((await link.getAttribute('aria-current')) !== 'location') seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+              if ((await link.getAttribute('aria-current')) !== 'location') {
+                seen.push(`following "${await link.textContent()}" (smooth scroll) does not mark it`);
+                const diagnostic=await link.evaluate(a=>{
+                  const id=decodeURIComponent(a.hash.slice(1)),target=document.getElementById(id),root=document.scrollingElement;
+                  if(!target)return {viewport:{width:innerWidth,height:innerHeight},hash:location.hash,scrollY,targetMissing:id,trace:window.__outlineTrace};
+                  const rect=el=>{const r=el?.getBoundingClientRect();return r?{top:r.top,bottom:r.bottom,height:r.height}:null;};
+                  const px=(value,of)=>value.endsWith('%')?parseFloat(value)*of/100:parseFloat(value)||0;
+                  const pad=px(getComputedStyle(root).scrollPaddingTop,root.clientHeight)+px(getComputedStyle(target).scrollMarginTop,0);
+                  const expected=Math.max(0,Math.min(root.scrollHeight-innerHeight,scrollY+target.getBoundingClientRect().top-pad));
+                  return {viewport:{width:innerWidth,height:innerHeight},hash:location.hash,scrollY,maxScroll:root.scrollHeight-innerHeight,target:{id,rect:rect(target)},current:[...document.querySelectorAll('cad-nav .cad-nav-outline a[aria-current=location]')].map(el=>({href:el.hash,text:el.textContent})),nearby:[...document.querySelectorAll('.prose h2[id],.prose h3[id]')].filter(el=>Math.abs(el.getBoundingClientRect().top-target.getBoundingClientRect().top)<400).map(el=>({id:el.id,rect:rect(el)})),smooth:{css:getComputedStyle(root).scrollBehavior,expectedY:expected,delta:scrollY-expected,lastScrollAgeMs:performance.now()-(window.__outlineTrace.filter(x=>x.event==='scroll').at(-1)?.t||0)},trace:window.__outlineTrace};
+                });
+                await writeFile(path.join(outlineEvidence,'smooth-'+decodeURIComponent((await link.getAttribute('href')).slice(1)).replace(/[^a-z0-9_-]/gi,'-')+'.json'),JSON.stringify(diagnostic,null,2));
+                console.log('outline smooth-scroll failure evidence '+JSON.stringify(diagnostic));
+              }
             }
             // A jump marks its heading until the reader scrolls on: jump to a middle heading, then scroll back until it sits
             // near the bottom of the window (still on screen, below the reading line). The section above is now being read.
@@ -281,11 +302,12 @@ try {
             if ((await middle.getAttribute('aria-current')) === 'location') seen.push(`"${await middle.textContent()}" stays marked after the reader scrolls back`);
             if (!(await nav.locator('.cad-nav-filter').isVisible())) seen.push('the filter is out of view');
             const filter = nav.locator('.cad-nav-filter');
+            const beforeOpen=await nav.locator('details.cad-nav-group[open]').count();
             await filter.fill('zzzz-no-such-page');
-            if (!/No pages match/.test(await nav.locator('.cad-nav-empty').textContent())) seen.push('filter with no match says nothing');
+            if (!/No (?:topics or )?pages match/.test(await nav.locator('.cad-nav-empty').textContent())) seen.push('filter with no match says nothing');
             await filter.press('Escape');
             const open = await nav.locator('details.cad-nav-group[open]').count();
-            if (open !== 1) seen.push(`clearing the filter leaves ${open} groups open (was 1)`);
+            if (open !== beforeOpen) seen.push(`clearing the filter leaves ${open} groups open (was ${beforeOpen})`);
           } else {
             const toggle = nav.locator('.cad-nav-toggle');
             if (!(await toggle.isVisible())) seen.push('no Contents toggle on a narrow screen');
@@ -484,6 +506,10 @@ try {
       }
       return problems;
     }],
+    ['homepage model lifecycle', () => homepageModelProblems(browser, base)],
+    ['learning image motion', () => learningPictureProblems(browser, base)],
+    ['late model allocation rollback', () => homepageLateDrawProblems(browser, base)],
+    ['computed image reduced motion', () => resultImageMotionProblems(browser, base)],
     ['reduced motion', async () => {
       const problems = [];
       const reduced = await browser.newPage({ reducedMotion: 'reduce' });
@@ -492,8 +518,11 @@ try {
       const still = await reduced.evaluate(() => document.getAnimations().filter(a => a.animationName?.startsWith('snap-')).length);
       if (still) problems.push(`reduced motion: ${still} hero animations still running`);
       // The model stands still (no turntable, so no Pause button) until the reader drags it.
-      await reduced.waitForFunction(() => document.querySelector('cad-model')?.dataset.state === 'ready', null, { timeout: 20000 })
-        .catch(() => problems.push('reduced motion: the 3D model did not load'));
+      for (const model of await reduced.locator('cad-model').all()) {
+        await model.evaluate(el => { document.documentElement.style.scrollBehavior='auto'; el.scrollIntoView({block:'center'}); });
+        await reduced.waitForFunction(src => document.querySelector(`cad-model[src="${src}"]`)?.dataset.state === 'ready', await model.getAttribute('src'), {timeout:20000})
+          .catch(() => problems.push('reduced motion: a project viewer did not load'));
+      }
       const turning = await reduced.evaluate(() => [...document.querySelectorAll('cad-model .cad-model-ui button')].filter(b => !b.hidden && b.textContent === 'Pause').length);
       if (turning) problems.push('reduced motion: the 3D model turns by itself');
       await reduced.close();
@@ -1660,55 +1689,6 @@ async function themeProblems() {
   // with the translucent ones (and each stop of a gradient) on the way composited over it; skipped where a picture is
   // behind. Colours are resolved by the browser itself (a 1 px canvas), so oklab() and color-mix() read right. Inputs'
   // placeholders are checked against the input, and `extra` (a selector) adds elements whose own text to check.
-  const lowContrast = (page, only = null) => page.evaluate(only => {
-    const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
-    // Each colour is read back from the canvas once, and each element's backdrop worked out once: a page asks for the
-    // same few colours thousands of times, and a canvas read is slow (in WebKit most of all).
-    const seen = new Map(), backdrops = new Map();
-    const rgba = c => { if (seen.has(c)) return seen.get(c); ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; seen.set(c, [d[0], d[1], d[2], d[3] / 255]); return seen.get(c); };
-    const lum = ([r, g, b]) => [r, g, b].map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
-    const ratio = (a, b) => { const [h, l] = [lum(a), lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
-    // What can be behind: a colour, or each stop of a CSS gradient (text must read on all of them); null for a picture.
-    const over = ([r, g, b, a], under) => [r, g, b].map((v, i) => v * a + under[i] * (1 - a));
-    const behind = el => { if (!backdrops.has(el)) backdrops.set(el, backdrop(el)); return backdrops.get(el); };
-    const backdrop = el => {
-      const layers = [];
-      for (let e = el; e; e = e.parentElement) {
-        const cs = getComputedStyle(e), c = rgba(cs.backgroundColor);
-        if (/url\(/.test(cs.backgroundImage)) return null;
-        // a gradient sized to nothing (the catalogue rows' hover sweep, until hovered) is not behind anything yet
-        const stops = cs.backgroundImage === 'none' || /^0(?:%|px)/.test(cs.backgroundSize) ? []
-          : (cs.backgroundImage.match(/(?:rgba?|oklab|oklch|lab|lch|color)\((?:[^()]|\([^()]*\))*\)/g) || []).map(rgba);
-        if (stops.length) layers.push(stops);
-        if (c[3] > 0) layers.push([c]);
-        if (c[3] >= 1 || (stops.length && stops.every(x => x[3] >= 1))) break;
-      }
-      let under = [[255, 255, 255]];
-      for (const layer of layers.reverse()) under = layer.flatMap(c => under.map(u => over(c, u)));
-      return under;
-    };
-    const SKIP = 'svg, img, video, canvas, cad-model, cad-cantilever, cad-fourbar, cad-fan-curve, cad-torsion-snap, cad-printed-boss, .cad-diagram-view, .visually-hidden, .sr, .glyph-sprite, [hidden]';
-    const low = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const name = el => `${el.localName}${el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''}`;
-    for (const input of only ? [] : document.querySelectorAll('input[placeholder]')) {
-      if (!input.getClientRects().length || input.closest(SKIP)) continue;
-      const bgs = behind(input), fg = rgba(getComputedStyle(input, '::placeholder').color);
-      const c = bgs && Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
-      if (c && c < 4.5) low.push(`${name(input)} placeholder "${input.placeholder.slice(0, 30)}" ${c.toFixed(2)}:1`);
-    }
-    for (let n; (n = walk.nextNode());) {
-      const el = n.parentElement;
-      if (!n.data.trim() || el.closest(SKIP) || (only && !el.closest(only))) continue;
-      const cs = getComputedStyle(el), r = el.getBoundingClientRect();
-      if (!r.width || !r.height || cs.visibility === 'hidden' || +cs.opacity === 0 || !el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true })) continue;
-      const bgs = behind(el);
-      if (!bgs) continue;
-      const fg = rgba(cs.color), c = Math.min(...bgs.map(bg => ratio(over(fg, bg), bg)));
-      const size = parseFloat(cs.fontSize), large = size >= 24 || (size >= 18.66 && +cs.fontWeight >= 700), need = large ? 3 : 4.5;
-      if (c < need) low.push(`${name(el)} "${n.data.trim().slice(0, 30)}" ${c.toFixed(2)}:1`);
-    }
-    return [...new Set(low)];
-  }, only);
   const state = page => page.evaluate(() => ({
     scheme: getComputedStyle(document.documentElement).colorScheme, chosen: document.documentElement.dataset.theme ?? null,
     pressed: document.querySelector('.theme-toggle')?.getAttribute('aria-pressed') ?? null,
@@ -2308,9 +2288,11 @@ async function foldProblems() {
 /** Jumps through the outline on a big screen (2560 x 1440, /docs/explore, the site's smooth scrolling), with the input
  * a desktop browser would give simulated, since headless browsers will not let a real wheel interrupt a smooth scroll
  * (#123 review 4):
- * - a wheel over the rail or the tree partway through the jump, and the page scroll it makes, releases it: the mark
+ * - a wheel over the rail partway through the jump, and the page scroll it makes, releases it: the mark
  *   follows the reading line, not the heading the reader turned away from;
  * - a wheel that only scrolls the tree (it can still scroll that way) leaves the jump marked;
+ * - actual wheel containment at the tree boundary is tested by readerBoundaryProblems; a sidebar wheel no longer
+ *   physically chains into the parent, so synthesizing it followed by forced article scroll would invent input;
  * - a jump whose scroll stalls for 300 ms partway (a frame slow to paint, #158) still marks its heading once it lands. */
 async function jumpProblems() {
   const out = [];
@@ -2340,7 +2322,7 @@ async function jumpProblems() {
     document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top + scrollY > 5000));
   if (far < 0) { await page.close(); return ['2560px /docs/explore: no heading 5000 px down, so the jump checks test nothing']; }
   const target = rail.nth(far), id = decodeURIComponent((await target.getAttribute('href')).slice(1)), name = await target.textContent();
-  for (const [where, sel] of [['rail', '.doc-rail a[href="#' + encodeURIComponent(id) + '"]'], ['tree', 'cad-nav a[aria-current=page]']]) {
+  for (const [where, sel] of [['rail', '.doc-rail a[href="#' + encodeURIComponent(id) + '"]']]) {
     await page.evaluate(() => { scrollTo({ top: 0, behavior: 'instant' }); document.querySelector('cad-nav .cad-nav-panel').scrollTop = 0; });
     await settle();
     await target.click();

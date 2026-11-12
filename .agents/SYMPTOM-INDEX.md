@@ -2,6 +2,8 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| The legacy catalogue shows only a quote prefix for a tag-like plain description | [Escape canonical plain text instead of stripping it through an HTML summary](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md#keep-canonical-plain-text-out-of-an-html-summary-extractor) |
+| A dark document outline is readable at rest but its hover uses a pale kit fallback | [Bind the complete shared navigation theme and check interactive states](inbox/publish/2026-11-07-source-records-need-their-actual-namespace.md#a-document-rail-needs-the-same-complete-theme-contract-as-its-tree) |
 | A short source-reading entrance leaves a skill workflow over the reading-wall budget | [Measure the whole skill route and disclose complete workflow detail](inbox/agents/2026-11-10-reading-batches-need-the-release-and-page-consumers.md#skill-entrances-need-the-whole-workflow-reading-check) |
 | `walls /docs/web-parts` exceeds 1200 px after a print API reference grows | [Keep printing actions visible and fold long API contracts](inbox/publish/2026-11-11-annotated-numbers-need-print-column-budgets.md#keep-printing-actions-visible-and-fold-long-api-contracts) |
 | A full procurement BOM retains every ID but prints hundreds of pages with one-character name columns | [Budget annotated numeric columns and inspect actual readable rows](inbox/publish/2026-11-11-annotated-numbers-need-print-column-budgets.md) |
@@ -35,6 +37,7 @@
 | An authored underside view is framed but the camera stays above the assembly | [Check camera direction after orbit constraints](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#authored-camera-directions-must-survive-orbit-constraints) |
 | A reset shows solid meshes but its selectors still say Wireframe or exploded | [Reset the displayed controls with the model](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#a-reset-must-reset-its-controls-as-well-as-its-meshes) |
 | A reset model looks correct in a later screenshot but its projected click is outside the viewport | [Update camera matrices before synchronous projection and picking](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md) |
+| Scrolling the reader sidebar upward loses its search again, or its label is painted over | [Contain sidebar input and group its sticky controls](inbox/publish/2026-11-08-outline-visibility-needs-scroll-state.md#keep-sidebar-controls-reachable-when-wheel-input-reaches-the-tree-edge) |
 | A marked outline entry is outside its panel after the reader scrolls the page | [Observe scroll delivery and preserve same-section visibility](inbox/publish/2026-11-08-outline-visibility-needs-scroll-state.md) |
 | An explicitly empty device selector falls back to listing the account | [Distinguish absence from an invalid selector](inbox/2026-11-07-camera-grants-do-not-prove-video.md#an-explicitly-invalid-selector-must-not-become-a-broader-observation) |
 | A review request remains unanswered while its agent is completed, or an existing exact-source clearance is overlooked | [Start idle reviewers and reuse valid clearances](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#start-idle-reviewers-instead-of-queueing-another-message) |
@@ -85,12 +88,15 @@
 | A newly published site still shows an obsolete robot layout | [A source revision does not refresh a CAD export](inbox/publish/2026-11-07-source-revision-does-not-refresh-a-cad-export.md) |
 | A footer picture appears again near the page title, or a unique image locator finds two copies after compilation | [Page placement can duplicate footer art](inbox/publish/2026-11-07-page-placement-can-duplicate-footer-art.md), [consumer verification](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
 | A narrow-header failure lacks bounds, hidden SVG geometry is treated as painted content, or resize geometry disagrees with its PNG | [Retain visibility, geometry and the requested viewport's paint](inbox/publish/2026-11-07-header-visibility-needs-paint-state.md) |
-| Reduced-motion emulation reports success while an embedded SVG still moves | [Check the actual image consumer](inbox/publish/2026-11-07-image-motion-needs-the-image-consumer.md), [verification rule](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
+| Reduced-motion emulation reports success while an embedded SVG still moves | [Check the actual image consumer](inbox/publish/2026-11-07-image-motion-needs-the-image-consumer.md), including the homepage #605 recurrence; [verification rule](../docs/lessons/process/verify-from-source.md#check-motion-in-the-actual-embedding-mode) |
 | Cloud login or a camera URL succeeds, but fresh telemetry or actual video is missing | [Separate connection stages and match the camera preparation reply](inbox/2026-11-07-camera-grants-do-not-prove-video.md), [reusable method](../docs/research/manufacturing/bambu-cloud.md) |
 | The pointer moves but clicks do not reach other applications despite healthy resources | [Persistent application grabs](inbox/2026-11-07-pointer-grabs-can-mimic-a-frozen-desktop.md), [desktop diagnosis](../docs/lessons/process/agent-process.md#diagnose-desktop-problems-without-disrupting-the-users-session) |
 | A process selector accepts command text belonging to another option, wrapper or application | [Command text is not ownership](inbox/2026-11-07-command-text-is-not-process-ownership.md) |
 | Parts orbit away from the body, shafts leave bearings, or a motor housing spins with its rotor | [Rendered motion and independent joint intent](domains/rendered-motion.md) |
 | Rest pose and rigid distances pass while firing/animation is wrong | [Rendered-motion trace procedure and seeded negative tests](../docs/mechanical/rendered-motion.md) |
+| A restarted local preview link refuses connections | [Pin the human preview port and verify HTTP identity](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#human-preview-urls-need-a-pinned-port-across-restarts) |
+| A source RGB material appears white in the packed model | [Validate the renderer color schema](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#a-source-material-value-must-match-the-renderers-color-schema) |
+| A failed 3D view retries with duplicate canvases or controls | [Roll back the whole rendering attempt](inbox/publish/2026-11-10-camera-state-needs-current-matrices.md#retry-must-roll-back-the-whole-failed-rendering-attempt) |
 | Old file imports overwrite newer progress or change state after controls are disposed | [Part checklist ownership](domains/web-part-state.md), [reproduced import incident](inbox/2026-10-29-import-ownership-must-survive-file-decoding.md) |
 | Native consumer errors disappear behind a pytest `*current` archive error, or final source guards never run | [Separate runner aliases, products and finalizer errors](inbox/2026-11-07-test-runner-aliases-are-not-deliverables.md) |
 | Fleet submission rejects a public `cpu-a` label as an invalid node before creating a job | [Resolve public aliases through the node inventory](inbox/2026-11-07-fleet-public-aliases-are-not-node-selectors.md) |
@@ -124,3 +130,5 @@
 
 - [Rendered motion needs an independent frame](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md): compare rendered transforms with independent joint intent.
 - [Folder inventories need NUL-safe names and explicit owners](inbox/2026-11-07-folder-inventories-need-explicit-owners.md): quoted paths, grouped maps and installer prompt namespaces; do not infer defect counts or add blanket README exceptions.
+
+- `git grep: failed to create thread` inside a capped site build → [bound Git thread fanout per process](inbox/publish/2026-11-07-publication-consumers-need-explicit-runtimes.md#bound-gits-thread-fanout-inside-capped-site-producers); preserve caps and failed output, not global Git settings.

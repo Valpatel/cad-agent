@@ -117,3 +117,47 @@ wrong-axis and normal-only-flip mutants; a midpoint alone cannot detect a missin
 whole pixel table before assertions. This fixture tests clipping visibility, not the product's material lighting.
 The ordinary material/appearance and full legacy tests remain separate; no complete feature or physical
 acceptance follows until actual corrected two-engine suites pass.
+
+## Retry must roll back the whole failed rendering attempt
+
+On 2026-11-12 UTC, independent review of homepage #606 injected a first GPU draw
+exception into the actual shared model component, after canvas, controls and observers
+were allocated. The tiny valid packed fixture reported `error: 1 canvas / 1 controls`,
+then `retry ready: 2 canvases / 2 controls`; the unrelated viewer remained `1 / ready`.
+[Review evidence](https://github.com/Valpatel/cad-agent/pull/606#discussion_r4546711636)
+retains the failed result. A fetch-only retry check had passed but never reached this
+allocation boundary.
+
+Register disposal as each resource is acquired, roll back the failed attempt before
+showing its poster/retry, and give every retry a fresh readiness promise. Cancel frames,
+disconnect observers/listeners, dispose renderer/geometry/material resources, and
+remove only that attempt's canvas/controls. The homepage browser regression injects
+the late draw failure into a tiny real packed model, requires zero failed-attempt
+canvases/controls and exactly one after recovery, and checks the other viewer's canvas
+identity survives. A resize and visibility change expose abandoned callbacks.
+
+The source-bound Chromium recheck at `1ee6f8a1` passed: first-draw failure left
+`0 canvas / 0 controls / poster visible`; successful retry left exactly
+`1 canvas / 1 controls`, a fresh readiness promise and no stale error. The other
+viewer retained its original canvas, ready state and one control panel. Resize and
+visibility callbacks produced no runtime error. Receipt SHA-256 `e214283145dd51e5a98bf083fdfeafe5fda0a17fd9d4647978b56a6777d76c85`
+records the positive counts and stopped browser/server cleanup. Independent delta
+review and normal CI remain required; this is not physical or publication acceptance.
+
+## A source material value must match the renderer's color schema
+
+The 2026-11-12 J501 homepage poster check first showed the fitted lid but hid both
+negative-X WiFi antennas behind the enclosure at the inherited +35° view. A second,
+negative-X view exposed both original context shapes, but rendered them white:
+the source manifest's normalized RGB array `[0.06, 0.065, 0.075]` had been passed
+unchanged to a material constructor that consumes a CSS color. Geometry/hash
+checks alone had not exercised this consumer boundary. Both unsuccessful posters
+and their stopped-run logs remain retained with #605; neither establishes visual
+acceptance.
+
+Preserve the source RGB values in provenance, validate exactly three finite numeric
+channels in [0,1], and convert only the display material to CSS `#0f1113`. The
+packed-model contract rejects the original array defect; the existing view tests
+reject malformed channels, NaN, infinity, booleans and out-of-range values. Inspect
+the actual matching opening-view poster as well as numerical geometry. This is
+render-only context, not a new color measurement, physical-fit or RF qualification.

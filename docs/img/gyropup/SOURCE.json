@@ -23,6 +23,15 @@
    "height": 861
   }
  },
+ "released_hardware_audit": {
+  "checked_utc": "2026-11-12",
+  "released_main": "41c5c266569d6141ecda28711188343b54ab43d8",
+  "released_hardware_tree": "346f5a5623560177390ad8cf207e5b8331ab5bae",
+  "packed_source_revision": "3a40891962b0b0a04625e070700f1d130bea3c7b",
+  "packed_hardware_tree": "346f5a5623560177390ad8cf207e5b8331ab5bae",
+  "method": "Direct Git tree equality from released main, independently checked by the coordinator. No recollection and no printed-leg change.",
+  "limits": "Hardware tree identity only. Historical FEA pictures retain their original source revision and assumptions."
+ },
  "banner": {
   "file": "docs/img/gyropup.jpg",
   "made": "node tools/site/figures/site-model-poster.mjs: the model's poster on a dark card with the project's words",

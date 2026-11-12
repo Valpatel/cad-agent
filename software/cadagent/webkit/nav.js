@@ -91,7 +91,7 @@ export class CadNav extends HTMLElement {
       this.append(fold);
     }
     this.#fold(fold, signal);
-    let filter = panel.querySelector(':scope > .cad-nav-filter');
+    let filter = panel.querySelector(':scope > .cad-nav-filter, :scope > [data-nav-controls] > .cad-nav-filter');
     if (!filter) {
       filter = document.createElement('input');
       filter.type = 'search';
@@ -100,10 +100,12 @@ export class CadNav extends HTMLElement {
       filter.setAttribute('aria-label', 'Filter pages');
       panel.prepend(filter);
     }
+    filter.disabled = false;
     this.#filter(filter, panel, signal);
     this.#room(panel, signal);
     this.#outline(panel, signal);
     this.#reveal(panel, filter);
+    this.toggleAttribute('data-ready',true);
   }
 
   /** On a wide screen the panel sticks below the page's header, inside <cad-nav>, which ends where the page's content
@@ -112,16 +114,31 @@ export class CadNav extends HTMLElement {
    * its sticky top to the end of <cad-nav> or of the window, whichever comes first (nav.css's 16px gap below kept). */
   #room(panel, signal) {
     let queued = false;
+    const controls = panel.querySelector(':scope > [data-nav-controls]');
     const fit = () => {
       queued = false;
       const style = getComputedStyle(panel);
-      if (style.position !== 'sticky') { panel.style.maxHeight = ''; return; }
+      if (style.position !== 'sticky') { panel.style.maxHeight = ''; panel.style.scrollPaddingTop = ''; panel.removeAttribute('data-scrollable'); return; }
+      // Native/automation scrollIntoView must leave links below the actual sticky controls, too.
+      if (controls) panel.style.scrollPaddingTop = `${Math.ceil(controls.getBoundingClientRect().height) + 16}px`;
       const end = Math.min(innerHeight, this.getBoundingClientRect().bottom);
       const room = Math.floor(end - (parseFloat(style.top) || 0) - 16);
       panel.style.maxHeight = `${Math.max(room, 120)}px`;        // a few links at least, on a very short window
+      panel.toggleAttribute('data-scrollable', panel.scrollHeight > panel.clientHeight + 1);
     };
     const queue = () => { if (!queued) { queued = true; requestAnimationFrame(fit); } };
     fit();
+    const size = new ResizeObserver(queue), watched = new Set();
+    const watch = () => {
+      const current = new Set([panel, ...panel.children]);
+      for (const old of watched) if (!current.has(old)) { size.unobserve(old); watched.delete(old); }
+      for (const el of current) if (!watched.has(el)) { size.observe(el); watched.add(el); }
+    };
+    watch();
+    // Fold/filter mutations must update the native wheel boundary before the next input, not after a timer.
+    const content = new MutationObserver(() => { watch(); fit(); });
+    content.observe(panel, { subtree: true, childList: true, attributes: true, attributeFilter: ['open', 'hidden'] });
+    signal.addEventListener('abort', () => { size.disconnect(); content.disconnect(); }, { once: true });
     addEventListener('scroll', queue, { passive: true, signal });
     addEventListener('resize', queue, { passive: true, signal });
   }
@@ -160,7 +177,7 @@ export class CadNav extends HTMLElement {
     const current = panel.querySelector('a[aria-current=page]');
     if (!current || panel.scrollHeight <= panel.clientHeight + 1) return;
     const top = el => el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
-    const room = filter.offsetHeight + 16, visible = () => top(current) - panel.scrollTop + current.offsetHeight <= panel.clientHeight - 24;
+    const room = (panel.querySelector(':scope > [data-nav-controls]')?.offsetHeight || filter.offsetHeight) + 16, visible = () => top(current) - panel.scrollTop + current.offsetHeight <= panel.clientHeight - 24;
     if (visible()) return;
     const group = current.closest('details');                   // its group, if the tree has groups (not the fold)
     panel.scrollTop = Math.max(0, (group && panel.contains(group) ? top(group) : top(current)) - room);
@@ -283,9 +300,10 @@ export class CadNav extends HTMLElement {
     while (box && box !== document.body && !(box.scrollHeight > box.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(box).overflowY)))
       box = box.parentElement;
     if (!box || box === document.body) return;
-    if (box === panel && panel.querySelector(':scope > .cad-nav-filter')?.value) return;
-    const filter = box === panel ? panel.querySelector(':scope > .cad-nav-filter') : null;
-    const top = (filter?.offsetHeight || 0) + 16, bottom = 24;
+    if (box === panel && panel.querySelector(':scope > .cad-nav-filter, :scope > [data-nav-controls] > .cad-nav-filter')?.value) return;
+    const filter = box === panel ? panel.querySelector(':scope > .cad-nav-filter, :scope > [data-nav-controls] > .cad-nav-filter') : null;
+    const controls = box === panel ? panel.querySelector(':scope > [data-nav-controls]') : null;
+    const top = (controls?.offsetHeight || filter?.offsetHeight || 0) + 16, bottom = 24;
     const b = box.getBoundingClientRect(), r = a.getBoundingClientRect();
     if (r.top < b.top + top) box.scrollTop -= b.top + top - r.top;
     else if (r.bottom > b.bottom - bottom) box.scrollTop += r.bottom - (b.bottom - bottom);
@@ -307,6 +325,26 @@ export class CadNav extends HTMLElement {
       const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
       if (terms.length && !saved) saved = groups.map(g => g.open);
       let shown = 0;
+      if (this.hasAttribute('topic-tree')) {
+        // Topic headings are searchable too; clearing restores even empty topics and prior folds.
+        const titleOf=g=>g.querySelector(':scope > summary')?.textContent.toLowerCase() || '';
+        const ancestors=el=>{const names=[];for(let g=el.closest('details');g&&panel.contains(g);g=g.parentElement?.closest('details'))names.push(titleOf(g));return names.join(' ');};
+        for(const li of [...panel.querySelectorAll('li')].filter(pageItem)){
+          const a=li.querySelector(':scope > a');
+          li.hidden=!terms.every(t=>`${a?.textContent||''} ${ancestors(li)}`.toLowerCase().includes(t));
+          if(!li.hidden)shown++;
+        }
+        for(let i=groups.length-1;i>=0;i--){
+          const group=groups[i];
+          const own=terms.every(t=>ancestors(group).includes(t));
+          const any=own||[...group.querySelectorAll('li')].some(li=>pageItem(li)&&!li.hidden)||[...group.querySelectorAll('details')].some(g=>!g.hidden);
+          group.hidden=terms.length>0&&!any;
+          if(terms.length&&any){group.open=true;shown++;}else if(!terms.length&&saved)group.open=saved[i];
+        }
+        if(!terms.length)saved=null;
+        status.textContent=terms.length&&!shown?`No topics or pages match “${input.value.trim()}”.`:'';
+        return;
+      }
       for (const li of [...panel.querySelectorAll('li')].filter(pageItem)) {
         const a = li.querySelector(':scope > a');
         li.hidden = !terms.every(t => (a?.textContent || li.textContent).toLowerCase().includes(t));

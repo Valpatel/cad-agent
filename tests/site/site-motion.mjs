@@ -72,17 +72,17 @@ export async function reducedHeroProblems(browser, base) {
 
 /** Compare the compiled README's actual picture selection and painted image over time.
  * Page emulation need not propagate inside SVG images: the parent selects a generated still explicitly. */
-async function readmePictureProblems(browser, base, basename) {
+async function readmePictureProblems(browser, base, basename, options = {}) {
   const problems = [];
   // The existing CI artifact upload keeps these real painted controls, including failures.
   const evidence = await mkdtemp(path.join(tmpdir(), 'cad-agent-readme-motion-'));
-  const animatedPath = `/docs/img/hero/${basename}.svg`;
-  const stillPath = `/docs/img/hero/${basename}-still.svg`;
-  const selector = `img[src="${animatedPath}"]`;
+  const animatedPath = options.animatedPath || `/docs/img/hero/${basename}.svg`;
+  const stillPath = options.stillPath || `/docs/img/hero/${basename}-still.svg`;
+  const selector = options.selector || `img[src="${animatedPath}"]`;
   const open = async reducedMotion => {
     const page = await browser.newPage({ viewport: { width: 390, height: 800 }, reducedMotion });
     try {
-      const response = await page.goto(base + '/README', { waitUntil: 'networkidle' });
+      const response = await page.goto(base + (options.route || '/README'), { waitUntil: 'networkidle' });
       if (response?.status() !== 200) throw new Error(`README returned ${response?.status()}`);
       await page.locator(selector).evaluate(img => img.decode());
       return page;
@@ -195,4 +195,13 @@ export async function homepageModelProblems(browser, base) {
     finally { await ctx.close(); }
   }
   return out;
+}
+
+/** Probe the actual responsive image, including a planted animated still as a rejection control. */
+export async function learningPictureProblems(browser, base) {
+  return readmePictureProblems(browser, base, 'learning-loop', {
+    route:'/', selector:'img[src="/docs/img/hero/learning-loop.svg"]',
+    animatedPath:'/docs/img/hero/learning-loop-mobile.svg',
+    stillPath:'/docs/img/hero/learning-loop-mobile-still.svg',
+  });
 }

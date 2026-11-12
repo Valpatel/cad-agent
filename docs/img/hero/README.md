@@ -23,6 +23,8 @@ flowchart TD
 | File or folder | Purpose |
 |---|---|
 | [learning-loop.svg](learning-loop.svg) | Original conceptual human/idea and engineering-workbench panorama, with reviewed feedback and reduced-motion still state. |
+| [learning-loop-still.svg](learning-loop-still.svg) | Explicit completed collaborative scene for reduced-motion image consumers. |
+| [learning-loop-mobile-still.svg](learning-loop-mobile-still.svg) | Completed square composition selected by parent picture media. |
 | [learning-loop-mobile.svg](learning-loop-mobile.svg) | Compact square composition of the same human learning story. |
 | [thermal-history.svg](thermal-history.svg) | Animated actual heater-zone samples from the recorded 20 W box case; iterations, not elapsed seconds. |
 | [airflow-balance.svg](airflow-balance.svg) | Recorded flow and heat-out comparison retaining the failed ducted case. |
@@ -120,3 +122,9 @@ and derivative-model redistribution. The local `240be82` capture is a legacy
 prototype context, not the latest remote product revision. The requested fitted
 lid and source-backed right-angle antennas must be resolved from the product's
 single source of truth; do not add invented site-only hardware.
+
+Prototype G's actual reduced-motion phone image still moved despite the parent
+preference (the existing image-consumer lesson applies). Preserve that failed
+receipt. The next producer selects explicit generated finished desktop/mobile
+stills in the parent picture, tests real pixels twice, and rejects a deliberately
+animated still. The hero now uses the existing CSS-only safe-vector contract.

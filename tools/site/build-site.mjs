@@ -502,8 +502,6 @@ const makeChip = (m, i) => {
   if (m.upstream && !u) throw new Error(`docs/home.yaml fits.make[${i}]: ${m.upstream} is not in software/vendor/upstreams/registry.yaml`);
   return `<li><span class="make-name"><a href="${esc(homeHref(m.href, `fits.make[${i}]`))}"><b>${esc(m.name)}</b></a>${u ? ` <span class="pill pill-${esc(u.status)}">${esc(STATUS_NOTE[u.status] || u.status)}</span><span class="pill">${esc(u.license)}</span><span class="pill" title="GitHub stars when surveyed">★ ${Number(u.stars).toLocaleString('en-US')}</span>` : ''}</span><span>${esc(m.does)}</span>${m.note ? `<small>${esc(m.note)}</small>` : ''}</li>`;
 };
-const testCount = git('grep', '-c', '-E', '^\\s*def test_', 'HEAD', '--', 'tests/*.py').split('\n').filter(Boolean)
-  .reduce((n, l) => n + Number(l.split(':').pop()), 0);
 // The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
 const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
@@ -529,7 +527,7 @@ const useCard = `<section class="use-band" id="use-it" aria-labelledby="use-titl
 <div class="os-tabs">${INSTALL.map(([id], i) => `<input type="radio" name="install-os" id="os-${id}" class="visually-hidden"${i === 0 ? ' checked' : ''}>`).join('')}
 <div class="os-tab-row" aria-hidden="true">${INSTALL.map(([id, name]) => `<label for="os-${id}" class="os-tab tab-${id}">${esc(name)}</label>`).join('')}</div>
 ${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class="install-guide" href="${esc(href)}">Install on ${esc(name)} →</a></div>`).join('')}</div>
-<p class="use-lead">Then ask your agent for a part, check or simulation.</p>
+<p class="use-lead">Use the knowledge with hosted agents or local/open models.</p>
 <ul class="agent-badges" aria-label="Agents it works with">${AGENTS.map(([name, mark]) => `<li><span class="agent-badge"><span class="agent-mark" aria-hidden="true">${esc(mark)}</span>${esc(name)}</span></li>`).join('')}</ul></div>
 <div class="use-paste"><p class="paste-title">Or paste this into your agent:</p>
 <cad-copy class="agent-copy" label="Copy prompt"><pre class="agent-box" aria-label="The line to paste into your agent">${esc(pasteLine)}</pre></cad-copy>
@@ -540,7 +538,7 @@ const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Shared knowledge. Better things.</p>
 <h1>Self-improving machines.<br><span>Teaching each other<br>how to build machines.</span></h1>
 <p class="intro">cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.</p></div>
-<figure class="learning-art"><picture><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="1000" height="1000"><img src="/docs/img/hero/learning-loop.svg" width="1440" height="640" fetchpriority="high" alt="A person's need flows through examples and manufacturer guides into organized knowledge, then design, checking, simulation and making; human-reviewed feedback improves the next design"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
+<figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="1000" height="1000"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1440" height="640"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="1000" height="1000"><img src="/docs/img/hero/learning-loop.svg" width="1440" height="640" fetchpriority="high" alt="A person's need flows through examples and manufacturer guides into organized knowledge, then design, checking, simulation and making; human-reviewed feedback improves the next design"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
 </section></div>
 ${useCard}
@@ -613,24 +611,26 @@ ${commands.map(c => `- \`cad-agent ${c.name}\`: ${c.help}`).join('\n')}
 ${refSite.llms}
 `;
 await writeFile(path.join(out, 'llms.txt'), llms);
-// The home page's twin: llms.txt, then what the page shows beside it (the reel and where cad-agent fits), in words.
-const fitsMake = home.fits.make.map(m => { const u = m.upstream && upstreamByName.get(m.upstream); return `- ${m.name}${u ? ` (${u.license}, ${STATUS_NOTE[u.status] || u.status})` : ''}: ${m.does}`; });
+// The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
 await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
-## On the home page
+## Self-improving machines teaching each other how to build machines
+
+cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.
+
+[The original learning illustration](${ORIGIN}/docs/img/hero/learning-loop.svg) is conceptual process artwork, not an engineering result or a claim of automatic model training.
 
 ### What the code computes
 
 ${homeMd.reel.join('\n')}
 
-### Where cad-agent fits
-
-Other people's tools make the model (we build on them or are trialling them):
-
-${fitsMake.join('\n')}
-
-cad-agent checks, simulates, explains and measures around it (maturity: ${LADDER.join(' → ')}, from docs/areas.yaml):
+### Check, simulate, explain, measure
 
 ${homeMd.ours.join('\n')}
+
+### Built with cad-agent
+
+- [Gyropup](${heroModel.source.repo}/tree/${heroModel.source.revision}): a wheel-legged robot; the web assembly omits interior hardware.
+- [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));

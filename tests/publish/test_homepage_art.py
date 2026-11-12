@@ -37,3 +37,16 @@ def test_learning_hero_has_readable_still_and_no_integration_or_physics_claim():
         assert 'Human-reviewed' in svg or 'HUMAN REVIEW' in svg
         assert 'not a hardware simulation or automatic model training' in svg
         assert 'MANUFACTURER GUIDE' in svg and 'source, edition, limits' in svg.lower()
+
+
+def test_learning_hero_uses_the_existing_safe_vector_contract_and_explicit_finished_images():
+    from cadagent.publish.anim import svg as contract
+    for name in ['learning-loop', 'learning-loop-mobile']:
+        animated = (ROOT / 'docs/img/hero' / (name+'.svg')).read_text()
+        assert contract.problems(animated) == []
+        still = (ROOT / 'docs/img/hero' / (name+'-still.svg')).read_text()
+        assert '.first-version{display:none!important}' in still
+        assert '.revised-version,.solid{opacity:1!important}' in still
+        assert '.still{display:inline!important}' in still
+        assert '*{animation:none!important}' in still
+        assert '<animate' not in still

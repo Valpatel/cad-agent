@@ -62,3 +62,21 @@ at two times is bounded evidence, not a proof of the entire timeline; source ins
 full still and representative phases remain necessary. The initial size/theme screenshots proved image loading
 and bounds only. Do not relabel them as reduced-motion acceptance. Final compiled-consumer results belong to
 PR #412's exact source revision and CI runs.
+
+## The homepage hit the same consumer boundary
+
+**Evidence, 2026-11-12 UTC, #605 / #606:** source `06992ad2` passed the shared
+reduced-motion SVG rule, and a bounded art-only Chromium probe sampled the full
+eight-second desktop scene at 0/2/4/6/8 seconds. The actual 390px homepage image in
+a `reducedMotion: 'reduce'` context still selected `learning-loop-mobile.svg`;
+two raw painted image screenshots 900ms apart differed, and the first/orange part
+remained visible rather than the completed corrected part. The run had zero page
+errors and zero model-data requests, but that did not make its still valid.
+
+The corrective source selects explicit generated finished desktop/mobile images
+from parent `<picture>` media, retains the completed collaboration and corrected
+part, and removes animated elements/declarations from the stills. It reuses the
+existing actual-image comparison plus planted moving-still rejection control.
+The original failed receipt is retained; a new source-bound browser pass is
+required before claiming recovery. The rule above remains unchanged: inspect the
+actual image consumer, not only the standalone SVG or parent preference.

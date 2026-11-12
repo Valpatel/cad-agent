@@ -15,7 +15,7 @@ import path from 'node:path';
 import { chromium, webkit, expect } from './npm-context.mjs';
 import { builtSite } from './built-site.mjs';
 import { folderMapPath } from '../../tools/site/publication.mjs';
-import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems } from './site-motion.mjs';
+import { reducedHeroProblems, repositoryHeroProblems, homepageModelProblems, learningPictureProblems } from './site-motion.mjs';
 import { outlineEntryState, scrollOutline, sameSectionOutlineProblems } from './site-outline.mjs';
 import { VIEWPORT, VISUAL, WALL_CLEARED, WALL_LIMIT, longestStretch, plantedScript, longCitationProblems } from './site-walls.mjs';
 
@@ -482,6 +482,7 @@ try {
       return problems;
     }],
     ['homepage model lifecycle', () => homepageModelProblems(browser, base)],
+    ['learning image motion', () => learningPictureProblems(browser, base)],
     ['reduced motion', async () => {
       const problems = [];
       const reduced = await browser.newPage({ reducedMotion: 'reduce' });

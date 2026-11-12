@@ -118,19 +118,27 @@ export class CadNav extends HTMLElement {
     const fit = () => {
       queued = false;
       const style = getComputedStyle(panel);
-      if (style.position !== 'sticky') { panel.style.maxHeight = ''; panel.style.scrollPaddingTop = ''; return; }
+      if (style.position !== 'sticky') { panel.style.maxHeight = ''; panel.style.scrollPaddingTop = ''; panel.removeAttribute('data-scrollable'); return; }
       // Native/automation scrollIntoView must leave links below the actual sticky controls, too.
       if (controls) panel.style.scrollPaddingTop = `${Math.ceil(controls.getBoundingClientRect().height) + 16}px`;
       const end = Math.min(innerHeight, this.getBoundingClientRect().bottom);
       const room = Math.floor(end - (parseFloat(style.top) || 0) - 16);
       panel.style.maxHeight = `${Math.max(room, 120)}px`;        // a few links at least, on a very short window
+      panel.toggleAttribute('data-scrollable', panel.scrollHeight > panel.clientHeight + 1);
     };
     const queue = () => { if (!queued) { queued = true; requestAnimationFrame(fit); } };
     fit();
-    if (controls) {
-      const size = new ResizeObserver(queue); size.observe(controls);
-      signal.addEventListener('abort', () => size.disconnect(), { once: true });
-    }
+    const size = new ResizeObserver(queue), watched = new Set();
+    const watch = () => {
+      const current = new Set([panel, ...panel.children]);
+      for (const old of watched) if (!current.has(old)) { size.unobserve(old); watched.delete(old); }
+      for (const el of current) if (!watched.has(el)) { size.observe(el); watched.add(el); }
+    };
+    watch();
+    // Fold/filter mutations must update the native wheel boundary before the next input, not after a timer.
+    const content = new MutationObserver(() => { watch(); fit(); });
+    content.observe(panel, { subtree: true, childList: true, attributes: true, attributeFilter: ['open', 'hidden'] });
+    signal.addEventListener('abort', () => { size.disconnect(); content.disconnect(); }, { once: true });
     addEventListener('scroll', queue, { passive: true, signal });
     addEventListener('resize', queue, { passive: true, signal });
   }

@@ -12,6 +12,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -36,7 +37,7 @@ def command(harness, executable, model, project):
         }
         for key, value in settings.items():
             args.extend(['-c', f'{key}={value}'])
-        for name in ('memories', 'hooks', 'plugins', 'apps', 'multi_agent'):
+        for name in ('memories', 'hooks', 'plugins', 'apps', 'multi_agent', 'shell_snapshot'):
             args.extend(['--disable', name])
         return args + ['-']
     if harness == 'claude':
@@ -151,7 +152,7 @@ def write_json(path, data):
         stream.write('\n')
 
 
-def run(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=None):
+def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=None):
     if os.name != 'posix':
         raise ValueError('this collector requires POSIX process groups')
     executable = shutil.which(harness)
@@ -161,6 +162,10 @@ def run(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=
     work = Path(work).resolve()
     prep = evaluation.prepare(job_id, mode, work, kit, kit_revision)
     work.chmod(0o700)
+    groups = [line[3:] for line in Path('/proc/self/cgroup').read_text().splitlines() if line.startswith('0::')]
+    if len(groups) != 1:
+        raise ValueError('collection requires a Linux cgroup v2 runtime')
+    write_json(work / 'cgroup.json', dict(path=groups[0]))
     prompt = (work / 'prompt.txt').read_text()
     if python:
         # A venv interpreter is commonly a symlink: resolving it would silently
@@ -174,9 +179,9 @@ def run(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=
     args = command(harness, executable, model, project)
     # Preserve the normal OS home/login without copying credentials or assigning
     # an alternative HOME/CODEX_HOME. Do not lend unrelated environment secrets.
-    env = {key: os.environ[key] for key in ('HOME', 'PATH', 'LANG', 'LC_ALL', 'TERM',
+    env = {key: os.environ[key] for key in ('HOME', 'LANG', 'LC_ALL', 'TERM',
                                           'XDG_RUNTIME_DIR', 'SSL_CERT_FILE', 'SSL_CERT_DIR') if key in os.environ}
-    env.update(OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2', MKL_NUM_THREADS='2',
+    env.update(PATH='/usr/bin:/bin', OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2', MKL_NUM_THREADS='2',
                CLAUDE_CODE_DISABLE_AUTO_MEMORY='1', CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC='1',
                DO_NOT_TRACK='1')
     version = subprocess.run([executable, '--version'], env=env, cwd=project,
@@ -185,6 +190,7 @@ def run(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=
     write_json(work / 'invocation.json', dict(argv=args, harness_version=harness_version,
                prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
                job_sha256=prep['job_sha256'], toolkit_revision=prep['kit_revision'],
+               python=str(python) if python else None, child_path=env['PATH'],
                wall_limit_seconds=prep['budget']['wall_seconds'],
                max_output_tokens_enforced=None, seed_enforced=None))
     started = time.monotonic()
@@ -210,43 +216,107 @@ def run(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=
     metadata = dict(harness=harness, harness_version=harness_version, model=model,
                     model_source='requested; resolved_model reported separately when available',
                     seed=None, wall_seconds=round(time.monotonic()-started, 3), exit_code=code,
-                    timed_out=timed_out, launch_error=launch_error, collector_settled=settled, peak_context=None,
+                    timed_out=timed_out, launch_error=launch_error, cli_group_gone=settled, peak_context=None,
                     fresh_session=None, fresh_conversation_requested=True, kit_use_observed=None,
                     session_boundary='new conversation and task directory; existing OS login; context controls requested, not clean OS-user isolation',
                     **metrics)
+    # A child can create a new session/process group. Only the outer service's
+    # later cgroup teardown settles it. Never grade from inside the collector.
+    write_json(work / 'collection.json', metadata)
+    return dict(job=job_id, mode=mode, collection_finished=True, awaiting_unit_settlement=True,
+                exit_code=code, timed_out=timed_out)
+
+
+def unit_receipt(work, unit, cgroup_root=Path('/sys/fs/cgroup')):
+    """Stop a completed owned collector's retained service, then verify empty.
+
+    RemainAfterExit retains real Result/ExecMainStatus until we capture them.
+    An unloaded unit alone supplies default fields and is not provenance.
+    """
+    if not re.fullmatch(r'cad-eval-[a-zA-Z0-9_-]+\.service', unit):
+        raise ValueError('unit must be an explicit cad-eval-*.service name')
+    keys = ('ActiveState', 'SubState', 'MainPID', 'ControlPID', 'KillMode', 'Result', 'ExecMainStatus',
+            'LoadState', 'RemainAfterExit', 'ControlGroup')
+    def state():
+        status = subprocess.run(['systemctl', '--user', 'show', unit,
+                                 '--property=' + ','.join(keys)], capture_output=True, text=True, timeout=10, check=True)
+        return dict(line.split('=', 1) for line in status.stdout.splitlines() if '=' in line)
+    props = state()
+    if (props.get('LoadState') != 'loaded' or props.get('ActiveState') not in ('active', 'inactive', 'failed')
+            or props.get('SubState') not in ('exited', 'dead', 'failed') or props.get('MainPID') != '0'
+            or props.get('ControlPID') != '0' or props.get('KillMode') != 'control-group'
+            or props.get('RemainAfterExit') != 'yes'
+            or 'Result' not in props or 'ExecMainStatus' not in props):
+        raise ValueError('unit is active, unknown, or lacks the required containment state')
+    group = evaluation.read_json(Path(work) / 'cgroup.json').get('path')
+    if not isinstance(group, str) or not group.startswith('/') or Path(group).name != unit or '..' in Path(group).parts:
+        raise ValueError('requested unit does not match the collector cgroup')
+    if props.get('ControlGroup') not in (group, ''):
+        raise ValueError('loaded unit cgroup differs from the collector cgroup')
+    root = Path(cgroup_root).resolve()
+    directory = (root / group.lstrip('/')).resolve()
+    if not directory.is_relative_to(root):
+        raise ValueError('cgroup escapes the cgroup filesystem')
+    # The collector has exited, but detached tools may remain. Only stop the
+    # explicitly bound, retained service; never stop a live collector or caller.
+    subprocess.run(['systemctl', '--user', 'stop', unit], capture_output=True, text=True, timeout=15, check=True)
+    after = state()
+    if (after.get('ActiveState') not in ('inactive', 'failed') or after.get('SubState') not in ('dead', 'failed')
+            or after.get('MainPID') != '0' or after.get('ControlPID') != '0'):
+        raise ValueError('service did not finish stopping; do not grade')
+    members = directory / 'cgroup.procs'
+    if members.exists() and members.read_text().strip():
+        raise ValueError('owned cgroup still contains processes; do not grade')
+    public_props = {key: value for key, value in props.items() if key != 'ControlGroup'}
+    return dict(unit=unit, properties=public_props, collector_cgroup_sha256=hashlib.sha256(group.encode()).hexdigest(),
+                cgroup_empty=True, unit_success=props['Result'] == 'success' and props['ExecMainStatus'] == '0')
+
+
+def finalize(work, unit):
+    """Run outside the service after its main collector exited, before grading."""
+    work = Path(work).resolve()
+    receipt = unit_receipt(work, unit)  # Must precede reads of any subject output.
+    prep = evaluation.read_json(work / 'preparation.json')
+    metadata = evaluation.read_json(work / 'collection.json') if (work / 'collection.json').exists() else {}
+    metadata['collector_settled'] = True
+    write_json(work / 'unit-receipt.json', receipt)
     write_json(work / 'metadata.json', metadata)
-    if not settled:
-        # No grader reads task files while a member of the owned group may write.
-        result = dict(job=job_id, mode=mode, passed=False, trial_completed=False,
-                      usable_trial=False, error='collector did not confirm owned process group settled',
-                      checks={}, collector=metadata)
-        write_json(work / 'result.json', result)
-        return result
-    result = evaluation.ingest_run(job_id, work)
-    result['usable_trial'] = (result['trial_completed'] and metrics['terminal_success_event']
-                              and metrics['malformed_transcript_lines'] == 0 and metrics['session_count'] == 1)
-    result['collector'] = {key: metadata[key] for key in ('launch_error', 'terminal_success_event',
+    result = evaluation.ingest_run(prep['job'], work)
+    result['usable_trial'] = (receipt['unit_success'] and result['trial_completed']
+                              and metadata.get('terminal_success_event') is True
+                              and metadata.get('malformed_transcript_lines') == 0 and metadata.get('session_count') == 1)
+    result['collector'] = {key: metadata.get(key) for key in ('launch_error', 'terminal_success_event',
                           'malformed_transcript_lines', 'session_count', 'session_id_sha256',
                           'resolved_model', 'cached_input_tokens', 'cache_creation_input_tokens', 'collector_settled')}
+    result['unit'] = receipt
     write_json(work / 'result.json', result)
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--job', required=True)
-    parser.add_argument('--mode', choices=('bare', 'kit'), required=True)
+    parser.add_argument('action', choices=('collect', 'finalize'))
+    parser.add_argument('--job')
+    parser.add_argument('--mode', choices=('bare', 'kit'))
     parser.add_argument('--work', type=Path, required=True)
-    parser.add_argument('--harness', choices=('codex', 'claude'), required=True)
-    parser.add_argument('--model', required=True)
+    parser.add_argument('--harness', choices=('codex', 'claude'))
+    parser.add_argument('--model')
+    parser.add_argument('--unit')
     parser.add_argument('--kit', type=Path)
     parser.add_argument('--kit-revision')
     parser.add_argument('--python', type=Path)
     args = parser.parse_args()
-    result = run(args.job, args.mode, args.work, args.harness, args.model,
-                 args.kit, args.kit_revision, args.python)
+    if args.action == 'collect':
+        if not all((args.job, args.mode, args.harness, args.model)):
+            parser.error('collect requires --job --mode --harness --model')
+        result = collect(args.job, args.mode, args.work, args.harness, args.model,
+                         args.kit, args.kit_revision, args.python)
+    else:
+        if not args.unit:
+            parser.error('finalize requires --unit')
+        result = finalize(args.work, args.unit)
     print(json.dumps(result, sort_keys=True, allow_nan=False))
-    return 0 if result['usable_trial'] and result['passed'] else 1
+    return 0 if args.action == 'collect' or (result['usable_trial'] and result['passed']) else 1
 
 
 if __name__ == '__main__':

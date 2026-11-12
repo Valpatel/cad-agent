@@ -27,16 +27,29 @@ python3 tools/evaluation/standard_eval.py grade --job snapfit-sizing --work /tmp
 python3 tools/evaluation/standard_eval.py ingest-run --job snapfit-sizing --work /tmp/unique-eval-run
 ```
 
-The supported CLI collector runs a complete attempt and retains failures:
+The Linux collector has two phases. A retained user service owns all descendants,
+including tools that create a new process group. Use a new unit and work path:
 
 ```sh
-python3 tools/evaluation/runner.py --job snapfit-sizing --mode bare \
-  --harness codex --model MODEL_ID --work /tmp/another-unique-run
+systemd-run --user --unit=cad-eval-example-1.service \
+  --property=RemainAfterExit=yes --property=KillMode=control-group \
+  --property=CPUQuota=100% --property=MemoryMax=1G --property=TasksMax=128 \
+  --property=RuntimeMaxSec=210 --property=TimeoutStopSec=5 \
+  --setenv=PATH="$PATH" /usr/bin/python3 "$PWD/tools/evaluation/runner.py" collect \
+  --job snapfit-sizing --mode bare --harness codex --model MODEL_ID \
+  --python /usr/bin/python3 --work /tmp/another-unique-run
+# After SubState is exited or failed (never while the collector is running):
+python3 tools/evaluation/runner.py finalize --work /tmp/another-unique-run \
+  --unit cad-eval-example-1.service
 # Use --harness claude for Claude Code; kit mode also needs --kit and --kit-revision.
 # --python may point to an existing interpreter; the same interpreter is offered in paired runs.
 ```
 
-The collector records its version-sensitive argv and actual prompt hash in `invocation.json`, streams stdout to `transcript.jsonl`, retains `stderr.txt`, then writes `metadata.json` and `result.json`. It preserves normal OS login without copying credentials, starts an owned process group, bounds wall time and confirms the owned group has settled before grading. If settlement cannot be confirmed, it records the failure and refuses to read subject artifacts. Requested output-token caps and seeds are recorded as unenforced/unknown where the installed CLI exposes no equivalent control. The Codex adapter requests ephemeral execution with user config, project instructions, skill discovery, memories, hooks, plugins, apps, delegation and web search disabled. The Claude adapter requests SafeMode, empty settings sources and MCP configuration, no session persistence, explicit file/shell tools and no permission prompts. These controls depend on the recorded CLI versions. Their presence is not proof of an empty OS-user environment; `fresh_session` remains null unless independently established. Claude SafeMode disables native skill discovery, so kit access uses the explicit checkout path.
+The collector records its argv and actual prompt hash in `invocation.json`, streams stdout to `transcript.jsonl`, retains `stderr.txt`, and writes `collection.json`. It **never grades**. `finalize`, called outside that service, binds the exact unit to the collector's recorded cgroup, requires the main collector to have exited, records its retained result, stops the unit, and verifies no cgroup members remain. Only then does it write `metadata.json` and grade `result.json`. An active, mismatched, unloaded or nonempty unit is rejected. An outer timeout, OOM or unsuccessful exit cannot become a usable trial. `RemainAfterExit` preserves real service status: querying an already unloaded unit gives defaults, not evidence.
+
+Normal OS login is preserved without credential copying. Child PATH excludes user-installed commands; the same supplied interpreter should have no ambient cad-agent import in bare mode. Kit mode adds its explicit pinned source path. This remains a cooperative same-user trial, not hostile-code isolation. The runner cannot prevent a subject deliberately leaving its service or reading another directory.
+
+Requested output-token caps and seeds are recorded as unenforced/unknown where the CLI exposes no equivalent control. Codex requests ephemeral execution with user config, project instructions, skill discovery, memories, hooks, plugins, apps, delegation, shell snapshots and web search disabled. Claude requests SafeMode, empty settings sources and MCP configuration, no session persistence, explicit file/shell tools and no permission prompts. These controls depend on the recorded CLI versions; `fresh_session` remains null unless independently established. Claude SafeMode disables native skill discovery, so kit access uses the explicit checkout path.
 
 Provider usage fields retain their provider meaning. Cached-input and cache-creation tokens are separate collector fields, not an invented common context measurement. Resolved model, success event, malformed transcript lines and session IDs (hashed) are collected when emitted. Kit use remains null until independent review of actual successful tool execution; artifact correctness does not fill that field.
 
@@ -58,7 +71,7 @@ The manifest has exactly these fields:
 
 `prepare(id, mode, work, kit=None, kit_revision=None)` refuses a nonempty work directory. `ingest_run(id, work)` verifies the preparation hash, combines artifact checks with `metadata.json`, and hashes `transcript.jsonl`. Collector metadata fields are `harness`, `harness_version`, `model`, `seed`, `wall_seconds`, `exit_code`, `timed_out`, `tokens_in`, `tokens_out`, `peak_context`, `cost_usd`, `tool_calls`, `fresh_session`, `kit_use_observed`, and `session_boundary`. Missing measurements remain JSON null. `passed` concerns artifact checks; `trial_completed` separately requires exit 0 and explicitly false timeout. `usable_trial`, added by the CLI collector, also requires a terminal success event, zero malformed transcript lines and exactly one observed session. It concerns the recorded execution, independently of artifact correctness. None of these fields alone proves a clean session or kit use. Keep raw transcripts external to git; published records should use stable relative evidence paths/hashes and omit credentials/private paths.
 
-A subject trial must start a new CLI session without resume/history. Bare and kit runs use the same task, numeric budget and inputs; the kit prompt adds the pinned toolkit paragraph requesting discovery and relevant tool use (or a tooling-gap report). Record the exact CLI version, argv with private paths redacted, session controls and their limits. Do not move or copy credentials, change accounts, install dependencies, or repurpose HOME/CODEX_HOME. An ordinary existing login can authorize the fresh session; it does not imply isolation from ambient settings. Preserve errors, partial transcripts and timeout status. Settle the entire owned process group before grading to avoid accepting artifacts still being changed.
+A subject trial must start a new CLI session without resume/history. Bare and kit runs use the same task, numeric budget and inputs; the kit prompt adds the pinned toolkit paragraph requesting discovery and relevant tool use (or a tooling-gap report). Record the exact CLI version, argv with private paths redacted, session controls and their limits. Do not move or copy credentials, change accounts, install dependencies, or repurpose HOME/CODEX_HOME. An ordinary existing login can authorize the fresh session; it does not imply isolation from ambient settings. Preserve errors, partial transcripts and timeout status. Settle the entire service cgroup before grading to avoid accepting artifacts still being changed.
 
 ## Jobs and what they prove
 
@@ -76,6 +89,6 @@ The repository's [landscape](../research/landscape.json) records CADGenBench use
 
 ## Testing and initial controls
 
-`tests/repo/test_standard_eval.py` validates every manifest and all three reference solutions. Negative controls alter length, reported strain, allowable factors, force, fillet and section; collide, overlap, move off-grid or overmove ribs; and mirror, short, omit or duplicate electrical endpoints. Reordered valid nets remain positive. Invalid JSON, duplicate keys, NaN, wrong schemas, symlinks and oversized files fail. Preparation refuses reuse; ingestion preserves unknown metrics and distinguishes an otherwise correct artifact from a timed-out trial. `tests/repo/test_standard_eval_runner.py` checks both CLI adapters and transcript accounting, then exercises normal completion, launch errors and timeout/group settlement with inert real subprocesses, without contacting a model.
+`tests/repo/test_standard_eval.py` validates every manifest and all three reference solutions. Negative controls alter length, reported strain, allowable factors, force, fillet and section; collide, overlap, move off-grid or overmove ribs; and mirror, short, omit or duplicate electrical endpoints. Reordered valid nets remain positive. Invalid JSON, duplicate keys, NaN, wrong schemas, symlinks and oversized files fail. Preparation refuses reuse; ingestion preserves unknown metrics and distinguishes an otherwise correct artifact from a timed-out trial. `tests/repo/test_standard_eval_runner.py` checks adapters, transcript accounting, inert real subprocess completion and timeout, plus active/wrong/unknown units and retained terminal failures. The opt-in `CAD_EVAL_SYSTEMD_CONTROL=1` test creates an actual user service with a detached child, proves the child survives the collector, then proves finalization stops it before grading. Default CI skips this service test explicitly; mocked unit tests are not teardown evidence.
 
 On 2026-11-12 the focused suite passed 25 focused tests using an existing Python environment, without new packages. All three reference artifacts pass; these controller controls are not fresh model results. Actual CLI trials and any aggregate table are reported separately with model, harness, mode, observed kit use, errors and session limits. A single trial has no useful population pass-rate estimate; do not infer reliability or toolkit benefit from these controls.

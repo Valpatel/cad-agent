@@ -1,8 +1,12 @@
 """Real inert subprocess controls for the fresh-session collector; no model calls."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
+import subprocess
+import time
+import uuid
 
 import pytest
 
@@ -82,6 +86,21 @@ def fake_harness(tmp_path, body):
     return executable
 
 
+def mock_terminal_unit(monkeypatch):
+    # These process controls are not cgroup-teardown evidence; the opt-in actual
+    # service test below covers the detached-child boundary.
+    monkeypatch.setattr(runner, 'unit_receipt', lambda *args: dict(unit_success=True, cgroup_empty=True))
+
+
+def collected_result(monkeypatch, *args, **kwargs):
+    result = runner.collect(*args, **kwargs)
+    assert result['awaiting_unit_settlement']
+    work = Path(args[2])
+    assert not (work / 'result.json').exists()
+    mock_terminal_unit(monkeypatch)
+    return runner.finalize(work, 'cad-eval-test.service')
+
+
 def test_actual_inert_process_is_collected_and_wrong_answer_fails(tmp_path, monkeypatch):
     executable = fake_harness(tmp_path, 'prompt = sys.stdin.read()\n'
         'from pathlib import Path\nPath("solution.json").write_text("{}")\n'
@@ -89,14 +108,14 @@ def test_actual_inert_process_is_collected_and_wrong_answer_fails(tmp_path, monk
         'print(json.dumps({"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":2}}))\n')
     monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
     work = tmp_path / 'run'
-    result = runner.run('snapfit-sizing', 'bare', work, 'codex', 'fake')
+    result = collected_result(monkeypatch, 'snapfit-sizing', 'bare', work, 'codex', 'fake')
     assert result['usable_trial']
     assert not result['passed']
     assert result['collector']['collector_settled']
     assert (work.stat().st_mode & 0o777) == 0o700
     assert ((work / 'transcript.jsonl').stat().st_mode & 0o777) == 0o600
     with pytest.raises(ValueError, match='fresh'):
-        runner.run('snapfit-sizing', 'bare', work, 'codex', 'fake')
+        runner.collect('snapfit-sizing', 'bare', work, 'codex', 'fake')
 
 
 def test_actual_timeout_cannot_pass_even_with_artifact(tmp_path, monkeypatch):
@@ -109,7 +128,7 @@ def test_actual_timeout_cannot_pass_even_with_artifact(tmp_path, monkeypatch):
         prepared['budget']['wall_seconds'] = .1
         return prepared
     monkeypatch.setattr(runner.evaluation, 'prepare', short)
-    result = runner.run('snapfit-sizing', 'bare', tmp_path / 'run', 'codex', 'fake')
+    result = collected_result(monkeypatch, 'snapfit-sizing', 'bare', tmp_path / 'run', 'codex', 'fake')
     assert result['timed_out']
     assert not result['usable_trial']
     assert result['collector']['collector_settled']
@@ -118,18 +137,23 @@ def test_actual_timeout_cannot_pass_even_with_artifact(tmp_path, monkeypatch):
 def test_missing_terminal_event_is_infrastructure_failure(tmp_path, monkeypatch):
     executable = fake_harness(tmp_path, 'sys.stdin.read()\nprint("{}")\n')
     monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
-    result = runner.run('snapfit-sizing', 'bare', tmp_path / 'run', 'codex', 'fake')
+    result = collected_result(monkeypatch, 'snapfit-sizing', 'bare', tmp_path / 'run', 'codex', 'fake')
     assert result['trial_completed']  # the subprocess exited normally
     assert not result['usable_trial']  # a model completion was not observed
 
 
-def test_unsettled_group_prevents_grading(tmp_path, monkeypatch):
+def test_no_grading_in_collector_and_unsettled_unit_refuses_finalize(tmp_path, monkeypatch):
     executable = fake_harness(tmp_path, 'sys.stdin.read()\n')
     monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
-    monkeypatch.setattr(runner, 'group_gone', lambda _: False)
     monkeypatch.setattr(runner.evaluation, 'ingest_run', lambda *args: pytest.fail('must not grade active writer'))
-    result = runner.run('snapfit-sizing', 'bare', tmp_path / 'run', 'codex', 'fake')
-    assert result['checks'] == {} and not result['usable_trial']
+    work = tmp_path / 'run'
+    runner.collect('snapfit-sizing', 'bare', work, 'codex', 'fake')
+    def unsettled(*args):
+        raise ValueError('active')
+    monkeypatch.setattr(runner, 'unit_receipt', unsettled)
+    with pytest.raises(ValueError, match='active'):
+        runner.finalize(work, 'cad-eval-test.service')
+    assert not (work / 'result.json').exists()
 
 
 def test_venv_interpreter_path_is_preserved(tmp_path, monkeypatch):
@@ -138,5 +162,94 @@ def test_venv_interpreter_path_is_preserved(tmp_path, monkeypatch):
     venv_python = tmp_path / 'venv-python'
     venv_python.symlink_to(sys.executable)
     work = tmp_path / 'run'
-    runner.run('snapfit-sizing', 'bare', work, 'codex', 'fake', python=venv_python)
+    runner.collect('snapfit-sizing', 'bare', work, 'codex', 'fake', python=venv_python)
     assert str(venv_python) in (work / 'prompt.txt').read_text()
+
+
+def unit_fixture(tmp_path, monkeypatch, changes=None, members=''):
+    work = tmp_path / 'run'; work.mkdir()
+    group = '/slice/cad-eval-test.service'
+    (work / 'cgroup.json').write_text(json.dumps(dict(path=group)))
+    root = tmp_path / 'cgroups'
+    procs = root / group.lstrip('/') / 'cgroup.procs'
+    procs.parent.mkdir(parents=True); procs.write_text(members)
+    state = dict(LoadState='loaded', ActiveState='active', SubState='exited', MainPID='0', ControlPID='0',
+                 KillMode='control-group', RemainAfterExit='yes', Result='success', ExecMainStatus='0', ControlGroup=group)
+    state.update(changes or {})
+    calls = []
+    def call(args, **kwargs):
+        calls.append(args)
+        if 'stop' in args:
+            state.update(ActiveState='inactive', SubState='dead', LoadState='not-found')
+        return subprocess.CompletedProcess(args, 0, '\n'.join(f'{k}={v}' for k,v in state.items()), '')
+    monkeypatch.setattr(runner.subprocess, 'run', call)
+    return work, root, calls
+
+
+@pytest.mark.parametrize('change', [dict(LoadState='not-found'), dict(MainPID='123'),
+    dict(ActiveState='active', SubState='running'), dict(KillMode='process'), dict(RemainAfterExit='no')])
+def test_unit_guard_refuses_unknown_active_self_or_weak_containment(tmp_path, monkeypatch, change):
+    work, root, calls = unit_fixture(tmp_path, monkeypatch, change)
+    with pytest.raises(ValueError):
+        runner.unit_receipt(work, 'cad-eval-test.service', root)
+    assert not any('stop' in args for args in calls)
+
+
+def test_wrong_unit_cannot_stop_another_service(tmp_path, monkeypatch):
+    work, root, calls = unit_fixture(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match='does not match'):
+        runner.unit_receipt(work, 'cad-eval-other.service', root)
+    assert not any('stop' in args for args in calls)
+
+
+def test_nonempty_cgroup_after_stop_refuses_grading(tmp_path, monkeypatch):
+    work, root, calls = unit_fixture(tmp_path, monkeypatch, members='123\n')
+    with pytest.raises(ValueError, match='still contains'):
+        runner.unit_receipt(work, 'cad-eval-test.service', root)
+    assert any('stop' in args for args in calls)
+
+
+def test_terminal_unit_error_is_preserved(tmp_path, monkeypatch):
+    work, root, _ = unit_fixture(tmp_path, monkeypatch, dict(Result='timeout', ExecMainStatus='15'))
+    receipt = runner.unit_receipt(work, 'cad-eval-test.service', root)
+    assert receipt['cgroup_empty'] and not receipt['unit_success']
+    assert receipt['properties']['Result'] == 'timeout'
+
+
+@pytest.mark.skipif(os.environ.get('CAD_EVAL_SYSTEMD_CONTROL') != '1', reason='opt-in actual user-service control')
+def test_actual_detached_child_stops_before_grading(tmp_path):
+    executable = fake_harness(tmp_path, 'sys.stdin.read()\n'
+        'import subprocess\nfrom pathlib import Path\n'
+        'child = subprocess.Popen(["/usr/bin/sleep", "60"], start_new_session=True)\n'
+        'Path("child.pid").write_text(str(child.pid))\nPath("solution.json").write_text("{}")\n'
+        'print(json.dumps({"type":"thread.started","thread_id":"control"}))\n'
+        'print(json.dumps({"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":2}}))\n')
+    (tmp_path / 'codex').symlink_to(executable)
+    unit = 'cad-eval-control-' + uuid.uuid4().hex + '.service'
+    work = tmp_path / 'attempt'
+    args = ['systemd-run', '--user', '--unit=' + unit, '--property=RemainAfterExit=yes',
+            '--property=KillMode=control-group', '--property=TimeoutStopSec=3', '--property=RuntimeMaxSec=20',
+            '--property=MemoryMax=256M', '--property=TasksMax=32',
+            '--setenv=PATH=' + str(tmp_path) + ':/usr/bin:/bin',
+            '/usr/bin/python3', str(ROOT / 'tools/evaluation/runner.py'), 'collect', '--job', 'snapfit-sizing',
+            '--mode', 'bare', '--work', str(work), '--harness', 'codex', '--model', 'fake']
+    subprocess.run(args, capture_output=True, text=True, timeout=10, check=True)
+    try:
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            state = subprocess.run(['systemctl','--user','show',unit,'--property=SubState','--value'],
+                                   capture_output=True,text=True,timeout=5).stdout.strip()
+            if state in ('exited','failed'):
+                break
+            time.sleep(.05)
+        assert state == 'exited'
+        child = int((work / 'project/child.pid').read_text())
+        os.kill(child, 0)  # The test genuinely produced a surviving detached child.
+        assert not (work / 'result.json').exists()
+        result = runner.finalize(work, unit)
+        assert result['harness_version'] == 'fake-cli 1'
+        assert result['usable_trial'] and not result['passed']
+        assert result['unit']['cgroup_empty']
+        assert not Path(f'/proc/{child}').exists()
+    finally:
+        subprocess.run(['systemctl','--user','stop',unit],capture_output=True,text=True,timeout=10)

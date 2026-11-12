@@ -334,3 +334,55 @@ Inert controls exercise success-without-capture, partial receipt before close, t
 failed/stalled capture and unavailable output without replacing the original error. These are simulated
 page controls, not a browser reproduction or diagnosis of the old failure. Obtain exact-source review
 before a normal diagnostic CI checkpoint; never relabel the original failed job or its skipped parts as passes.
+
+
+## Count current names after reviewed historical exclusions
+
+2026-11-12 UTC: independent review of #643's exact four-instance supersession guard
+found `names.add(name)` before the historical-cancellation skip. No merge had occurred; the
+optimized preflight still rejected the pending browser workflow. The [corrected guard](https://github.com/Valpatel/cad-agent/pull/643#issuecomment-6835704052)
+adds a name only after excluding those exact reviewed historical instances, and independently
+requires the complete replacement CI and original browser job sets to succeed.
+
+**Rule and limits:** a historical canceled wrapper must never satisfy current required-name
+presence. Scope any disposition to immutable head/name/job identities, retain cancellations as
+NOT PASS, and require every other current instance. This was a temporary local guard correction,
+not a CI waiver or permission for a general cancellation filter.
+
+## Read back the verdict's last non-empty line
+
+2026-11-12 UTC: `gh api repos/Valpatel/cad-agent/pulls/643/reviews` showed review
+`5881799653` starting with its PASS marker and ending with prose. The existing
+`tools/ci_gates.py:marker` contract therefore ignored it. Review `5881856490` repeated the
+unchanged exact-head findings with the marker last, and the normal Actions gate accepted it.
+The same placement mistake affected #636 review `5881697816` at `00f0a4eb`; its later
+exact-head renewal `5881875427` at `d7e572b9` used a parser-validated final marker.
+
+**Cause and rule:** human-readable PASS prose is not a machine-readable verdict. End the posted
+summary with the exact forty-character-head marker as its last non-empty line, read the created
+review back, and validate it with the existing parser before requesting the ordinary Actions
+refresh. `tests/repo/test_ci_gates.py::test_the_marker_must_be_the_last_line` already protects
+this behavior; no new gate or parser relaxation is needed.
+
+**Limits:** the first-marker reviews remain ignored, not retroactive passes. The correction
+changes review formatting, not source, runtime evidence, independent-review scope or required CI.
+
+## Preserve the actual predecessor state after an ancestry merge
+
+2026-11-12 UTC: after corrected #632 merged as `764a73b4`,
+`gh pr view 580 --json state,headRefOid,mergeCommit` reported MERGED with that same merge commit
+and unchanged original tip `a5a1455d`. After corrected #634 merged as `86920258`, #582 likewise
+reported MERGED with unchanged tip `3f6781b6`. Both original tips are ancestors of their accepted
+replacement merges. GitHub had recognized the preserved contribution ancestry automatically.
+An OPEN-only supersession check rejected #580's new state; a subsequent close attempt returned
+"already merged" and made no closure change.
+
+**Rule:** re-read the original PR's exact tip, state and merge commit before supersession work.
+Verify ancestry and record where its blocking findings were corrected; do not reopen or relabel
+an automatically merged predecessor to force an expected workflow. Keep dependent mutations in
+the checked program, or execute them only after inspecting a successful preflight receipt
+([existing fail-closed procedure](../2026-11-06-failed-prechecks-must-stop-mutations.md)).
+
+**Limits:** preserving ancestry is not accepting the original blocked implementation unchanged.
+Remote retirement still requires actual released-main incorporation, fresh exact tips, explicit
+scope and independent review. Local branches, worktrees and providers remain intact.

@@ -25,6 +25,7 @@
  * - facets: checkboxes (several values, any of them matches) and `data-facet` links (one value), matched against the
  *   card's space-separated `data-<name>` tokens; facets combine with AND. Counts in `[data-count]` (inside the
  *   control) and `[data-count-of="name:value"]` show what each choice would leave, given the others;
+ * - opt-in `search-ids` also indexes the existing result IDs; `sort-label` derives A–Z from a visible label instead of duplicating it per item;
  * - search over `data-text` (or visible text), plus optional `data-search-extra` metadata (each word matches the start of a word), sorting by `data-sort-<option value>` (numbers or
  *   text, `data-dir="desc"` on the option; empty values last, ties in the page's order);
  * - the overview (no tab): the first `limit` cards of each group, a `[data-gallery-more]` link when there are more;
@@ -160,11 +161,12 @@ export class CadGallery extends Base {
     this.links = $$('a[data-gallery-link]');
     for (const a of this.links) a.dataset.galleryTo ??= a.getAttribute('href');
     this.results = $('[data-gallery-results]');
+    const sortLabel = this.getAttribute('sort-label');
     this.#items = $$('[data-item]').map((el, index) => ({
       el, index, tab: el.closest('[data-group]')?.dataset.group || '', list: el.parentElement,
-      text: [(el.dataset.text || el.textContent), el.dataset.searchExtra || ''].join(' ').toLowerCase(),
+      text: [(el.dataset.text || el.textContent), el.dataset.searchExtra || '', this.hasAttribute('search-ids') ? el.id : ''].join(' ').toLowerCase(),
       facets: Object.fromEntries(this.facetNames.map(n => [n, new Set(words(el.getAttribute(`data-${n}`)))])),
-      sort: Object.fromEntries([...el.attributes].filter(a => a.name.startsWith('data-sort-')).map(a => [a.name.slice(10), a.value])),
+      sort: { ...(sortLabel ? {az: el.querySelector(sortLabel)?.textContent.toLowerCase() || ''} : {}), ...Object.fromEntries([...el.attributes].filter(a => a.name.startsWith('data-sort-')).map(a => [a.name.slice(10), a.value])) },
     }));
     this.#setupTabs(signal);
     this.#state = this.#fromLocation();

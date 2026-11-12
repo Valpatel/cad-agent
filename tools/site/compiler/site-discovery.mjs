@@ -57,10 +57,11 @@ export function discoveryModel({ catalog, pages, references: m, ORIGIN, revision
     add({ id: 'reference:' + r.id, source_id: r.id, collection: 'reference', group: 'references', kind: 'Source record', title: r.title || r.id,
       summary: short(r.summary), url: ORIGIN + m.home(r.id), source_url: safeLink(r.url), areas: m.placed.get(r.id), aliases,
       evidence: evidenceOf(r) || 'snippet-only', confidence: confidenceOf(r).level, status: r.status,
-      search: text([r.id, ...aliases, r.org, short(r.summary, 160), ...(r.processes || [])].filter(Boolean).join(' ')) });
+      search: text([...aliases, r.org, short(r.summary, 160), ...(r.processes || [])].filter(Boolean).join(' ')) });
   }
   const ids = items.map(x => x.id); if (new Set(ids).size !== ids.length) throw new Error('duplicate discovery identity');
   return { schema: 'cad-agent-discovery/1', revision, origin: ORIGIN,
+    search_fields: ['title', 'summary', 'source_id', 'search'],
     about: 'Derived search links, not new source records or independent evidence. Catalogue adoption, source evidence and area maturity remain separate.',
     source_counts: { catalogue_entries: catalog.items.length, reference_records: m.refs.records.size, lesson_and_pitfall_sections: sections }, items };
 }
@@ -74,13 +75,13 @@ export function discoveryHTML(model, { areas }) {
   const label = item => item.collection === 'reference'
     ? `Source: ${item.status === 'catalogued' ? 'Not yet read' : 'Read'} · Evidence: ${item.evidence.replaceAll('-', ' ')} · Confidence: ${item.confidence}`
     : item.collection === 'section' ? item.kind : item.group === 'external' ? `${item.kind === 'project' ? 'Project' : item.kind} · Adoption: ${item.adoption}` : item.kind === 'tool' ? 'Command' : item.kind;
-  const row = (item, i) => `<li data-item id="${esc(item.id)}" data-area="${esc(topicsOf(item).join(' '))}" data-evidence="${esc(item.evidence || '')}" data-adoption="${esc(item.adoption || '')}" data-sort-az="${esc(item.title.toLowerCase())}" data-search-extra="${esc([item.search, ...(item.areas || []).map(a => titles.get(a))].join(' '))}"${i >= 3 ? ' data-over' : ''}><a href="${esc(localURL(item.url))}"><span class="result-title">${esc(item.title)}</span> ${item.collection === 'reference' ? '' : `<span class="result-summary">${esc(item.summary)}</span>`}</a> <span class="result-meta">${esc(label(item))}</span></li>`;
+  const row = (item, i) => `<li data-item id="${esc(item.id)}" data-area="${esc(topicsOf(item).join(' '))}" data-evidence="${esc(item.evidence || '')}" data-adoption="${esc(item.adoption || '')}" data-search-extra="${esc([item.search, ...(item.areas || []).map(a => titles.get(a))].join(' '))}"${i >= 3 ? ' data-over' : ''}><a href="${esc(localURL(item.url))}"><span class="result-title">${esc(item.title)}</span> ${item.collection === 'reference' ? '' : `<span class="result-summary">${esc(item.summary)}</span>`}</a> <span class="result-meta">${esc(label(item))}</span></li>`;
   const topic = (slug, title) => `<a href="/explore?area=${esc(slug)}" data-gallery-link data-facet="area" data-value="${esc(slug)}">${esc(title)} <span data-count></span></a>`;
   const topicTree = areas.domains.map(d => `<details><summary>${esc(d.title)}</summary>${topic(d.slug, 'All ' + d.title)}${(d.areas || []).map(a => topic(a.slug, a.title)).join('')}</details>`).join('');
   const localCover = cover => { const u = new URL(cover, model.origin); if (u.origin !== model.origin) throw new Error('discovery: cover is not site-owned'); return u.pathname + u.search; };
   const demoItems = model.items.filter(x => x.group === 'demos').slice(0, 3);
   const option = (name, value, title) => `<label><input type="checkbox" name="${name}" value="${esc(value)}"> ${esc(title)} <span data-count></span></label>`;
-  return `${glyphSprite(areas.domains.map(d => d.slug))}<cad-gallery class="catalog discovery" tab-param="kind" limit="3" item-noun="result" items-noun="results" data-open-groups data-overview>
+  return `${glyphSprite(areas.domains.map(d => d.slug))}<cad-gallery class="catalog discovery" tab-param="kind" limit="3" item-noun="result" items-noun="results" data-open-groups search-ids sort-label=".result-title" data-overview>
 <header class="discover-hero"><p class="eyebrow">Explore hardware knowledge</p><h1>Find the next useful step.</h1><p>Tools to try, practical lessons and the sources behind the design.</p>
 <label class="discover-search" data-gallery-js><span>Search everything</span><input type="search" name="q" data-gallery-search placeholder="Counterbores, snap fits, a source ID…" autocomplete="off"></label>
 <p class="discover-quick" data-gallery-js>Try ${['counterbores','disassembly','snap fits','PEM'].map(q => `<a href="/explore?q=${encodeURIComponent(q)}" data-gallery-link>${esc(q)}</a>`).join('')}</p>

@@ -13,7 +13,7 @@ const model=await json('discovery.json'),catalog=await json('catalog.json'),refs
 const refIndex=await json('catalog/references/index.json');
 const fullSources=new Map((await Promise.all(refIndex.areas.map(a=>json(new URL(a.json).pathname.slice(1))))).flatMap(a=>a.records.map(r=>[r.id,r])));
 const html=await readFile(path.join(site.dir,'explore.html'),'utf8');
-const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test([x.title,x.summary,x.search].join(' ').toLowerCase())));
+const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test([x.title,x.summary,x.source_id,x.search].join(' ').toLowerCase())));
 
 test('derived identities cover every catalogue entry and canonical source exactly once without rewriting their roles',()=>{
  assert.equal(model.schema,'cad-agent-discovery/1');
@@ -33,7 +33,7 @@ test('real body incidents, canonical IDs, aliases and unplaced sources have usef
  assert.ok(query('snap fits').some(x=>x.url.endsWith('/docs/compliant')));
  for(const q of ['pem-consumer-electronics-design-guide-2021','pem-ce-guide-2021'])assert.ok(query(q).some(x=>x.url.endsWith('/references/fasteners-and-hardware#pem-consumer-electronics-design-guide-2021')));
  assert.ok(query('abbud-riveted-joints').some(x=>x.url.endsWith('/references/unplaced#abbud-riveted-joints')));
- const seat=model.items.find(x=>x.url.endsWith('#move-the-head-seat-to-reach-a-standard-screw-length'));
+ const seat=model.items.find(x=>x.collection==='section' && x.url.endsWith('#move-the-head-seat-to-reach-a-standard-screw-length'));
  assert.match(seat.summary,/If the computed length/);assert.doesNotMatch(seat.summary,/What happened|Incident:/);
  for (const [q,path] of [['validate rendered','/docs/rendered-motion'],['download McMaster','/skills/mcmaster-parts/SKILL'],['twist printed','#try-it-the-torsion-snap-explorer']]) assert.ok(query(q).some(x=>x.url.endsWith(path)),q);
  assert.deepEqual(query('zz-no-such-fixture-599'),[]);
@@ -63,9 +63,10 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(!/<img[^>]*src="https?:/.test(html), 'site-owned images stay same-origin under real CSP');
  assert.match(html, /<\/span> <span class="result-summary">/, 'title/summary remain separate search words');
  // Budget is for compact links/search metadata, not a second full reference table or article copies.
- assert.ok(Buffer.byteLength(html)<900000,'initial HTML must remain compact');
- assert.ok(gzipSync(html).length<140000,'initial gzip budget');
- assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<7000,'bounded initial DOM, below the old catalogue tag count');
+ const n=model.items.length;
+ assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<1200000,'700 bytes/result plus fixed shell; absolute safety cap');
+ assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
+ assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
 });
 
 test('generated pitfall destinations are unique and hostile text is inert',()=>{

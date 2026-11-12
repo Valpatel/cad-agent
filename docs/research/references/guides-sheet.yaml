@@ -1017,20 +1017,19 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: Thickness-specific 5052-H32 service listings and temper-dependent bending advice. A cutting listing is
-    not a bending tooling specification; current main-list and FAQ thickness counts disagree.
+  summary: Thickness-specific 5052-H32 service listings and temper-dependent bending advice. A cutting listing is not a bending
+    tooling specification; current main-list and FAQ thickness counts disagree.
   used_for:
   - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
   - docs/research/manufacturing/process-profiles.md
-  verified: '2026-11-12: Read substantive material article, per-thickness service listings and FAQ; undated HTML,
-    no numbered edition/pages. Direct HTTP 200, no redirect; 611090 bytes, SHA-256 9ff54e9519003deeae40fe837fb96154e2f52c0b4aab8d42aaa1b601af781026.
+  verified: '2026-11-12: Read substantive material article, per-thickness service listings and FAQ; undated HTML, no numbered
+    edition/pages. Direct HTTP 200, no redirect; 611090 bytes, SHA-256 9ff54e9519003deeae40fe837fb96154e2f52c0b4aab8d42aaa1b601af781026.
     Interactive bending specifications, artwork, linked certificates and physical bends not inspected.'
   claims:
   - text: Choose the exact thickness and its bending service specification before setting a bracket radius or flange.
     status: unconfirmed
-    evidence: Available Service Specifications are thickness-specific; broad bending-radius prose depends on temper
-      and does not supply a selected stock tooling row. Main thickness listing and FAQ counts disagree; no total
-      count adopted.
+    evidence: Available Service Specifications are thickness-specific; broad bending-radius prose depends on temper and does
+      not supply a selected stock tooling row. Main thickness listing and FAQ counts disagree; no total count adopted.
 - id: osh-cut-aluminum-6061-t6-bending-terms
   kind: guide
   category: manufacturing-guides

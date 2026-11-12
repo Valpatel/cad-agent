@@ -1,4 +1,4 @@
-import {lowContrast} from './site-contrast.mjs';
+import {lowContrast} from './site-outline.mjs';
 /** Explore browsing, legacy catalogue bookmarks and focused readers, in both hosted engines.
  * Existing gallery predicates/URL states remain tested; no old maturity bar or modal-sheet presentation is required.
  * Native fallback, hostile data, runtime/CSP, exact legacy filters/hash/history and current contrast remain hard gates.

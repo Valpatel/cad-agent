@@ -1,4 +1,4 @@
-import {topicTree, readerNav, updateTime} from './compiler/site-explore-shell.mjs';
+import {topicSprite, readerNav, updateTime} from './compiler/site-explore-shell.mjs';
 /** Build cad-agent.valpatel.com into dist/: one static bundle for local preview and Cloudflare Pages.
  *
  * Agent-first: every page has its Markdown source next to it (same path, .md), /llms.txt and /llms-full.txt index
@@ -164,6 +164,7 @@ validateRedirects(redirects, { tracked, pageFiles, moved, publicPath });
 // The reference registry (docs/research/references.yaml and its shards): /references pages, their JSON, and [ref:<id>]
 // tags in every page as links to the record (tools/site/compiler/site-references.mjs). Records are not catalogue entries.
 const areaTree = YAML.parse(await read('docs/areas.yaml'));
+await writeFile(path.join(out,'web/topic-icons.svg'),topicSprite(areaTree));
 const refModel = referenceModel(await loadReferences({ files: tracked, read }), areaTree);
 
 // ----------------------------------------------------------------------------- catalogue

@@ -1,4 +1,4 @@
-import {lowContrast} from './site-contrast.mjs';
+import {lowContrast} from './site-outline.mjs';
 /** Load cad-agent.valpatel.com pages in a real browser, served the way Cloudflare Pages serves them (pretty URLs and
  * the _headers file, including the Content-Security-Policy), at phone and desktop widths.
  * Fails on console errors, CSP violations, failed or third-party requests, sideways scrolling, a phone header without

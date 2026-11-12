@@ -65,7 +65,7 @@ text-decoration:none;min-height:48px;transition:transform .2s,box-shadow .2s;bor
 .use-note{margin:6px 0 0;font-size:13.5px;line-height:1.65;color:var(--muted)}
 .use-loop{display:block;width:100%;height:auto;margin:18px 0 4px;font-family:var(--font)}
 .agent-badges{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:18px 0 0;padding:0}
-.agent-badge{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 5px;border:1px solid var(--line-2);border-radius:var(--pill);background:var(--card);font:600 12px/1.2 var(--font);color:var(--ink)}
+.agent-badge{display:flex;align-items:center;gap:7px;padding:5px 9px 5px 5px;border:1px solid var(--line-2);border-radius:var(--pill);background:var(--card);font:600 12px/1.2 var(--font);color:var(--ink)}
 .agent-mark{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:calc(7px*var(--round));background:var(--ink);color:var(--cream);font:700 10px/1 var(--mono)}
 .use-card .agent-copy{margin:0;max-width:none}.use-card .agent-box{max-width:none;background:var(--term);border-color:var(--term-line);color:var(--term-fg);font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:calc(14px*var(--round))}
 .use-card .agent-box b{color:var(--term-hi)}

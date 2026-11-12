@@ -27,6 +27,7 @@ flowchart TD
 | [learning-loop-mobile-still.svg](learning-loop-mobile-still.svg) | Completed square composition selected by parent picture media. |
 | [learning-loop-mobile.svg](learning-loop-mobile.svg) | Compact square composition of the same human learning story. |
 | [thermal-history.svg](thermal-history.svg) | Animated actual heater-zone samples from the recorded 20 W box case; iterations, not elapsed seconds. |
+| [result-stills/](result-stills/README.md) | Explicit finished computation pictures and original-evidence links; no new simulation. |
 | [airflow-balance.svg](airflow-balance.svg) | Recorded flow and heat-out comparison retaining the failed ducted case. |
 | [learning-evidence.json](learning-evidence.json) | Input hashes, sampled trace count and recorded case facts. |
 | [gyropup-leg.svg](gyropup-leg.svg) | SVG: cad-agent: Gyropup's five-bar leg drawn from its real CAD, assembled, then checked for fit, strength and motion |

@@ -53,6 +53,56 @@
           "steady": false
         }
       }
+    },
+    "result_stills": {
+      "mesh-convergence-still.svg": {
+        "input": "docs/img/fea/mesh-convergence.svg",
+        "output": "docs/img/hero/result-stills/mesh-convergence-still.svg",
+        "sha256": "9fa8f99941ce49dc95b8540372c3fa493ca6f42d5d1a9de288964f41ea2060b8",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "rib-in-counterbore-still.svg": {
+        "input": "docs/img/motion/rib-in-counterbore.svg",
+        "output": "docs/img/hero/result-stills/rib-in-counterbore-still.svg",
+        "sha256": "9ecc896d10d4142f0e9a5091dc98641d99b88e2e162d4861f997e859a749243e",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "connector-window-still.svg": {
+        "input": "docs/img/motion/connector-window.svg",
+        "output": "docs/img/hero/result-stills/connector-window-still.svg",
+        "sha256": "7de559387ddacf2c0d294c7a067b5933e373916f08d53b8be7457a047e431412",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "hinge-sweep-still.svg": {
+        "input": "docs/img/motion/hinge-sweep.svg",
+        "output": "docs/img/hero/result-stills/hinge-sweep-still.svg",
+        "sha256": "0d5781f38f71920f463ffb2b8a609ee780ba5bfa906a26efdfe9cfc8e362bbca",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "module-insertion-still.svg": {
+        "input": "docs/img/motion/module-insertion.svg",
+        "output": "docs/img/hero/result-stills/module-insertion-still.svg",
+        "sha256": "07eb8e0d09d77d6fcbd414ebef7d9461655e74b03ef2971ae681f3717c5fc0ff",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "search-front-still.svg": {
+        "input": "docs/img/motion/search-front.svg",
+        "output": "docs/img/hero/result-stills/search-front-still.svg",
+        "sha256": "799a64cf4b119036b0f81fba1bb19ed965f7054bcc6429f75db700530e49003a",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "thermal-history-still.svg": {
+        "input": "docs/img/hero/thermal-history.svg",
+        "output": "docs/img/hero/result-stills/thermal-history-still.svg",
+        "sha256": "331178a20c230e5417e8bb772c4b205fbcda512a633ff09494f3ac838bdcf12d",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      },
+      "airflow-balance-still.svg": {
+        "input": "docs/img/hero/airflow-balance.svg",
+        "output": "docs/img/hero/result-stills/airflow-balance-still.svg",
+        "sha256": "4ca831f4d7abcea13307091bc2b5bd086ea61e015c06175e09753771f862597b",
+        "method": "Unconditional authored reduced-motion pose; animation declarations removed"
+      }
     }
   }
 }

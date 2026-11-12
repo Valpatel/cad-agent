@@ -50,3 +50,23 @@ def test_learning_hero_uses_the_existing_safe_vector_contract_and_explicit_finis
         assert '.still{display:inline!important}' in still
         assert '*{animation:none!important}' in still
         assert '<animate' not in still
+
+
+def test_computation_stills_preserve_the_recorded_sources_and_finished_pose():
+    """Explicit stills keep the original authors' final states and numerical evidence."""
+    from cadagent.publish.anim import svg as contract
+    figures = json.loads((ROOT / 'docs/img/hero/learning-evidence.json').read_text())['figures']
+    stills = figures['result_stills']
+    assert len(stills) == 8
+    for record in stills.values():
+        original = ROOT / record['input']
+        assert hashlib.sha256(original.read_bytes()).hexdigest() == record['sha256']
+        still = (ROOT / record['output']).read_text()
+        assert '<animate' not in still and '@keyframes' not in still
+        ET.fromstring(still)
+    thermal = (ROOT / 'docs/img/hero/result-stills/thermal-history-still.svg').read_text()
+    assert f"{figures['thermal-history']['final_c']:.2f} °C" in thermal
+    assert 'solver iterations — not seconds' in thermal
+    assert 'stroke-dashoffset:0' in thermal  # Complete recorded trace, not its hidden first frame.
+    flow = (ROOT / 'docs/img/hero/result-stills/airflow-balance-still.svg').read_text()
+    assert '-10.9%' in flow and 'energy check fails' in flow

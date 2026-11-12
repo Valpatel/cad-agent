@@ -313,10 +313,15 @@ test('catalogue statuses are honest', async () => {
   const index = await readFile(path.join(out, 'index.html'), 'utf8');
   for (const [, cmd] of index.matchAll(/<code>cad-agent ([a-z0-9-]+)<\/code>/g))
     assert.ok(catalog.items.some(i => i.name === `cad-agent ${cmd}`), `landing page names cad-agent ${cmd}, which does not exist`);
-  const { source } = JSON.parse(await readFile(path.join(out, 'web/models/gyropup.json'), 'utf8'));
-  const modelFigure = index.match(/<figure class="hero-model">[\s\S]*?<\/figure>/)?.[0] || '';
-  assert.ok(modelFigure.includes(`href="${source.repo}/tree/${source.revision}"`), 'the displayed assembly links its actual immutable CAD source');
-  assert.ok(!modelFigure.includes('exported from its STEP files'), 'the current collector does not read historical STEP exports');
+  const showcases = index.match(/<section class="section built-with"[^>]*>[\s\S]*?<\/section>/)?.[0] || '';
+  const articles = [...showcases.matchAll(/<article>[\s\S]*?<\/article>/g)].map(m => m[0]);
+  for (const name of ['gyropup','j501']) {
+    const { source } = JSON.parse(await readFile(path.join(out, `web/models/${name}.json`), 'utf8'));
+    const article = articles.find(a => a.includes(`src="/web/models/${name}.json"`));
+    assert.ok(article, `the displayed ${name} model has its own project article`);
+    assert.ok(article.includes(`href="${source.repo}/tree/${source.revision}"`), `the displayed ${name} assembly links its actual immutable CAD source`);
+    assert.ok(!article.includes('exported from its STEP files'), 'do not relabel historical engineering exports as current collector evidence');
+  }
   for (const i of catalog.items.filter(i => i.type === 'upstream')) assert.ok(i.summary, `${i.name} has no summary`);
 });
 

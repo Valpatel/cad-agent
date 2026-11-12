@@ -117,3 +117,24 @@ wrong-axis and normal-only-flip mutants; a midpoint alone cannot detect a missin
 whole pixel table before assertions. This fixture tests clipping visibility, not the product's material lighting.
 The ordinary material/appearance and full legacy tests remain separate; no complete feature or physical
 acceptance follows until actual corrected two-engine suites pass.
+
+## Retry must roll back the whole failed rendering attempt
+
+On 2026-11-12 UTC, independent review of homepage #606 injected a first GPU draw
+exception into the actual shared model component, after canvas, controls and observers
+were allocated. The tiny valid packed fixture reported `error: 1 canvas / 1 controls`,
+then `retry ready: 2 canvases / 2 controls`; the unrelated viewer remained `1 / ready`.
+[Review evidence](https://github.com/Valpatel/cad-agent/pull/606#discussion_r4546711636)
+retains the failed result. A fetch-only retry check had passed but never reached this
+allocation boundary.
+
+Register disposal as each resource is acquired, roll back the failed attempt before
+showing its poster/retry, and give every retry a fresh readiness promise. Cancel frames,
+disconnect observers/listeners, dispose renderer/geometry/material resources, and
+remove only that attempt's canvas/controls. The homepage browser regression injects
+the late draw failure into a tiny real packed model, requires zero failed-attempt
+canvases/controls and exactly one after recovery, and checks the other viewer's canvas
+identity survives. A resize and visibility change expose abandoned callbacks.
+
+This is an attempted correction pending its actual-browser recheck and independent
+review; no current homepage art, physical design or publication acceptance follows.

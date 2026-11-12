@@ -1,6 +1,7 @@
 # Every visible example has a real animated figure, source and limits. See docs/img/hero/README.md (#605).
 reel:
 - img: docs/img/fea/mesh-convergence.svg
+  still: docs/img/hero/result-stills/mesh-convergence-still.svg
   'on': example
   tool: cadagent.simulation.fea
   title: A mesh that earns its answer
@@ -10,6 +11,7 @@ reel:
   href: docs/toolkit.md
 - field: docs/img/cfd/fan-faces.webp
   img: docs/img/hero/thermal-history.svg
+  still: docs/img/hero/result-stills/thermal-history-still.svg
   'on': example
   tool: cadagent.simulation.cfd
   title: Watch a thermal solve settle
@@ -19,6 +21,7 @@ reel:
   href: docs/research/fea-and-process-tools.md
 - field: docs/img/cfd/fan-faces.webp
   img: docs/img/hero/airflow-balance.svg
+  still: docs/img/hero/result-stills/airflow-balance-still.svg
   'on': example
   tool: cadagent.simulation.cfd
   title: A flow picture is not enough
@@ -27,6 +30,7 @@ reel:
   alt: Two recorded cases showing mass flow and heat balance, including the failed ducted case
   href: docs/research/fea-and-process-tools.md
 - img: docs/img/motion/rib-in-counterbore.svg
+  still: docs/img/hero/result-stills/rib-in-counterbore-still.svg
   'on': fixture-2d
   tool: cad-agent holes
   title: A rib that refills a counterbore
@@ -36,6 +40,7 @@ reel:
     both
   href: docs/practice/common-issues.md
 - img: docs/img/motion/connector-window.svg
+  still: docs/img/hero/result-stills/connector-window-still.svg
   'on': fixture
   tool: cadagent.mechanical.connectors
   title: A port window sized from the mating plug
@@ -45,6 +50,7 @@ reel:
     clears the latch
   href: docs/practice/common-issues.md
 - img: docs/img/motion/hinge-sweep.svg
+  still: docs/img/hero/result-stills/hinge-sweep-still.svg
   'on': fixture-2d
   tool: cad-agent gates
   title: When a moving arm first hits the frame
@@ -54,6 +60,7 @@ reel:
     and 44.91 degrees
   href: docs/practice/gates.md
 - img: docs/img/motion/module-insertion.svg
+  still: docs/img/hero/result-stills/module-insertion-still.svg
   'on': fixture
   tool: cad-agent gates
   title: A module that slides in as one piece
@@ -62,6 +69,7 @@ reel:
   alt: A preassembled module inserted into its parent as one rigid body, then withdrawn
   href: docs/mechanical/subassembly-insertion.md
 - img: docs/img/motion/search-front.svg
+  still: docs/img/hero/result-stills/search-front-still.svg
   'on': example
   tool: cad-agent optimise
   title: Searching designs by cost and mass

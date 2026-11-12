@@ -443,6 +443,13 @@ const homeImg = async (src, at, attrs = '') => {
   if (!size) throw new Error(`docs/home.yaml ${at}: cannot read the size of ${src}`);
   return `<img src="/${esc(src)}" width="${size.width}" height="${size.height}"${attrs}>`;
 };
+const resultStills = new Map(home.reel.filter(r => r.still).map(r => [r.img, r.still]));
+const homePicture = async (src, at, attrs = '', still = resultStills.get(src)) => {
+  const image = await homeImg(src, at, attrs);
+  if (!still) return image;
+  await homeImg(still, at + '.still'); // Apply the same committed local-image validation.
+  return `<picture><source media="(prefers-reduced-motion: reduce)" srcset="/${esc(still)}">${image}</picture>`;
+};
 // What each output was computed on, said on its tile (#182 review: not every picture is a real part): ON, from
 // tools/site/compiler/site-pages.mjs, which the doc pages' figures use too.
 // A tool on a tile is a cad-agent command, a cadagent module or a script under tools/, and it must exist.
@@ -472,7 +479,7 @@ for (const [i, r] of home.reel.entries()) {
   if (!ON[r.on]) throw new Error(`docs/home.yaml ${at}: on is one of ${Object.keys(ON).join(', ')}`);
   checkNumbers(r, at);
   homeMd.reel.push(`- [${r.title}](${/^https:/.test(r.href) ? r.href : ORIGIN + pageURL(r.href)}): ${r.caption} (\`${r.tool}\`, on ${ON[r.on].replace(/<[^>]+>/g, '')})`);
-  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media${r.field ? ' reel-recorded' : ''}" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${r.field ? `<span class="recorded-field">${await homeImg(r.field, at, ' alt="Recorded thermal field and streamlines for the two fixed solver cases" loading="lazy" decoding="async"')}</span>` : ''}${await homeImg(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
+  reel.push(`<li class="reel-tile${r.fit === 'cover' ? ' reel-cover' : ''}"><a class="reel-media${r.field ? ' reel-recorded' : ''}" href="${esc(homeHref(r.href, at))}" tabindex="-1" aria-hidden="true">${r.field ? `<span class="recorded-field">${await homeImg(r.field, at, ' alt="Recorded thermal field and streamlines for the two fixed solver cases" loading="lazy" decoding="async"')}</span>` : ''}${await homePicture(r.img, at, ` alt="" loading="lazy" decoding="async"`)}</a>
 <p class="reel-tool"><code>${esc(realTool(r.tool, at))}</code></p><h3><a href="${esc(homeHref(r.href, at))}">${esc(r.title)}</a></h3><p>${esc(r.caption)}</p><p class="reel-credit">On ${ON[r.on]}</p>
 <span class="visually-hidden">${esc(r.alt)}</span></li>`);
 }
@@ -490,7 +497,7 @@ const fitsTile = async (t, i) => {
   const level = levels.reduce((lo, l) => LADDER.indexOf(l) < LADDER.indexOf(lo) ? l : lo);      // the least mature area decides
   homeMd.ours.push(`- [${t.title}](${/^https:/.test(t.href) ? t.href : ORIGIN + pageURL(t.href)}) (${level}): ${t.does}`);
   const step = LADDER.indexOf(level);
-  return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homeImg(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
+  return `<li class="fit-tile"><a href="${esc(homeHref(t.href, at))}">${t.img ? `<span class="fit-media">${await homePicture(t.img, at, ' alt="" loading="lazy" decoding="async"')}</span>`
   : t.cmd ? `<span class="fit-media fit-cmd"><code>$ ${esc(t.cmd)}</code></span>`
   : step === 0 ? '<span class="fit-media fit-empty">not built yet</span>' : (() => { throw new Error(`docs/home.yaml ${at}: a built block needs an img or a cmd`); })()}
 <span class="fit-title">${esc(t.title)}</span></a><p>${esc(t.does)}</p>
@@ -504,6 +511,7 @@ const makeChip = (m, i) => {
 };
 // The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
+const j501Model = JSON.parse(await read(ASSETS + '/models/j501.json')); 
 const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site/figures/site-model-poster.mjs');
 // One checked installation guide per platform, or one line to paste into an agent. Keep checksum/immutable-source
@@ -547,7 +555,7 @@ ${useCard}
 <div class="wrap"><section class="section fits" aria-labelledby="fits-title"><div class="lead"><h2 id="fits-title">Check, simulate,<br><span>explain, measure.</span></h2><p>Real outputs, traceable inputs and explicit limits. Every example opens the method and the evidence behind it.</p></div><div class="fits-ours"><ul>${(await Promise.all(home.fits.ours.map(fitsTile))).join('')}</ul></div></section>
 <section class="section built-with" id="built-with"><div class="lead"><h2>Built with <span>cad-agent.</span></h2><p>Useful things made with the toolkit. Turn them around, explore the parts, and follow the projects.</p></div><div class="project-viewers">
 <article><h3>Gyropup</h3><cad-model src="/web/models/gyropup.json" label="Gyropup" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" loading="lazy" alt="Current collected Gyropup assembly"></cad-model><p>A wheel-legged robot that brings mechanical design, motion and electronics together. This simplified view leaves out interior hardware.</p><p><a href="${esc(heroModel.source.repo + '/tree/' + heroModel.source.revision)}">Exact CAD source</a> · <a href="https://gyropup.com">Project</a></p></article>
-<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
+<article><h3>J501 AGX Orin enclosure</h3><cad-model src="/web/models/j501.json" label="J501 enclosure with real carrier board" style="aspect-ratio:1"><img class="cad-model-poster" src="/web/models/j501.webp" width="1200" height="1200" loading="lazy" alt="J501 enclosure and real carrier board, assembled from exported CAD"></cad-model><p>A printed home for a Jetson AGX Orin computer, shown with its real carrier board. A fit-check prototype, not a physically qualified enclosure.</p><p><a href="${esc(j501Model.source.repo + '/tree/' + j501Model.source.revision)}">Exact CAD snapshot</a> · <a href="https://github.com/mvalancy/j501-agx-orin">Project and evidence</a> · <a href="/web/models/j501-source.json">Model provenance</a></p></article>
 </div></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;

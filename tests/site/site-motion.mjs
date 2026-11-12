@@ -1,5 +1,5 @@
 /** Rendered SVG still checks. Page media emulation covers an SVG document, but can miss an external <img>'s SVG. */
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -204,4 +204,81 @@ export async function learningPictureProblems(browser, base) {
     animatedPath:'/docs/img/hero/learning-loop-mobile.svg',
     stillPath:'/docs/img/hero/learning-loop-mobile-still.svg',
   });
+}
+
+
+/** A tiny real packed fixture isolates post-allocation GPU rollback from model size. */
+export async function homepageLateDrawProblems(browser, base) {
+  const out=[], errors=[];
+  const fixture=JSON.parse(await readFile(new URL('../fixtures/model/two-parts.json',import.meta.url),'utf8'));
+  const binary=await readFile(new URL('../fixtures/model/two-parts.bin',import.meta.url));
+  const ctx=await browser.newContext({viewport:{width:1100,height:800},reducedMotion:'reduce'});
+  const page=await ctx.newPage(); page.on('pageerror',e=>errors.push(e.message));
+  try {
+    await page.route('**/web/models/*.json',route=>{const name=new URL(route.request().url()).pathname.includes('j501')?'j501':'other';return route.fulfill({contentType:'application/json',body:JSON.stringify({...fixture,bin:`/__late-${name}.bin`})});});
+    await page.route('**/__late-*.bin',route=>route.fulfill({contentType:'application/octet-stream',body:binary}));
+    await page.addInitScript(()=>{
+      window.__lateDrawFaults=0;
+      for(const Klass of [window.WebGLRenderingContext,window.WebGL2RenderingContext]) if(Klass)
+        for(const method of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']) {
+          const original=Klass.prototype[method];if(!original)continue;
+          Klass.prototype[method]=function(...args){
+            if(!window.__lateDrawFaults&&this.canvas?.closest('cad-model')?.getAttribute('src')?.endsWith('j501.json')) {
+              window.__lateDrawFaults++;throw Error('planted first GPU draw failure after allocation');
+            }
+            return original.apply(this,args);
+          };
+        }
+    });
+    await page.goto(base+'/',{waitUntil:'networkidle'});
+    await page.locator('#built-with').evaluate(el=>{document.documentElement.style.scrollBehavior='auto';el.scrollIntoView({block:'start'});});
+    await page.waitForFunction(()=>document.querySelector('cad-model[src$="j501.json"]')?.dataset.state==='error',null,{timeout:20000});
+    await page.waitForFunction(()=>document.querySelector('cad-model[src$="gyropup.json"]')?.dataset.state==='ready',null,{timeout:20000});
+    const target=page.locator('cad-model[src$="j501.json"]');
+    const failed=await target.evaluate(el=>{window.__lateFailedReady=el.ready;const other=document.querySelector('cad-model[src$="gyropup.json"]');window.__lateOtherCanvas=other.querySelector('canvas');return {canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,poster:el.querySelector('img').checkVisibility(),faults:window.__lateDrawFaults};});
+    if(failed.canvases||failed.controls||!failed.poster||failed.faults!==1)out.push('late GPU failure did not roll back to the real poster: '+JSON.stringify(failed));
+    await target.getByRole('button',{name:'Retry 3D view'}).click();
+    await page.waitForFunction(()=>document.querySelector('cad-model[src$="j501.json"]')?.dataset.state==='ready',null,{timeout:20000});
+    const ready=await target.evaluate(el=>({canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,freshReady:el.ready!==window.__lateFailedReady,error:el.dataset.error,otherUnchanged:document.querySelector('cad-model[src$="gyropup.json"]').querySelector('canvas')===window.__lateOtherCanvas}));
+    if(ready.canvases!==1||ready.controls!==1||!ready.freshReady||ready.error||!ready.otherUnchanged)out.push('late failure retry did not create exactly one independent live view: '+JSON.stringify(ready));
+    await page.setViewportSize({width:1000,height:800});
+    await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(100);
+    if(errors.length)out.push('late retry left a failing observer or renderer: '+errors.join('; '));
+  } catch(error){out.push('late draw rollback: '+error.message);}
+  finally{await ctx.close();}
+  return out;
+}
+
+/** Every displayed computed SVG is tested through its real picture consumer. */
+export async function resultImageMotionProblems(browser, base) {
+  const out=[];
+  const ctx=await browser.newContext({viewport:{width:1366,height:900},reducedMotion:'reduce'});
+  const page=await ctx.newPage();
+  try {
+    await page.goto(base+'/',{waitUntil:'networkidle'});
+    const images=page.locator('.reel-tile picture img');
+    if(await images.count()!==8)out.push('expected the eight real animated result images');
+    for(const image of await images.all()) {
+      await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
+      const state=await image.evaluate(el=>({src:el.getAttribute('src'),current:new URL(el.currentSrc).pathname,loaded:el.complete&&el.naturalWidth>0}));
+      if(!state.loaded||!state.current.includes('/result-stills/'))out.push('result did not select its finished image: '+JSON.stringify(state));
+      const first=await image.screenshot();await page.waitForTimeout(300);const second=await image.screenshot();
+      if(!first.equals(second))out.push('computed image still moves under reduced motion: '+state.src);
+    }
+  }catch(error){out.push('result image consumer: '+error.message);}
+  finally{await ctx.close();}
+  // A deliberately moving image at the exact selected still URL must be rejected too.
+  const control=await browser.newContext({viewport:{width:1366,height:900},reducedMotion:'reduce'});
+  const cp=await control.newPage();
+  try {
+    await cp.route('**/result-stills/thermal-history-still.svg',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="760" height="390"><rect width="760" height="390" fill="black"/><rect width="180" height="390" fill="cyan"><animate attributeName="x" values="0;580;0" dur="2s" repeatCount="indefinite"/></rect></svg>'}));
+    await cp.goto(base+'/',{waitUntil:'networkidle'});
+    const image=cp.locator('.reel-tile img[src$="thermal-history.svg"]');
+    await image.scrollIntoViewIfNeeded();await image.evaluate(el=>el.decode());
+    const first=await image.screenshot();await cp.waitForTimeout(300);const second=await image.screenshot();
+    if(first.equals(second))out.push('moving reduced-image control was not observable; stillness probe is inconclusive');
+  } catch(error){out.push('moving result-image rejection control: '+error.message);}
+  finally{await control.close();}
+  return out;
 }

@@ -2,11 +2,12 @@
 No CAD, solver, browser, network or dependency installation. Run with Python3.
 """
 from pathlib import Path
-import json, hashlib, math, sys, re
+import json, hashlib, math, sys, re, argparse
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'docs/img/hero'
+RESULT_OUT=OUT/'result-stills'
 sys.path.insert(0, str(ROOT/'software'))
 from cadagent.publish.anim.svg import REDUCED_MOTION
 FONT='Inter,system-ui,sans-serif'
@@ -38,8 +39,15 @@ def finished_still(svg):
         for child in list(parent):
             if child.tag.rsplit('}',1)[-1] in {'animate','animateMotion','animateTransform'}:
                 parent.remove(child)
+    finished_rules=[]
     for existing in root.findall('{http://www.w3.org/2000/svg}style'):
         css=existing.text or ''
+        # Promote each author's own finished reduced-motion pose into unconditional still CSS.
+        for match in re.finditer(r'@media\s*\(prefers-reduced-motion\s*:\s*reduce\)',css):
+            opening=css.index('{',match.end());depth=1;end=opening+1
+            while depth and end<len(css):
+                depth += (css[end]=='{')-(css[end]=='}');end+=1
+            finished_rules.append(css[opening+1:end-1])
         while '@keyframes' in css:
             start=css.index('@keyframes'); opening=css.index('{',start); depth=1; end=opening+1
             while depth and end<len(css):
@@ -48,10 +56,14 @@ def finished_still(svg):
         existing.text=re.sub(r'\banimation(?:-[a-z-]+)?\s*:[^;}]*;?', '', css)
     style=ET.SubElement(root,'{http://www.w3.org/2000/svg}style')
     style.text=REDUCED_MOTION+'*{animation:none!important}.moving{display:none!important}.still{display:inline!important}.first-version{display:none!important}.revised-version,.solid{opacity:1!important}.draw{stroke-dashoffset:0!important;opacity:1!important}.lid{transform:none!important}.handoff{transform:translate(calc(var(--dx)*.5),calc(var(--dy)*.5))!important}'
+    style.text+=''.join(finished_rules)
     return ET.tostring(root,encoding='unicode')+'\n'
 
 if __name__=='__main__':
- for mobile in [False,True]:
+ parser=argparse.ArgumentParser(description=__doc__)
+ parser.add_argument('--hero',action='store_true',help='Explicitly regenerate hero art; coordinate with its owner first')
+ args=parser.parse_args()
+ for mobile in ([False,True] if args.hero else []):
   name='learning-loop-mobile' if mobile else 'learning-loop'
   svg=cinematic_hero(mobile)
   (OUT/(name+'.svg')).write_text(svg)
@@ -59,4 +71,9 @@ if __name__=='__main__':
  records={}
  for name,fn in [('thermal-history',trace_chart),('airflow-balance',balance_chart)]:
   svg,record=fn();(OUT/(name+'.svg')).write_text(svg);records[name]=record
+ sources=['docs/img/fea/mesh-convergence.svg']+[f'docs/img/motion/{n}.svg' for n in ['rib-in-counterbore','connector-window','hinge-sweep','module-insertion','search-front']]+['docs/img/hero/thermal-history.svg','docs/img/hero/airflow-balance.svg']
+ records['result_stills']={}
+ for source in sources:
+  original=ROOT/source;name=original.stem+'-still.svg';(RESULT_OUT/name).write_text(finished_still(original.read_text()))
+  records['result_stills'][name]={'input':source,'output':str((RESULT_OUT/name).relative_to(ROOT)),'sha256':hashlib.sha256(original.read_bytes()).hexdigest(),'method':'Unconditional authored reduced-motion pose; animation declarations removed'}
  (OUT/'learning-evidence.json').write_text(json.dumps({'illustration':'learning-loop variants are conceptual process artwork, not an engineering result','generated_by':'tools/site/figures/learning-home.py','figures':records},indent=2)+'\n')

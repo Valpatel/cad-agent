@@ -117,7 +117,8 @@ flowchart TD
 ## Writing
 
 Plain, short sentences. Say what a thing does and what it assumes, not how good it is. Name sources and people.
-Credit known creators and organisations together, and link directly to the original work beside concise takeaways so readers can inspect its methods, data and context. Attribution is independent appreciation: we have no affiliations, sponsorships, partnerships or agreements with the listed creators; do not imply paid placements or endorsement, and keep source licences and their measurements distinct from our checks.
+Beside concise takeaways, credit known creators and organisations together and provide a direct **Read/watch original** link, explaining why its methods, data or practical demonstration are worth visiting. The [CNC Kitchen recovery guidance](../mechanical/inserts.md#recover-inserts-before-discarding-a-print) is one example; distinguish the creator’s measurements and source licences from our checks. Attribution is independent appreciation: we have no affiliations, sponsorships, partnerships or agreements with listed creators, and do not imply paid placements or endorsement.
+
 
 ## Folder ownership checks
 

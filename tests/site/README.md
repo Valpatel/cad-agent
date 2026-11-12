@@ -45,7 +45,7 @@ flowchart TD
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
-| `site-outline.mjs` | Helper: actual scroll/frame readiness, strict marked-entry geometry, shared WCAG predicate and same-section/manual-panel regression with a hidden-entry control |
+| `site-outline.mjs` | Helper: actual scroll/frame readiness, strict marked-entry geometry, shared WCAG predicate, same-section/manual-panel regression and bounded failure-only reader navigation receipts |
 | `site-motion.mjs` | Helper: rendered reduced-motion hero still and a hidden-drawing negative control |
 | `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
@@ -58,7 +58,7 @@ flowchart TD
 | `website-diagrams.test.mjs` | `tools/site/compiler/site-diagrams.mjs`: Mermaid blocks drawn at build time |
 | `website-html.test.mjs` | `tools/site/compiler/site-html.mjs`: the sanitizer keeps our markup and drops unsafe HTML |
 | `website-references.test.mjs` | `tools/site/compiler/site-references.mjs`: the reference pages, their JSON and llms.txt lines against the committed records, `[ref:]` links, no record in the catalogue or llms-full.txt, `docs/practice/experts.md` current |
-| `website-pages.test.mjs` | `tools/site/compiler/site-pages.mjs`: outputs placed on pages, section cards, folded reference |
+| `website-pages.test.mjs` | `tools/site/compiler/site-pages.mjs`: outputs placed on pages, section cards, folded reference; inert reader failure-receipt/bounds controls |
 | `website-snap-demo.test.mjs` | The landing page's snap-fit animation shows a real engagement |
 | `website-theme.test.mjs` | The light and dark colour tokens: the same tokens in both, contrast in both, no stray light-only colour, and the theme script and button on every page |
 

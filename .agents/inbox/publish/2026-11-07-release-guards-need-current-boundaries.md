@@ -290,3 +290,24 @@ Do not infer completion from a presentation label or parse its age as a new stat
 
 **Limits:** this corrected a preflight assumption; no failed public verification was waived, and no account,
 permission or deployment setting changed. It does not replace normal CI or the actual publication readback.
+
+## Retain reader navigation evidence before closing a failed page
+
+**Evidence, 2026-11-12 UTC, #625 / release #623:** WebKit job 131388834790/run 43277252434 at
+`bae1820c` passed 103 component tests, then `site-outline.mjs:149` timed out after 30000 ms in
+`page.goto('/docs/toolkit', {waitUntil: 'networkidle'})`. Later reader/layout cases did not run.
+Independent inspection of artifact 13971626851 (SHA256
+`0590eca06bedce050975bbc444ffc1cb2e23e9513cefa1d1732134da5f81c85a`) found 248 files but no
+reader-boundary receipt, trace or network state. The failing viewport, HTTP status, pending requests
+and DOM state are unknown. Identical reader/toolkit/runtime source at accepted 616ab and main 6e8 is
+not evidence of a transient cause; the failed generated toolkit HTML was not retained.
+
+**Cause and corrective rule:** the reader probe wrote its receipt only after every viewport, while
+`finally` closed each failed page first. Preserve bounded observations and partial states before close,
+then rethrow the original error. Keep the existing navigation wait/timeout and every readiness/geometry
+predicate. The targeted repair records 24 samples per event kind, 300-character redacted URL/text
+fields, 12 stylesheet entries, at most a 2 MiB viewport screenshot and 1000 ms per diagnostic capture.
+Inert controls exercise success-without-capture, partial receipt before close, truncation/redaction,
+failed/stalled capture and unavailable output without replacing the original error. These are simulated
+page controls, not a browser reproduction or diagnosis of the old failure. Obtain exact-source review
+before a normal diagnostic CI checkpoint; never relabel the original failed job or its skipped parts as passes.

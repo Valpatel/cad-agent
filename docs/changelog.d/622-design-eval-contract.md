@@ -1,0 +1,2 @@
+**Changed**
+- Define the next fact-backed CAD evaluation phase in the existing Evaluation guide: provisional Inspect reuse, matched local/hosted trials, isolated subject bundles, independent CAD/source grading, compact bound visual evidence and explicit qualification tests. Whole-checkout access is deprecated for new controlled studies; v1 behavior and historical records are unchanged. No new runtime or model-performance claim (#622).

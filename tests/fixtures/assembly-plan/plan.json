@@ -1,0 +1,173 @@
+{
+ "schema": "cad-agent.assembly-plan/1",
+ "units": "mm",
+ "frame": "assembly-home/z-up",
+ "clearance_mm": 0,
+ "source": {
+  "revision": "1111111111111111111111111111111111111111",
+  "closure_sha256": "3b945f0ff67aa4dcaf81ad29d3d842b2e0f5058ec4086c9c1a9be5b01091ea33",
+  "producer": "native assembly-plan bench/1",
+  "tooling_sha256": "37760c740735ace1844f3bdc547264e61dfbb5166462c677aac65f41bdf2f114",
+  "instances": {
+   "base": {
+    "mesh_sha256": "d200e907a9e7e414f9e7d764189a033b32f2eebf5fbaecd811f17d26b90cd1bd",
+    "brep_sha256": "5e862e4061ef599863f8abd649a2ef320309f00cd13e9f674f5dd2609f959d37",
+    "matrix": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0
+    ]
+   },
+   "rail": {
+    "mesh_sha256": "774aecf78f7fd69f2f0bbf3b2506d223d32304db555e8fd760ba272e29fb0bc0",
+    "brep_sha256": "653c9c261fc67d83f1c49827e474a8194cf524debe9e11fdeca5e430c40ed0a6",
+    "matrix": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0
+    ]
+   },
+   "plate": {
+    "mesh_sha256": "bcfcbb2e396da36084ad961112a89836ce6c52e5a68e022b8503b4018f2877a8",
+    "brep_sha256": "fa11c688978bb5cb301e78015e6d7bd7676cea3a5d45383349c8005d288db9eb",
+    "matrix": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0
+    ]
+   },
+   "fastener": {
+    "mesh_sha256": "054f51f7691b78d320ce7c66501fbdba2b748f2963b16dd7350e23b157270886",
+    "brep_sha256": "1367e7eef628dfdcec0ad1e4fd8b49a26ae759ab1c001406b528f3b777157020",
+    "matrix": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0
+    ]
+   },
+   "lid": {
+    "mesh_sha256": "fe32664fd39263bc01c1f2b6b45e2e3daa0bd741d48ea050b119ef7ee109150e",
+    "brep_sha256": "acd28819cbf6caca0ba2ccbd54f8256f4290d8d1136bc2ca3ed37c97e566764b",
+    "matrix": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0
+    ]
+   }
+  }
+ },
+ "fixed": [
+  "base",
+  "rail"
+ ],
+ "operations": [
+  {
+   "id": "plate",
+   "type": "translate",
+   "members": [
+    "plate",
+    "fastener"
+   ],
+   "requires": [],
+   "path_mm": [
+    [
+     20,
+     0,
+     25
+    ],
+    [
+     0,
+     0,
+     25
+    ],
+    [
+     0,
+     0,
+     0
+    ]
+   ],
+   "intent": "fixture source: plate translates above open rail channel, then descends between x=-6 and x=6 walls; fastener stays attached",
+   "tools": [
+    {
+     "fastener": "fastener",
+     "tool": "ordinary-driver",
+     "approach_mm": 10
+    }
+   ]
+  },
+  {
+   "id": "lid",
+   "type": "translate",
+   "members": [
+    "lid"
+   ],
+   "requires": [
+    "plate"
+   ],
+   "path_mm": [
+    [
+     35,
+     0,
+     20
+    ],
+    [
+     0,
+     0,
+     20
+    ],
+    [
+     0,
+     0,
+     0
+    ]
+   ],
+   "intent": "fixture source: roof closes z=13 only after plate insertion and axial driver withdrawal",
+   "tools": []
+  }
+ ]
+}

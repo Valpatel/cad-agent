@@ -1,0 +1,113 @@
+{
+ "schema": "cad-agent-model/1",
+ "title": "Serial native rail bench",
+ "units": "mm",
+ "up": "z",
+ "box_mm": [
+  -20.0,
+  -12.0,
+  -3.0,
+  20.0,
+  12.0,
+  15.0
+ ],
+ "quant": 65535,
+ "bin": "mini.bin",
+ "encoding": "gzip",
+ "bytes": 253,
+ "raw_bytes": 720,
+ "sha256": "09a3446e0150acad3ccf4648ae0c3f5f33dde0bf062f2fe752fe921159839a34",
+ "triangles": 72,
+ "source": {},
+ "parts": [
+  {
+   "name": "base",
+   "bounds_mm": [
+    -20.0000001,
+    -12.000000100000001,
+    -3.0000001000000007,
+    20.0000001,
+    12.000000100000001,
+    1.0000000088817842e-07
+   ],
+   "source_mesh_sha256": "d200e907a9e7e414f9e7d764189a033b32f2eebf5fbaecd811f17d26b90cd1bd",
+   "color": "#487ca8",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 0,
+   "index_bits": 16
+  },
+  {
+   "name": "rail",
+   "bounds_mm": [
+    -8.000000100000001,
+    -8.000000100000001,
+    -1.000000004440892e-07,
+    8.000000100000001,
+    8.000000100000001,
+    12.000000100000001
+   ],
+   "source_mesh_sha256": "774aecf78f7fd69f2f0bbf3b2506d223d32304db555e8fd760ba272e29fb0bc0",
+   "color": "#487ca8",
+   "vertices": 16,
+   "triangles": 24,
+   "offset": 120,
+   "index_bits": 16
+  },
+  {
+   "name": "plate",
+   "bounds_mm": [
+    -5.0000001,
+    -5.0000001,
+    0.9999998999999995,
+    5.0000001,
+    5.0000001,
+    3.0000001000000003
+   ],
+   "source_mesh_sha256": "bcfcbb2e396da36084ad961112a89836ce6c52e5a68e022b8503b4018f2877a8",
+   "color": "#487ca8",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 360,
+   "index_bits": 16
+  },
+  {
+   "name": "fastener",
+   "bounds_mm": [
+    -1.0000001,
+    -1.0000001,
+    2.9999998999999997,
+    1.0000001,
+    1.0000001,
+    5.0000001
+   ],
+   "source_mesh_sha256": "054f51f7691b78d320ce7c66501fbdba2b748f2963b16dd7350e23b157270886",
+   "color": "#487ca8",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 480,
+   "index_bits": 16
+  },
+  {
+   "name": "lid",
+   "bounds_mm": [
+    -9.0000001,
+    -9.0000001,
+    12.9999999,
+    9.0000001,
+    9.0000001,
+    15.0000001
+   ],
+   "source_mesh_sha256": "fe32664fd39263bc01c1f2b6b45e2e3daa0bd741d48ea050b119ef7ee109150e",
+   "color": "#487ca8",
+   "vertices": 8,
+   "triangles": 12,
+   "offset": 600,
+   "index_bits": 16
+  }
+ ],
+ "assembly_plan": {
+  "file": "plan.json",
+  "sha256": "7c916dc729d07db0edf903c5add7ff24d36365d4638db065413877871ee84eee"
+ }
+}

@@ -319,3 +319,29 @@ Tools reuse the fastener gate's ordinary axial envelopes and sector swing, with 
 approach/retraction. Insertion, tool access, internal qualification, support and retention/process remain
 separate results; sampled clearance never means physical assembly qualification. No product geometry is
 changed by this slice. Product migration and richer paths require their own acceptance evidence.
+
+The opt-in JSON is authored under dossier `assembly: {plan: ...}` and exported as a separate resource.
+`collect_guides` captures `assembly_plan: {file, sha256}`; `pack_view(..., assembly_plan=Path(...))`
+validates original mesh hashes, preserves instance partitions and copies the identical resource when needed.
+Guide steps project operation IDs in the same order and keep `offsets_mm` empty. Full-plan subsets are the
+only supported presentation in this slice. `loadGuide` returns `plan`; `createGuideController(viewer, guide,
+{plan})` and `createViewer({assemblyPlan: plan, ...})` bind the same validated data. A consumer adapter using
+its own scene must apply the same CAD-root rest/parent contract; arbitrary articulation composition is unsupported.
+
+The plan has `schema`, `units`, `frame`, `source`, `clearance_mm`, `fixed`, and `operations`. Source carries
+`revision`, `closure_sha256`, `producer`, `tooling_sha256`, and `instances` (original `mesh_sha256`,
+`brep_sha256`, rigid 3×4 row-major `matrix`). Each operation carries `id`, `type: "translate"`, exact
+`members`, `requires`, `path_mm`, independent `intent`, and `tools`. Tool references carry `fastener`, `tool`
+and positive finite `approach_mm`. The tooling digest binds existing fastener specs/axes and tool declarations,
+so shrinking an ordinary driver under the same name is stale input. An ordinary tool declaration needs its
+`identity`, `ordinary: true` and a `drive` matching the fastener spec, in addition to existing envelope/swing data.
+Positive tool allowance remains explicitly unverified by the current envelope owner; no special smaller tool is
+silently selected. Drive engagement, holding-side tools, support and retention remain unqualified in this slice.
+
+`playback_gate(..., tools=..., fastener_specs=..., reverse=True)` validates the captured plan against the original
+producer binding before loading CAD. `bind_playback_breps` accepts the producer's `source_closure_sha256` and
+`producer` alongside its existing mesh/BREP/placement receipt. Pure `run_plan_sequence` establishes no source
+identity. Public player `seek(0..operationCount)`, `reverse()` and `reset()` are absolute; `reset()` presents
+assembled home. A loop traverses the same path back and forth, preserving each terminal frame. The existing
+guide policy still clears selection/material overrides on instruction/playback transitions; no new articulation
+owner is introduced. Mini-viewer turns, hover and pointer controls remain owned by that viewer.

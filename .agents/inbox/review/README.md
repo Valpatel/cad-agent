@@ -17,6 +17,7 @@ flowchart TD
 | [Preassembly scope](2026-10-29-preassembly-needs-its-own-obstacle-scope.md) | Bench assembly, rigid parent insertion and explicit service targets need distinct checked scopes. |
 | [Volume precision](2026-10-29-volume-precision-needs-valid-solids-and-aggregate-errors.md) | Validate solids and aggregate integration uncertainty before accepting relations. |
 | [Playback geometry](2026-11-10-playback-needs-finite-bound-source-geometry.md) | Finite paths and exact world/source bindings must describe the displayed geometry. |
+| [Tool-only controls](2026-11-12-tool-control-must-clear-later-component-paths.md) | A tool obstruction control must also clear later component paths. |
 | [Lazy checkpoints](2026-11-10-lazy-callbacks-are-not-completed-checkpoints.md) | Deferred callback bodies cannot count as completed durable progress. |
 
 [Incident inbox](../README.md) · [Assembly scope guidance](../../domains/assembly-scopes.md) ·

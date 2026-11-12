@@ -137,7 +137,7 @@ class FastenerOptions:
         return tuple(float(x) for x in METRIC_STOCK_MM) if metric else INCH_STOCK_MM
 
 
-SPEC_OPTIONAL = ("key", "via", "tool", "length_mm", "diameter_mm", "thread_start_mm", "thread_depth_mm",
+SPEC_OPTIONAL = ("key", "via", "tool", "drive", "length_mm", "diameter_mm", "thread_start_mm", "thread_depth_mm",
                  "min_engagement_mm", "pitch_mm", "head", "head_d_mm", "head_h_mm", "hole_clearance_mm",
                  "tip_clearance_mm")
 
@@ -155,6 +155,7 @@ class FastenerSpec:
     key: str = ""
     via: str = ""
     tool: str = ""
+    drive: str = ""
     length_mm: Optional[float] = None
     diameter_mm: Optional[float] = None
     thread_start_mm: Optional[float] = None
@@ -313,7 +314,7 @@ def tool_envelope(decl: Any) -> Dict[str, Any]:
         if d is None or decl.get("length") is None:
             raise ValueError(f"a tool envelope needs envelope_d and length, or segments: {dict(decl)!r}")
         segs = [{"d": float(d), "length": float(decl["length"])}]
-    if any(s["d"] <= 0 or s["length"] <= 0 for s in segs):
+    if any(not math.isfinite(s["d"]) or not math.isfinite(s["length"]) or s["d"] <= 0 or s["length"] <= 0 for s in segs):
         raise ValueError(f"tool segments need positive d and length: {segs!r}")
     start = str(decl.get("start", "head"))
     if start not in ("head", "seat"):
@@ -323,9 +324,12 @@ def tool_envelope(decl: Any) -> Dict[str, Any]:
         swing = {"radius": float(swing["radius"]), "at": float(swing.get("at", 0.0)),
                  "thickness": float(swing.get("thickness", 3.0)), "min_deg": float(swing.get("min_deg", 60.0)),
                  "sectors": int(swing.get("sectors", 12))}
-        if swing["radius"] <= 0 or swing["thickness"] <= 0 or not 0 < swing["min_deg"] <= 360 or swing["sectors"] < 4:
+        if not all(math.isfinite(v) for v in swing.values()) or swing["radius"] <= 0 or swing["thickness"] <= 0 or not 0 < swing["min_deg"] <= 360 or swing["sectors"] < 4:
             raise ValueError(f"bad tool swing {swing!r}")
-    return {"segments": segs, "start": start, "offset_mm": float(decl.get("offset_mm", 0.0)), "swing": swing}
+    offset = float(decl.get("offset_mm", 0.0))
+    if not math.isfinite(offset):
+        raise ValueError("tool offset must be finite")
+    return {"segments": segs, "start": start, "offset_mm": offset, "swing": swing}
 
 
 def _steps(steps: Iterable[Any]) -> List[Dict[str, Any]]:
@@ -1441,3 +1445,42 @@ __all__ = ["FastenerSpec", "FastenerOptions", "fastener_gate", "fastener_gate_fr
            "tools_from", "tool_envelope", "install_step", "present_at", "evaluate", "measure", "table_markdown",
            "tool_access", "tool_check",
            "owner", "ASSUMPTIONS", "GATE", "CHECKS", "DEFAULT_STOCK_MM", "COARSE_PITCH_MM"]
+
+
+def axial_tool_path(assembly: Any, spec: FastenerSpec, i: int, tool_name: str, decl: Any,
+                    present: Sequence[str], approach_mm: float, *, max_step_mm: float = 1.0,
+                    max_samples: int = 5000, tol: Any = None):
+    """Finite straight approach/retraction of the SAME ordinary envelope, plus engaged swing.
+
+    Uses existing head/axis/envelope queries. Sampling is explicit; clear engagement alone is insufficient.
+    Tool identity/compatibility are declared provenance, not an inferred special smaller envelope.
+    """
+    if (type(approach_mm) not in (int, float) or not math.isfinite(approach_mm) or approach_mm <= 0
+            or type(max_step_mm) not in (int, float) or not math.isfinite(max_step_mm) or max_step_mm <= 0
+            or type(max_samples) is not int or max_samples < 1):
+        raise ValueError("finite tool approach and sampling budget required")
+    if not isinstance(decl, Mapping) or decl.get("ordinary") is not True or not decl.get("identity"):
+        return {"state": "unsupported", "tool": tool_name, "reason": "ordinary tool identity not declared"}
+    if not getattr(spec, "drive", "") or decl.get("drive") != spec.drive:
+        return {"state": "unknown", "tool": tool_name, "reason": "drive compatibility not established"}
+    env = tool_envelope(decl)
+    count = math.ceil(approach_mm / max_step_mm)
+    if count + 1 > max_samples:
+        return {"state": "unchecked", "tool": tool_name, "reason": "tool path sample budget exhausted"}
+    rows = []
+    # Outward-to-engaged; reverse traverses precisely the same occupied states.
+    for j in range(count, -1, -1):
+        distance = approach_mm * j / count
+        sample_decl = {**decl, "offset_mm": env["offset_mm"] + distance}
+        if j:  # Operating swing belongs to engaged pose, not translating tool poses.
+            sample_decl.pop("swing", None)
+        evidence = tool_access(assembly, spec, i, tool_name, sample_decl, present, tol=tol)
+        rows.append({"distance_mm": distance, **evidence})
+        if not evidence.get("clear"):
+            return {"state": "unknown" if evidence.get("error") else "blocked", "tool": tool_name,
+                    "identity": decl["identity"], "samples": rows, "max_step_mm": max_step_mm,
+                    "last_clear_mm": rows[-2]["distance_mm"] if len(rows) > 1 else None,
+                    "first_blocked_mm": distance}
+    return {"state": "sampled-clear", "tool": tool_name, "identity": decl["identity"], "samples": rows,
+            "max_step_mm": max_step_mm, "approach_mm": approach_mm, "retraction": "same path reversed",
+            "limits": "finite axial envelope samples and engaged sector swing; hands and torque unverified"}

@@ -395,6 +395,8 @@ test('reference HTML Markdown and citation tooltips credit named people alongsid
   assert.ok(area.body.includes('Ada Lovelace · Example Lab'));
   assert.ok(area.body.includes('href="https://example.com/original?dlpdf=t&amp;part=1"'));
   assert.ok(area.body.includes('Read original'));
+  assert.ok(site.pages[0].body.includes('No sponsorships, partnerships or paid placements'));
+  assert.ok(site.pages[0].body.includes('Meet the creators'));
   assert.ok(area.markdown.includes('Ada Lovelace · Example Lab'));
   assert.ok(area.markdown.includes('— Read original'));
   assert.match(linkTags('[ref:credit-example]',m),/title="A useful study, Ada Lovelace · Example Lab/);

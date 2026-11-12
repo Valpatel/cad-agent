@@ -480,6 +480,7 @@ function indexBody(m, { feedback }) {
   return `<div class="refs-page"><p class="crumbs"><a href="/catalog">Catalogue</a> · <a href="/references.md">Markdown</a> · <a href="/catalog/references/index.json">JSON</a> · <a href="/catalog/references/records.json">All records (JSON)</a> · <a href="/docs/experts">Experts</a></p>`
     + `<header class="refs-head"><p class="eyebrow">Reference knowledge base</p><h1>References</h1>`
     + `<p class="refs-lede">${plural(all.length, 'record')} in ${plural(m.pages.filter(p => p !== UNPLACED).length, 'area')}: ${plural(read, 'read source')} that the rules and checks cite, and ${plural(all.length - read, 'record')} catalogued from the Reference Map (open projects and design guides), not yet read. Open an area for its charts and a table you can filter.</p>`
+    + `<p class="refs-caveat">${esc(RESOURCE_ATTRIBUTION)} <a href="/docs/experts">Meet the creators</a></p>`
     + `<p class="refs-caveat">A catalogued record is a search snippet: listed and linked, never cited until someone reads the source. Its numbers are the authors' claims and its licence is as the map states it.</p></header>`
     + `<section class="refs-charts refs-charts-wide" aria-label="All areas">${areaChart(m)}${m.rows.length ? coverageChart(m) : ''}</section>`
     + (wanted.length ? `<section aria-labelledby="wanted"><h2 id="wanted">Sources still wanted</h2><ul class="refs-cov-cards">`

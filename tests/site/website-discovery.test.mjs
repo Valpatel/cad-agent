@@ -71,7 +71,9 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(compactReferences.reduce((n,s)=>n+Buffer.byteLength(s),0)<model.source_counts.reference_records*700,'reference projection remains compact; richer catalogue details are not copied onto sources');
  assert.ok(compactReferences.every(s=>!s.includes('result-details')&&!s.includes('result-cover')));
  const n=model.items.length;
- assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<900000,'700 bytes/result plus fixed shell; absolute safety cap');
+ // Dated before/after: c301 Explore 856890 B / 132119 gzip; creator/original links 941750 B / 147813 gzip.
+ // Only raw absolute headroom changes: 700 B/reference, per-item, gzip and DOM guards remain unchanged.
+ assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<1000000,'700 bytes/result plus fixed shell; 1 MB raw cap includes direct original destinations');
  assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
  assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
 });
@@ -176,4 +178,27 @@ test('shared reference rows credit creators and link originals without copying f
  const unsafe=discoveryHTML(discoveryModel(input),{areas,catalog:input.catalog});
  assert.ok(unsafe.includes('&lt;img src=x onerror=alert(1)&gt;'));
  assert.doesNotMatch(unsafe,/<img src=x|href="javascript:/);
+});
+
+
+test('outside original links survive legacy group remapping without guessed creator metadata',()=>{
+ const areas={domains:[{slug:'mechanical',title:'Mechanical',areas:[{slug:'fasteners',title:'Fasteners'}]}],maturity:[]};
+ const references={refs:{records:new Map(),aliases:new Map()},placed:new Map(),home:()=>''};
+ for(const kind of ['project','library','benchmark']){
+  const entry={id:kind+'-example',kind,name:'known-owner/example',url:'https://example.com/project?view=full&x=1',areas:['fasteners'],status:'reference',cover:'/cover.svg'};
+  const catalog={items:[entry]},m=discoveryModel({catalog,pages:[],references,ORIGIN:'https://cad-agent.valpatel.com',revision:'r',pageURL:()=>''});
+  assert.equal(m.items[0].creator,undefined,'no creator inferred from URL or repository identity');
+  for(const legacy of [false,true]){
+   const html=discoveryHTML(m,{areas,catalog,legacy});
+   const label=kind==='benchmark'?'Visit original':'Visit project';
+   assert.ok(html.includes('href="https://example.com/project?view=full&amp;x=1">'+label+'</a>'),kind+' legacy='+legacy);
+  }
+ }
+});
+
+test('every recorded author remains searchable alongside their organisation',()=>{
+ for(const source of fullSources.values())for(const author of source.authors||[]){
+  if(typeof author!=='string'||!author.trim())continue;
+  assert.ok(query(author).some(item=>item.collection==='reference'&&item.source_id===source.id),source.id+': '+author);
+ }
 });

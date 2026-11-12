@@ -169,6 +169,25 @@ async function lifecycleChecks(){
   }finally{await done();}
  }
 }
+async function interactionChecks(){
+ const {page,done}=await open('/explore');try{
+  const tabs=page.locator('[data-gallery-tabs] [data-tab]');await tabs.first().focus();await page.keyboard.press('ArrowRight');await page.waitForURL(u=>u.searchParams.get('kind')==='guides');
+  if(await page.locator('[data-gallery-tabs] [aria-selected=true]').getAttribute('data-tab')!=='guides')fail('keyboard tabs','ArrowRight does not select guides');
+  await page.keyboard.press('End');await page.waitForURL(u=>u.searchParams.get('kind')==='demos');await page.keyboard.press('Home');await page.waitForURL(u=>!u.searchParams.has('kind'));
+  await page.locator('.discover-filter-options > summary').click();
+  const box=page.locator('input[name=format][value=tool]');await box.check();await page.waitForURL(u=>u.searchParams.get('format')==='tool');
+  const chip=page.getByRole('button',{name:'Remove filter: tool',exact:true});if(!await chip.isVisible())fail('filter chip','label includes a count or is not removable');
+  await page.locator('[data-gallery-sort]').selectOption('az');await page.waitForURL(u=>u.searchParams.get('sort')==='az');
+  await page.getByRole('button',{name:'Remove filter: tool',exact:true}).click();await page.waitForURL(u=>!u.searchParams.has('format'));
+  await page.goBack();await box.waitFor();if(!await box.isChecked()||await page.locator('[data-gallery-sort]').inputValue()!=='az')fail('filter history','Back lost checkbox or sort');
+  await page.locator('[data-group=guides] [data-gallery-more]').click();await page.waitForURL(u=>u.searchParams.get('kind')==='guides');
+  const titles=await page.locator('[data-item]').evaluateAll(xs=>xs.filter(x=>x.checkVisibility()).map(x=>x.querySelector('.result-title').textContent.toLowerCase()));
+  const expected=catalog.items.filter(x=>x.kind==='tool').map(x=>x.name.toLowerCase()).sort((a,b)=>a.localeCompare(b));
+  if(JSON.stringify(titles)!==JSON.stringify(expected))fail('sort/filter','A–Z tool results disagree with catalogue');
+  const projection=JSON.parse(await readFile(path.join(dir,'discovery.json'),'utf8')),total=projection.items.filter(x=>x.group==='guides').length;
+  const line=await page.locator('[data-gallery-status]').textContent();if(line!==`${expected.length} of ${total} results`)fail('filtered count',line);
+ }finally{await done();}
+}
 async function detailsChecks(){
  for(const badRevision of [false,true]){
   const {page,done}=await open('/explore?q=holes');try{
@@ -222,7 +241,7 @@ async function outlineThemeChecks(){
   }finally{await done();}
  }
 }
-try{await sharedDiscoveryChecks();await legacyChecks();await lifecycleChecks();await detailsChecks();await readerChecks();await outlineThemeChecks();}
+try{await sharedDiscoveryChecks();await legacyChecks();await lifecycleChecks();await interactionChecks();await detailsChecks();await readerChecks();await outlineThemeChecks();}
 finally{await browser.close();server.kill();await site.done();}
 assert.deepEqual(problems,[],problems.join('\n'));
 console.log(`Explore/catalogue/readers OK in ${engine.name()}`);

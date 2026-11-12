@@ -91,7 +91,7 @@ export function discoveryHTML(model, { areas, pages=[], pageURL=()=>'', catalog=
   const tree = topicTree({areas,pages,pageURL,browse:true,sprite:false});
   const localCover = cover => { const u = new URL(cover, model.origin); if (u.origin !== model.origin) throw new Error('discovery: cover is not site-owned'); return u.pathname + u.search; };
   const demoItems = model.items.filter(x => x.group === 'demos').slice(0, 3);
-  const option = (name, value, title) => `<label><input type="checkbox" name="${name}" value="${esc(value)}"> ${esc(title)} <span data-count></span></label>`;
+  const option = (name, value, title) => `<label><input type="checkbox" name="${name}" value="${esc(value)}"> <span>${esc(title)}</span> <span data-count></span></label>`;
   return `<cad-gallery data-revision="${esc(model.revision)}" class="catalog discovery" tab-param="kind" limit="3" browse-limit="2" item-noun="result" items-noun="results" data-open-groups search-ids sort-label=".result-title" data-overview>
 <header class="discover-hero"><p class="eyebrow">Explore hardware knowledge</p><h1>Find the next useful step.</h1><p>Tools to try, practical lessons and the sources behind the design.</p>
 <label class="discover-search" data-gallery-js><span>Search everything</span><input type="search" name="q" data-gallery-search placeholder="Counterbores, snap fits, a source ID…" autocomplete="off"></label>

@@ -2,6 +2,9 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A valid changelog-fragment link breaks after folding into root CHANGELOG.md | [Check the moved Markdown consumer before release](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#check-release-links-after-moving-their-markdown-consumer) |
+| A review says PASS but its marker is first and the gate ignores it | [Read back the last non-empty verdict line](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#read-back-the-verdicts-last-non-empty-line) |
+| An original blocked PR becomes MERGED after a corrected replacement preserves its ancestry | [Verify the actual predecessor state and exact tip](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#preserve-the-actual-predecessor-state-after-an-ancestry-merge) |
 | A documentation-only PR passes content checks but its changelog fragment cannot be released | [Validate release inputs as well as the page](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#documentation-changes-still-need-the-release-parser) |
 | A real PowerShell guard exceeds 20 seconds with empty captured output | [Retain bounded phase receipts without changing the guard](inbox/2026-11-06-source-selection-must-not-pass-empty.md#a-silent-powershell-timeout-needs-its-phase-receipts) |
 | Containment or packet poses lose a follower offset while an independent joint moves | [Preserve other followers' home transforms](inbox/2026-10-28-rendered-motion-needs-an-independent-frame.md#a-sampled-group-still-needs-other-followers-home-transforms) |

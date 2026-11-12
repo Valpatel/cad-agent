@@ -345,6 +345,25 @@ def test_phase1_missing_executable_still_records_failure(tmp_path, monkeypatch):
     assert 'FileNotFoundError' in receipt['error'] and receipt['group_settled'] is None
 
 
+def test_phase1_redirect_scope_allows_only_bounded_https_release_assets():
+    from urllib.request import Request
+    request = Request(probe.UV_URL)
+    good = 'https://release-assets.githubusercontent.com/github-production-release-asset/id/file'
+    handler = probe.ReleaseRedirects(True)
+    assert handler.redirect_request(request, None, 302, '', {}, good).full_url == good
+    assert handler.redirect_request(request, None, 302, '', {}, good).full_url == good
+    with pytest.raises(ValueError, match='redirect is outside'):
+        handler.redirect_request(request, None, 302, '', {}, good)
+    for bad in ('http://release-assets.githubusercontent.com/github-production-release-asset/file',
+                'https://example.org/github-production-release-asset/file',
+                'https://user@release-assets.githubusercontent.com/github-production-release-asset/file',
+                'https://release-assets.githubusercontent.com/other/file'):
+        with pytest.raises(ValueError, match='redirect is outside'):
+            probe.ReleaseRedirects(True).redirect_request(request, None, 302, '', {}, bad)
+    with pytest.raises(ValueError, match='redirect is outside'):
+        probe.ReleaseRedirects(False).redirect_request(request, None, 302, '', {}, good)
+
+
 @pytest.mark.skipif(os.environ.get('CAD_EVAL_INSPECT_WIRE') != '1',
                     reason='optional pinned Inspect/OpenAI SDK environment; enable explicitly after setup review')
 def test_actual_compatible_provider_missing_usage_and_request_counts():

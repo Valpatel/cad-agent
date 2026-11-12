@@ -15,7 +15,8 @@ from pathlib import Path
 import subprocess
 import tarfile
 import tempfile
-from urllib.request import HTTPSHandler, ProxyHandler, build_opener
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, HTTPSHandler, ProxyHandler, build_opener
 
 INSPECT_REVISION = 'ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8'
 HELPER_HASHES = {
@@ -50,9 +51,28 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+class ReleaseRedirects(HTTPRedirectHandler):
+    """Only GitHub's expected public HTTPS release-asset redirect, at most two."""
+    def __init__(self, allow_assets):
+        self.allow_assets, self.count = allow_assets, 0
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        target = urlsplit(newurl)
+        self.count += 1
+        if (not self.allow_assets or self.count > 2 or target.scheme != 'https'
+                or target.hostname != 'release-assets.githubusercontent.com'
+                or not target.path.startswith('/github-production-release-asset/')
+                or target.username is not None or target.password is not None
+                or target.port not in (None, 443)):
+            raise ValueError('redirect is outside the reviewed public artifact scope')
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def download(url, path, expected, limit):
     # Public immutable artifacts only. Ignore ambient proxy/credential helpers.
-    opener = build_opener(ProxyHandler({}), HTTPSHandler())
+    if url not in (UV_URL, UV_URL + '.sha256', *(SOURCE + name for name in SOURCE_HASHES)):
+        raise ValueError('URL is outside the reviewed public artifact scope')
+    opener = build_opener(ProxyHandler({}), HTTPSHandler(), ReleaseRedirects(url.startswith('https://github.com/')))
     size = 0
     with opener.open(url, timeout=20) as response, Path(path).open('xb') as out:
         os.chmod(path, 0o600)

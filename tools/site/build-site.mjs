@@ -511,7 +511,7 @@ const makeChip = (m, i) => {
 };
 // The hero model (web/models/, from tools/gyropup_showcase.py) and its still poster (tools/site/figures/site-model-poster.mjs).
 const heroModel = JSON.parse(await read(ASSETS + '/models/gyropup.json'));
-const j501Model = JSON.parse(await read(ASSETS + '/models/j501.json')); 
+const j501Model = JSON.parse(await read(ASSETS + '/models/j501.json'));
 const poster = imageSize(await readBuf(ASSETS + '/models/gyropup.webp'), 'gyropup.webp');
 if (!poster) throw new Error('web/models/gyropup.webp: run node tools/site/figures/site-model-poster.mjs');
 // One checked installation guide per platform, or one line to paste into an agent. Keep checksum/immutable-source

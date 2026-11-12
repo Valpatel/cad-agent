@@ -85,3 +85,37 @@ test('part labels read as words, with a side spelled out', () => {
   assert.equal(partLabel('thigh_l'), 'thigh (left)');
   assert.equal(partLabel('hip_motor_r'), 'hip motor (right)');
 });
+
+test('J501 showcase includes the real board mesh with bounded render-only simplification', async () => {
+  const { model, packed, parts } = await load('tools/site/assets/models/j501.json');
+  assert.equal(packed.length, model.bytes);
+  assert.equal(createHash('sha256').update(packed).digest('hex'), model.sha256);
+  assert.ok(model.bytes < 1200 * 1024, 'phone transfer budget: 1.2 MiB');
+  assert.ok(model.triangles < 400000, 'render-only triangle budget');
+  assert.equal(parts.length, model.parts.length);
+  const board = model.parts.find(p => p.name === 'carrier_board');
+  assert.ok(board && board.triangles > 50000, 'detailed source PCB, not an invented box');
+  assert.deepEqual(board.bounds_mm, [15, 11.62, 13.5, 191.35, 180.5, 38.01]);
+  assert.match(model.source.board_reference.url, /RESERVER_AGX_ORIN_CARRIER_BOARD\.stp$/);
+  assert.equal(model.source.revision, '240be82ec5420e989dbfad07d76ab62ea3e83a50');
+  for (const [name, p] of Object.entries(model.source.display_only.parts)) {
+    assert.ok(p.max_vertex_move_mm < .7, name + ': display-only displacement bound');
+    assert.ok(p.display_triangles <= p.original_triangles, name);
+  }
+});
+
+test('loading counts actual received bytes without mixing compressed and decoded totals', async () => {
+  const { modelBytes, transferTotal } = await import('../../software/cadagent/webkit/model.js');
+  const body = new Uint8Array(40).fill(7);
+  for (const headers of [{}, {'content-length':'40'}, {'content-length':'5','content-encoding':'gzip'}, {'content-length':'5'}, {'content-length':'no'}]) {
+    const response = new Response(body, {headers}), progress=[];
+    const initial = transferTotal(response);
+    if (headers['content-encoding']) assert.equal(initial, null);
+    const got = await modelBytes(response, (bytes,total)=>progress.push([bytes,total]));
+    assert.deepEqual(got,body);
+    assert.equal(progress.at(-1)[0],40);
+    assert.equal(progress.at(-1)[1],headers['content-length']==='40'?40:null);
+    assert.ok(progress.every(([n,total])=>total===null||n<=total));
+  }
+  await assert.rejects(modelBytes(new Response('bad',{status:503})), /HTTP 503/);
+});

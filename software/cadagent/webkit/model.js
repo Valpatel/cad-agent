@@ -38,6 +38,30 @@ export async function inflate(buffer) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
+/** Browser fetch may decode Content-Encoding while Content-Length describes wire bytes.
+ * Only identity transfers have a comparable total; otherwise progress stays indeterminate. */
+export function transferTotal(response) {
+  const encoding = response.headers.get('content-encoding');
+  const raw = response.headers.get('content-length');
+  const n = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
+  return (!encoding || encoding.toLowerCase() === 'identity') && Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+export async function modelBytes(response, progress = () => {}) {
+  if (!response.ok) throw new Error(`Model data: HTTP ${response.status}`);
+  let total = transferTotal(response), loaded = 0;
+  if (!response.body?.getReader) { const b = new Uint8Array(await response.arrayBuffer()); progress(b.length, null); return b; }
+  const reader = response.body.getReader(), chunks = [];
+  try { for (;;) { const {value, done} = await reader.read(); if (done) break; chunks.push(value); loaded += value.byteLength;
+    if (total && loaded > total) total = null;
+    progress(loaded, total);
+  } } finally { reader.releaseLock(); }
+  if (total !== loaded) total = null;
+  progress(loaded, total);
+  const result = new Uint8Array(loaded); let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }
+  return result;
+}
+
 /** [{ positions: Float32Array (mm, x y z per vertex), index: Uint16Array | Uint32Array }] per part, the inverse of
  * pack_view (cadagent/view.py documents the layout; unpack_model there is the reference the tests compare with). */
 export function decodeModel(model, raw) {
@@ -121,6 +145,9 @@ const BUTTON = (label, pressed) => {
 class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) {
   #started = false;
   #resolve;
+  #status;
+  #meter;
+  #message;
   ready = new Promise(r => { this.#resolve = r; });
 
   connectedCallback() {
@@ -146,24 +173,44 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     });
   }
 
+  #report(message, bytes = null, total = null) {
+    if (!this.#status) {
+      this.#status = document.createElement('div'); this.#status.className = 'cad-model-status';
+      this.#status.setAttribute('role', 'status');
+      this.#message = document.createElement('span'); this.#meter = document.createElement('progress');
+      this.#meter.setAttribute('aria-label', 'Model data loading');
+      this.#status.append(this.#message, this.#meter); this.append(this.#status);
+    }
+    this.#message.textContent = message + (bytes === null ? '' : ` · ${(bytes / 1024).toFixed(0)} KiB received`);
+    this.#meter.hidden = this.dataset.state !== 'loading';
+    if (total) { this.#meter.max = total; this.#meter.value = bytes; }
+    else this.#meter.removeAttribute('value');
+  }
+
   async #start() {
     if (this.#started) return;
-    this.#started = true;
-    this.dataset.state = 'loading';
+    this.#started = true; this.dataset.state = 'loading'; this.setAttribute('aria-busy', 'true');
+    this.#report('Preparing 3D viewer');
     try {
       const src = new URL(this.getAttribute('src'), location.href);
-      const [THREE, model] = await Promise.all([import(new URL('vendor/three/three.module.min.js', KIT).href),
-        fetch(src).then(r => { if (!r.ok) throw new Error(`${src.pathname}: HTTP ${r.status}`); return r.json(); })]);
+      const [THREE, metadata] = await Promise.all([import(new URL('vendor/three/three.module.min.js', KIT).href),
+        fetch(src).then(r => modelBytes(r, (n, total) => this.#report('Loading model structure', n, total)))]);
+      const model = JSON.parse(new TextDecoder().decode(metadata));
       if (model.schema !== 'cad-agent-model/1') throw new Error(`unknown model schema ${model.schema}`);
-      const bin = await fetch(new URL(model.bin, src)).then(r => { if (!r.ok) throw new Error(`${model.bin}: HTTP ${r.status}`); return r.arrayBuffer(); });
+      const bin = await modelBytes(await fetch(new URL(model.bin, src)), (n, total) => this.#report('Loading mesh data', n, total));
+      this.#report(`Decoding ${model.parts.length} CAD parts`);
       const parts = decodeModel(model, await inflate(bin));
+      this.#report(`Preparing ${parts.length} parts for display`);
       this.#build(THREE, model, parts);
-      this.dataset.state = 'ready';
-      this.#resolve(this);
+      this.dataset.state = 'ready'; this.setAttribute('aria-busy', 'false');
+      this.#report(`${parts.length} parts ready · drag to turn`); this.#resolve(this);
     } catch (err) {
-      this.dataset.state = 'error';
+      this.dataset.state = 'error'; this.setAttribute('aria-busy', 'false');
       this.dataset.error = String(err?.message ?? err).slice(0, 300);
-      this.#resolve(this);
+      this.#report('3D view unavailable. The source poster remains available.');
+      const retry = BUTTON('Retry 3D view'); retry.className = 'cad-model-retry';
+      retry.addEventListener('click', () => { retry.remove(); this.#started = false; this.#start(); }, {once:true});
+      this.#status.append(retry); this.#resolve(this);
     }
   }
 

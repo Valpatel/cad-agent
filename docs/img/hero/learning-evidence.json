@@ -1,0 +1,58 @@
+{
+  "illustration": "learning-loop variants are conceptual process artwork, not an engineering result",
+  "generated_by": "tools/site/figures/learning-home.py",
+  "figures": {
+    "thermal-history": {
+      "input": "tests/fixtures/cfd_runs/exhaust-under-opening/postProcessing/domain0/zone_heater/0/volFieldValue.dat",
+      "sha256": "d6ea88105687c952bc98a3de4d0c55aadbd94ce7684645e531ea9d1f8b7d4073",
+      "samples": 150,
+      "final_c": 33.96448300000003
+    },
+    "airflow-balance": {
+      "input": "docs/img/cfd/SOURCE.json",
+      "sha256": "44cd643e53f8e2c77bf363d0c94ba0b94a36bcb40f70cd966b05a1f25ec42704",
+      "facts": {
+        "exhaust-under-opening": {
+          "mass_flow_g_s": 3.75,
+          "inlet_c": 33.64,
+          "outlet_c": 33.57,
+          "zone_by_volume_c": 33.56,
+          "heat_carried_w": 32.26,
+          "heat_input_w": 20.0,
+          "heat_out_w": 19.61,
+          "energy_balance_pct": -2.0,
+          "heat_out_window_w": [
+            18.9,
+            21.5
+          ],
+          "window": [
+            1200,
+            1500
+          ],
+          "energy_conserved": true,
+          "steady": true
+        },
+        "exhaust-ducted": {
+          "mass_flow_g_s": 2.77,
+          "inlet_c": 31.32,
+          "outlet_c": 31.33,
+          "zone_by_volume_c": 31.23,
+          "heat_carried_w": 17.6,
+          "heat_input_w": 20.0,
+          "heat_out_w": 17.83,
+          "energy_balance_pct": -10.9,
+          "heat_out_window_w": [
+            15.9,
+            23.3
+          ],
+          "window": [
+            1200,
+            1500
+          ],
+          "energy_conserved": false,
+          "steady": false
+        }
+      }
+    }
+  }
+}

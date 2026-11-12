@@ -1,0 +1,369 @@
+{
+  "source": {
+    "repo": "https://github.com/mvalancy/j501-agx-orin",
+    "revision": "240be82ec5420e989dbfad07d76ab62ea3e83a50",
+    "manifest": {
+      "file": "exports/view/view.json",
+      "sha256": "9981d20d2786ea3890b2730a91ef71acffb39533ab0e8c1dece61dc5526968df"
+    },
+    "inputs": {
+      "exports/view/base.stl": {
+        "sha256": "16a806d911976f22e1f4b03102af3d0e4aa9e8a5e8757417ede786f762059abc",
+        "bytes": 3873684
+      },
+      "exports/view/cover.stl": {
+        "sha256": "fc5ba05b817cc60755b4d01a61c23ab64a6bb5f4f6274f37a8ea3a05e0bfda8f",
+        "bytes": 1803884
+      },
+      "exports/view/front_no_gmsl.stl": {
+        "sha256": "4134b0f54a0423e586e1e3d94bd588081107de21a89132cae494ae3751b7a501",
+        "bytes": 923284
+      },
+      "exports/view/rear_io.stl": {
+        "sha256": "8283cc5bc7443ae5f73c692faecde5035d5d83c27b4b288974b2092f32b277ae",
+        "bytes": 979184
+      },
+      "exports/view/side_hatch.stl": {
+        "sha256": "fb99ea195753296cf44ba7b6a0a14f659cd81a21239beda9f3644005a28392d2",
+        "bytes": 42684
+      },
+      "exports/view/chimney_cap.stl": {
+        "sha256": "df52a0426e206474dae5f221117430b1bd84c7ad0920433d0d9a316e96d9a584",
+        "bytes": 16684
+      },
+      "exports/view/spreader.stl": {
+        "sha256": "1f968cf36019c4a63ca067fda08220e44d310b8289cca7bb762c33ccfa9d79e6",
+        "bytes": 52484
+      },
+      "exports/view/spacers.stl": {
+        "sha256": "f9c5a99cbad57ad4923828b42163418fc3056d0651eb0c654ab687d72bd74039",
+        "bytes": 100884
+      },
+      "exports/view/cold_plate.stl": {
+        "sha256": "df58ba2f6ad65b8ee48ddabca850397cb7919f55a00ef696dfc623edd23a6f0d",
+        "bytes": 684
+      },
+      "exports/view/heat_pipes.stl": {
+        "sha256": "545323931dc0f301b0d2afe832bebf7c4d978b514d2a90bb48db438bdea08cf2",
+        "bytes": 1101584
+      },
+      "exports/view/fins.stl": {
+        "sha256": "d451b0c3c8f3fe71488242ae4ff58e643890b82c781b24ff0ec54c9b5fcc0e94",
+        "bytes": 29484
+      },
+      "exports/view/mount_ears.stl": {
+        "sha256": "f7889585b589b486a05d9f1155b3dfa08b1075e7cabc0c40abc0e33fdad53b5d",
+        "bytes": 96884
+      },
+      "exports/view/fan_frame.stl": {
+        "sha256": "80673c0f5d682e7cdd2f05af095d86345bfa2066f34e342b89d2da515129d5e8",
+        "bytes": 14284
+      },
+      "exports/view/fan_rotor.stl": {
+        "sha256": "42f463c150da9a827553d2a0b218bcd3e42247cc9214a4c38eefa56a6fcfebf7",
+        "bytes": 80884
+      },
+      "exports/view/carrier_board.stl": {
+        "sha256": "7edeee5e695d553395340e11ce5e760595a1f12373dd6731a3d9a5b87f214561",
+        "bytes": 42283834
+      },
+      "exports/view/agx_module.stl": {
+        "sha256": "de92e892211332b1fdaa59641fcb9c397e53f143abae1a8a736a5f6e33df7d1d",
+        "bytes": 15251334
+      },
+      "exports/view/lid_screws.stl": {
+        "sha256": "d6d19644b6adff7d2ba0393f0821ded4c478476c5e479a5858073339fd39609e",
+        "bytes": 507684
+      },
+      "exports/view/board_screws.stl": {
+        "sha256": "b5397bb82abb82eedd0d0eb0d6c018c8663a1be36e723a843e70cc3755736606",
+        "bytes": 256484
+      },
+      "exports/view/cooler_tiedown_screws.stl": {
+        "sha256": "da9d95858939fdac35471e2677b4e4300f324caefc2fc3250dcf85e82007ed76",
+        "bytes": 130484
+      },
+      "exports/view/antenna_bulkheads.stl": {
+        "sha256": "9cc0322818d2b56a05235a0ba1d712b7ab863d986051217eaadbcf328f938c03",
+        "bytes": 251284
+      }
+    },
+    "display_only": {
+      "method": "0.4 mm vertex-cell centroid clustering; degenerate display triangles omitted",
+      "limits": "Render-only simplification, not dimension or fit evidence; lid hidden initially to reveal board. No CAD reconstruction.",
+      "parts": {
+        "base": {
+          "original_triangles": 77472,
+          "display_triangles": 49288,
+          "max_vertex_move_mm": 0.36442596861170534,
+          "source_bounds_mm": [
+            -0.02,
+            5.48,
+            -0.02,
+            206.02,
+            186.52,
+            76.5
+          ]
+        },
+        "cover": {
+          "original_triangles": 36076,
+          "display_triangles": 25062,
+          "max_vertex_move_mm": 0.3607911993132807,
+          "source_bounds_mm": [
+            -0.05,
+            5.45,
+            71.98,
+            206.05,
+            186.55,
+            97.05
+          ]
+        },
+        "front_no_gmsl": {
+          "original_triangles": 18464,
+          "display_triangles": 8586,
+          "max_vertex_move_mm": 0.3686879449985113,
+          "source_bounds_mm": [
+            10.25,
+            8.23,
+            4.0,
+            195.75,
+            11.26,
+            71.8
+          ]
+        },
+        "rear_io": {
+          "original_triangles": 19582,
+          "display_triangles": 8890,
+          "max_vertex_move_mm": 0.3741056773939522,
+          "source_bounds_mm": [
+            10.25,
+            178.35,
+            4.0,
+            195.75,
+            183.77,
+            71.8
+          ]
+        },
+        "side_hatch": {
+          "original_triangles": 852,
+          "display_triangles": 492,
+          "max_vertex_move_mm": 0.23065322216756287,
+          "source_bounds_mm": [
+            202.0,
+            75.2,
+            11.2,
+            206.0,
+            118.8,
+            71.8
+          ]
+        },
+        "chimney_cap": {
+          "original_triangles": 332,
+          "display_triangles": 188,
+          "max_vertex_move_mm": 0.2500228734313747,
+          "source_bounds_mm": [
+            13.5,
+            28.8,
+            -0.0,
+            30.0,
+            65.7,
+            4.0
+          ]
+        },
+        "spreader": {
+          "original_triangles": 1048,
+          "display_triangles": 488,
+          "max_vertex_move_mm": 0.19185742118508275,
+          "source_bounds_mm": [
+            55.5,
+            40.0,
+            41.26,
+            155.5,
+            150.0,
+            55.26
+          ]
+        },
+        "spacers": {
+          "original_triangles": 2016,
+          "display_triangles": 944,
+          "max_vertex_move_mm": 0.23430391772871711,
+          "source_bounds_mm": [
+            57.0,
+            64.0,
+            43.26,
+            153.0,
+            147.0,
+            50.06
+          ]
+        },
+        "cold_plate": {
+          "original_triangles": 12,
+          "display_triangles": 12,
+          "max_vertex_move_mm": 0.0,
+          "source_bounds_mm": [
+            83.0,
+            76.5,
+            43.26,
+            127.0,
+            134.5,
+            48.26
+          ]
+        },
+        "heat_pipes": {
+          "original_triangles": 22030,
+          "display_triangles": 17422,
+          "max_vertex_move_mm": 0.2430000174493242,
+          "source_bounds_mm": [
+            53.98,
+            78.48,
+            43.74,
+            156.02,
+            132.52,
+            73.58
+          ]
+        },
+        "fins": {
+          "original_triangles": 588,
+          "display_triangles": 540,
+          "max_vertex_move_mm": 0.21000366210938637,
+          "source_bounds_mm": [
+            63.0,
+            59.0,
+            48.26,
+            147.35,
+            152.0,
+            76.56
+          ]
+        },
+        "mount_ears": {
+          "original_triangles": 1936,
+          "display_triangles": 1272,
+          "max_vertex_move_mm": 0.24980078049669713,
+          "source_bounds_mm": [
+            55.0,
+            62.0,
+            50.05,
+            155.0,
+            149.0,
+            51.56
+          ]
+        },
+        "fan_frame": {
+          "original_triangles": 284,
+          "display_triangles": 284,
+          "max_vertex_move_mm": 0.0,
+          "source_bounds_mm": [
+            59.0,
+            59.5,
+            76.5,
+            151.0,
+            151.5,
+            91.61
+          ]
+        },
+        "fan_rotor": {
+          "original_triangles": 1616,
+          "display_triangles": 1616,
+          "max_vertex_move_mm": 0.0,
+          "source_bounds_mm": [
+            61.12,
+            61.61,
+            77.54,
+            148.1,
+            148.29,
+            91.58
+          ]
+        },
+        "carrier_board": {
+          "original_triangles": 845675,
+          "display_triangles": 144890,
+          "max_vertex_move_mm": 0.39440961399445446,
+          "source_bounds_mm": [
+            15.0,
+            11.62,
+            13.5,
+            191.35,
+            180.5,
+            38.01
+          ]
+        },
+        "agx_module": {
+          "original_triangles": 305025,
+          "display_triangles": 57950,
+          "max_vertex_move_mm": 0.46249767190804353,
+          "source_bounds_mm": [
+            54.99,
+            62.0,
+            24.47,
+            155.0,
+            149.0,
+            40.76
+          ]
+        },
+        "lid_screws": {
+          "original_triangles": 10152,
+          "display_triangles": 6864,
+          "max_vertex_move_mm": 0.2826686844283411,
+          "source_bounds_mm": [
+            -7.0,
+            27.25,
+            57.4,
+            213.0,
+            164.75,
+            81.0
+          ]
+        },
+        "board_screws": {
+          "original_triangles": 5128,
+          "display_triangles": 2696,
+          "max_vertex_move_mm": 0.30926969313525426,
+          "source_bounds_mm": [
+            27.15,
+            28.65,
+            9.99,
+            182.85,
+            164.35,
+            23.23
+          ]
+        },
+        "cooler_tiedown_screws": {
+          "original_triangles": 2608,
+          "display_triangles": 1708,
+          "max_vertex_move_mm": 0.31792080317665555,
+          "source_bounds_mm": [
+            55.61,
+            62.61,
+            11.23,
+            154.39,
+            148.39,
+            46.26
+          ]
+        },
+        "antenna_bulkheads": {
+          "original_triangles": 5024,
+          "display_triangles": 4032,
+          "max_vertex_move_mm": 0.2677536681321141,
+          "source_bounds_mm": [
+            -7.0,
+            41.88,
+            57.4,
+            213.0,
+            150.12,
+            66.61
+          ]
+        }
+      }
+    },
+    "board_reference": {
+      "file": "RESERVER_AGX_ORIN_CARRIER_BOARD.stp",
+      "url": "https://files.seeedstudio.com/wiki/reComputer-Jetson/J501/RESERVER_AGX_ORIN_CARRIER_BOARD.stp",
+      "retrieved": "2026-10-23",
+      "sha256": "a131fdc60ed76df660e5d491c45af852d28f16e2f0d7f11de0152da4c5f45793",
+      "id": "S01"
+    }
+  },
+  "model_sha256": "e0c4bda6f1df4b0471afa2e3f2eecb1b33177940c05c2b2729c4d8ac96e26b85",
+  "binary_sha256": "4650ff17382594fa96702bf1278a7cd429c04c11dff843fa0aa66a0413096be3",
+  "triangles": 333224,
+  "bytes": 1045580
+}

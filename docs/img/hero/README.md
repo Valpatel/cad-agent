@@ -78,3 +78,12 @@ self-modification. Reduced motion freezes the complete readable state.
 
 The homepage owns the compiler region after `const home`; #603 owns the frame,
 navigation, discovery, catalogue and timestamp regions. No editing another tree.
+
+Owner refinement (2026-11-11): the central story is **helping anyone build what
+they need, with high quality and continuously improving AI**. A person's need
+starts the loop, evidence/resources support the AI, checks and making produce a
+useful object, and real or simulated feedback improves the next round. Graph
+cleanup supports that human story rather than replacing it. The first prototype
+uses the product's existing `preview/open.png` as J501's honest interim poster;
+final acceptance requires a matching shared-viewer poster and complete loading,
+reduced-motion, WebGL failure and keyboard evidence.

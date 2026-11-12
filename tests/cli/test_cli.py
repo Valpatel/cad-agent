@@ -447,3 +447,64 @@ def test_torsion_declaration_actual_all_in_existing_starter(tmp_path, monkeypatc
     checks = next(f["checks"] for f in results["features"] if f["feature_id"] == "cad-checks")
     assert any(v["name"].startswith("torsion") and v["status"] == "pass" for v in checks)
     assert results["pass"] and not results["physical_fit_verified"]
+
+
+# ------------------------------------------------------------------------- parts that are not printed (#577)
+
+def _mixed(tmp_path, extra=""):
+    """box and lid are printed (real STLs); frame is welded and has no STL."""
+    trimesh = pytest.importorskip("trimesh")
+    from tests.publish.test_report import GOOD
+    root = make_project(tmp_path, parts={"box": dict(GOOD), "lid": dict(GOOD), "frame": dict(GOOD)},
+                        checks_yaml="  part_process: {frame: weldment}\n" + extra)
+    for name in ("box", "lid"):
+        trimesh.creation.box(extents=(10, 10, 10)).export(root / "exports" / f"{name}.stl")
+    for ext in ("stl", "3mf"):
+        (root / "exports" / f"frame.{ext}").unlink()
+    return root
+
+
+def test_export_3mf_leaves_out_a_part_that_is_not_printed(tmp_path, capsys):
+    root = _mixed(tmp_path)
+    assert main(["export-3mf", "--project", str(root)]) == 0
+    out = capsys.readouterr().out
+    assert "not printed, no print files written: frame" in out and "2 3MF file(s) written" in out
+    assert not (root / "exports" / "frame.3mf").exists()
+    plates = json.loads((root / "exports" / "demo-plates.json").read_text())
+    assert sorted(plates["quantities"]) == ["box", "lid"]
+    assert any("not printed, left off the plates: frame" in w for w in plates["warnings"])
+    assert main(["check", "--project", str(root)]) == 0         # the frame's rows are skips, not failures
+    out = capsys.readouterr().out
+    assert out.count("SKIP  frame") == 2 and "0 fail" in out
+
+
+def test_all_finishes_on_a_project_with_no_printed_part(tmp_path, monkeypatch, capsys):
+    """The welded machine with bought parts: no bed, no STL, no trimesh needed, and `all` reaches its report."""
+    from cadagent import cli
+    root = make_project(tmp_path, checks_yaml='  part_process: {"*": weldment, lid: purchased}\n')
+    cfg = root / "cad-agent.yaml"
+    cfg.write_text(cfg.read_text().replace("  printer: {name: Bed, bed_mm: [256, 256, 256]}\n", ""))
+    for name in ("box", "lid"):
+        for ext in ("stl", "3mf"):
+            (root / "exports" / f"{name}.{ext}").unlink()
+    monkeypatch.setitem(sys.modules, "trimesh", None)
+    assert main(["export-3mf", "--project", str(root)]) == 0
+    assert "no printed part: no 3MF or plates file written" in capsys.readouterr().out
+    assert main(["export-3mf", "--project", str(root), "--require-project-settings"]) == 1
+    for name in ("cmd_build", "cmd_holes", "cmd_package"):      # unrelated steps; the export and the report are real
+        monkeypatch.setattr(cli, name, lambda project, args: 0)
+    assert main(["all", "--project", str(root)]) == 0
+    out = capsys.readouterr().out
+    assert "0 fail" in out and "SKIP" in out and "welded fabrication" in out and "bought, not made" in out
+    results = json.loads((root / "exports" / "cad-agent-results.json").read_text())
+    status = {f["feature_id"]: [c["status"] for c in f["checks"]] for f in results["features"]}
+    assert status["cad-parts"] == status["cad-print-files"] == ["skip", "skip"] and results["pass"] is True
+
+
+def test_overhangs_screens_the_printed_parts_unless_one_is_named(tmp_path, capsys):
+    root = _mixed(tmp_path)
+    assert main(["overhangs", "--project", str(root)]) == 0
+    assert "not printed, not screened: frame" in capsys.readouterr().out
+    assert sorted(json.loads((root / "exports" / "overhang-screen.json").read_text())["parts"]) == ["box", "lid"]
+    assert main(["overhangs", "--project", str(root), "frame"]) == 1       # asked for by name: it has no STL
+    assert "frame.stl not found" in capsys.readouterr().out

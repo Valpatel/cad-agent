@@ -132,15 +132,31 @@ def cmd_export_3mf(project: CadProject, args: argparse.Namespace) -> int:
     from cadagent.manufacturing.mesh3mf import export_parts_3mf
     from cadagent.publish.report import load_parts
 
+    from cadagent.manufacturing.process import printed_parts
+
     parts, error = load_parts(project)
     if error:
         raise _Unusable(error)
+    strict = getattr(args, 'require_project_settings', False)
+    printed = printed_parts(project, parts)     # a part made another way has no print files (#577)
+    others = [p for p in parts if p not in printed]
+    if others:
+        _say(f"  not printed, no print files written: {', '.join(others)}")
+        old = [f"{p}.3mf" for p in others if (project.exports_dir / f"{p}.3mf").is_file()]
+        if old:                                 # written when the part was printed: not this run's, and not deleted
+            _say(f"  note: left in {project.exports_dir.name}/ from an earlier run, not checked: {', '.join(old)}")
+    if not printed:
+        from cadagent.manufacturing.plates import _remove_outputs, plates_file
+        _remove_outputs(plates_file(project))   # a plates file from when a part was printed is stale now
+        _say("no printed part: no 3MF or plates file written")
+        if strict:
+            _say("plates: FAILED: project settings required, but no part is printed")
+        return 1 if strict else 0
     if not project.printer.bed_mm:
         raise _Unusable("cad.printer.bed_mm is required to centre 3MF files on the bed")
-    strict = getattr(args, 'require_project_settings', False)
     if strict and _export_plates(project, list(parts), require_project_settings=True):
         return 1
-    reports = export_parts_3mf(project.exports_dir, list(parts), project.printer.bed_mm[:2])
+    reports = export_parts_3mf(project.exports_dir, printed, project.printer.bed_mm[:2])
     for r in reports:
         _say(f"  {r['part']}.3mf  {r['triangles']} triangles  watertight  {r['volume_mm3']:.1f} mm3")
     _say(f"{len(reports)} 3MF file(s) written and read back")
@@ -165,13 +181,15 @@ def _export_plates(project: CadProject, parts: List[str], require_project_settin
     return 0
 
 def cmd_slice(project: CadProject, args: argparse.Namespace) -> int:
-    from cadagent.manufacturing.slicer import engine_executable, engine_of, not_installed, slice_project
+    from cadagent.manufacturing.slicer import NothingToSlice, engine_executable, engine_of, not_installed, slice_project
 
     engine = engine_of(project)
     if not engine_executable(engine):
         raise _Unusable(f"{not_installed(engine)}; nothing was sliced")
     try:
         rep = slice_project(project, getattr(args, "parts", None) or None)
+    except NothingToSlice as exc:
+        raise _Unusable(str(exc)) from None
     except (ValueError, KeyError, FileNotFoundError) as exc:   # PrusaSlicer: a profile name or override key it lacks
         if engine == "bambu":
             raise
@@ -916,7 +934,13 @@ def cmd_overhangs(project: CadProject, args: argparse.Namespace) -> int:
         except (OSError, ValueError, AttributeError):
             rows = {}
     failed = 0
-    for name in parts or list(known):
+    if not parts:       # by default the printed parts: a welded or bought part has no overhangs to print (#577)
+        from cadagent.manufacturing.process import printed_parts
+        parts = printed_parts(project, known)
+        left = [p for p in known if p not in parts]
+        if left:
+            _say(f"  not printed, not screened: {', '.join(left)}")
+    for name in parts:
         stl = project.exports_dir / f"{name}.stl"
         if not stl.is_file():
             rows[name] = {"error": f"{stl.name} not found; run the build first"}

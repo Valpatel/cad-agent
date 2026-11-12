@@ -43,13 +43,13 @@ export function discoveryModel({ catalog, pages, references: m, ORIGIN, revision
         const h = heads[i], body = p.html.slice(h.index + h[0].length, heads[i + 1]?.index ?? p.html.length);
         add({ id: `section:${owner.id}:${h[1]}`, source_id: owner.id, collection: 'section', group: 'lessons', kind: 'Lesson entry',
           title: text(h[2]), summary: short(body), url: owner.url + '#' + h[1], areas: owner.areas,
-          search: text([p.title, short(body, 600)].join(' ')) }); sections++;
+          search: text([p.title, short(body, 240)].join(' ')) }); sections++;
       }
     }
     if (p.file === 'docs/practice/common-issues.md') for (const row of p.html.matchAll(/<tr id="(issue-[^"]+)">\s*<td\b[^>]*>([\s\S]*?)<\/td>([\s\S]*?)<\/tr>/g)) {
       add({ id: `pitfall:${row[1]}`, source_id: owner.id, collection: 'section', group: 'lessons', kind: 'Review pitfall',
         title: short(row[2], 135), summary: short(row[3]), url: owner.url + '#' + row[1], areas: owner.areas,
-        search: text([row[2], short(row[3], 600)].join(' ')) }); sections++;
+        search: text([row[2], short(row[3], 240)].join(' ')) }); sections++;
     }
   }
   for (const r of m.refs.records.values()) {

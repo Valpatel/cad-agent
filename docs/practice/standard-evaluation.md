@@ -20,10 +20,19 @@ remain unchanged. [Architecture study and source audit](https://github.com/Valpa
 
 The proposed flow is: freeze task → prepare subject → execute → stop every writer → seal exports → independently
 grade → publish. Inspect owns execution; cad-agent owns acceptance. An in-session scorer cannot finalize a result.
-Use one isolated output mount per attempt, verify termination of subject/tool/helper processes, then copy bounded
-regular files into a sealed snapshot. Regenerate submitted CAD source in a separate capped sandbox; never import
-it into the controller. Inspect's [sandbox contract](https://inspect.aisi.org.uk/sandboxing.html) must be tested,
-not inferred from its name.
+Keep exports in a regular directory inside the owned Docker sandbox, with `sandbox_cleanup=False`; writable host
+binds, tmpfs output and premature container removal do not fit this lifecycle. Before tools run, persist attempt
+ownership, Compose project/config identity, immutable container IDs and image digest; record ownership labels for
+startup-failure recovery too. After controller/helper processes settle, stop the owned containers and verify their
+process settlement separately: Docker containers are outside the collector's cgroup. Only then copy a bounded
+archive from the stopped container, reject unsafe entries and seal regular files. Regenerate submitted CAD source
+in a separate capped sandbox; never import it into the controller.
+
+Tear down only the recorded Compose project/config and verify its resources are absent. A successful command is
+not a cleanup receipt: pinned Inspect teardown can warn on failure, and its CLI cleanup also touches orphan cache
+files beyond the named project. The [source/API audit](https://github.com/Valpatel/cad-agent/issues/142#issuecomment-6832295831)
+records these boundaries. Its [sandbox contract](https://inspect.aisi.org.uk/sandboxing.html) still needs actual
+qualification; metadata showing Docker or a cached image exists is insufficient.
 
 **Compare toolkit availability.** Both arms receive the same CAD runtime, raw-source packet, requirements and
 budgets; kit adds cad-agent. Freeze resolved model/weight identity where available, quantization, effort, server
@@ -83,8 +92,8 @@ Add a lower-cost hosted pair after the local path works; sheet-metal and CNC tas
 
 | Gate | Required controls |
 |---|---|
-| Execution | A deterministic fake provider must exercise real sandbox tools: success, malformed calls, timeout/OOM, detached writers, interrupted collection and failed cleanup. Verify denied controller/answer/synthetic-credential reads, traversal and symlink escapes. Keep missing usage unknown. |
-| Artifacts | Reject missing/oversized/nonregular files, traversal, altered hashes, stale grades, wrong units and invalid solids. Prove late writes cannot affect the sealed snapshot. Separately cap source regeneration, then inspect its actual exports. |
+| Execution | Built-in mock calls exercise real sandbox tools; a scripted loopback HTTP fixture exercises the actual provider adapter's serialization and absent usage. Test malformed calls, timeout/OOM, detached writers, interruption and failed cleanup; denied controller/answer/synthetic-credential reads, traversal and symlink escapes. |
+| Artifacts | Reject missing/oversized/nonregular files, unsafe archives, altered hashes, stale grades, wrong units and invalid solids. Refuse sealing while ownership/settlement is unknown. Prove stable sealed bytes and cleanup that leaves unrelated control resources untouched. Separately cap source regeneration and inspect actual exports. |
 | Design | Two different good designs pass. Wrong hole axes, uncovered aperture, colliding ribs, inadequate declared feature dimensions and obstructed assembly/service paths fail. Similar appearance, volume or subject-reported dimensions cannot substitute. |
 | Facts | Omitted and incompatible material/process sources remain unresolved in the evidence rubric. Correctly identifying the gap earns no hard-design pass. Citation existence alone is insufficient; verify the fact and its applicability. |
 | Transfer | Fresh sessions, frozen held-outs, original failed records and immutable task/grader versions. Report end-to-end success over all registered attempts separately from artifact success among evaluable attempts. |
@@ -94,6 +103,12 @@ Keep exact artifact hashes and CAD/runtime provenance. BREP bytes may differ acr
 architectures; geometric signatures help diagnose this but do not prove complete equivalence or design quality.
 Preserve v1 validation and recorded results with compatibility checks; real sandbox controls are a separate
 qualification gate, not replaceable by mocked cleanup tests.
+
+Inspect's mock model synthesizes usage, so it cannot establish missing-provider-usage handling. Preserve unknowns
+and assert exact request/retry counts through the wire fixture. Use an explicitly selected pinned local image,
+bounded resources and no subject network, secrets or host sockets. Default tests may explicitly skip unavailable
+prerequisites; the qualification command must fail when they are missing. No suitable clean image or Inspect
+runtime has yet been qualified.
 
 </details>
 
@@ -108,8 +123,11 @@ Reuse `publish.anim` CAD/SVG/raster/text primitives and the [animated-figure con
 scene extracted from sealed outputs, deterministic rendering, ≤250 KB and a reduced-motion still. Reuse the
 hash-bound assembly guide for actual geometry. Solver videos require actual solver results; ordinary CAD playback
 is presentation. Keep code, compact manifests, selected SVGs and summaries in git. Store bulky CAD/transcripts and
-selected short videos in the established artifact storage with stable identities, hashes and size limits. Retain
-success and failure evidence equally; only disposable render frames/cache expire after verified collection.
+selected short videos outside git with stable identities, hashes and size limits. No durable evaluation store has
+been demonstrated: select an existing facility and pass retrieval, access, hash and retention checks before
+publication. The existing local package/manifest builder applies only after snapshot validation; expiring CI logs
+are not a durable archive. Retain success and failure evidence equally; only disposable render frames/cache expire
+after verified collection. Raw-source fetch manifests can preserve provenance without redistributing the guides.
 
 </details>
 

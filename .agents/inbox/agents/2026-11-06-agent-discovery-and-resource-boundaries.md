@@ -139,3 +139,18 @@ The [design/testing contract](../../../docs/practice/standard-evaluation.md#plan
 deprecates whole-checkout preparation for those studies; it does not claim that a new bundle/runtime is implemented.
 **Limits:** v1 remains a disclosed cooperative smoke protocol. Its historical `59441e75` kit predates the shipped
 corpus; this finding does not prove those subjects read answers or retrospectively change their records.
+
+## Framework cleanup is not an attempt ownership receipt
+
+On 2026-11-12, the [read-only Inspect feasibility audit](https://github.com/Valpatel/cad-agent/issues/142#issuecomment-6832295831)
+checked pinned source `ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8`: writable host mounts are rejected by default;
+`sandbox_cleanup=False` retains the sample sandbox; Docker cleanup can warn rather than raise; even named CLI
+cleanup also scans orphan auto-compose cache files. No container, provider or model was run.
+
+**Cause:** a framework's general lifecycle and cache maintenance are broader than one attempt's evidence boundary.
+**Rule:** retain a controller-owned startup/creation receipt; settle the collector and separately verify the owned
+containers stop. Copy bounded regular outputs from stopped containers, validate/seal, then tear down only the exact
+recorded Compose project/config and verify absence. Test unrelated-resource preservation and unresolved ownership.
+**Limits:** this is a reviewed design correction, not runtime qualification. Cached Docker/image metadata and
+synthetic mock usage prove neither isolated execution nor real provider accounting; the guide requires real inert
+and wire controls before trials. No new storage facility was established by this study.

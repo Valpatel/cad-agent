@@ -92,3 +92,18 @@ cleanup supports that human story rather than replacing it. The first prototype
 uses the product's existing `preview/open.png` as J501's honest interim poster;
 final acceptance requires a matching shared-viewer poster and complete loading,
 reduced-motion, WebGL failure and keyboard evidence.
+
+### Owner art rejection and revised acceptance, 2026-11-11
+
+The owner viewed prototype C and rejected its slow/simple lone-person scene:
+“it needs to clearly convey the idea of humans collaborating with self-improving
+machines.” The previous 16-second workbench/graph loop is **not accepted art**.
+The next scene must show a recognizable capable machine partner working with the
+person: a sketch/gesture, machine construction, direct handoff, human testing and
+feedback, then a visibly revised second object. Shared knowledge returns to the
+machine. Target an eight-second narrative with purposeful one-to-three-second
+beats, articulated hands/tool head, assembly motion and clear finished solids.
+The reduced-motion composition must show the completed collaboration. A denser
+graph, passing loader tests or earlier screenshots cannot substitute for that
+visual acceptance. The scene stays conceptual, without claiming physical autonomy
+or automatic model training. Review the new source-bound producer headed again.

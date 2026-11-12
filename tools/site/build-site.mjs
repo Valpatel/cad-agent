@@ -381,19 +381,16 @@ for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, 
 // Each ### entry in a lesson file is one lesson (docs/lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
 const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
   .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
-await writeFile(path.join(out, 'catalog.html'), frame({ title: 'Catalogue', body: catalogBody, current: '/catalog', page: 'catalog',
-  description: `${catalog.items.length} open-source projects, libraries, benchmarks, demos, tools, guides and lessons for agentic CAD, by area of hardware design.`,
-  css: ['/kit/gallery.css', '/web/catalog.css'] }));
-
 // A derived search view: no new source identity and no mutation of the catalogue/reference machine feeds.
 const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN, revision, pageURL });
 await writeFile(path.join(out, 'discovery.json'), JSON.stringify(discovery) + '\n');
+await writeFile(path.join(out,'catalog.html'),frame({title:'Explore',current:'/catalog',page:'discovery',body:discoveryHTML(discovery,{areas:areaTree,pages,pageURL,catalog,legacy:true}),css:['/kit/gallery.css','/kit/nav.css','/web/catalog.css','/web/discovery.css']}));
 await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
   description: 'Find tools, guides, practical lessons and reference records by topic.',
   body: discoveryHTML(discovery, { areas: areaTree, pages, pageURL, catalog }),
   md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
 await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
-  + '- [Full catalogue](/catalog)\n- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
+  + '- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
   + 'Derived search metadata: /discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
@@ -408,8 +405,8 @@ const REF_SOURCES = ['docs/research/references.yaml', 'docs/research/references'
 const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCES) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', ...REF_SOURCES) || committed;
 for (const p of refSite.pages) {
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
-  await writeFile(path.join(out, p.file), frame({ title: p.title, body: p.body, md: '/' + p.md, description: p.description, current: p.url,
-    page: 'references', css: ['/web/references.css'], updated: refsUpdated }));
+  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url})}<div class="doc-main">${p.body}</div></div>`, md: '/' + p.md, description: p.description, current: p.url,
+    page: 'references', css: ['/web/references.css','/kit/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }
 

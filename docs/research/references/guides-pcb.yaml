@@ -108,7 +108,7 @@ sources:
   process_groups:
   - pcb
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -117,13 +117,26 @@ sources:
     estimate: 0.4
     sources: 1
   claims:
-  - text: Standard boards min trace/space 4 mil (0.1 mm); design above 6 mil to save cost.
+  - text: 'Advanced matrix rows 14 and 15, normal process, before compensation: 70 µm inner width/spacing 6/8 mil; outer 7/8
+      mil.'
     status: unconfirmed
-    evidence: No second source checked.
-  summary: 'Capability table: standard 4 mil trace/space; advanced 2/2 mil; 3 mil annular ring; half-hole minimum 0.4 mm.
-    Note: Figures differ between PCBWay pages and dates'
-  used_for: []
+    evidence: Primary table read; not independently corroborated. The Standard headline does not establish these values for
+      every copper thickness. Imported 6 mil cost advice, advanced 2/2 mil and generic 3 mil annular-ring summary were not
+      substantiated.
+  summary: Supplier capability tables distinguish Standard headlines from copper-side/thickness and process-difficulty rows.
+    Use before-compensation datums and confirm the selected manufacturing route; no universal advanced minimum or cost optimum
+    follows.
+  used_for:
+  - docs/pcb.md
   imported: 9d2c5a9936ae8deb
+  verified: '2026-11-12: Read original undated HTML technical tables; no numbered pages or edition. Standard PCB table and
+    complete Advanced PCB matrix/remarks, plus the 18 process descriptions. Native illustrations and linked pages were not
+    inspected. Row labels and normal-process columns bound the selected examples; no order or fabricated board checked.'
+  archive:
+    sha256: 830504881d2a4ce6b04d6a0a003725e958895504c4164009fdcbe77d6e573a89
+    kind: html
+    fetched: '2026-11-12'
+    redistribute: false
 - id: osh-park-fabrication-services
   kind: guide
   category: manufacturing-guides
@@ -304,7 +317,7 @@ sources:
   process_groups:
   - pcb
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -312,10 +325,27 @@ sources:
     level: low
     estimate: 0.4
     sources: 1
-  summary: 'Pooled PCB service: 0-8 layers pooled, 10-16 non-pooled; order pooling lowers small-quantity cost. Note: European
-    service; relevance to design rules limited'
-  used_for: []
+  summary: Supplier STANDARD pool service tables separate pooled and non-pooled trace limits and finished-hole-based pad diameters.
+    Copper-edge requirements depend on layer and profiling method; internally conflicting layer/finish eligibility needs supplier
+    confirmation.
+  used_for:
+  - docs/pcb.md
   imported: 4ceccc70673a23be
+  verified: '2026-11-12: Read original undated HTML technical tables; no numbered pages or edition. Complete STANDARD pool
+    page: availability, bare-board and assembly parameter tables and three closing notes. Linked calculator, materials, technical
+    guidelines and assembly-capability pages were not read. Layer/thickness and immersion-silver pooling statements conflict;
+    supplier confirmation remains required.'
+  claims:
+  - text: The service table specifies pad-diameter additions relative to finished-hole size, separately for outer and inner
+      layers.
+    status: unconfirmed
+    evidence: Primary table read, not independent corroboration; additions are diametral, not radial annular-ring widths.
+      No drill-tool diameter is substituted.
+  archive:
+    sha256: eb5b272b40778776953d916130c74cabe5b90906472b4776ab3a9018124fba72
+    kind: html
+    fetched: '2026-11-12'
+    redistribute: false
 - id: altium-preventing-top-dfm-errors-in-your-pcb-design
   kind: guide
   category: manufacturing-guides

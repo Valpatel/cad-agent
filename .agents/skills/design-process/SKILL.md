@@ -96,6 +96,8 @@ For supplier-specific printing settings, inspect the [Stratasys layer-table and 
 For plastic screw selection, read the [family-selection example and limits](../../../docs/research/manufacturing/process-profiles.md#select-the-screw-family-before-sizing-the-boss).
 A material-family preference does not fill a missing capacity model or qualify a printed resin; retain the card’s warnings.
 
+For a PCB or its enclosure, use the [fabrication service and datum review](../../../docs/pcb.md#select-fabrication-limits-before-routing) before routing. Retain supplier/service, copper side and thickness, profiling method and finished-hole datums; clean CAD reports do not close order or physical qualification gates.
+
 For a finished bearing seat or other precision interface, use the [manufacturer interface studies](../../../docs/research/manufacturing/joint-interfaces.md) before choosing a tolerance code. Confirm the loaded ring, material and post-finish dimensions; the worked cases are source-bound screening, not assembly qualification.
 
 For injection-moulded walls, overmoulds or trapped features, use the [wall, bond and release review](../../../docs/research/manufacturing/moulding-wall-bond-and-release-review.md). Preserve resin grades and units, separate chemical bonding from mechanical retention, and name the pull direction before asking for supplier DFM. Its examples do not qualify FDM parts, peel strength or ejection.

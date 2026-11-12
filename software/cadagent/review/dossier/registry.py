@@ -176,6 +176,8 @@ class JointDecl:
     range2: Optional[Tuple[float, float]] = None    # the slide range of a cylindrical joint (mm)
     intended_contacts: List[Tuple[str, str]] = field(default_factory=list)
     samples: Optional[int] = None
+    follows: Optional[Dict[str, Any]] = None        # {joint, multiplier, offset}: a driven (mimic) joint
+    closes: List[Dict[str, Any]] = field(default_factory=list)   # [{parts, at (point, Axis or callable(p)), tol_mm}]
     body: Optional[Callable] = None
     where: str = ""
 
@@ -370,13 +372,20 @@ class Registry:
 
     def joint(self, interface: str, kind: str = "revolute", *, parts: Sequence[str], axis: Any,
               range_deg: Any = None, range_mm: Any = None, intended_contacts: Iterable[Sequence[str]] = (),
-              samples: Optional[int] = None) -> Callable:
+              samples: Optional[int] = None, follows: Any = None, closes: Any = None) -> Callable:
         """Declare the joint that realises interface ``interface``: ``parts=(moving, fixed)``, the axis in assembly
         coordinates (or a function of the parameters), and the motion range (``range_deg`` for revolute,
         ``range_mm`` for slider, both for cylindrical). ``intended_contacts`` are the pairs allowed to touch over
-        the range (the stops). Registers on the call; use it bare or as a decorator on a body that documents it."""
+        the range (the stops). Registers on the call; use it bare or as a decorator on a body that documents it.
+
+        ``follows`` makes a revolute or slider joint a driven one (URDF ``mimic``): ``"I-lower"``,
+        ``("I-lower", multiplier)`` or ``("I-lower", multiplier, offset)``. The motion gate does not sample it; its
+        value is ``multiplier × the driver's value + offset`` about its own axis, and its range may be left out.
+        ``closes`` names a point two parts share, which the motion gate keeps together over the range:
+        ``{"parts": (a, b), "at": point, Axis or function of the parameters, "tol_mm": 0.1}`` or a list of them
+        (docs/practice/gates.md, "Driven joints")."""
         decl = self._joint_decl(interface, kind, parts, axis, range_deg, range_mm, intended_contacts, samples,
-                                _caller_where())
+                                _caller_where(), follows, closes)
         self._add("joints", interface, decl, f"joint {interface!r}")
 
         def attach(fn: Callable) -> Callable:
@@ -385,19 +394,40 @@ class Registry:
         return attach
 
     @staticmethod
-    def _joint_decl(interface, kind, parts, axis, range_deg, range_mm, intended_contacts, samples, where):
+    def _joint_decl(interface, kind, parts, axis, range_deg, range_mm, intended_contacts, samples, where,
+                    follows=None, closes=None):
+        from cadagent.review.gates.motion import DRIVABLE, Closure, Follow
         _check_id(interface, "joint interface")
+        try:
+            law = Follow.coerce(follows)
+            # a callable ``at`` is resolved at build(); the rest of each closes entry is checked now
+            pins = [dict(c) for c in ([closes] if isinstance(closes, Mapping) else list(closes or []))]
+            Closure.coerce_all([{**c, "at": (0, 0, 0)} if callable(c.get("at")) else c for c in pins])
+        except (ValueError, TypeError) as exc:
+            raise RegistryError(f"joint {interface!r}: {exc}") from None
         if kind not in JOINT_KINDS:
             raise RegistryError(f"joint {interface!r}: kind {kind!r}; one of {', '.join(JOINT_KINDS)}")
+        if law is not None and kind not in DRIVABLE:
+            raise RegistryError(f"joint {interface!r}: a {kind} joint cannot follow another (only "
+                                f"{' and '.join(DRIVABLE)} joints can)")
+        if law is not None and law.joint == interface:
+            raise RegistryError(f"joint {interface!r} follows itself")
+        if law is not None and samples is not None:
+            raise RegistryError(f"joint {interface!r} follows {law.joint} and is not sampled: set samples on the "
+                                "joint that drives it")
         parts = list(parts)
         if len(parts) != 2 or parts[0] == parts[1]:
             raise RegistryError(f"joint {interface!r}: parts must be (moving, fixed), got {parts!r}")
         rdeg, rmm = _range(range_deg, f"joint {interface!r} range_deg"), _range(range_mm, f"joint {interface!r} range_mm")
         need = {"revolute": ("deg",), "slider": ("mm",), "cylindrical": ("deg", "mm"), "fixed": (),
                 "planar": (), "ball": ()}[kind]
-        if "deg" in need and rdeg is None or "mm" in need and rmm is None:
+        if law is None and ("deg" in need and rdeg is None or "mm" in need and rmm is None):
             raise RegistryError(f"joint {interface!r} ({kind}) needs " + " and ".join(
                 {"deg": "range_deg", "mm": "range_mm"}[u] for u in need))
+        if law is not None and (rmm if kind == "revolute" else rdeg) is not None:
+            # the range a driven joint declares is the one its computed values are checked against: in its own unit
+            raise RegistryError(f"joint {interface!r} ({kind}) follows {law.joint}: its range is " +
+                                ("range_deg, not range_mm" if kind == "revolute" else "range_mm, not range_deg"))
         if kind == "fixed" and (rdeg or rmm):
             raise RegistryError(f"joint {interface!r} is fixed and cannot have a range")
         if samples is not None and (isinstance(samples, bool) or not isinstance(samples, int) or samples < 2):
@@ -411,9 +441,12 @@ class Registry:
                 raise RegistryError(f"joint {interface!r}: intended_contacts entries are (part, part), got {pair!r}")
             contacts.append((str(pair[0]), str(pair[1])))
         primary, unit = (rdeg, "deg") if rdeg is not None else (rmm, "mm") if rmm is not None else (None, "")
+        if law is not None and not unit:            # a follower without a range of its own still has a unit
+            unit = "deg" if kind == "revolute" else "mm"
         return JointDecl(interface=interface, kind=kind, moving=str(parts[0]), fixed=str(parts[1]), axis=axis,
                          range=primary, unit=unit, range2=rmm if kind == "cylindrical" else None,
-                         intended_contacts=contacts, samples=samples, where=where)
+                         intended_contacts=contacts, samples=samples, where=where,
+                         follows=law.to_dict() if law is not None else None, closes=pins)
 
     def fastener(self, key: str, *, clamps: str, into: str, at: Any, name: str = "", via: str = "", tool: str = "",
                  length_mm: Optional[float] = None, diameter_mm: Optional[float] = None, thread_start_mm: Any = None,
@@ -484,7 +517,8 @@ class Registry:
                 raise RegistryError(f"dossier_items() joint without an 'interface': {j!r}")
             decl = self._joint_decl(iid, j.pop("kind", "revolute"), j.pop("parts"), j.pop("axis"),
                                     j.pop("range_deg", None), j.pop("range_mm", None),
-                                    j.pop("intended_contacts", ()), j.pop("samples", None), f"{where} (joint {iid})")
+                                    j.pop("intended_contacts", ()), j.pop("samples", None), f"{where} (joint {iid})",
+                                    j.pop("follows", None), j.pop("closes", None))
             if j:
                 raise RegistryError(f"dossier_items() joint {decl.interface!r} has unknown keys: {sorted(j)}")
             self._add("joints", decl.interface, decl, f"joint {decl.interface!r}")
@@ -577,10 +611,15 @@ class Registry:
             info = result._record(shape, name)
             info.pop("key")
             geo["cavities"][name] = {"part": decl.part, **info, "declared_at": _rel(decl.where, root)}
+        from cadagent.review.gates.motion import Closure, resolve_follows
+        _, cannot = resolve_follows({iid: {"kind": j.kind, "follows": j.follows} for iid, j in self.joints.items()})
+        for iid, why in sorted(cannot.items()):
+            raise RegistryError(f"joint {iid!r} ({self.joints[iid].where}) cannot be driven: {why}")
         for iid, j in self.joints.items():
             try:
                 axis = Axis.of(_call(j.axis, p) if callable(j.axis) else j.axis)
-            except RegistryError as exc:
+                pins = Closure.coerce_all([{**c, "at": _call(c["at"], p)} for c in j.closes])
+            except (RegistryError, ValueError) as exc:
                 raise RegistryError(f"joint {iid!r} ({j.where}): {exc}") from None
             record = {"kind": j.kind, "moving": j.moving, "fixed": j.fixed, "axis": axis.to_dict(),
                       "range": list(j.range) if j.range else None, "unit": j.unit,
@@ -588,6 +627,10 @@ class Registry:
                       "declared_at": _rel(j.where, root)}
             if j.range2:
                 record["range_mm"] = list(j.range2)
+            if j.follows:                       # only when declared: a record without them keeps its digest
+                record["follows"] = dict(j.follows)
+            if pins:
+                record["closes"] = [c.to_dict() for c in pins]
             result.joints[iid] = {**record, "axis": axis}
             geo["joints"][iid] = record
         for fname, f in self.fasteners.items():
@@ -1067,6 +1110,23 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
         for role in ("moving", "fixed"):
             if j.get(role) not in known:
                 add("unknown-part", f"joint {iid!r} {role} part {j.get(role)!r} is not a part", w)
+        from cadagent.review.gates.motion import Closure, Follow
+        pins, law = [], None                # any spelling the motion gate reads; a malformed one is its to report
+        try:
+            pins = Closure.coerce_all(j.get("closes"))
+        except (ValueError, TypeError):
+            pass
+        try:
+            law = Follow.coerce(j.get("follows"))
+        except (ValueError, TypeError):
+            pass
+        instance_keys = {str(i.get("key")) for info in parts.values() for i in (info.get("instances") or [])}
+        for c in pins:
+            for name in c.parts:
+                if name not in known and name not in instance_keys:
+                    add("unknown-part", f"joint {iid!r} closes {name!r}, which is not a part", w)
+        if law is not None and law.joint not in joints:
+            add("unknown-joint", f"joint {iid!r} follows {law.joint!r}, which is not a declared joint", w)
         iface = dossier.interfaces.get(iid)
         if iface is None:
             add("joint-without-interface", f"joint {iid!r} realises no interface of that id in the dossier", w)

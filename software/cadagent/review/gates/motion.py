@@ -12,6 +12,13 @@ part it moves against (``cadagent.review.gates.relations``: apart / touching / o
   times every child sample). Independent joints are sampled one at a time with the others held at
   home; ``combine=[[...]]`` grids independent joints too. Home is 0 (the pose the model was built
   in), clamped into the range.
+* **Driven joints.** A joint with ``follows`` (``Follow``: a driver joint, a multiplier and an offset,
+  like URDF's ``mimic``) is not sampled: in every pose its value is ``multiplier × driver + offset``
+  about its own axis, in its own unit per the driver's unit. It is posed in its driver's group, so a
+  one-degree-of-freedom linkage (a parallelogram: the upper arm follows the lower, the carried link
+  turns back by the same angle) is sampled along its path, not as a grid of free joints. The ratio is
+  the author's declaration: nothing here solves loop closure. ``closes`` on a joint (``Closure``)
+  names a point two parts share (a pin) and fails when the sampled poses pull it apart.
 * **Pairs.** Per pose, a moving part against every part outside its body (the static frame, other
   bodies). Pairs that never move relative to each other (static against static, parts of one
   body) are the same in every pose and are never queried here: the relation table and the
@@ -47,7 +54,7 @@ from __future__ import annotations
 import itertools
 import math
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from cadagent.review.gates.cache import PairCache, matrix_key
@@ -59,6 +66,8 @@ RANGED = ("revolute", "slider", "cylindrical")
 UNSAMPLED = ("planar", "ball")
 DEFAULT_SAMPLES = 12
 DEFAULT_MAX_POSES = 2000
+DEFAULT_CLOSURE_TOL_MM = 0.1
+DRIVABLE = ("revolute", "slider")       # one value each: the kinds that can follow or be followed
 IDENTITY: Tuple[float, ...] = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
 ASSUMPTIONS = [
@@ -71,6 +80,9 @@ ASSUMPTIONS = [
     "clamps/into (relations.moving_bodies), or the assembly's own body labels",
     "joints in one chain are sampled on a grid; independent joints one at a time with the others at home "
     "(0 clamped into the range) unless combined",
+    "a joint that follows another is not sampled: it takes multiplier × driver + offset in every pose. That ratio "
+    "is the author's declaration of the linkage; loop closure is not solved, and only a declared closes point is "
+    "measured, at the sampled poses",
     "pairs that do not move relative to each other (static against static, parts of one body) are not queried; "
     "the relation table and connectivity gate cover them",
     "exact B-rep relations within the relation tolerances; no tolerance stack, print shrink, deflection or "
@@ -167,6 +179,145 @@ class Dof:
         return 0.0 if n < 2 or self.hi == self.lo else (self.hi - self.lo) / (n - 1)
 
 
+@dataclass(frozen=True)
+class Follow:
+    """A dependent joint's law (URDF ``mimic``): its value is ``multiplier × driver's value + offset``.
+
+    Values are measured as every joint's are, from the pose the model was built in, about each joint's own axis:
+    two parallel arms whose axes point the same way follow at +1, and at -1 when one axis is declared reversed.
+    The follower's value is in its own unit (deg for a revolute, mm for a slider) and the driver's in the
+    driver's, so the multiplier of a revolute following a slider is in deg per mm (a rack and pinion)."""
+    joint: str
+    multiplier: float = 1.0
+    offset: float = 0.0
+
+    @classmethod
+    def coerce(cls, value: Any) -> Optional["Follow"]:
+        """From ``None``, a driver id, ``(driver, multiplier)``, ``(driver, multiplier, offset)`` or
+        ``{joint, multiplier, offset}`` (the build record)."""
+        if value is None or isinstance(value, cls):
+            return value
+        if isinstance(value, str):
+            value = (value,)
+        if isinstance(value, Mapping):
+            extra = set(value) - {"joint", "multiplier", "offset"}
+            if extra or "joint" not in value:
+                raise ValueError(f"follows is {{joint, multiplier, offset}}, got {dict(value)!r}")
+            value = (value["joint"], value.get("multiplier", 1.0), value.get("offset", 0.0))
+        try:
+            driver, *rest = value
+            numbers = [float(v) for v in rest]
+        except (TypeError, ValueError):
+            raise ValueError(f"follows is a joint id, (joint, multiplier) or (joint, multiplier, offset), "
+                             f"got {value!r}") from None
+        if not isinstance(driver, str) or not driver or len(numbers) > 2 or \
+                any(isinstance(v, bool) for v in rest) or not all(math.isfinite(v) for v in numbers):
+            raise ValueError(f"follows is a joint id, (joint, multiplier) or (joint, multiplier, offset), "
+                             f"got {value!r}")
+        out = cls(driver, *numbers)
+        if out.multiplier == 0:
+            raise ValueError("follows has multiplier 0, which never moves: declare the joint fixed instead")
+        return out
+
+    def of(self, value: float) -> float:
+        return self.multiplier * value + self.offset
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"joint": self.joint, "multiplier": self.multiplier, "offset": self.offset}
+
+
+def resolve_follows(joints: Mapping[str, Mapping[str, Any]]) -> Tuple[Dict[str, Follow], Dict[str, str]]:
+    """``({follower: law from its root driver}, {follower: why it cannot follow})`` for a table of joints
+    (``{id: {kind, follows, ...}}``). A follower of a follower is composed down to the joint that is sampled.
+    Refused: a malformed ``follows``, a driver that is not a joint, a joint in a cycle of followers, and a
+    follower or driver that is not revolute or slider (one value each; a cylindrical joint has two)."""
+    direct: Dict[str, Follow] = {}
+    errors: Dict[str, str] = {}
+    for jid in sorted(joints):
+        raw = joints[jid]
+        if not isinstance(raw, Mapping) or raw.get("follows") is None:
+            continue
+        kind = str(raw.get("kind") or "revolute")
+        try:
+            law = Follow.coerce(raw["follows"])
+        except ValueError as exc:
+            errors[jid] = str(exc)
+            continue
+        other = joints.get(law.joint)
+        okind = str((other or {}).get("kind") or "revolute") if isinstance(other, Mapping) else ""
+        if kind not in DRIVABLE:
+            errors[jid] = f"a {kind} joint cannot follow another (only {' and '.join(DRIVABLE)} joints can)"
+        elif law.joint == jid:
+            errors[jid] = "it follows itself"
+        elif not isinstance(other, Mapping):
+            errors[jid] = f"it follows {law.joint!r}, which is not a declared joint"
+        elif okind not in DRIVABLE:
+            errors[jid] = (f"it follows {law.joint}, a {okind} joint (only {' and '.join(DRIVABLE)} joints can be "
+                           "followed)")
+        else:
+            direct[jid] = law
+    resolved: Dict[str, Follow] = {}
+    for jid in sorted(direct):
+        chain, cur, mult, off = [jid], jid, 1.0, 0.0
+        while cur in direct:
+            law = direct[cur]
+            mult, off = mult * law.multiplier, mult * law.offset + off      # outer(inner(x))
+            cur = law.joint
+            if cur in chain:
+                errors[jid] = "joints " + " -> ".join(chain[chain.index(cur):] + [cur]) + " follow each other in a loop"
+                break
+            chain.append(cur)
+        else:
+            if cur in errors:
+                errors[jid] = f"it follows {direct[jid].joint}, which cannot follow: {errors[cur]}"
+            else:
+                resolved[jid] = Follow(cur, mult, off)
+    return resolved, errors
+
+
+@dataclass(frozen=True)
+class Closure:
+    """A point two parts share (the pin that closes a loop), in assembly coordinates as built: carried by each
+    part's body, the two copies must stay within ``tol_mm`` of each other in every sampled pose."""
+    parts: Tuple[str, str]
+    at: Tuple[float, float, float]
+    tol_mm: float = DEFAULT_CLOSURE_TOL_MM
+
+    @classmethod
+    def coerce_all(cls, value: Any) -> List["Closure"]:
+        """From ``None``, one ``{parts: (a, b), at: (x, y, z), tol_mm}`` or a list of them."""
+        if value is None:
+            return []
+        items = [value] if isinstance(value, Mapping) else list(value)
+        out = []
+        for item in items:
+            if isinstance(item, cls):
+                out.append(item)
+                continue
+            if not isinstance(item, Mapping) or set(item) - {"parts", "at", "tol_mm"} or \
+                    not {"parts", "at"} <= set(item) or isinstance(item["parts"], str):
+                raise ValueError(f"closes is {{parts: (a, b), at: (x, y, z), tol_mm}}, got {item!r}")
+            at = item["at"]
+            if hasattr(at, "origin"):               # an Axis: its origin is the point
+                at = at.origin
+            try:
+                parts = tuple(str(x) for x in item["parts"])
+                point = tuple(float(c) for c in at)
+                tol = float(item.get("tol_mm", DEFAULT_CLOSURE_TOL_MM) if item.get("tol_mm") is not None
+                            else DEFAULT_CLOSURE_TOL_MM)
+            except (TypeError, ValueError):
+                raise ValueError(f"closes is {{parts: (a, b), at: (x, y, z), tol_mm}}, got {item!r}") from None
+            if len(parts) != 2 or parts[0] == parts[1] or len(point) != 3 or \
+                    not all(math.isfinite(c) for c in point) or not (math.isfinite(tol) and tol > 0):
+                raise ValueError(f"closes names two different parts, a point (x, y, z) and a tol_mm above 0, "
+                                 f"got {item!r}")
+            out.append(cls((parts[0], parts[1]), point, tol))        # type: ignore[arg-type]
+        return out
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"parts": list(self.parts), "at": list(self.at), "tol_mm": self.tol_mm}
+
+
 @dataclass
 class Joint:
     """A joint normalised from a dossier build's ``joints`` entry or a hand-written mapping."""
@@ -178,6 +329,9 @@ class Joint:
     direction: Tuple[float, float, float]
     dofs: List[Dof] = field(default_factory=list)
     intended_contacts: List[Tuple[str, str]] = field(default_factory=list)
+    follows: Optional[Follow] = None                    # as declared (its direct driver)
+    declared: Optional[Tuple[float, float]] = None      # a follower's own declared range, if it has one
+    closes: List[Closure] = field(default_factory=list)
 
     def transform(self, values: Sequence[float]) -> Tuple[float, ...]:
         """The joint's motion (in assembly coordinates at home) for one value per dof."""
@@ -191,9 +345,10 @@ class Joint:
     def coerce(cls, jid: str, data: Mapping[str, Any], *, samples: Optional[int] = None,
                default_samples: int = DEFAULT_SAMPLES, max_step_deg: Optional[float] = None,
                max_step_mm: Optional[float] = None) -> "Joint":
-        """From ``{kind, moving, fixed, axis, range, unit, range_mm, intended_contacts, samples}`` (the build
-        record; ``axis`` an ``Axis``, ``{origin, direction}`` or ``(origin, direction)``), or the registry's
-        spelling (``parts=(moving, fixed)``, ``range_deg``, ``range_mm``)."""
+        """From ``{kind, moving, fixed, axis, range, unit, range_mm, intended_contacts, samples, follows, closes}``
+        (the build record; ``axis`` an ``Axis``, ``{origin, direction}`` or ``(origin, direction)``), or the
+        registry's spelling (``parts=(moving, fixed)``, ``range_deg``, ``range_mm``). A joint with ``follows``
+        may leave its range out; its one axis is filled in from its driver by ``run_motion``."""
         kind = str(data.get("kind") or "revolute")
         moving, fixed = data.get("moving"), data.get("fixed")
         if (moving is None or fixed is None) and data.get("parts"):
@@ -226,6 +381,19 @@ class Joint:
                 rmm = rng
         need = {"revolute": ("deg",), "slider": ("mm",), "cylindrical": ("deg", "mm")}.get(kind, ())
         have = tuple(u for u, r in (("deg", rdeg), ("mm", rmm)) if r is not None)
+        follows = Follow.coerce(data.get("follows"))
+        closes = Closure.coerce_all(data.get("closes"))
+        contacts = [(str(a), str(b)) for a, b in (data.get("intended_contacts") or [])]
+        if follows is not None:
+            if kind not in DRIVABLE:
+                raise ValueError(f"joint {jid!r}: a {kind} joint cannot follow another")
+            if have and set(have) != set(need):
+                raise ValueError(f"joint {jid!r} ({kind}) has a range in {' and '.join(have)}; it needs "
+                                 f"{need[0]} or none")
+            declared = tuple(sorted(float(v) for v in (rdeg if kind == "revolute" else rmm))) if have else None
+            dof = Dof(jid, "rotate" if kind == "revolute" else "slide", 0.0, 0.0, 1)
+            return cls(jid, kind, str(moving), str(fixed), origin, direction, [dof], contacts, follows,
+                       declared, closes)                                         # type: ignore[arg-type]
         if kind in RANGED and set(have) != set(need):
             missing = [u for u in need if u not in have]
             extra = [u for u in have if u not in need]
@@ -246,8 +414,7 @@ class Joint:
             if cap and hi > lo:
                 k = max(k, int(math.ceil((hi - lo) / cap - 1e-9)) + 1)
             dofs.append(Dof(jid, kd, lo, hi, k if hi > lo else 1))
-        contacts = [(str(a), str(b)) for a, b in (data.get("intended_contacts") or [])]
-        return cls(jid, kind, str(moving), str(fixed), origin, direction, dofs, contacts)
+        return cls(jid, kind, str(moving), str(fixed), origin, direction, dofs, contacts, closes=closes)
 
 
 # ----------------------------------------------------------------------------- the world (kernel or fake)
@@ -369,6 +536,13 @@ def _label(group: _Group, values: Sequence[float]) -> str:
     return ",".join(f"{a.joint}={_fmt(v)}{a.unit}" for a, v in zip(group.axes, values))
 
 
+def _law(jid: str, law: Follow, unit: str, driver_unit: str) -> str:
+    """``I-upper = 1 × I-lower`` (``+ 5 deg``; ``deg per mm`` when the two joints' units differ)."""
+    per = f" {unit} per {driver_unit}" if unit != driver_unit else ""
+    off = f" {'+' if law.offset > 0 else '-'} {_fmt(abs(law.offset))} {unit}" if law.offset else ""
+    return f"{jid} = {_fmt(law.multiplier)}{per} × {law.joint}{off}"
+
+
 # ----------------------------------------------------------------------------- the core
 
 def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tolerances(),
@@ -400,9 +574,20 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     # -- joints and their bodies
     js: Dict[str, Joint] = {}
     body_of_joint: Dict[str, List[str]] = {}
+    eff, follow_errors = resolve_follows(joints)       # {follower: its law from the joint that is sampled}
+    closures: List[Tuple[str, int, Closure]] = []
     for jid in sorted(joints):
         raw = joints[jid]
         kind = str(raw.get("kind") or "revolute")
+        try:                                # a closes point is measured whatever the kind of the joint that states it
+            closures += [(jid, n, c) for n, c in enumerate(Closure.coerce_all(raw.get("closes")))]
+        except ValueError as exc:
+            checks.append(Check(f"joint:{jid}", "fail", f"joint {jid}: {exc}", [str(raw.get("moving") or "")]))
+            continue
+        if jid in follow_errors:
+            checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} cannot be driven: {follow_errors[jid]}",
+                                [str(raw.get("moving") or "")]))
+            continue
         if kind == "fixed":
             continue
         if kind in UNSAMPLED:
@@ -420,8 +605,11 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} ({kind}) has no range to sample",
                                 [j.moving]))
             continue
+        if j.follows is not None and (samples.get(jid) is not None or raw.get("samples") is not None):
+            checks.append(Check(f"samples:{jid}", "warn", f"joint {jid} follows {j.follows.joint} and is not sampled: "
+                                f"its samples are ignored (set them on the joint that drives it)", [j.moving]))
         for d in j.dofs:
-            if d.hi == d.lo:
+            if d.hi == d.lo and j.follows is None:
                 checks.append(Check(f"range:{jid}:{d.unit}", "warn", f"joint {jid}'s {d.unit} range is "
                                     f"{_fmt(d.lo)}..{_fmt(d.hi)}: one pose, no motion along it", [j.moving]))
         mk, fk = _keys(names, j.moving), _keys(names, j.fixed)
@@ -466,17 +654,57 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                 js.pop(x)
                 body_of_joint.pop(x, None)
     changed = True
-    while changed:                      # a joint riding on one that cannot be posed cannot be posed either
+    while changed:                      # a joint riding on, or following, one that cannot be posed cannot be either
         changed = False
         for jid in sorted(js):
             p = parent.get(jid)
+            lost = [x for x in (js[jid].follows.joint, eff[jid].joint) if x not in js] if jid in eff else []
             if p is not None and p not in js:
-                checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} rides on joint {p}, which cannot be posed",
-                                    [js[jid].moving]))
-                js.pop(jid)
-                body_of_joint.pop(jid, None)
-                changed = True
+                why = f"rides on joint {p}, which cannot be posed"
+            elif lost:
+                why = f"follows joint {lost[0]}, which cannot be posed"
+            else:
+                continue
+            checks.append(Check(f"joint:{jid}", "fail", f"joint {jid} {why}", [js[jid].moving]))
+            js.pop(jid)
+            body_of_joint.pop(jid, None)
+            changed = True
     parent = {k: v for k, v in parent.items() if k in js}
+    eff = {k: v for k, v in eff.items() if k in js}
+
+    # -- driven joints: the follower's one axis spans what its driver's range gives it
+    for cap, unit in ((max_step_deg, "deg"), (max_step_mm, "mm")):      # a step cap holds for followers too
+        for jid, law in eff.items():
+            d = js[law.joint].dofs[0]
+            if cap and js[jid].dofs[0].unit == unit and d.hi > d.lo:
+                need_n = int(math.ceil(abs(law.multiplier) * (d.hi - d.lo) / cap - 1e-9)) + 1
+                if need_n > d.samples:
+                    js[law.joint].dofs[0] = replace(d, samples=need_n)
+    driven: Dict[str, Dict[str, Any]] = {}
+    for jid in sorted(eff):
+        law, j, d = eff[jid], js[jid], js[eff[jid].joint].dofs[0]
+        lo, hi = sorted((law.of(d.lo), law.of(d.hi)))
+        j.dofs[0] = replace(j.dofs[0], lo=lo, hi=hi)
+        unit = j.dofs[0].unit
+        # ``follows`` is the joint it was declared to follow; ``driver`` is the sampled joint that ends up moving
+        # it (they differ when it follows a follower), with the composed multiplier and offset
+        row = {"joint": jid, "follows": j.follows.joint, "multiplier": j.follows.multiplier,
+               "offset": j.follows.offset, "driver": law.joint, "driver_multiplier": law.multiplier,
+               "driver_offset": law.offset, "unit": unit, "driver_unit": d.unit,
+               "range": [round(lo, 6), round(hi, 6)], "declared_range": list(j.declared) if j.declared else None,
+               "law": _law(jid, j.follows, unit, js[j.follows.joint].dofs[0].unit)}
+        driven[jid] = row
+        text = (f"{row['law']}: {_fmt(lo)}..{_fmt(hi)} {unit} as {law.joint} moves {_fmt(d.lo)}..{_fmt(d.hi)} "
+                f"{d.unit}")
+        if j.declared and (lo < j.declared[0] - 1e-6 or hi > j.declared[1] + 1e-6):
+            checks.append(Check(f"follows:{jid}", "fail", f"{text}, outside its declared range "
+                                f"{_fmt(j.declared[0])}..{_fmt(j.declared[1])} {unit}: narrow {law.joint}'s range, "
+                                "or correct this joint's range, multiplier or offset", [j.moving], row))
+        else:
+            inside = (f", inside its declared range {_fmt(j.declared[0])}..{_fmt(j.declared[1])} {unit}"
+                      if j.declared else "; it declares no range of its own")
+            checks.append(Check(f"follows:{jid}", "pass", f"{text}{inside}. The ratio is declared, not solved",
+                                [j.moving], row))
 
     def root(jid: str) -> str:
         while parent.get(jid) is not None:
@@ -493,6 +721,8 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             r = merged[r]
         return r
 
+    for jid, law in eff.items():        # a follower is posed with its driver: one group
+        merged[find(root(jid))] = find(root(law.joint))
     for combo in combine:
         roots = []
         for jid in combo:
@@ -515,7 +745,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     groups: List[_Group] = []
     for r in sorted(members):
         order = sorted(members[r], key=lambda j: (depth(j), j))
-        axes = [d for j in order for d in js[j].dofs]
+        axes = [d for j in order if j not in eff for d in js[j].dofs]       # followers are not sampled
         counts = [a.samples for a in axes]
         coarsened = False
         if math.prod(counts) > max_poses:
@@ -526,6 +756,8 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         groups.append(_Group("+".join(order), order, axes, counts, coarsened))
 
     def home_values(jid: str) -> List[float]:
+        if jid in eff:
+            return [eff[jid].of(js[eff[jid].joint].dofs[0].home)]
         return [d.home for d in js[jid].dofs]
 
     def world_mats(values: Mapping[str, Sequence[float]]) -> Dict[str, Tuple[float, ...]]:
@@ -549,6 +781,30 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
     for k in names:
         body_keys.setdefault(world.body(k), []).append(k)
 
+    # -- closes points: the body that carries each of the two parts, or why the point cannot be measured
+    closure_ids = {(jid, n): f"closure:{jid}:{_pair_id(*c.parts)}" + (f"#{n + 1}" if sum(
+        1 for j2, _, c2 in closures if j2 == jid and set(c2.parts) == set(c.parts)) > 1 else "")
+        for jid, n, c in closures}
+    closure_bodies: Dict[Tuple[str, int], List[str]] = {}
+    closure_problem: Dict[Tuple[str, int], str] = {}
+    for jid, n, c in closures:
+        found: List[str] = []
+        for part in c.parts:
+            bs = sorted({world.body(k) for k in _keys(names, part)})
+            if not bs:
+                closure_problem[(jid, n)] = f"{part} is not in the assembly"
+            elif len(bs) > 1:
+                closure_problem[(jid, n)] = (f"{part} has instances in several bodies ({', '.join(bs)}): name the "
+                                             "instance the point is on")
+            else:
+                found.append(bs[0])
+        if (jid, n) not in closure_problem and found[0] == found[1]:
+            closure_problem[(jid, n)] = (f"both are in one body ({found[0]}), so the point cannot come apart and "
+                                         "measures nothing")
+        if (jid, n) not in closure_problem:
+            closure_bodies[(jid, n)] = found
+    apart: Dict[Tuple[str, int], Tuple[float, str, str, int]] = {}      # the worst over every group: mm, pose, group
+
     # -- sample and query
     group_rows: List[Dict[str, Any]] = []
     swept: Dict[str, Dict[str, Tuple[float, ...]]] = {}
@@ -569,9 +825,14 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             out: Dict[str, List[float]] = {}
             i = 0
             for jid in g.joints:
+                if jid in eff:
+                    continue
                 n = len(js[jid].dofs)
                 out[jid] = list(vals[i:i + n])
                 i += n
+            for jid in g.joints:
+                if jid in eff:
+                    out[jid] = [eff[jid].of(out[eff[jid].joint][0])]
             return out
 
         def carried_rel(vals: Dict[str, List[float]], ancestor: str, jid: str) -> Tuple[float, ...]:
@@ -582,10 +843,16 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                 jid = parent[jid]  # type: ignore[assignment]
             return m
 
-        carried = {i: [(jj, k) for jj in g.joints if _carries(parent, a.joint, jj)
-                       for b in body_of_joint[jj] for k in body_keys.get(b, [])]
-                   for i, a in enumerate(g.axes) if a.kind == "rotate"}
-        radius = {i: 0.0 for i in carried}
+        followers = {a.joint: [f for f in g.joints if f in eff and eff[f].joint == a.joint] for a in g.axes}
+        turning = {a.joint for a in g.axes if a.kind == "rotate"} | \
+                  {f for fs in followers.values() for f in fs if js[f].dofs[0].kind == "rotate"}
+        carried = {x: [(jj, k) for jj in g.joints if _carries(parent, x, jj)
+                       for b in body_of_joint[jj] for k in body_keys.get(b, [])] for x in sorted(turning)}
+        radius = {x: 0.0 for x in carried}
+        # a closes point is measured in every group that moves either of its parts, whichever joint states it
+        closures_g = [(jid, n, c) for jid, n, c in closures
+                      if set(closure_bodies.get((jid, n), ())) & set(moving_bodies_g)]
+        apart_g: Dict[Tuple[str, int], Tuple[float, str]] = {}
         pair_rows: Dict[Tuple[str, str], List[Tuple[int, Relation]]] = {}
         min_box: Dict[str, Any] = {}
         pose_mats: Dict[str, Dict[str, Tuple[float, ...]]] = {}
@@ -593,11 +860,16 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             vmap = values_of(vals)
             mats = world_mats(vmap)
             pose_mats[_label(g, vals)] = {b: mats[b] for b in moving_bodies_g}
-            for i, rows_c in carried.items():         # how far the carried parts reach from this axis, in this pose
-                j = js[g.axes[i].joint]
+            for x, rows_c in carried.items():         # how far the carried parts reach from this axis, in this pose
+                j = js[x]
                 for jj, k in rows_c:
                     rel = carried_rel(vmap, j.id, jj)
-                    radius[i] = max(radius[i], _radius(moved_box(world.box(k), rel), j.origin, j.direction))
+                    radius[x] = max(radius[x], _radius(moved_box(world.box(k), rel), j.origin, j.direction))
+            for jid, n, c in closures_g:              # the shared point, carried by each part's body
+                pa, pb = (_apply(mats.get(b, IDENTITY), c.at) for b in closure_bodies[(jid, n)])
+                d = math.dist(pa, pb)
+                if (jid, n) not in apart_g or d > apart_g[(jid, n)][0]:
+                    apart_g[(jid, n)] = (d, _label(g, vals))
             boxes = {k: moved_box(world.box(k), mats.get(world.body(k), IDENTITY)) for k in names}
             for k in moving_keys:
                 swept.setdefault(g.id, {})[k] = _union(swept.get(g.id, {}).get(k), boxes[k])
@@ -663,17 +935,54 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
         for a, c in zip(g.axes, g.counts):
             row: Dict[str, Any] = {"joint": a.joint, "axis": a.kind, "unit": a.unit, "range": [a.lo, a.hi],
                                    "samples": c, "declared_samples": a.samples, "step": round(a.step(c), 6)}
-            i = len(density)
             if a.kind == "rotate":
-                row["max_radius_mm"] = round(radius[i], 3)
-                row["max_travel_per_step_mm"] = round(math.radians(a.step(c)) * radius[i], 3)
+                row["max_radius_mm"] = round(radius[a.joint], 3)
+                own = {a.joint: math.radians(a.step(c)) * radius[a.joint]}
             else:
-                row["max_travel_per_step_mm"] = round(a.step(c), 3)
+                own = {a.joint: a.step(c)}
+            drives = []
+            for f in followers[a.joint]:
+                fd = js[f].dofs[0]
+                frow: Dict[str, Any] = {"joint": f, "axis": fd.kind, "unit": fd.unit, "range": driven[f]["range"],
+                                        "step": round(abs(eff[f].multiplier) * a.step(c), 6)}
+                if fd.kind == "rotate":
+                    frow["max_radius_mm"] = round(radius[f], 3)
+                    own[f] = math.radians(frow["step"]) * radius[f]
+                else:
+                    own[f] = frow["step"]
+                frow["max_travel_per_step_mm"] = round(own[f], 3)
+                drives.append(frow)
+            if drives:
+                row["drives"] = drives
+
+            def travel(x: Optional[str]) -> float:
+                """A body's travel per step: its joint's own, plus that of each joint moving with this axis that
+                carries it (a follower riding on its driver adds to it; one beside it does not)."""
+                total = 0.0
+                while x is not None:
+                    total += own.get(x, 0.0)
+                    x = parent.get(x)
+                return total
+
+            row["max_travel_per_step_mm"] = round(max(travel(x) for x in own), 3)
             density.append(row)
         failed = bool(collisions or unknown or (strict_contacts and contacts))
         text = "; ".join(f"{d['joint']} {d['range'][0]:g}..{d['range'][1]:g} {d['unit']} in {d['samples']} samples "
                          f"({d['step']:g} {d['unit']} apart, up to {d['max_travel_per_step_mm']:g} mm of travel)"
                          for d in density)
+        group_driven = [driven[f] for f in g.joints if f in driven]
+        if group_driven:
+            text += "; driven, not sampled: " + ", ".join(d["law"] for d in group_driven)
+        closure_rows = []
+        for jid, n, c in closures_g:
+            worst, pose = apart_g[(jid, n)]
+            closure_rows.append({"id": closure_ids[(jid, n)], "joint": jid, **c.to_dict(),
+                                 "max_apart_mm": round(worst, 6), "worst_pose": pose, "poses": len(poses),
+                                 "status": "fail" if worst > c.tol_mm else "pass"})
+            if (jid, n) not in apart or worst > apart[(jid, n)][0]:
+                apart[(jid, n)] = (worst, pose, g.id, apart.get((jid, n), (0, "", "", 0))[3] + len(poses))
+            else:
+                apart[(jid, n)] = apart[(jid, n)][:3] + (apart[(jid, n)][3] + len(poses),)
         if collisions:
             msg = f"{g.id}: {len(collisions)} colliding pair(s) over {len(poses)} poses ({text})"
         elif unknown:
@@ -686,6 +995,7 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
             clearance["unmeasured_at"] = min_box
         evidence = {"joints": g.joints, "poses": len(poses), "density": density, "coarsened": g.coarsened,
                     "max_poses": max_poses, "moving": moving_keys, "bodies": moving_bodies_g,
+                    "driven": group_driven, "closures": closure_rows,
                     "intended_contacts": sorted(_pair_id(*sorted(p)) for p in set(intended) if len(p) == 2),
                     "intended_contacts_touching": touched, "collisions": [_pair_id(*p) for p in collisions],
                     **clearance}
@@ -721,15 +1031,63 @@ def run_motion(world: World, joints: Mapping[str, Any], *, tol: Tolerances = Tol
                                 f"combine=[[...]] to sample them together", [near[1], near[2]],
                                 {"groups": [x, y], "box_distance_mm": round(near[0], 6)}))
             not_checked.append(f"{x} with {y}: combined poses (sampled separately)")
+    # -- closes points: one check each, over every group that moved one of its parts
+    closure_rows_all: List[Dict[str, Any]] = []
+    measured = set()                    # joints between the two parts of a measured point: their values move it apart
+    for jid, n, c in closures:
+        cid = closure_ids[(jid, n)]
+        crow: Dict[str, Any] = {"id": cid, "joint": jid, **c.to_dict()}
+        at = ", ".join(_fmt(v) for v in c.at)
+        between: set = set()            # the joints that carry one of the two parts and not the other
+        if (jid, n) in closure_bodies:
+            above = []
+            for body in closure_bodies[(jid, n)]:
+                chain = set()
+                for cur in [o for o, bs in body_of_joint.items() if body in bs]:
+                    while cur is not None:
+                        chain.add(cur)
+                        cur = parent.get(cur)
+                above.append(chain)
+            between = above[0] ^ above[1]
+            only = js[next(iter(between))] if len(between) == 1 else None
+            if only is not None and only.kind == "revolute" and \
+                    _radius(tuple(c.at) * 2, only.origin, only.direction) < 1e-6:
+                closure_problem[(jid, n)] = (f"the point lies on the axis of {only.id}, the only joint between the "
+                                             "two, so it cannot come apart and measures nothing")
+        if (jid, n) in closure_problem or (jid, n) not in apart:
+            why = closure_problem.get((jid, n)) or "no sampled joint moves either part, so the point measures nothing"
+            crow["status"] = "fail"
+            checks.append(Check(cid, "fail", f"joint {jid} closes {c.parts[0]} on {c.parts[1]} at ({at}), but {why}",
+                                list(c.parts), crow))
+        else:
+            worst, pose, gid, count = apart[(jid, n)]
+            crow.update(max_apart_mm=round(worst, 6), worst_pose=pose, group=gid, poses=count,
+                        status="fail" if worst > c.tol_mm else "pass")
+            if worst > c.tol_mm:
+                msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share comes {worst:.4g} mm apart "
+                         f"at {pose} (over {c.tol_mm:g} mm): the declared joint values do not keep the loop "
+                         f"closed, so check the follows multipliers, the axis directions and the link geometry")
+            else:
+                msg_c = (f"the point ({at}) that {c.parts[0]} and {c.parts[1]} share stays within "
+                         f"{worst:.3g} mm over {count} poses (limit {c.tol_mm:g} mm)")
+            checks.append(Check(cid, crow["status"], msg_c, list(c.parts), crow))
+            measured |= between         # a joint carrying both parts moves them together: not measured
+        closure_rows_all.append(crow)
+    for jid in sorted(driven):
+        if jid not in measured:
+            not_checked.append(f"loop closure of {driven[jid]['law']}: the ratio is declared, not solved, and no "
+                               "closes point measures it")
     limits = {"touch_mm": tol.touch_mm, "overlap_mm3": tol.overlap_mm3, "near_mm": tol.near_mm,
               "volume_check_mm3": tol.volume_check_mm3, "default_samples": default_samples,
               "max_step_deg": max_step_deg, "max_step_mm": max_step_mm, "max_poses": max_poses,
               "refine_steps": refine_steps, "strict_contacts": strict_contacts,
               "combine": [list(c) for c in combine]}
-    stats = {"joints": len(js), "groups": len(groups), "poses": poses_total, "pair_queries": candidates_total,
+    stats = {"joints": len(js), "driven_joints": len(driven), "groups": len(groups), "poses": poses_total,
+             "pair_queries": candidates_total,
              **world.stats, "seconds": round(time.perf_counter() - t0, 3)}
     return verdict(GATE, checks, assumptions=ASSUMPTIONS, limits=limits, exclusions=excl,
-                   extra={"groups": group_rows, "not_checked": not_checked, "stats": stats})
+                   extra={"groups": group_rows, "driven": driven, "closures": closure_rows_all,
+                          "not_checked": not_checked, "stats": stats})
 
 
 def _carries(parent: Mapping[str, Optional[str]], ancestor: str, jid: str) -> bool:

@@ -79,6 +79,38 @@ class MirrorTests(unittest.TestCase):
                 self.assertEqual(self.path.read_text(), ORIGINAL)
                 self.assertEqual(self.source.read_text(), mutant)
 
+    def test_rejection_reports_actual_profile_without_mutation(self):
+        unknown = ORIGINAL.replace("priority:1", "priority:99")
+        self.path.write_text(unknown)
+        with self.assertRaises(ValueError) as caught:
+            mirror.configure(self.path, self.source)
+        detail = str(caught.exception)
+        self.assertIn('"uri": "http://azure.archive.ubuntu.com/ubuntu/"', detail)
+        self.assertIn('"priority": "priority:99"', detail)
+        self.assertIn('"line": 3', detail)
+        self.assertEqual(self.path.read_text(), unknown)
+        self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_rejection_omits_credentials_queries_paths_and_extra_fields(self):
+        unknown = "https://alice:private-password@mirror.example/private-path?private-query#private-fragment private-priority private-extra\n" + FALLBACKS
+        self.path.write_text(unknown)
+        with self.assertRaises(ValueError) as caught:
+            mirror.configure(self.path, self.source)
+        detail = str(caught.exception)
+        for secret in ("alice", "private-password", "private-path", "private-query", "private-fragment", "private-priority", "private-extra"):
+            self.assertNotIn(secret, detail)
+        self.assertIn('"uri": "https://mirror.example<other-path>"', detail)
+        self.assertIn('"fields": 3', detail)
+        self.assertEqual(self.path.read_text(), unknown)
+        self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_rejection_diagnostics_are_bounded_and_handle_malformed_uris(self):
+        self.assertIn("<malformed-uri>", mirror.mirror_profile("https://[bad priority:1\n"))
+        import json
+        records = json.loads(mirror.mirror_profile("# note\n\n" + ORIGINAL * 20))
+        self.assertEqual(len(records), 12)
+        self.assertEqual(records[0]["line"], 3)
+
     # Canonical cloud-init template at 179c69886be4c8e7e93bf22c34e97bf03e142b22,
     # specialized to noble and the runner-images mirror URI transformation.
     def test_split_producer_stanzas_and_explicit_enabled_are_accepted(self):

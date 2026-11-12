@@ -98,3 +98,27 @@ On 2026-11-07, one separately reviewed read-only discriminator used the existing
 The existing evaluator now offers an explicit `--normal-auth-config` route for a separately graded current paste/install/CLI flow. It requests SafeMode, empty settings/MCP, a builtin general-purpose agent, bounded file/shell/web tools and the existing normal login. It refuses mixed environment/normal auth, wrong harnesses, failed metadata and nonempty work directories. It resolves the existing CLI directly instead of lending unrelated user-bin commands. It never searches for credential files. The five inert real-process controls validate those boundaries; they are not a model trial.
 
 **Rule:** retain the historical acceptance wording and declare the substitution. SafeMode disables native skill discovery, including newly installed toolkit skills; managed policy may still apply. The normal-login route therefore marks `fresh_session` unknown and excludes it from its score, while grading the existing 12 flow outcomes from transcript/files. It cannot claim a clean OS user, default-harness parity or native skill invocation. A current named model trial still needs exact source/command/runtime/tool/output bounds and independent actual-result review. Use an owned-group collector with an outer deadline below the evaluator's own timeout so a timed-out producer cannot leave descendants while grading or accepting files.
+
+## Grade only after the entire service stops
+
+On 2026-11-12, [independent PR #613 review](https://github.com/Valpatel/cad-agent/pull/613#discussion_r4552450994)
+reproduced a new boundary failure: an inert CLI spawned a child with `start_new_session=True`. The initial
+collector reported `collector_settled=True` and `usable_trial=True` while that detached child was still alive
+inside the grader. No model trial had started. Killing a POSIX process group does not settle a different group.
+
+The corrected collector never grades. An external finalizer binds the recorded cgroup to an explicit owned
+service, captures its retained `Result`/`ExecMainStatus`, stops it with `KillMode=control-group`, and checks for
+remaining members before reading subject output. A separate probe found that an already unloaded service returns
+default success fields; `RemainAfterExit=yes` therefore retains actual status until the finalizer records it.
+
+Evidence: `CAD_EVAL_SYSTEMD_CONTROL=1 python -m pytest -q tests/repo/test_standard_eval_runner.py` reported
+`20 passed` on 2026-11-12. The actual service control asserts the detached child is alive after collection,
+no result exists yet, and the child is absent before a graded result returns. Default CI explicitly skips this
+service-dependent case; mocked state controls are not equivalent evidence. Wrong/active/unknown units and a
+nonempty cgroup after stopping fail closed. The existing same-user login and directory-only input boundary do
+not isolate hostile code or prevent a deliberately created unrelated service; no such claim is made.
+
+A second independent control at `ffc14cb5` caught late inherited stdout: cached metrics reported zero malformed
+lines and a usable trial, while the final transcript contained one malformed line. The [review finding](https://github.com/Valpatel/cad-agent/pull/613#discussion_r4552581625)
+requires transcript parsing to move after service teardown as well. The corrected focused suite includes this
+ordering control; transcript hashes and metrics must describe the same settled bytes, not different moments.

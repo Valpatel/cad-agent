@@ -100,6 +100,7 @@ export class CadNav extends HTMLElement {
       filter.setAttribute('aria-label', 'Filter pages');
       panel.prepend(filter);
     }
+    filter.disabled = false;
     this.#filter(filter, panel, signal);
     this.#room(panel, signal);
     this.#outline(panel, signal);

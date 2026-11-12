@@ -6,7 +6,8 @@ const pages=[{file:'boss.md',title:'A screw boss'},{file:'other.md',title:'Other
 test('browse and reader share real nested taxonomy and preserve exact local page destinations',()=>{
  const nodes=topicNodes(areas);assert.equal(nodes.get('bosses').parent,'fasteners');assert.equal(nodes.get('bosses').domain,'mechanical');
  const browse=topicTree({areas,pages,pageURL,browse:true}),reader=readerNav({areas,pages,pageURL,current:'/docs/boss'});
- for(const html of [browse,reader]){for(const id of ['mechanical','fasteners','bosses','cross-cutting'])assert.ok(html.includes('data-topic="'+id+'"'));assert.ok(html.includes('href="/docs/boss"'));assert.doesNotMatch(html,/maturity|mat-dots/);}
+ for(const html of [browse,reader]){for(const id of ['mechanical','fasteners','bosses','cross-cutting'])assert.ok(html.includes('data-topic="'+id+'"'));assert.ok(html.includes('data-topic="bosses"'));assert.doesNotMatch(html,/maturity|mat-dots/);}
+ assert.ok(browse.includes('href="/explore?area=bosses"'));
  assert.match(reader,/href="\/docs\/boss" aria-current="page"/);assert.match(reader,/action="\/explore"/);assert.ok(reader.includes('name="q"'));
  assert.ok(reader.includes('data-topic="bosses" data-tone="mechanical" open'));
  const wrong=readerNav({areas,pages,pageURL,current:'/docs/missing'});assert.doesNotMatch(wrong,/aria-current="page"/);
@@ -34,4 +35,13 @@ test('on-demand detail destinations retain local previews and reject executable/
   assert.equal(detailURL('https://github.com/owner/tool'),'https://github.com/owner/tool');
   assert.equal(detailURL('javascript:alert(1)'),null);assert.equal(detailURL('https://user:pass@example.com'),null);
  }finally{delete globalThis.location;}
+});
+
+test('glyph sprite preserves every stable symbol while reusing identical artwork',async()=>{
+ const {glyphSprite,glyphFor}=await import('../../tools/site/compiler/catalog-art.mjs');
+ const slugs=['unplaced','fixture-unknown-topic','fixture-other-topic'];const sprite=glyphSprite(slugs);
+ for(const slug of slugs)assert.ok(sprite.includes(`id="g-${slug}"`));
+ assert.equal((sprite.match(/<use href="#g-unplaced"/g)||[]).length,2);
+ assert.ok(glyphFor(slugs[0])===glyphFor(slugs[1]));
+ assert.equal((glyphSprite(['unplaced','unplaced']).match(/<symbol/g)||[]).length,1);
 });

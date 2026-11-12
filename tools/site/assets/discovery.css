@@ -36,4 +36,8 @@ cad-gallery.discovery:not([data-ready]) [data-item][data-over]{display:list-item
 .result-cover{display:block;width:100%;max-width:280px;height:auto;max-height:210px;object-fit:contain;border-radius:8px;background:var(--soft);margin:8px 0}
 .explore-mobile-outline{font-size:12px;margin-top:18px;border-top:1px solid var(--line-2);padding-top:12px}.explore-mobile-outline>p{font-weight:700}.explore-reader .explore-mobile-outline .cad-nav-outline{display:block!important}
 @media(min-width:1480px){.explore-mobile-outline{display:none}}
-.explore-nav:not([data-ready]) .cad-nav-filter{display:none}
+
+
+.explore-topic>summary{font-size:13px;letter-spacing:normal;text-transform:none;min-height:44px}.explore-tree a{min-height:36px}.discover-filter-options>summary{font-weight:700;cursor:pointer;padding:12px 0}
+/* Reserve the disclosure line without offering an inert control when its enhancement fails. */
+.discovery .result-details[data-catalogue-id]:not([data-detail-active]){visibility:hidden}

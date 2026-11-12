@@ -405,7 +405,7 @@ const REF_SOURCES = ['docs/research/references.yaml', 'docs/research/references'
 const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCES) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', ...REF_SOURCES) || committed;
 for (const p of refSite.pages) {
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
-  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url})}<div class="doc-main">${p.body}</div></div>`, md: '/' + p.md, description: p.description, current: p.url,
+  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div></div>`, md: '/' + p.md, description: p.description, current: p.url,
     page: 'references', css: ['/web/references.css','/kit/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }

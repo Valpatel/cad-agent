@@ -208,11 +208,11 @@ test('home, README and agent indexes reach the canonical checked installers (#27
 });
 
 test('pages say when they were last updated and how to give feedback', async () => {
-  const commitDay = git('show', '-s', '--format=%cs', 'HEAD').trim();
-  const lessonDay = git('log', '-1', '--format=%cs', 'HEAD', '--', 'docs/lessons/process/verify-from-source.md').trim();
-  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay}">`));
+  const commitDay = git('show', '-s', '--format=%cI', 'HEAD').trim();
+  const lessonDay = git('log', '-1', '--format=%cI', 'HEAD', '--', 'docs/lessons/process/verify-from-source.md').trim();
+  assert.match(await readFile(path.join(out, 'index.html'), 'utf8'), new RegExp(`Last updated <time datetime="${commitDay.replace(/[+]/g,'\\+')}">`));
   const lesson = await readFile(path.join(out, 'lessons/process/verify-from-source.html'), 'utf8');
-  assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay}">`), 'a page shows its own last change');
+  assert.match(lesson, new RegExp(`Last updated <time datetime="${lessonDay.replace(/[+]/g,'\\+')}">`), 'a page shows its own last change');
   const fb = lesson.match(/<aside class="feedback"[\s\S]*?<\/aside>/)?.[0];
   assert.ok(fb, 'doc pages end with the feedback box');
   const href = fb.match(/href="([^"]+)"/)[1].replace(/&amp;/g, '&');

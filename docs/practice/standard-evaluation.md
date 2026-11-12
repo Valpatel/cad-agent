@@ -92,3 +92,39 @@ The repository's [landscape](../research/landscape.json) records CADGenBench use
 `tests/repo/test_standard_eval.py` validates every manifest and all three reference solutions. Negative controls alter length, reported strain, allowable factors, force, fillet and section; collide, overlap, move off-grid or overmove ribs; and mirror, short, omit or duplicate electrical endpoints. Reordered valid nets remain positive. Invalid JSON, duplicate keys, NaN, wrong schemas, symlinks and oversized files fail. Preparation refuses reuse; ingestion preserves unknown metrics and distinguishes an otherwise correct artifact from a timed-out trial. `tests/repo/test_standard_eval_runner.py` checks adapters, transcript accounting, inert real subprocess completion and timeout, plus active/wrong/unknown units and retained terminal failures. The opt-in `CAD_EVAL_SYSTEMD_CONTROL=1` test creates an actual user service with a detached child, proves the child survives the collector, then proves finalization stops it before grading. Default CI skips this service test explicitly; mocked unit tests are not teardown evidence.
 
 On 2026-11-12 the focused suite passed 25 focused tests using an existing Python environment, without new packages. All three reference artifacts pass; these controller controls are not fresh model results. Actual CLI trials and any aggregate table are reported separately with model, harness, mode, observed kit use, errors and session limits. A single trial has no useful population pass-rate estimate; do not infer reliability or toolkit benefit from these controls.
+
+## Recorded fresh-agent attempts
+
+The [2026-11-12 records](https://github.com/Valpatel/cad-agent/blob/main/docs/research/bench/standard-evaluation-2026-11-12.jsonl)
+retain all five attempts and their hashes, outputs, selected tool-call excerpts and limitations. The toolkit was
+pinned to `59441e75` (the released v0.37.2 tree). Three separate native-app conversations requested GPT-6.1 Sol;
+their session metadata reports that model with maximum reasoning effort. Controller reference answers were not
+provided. Independent graders checked the artifacts after each task completed.
+
+| Attempt | Artifact checks | Observed toolkit use | Time |
+|---|---|---|---|
+| Codex CLI · snap-fit | No artifact | None retained; model reported a sandbox failure | 15.9 s |
+| Claude CLI · snap-fit | No artifact | Provider usage limit prevented task work | 0.9 s |
+| Native Sol · snap-fit | 8 checks passed | `rect_section`, `root_strain`, `deflection_force` | 62.8 s |
+| Native Sol · lid ribs | 4 checks passed | `box_distance`, with local enumeration and an analytical cross-check | 112.8 s |
+| Native Sol · connector | 4 checks passed | Documentation inspected; task-specific Python, no toolkit API invoked | 78.5 s |
+
+The connector subject reported that it did not find an applicable pin/net declaration validator. That is a
+discoverability observation for this input, not proof that the entire toolkit lacks electrical checks. Its output
+still passed the independent graph checks. The snap and rib traces show actual successful API execution, beyond
+an agent's claim or a written import.
+
+The Codex CLI transcript contains a structured unstable-feature diagnostic but no retained command trace proving
+the reported sandbox failure. Its original collector marked a normally completed model turn usable; the later
+conservative diagnostic rule excludes it. The original record is preserved. Claude explicitly reported a provider
+limit. Neither is counted as a design failure or a successful toolkit trial.
+
+Native conversations used the working app tool interface with existing user configuration. Their wall/token limits
+were **not enforced**, their effort differed from the CLI pilots, and there was no bare baseline. API tool output
+was truncated, so only each new task's own local rollout supplied the audited tool records. All observed commands
+were synchronous and stayed within the task and pinned toolkit. No clean-user isolation, causal toolkit benefit,
+population pass rate, exported CAD correctness or physical qualification follows from these three smoke tasks.
+
+Next, [#142](https://github.com/Valpatel/cad-agent/issues/142) retains the work on repeatable paired trials in a
+working bounded environment, native CAD/PCB artifacts and source-lookup questions. These observations do not close
+that broader evaluation program.

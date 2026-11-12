@@ -10,6 +10,8 @@ import uuid
 
 import pytest
 
+pytestmark = pytest.mark.skipif(sys.platform != 'linux', reason='Linux cgroup v2/user-service collector')
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools/evaluation'))
 spec = importlib.util.spec_from_file_location('standard_eval_runner', ROOT / 'tools/evaluation/runner.py')

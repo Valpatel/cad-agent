@@ -158,8 +158,8 @@ def write_json(path, data):
 
 
 def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=None):
-    if os.name != 'posix':
-        raise ValueError('this collector requires POSIX process groups')
+    if sys.platform != 'linux':
+        raise ValueError('this collector requires Linux cgroup v2 and user systemd')
     executable = shutil.which(harness)
     if executable is None:
         raise ValueError(f'{harness} is not installed')

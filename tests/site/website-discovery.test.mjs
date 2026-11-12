@@ -71,9 +71,9 @@ test('compact projection avoids reference detail tables, article dumps and cover
  assert.ok(compactReferences.reduce((n,s)=>n+Buffer.byteLength(s),0)<model.source_counts.reference_records*700,'reference projection remains compact; richer catalogue details are not copied onto sources');
  assert.ok(compactReferences.every(s=>!s.includes('result-details')&&!s.includes('result-cover')));
  const n=model.items.length;
- assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<900000,'compact search links plus bounded catalogue details; original absolute safety cap');
+ assert.ok(Buffer.byteLength(html)<50000+n*700 && Buffer.byteLength(html)<900000,'700 bytes/result plus fixed shell; absolute safety cap');
  assert.ok(gzipSync(html).length<20000+n*110 && gzipSync(html).length<180000,'110 gzip bytes/result plus shell; absolute safety cap');
- assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact sources plus explicit catalogue detail/link allowance; absolute safety cap');
+ assert.ok((html.match(/<[a-z][^>]*>/g)||[]).length<800+n*5 && (html.match(/<[a-z][^>]*>/g)||[]).length<9000,'compact result DOM plus fixed shell; absolute safety cap');
 });
 
 test('generated pitfall destinations are unique and hostile text is inert',()=>{

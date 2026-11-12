@@ -35,9 +35,12 @@ cad-gallery.discovery:not([data-ready]) [data-item][data-over]{display:list-item
 .result-details{margin-top:8px;font-size:12px;color:var(--muted)}.result-details>summary{cursor:pointer;min-height:28px;padding:5px 0}.result-details p{line-height:1.6}.result-details code{overflow-wrap:anywhere;white-space:pre-wrap}.explore-anchor{scroll-margin-top:100px}.result-details a{color:var(--ink)}.result-details .card-policy,.result-details .card-note{font-size:12px}.explore-reader .refs-hero{padding-top:28px}.explore-reader .refs-table{min-width:620px}
 .result-cover{display:block;width:100%;max-width:280px;height:auto;max-height:210px;object-fit:contain;border-radius:8px;background:var(--soft);margin:8px 0}
 .explore-mobile-outline{font-size:12px;margin-top:18px;border-top:1px solid var(--line-2);padding-top:12px}.explore-mobile-outline>p{font-weight:700}.explore-reader .explore-mobile-outline .cad-nav-outline{display:block!important}
-@media(min-width:1480px){.explore-mobile-outline{display:none}}
+@media(min-width:1500px){.explore-mobile-outline{display:none}}
 
 
 .explore-topic>summary{font-size:13px;letter-spacing:normal;text-transform:none;min-height:44px}.explore-tree a{min-height:36px}.discover-filter-options>summary{font-weight:700;cursor:pointer;padding:12px 0}
 /* Reserve the disclosure line without offering an inert control when its enhancement fails. */
 .discovery .result-details[data-catalogue-id]:not([data-detail-active]){visibility:hidden}
+/* A failed navigation module cannot offer a working filter/global-search enhancement. Native page links remain. */
+.explore-nav:not([data-ready]) .explore-nav-search{visibility:hidden}
+@media(scripting:none){.explore-nav-search{display:none}}

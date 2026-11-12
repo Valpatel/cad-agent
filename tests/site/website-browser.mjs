@@ -174,7 +174,7 @@ try {
         }
         if (route === '/catalog' && width === 1366) {
           await page.fill('[data-gallery-search]', 'zzzz-nothing-matches');
-          if (!/0 of 228 results/.test(await page.textContent('[data-gallery-status]'))) seen.push('empty filter result is not announced');
+          if (!/No results match/.test(await page.textContent('[data-gallery-status]'))) seen.push('empty filter result is not announced');
           await page.fill('[data-gallery-search]', 'mit');
           const hits = await page.$$eval('[data-item]', cs => cs.filter(c=>c.checkVisibility()).map(c=>c.textContent.toLowerCase()+' '+c.getAttribute('data-search-extra')));
           if (!hits.length || hits.some(t => !/(^|[^\p{L}\p{N}])mit/u.test(t))) seen.push('"mit" matches inside other words');

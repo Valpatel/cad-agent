@@ -1,4 +1,4 @@
-import {topicSprite, readerNav, updateTime} from './compiler/site-explore-shell.mjs';
+import {topicSprite, readerNav, updateTime, articleOutline} from './compiler/site-explore-shell.mjs';
 /** Build cad-agent.valpatel.com into dist/: one static bundle for local preview and Cloudflare Pages.
  *
  * Agent-first: every page has its Markdown source next to it (same path, .md), /llms.txt and /llms-full.txt index
@@ -405,8 +405,9 @@ for (const [f, text] of refSite.files) { await mkdir(path.dirname(path.join(out,
 const REF_SOURCES = ['docs/research/references.yaml', 'docs/research/references', 'docs/areas.yaml'];
 const refsUpdated = WORKTREE && git('status', '--porcelain', '--', ...REF_SOURCES) ? null : git('log', '-1', '--format=%cI', 'HEAD', '--', ...REF_SOURCES) || committed;
 for (const p of refSite.pages) {
+  const outline=articleOutline(p.body),rail=outline?`<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline.replace('class="cad-nav-outline"','class="cad-nav-outline cad-nav-rail"')}</nav>`:'';
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
-  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div></div>`, md: '/' + p.md, description: p.description, current: p.url,
+  await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
     page: 'references', css: ['/web/references.css','/kit/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }

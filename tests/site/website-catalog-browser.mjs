@@ -84,7 +84,7 @@ async function sharedDiscoveryChecks() {
       const before = await page.evaluate(() => ({height: document.documentElement.scrollHeight, nodes: document.querySelectorAll('*').length,
         visible: [...document.querySelectorAll('[data-item]')].filter(x => x.checkVisibility()).length}));
       if (width >= 1100) { const wall = await page.evaluate(longestStretch, VISUAL); if (wall.worst > WALL_LIMIT) fail('Explore reading', JSON.stringify(wall)); }
-      if (before.height > 7000 || before.nodes > 9000 || before.visible > 8) fail('Explore', `${width}px ${color}: unbounded default ${JSON.stringify(before)}`);
+      if (before.height > 7000 || before.nodes > 7300 || before.visible > 8) fail('Explore', `${width}px ${color}: unbounded default ${JSON.stringify(before)}`);
       for (const [q, href] of cases) {
         await box.fill(q);
         await page.waitForFunction(needle => [...document.querySelectorAll('[data-item] a')].some(a => a.closest('[data-item]').checkVisibility() && new URL(a.href).pathname.concat(new URL(a.href).hash).startsWith(needle)), href);

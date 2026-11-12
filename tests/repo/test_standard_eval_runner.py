@@ -166,6 +166,24 @@ def test_venv_interpreter_path_is_preserved(tmp_path, monkeypatch):
     assert str(venv_python) in (work / 'prompt.txt').read_text()
 
 
+def test_final_metrics_include_bytes_written_until_unit_teardown(tmp_path, monkeypatch):
+    executable = fake_harness(tmp_path, 'sys.stdin.read()\n'
+        'print(json.dumps({"type":"thread.started","thread_id":"control"}))\n'
+        'print(json.dumps({"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":2}}))\n')
+    monkeypatch.setattr(runner.shutil, 'which', lambda harness: str(executable))
+    work = tmp_path / 'run'
+    runner.collect('snapfit-sizing', 'bare', work, 'codex', 'fake')
+    assert 'tokens_in' not in json.loads((work / 'collection.json').read_text())
+    def stop_then_settle(*args):
+        with (work / 'transcript.jsonl').open('a') as stream:
+            stream.write('detached child late bytes\n')
+        return dict(unit_success=True, cgroup_empty=True)
+    monkeypatch.setattr(runner, 'unit_receipt', stop_then_settle)
+    result = runner.finalize(work, 'cad-eval-test.service')
+    assert result['collector']['malformed_transcript_lines'] == 1
+    assert not result['usable_trial']
+
+
 def unit_fixture(tmp_path, monkeypatch, changes=None, members=''):
     work = tmp_path / 'run'; work.mkdir()
     group = '/slice/cad-eval-test.service'

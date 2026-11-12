@@ -212,14 +212,12 @@ def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, pyt
             code = process.returncode
         except OSError as exc:
             launch_error = str(exc)
-    metrics = transcript_metrics(work / 'transcript.jsonl', harness)
     metadata = dict(harness=harness, harness_version=harness_version, model=model,
                     model_source='requested; resolved_model reported separately when available',
                     seed=None, wall_seconds=round(time.monotonic()-started, 3), exit_code=code,
                     timed_out=timed_out, launch_error=launch_error, cli_group_gone=settled, peak_context=None,
                     fresh_session=None, fresh_conversation_requested=True, kit_use_observed=None,
-                    session_boundary='new conversation and task directory; existing OS login; context controls requested, not clean OS-user isolation',
-                    **metrics)
+                    session_boundary='new conversation and task directory; existing OS login; context controls requested, not clean OS-user isolation')
     # A child can create a new session/process group. Only the outer service's
     # later cgroup teardown settles it. Never grade from inside the collector.
     write_json(work / 'collection.json', metadata)
@@ -278,6 +276,10 @@ def finalize(work, unit):
     receipt = unit_receipt(work, unit)  # Must precede reads of any subject output.
     prep = evaluation.read_json(work / 'preparation.json')
     metadata = evaluation.read_json(work / 'collection.json') if (work / 'collection.json').exists() else {}
+    if (work / 'transcript.jsonl').exists() and metadata.get('harness') in ('codex', 'claude'):
+        # Detached tools can inherit stdout. Its final bytes and metrics must be
+        # read only after teardown, just like the solution artifact.
+        metadata.update(transcript_metrics(work / 'transcript.jsonl', metadata['harness']))
     metadata['collector_settled'] = True
     write_json(work / 'unit-receipt.json', receipt)
     write_json(work / 'metadata.json', metadata)

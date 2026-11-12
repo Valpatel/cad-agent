@@ -117,3 +117,8 @@ no result exists yet, and the child is absent before a graded result returns. De
 service-dependent case; mocked state controls are not equivalent evidence. Wrong/active/unknown units and a
 nonempty cgroup after stopping fail closed. The existing same-user login and directory-only input boundary do
 not isolate hostile code or prevent a deliberately created unrelated service; no such claim is made.
+
+A second independent control at `ffc14cb5` caught late inherited stdout: cached metrics reported zero malformed
+lines and a usable trial, while the final transcript contained one malformed line. The [review finding](https://github.com/Valpatel/cad-agent/pull/613#discussion_r4552581625)
+requires transcript parsing to move after service teardown as well. The corrected focused suite includes this
+ordering control; transcript hashes and metrics must describe the same settled bytes, not different moments.

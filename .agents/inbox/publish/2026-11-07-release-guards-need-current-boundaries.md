@@ -38,6 +38,9 @@ contract; neither is taking one green row per name while ignoring another runnin
 non-success and superseded runs under the repository's rules, retain their scope, and run the live review gates
 again immediately before a merge. This was a local guard error, not a failing CI test, and no CI result was waived.
 
+
+On 2026-11-12, a PR #616 body edit at unchanged `fed30ca4` intentionally triggered the workflow's `pull_request: edited` handling: CI run `43272837046` was superseded by normal run `43272914888`. `gh api repos/Valpatel/cad-agent/actions/runs/43272837046/jobs` retained five cancelled instances: mermaid-provenance `131373537135`, core (3.10) `131373537435`, installer-windows `131373537437`, core (3.12) `131373539656`, and full `131373540239`—all **NOT PASS**. The sixth listed job, supply-chain `131373539604`, succeeded and must not be relabelled cancelled. A separate generic gates wrapper job `131373883532` in run `43272915120` was cancelled and superseded by normal dispatch `43272998465`; it is also NOT PASS. The earlier gates workflow `43272830997` was cancelled overall, but its completed job `131373495524` was SUCCESS and retains that result. These are five CI-job cancellations plus one separate gate-wrapper cancellation, not six cancelled CI jobs. The replacement core 3.12 then found a real canonical-shard defect; its core 3.10 peer was fail-fast cancelled. Preserve the supersession and the separate defect, require complete new ordinary checks on the concrete fix, and finish description edits before starting acceptance observation. A body edit is not evidence that a cancelled check passed, nor permission to retry or waive a failure.
+
 ## Compare an integration repair to the current accepted base
 
 During PR441's normal merge of that dev into the previously reviewed source-recovery head, `git diff --cached

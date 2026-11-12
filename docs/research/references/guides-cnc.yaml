@@ -660,7 +660,7 @@ sources:
 - id: sendcutsend-sheet-cnc-machining-design-guidelines
   kind: guide
   category: manufacturing-guides
-  title: 'Sheet: CNC machining design guidelines (SendCutSend)'
+  title: CNC machining design guidelines (SendCutSend)
   authors: []
   org: SendCutSend
   year: null
@@ -682,7 +682,7 @@ sources:
   process_groups:
   - cnc
   evidence:
-    class: snippet-only
+    class: read
     numbers: claimed
     tested: 'no'
     authority: primary
@@ -691,14 +691,27 @@ sources:
     estimate: 0.4
     sources: 1
   claims:
-  - text: Min internal radius 1.587 mm (0.0625 in); wall corner fillet at least cutter radius or 1/5 wall height.
-    status: corroborated
-    evidence: 'JLCCNC table: 2.0 mm tool gives min R 1.5 mm; Frontpanel Express: 1.5 mm typical. Close to 1.587 mm but not
-      identical; fillet-ratio part not confirmed.'
-  summary: 'SendCutSend CNC limits: min internal cutout and internal radius, wall-to-wall fillet rule. Note: No min wall number
-    seen'
-  used_for: []
-  imported: d14c8300fffb9977
+  - text: The CNC guide and linked CNC 6061 FAQ describe an overall minimum 0.5 x 0.5 x 0.5 inch service envelope; confirm
+      its application to a thin plate with the supplier.
+    status: unconfirmed
+    evidence: Minimum/maximum part sizes and linked /materials/cnc/6061-aluminum/ thickness/minimum-size FAQ. FAQ says dimensions
+      come from the design rather than fixed stock offerings; this is service-specific, not a universal material or machinability
+      threshold. Same publisher is not independent corroboration.
+  - text: For this service tapping setup, model a simple hole at the thread major diameter, then confirm the preferred diameter
+      in the order UI.
+    status: unconfirmed
+    evidence: CNC threading/tapping setup; selected M3 x 0.50 row shows 3.000 mm. This is a model/order convention, not a
+      generic tap-drill recommendation; modeled threads are excluded.
+  summary: Supplier-specific one-solid/model-scale/tapping conventions and CNC service envelope, distinct from generic machining
+    rules. Envelope observations require supplier confirmation; no universal thin-plate rejection or automatic geometry gate.
+  used_for:
+  - docs/research/manufacturing/sheet-metal-file-and-hole-review.md
+  - docs/research/manufacturing/process-profiles.md
+  verified: '2026-11-12: Read complete substantive guideline text, service setup, cost and finished-part sections. Undated
+    HTML, no numbered edition/pages. Direct HTTP 200, no redirect; 285237 bytes, SHA-256 42edec9fa3c451e388eb3db4c41ab0b52542e9e907ea345e1874c4506dd6703d.
+    Linked CNC 6061 FAQ cross-check: 343443 bytes, SHA-256 c81bdd503b57c693e86566ba5f22d706da102df1ee57917f642a131cf78f8201;
+    its material-quality section incorrectly links 5052 certificates, not accepted as 6061 qualification. Artwork, quoting
+    UI, certificates, tool access and physical production not validated.'
 - id: sendcutsend-cnc-undercuts-why-they-are-expensive
   kind: guide
   category: manufacturing-guides

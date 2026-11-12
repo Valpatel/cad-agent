@@ -337,6 +337,7 @@ def _bend_hole_example():
     """Run our published, self-contained illustration, never vendor code."""
     path = ROOT / "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
     blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    blocks = [block for block in blocks if "def bend_callout(" in block]
     assert len(blocks) == 1
     namespace = {}
     exec(compile(blocks[0], str(path), "exec"), namespace)
@@ -456,3 +457,52 @@ def test_two_stratasys_reads_do_not_create_ids_or_automatic_cross_process_rules(
     assert not any(rule["source"] in ids for rule in data["rules"]), "unresolved observations are not new automatic gates"
     mjf = next(r for r in data["rules"] if r["id"] == "mjf-tolerance-stratasys")
     assert mjf["source"] == "stratasys-direct-mjf-design-guide", "SLS must not replace the separate MJF source"
+
+
+def _scs_service_examples():
+    path = ROOT / "docs/research/manufacturing/sheet-metal-file-and-hole-review.md"
+    blocks = re.findall(r"```python\n(.*?)\n```", path.read_text(), re.S)
+    selected = [block for block in blocks if "def scs_cnc_envelope_review(" in block]
+    assert len(selected) == 1
+    namespace = {}
+    exec(compile(selected[0], str(path), "exec"), namespace)
+    return namespace
+
+
+def test_scs_envelope_is_a_supplier_question_not_a_thin_plate_prohibition():
+    from decimal import Decimal as D
+    f = _scs_service_examples()["scs_cnc_envelope_review"]
+    thin = f([80, 60, 6])
+    boundary = f([80, 60, "12.7"])
+    assert thin["published_min_each_axis_mm"] == D("12.7")
+    assert thin["below_published_min"] and not boundary["below_published_min"]
+    assert thin["decision"] == boundary["decision"] == "confirm-service-envelope-and-quote"
+    assert "pass" not in thin and "accepted" not in boundary
+    assert f(["3.15", "2.36", ".5"])["below_published_min"], "inches cannot be silently used as millimetres"
+    assert all(f(axes)["below_published_min"] for axes in ([6,80,60],[80,6,60],[80,60,6]))
+    for bad in ([80,60], [80,60,0], [80,60,-1], [80,60,"NaN"], [80,60,"Infinity"], [80,60,True]):
+        with pytest.raises(ValueError):f(bad)
+
+
+def test_scs_tapping_model_is_neither_a_tap_drill_nor_another_supplier():
+    from decimal import Decimal as D
+    f = _scs_service_examples()["scs_m3_tapping_model_hole"]
+    row = f("sendcutsend-cnc", "M3x0.5")
+    assert row["model_hole_mm"] == D("3")
+    assert row["model_hole_mm"] != D("2.5"), "a machinist's tap drill is a different datum/convention"
+    assert row["decision"] == "confirm-preferred-hole-in-tapping-setup"
+    for service,thread in (("generic-cnc","M3x0.5"),("sendcutsend-sheet","M3x0.5"),("sendcutsend-cnc","M4x0.7")):
+        with pytest.raises(ValueError):f(service,thread)
+
+
+def test_scs_reads_preserve_identities_and_add_no_automatic_profile_gates(data):
+    ids = {"sendcutsend-5052-h32-aluminum-sheet-metal", "sendcutsend-sheet-cnc-machining-design-guidelines"}
+    reg=load_registry()
+    for key in ids:
+        source=reg.resolve(key).data
+        assert source["evidence"]["class"] == "read"
+        assert source["evidence"]["tested"] == "no"
+        assert source["confidence"] == {"level":"low","estimate":0.4,"sources":1}
+        assert "SHA-256" in source["verified"]
+        assert "docs/research/manufacturing/sheet-metal-file-and-hole-review.md" in source["used_for"]
+    assert not any(rule["source"] in ids for rule in data["rules"])

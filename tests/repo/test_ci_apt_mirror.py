@@ -24,6 +24,8 @@ Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 FALLBACKS = "https://archive.ubuntu.com/ubuntu/\tpriority:2\nhttps://security.ubuntu.com/ubuntu/\tpriority:3\n"
 ORIGINAL = "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
 CORRECTED = ORIGINAL.replace(mirror.AZURE, mirror.PREFERRED)
+# Observed verbatim URI/priority order in full job 131436221538, 2026-11-12.
+OBSERVED_EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
 
 
 class MirrorTests(unittest.TestCase):
@@ -41,6 +43,63 @@ class MirrorTests(unittest.TestCase):
         mirror.configure(self.path, self.source)
         self.assertEqual(self.path.read_text(), CORRECTED)
         self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_observed_ec2_profile_preserves_sources_and_is_idempotent(self):
+        import contextlib
+        import io
+        self.path.write_text(OBSERVED_EC2)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            mirror.configure(self.path, self.source)
+        expected = "https://mirror.pilotfiber.com/ubuntu/\tpriority:1\n" + FALLBACKS
+        self.assertEqual(self.path.read_text(), expected)
+        self.assertEqual(self.source.read_text(), SOURCE)
+        self.assertIn("input primary: http://us-east-2.ec2.archive.ubuntu.com/ubuntu/", output.getvalue())
+        mirror.configure(self.path, self.source)
+        self.assertEqual(self.path.read_text(), expected)
+        self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_observed_ec2_comments_and_spacing_are_preserved(self):
+        original = "# hosted mirrors\n\n  " + OBSERVED_EC2.replace("\t", "   ")
+        expected = original.replace("http://us-east-2.ec2.archive.ubuntu.com/ubuntu/",
+                                    "https://mirror.pilotfiber.com/ubuntu/")
+        self.path.write_text(original)
+        mirror.configure(self.path, self.source)
+        self.assertEqual(self.path.read_text(), expected)
+        self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_observed_ec2_is_not_a_wildcard_or_a_mixed_profile(self):
+        uri = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
+        mutants = [OBSERVED_EC2.replace("us-east-2", "us-east-1"),
+                   OBSERVED_EC2.replace(".ubuntu.com/", ".ubuntu.com.evil.example/"),
+                   OBSERVED_EC2.replace(uri, uri.replace("http://", "http://user@")),
+                   OBSERVED_EC2.replace(uri, uri + "?extra=1"),
+                   OBSERVED_EC2.replace(uri, uri.replace("http:", "https:")),
+                   OBSERVED_EC2.replace(uri, uri.rstrip("/")),
+                   OBSERVED_EC2.replace("priority:1", "priority:99"),
+                   OBSERVED_EC2 + ORIGINAL.splitlines(keepends=True)[0],
+                   OBSERVED_EC2 + CORRECTED.splitlines(keepends=True)[0],
+                   OBSERVED_EC2 + OBSERVED_EC2.splitlines(keepends=True)[0],
+                   OBSERVED_EC2.replace(FALLBACKS, "")]
+        for mutant in mutants:
+            with self.subTest(mutant=mutant):
+                self.path.write_text(mutant)
+                with self.assertRaises(ValueError):
+                    mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), mutant)
+                self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_observed_ec2_still_requires_complete_signed_active_sources(self):
+        for mutant in [SOURCE.replace("noble-security", ""), SOURCE + "Trusted: yes\n",
+                       SOURCE.replace("/usr/share/keyrings/ubuntu-archive-keyring.gpg", "/tmp/other.gpg"),
+                       SOURCE.replace(mirror.MIRROR, "https://archive.ubuntu.com/ubuntu/")]:
+            with self.subTest(source=mutant):
+                self.path.write_text(OBSERVED_EC2)
+                self.source.write_text(mutant)
+                with self.assertRaises(ValueError):
+                    mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), OBSERVED_EC2)
+                self.assertEqual(self.source.read_text(), mutant)
 
     def test_unknown_mirror_entries_fail_without_mutation(self):
         mutants = [ORIGINAL.replace("priority:1", "priority:99"),

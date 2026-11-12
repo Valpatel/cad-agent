@@ -92,8 +92,12 @@ async function sharedDiscoveryChecks() {
       }
       await box.fill('counterbores');
       const pitfall=page.locator('.discover-results a[href^="/docs/common-issues#issue-"]').first();
-      const target=await pitfall.getAttribute('href');await pitfall.click();
-      if (new URL(page.url()).origin !== base || !await page.locator('[id="'+decodeURIComponent(new URL(page.url()).hash.slice(1))+'"]').isVisible()) fail('Explore local destination', 'pitfall leaves preview or its real anchor stays hidden: '+target);
+      const target=await pitfall.getAttribute('href');
+      // A real click can return after the destination commits but before its parser reaches this table row.
+      // Bind the exact local destination and DOM readiness before testing its real (not merely present) anchor.
+      await Promise.all([page.waitForURL(url=>url.origin===base&&url.pathname+url.hash===target,{waitUntil:'domcontentloaded'}),pitfall.click()]);
+      const destination=page.locator('[id="'+decodeURIComponent(target.split('#')[1])+'"]');await destination.waitFor({state:'visible'});
+      if (new URL(page.url()).origin !== base || new URL(page.url()).pathname+new URL(page.url()).hash!==target || !await destination.isVisible()) fail('Explore local destination', 'pitfall leaves preview or its real anchor stays hidden: '+target);
       await page.goto(base+'/explore');await page.waitForSelector('cad-gallery[data-ready]');
       await box.fill('agentcad');
       const roles = await page.locator('[data-item]').evaluateAll(xs => xs.filter(x => x.checkVisibility()).map(x => x.textContent));

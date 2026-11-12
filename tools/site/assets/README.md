@@ -17,6 +17,7 @@ flowchart TD
 
 | File or folder | Purpose |
 |---|---|
+| [discovery.css](discovery.css) | Compact shared Explore search and topic layout. |
 | [catalog.css](catalog.css) | Catalogue layout and reading styles. |
 | [favicon.ico](favicon.ico) | Browser icon. |
 | [icon.svg](icon.svg) | Original project emblem. |

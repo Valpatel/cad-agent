@@ -161,7 +161,8 @@ async function legacyChecks(){
  }
  for(const config of [{js:false},{block:'/kit/gallery.js'},{block:'/web/site.js'}]){
   const {page,done}=await open('/catalog?kind=tools&area=gears',config);try{
-   await nativeGroups(page);if((await visible(page)).length!==catalog.items.length)fail('legacy fallback','not all canonical entries accessible');
+   await nativeGroups(page);const ids=(await visible(page)).sort(),expected=catalog.items.map(x=>x.id).sort();
+   if(JSON.stringify(ids)!==JSON.stringify(expected))fail('legacy fallback '+JSON.stringify(config),JSON.stringify({missing:expected.filter(id=>!ids.includes(id)),unexpected:ids.filter(id=>!expected.includes(id)),groups:await page.locator('details[data-group]').evaluateAll(xs=>xs.map(e=>({group:e.dataset.group,open:e.open,visible:e.checkVisibility(),display:getComputedStyle(e).display}))),ready:await page.locator('cad-gallery').getAttribute('data-ready')}));
    if(await page.locator('[data-gallery-js]').evaluateAll(xs=>xs.some(x=>x.checkVisibility())))fail('legacy fallback','dead enhancement controls');
   }finally{await done();}
  }
@@ -198,7 +199,7 @@ async function interactionChecks(){
   const expected=catalog.items.filter(x=>x.kind==='tool').map(x=>x.name.toLowerCase()).sort((a,b)=>a.localeCompare(b));
   if(JSON.stringify(titles)!==JSON.stringify(expected))fail('sort/filter','A–Z tool results disagree with catalogue');
   const projection=JSON.parse(await readFile(path.join(dir,'discovery.json'),'utf8')),total=projection.items.filter(x=>x.group==='guides').length;
-  const line=await page.locator('[data-gallery-status]').textContent();if(line!==`${expected.length} of ${total} results`)fail('filtered count',line);
+  const line=await page.locator('[data-gallery-status]').textContent();if(line!==`${expected.length} of ${total} tools & guides`)fail('filtered count',line);
  }finally{await done();}
 }
 async function detailsChecks(){

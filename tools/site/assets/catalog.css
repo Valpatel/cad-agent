@@ -220,7 +220,7 @@ cad-gallery:not([data-overview]) .cat-section-head p,cad-gallery:not([data-overv
 /* the strip is for browsing: a search, a filter or a kind brings the results up under the search box */
 cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:none}
 /* the overview shows the demos in the strip above; they come back as a group when filtering or on their tab */
-@media(scripting:enabled){cad-gallery[data-overview]:not([data-filtered]):not([data-failed]) [data-group=demos]{display:none}}
+@media(scripting:enabled){cad-gallery[data-ready][data-overview]:not([data-filtered]):not([data-failed]) [data-group=demos]{display:none}}
 #cat-results{scroll-margin-top:calc(var(--bar-top) + 64px)}
 .cat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .cat-card{display:flex;flex-direction:column;padding:0 0 14px;overflow:hidden;background:var(--card);border-color:var(--line);scroll-margin-top:calc(var(--bar-top) + 70px)}

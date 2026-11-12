@@ -13,6 +13,6 @@ flowchart TD
 
 | File | Purpose |
 | --- | --- |
-| [apt_mirror.py](apt_mirror.py) | Remove the exact stalled Azure HTTP mirror entry after validating pinned priorities and the Ubuntu 24.04/noble source profile; retain Canonical HTTPS fallbacks and apt signature checks. |
+| [apt_mirror.py](apt_mirror.py) | Prefer the registered HTTPS mirror after validating the Ubuntu 24.04/noble source profile; retain Canonical fallbacks/signature checks and report a redacted profile on rejection. |
 
 [Tools](../README.md)

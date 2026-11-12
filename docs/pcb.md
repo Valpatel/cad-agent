@@ -53,6 +53,100 @@ What fails a check: a missing or malformed report, filtered severities, an unkno
 
 Design cards can reference `pcb_evidence: exports/pcb-evidence.json`; they show CAD status separately from open release gates and production qualification. Never turn fabrication, fit, transient protection, CAN timing, stock or supplier orientation gates green based only on clean CAD checks.
 
+## Select fabrication limits before routing
+
+Record the supplier, service, dated source, layer count, copper thickness and side,
+profiling method, and hole datum in the board decision. Transfer confirmed limits
+into KiCad's project rules before routing; retain supplier DFM and order confirmation
+as open release gates. A clean ERC/DRC bundle does not establish service eligibility.
+
+The following are source-review examples from undated HTML pages read on
+2026-11-12, not a fabrication checker. Recheck the selected order specification.
+The suppliers describe different services; neither corroborates the other's limits.
+
+<details>
+<summary>PCBWay: copper side and thickness govern the selected row</summary>
+
+In **Advanced PCB Capabilities**, rows 14–15, the normal-process,
+before-compensation width/spacing pair at 70 µm copper is 6/8 mil inner and
+7/8 mil outer. Thus a 6.5 mil trace with 8 mil spacing meets that selected inner
+row but misses the outer row. Do not replace either with the Standard table's
+rounded 0.1 mm / 4 mil headline. The source does not substantiate the old registry's
+6 mil cost advice or universal 2/2 mil advanced minimum. Its Standard table also
+separates drill size from finished-hole diameter; plating changes the hole datum.
+No copper thickness, route or datum means an unanswered question, not a pass.
+[ref:pcbway-pcb-capabilities]
+
+</details>
+
+<details>
+<summary>Eurocircuits: service, pad diameter and board-edge datum</summary>
+
+The **STANDARD pool Service Parameters** table gives pooled/non-pooled track and
+gap as 0.100/0.090 mm: 0.095 mm misses the pooled row. Its PTH pad-diameter
+additions are 0.300 mm outer and 0.350 mm inner, relative to **finished-hole**
+diameter. For a 0.600 mm finished PTH these yield 0.900/0.950 mm pad diameters;
+the nominal radial differences are 0.150/0.175 mm, before registration or other
+allowances. Adding those radial differences once to the hole diameter undersizes
+the pad. They are not a guaranteed residual ring around the drilled hole.
+[ref:eurocircuits-standard-pool-services]
+
+The same table's routed copper-to-edge minima differ by side: 0.250 mm outer,
+0.400 mm inner; V-cut is 0.450 mm for both. A routed 0.300 mm gap meets only the
+outer selected row. This measures copper edge to board edge, not drill centre.
+The layer row enumerates pooled choices; it does not allow every integer through
+eight. Thickness rows nevertheless label higher layers as pooled, and the surface
+finish row conflicts with the opening immersion-silver eligibility statement.
+Leave those choices unresolved for the supplier. Closing notes reserve confirmation
+to the order; linked calculators and other capability pages were not read.
+[ref:eurocircuits-standard-pool-services]
+
+</details>
+
+<details>
+<summary>Reproduce selected rows and reject a missing scope</summary>
+
+This deliberately small example reproduces only the selected source observations.
+Its arguments name the service or row explicitly. Unknown combinations raise instead
+of borrowing a reassuring value from another supplier, side or process column.
+Dimensions returned are millimetres; one mil is exactly 0.0254 mm.
+
+```python
+from decimal import Decimal as D
+
+
+def selected_pcb_observation(supplier, feature, scope):
+    rows = {
+        ("pcbway", "width-space", "normal-inner-70um-before-compensation"):
+            (D("6") * D("0.0254"), D("8") * D("0.0254")),
+        ("pcbway", "width-space", "normal-outer-70um-before-compensation"):
+            (D("7") * D("0.0254"), D("8") * D("0.0254")),
+        ("eurocircuits", "width-space", "pooled"):
+            (D("0.100"), D("0.100")),
+        ("eurocircuits", "width-space", "non-pooled"):
+            (D("0.090"), D("0.090")),
+        ("eurocircuits", "pth-pad-diameter-addition", "outer-finished-hole"):
+            D("0.300"),
+        ("eurocircuits", "pth-pad-diameter-addition", "inner-finished-hole"):
+            D("0.350"),
+        ("eurocircuits", "copper-to-edge", "outer-routed"): D("0.250"),
+        ("eurocircuits", "copper-to-edge", "inner-routed"): D("0.400"),
+        ("eurocircuits", "copper-to-edge", "outer-v-cut"): D("0.450"),
+        ("eurocircuits", "copper-to-edge", "inner-v-cut"): D("0.450"),
+    }
+    try:
+        return rows[(supplier, feature, scope)]
+    except KeyError:
+        raise ValueError("unlisted source observation; confirm supplier") from None
+```
+
+The regression examples run this published block with wrong-service, wrong-side,
+unit and radial/diametral substitutions. They verify the transcription and scope;
+no board is parsed, no production rule is installed, and neither source is promoted
+to encoded or measured evidence.
+
+</details>
+
 ## JLC assembly files
 
 `cadagent.electrical.pcb.check_jlc_files(bom, cpl)` checks required columns, exact C-codes, duplicate references, finite coordinates, layers and BOM/CPL set equality. Build separate explicit populations for SMT-only versus SMT+THT assembly, and keep manual/consigned components visible in another file. CSV parity does not verify part availability, library zero-angle convention, solder process, panelization or quoted pricing.

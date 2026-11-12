@@ -1,0 +1,1 @@
+- PCB fabrication review now distinguishes service, copper side/thickness, finished-hole pad diameters and profiling datums, with two dated manufacturer readings and executable source examples that preserve unknowns and supplier contradictions.

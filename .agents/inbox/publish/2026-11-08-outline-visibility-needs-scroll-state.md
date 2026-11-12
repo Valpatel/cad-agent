@@ -32,3 +32,11 @@ any later screenshot. No longer sleep an arbitrary 300 ms and assume the page's 
 
 The same-section regression and current full browser CI remain required for the corrected source. This component
 control does not establish the exact timing cause of the original Chromium failure or waive any current check.
+
+## Keep sidebar controls reachable when wheel input reaches the tree edge
+
+On 2026-11-12, the user reported that the toolkit reader's left side could not scroll back to its filters. A bounded actual Chrome probe at 1440×900 and article Y=6000 found the active `print-files` section, panel Y=1305. An upward wheel returned the panel to zero; the next upward wheel chained into the article (Y=5700), and correct section tracking pulled the panel back to Y=1283. At 1600 px the left outline is absent, so the same trap did not occur. Initial current-page reveal also moved the global search above view. The prior DOM/rect checks had not tested this input boundary.
+
+A second screenshot showed an independent layering defect: the old one-filter sticky pseudo-element painted over the newly prepended global search label/input. Viewport geometry alone did not prove the control was usable.
+
+Contain desktop panel overscroll so wheel/touch input at its edge does not chain into an article scroll. Preserve current-section tracking, including the strict same-section regression. Give the global search and tree filter one optional sticky controls block with its own background; suppress the legacy single-filter cover only for that block. Keep the mobile panel static with native page scrolling. The related browser regression uses actual wheel input at 1440/short desktop/1600, hit-tests and clicks the search, exercises mobile script/no-script layout, and plants the former wheel-chain and opaque-cover CSS as independent negative controls. No physical/CAD or full-suite claims follow from the focused evidence.

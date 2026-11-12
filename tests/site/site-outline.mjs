@@ -130,3 +130,55 @@ export const lowContrast = (page, only = null) => page.evaluate(only => {
     }
     return [...new Set(low)];
   }, only);
+
+/** Actual wheel input at the reader tree's upper boundary must not chain into an article scroll,
+ * whose correctly preserved section tracker would otherwise pull the tree away from its search fields. */
+export async function readerBoundaryProblems(browser, base) {
+  const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-boundary-'));
+  const snapshot=page=>page.evaluate(()=>{
+    const p=document.querySelector('.cad-nav-panel'),s=document.querySelector('.explore-nav-search'),r=s.getBoundingClientRect();
+    return {article:scrollY,panel:p.scrollTop,searchTop:r.top,searchBottom:r.bottom,contain:getComputedStyle(p).overscrollBehaviorY,current:[...document.querySelectorAll('.cad-nav-outline a[aria-current=location]')].map(a=>a.hash)};
+  });
+  const quiet=page=>page.evaluate(()=>new Promise(resolve=>{
+    let prior='',same=0;const until=setTimeout(()=>resolve(false),2000);
+    const tick=()=>{const p=document.querySelector('.cad-nav-panel'),now=scrollY+':'+p.scrollTop;if(now===prior)same++;else same=0;prior=now;if(same>=12){clearTimeout(until);resolve(true);}else requestAnimationFrame(tick);};requestAnimationFrame(tick);
+  }));
+  for(const viewport of [{width:1440,height:900},{width:1440,height:600},{width:1600,height:900}]){
+    const page=await browser.newPage({viewport});
+    try{
+      await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
+      await scrollOutline(page,6000);await quiet(page);
+      const initial=await snapshot(page);if(!initial.current.length)problems.push('reader boundary: no active article heading at '+JSON.stringify(viewport));
+      const panel=page.locator('.cad-nav-panel');const box=await panel.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+Math.min(150,box.height/2));
+      await page.mouse.wheel(0,-10000);await page.waitForFunction(()=>document.querySelector('.cad-nav-panel').scrollTop===0);await quiet(page);
+      const before=await snapshot(page);await page.mouse.wheel(0,-300);if(!await quiet(page))problems.push('reader boundary: input never settled');const after=await snapshot(page);
+      states.push({viewport,initial,before,after});
+      if(after.article!==before.article||after.panel!==0||after.searchTop<0||after.searchBottom>viewport.height)problems.push('reader boundary: lost search '+JSON.stringify({viewport,before,after}));
+      // A keyboard user can still reach and type in the global search field at the top.
+      const search=page.getByRole('searchbox',{name:'Search all knowledge'});
+      const exposed=await search.evaluate(el=>{const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===el;});
+      const labelExposed=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
+      if(!exposed||!labelExposed)problems.push('reader boundary: global search is covered');
+      await search.click();await search.fill('counterbores');if(await search.inputValue()!=='counterbores')problems.push('reader boundary: search input inaccessible');
+      if(viewport.width===1440&&viewport.height===900){
+        const cover=await page.addStyleTag({content:'cad-nav [data-nav-controls]{position:static!important}cad-nav .cad-nav-panel::before{display:block!important}'});
+        const covered=await page.locator('label[for=explore-reader-search]').evaluate(el=>{const r=el.getBoundingClientRect();return !el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
+        states.push({legacyCoverRejected:covered});if(!covered)problems.push('reader boundary: old opaque cover control was not rejected');await cover.evaluate(el=>el.remove());
+        await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:auto!important}'});
+        await page.mouse.move(box.x+box.width/2,box.y+150);await page.mouse.wheel(0,-300);await page.waitForFunction(y=>scrollY<y,before.article);await quiet(page);
+        const negative=await snapshot(page);states.push({negative});
+        if(!(negative.article<before.article&&negative.panel>0))problems.push('reader boundary: old scroll-chain control did not reproduce the trap');
+      }
+    }finally{await page.close();}
+  }
+  for(const javaScriptEnabled of [true,false]){
+    const page=await browser.newPage({viewport:{width:390,height:844},javaScriptEnabled});
+    try{
+      await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.locator('.cad-nav-toggle').click();
+      const mode=await page.locator('.cad-nav-panel').evaluate(p=>({position:getComputedStyle(p).position,overflow:getComputedStyle(p).overflowY,contain:getComputedStyle(p).overscrollBehaviorY}));states.push({mobile:javaScriptEnabled,mode});
+      if(mode.position!=='static'||mode.overflow!=='visible'||mode.contain!=='auto')problems.push('reader boundary: mobile native page scrolling changed');
+    }finally{await page.close();}
+  }
+  await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));
+  console.log('Reader boundary evidence: '+evidence);return problems;
+}

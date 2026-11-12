@@ -91,7 +91,7 @@ export class CadNav extends HTMLElement {
       this.append(fold);
     }
     this.#fold(fold, signal);
-    let filter = panel.querySelector(':scope > .cad-nav-filter');
+    let filter = panel.querySelector(':scope > .cad-nav-filter, :scope > [data-nav-controls] > .cad-nav-filter');
     if (!filter) {
       filter = document.createElement('input');
       filter.type = 'search';
@@ -162,7 +162,7 @@ export class CadNav extends HTMLElement {
     const current = panel.querySelector('a[aria-current=page]');
     if (!current || panel.scrollHeight <= panel.clientHeight + 1) return;
     const top = el => el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
-    const room = filter.offsetHeight + 16, visible = () => top(current) - panel.scrollTop + current.offsetHeight <= panel.clientHeight - 24;
+    const room = (panel.querySelector(':scope > [data-nav-controls]')?.offsetHeight || filter.offsetHeight) + 16, visible = () => top(current) - panel.scrollTop + current.offsetHeight <= panel.clientHeight - 24;
     if (visible()) return;
     const group = current.closest('details');                   // its group, if the tree has groups (not the fold)
     panel.scrollTop = Math.max(0, (group && panel.contains(group) ? top(group) : top(current)) - room);
@@ -285,9 +285,10 @@ export class CadNav extends HTMLElement {
     while (box && box !== document.body && !(box.scrollHeight > box.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(box).overflowY)))
       box = box.parentElement;
     if (!box || box === document.body) return;
-    if (box === panel && panel.querySelector(':scope > .cad-nav-filter')?.value) return;
-    const filter = box === panel ? panel.querySelector(':scope > .cad-nav-filter') : null;
-    const top = (filter?.offsetHeight || 0) + 16, bottom = 24;
+    if (box === panel && panel.querySelector(':scope > .cad-nav-filter, :scope > [data-nav-controls] > .cad-nav-filter')?.value) return;
+    const filter = box === panel ? panel.querySelector(':scope > .cad-nav-filter, :scope > [data-nav-controls] > .cad-nav-filter') : null;
+    const controls = box === panel ? panel.querySelector(':scope > [data-nav-controls]') : null;
+    const top = (controls?.offsetHeight || filter?.offsetHeight || 0) + 16, bottom = 24;
     const b = box.getBoundingClientRect(), r = a.getBoundingClientRect();
     if (r.top < b.top + top) box.scrollTop -= b.top + top - r.top;
     else if (r.bottom > b.bottom - bottom) box.scrollTop += r.bottom - (b.bottom - bottom);

@@ -1,5 +1,5 @@
 /** Shared static Explore/reader chrome. Topic ownership comes from docs/areas.yaml. */
-import {glyphSprite} from './catalog-art.mjs';
+import {glyphSprite,glyphFor,GLYPHS,DOMAIN_GLYPH} from './catalog-art.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function topicNodes(areas){
  const nodes=new Map();
@@ -7,7 +7,24 @@ export function topicNodes(areas){
  for(const d of areas.domains)visit(d);
  return nodes;
 }
-export const topicSprite=areas=>glyphSprite([...topicNodes(areas).keys(),'cross-cutting']).replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
+/** A topic's identity stays its own; absent artwork inherits from the nearest illustrated ancestor. */
+export function topicGlyphs(areas){
+ const nodes=topicNodes(areas),art=new Map();
+ for(const slug of [...nodes.keys(),'cross-cutting']){
+  let chosen=slug;
+  while(!GLYPHS[chosen]&&!GLYPHS[DOMAIN_GLYPH[chosen]]){
+   const parent=nodes.get(chosen)?.parent;
+   if(!parent){chosen='unplaced';break;}
+   chosen=parent;
+  }
+  art.set(slug,chosen);
+ }
+ return art;
+}
+export const topicSprite=areas=>{
+ const art=topicGlyphs(areas);
+ return glyphSprite([...art.keys()],slug=>glyphFor(art.get(slug))).replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
+};
 /** Exact recorded timestamp; do not fabricate a time for date-only metadata. */
 export function updateTime(iso){
  if(/^\d{4}-\d{2}-\d{2}$/.test(iso||''))return {datetime:iso,label:new Intl.DateTimeFormat('en-US',{dateStyle:'long',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'))};

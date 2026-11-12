@@ -141,10 +141,10 @@ export const TINT = {
 export const glyphFor = slug => GLYPHS[slug] || GLYPHS[DOMAIN_GLYPH[slug]] || GLYPHS.unplaced;
 
 /** One <symbol> per glyph, for the page to <use> (the area tree's icons). */
-export const glyphSprite = slugs => {
+export const glyphSprite = (slugs, artFor = glyphFor) => {
   const first=new Map();
   return `<svg class="glyph-sprite" width="0" height="0" aria-hidden="true" focusable="false"><defs>${[...new Set(slugs)].map(s=>{
-    const body=glyphFor(s),prior=first.get(body);if(!prior)first.set(body,s);
+    const body=artFor(s),prior=first.get(body);if(!prior)first.set(body,s);
     return `<symbol id="g-${s}" viewBox="0 0 100 100">${prior?`<use href="#g-${prior}"/>`:body.replaceAll('class="a"','style="stroke:var(--glyph-accent,#bd3a12)"')}</symbol>`;
   }).join('')}</defs></svg>`;
 };

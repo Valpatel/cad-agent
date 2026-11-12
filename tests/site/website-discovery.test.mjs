@@ -1,4 +1,4 @@
-import {topicNodes,topicTree,topicPlacement,readerNav,updateTime} from '../../tools/site/compiler/site-explore-shell.mjs';
+import {topicNodes,topicTree,topicPlacement,readerNav,updateTime,topicGlyphs,topicSprite} from '../../tools/site/compiler/site-explore-shell.mjs';
 /** Shared discovery uses real producer identities, not a second authored registry or inflated source counts. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -132,4 +132,15 @@ test('glyph sprite preserves every stable symbol while reusing identical artwork
  assert.equal((sprite.match(/<use href="#g-unplaced"/g)||[]).length,2);
  assert.ok(glyphFor(slugs[0])===glyphFor(slugs[1]));
  assert.equal((glyphSprite(['unplaced','unplaced']).match(/<symbol/g)||[]).length,1);
+});
+
+test('unillustrated topics reuse nearest ancestor artwork without changing topic symbol identities',()=>{
+ const taxonomy={domains:[{slug:'mechanical',areas:[{slug:'cad-modelling',topics:[{slug:'motor-mounts'},{slug:'gears'}]},{slug:'fixture-unillustrated-area',topics:[{slug:'fixture-deep-topic'}]}]}]};
+ const art=topicGlyphs(taxonomy);
+ assert.equal(art.get('motor-mounts'),'cad-modelling');assert.equal(art.get('gears'),'gears');
+ assert.equal(art.get('fixture-deep-topic'),'mechanical');assert.equal(art.get('cross-cutting'),'cross-cutting');
+ const sprite=topicSprite(taxonomy);
+ assert.match(sprite,/<symbol id="g-motor-mounts"[^>]*><use href="#g-cad-modelling"\/><\/symbol>/);
+ for(const slug of topicNodes(taxonomy).keys())assert.ok(sprite.includes(`id="g-${slug}"`));
+ assert.equal(topicSprite(taxonomy),sprite,'deterministic output');
 });

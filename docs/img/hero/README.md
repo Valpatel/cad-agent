@@ -22,10 +22,10 @@ flowchart TD
 
 | File or folder | Purpose |
 |---|---|
-| [learning-loop.svg](learning-loop.svg) | Original conceptual human/idea and engineering-workbench panorama, with reviewed feedback and reduced-motion still state. |
+| [learning-loop.svg](learning-loop.svg) | Original 16-bit orbital workshop: robots build, test, teach and join the next build in a continuous 12-second loop. |
 | [learning-loop-still.svg](learning-loop-still.svg) | Explicit completed collaborative scene for reduced-motion image consumers. |
-| [learning-loop-mobile-still.svg](learning-loop-mobile-still.svg) | Completed square composition selected by parent picture media. |
-| [learning-loop-mobile.svg](learning-loop-mobile.svg) | Compact square composition of the same human learning story. |
+| [learning-loop-mobile-still.svg](learning-loop-mobile-still.svg) | Completed phone composition selected only by the parent reduced-motion picture media. |
+| [learning-loop-mobile.svg](learning-loop-mobile.svg) | Tighter phone composition of the same continuous robot-building story. |
 | [thermal-history.svg](thermal-history.svg) | Animated actual heater-zone samples from the recorded 20 W box case; iterations, not elapsed seconds. |
 | [result-stills/](result-stills/README.md) | Explicit finished computation pictures and original-evidence links; no new simulation. |
 | [airflow-balance.svg](airflow-balance.svg) | Recorded flow and heat-out comparison retaining the failed ducted case. |
@@ -42,18 +42,25 @@ flowchart TD
 
 ## Homepage learning loop — design and evidence plan (#605)
 
-The new hero is an original vector explanation, not a simulated hardware result. Its
-loop shows authored examples and manufacturer guides entering a messy evidence
-network, being organized into topic trees and cited rules, then design → check →
-simulate → print → feedback. A clear human review gate precedes contributions.
-Hosted agents (including Anthropic's tooling) and local/open models are possible
-clients of the same documented files; their presence is not an integration claim.
+The accepted hero is **an original 16-bit futuristic adventure, with robots building
+robots**. The owner accepted this direction on 2026-11-11 and requested the simpler
+headline **“Machines building machines”** with original pixel lettering. Earlier
+human anatomy, projected workshop and polished-metal studies below are rejected
+history, not the current design specification.
 
-Use a dark technical canvas, warm white typography, restrained cyan/amber accents,
-visible source-document shapes and evolving graph geometry. Keep three readable
-stages at phone width; the animation must tell the same story as a useful still.
-No logos, particle-only filler, invented benchmark values or implied autonomous
-self-modification. Reduced motion freezes the complete readable state.
+The 12-second loop shows two distinct robot builders carrying arms to a chassis,
+a physical hoist seating its head, a diagnostic awakening, a shared build guide,
+and the successor walking over to help with the next build. The next chassis and
+head arrive before the loop repeats. Everything is drawn on one 768 × 384 pixel
+grid with an original limited palette; no Nintendo or other third-party sprites,
+fonts, logos or game assets are used. The phone image keeps all three characters
+and the shared guide visible. The normal image loops continuously; the separate
+finished SVG is selected only for a reader's reduced-motion preference.
+
+The scene is conceptual artwork, not simulated hardware, evidence of physical
+autonomy or automatic model training. Human-reviewed shared project knowledge
+is the real mechanism behind the homepage's ambition. Recorded computation
+figures and actual CAD models keep their independent source and scope requirements.
 
 ### Asset audit, 2026-11-11
 
@@ -96,7 +103,7 @@ uses the product's existing `preview/open.png` as J501's honest interim poster;
 final acceptance requires a matching shared-viewer poster and complete loading,
 reduced-motion, WebGL failure and keyboard evidence.
 
-### Owner art rejection and revised acceptance, 2026-11-11
+### Rejected art history, 2026-11-11 (superseded by the accepted pixel scene above)
 
 The owner viewed prototype C and rejected its slow/simple lone-person scene:
 “it needs to clearly convey the idea of humans collaborating with self-improving

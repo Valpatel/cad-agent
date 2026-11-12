@@ -542,11 +542,37 @@ ${INSTALL.map(([id, name, href]) => `<div class="os-panel panel-${id}"><a class=
 ${useLoop}
 <p class="use-note">No telemetry. Your agent sends what it learns as a pull request or issue, only when you say yes. <a href="/docs/agent-workflow#install">Install by hand</a> · Names belong to their owners; no endorsement implied.</p></div>
 </div></div></section>`;
+// Original five-by-seven title lettering; no web font or third-party game assets.
+const titlePixels = {
+  A:['01110','10001','10001','11111','10001','10001','10001'],
+  B:['11110','10001','10001','11110','10001','10001','11110'],
+  C:['01111','10000','10000','10000','10000','10000','01111'],
+  D:['11110','10001','10001','10001','10001','10001','11110'],
+  E:['11111','10000','10000','11110','10000','10000','11111'],
+  G:['01111','10000','10000','10111','10001','10001','01111'],
+  H:['10001','10001','10001','11111','10001','10001','10001'],
+  I:['11111','00100','00100','00100','00100','00100','11111'],
+  L:['10000','10000','10000','10000','10000','10000','11111'],
+  M:['10001','11011','10101','10101','10001','10001','10001'],
+  N:['10001','11001','10101','10011','10001','10001','10001'],
+  S:['01111','10000','10000','01110','00001','00001','11110'],
+  U:['10001','10001','10001','10001','10001','10001','01110'],
+};
+function titlePixelLine(label, y=0) {
+  return [...label].map((letter, i) => {
+    const cells = (titlePixels[letter] || []).flatMap((row, j) => [...row].flatMap((bit, k) =>
+      bit === '1' ? [`M${i*6+k} ${y+j}h1v1h-1z`] : []));
+    return cells.join('');
+  }).join('');
+}
+const titleWide = titlePixelLine('MACHINES BUILDING MACHINES');
+const titleNarrow = titlePixelLine('MACHINES') + titlePixelLine('BUILDING MACHINES', 10);
+const pixelHeading = `<h1 class="pixel-title"><span class="pixel-title-text">Machines building machines</span><svg class="pixel-title-wide" viewBox="0 0 155 9" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleWide}"/><path fill="currentColor" d="${titleWide}"/></svg><svg class="pixel-title-narrow" viewBox="0 0 101 19" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><path class="pixel-title-shadow" transform="translate(0 1)" d="${titleNarrow}"/><path fill="currentColor" d="${titleNarrow}"/></svg></h1>`;
 const landing = `<div class="wrap"><section class="hero learning-hero">
 <div class="hero-head"><p class="eyebrow"><span class="status-dot"></span>Shared knowledge. Better things.</p>
-<h1>Self-improving machines.<br><span>Teaching each other<br>how to build machines.</span></h1>
+${pixelHeading}
 <p class="intro">cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.</p></div>
-<figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="1000" height="1000"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1440" height="640"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="1000" height="1000"><img src="/docs/img/hero/learning-loop.svg" width="1440" height="640" fetchpriority="high" alt="A person's need flows through examples and manufacturer guides into organized knowledge, then design, checking, simulation and making; human-reviewed feedback improves the next design"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
+<figure class="learning-art"><picture><source media="(prefers-reduced-motion: reduce) and (max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile-still.svg" width="956" height="710"><source media="(prefers-reduced-motion: reduce)" srcset="/docs/img/hero/learning-loop-still.svg" width="1536" height="768"><source media="(max-width:600px)" srcset="/docs/img/hero/learning-loop-mobile.svg" width="956" height="710"><img src="/docs/img/hero/learning-loop.svg" width="1536" height="768" fetchpriority="high" alt="An original pixel-art orbital workshop: robots assemble, test and teach a new robot, which joins the builders as the next chassis arrives"></picture><figcaption>Every build can improve the shared knowledge and checks behind the next one.</figcaption></figure>
 <div class="hero-actions"><div class="actions"><a class="button primary" href="#use-it">Build with your agent ↓</a><a class="button" href="/explore">Explore the knowledge</a><a class="button quiet" href="${REPO}">GitHub ↗</a></div></div>
 </section></div>
 ${useCard}
@@ -621,7 +647,7 @@ ${refSite.llms}
 await writeFile(path.join(out, 'llms.txt'), llms);
 // The homepage twin keeps the same current story and evidenced examples as the rendered entrance.
 await writeFile(path.join(out, 'index.md'), `${llms.replace(/\n*$/, '\n')}
-## Self-improving machines teaching each other how to build machines
+## Machines building machines
 
 cad-agent is an open-source CAD toolkit where AI agents share knowledge, test designs, and improve through human feedback.
 

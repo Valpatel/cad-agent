@@ -34,9 +34,9 @@ def test_learning_hero_has_readable_still_and_no_integration_or_physics_claim():
         svg = (ROOT / 'docs/img/hero' / name).read_text()
         ET.fromstring(svg)
         assert 'prefers-reduced-motion:reduce' in svg
-        assert 'Human-reviewed' in svg or 'HUMAN REVIEW' in svg
-        assert 'not a hardware simulation or automatic model training' in svg
-        assert 'MANUFACTURER GUIDE' in svg and 'source, edition, limits' in svg.lower()
+        assert 'Original 16-bit science-fiction adventure illustration' in svg
+        assert 'not an engineering simulation or a claim of automatic model training' in svg
+        assert 'People review and share the real project knowledge' in svg
 
 
 def test_learning_hero_uses_the_existing_safe_vector_contract_and_explicit_finished_images():
@@ -45,11 +45,28 @@ def test_learning_hero_uses_the_existing_safe_vector_contract_and_explicit_finis
         animated = (ROOT / 'docs/img/hero' / (name+'.svg')).read_text()
         assert contract.problems(animated) == []
         still = (ROOT / 'docs/img/hero' / (name+'-still.svg')).read_text()
-        assert '.first-version{display:none!important}' in still
-        assert '.revised-version,.solid{opacity:1!important}' in still
-        assert '.still{display:inline!important}' in still
+        ET.fromstring(still)
         assert '*{animation:none!important}' in still
-        assert '<animate' not in still
+        assert '<animate' not in still and '@keyframes' not in still
+        # The preference-only still retains the next build and the newly joined crew member.
+        assert '.new-builder{transform:translate(110px,25px)}' in still
+        assert '.next-chassis{transform:none}' in still
+
+    # Exported artwork must come from its committed producer, including the authored final pose.
+    import importlib.util
+    import sys
+    figures = ROOT / 'tools/site/figures'
+    sys.path.insert(0, str(figures))
+    try:
+        spec = importlib.util.spec_from_file_location('learning_home_art_test', figures / 'learning-home.py')
+        producer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(producer)
+        for mobile, name in [(False, 'learning-loop'), (True, 'learning-loop-mobile')]:
+            generated = producer.cinematic_hero(mobile)
+            assert (ROOT / 'docs/img/hero' / (name+'.svg')).read_text() == generated
+            assert (ROOT / 'docs/img/hero' / (name+'-still.svg')).read_text() == producer.finished_still(generated)
+    finally:
+        sys.path.remove(str(figures))
 
 
 def test_computation_stills_preserve_the_recorded_sources_and_finished_pose():

@@ -19,7 +19,7 @@ flowchart TD
 |---|---|
 | [cantilever-still.mjs](cantilever-still.mjs) | Snapshot the cantilever example. |
 | [collect-showcase.py](collect-showcase.py) | Bounded no-install, source-pinned candidate collection using the existing product collector and retained CAD runtime; no adoption or publication. |
-| [workshop_scene.py](workshop_scene.py) | Original projected sci-fi workshop story: human insight, machine construction, test/revision and shared learning. |
+| [workshop_scene.py](workshop_scene.py) | Original 16-bit orbital workshop: robot assembly, test, shared guide and a successor joining the builders. |
 | [learning-home.py](learning-home.py) | Draw original conceptual homepage art and source-bound recorded thermal/airflow animations, without a solver. |
 | [pack-j501.py](pack-j501.py) | Hash and pack existing assembly meshes with explicit render-only simplification and a real-board coordinate check. |
 | [fan-curve-still.mjs](fan-curve-still.mjs) | Snapshot fan curve data. |

@@ -9,6 +9,20 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.38.1 (2026-11-12)
+
+**New**
+- Added supplier-scoped bent-bracket and simple CNC-plate review workflows with distinct bend/fastener datums, service-envelope uncertainty, tapping-model conventions and executable negative controls. Two existing manufacturer records now have full text-reading receipts; no automatic manufacturing gates or physical qualification are added.
+- Added CNC Kitchen creator links and versioned insert-recovery guidance, the owner's preferred V2 tool, exact McMaster extraction-tip alternatives, and coupon reuse/material-separation cautions. No recovered-joint strength or recycling acceptance is claimed.
+- Documented creator credit and direct original-source links beside concise takeaways, keeping source measurements separate from toolkit checks.
+
+**Changed**
+- Define the next fact-backed CAD evaluation phase in the existing Evaluation guide: provisional Inspect reuse, matched local/hosted trials, isolated subject bundles, independent CAD/source grading, compact bound visual evidence and explicit qualification tests. Whole-checkout access is deprecated for new controlled studies; v1 behavior and historical records are unchanged. No new runtime or model-performance claim (#622).
+
+**Fixed**
+- CI mirror rejections now retain bounded, redacted profile evidence for diagnosis; accepted sources, signatures, dependencies and test conditions remain unchanged (#617).
+- Reader-boundary browser navigation failures now retain bounded partial state and a viewport screenshot before page close; the original wait, timeout, thrown error and acceptance predicates remain unchanged. This improves diagnosis, not the unresolved navigation failure's cause (#625).
+
 ## v0.38.0 (2026-11-12)
 
 **New**

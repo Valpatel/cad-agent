@@ -117,6 +117,7 @@ flowchart TD
 ## Writing
 
 Plain, short sentences. Say what a thing does and what it assumes, not how good it is. Name sources and people.
+Credit known creators and organisations together, and link directly to the original work beside concise takeaways so readers can inspect its methods, data and context. Attribution is independent appreciation: we have no affiliations, sponsorships, partnerships or agreements with the listed creators; do not imply paid placements or endorsement, and keep source licences and their measurements distinct from our checks.
 
 ## Folder ownership checks
 

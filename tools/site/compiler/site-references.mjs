@@ -23,7 +23,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import YAML from 'yaml';
-import { safeUrl } from './site-html.mjs';
 
 export const SCHEMA = 'cad-agent-references/1';
 export const CORE = 'docs/research/references.yaml';
@@ -47,11 +46,35 @@ const ROLE_ORDER = ['leader', 'reference', 'lessons', 'context'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const one = s => String(s ?? '').replace(/\s+/g, ' ').trim();
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+/** Credit only recorded people/organisations; organisation metadata must not hide named authors. */
+export function creatorText(record) {
+  const seen = new Set();
+  const unique = values => values.filter(value => typeof value === 'string').map(one).filter(value => {
+    const key = value.toLowerCase();
+    if (!value || seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+  const authors = unique(Array.isArray(record?.authors) ? record.authors : []);
+  const org = unique([record?.org]);
+  return [authors.join(', '), ...org].filter(Boolean).join(' · ');
+}
+
+export const RESOURCE_ATTRIBUTION = 'Independently selected resources. No sponsorships, partnerships or paid placements. Visit the original work for its full methods and context.';
+
+/** Validate an original URL without rewriting vendor query parameters or adding tracking. */
+export function originalUrl(value) {
+  if (typeof value !== 'string' || !/^https?:\/\//i.test(value.trim())) return null;
+  try {
+    const url = new URL(value.trim());
+    return /^https?:$/.test(url.protocol) && !url.username && !url.password ? value.trim() : null;
+  } catch { return null; }
+}
+
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const byText = (a, b) => (a < b ? -1 : a > b ? 1 : 0);      // code-unit order: the same on every machine
 const plural = (n, word, many = word + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? word : many}`;
 /** A link only to http(s): a record's url comes from outside, and a page never links a `javascript:` one. */
-const httpUrl = u => (typeof u === 'string' && /^https?:\/\//i.test(u.trim()) && safeUrl(u) !== '#' ? u.trim() : null);
+const httpUrl = originalUrl;
 
 // ----------------------------------------------------------------------------- reading
 
@@ -380,7 +403,7 @@ const badge = (cls, text, title = '') => `<span class="refs-badge ${cls}"${title
 
 function recordRow(r, m, L) {
   const ev = evidenceOf(r), conf = confidenceOf(r), lic = licenceOf(r), groups = groupsOf(r), role = roleOf(r);
-  const url = httpUrl(r.url), who = one(r.org || (Array.isArray(r.authors) ? r.authors.join(', ') : ''));
+  const url = httpUrl(r.url), who = creatorText(r);
   const claims = (Array.isArray(r.claims) ? r.claims : []).filter(isObj);
   const text = one([r.title, who, r.summary, r.id, kindOf(r)].join(' ')).toLowerCase();
   const read = r.status === 'source' ? one(typeof r.verified === 'string' ? r.verified : '') : '';
@@ -388,7 +411,7 @@ function recordRow(r, m, L) {
   const numbers = isObj(r.evidence) && r.evidence.numbers === 'claimed' ? `<span class="refs-note">${esc(L.numbers('claimed'))}</span>` : '';
   const lict = isObj(r.licence) ? r.licence : {};
   return `<tr id="${esc(r.id)}" data-kind="${esc(kindOf(r))}" data-evidence="${esc(ev || '')}" data-confidence="${esc(conf.level)}" data-licence="${esc(lic)}" data-process="${esc(groups.join(' '))}" data-role="${esc(role || '')}" data-text="${esc(text)}">`
-    + `<td class="refs-rec">${url ? `<a class="refs-title" href="${esc(url)}">${esc(r.title)}</a>` : `<span class="refs-title">${esc(r.title)}</span>${r.isbn ? ` <span class="refs-who">ISBN ${esc(r.isbn)}</span>` : ''}`}`
+    + `<td class="refs-rec">${url ? `<a class="refs-title" href="${esc(url)}">${esc(r.title)} <span class="refs-note">Read original</span></a>` : `<span class="refs-title">${esc(r.title)}</span>${r.isbn ? ` <span class="refs-who">ISBN ${esc(r.isbn)}</span>` : ''}`}`
     + `${who || r.year ? `<span class="refs-who">${esc(who)}${who && r.year ? ' · ' : ''}${r.year ? esc(r.year) : ''}</span>` : ''}`
     + `${r.summary ? `<p class="refs-sum">${esc(one(r.summary))}</p>` : ''}`
     + `${read ? `<p class="refs-sum"><b>Read:</b> ${esc(read.length > 240 ? read.slice(0, 239) + '…' : read)}</p>` : ''}`
@@ -446,6 +469,7 @@ function areaBody(slug, m, { feedback }) {
     + `<header class="refs-head"><p class="eyebrow">${esc(a.domainTitle ? `References · ${a.domainTitle}` : 'References')}</p><h1>${esc(a.title)}</h1>`
     + `<p class="refs-lede">${list.length ? `${plural(list.length, 'record')}: ${plural(read, 'read source')} that cad-agent's rules and checks may cite, and ${plural(cat, 'record')} catalogued from the Reference Map, not yet read.` : 'No records yet, only the coverage below.'} ${esc(one(a.scope || ''))}</p>`
     + (cat ? `<p class="refs-caveat">Catalogued records are search snippets: their numbers are the authors' claims and their licences are as the map states them, unread. Cite one only after reading the source and promoting it (<a href="https://github.com/Valpatel/cad-agent/blob/dev/docs/research/references/README.md">how</a>).</p>` : '')
+    + `<p class="refs-caveat">${esc(RESOURCE_ATTRIBUTION)}</p>`
     + '</header>' + coverageCards(rows, L) + charts + table + feedback + '</div>';
 }
 
@@ -478,6 +502,7 @@ function areaMd(slug, m, ORIGIN) {
   const read = list.filter(r => r.status === 'source').length;
   const out = [`# ${a.title}: references`, '',
     `${plural(list.length, 'record')}: ${plural(read, 'read source')} that the rules and checks may cite, and ${plural(list.length - read, 'record')} catalogued from the Reference Map, not yet read. ${one(a.scope || '')}`, '',
+    RESOURCE_ATTRIBUTION, '',
     'Catalogued records are search snippets: their numbers are the authors\' claims and their licences are as the map states them, unread. Cite one only after reading it.', '',
     `The same records as JSON: ${ORIGIN}/catalog/references/${slug}.json. All areas: [references](../references.md).`, ''];
   if (rows.length) {
@@ -489,9 +514,9 @@ function areaMd(slug, m, ORIGIN) {
     out.push('## Records', '', '| Record | Kind | Evidence | Confidence | Licence | Process | Role |', '|---|---|---|---|---|---|---|');
     for (const r of list) {
       const url = httpUrl(r.url), conf = confidenceOf(r), lic = isObj(r.licence) ? r.licence : {};
-      const who = one(r.org || (Array.isArray(r.authors) ? r.authors.join(', ') : ''));
+      const who = creatorText(r);
       const cells = [
-        `${url ? `[${mdText(r.title)}](${mdUrl(url)})` : mdText(r.title)}${who ? ` · ${mdText(who)}` : ''} · \`${r.id}\``,
+        `${url ? `[${mdText(r.title)} — Read original](${mdUrl(url)})` : mdText(r.title)}${who ? ` · ${mdText(who)}` : ''} · \`${r.id}\``,
         mdText(L.kind(kindOf(r))),
         mdText(L.evidence(evidenceOf(r))) + (isObj(r.evidence) && r.evidence.numbers === 'claimed' ? ' (authors\' claim)' : ''),
         mdText(`${conf.level}${conf.estimate == null ? '' : ' ' + conf.estimate}`),
@@ -544,10 +569,10 @@ function cite(id, m) {
   const key = m.refs.records.has(id) ? id : m.refs.aliases.get(id);
   const r = key && m.refs.records.get(key);
   if (r) {
-    const who = one(r.org || (Array.isArray(r.authors) ? r.authors.join(', ') : '')), url = httpUrl(r.url);
+    const who = creatorText(r), url = httpUrl(r.url);
     const title = `${one(r.title)}${who ? ', ' + who : ''} (${(evidenceOf(r) || '').replace(/-/g, ' ')})`;
     return `<span class="ref-cite">[<a class="ref-key" href="${esc(m.home(key))}" title="${esc(title)}">${esc(id)}</a>`
-      + `${url ? `<a class="ref-out" href="${esc(url)}" aria-label="${esc('Open the source: ' + one(r.title))}">↗</a>` : ''}]</span>`;
+      + `${url ? `<a class="ref-out" href="${esc(url)}" aria-label="${esc('Read original: ' + one(r.title))}">↗</a>` : ''}]</span>`;
   }
   const o = m.refs.others.get(id) ?? m.refs.others.get(m.refs.aliases.get(id));
   return o ? `<span class="ref-cite ref-unread" title="${esc(`${o.status}: not yet read`)}">[${esc(id)}]</span>` : null;
@@ -587,15 +612,16 @@ export function expertsMarkdown(m, { ORIGIN }) {
   const lines = [
     `<!-- Generated by tools/site/compiler/site-references.mjs from ${CORE} and ${DIR}*.yaml. Do not edit: change a record, then run \`node tools/site/compiler/site-references.mjs --experts\` (also to settle a merge conflict here). -->`,
     '# Experts and sources', '',
-    `The people and organisations whose published work cad-agent's rules and checks stand on: ${plural(rows.length, 'publisher')} and ${plural(people.size, 'named author')}, in ${plural(sources.length, 'read source')}. They did the work. cad-agent cites it by name and never copies it. A rule, check or page that relies on a source names it by id: a \`[ref:<id>]\` tag in text (which the site links to the source), a module's source table, a material's \`source\` or a process rule's \`source\`.`, '',
+    `The people and organisations whose published work cad-agent's rules and checks stand on: ${plural(rows.length, 'publisher')} and ${plural(people.size, 'named author')}, in ${plural(sources.length, 'read source')}. They did the work. cad-agent credits original work and uses short cited summaries or excerpts with their source and licence limits. A rule, check or page that relies on a source names it by id: a \`[ref:<id>]\` tag in text (which the site links to the source), a module's source table, a material's \`source\` or a process rule's \`source\`.`, '',
     '```mermaid', 'flowchart TD',
     `  P["${rows.length} publishers, ${people.size} named authors"] -->|published| S["${sources.length} read sources"]`,
     `  S -->|cited by| U["${files.size} files: rules, checks and pages"]`,
     `  C["${catalogued.length} catalogued records, not yet read"] -.->|read, then promote| S`,
     '  class S here', '```', '',
+    RESOURCE_ATTRIBUTION, '',
     '## Who they are', '',
     'Each row is one publisher (or the authors, where a source names no organisation), largest first. Areas link to the record on the site.', '',
-    '| Publisher | People | Contributed | Areas | Cited by |', '|---|---|---|---|---|',
+    '| Publisher | People | Original work | Areas | Cited by |', '|---|---|---|---|---|',
     ...rows.map(([who, list]) => {
       const authors = [...new Set(list.flatMap(r => (Array.isArray(r.authors) ? r.authors : []).map(one)).filter(Boolean))];
       const works = list.map(r => { const url = httpUrl(r.url); return url ? `[${cell(r.title)}](${mdUrl(url)})` : `${cell(r.title)}${r.isbn ? ` (ISBN ${cell(r.isbn)})` : ''}`; });

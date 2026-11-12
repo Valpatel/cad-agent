@@ -14,7 +14,7 @@ const model=await json('discovery.json'),catalog=await json('catalog.json'),refs
 const refIndex=await json('catalog/references/index.json');
 const fullSources=new Map((await Promise.all(refIndex.areas.map(a=>json(new URL(a.json).pathname.slice(1))))).flatMap(a=>a.records.map(r=>[r.id,r])));
 const html=await readFile(path.join(site.dir,'explore.html'),'utf8');
-const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test([x.title,x.summary,x.source_id,x.search].join(' ').toLowerCase())));
+const query=q=>model.items.filter(x=>searchPatterns(q).every(r=>r.test(model.search_fields.map(field=>x[field]||'').join(' ').toLowerCase())));
 
 test('derived identities cover every catalogue entry and canonical source exactly once without rewriting their roles',()=>{
  assert.equal(model.schema,'cad-agent-discovery/1');
@@ -155,4 +155,25 @@ test('legacy catalogue descriptions escape canonical plain text without passing 
  assert.ok(html.includes('A literal &lt;img src=x onerror=alert(2)&gt; and &lt;script&gt;alert(2)&lt;/script&gt; description'));
  assert.doesNotMatch(html,/<img src=x|<script>alert/);
  assert.equal(JSON.stringify(projection),before,'legacy rendering does not mutate discovery projection semantics');
+});
+
+
+test('shared reference rows credit creators and link originals without copying full records',()=>{
+ const record={id:'credit-example',title:'Original study',authors:['Ada Example'],org:'Example Lab',url:'https://example.com/source?dlpdf=t&part=1',summary:'A practical source',status:'source',evidence:{class:'read'}};
+ const references={refs:{records:new Map([[record.id,record]]),aliases:new Map()},placed:new Map([[record.id,['fasteners']]]),home:id=>'/references/fasteners#'+id};
+ const areas={domains:[{slug:'mechanical',title:'Mechanical',areas:[{slug:'fasteners',title:'Fasteners'}]}],maturity:[]};
+ const input={catalog:{items:[]},pages:[],references,ORIGIN:'https://cad-agent.valpatel.com',revision:'r',pageURL:()=>''};
+ const m=discoveryModel(input),item=m.items[0];
+ assert.equal(item.creator,'Ada Example · Example Lab');
+ assert.ok(m.search_fields.includes('creator'));
+ assert.ok(m.search_fields.map(k=>item[k]||'').join(' ').includes('Ada Example'));
+ assert.ok(!item.search.includes('Ada Example'),'visible creator is not duplicated in hidden search metadata');
+ const html=discoveryHTML(m,{areas,catalog:input.catalog});
+ assert.match(html,/Ada Example · Example Lab · <a href="https:\/\/example.com\/source\?dlpdf=t&amp;part=1">Read original<\/a>/);
+ assert.ok(!html.includes('result-details'));
+ assert.equal(m.source_counts.reference_records,1);
+ record.authors=['<img src=x onerror=alert(1)>'];record.url='javascript:alert(1)';
+ const unsafe=discoveryHTML(discoveryModel(input),{areas,catalog:input.catalog});
+ assert.ok(unsafe.includes('&lt;img src=x onerror=alert(1)&gt;'));
+ assert.doesNotMatch(unsafe,/<img src=x|href="javascript:/);
 });

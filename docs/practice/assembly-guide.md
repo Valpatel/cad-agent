@@ -291,3 +291,31 @@ the flushed event prefix; uncompleted/unrecorded work remains unchecked. Keep or
 identities when retrying. No output is written by the toolkit unless the caller supplies a callback.
 
 </details>
+
+## Source-bound serial assembly plans (#542)
+
+The first executable scope extends the dossier and playback owners with one optional
+`cad-agent.assembly-plan/1` resource. A guide and packed mini-model bind the **same bytes** by relative
+file and SHA-256. Legacy guides remain illustrative. A malformed or stale declared plan fails loading;
+plan-enabled consumers never select radial motion as a fallback.
+
+The bounded contract is mm, assembly-home/Z-up, exact source instance identities, fixed context and a
+serial list of rigid translations. Each operation declares an ID, preceding dependencies, moving members,
+finite piecewise-linear offsets from its parked pose to the assembled zero offset, independent intent
+provenance and stage tool references. Every instance belongs to fixed context or exactly one operation.
+All future/removed parts occupy their declared parked poses; none disappear. Multiple members are one
+rigid module whose internal qualification remains separate. Rotations, nesting, concurrency, process
+inverses and display regrouping of independently moving instances are unsupported.
+
+Installation evaluates absolute source-rest-derived poses. Disassembly evaluates the identical trajectory
+at reversed global time: reverse operation order **and** each segment's parameter. Seeking, resetting and
+rapid reversal must not accumulate offsets. Presentation may compress duration but cannot change order,
+membership or path. Existing tick/lifecycle owners remain responsible for rendering and suspension.
+
+The source declaration binds source revision/closure, producer, original BREP, source mesh and exact placed
+matrix per instance. Hash agreement establishes freshness, not mechanical intent. Geometry checks reuse
+finite `sweep_pair` segments against occupied stages, including parked parts and every attached member.
+Tools reuse the fastener gate's ordinary axial envelopes and sector swing, with explicit finite axial
+approach/retraction. Insertion, tool access, internal qualification, support and retention/process remain
+separate results; sampled clearance never means physical assembly qualification. No product geometry is
+changed by this slice. Product migration and richer paths require their own acceptance evidence.

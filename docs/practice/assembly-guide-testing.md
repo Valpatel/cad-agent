@@ -189,3 +189,19 @@ existing full-check behavior. Prove event order, mutation isolation and failures
 known collision, with the existing box and real CAD fixture.
 
 </details>
+
+## Canonical serial-plan acceptance (#542)
+
+The first slice uses one small native base/rail/plate/lid/fastener fixture in both detailed and mini
+consumers. Source-derived noncoplanar mesh landmarks and actual rendered world matrices are independent
+of the evaluator. Required controls cover a mid-segment obstacle despite clear endpoints, future parked
+occupancy, attached-fastener-only collision, wrong axis/order, units/parent errors, stale source/export,
+ordinary-driver obstruction, and unavailable/unsupported tool work. Forward/reverse equivalence, segment
+boundaries, direct seeks, reset and repeated reversals are checked without resampling rest transforms.
+
+Contract tests cover exact IDs, duplicate membership, dependencies/cycles, finite nonzero segments and
+unsupported rotation/concurrency/process fields. Publication tests require both consumers to bind the same
+plan hash and reject stale bytes. Native checks retain pair/segment witnesses and finite sampling settings;
+browser checks observe vertices through actual current world matrices, never requested offsets alone.
+Current implementation/evidence is tracked in the #542 slice PR; this matrix is acceptance work, not a
+statement that these cases or any product build have passed.

@@ -13,12 +13,22 @@ function stateFor(kind, documentId, value) {
 export function createModelHost(container, { title = 'Assembly model', manifestUrl, ...options } = {}) {
   return createViewerHost(container, { title, signal: options.signal,
     async mount({ viewport, inspector, signal, onProgress, onSelect, onState }) {
+      let selector;
       const viewer = await createViewer({ ...options, app: viewport, panel: inspector, title: null, manifestUrl, signal,
-        embedded: true, onProgress, onSelect, onStateChange: onState, onError: error => onState({ state: 'error', message: error.message }) });
+        embedded: true, onProgress, onSelect: value => { if (selector) selector.value = value ?? ''; onSelect(value); },
+        onStateChange: state => { if (selector) for (const option of selector.options) option.disabled = !!option.value && (!state.visible.includes(option.value) || state.isolate !== null && !state.isolate.includes(option.value)); onState(state); }, onError: error => onState({ state: 'error', message: error.message }) });
       let unbind;
       try {
         const documentId = crypto.randomUUID();
+        // Match the contained surface instead of compositing shadows over a page background.
+        viewer.stage.setPalette({ background: getComputedStyle(viewport).getPropertyValue('--viewer-bg').trim() || '#0e1b28' });
         const fit = () => viewer.frameParts();
+        const label = document.createElement('label'); label.textContent = 'Part selection';
+        selector = document.createElement('select'); selector.setAttribute('aria-label', 'Part selection');
+        for (const [value, text] of [['', 'No selection'], ...viewer.parts.map(part => [part.name, part.name])]) {
+          const option = document.createElement('option'); option.value = value; option.textContent = text; selector.append(option);
+        }
+        selector.onchange = () => viewer.setSelection(selector.value || null); label.append(selector); inspector.prepend(label);
         unbind = bindStageControls(viewport, viewer.stage, fit);
         return { fit, select: value => viewer.setSelection(value),
           getViewState: () => ({ version: 1, kind: 'assembly', documentId, camera: captureCamera(viewer.stage), selection: viewer.getState().selected, domain: viewer.getState() }),

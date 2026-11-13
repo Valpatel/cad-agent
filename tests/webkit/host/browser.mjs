@@ -45,6 +45,15 @@ const launch = engine === chromium
   : {headless:true};
 const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-contained-viewers';
 await mkdir(out,{recursive:true});
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+const runtimeFiles = ['host/viewer-host.js','host/adapters.js','host/stage-controls.js','host/viewer-host.css',
+  'viewer.js','file-viewer.js','file-loader.js','stage.js'];
+const provenance = {
+  sourceRevision:process.env.TEST_SOURCE_REVISION || 'unrecorded',
+  harnessSha256:sha(await readFile(new URL(import.meta.url))),
+  runtimeHashes:Object.fromEntries(await Promise.all(runtimeFiles.map(async name=>[name,sha(await readFile(new URL('../../../software/cadagent/webkit/'+name,import.meta.url)))]))),
+  fixtureMeshSha256:sha(stl),
+};
 const site = await serveWebkit(routes), browser = await engine.launch(launch), errors = [], cases = [];
 let page;
 try {
@@ -151,7 +160,13 @@ try {
     return{saved,restored,rejected,after:left.getViewState()};
   });
   assert.deepEqual(restore.restored,restore.saved);assert.ok(restore.rejected);assert.deepEqual(restore.after,restore.saved);
-  cases.push({name:'presentation roundtrip and atomic rejection'});
+  const foreign=await page.evaluate(()=>{
+    const before=right.getViewState();let rejected=false;
+    try{right.restoreViewState(left.getViewState());}catch{rejected=true;}
+    return{before,after:right.getViewState(),rejected};
+  });
+  assert.ok(foreign.rejected);assert.deepEqual(foreign.before,foreign.after);
+  cases.push({name:'presentation roundtrip, malformed and foreign-state rejection'});
 
   // An observer must not write into the live page after its host is removed.
   const sibling = await state('right');
@@ -229,7 +244,8 @@ try {
     const loaded=await page.evaluate(async()=>{window.cycle=factories.createFileHost(document.querySelector('#spare'),{file:'/block.stl',title:'Repeated file'});return cycle.ready;});
     assert.equal(loaded,true);await page.evaluate(()=>cycle.dispose());
   }
-  await page.evaluate(()=>right.dispose());
+  await fit('right').focus();await page.evaluate(()=>right.dispose());
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'right');
   await page.waitForFunction(()=>resourceCounts.lost===resourceCounts.contexts);
   const released=await page.evaluate(()=>({...resourceCounts}));
   assert.equal(released.workers,released.terminated);
@@ -249,7 +265,7 @@ try {
     cases.push({name:'responsive contained layout',viewport,measured});
   }
   assert.deepEqual(errors,[]);
-  await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({passed:true,engine:engine.name(),browserVersion:browser.version(),cases,errors},null,2));
+  await writeFile(`${out}/${engine.name()}-report.json`,JSON.stringify({passed:true,...provenance,engine:engine.name(),browserVersion:browser.version(),cases,errors},null,2));
   console.log(JSON.stringify({passed:true,engine:engine.name(),cases:cases.length,out}));
 }catch(error){
   if(page){await page.screenshot({path:`${out}/${engine.name()}-failure.png`,fullPage:true}).catch(()=>{});console.error(await page.locator('body').innerText().catch(()=>''));}

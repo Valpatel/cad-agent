@@ -14,6 +14,7 @@ flowchart LR
 
 | File | Coverage |
 | --- | --- |
+| [__init__.py](__init__.py) | Empty test-package marker |
 | [browser.mjs](browser.mjs) | Two real sibling viewers, scoped CSS/status, keyboard/pointer isolation, camera-preserving resize, selection, view-state validation, aborted fetch/worker mounts, partial failure, late handles and GPU/worker cleanup |
 
 Run `node tests/webkit/host/browser.mjs` from the repository root after installing

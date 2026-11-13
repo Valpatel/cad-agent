@@ -80,6 +80,37 @@ def test_copy_mode_and_dry_run(tmp_path):
     assert (home / '.claude/agents/reviewer.md').read_bytes().startswith(role)
 
 
+def test_work_tracking_bundle_links_survive_source_removal(tmp_path):
+    import shutil
+
+    root, home = kit(tmp_path), tmp_path / 'home'
+    source = agentkit.kit_root() / '.agents/skills/cad-work-tracking'
+    bundle = root / '.agents/skills/cad-work-tracking'
+    shutil.copytree(source, bundle)
+    resource = bundle / 'issue-labels.md'
+    expected = resource.read_bytes()
+    assert not agentkit.install(home, root, copy=True)['conflicts']
+
+    # A bundled-reference-only edit must be detected and shipped by the existing installer.
+    resource.write_bytes(expected + b'\nAdditional local guidance.\n')
+    rows = [row for row in agentkit.status(home, root) if row['name'] == 'cad-work-tracking']
+    assert len(rows) == 2 and {row['state'] for row in rows} == {'copied, out of date'}
+    assert not agentkit.install(home, root, copy=True)['conflicts']
+    expected = resource.read_bytes()
+    shutil.rmtree(root)  # Delete only the disposable kit; the real checkout remains untouched.
+
+    for relative in ('.claude/skills/cad-work-tracking', '.agents/skills/cad-work-tracking'):
+        installed = home / relative
+        targets = {href.split('#', 1)[0] for href in
+                   re.findall(r'\]\(([^)\s]+)\)', (installed / 'SKILL.md').read_text())
+                   if not href.startswith('#') and not re.match(r'[a-z]+://', href)}
+        assert resource.name in targets, 'the installed instructions must lead to their bundled reference'
+        for target in targets:
+            resolved = (installed / target).resolve()
+            assert resolved.is_relative_to(installed.resolve()) and resolved.is_file()
+        assert (installed / resource.name).read_bytes() == expected
+
+
 def test_bad_kits_rejected(tmp_path):
     root = kit(tmp_path)
     (root / '.agents/agents/alpha.md').write_text('---\nname: alpha\ndescription: clash\n---\n')

@@ -5,6 +5,11 @@ install it with `cad-agent agents install`): the `cad-work-tracking`, `cad-pr-re
 `cad-pr-reviewer` and `cad-resume` subagents. Assume the session can end at any time: every piece of work has a
 GitHub issue, is pushed in clean commits as it goes and has an early draft PR, so another computer can pick it up.
 
+**Classify tracked issues with the canonical [issue labels](.agents/skills/cad-work-tracking/issue-labels.md).**
+Use exactly one `scope:` label; `stage:design-review` independently marks a pending design decision. Read the latest
+comments before classifying or resuming, keep unrelated labels, and write outcome/evidence/acceptance rather than
+conversation history. The bundled guide defines transitions and the additional requirements for design proposals.
+
 Other agent sessions use and change this repo at the same time, so:
 
 - **Never push to `main` or `dev`**, and never force-push a branch you did not create. Both are protected.

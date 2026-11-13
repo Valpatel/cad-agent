@@ -20,6 +20,9 @@ EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
 ARCHIVE = "https://archive.ubuntu.com/ubuntu/"
 SECURITY = "https://security.ubuntu.com/ubuntu/"
 MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
+# Observed split security stanza in hosted full job 131567345145 (2026-11-12).
+# This source remains byte-identical; it is not rewritten or added as a mirror.
+SPLIT_SECURITY = "http://security.ubuntu.com/ubuntu"
 # Ubuntu Official Archive Mirrors: /ubuntu/+mirror/mirror.pilotfiber.com-archive.
 PREFERRED = "https://mirror.pilotfiber.com/ubuntu/"
 EXPECTED = {AZURE: "priority:1", EC2: "priority:1", PREFERRED: "priority:1",
@@ -104,6 +107,7 @@ def validate_source(text: str, codename: str) -> None:
     expected_suites = {codename, *(codename + "-" + suffix for suffix in ("updates", "backports", "security"))}
     seen_suites = set()
     active = 0
+    split_security = False
     for stanza in text.split("\n\n"):
         fields = {}
         current = None
@@ -123,9 +127,12 @@ def validate_source(text: str, codename: str) -> None:
         allowed = {"types", "uris", "suites", "components", "signed-by", "enabled"}
         if set(fields) - allowed or fields.get("enabled", "yes").lower() != "yes":
             raise ValueError("unsupported Ubuntu source fields or enabled state")
-        if fields.get("uris", "").split() != [MIRROR]:
-            raise ValueError("active Ubuntu source must use the expected mirror file")
         suites = fields.get("suites", "").split()
+        uris = fields.get("uris", "").split()
+        if uris == [SPLIT_SECURITY] and suites == [codename + "-security"]:
+            split_security = True
+        elif uris != [MIRROR]:
+            raise ValueError("active Ubuntu source must use the expected mirror file")
         components = fields.get("components", "").split()
         if (fields.get("types", "").split() != ["deb"] or
                 fields.get("signed-by") != "/usr/share/keyrings/ubuntu-archive-keyring.gpg" or
@@ -137,6 +144,8 @@ def validate_source(text: str, codename: str) -> None:
         active += 1
     if not active or seen_suites != expected_suites:
         raise ValueError("expected the complete active Ubuntu runner suite set")
+    if split_security and active != 2:
+        raise ValueError("expected the observed two-stanza split security source profile")
 
 
 def configure(path: Path, source: Path, codename: str = "noble") -> None:

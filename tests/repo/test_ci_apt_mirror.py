@@ -26,6 +26,11 @@ ORIGINAL = "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
 CORRECTED = ORIGINAL.replace(mirror.AZURE, mirror.PREFERRED)
 # Observed verbatim URI/priority order in full job 131436221538, 2026-11-12.
 OBSERVED_EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
+# Fields captured by the bounded diagnostic in full job 131567345145.
+# Comments/blank lines are not a reconstruction of its original source bytes.
+OBSERVED_SPLIT_SECURITY = SOURCE.replace(" noble-security", "") + "\n" + SOURCE.replace(
+    mirror.MIRROR, "http://security.ubuntu.com/ubuntu").replace(
+    "noble noble-updates noble-backports noble-security", "noble-security")
 
 
 class MirrorTests(unittest.TestCase):
@@ -67,6 +72,46 @@ class MirrorTests(unittest.TestCase):
         mirror.configure(self.path, self.source)
         self.assertEqual(self.path.read_text(), expected)
         self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_observed_split_security_preserves_source_and_is_idempotent(self):
+        for original in (ORIGINAL, OBSERVED_EC2, CORRECTED):
+            with self.subTest(primary=original.splitlines()[0]):
+                self.path.write_text(original)
+                self.source.write_text(OBSERVED_SPLIT_SECURITY)
+                mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), CORRECTED)
+                self.assertEqual(self.source.read_text(), OBSERVED_SPLIT_SECURITY)
+                mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), CORRECTED)
+                self.assertEqual(self.source.read_text(), OBSERVED_SPLIT_SECURITY)
+
+    def test_split_security_rejects_changed_uri_and_incomplete_or_unsigned_profiles(self):
+        uri = "http://security.ubuntu.com/ubuntu"
+        source = OBSERVED_SPLIT_SECURITY
+        mutants = [source.replace(uri, alternative) for alternative in (
+            uri + "/", uri.replace("http:", "https:"), uri + "?x=1", uri + "#fragment",
+            uri.replace("security.ubuntu.com", "security.ubuntu.com.evil.example"),
+            uri.replace("http://", "http://user@"), uri.replace("/ubuntu", "/other"),
+            uri + " " + mirror.MIRROR)]
+        mutants += [source.replace("noble-security", "noble-proposed"),
+                    source.replace("noble noble-updates noble-backports", "noble noble-updates"),
+                    source.replace("noble noble-updates noble-backports", "noble noble-updates noble-backports noble-security"),
+                    source.replace("Types: deb", "Types: deb-src"),
+                    source.replace("/usr/share/keyrings/ubuntu-archive-keyring.gpg", "/tmp/key.gpg"),
+                    source.replace("main universe", "main main"),
+                    source + "Trusted: yes\n", source + "Enabled: no\n",
+                    source + "\n" + source.split("\n\n")[1],
+                    source.replace(mirror.MIRROR, uri),
+                    source.replace("noble noble-updates noble-backports", "noble") +
+                    "\n" + SOURCE.replace("noble noble-updates noble-backports noble-security", "noble-updates noble-backports")]
+        for mutant in mutants:
+            with self.subTest(source=mutant):
+                self.path.write_text(ORIGINAL)
+                self.source.write_text(mutant)
+                with self.assertRaises(ValueError):
+                    mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), ORIGINAL)
+                self.assertEqual(self.source.read_text(), mutant)
 
     def test_observed_ec2_is_not_a_wildcard_or_a_mixed_profile(self):
         uri = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"

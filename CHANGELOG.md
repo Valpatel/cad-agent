@@ -9,6 +9,12 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.41.1 (2026-11-13)
+
+**Fixed**
+- The four-bar transmission-angle chart describes the 40° band as a guideline instead of claiming every angle below it binds; actual kinematic lock reporting is unchanged (#670).
+- `pcb-check` explains that reports missing severity metadata need regeneration with KiCad CLI 10 or newer and `--severity-all`, rather than asking KiCad 9 users to repeat a flag that cannot add the metadata. Incomplete reports still fail closed (#672).
+
 ## v0.41.0 (2026-11-13)
 
 **Changed**

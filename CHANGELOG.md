@@ -9,6 +9,11 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.41.0 (2026-11-13)
+
+**Changed**
+- Legacy CLI evaluation trials can request low, medium or high reasoning effort, preserving medium by default and recording requested effort separately from unknown effective effort; historical records are not backfilled (#665).
+
 ## v0.40.1 (2026-11-13)
 
 **New**

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SCADA component kit · Example</title>
+  <link rel="stylesheet" href="../../src/scada-components.css">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#080f18;color:#e3f2fa;font:16px/1.6 system-ui,sans-serif}main{max-width:950px;margin:auto;padding:32px 22px}h1{line-height:1.2;font-size:36px;letter-spacing:-1px}p{color:#b4cad8}a{color:#84eef7}label{display:flex;gap:10px;align-items:center}select,button{font:inherit;min-height:44px;padding:9px 12px;border:1px solid #486077;border-radius:7px;background:#142433;color:#edfaff}select{max-width:100%;width:100%}input{accent-color:#00dce9;width:20px;height:20px}.controls{display:flex;gap:20px;flex-wrap:wrap;padding:16px 0}.preview{display:grid;place-items:center;min-height:300px;padding:32px;border:1px solid #35566c;border-radius:16px;background:radial-gradient(ellipse at center,#143243,#0b1522 72%)}.preview>.scada-component{width:100%;max-width:420px;height:260px}.preview svg{max-height:260px}pre{overflow:auto;padding:18px;background:#12202e;border:1px solid #334e64;border-radius:9px;color:#c6edf3;font-size:14px}small{color:#9eb8ca}footer{margin-top:32px;border-top:1px solid #304456;padding-top:18px}#error{color:#ffb8ce}
+    .discovery{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}.discovery label{display:grid;gap:5px}.discovery input[type=search]{width:100%;height:44px;font:inherit;padding:8px 12px;border:1px solid #486077;border-radius:7px;background:#142433;color:#edfaff}#variant-row{margin-top:12px}#variant-row[hidden]{display:none}@media(max-width:600px){.discovery{grid-template-columns:1fr}}
+    p code{overflow-wrap:anywhere}
+  </style>
+</head>
+<body>
+<main>
+  <small>REUSABLE SCADA VISUALS · STANDALONE EXAMPLE</small>
+  <h1>One component, your system.</h1>
+  <p>This example renders the same library used by Digester Twin. Preview states are visual inputs; connect them to your model or telemetry adapter.</p>
+  <div class="discovery">
+    <label for="search">Find equipment <input id="search" type="search" maxlength="512" placeholder="Fuel, technology or equipment"></label>
+    <label for="category">Family <select id="category"><option value="">All families</option></select></label>
+  </div>
+  <label for="component">Component</label>
+  <select id="component"></select>
+  <label id="variant-row" for="variant" hidden>Variant <select id="variant"></select></label>
+  <div class="controls">
+    <label><input id="active" type="checkbox" checked> Active</label>
+    <label><input id="running" type="checkbox" checked> Animate</label>
+    <label><input id="fault" type="checkbox"> Fault</label>
+  </div>
+  <div class="preview" id="preview"></div>
+  <p id="description"></p>
+  <p id="support"></p>
+  <p id="error" role="alert"></p>
+  <pre><code id="example-code"></code></pre>
+  <p>Serve the package root with <code>python -m http.server 8000</code>, then open <code>http://localhost:8000/examples/components/</code>. See ../../README.md for the full state and port contract.</p>
+  <footer>Created by <a href="https://valpatel.com" target="_blank" rel="noopener">Valpatel Software LLC</a></footer>
+</main>
+<script type="module">
+  import {SCADA_CATEGORIES, renderScadaComponent} from '../../src/scada-components.mjs';
+  import {findScadaComponents, getScadaComponent, getScadaVariants} from '../../src/scada-catalog.mjs';
+  const select = document.querySelector('#component');
+  const search = document.querySelector('#search');
+  const category = document.querySelector('#category');
+  const variant = document.querySelector('#variant');
+  for (const family of SCADA_CATEGORIES) category.add(new Option(family.label, family.id));
+
+  function chooseVariants() {
+    variant.replaceChildren(new Option('Baseline artwork', ''));
+    const choices = getScadaVariants(select.value);
+    for (const item of choices) variant.add(new Option(item.label, item.id));
+    document.querySelector('#variant-row').hidden = choices.length === 0;
+  }
+
+  function filterComponents(initial = false) {
+    const previous = initial ? 'pump' : select.value;
+    const matches = findScadaComponents({query: search.value, ...(category.value ? {category: category.value} : {})});
+    select.replaceChildren(...matches.map(item => new Option(item.label, item.type)));
+    if (matches.some(item => item.type === previous)) select.value = previous;
+    document.querySelectorAll('input[type=checkbox]').forEach(input => input.disabled = !matches.length);
+    document.querySelector('#error').textContent = '';
+    if (!matches.length) {
+      document.querySelector('#preview').replaceChildren();
+      document.querySelector('#variant-row').hidden = true;
+      document.querySelector('#description').textContent = 'No matching equipment. Change the search or family.';
+      document.querySelector('#support').textContent = '';
+      document.querySelector('#example-code').textContent = '';
+      return;
+    }
+    chooseVariants();
+    render();
+  }
+  function render() {
+    if (!select.value) return;
+    try {
+      const chosenVariant = variant.value || undefined;
+      const component = getScadaComponent(select.value, {variant: chosenVariant});
+      const supported = new Set(component.stateFields.map(field => field.key));
+      const state = {};
+      for (const key of ['active', 'running', 'fault']) {
+        const input = document.getElementById(key);
+        input.disabled = !supported.has(key);
+        if (supported.has(key)) state[key] = input.checked;
+      }
+      document.querySelector('#preview').innerHTML = renderScadaComponent(component.id, {id:'example-equipment', variant:chosenVariant, label:component.label, state, decorative:false});
+      document.querySelector('#description').textContent = component.description;
+      document.querySelector('#support').textContent = component.modelSupport.description;
+      document.querySelector('#example-code').textContent = `import {renderScadaComponent} from '@valpatel/scada-ui';\n\ncontainer.innerHTML = renderScadaComponent(${JSON.stringify(component.id)}, {\n  id: 'example-equipment',${chosenVariant ? `\n  variant: ${JSON.stringify(chosenVariant)},` : ''}\n  label: ${JSON.stringify(component.label)},\n  state: ${JSON.stringify(state)},\n  decorative: false\n});`;
+      document.querySelector('#error').textContent = '';
+    } catch(error) { document.querySelector('#error').textContent = error.message; }
+  }
+  select.addEventListener('change', () => { chooseVariants(); render(); });
+  variant.addEventListener('change', render);
+  search.addEventListener('input', () => filterComponents());
+  category.addEventListener('change', () => filterComponents());
+  document.querySelectorAll('input[type=checkbox]').forEach(input => input.addEventListener('change', render));
+  filterComponents(true);
+</script>
+</body>
+</html>

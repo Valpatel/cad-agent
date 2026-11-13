@@ -1,0 +1,54 @@
+{
+  "name": "@valpatel/scada-sim",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Headless SCADA simulation kernels, swappable equation providers, illustrative equipment models and viewer adapters",
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./models": "./src/model-registry.mjs",
+    "./engine": "./src/placeholder-system.mjs",
+    "./adapter": "./src/adapter.mjs",
+    "./validation": "./src/validation.mjs",
+    "./schema": "./schema/placeholder-model-v1.schema.json",
+    "./snapshot-schema": "./schema/placeholder-snapshot-v1.schema.json",
+    "./models-v2": "./src/v2/contract.mjs",
+    "./engine-v2": "./src/v2/circuit-system.mjs",
+    "./validation-v2": "./src/v2/validation.mjs",
+    "./schema-v2": "./schema/placeholder-model-v2.schema.json",
+    "./snapshot-schema-v2": "./schema/placeholder-snapshot-v2.schema.json",
+    "./model-registry.json": "./metadata/model-registry.json",
+    "./model-registry-v2.json": "./metadata/model-registry-v2.json",
+    "./scenarios": "./scenarios/index.json",
+    "./package.json": "./package.json",
+    "./img/*": "./img/*",
+    "./equations": "./src/equations/index.mjs",
+    "./equation-examples": "./src/equation-examples/index.mjs"
+  },
+  "files": [
+    "src",
+    "schema",
+    "scenarios",
+    "examples",
+    "docs",
+    "img/",
+    "metadata",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.18"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build:metadata": "node ../../../../../tools/webkit/scada/sim/build-metadata.mjs",
+    "check:metadata": "node ../../../../../tools/webkit/scada/sim/build-metadata.mjs --check",
+    "test": "node --test --test-concurrency=2 ../../../../../tests/webkit/scada/sim/*.test.mjs",
+    "check:default-baseline": "node ../../../../../tools/webkit/scada/sim/check-default-baseline.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Valpatel/cad-agent.git",
+    "directory": "software/cadagent/webkit/scada/sim"
+  }
+}

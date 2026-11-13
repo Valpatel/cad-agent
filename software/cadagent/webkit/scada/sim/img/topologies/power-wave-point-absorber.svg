@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="268" viewBox="0 0 900 268" role="img" aria-labelledby="topology-title topology-description">
+<title id="topology-title">Wave point-absorber array — Resource and conversion devices</title>
+<desc id="topology-description">Resource and conversion devices. 3 equipment references and 2 declared directed connections. Static illustrative symbols; arrows do not show instantaneous flow. This selected view does not include every plant connection.</desc>
+<rect width="900" height="268" rx="20" fill="#091824"/>
+<style>text{font-family:Arial,sans-serif;fill:#dcecf1}.topology-edge{stroke-linejoin:round;stroke-linecap:round}</style>
+<text x="26" y="35" font-size="25" font-weight="700" data-heading="true">Wave point-absorber array</text>
+<text x="26" y="59" font-size="14">Resource and conversion devices · declared connections · illustrative equipment symbols</text>
+<defs><marker id="arrow-0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1L8 5L0 9Z" fill="#ffd16d"/></marker></defs>
+<g data-edge="deviceA-output-to-collection-supply"><title>deviceA:output → collection:supply (electricity)</title>
+<path class="topology-edge" d="M317.0 130.0L352.0 130.0L352.0 70L575.0 70L575.0 130.0L583.0 130.0" fill="none" stroke="#091824" stroke-width="7"/>
+<path class="topology-edge" d="M317.0 130.0L352.0 130.0L352.0 70L575.0 70L575.0 130.0L583.0 130.0" fill="none" stroke="#ffd16d" stroke-width="2.5" marker-end="url(#arrow-0)"/></g>
+<defs><marker id="arrow-1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1L8 5L0 9Z" fill="#ffd16d"/></marker></defs>
+<g data-edge="deviceB-output-to-collection-supply"><title>deviceB:output → collection:supply (electricity)</title>
+<path class="topology-edge" d="M540.0 144.0L583.0 144.0" fill="none" stroke="#091824" stroke-width="7"/>
+<path class="topology-edge" d="M540.0 144.0L583.0 144.0" fill="none" stroke="#ffd16d" stroke-width="2.5" marker-end="url(#arrow-1)"/></g>
+<g data-node="deviceA" transform="translate(137.0 78)"><title>Wave buoy / takeoff A — deviceA / wave-energy-converter</title>
+<rect width="180" height="132" rx="12" fill="#102735" stroke="#315363"/>
+<g transform="translate(36 0) scale(.6)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 136" width="180" height="136"><svg viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="180" height="136" style="fill: rgb(0, 0, 0); fill-opacity: 1; fill-rule: nonzero; stroke: none; stroke-width: 1px; stroke-opacity: 1; stroke-dasharray: none; stroke-dashoffset: 0px; stroke-linecap: butt; stroke-linejoin: miter; opacity: 1; display: block; visibility: visible; filter: none; clip-path: none; mask: none; transform: none; transform-origin: 90px 68px; transform-box: view-box; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; text-anchor: start; dominant-baseline: auto; paint-order: normal;"><defs>
+ <linearGradient id="scada-topology-power-wave-point-absorber-deviceA-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-topology-power-wave-point-absorber-deviceA-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-topology-power-wave-point-absorber-deviceA-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-topology-power-wave-point-absorber-deviceA-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-topology-power-wave-point-absorber-deviceA-glow)" style="fill: url(&quot;#scada-topology-power-wave-point-absorber-deviceA-glow&quot;);"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65" style="fill: rgb(3, 13, 25); opacity: 0.65;"/><g><g data-power-type="wave-energy-converter" data-power-speed-zero="false" data-power-drive-blocked="false">
+    <ellipse cx="90" cy="128" rx="63" ry="4.5" fill="#020d18" opacity=".72" style="fill: rgb(2, 13, 24); opacity: 0.72;"/>
+    <path d="M18 91H163V128H18Z" fill="#154356" opacity=".45" style="fill: rgb(21, 67, 86); opacity: 0.45;"/>
+    <g data-wave="true">
+      <path d="M10 89q10-5 20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0" fill="none" stroke="#8bdedc" stroke-width="2" style="fill: none; stroke: rgb(139, 222, 220); stroke-width: 2px;"/>
+      <g><path d="M49 69Q86 50 126 69V87Q87 108 49 87Z" fill="url(#scada-topology-power-wave-point-absorber-deviceA-steel)" stroke="#afd4dc" stroke-width="1.5" style="fill: url(&quot;#scada-topology-power-wave-point-absorber-deviceA-steel&quot;); stroke: rgb(175, 212, 220); stroke-width: 1.5px;"/><ellipse cx="87" cy="69" rx="38" ry="14" fill="#397d88" stroke="#b4dedc" style="fill: rgb(57, 125, 136); stroke: rgb(180, 222, 220);"/>
+      <path d="M62 69h50" stroke="#80e0cf" stroke-width="3" style="stroke: rgb(128, 224, 207); stroke-width: 3px;"/><path d="M86 58V26" stroke="#abcdd5" stroke-width="7" style="stroke: rgb(171, 205, 213); stroke-width: 7px;"/>
+      <path d="M73 20h27v25H73Z" fill="#153a50" stroke="#94becf" style="fill: rgb(21, 58, 80); stroke: rgb(148, 190, 207);"/><path d="M79 25h15v15H79Z" fill="#224f63" stroke="#77a4b7" style="fill: rgb(34, 79, 99); stroke: rgb(119, 164, 183);"/>
+      <path d="M86 28v10" stroke="#ffd58a" stroke-width="4" opacity="0.68" style="stroke: rgb(255, 213, 138); stroke-width: 4px; opacity: 0.68;"/></g>
+    </g>
+    <path d="M86 92V127" stroke="#7ca6b7" stroke-width="4" style="stroke: rgb(124, 166, 183); stroke-width: 4px;"/>
+    <path d="M56 91L35 126m82-35 22 35" stroke="#9cb6bd" stroke-width="1.5" stroke-dasharray="3 2" style="stroke: rgb(156, 182, 189); stroke-width: 1.5px; stroke-dasharray: 3px, 2px;"/>
+    <path d="M77 128h18" stroke="#b3c8c7" stroke-width="4" style="stroke: rgb(179, 200, 199); stroke-width: 4px;"/>
+    <path d="M99 39h23V115h43" fill="none" stroke="#7b9cab" stroke-width="3" style="fill: none; stroke: rgb(123, 156, 171); stroke-width: 3px;"/>
+    <g data-flowing="true"><path d="M99 39h23V115h43" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round" style="fill: none; stroke: rgb(141, 158, 170); stroke-width: 3px; stroke-linejoin: round;"/>
+    <path d="M99 39h23V115h43" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7" style="fill: none; stroke: rgb(255, 211, 138); stroke-width: 1.6px; stroke-dasharray: 3px, 7px; opacity: 0.648;"/></g>
+
+
+  </g></g></svg></svg></g>
+<text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="deviceA">Wave buoy / takeoff A</text>
+</g>
+<g data-node="deviceB" transform="translate(360.0 78)"><title>Wave buoy / takeoff B — deviceB / wave-energy-converter</title>
+<rect width="180" height="132" rx="12" fill="#102735" stroke="#315363"/>
+<g transform="translate(36 0) scale(.6)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 136" width="180" height="136"><svg viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="180" height="136" style="fill: rgb(0, 0, 0); fill-opacity: 1; fill-rule: nonzero; stroke: none; stroke-width: 1px; stroke-opacity: 1; stroke-dasharray: none; stroke-dashoffset: 0px; stroke-linecap: butt; stroke-linejoin: miter; opacity: 1; display: block; visibility: visible; filter: none; clip-path: none; mask: none; transform: none; transform-origin: 90px 68px; transform-box: view-box; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; text-anchor: start; dominant-baseline: auto; paint-order: normal;"><defs>
+ <linearGradient id="scada-topology-power-wave-point-absorber-deviceB-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-topology-power-wave-point-absorber-deviceB-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-topology-power-wave-point-absorber-deviceB-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-topology-power-wave-point-absorber-deviceB-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-topology-power-wave-point-absorber-deviceB-glow)" style="fill: url(&quot;#scada-topology-power-wave-point-absorber-deviceB-glow&quot;);"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65" style="fill: rgb(3, 13, 25); opacity: 0.65;"/><g><g data-power-type="wave-energy-converter" data-power-speed-zero="false" data-power-drive-blocked="false">
+    <ellipse cx="90" cy="128" rx="63" ry="4.5" fill="#020d18" opacity=".72" style="fill: rgb(2, 13, 24); opacity: 0.72;"/>
+    <path d="M18 91H163V128H18Z" fill="#154356" opacity=".45" style="fill: rgb(21, 67, 86); opacity: 0.45;"/>
+    <g data-wave="true">
+      <path d="M10 89q10-5 20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0" fill="none" stroke="#8bdedc" stroke-width="2" style="fill: none; stroke: rgb(139, 222, 220); stroke-width: 2px;"/>
+      <g><path d="M49 69Q86 50 126 69V87Q87 108 49 87Z" fill="url(#scada-topology-power-wave-point-absorber-deviceB-steel)" stroke="#afd4dc" stroke-width="1.5" style="fill: url(&quot;#scada-topology-power-wave-point-absorber-deviceB-steel&quot;); stroke: rgb(175, 212, 220); stroke-width: 1.5px;"/><ellipse cx="87" cy="69" rx="38" ry="14" fill="#397d88" stroke="#b4dedc" style="fill: rgb(57, 125, 136); stroke: rgb(180, 222, 220);"/>
+      <path d="M62 69h50" stroke="#80e0cf" stroke-width="3" style="stroke: rgb(128, 224, 207); stroke-width: 3px;"/><path d="M86 58V26" stroke="#abcdd5" stroke-width="7" style="stroke: rgb(171, 205, 213); stroke-width: 7px;"/>
+      <path d="M73 20h27v25H73Z" fill="#153a50" stroke="#94becf" style="fill: rgb(21, 58, 80); stroke: rgb(148, 190, 207);"/><path d="M79 25h15v15H79Z" fill="#224f63" stroke="#77a4b7" style="fill: rgb(34, 79, 99); stroke: rgb(119, 164, 183);"/>
+      <path d="M86 28v10" stroke="#ffd58a" stroke-width="4" opacity="0.68" style="stroke: rgb(255, 213, 138); stroke-width: 4px; opacity: 0.68;"/></g>
+    </g>
+    <path d="M86 92V127" stroke="#7ca6b7" stroke-width="4" style="stroke: rgb(124, 166, 183); stroke-width: 4px;"/>
+    <path d="M56 91L35 126m82-35 22 35" stroke="#9cb6bd" stroke-width="1.5" stroke-dasharray="3 2" style="stroke: rgb(156, 182, 189); stroke-width: 1.5px; stroke-dasharray: 3px, 2px;"/>
+    <path d="M77 128h18" stroke="#b3c8c7" stroke-width="4" style="stroke: rgb(179, 200, 199); stroke-width: 4px;"/>
+    <path d="M99 39h23V115h43" fill="none" stroke="#7b9cab" stroke-width="3" style="fill: none; stroke: rgb(123, 156, 171); stroke-width: 3px;"/>
+    <g data-flowing="true"><path d="M99 39h23V115h43" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round" style="fill: none; stroke: rgb(141, 158, 170); stroke-width: 3px; stroke-linejoin: round;"/>
+    <path d="M99 39h23V115h43" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7" style="fill: none; stroke: rgb(255, 211, 138); stroke-width: 1.6px; stroke-dasharray: 3px, 7px; opacity: 0.648;"/></g>
+
+
+  </g></g></svg></svg></g>
+<text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="deviceB">Wave buoy / takeoff B</text>
+</g>
+<g data-node="collection" transform="translate(583.0 78)"><title>Electrical collection bus — collection / busbar</title>
+<rect width="180" height="132" rx="12" fill="#102735" stroke="#315363"/>
+<g transform="translate(36 0) scale(.6)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 136" width="180" height="136"><svg viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="180" height="136" style="fill: rgb(0, 0, 0); fill-opacity: 1; fill-rule: nonzero; stroke: none; stroke-width: 1px; stroke-opacity: 1; stroke-dasharray: none; stroke-dashoffset: 0px; stroke-linecap: butt; stroke-linejoin: miter; opacity: 1; display: block; visibility: visible; filter: none; clip-path: none; mask: none; transform: none; transform-origin: 90px 68px; transform-box: view-box; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; text-anchor: start; dominant-baseline: auto; paint-order: normal;"><defs>
+ <linearGradient id="scada-topology-power-wave-point-absorber-collection-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-topology-power-wave-point-absorber-collection-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-topology-power-wave-point-absorber-collection-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-topology-power-wave-point-absorber-collection-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-topology-power-wave-point-absorber-collection-glow)" style="fill: url(&quot;#scada-topology-power-wave-point-absorber-collection-glow&quot;);"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65" style="fill: rgb(3, 13, 25); opacity: 0.65;"/><g><rect x="17" y="29" width="146" height="78" rx="7" fill="#0e263b" stroke="#4e8198" style="fill: rgb(14, 38, 59); stroke: rgb(78, 129, 152);"/><path d="M23 46H157" stroke="#bf9966" stroke-width="8" style="stroke: rgb(191, 153, 102); stroke-width: 8px;"/><path d="M23 46H157" stroke-width="2" style="stroke: rgb(255, 211, 138); stroke-width: 2px; stroke-dasharray: 5px, 11px; stroke-linecap: round; opacity: 0.95;"/><path d="M55 46v72" stroke="#8cc0cf" stroke-width="5" style="stroke: rgb(140, 192, 207); stroke-width: 5px;"/><circle cx="28" cy="46" r="1.5" fill="#c1e4ec" style="fill: rgb(193, 228, 236);"/><path d="M27 46h2" stroke="#21445a" stroke-width=".6" style="stroke: rgb(33, 68, 90); stroke-width: 0.6px;"/><circle cx="151" cy="46" r="1.5" fill="#c1e4ec" style="fill: rgb(193, 228, 236);"/><path d="M150 46h2" stroke="#21445a" stroke-width=".6" style="stroke: rgb(33, 68, 90); stroke-width: 0.6px;"/><path d="M23 67H157" stroke="#bf9966" stroke-width="8" style="stroke: rgb(191, 153, 102); stroke-width: 8px;"/><path d="M23 67H157" stroke-width="2" style="stroke: rgb(255, 211, 138); stroke-width: 2px; stroke-dasharray: 5px, 11px; stroke-linecap: round; opacity: 0.95;"/><path d="M89 67v51" stroke="#8cc0cf" stroke-width="5" style="stroke: rgb(140, 192, 207); stroke-width: 5px;"/><circle cx="28" cy="67" r="1.5" fill="#c1e4ec" style="fill: rgb(193, 228, 236);"/><path d="M27 67h2" stroke="#21445a" stroke-width=".6" style="stroke: rgb(33, 68, 90); stroke-width: 0.6px;"/><circle cx="151" cy="67" r="1.5" fill="#c1e4ec" style="fill: rgb(193, 228, 236);"/><path d="M150 67h2" stroke="#21445a" stroke-width=".6" style="stroke: rgb(33, 68, 90); stroke-width: 0.6px;"/><path d="M23 88H157" stroke="#bf9966" stroke-width="8" style="stroke: rgb(191, 153, 102); stroke-width: 8px;"/><path d="M23 88H157" stroke-width="2" style="stroke: rgb(255, 211, 138); stroke-width: 2px; stroke-dasharray: 5px, 11px; stroke-linecap: round; opacity: 0.95;"/><path d="M123 88v30" stroke="#8cc0cf" stroke-width="5" style="stroke: rgb(140, 192, 207); stroke-width: 5px;"/><circle cx="28" cy="88" r="1.5" fill="#c1e4ec" style="fill: rgb(193, 228, 236);"/><path d="M27 88h2" stroke="#21445a" stroke-width=".6" style="stroke: rgb(33, 68, 90); stroke-width: 0.6px;"/><circle cx="151" cy="88" r="1.5" fill="#c1e4ec" style="fill: rgb(193, 228, 236);"/><path d="M150 88h2" stroke="#21445a" stroke-width=".6" style="stroke: rgb(33, 68, 90); stroke-width: 0.6px;"/></g></svg></svg></g>
+<text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="collection">Electrical collection</text>
+<text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="collection">bus</text>
+</g>
+<path d="M26 229h20" stroke="#ffd16d" stroke-width="3"/>
+<text x="54" y="234" font-size="14">electricity</text>
+<text x="26" y="256" font-size="13">Arrows show declared direction, not instantaneous flow. Open the shared model for live state.</text>
+</svg>

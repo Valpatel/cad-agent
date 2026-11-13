@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08111d">
+  <title>SCADA simulation lab · cad-agent</title>
+  <link rel="stylesheet" href="../ui/src/styles.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main id="industry-lab" class="industry-lab scada-workspace" aria-busy="true">
+    <nav class="lab-site-nav" aria-label="cad-agent Toolkit"><a href="/toolkit">Toolkit</a><span aria-hidden="true">/</span><a href="/toolkit/scada/elements">SCADA elements</a><a href="/toolkit/scada/simulations" aria-current="page">Example simulations</a></nav>
+    <header class="lab-heading">
+      <div class="lab-identity"><a class="lab-brand" href="/toolkit/scada">CAD-AGENT <span>SCADA TOOLKIT</span></a><p class="lab-eyebrow">INDUSTRY LAB <span>ILLUSTRATIVE MODELS</span></p><h1 data-scenario-title>Opening the control room…</h1><p class="lab-intro" data-scenario-description>Many industries. One reusable system viewer.</p></div>
+      <div class="lab-live"><span class="lab-live-dot" aria-hidden="true"></span><span data-session-state>Loading</span></div>
+    </header>
+    <div id="lab-tools"></div>
+    <div class="lab-kpis" aria-label="Simulation summary">
+      <div><span>Simulation time</span><strong data-kpi="time">0.0 <small>min</small></strong></div>
+      <div><span>Equipment online</span><strong data-kpi="active">—</strong></div>
+      <div title="Mean normalized transfer across material-flow equipment, including zero readings. This is not plant production or a material balance."><span>Mean transfer index</span><strong data-kpi="flow">—</strong></div>
+      <div><span>Equipment health</span><strong data-kpi="health">—</strong></div>
+    </div>
+    <p class="lab-message" role="status" data-lab-message hidden></p>
+    <div id="lab-viewer"><p class="lab-loading" role="status">Loading the scenario definitions and placeholder model…</p></div>
+    <footer class="lab-footer"><span>Drag to pan; wheel or pinch to zoom. Use Zoom to fit for the whole process. Click equipment to operate it. Every layout shares one model. Model parameters are editable guesses. <a href="/toolkit/scada/simulations">All simulations</a></span><a href="https://valpatel.com" target="_blank" rel="noopener noreferrer">Created by Valpatel Software LLC</a></footer>
+  </main>
+  <script type="module" src="./main.mjs"></script>
+</body>
+</html>

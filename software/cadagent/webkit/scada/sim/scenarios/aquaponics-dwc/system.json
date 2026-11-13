@@ -1,0 +1,3313 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "aquaponics-dwc",
+    "label": "Raft / DWC aquaponics",
+    "description": "Fish-water treatment feeds parallel floating-raft beds. Mechanical filtration, biological media and aeration have distinct roles."
+  },
+  "components": [
+    {
+      "id": "fish",
+      "type": "fish-tank",
+      "label": "Fish tank",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "oxygen": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fish/active",
+        "running": "/components/fish/running",
+        "fault": "/components/fish/fault",
+        "status": "/components/fish/status",
+        "level": "/components/fish/level",
+        "oxygen": "/components/fish/oxygen",
+        "load": "/components/fish/load",
+        "damage": "/components/fish/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "bottom",
+          "offset": 0.25
+        },
+        {
+          "id": "drain",
+          "side": "bottom",
+          "offset": 0.25
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "solidsFilter",
+      "type": "filter",
+      "label": "Solids capture filter",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/solidsFilter/active",
+        "running": "/components/solidsFilter/running",
+        "fault": "/components/solidsFilter/fault",
+        "status": "/components/solidsFilter/status",
+        "load": "/components/solidsFilter/load",
+        "damage": "/components/solidsFilter/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "biofilter",
+      "type": "biofilter",
+      "label": "Dedicated biological media",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "oxygen": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/biofilter/active",
+        "running": "/components/biofilter/running",
+        "fault": "/components/biofilter/fault",
+        "status": "/components/biofilter/status",
+        "level": "/components/biofilter/level",
+        "oxygen": "/components/biofilter/oxygen",
+        "load": "/components/biofilter/load",
+        "damage": "/components/biofilter/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "bottom",
+          "offset": 0.25
+        },
+        {
+          "id": "waste",
+          "side": "bottom",
+          "offset": 0.25
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "sump",
+      "type": "tank",
+      "label": "Treatment / return sump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/sump/active",
+        "running": "/components/sump/running",
+        "fault": "/components/sump/fault",
+        "status": "/components/sump/status",
+        "level": "/components/sump/level",
+        "damage": "/components/sump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "returnPump",
+      "type": "pump",
+      "label": "Shared circulation pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/returnPump/active",
+        "running": "/components/returnPump/running",
+        "fault": "/components/returnPump/fault",
+        "status": "/components/returnPump/status",
+        "load": "/components/returnPump/load",
+        "speed": "/components/returnPump/speed",
+        "damage": "/components/returnPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "manifold",
+      "type": "junction",
+      "label": "Fish and raft distribution",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/manifold/active",
+        "running": "/components/manifold/running",
+        "fault": "/components/manifold/fault",
+        "status": "/components/manifold/status",
+        "open": "/components/manifold/open",
+        "damage": "/components/manifold/damage"
+      },
+      "ports": [
+        {
+          "id": "west",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "east",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "north",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "south",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "raftA",
+      "type": "dwc-raft-bed",
+      "label": "Raft bed A",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "oxygen": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/raftA/active",
+        "running": "/components/raftA/running",
+        "fault": "/components/raftA/fault",
+        "status": "/components/raftA/status",
+        "level": "/components/raftA/level",
+        "oxygen": "/components/raftA/oxygen",
+        "load": "/components/raftA/load",
+        "damage": "/components/raftA/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "bottom",
+          "offset": 0.25
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "raftB",
+      "type": "dwc-raft-bed",
+      "label": "Raft bed B",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "oxygen": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/raftB/active",
+        "running": "/components/raftB/running",
+        "fault": "/components/raftB/fault",
+        "status": "/components/raftB/status",
+        "level": "/components/raftB/level",
+        "oxygen": "/components/raftB/oxygen",
+        "load": "/components/raftB/load",
+        "damage": "/components/raftB/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "bottom",
+          "offset": 0.25
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "sitePower",
+      "type": "transformer",
+      "label": "Explicit grid-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/sitePower/active",
+        "running": "/components/sitePower/running",
+        "fault": "/components/sitePower/fault",
+        "status": "/components/sitePower/status",
+        "load": "/components/sitePower/load",
+        "damage": "/components/sitePower/damage"
+      },
+      "ports": [
+        {
+          "id": "primary",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "secondary",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared growing-system controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "io",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "airSupply",
+      "type": "blower",
+      "label": "Ambient-air blower \u00b7 explicit source",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/airSupply/active",
+        "running": "/components/airSupply/running",
+        "fault": "/components/airSupply/fault",
+        "status": "/components/airSupply/status",
+        "load": "/components/airSupply/load",
+        "speed": "/components/airSupply/speed",
+        "damage": "/components/airSupply/damage"
+      },
+      "ports": [
+        {
+          "id": "intake",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "fishAir",
+      "type": "air-diffuser",
+      "label": "Fish-tank air diffuser",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "airflow": 60,
+        "oxygen": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fishAir/active",
+        "running": "/components/fishAir/running",
+        "fault": "/components/fishAir/fault",
+        "status": "/components/fishAir/status",
+        "airflow": "/components/fishAir/airflow",
+        "oxygen": "/components/fishAir/oxygen",
+        "damage": "/components/fishAir/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "bubbles",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "bioAir",
+      "type": "air-diffuser",
+      "label": "Biofilter air diffuser",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "airflow": 60,
+        "oxygen": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bioAir/active",
+        "running": "/components/bioAir/running",
+        "fault": "/components/bioAir/fault",
+        "status": "/components/bioAir/status",
+        "airflow": "/components/bioAir/airflow",
+        "oxygen": "/components/bioAir/oxygen",
+        "damage": "/components/bioAir/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "bubbles",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "raftAir",
+      "type": "air-diffuser",
+      "label": "Raft-zone air diffuser",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "airflow": 60,
+        "oxygen": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/raftAir/active",
+        "running": "/components/raftAir/running",
+        "fault": "/components/raftAir/fault",
+        "status": "/components/raftAir/status",
+        "airflow": "/components/raftAir/airflow",
+        "oxygen": "/components/raftAir/oxygen",
+        "damage": "/components/raftAir/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "bubbles",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "raftLight",
+      "type": "grow-light",
+      "label": "Growing-zone light",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "light": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/raftLight/active",
+        "running": "/components/raftLight/running",
+        "fault": "/components/raftLight/fault",
+        "status": "/components/raftLight/status",
+        "light": "/components/raftLight/light",
+        "load": "/components/raftLight/load",
+        "damage": "/components/raftLight/damage"
+      },
+      "ports": [
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "light",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "fishProbe",
+      "type": "water-quality-probe",
+      "label": "Fish oxygen \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fishProbe/active",
+        "running": "/components/fishProbe/running",
+        "fault": "/components/fishProbe/fault",
+        "status": "/components/fishProbe/status",
+        "connected": "/components/fishProbe/connected",
+        "measurement": "/components/fishProbe/measurement",
+        "value": "/components/fishProbe/value",
+        "damage": "/components/fishProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "raftProbe",
+      "type": "water-quality-probe",
+      "label": "Raft oxygen \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/raftProbe/active",
+        "running": "/components/raftProbe/running",
+        "fault": "/components/raftProbe/fault",
+        "status": "/components/raftProbe/status",
+        "connected": "/components/raftProbe/connected",
+        "measurement": "/components/raftProbe/measurement",
+        "value": "/components/raftProbe/value",
+        "damage": "/components/raftProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A2",
+        "A4",
+        "A5"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "fish-outlet-to-solidsFilter-inlet",
+      "from": {
+        "component": "fish",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "solidsFilter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/fish-outlet-to-solidsFilter-inlet"
+    },
+    {
+      "id": "solidsFilter-outlet-to-biofilter-inlet",
+      "from": {
+        "component": "solidsFilter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "biofilter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/solidsFilter-outlet-to-biofilter-inlet"
+    },
+    {
+      "id": "biofilter-outlet-to-sump-inlet",
+      "from": {
+        "component": "biofilter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "sump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/biofilter-outlet-to-sump-inlet"
+    },
+    {
+      "id": "sump-outlet-to-returnPump-inlet",
+      "from": {
+        "component": "sump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "returnPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/sump-outlet-to-returnPump-inlet"
+    },
+    {
+      "id": "returnPump-outlet-to-manifold-west",
+      "from": {
+        "component": "returnPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "manifold",
+        "port": "west"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/returnPump-outlet-to-manifold-west"
+    },
+    {
+      "id": "manifold-east-to-fish-inlet",
+      "from": {
+        "component": "manifold",
+        "port": "east"
+      },
+      "to": {
+        "component": "fish",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/manifold-east-to-fish-inlet"
+    },
+    {
+      "id": "manifold-north-to-raftA-inlet",
+      "from": {
+        "component": "manifold",
+        "port": "north"
+      },
+      "to": {
+        "component": "raftA",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/manifold-north-to-raftA-inlet"
+    },
+    {
+      "id": "manifold-south-to-raftB-inlet",
+      "from": {
+        "component": "manifold",
+        "port": "south"
+      },
+      "to": {
+        "component": "raftB",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/manifold-south-to-raftB-inlet"
+    },
+    {
+      "id": "raftA-outlet-to-sump-inlet",
+      "from": {
+        "component": "raftA",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "sump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/raftA-outlet-to-sump-inlet"
+    },
+    {
+      "id": "raftB-outlet-to-sump-inlet",
+      "from": {
+        "component": "raftB",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "sump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/raftB-outlet-to-sump-inlet"
+    },
+    {
+      "id": "sitePower-secondary-to-plc-power",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Control power",
+      "flowBinding": "/flows/sitePower-secondary-to-plc-power"
+    },
+    {
+      "id": "sitePower-secondary-to-returnPump-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "returnPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-returnPump-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-airSupply-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "airSupply",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-airSupply-drive"
+    },
+    {
+      "id": "airSupply-discharge-to-fishAir-inlet",
+      "from": {
+        "component": "airSupply",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "fishAir",
+        "port": "inlet"
+      },
+      "medium": "air",
+      "label": "Aeration air",
+      "flowBinding": "/flows/airSupply-discharge-to-fishAir-inlet"
+    },
+    {
+      "id": "fishAir-bubbles-to-fish-air",
+      "from": {
+        "component": "fishAir",
+        "port": "bubbles"
+      },
+      "to": {
+        "component": "fish",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "Dispersed air \u00b7 separate from water",
+      "flowBinding": "/flows/fishAir-bubbles-to-fish-air"
+    },
+    {
+      "id": "airSupply-discharge-to-bioAir-inlet",
+      "from": {
+        "component": "airSupply",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "bioAir",
+        "port": "inlet"
+      },
+      "medium": "air",
+      "label": "Aeration air",
+      "flowBinding": "/flows/airSupply-discharge-to-bioAir-inlet"
+    },
+    {
+      "id": "bioAir-bubbles-to-biofilter-air",
+      "from": {
+        "component": "bioAir",
+        "port": "bubbles"
+      },
+      "to": {
+        "component": "biofilter",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "Dispersed air \u00b7 separate from water",
+      "flowBinding": "/flows/bioAir-bubbles-to-biofilter-air"
+    },
+    {
+      "id": "airSupply-discharge-to-raftAir-inlet",
+      "from": {
+        "component": "airSupply",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "raftAir",
+        "port": "inlet"
+      },
+      "medium": "air",
+      "label": "Aeration air",
+      "flowBinding": "/flows/airSupply-discharge-to-raftAir-inlet"
+    },
+    {
+      "id": "raftAir-bubbles-to-raftA-air",
+      "from": {
+        "component": "raftAir",
+        "port": "bubbles"
+      },
+      "to": {
+        "component": "raftA",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "Dispersed air \u00b7 separate from water",
+      "flowBinding": "/flows/raftAir-bubbles-to-raftA-air"
+    },
+    {
+      "id": "raftAir-bubbles-to-raftB-air",
+      "from": {
+        "component": "raftAir",
+        "port": "bubbles"
+      },
+      "to": {
+        "component": "raftB",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "air",
+      "flowBinding": "/flows/raftAir-bubbles-to-raftB-air"
+    },
+    {
+      "id": "sitePower-secondary-to-raftLight-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "raftLight",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-raftLight-supply"
+    },
+    {
+      "id": "plc-io-to-raftLight-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "raftLight",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-raftLight-control"
+    },
+    {
+      "id": "raftLight-light-to-raftA-light",
+      "from": {
+        "component": "raftLight",
+        "port": "light"
+      },
+      "to": {
+        "component": "raftA",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "Illustrative light energy",
+      "flowBinding": "/flows/raftLight-light-to-raftA-light"
+    },
+    {
+      "id": "raftLight-light-to-raftB-light",
+      "from": {
+        "component": "raftLight",
+        "port": "light"
+      },
+      "to": {
+        "component": "raftB",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "optical",
+      "flowBinding": "/flows/raftLight-light-to-raftB-light"
+    },
+    {
+      "id": "sitePower-secondary-to-fishProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "fishProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-fishProbe-supply"
+    },
+    {
+      "id": "fish-measurement-to-fishProbe-measurement",
+      "from": {
+        "component": "fish",
+        "port": "measurement"
+      },
+      "to": {
+        "component": "fishProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/fish-measurement-to-fishProbe-measurement"
+    },
+    {
+      "id": "fishProbe-signal-to-plc-io",
+      "from": {
+        "component": "fishProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/fishProbe-signal-to-plc-io"
+    },
+    {
+      "id": "sitePower-secondary-to-raftProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "raftProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-raftProbe-supply"
+    },
+    {
+      "id": "raftA-measurement-to-raftProbe-measurement",
+      "from": {
+        "component": "raftA",
+        "port": "measurement"
+      },
+      "to": {
+        "component": "raftProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/raftA-measurement-to-raftProbe-measurement"
+    },
+    {
+      "id": "raftProbe-signal-to-plc-io",
+      "from": {
+        "component": "raftProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/raftProbe-signal-to-plc-io"
+    }
+  ],
+  "views": [
+    {
+      "id": "water",
+      "label": "Fish treatment & raft return",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "fish",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "solidsFilter",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "biofilter",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "sump",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "returnPump",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "manifold",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "raftA",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "raftB",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fish-outlet-to-solidsFilter-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "solidsFilter-outlet-to-biofilter-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "biofilter-outlet-to-sump-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 880,
+              "y": 155
+            },
+            {
+              "x": 880,
+              "y": 320
+            },
+            {
+              "x": 640,
+              "y": 320
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "sump-outlet-to-returnPump-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 435
+            },
+            {
+              "x": 880,
+              "y": 435
+            },
+            {
+              "x": 880,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "returnPump-outlet-to-manifold-west",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "manifold-east-to-fish-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 155
+            },
+            {
+              "x": 60,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "manifold-north-to-raftA-inlet",
+          "points": [
+            {
+              "x": 160,
+              "y": 340
+            },
+            {
+              "x": 160,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 715
+            },
+            {
+              "x": 60,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "manifold-south-to-raftB-inlet",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 600
+            },
+            {
+              "x": 340,
+              "y": 600
+            },
+            {
+              "x": 340,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "raftA-outlet-to-sump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 280,
+              "y": 715
+            },
+            {
+              "x": 280,
+              "y": 550
+            },
+            {
+              "x": 640,
+              "y": 550
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "raftB-outlet-to-sump-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 550
+            },
+            {
+              "x": 640,
+              "y": 550
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "roots",
+      "label": "Rafts, light & oxygen",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "raftA",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "raftB",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "raftLight",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fish",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fishProbe",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "raftProbe",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "raftLight-light-to-raftA-light",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 292
+            },
+            {
+              "x": 302,
+              "y": 292
+            },
+            {
+              "x": 302,
+              "y": 18
+            },
+            {
+              "x": 160,
+              "y": 18
+            },
+            {
+              "x": 160,
+              "y": 60
+            }
+          ]
+        },
+        {
+          "connection": "raftLight-light-to-raftB-light",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 292
+            },
+            {
+              "x": 602,
+              "y": 292
+            },
+            {
+              "x": 602,
+              "y": 18
+            },
+            {
+              "x": 460,
+              "y": 18
+            },
+            {
+              "x": 460,
+              "y": 60
+            }
+          ]
+        },
+        {
+          "connection": "fish-measurement-to-fishProbe-measurement",
+          "points": [
+            {
+              "x": 810,
+              "y": 340
+            },
+            {
+              "x": 810,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "raftA-measurement-to-raftProbe-measurement",
+          "points": [
+            {
+              "x": 210,
+              "y": 60
+            },
+            {
+              "x": 210,
+              "y": 54
+            },
+            {
+              "x": 306,
+              "y": 54
+            },
+            {
+              "x": 306,
+              "y": 286
+            },
+            {
+              "x": 210,
+              "y": 286
+            },
+            {
+              "x": 210,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Three aeration branches",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "sitePower",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "airSupply",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fishAir",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bioAir",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "raftAir",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "returnPump",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "fish",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "biofilter",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "sitePower-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-returnPump-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-airSupply-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "airSupply-discharge-to-fishAir-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 310
+            },
+            {
+              "x": 630,
+              "y": 310
+            },
+            {
+              "x": 630,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "fishAir-bubbles-to-fish-air",
+          "points": [
+            {
+              "x": 860,
+              "y": 435
+            },
+            {
+              "x": 890,
+              "y": 435
+            },
+            {
+              "x": 890,
+              "y": 590
+            },
+            {
+              "x": 590,
+              "y": 590
+            },
+            {
+              "x": 590,
+              "y": 840
+            },
+            {
+              "x": 410,
+              "y": 840
+            },
+            {
+              "x": 410,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "airSupply-discharge-to-bioAir-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 310
+            },
+            {
+              "x": 330,
+              "y": 310
+            },
+            {
+              "x": 330,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "bioAir-bubbles-to-biofilter-air",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 590,
+              "y": 435
+            },
+            {
+              "x": 590,
+              "y": 590
+            },
+            {
+              "x": 630,
+              "y": 590
+            },
+            {
+              "x": 630,
+              "y": 840
+            },
+            {
+              "x": 710,
+              "y": 840
+            },
+            {
+              "x": 710,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "airSupply-discharge-to-raftAir-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 310
+            },
+            {
+              "x": 30,
+              "y": 310
+            },
+            {
+              "x": 30,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "fish-enabled",
+      "label": "Equipment enabled",
+      "component": "fish",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fish"
+      }
+    },
+    {
+      "id": "fish-load",
+      "label": "Requested duty (%)",
+      "component": "fish",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fish"
+      }
+    },
+    {
+      "id": "fish-fault",
+      "label": "Inject fictional failure",
+      "component": "fish",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fish",
+        "value": true
+      }
+    },
+    {
+      "id": "fish-repair",
+      "label": "Repair selected equipment",
+      "component": "fish",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fish"
+      }
+    },
+    {
+      "id": "solidsFilter-enabled",
+      "label": "Equipment enabled",
+      "component": "solidsFilter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "solidsFilter"
+      }
+    },
+    {
+      "id": "solidsFilter-load",
+      "label": "Requested duty (%)",
+      "component": "solidsFilter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "solidsFilter"
+      }
+    },
+    {
+      "id": "solidsFilter-fault",
+      "label": "Inject fictional failure",
+      "component": "solidsFilter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "solidsFilter",
+        "value": true
+      }
+    },
+    {
+      "id": "solidsFilter-repair",
+      "label": "Repair selected equipment",
+      "component": "solidsFilter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "solidsFilter"
+      }
+    },
+    {
+      "id": "biofilter-enabled",
+      "label": "Equipment enabled",
+      "component": "biofilter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "biofilter"
+      }
+    },
+    {
+      "id": "biofilter-load",
+      "label": "Requested duty (%)",
+      "component": "biofilter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "biofilter"
+      }
+    },
+    {
+      "id": "biofilter-fault",
+      "label": "Inject fictional failure",
+      "component": "biofilter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "biofilter",
+        "value": true
+      }
+    },
+    {
+      "id": "biofilter-repair",
+      "label": "Repair selected equipment",
+      "component": "biofilter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "biofilter"
+      }
+    },
+    {
+      "id": "sump-enabled",
+      "label": "Equipment enabled",
+      "component": "sump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "sump"
+      }
+    },
+    {
+      "id": "sump-load",
+      "label": "Requested duty (%)",
+      "component": "sump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "sump"
+      }
+    },
+    {
+      "id": "sump-fault",
+      "label": "Inject fictional failure",
+      "component": "sump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "sump",
+        "value": true
+      }
+    },
+    {
+      "id": "sump-repair",
+      "label": "Repair selected equipment",
+      "component": "sump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "sump"
+      }
+    },
+    {
+      "id": "returnPump-enabled",
+      "label": "Equipment enabled",
+      "component": "returnPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "returnPump"
+      }
+    },
+    {
+      "id": "returnPump-load",
+      "label": "Requested duty (%)",
+      "component": "returnPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "returnPump"
+      }
+    },
+    {
+      "id": "returnPump-fault",
+      "label": "Inject fictional failure",
+      "component": "returnPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "returnPump",
+        "value": true
+      }
+    },
+    {
+      "id": "returnPump-repair",
+      "label": "Repair selected equipment",
+      "component": "returnPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "returnPump"
+      }
+    },
+    {
+      "id": "manifold-enabled",
+      "label": "Equipment enabled",
+      "component": "manifold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "manifold"
+      }
+    },
+    {
+      "id": "manifold-load",
+      "label": "Requested duty (%)",
+      "component": "manifold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "manifold"
+      }
+    },
+    {
+      "id": "manifold-fault",
+      "label": "Inject fictional failure",
+      "component": "manifold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "manifold",
+        "value": true
+      }
+    },
+    {
+      "id": "manifold-repair",
+      "label": "Repair selected equipment",
+      "component": "manifold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "manifold"
+      }
+    },
+    {
+      "id": "manifold-open",
+      "label": "Flow path open",
+      "component": "manifold",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "manifold"
+      }
+    },
+    {
+      "id": "raftA-enabled",
+      "label": "Equipment enabled",
+      "component": "raftA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "raftA"
+      }
+    },
+    {
+      "id": "raftA-load",
+      "label": "Requested duty (%)",
+      "component": "raftA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "raftA"
+      }
+    },
+    {
+      "id": "raftA-fault",
+      "label": "Inject fictional failure",
+      "component": "raftA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "raftA",
+        "value": true
+      }
+    },
+    {
+      "id": "raftA-repair",
+      "label": "Repair selected equipment",
+      "component": "raftA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "raftA"
+      }
+    },
+    {
+      "id": "raftB-enabled",
+      "label": "Equipment enabled",
+      "component": "raftB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "raftB"
+      }
+    },
+    {
+      "id": "raftB-load",
+      "label": "Requested duty (%)",
+      "component": "raftB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "raftB"
+      }
+    },
+    {
+      "id": "raftB-fault",
+      "label": "Inject fictional failure",
+      "component": "raftB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "raftB",
+        "value": true
+      }
+    },
+    {
+      "id": "raftB-repair",
+      "label": "Repair selected equipment",
+      "component": "raftB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "raftB"
+      }
+    },
+    {
+      "id": "sitePower-enabled",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-load",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-fault",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "sitePower",
+        "value": true
+      }
+    },
+    {
+      "id": "sitePower-repair",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "airSupply-enabled",
+      "label": "Equipment enabled",
+      "component": "airSupply",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "airSupply"
+      }
+    },
+    {
+      "id": "airSupply-load",
+      "label": "Requested duty (%)",
+      "component": "airSupply",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "airSupply"
+      }
+    },
+    {
+      "id": "airSupply-fault",
+      "label": "Inject fictional failure",
+      "component": "airSupply",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "airSupply",
+        "value": true
+      }
+    },
+    {
+      "id": "airSupply-repair",
+      "label": "Repair selected equipment",
+      "component": "airSupply",
+      "action": "repair",
+      "arguments": {
+        "equipment": "airSupply"
+      }
+    },
+    {
+      "id": "fishAir-enabled",
+      "label": "Equipment enabled",
+      "component": "fishAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fishAir"
+      }
+    },
+    {
+      "id": "fishAir-load",
+      "label": "Requested duty (%)",
+      "component": "fishAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fishAir"
+      }
+    },
+    {
+      "id": "fishAir-fault",
+      "label": "Inject fictional failure",
+      "component": "fishAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fishAir",
+        "value": true
+      }
+    },
+    {
+      "id": "fishAir-repair",
+      "label": "Repair selected equipment",
+      "component": "fishAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fishAir"
+      }
+    },
+    {
+      "id": "bioAir-enabled",
+      "label": "Equipment enabled",
+      "component": "bioAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bioAir"
+      }
+    },
+    {
+      "id": "bioAir-load",
+      "label": "Requested duty (%)",
+      "component": "bioAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bioAir"
+      }
+    },
+    {
+      "id": "bioAir-fault",
+      "label": "Inject fictional failure",
+      "component": "bioAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bioAir",
+        "value": true
+      }
+    },
+    {
+      "id": "bioAir-repair",
+      "label": "Repair selected equipment",
+      "component": "bioAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bioAir"
+      }
+    },
+    {
+      "id": "raftAir-enabled",
+      "label": "Equipment enabled",
+      "component": "raftAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "raftAir"
+      }
+    },
+    {
+      "id": "raftAir-load",
+      "label": "Requested duty (%)",
+      "component": "raftAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "raftAir"
+      }
+    },
+    {
+      "id": "raftAir-fault",
+      "label": "Inject fictional failure",
+      "component": "raftAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "raftAir",
+        "value": true
+      }
+    },
+    {
+      "id": "raftAir-repair",
+      "label": "Repair selected equipment",
+      "component": "raftAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "raftAir"
+      }
+    },
+    {
+      "id": "raftLight-enabled",
+      "label": "Equipment enabled",
+      "component": "raftLight",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "raftLight"
+      }
+    },
+    {
+      "id": "raftLight-load",
+      "label": "Requested duty (%)",
+      "component": "raftLight",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "raftLight"
+      }
+    },
+    {
+      "id": "raftLight-fault",
+      "label": "Inject fictional failure",
+      "component": "raftLight",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "raftLight",
+        "value": true
+      }
+    },
+    {
+      "id": "raftLight-repair",
+      "label": "Repair selected equipment",
+      "component": "raftLight",
+      "action": "repair",
+      "arguments": {
+        "equipment": "raftLight"
+      }
+    },
+    {
+      "id": "fishProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "fishProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fishProbe"
+      }
+    },
+    {
+      "id": "fishProbe-load",
+      "label": "Requested duty (%)",
+      "component": "fishProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fishProbe"
+      }
+    },
+    {
+      "id": "fishProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "fishProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fishProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "fishProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "fishProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fishProbe"
+      }
+    },
+    {
+      "id": "raftProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "raftProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "raftProbe"
+      }
+    },
+    {
+      "id": "raftProbe-load",
+      "label": "Requested duty (%)",
+      "component": "raftProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "raftProbe"
+      }
+    },
+    {
+      "id": "raftProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "raftProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "raftProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "raftProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "raftProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "raftProbe"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "fish-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fish",
+      "kind": "toggle",
+      "command": "fish-enabled",
+      "binding": "/controls/fish/enabled"
+    },
+    {
+      "id": "fish-load-control",
+      "label": "Requested duty (%)",
+      "component": "fish",
+      "kind": "range",
+      "command": "fish-load",
+      "binding": "/controls/fish/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fish-fault-control",
+      "label": "Inject fictional failure",
+      "component": "fish",
+      "kind": "button",
+      "command": "fish-fault"
+    },
+    {
+      "id": "fish-repair-control",
+      "label": "Repair selected equipment",
+      "component": "fish",
+      "kind": "button",
+      "command": "fish-repair"
+    },
+    {
+      "id": "solidsFilter-enabled-control",
+      "label": "Equipment enabled",
+      "component": "solidsFilter",
+      "kind": "toggle",
+      "command": "solidsFilter-enabled",
+      "binding": "/controls/solidsFilter/enabled"
+    },
+    {
+      "id": "solidsFilter-load-control",
+      "label": "Requested duty (%)",
+      "component": "solidsFilter",
+      "kind": "range",
+      "command": "solidsFilter-load",
+      "binding": "/controls/solidsFilter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "solidsFilter-fault-control",
+      "label": "Inject fictional failure",
+      "component": "solidsFilter",
+      "kind": "button",
+      "command": "solidsFilter-fault"
+    },
+    {
+      "id": "solidsFilter-repair-control",
+      "label": "Repair selected equipment",
+      "component": "solidsFilter",
+      "kind": "button",
+      "command": "solidsFilter-repair"
+    },
+    {
+      "id": "biofilter-enabled-control",
+      "label": "Equipment enabled",
+      "component": "biofilter",
+      "kind": "toggle",
+      "command": "biofilter-enabled",
+      "binding": "/controls/biofilter/enabled"
+    },
+    {
+      "id": "biofilter-load-control",
+      "label": "Requested duty (%)",
+      "component": "biofilter",
+      "kind": "range",
+      "command": "biofilter-load",
+      "binding": "/controls/biofilter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "biofilter-fault-control",
+      "label": "Inject fictional failure",
+      "component": "biofilter",
+      "kind": "button",
+      "command": "biofilter-fault"
+    },
+    {
+      "id": "biofilter-repair-control",
+      "label": "Repair selected equipment",
+      "component": "biofilter",
+      "kind": "button",
+      "command": "biofilter-repair"
+    },
+    {
+      "id": "sump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "sump",
+      "kind": "toggle",
+      "command": "sump-enabled",
+      "binding": "/controls/sump/enabled"
+    },
+    {
+      "id": "sump-load-control",
+      "label": "Requested duty (%)",
+      "component": "sump",
+      "kind": "range",
+      "command": "sump-load",
+      "binding": "/controls/sump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "sump",
+      "kind": "button",
+      "command": "sump-fault"
+    },
+    {
+      "id": "sump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "sump",
+      "kind": "button",
+      "command": "sump-repair"
+    },
+    {
+      "id": "returnPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "returnPump",
+      "kind": "toggle",
+      "command": "returnPump-enabled",
+      "binding": "/controls/returnPump/enabled"
+    },
+    {
+      "id": "returnPump-load-control",
+      "label": "Requested duty (%)",
+      "component": "returnPump",
+      "kind": "range",
+      "command": "returnPump-load",
+      "binding": "/controls/returnPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "returnPump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "returnPump",
+      "kind": "button",
+      "command": "returnPump-fault"
+    },
+    {
+      "id": "returnPump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "returnPump",
+      "kind": "button",
+      "command": "returnPump-repair"
+    },
+    {
+      "id": "manifold-enabled-control",
+      "label": "Equipment enabled",
+      "component": "manifold",
+      "kind": "toggle",
+      "command": "manifold-enabled",
+      "binding": "/controls/manifold/enabled"
+    },
+    {
+      "id": "manifold-load-control",
+      "label": "Requested duty (%)",
+      "component": "manifold",
+      "kind": "range",
+      "command": "manifold-load",
+      "binding": "/controls/manifold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "manifold-fault-control",
+      "label": "Inject fictional failure",
+      "component": "manifold",
+      "kind": "button",
+      "command": "manifold-fault"
+    },
+    {
+      "id": "manifold-repair-control",
+      "label": "Repair selected equipment",
+      "component": "manifold",
+      "kind": "button",
+      "command": "manifold-repair"
+    },
+    {
+      "id": "manifold-open-control",
+      "label": "Flow path open",
+      "component": "manifold",
+      "kind": "toggle",
+      "command": "manifold-open",
+      "binding": "/controls/manifold/open"
+    },
+    {
+      "id": "raftA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "raftA",
+      "kind": "toggle",
+      "command": "raftA-enabled",
+      "binding": "/controls/raftA/enabled"
+    },
+    {
+      "id": "raftA-load-control",
+      "label": "Requested duty (%)",
+      "component": "raftA",
+      "kind": "range",
+      "command": "raftA-load",
+      "binding": "/controls/raftA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "raftA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "raftA",
+      "kind": "button",
+      "command": "raftA-fault"
+    },
+    {
+      "id": "raftA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "raftA",
+      "kind": "button",
+      "command": "raftA-repair"
+    },
+    {
+      "id": "raftB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "raftB",
+      "kind": "toggle",
+      "command": "raftB-enabled",
+      "binding": "/controls/raftB/enabled"
+    },
+    {
+      "id": "raftB-load-control",
+      "label": "Requested duty (%)",
+      "component": "raftB",
+      "kind": "range",
+      "command": "raftB-load",
+      "binding": "/controls/raftB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "raftB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "raftB",
+      "kind": "button",
+      "command": "raftB-fault"
+    },
+    {
+      "id": "raftB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "raftB",
+      "kind": "button",
+      "command": "raftB-repair"
+    },
+    {
+      "id": "sitePower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "kind": "toggle",
+      "command": "sitePower-enabled",
+      "binding": "/controls/sitePower/enabled"
+    },
+    {
+      "id": "sitePower-load-control",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "kind": "range",
+      "command": "sitePower-load",
+      "binding": "/controls/sitePower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sitePower-fault-control",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-fault"
+    },
+    {
+      "id": "sitePower-repair-control",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "airSupply-enabled-control",
+      "label": "Equipment enabled",
+      "component": "airSupply",
+      "kind": "toggle",
+      "command": "airSupply-enabled",
+      "binding": "/controls/airSupply/enabled"
+    },
+    {
+      "id": "airSupply-load-control",
+      "label": "Requested duty (%)",
+      "component": "airSupply",
+      "kind": "range",
+      "command": "airSupply-load",
+      "binding": "/controls/airSupply/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "airSupply-fault-control",
+      "label": "Inject fictional failure",
+      "component": "airSupply",
+      "kind": "button",
+      "command": "airSupply-fault"
+    },
+    {
+      "id": "airSupply-repair-control",
+      "label": "Repair selected equipment",
+      "component": "airSupply",
+      "kind": "button",
+      "command": "airSupply-repair"
+    },
+    {
+      "id": "fishAir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fishAir",
+      "kind": "toggle",
+      "command": "fishAir-enabled",
+      "binding": "/controls/fishAir/enabled"
+    },
+    {
+      "id": "fishAir-load-control",
+      "label": "Requested duty (%)",
+      "component": "fishAir",
+      "kind": "range",
+      "command": "fishAir-load",
+      "binding": "/controls/fishAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fishAir-fault-control",
+      "label": "Inject fictional failure",
+      "component": "fishAir",
+      "kind": "button",
+      "command": "fishAir-fault"
+    },
+    {
+      "id": "fishAir-repair-control",
+      "label": "Repair selected equipment",
+      "component": "fishAir",
+      "kind": "button",
+      "command": "fishAir-repair"
+    },
+    {
+      "id": "bioAir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "bioAir",
+      "kind": "toggle",
+      "command": "bioAir-enabled",
+      "binding": "/controls/bioAir/enabled"
+    },
+    {
+      "id": "bioAir-load-control",
+      "label": "Requested duty (%)",
+      "component": "bioAir",
+      "kind": "range",
+      "command": "bioAir-load",
+      "binding": "/controls/bioAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bioAir-fault-control",
+      "label": "Inject fictional failure",
+      "component": "bioAir",
+      "kind": "button",
+      "command": "bioAir-fault"
+    },
+    {
+      "id": "bioAir-repair-control",
+      "label": "Repair selected equipment",
+      "component": "bioAir",
+      "kind": "button",
+      "command": "bioAir-repair"
+    },
+    {
+      "id": "raftAir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "raftAir",
+      "kind": "toggle",
+      "command": "raftAir-enabled",
+      "binding": "/controls/raftAir/enabled"
+    },
+    {
+      "id": "raftAir-load-control",
+      "label": "Requested duty (%)",
+      "component": "raftAir",
+      "kind": "range",
+      "command": "raftAir-load",
+      "binding": "/controls/raftAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "raftAir-fault-control",
+      "label": "Inject fictional failure",
+      "component": "raftAir",
+      "kind": "button",
+      "command": "raftAir-fault"
+    },
+    {
+      "id": "raftAir-repair-control",
+      "label": "Repair selected equipment",
+      "component": "raftAir",
+      "kind": "button",
+      "command": "raftAir-repair"
+    },
+    {
+      "id": "raftLight-enabled-control",
+      "label": "Equipment enabled",
+      "component": "raftLight",
+      "kind": "toggle",
+      "command": "raftLight-enabled",
+      "binding": "/controls/raftLight/enabled"
+    },
+    {
+      "id": "raftLight-load-control",
+      "label": "Requested duty (%)",
+      "component": "raftLight",
+      "kind": "range",
+      "command": "raftLight-load",
+      "binding": "/controls/raftLight/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "raftLight-fault-control",
+      "label": "Inject fictional failure",
+      "component": "raftLight",
+      "kind": "button",
+      "command": "raftLight-fault"
+    },
+    {
+      "id": "raftLight-repair-control",
+      "label": "Repair selected equipment",
+      "component": "raftLight",
+      "kind": "button",
+      "command": "raftLight-repair"
+    },
+    {
+      "id": "fishProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fishProbe",
+      "kind": "toggle",
+      "command": "fishProbe-enabled",
+      "binding": "/controls/fishProbe/enabled"
+    },
+    {
+      "id": "fishProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "fishProbe",
+      "kind": "range",
+      "command": "fishProbe-load",
+      "binding": "/controls/fishProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fishProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "fishProbe",
+      "kind": "button",
+      "command": "fishProbe-fault"
+    },
+    {
+      "id": "fishProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "fishProbe",
+      "kind": "button",
+      "command": "fishProbe-repair"
+    },
+    {
+      "id": "raftProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "raftProbe",
+      "kind": "toggle",
+      "command": "raftProbe-enabled",
+      "binding": "/controls/raftProbe/enabled"
+    },
+    {
+      "id": "raftProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "raftProbe",
+      "kind": "range",
+      "command": "raftProbe-load",
+      "binding": "/controls/raftProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "raftProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "raftProbe",
+      "kind": "button",
+      "command": "raftProbe-fault"
+    },
+    {
+      "id": "raftProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "raftProbe",
+      "kind": "button",
+      "command": "raftProbe-repair"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "model-guesses",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "All quantities, coefficients, inventories, timings and fault responses are author-selected teaching indices, not biological or engineering calibration."
+    },
+    {
+      "id": "authored-topology",
+      "label": "Authored demonstration topology",
+      "kind": "illustrative",
+      "description": "One selected process arrangement with separate water, air, optical, power and signal paths. Screen geometry is not physical sizing."
+    },
+    {
+      "id": "A2",
+      "label": "OSU Extension \u00b7 Principles of Small-Scale Aquaponics",
+      "kind": "external",
+      "source": "https://extension.okstate.edu/fact-sheets/principles-of-small-scale-aquaponics",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A4",
+      "label": "FAO \u00b7 Small-scale aquaponic food production",
+      "kind": "external",
+      "source": "https://www.fao.org/3/a-i4021e.pdf",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A5",
+      "label": "Cornell CEA \u00b7 Hydroponic Lettuce Handbook",
+      "kind": "external",
+      "source": "https://cea.cals.cornell.edu/files/2019/06/Cornell-CEA-Lettuce-Handbook-.pdf",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model values are editable teaching assumptions",
+      "value": true,
+      "provenance": "model-guesses"
+    },
+    {
+      "id": "separate-media",
+      "label": "Air and optical energy never add to water inventory",
+      "value": true,
+      "provenance": "authored-topology"
+    },
+    {
+      "id": "no-biology-prediction",
+      "label": "No crop-yield or fish-welfare prediction",
+      "value": true,
+      "provenance": "model-guesses"
+    }
+  ]
+}

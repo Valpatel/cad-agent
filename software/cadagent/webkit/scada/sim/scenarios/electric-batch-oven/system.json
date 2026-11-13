@@ -1,0 +1,646 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "electric-batch-oven",
+    "label": "Electric batch heating cell",
+    "description": "One explicit electrical boundary supplies an isolating breaker and a rack oven. Two views observe the same editable retained-heat model."
+  },
+  "components": [
+    {
+      "id": "supply",
+      "type": "transformer",
+      "label": "Explicit electrical supply boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/supply/active",
+        "running": "/components/supply/running",
+        "fault": "/components/supply/fault",
+        "status": "/components/supply/status",
+        "load": "/components/supply/load",
+        "damage": "/components/supply/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "I1"
+      ]
+    },
+    {
+      "id": "breaker",
+      "type": "breaker",
+      "label": "Batch cell electrical isolation",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/breaker/active",
+        "running": "/components/breaker/running",
+        "fault": "/components/breaker/fault",
+        "status": "/components/breaker/status",
+        "open": "/components/breaker/open",
+        "damage": "/components/breaker/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "I1"
+      ]
+    },
+    {
+      "id": "oven",
+      "type": "rack-oven",
+      "label": "Electric rack / batch oven",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "temperature": 45,
+        "open": false,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/oven/active",
+        "running": "/components/oven/running",
+        "fault": "/components/oven/fault",
+        "status": "/components/oven/status",
+        "load": "/components/oven/load",
+        "temperature": "/components/oven/temperature",
+        "open": "/components/oven/open",
+        "damage": "/components/oven/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "I1"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "supply-breaker",
+      "from": {
+        "component": "supply",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "breaker",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Illustrative AC supply",
+      "flowBinding": "/flows/supply-breaker"
+    },
+    {
+      "id": "breaker-oven",
+      "from": {
+        "component": "breaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "oven",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Illustrative AC supply",
+      "flowBinding": "/flows/breaker-oven"
+    }
+  ],
+  "views": [
+    {
+      "id": "cell",
+      "label": "Batch heating cell",
+      "canvas": {
+        "width": 920,
+        "height": 360
+      },
+      "placements": [
+        {
+          "component": "supply",
+          "x": 40,
+          "y": 80,
+          "width": 220,
+          "height": 200
+        },
+        {
+          "component": "breaker",
+          "x": 350,
+          "y": 80,
+          "width": 220,
+          "height": 200
+        },
+        {
+          "component": "oven",
+          "x": 660,
+          "y": 80,
+          "width": 220,
+          "height": 200
+        }
+      ],
+      "routes": [
+        {
+          "connection": "supply-breaker",
+          "points": [
+            {
+              "x": 260,
+              "y": 180
+            },
+            {
+              "x": 350,
+              "y": 180
+            }
+          ]
+        },
+        {
+          "connection": "breaker-oven",
+          "points": [
+            {
+              "x": 570,
+              "y": 180
+            },
+            {
+              "x": 660,
+              "y": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "equipment",
+      "label": "Oven and supply detail",
+      "canvas": {
+        "width": 920,
+        "height": 560
+      },
+      "placements": [
+        {
+          "component": "oven",
+          "x": 350,
+          "y": 100,
+          "width": 360,
+          "height": 330
+        },
+        {
+          "component": "supply",
+          "x": 40,
+          "y": 80,
+          "width": 220,
+          "height": 200
+        },
+        {
+          "component": "breaker",
+          "x": 40,
+          "y": 340,
+          "width": 220,
+          "height": 200
+        }
+      ],
+      "routes": [
+        {
+          "connection": "supply-breaker",
+          "points": [
+            {
+              "x": 150,
+              "y": 280
+            },
+            {
+              "x": 150,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "breaker-oven",
+          "points": [
+            {
+              "x": 260,
+              "y": 440
+            },
+            {
+              "x": 300,
+              "y": 440
+            },
+            {
+              "x": 300,
+              "y": 265
+            },
+            {
+              "x": 350,
+              "y": 265
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "supply-enabled",
+      "label": "Equipment enabled",
+      "component": "supply",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "supply"
+      }
+    },
+    {
+      "id": "supply-load",
+      "label": "Requested output / load (%)",
+      "component": "supply",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "supply"
+      }
+    },
+    {
+      "id": "supply-fault",
+      "label": "Inject fictional fault",
+      "component": "supply",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "supply",
+        "value": true
+      }
+    },
+    {
+      "id": "supply-repair",
+      "label": "Repair damage",
+      "component": "supply",
+      "action": "repair",
+      "arguments": {
+        "equipment": "supply"
+      }
+    },
+    {
+      "id": "breaker-enabled",
+      "label": "Equipment enabled",
+      "component": "breaker",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "breaker-load",
+      "label": "Requested output / load (%)",
+      "component": "breaker",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "breaker-fault",
+      "label": "Inject fictional fault",
+      "component": "breaker",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "breaker",
+        "value": true
+      }
+    },
+    {
+      "id": "breaker-repair",
+      "label": "Repair damage",
+      "component": "breaker",
+      "action": "repair",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "oven-enabled",
+      "label": "Equipment enabled",
+      "component": "oven",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "oven-load",
+      "label": "Requested output / load (%)",
+      "component": "oven",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "oven-fault",
+      "label": "Inject fictional fault",
+      "component": "oven",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "oven",
+        "value": true
+      }
+    },
+    {
+      "id": "oven-repair",
+      "label": "Repair damage",
+      "component": "oven",
+      "action": "repair",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "breaker-open",
+      "label": "Breaker isolated (open)",
+      "component": "breaker",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "breaker"
+      }
+    },
+    {
+      "id": "oven-open",
+      "label": "Door open (visual only; no interlock model)",
+      "component": "oven",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "oven"
+      }
+    },
+    {
+      "id": "oven-overheated",
+      "label": "overheated",
+      "component": "oven",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "oven",
+        "value": "overheated"
+      }
+    },
+    {
+      "id": "oven-element-fault",
+      "label": "element fault",
+      "component": "oven",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "oven",
+        "value": "element-fault"
+      }
+    },
+    {
+      "id": "oven-door-seal-leak",
+      "label": "door seal leak",
+      "component": "oven",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "oven",
+        "value": "door-seal-leak"
+      }
+    },
+    {
+      "id": "oven-break",
+      "label": "Break oven drive / heat source",
+      "component": "oven",
+      "action": "setDamage",
+      "arguments": {
+        "equipment": "oven",
+        "value": 100
+      }
+    },
+    {
+      "id": "plant-running",
+      "label": "Run shared system",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics · retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "supply-enabled-control",
+      "label": "Equipment enabled",
+      "component": "supply",
+      "kind": "toggle",
+      "command": "supply-enabled",
+      "binding": "/controls/supply/enabled"
+    },
+    {
+      "id": "supply-load-control",
+      "label": "Requested output / load (%)",
+      "component": "supply",
+      "kind": "range",
+      "command": "supply-load",
+      "binding": "/controls/supply/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "supply-fault-control",
+      "label": "Inject fictional fault",
+      "component": "supply",
+      "kind": "button",
+      "command": "supply-fault"
+    },
+    {
+      "id": "supply-repair-control",
+      "label": "Repair damage",
+      "component": "supply",
+      "kind": "button",
+      "command": "supply-repair"
+    },
+    {
+      "id": "breaker-enabled-control",
+      "label": "Equipment enabled",
+      "component": "breaker",
+      "kind": "toggle",
+      "command": "breaker-enabled",
+      "binding": "/controls/breaker/enabled"
+    },
+    {
+      "id": "breaker-load-control",
+      "label": "Requested output / load (%)",
+      "component": "breaker",
+      "kind": "range",
+      "command": "breaker-load",
+      "binding": "/controls/breaker/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "breaker-fault-control",
+      "label": "Inject fictional fault",
+      "component": "breaker",
+      "kind": "button",
+      "command": "breaker-fault"
+    },
+    {
+      "id": "breaker-repair-control",
+      "label": "Repair damage",
+      "component": "breaker",
+      "kind": "button",
+      "command": "breaker-repair"
+    },
+    {
+      "id": "oven-enabled-control",
+      "label": "Equipment enabled",
+      "component": "oven",
+      "kind": "toggle",
+      "command": "oven-enabled",
+      "binding": "/controls/oven/enabled"
+    },
+    {
+      "id": "oven-load-control",
+      "label": "Requested output / load (%)",
+      "component": "oven",
+      "kind": "range",
+      "command": "oven-load",
+      "binding": "/controls/oven/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "oven-fault-control",
+      "label": "Inject fictional fault",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-fault"
+    },
+    {
+      "id": "oven-repair-control",
+      "label": "Repair damage",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-repair"
+    },
+    {
+      "id": "breaker-open-control",
+      "label": "Breaker isolated (open)",
+      "component": "breaker",
+      "kind": "toggle",
+      "command": "breaker-open",
+      "binding": "/controls/breaker/open"
+    },
+    {
+      "id": "oven-open-control",
+      "label": "Door open (visual only; no interlock model)",
+      "component": "oven",
+      "kind": "toggle",
+      "command": "oven-open",
+      "binding": "/controls/oven/open"
+    },
+    {
+      "id": "oven-overheated-control",
+      "label": "overheated",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-overheated"
+    },
+    {
+      "id": "oven-element-fault-control",
+      "label": "element fault",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-element-fault"
+    },
+    {
+      "id": "oven-door-seal-leak-control",
+      "label": "door seal leak",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-door-seal-leak"
+    },
+    {
+      "id": "oven-break-control",
+      "label": "Break oven drive / heat source",
+      "component": "oven",
+      "kind": "button",
+      "command": "oven-break"
+    },
+    {
+      "id": "plant-running-control",
+      "label": "Run shared system",
+      "kind": "toggle",
+      "command": "plant-running",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics · retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every power limit, inventory, heat store, loss and damage response is a toy assumption. No calibrated temperature, recipe, process-quality or safety prediction."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Original illustrative cell layout",
+      "kind": "illustrative",
+      "description": "Coordinates, equipment selection and connections are authored examples, not a verified facility drawing."
+    },
+    {
+      "id": "I1",
+      "label": "Front-loading batch oven structural reference",
+      "kind": "external",
+      "source": "https://www.grievecorp.com/product-category/shelf-loading-ovens/shelf-ovens/",
+      "description": "Front-loading shelf/batch enclosure and stationary product support informed the original generic artwork. No product dimensions, ratings or operating parameters were copied."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "Heat readings are normalized indices, not degrees or setpoints",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "door",
+      "label": "Door opening is a visual command; no interlock or seal-loss equation",
+      "value": true,
+      "provenance": "assumed-model"
+    }
+  ],
+  "units": {
+    "power": "toy power units",
+    "heat": "0–100 retained-heat index; not degrees",
+    "inventory": "toy product stock"
+  }
+}

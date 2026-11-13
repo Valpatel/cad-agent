@@ -1,0 +1,4248 @@
+{
+  "format": "scada-scenario-thumbnails",
+  "version": 1,
+  "source_hashes": {
+    "software/cadagent/webkit/scada/sim/src/adapter.mjs": "8c99c0c4e2e2105aad383af842f9de079c08274c2fb7630a9c3061fb85e722d6",
+    "software/cadagent/webkit/scada/sim/src/components.mjs": "37c08cf5cc551535e3a91669cb02f1921cb9c6d8d2518b3612dda339f59bc90d",
+    "software/cadagent/webkit/scada/sim/src/equation-examples/index.mjs": "30560828d6a724770704f9ee202093249aa03b061eaa9bbddc5187629e95614f",
+    "software/cadagent/webkit/scada/sim/src/equation-examples/physics.mjs": "9e41c63c3867173b7e5009fae1ff8ed5c30616678e5eb0e3eb9cfa0073f8e706",
+    "software/cadagent/webkit/scada/sim/src/equation-examples/providers.mjs": "5d039ff875965871962834899dcd8240ceae894a862470d0c8cdd9612028d625",
+    "software/cadagent/webkit/scada/sim/src/equations/bindings.mjs": "c4580895319da08ac5ae8d0d23f15bafd765abbc0c3a46242c00a5c9f02d4ab3",
+    "software/cadagent/webkit/scada/sim/src/equations/contracts.mjs": "d1ca21b01077bff785ea2f6d0c819f9c305433b361088f1cd501b4e9295062d4",
+    "software/cadagent/webkit/scada/sim/src/equations/index.mjs": "0ca0cd566557246221584cbf4df4ca25f9b774faa624da1b5eb551001a9ebec3",
+    "software/cadagent/webkit/scada/sim/src/equations/runtime.mjs": "aec0a844c31507dbf9d9dc8c949e9f5cdbf957cbc2f8e7f48a9867e9d0645114",
+    "software/cadagent/webkit/scada/sim/src/equations/schema.mjs": "9ca2effd8b7f5c5ea1115e067d7a280f86f9457857ae62a401893ab83a9c898e",
+    "software/cadagent/webkit/scada/sim/src/index.mjs": "be845416fb1507acd4a0fc243a0a11ef6866025a6f5e9ec4985900d7edff45e2",
+    "software/cadagent/webkit/scada/sim/src/model-registry.mjs": "3064d717657ccb07b569587c62106ca8a849ad6bc02745b6ac465ca8b88e9c59",
+    "software/cadagent/webkit/scada/sim/src/placeholder-system.mjs": "4e351901d39ba6a380c855137fecf25604054d3f32a2bc58aec2192320ac8efc",
+    "software/cadagent/webkit/scada/sim/src/type-contracts.mjs": "61fb76fe68e4986c3d050b411258e6ce9eb2efa883ed28cf704d20111d9bfb66",
+    "software/cadagent/webkit/scada/sim/src/v2/circuit-system.mjs": "c284691d92ac39ae3f8837d9e2fe43520dce7af5c02255f40659853e6b35e377",
+    "software/cadagent/webkit/scada/sim/src/v2/contract.mjs": "b91b9685f9b81b635dd1233989049a9cf11a4293f0b05e80df8a7e6aea7a0bb2",
+    "software/cadagent/webkit/scada/sim/src/v2/type-contracts.mjs": "b8570c2ae1ad74ccb915710ebb69cf086c232e51cf60d72450e43c1b453724f7",
+    "software/cadagent/webkit/scada/sim/src/v2/validation.mjs": "1bf59536660dd20d8d5b9f21261902591b34a9303e251c9f641563b74f98e374",
+    "software/cadagent/webkit/scada/sim/src/validation.mjs": "45fa6c10582c8c843fc9def566e8ead4778b7fd368650a4d22aff2a161257421",
+    "software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc/model.json": "037ab0fc79374b2203329c28cefb68fdd098c43e7508a2d1e50bf6922f6e404e",
+    "software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc/system.json": "1babc5c7cc9d25a969175820c20ef24e4bba815365a8611401a145b59f1c190d",
+    "software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/model.json": "92ea7eaea4da018730bcd78d4ae541980a11436b15ab138a6d39dbadd208c31c",
+    "software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/system.json": "78f503b0baead3ff4c3a8eb1f3b868b156fab74a0589e21eb883d226b5852642",
+    "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/model.json": "515e813653a5130b8830a5e8c156760f3af099fc22543cc3960c9bf75414d394",
+    "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/system.json": "043c54e2e7552fd281c591310060db8de998b1b3c1fdd10df347eb900eb0cb3b",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/model.json": "23fd7a230d0ff2ffc11ab99d3b127f1fa781a328149e26cda1e4ebbd4174caec",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "688bf5df79f984f06fa0fbd522b4d34d3603aa1f3f9167dc4410580917f66c79",
+    "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/model.json": "194b851476c5f164a06f7e4a1b2cefd7a29c248b8a30db20ff5123da5a4abc86",
+    "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/system.json": "994c724b5fa6647db78f5f6b5c7e11643fcc4fe7938e21944bb4df426a1fab43",
+    "software/cadagent/webkit/scada/sim/scenarios/cement/model.json": "d1168d767e57baadaecdf5625fab989c234e9e72f8a5cdc644fa651efefb145e",
+    "software/cadagent/webkit/scada/sim/scenarios/cement/system.json": "da0aea9eac5bb68c325cd4d2cab0ddd5f6a9a2d8593e65cba95adb1ed4bd2a7f",
+    "software/cadagent/webkit/scada/sim/scenarios/concrete-batching/model.json": "527cf16ef50ab2a3b05f7c160f85efe0192aca942d0d699bfd7d58d51af12cfa",
+    "software/cadagent/webkit/scada/sim/scenarios/concrete-batching/system.json": "dd492c4d2e9874a5bebb9b9b55b30f5709163bb6b94933d9ae1e9b50946707b2",
+    "software/cadagent/webkit/scada/sim/scenarios/dairy/model.json": "d168879d88945f5ef9aa53e24060825a96c03ddbff0d87cfc521565e145b5ebe",
+    "software/cadagent/webkit/scada/sim/scenarios/dairy/system.json": "5c07284c0a8581c9124ff32b1ee5ba613b9f2a71837b4935975ca4c00cd1db36",
+    "software/cadagent/webkit/scada/sim/scenarios/electric-batch-oven/model.json": "e2c569fef9080a1a8df25dba00954feb6dc2656d800aee31aabad7a951da2619",
+    "software/cadagent/webkit/scada/sim/scenarios/electric-batch-oven/system.json": "6e0fb52116f82dac9dc9772028323e8114ec7ee3caf89f567935702a42cd7375",
+    "software/cadagent/webkit/scada/sim/scenarios/fortune-cookies/model.json": "2178a5cb588ee49f804ee06ba77f9349f42673460d4c83d434d3c529d2ccf551",
+    "software/cadagent/webkit/scada/sim/scenarios/fortune-cookies/system.json": "11a8328e0096987580c4cb07e29f1e894a686aa7e7d05ec4065ab4fbfcf49830",
+    "software/cadagent/webkit/scada/sim/scenarios/fruit-juice/model.json": "eac482667983fb279088cf44468edb751c7bf06ea698f43ba9aa88249b84f744",
+    "software/cadagent/webkit/scada/sim/scenarios/fruit-juice/system.json": "87645edeaca259473578b185a0b35589c0f1923b866861bfd523e3dcb0d415b5",
+    "software/cadagent/webkit/scada/sim/scenarios/greenhouse-drip/model.json": "5f7f8598ee1950039d9e7b9f18cd5127034cc748be5eaaa60f66a434972130f2",
+    "software/cadagent/webkit/scada/sim/scenarios/greenhouse-drip/system.json": "564771e91e59dc4bf1aff61d3eabb5c40ff013d4ff8de37485da3ffa9c6f31db",
+    "software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/model.json": "cb79697c020297cd19b698e78ae4a23a5c0c7a3945fa27c3dee5c7d2ef520e5b",
+    "software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/system.json": "820d566f30912f05e103a34156abf8722341a4263b87436b72e105f879a66cd7",
+    "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/model.json": "045e76e36a81137af619d14ca316232a7127a1677645060a4f322e30855fbf52",
+    "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/system.json": "6b276fef885f43b220bdde06a10941a6aa613bed9fcb5c42ceed23f994075742",
+    "software/cadagent/webkit/scada/sim/scenarios/index.json": "96d824b31317dcfe8088b1bbf5c5ded21acfc1d6d20025885d71ca9bbb87c1e9",
+    "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/model.json": "e552362f01bd27564335ff6eb49375762bb2f93d555fed7994dde48e60324ae7",
+    "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/system.json": "aec3a5cb63f2293b48640abdb5df4cf5d8a4a40d3dedda7fc6d1ea0805011792",
+    "software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/model.json": "b0027e1338f600cb07bee17b8db4a89675c426711ed668418b793203f7956108",
+    "software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/system.json": "e5a17e6ea928b4adf3ab8f072b8199aa9e505b08f803e9a740f0cdc05b502ccf",
+    "software/cadagent/webkit/scada/sim/scenarios/metal-finishing/model.json": "d13ab05183b401ed5ac3430a99955a71cd4ce8094e5795e5d8b85369544ef1db",
+    "software/cadagent/webkit/scada/sim/scenarios/metal-finishing/system.json": "ad161655c4fbf76b8b172f53a79db337707d8a8494ae80027a02f5ed9ccd7ea7",
+    "software/cadagent/webkit/scada/sim/scenarios/mineral-crushing/model.json": "d90b0a1bb49604bcd0a6b3b2eb6abee0e4b4a59ae953068e3d6dd2a9ad6988c6",
+    "software/cadagent/webkit/scada/sim/scenarios/mineral-crushing/system.json": "861b3d3e2361cde9eb30d55577ddaa2b01f34f2351316b6ace02da2e60caea7a",
+    "software/cadagent/webkit/scada/sim/scenarios/mineral-flotation/model.json": "83d203fb1523df24ef923e19d7e0bc4f7dbbc38c8c2eb0d53507f92ae66339ba",
+    "software/cadagent/webkit/scada/sim/scenarios/mineral-flotation/system.json": "1a973db10e6d8733996af1c187ef1e338c233a9989059fda4b024aa0220216ed",
+    "software/cadagent/webkit/scada/sim/scenarios/paint-blending/model.json": "cadb632d00fe1d5671d70cc233bf55975178f075c149109553fb52e2b1aa23ed",
+    "software/cadagent/webkit/scada/sim/scenarios/paint-blending/system.json": "cdd5fc455dcd108b6b1e0e3f3f0c61f4fc287ec855e9bc799e291d11c5428993",
+    "software/cadagent/webkit/scada/sim/scenarios/pharma-oral-liquid/model.json": "9590da78f3e2d02eb75860af2fe7ea91a7ede80483d79b070a8172a466823136",
+    "software/cadagent/webkit/scada/sim/scenarios/pharma-oral-liquid/system.json": "0cae4c3d716f5bdac5a8159f6f5c2a85fb601f557be2274a7b4c88cd885ec09c",
+    "software/cadagent/webkit/scada/sim/scenarios/polymer-extrusion/model.json": "50ded93ebc86fe56615cdc150d58ebed8b5d6e2dd91ea2bad70eb177f310ba13",
+    "software/cadagent/webkit/scada/sim/scenarios/polymer-extrusion/system.json": "3dcb69bf25273bff7a93bf57e398b2969e3b5ba6a24535550fae64deb6163855",
+    "software/cadagent/webkit/scada/sim/scenarios/power-battery-storage/model.json": "e4e6db34434ef581321049e3f41e047b8a47be841af8a24c2c41fda58b651df0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-battery-storage/system.json": "9fb54a65c2f47b219f982beb4eee1d73452d4e0509b180de3a7e1dcf374d3c7b",
+    "software/cadagent/webkit/scada/sim/scenarios/power-biomass-chp/model.json": "19cca5874e3145b3a42ff4f0b2b15a225921cf4af50a606045121523b01ceaea",
+    "software/cadagent/webkit/scada/sim/scenarios/power-biomass-chp/system.json": "cc7c7c6fdc6690e49bd17c87c102439a9ccd39c7084fc2a60f385cc14800329c",
+    "software/cadagent/webkit/scada/sim/scenarios/power-coal-steam/model.json": "9bedce58ced0b50a77659d2eb2378158a1e738116c8b8a73e88ac62d2274cb72",
+    "software/cadagent/webkit/scada/sim/scenarios/power-coal-steam/system.json": "1a6164860af2e993331e95a778aee79542a217701f93e84932030ea87b14e8a6",
+    "software/cadagent/webkit/scada/sim/scenarios/power-csp-tower/model.json": "47307ba56084578466bb617193a62cb44d7d0170a4b869629ce34da70cebcd03",
+    "software/cadagent/webkit/scada/sim/scenarios/power-csp-tower/system.json": "4672c205551465865fb6cd32a264a5517d974e60fc31754f5351508477c18ca5",
+    "software/cadagent/webkit/scada/sim/scenarios/power-csp-trough/model.json": "71023ab06fbff9bab1875f22cc3a45cc31851c0d5e716aef083894cddf9ed690",
+    "software/cadagent/webkit/scada/sim/scenarios/power-csp-trough/system.json": "ba58dfb403fcdd8b92b9f3f5965d9ea106db2cddd7de2d8671bc383f27808d27",
+    "software/cadagent/webkit/scada/sim/scenarios/power-diesel-standby/model.json": "f3d036582a1a95f0a908f8b4d46c42841e47e65b75da811cf42d57d5d788e6cd",
+    "software/cadagent/webkit/scada/sim/scenarios/power-diesel-standby/system.json": "173fc083e98a250376bbaa88db0147b8fbdef8ad5a0b5bc4fe0207693e6d5295",
+    "software/cadagent/webkit/scada/sim/scenarios/power-fuel-cell/model.json": "a38032a3bb679fafaa06ed63cd8f3f3c1d79c14ec7086ad4464fe9d8e02053db",
+    "software/cadagent/webkit/scada/sim/scenarios/power-fuel-cell/system.json": "33411b3c265dacba2f1130a0ab6bb4cb47d19b2c615ad5a49703d609fe5b3456",
+    "software/cadagent/webkit/scada/sim/scenarios/power-gas-combined-cycle/model.json": "fd646a7b88c1193ece3bde543edcd48d0bc4638434a140387f50405f7d48e0de",
+    "software/cadagent/webkit/scada/sim/scenarios/power-gas-combined-cycle/system.json": "507f3d6956580239de037b6bc43979850716f82ca427d8be61cdbc646be43f4a",
+    "software/cadagent/webkit/scada/sim/scenarios/power-gas-simple-cycle/model.json": "6c872ac894e32544ccc19cfda560b75ed121e86c94062dfad8f292e533a9d25d",
+    "software/cadagent/webkit/scada/sim/scenarios/power-gas-simple-cycle/system.json": "dbbe4f14e68717998ffbebd527bde2fcf0261dd34de9f0de92454a40c97fde52",
+    "software/cadagent/webkit/scada/sim/scenarios/power-gasoline-portable/model.json": "e7dfa3fdbdd393ca75b28dbf23dac4d3bba5d5817a45439b90890baded8c3b6c",
+    "software/cadagent/webkit/scada/sim/scenarios/power-gasoline-portable/system.json": "a5b91c2dd25a27669f34e628f0a8b8626257ddd2bdccfe036187ff45186de144",
+    "software/cadagent/webkit/scada/sim/scenarios/power-geothermal-binary/model.json": "4d65518143071c5626776b90fc77025bde1e842a7c4e9ec63eac8320f67216c0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-geothermal-binary/system.json": "63aaeda9d121916c5eb0dcf2e8b802f9055159dca687e1c67dbee0885c2c8e75",
+    "software/cadagent/webkit/scada/sim/scenarios/power-geothermal-dry-steam/model.json": "619e1f6d784ac5a292bb96712227b3a2c4be1ccfdd5b50718397f399cfe2eb1b",
+    "software/cadagent/webkit/scada/sim/scenarios/power-geothermal-dry-steam/system.json": "43cff44e824871f9581f17e8675f6c5650ca46f20ddf579db957e6f9fcf2e9b8",
+    "software/cadagent/webkit/scada/sim/scenarios/power-geothermal-flash/model.json": "cf07d8d80e8b447454dfaf5ee9f12ac939080a092008a400dc478422d67087f7",
+    "software/cadagent/webkit/scada/sim/scenarios/power-geothermal-flash/system.json": "cdc955861a3b8eae80ef26b50b024094907b2775f0a0592c4db9e4d43c0f3f25",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hvdc-interface/model.json": "e15d7fe48066b54f5cca375ca1772f7d61276cd9f9f34ae7e40070d017cf3bf6",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hvdc-interface/system.json": "56ee766964ff01cbfa943012acd932107b078ba30fb1f4e941f8f6d469df81e9",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hybrid-microgrid/model.json": "1896fce69dd11a9195cb9ae38d10ac3722ed46d084186c6b89555692c31f4104",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hybrid-microgrid/system.json": "dab39c185115ad1f29315332b6c0f9a21ab03234c3ebcb13804ae7611aa1b2e0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hydro-diversion/model.json": "cec5f6c544803a96fe5d2516fda93b54ad205c4254a380dbd39ad4b58fff5cde",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hydro-diversion/system.json": "7edcae9a812de7af03aca049e4bbceebf566b5e54a91c062c7e7384e438f0da0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hydro-impoundment/model.json": "712c125b90cc6bc44d2c06c1dbe37f0d4275a88978b6e9ef50aac8c5753391ae",
+    "software/cadagent/webkit/scada/sim/scenarios/power-hydro-impoundment/system.json": "7226d3c6ddff635180ee24beafabff2f60e38c8c6d03a671859ac5579d009c21",
+    "software/cadagent/webkit/scada/sim/scenarios/power-ng-engine-chp/model.json": "668797a7993f96af6dd84ecb978d513ae90d804dc03236ff50e16f0d5c90a6ea",
+    "software/cadagent/webkit/scada/sim/scenarios/power-ng-engine-chp/system.json": "6992e380a8acdb95ead51cb870ee7655c4a2a63bc37ad4985025568b4d587090",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-bwr/model.json": "222ff278c23f48019381896f42f08410d1996ded7e31eb518703387a0af3ea0a",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-bwr/system.json": "e21abf9f0a150a0654d71489a45864d6066012a4db3737b03db19b511a55bbc0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-htgr/model.json": "c4b5b0e54c44f04dcbc0f6b7d5fd3cdf9d27f14284c5f18cd8548f88722ba178",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-htgr/system.json": "7134e95adb53fc2e993e930151165937057333d457f7e00152d4ca6ff3a2ddc7",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-lw-smr/model.json": "0ba2881105bc2e320e74607b1b3e96602b92a638dcec1a95b209deca61d73132",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-lw-smr/system.json": "829e40eaeb7aeb565bb82a8c45bd26c759df0ffee62ea324209600fd486f3005",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-molten-salt/model.json": "84466c28991d5de7799d90b95cb18f14f56c6b5bf50cb86abcd6a9cec56fb90f",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-molten-salt/system.json": "c92017767c7d774f2b84d95a560bbdd08d0208ecbdad84eb54d347a1395a1df8",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-phwr/model.json": "83f9c46fc1557ede49490fac7f19a646ac3f2a75c8a095d4537b008eabc1b096",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-phwr/system.json": "85b55acf8b201db1c56fa752322c01054ed85f5d15f05338bd55ea3ea242d654",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-pwr/model.json": "a04cf077167d0d13800a7f65754ebe451d2c94eccfb725559eb5a976504fb4cf",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-pwr/system.json": "a188588414ed721106a9c49ad112402ffa4f64ee162bf57deaf672718b6b0ffd",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-sodium-fast/model.json": "90d1af9ef3458b5d47ac063938c3181ddbec664d6fc36fa8c1d588905cd1a02a",
+    "software/cadagent/webkit/scada/sim/scenarios/power-nuclear-sodium-fast/system.json": "c30ac323126cb618e026bf0c35d274d9c464f247de6b11b3636747ed99f48642",
+    "software/cadagent/webkit/scada/sim/scenarios/power-pumped-storage/model.json": "4f0860fa73595a3685046653926dfa5f2f829b6ae4ccb17116770b664d4c4853",
+    "software/cadagent/webkit/scada/sim/scenarios/power-pumped-storage/system.json": "8be311c02d8f918d31538ce690819c83c9293a80e444382ed0a8a1bd61b2fcb8",
+    "software/cadagent/webkit/scada/sim/scenarios/power-solar-pv/model.json": "3d1bc57431c47636e699b5865d1b5dbb2058d72b29ef8021014bd60d9c9478e1",
+    "software/cadagent/webkit/scada/sim/scenarios/power-solar-pv/system.json": "0934d6ebe50455d3cc30b8343d44a1d78954163999629ad5ae3c43b268e7f70b",
+    "software/cadagent/webkit/scada/sim/scenarios/power-substation-distribution/model.json": "a87b551148ae6165a3804523539900227e1e6b5430a461d95d8a932faad9bfb1",
+    "software/cadagent/webkit/scada/sim/scenarios/power-substation-distribution/system.json": "3265501ea043cfbda4040557e8dd612de14c19c319f9d81aeb1eccb5f217bd9f",
+    "software/cadagent/webkit/scada/sim/scenarios/power-substation-gis/model.json": "b36fe428a4898449f576aed2d5dcd71e729bfdc10ab4ee7056f882859a1fb00c",
+    "software/cadagent/webkit/scada/sim/scenarios/power-substation-gis/system.json": "8b93be5ddb79318b3fd77cf208c79945c4e95bfe2501da5a1345d38d802369c0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-substation-gsu/model.json": "c56f9c5402c12d94780b981a8f42dbf91278b9f3948c5a58bfd555b3e1e4f454",
+    "software/cadagent/webkit/scada/sim/scenarios/power-substation-gsu/system.json": "4ac4f1c8bf2b5c73ddf21c1cf89aad2ce1fb327555661ba188874f64cb7db90a",
+    "software/cadagent/webkit/scada/sim/scenarios/power-tidal-current/model.json": "3e5914ee9777a69e826207ca0492bc41394900b1fb4df50abb9069d6aba0c523",
+    "software/cadagent/webkit/scada/sim/scenarios/power-tidal-current/system.json": "68d803af51924999238758a3749f99e079bab91d7e8392c6c7a130582a7e54e0",
+    "software/cadagent/webkit/scada/sim/scenarios/power-wave-point-absorber/model.json": "3a7e1ff043ec1feeb02a557a3d1daf1d501fff4270464c55c39914e078491254",
+    "software/cadagent/webkit/scada/sim/scenarios/power-wave-point-absorber/system.json": "306c9e9f3b06992f016e843bd3ebd8400ed4c1ca24d81d7740b4982ffc40c620",
+    "software/cadagent/webkit/scada/sim/scenarios/power-wind-collection/model.json": "5d2ad35436e92a575f1998001d02db83828594814e7f2e738de78a7ba9aaab65",
+    "software/cadagent/webkit/scada/sim/scenarios/power-wind-collection/system.json": "6bfe5f667c09cae5830d0afa6a5fa13aff6781f088d15fcad0ac4a6291c35882",
+    "software/cadagent/webkit/scada/sim/scenarios/pulp-paper/model.json": "830897a2a2dc0ab12c095e599fe3a97fa9946e2c41f22a70e38b619c10af738d",
+    "software/cadagent/webkit/scada/sim/scenarios/pulp-paper/system.json": "39fae82ec54ddc24988b0fdb31ef63f7a6120d5a8db2c4f2d05ca9ca0f826a73",
+    "software/cadagent/webkit/scada/sim/scenarios/shampoo/model.json": "809c81732d30b242165b1a1f59b2a5372c9868ae565af8f66861dfd4f183ada1",
+    "software/cadagent/webkit/scada/sim/scenarios/shampoo/system.json": "37c5b006585d1dff3033b202f731c1740b3947142b9f6539b14d5a3467dcbaf1",
+    "software/cadagent/webkit/scada/sim/scenarios/sterile-filling/model.json": "b90cd55526358338c64d3911fa2ee7d6b8cdcfc76bebfe5a9f86f5257303f577",
+    "software/cadagent/webkit/scada/sim/scenarios/sterile-filling/system.json": "230c13cc69caff1928358ed52c4d6aed557c9c3be32ea36ec9f2f4a6db75bf07",
+    "software/cadagent/webkit/scada/sim/scenarios/tablets/model.json": "aa50cbab2e1f312a0a93ddc54b2060a7ac7a2d03d37c28a344bd4353006ef2a7",
+    "software/cadagent/webkit/scada/sim/scenarios/tablets/system.json": "554d26afda550592b675c246624cfaf03f5f5a59e9637b6d3be85cbb6d7e7f1a",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "de0bce5e0bb09f74ad4e3cd2104bca19848bf7ffecd1cd07fbbf0b5a8d1f0f85",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "c98caa4016a3c07d74a55e17c76ffc451e408528087a8e363fcdc5c2aa5e58df",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "5d69288356914f610617d1f55e139dc484e10020cc88aad9668edcc0dd3951e1",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "5b34ef9975887e5ebe4348d1465cfe0ecf98e43a8da3f1d5a20a09fcde9b0da9",
+    "software/cadagent/webkit/scada/sim/examples/equation-models/heater-bench.mjs": "ee0f6adff8a60b7501c315ccc76d25058021a5d77fa786d1c66ebe38446b5cba",
+    "software/cadagent/webkit/scada/sim/examples/equation-models/pump-bench.mjs": "796519288c6ee2a6d6fa1dd86e5dc327ee9521ecab4956c7720744decd9d8276",
+    "software/cadagent/webkit/scada/sim/examples/equation-models/pump-parameters.json": "d7b91d4d148c761387388170de32b246e9d14b024a66b2357547c9d5179dc275",
+    "software/cadagent/webkit/scada/sim/examples/equation-models/run.mjs": "195d92611e2bc9c803e46264a678d1f8b90bce6356627beda82a935417332322",
+    "software/cadagent/webkit/scada/sim/examples/external-adapter/adapter.mjs": "80ae7df86934155e5361ac21ef44940f1c34457cf49c812a7c75c9b49faa657c",
+    "software/cadagent/webkit/scada/sim/examples/external-adapter/fake-engine.mjs": "199c3a9a2e2b3654d51e95f764060d7e79e31dd7d03180931413c11cb662e534",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/bench.mjs": "cb074dcac44c6c22ef0688c5abb1f1ed2cb76d99094b2d7884f0850f69aa2e71",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/index.html": "95c6cb3be582242d8c211d40c33e1a903033554d0e02f7abf1ee66af383483cb",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/main.mjs": "61405ef08688dfbd13c530b3d12ac7d2d2ea8ee1d34f1a2cb05e47bb26c8d229",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/styles.css": "fbcdf6da77f1d806d599a932a914a692df68e37e3edc178b4f36dad45707f156",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/system.json": "da880bbece64b0e5da801f513a73e17fb8251d5dc57ac926ab6fe1f84c0da88a",
+    "software/cadagent/webkit/scada/explorer/index.html": "b727159649ed1369094aa7904c25ed620552f59d6bf0258b65e086bc401dc768",
+    "software/cadagent/webkit/scada/explorer/main.mjs": "2d1461ea31aae8d0bbf2e9ed43f6327173176872f1f1023195bd5f19357ce8a4",
+    "software/cadagent/webkit/scada/explorer/model-editor.mjs": "4e887bb9896bb7bf1e23d30984773903cba0a860116c1b405c806fb966a99061",
+    "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
+    "software/cadagent/webkit/scada/explorer/selection.mjs": "a513e7bf6545805e8cc8efa0ee4c20b68ebe04ac28cf2eb56e92073044a7ad7a",
+    "software/cadagent/webkit/scada/explorer/sound.mjs": "35b5fb0ea8f76d42477ef6ce75284da2e0064e466da5c08c7253f2088b2e49d5",
+    "software/cadagent/webkit/scada/explorer/styles.css": "af312e95852d038d31ec1b31ab6348f0d9fe8ed8213e50e9969eea55cf5ccd7a",
+    "software/cadagent/webkit/scada/ui/src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
+    "software/cadagent/webkit/scada/ui/src/catalog/definitions/industrial.mjs": "9e00d1b0246ebce249a1d577541eeeed4f751b4207178761fd8d0b0e190af575",
+    "software/cadagent/webkit/scada/ui/src/catalog/definitions/power.mjs": "91a40bc3f3626018b6ab046c222f23e701cc52cf0835946a897c10d0aea1ab48",
+    "software/cadagent/webkit/scada/ui/src/catalog/discovery.mjs": "083bac2a197cdd2c5f117cfd91ed07e39c4cf1bdf5faa776f4cc8896b96a2494",
+    "software/cadagent/webkit/scada/ui/src/catalog/registry.mjs": "41ade040fa118a07758a757ca903885377393ebb5053cdf7d63a05bbbd1c64e9",
+    "software/cadagent/webkit/scada/ui/src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
+    "software/cadagent/webkit/scada/ui/src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
+    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
+    "software/cadagent/webkit/scada/ui/src/index.mjs": "4bdb88afb8fdd2ba31ae694db2b18992d6c6303c3cd8586b86e21fcc59d03f97",
+    "software/cadagent/webkit/scada/ui/src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
+    "software/cadagent/webkit/scada/ui/src/scada-agriculture-art.css": "32c0eaa50ca095c128041ecebb092ab75984685e968e8274ea50ae5b61e5f337",
+    "software/cadagent/webkit/scada/ui/src/scada-agriculture-art.mjs": "8ae56df8632593157e2932371c03fedb3bccaa2e0b4b23e42734b0ff2d50bcc6",
+    "software/cadagent/webkit/scada/ui/src/scada-agriculture-definitions.mjs": "3070263e9baf9d75492a50c19c457814ffb3d5f89bfa503611884443bf021015",
+    "software/cadagent/webkit/scada/ui/src/scada-catalog.mjs": "ea8646112588e4d0688daaafe0bdefc6ff4bceafbd84ba33da7ff24c5fe85285",
+    "software/cadagent/webkit/scada/ui/src/scada-components.css": "204cca86073193d953dfc79244904b535b97172f674b3f36a2c42e328035e671",
+    "software/cadagent/webkit/scada/ui/src/scada-components.mjs": "8621053efdfd03aa7482d81c669d8415b4ff331c44f780f6a3adb2c729cf9843",
+    "software/cadagent/webkit/scada/ui/src/scada-control-art.mjs": "4a3c8febcadb5cd34e4998909f8be084189820de91b0d3df3563335966988f67",
+    "software/cadagent/webkit/scada/ui/src/scada-electrical-art.mjs": "7216894ff0df211fcabda43dd5a34d955660bd366337a3dea01a569aa3e2027a",
+    "software/cadagent/webkit/scada/ui/src/scada-energy-art.mjs": "bcec93b778360c3e7eb6c43adeddddce21e411d2559c0ef690f7d8fda2a97810",
+    "software/cadagent/webkit/scada/ui/src/scada-expansion.mjs": "6b9ca92dd7e17dad252b0da3ce9b7326d6574c1266ab5b22526b98a9c6fbc346",
+    "software/cadagent/webkit/scada/ui/src/scada-genset-art.mjs": "d014f381d1297143b74f691e11e9f8daafc1c4cc74295612fd5fa0bef1d3c1b0",
+    "software/cadagent/webkit/scada/ui/src/scada-industrial-art.css": "632e7b0a9b4441b6ed014e580da4c5a71f59d2b0c3204ff326fab7f8683f47be",
+    "software/cadagent/webkit/scada/ui/src/scada-industrial-art.mjs": "22151fe5026301b1109b8c08dc018526a5bb7b5544ab14a802d07abd9542ed68",
+    "software/cadagent/webkit/scada/ui/src/scada-nuclear-art.css": "e6657c2dedd286e0a0c41bbdc36178b0b75d4b2248be0b31f2b259f0bb8d38ac",
+    "software/cadagent/webkit/scada/ui/src/scada-nuclear-art.mjs": "133c2216f86f635c4cedfac963f259968c3dc3f48299e2c04433b05852c5539d",
+    "software/cadagent/webkit/scada/ui/src/scada-power-art-primitives.mjs": "62304d20eeb106ac492d9a23e228893a52e7fc8a05f7f15f637773b8f7d22ad3",
+    "software/cadagent/webkit/scada/ui/src/scada-power-art.css": "91669024277dbd0ad84b1a814f84c7281975be497715a94d7446212f0e0d598f",
+    "software/cadagent/webkit/scada/ui/src/scada-power-expansion.mjs": "b729257c3c2241fe7e9213f404534eef01328e2738500d866a2e15e5c8ee2d0b",
+    "software/cadagent/webkit/scada/ui/src/scada-process-art.css": "6f3cfcd6060930cca9021a0da8404fd763e25d91cb44baa4f4d1f6ed6af2dc07",
+    "software/cadagent/webkit/scada/ui/src/scada-process-art.mjs": "dffbb04a8a15328af75af09624b9595098f29c38692c8971fadebff1ea2579da",
+    "software/cadagent/webkit/scada/ui/src/scada-selection.mjs": "aff94d1d84ba257f80c166e6771dc21c2206262a301f3be00ecec97fcf26896b",
+    "software/cadagent/webkit/scada/ui/src/scada-utility-variants.mjs": "e28627aaad6653d1558e29303dcef708522ae1fe71fe29fb35b842a0cddc0e66",
+    "software/cadagent/webkit/scada/ui/src/scada-viewer.css": "19bc734f7924f7ffe3c9278c97902b2aede29064d1b5229f15d621d74244a87c",
+    "software/cadagent/webkit/scada/ui/src/scada-viewer.mjs": "c759c0295b4a7e8621271374cdc7c1bca2a3e9c08deb4c7ba54876a27868159a",
+    "software/cadagent/webkit/scada/ui/src/scada-workspace.css": "008cd6b4c854e73ce8ecf1fd76e96c72880afea7eac69f5a9ba55dcac977e289",
+    "software/cadagent/webkit/scada/ui/src/scada-workspace.mjs": "87f8cafa7a795dbd38d89f00dd5df8510bb0a10bdec82b1efb7b6d916c6ac806",
+    "software/cadagent/webkit/scada/ui/src/styles.css": "6827e63a1875820905ee63f8d61d8562df088e65aa9b9a7007963d5862643d1c",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/agriculture.css": "619c06b0a6eaf25e2dad45e5e102cb8b4549598f422c6d7b24b7d1886a2ac1b7",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/agriculture.mjs": "949ba99f9bd1e4bc788f34fca83df26d1e09892241128f18eeb0693a18e826fb",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/control.mjs": "ee5edd0d3aa567c0dd2fbbe3914552999afeae1cee645598c6a8ec1e814c8dda",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/industrial.css": "d4820ce4338d2aa9757cb65cf74799e7e20be07e20f992793bba9aa71856556d",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/industrial.mjs": "a5a285ea2e62cc58258e03a58f2fb72638f65a112cef6f4d971dd9fc992f240f",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/process.css": "25d3db4a55b963c2ded21e3725d77871d22c369391f5fe180d321432bce5c65b",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/process.mjs": "f9f73f097e5534f9119425fad9a5aa20ea402264da042581aa862e16bcb17ce0",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/twin.css": "b530ab2fdc6319d0c0e56ddfe814e0a1f8ca3fbd412bb0e45b25b2ddabde8fac",
+    "software/cadagent/webkit/scada/ui/src/symbols/art/twin.mjs": "bd79eb3521fc4c98bececa67679c00c1fa2c2d98ba465ba471aa08d98745c4a7",
+    "software/cadagent/webkit/scada/ui/src/symbols/components.css": "9291ad91717ac0f770bc2a79291d4191e8b269f966e2b81ca7b377b846aacdd3",
+    "software/cadagent/webkit/scada/ui/src/symbols/components.mjs": "72b2c4843229f54e0e347678b776b1a640a12dcfc756313eac238e2ee2874ab6",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/electrical.mjs": "7d27d7978e8cf260e71ce8f6120f9a9e98a00e3db94a2f65224ab12177746f1d",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/energy.mjs": "fbdca8a2ae023d523ec7c102329a87b51ad7005824993ec63de65ab3eabb9531",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/generators.mjs": "3248da64356d6314cc68e2a4e5183592b55d3bbd9549d56037d002d944b32e3f",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/nuclear.css": "abcabbaf7128784b50000e27796d0486c39125918d2905188dda79fe67c595d1",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/nuclear.mjs": "b669848e4bad9eb88e058941e57c3d9df733353c524634a700c22ee8c056e1c4",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
+    "software/cadagent/webkit/scada/ui/src/system-definition.mjs": "6bad8dee0b2e300ea229fcea8f26c668ef25044992e62bc09fb53cea1577c4a1",
+    "software/cadagent/webkit/scada/ui/src/twin-art.css": "d894e4897da2d5ddf0d0b807a5f1b66f243a3efe21837453968aa2c781c130d7",
+    "software/cadagent/webkit/scada/ui/src/twin-art.mjs": "e820d8e0f926278af7cd95549caf291c2fc90aa55fc012740bbfd083180a581d",
+    "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "7f605bd3676000c99db8fd89e653410b03cb11b6fda0e5e10b61131740c8880b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "bb0cc5abb96379872649d1ce88e10ca979721180eb80da7873d626ffce3f543a",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "ceeb9735373404d0e761e7574f00e2b517dd1762e57fe94e803c02d3a2238de4",
+    "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
+    "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085"
+  },
+  "generator_sha256": "51c56be9126dbb42bb5b9896ec8de2003e3a697225436da1b12a0662ae903d83",
+  "capture_helper_sha256": "2d767c6b3ab41936f2d199969612c12150c228e8259c30623fccf72d95bf1ffa",
+  "capture": {
+    "renderer": "Chromium software rendering, sRGB",
+    "format": "jpeg",
+    "quality": 85,
+    "viewport": {
+      "width": 1440,
+      "height": 1600
+    },
+    "model_minutes": 0,
+    "running": false,
+    "animation_frame_ms": 1200,
+    "crop": "Actual contained viewer after Zoom to fit; overview scale depends on the viewport and declared diagram bounds."
+  },
+  "scenarios": [
+    {
+      "id": "wastewater-digester",
+      "title": "Wastewater & biogas digital twin",
+      "sector": "Water & utilities",
+      "view": "treatment",
+      "system": "wastewater-digester/system.json",
+      "model": "wastewater-digester/model.json",
+      "components": 17,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1160,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 1160,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 79,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 79,
+          "y": 75,
+          "width": 1160,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "aeration",
+          "clarifier",
+          "effluent",
+          "influent",
+          "liftPump",
+          "screen"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "aeration",
+          "clarifier",
+          "effluent",
+          "influent",
+          "liftPump",
+          "screen"
+        ]
+      },
+      "path": "img/thumbnails/wastewater-digester.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 108175,
+      "sha256": "17d406e39a4886fb0f4d90ef7ac982f6d37e83852dd34849027f3feb0813f6d7"
+    },
+    {
+      "id": "winery",
+      "title": "Winery",
+      "sector": "Food & beverage",
+      "view": "process",
+      "system": "winery/system.json",
+      "model": "winery/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "aging",
+          "bottler",
+          "crusher",
+          "extraction",
+          "fermenter",
+          "grapeIntake",
+          "mustTransfer",
+          "packer",
+          "polishing",
+          "transferValve"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "aging",
+          "bottler",
+          "crusher",
+          "extraction",
+          "fermenter",
+          "grapeIntake",
+          "mustTransfer",
+          "packer",
+          "polishing",
+          "transferValve"
+        ]
+      },
+      "path": "img/thumbnails/winery.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 111678,
+      "sha256": "f13c41c95d36917c59e55522e915544d35ba34e8cb14eb16fdd94d524433c5c8"
+    },
+    {
+      "id": "brewery",
+      "title": "Brewery",
+      "sector": "Food & beverage",
+      "view": "process",
+      "system": "brewery/system.json",
+      "model": "brewery/model.json",
+      "components": 16,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "conditioning",
+          "cooler",
+          "fermenter",
+          "filler",
+          "grainSilo",
+          "kettle",
+          "lauter",
+          "mash",
+          "mill",
+          "packer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "conditioning",
+          "cooler",
+          "fermenter",
+          "filler",
+          "grainSilo",
+          "kettle",
+          "lauter",
+          "mash",
+          "mill",
+          "packer"
+        ]
+      },
+      "path": "img/thumbnails/brewery.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 110560,
+      "sha256": "2929f57f27e6714523f53c5fc094cb5619f239a531c3dfd0d8aba474bd7f2d43"
+    },
+    {
+      "id": "fortune-cookies",
+      "title": "Fortune-cookie factory",
+      "sector": "Food & beverage",
+      "view": "process",
+      "system": "fortune-cookies/system.json",
+      "model": "fortune-cookies/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "batter",
+          "coolingBelt",
+          "depositor",
+          "flour",
+          "folder",
+          "metering",
+          "oven",
+          "packer",
+          "transfer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "batter",
+          "coolingBelt",
+          "depositor",
+          "flour",
+          "folder",
+          "metering",
+          "oven",
+          "packer",
+          "transfer"
+        ]
+      },
+      "path": "img/thumbnails/fortune-cookies.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 111605,
+      "sha256": "f606627eb1b9af18913138df5a0096de90806d7b4865008ffc02bf38bf2cb637"
+    },
+    {
+      "id": "shampoo",
+      "title": "Shampoo blending",
+      "sector": "Consumer products",
+      "view": "process",
+      "system": "shampoo/system.json",
+      "model": "shampoo/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "base",
+          "blend",
+          "bulk",
+          "circulation",
+          "dose",
+          "filler",
+          "packer",
+          "polish",
+          "temperatureLoop",
+          "water"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "base",
+          "blend",
+          "bulk",
+          "circulation",
+          "dose",
+          "filler",
+          "packer",
+          "polish",
+          "temperatureLoop",
+          "water"
+        ]
+      },
+      "path": "img/thumbnails/shampoo.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 113344,
+      "sha256": "7b17dbea5f1826a35b3d026ee95ce2e35ae22e227d67c5c6c01e1d1081cac657"
+    },
+    {
+      "id": "carbonated-beverages",
+      "title": "Carbonated beverages",
+      "sector": "Food & beverage",
+      "view": "process",
+      "system": "carbonated-beverages/system.json",
+      "model": "carbonated-beverages/model.json",
+      "components": 19,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "blend",
+          "buffer",
+          "carbonator",
+          "controlValve",
+          "cooler",
+          "filler",
+          "packer",
+          "syrup",
+          "syrupDose",
+          "water",
+          "waterFilter",
+          "waterPump"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "blend",
+          "buffer",
+          "carbonator",
+          "controlValve",
+          "cooler",
+          "filler",
+          "packer",
+          "syrup",
+          "syrupDose",
+          "water",
+          "waterFilter",
+          "waterPump"
+        ]
+      },
+      "path": "img/thumbnails/carbonated-beverages.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 117914,
+      "sha256": "065b61eee2bf42e1964ac395836075db7e2023f702f3b2f98ddf06e5479ad9ae"
+    },
+    {
+      "id": "dairy",
+      "title": "Dairy processing",
+      "sector": "Food & beverage",
+      "view": "process",
+      "system": "dairy/system.json",
+      "model": "dairy/model.json",
+      "components": 13,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "buffer",
+          "exchanger",
+          "filler",
+          "hold",
+          "packer",
+          "pitPump",
+          "receiving",
+          "separator",
+          "strainer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "buffer",
+          "exchanger",
+          "filler",
+          "hold",
+          "packer",
+          "pitPump",
+          "receiving",
+          "separator",
+          "strainer"
+        ]
+      },
+      "path": "img/thumbnails/dairy.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 106230,
+      "sha256": "88540e83e84b816b3948e93ede9106f780e23330cc47700b00b2942059b3de70"
+    },
+    {
+      "id": "fruit-juice",
+      "title": "Fruit-juice line",
+      "sector": "Food & beverage",
+      "view": "process",
+      "system": "fruit-juice/system.json",
+      "model": "fruit-juice/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "blend",
+          "clarifier",
+          "concentrator",
+          "crusher",
+          "exchanger",
+          "filler",
+          "hold",
+          "intake",
+          "packer",
+          "polish"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "blend",
+          "clarifier",
+          "concentrator",
+          "crusher",
+          "exchanger",
+          "filler",
+          "hold",
+          "intake",
+          "packer",
+          "polish"
+        ]
+      },
+      "path": "img/thumbnails/fruit-juice.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 113042,
+      "sha256": "3679cd0a34bf19932dd481b65a723a11720bdcfd0463706c835328f282f9dff3"
+    },
+    {
+      "id": "pharma-oral-liquid",
+      "title": "Oral-liquid manufacturing",
+      "sector": "Pharmaceuticals",
+      "view": "process",
+      "system": "pharma-oral-liquid/system.json",
+      "model": "pharma-oral-liquid/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "base",
+          "blend",
+          "bulk",
+          "checkValve",
+          "dose",
+          "filler",
+          "hold",
+          "packer",
+          "purification",
+          "transfer",
+          "transferPipe",
+          "water"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "base",
+          "blend",
+          "bulk",
+          "checkValve",
+          "dose",
+          "filler",
+          "hold",
+          "packer",
+          "purification",
+          "transfer",
+          "transferPipe",
+          "water"
+        ]
+      },
+      "path": "img/thumbnails/pharma-oral-liquid.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 118629,
+      "sha256": "df78593878996cbab38b8cb5a4f10e7c3b2920397ab029fc8007f61c849bafa0"
+    },
+    {
+      "id": "tablets",
+      "title": "Tablet manufacturing",
+      "sector": "Pharmaceuticals",
+      "view": "process",
+      "system": "tablets/system.json",
+      "model": "tablets/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "blender",
+          "dryer",
+          "feeder",
+          "granulator",
+          "inspection",
+          "mill",
+          "packer",
+          "powder",
+          "press",
+          "screen",
+          "weighing"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "blender",
+          "dryer",
+          "feeder",
+          "granulator",
+          "inspection",
+          "mill",
+          "packer",
+          "powder",
+          "press",
+          "screen",
+          "weighing"
+        ]
+      },
+      "path": "img/thumbnails/tablets.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 118302,
+      "sha256": "689d9af3043ac92c218b4bbbf25a053c61ac0d6b3e6182b7c55abc1eb78413b7"
+    },
+    {
+      "id": "biopharma-fermentation",
+      "title": "Biopharma fermentation",
+      "sector": "Biopharma",
+      "view": "process",
+      "system": "biopharma-fermentation/system.json",
+      "model": "biopharma-fermentation/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "bulk",
+          "conditioning",
+          "fermenter",
+          "harvestHold",
+          "harvestPump",
+          "mediaBlend",
+          "mediaFeed",
+          "membranes",
+          "separator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "bulk",
+          "conditioning",
+          "fermenter",
+          "harvestHold",
+          "harvestPump",
+          "mediaBlend",
+          "mediaFeed",
+          "membranes",
+          "separator"
+        ]
+      },
+      "path": "img/thumbnails/biopharma-fermentation.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 108165,
+      "sha256": "9df1562b0df6877783375a1629181c05ad3cb50df21bbc5e0293d054baa7ff34"
+    },
+    {
+      "id": "sterile-filling",
+      "title": "Sterile-filling concept",
+      "sector": "Pharmaceuticals",
+      "view": "process",
+      "system": "sterile-filling/system.json",
+      "model": "sterile-filling/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "buffer",
+          "closing",
+          "filler",
+          "filter",
+          "inspection",
+          "packer",
+          "pump",
+          "solution",
+          "valve"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "buffer",
+          "closing",
+          "filler",
+          "filter",
+          "inspection",
+          "packer",
+          "pump",
+          "solution",
+          "valve"
+        ]
+      },
+      "path": "img/thumbnails/sterile-filling.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109204,
+      "sha256": "21e59cd8b52a6acbe2ddc57846954a76e426fe30b7d2b58abdb22df08232c5d5"
+    },
+    {
+      "id": "paint-blending",
+      "title": "Paint blending",
+      "sector": "Chemicals",
+      "view": "process",
+      "system": "paint-blending/system.json",
+      "model": "paint-blending/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "binder",
+          "disperser",
+          "filler",
+          "filter",
+          "hold",
+          "mill",
+          "packer",
+          "pigment",
+          "tint"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "binder",
+          "disperser",
+          "filler",
+          "filter",
+          "hold",
+          "mill",
+          "packer",
+          "pigment",
+          "tint"
+        ]
+      },
+      "path": "img/thumbnails/paint-blending.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 108520,
+      "sha256": "4ae587246b4422de9be8f68c5df87ac5b69565ad6db6cbcaa9f678ba3a6f5189"
+    },
+    {
+      "id": "industrial-detergent",
+      "title": "Industrial detergent",
+      "sector": "Chemicals",
+      "view": "process",
+      "system": "industrial-detergent/system.json",
+      "model": "industrial-detergent/model.json",
+      "components": 18,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "base",
+          "blend",
+          "exchanger",
+          "filler",
+          "filter",
+          "hold",
+          "junction",
+          "metering",
+          "packer",
+          "valve",
+          "water"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "base",
+          "blend",
+          "exchanger",
+          "filler",
+          "filter",
+          "hold",
+          "junction",
+          "metering",
+          "packer",
+          "valve",
+          "water"
+        ]
+      },
+      "path": "img/thumbnails/industrial-detergent.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 115390,
+      "sha256": "940d3a0b7c7366e8230a255529bdb11f086f8bb7a7cbdbbc5d7ad9059f5cc892"
+    },
+    {
+      "id": "polymer-extrusion",
+      "title": "Polymer extrusion",
+      "sector": "Materials",
+      "view": "process",
+      "system": "polymer-extrusion/system.json",
+      "model": "polymer-extrusion/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "blend",
+          "coolingTransfer",
+          "cutting",
+          "dryer",
+          "extruder",
+          "feeder",
+          "former",
+          "hopper",
+          "packer",
+          "resin"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "blend",
+          "coolingTransfer",
+          "cutting",
+          "dryer",
+          "extruder",
+          "feeder",
+          "former",
+          "hopper",
+          "packer",
+          "resin"
+        ]
+      },
+      "path": "img/thumbnails/polymer-extrusion.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 115176,
+      "sha256": "ced7124da8cbfae32d45d93d6aa5cafc8bbe72b741df63c21dcae1b8b089c20d"
+    },
+    {
+      "id": "concrete-batching",
+      "title": "Concrete batching",
+      "sector": "Construction materials",
+      "view": "process",
+      "system": "concrete-batching/system.json",
+      "model": "concrete-batching/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "aggregate",
+          "aggregateWeigh",
+          "binderFeed",
+          "cement",
+          "discharge",
+          "mixer",
+          "screen",
+          "transfer",
+          "water",
+          "waterPump"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "aggregate",
+          "aggregateWeigh",
+          "binderFeed",
+          "cement",
+          "discharge",
+          "mixer",
+          "screen",
+          "transfer",
+          "water",
+          "waterPump"
+        ]
+      },
+      "path": "img/thumbnails/concrete-batching.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 115080,
+      "sha256": "a7b25faa79de38689b03176c4e79a9c7e61f313e3834857d257453873bc0bc4c"
+    },
+    {
+      "id": "cement",
+      "title": "Cement processing",
+      "sector": "Construction materials",
+      "view": "process",
+      "system": "cement/system.json",
+      "model": "cement/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "coolingTransfer",
+          "crusher",
+          "feed",
+          "finishMill",
+          "kiln",
+          "packer",
+          "preheater",
+          "rawMill",
+          "silo"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "coolingTransfer",
+          "crusher",
+          "feed",
+          "finishMill",
+          "kiln",
+          "packer",
+          "preheater",
+          "rawMill",
+          "silo"
+        ]
+      },
+      "path": "img/thumbnails/cement.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 110672,
+      "sha256": "a51ae5014acf186ab45c1245cecd2b7230b6827427a3ae5f49ddfddf97c2f506"
+    },
+    {
+      "id": "mineral-crushing",
+      "title": "Mineral crushing & screening",
+      "sector": "Mineral processing",
+      "view": "process",
+      "system": "mineral-crushing/system.json",
+      "model": "mineral-crushing/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "classification",
+          "feed",
+          "feeder",
+          "outfeed",
+          "primary",
+          "screen",
+          "secondary",
+          "surge",
+          "transfer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "classification",
+          "feed",
+          "feeder",
+          "outfeed",
+          "primary",
+          "screen",
+          "secondary",
+          "surge",
+          "transfer"
+        ]
+      },
+      "path": "img/thumbnails/mineral-crushing.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109592,
+      "sha256": "67b8835b4f2ac2d45ba638dbbebedbea9281d41124197a87e7c8c0458856397b"
+    },
+    {
+      "id": "mineral-flotation",
+      "title": "Mineral flotation",
+      "sector": "Mineral processing",
+      "view": "process",
+      "system": "mineral-flotation/system.json",
+      "model": "mineral-flotation/model.json",
+      "components": 13,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "cleaner",
+          "feed",
+          "filter",
+          "hold",
+          "mill",
+          "outfeed",
+          "rougher",
+          "slurry",
+          "thickener"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "cleaner",
+          "feed",
+          "filter",
+          "hold",
+          "mill",
+          "outfeed",
+          "rougher",
+          "slurry",
+          "thickener"
+        ]
+      },
+      "path": "img/thumbnails/mineral-flotation.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109544,
+      "sha256": "1ff86ba58040c9be1058f9505644c4a066e59a234c83c62f2d1d248b9e533018"
+    },
+    {
+      "id": "metal-finishing",
+      "title": "Metal-finishing line",
+      "sector": "Surface treatment",
+      "view": "process",
+      "system": "metal-finishing/system.json",
+      "model": "metal-finishing/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 19,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 19,
+          "y": 75,
+          "width": 1280,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "cleaning",
+          "dryer",
+          "finalRinse",
+          "intake",
+          "outfeed",
+          "rinseOne",
+          "rinseTwo",
+          "treatment"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "cleaning",
+          "dryer",
+          "finalRinse",
+          "intake",
+          "outfeed",
+          "rinseOne",
+          "rinseTwo",
+          "treatment"
+        ]
+      },
+      "path": "img/thumbnails/metal-finishing.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 117734,
+      "sha256": "b2b24ace50c3d062176c396e427fe00955efb0ea4c68f0095290c33ee099fce8"
+    },
+    {
+      "id": "pulp-paper",
+      "title": "Pulp & paper",
+      "sector": "Fiber processing",
+      "view": "process",
+      "system": "pulp-paper/system.json",
+      "model": "pulp-paper/model.json",
+      "components": 16,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "dryer",
+          "headbox",
+          "machine",
+          "packer",
+          "press",
+          "pulp",
+          "reel",
+          "refiner",
+          "screen",
+          "stock"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "dryer",
+          "headbox",
+          "machine",
+          "packer",
+          "press",
+          "pulp",
+          "reel",
+          "refiner",
+          "screen",
+          "stock"
+        ]
+      },
+      "path": "img/thumbnails/pulp-paper.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 114433,
+      "sha256": "96f4c6ffa7e529316a156f05c365c758d46cc202035535bbda6bbdd73dd7c99c"
+    },
+    {
+      "id": "power-gas-simple-cycle",
+      "title": "Simple-cycle gas turbine",
+      "sector": "Power & utilities",
+      "view": "train",
+      "system": "power-gas-simple-cycle/system.json",
+      "model": "power-gas-simple-cycle/model.json",
+      "components": 13,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "air",
+          "exhaust",
+          "fuel",
+          "regulator",
+          "turbine"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "air",
+          "exhaust",
+          "fuel",
+          "regulator",
+          "turbine"
+        ]
+      },
+      "path": "img/thumbnails/power-gas-simple-cycle.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 107688,
+      "sha256": "a80ddf4ed1806d9679ba9526bb4bedd4b7da7b876f14a6def11ce95ae57bfb0f"
+    },
+    {
+      "id": "power-gas-combined-cycle",
+      "title": "Combined-cycle gas plant",
+      "sector": "Power & utilities",
+      "view": "gas",
+      "system": "power-gas-combined-cycle/system.json",
+      "model": "power-gas-combined-cycle/model.json",
+      "components": 21,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "air",
+          "alternator",
+          "alternatorField",
+          "fuel",
+          "gasTurbine",
+          "regulator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "air",
+          "alternator",
+          "alternatorField",
+          "fuel",
+          "gasTurbine",
+          "regulator"
+        ]
+      },
+      "path": "img/thumbnails/power-gas-combined-cycle.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 119065,
+      "sha256": "c5f9e4b704dbeacb9de26a66f2cb5db44aefbe06e1c41a4a396be9540874bb33"
+    },
+    {
+      "id": "power-coal-steam",
+      "title": "Coal steam-cycle plant",
+      "sector": "Power & utilities",
+      "view": "fuel",
+      "system": "power-coal-steam/system.json",
+      "model": "power-coal-steam/model.json",
+      "components": 18,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "boiler",
+          "boilerAir",
+          "cleanup",
+          "feed",
+          "fuel",
+          "prepare",
+          "stack"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "boiler",
+          "boilerAir",
+          "cleanup",
+          "feed",
+          "fuel",
+          "prepare",
+          "stack"
+        ]
+      },
+      "path": "img/thumbnails/power-coal-steam.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109869,
+      "sha256": "75924e79f2d1e9f1d41dec197fffd4248001c403c33542b3428fe6e48b86fb88"
+    },
+    {
+      "id": "power-biomass-chp",
+      "title": "Biomass CHP",
+      "sector": "Power & utilities",
+      "view": "fuel",
+      "system": "power-biomass-chp/system.json",
+      "model": "power-biomass-chp/model.json",
+      "components": 21,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "boiler",
+          "boilerAir",
+          "cleanup",
+          "feed",
+          "fuel",
+          "prepare",
+          "stack"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "boiler",
+          "boilerAir",
+          "cleanup",
+          "feed",
+          "fuel",
+          "prepare",
+          "stack"
+        ]
+      },
+      "path": "img/thumbnails/power-biomass-chp.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 110565,
+      "sha256": "7fe28d29686df5300acf50505772cce5252d1260644130edcc0e9d17ce782e45"
+    },
+    {
+      "id": "power-hydro-impoundment",
+      "title": "Impoundment hydropower",
+      "sector": "Power & utilities",
+      "view": "water",
+      "system": "power-hydro-impoundment/system.json",
+      "model": "power-hydro-impoundment/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "gate",
+          "penstock",
+          "riverInflow",
+          "runner",
+          "tailwater",
+          "upstream"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "gate",
+          "penstock",
+          "riverInflow",
+          "runner",
+          "tailwater",
+          "upstream"
+        ]
+      },
+      "path": "img/thumbnails/power-hydro-impoundment.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109077,
+      "sha256": "f1ea9dbe39fdf80d66eb2f56b01d4cb42776f02ffbd602291aa5e49eb3c22141"
+    },
+    {
+      "id": "power-hydro-diversion",
+      "title": "Diversion hydropower",
+      "sector": "Power & utilities",
+      "view": "water",
+      "system": "power-hydro-diversion/system.json",
+      "model": "power-hydro-diversion/model.json",
+      "components": 13,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "gate",
+          "penstock",
+          "runner",
+          "tailwater",
+          "upstream"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "gate",
+          "penstock",
+          "runner",
+          "tailwater",
+          "upstream"
+        ]
+      },
+      "path": "img/thumbnails/power-hydro-diversion.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 104898,
+      "sha256": "0b6384f65315c7dccc779cccadc2c99525334d82b3931d2f3b174694baabb487"
+    },
+    {
+      "id": "power-pumped-storage",
+      "title": "Reversible pumped storage",
+      "sector": "Power & utilities",
+      "view": "inventory",
+      "system": "power-pumped-storage/system.json",
+      "model": "power-pumped-storage/model.json",
+      "components": 12,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "lower",
+          "unit",
+          "upper"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "lower",
+          "unit",
+          "upper"
+        ]
+      },
+      "path": "img/thumbnails/power-pumped-storage.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 93711,
+      "sha256": "ffa0023106379a3570840cefaf604a35d11d9c2f00978f91a7323343bec20b70"
+    },
+    {
+      "id": "power-nuclear-pwr",
+      "title": "Pressurized-water nuclear concept",
+      "sector": "Power & utilities",
+      "view": "primary",
+      "system": "power-nuclear-pwr/system.json",
+      "model": "power-nuclear-pwr/model.json",
+      "components": 22,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "containment",
+          "core",
+          "pressurizer",
+          "primaryPump",
+          "steamGenerator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "containment",
+          "core",
+          "pressurizer",
+          "primaryPump",
+          "steamGenerator"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-pwr.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 119094,
+      "sha256": "b96f3557c421bf50e8e2c134c70b12edee2f89ca33a0dda3610a10e4f60dc3c2"
+    },
+    {
+      "id": "power-nuclear-phwr",
+      "title": "Pressure-channel heavy-water concept",
+      "sector": "Power & utilities",
+      "view": "primary",
+      "system": "power-nuclear-phwr/system.json",
+      "model": "power-nuclear-phwr/model.json",
+      "components": 21,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "containment",
+          "core",
+          "pressurizer",
+          "primaryPump",
+          "steamGenerator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "containment",
+          "core",
+          "pressurizer",
+          "primaryPump",
+          "steamGenerator"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-phwr.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 120675,
+      "sha256": "981cc6f66e384f98bdba654264b34f37974e38a9365ae14c96c1dd0847ca6b4d"
+    },
+    {
+      "id": "power-nuclear-htgr",
+      "title": "Helium-cooled reactor concept",
+      "sector": "Power & utilities",
+      "view": "primary",
+      "system": "power-nuclear-htgr/system.json",
+      "model": "power-nuclear-htgr/model.json",
+      "components": 18,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "containment",
+          "core",
+          "primaryPump",
+          "steamGenerator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "containment",
+          "core",
+          "primaryPump",
+          "steamGenerator"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-htgr.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109696,
+      "sha256": "2caa1485f724150da6b124a496146a0317bfc3d858ea82c6d4fd13874615b131"
+    },
+    {
+      "id": "power-nuclear-sodium-fast",
+      "title": "Pool-type sodium fast-reactor concept",
+      "sector": "Power & utilities",
+      "view": "primary",
+      "system": "power-nuclear-sodium-fast/system.json",
+      "model": "power-nuclear-sodium-fast/model.json",
+      "components": 20,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "containment",
+          "core",
+          "intermediateHX",
+          "intermediatePump",
+          "primaryPump",
+          "steamGenerator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "containment",
+          "core",
+          "intermediateHX",
+          "intermediatePump",
+          "primaryPump",
+          "steamGenerator"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-sodium-fast.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 130694,
+      "sha256": "4ce99b13978d8eb6f718fef4bbe782ac5503fb588599b1c1b9b430c5fc97b175"
+    },
+    {
+      "id": "power-nuclear-molten-salt",
+      "title": "Solid-fuel salt-cooled nuclear concept",
+      "sector": "Power & utilities",
+      "view": "primary",
+      "system": "power-nuclear-molten-salt/system.json",
+      "model": "power-nuclear-molten-salt/model.json",
+      "components": 20,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "containment",
+          "core",
+          "intermediateHX",
+          "intermediatePump",
+          "primaryPump",
+          "steamGenerator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "containment",
+          "core",
+          "intermediateHX",
+          "intermediatePump",
+          "primaryPump",
+          "steamGenerator"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-molten-salt.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 128111,
+      "sha256": "7a90b7c52d8b0da783375c0914e6af8c37259ad0535f99fbb60d1cbeff8961d5"
+    },
+    {
+      "id": "power-nuclear-bwr",
+      "title": "Boiling-water nuclear concept",
+      "sector": "Power & utilities",
+      "view": "vessel",
+      "system": "power-nuclear-bwr/system.json",
+      "model": "power-nuclear-bwr/model.json",
+      "components": 17,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "containment",
+          "core",
+          "recirc",
+          "rods"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "containment",
+          "core",
+          "recirc",
+          "rods"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-bwr.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 107652,
+      "sha256": "4df262597eb65c9bcaa19b52d858553d0e101b80837f87bd85774326865d8df7"
+    },
+    {
+      "id": "power-nuclear-lw-smr",
+      "title": "Two-module integral-PWR concept",
+      "sector": "Power & utilities",
+      "view": "module-a",
+      "system": "power-nuclear-lw-smr/system.json",
+      "model": "power-nuclear-lw-smr/model.json",
+      "components": 31,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "aContainment",
+          "aCore",
+          "aFeedPump",
+          "aPressurizer",
+          "aPrimaryPump",
+          "aRadiation",
+          "aRods",
+          "aSG",
+          "aTurbine"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "aContainment",
+          "aCore",
+          "aFeedPump",
+          "aPressurizer",
+          "aPrimaryPump",
+          "aRadiation",
+          "aRods",
+          "aSG",
+          "aTurbine"
+        ]
+      },
+      "path": "img/thumbnails/power-nuclear-lw-smr.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 126625,
+      "sha256": "553e666ea34442a79c2875eee89ebc60bb559329ba6b031f7514fff932b56570"
+    },
+    {
+      "id": "power-ng-engine-chp",
+      "title": "Natural-gas engine CHP",
+      "sector": "Power & utilities",
+      "view": "generation",
+      "system": "power-ng-engine-chp/system.json",
+      "model": "power-ng-engine-chp/model.json",
+      "components": 19,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "engine",
+          "engineAir",
+          "fuel",
+          "regulator",
+          "stack"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "engine",
+          "engineAir",
+          "fuel",
+          "regulator",
+          "stack"
+        ]
+      },
+      "path": "img/thumbnails/power-ng-engine-chp.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 112434,
+      "sha256": "4b28a0b4af190905183d0dc10a06e1f72a25696a57c15d33144f46308a11dc1b"
+    },
+    {
+      "id": "power-diesel-standby",
+      "title": "Diesel standby supply",
+      "sector": "Power & utilities",
+      "view": "changeover",
+      "system": "power-diesel-standby/system.json",
+      "model": "power-diesel-standby/model.json",
+      "components": 11,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "engine",
+          "engineAir",
+          "grid",
+          "load",
+          "transfer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "engine",
+          "engineAir",
+          "grid",
+          "load",
+          "transfer"
+        ]
+      },
+      "path": "img/thumbnails/power-diesel-standby.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 110780,
+      "sha256": "cb400bce2b75ad844abbf80ee7d29afda47344e98348ce629f8b62a2e534e9e9"
+    },
+    {
+      "id": "power-gasoline-portable",
+      "title": "Portable gasoline generator",
+      "sector": "Power & utilities",
+      "view": "load",
+      "system": "power-gasoline-portable/system.json",
+      "model": "power-gasoline-portable/model.json",
+      "components": 10,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "breaker",
+          "dcService",
+          "engine",
+          "engineAir",
+          "load",
+          "plc",
+          "station"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "breaker",
+          "dcService",
+          "engine",
+          "engineAir",
+          "load",
+          "plc",
+          "station"
+        ]
+      },
+      "path": "img/thumbnails/power-gasoline-portable.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 106103,
+      "sha256": "e41d67f6295d60e08e6bf81926531ef6b2a20cd438318824db17a4d0fe51271e"
+    },
+    {
+      "id": "power-substation-distribution",
+      "title": "Distribution substation",
+      "sector": "Power & utilities",
+      "view": "incoming",
+      "system": "power-substation-distribution/system.json",
+      "model": "power-substation-distribution/model.json",
+      "components": 18,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "arrester",
+          "grid",
+          "incoming",
+          "isolator",
+          "stepdown"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "arrester",
+          "grid",
+          "incoming",
+          "isolator",
+          "stepdown"
+        ]
+      },
+      "path": "img/thumbnails/power-substation-distribution.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 111848,
+      "sha256": "92967148c5ed23400e9162641686bd9c637148d7eb47d2cec264cff8ea9cc16a"
+    },
+    {
+      "id": "power-substation-gsu",
+      "title": "Generator step-up substation",
+      "sector": "Power & utilities",
+      "view": "source",
+      "system": "power-substation-gsu/system.json",
+      "model": "power-substation-gsu/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "alternator",
+          "alternatorField",
+          "primeMover",
+          "transformer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "alternator",
+          "alternatorField",
+          "primeMover",
+          "transformer"
+        ]
+      },
+      "path": "img/thumbnails/power-substation-gsu.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 102761,
+      "sha256": "0e98c779224f06ac625549457aa6acdd0620a3b26fc6970484bc141cbb44f324"
+    },
+    {
+      "id": "power-substation-gis",
+      "title": "Gas-insulated substation interface",
+      "sector": "Power & utilities",
+      "view": "incoming",
+      "system": "power-substation-gis/system.json",
+      "model": "power-substation-gis/model.json",
+      "components": 12,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "disconnect",
+          "gis",
+          "grid",
+          "transformer"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "disconnect",
+          "gis",
+          "grid",
+          "transformer"
+        ]
+      },
+      "path": "img/thumbnails/power-substation-gis.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 99368,
+      "sha256": "9a87c982ceead57c9db852be2f0ad5e9772f341cf9e999742e0c7ddd9384c3fa"
+    },
+    {
+      "id": "power-hvdc-interface",
+      "title": "Back-to-back HVDC interface",
+      "sector": "Power & utilities",
+      "view": "rectifier",
+      "system": "power-hvdc-interface/system.json",
+      "model": "power-hvdc-interface/model.json",
+      "components": 10,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "dcIsolator",
+          "rectifier",
+          "source"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "dcIsolator",
+          "rectifier",
+          "source"
+        ]
+      },
+      "path": "img/thumbnails/power-hvdc-interface.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 93221,
+      "sha256": "10beafb99e45a15d647623e0fc2bd2af32c0b775cbb4dcff674eb34beea0796b"
+    },
+    {
+      "id": "power-solar-pv",
+      "title": "Photovoltaic field",
+      "sector": "Power & utilities",
+      "view": "dc",
+      "system": "power-solar-pv/system.json",
+      "model": "power-solar-pv/model.json",
+      "components": 10,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "arrayA",
+          "arrayB",
+          "inverter",
+          "isolator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "arrayA",
+          "arrayB",
+          "inverter",
+          "isolator"
+        ]
+      },
+      "path": "img/thumbnails/power-solar-pv.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 102443,
+      "sha256": "d023cb5d5c5727f2316147ccd1ce0a1cfe982973d1d2b3bb7a348d3d6a69b8d3"
+    },
+    {
+      "id": "power-wind-collection",
+      "title": "Wind collection network",
+      "sector": "Power & utilities",
+      "view": "field",
+      "system": "power-wind-collection/system.json",
+      "model": "power-wind-collection/model.json",
+      "components": 10,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "collection",
+          "deviceA",
+          "deviceB"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "collection",
+          "deviceA",
+          "deviceB"
+        ]
+      },
+      "path": "img/thumbnails/power-wind-collection.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 95753,
+      "sha256": "f3cc55b72fe74ad8bb154b462d43521ef91725be705ffa8f5ca214d7e763ba7d"
+    },
+    {
+      "id": "power-tidal-current",
+      "title": "Tidal-current array",
+      "sector": "Power & utilities",
+      "view": "field",
+      "system": "power-tidal-current/system.json",
+      "model": "power-tidal-current/model.json",
+      "components": 10,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "collection",
+          "deviceA",
+          "deviceB"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "collection",
+          "deviceA",
+          "deviceB"
+        ]
+      },
+      "path": "img/thumbnails/power-tidal-current.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 96580,
+      "sha256": "f1d532155f3657280b6aeec83a8969e5654873038bf812a541c5ef59e7f57787"
+    },
+    {
+      "id": "power-wave-point-absorber",
+      "title": "Wave point-absorber array",
+      "sector": "Power & utilities",
+      "view": "field",
+      "system": "power-wave-point-absorber/system.json",
+      "model": "power-wave-point-absorber/model.json",
+      "components": 10,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "collection",
+          "deviceA",
+          "deviceB"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "collection",
+          "deviceA",
+          "deviceB"
+        ]
+      },
+      "path": "img/thumbnails/power-wave-point-absorber.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 96716,
+      "sha256": "9c3c6385c057d76359f91de77c8cddc231fb42d8b811775d8880e68760ec82f9"
+    },
+    {
+      "id": "power-csp-tower",
+      "title": "Solar power tower",
+      "sector": "Power & utilities",
+      "view": "field",
+      "system": "power-csp-tower/system.json",
+      "model": "power-csp-tower/model.json",
+      "components": 18,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "collector",
+          "dcService",
+          "hotStore",
+          "mirrorA",
+          "mirrorB",
+          "station"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "collector",
+          "dcService",
+          "hotStore",
+          "mirrorA",
+          "mirrorB",
+          "station"
+        ]
+      },
+      "path": "img/thumbnails/power-csp-tower.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 122053,
+      "sha256": "4090c88a1d5f3eab3c5e6e1ab778e1b908eec167373ac4fd10c49e4ee90e44b3"
+    },
+    {
+      "id": "power-csp-trough",
+      "title": "Parabolic-trough solar plant",
+      "sector": "Power & utilities",
+      "view": "field",
+      "system": "power-csp-trough/system.json",
+      "model": "power-csp-trough/model.json",
+      "components": 16,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "coldStore",
+          "collector",
+          "collectorPump",
+          "dcService",
+          "hotStore",
+          "station"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "coldStore",
+          "collector",
+          "collectorPump",
+          "dcService",
+          "hotStore",
+          "station"
+        ]
+      },
+      "path": "img/thumbnails/power-csp-trough.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 122016,
+      "sha256": "5364bd0eaa6db4793969fdcec0ce937a8789e251b111872f72ff8771cd822f01"
+    },
+    {
+      "id": "power-fuel-cell",
+      "title": "Stationary fuel-cell system",
+      "sector": "Power & utilities",
+      "view": "reactants",
+      "system": "power-fuel-cell/system.json",
+      "model": "power-fuel-cell/model.json",
+      "components": 15,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "air",
+          "fuel",
+          "regulator",
+          "stack",
+          "water"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "air",
+          "fuel",
+          "regulator",
+          "stack",
+          "water"
+        ]
+      },
+      "path": "img/thumbnails/power-fuel-cell.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 109271,
+      "sha256": "91e3e47b3c59e4d1b4e9de8f3a7dfc725824dc704c239de6edbd6d496dd73c79"
+    },
+    {
+      "id": "power-geothermal-flash",
+      "title": "Flash geothermal",
+      "sector": "Power & utilities",
+      "view": "production",
+      "system": "power-geothermal-flash/system.json",
+      "model": "power-geothermal-flash/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "flash",
+          "return",
+          "well"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "flash",
+          "return",
+          "well"
+        ]
+      },
+      "path": "img/thumbnails/power-geothermal-flash.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 101672,
+      "sha256": "55aba93641814aac72e8391e94532dddd0c1c20512c14be5021ac3ce89b176d2"
+    },
+    {
+      "id": "power-geothermal-binary",
+      "title": "Binary geothermal",
+      "sector": "Power & utilities",
+      "view": "geothermal",
+      "system": "power-geothermal-binary/system.json",
+      "model": "power-geothermal-binary/model.json",
+      "components": 14,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "exchange",
+          "return",
+          "well"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "exchange",
+          "return",
+          "well"
+        ]
+      },
+      "path": "img/thumbnails/power-geothermal-binary.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 100432,
+      "sha256": "17067d765ff9cae5e8ab2fe39ae2b4218384e12ea0fe9516d84d25c3d2c81d93"
+    },
+    {
+      "id": "power-geothermal-dry-steam",
+      "title": "Dry-steam geothermal",
+      "sector": "Power & utilities",
+      "view": "steam",
+      "system": "power-geothermal-dry-steam/system.json",
+      "model": "power-geothermal-dry-steam/model.json",
+      "components": 13,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 380
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 380
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 215,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 215,
+          "width": 980,
+          "height": 380
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "condenser",
+          "turbine",
+          "well"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "condenser",
+          "turbine",
+          "well"
+        ]
+      },
+      "path": "img/thumbnails/power-geothermal-dry-steam.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 94501,
+      "sha256": "49ec8065b37c31aff9d240c95741e04c81145d956ac35edab57c2215a82f560e"
+    },
+    {
+      "id": "power-battery-storage",
+      "title": "Battery energy-storage system",
+      "sector": "Power & utilities",
+      "view": "storage",
+      "system": "power-battery-storage/system.json",
+      "model": "power-battery-storage/model.json",
+      "components": 12,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "acBus",
+          "battery",
+          "bay",
+          "converter"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "acBus",
+          "battery",
+          "bay",
+          "converter"
+        ]
+      },
+      "path": "img/thumbnails/power-battery-storage.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 103059,
+      "sha256": "2e0816ace4c4aac4b741ff73be641c84a730b921d845319f14824af6033ef07c"
+    },
+    {
+      "id": "power-hybrid-microgrid",
+      "title": "Hybrid islandable microgrid",
+      "sector": "Power & utilities",
+      "view": "sources",
+      "system": "power-hybrid-microgrid/system.json",
+      "model": "power-hybrid-microgrid/model.json",
+      "components": 17,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 1280,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 194.6595744680851,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 194.65957641601562,
+          "y": 64,
+          "width": 928.680908203125,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "acBus",
+          "engine",
+          "engineAir",
+          "engineExhaust",
+          "fuel",
+          "localBay",
+          "pv",
+          "pvInverter",
+          "regulator"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "acBus",
+          "engine",
+          "engineAir",
+          "engineExhaust",
+          "fuel",
+          "localBay",
+          "pv",
+          "pvInverter",
+          "regulator"
+        ]
+      },
+      "path": "img/thumbnails/power-hybrid-microgrid.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 121171,
+      "sha256": "bf8c1d0847cd37f2d8eaf7176ec64418fb8e6705c12e7c888c6560ceb0d9d26b"
+    },
+    {
+      "id": "aquaponics-media-bed",
+      "title": "Media-bed aquaponics",
+      "sector": "Agriculture & aquaculture",
+      "view": "water",
+      "system": "aquaponics-media-bed/system.json",
+      "model": "aquaponics-media-bed/model.json",
+      "components": 12,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 660
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 660
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 169,
+          "y": 75,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 169,
+          "y": 75,
+          "width": 980,
+          "height": 660
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "bed",
+          "fish",
+          "returnPump",
+          "solidsFilter",
+          "sump"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "bed",
+          "fish",
+          "returnPump",
+          "solidsFilter",
+          "sump"
+        ]
+      },
+      "path": "img/thumbnails/aquaponics-media-bed.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 112146,
+      "sha256": "6b31e52ac752db8aaae145285c5b56751af64e504f748b0a0027db0ae9b52345"
+    },
+    {
+      "id": "aquaponics-dwc",
+      "title": "Raft / DWC aquaponics",
+      "sector": "Agriculture & aquaculture",
+      "view": "water",
+      "system": "aquaponics-dwc/system.json",
+      "model": "aquaponics-dwc/model.json",
+      "components": 17,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "biofilter",
+          "fish",
+          "manifold",
+          "raftA",
+          "raftB",
+          "returnPump",
+          "solidsFilter",
+          "sump"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "biofilter",
+          "fish",
+          "manifold",
+          "raftA",
+          "raftB",
+          "returnPump",
+          "solidsFilter",
+          "sump"
+        ]
+      },
+      "path": "img/thumbnails/aquaponics-dwc.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 111721,
+      "sha256": "4ff75ffd35d7587b823b416b99bb232b71d07306e558400a0ec41fe510e0d82f"
+    },
+    {
+      "id": "hydroponics-nft",
+      "title": "NFT hydroponics",
+      "sector": "Agriculture & aquaculture",
+      "view": "water",
+      "system": "hydroponics-nft/system.json",
+      "model": "hydroponics-nft/model.json",
+      "components": 17,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "channelA",
+          "channelB",
+          "header",
+          "reservoir",
+          "screen",
+          "supplyPump",
+          "valveA",
+          "valveB"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "channelA",
+          "channelB",
+          "header",
+          "reservoir",
+          "screen",
+          "supplyPump",
+          "valveA",
+          "valveB"
+        ]
+      },
+      "path": "img/thumbnails/hydroponics-nft.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 112804,
+      "sha256": "2e260da848bbb39511053276a3deb56f2356b6fcd25eccfc2bc304c826c1938f"
+    },
+    {
+      "id": "hydroponics-ebb-flow",
+      "title": "Ebb-and-flow nursery",
+      "sector": "Agriculture & aquaculture",
+      "view": "water",
+      "system": "hydroponics-ebb-flow/system.json",
+      "model": "hydroponics-ebb-flow/model.json",
+      "components": 13,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "drainA",
+          "drainB",
+          "fillPump",
+          "header",
+          "reservoir",
+          "tableA",
+          "tableB"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "drainA",
+          "drainB",
+          "fillPump",
+          "header",
+          "reservoir",
+          "tableA",
+          "tableB"
+        ]
+      },
+      "path": "img/thumbnails/hydroponics-ebb-flow.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 106945,
+      "sha256": "c52d6400eef5e7170d75ae34f2a13393e18d5368ccf9655ed0e604f7d87bfe78"
+    },
+    {
+      "id": "greenhouse-drip",
+      "title": "Drip / substrate greenhouse",
+      "sector": "Agriculture & aquaculture",
+      "view": "water",
+      "system": "greenhouse-drip/system.json",
+      "model": "greenhouse-drip/model.json",
+      "components": 19,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "drainTank",
+          "filter",
+          "header",
+          "irrigationPump",
+          "reservoir",
+          "returnPump",
+          "rowA",
+          "rowB"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "drainTank",
+          "filter",
+          "header",
+          "irrigationPump",
+          "reservoir",
+          "returnPump",
+          "rowA",
+          "rowB"
+        ]
+      },
+      "path": "img/thumbnails/greenhouse-drip.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 116432,
+      "sha256": "380ed03b4dd18a9655d42a760d9405a0ec84f709ad548ea83443772ba3cdf946"
+    },
+    {
+      "id": "indoor-aeroponics",
+      "title": "Indoor vertical / aeroponic room",
+      "sector": "Agriculture & aquaculture",
+      "view": "water",
+      "system": "indoor-aeroponics/system.json",
+      "model": "indoor-aeroponics/model.json",
+      "components": 18,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 980,
+          "height": 940
+        },
+        "layoutSize": {
+          "width": 980,
+          "height": 940
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 303.48936170212767,
+          "y": 64,
+          "zoom": 0.725531914893617,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 303.4893493652344,
+          "y": 64,
+          "width": 711.021240234375,
+          "height": 682
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "chamberA",
+          "chamberB",
+          "filter",
+          "manifold",
+          "mistPump",
+          "reservoir",
+          "waterProbe"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "chamberA",
+          "chamberB",
+          "filter",
+          "manifold",
+          "mistPump",
+          "reservoir",
+          "waterProbe"
+        ]
+      },
+      "path": "img/thumbnails/indoor-aeroponics.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 113718,
+      "sha256": "678ac5b838d86ac9c1d4b004a914936e05221e8bc773c02d74873cdd005a158c"
+    },
+    {
+      "id": "electric-batch-oven",
+      "title": "Electric batch heating cell",
+      "sector": "Manufacturing & thermal processing",
+      "view": "cell",
+      "system": "electric-batch-oven/system.json",
+      "model": "electric-batch-oven/model.json",
+      "components": 3,
+      "camera_coverage": {
+        "worldSize": {
+          "width": 920,
+          "height": 360
+        },
+        "layoutSize": {
+          "width": 920,
+          "height": 360
+        },
+        "viewportSize": {
+          "width": 1318,
+          "height": 758
+        },
+        "camera": {
+          "x": 199,
+          "y": 225,
+          "zoom": 1,
+          "fitted": true
+        },
+        "canvasRect": {
+          "x": 199,
+          "y": 225,
+          "width": 920,
+          "height": 360
+        },
+        "finite": true,
+        "layoutMatchesWorld": true,
+        "dimensionsMatchScale": true,
+        "canvasOverflowPx": 0,
+        "renderedIds": [
+          "breaker",
+          "oven",
+          "supply"
+        ],
+        "clippedIds": [],
+        "clippedLabelIds": [],
+        "controlOverlapIds": [],
+        "maxOverflowPx": 0,
+        "expectedIds": [
+          "breaker",
+          "oven",
+          "supply"
+        ]
+      },
+      "path": "img/thumbnails/electric-batch-oven.jpg",
+      "width": 1354,
+      "height": 975,
+      "bytes": 89529,
+      "sha256": "c94e3270185f7f80cec48c232748a10d317c3da6772809f16b875342245ea6f7"
+    }
+  ],
+  "contact_sheet": {
+    "path": "img/thumbnails/contact-sheet.jpg",
+    "width": 2000,
+    "height": 6426,
+    "bytes": 1406828,
+    "sha256": "1e04b39eca1ffec83e049b14bf87259b6f5e959c2387ab3ef5949caf90660dfb"
+  },
+  "capture_implementation_sha256": "8f66bb49d4c672df66053123585eb1047c7b6db249f8f9ab9c03c5504d539585"
+}

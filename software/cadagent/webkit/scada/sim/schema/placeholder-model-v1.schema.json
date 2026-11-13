@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:valpatel:scada-placeholder-model:1",
+  "title": "SCADA placeholder model configuration, version 1",
+  "description": "Data-only configuration for an illustrative normalized model. It contains no executable equations or engineering calibration. Presentation geometry belongs to the separate scada-system definition.",
+  "$comment": "Runtime validation also checks scenarioId against system.system.id, exact component coverage, component types and ports, connection references, model family registration, descriptor-specific defaults and bounds, and agreement of initial.level with initial.inventory when both are supplied. JSON must be plain data without prototype/accessor fields, cycles, nonfinite numbers, or credentials.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "scenarioId",
+    "seed",
+    "components"
+  ],
+  "properties": {
+    "format": {
+      "const": "scada-placeholder-model"
+    },
+    "version": {
+      "const": 1
+    },
+    "scenarioId": {
+      "$ref": "#/$defs/id"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "components": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 256,
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "assumptions": {
+      "$ref": "#/$defs/assumptions"
+    },
+    "equations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "families": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "v1": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "version"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "version": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "parameters": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "v2": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "version"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "version": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "parameters": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "version"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "parameters": {
+                    "type": "object"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "version"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "parameters": {
+                    "type": "object"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": "Data-only references to trusted, host-registered equation providers. Component overrides type, type overrides engine-scoped family; null explicitly selects built-in equations. Runtime validates selector identities, provider availability, parameters, phases and units."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,99}$",
+      "not": {
+        "enum": [
+          "__proto__",
+          "prototype",
+          "constructor"
+        ]
+      }
+    },
+    "index": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "fraction": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "assumptions": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capacity": {
+          "$ref": "#/$defs/index"
+        },
+        "response": {
+          "$ref": "#/$defs/fraction"
+        },
+        "demand": {
+          "$ref": "#/$defs/index"
+        },
+        "loss": {
+          "$ref": "#/$defs/fraction"
+        },
+        "pressureGain": {
+          "$ref": "#/$defs/index"
+        },
+        "heatGain": {
+          "$ref": "#/$defs/index"
+        },
+        "warningAt": {
+          "$ref": "#/$defs/index"
+        },
+        "damageRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        }
+      }
+    },
+    "initial": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "load": {
+          "$ref": "#/$defs/index"
+        },
+        "level": {
+          "$ref": "#/$defs/index"
+        },
+        "inventory": {
+          "$ref": "#/$defs/index"
+        },
+        "temperature": {
+          "$ref": "#/$defs/index"
+        },
+        "pressure": {
+          "$ref": "#/$defs/index"
+        },
+        "failed": {
+          "type": "boolean"
+        },
+        "damage": {
+          "$ref": "#/$defs/index"
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "source",
+            "storage",
+            "pump",
+            "valve",
+            "processor",
+            "heater",
+            "generator",
+            "load",
+            "controller",
+            "sensor",
+            "pipe",
+            "network",
+            "energy-storage",
+            "sink"
+          ]
+        },
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "initial": {
+          "$ref": "#/$defs/initial"
+        },
+        "assumptions": {
+          "$ref": "#/$defs/assumptions"
+        }
+      }
+    }
+  }
+}

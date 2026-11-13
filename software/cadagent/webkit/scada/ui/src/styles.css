@@ -1,0 +1,3 @@
+/* The viewer stylesheet imports the component and workspace styles, keeping
+   the complete package style graph local without loading any stylesheet twice. */
+@import url('./scada-viewer.css');

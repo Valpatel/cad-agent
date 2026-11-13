@@ -1,0 +1,50 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "harbor-utility",
+    "label": "Harbor utility loop",
+    "description": "A fictional water and backup-power loop. Both views operate the same external model."
+  },
+  "components": [
+    {"id":"tank","type":"tank","label":"Service reservoir","ports":[{"id":"outlet","side":"right","offset":0.5}]},
+    {"id":"pump","type":"pump","label":"Delivery pump","ports":[{"id":"inlet","side":"left","offset":0.5},{"id":"outlet","side":"right","offset":0.5},{"id":"drive","side":"bottom","offset":0.5}]},
+    {"id":"valve","type":"control-valve","label":"Delivery valve","ports":[{"id":"inlet","side":"left","offset":0.5},{"id":"outlet","side":"right","offset":0.5}]},
+    {"id":"meter","type":"flow-meter","label":"Delivered flow","ports":[{"id":"process","side":"left","offset":0.5}]},
+    {"id":"generator","type":"generator","label":"Backup generator","ports":[{"id":"output","side":"right","offset":0.5}]}
+  ],
+  "connections": [
+    {"id":"waterIntake","from":{"component":"tank","port":"outlet"},"to":{"component":"pump","port":"inlet"},"medium":"liquid","flowBinding":"/flows/waterIntake"},
+    {"id":"pumpedWater","from":{"component":"pump","port":"outlet"},"to":{"component":"valve","port":"inlet"},"medium":"liquid","flowBinding":"/flows/pumpedWater"},
+    {"id":"deliveredWater","from":{"component":"valve","port":"outlet"},"to":{"component":"meter","port":"process"},"medium":"liquid","flowBinding":"/flows/deliveredWater"},
+    {"id":"pumpPower","from":{"component":"generator","port":"output"},"to":{"component":"pump","port":"drive"},"medium":"electricity","flowBinding":"/flows/pumpPower"}
+  ],
+  "views": [
+    {
+      "id":"water","label":"Water delivery","canvas":{"width":1020,"height":420},
+      "placements":[{"component":"tank","x":35,"y":95,"width":190,"height":220},{"component":"pump","x":295,"y":110,"width":185,"height":190},{"component":"valve","x":555,"y":110,"width":185,"height":190},{"component":"meter","x":815,"y":110,"width":175,"height":190}],
+      "routes":[{"connection":"waterIntake","points":[{"x":225,"y":205},{"x":295,"y":205}]},{"connection":"pumpedWater","points":[{"x":480,"y":205},{"x":555,"y":205}]},{"connection":"deliveredWater","points":[{"x":740,"y":205},{"x":815,"y":205}]}]
+    },
+    {
+      "id":"power","label":"Power & delivery","canvas":{"width":1020,"height":420},
+      "placements":[{"component":"generator","x":50,"y":100,"width":230,"height":220},{"component":"pump","x":420,"y":100,"width":210,"height":220},{"component":"valve","x":770,"y":100,"width":200,"height":220}],
+      "routes":[{"connection":"pumpPower","points":[{"x":280,"y":210},{"x":340,"y":210},{"x":340,"y":355},{"x":525,"y":355},{"x":525,"y":320}]},{"connection":"pumpedWater","points":[{"x":630,"y":210},{"x":770,"y":210}]}]
+    }
+  ],
+  "commands": [
+    {"id":"pumpSwitch","label":"Set pump command","component":"pump","action":"set","arguments":{"key":"pumpOn"}},
+    {"id":"valveSwitch","label":"Set delivery valve","component":"valve","action":"set","arguments":{"key":"valveOpen"}},
+    {"id":"demand","label":"Set assumed demand","component":"pump","action":"set","arguments":{"key":"demandPct"}},
+    {"id":"breakGenerator","label":"Inject generator fault","component":"generator","action":"fault","arguments":{"equipment":"generator","value":true}},
+    {"id":"repairGenerator","label":"Repair generator","component":"generator","action":"fault","arguments":{"equipment":"generator","value":false}}
+  ],
+  "controls": [
+    {"id":"pumpSwitch","label":"Delivery pump","component":"pump","command":"pumpSwitch","kind":"toggle","binding":"/controls/pumpOn"},
+    {"id":"valveSwitch","label":"Delivery valve","component":"valve","command":"valveSwitch","kind":"toggle","binding":"/controls/valveOpen"},
+    {"id":"demand","label":"Assumed demand (%)","component":"pump","command":"demand","kind":"range","binding":"/controls/demandPct","min":0,"max":100,"step":1},
+    {"id":"breakGenerator","label":"Inject generator fault","component":"generator","command":"breakGenerator","kind":"button"},
+    {"id":"repairGenerator","label":"Repair generator","component":"generator","command":"repairGenerator","kind":"button"}
+  ],
+  "provenance":[{"id":"fictional","label":"Illustrative utility example","kind":"illustrative","description":"All geometry and model behavior were invented for a reusable viewer demonstration."}],
+  "assumptions":[{"id":"levelChange","label":"Reservoir animation rate","value":"Invented bounded level changes","provenance":"fictional"}]
+}

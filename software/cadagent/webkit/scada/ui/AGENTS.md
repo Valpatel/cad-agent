@@ -1,0 +1,15 @@
+# Scope: packages/scada-ui
+
+- Read `README.md`, `STYLE_GUIDE.md`, `CONTRIBUTING.md` and the relevant `docs/API.md` / `docs/SYSTEM_FORMAT.md` contract before changing public components, viewer behavior or system definitions. Do not invent an import or binding format.
+- Follow `src/README.md` for domain ownership. Flat historical/public entries are compatibility facades; put implementations in their domains. Keep catalog/contracts independent of symbols, viewer, workspace and host code.
+- `src/` is canonical. `npm run build:library` generates package metadata; `npm run build` composes its browser projection under `dist/client/packages/scada-ui/`. Verify `npm run check:generated` before completion; never repair a generated copy.
+- Keep the package independent of the host application's process runtime, data, clock and network/PLC IO. Views share an external adapter/session. A renderer owns visual state, never a second plant model.
+- Declare and validate state fields and ports. Preserve escaping, unique SVG instance IDs, accessible descriptions, keyboard controls and reduced motion. JSON/bindings are data, never executable expressions.
+- Keep geometry/styles in the existing namespaces and preserve the twin's `hostState` behavior. Do not override parent inventory, fault or incident state with standalone defaults.
+- For behavior/visual changes, run the relevant tests and inspect real renders, including small cards and large previews. Regenerate affected thumbnails/manifest/contact sheet from source; do not hand-edit generated images.
+- Keep the README map, public examples, style guide and prompts aligned with real exports and generated artifacts. Report checks actually performed. Do not infer public npm publication, an open-source license or a live Site update from local packaging.
+- Use the [component-authoring skill](../../../../../.agents/skills/scada-component-authoring/SKILL.md) for a new type or variant and the [viewer-review skill](../../../../../.agents/skills/scada-viewer-review/SKILL.md) for rendered acceptance. Declare meaningful states and model support separately; adding artwork alone does not add an equipment solver.
+
+- The reusable gallery belongs to this package at `img/`. Generate SVGs and indexes with `npm run gallery:generate`, verify `npm run gallery:check` and image-mode QA, and regenerate affected JPEGs. Never patch output hashes or duplicate artwork in the exporter. A different library owns its own `img/`; scenario previews belong to `scada-sim/img/`.
+
+- Maintain folder navigation using the repository's [documentation skill](../../../../../.agents/skills/repository-documentation/SKILL.md). Generated image indexes belong to their generator; authored README maps belong to their source folder. Keep references within this package relative, and link source-only tools/tests back to the repository when they are excluded from runtime distributions. Run root `npm run docs:check` and render edited architecture diagrams with `npm run docs:mermaid`.

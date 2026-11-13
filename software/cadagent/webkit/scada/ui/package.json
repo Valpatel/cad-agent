@@ -1,0 +1,77 @@
+{
+  "name": "@valpatel/scada-ui",
+  "version": "1.4.1",
+  "description": "Framework-free animated SCADA equipment and accessible workspace primitives with typed visual state",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./src/index.mjs",
+  "module": "./src/index.mjs",
+  "style": "./src/styles.css",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.mjs",
+    "./components": "./src/scada-components.mjs",
+    "./catalog": "./src/scada-catalog.mjs",
+    "./workspace": "./src/scada-workspace.mjs",
+    "./viewer": "./src/scada-viewer.mjs",
+    "./system-definition": "./src/system-definition.mjs",
+    "./schema": "./schema/scada-system.schema.json",
+    "./schema.json": "./schema/scada-system.schema.json",
+    "./styles": "./src/styles.css",
+    "./styles.css": "./src/styles.css",
+    "./components.css": "./src/scada-components.css",
+    "./workspace.css": "./src/scada-workspace.css",
+    "./viewer.css": "./src/scada-viewer.css",
+    "./metadata": "./src/metadata.mjs",
+    "./metadata.json": "./metadata/components.json",
+    "./thumbnails.json": "./metadata/thumbnails.json",
+    "./thumbnails/*": "./img/thumbnails/*",
+    "./package.json": "./package.json",
+    "./img/*": "./img/*",
+    "./gallery.json": "./metadata/gallery.json"
+  },
+  "files": [
+    "src/",
+    "metadata/",
+    "img/",
+    "schema/",
+    "docs/",
+    "examples/",
+    "README.md",
+    "STYLE_GUIDE.md",
+    "CONTRIBUTING.md",
+    "AGENT_PROMPTS.md",
+    "AGENTS.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Valpatel/cad-agent.git",
+    "directory": "software/cadagent/webkit/scada/ui"
+  },
+  "keywords": [
+    "scada",
+    "svg",
+    "industrial-ui",
+    "digital-twin",
+    "animation"
+  ],
+  "engines": {
+    "node": ">=20.18"
+  },
+  "scripts": {
+    "build:schema": "node ../../../../../tools/webkit/scada/ui/build-schema.mjs",
+    "check:schema": "node ../../../../../tools/webkit/scada/ui/build-schema.mjs --check",
+    "build:metadata": "node ../../../../../tools/webkit/scada/ui/build-metadata.mjs",
+    "check:metadata": "node ../../../../../tools/webkit/scada/ui/build-metadata.mjs --check",
+    "test": "node --test --test-concurrency=2 ../../../../../tests/webkit/scada/ui/*.test.mjs",
+    "thumbnails": "python3 ../../../../../tools/webkit/scada/ui/generate-thumbnails.py",
+    "qa:viewer": "python3 ../../../../../tools/webkit/scada/ui/qa/check-scada-viewer-browser.py",
+    "qa:component-states": "python3 ../../../../../tools/webkit/scada/ui/qa/check-component-states.py",
+    "gallery:generate": "python3 ../../../../../tools/webkit/scada/ui/generate-gallery.py",
+    "gallery:check": "python3 ../../../../../tools/webkit/scada/ui/generate-gallery.py --check",
+    "qa:gallery": "python3 ../../../../../tools/webkit/scada/ui/qa/check-gallery.py"
+  }
+}

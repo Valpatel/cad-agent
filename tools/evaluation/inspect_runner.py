@@ -75,6 +75,54 @@ def runtime(source):
     return dict(revision=head, python=sys.version.split()[0], source=str(source))
 
 
+def preflight(source=None):
+    """Read-only prerequisite availability, never retained-service qualification."""
+    checks = {}
+
+    def record(name, available, detail):
+        checks[name] = dict(state='available' if available else 'unavailable', detail=detail)
+
+    record('python', sys.version_info >= (3, 11), sys.version.split()[0])
+    record('linux', sys.platform == 'linux', sys.platform)
+    record('cgroup_v2', Path('/sys/fs/cgroup/cgroup.controllers').is_file(),
+           'requires the unified cgroup hierarchy')
+    record('systemd_run', shutil.which('systemd-run') is not None,
+           'required to launch the retained user service')
+    try:
+        status = subprocess.run(['systemctl', '--user', 'is-system-running'],
+                                capture_output=True, text=True, timeout=10, check=False)
+        state = status.stdout.strip()
+        available = ((state == 'running' and status.returncode == 0)
+                     or (state == 'degraded' and status.returncode == 1))
+        record('user_manager', available, dict(state=state, exit_code=status.returncode))
+    except (OSError, subprocess.SubprocessError) as exc:
+        record('user_manager', False, f'{type(exc).__name__}: {exc}')
+    try:
+        docker = Docker()
+        record('docker', True, dict(daemon=docker.identity, endpoint='unix:///var/run/docker.sock'))
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        record('docker', False, f'{type(exc).__name__}: {exc}')
+        checks['compose'] = dict(state='not_checked', detail='local Docker prerequisite unavailable')
+    else:
+        try:
+            version = docker.call('compose', 'version', '--short').strip()
+            record('compose', bool(version), version)
+        except (OSError, ValueError, subprocess.SubprocessError) as exc:
+            record('compose', False, f'{type(exc).__name__}: {exc}')
+    if source is None:
+        checks['inspect_source'] = dict(state='not_checked', detail='optional --inspect-source omitted')
+    else:
+        try:
+            record('inspect_source', True, runtime(source))
+        except (OSError, ValueError, subprocess.SubprocessError, ImportError) as exc:
+            record('inspect_source', False, f'{type(exc).__name__}: {exc}')
+    required = [name for name in checks if name != 'inspect_source' or source is not None]
+    return dict(schema='cadagent.inspect-prerequisites/1',
+                passed=all(checks[name]['state'] == 'available' for name in required),
+                checks=checks, runtime_qualified=False, real_model_called=False,
+                note='Availability only; retained service, sandbox and provider controls remain required.')
+
+
 class Docker:
     """Only an explicitly local daemon; never enumerate or mutate by broad name."""
     def __init__(self):
@@ -645,14 +693,20 @@ def wire_qualification():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('collect', 'finalize', 'wire', 'qualify'))
-    parser.add_argument('--work', type=Path, required=True)
+    parser.add_argument('action', choices=('preflight', 'collect', 'finalize', 'wire', 'qualify'))
+    parser.add_argument('--work', type=Path)
     parser.add_argument('--image')
     parser.add_argument('--inspect-source', type=Path)
     parser.add_argument('--unit')
     parser.add_argument('--case', choices=CASES, default='normal')
     args = parser.parse_args()
     try:
+        if args.action == 'preflight':
+            result = preflight(args.inspect_source)
+            print(json.dumps(result, allow_nan=False))
+            return 0 if result['passed'] else 1
+        if args.work is None:
+            parser.error(f'{args.action} requires --work')
         if args.action == 'collect':
             if not args.image or not args.inspect_source:
                 parser.error('collect requires --image and --inspect-source')

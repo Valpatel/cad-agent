@@ -279,6 +279,58 @@ def test_explicit_qualification_fails_missing_prerequisites(tmp_path):
     assert json.loads(result.stdout)['passed'] is False
 
 
+@pytest.mark.parametrize('state,code,available', [
+    ('running', 0, True), ('degraded', 1, True), ('offline', 1, False),
+    ('running', 1, False), ('degraded', 0, False), ('starting', 1, False),
+])
+def test_preflight_manager_availability_never_claims_qualification(monkeypatch, state, code, available):
+    calls = []
+    def command(argv, **kwargs):
+        calls.append(argv)
+        assert kwargs['timeout'] == 10
+        return subprocess.CompletedProcess(argv, code, state + '\n', '')
+    class LocalDocker:
+        identity = 'local-daemon'
+        def call(self, *args):
+            calls.append(args)
+            assert args == ('compose', 'version', '--short')
+            return '2.40.0\n'
+    monkeypatch.setattr(adapter.subprocess, 'run', command)
+    monkeypatch.setattr(adapter, 'Docker', LocalDocker)
+    monkeypatch.setattr(adapter.sys, 'platform', 'linux')
+    monkeypatch.setattr(adapter.sys, 'version_info', (3, 12))
+    monkeypatch.setattr(adapter.shutil, 'which', lambda name: '/usr/bin/' + name)
+    monkeypatch.setattr(adapter.Path, 'is_file', lambda path: str(path) == '/sys/fs/cgroup/cgroup.controllers')
+    result = adapter.preflight()
+    assert result['passed'] is available
+    assert result['runtime_qualified'] is False
+    assert result['checks']['inspect_source']['state'] == 'not_checked'
+    assert calls == [['systemctl', '--user', 'is-system-running'], ('compose', 'version', '--short')]
+
+
+def test_preflight_reports_missing_tools_and_requested_source_without_mutation(monkeypatch, tmp_path):
+    def unavailable(*args, **kwargs):
+        raise FileNotFoundError('missing executable')
+    monkeypatch.setattr(adapter.subprocess, 'run', unavailable)
+    monkeypatch.setattr(adapter, 'Docker', unavailable)
+    monkeypatch.setattr(adapter, 'runtime', unavailable)
+    result = adapter.preflight(tmp_path / 'absent-source')
+    assert result['passed'] is False
+    assert result['checks']['user_manager']['state'] == 'unavailable'
+    assert result['checks']['docker']['state'] == 'unavailable'
+    assert result['checks']['compose']['state'] == 'not_checked'
+    assert result['checks']['inspect_source']['state'] == 'unavailable'
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize('passed,exit_code', [(True, 0), (False, 1)])
+def test_preflight_cli_needs_no_work_directory_and_fails_unmet_prerequisites(monkeypatch, capsys, passed, exit_code):
+    monkeypatch.setattr(adapter.sys, 'argv', ['inspect_runner.py', 'preflight'])
+    monkeypatch.setattr(adapter, 'preflight', lambda source: dict(passed=passed, runtime_qualified=False))
+    assert adapter.main() == exit_code
+    assert json.loads(capsys.readouterr().out)['runtime_qualified'] is False
+
+
 def test_phase1_uv_extraction_whitelist_prevents_executing_unexpected_members(tmp_path):
     path = tmp_path / 'uv.tar.gz'
     def packed(entries):

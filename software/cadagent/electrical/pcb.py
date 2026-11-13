@@ -79,7 +79,11 @@ def kicad_report(path: Path, kind: str, waivers: dict | None = None) -> dict:
         if not isinstance(data, dict):
             raise ValueError('report must be a JSON object')
         severities = data.get('included_severities')
-        if not isinstance(severities, list) or not set(REQUIRED_SEVERITIES) <= set(severities):
+        if not isinstance(severities, list):
+            raise ValueError(f'report missing or invalid severity metadata: included_severities={severities!r}; '
+                             'regenerate with kicad-cli 10 or newer and --severity-all '
+                             '(KiCad 9 reports lack this metadata)')
+        if not set(REQUIRED_SEVERITIES) <= set(severities):
             raise ValueError(f'report filtered severities: included_severities={severities!r}; '
                              'rerun kicad-cli with --severity-all')
         ignored = data.get('ignored_checks', [])

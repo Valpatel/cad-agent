@@ -21,9 +21,13 @@ import time
 
 import standard_eval as evaluation
 
+REASONING_EFFORTS = ('low', 'medium', 'high')
 
-def command(harness, executable, model, project):
+
+def command(harness, executable, model, project, reasoning_effort='medium'):
     """Version-sensitive flags, recorded verbatim with every attempted trial."""
+    if reasoning_effort not in REASONING_EFFORTS:
+        raise ValueError('reasoning effort must be low, medium or high')
     if harness == 'codex':
         args = [executable, 'exec', '--json', '--ephemeral', '--ignore-user-config',
                 '--skip-git-repo-check', '--sandbox', 'workspace-write',
@@ -33,7 +37,7 @@ def command(harness, executable, model, project):
             'skills.include_instructions': 'false',
             'features.skip_host_skill_discovery': 'true',
             'memories.use_memories': 'false', 'memories.generate_memories': 'false',
-            'web_search': '"disabled"', 'model_reasoning_effort': '"medium"',
+            'web_search': '"disabled"', 'model_reasoning_effort': json.dumps(reasoning_effort),
         }
         for key, value in settings.items():
             args.extend(['-c', f'{key}={value}'])
@@ -47,7 +51,7 @@ def command(harness, executable, model, project):
                 '--no-session-persistence', '--no-chrome', '--disable-slash-commands',
                 '--tools', 'Bash,Read,Write,Edit', '--allowedTools', 'Bash,Read,Write,Edit',
                 '--permission-mode', 'dontAsk', '--permission-prompts', 'none',
-                '--max-budget-usd', '2', '--effort', 'medium']
+                '--max-budget-usd', '2', '--effort', reasoning_effort]
     raise ValueError('harness must be codex or claude')
 
 
@@ -157,7 +161,11 @@ def write_json(path, data):
         stream.write('\n')
 
 
-def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=None):
+def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, python=None,
+            reasoning_effort='medium'):
+    # Reject unsupported requests before creating a trial or launching a CLI.
+    if reasoning_effort not in REASONING_EFFORTS:
+        raise ValueError('reasoning effort must be low, medium or high')
     if sys.platform != 'linux':
         raise ValueError('this collector requires Linux cgroup v2 and user systemd')
     executable = shutil.which(harness)
@@ -181,7 +189,7 @@ def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, pyt
         prompt += f'\nThe existing Python interpreter is {python}. Use it when Python is needed; do not install dependencies.\n'
         (work / 'prompt.txt').write_text(prompt)
     project = work / 'project'
-    args = command(harness, executable, model, project)
+    args = command(harness, executable, model, project, reasoning_effort)
     # Preserve the normal OS home/login without copying credentials or assigning
     # an alternative HOME/CODEX_HOME. Do not lend unrelated environment secrets.
     env = {key: os.environ[key] for key in ('HOME', 'LANG', 'LC_ALL', 'TERM',
@@ -193,6 +201,7 @@ def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, pyt
                              capture_output=True, text=True, timeout=15)
     harness_version = version.stdout.strip() if version.returncode == 0 else None
     write_json(work / 'invocation.json', dict(argv=args, harness_version=harness_version,
+               reasoning_effort_requested=reasoning_effort,
                prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
                job_sha256=prep['job_sha256'], toolkit_revision=prep['kit_revision'],
                python=str(python) if python else None, child_path=env['PATH'],
@@ -218,6 +227,7 @@ def collect(job_id, mode, work, harness, model, kit=None, kit_revision=None, pyt
         except OSError as exc:
             launch_error = str(exc)
     metadata = dict(harness=harness, harness_version=harness_version, model=model,
+                    reasoning_effort_requested=reasoning_effort, reasoning_effort_effective=None,
                     model_source='requested; resolved_model reported separately when available',
                     seed=None, wall_seconds=round(time.monotonic()-started, 3), exit_code=code,
                     timed_out=timed_out, launch_error=launch_error, cli_group_gone=settled, peak_context=None,
@@ -295,7 +305,8 @@ def finalize(work, unit):
                               and metadata.get('malformed_transcript_lines') == 0 and metadata.get('session_count') == 1)
     result['collector'] = {key: metadata.get(key) for key in ('launch_error', 'terminal_success_event',
                           'malformed_transcript_lines', 'harness_errors', 'session_count', 'session_id_sha256',
-                          'resolved_model', 'cached_input_tokens', 'cache_creation_input_tokens', 'collector_settled')}
+                          'resolved_model', 'reasoning_effort_requested', 'reasoning_effort_effective',
+                          'cached_input_tokens', 'cache_creation_input_tokens', 'collector_settled')}
     result['unit'] = receipt
     write_json(work / 'result.json', result)
     return result
@@ -309,6 +320,8 @@ def main():
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--harness', choices=('codex', 'claude'))
     parser.add_argument('--model')
+    parser.add_argument('--reasoning-effort', choices=REASONING_EFFORTS, default='medium',
+                        help='requested CLI effort (collect only; effective value is unverified)')
     parser.add_argument('--unit')
     parser.add_argument('--kit', type=Path)
     parser.add_argument('--kit-revision')
@@ -318,7 +331,7 @@ def main():
         if not all((args.job, args.mode, args.harness, args.model)):
             parser.error('collect requires --job --mode --harness --model')
         result = collect(args.job, args.mode, args.work, args.harness, args.model,
-                         args.kit, args.kit_revision, args.python)
+                         args.kit, args.kit_revision, args.python, args.reasoning_effort)
     else:
         if not args.unit:
             parser.error('finalize requires --unit')

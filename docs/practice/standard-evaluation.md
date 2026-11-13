@@ -277,6 +277,16 @@ Normal OS login is preserved without credential copying. Child PATH excludes use
 
 Requested output-token caps and seeds are recorded as unenforced/unknown where the CLI exposes no equivalent control. Codex requests ephemeral execution with user config, project instructions, skill discovery, memories, hooks, plugins, apps, delegation, shell snapshots and web search disabled. Claude requests SafeMode, empty settings sources and MCP configuration, no session persistence, explicit file/shell tools and no permission prompts. These controls depend on the recorded CLI versions; `fresh_session` remains null unless independently established. Claude SafeMode disables native skill discovery, so kit access uses the explicit checkout path.
 
+For legacy CLI smoke trials, `runner.py collect --reasoning-effort low|medium|high` selects the requested effort;
+omitting it preserves `medium`. The adapters use Codex's
+[`model_reasoning_effort`](https://developers.openai.com/codex/config-reference) override and Claude's
+[`--effort`](https://code.claude.com/docs/en/cli-reference) flag. Their availability depends on the CLI and model;
+an unsupported request is a failed attempt, never a reason to silently substitute another level. The exact argv
+and `reasoning_effort_requested` are retained; `reasoning_effort_effective` stays null because the collector does
+not verify provider enforcement. `finalize` preserves both in `result.json`'s `collector` object and leaves old
+records without these fields unknown. Effort labels are not equal compute budgets across providers. This option
+does not qualify legacy whole-checkout trials for controlled comparisons or bypass the planned v2 boundary.
+
 Provider usage fields retain their provider meaning. Cached-input and cache-creation tokens are separate collector fields, not an invented common context measurement. Tool counts cover recognized retained events only. Resolved model, success event, malformed transcript lines and session IDs (hashed) are collected when emitted. Structured error items conservatively exclude a usable trial, including warnings that the CLI emits as error items; this is not a diagnosis that a shell command failed. Kit use remains null until independent review of actual successful tool execution; artifact correctness does not fill that field.
 
 Kit preparation additionally requires `--kit /path/to/clean/released-checkout --kit-revision FULL_40_CHARACTER_SHA`. It verifies HEAD and a clean worktree. The prompt presents this path, its docs, canonical skills and the Python import path explicitly. This is explicit toolkit availability; it does not demonstrate native harness skill discovery. A successful toolkit command or import must be observed in executed tool evidence before a trial can claim toolkit use. Writing code containing an import, printing a command or merely reading documentation is insufficient.

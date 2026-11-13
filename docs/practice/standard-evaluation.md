@@ -11,6 +11,9 @@ PCB work, simulation, assembly/service and release integrity. Three entries link
 25 are **candidate briefs, not runnable or qualified evaluations**. These counts describe the initial catalog,
 not completed trials or coverage of every engineering task.
 
+<details>
+<summary>Sources, YAML fields, qualification and repeated-series measurements</summary>
+
 ### Reuse before new tasks
 
 The source records in the YAML retain the reuse decision and license limits. This change imports no benchmark
@@ -79,6 +82,8 @@ For Codex cloud/mobile, record the actual harness, network/sandbox limits and ar
 viewport emulation, actual mobile-device interaction and cloud-only execution are distinct conditions. A cloud
 agent producing files does not establish that a phone user can inspect or download them. Site discoverability,
 installation, toolkit use, artifact correctness and physical usefulness need separate outcomes.
+
+</details>
 
 ## Planned CAD design evaluations
 

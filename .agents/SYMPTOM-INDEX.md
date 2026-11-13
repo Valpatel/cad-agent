@@ -2,6 +2,7 @@
 
 | Symptom | Guidance |
 | --- | --- |
+| A setup probe times out without a command receipt, or an archive payload cap misses repeated directory/header entries | [Retain failed phase evidence and bound decompressed metadata](inbox/agents/2026-11-06-agent-discovery-and-resource-boundaries.md#a-metadata-probe-must-retain-its-failures-and-bound-archive-metadata) |
 | Full CI rejects the active Ubuntu source URI but the actual source shape is missing | [Retain bounded source evidence without admitting it](inbox/2026-11-11-ci-apt-timeouts-need-source-correction.md#retain-the-rejected-source-shape-without-admitting-it) |
 | A valid changelog-fragment link breaks after folding into root CHANGELOG.md | [Check the moved Markdown consumer before release](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#check-release-links-after-moving-their-markdown-consumer) |
 | A review says PASS but its marker is first and the gate ignores it | [Read back the last non-empty verdict line](inbox/publish/2026-11-07-release-guards-need-current-boundaries.md#read-back-the-verdicts-last-non-empty-line) |

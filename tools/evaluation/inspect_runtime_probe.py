@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+"""Reviewed phase-1 metadata probe: no installs, resolution, images or models.
+
+Download a hash-bound uv binary and three pinned source files into a fresh
+private directory; execute only version/help and offline frozen exports.
+"""
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tarfile
+import tempfile
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, HTTPSHandler, Request, build_opener
+
+INSPECT_REVISION = 'ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8'
+HELPER_HASHES = {
+    'runner.py': 'c20a2799749e3bb56951fb31555c0f29f3052b12b6cbbfc9ac769389669af5bc',
+    'standard_eval.py': '289dc3b4dd30ed403432ae84f0be01da91ea7713f361a04fb5f033766a13bfa8',
+}
+for name, expected in HELPER_HASHES.items():
+    if hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() != expected:
+        raise ValueError('phase-1 process helper differs from reviewed bytes')
+import runner
+
+UV_VERSION = '0.13.4'
+UV_URL = 'https://github.com/astral-sh/uv/releases/download/0.13.4/uv-x86_64-unknown-linux-gnu.tar.gz'
+UV_HASH = '2b428396f12572d4429cf210ca234dd599a33b3af0958a4d5ed569d63e3f344f'
+CHECKSUM_HASH = '4504013b0a07f04078a3423e741b904206c2b4ea04bffaf3cba1b2334a007c93'
+SOURCE = 'https://raw.githubusercontent.com/UKGovernmentBEIS/inspect_ai/' + INSPECT_REVISION + '/'
+SOURCE_HASHES = {
+    'pyproject.toml': 'c05c87727d3908ed9c56ead746012af41440f99435ebac98cad105f566f433ac',
+    'uv.lock': '51e5c7e02907eddb299da012cc1a141ef9054f544300a19ee1f862d169da497c',
+    'CONTRIBUTING.md': '772f6f756d7dfad60a54355987ebdb229709feb4700503a98983098beb130b9f',
+}
+MAX_TAR_BYTES = 128_000_000
+
+
+def metadata_limits():
+    import resource
+    resource.setrlimit(resource.RLIMIT_FSIZE, (2_000_000, 2_000_000))
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+class ReleaseRedirects(HTTPRedirectHandler):
+    """Only GitHub's expected public HTTPS release-asset redirect, at most two."""
+    def __init__(self, allow_assets):
+        self.allow_assets, self.count = allow_assets, 0
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        target = urlsplit(newurl)
+        self.count += 1
+        if (not self.allow_assets or self.count > 2 or target.scheme != 'https'
+                or target.hostname != 'release-assets.githubusercontent.com'
+                or not target.path.startswith('/github-production-release-asset/')
+                or target.username is not None or target.password is not None
+                or target.port not in (None, 443)):
+            raise ValueError('redirect is outside the reviewed public artifact scope')
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def download(url, path, expected, limit):
+    # Public immutable artifacts only. Preserve the managed proxy and CA trust.
+    if url not in (UV_URL, UV_URL + '.sha256', *(SOURCE + name for name in SOURCE_HASHES)):
+        raise ValueError('URL is outside the reviewed public artifact scope')
+    opener = build_opener(HTTPSHandler(), ReleaseRedirects(url.startswith('https://github.com/')))
+    size = 0
+    with opener.open(Request(url, headers={'User-Agent': 'cad-agent-inspect-probe/1'}), timeout=20) as response, Path(path).open('xb') as out:
+        os.chmod(path, 0o600)
+        while True:
+            data = response.read(min(65536, limit-size+1))
+            if not data:
+                break
+            size += len(data)
+            if size > limit:
+                raise ValueError('download exceeds its artifact bound')
+            out.write(data)
+    if digest(path) != expected:
+        raise ValueError('download hash differs from reviewed artifact')
+
+
+def extract_uv(archive, destination):
+    prefix = 'uv-x86_64-unknown-linux-gnu'
+    found, seen, size = {}, set(), 0
+    # Bound every decompressed byte, including PAX/GNU headers and padding,
+    # before tarfile parses metadata that may otherwise allocate without a cap.
+    with tempfile.TemporaryFile(dir=Path(archive).parent) as unpacked:
+        with gzip.open(archive, 'rb') as compressed:
+            while True:
+                data = compressed.read(min(65536, MAX_TAR_BYTES-size+1))
+                if not data:
+                    break
+                size += len(data)
+                if size > MAX_TAR_BYTES:
+                    raise ValueError('decompressed uv archive exceeds byte bound')
+                unpacked.write(data)
+        unpacked.seek(0)
+        with tarfile.open(fileobj=unpacked, mode='r:', ignore_zeros=True) as tar:
+            for member in tar:
+                canonical = member.name.rstrip('/')
+                if canonical in seen or len(seen) >= 3:
+                    raise ValueError('duplicate or excessive uv archive members')
+                seen.add(canonical)
+                if member.isdir() and canonical == prefix:
+                    continue
+                if member.name not in (prefix + '/uv', prefix + '/uvx') or not member.isfile():
+                    raise ValueError('unexpected uv archive member/type')
+                name = Path(member.name).name
+                if not 0 < member.size <= 80_000_000:
+                    raise ValueError('oversized uv archive member')
+                data = tar.extractfile(member).read(member.size + 1)
+                if len(data) != member.size:
+                    raise ValueError('truncated uv archive member')
+                found[name] = data
+    if set(found) != {'uv', 'uvx'}:
+        raise ValueError('expected exactly uv and uvx binaries')
+    destination.mkdir(mode=0o700)
+    for name, data in found.items():
+        with (destination / name).open('xb') as out:
+            out.write(data)
+        (destination / name).chmod(0o500)
+
+
+def metadata_command(work, index, argv, source, env, timeout=15):
+    """Retain failure evidence after group settlement, including timeouts."""
+    stdout, stderr = work / f'{index}.stdout', work / f'{index}.stderr'
+    runner.write_json(work / f'{index}.invocation.json', dict(argv=argv, timeout_seconds=timeout))
+    code, timed_out, error, child, settled = None, False, None, None, None
+    with stdout.open('xb') as out, stderr.open('xb') as err:
+        os.chmod(stdout, 0o600)
+        os.chmod(stderr, 0o600)
+        try:
+            child = subprocess.Popen(argv, env=env, cwd=source, stdout=out, stderr=err,
+                                     start_new_session=True, preexec_fn=metadata_limits)
+            try:
+                code = child.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                timed_out = True
+            finally:
+                try:
+                    runner.settle_group(child)
+                    code = child.wait(timeout=5)
+                    settled = runner.group_gone(child.pid)
+                except (OSError, subprocess.SubprocessError) as exc:
+                    error = f'{type(exc).__name__}: {exc}'
+                    settled = False
+        except (OSError, subprocess.SubprocessError) as exc:
+            error = f'{type(exc).__name__}: {exc}'
+    evidence_errors = {}
+    def observed_hash(name, path):
+        try:
+            return digest(path) if path.is_file() else None
+        except OSError as exc:
+            evidence_errors[name] = f'{type(exc).__name__}: {exc}'
+            return None
+    hashes = {name: observed_hash(name, source / name) for name in SOURCE_HASHES}
+    output_hashes = {name: observed_hash(name, path) for name, path in (('stdout', stdout), ('stderr', stderr))}
+    receipt = dict(argv=argv, exit_code=code, timed_out=timed_out, error=error, group_settled=settled,
+                   pid=child.pid if child else None,
+                   stdout_sha256=output_hashes['stdout'], stderr_sha256=output_hashes['stderr'],
+                   source_sha256=hashes, evidence_errors=evidence_errors)
+    try:
+        runner.write_json(work / f'{index}.receipt.json', receipt)
+    except OSError as exc:
+        # The caller retains this primary outcome in the phase failure receipt.
+        raise ValueError(f'metadata command {index} receipt write failed: {type(exc).__name__}: {exc}; primary outcome={json.dumps(receipt)}') from exc
+    if code != 0 or timed_out or error or settled is not True or evidence_errors or hashes != SOURCE_HASHES:
+        raise ValueError(f'metadata command {index} failed; retain its receipt, do not retry setup')
+    return receipt
+
+
+def probe(work):
+    work = Path(work).absolute()
+    if '..' in work.parts or any(p.is_symlink() for p in (work, *work.parents)):
+        raise ValueError('work path must not contain symlinks/traversal')
+    work.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if any(work.iterdir()):
+        raise ValueError('work must be fresh and empty')
+    work.chmod(0o700)
+    try:
+        return _probe(work)
+    except (OSError, ValueError, subprocess.SubprocessError, tarfile.TarError) as exc:
+        failure = dict(phase=1, passed=False, error=f'{type(exc).__name__}: {exc}')
+        try:
+            runner.write_json(work / 'phase-failure.json', failure)
+        except OSError as receipt_error:
+            raise ValueError(f'{failure["error"]}; phase receipt failed: {receipt_error}') from exc
+        raise
+
+
+def _probe(work):
+    source = work / 'source'
+    source.mkdir(mode=0o700)
+    checksum = work / 'uv.sha256'
+    download(UV_URL + '.sha256', checksum, CHECKSUM_HASH, 1024)
+    if checksum.read_text() != UV_HASH + '  uv-x86_64-unknown-linux-gnu.tar.gz\n':
+        raise ValueError('official release checksum content differs')
+    archive = work / 'uv.tar.gz'
+    download(UV_URL, archive, UV_HASH, 20_000_000)
+    extract_uv(archive, work / 'tool')
+    for name, expected in SOURCE_HASHES.items():
+        download(SOURCE + name, source / name, expected, 2_000_000)
+        (source / name).chmod(0o400)
+    uv = str(work / 'tool/uv')
+    commands = [
+        [uv, '--version'],
+        [uv, 'export', '--help'],
+        [uv, 'tree', '--help'],
+        [uv, '--no-config', 'export', '--offline', '--frozen', '--no-default-groups',
+         '--no-emit-project', '--no-header', '--no-annotate', '--python', sys.executable,
+         '--output-file', str(work / 'base.requirements.txt')],
+        [uv, '--no-config', 'export', '--offline', '--frozen', '--no-default-groups', '--extra', 'dev',
+         '--no-emit-project', '--no-header', '--no-annotate', '--python', sys.executable,
+         '--output-file', str(work / 'dev-extra.requirements.txt')],
+    ]
+    env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'UV_OFFLINE': '1',
+           'UV_PYTHON_DOWNLOADS': 'never', 'UV_CACHE_DIR': str(work / 'cache'),
+           'PYTHONDONTWRITEBYTECODE': '1'}
+    receipts = []
+    for index, argv in enumerate(commands):
+        # Metadata-only commands cannot invoke dependency builds: no project
+        # source was fetched, no sync/install command or model is available.
+        receipts.append(metadata_command(work, index, argv, source, env))
+        if index == 0 and not (work / '0.stdout').read_text().startswith('uv 0.13.4 '):
+            raise ValueError('verified artifact reports an unexpected version')
+    artifacts = {name: dict(sha256=digest(work / name), bytes=(work / name).stat().st_size)
+                 for name in ('base.requirements.txt', 'dev-extra.requirements.txt')}
+    result = dict(phase=1, upstream_revision=INSPECT_REVISION, uv_sha256=UV_HASH, exports=artifacts,
+                  environment_installed=False, image_operations=False, dependency_resolution=False,
+                  note='Exports retain upstream markers/hashes; no minimal environment has been selected or qualified.')
+    runner.write_json(work / 'probe.json', result)
+    return result
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--work', type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        print(json.dumps(probe(args.work)))
+    except (OSError, ValueError, subprocess.SubprocessError, tarfile.TarError) as exc:
+        print(json.dumps(dict(phase=1, passed=False, error=str(exc))))
+        raise SystemExit(1)

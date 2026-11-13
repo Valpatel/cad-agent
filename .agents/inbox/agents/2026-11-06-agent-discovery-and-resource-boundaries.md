@@ -154,3 +154,27 @@ recorded Compose project/config and verify absence. Test unrelated-resource pres
 **Limits:** this is a reviewed design correction, not runtime qualification. Cached Docker/image metadata and
 synthetic mock usage prove neither isolated execution nor real provider accounting; the guide requires real inert
 and wire controls before trials. No new storage facility was established by this study.
+
+## A metadata probe must retain its failures and bound archive metadata
+
+On 2026-11-12, independent pre-execution review of [#648](https://github.com/Valpatel/cad-agent/pull/648)
+found that the proposed Inspect setup probe wrote its command receipt only after `wait()` returned. An inert
+timeout left stdout/stderr but no argv/timeout/settlement receipt. A separate archive control supplied repeated
+root-directory entries: the binary whitelist rejected duplicate binaries but accepted duplicate directories;
+its payload-size sum did not bound decompressed tar headers.
+
+**Cause:** success-path receipt writing and regular-file payload limits omitted the failure and metadata consumers.
+**Rule:** persist invocation before spawn, settle the owned group and record terminal error/timeout/status, output
+hashes and current source hashes before refusing the phase. Bound the complete decompressed stream before tar
+parsing, count directory entries too, and reject duplicate members. A frozen script must also pin any imported
+process helpers before importing them; a changing draft helper is not part of a frozen action.
+
+Evidence: `PYTHONDONTWRITEBYTECODE=1 <existing-test-python> -m pytest -q -p no:cacheprovider
+tests/repo/test_inspect_eval_runner.py tests/repo/test_standard_eval.py tests/repo/test_standard_eval_runner.py`
+reported `82 passed, 2 skipped` after correction. Controls execute an inert Python timeout and require its retained
+invocation/failure/settlement receipts, reject a missing executable with a retained failure, reject repeated tar
+directories, and cap decompressed bytes before parsing.
+
+**Limits:** these controls downloaded or executed no uv artifact, installed no environment and ran no container,
+provider or model. They repair the proposed action's evidence contract; they do not qualify its runtime. The two
+optional skips remain unmet runtime evidence, not passes.

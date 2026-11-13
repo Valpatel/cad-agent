@@ -306,23 +306,46 @@ export async function readerOutlineClickProblems(browser, base) {
   return problems;
 }
 
+/** Capture one layout sample. A resize can expose the new viewport before responsive style/observer work;
+ * consistency alone can accept the preceding layout. Require the commanded layout and assert this SAME sample. */
+export function readerOverflowSnapshot(expected = null) {
+  const p = document.querySelector('.cad-nav-panel'), style = getComputedStyle(p);
+  const state = { fits: p.scrollHeight <= p.clientHeight + 1, height: p.clientHeight, content: p.scrollHeight,
+    contain: style.overscrollBehaviorY, position: style.position, measured: p.hasAttribute('data-scrollable'),
+    article: scrollY, viewport: { width: innerWidth, height: innerHeight } };
+  if (!expected) return state;
+  const { width, height, overflow, position } = expected;
+  return innerWidth === width && innerHeight === height && state.position === position &&
+    state.fits === !overflow && state.measured === (position === 'sticky' && overflow) &&
+    state.contain === (position === 'sticky' && overflow ? 'contain' : 'auto') &&
+    (position !== 'sticky' || state.height <= height) ? state : false;
+}
+
 /** A fitting desktop tree must not become a wheel dead zone; containment follows actual overflow after edits. */
 export async function readerOverflowProblems(browser, base) {
   const problems=[],states=[],evidence=await mkdtemp(path.join(tmpdir(),'cad-agent-reader-overflow-'));
   const page=await browser.newPage({viewport:{width:1920,height:1080}});
-  const state=()=>page.locator('.cad-nav-panel').evaluate(p=>({fits:p.scrollHeight<=p.clientHeight+1,height:p.clientHeight,content:p.scrollHeight,contain:getComputedStyle(p).overscrollBehaviorY,position:getComputedStyle(p).position,measured:p.hasAttribute('data-scrollable'),article:scrollY}));
-  const current=()=>page.waitForFunction(()=>{const p=document.querySelector('.cad-nav-panel'),s=getComputedStyle(p);return s.position==='sticky'?(p.hasAttribute('data-scrollable')===(p.scrollHeight>p.clientHeight+1)):!p.hasAttribute('data-scrollable');});
+  const state=()=>page.evaluate(readerOverflowSnapshot);
+  const current=async expected=>{
+    try {
+      const sample=await page.waitForFunction(readerOverflowSnapshot,expected);
+      try{return await sample.jsonValue();}finally{await sample.dispose();}
+    } catch(error) {
+      states.push({readinessFailure:{expected,error:error.message,last:await state()}});
+      throw error;
+    }
+  };
   try{
     await page.goto(base+'/docs/toolkit',{waitUntil:'networkidle'});await page.waitForSelector('cad-nav[data-ready]');
-    const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});await current();
-    const folded=await state();states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
+    const panel=page.locator('.cad-nav-panel');await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=false;});const folded=await current({width:1920,height:1080,overflow:false,position:'sticky'});
+    states.push({folded});if(!folded.fits||folded.contain!=='auto')problems.push('reader overflow: folded fitting tree traps wheel input');
     const old=await page.addStyleTag({content:'cad-nav .cad-nav-panel{overscroll-behavior-y:contain!important}'});const planted=await state();states.push({blanketContainRejected:planted.fits&&planted.contain!=='auto'});if(!(planted.fits&&planted.contain!=='auto'))problems.push('reader overflow: old blanket-contain control not rejected');await old.evaluate(el=>el.remove());
     const box=await panel.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+60);await page.mouse.wheel(0,300);await page.waitForTimeout(400);
     const wheel=await state();states.push({wheel});if(wheel.article<100)problems.push('reader overflow: actual wheel over fitting tree does not scroll article');
-    await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});await current();const expanded=await state();states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');
-    await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');await current();const filtered=await state();states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
-    await page.setViewportSize({width:1440,height:600});await current();const short=await state();states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
-    await page.setViewportSize({width:390,height:844});await current();const mobile=await state();states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
+    await panel.evaluate(p=>{for(const group of p.querySelectorAll('details'))group.open=true;});const expanded=await current({width:1920,height:1080,overflow:true,position:'sticky'});states.push({expanded});if(expanded.fits||expanded.contain!=='contain')problems.push('reader overflow: expanded tree does not contain its wheel');
+    await page.getByRole('searchbox',{name:'Filter topic pages'}).fill('zzzz-no-such-page');const filtered=await current({width:1920,height:1080,overflow:false,position:'sticky'});states.push({filtered});if(!filtered.fits||filtered.contain!=='auto')problems.push('reader overflow: filtering leaves stale containment');
+    await page.setViewportSize({width:1440,height:600});const short=await current({width:1440,height:600,overflow:true,position:'sticky'});states.push({short});if(short.fits||short.contain!=='contain')problems.push('reader overflow: short left-outline layout does not regain containment');
+    await page.setViewportSize({width:390,height:844});const mobile=await current({width:390,height:844,overflow:false,position:'static'});states.push({mobile});if(mobile.position!=='static'||mobile.contain!=='auto')problems.push('reader overflow: mobile retains containment');
   }finally{await page.close();await writeFile(path.join(evidence,'receipt.json'),JSON.stringify({states,problems},null,2));console.log('Reader overflow evidence: '+evidence);}
   return problems;
 }

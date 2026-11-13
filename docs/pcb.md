@@ -32,14 +32,14 @@ All drawings are embedded directly in the status page. Variants and views use re
 
 ## Source-bound electrical evidence
 
-Run KiCad's full ERC and DRC, including schematic parity, immediately before binding the results:
+Use KiCad CLI 10 or newer for source-bound evidence. KiCad 9 reports lack the required severity metadata even with `--severity-all`; regenerate them with a supported version rather than editing the JSON. Run full ERC and DRC, including schematic parity, immediately before binding the results:
 
 ```sh
 kicad-cli sch erc --format json --severity-all -o exports/erc.json hardware/board.kicad_sch
 kicad-cli pcb drc --format json --severity-all --schematic-parity -o exports/drc.json hardware/board.kicad_pcb
 ```
 
-`--severity-all` is required, and the adapter enforces it. kicad-cli 10 writes the severities it was asked for into the report as `included_severities`: the default run writes `["error","warning"]`, which leaves excluded violations out, and `--severity-error` drops warnings too. A report whose `included_severities` does not contain `error`, `warning` and `exclusion` fails with "report filtered severities". DRC reports must also include `violations`, `unconnected_items` and `schematic_parity`. Do not reuse old reports after changing a board. Binding rejects reports with filesystem timestamps older than any listed source. This guard applies at local snapshot creation; subsequent freshness uses hashes so repository checkouts do not depend on timestamps. The adapter does not invoke KiCad and cannot prove that an arbitrary report was actually produced from an arbitrary source; the build orchestrator must run checks before the snapshot.
+`--severity-all` is required, and the adapter enforces it. kicad-cli 10 writes the severities it was asked for into the report as `included_severities`: the default run writes `["error","warning"]`, which leaves excluded violations out, and `--severity-error` drops warnings too. A report with missing or invalid `included_severities` fails with guidance to regenerate it using KiCad CLI 10 or newer and `--severity-all`; a severity list that does not contain `error`, `warning` and `exclusion` fails with "report filtered severities". The claimed KiCad version never substitutes for that metadata. DRC reports must also include `violations`, `unconnected_items` and `schematic_parity`. Do not reuse old reports after changing a board. Binding rejects reports with filesystem timestamps older than any listed source. This guard applies at local snapshot creation; subsequent freshness uses hashes so repository checkouts do not depend on timestamps. The adapter does not invoke KiCad and cannot prove that an arbitrary report was actually produced from an arbitrary source; the build orchestrator must run checks before the snapshot.
 
 An evidence manifest supplies:
 

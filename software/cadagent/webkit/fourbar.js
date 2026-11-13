@@ -33,7 +33,7 @@ export const CONTROLS = Object.freeze({
 });
 // Norton's Example 4-1: a crank-rocker whose transmission angle dips below the guideline
 export const DEFAULTS = Object.freeze({ crank: 40, coupler: 120, rocker: 80, ground: 100, branch: 'open', angle: 40 });
-/** Degrees: a transmission angle below this binds (Norton, Chapter 4: the usual minimum for a four-bar). */
+/** Degrees: usual minimum transmission-angle guideline (Norton, Chapter 4); not a binding or force check. */
 export const MU_POOR = 40;
 export const BRANCHES = Object.freeze({ open: 'Open', crossed: 'Crossed' });
 const CLASSES = {
@@ -319,7 +319,7 @@ export function drawChart(s, r, { t2 = r.start, palette = PALETTES.light } = {})
   const P = palette, { width: W, height: H } = CHART, yPoor = f(chartY(MU_POOR * RAD));
   const label = r.low === null ? 'Transmission angle: the links cannot close at any input angle.' :
     `Transmission angle over the input angle from ${fmt(deg(r.axis))} to ${fmt(deg(r.axis + TAU))}: lowest ${lowText(r)} at ` +
-    `${fmt(shown(r, r.low.t))}; below ${MU_POOR}° the linkage binds.`;
+    `${fmt(shown(r, r.low.t))}; ${MU_POOR}° is the usual minimum guideline, not a binding check.`;
   let body = `<rect x="${CX.x0}" y="${yPoor}" width="${CX.x1 - CX.x0}" height="${f(CX.y1 - yPoor)}" fill="${P.peach}"/>`;
   // where the links cannot close: the runs of samples without a transmission angle, between their neighbours
   const shade = (t0, t1) => { body += `<rect data-part="chart-no-close" x="${f(chartX(r, t0))}" y="${CX.y0}" width="${f(chartX(r, t1) - chartX(r, t0))}" height="${CX.y1 - CX.y0}" fill="${P.mist}"/>`; };
@@ -333,7 +333,7 @@ export function drawChart(s, r, { t2 = r.start, palette = PALETTES.light } = {})
     `<text x="${CX.x0 - 7}" y="${f(chartY(v * RAD) + 4)}" text-anchor="end">${v}°</text>`;
   for (let k = 0; k <= 4; k++) body += `<text x="${f(chartX(r, r.axis + k * Math.PI / 2))}" y="${CX.y1 + 15}" text-anchor="middle">${Math.round(deg(r.axis) + 90 * k)}°</text>`;
   body += `<text x="${(CX.x0 + CX.x1) / 2}" y="${H - 3}" text-anchor="middle">input angle θ₂</text>` +
-    `<text x="${CX.x1 - 4}" y="${f(CX.y1 - 6)}" text-anchor="end" fill="${P.rust}"${halo(P, P.peach, 3)}>below ${MU_POOR}°: binds</text>` +
+    `<text x="${CX.x1 - 4}" y="${f(CX.y1 - 6)}" text-anchor="end" fill="${P.rust}"${halo(P, P.peach, 3)}>below ${MU_POOR}° guideline</text>` +
     `<text x="${CX.x0 + 4}" y="${CX.y0 + 12}" fill="${P.ink}" font-weight="700">μ</text>`;
   const runs = [[]];
   for (const p of r.samples) if (p.mu !== null) runs.at(-1).push(`${f(chartX(r, p.t))},${f(chartY(p.mu))}`); else if (runs.at(-1).length) runs.push([]);

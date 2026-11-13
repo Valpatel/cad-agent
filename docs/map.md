@@ -334,7 +334,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 51 folders</summary>
+<summary>docs — 52 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -905,6 +905,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `docs/practice` |
+
+</details>
+
+<details>
+<summary><code>docs/practice/workbench/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-practice/d-workbench/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/practice/workbench/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `docs/practice/workbench` |
 
 </details>
 

@@ -158,7 +158,12 @@ exist that are not on the remote, push them first.
 ## Issue template
 
 ```markdown
-<one paragraph: the outcome wanted and why; who asked and when>
+<one paragraph: the outcome, why it matters, and current technical evidence>
+
+**Scope:** <the finite deliverable or ongoing program, and what is outside it>
+
+**Acceptance**
+- [ ] <observable completion criterion, with the evidence that will establish it>
 
 **Done**
 - [x] <step> (<commit or PR>)
@@ -178,6 +183,9 @@ exist that are not on the remote, push them first.
   create, merge only when the repo's rules allow (CI green, review done, threads resolved, the user's go-ahead
   where the repo requires it).
 - Write issue and PR text for a reader who was not in the session: no "as discussed", no chat references.
+  Describe autonomous project work through outcomes, source evidence, decisions and next steps; do not quote the
+  owner or reconstruct timestamped conversations. Keep machine-readable work claims, lease timestamps and dated
+  run or measurement receipts: those establish coordination and evidence freshness, not conversational provenance.
 - Do not post private infrastructure details (host names, addresses, credentials) in public repos. Name a run host
   by role ("the CFD host") and keep its address in the private notes the team already uses.
 

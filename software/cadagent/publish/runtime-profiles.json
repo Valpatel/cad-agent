@@ -1,0 +1,130 @@
+{
+  "profiles": {
+    "assembly-reader": {
+      "entrypoints": [
+        "viewer.html"
+      ],
+      "files": {
+        "assembly/guide.js": {
+          "requires": [
+            "assembly/playback.js",
+            "viewer.js"
+          ],
+          "sha256": "bb4d4d9e1940d313dd7c5e100219fe0a7bece14d61bda024c7985800b867e450"
+        },
+        "assembly/playback.js": {
+          "requires": [],
+          "sha256": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7"
+        },
+        "file-geometry.js": {
+          "requires": [],
+          "sha256": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd"
+        },
+        "hud.css": {
+          "requires": [
+            "vendor/fonts/fonts.css"
+          ],
+          "sha256": "ac4e00c68cf803581fb2a1f087b12d0f1f75158d882a99af78fc66b982a531d9"
+        },
+        "package.json": {
+          "requires": [],
+          "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+        },
+        "panel.js": {
+          "requires": [],
+          "sha256": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b"
+        },
+        "stage.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "vendor/three/addons/controls/OrbitControls.js"
+          ],
+          "sha256": "4adace8c17dae14a39f4916d7adade2f4e348628f056fc6ce3f8f48a5caf78fa"
+        },
+        "vendor/file-parsers/THREE-LICENSE.txt": {
+          "requires": [],
+          "sha256": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d"
+        },
+        "vendor/fonts/OFL-Inter.txt": {
+          "requires": [],
+          "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+        },
+        "vendor/fonts/OFL-JetBrainsMono.txt": {
+          "requires": [],
+          "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+        },
+        "vendor/fonts/SOURCE.json": {
+          "requires": [],
+          "sha256": "d7ab379b752f78ec529c1f5f4072ac659842d143b2f288212f5c75123f4939df"
+        },
+        "vendor/fonts/fonts.css": {
+          "requires": [
+            "vendor/fonts/inter.woff2",
+            "vendor/fonts/jetbrains-mono.woff2"
+          ],
+          "sha256": "8d4d4568d1e6d4942045dadc47aae800a5cc759245bdd3c742e665072865afd4"
+        },
+        "vendor/fonts/inter.woff2": {
+          "requires": [],
+          "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+        },
+        "vendor/fonts/jetbrains-mono.woff2": {
+          "requires": [],
+          "sha256": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be"
+        },
+        "vendor/three/SOURCE.json": {
+          "requires": [],
+          "sha256": "a9e994c36cf9afda1bc0fc5ca72b19449654d98afdba1687d671873270008dbf"
+        },
+        "vendor/three/addons/controls/OrbitControls.js": {
+          "requires": [
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe"
+        },
+        "vendor/three/addons/loaders/STLLoader.js": {
+          "requires": [
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93"
+        },
+        "vendor/three/three.module.min.js": {
+          "requires": [],
+          "sha256": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
+        },
+        "viewer.html": {
+          "requires": [
+            "hud.css",
+            "viewer.js",
+            "assembly/guide.js",
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "4ef7ed0ad57ffc1fca510a985cb05b3a24c55565be86763bf322295e8b3e7de1"
+        },
+        "viewer.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "assembly/playback.js",
+            "vendor/three/addons/loaders/STLLoader.js",
+            "stage.js",
+            "panel.js",
+            "assembly/guide.js",
+            "file-geometry.js"
+          ],
+          "sha256": "222da922ceab7f38aa55e6555dd128b1e669a374aab61f1a3f72353b8de12a62"
+        }
+      },
+      "notices": [
+        "vendor/fonts/OFL-Inter.txt",
+        "vendor/fonts/OFL-JetBrainsMono.txt",
+        "vendor/file-parsers/THREE-LICENSE.txt"
+      ],
+      "resources": [
+        "package.json",
+        "vendor/fonts/SOURCE.json",
+        "vendor/three/SOURCE.json"
+      ]
+    }
+  },
+  "schema": "cad-agent.runtime-profiles/1"
+}

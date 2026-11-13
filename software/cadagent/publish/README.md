@@ -54,3 +54,36 @@ Related: [package map](../README.md) · [review](../review/README.md) · [web ki
 | File | Purpose |
 |---|---|
 | [__init__.py](__init__.py) | Package entry point; public imports and compatibility behavior are defined here. |
+
+## Checked browser runtime profiles
+
+[runtime.py](runtime.py) captures a versioned, explicit dependency closure from
+[runtime-profiles.json](runtime-profiles.json). The assembly-reader profile keeps
+legacy viewer paths while excluding unrelated viewers, parsers and galleries.
+Dependencies include literal/dynamic modules, styles, fonts and license notices;
+the graph is reviewed source data, not automatic dependency discovery. SHA-256
+binds each reviewed node to its bytes. The resolver checks the whole schema and
+reachability, refuses missing/changed/symlinked files, and captures immutable bytes
+before the publisher replaces an existing release.
+
+```sh
+python -m cadagent.publish.runtime
+# After reviewing imports, styles, dynamic resources and notices in a source change:
+python -m cadagent.publish.runtime --refresh
+```
+
+Refreshing hashes is an explicit source-maintenance action. Add/remove dependency
+graph edges when behavior changes, run the actual packaged browser consumer, and
+commit the manifest with its source. Publication never refreshes a stale manifest.
+The normal release manifest retains its file hash inventory and adds the profile
+schema, name and canonical profile hash. Other profiles cannot change that identity.
+
+The initial source baseline at `33c3f51b574bdfa9171da62c4573beaf840daa95` copied
+104 files / 13,674,991 uncompressed runtime bytes. The checked assembly closure
+contains 20 files / 901,944 bytes; these are runtime membership measurements,
+not a full ZIP size or browser-performance benchmark. Full-copy `cad-agent webkit`
+behavior is unchanged. Future nested runtime folders need explicit package-data
+admission and an installed-wheel test; gallery ownership does not imply inclusion.
+Rollback restores the prior producer in a new release; existing archives stay
+immutable. [Runtime tests](../../../tests/publish/test_runtime.py) exercise the
+closure and rejection behavior; portable guide/browser tests prove actual loading.

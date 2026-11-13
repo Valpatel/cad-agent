@@ -24,6 +24,9 @@
  * Content-Security-Policy (no inline script) can use it.
  */
 
+import { normalizePlan, planState, createPlanPoseAdapter } from './assembly/playback.js';
+import { assetURL, readAsset, parseJSON, sha256 } from './assembly/guide.js';
+
 const KIT = new URL('.', import.meta.url);
 const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const NAMES = { l: 'left', r: 'right' };
@@ -94,6 +97,17 @@ export function decodeModel(model, raw) {
     if (fresh > n) throw new Error(`${part.name}: more vertices used than stored`);
     return { positions, index };
   });
+}
+
+/** Validate the original partition list before any map can discard duplicate source identities. */
+export function planMeshHashes(parts) {
+  if (!Array.isArray(parts) || parts.length < 1 || parts.length > 2000
+      || parts.some(p => !p || typeof p !== 'object' || Array.isArray(p)
+        || typeof p.name !== 'string' || !p.name.trim() || p.name.length > 200))
+    throw new Error('Assembly plan requires 1..2000 named source instances');
+  const names = parts.map(p => p.name);
+  if (new Set(names).size !== names.length) throw new Error('Assembly plan requires unique source instance names');
+  return Object.fromEntries(parts.map(p => [p.name, p.source_mesh_sha256]));
 }
 
 /** Flat-and-smooth shading for CAD: each corner's normal averages the faces around its vertex that meet its own face
@@ -198,12 +212,21 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
         fetch(src).then(r => modelBytes(r, (n, total) => this.#report('Loading model structure', n, total)))]);
       const model = JSON.parse(new TextDecoder().decode(metadata));
       if (model.schema !== 'cad-agent-model/1') throw new Error(`unknown model schema ${model.schema}`);
+      const meshHashes = model.assembly_plan !== undefined ? planMeshHashes(model.parts) : null;
       this.#report('Loading mesh data');
       const bin = await modelBytes(await fetch(new URL(model.bin, src)), (n, total) => this.#report('Loading mesh data', n, total));
+      let plan;
+      if (model.assembly_plan !== undefined) {
+        const binding = model.assembly_plan;
+        if (!binding || Object.keys(binding).sort().join(',') !== 'file,sha256' || !/^[0-9a-f]{64}$/.test(binding.sha256)) throw new Error('Invalid assembly plan binding');
+        plan = normalizePlan(parseJSON(await readAsset(assetURL(binding.file, src), { expectedHash: binding.sha256, maxBytes: 2 * 1024 * 1024 })),
+          { meshHashes });
+        if (model.units !== 'mm' || model.up !== 'z' || await sha256(bin) !== model.sha256) throw new Error('Stale plan-enabled packed geometry');
+      }
       this.#report(`Decoding ${model.parts.length} CAD parts`);
       const parts = decodeModel(model, await inflate(bin));
       this.#report(`Preparing ${parts.length} parts for display`);
-      this.#build(THREE, model, parts);
+      this.#build(THREE, model, parts, plan);
       this.dataset.state = 'ready'; this.setAttribute('aria-busy', 'false');
       this.#report(`${parts.length} parts ready · drag to turn`); this.#resolve(this);
     } catch (err) { this.#fail(err); }
@@ -225,14 +248,14 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     this.#status.append(retry); this.#resolve(this);
   }
 
-  #build(THREE, model, decoded) {
+  #build(THREE, model, decoded, plan) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power', preserveDrawingBuffer: false });
     // Register resources as soon as allocated: a late first-draw failure must roll back the entire attempt.
     const disposers = []; let disposed = false;
     this.#cleanup = () => {
       if (disposed) return; disposed = true;
       for (const dispose of disposers.reverse()) { try { dispose(); } catch { /* Preserve the original rendering failure. */ } }
-      for (const name of ['snapshot','view','setExplode','stats']) delete this[name];
+      for (const name of ['snapshot','view','setExplode','stats','captureAssemblyLandmarks']) delete this[name];
       this.classList.remove('cad-model-live');
     };
     disposers.push(() => renderer.forceContextLoss?.(), () => renderer.dispose());
@@ -294,8 +317,16 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       return d.lengthSq() > 1e-9 ? d.normalize() : new THREE.Vector3(0, 0, 1);
     });
     const reach = Math.max(size.x, size.y, size.z) * 0.2;
+    const applyPlanPoses = plan ? createPlanPoseAdapter(THREE, zUp, model.parts.map((p, i) => ({ name: p.name, mesh: meshes[i] }))) : null;
+    const planReach = plan ? Math.max(...plan.operations.flatMap(op => op.path_mm.map(v => Math.hypot(...v)))) : 0;
     let explode = 0;
-    const setExplode = f => { explode = f; meshes.forEach((m, i) => m.position.copy(dirs[i]).multiplyScalar(f * reach)); fit(); place(); };
+    const setExplode = f => {
+      if (!Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid explode factor');
+      explode = f;
+      if (plan) applyPlanPoses(planState(plan, plan.operations.length * (1 - f)));
+      else meshes.forEach((m, i) => m.position.copy(dirs[i]).multiplyScalar(f * reach));
+      fit(); place();
+    };
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(radius * 12, radius * 12), new THREE.ShadowMaterial({ opacity: 0.16 }));
     disposers.push(() => floor.geometry.dispose(), () => floor.material.dispose());
@@ -321,7 +352,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     // The bounding sphere (grown by the explode) fits both ways; 0.94 of it, since a sphere is looser than the parts.
     const fit = () => {
       const vfov = camera.fov * deg / 2, hfov = Math.atan(Math.tan(vfov) * camera.aspect);
-      distance = (radius + explode * reach) * 0.94 / Math.sin(Math.min(vfov, hfov));
+      distance = (radius + (plan ? planReach : explode * reach)) * 0.94 / Math.sin(Math.min(vfov, hfov));
     };
     const place = () => {
       camera.position.set(Math.sin(view.az) * Math.cos(view.el), Math.sin(view.el), Math.cos(view.az) * Math.cos(view.el))
@@ -394,9 +425,9 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       request();
     });
     apart.addEventListener('click', () => {
-      const to = explode > 0.5 ? 0 : 1;
+      const to = (anim?.to ?? (explode > 0.5 ? 1 : 0)) === 1 ? 0 : 1;
       apart.setAttribute('aria-pressed', String(to === 1));
-      if (reduced()) { setExplode(to); request(); return; }
+      if (reduced()) { anim = null; setExplode(to); request(); return; }
       anim = { from: explode, to, t0: performance.now() };
       request();
     });
@@ -456,7 +487,7 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
     const fadeFrame = requestAnimationFrame(() => { if (this.dataset.state === 'ready') this.classList.add('cad-model-live'); });
     disposers.push(() => cancelAnimationFrame(fadeFrame));   // the canvas fades in over the poster
 
-    this.setExplode = f => { setExplode(Math.max(0, Math.min(1, f))); request(); };
+    this.setExplode = f => { anim = null; setExplode(Math.max(0, Math.min(1, f))); apart.setAttribute('aria-pressed', String(f > 0.5)); request(); };
     this.view = (azimuth, elevation) => { view.az = azimuth * deg; view.el = elevation * deg; lastInput = performance.now(); request(); };
     this.snapshot = (width, height, type = 'image/png', quality = 0.9) => {
       const old = [renderer.getPixelRatio(), this.clientWidth, this.clientHeight];
@@ -471,6 +502,18 @@ class CadModel extends (typeof HTMLElement === 'undefined' ? class {} : HTMLElem
       renderer.setPixelRatio(old[0]);
       resize();
       return url;
+    };
+    this.captureAssemblyLandmarks = indicesByName => {
+      zUp.updateWorldMatrix(true, true);
+      return { cadToWorld: zUp.matrixWorld.toArray(), components: Object.fromEntries(model.parts.map((p, i) => {
+        const indices = indicesByName[p.name];
+        if (!Array.isArray(indices) || indices.length < 4) throw new Error('Need four mesh landmarks per instance');
+        const attr = meshes[i].geometry.attributes.position;
+        return [p.name, indices.map(index => {
+          if (!Number.isInteger(index) || index < 0 || index >= attr.count) throw new Error('Invalid mesh landmark');
+          return new THREE.Vector3().fromBufferAttribute(attr, index).applyMatrix4(meshes[i].matrixWorld).toArray();
+        })];
+      })) };
     };
     this.stats = { parts: meshes.length, triangles: model.triangles, bytes: model.bytes };
   }

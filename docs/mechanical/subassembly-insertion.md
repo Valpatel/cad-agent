@@ -49,3 +49,25 @@ The ordinary `service=True` or `service=[module]` mode cannot silently stand in 
 Existing single-part calls and their verdicts remain unchanged. The first interface is Python-only, through `run_sequence`, `assembly_gate` and the keyword pass-through in `assembly_from_build`; it does not silently extend registry/YAML/CLI schemas. Internal results and parent results are separate in JSON/Markdown. The adapter does not change the separate fastener-engagement, connectivity, tolerance or motion gates. Declaring a module rigid is an assumption, not proof that its joints hold it rigid.
 
 Validation in `tests/review/test_gate_subassembly.py`: kernel-free structural/order/coverage and scoped-tool tests; rigid member and attached-screw path blockers; rejected cross-boundary/partial fastener declarations; failed internal-plan propagation; conditional removal with retained versus removed obstacles; unknown kernel responses; small BREP positive/negative fixtures. Existing assembly and fastener suites remain regressions. The same straight-line sampling, rigid geometry and tolerance limits apply: a model pass does not prove printed fit, strength, service ergonomics or hardware readiness.
+
+## Source-bound serial inspection plans
+
+The optional [assembly plan](../practice/assembly-guide.md#source-bound-serial-assembly-plans-542) checks
+finite piecewise translations with every future/removed instance occupying an explicit parked pose. A rigid
+operation moves every listed member, including attached fasteners, against every outside occupied instance.
+It preserves the existing distinction here: **internal qualification remains unknown** until a separate
+bench scope is qualified; a sampled-clear parent path cannot qualify that internal scope.
+
+Disassembly reverses global operation time and each segment. Tool checks run after insertion or before
+removal at the identical occupied stage. Neither an internal pair assumption nor a named seated contact may
+waive an earlier wall crossing. Unsupported process inverses and nested/concurrent motion are rejected.
+The tiny native fixture in `tests/fixtures/assembly-plan/` is a shared consumer and clearance regression,
+not evidence about any product or actual bought hardware. Its ordinary driver obstruction control preserves
+the full envelope and checks an alternative lid route, as recorded in the [assembly-access lesson](../lessons/mechanical/fasteners-and-assembly-access.md#separate-tool-approach-obstructions-from-component-path-obstructions).
+
+
+![Source-defined rail bench with finite plate and roof paths and two separate obstruction controls](../img/motion/assembly-plan-bench.svg)
+
+*Illustration from `tests/fixtures/assembly-plan/fixture.json`, drawn by `tools/figures/motion_figures.py`:
+source datums and authored waypoints, with separate negative controls. It is not a clearance measurement;
+`playback_gate` and actual world-vertex browser captures provide separate finite evidence.*

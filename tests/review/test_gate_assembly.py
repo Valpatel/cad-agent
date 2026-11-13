@@ -1060,3 +1060,215 @@ def test_playback_lazy_checkpoint_rejected_by_full_gate_before_native_work(tmp_p
     assert not report["pass"] and written == [] and report["operations"] == []
     assert report["limits"]["progress_complete"] is False
     assert report["checks"][0]["id"] == "progress" and "without yielding" in report["checks"][0]["message"]
+
+
+# Canonical plan fixtures are shared with both actual web consumers. The oracle below uses source bench
+# datums, not evaluator output; its thin/parked/attached controls remain useful without a CAD kernel.
+PLAN_FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "assembly-plan"
+
+
+def serial_plan_fixture():
+    return json.loads((PLAN_FIXTURE / "plan.json").read_text())
+
+
+def test_serial_plan_independent_corners_absolute_seek_and_reverse_order():
+    from cadagent.review.dossier.plan import normalize_plan, plan_state
+    plan = normalize_plan(serial_plan_fixture())
+    assert plan_state(plan, .25)["plate"] == [8.75, 0, 25]
+    assert plan_state(plan, .5)["plate"] == [0, 0, 22.5]
+    assert plan_state(plan, 1.5)["lid"] == [7.5, 0, 20]
+    assert plan_state(plan, 1.5)["fastener"] == [0, 0, 0]
+    assert plan_state(plan, 0)["lid"] == [35, 0, 20]
+    assert all(v == [0, 0, 0] for v in plan_state(plan, 2).values())
+    for value in [2, 0, .5, 1.5, 0, 2, .25]:
+        assert plan_state(plan, value) == plan_state(plan, 2 - (2 - value))
+    plan_state(plan, 0)["plate"][0] = 1000
+    assert plan_state(plan, .25)["plate"] == [8.75, 0, 25]
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda p: p.update(units="m"), lambda p: p.update(frame="y-up"),
+    lambda p: p["operations"][0].update(type="rotate"),
+    lambda p: p["operations"][1].update(requires=[]),
+    lambda p: p["operations"][0].update(requires=["lid"]),
+    lambda p: p["operations"][0]["members"].append("lid"),
+    lambda p: p["operations"][0]["members"].append("missing"),
+    lambda p: p["operations"][0].update(concurrent=True),
+    lambda p: p["operations"][0]["path_mm"].append([float("nan"), 0, 0]),
+    lambda p: p["operations"][0].update(path_mm=[[0, 0, 0], [0, 0, 0]]),
+    lambda p: p["source"]["instances"]["plate"]["matrix"].__setitem__(0, -1),
+    lambda p: p["source"].pop("producer"), lambda p: p.update(clearance_mm=-1),
+])
+def test_serial_plan_rejects_unsupported_ambiguous_or_nonfinite_declarations(mutation):
+    from cadagent.review.dossier.plan import normalize_plan
+    plan = serial_plan_fixture()
+    mutation(plan)
+    with pytest.raises(ValueError):
+        normalize_plan(plan)
+
+
+def serial_box_world(plan, blocker=None):
+    data = json.loads((PLAN_FIXTURE / "fixture.json").read_text())
+    # Independent axis-aligned solids, including both rail walls, implemented as a compound-aware test world.
+    boxes = data["boxes"]
+    if blocker:
+        boxes["blocker"] = [blocker]
+        plan["fixed"].append("blocker")
+        plan["source"]["instances"]["blocker"] = dict(plan["source"]["instances"]["base"])
+
+    class CompoundBoxWorld(BoxWorld):
+        def __init__(self):
+            bounds = {name: tuple(min(b[i] for b in members) for i in range(3)) +
+                      tuple(max(b[i] + b[i+3] for b in members) for i in range(3)) for name, members in boxes.items()}
+            super().__init__(bounds)
+
+        def relate_at(self, key, shift, other):
+            relations = []
+            for a in boxes[key]:
+                for b in boxes[other]:
+                    world = BoxWorld({"a": (*a[:3], *(a[i]+a[i+3] for i in range(3))),
+                                      "b": (*b[:3], *(b[i]+b[i+3] for i in range(3)))})
+                    relations.append(world.relate_at("a", shift, "b"))
+            hit = next((r for r in relations if r.interferes), None)
+            return hit or min(relations, key=lambda r: r.gap_mm)
+    return CompoundBoxWorld()
+
+
+def test_serial_plan_intermediate_parked_attached_and_clearance_controls():
+    from cadagent.review.gates.playback import run_plan_sequence
+    plan = serial_plan_fixture()
+    result = run_plan_sequence(serial_box_world(plan), plan)
+    assert all(row["insertion"] == "sampled-clear" for row in result["operations"])
+    assert result["operations"][0]["tools"][0]["state"] == "unknown"  # no fake tool clearance on a box world
+    reverse = run_plan_sequence(serial_box_world(plan), plan, reverse=True)
+    assert [r["id"] for r in reverse["operations"]] == ["lid", "plate"]
+    assert all(row["insertion"] == "sampled-clear" for row in reverse["operations"])
+    for blocker, moving in [([-4,-4,16,8,8,.2], "plate"), ([9.5,-.5,29,.2,1,.2], "fastener")]:
+        control = serial_plan_fixture()
+        result = run_plan_sequence(serial_box_world(control, blocker), control)
+        hits = [p for p in result["operations"][0]["pairs"] if p["part"] == "blocker" and p["state"] == "blocked"]
+        assert any(p["moving"] == moving for p in hits), result
+        assert all(p["first_contact_mm"][0] is not None for p in hits)
+        if moving == "fastener":
+            assert not any(p["moving"] == "plate" for p in hits)
+    control = serial_plan_fixture()
+    control["operations"][1]["path_mm"][0] = [0,0,10]
+    result = run_plan_sequence(serial_box_world(control), control)
+    assert any(p["part"] == "lid" and p["state"] == "blocked" for p in result["operations"][0]["pairs"])
+    wrong_order = serial_plan_fixture()
+    wrong_order["operations"].reverse()
+    wrong_order["operations"][0]["requires"] = []
+    wrong_order["operations"][1]["requires"] = ["lid"]
+    result = run_plan_sequence(serial_box_world(wrong_order), wrong_order)
+    assert any(p["part"] == "lid" and p["state"] == "blocked" for p in result["operations"][1]["pairs"])
+    exhausted = run_plan_sequence(serial_box_world(plan), plan, options=AccessOptions(max_samples=0))
+    assert any(p["state"] == "unchecked" for r in exhausted["operations"] for p in r["pairs"])
+    control = serial_plan_fixture()
+    control["clearance_mm"] = 2
+    result = run_plan_sequence(serial_box_world(control), control)
+    assert any(p["state"] in ("insufficient-clearance", "clearance-unresolved") for p in result["operations"][0]["pairs"])
+
+
+def native_serial_fixture(tmp_path):
+    pytest.importorskip("cadquery")
+    spec = importlib.util.spec_from_file_location("serial_native_bench", PLAN_FIXTURE / "build.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.build(tmp_path)
+
+
+def test_native_serial_plan_source_bound_forward_reverse_and_ordinary_driver(tmp_path):
+    from cadagent.review.gates.playback import playback_gate
+    assembly, bundle, binding, breps, spec, tool = native_serial_fixture(tmp_path)
+    for reverse in (False, True):
+        report = playback_gate(bundle, binding, breps, fastener_specs=[spec], tools={"ordinary-driver": tool}, reverse=reverse)
+        assert report["pass"], report["findings"]
+        assert all(r["insertion"] == "sampled-clear" for r in report["operations"])
+        plate = next(r for r in report["operations"] if r["id"] == "plate")
+        assert plate["tools"][0]["state"] == "sampled-clear"
+        assert plate["internal_qualification"] == "unknown"
+        assert report["physical_fit_verified"] is False
+    # Hash agreement cannot validate wrong physical intent: wrong lateral arrival crosses a rail wall.
+    from cadagent.review.gates.assembly import AssemblySequenceWorld
+    from cadagent.review.gates.playback import run_plan_sequence
+    wrong = serial_plan_fixture()
+    wrong["operations"][0]["path_mm"] = [[20,0,0],[0,0,0]]
+    result = run_plan_sequence(AssemblySequenceWorld(assembly), wrong)
+    assert any(p["part"] == "rail" and p["state"] == "blocked" for p in result["operations"][0]["pairs"])
+
+
+def test_native_serial_tool_approach_obstruction_and_stale_source_controls(tmp_path, monkeypatch):
+    cq = pytest.importorskip("cadquery")
+    import cadagent.review.gates.playback as playback
+    from cadagent.review.gates.assembly import AssemblySequenceWorld
+    assembly, bundle, binding, breps, spec, tool = native_serial_fixture(tmp_path)
+    # At z31 the fixed obstruction misses every component path and engaged tool, but blocks the handle
+    # during ordinary straight approach. This is independent source geometry, not a fabricated tool result.
+    assembly.add("blocker", cq.Solid.makeBox(1,2,1,cq.Vector(3,-1,31)))
+    plan = serial_plan_fixture()
+    plan["fixed"].append("blocker")
+    plan["source"]["instances"]["blocker"] = dict(plan["source"]["instances"]["base"])
+    plan["operations"][1]["path_mm"] = [[35,0,20],[35,0,0],[0,0,0]]  # lower the lid beside, then below the fixed approach blocker
+    result = playback.run_plan_sequence(AssemblySequenceWorld(assembly), plan, fastener_specs=[spec], tools={"ordinary-driver":tool})
+    assert all(r["insertion"] == "sampled-clear" for r in result["operations"])
+    access = result["operations"][0]["tools"][0]
+    assert access["state"] == "blocked" and access["first_blocked_mm"] == 20 and access["last_clear_mm"] == 21
+    assert access["samples"][0]["clear"]
+    assert any(p["part"] == "blocker" for p in access["samples"][-1]["blocked"])
+    from cadagent.review.gates.fasteners import tool_access
+    stage = AssemblySequenceWorld(assembly).staged({n:[0,0,0] if n != "lid" else [35,0,20] for n in assembly.names})
+    assert tool_access(stage,spec,0,"ordinary-driver",tool,stage.names)["clear"]
+    monkeypatch.setattr(playback, "_load_world", lambda *a: pytest.fail("stale source must reject before CAD load"))
+    smaller = {**tool, "segments":[{"d":1,"length":18}]}
+    report = playback.playback_gate(bundle,binding,breps,fastener_specs=[spec],tools={"ordinary-driver":smaller})
+    assert not report["pass"] and "stale assembly plan tooling" in report["checks"][0]["message"]
+    for field in ("producer", "source_closure_sha256"):
+        stale = {**binding, field: "0"*64}
+        report = playback.playback_gate(bundle, stale, breps)
+        assert not report["pass"] and "stale assembly plan source" in report["checks"][0]["message"]
+
+
+def write_serial_native_receipt(path, revision):
+    """Bounded evidence collector for this test bench; called explicitly, outside ordinary pytest execution."""
+    import hashlib
+    import tempfile
+    import cadquery as cq
+    from cadagent.review.gates.playback import playback_gate, run_plan_sequence
+    from cadagent.review.gates.assembly import AssemblySequenceWorld
+    from cadagent.review.gates.relations import Assembly
+    from cadagent.review.gates.fasteners import tool_access
+    with tempfile.TemporaryDirectory() as temporary:
+        assembly, bundle, binding, breps, spec, tool = native_serial_fixture(Path(temporary))
+        positive = []
+        for reverse in (False, True):
+            report = playback_gate(bundle, binding, breps, tools={"ordinary-driver":tool}, fastener_specs=[spec], reverse=reverse)
+            assert report["pass"], report["findings"]
+            positive.append({"direction":"remove" if reverse else "install", "inputs":report["inputs"],
+                "world_stats":report["world_stats"], "operations":[{k:r[k] for k in
+                ("id","insertion","tool_access","internal_qualification","support","retention_process")} for r in report["operations"]]})
+        controls = []
+        for name, box in [("thin-intermediate",[-4,-4,16,8,8,.2]),("attached-fastener-only",[9.5,-.5,29,.2,1,.2]),
+                          ("ordinary-handle-approach",[3,-1,31,1,2,1])]:
+            native = Assembly({n:assembly.shape(n) for n in assembly.names})
+            native.add("blocker",cq.Solid.makeBox(*box[3:],cq.Vector(*box[:3])))
+            plan = serial_plan_fixture()
+            plan["fixed"].append("blocker")
+            plan["source"]["instances"]["blocker"] = dict(plan["source"]["instances"]["base"])
+            if name == "ordinary-handle-approach":
+                plan["operations"][1]["path_mm"] = [[35,0,20],[35,0,0],[0,0,0]]
+            report = run_plan_sequence(AssemblySequenceWorld(native),plan,tools={"ordinary-driver":tool},fastener_specs=[spec])
+            failures = [{"operation":r["id"],**p} for r in report["operations"] for p in r["pairs"] if p["part"]=="blocker" and p["state"]!="clear"]
+            row = {"id":name,"blocker_box_mm":box,"component_states":[r["insertion"] for r in report["operations"]],"witnesses":failures}
+            if name == "ordinary-handle-approach":
+                occupied = {n:[0,0,0] if n!="lid" else [35,0,20] for n in native.names}
+                engaged = tool_access(AssemblySequenceWorld(native).staged(occupied),spec,0,"ordinary-driver",tool,native.names)
+                access = report["operations"][0]["tools"][0]
+                assert engaged["clear"] and access["state"]=="blocked" and all(r["insertion"]=="sampled-clear" for r in report["operations"])
+                row.update(engaged_clear=True,tool=access,lid_path_mm=plan["operations"][1]["path_mm"])
+            else:
+                assert failures
+            controls.append(row)
+        receipt = {"source_revision":revision,"plan_sha256":hashlib.sha256((PLAN_FIXTURE/"plan.json").read_bytes()).hexdigest(),
+            "test_file_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),"positive":positive,"controls":controls,
+            "limits":"Finite sampled rigid geometry and ordinary axial envelopes. Source correspondence producer-declared; internal qualification, hands, support, retention and physical build unknown."}
+        Path(path).write_text(json.dumps(receipt,separators=(",",":"))+"\n")

@@ -248,6 +248,17 @@ class AssemblySequenceWorld(SequenceWorld):
         return tool_access(self.assembly, spec, i, tool_name, decl, present, step, self.tol, later=later,
                            probe=self._probe)
 
+    def staged(self, offsets: Mapping[str, Sequence[float]]):
+        """Frozen stage occupancy, including parked instances, for the existing native tool owner."""
+        from cadagent.review.gates.relations import Assembly
+        staged = Assembly()
+        for name in self.names:
+            p = self.assembly[name]
+            x, y, z = offsets[name]
+            staged._parts[name] = replace(p, matrix=_mul((1., 0., 0., x, 0., 1., 0., y, 0., 0., 1., z),
+                                                         p.matrix), _located=None)
+        return staged
+
     @property
     def stats(self) -> Dict[str, Any]:
         return {"kernel_queries": self.kernel_queries, "memo_hits": self.memo_hits, "cache_hits": self.cache_hits,

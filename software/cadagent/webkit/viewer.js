@@ -2,6 +2,7 @@
 // part in place, and gives a parts list (show/hide, colour), an exploded view, a section cut and standard views.
 // Housings, brackets, mechanisms and robots all work the same way.
 import * as THREE from 'three';
+import { normalizePlan, planState, createPlanPoseAdapter } from './assembly/playback.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { createStage } from './stage.js';
 import { section, slider, toggle, readouts } from './panel.js';
@@ -12,7 +13,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** Existing viewer, with optional validated guide manifests and abortable loading. */
 export async function createViewer({ app, panel, title, manifestUrl, manifest: suppliedManifest,
-    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, onSelect = () => {}, onHover, onStateChange = () => {} }) {
+    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, assemblyPlan, onSelect = () => {}, onHover, onStateChange = () => {} }) {
   if (typeof guideBound !== 'boolean') throw new Error('Invalid guide mode');
   if (onHover !== undefined && typeof onHover !== 'function') throw new Error('Invalid hover callback');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
@@ -83,6 +84,9 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   stage.renderer.localClippingEnabled = true;
   stage.root.add(holder);
 
+  const plan = assemblyPlan ? normalizePlan(assemblyPlan, { meshHashes: Object.fromEntries(parts.map(p => [p.name, p.sha256])) }) : null;
+  const applyPlanPoses = plan ? createPlanPoseAdapter(THREE, model, parts) : null;
+
   // Exploded view: each part moves away from the assembly centre (or along its configured direction).
   const centre = new THREE.Vector3();
   parts.forEach((p) => centre.add(p.center));
@@ -93,7 +97,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     ensureLive();
     if (!Number.isFinite(f) || f < 0 || f > 1) throw new Error('Invalid explode factor');
     explodeSlider?.set(f);
-    const offsets_mm = Object.fromEntries(parts.map(p => {
+    const offsets_mm = plan ? planState(plan, plan.operations.length * (1 - f)) : Object.fromEntries(parts.map(p => {
       const dir = p.explode ? new THREE.Vector3(...p.explode).normalize() : p.center.clone().sub(centre);
       if (!p.explode) dir.lengthSq() > 1e-6 ? dir.normalize() : dir.set(0, 0, 1);
       return [p.name, dir.multiplyScalar(f * span * 0.6).toArray()];
@@ -211,10 +215,11 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     ensureLive(); validateState(next, names);
     const nextState = structuredClone({ ...next, partModes: next.partModes ?? {} });
     const previousSelection = state.selected;
+    if (applyPlanPoses) applyPlanPoses(Object.fromEntries(names.map(name => [name, Object.hasOwn(next.offsets_mm, name) ? next.offsets_mm[name] : [0, 0, 0]])));
     for (const p of parts) {
       const m = p.mesh.material, highlighted = next.highlight.includes(p.name);
       p.mesh.visible = next.visible.includes(p.name) && (next.isolate === null || next.isolate.includes(p.name));
-      p.mesh.position.fromArray(Object.hasOwn(next.offsets_mm, p.name) ? next.offsets_mm[p.name] : [0, 0, 0]);
+      if (!applyPlanPoses) p.mesh.position.fromArray(Object.hasOwn(next.offsets_mm, p.name) ? next.offsets_mm[p.name] : [0, 0, 0]);
       m.color.copy(userColors.get(p.name) || baseline.get(p.name).color);
       m.emissive.setHex(next.selected === p.name ? 0x005588 : highlighted ? 0x5a2700 : 0);
       const partMode = Object.hasOwn(nextState.partModes, p.name) ? nextState.partModes[p.name] : null;
@@ -250,7 +255,16 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
     }
     model.updateMatrixWorld(true);
     const points = [];
-    for (const p of parts.filter(p => selected.includes(p.name) && (includeHidden || p.mesh.visible))) {
+    if (plan) {
+      // Frame the complete source-bound path, so changing operation cannot pump the camera.
+      for (const p of parts.filter(p => selected.includes(p.name))) {
+        const paths = plan.operations.find(op => op.members.includes(p.name))?.path_mm || [[0,0,0]];
+        const b = p.bounds_mm;
+        for (const offset of paths) for (let i=0;i<8;i++) points.push(new THREE.Vector3(
+          (i&1?b[3]:b[0])+offset[0], (i&2?b[4]:b[1])+offset[1], (i&4?b[5]:b[2])+offset[2]).applyMatrix4(model.matrixWorld));
+      }
+    }
+    for (const p of parts.filter(p => !plan && selected.includes(p.name) && (includeHidden || p.mesh.visible))) {
       const b = new THREE.Box3().setFromObject(p.mesh);
       if (!b.isEmpty()) for (let i = 0; i < 8; i++) points.push(new THREE.Vector3(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
     }

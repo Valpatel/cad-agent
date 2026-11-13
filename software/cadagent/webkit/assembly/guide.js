@@ -1,5 +1,5 @@
 /** Optional instructions for the existing viewer. Geometry is already assembled, mm / z-up. */
-import { createPlayback } from './playback.js';
+import { createPlayback, normalizePlan, planState } from './playback.js';
 export const GUIDE_SCHEMA = 'cad-agent.assembly-guide/1';
 const hashPattern = /^[0-9a-f]{64}$/;
 const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
@@ -80,13 +80,14 @@ export function validateView(manifest, { guide = false } = {}) {
   return manifest;
 }
 export function validateGuide(guide, manifest) {
-  keys(guide, ['schema', 'snapshot', 'model', 'subassemblies', 'steps', 'source'], 'Guide');
+  keys(guide, ['schema', 'snapshot', 'model', 'subassemblies', 'steps', 'source', 'assembly_plan'], 'Guide');
   if (guide.schema !== GUIDE_SCHEMA) fail('Unsupported assembly guide schema');
   keys(guide.snapshot, ['id', 'revision', 'status', 'source_commit'], 'Snapshot');
   id(guide.snapshot.id, 'Snapshot'); text(guide.snapshot.revision, 'Revision', 200);
   if (!['released', 'wip'].includes(guide.snapshot.status) || !/^[0-9a-f]{40}$/.test(guide.snapshot.source_commit)) fail('Invalid snapshot status/source commit');
   if (guide.source !== undefined && !record(guide.source)) fail('Guide source metadata must be an object');
   binding(guide.model, 'Model');
+  if (guide.assembly_plan !== undefined) binding(guide.assembly_plan, 'Assembly plan');
   validateView(manifest, { guide: true });
   const names = new Set(manifest.parts.map(p => p.name)), groups = new Map();
   if (!Array.isArray(guide.subassemblies) || !guide.subassemblies.length || guide.subassemblies.length > 2000) fail('Guide needs subassemblies');
@@ -172,28 +173,53 @@ export async function loadGuide(url, options = {}) {
   // Validate every referenced URL before the renderer starts fetching mesh data.
   for (const part of manifest.parts) assetURL(part.file, manifestUrl, options.assetRoot);
   for (const step of guide.steps) if (step.poster) assetURL(step.poster.file, guideURL, options.assetRoot);
-  return { guide, manifest, manifestUrl: manifestUrl.href, guideUrl: guideURL.href };
+  let plan;
+  if (guide.assembly_plan !== undefined) {
+    binding(guide.assembly_plan, 'Assembly plan');
+    plan = normalizePlan(parseJSON(await readAsset(assetURL(guide.assembly_plan.file, guideURL, options.assetRoot),
+      { ...options, redirect: 'error', expectedHash: guide.assembly_plan.sha256, maxBytes: 2 * 1024 * 1024 })),
+      { meshHashes: Object.fromEntries(manifest.parts.map(p => [p.name, p.sha256])) });
+    validatePlanGuide(guide, plan);
+  }
+  return { guide, manifest, plan, manifestUrl: manifestUrl.href, guideUrl: guideURL.href };
 }
 /** Absolute state, so backward/direct navigation cannot accumulate a translation or material change. */
-export function stepState(guide, id, { explode = 1, mode = 'ghost' } = {}) {
+export function stepState(guide, id, { explode = 1, mode = 'ghost', plan } = {}) {
   if (!Number.isFinite(explode) || explode < 0 || explode > 1 || !['solid', 'ghost', 'wireframe'].includes(mode)) fail('Invalid instruction presentation');
   const step = guide.steps.find(s => s.id === id);
   if (!step) fail(`Unknown instruction step ${id}`);
+  if (guide.assembly_plan) {
+    if (!plan) fail('Bound assembly plan is required');
+    const index = plan.operations.findIndex(op => op.id === id);
+    if (index < 0) fail('Unknown plan operation');
+    return { visible: Object.keys(plan.source.instances), highlight: [...plan.operations[index].members], mode,
+      offsets_mm: planState(plan, index + 1 - explode), selected: null, isolate: null, partModes: {} };
+  }
   return { visible: [...step.parts], highlight: [...step.highlight], mode,
     offsets_mm: Object.fromEntries(Object.entries(step.offsets_mm).map(([name, v]) => [name, v.map(n => n * explode)])), selected: null, isolate: null, partModes: {} };
 }
-export function createGuideController(viewer, guide) {
+function validatePlanGuide(guide, plan) {
+  if (guide.snapshot.source_commit !== plan.source.revision || guide.steps.length !== plan.operations.length
+      || guide.steps.some((step, i) => step.id !== plan.operations[i].id || Object.keys(step.offsets_mm).length))
+    fail('Guide must project the exact source and serial plan operations without authored offsets');
+}
+export function createGuideController(viewer, guide, { plan } = {}) {
   validateGuide(guide, { units: 'mm', up: 'z', parts: viewer.parts.map(({ mesh, center, ...part }) => part) });
+  if (guide.assembly_plan) {
+    if (!plan) fail('Bound assembly plan is required');
+    plan = normalizePlan(plan, { meshHashes: Object.fromEntries(viewer.parts.map(p => [p.name, p.sha256])) });
+    validatePlanGuide(guide, plan);
+  } else if (plan) fail('Plan requires a guide binding');
   guide = structuredClone(guide);
   let current = null, disposed = false, player;
   const navigation = new Set(), live = () => { if (disposed) fail('Guide controller is disposed'); };
   const notify = event => { for (const listener of [...navigation]) listener(event); };
   function applyStep(id, { frame = true, ...options } = {}, manual = true) {
     live();
-    const state = stepState(guide, id, options), step = guide.steps.find(s => s.id === id);
+    const state = stepState(guide, id, { ...options, plan }), step = guide.steps.find(s => s.id === id);
     if (manual) notify({ type: 'step', id });
     viewer.applyState(state);
-    if (frame) viewer.frameParts(step.parts, step.camera?.direction);
+    if (frame) viewer.frameParts(plan ? Object.keys(plan.source.instances) : step.parts, step.camera?.direction);
     current = id; return state;
   }
   return {
@@ -203,7 +229,7 @@ export function createGuideController(viewer, guide) {
     createPlayback(options) {
       live();
       if (player && player.getState().status !== 'disposed') fail('Guide controller already has a playback owner');
-      player = createPlayback({ guide, viewer, current: () => current, setCurrent: id => { current = id; },
+      player = createPlayback({ guide, viewer, plan, current: () => current, setCurrent: id => { current = id; },
         commitStep: id => applyStep(id, { explode: 0, mode: 'solid', frame: false }, false),
         subscribeNavigation(listener) { navigation.add(listener); return () => navigation.delete(listener); } }, options);
       return player;
@@ -244,9 +270,9 @@ export async function mountGuide({ app, panel, title, guideUrl, expectedHash, si
   const loaded = await loadGuide(guideUrl, { expectedHash, signal, assetRoot });
   const { createViewer } = await import('../viewer.js');
   let controls, syncAppearance;
-  const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true, signal, onProgress, assetRoot, onStateChange: () => syncAppearance?.() });
+  const viewer = await createViewer({ app, panel, title, manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true, assemblyPlan: loaded.plan, signal, onProgress, assetRoot, onStateChange: () => syncAppearance?.() });
   try {
-    const controller = createGuideController(viewer, loaded.guide), guide = loaded.guide;
+    const controller = createGuideController(viewer, loaded.guide, { plan: loaded.plan }), guide = loaded.guide;
     controls = document.createElement('section'); controls.className = 'hud-section guide-controls';
     controls.innerHTML = '<h2>Assembly instructions</h2><p class="guide-version"></p><label>Instruction <select aria-label="Instruction step"></select></label><p class="guide-text"></p><div class="hud-chips"><button type="button" class="hud-btn" data-action="previous">Previous</button><button type="button" class="hud-btn" data-action="next">Next</button><button type="button" class="hud-btn" data-action="reset">Assembled</button></div><label>Display <select aria-label="Instruction display"><option value="ghost">Ghost previous parts</option><option value="solid">Solid</option><option value="wireframe">Wireframe</option></select></label><label><input type="checkbox" checked class="guide-explode"> Show authored explosion</label><p>Selected: <output class="guide-selection">None</output></p><label>Selected part appearance <select aria-label="Selected part appearance" disabled><option value="">Use scene mode</option><option value="solid">Solid</option><option value="transparent">Transparent</option><option value="wireframe">Wireframe</option></select></label>';
     controls.querySelector('.guide-version').textContent = `${guide.snapshot.revision} · ${guide.snapshot.status} · ${guide.snapshot.source_commit.slice(0, 10)}`;

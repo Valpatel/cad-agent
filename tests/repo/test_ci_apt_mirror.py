@@ -26,6 +26,11 @@ ORIGINAL = "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
 CORRECTED = ORIGINAL.replace(mirror.AZURE, mirror.PREFERRED)
 # Observed verbatim URI/priority order in full job 131436221538, 2026-11-12.
 OBSERVED_EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/\tpriority:1\n" + FALLBACKS
+# Fields captured by the bounded diagnostic in full job 131567345145.
+# Comments/blank lines are not a reconstruction of its original source bytes.
+OBSERVED_SPLIT_SECURITY = SOURCE.replace(" noble-security", "") + "\n" + SOURCE.replace(
+    mirror.MIRROR, "http://security.ubuntu.com/ubuntu").replace(
+    "noble noble-updates noble-backports noble-security", "noble-security")
 
 
 class MirrorTests(unittest.TestCase):
@@ -67,6 +72,46 @@ class MirrorTests(unittest.TestCase):
         mirror.configure(self.path, self.source)
         self.assertEqual(self.path.read_text(), expected)
         self.assertEqual(self.source.read_text(), SOURCE)
+
+    def test_observed_split_security_preserves_source_and_is_idempotent(self):
+        for original in (ORIGINAL, OBSERVED_EC2, CORRECTED):
+            with self.subTest(primary=original.splitlines()[0]):
+                self.path.write_text(original)
+                self.source.write_text(OBSERVED_SPLIT_SECURITY)
+                mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), CORRECTED)
+                self.assertEqual(self.source.read_text(), OBSERVED_SPLIT_SECURITY)
+                mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), CORRECTED)
+                self.assertEqual(self.source.read_text(), OBSERVED_SPLIT_SECURITY)
+
+    def test_split_security_rejects_changed_uri_and_incomplete_or_unsigned_profiles(self):
+        uri = "http://security.ubuntu.com/ubuntu"
+        source = OBSERVED_SPLIT_SECURITY
+        mutants = [source.replace(uri, alternative) for alternative in (
+            uri + "/", uri.replace("http:", "https:"), uri + "?x=1", uri + "#fragment",
+            uri.replace("security.ubuntu.com", "security.ubuntu.com.evil.example"),
+            uri.replace("http://", "http://user@"), uri.replace("/ubuntu", "/other"),
+            uri + " " + mirror.MIRROR)]
+        mutants += [source.replace("noble-security", "noble-proposed"),
+                    source.replace("noble noble-updates noble-backports", "noble noble-updates"),
+                    source.replace("noble noble-updates noble-backports", "noble noble-updates noble-backports noble-security"),
+                    source.replace("Types: deb", "Types: deb-src"),
+                    source.replace("/usr/share/keyrings/ubuntu-archive-keyring.gpg", "/tmp/key.gpg"),
+                    source.replace("main universe", "main main"),
+                    source + "Trusted: yes\n", source + "Enabled: no\n",
+                    source + "\n" + source.split("\n\n")[1],
+                    source.replace(mirror.MIRROR, uri),
+                    source.replace("noble noble-updates noble-backports", "noble") +
+                    "\n" + SOURCE.replace("noble noble-updates noble-backports noble-security", "noble-updates noble-backports")]
+        for mutant in mutants:
+            with self.subTest(source=mutant):
+                self.path.write_text(ORIGINAL)
+                self.source.write_text(mutant)
+                with self.assertRaises(ValueError):
+                    mirror.configure(self.path, self.source)
+                self.assertEqual(self.path.read_text(), ORIGINAL)
+                self.assertEqual(self.source.read_text(), mutant)
 
     def test_observed_ec2_is_not_a_wildcard_or_a_mixed_profile(self):
         uri = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
@@ -169,6 +214,67 @@ class MirrorTests(unittest.TestCase):
         records = json.loads(mirror.mirror_profile("# note\n\n" + ORIGINAL * 20))
         self.assertEqual(len(records), 12)
         self.assertEqual(records[0]["line"], 3)
+
+    def test_source_rejection_records_the_input_without_mutation_or_success(self):
+        import contextlib
+        import io
+        import json
+        # Synthetic source, not a claim about the unretained #649 runner file.
+        rejected = SOURCE.replace(mirror.MIRROR, "https://archive.ubuntu.com/ubuntu/")
+        self.source.write_text(rejected)
+        error, output = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stderr(error), contextlib.redirect_stdout(output):
+            with self.assertRaises(ValueError) as caught:
+                mirror.configure(self.path, self.source)
+        self.assertEqual(str(caught.exception), "active Ubuntu source must use the expected mirror file")
+        record = json.loads(error.getvalue().split("observed=", 1)[1])
+        self.assertEqual(next(x for x in record["fields"] if x["field"] == "uris")["values"],
+                         ["https://archive.ubuntu.com/ubuntu/"])
+        self.assertEqual(self.path.read_text(), ORIGINAL)
+        self.assertEqual(self.source.read_text(), rejected)
+        self.assertEqual(output.getvalue(), "")
+
+    def test_source_visibility_does_not_admit_another_mirror_file(self):
+        import contextlib
+        import io
+        rejected = SOURCE.replace(mirror.MIRROR, "mirror+file:/etc/apt/mirrors/ubuntu.list")
+        self.source.write_text(rejected)
+        error = io.StringIO()
+        with contextlib.redirect_stderr(error), self.assertRaises(ValueError):
+            mirror.configure(self.path, self.source)
+        self.assertIn("mirror+file:/etc/apt/mirrors/ubuntu.list", error.getvalue())
+        self.assertEqual(self.path.read_text(), ORIGINAL)
+        self.assertEqual(self.source.read_text(), rejected)
+
+    def test_source_diagnostic_redacts_credentials_queries_unknown_values_and_paths(self):
+        text = SOURCE.replace(mirror.MIRROR,
+                              "https://alice:private-password@mirror.example/private-path?private-query#private-fragment")
+        text += "Private-field: private-extra\nSigned-By: /tmp/private-keyring\n"
+        detail = mirror.source_profile(text)
+        for secret in ("alice", "private-password", "private-path", "private-query", "private-fragment",
+                       "Private-field", "private-extra", "private-keyring"):
+            self.assertNotIn(secret, detail)
+        self.assertIn("https://mirror.example<other-path>", detail)
+        self.assertIn("<other-field>", detail)
+        self.assertNotIn("private-home", mirror.source_profile("URIs: mirror+file:/home/private-home/list\n"))
+
+    def test_source_diagnostic_is_bounded_and_preserves_continuation_shape(self):
+        import json
+        record = json.loads(mirror.source_profile("URIs: mirror+file:/etc/apt/apt-mirrors.txt\n https://[bad #private\n"))
+        self.assertTrue(record["fields"][1]["continuation"])
+        self.assertEqual(record["fields"][1]["values"], ["<malformed-uri>", "<malformed-uri>"])
+        detail = mirror.source_profile(SOURCE * 100)
+        self.assertLessEqual(len(detail), 8000)
+        self.assertTrue(json.loads(detail)["truncated"])
+        self.assertLessEqual(len(json.loads(detail)["fields"]), 24)
+
+    def test_valid_source_does_not_emit_rejection_evidence(self):
+        import contextlib
+        import io
+        error = io.StringIO()
+        with contextlib.redirect_stderr(error):
+            mirror.configure(self.path, self.source)
+        self.assertEqual(error.getvalue(), "")
 
     # Canonical cloud-init template at 179c69886be4c8e7e93bf22c34e97bf03e142b22,
     # specialized to noble and the runner-images mirror URI transformation.

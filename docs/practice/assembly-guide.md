@@ -252,6 +252,76 @@ compliance. See the [testing and physics follow-through](assembly-guide-testing.
 
 </details>
 
+## Source-bound serial assembly plans (#542)
+
+![Source-defined rail bench showing the finite plate path through open rails before the roof closes](../img/motion/assembly-plan-bench.svg)
+
+*Source illustration from the native serial-plan fixture, drawn by `tools/figures/motion_figures.py`:
+plate and roof waypoints, rail datums and separate component/tool obstruction controls. Native clearance
+checks and actual rendered world-vertex traces remain separate evidence.*
+
+The first executable scope extends the dossier and playback owners with one optional
+`cad-agent.assembly-plan/1` resource. A guide and packed mini-model bind the **same bytes** by relative
+file and SHA-256. Legacy guides remain illustrative. A malformed or stale declared plan fails loading;
+plan-enabled consumers never select radial motion as a fallback.
+
+<details>
+<summary>Bounded mechanical contract and validation limits</summary>
+
+The bounded contract is mm, assembly-home/Z-up, exact source instance identities, fixed context and a
+serial list of rigid translations. Each operation declares an ID, preceding dependencies, moving members,
+finite piecewise-linear offsets from its parked pose to the assembled zero offset, independent intent
+provenance and stage tool references. Every instance belongs to fixed context or exactly one operation.
+All future/removed parts occupy their declared parked poses; none disappear. Multiple members are one
+rigid module whose internal qualification remains separate. Rotations, nesting, concurrency, process
+inverses and display regrouping of independently moving instances are unsupported.
+
+Installation evaluates absolute source-rest-derived poses. Disassembly evaluates the identical trajectory
+at reversed global time: reverse operation order **and** each segment's parameter. Seeking, resetting and
+rapid reversal must not accumulate offsets. Presentation may compress duration but cannot change order,
+membership or path. Existing tick/lifecycle owners remain responsible for rendering and suspension.
+
+The source declaration binds source revision/closure, producer, original BREP, source mesh and exact placed
+matrix per instance. Hash agreement establishes freshness, not mechanical intent. Geometry checks reuse
+finite `sweep_pair` segments against occupied stages, including parked parts and every attached member.
+Tools reuse the fastener gate's ordinary axial envelopes and sector swing, with explicit finite axial
+approach/retraction. Insertion, tool access, internal qualification, support and retention/process remain
+separate results; sampled clearance never means physical assembly qualification. No product geometry is
+changed by this slice. Product migration and richer paths require their own acceptance evidence.
+
+</details>
+
+<details>
+<summary>Opt-in schema and existing owner APIs</summary>
+
+The opt-in JSON is authored under dossier `assembly: {plan: ...}` and exported as a separate resource.
+`collect_guides` captures `assembly_plan: {file, sha256}`; `pack_view(..., assembly_plan=Path(...))`
+validates original mesh hashes, preserves instance partitions and copies the identical resource when needed.
+Guide steps project operation IDs in the same order and keep `offsets_mm` empty. Full-plan subsets are the
+only supported presentation in this slice. `loadGuide` returns `plan`; `createGuideController(viewer, guide,
+{plan})` and `createViewer({assemblyPlan: plan, ...})` bind the same validated data. A consumer adapter using
+its own scene must apply the same CAD-root rest/parent contract; arbitrary articulation composition is unsupported.
+
+The plan has `schema`, `units`, `frame`, `source`, `clearance_mm`, `fixed`, and `operations`. Source carries
+`revision`, `closure_sha256`, `producer`, `tooling_sha256`, and `instances` (original `mesh_sha256`,
+`brep_sha256`, rigid 3×4 row-major `matrix`). Each operation carries `id`, `type: "translate"`, exact
+`members`, `requires`, `path_mm`, independent `intent`, and `tools`. Tool references carry `fastener`, `tool`
+and positive finite `approach_mm`. The tooling digest binds existing fastener specs/axes and tool declarations,
+so shrinking an ordinary driver under the same name is stale input. An ordinary tool declaration needs its
+`identity`, `ordinary: true` and a `drive` matching the fastener spec, in addition to existing envelope/swing data.
+Positive tool allowance remains explicitly unverified by the current envelope owner; no special smaller tool is
+silently selected. Drive engagement, holding-side tools, support and retention remain unqualified in this slice.
+
+`playback_gate(..., tools=..., fastener_specs=..., reverse=True)` validates the captured plan against the original
+producer binding before loading CAD. `bind_playback_breps` accepts the producer's `source_closure_sha256` and
+`producer` alongside its existing mesh/BREP/placement receipt. Pure `run_plan_sequence` establishes no source
+identity. Public player `seek(0..operationCount)`, `reverse()` and `reset()` are absolute; `reset()` presents
+assembled home. A loop traverses the same path back and forth, preserving each terminal frame. The existing
+guide policy still clears selection/material overrides on instruction/playback transitions; no new articulation
+owner is introduced. Mini-viewer turns, hover and pointer controls remain owned by that viewer.
+
+</details>
+
 ## Preflight a native collection and retain progress
 
 <details>

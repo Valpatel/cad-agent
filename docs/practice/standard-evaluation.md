@@ -2,6 +2,89 @@
 
 The initial corpus for [#142](https://github.com/Valpatel/cad-agent/issues/142), scoped by [#612](https://github.com/Valpatel/cad-agent/issues/612), measures three small jobs with independently recomputed checks. These are analytical calculations and explicit geometry/connectivity declarations. They do not establish that an agent can produce working CAD or a routed PCB.
 
+## Candidate task catalog
+
+The versioned [YAML catalog](../../tests/fixtures/evaluation/candidates.yaml) extends the task list for [#657](https://github.com/Valpatel/cad-agent/issues/657),
+under the existing [#142](https://github.com/Valpatel/cad-agent/issues/142) program. Its initial 28 entries cover
+setup/discovery, cloud capability recovery, mobile artifact review, mechanical modeling and editing, manufacturing,
+PCB work, simulation, assembly/service and release integrity. Three entries link the existing analytical jobs;
+25 are **candidate briefs, not runnable or qualified evaluations**. These counts describe the initial catalog,
+not completed trials or coverage of every engineering task.
+
+<details>
+<summary>Sources, YAML fields, qualification and repeated-series measurements</summary>
+
+### Reuse before new tasks
+
+The source records in the YAML retain the reuse decision and license limits. This change imports no benchmark
+assets, implementations or dependencies. Before importing any future item, pin its source and verify the actual
+file/dataset license, attribution and redistribution terms; a repository license is not automatically the license
+of every board, model or manufacturer drawing it points to.
+
+| Existing work | Use here and remaining gap |
+|---|---|
+| This repository's v1 jobs and quickstart evaluator | Link runnable analytical jobs without copying their prompts or checks. Borrow discovery evidence concepts; do not reuse the quickstart collector's environment setup for a new controlled study. |
+| [CADGenBench](https://github.com/huggingface/cadgenbench) | Generation/editing and reopened STEP checking ideas. Its Apache-2.0 code and public-input/private-ground-truth arrangement do not make a local copy of every task independently gradeable. |
+| [CADTestBench](https://github.com/dimitrismallis/CADTestBench) | BREP requirement checks and abstract/detailed prompt variants; MIT code and [dataset card](https://huggingface.co/datasets/dimitrismallis/CADTestBench/blob/main/README.md) are promising reuse candidates. Freeze and audit chosen inputs before adoption. |
+| [BenchCAD](https://github.com/BenchCAD/BenchCAD-main) | Understanding/editing/vision taxonomy; its [license](https://github.com/BenchCAD/BenchCAD-main/blob/main/LICENSE) separates MIT code from CC-BY-4.0 data. No task data copied. |
+| [Text2CAD-Bench](https://huggingface.co/datasets/AICAD/Text2CAD-Bench), [CADWorld](https://github.com/Zdong104/CADWORLD) | Difficulty/prompt specificity and broader GUI task families. Link-only: data or repository-wide license not verified; partial/withheld inputs and GUI runtime requirements limit direct reuse. |
+| [PCBench](https://github.com/PCBench/PCBench), [PCB-Bench](https://github.com/digailab/PCB-Bench) | Routing and board-understanding families. PCBench's MIT repository still requires per-board provenance checks; PCB-Bench redistribution terms remain unverified. |
+
+The original briefs fill discovery, cloud recovery, mobile handoff and cross-domain product gaps. They do not
+claim equivalent scores to these benchmarks. Existing Inspect/Harbor execution research below remains the runner
+reuse decision; the catalog adds neither an agent loop nor a second execution schema.
+
+### YAML contract and promotion
+
+`schema: cad-agent-candidate-catalog/1` identifies a planning format, separate from the existing runnable v1 API.
+The `sources` mapping holds stable IDs with a URL, reuse decision and license note. Each `tasks` entry has:
+
+| Field | Meaning |
+|---|---|
+| `id`, `version` | Stable task ID and positive integer revision; increment on any change to its prompt, required inputs or acceptance meaning. |
+| `status` | `candidate` or `existing-v1`; never infer execution readiness from the presence of a prompt. |
+| `domain`, `area` | Existing `docs/areas.yaml` vocabulary. The index maps legacy v1 `housings`/`pcb` to current areas without changing those manifests. |
+| `difficulty` | Editorial `starter`, `intermediate`, `advanced` or `expert`; not an empirically calibrated model ranking. |
+| `job_manifest` | Existing v1 manifest path relative to the evaluation fixture directory, or null for candidates. |
+| `prompt` | Original subject-facing brief for a candidate; null for existing jobs so their canonical `job.json` remains authoritative. |
+| `required_inputs` | Facts/assets/environment conditions to freeze before execution; unresolved required facts block launch. |
+| `success_criteria` | Controller-side acceptance intentions, not implemented graders or subject self-report fields. |
+| `artifacts` | Intended outputs to freeze, hash and independently inspect. |
+| `limits` | What a success would not establish, including physical tests or missing runtime qualification. |
+| `sources` | IDs from the source mapping; links are provenance, not fetched or executed by the catalog. |
+
+To promote a candidate, freeze its prompt/input packet, budgets, permitted tools and measurable acceptance bounds;
+qualify independent positive and negative controls (including distinct valid designs where applicable), then use
+the explicit v2 dispatch plan below or an existing compatible v1 job. Do not rename YAML to `job.json` or relax the
+v1 loader: it accepts exact fields and three allowlisted graders. New formats need explicit version dispatch and
+compatibility tests. A changed benchmark gets a new task version; retain old attempts against their original hash.
+
+The catalog is controller material. Subject preparation exposes **only** the frozen task prompt and approved
+inputs, never the whole YAML, answers, grader code, negative controls, held-outs, run notes or issue discussions.
+For discovery trials the public toolkit/site can reveal published examples; record that condition and do not call
+it a held-out study. Use the planned allowlisted subject bundle for controlled comparisons. A published catalog is
+useful for experience testing but cannot itself provide hidden benchmark questions.
+
+### Repeated experience series and effort
+
+Use a scoped GitHub tracking issue for a series of dozens of attempts, linking immutable task versions, commits
+and retained evidence. Log every registered attempt, including failure, timeout and retry; group comparable runs
+rather than treating different difficulty labels as equivalent. Vary tasks, model and reasoning level deliberately,
+with fixed conditions for comparisons. Subject agents must not receive the series issue or previous solutions.
+
+Reuse the existing run fields (`tokens_in`, `tokens_out`, `peak_context`, `tool_calls`, elapsed time and provider
+usage) and the planned v2 identity/execution/resource groups. Retain requested **and resolved** model/effort where
+available. Report unavailable measurements as null, not zero or guessed values. Define whether a tool count is a
+harness invocation, a nested operation, or a completed provider call; preserve the transcript and counting method.
+Cumulative input tokens are not peak context. Separate scout effort from validation, implementation and review.
+
+For Codex cloud/mobile, record the actual harness, network/sandbox limits and artifact-access evidence. Phone
+viewport emulation, actual mobile-device interaction and cloud-only execution are distinct conditions. A cloud
+agent producing files does not establish that a phone user can inspect or download them. Site discoverability,
+installation, toolkit use, artifact correctness and physical usefulness need separate outcomes.
+
+</details>
+
 ## Planned CAD design evaluations
 
 The next question is whether cad-agent helps a local or lower-cost model make better **design decisions backed by

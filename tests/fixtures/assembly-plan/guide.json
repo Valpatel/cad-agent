@@ -1,0 +1,67 @@
+{
+ "schema": "cad-agent.assembly-guide/1",
+ "snapshot": {
+  "id": "serial-bench",
+  "revision": "native-bench/1",
+  "status": "wip",
+  "source_commit": "1111111111111111111111111111111111111111"
+ },
+ "model": {
+  "file": "view.json",
+  "sha256": "bee31d8cbd34e12c9fdfa18af8cfa801f1736311a474e192b9bd8dd6861edcd1"
+ },
+ "assembly_plan": {
+  "file": "plan.json",
+  "sha256": "67126dfab8ca7648a2d9a81388d1edcc43dee0be2a11a62b7a45016bc84c2e2d"
+ },
+ "subassemblies": [
+  {
+   "id": "bench",
+   "title": "Native rail bench",
+   "parts": [
+    "base",
+    "rail",
+    "plate",
+    "fastener",
+    "lid"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "id": "plate",
+   "title": "Install plate",
+   "text": "fixture source: plate translates above open rail channel, then descends between x=-6 and x=6 walls; fastener stays attached",
+   "subassembly": "bench",
+   "parts": [
+    "base",
+    "rail",
+    "plate",
+    "fastener",
+    "lid"
+   ],
+   "highlight": [
+    "plate",
+    "fastener"
+   ],
+   "offsets_mm": {}
+  },
+  {
+   "id": "lid",
+   "title": "Install lid",
+   "text": "fixture source: roof closes z=13 only after plate insertion and axial driver withdrawal",
+   "subassembly": "bench",
+   "parts": [
+    "base",
+    "rail",
+    "plate",
+    "fastener",
+    "lid"
+   ],
+   "highlight": [
+    "lid"
+   ],
+   "offsets_mm": {}
+  }
+ ]
+}

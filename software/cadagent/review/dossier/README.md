@@ -16,6 +16,7 @@ flowchart TD
 | File or folder | Purpose |
 |---|---|
 | [load.py](load.py) | YAML loading, item locations and identifier resolution. |
+| [plan.py](plan.py) | Canonical serial assembly-plan validation and absolute path evaluation. |
 | [model.py](model.py) | Plain dossier dataclasses and serialisation. |
 | [registry.py](registry.py) | CAD-side parts, cavities, axes, joints and assembly declarations. |
 | [lint.py](lint.py) | Non-geometric dossier lint and status transitions. |

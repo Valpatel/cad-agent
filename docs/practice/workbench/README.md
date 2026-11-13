@@ -24,8 +24,8 @@ keeps its own document, renderer and solver; the host composes their capabilitie
 flowchart TD
   A["Project artifacts"] --> B["Shared host<br/>and review services"]
   B --> C["Mechanical<br/>2D and 3D"]
-  B --> D["SCADA<br/>views and models"]
-  B --> E["PCB, electrical<br/>and harness review"]
+  B --> D["SCADA<br/>views / models"]
+  B --> E["PCB / wiring<br/>harness"]
   C --> F["Reports and<br/>portable evidence"]
   D --> F
   E --> F

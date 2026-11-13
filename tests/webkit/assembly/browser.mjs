@@ -114,6 +114,8 @@ async function serialBrowserChecks(page, browser) {
           const first = el.captureAssemblyLandmarks(window.__serialIndices);
           window.__serialBasis = new THREE.Matrix4().fromArray(first.cadToWorld).invert();
         }
+        window.__serialWithin = (actual, expected, tolerance) => Object.entries(expected).every(([name, points]) =>
+          points.every((point, i) => point.every((n, k) => Math.abs(actual[name]?.[i]?.[k] - n) <= tolerance)));
         window.__serialCapture = () => {
           let components;
           if (consumer === 'guide') {
@@ -157,12 +159,23 @@ async function serialBrowserChecks(page, browser) {
       }
       await page.evaluate(()=>window.__serialPlayer.reset());checkSerial(await page.evaluate(()=>window.__serialCapture()),2);
     } else {
-      await seek(2);
+      const atRest = await seek(2);
+      // A first-corner readiness witness misses a different packed vertex still outside tolerance.
+      // Keep the same physical tolerance and prove the full-landmark predicate rejects that boundary.
+      const premature = structuredClone(atRest); premature.lid[3][2] = serialExpected(2).lid[3][2] + .0021;
+      assert.ok(Math.abs(premature.lid[0][2] - 13) < .002 && Math.abs(premature.lid[0][0] + 9) < .002);
+      assert.equal(await page.evaluate(({ actual, expected }) => window.__serialWithin(actual, expected, .002),
+        { actual: premature, expected: serialExpected(2) }), false);
+      assert.equal(await page.evaluate(({ actual, expected }) => window.__serialWithin(actual, expected, .002),
+        { actual: atRest, expected: serialExpected(2) }), true);
       const button=page.getByRole('button',{name:'Explode',exact:true}).first();await button.click();
       await page.waitForFunction(()=>{const capture=window.__serialCapture();return capture.lid[0][2]>13.01 && capture.plate[0][2]<1.002;});
       await button.click();assert.equal(await button.getAttribute('aria-pressed'),'false','A second click reverses even before halfway');
-      await page.waitForFunction(()=>{const capture=window.__serialCapture();return Math.abs(capture.lid[0][2]-13)<.002 && Math.abs(capture.lid[0][0]+9)<.002;});
-      checkSerial(await page.evaluate(()=>window.__serialCapture()),2);
+      const settled = await page.waitForFunction(expected => {
+        const capture = window.__serialCapture();
+        return window.__serialWithin(capture, expected, .002) ? capture : false;
+      }, serialExpected(2));
+      try { checkSerial(await settled.jsonValue(), 2); } finally { await settled.dispose(); }
       const second=await page.evaluate(()=>{const models=document.querySelectorAll('cad-model');return {frames:models[1].frames,first:models[0].stats.parts,second:models[1].stats.parts};});
       assert.equal(second.first,5);assert.equal(second.second,5);
     }

@@ -9,6 +9,17 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.40.1 (2026-11-13)
+
+**New**
+- Versioned YAML candidate task catalog for agent discovery, cloud/mobile review and hardware design studies; existing analytical jobs remain unchanged, and candidate briefs require qualified inputs and graders before execution (#657).
+
+**Fixed**
+- CI recognizes the observed Ubuntu runner's separate security stanza while preserving its source bytes, complete suite checks and archive-keyring requirements; unknown profiles still fail before mutation (#617).
+- `cad-agent init` prints a command using its current Python environment when `cad-agent` is not on PATH, so a custom installation can continue without opening a new shell (#655).
+- Assembly reversal browser checks wait for every independent world landmark before asserting the captured pose; the existing 0.002 mm tolerance and geometry fault controls remain unchanged (#660).
+- Browser reader overflow checks wait for the requested responsive layout and assert one captured sample, preserving containment expectations instead of sampling a resize transition (#663).
+
 ## v0.40.0 (2026-11-12)
 
 **New**

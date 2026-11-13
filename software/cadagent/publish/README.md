@@ -31,6 +31,8 @@ flowchart TD
 
 | Module | What it does |
 |---|---|
+| [runtime.py](runtime.py) | Validates and captures explicit browser runtime dependency profiles |
+| [runtime-profiles.json](runtime-profiles.json) | Reviewed runtime paths, dependency edges and source hashes |
 | `report.py` | Collects a project's check outputs into results JSON (schema 1.0) |
 | `htmlreport.py` | A standalone HTML page for a results file |
 | `render.py` | Off-screen VTK renders of CadQuery shapes and STL meshes, captioned |
@@ -87,3 +89,13 @@ admission and an installed-wheel test; gallery ownership does not imply inclusio
 Rollback restores the prior producer in a new release; existing archives stay
 immutable. [Runtime tests](../../../tests/publish/test_runtime.py) exercise the
 closure and rejection behavior; portable guide/browser tests prove actual loading.
+
+
+For the same three-snapshot synthetic guide fixture, the baseline full-kit archive
+contained 131 ZIP entries / 4,864,573 compressed bytes; the profiled archive contains
+48 entries / 319,902 compressed bytes. Project source and original release folders
+were removed before the actual Chromium reader ran: eight cases passed with no
+page errors or foreign requests. This is fixture portability evidence, not a
+measurement of all project archives. The source-free installed-wheel check also
+passed, including nested ESM import and missing-profile rejection. Required CI
+retains both Chromium and WebKit coverage.

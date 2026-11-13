@@ -5,6 +5,8 @@ import re
 
 import yaml
 
+from tests.repo.test_areas import load_areas
+
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'tests/fixtures/evaluation'
 FIELDS = {'id', 'version', 'status', 'domain', 'area', 'difficulty', 'job_manifest', 'prompt',
@@ -12,15 +14,8 @@ FIELDS = {'id', 'version', 'status', 'domain', 'area', 'difficulty', 'job_manife
 SLUG = re.compile(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
 
 
-class UniqueKeys(yaml.SafeLoader):
-    def construct_mapping(self, node, deep=False):
-        keys = [self.construct_object(key, deep=deep) for key, _ in node.value]
-        assert len(keys) == len(set(keys)), f'duplicate catalog key: {keys}'
-        return super().construct_mapping(node, deep)
-
-
 def catalog():
-    return yaml.load((FIXTURES / 'candidates.yaml').read_text(), Loader=UniqueKeys)
+    return load_areas((FIXTURES / 'candidates.yaml').read_text())
 
 
 def test_catalog_fields_sources_and_domain_vocabulary():

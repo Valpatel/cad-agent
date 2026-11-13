@@ -395,6 +395,13 @@ domains:
               cadagent.publish.render, cadagent.publish.view, cadagent.publish.dotsvg, cadagent.publish.serve,
               cadagent.publish.release, cadagent.publish.guides, cadagent.publish.anim]
         issues: [104, 141, 181]
+        topics:
+          - slug: engineering-workbench
+            title: Shared engineering workbench
+            scope: Shared viewer services and physically integrated domain toolkits; design under review, not a shipped host.
+            maturity: surveyed
+            pages: [docs/practice/workbench/README.md, docs/practice/workbench/integration-plan.md, docs/practice/workbench/contracts.md, docs/practice/workbench/migration-and-validation.md, docs/practice/workbench/source-audit.md]
+            issues: [527, 682, 683, 684, 685]
       - slug: evaluation
         title: Evaluation
         scope: Standard jobs and graders that measure models, harnesses and our tooling.

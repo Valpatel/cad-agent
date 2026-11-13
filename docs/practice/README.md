@@ -20,6 +20,7 @@ flowchart TD
 | Review a result | [Dossier](dossier.md), [integrity gates](gates.md), [review packet](review-packet.md), [common issues](common-issues.md) |
 | Publish readable evidence | [Style guide](style-guide.md), [animated figures](animated-figures.md), [project badge](share-badge.md), [web parts](web-parts.md), [file viewer](file-viewer.md) |
 | Maintain the system | [Supply chain](supply-chain.md), [weekly updates](weekly-upstream-update.md), [process lessons](../lessons/process/README.md) |
+| Plan shared engineering viewers | [Workbench integration design](workbench/README.md): SCADA, mechanical, PCB, electrical and harness ownership |
 
 [All guides](../README.md) · [Skills](../../.agents/skills/README.md)
 

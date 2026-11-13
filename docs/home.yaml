@@ -18,7 +18,7 @@ reel:
   caption: 'Recorded 20 W box: heater-zone average temperature over 1,500 solver iterations. Iterations are not
     elapsed seconds. This is a simulation, not a measured hardware temperature.'
   alt: Actual sampled heater-zone temperature history over 1500 iterations
-  href: docs/research/fea-and-process-tools.md
+  href: docs/research/simulation-tools.md#3-cfd--conjugate-heat-transfer
 - field: docs/img/cfd/fan-faces.webp
   img: docs/img/hero/airflow-balance.svg
   still: docs/img/hero/result-stills/airflow-balance-still.svg
@@ -28,7 +28,7 @@ reel:
   caption: 'Recorded fan cases: 3.75 versus 2.77 g/s. The ducted case is not steady and misses the energy balance
     by 10.9 percent; that failure stays visible. Not a cooling qualification.'
   alt: Two recorded cases showing mass flow and heat balance, including the failed ducted case
-  href: docs/research/fea-and-process-tools.md
+  href: docs/research/simulation-tools.md#3-cfd--conjugate-heat-transfer
 - img: docs/img/motion/rib-in-counterbore.svg
   still: docs/img/hero/result-stills/rib-in-counterbore-still.svg
   'on': fixture-2d

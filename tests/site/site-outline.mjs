@@ -328,7 +328,7 @@ export async function readerOverflowProblems(browser, base) {
   const state=()=>page.evaluate(readerOverflowSnapshot);
   const current=async expected=>{
     try {
-      const sample=await page.waitForFunction(readerOverflowSnapshot,expected);
+      const sample=await page.waitForFunction(readerOverflowSnapshot,expected,{timeout:5000});
       try{return await sample.jsonValue();}finally{await sample.dispose();}
     } catch(error) {
       states.push({readinessFailure:{expected,error:error.message,last:await state()}});

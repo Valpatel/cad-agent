@@ -1282,7 +1282,8 @@ class Study:
         changed by at most `tolerance` and the finer mesh resolves it (``peak``'s wall and radius checks); a peak that
         moved more than two mesh sizes is noted either way (an artefact when its value changed too, else two spots near
         the peak value). A peak at a sharp re-entrant corner (on either mesh) never converges, even when the two
-        meshes happen to agree.
+        meshes happen to agree. The stress pair and relative change retain their unrounded numerical precision
+        so the acceptance decision can be audited, even at tiny loads or near the tolerance boundary.
         One step is a check, not a convergence study: for that, refine the peak in steps (refine=) and plot it."""
         if not 0 < factor < 1:
             raise ValueError('factor must be between 0 and 1 (0.75: a mesh a quarter finer)')
@@ -1303,7 +1304,8 @@ class Study:
             warnings.simplefilter('ignore', MeshWarning)  # the finer peak's notes go into this check's own warning
             r2 = fine.solve()
         r1 = self.result
-        a, b = r1['von_mises_design_mpa'], r2['von_mises_design_mpa']
+        # Display rounding can hide a relative change entirely at small loads. Compare the solved field.
+        a, b = self._design_stress(), fine._design_stress()
         change = (b - a) / a if a else 0.0
         moved = math.dist(r1['mesh']['peak']['at_mm'], r2['mesh']['peak']['at_mm'])
         fine_peak = r2['mesh']['peak']
@@ -1330,7 +1332,7 @@ class Study:
             notes.append('the peak is at a sharp re-entrant corner, which never converges')
         rec = {'factor': factor, 'mesh_mm': [self.mesh_mm, fine.mesh_mm], 'tets': [r1['mesh']['tets'], r2['mesh']['tets']],
                'von_mises_design_mpa': [a, b], 'max_displacement_mm': [r1['max_displacement_mm'], r2['max_displacement_mm']],
-               'change': round(change, 4), 'peak_moved_mm': round(moved, 2), 'converged': bool(ok),
+               'change': change, 'peak_moved_mm': round(moved, 2), 'converged': bool(ok),
                'tolerance': tolerance, 'note': '; '.join(notes)}
         self.result['mesh']['convergence'] = rec
         self.finer = fine

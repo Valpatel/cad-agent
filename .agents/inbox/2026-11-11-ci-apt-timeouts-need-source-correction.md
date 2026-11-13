@@ -218,3 +218,26 @@ passed locally; no real rejected runner source was reconstructed or newly admitt
 sufficient actual producer evidence. The original failure is not rerun or waived by adding diagnostics. A
 source/configuration correction needs that evidence, independent review and all new normal CI. Release649
 remains held; no local apt configuration, dependency, workflow or model runtime was changed.
+
+## Recognize only the observed split security stanza
+
+2026-11-12 [full job 131567345145](https://github.com/Valpatel/cad-agent/actions/runs/43327783983/job/131567345145)
+rejected a two-stanza source before apt/tests. The untruncated diagnostic records the mirror-file source for
+`noble noble-updates noble-backports` and `http://security.ubuntu.com/ubuntu` for `noble-security`, both with
+`deb`, the four standard components and the Ubuntu archive keyring. Original source hash:
+`fc0fadce467e557a358c63f5532de4590c02933dfff8016028bb0a319b0e8b44`.
+This diagnoses that observed job; it does not reconstruct comments, blank lines, redacted URI components or
+identify the missing source of historical release649f0ae. The original failed runs remain failures.
+
+The bounded correction recognizes only that literal security URI with only the security suite, alongside
+exactly one mirror-file stanza covering the remaining suites. Existing all-mirror profiles still work.
+Complete suite/component coverage, no duplicates or unknown fields, active `deb` and the exact signed-by
+keyring remain required before writes. The security source is retained byte for byte, not rewritten to HTTP
+or added to the mirror list. The registered HTTPS preference affects the existing mirror file only. This
+preserves upstream transport and authentication; it does not claim security traffic uses that preference.
+
+Controls retain sources and verify idempotence for all three recognized mirror primaries. Modified hosts,
+credentials, queries/fragments, schemes, trailing slashes, paths, extra URIs, wrong suites/keyrings, unsigned
+options, inactive entries and extra stanzas fail without changing either file. The loopback apt test remains
+responsible for proving unsigned metadata is rejected. Hosted success on another profile cannot establish
+that the split profile was exercised, and no signature, retry, deadline or package-source bypass is introduced.

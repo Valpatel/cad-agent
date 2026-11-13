@@ -1962,7 +1962,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 351 folders</summary>
+<summary>tests — 352 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -2004,7 +2004,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary><code>tests/fixtures/README.md</code> — 334 folders</summary>
+<summary><code>tests/fixtures/README.md</code> — 335 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-fixtures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md)
 
@@ -2014,6 +2014,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 |---|
 | `tests/fixtures` |
 | `tests/fixtures/assembly-guide` |
+| `tests/fixtures/assembly-plan` |
 | `tests/fixtures/bambu_templates` |
 | `tests/fixtures/cards` |
 | `tests/fixtures/cfd_runs` |

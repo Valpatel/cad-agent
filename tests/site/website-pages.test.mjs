@@ -312,3 +312,27 @@ test('a disconnected page and unavailable receipt directory never mask the origi
   assert.equal(context.states.at(-1).navigationFailure.currentURL, '[unavailable URL]');
   assert.equal(errors.length, 1); assert.match(errors[0], /partial receipt unavailable/); noProbeListeners(page);
 });
+
+// #663: the prior filtered sample was internally consistent before the resized layout arrived.
+import { readerOverflowSnapshot } from './site-outline.mjs';
+test('reader overflow readiness rejects stale viewport/layout/containment and captures the passing sample', t => {
+  const mockGlobal=(name,value)=>{const old=Object.getOwnPropertyDescriptor(globalThis,name);Object.defineProperty(globalThis,name,{value,configurable:true});t.after(()=>old?Object.defineProperty(globalThis,name,old):delete globalThis[name]);};
+  const panel = { clientHeight:345, scrollHeight:345, hasAttribute:()=>false };
+  const style = {position:'sticky',overscrollBehaviorY:'auto'};
+  mockGlobal('document',{querySelector:()=>panel});
+  mockGlobal('getComputedStyle',()=>style);
+  mockGlobal('scrollY',300);
+  mockGlobal('innerWidth',1440);
+  mockGlobal('innerHeight',600);
+  const expected={width:1440,height:600,overflow:true,position:'sticky'};
+  assert.equal(readerOverflowSnapshot(expected),false,'preceding fitting layout must not settle resize');
+  panel.clientHeight=968;panel.scrollHeight=1429;
+  assert.equal(readerOverflowSnapshot(expected),false,'actual hosted transitional sample is rejected');
+  style.overscrollBehaviorY='contain';panel.hasAttribute=()=>true;
+  assert.equal(readerOverflowSnapshot(expected),false,'old tall max-height still exceeds requested viewport');
+  panel.clientHeight=488;
+  const sample=readerOverflowSnapshot(expected);
+  assert.equal(sample.content,1429);assert.equal(sample.contain,'contain');assert.equal(sample.fits,false);
+  panel.clientHeight=345;panel.scrollHeight=345;
+  assert.equal(sample.height,488,'returned value is the captured sample, not a second layout read');
+});

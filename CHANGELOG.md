@@ -9,6 +9,29 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.40.1 (2026-11-13)
+
+**New**
+- Versioned YAML candidate task catalog for agent discovery, cloud/mobile review and hardware design studies; existing analytical jobs remain unchanged, and candidate briefs require qualified inputs and graders before execution (#657).
+
+**Fixed**
+- CI recognizes the observed Ubuntu runner's separate security stanza while preserving its source bytes, complete suite checks and archive-keyring requirements; unknown profiles still fail before mutation (#617).
+- `cad-agent init` prints a command using its current Python environment when `cad-agent` is not on PATH, so a custom installation can continue without opening a new shell (#655).
+- Assembly reversal browser checks wait for every independent world landmark before asserting the captured pose; the existing 0.002 mm tolerance and geometry fault controls remain unchanged (#660).
+- Browser reader overflow checks wait for the requested responsive layout and assert one captured sample, preserving containment expectations instead of sampling a resize transition (#663).
+
+## v0.40.0 (2026-11-12)
+
+**New**
+- Opt-in source-bound serial assembly plans drive the detailed guide and packed mini-viewer through the same finite piecewise paths, reversing operation order and path for disassembly. Existing playback and fastener gates check occupied/parked component paths and declared ordinary axial tool paths separately (#542).
+
+**Changed**
+- Hosted Ubuntu source rejections retain bounded, redacted field/URI evidence and the source hash before the original failure; no new source profile or URI is accepted (#617, #649).
+- Give the homepage knowledge indicator a luminous green core, soft halo and gentle looping pulse, with a still glow for reduced-motion readers (#651).
+
+**Projects must change**
+- To opt in, export exact source-instance BREP/mesh/placement/tooling bindings and an explicit plan; legacy guides remain illustrative. Rotations, simultaneous/process operations, support, retention, internal module qualification and physical build remain unsupported or unverified. Product migrations are separate (#542).
+
 ## v0.39.0 (2026-11-12)
 
 **New**

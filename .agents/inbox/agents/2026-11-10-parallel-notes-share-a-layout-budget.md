@@ -80,3 +80,29 @@ opens and retains the engineering limits. Current-head complete browser CI still
 
 
 On2026-11-11, printable-checklist PR573 reconciled reviewed CI/PEM dev0ba1bc70 and pure layout/areas reported2 failures/27 passes: the union put21 files directly in `.agents/inbox/`. The new print-layout incident moved with `git mv` into the existing publication domain (20 files after the move), and its symptom/owner links were updated. No growth limit or exception list changed. Check the resulting union after integration, even when each original branch passed its own layout gate.
+
+
+## Serial-plan reference extensions reopened both reading walls
+
+On 2026-11-12, PR637 source `27c3b33114602c470a20b9d2e7c674b67b9f698c` failed actual browser
+run `43301340964`: Chromium job `131473027065` measured assembly-guide/testing at **1352/2277 px**;
+WebKit job `131473026431` measured **1346/2272 px**, against the unchanged **1200 px** limit. Earlier
+native, source, map and bounded viewer passes did not cover the published reference pages.
+
+The serial-plan contract and repeated receipt/history paragraphs had extended the visible page after its
+last diagram. Keep that complete reference in a named native disclosure with a concise visible overview.
+Show the existing source-derived rail/plate/roof illustration where it explains the canonical plan, before
+the longer native-preflight chapter; do not add a decorative visual or change the wall predicate/backlog.
+
+A declared working-draft/client-diagram diagnostic imported the existing `site-walls.mjs` measurement at
+1366×800 and measured **1070/945 px in Chromium**, **1065/940 px in WebKit**, with loaded source illustration,
+rendered diagram, and an ordinary click exposing the original receipt command and physical-build limits.
+The first probe asked for the wrong exact phrase (`physical qualification` rather than the retained
+`physical build qualification`) inside the disclosure; that probe error was retained and its text oracle
+corrected without changing the engineering limit. These are draft diagnostics, not hosted acceptance.
+
+The same hosted WebKit job also reported a shared-reader short-layout containment failure. Independent
+artifact comparison found unchanged reader inputs; the suspected resize-readiness race was not demonstrated
+as a production defect. Preserve that separate failure and require fresh current-source CI rather than
+claiming the documentation correction fixes it. Exact raw-log hashes and scoped reading evidence live in
+[`reading-witness.json`](../../../tests/fixtures/assembly-plan/reading-witness.json).

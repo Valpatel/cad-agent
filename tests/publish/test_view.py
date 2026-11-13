@@ -292,3 +292,27 @@ def test_j501_source_rgb_conversion_rejects_invalid_material_channels():
                     [float('nan'), 0, 0], [float('inf'), 0, 0], [True, 0, 0], '#000000', ['0', 0, 0]]:
         with pytest.raises(RuntimeError, match='finite normalized RGB'):
             convert(invalid)
+
+
+@pytest.mark.parametrize("duplicate_mesh", ["plate", "rail"])
+def test_plan_pack_rejects_original_duplicate_partitions_before_reading_or_writing(tmp_path, monkeypatch, duplicate_mesh):
+    """Same-mesh duplicates and a wrong earlier rail aliased as plate both violate exact ownership."""
+    import shutil
+    import cadagent.publish.view as view
+    fixture = Path(__file__).resolve().parents[1] / "fixtures/assembly-plan"
+    for filename in ("view.json", "plan.json", "base.stl", "rail.stl", "plate.stl", "fastener.stl", "lid.stl"):
+        shutil.copyfile(fixture / filename, tmp_path / filename)
+    manifest = json.loads((tmp_path / "view.json").read_text())
+    extra = dict(next(p for p in manifest["parts"] if p["name"] == duplicate_mesh), name="plate")
+    manifest["parts"].insert(0, extra)
+    (tmp_path / "duplicate.json").write_text(json.dumps(manifest))
+    # Retain prior complete outputs; a rejected new source cannot corrupt them.
+    out = tmp_path / "retained"
+    (tmp_path / "retained.json").write_bytes(b"previous manifest")
+    (tmp_path / "retained.bin").write_bytes(b"previous binary")
+    monkeypatch.setattr(view, "_read_stl", lambda *a: pytest.fail("reject duplicate source IDs before geometry decoding"))
+    with pytest.raises(ValueError, match="unique source instance names"):
+        view.pack_view(tmp_path / "duplicate.json", out, assembly_plan=tmp_path / "plan.json")
+    assert (tmp_path / "retained.json").read_bytes() == b"previous manifest"
+    assert (tmp_path / "retained.bin").read_bytes() == b"previous binary"
+    assert not (tmp_path / "retained.assembly-plan.json").exists()

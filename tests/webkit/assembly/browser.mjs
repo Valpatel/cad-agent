@@ -1,7 +1,7 @@
 /** Real shared viewer, three distinct snapshots, independent CAD-frame expectations and owned cleanup. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { chromium, webkit } from '../../site/npm-context.mjs';
 import { serveWebkit } from '../webkit-server.mjs';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -13,7 +13,7 @@ function cube(origin, size) {
   faces.forEach((face, i) => face.forEach((vertex, j) => vertices[vertex].forEach((n, k) => bytes.writeFloatLE(n, 84 + 50 * i + 12 + j * 12 + k * 4))));
   return { bytes, bounds: [...origin, ...origin.map((n, i) => n + size[i])] };
 }
-const routes = new Map(), versions = ['v1', 'v2', 'wip'];
+const routes = new Map([['/favicon.ico',(_,res)=>res.writeHead(204).end()]]), versions = ['v1', 'v2', 'wip'];
 for (const [index, version] of [...versions, 'proto'].entries()) {
   const shapes = [cube([0, 0, 0], [40 + index * 10, 30, 8]), cube([8, 8, 8], [5, 5, 20]), cube([28, 8, 8], [5, 5, 20])];
   const names = [version === 'proto' ? 'constructor' : 'base', 'screw#1', 'screw#2'];
@@ -35,12 +35,185 @@ for (const [index, version] of [...versions, 'proto'].entries()) {
 const legacyShape = cube([0, 0, 0], [10, 20, 30]);
 routes.set('/legacy/small%20part.stl', (_, res) => res.end(legacyShape.bytes));
 routes.set('/legacy/view.json', (_, res) => res.end(encode({ parts: [{ name: 'small part', file: 'small part.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
+// Native source exports are shared with the independent BREP/tool suite, not reconstructed from paths.
+const serialRoot = new URL('../../fixtures/assembly-plan/', import.meta.url);
+const serialFiles = new Map(await Promise.all((await readdir(serialRoot)).filter(n => /\.(?:json|stl|bin)$/.test(n)).map(async n => [n, await readFile(new URL(n, serialRoot))])));
+const serialPlan = JSON.parse(serialFiles.get('plan.json')), serialGuide = JSON.parse(serialFiles.get('guide.json')), serialMini = JSON.parse(serialFiles.get('mini.json'));
+assert.equal(serialGuide.assembly_plan.sha256, hash(serialFiles.get('plan.json')));
+assert.deepEqual(serialMini.assembly_plan, serialGuide.assembly_plan);
+for (const variant of ['serial', 'serial-wrong-axis', 'serial-wrong-order', 'serial-stale', 'serial-duplicate-same', 'serial-duplicate-different']) {
+  for (const [name, bytes] of serialFiles) routes.set(`/${variant}/${name}`, (_, res) => res.end(bytes));
+  const plan = structuredClone(serialPlan), guide = structuredClone(serialGuide), mini = structuredClone(serialMini);
+  if (variant === 'serial-wrong-axis') plan.operations[0].path_mm = [[0,20,25],[0,0,25],[0,0,0]];
+  if (variant === 'serial-wrong-order') {
+    plan.operations.reverse(); plan.operations[0].requires = []; plan.operations[1].requires = ['lid']; guide.steps.reverse();
+  }
+  if (variant.startsWith('serial-duplicate-')) {
+    const extra = structuredClone(mini.parts.find(p => p.name === (variant.endsWith('-same') ? 'plate' : 'rail')));
+    extra.name = 'plate'; mini.parts.unshift(extra);
+    assert.equal(mini.parts.length,6); assert.equal(new Set(mini.parts.map(p=>p.name)).size,5);
+  }
+  const bytes = (variant === 'serial' || variant.startsWith('serial-duplicate-')) ? serialFiles.get('plan.json') : encode(plan);
+  if (variant !== 'serial-stale') guide.assembly_plan.sha256 = mini.assembly_plan.sha256 = hash(bytes);
+  routes.set(`/${variant}/plan.json`, (_, res) => res.end(bytes));
+  routes.set(`/${variant}/guide.json`, (_, res) => res.end(encode(guide)));
+  routes.set(`/${variant}/mini.json`, (_, res) => res.end(encode(mini)));
+  routes.set(`/${variant}/index.html`, (_, res) => {
+    res.setHeader('Content-Type','text/html');
+    res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:44vh;min-height:230px}</style><script type="module" src="/kit/model.js"></script><cad-model src="/${variant}/mini.json" loading="eager" turn="0"></cad-model><cad-model src="/serial/mini.json" loading="eager" turn="0"></cad-model>`);
+  });
+}
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
 const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-assembly-guide'; await mkdir(out, { recursive: true });
 const site = await serveWebkit(routes); let browser, cors;
 
-const cases = [], errors = [];
+const cases = [], errors = [], consoleErrors = [];
 const near = (actual, expected, tolerance = 1e-6) => actual.forEach((n, i) => assert.ok(Math.abs(n - expected[i]) < tolerance, `${actual} != ${expected}`));
+// Four noncoplanar corners chosen from native source boxes, never from the motion plan.
+const serialBoxes = JSON.parse(serialFiles.get('fixture.json')).boxes;
+const serialCorners = Object.fromEntries(Object.entries(serialBoxes).map(([name, boxes]) => {
+  const b = boxes[0], a = b.slice(0,3); return [name,[a,[a[0]+b[3],a[1],a[2]],[a[0],a[1]+b[4],a[2]],[a[0],a[1],a[2]+b[5]]]];
+}));
+function serialExpected(position) {
+  const p = Math.max(0,Math.min(1,position)), q = Math.max(0,Math.min(1,position-1));
+  const plate = p <= 4/9 ? [20-45*p,0,25] : [0,0,45*(1-p)];
+  const lid = q <= 7/11 ? [35-55*q,0,20] : [0,0,55*(1-q)];
+  return Object.fromEntries(Object.entries(serialCorners).map(([name, points]) => [name,points.map(point => point.map((v,i) => v + (['plate','fastener'].includes(name) ? plate[i] : name === 'lid' ? lid[i] : 0)))]));
+}
+function checkSerial(actual, position, tolerance = .002) {
+  const expected = serialExpected(position);
+  for (const [name, points] of Object.entries(expected)) points.forEach((point,i) => point.forEach((n,k) => assert.ok(Math.abs(actual[name][i][k]-n) <= tolerance, `${name} world landmark at ${position}: ${actual[name][i]} != ${point}`)));
+}
+async function serialBrowserChecks(page, browser) {
+  const packet = { sourceRevision:process.env.TEST_SOURCE_REVISION || 'unrecorded', engine:engine.name(), browserVersion:browser.version(),
+    sourcePlan:hash(serialFiles.get('plan.json')), fixtureMeshes:Object.fromEntries([...serialFiles].filter(([n])=>n.endsWith('.stl')).map(([n,b])=>[n,hash(b)])),
+    runtimeHashes:Object.fromEntries(await Promise.all(['assembly/playback.js','assembly/guide.js','viewer.js','model.js'].map(async n=>[n,hash(await readFile(new URL('../../../software/cadagent/webkit/'+n,import.meta.url)))]))),
+    harnessSha256:hash(await readFile(new URL(import.meta.url))), cases:[], samples:[], maxToleranceMm:.002 };
+  for (const consumer of ['guide','mini']) {
+    const open = async variant => {
+      await page.goto(consumer === 'guide' ? `${site.url}/kit/viewer.html?guide=/${variant}/guide.json` : `${site.url}/${variant}/index.html`);
+      await page.waitForFunction(kind => kind === 'guide' ? document.body.dataset.ready === '1' : [...document.querySelectorAll('cad-model')].every(m => m.dataset.state === 'ready'), consumer);
+      await page.evaluate(async ({ consumer, corners }) => {
+        const THREE = await import('/kit/vendor/three/three.module.min.js');
+        window.__serialTHREE = THREE; window.__serialConsumer = consumer;
+        if (consumer === 'guide') {
+          const v = window.__viewer; v.reset(); window.__serialPlayer = window.__guide.controller.createPlayback({durationMs:100});
+          v.parts[0].mesh.parent.updateWorldMatrix(true,true); window.__serialBasis = v.parts[0].mesh.parent.matrixWorld.clone().invert();
+          window.__serialIndices = Object.fromEntries(v.parts.map(p => [p.name,corners[p.name].map(point => {
+            const a = p.mesh.geometry.attributes.position; for(let i=0;i<a.count;i++) if(point.every((n,k)=>Math.abs(a.array[3*i+k]-n)<.002)) return i;
+            throw new Error('Native source landmark missing');
+          })]));
+        } else {
+          const el = document.querySelector('cad-model'), {decodeModel,inflate} = await import('/kit/model.js');
+          const model = await (await fetch(el.getAttribute('src'))).json(), bin = await (await fetch(new URL(model.bin,new URL(el.getAttribute('src'),location.href)))).arrayBuffer();
+          const decoded = decodeModel(model,await inflate(bin));
+          window.__serialIndices = Object.fromEntries(model.parts.map((p,i) => [p.name,corners[p.name].map(point => {
+            const d=decoded[i]; for(let j=0;j<d.index.length;j++) if(point.every((n,k)=>Math.abs(d.positions[3*d.index[j]+k]-n)<.002)) return j;
+            throw new Error('Packed native landmark missing');
+          })]));
+          const first = el.captureAssemblyLandmarks(window.__serialIndices);
+          window.__serialBasis = new THREE.Matrix4().fromArray(first.cadToWorld).invert();
+        }
+        window.__serialWithin = (actual, expected, tolerance) => Object.entries(expected).every(([name, points]) =>
+          points.every((point, i) => point.every((n, k) => Math.abs(actual[name]?.[i]?.[k] - n) <= tolerance)));
+        window.__serialCapture = () => {
+          let components;
+          if (consumer === 'guide') {
+            const v=window.__viewer; v.stage.root.updateMatrixWorld(true); v.stage.renderer.render(v.stage.scene,v.stage.camera);
+            components=Object.fromEntries(v.parts.map(p=>[p.name,window.__serialIndices[p.name].map(i=>new THREE.Vector3().fromBufferAttribute(p.mesh.geometry.attributes.position,i).applyMatrix4(p.mesh.matrixWorld).toArray())]));
+          } else components=document.querySelector('cad-model').captureAssemblyLandmarks(window.__serialIndices).components;
+          return Object.fromEntries(Object.entries(components).map(([name,points])=>[name,points.map(point=>new THREE.Vector3(...point).applyMatrix4(window.__serialBasis).toArray())]));
+        };
+      }, {consumer,corners:serialCorners});
+    };
+    const seek = async position => {
+      const before = await page.evaluate(() => window.__serialConsumer === 'mini' ? document.querySelector('cad-model').frames : 0);
+      await page.evaluate(position => {
+        if(window.__serialConsumer === 'guide') window.__serialPlayer.seek(position);
+        else document.querySelector('cad-model').setExplode(1-position/2);
+      },position);
+      if (consumer === 'mini') await page.waitForFunction(before => document.querySelector('cad-model').frames > before,before);
+      return page.evaluate(()=>window.__serialCapture());
+    };
+    await open('serial');
+    // Direct/nonmonotone seeks are the same absolute trajectory as reverse elapsed time.
+    for (const [i,position] of [2,1.5,1,.5,.25,0,1.5,.25,2].entries()) {
+      const actual=await seek(position);checkSerial(actual,position);
+      if(i===1||i===4)packet.samples.push({consumer,position,components:actual});
+    }
+    if (consumer === 'guide') {
+      const actual = await page.evaluate(() => {
+        const p=window.__serialPlayer;p.seek(2);p.reverse();p.play();p.tick(.05);return window.__serialCapture();
+      }); checkSerial(actual,1.5);
+      const restored = await page.evaluate(() => {
+        const v=window.__viewer,T=window.__serialTHREE,p=v.parts.find(p=>p.name==='plate'),parent=p.mesh.parent;
+        const group=new T.Group();group.rotation.z=.7;group.position.set(12,3,2);parent.add(group);group.add(p.mesh);
+        window.__serialPlayer.seek(.5);const actual=window.__serialCapture();parent.attach(p.mesh);group.removeFromParent();return actual;
+      }); checkSerial(restored,.5);
+      for (const fault of ['units','parent','fixed']) {
+        const mutant=await page.evaluate(fault=>{
+          window.__serialPlayer.seek(.5);const v=window.__viewer,m=v.parts.find(p=>p.name===(fault==='fixed'?'base':'plate')).mesh;
+          if(fault==='units')m.scale.multiplyScalar(1000);else m.position.x+=7;
+          m.updateMatrixWorld(true);return window.__serialCapture();
+        },fault);assert.throws(()=>checkSerial(mutant,.5),`Actual ${fault} mutation must fail independent source landmarks`);
+      }
+      await page.evaluate(()=>window.__serialPlayer.reset());checkSerial(await page.evaluate(()=>window.__serialCapture()),2);
+    } else {
+      const atRest = await seek(2);
+      // A first-corner readiness witness misses a different packed vertex still outside tolerance.
+      // Keep the same physical tolerance and prove the full-landmark predicate rejects that boundary.
+      const premature = structuredClone(atRest); premature.lid[3][2] = serialExpected(2).lid[3][2] + .0021;
+      assert.ok(Math.abs(premature.lid[0][2] - 13) < .002 && Math.abs(premature.lid[0][0] + 9) < .002);
+      assert.equal(await page.evaluate(({ actual, expected }) => window.__serialWithin(actual, expected, .002),
+        { actual: premature, expected: serialExpected(2) }), false);
+      assert.equal(await page.evaluate(({ actual, expected }) => window.__serialWithin(actual, expected, .002),
+        { actual: atRest, expected: serialExpected(2) }), true);
+      const button=page.getByRole('button',{name:'Explode',exact:true}).first();await button.click();
+      await page.waitForFunction(()=>{const capture=window.__serialCapture();return capture.lid[0][2]>13.01 && capture.plate[0][2]<1.002;});
+      await button.click();assert.equal(await button.getAttribute('aria-pressed'),'false','A second click reverses even before halfway');
+      const settled = await page.waitForFunction(expected => {
+        const capture = window.__serialCapture();
+        return window.__serialWithin(capture, expected, .002) ? capture : false;
+      }, serialExpected(2));
+      try { checkSerial(await settled.jsonValue(), 2); } finally { await settled.dispose(); }
+      const second=await page.evaluate(()=>{const models=document.querySelectorAll('cad-model');return {frames:models[1].frames,first:models[0].stats.parts,second:models[1].stats.parts};});
+      assert.equal(second.first,5);assert.equal(second.second,5);
+    }
+    packet.cases.push({consumer,case:'native-world-corners-seek-reverse-reset',samples:9,parkedVisible:true});
+    for (const [variant,position] of [['serial-wrong-axis',.25],['serial-wrong-order',1.5]]) {
+      await open(variant);const mutant=await seek(position);assert.throws(()=>checkSerial(mutant,position),`${consumer} ${variant} must fail independent physical oracle`);
+      packet.cases.push({consumer,case:variant,rejectedByIndependentOracle:true});
+    }
+    await page.goto(consumer==='guide'?`${site.url}/kit/viewer.html?guide=/serial-stale/guide.json`:`${site.url}/serial-stale/index.html`);
+    if(consumer==='guide'){await page.getByRole('button',{name:'Retry model',exact:true}).waitFor();assert.equal(await page.locator('#app canvas').count(),0);}
+    else {await page.waitForFunction(()=>document.querySelector('cad-model').dataset.state==='error');assert.match(await page.locator('cad-model').first().getAttribute('data-error'),/SHA-256/);}
+    packet.cases.push({consumer,case:'stale-plan-refused',radialFallback:false});
+  }
+  // Preserve real plan/bin identities; only the original partition list is adversarial.
+  for (const variant of ['serial-duplicate-same','serial-duplicate-different']) {
+    await page.goto(`${site.url}/${variant}/index.html`);
+    await page.waitForFunction(()=>{const [bad,good]=document.querySelectorAll('cad-model');return bad.dataset.state==='error'&&good.dataset.state==='ready';});
+    const refusal=await page.evaluate(()=>{const el=document.querySelector('cad-model');return {state:el.dataset.state,error:el.dataset.error,
+      canvases:el.querySelectorAll('canvas').length,controls:el.querySelectorAll('.cad-model-ui').length,
+      hasExplode:typeof el.setExplode==='function',parts:el.stats?.parts??null};});
+    assert.match(refusal.error,/unique source instance names/);
+    assert.deepEqual({...refusal,error:undefined},{state:'error',error:undefined,canvases:0,controls:0,hasExplode:false,parts:null});
+    packet.cases.push({consumer:'mini',case:variant,refusal});
+  }
+  const phone=await browser.newContext({viewport:{width:320,height:700},deviceScaleFactor:2,reducedMotion:'reduce'});
+  const phonePage=await phone.newPage();phonePage.on('pageerror',e=>errors.push(e.message));phonePage.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});
+  try {
+    await phonePage.goto(`${site.url}/serial/index.html`);await phonePage.waitForFunction(()=>[...document.querySelectorAll('cad-model')].every(m=>m.dataset.state==='ready'));
+    const button=phonePage.getByRole('button',{name:'Explode',exact:true}).first();await button.click();
+    assert.equal(await button.getAttribute('aria-pressed'),'true');await button.focus();await phonePage.keyboard.press('Space');assert.equal(await button.getAttribute('aria-pressed'),'false');
+    assert.equal(await phonePage.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+    await phonePage.screenshot({path:`${out}/${engine.name()}-serial-320.png`});
+    packet.cases.push({case:'320px-dpr2-reduced-motion-keyboard-static',twoMiniViewers:true});
+  } finally {await phone.close();}
+  packet.errors=[...errors];packet.consoleErrors=[...consoleErrors];assert.deepEqual(packet.errors,[]);assert.deepEqual(packet.consoleErrors,[]);packet.passed=true;
+  await writeFile(`${out}/${engine.name()}-serial-plan.json`,JSON.stringify(packet,null,2));
+  cases.push(...packet.cases);
+}
 try {
   cors = await serveWebkit(new Map([['/part.stl', (_, res) => { res.setHeader('Access-Control-Allow-Origin', '*'); res.end(legacyShape.bytes); }]]));
   for (const [kind, file] of [['absolute', site.url + '/legacy/small%20part.stl'], ['root', '/legacy/small%20part.stl'], ['cors', cors.url + '/part.stl']]) routes.set(`/legacy/${kind}.json`, (_, res) => res.end(encode({ parts: [{ name: 'Published pan base fixture', file, color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
@@ -48,7 +221,7 @@ routes.set('/legacy/redirect.stl', (_, res) => { res.writeHead(302, { Location: 
 routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name: 'redirect', file: '/legacy/redirect.stl', color: 'steelblue', bounds_mm: legacyShape.bounds }] })));
   browser = await engine.launch(engine === chromium ? { channel: process.env.PLAYWRIGHT_CHANNEL === 'chromium' ? undefined : 'chrome', headless: true } : { headless: true });
   const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
-  const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
+  const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message)); page.on('console', message => {if(message.type()==='error')consoleErrors.push(message.text());});
   const visit = async (version, viewport = { width: 1100, height: 800 }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${site.url}/kit/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);
@@ -59,6 +232,8 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     v.stage.root.updateMatrixWorld(true);
     return v.parts.map(p => ({ name: p.name, visible: p.mesh.visible, offset: p.mesh.position.toArray(), world: p.mesh.getWorldPosition(new THREE.Vector3()).toArray(), opacity: p.mesh.material.opacity, transparent: p.mesh.material.transparent, depthWrite: p.mesh.material.depthWrite, wireframe: p.mesh.material.wireframe, emissive: p.mesh.material.emissive.getHex(), color: p.mesh.material.color.getHex(), uuid: p.mesh.uuid }));
   });
+  await serialBrowserChecks(page, browser);
+  if (!process.env.ASSEMBLY_PLAN_ONLY) {
   const v1UUIDs = [];
   for (const [index, version] of versions.entries()) {
     await visit(version);
@@ -379,6 +554,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     assert.ok(framed.points.every(([x, y]) => x >= framed.left - 1 && x <= framed.right + 1 && y >= framed.top - 1 && y <= framed.bottom + 1), JSON.stringify(framed));
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1); assert.equal(overflow, false);
     await page.screenshot({ path: `${out}/${engine.name()}-${viewport.width}.png` }); cases.push({ viewport, keyboard: true });
+  }
   }
   assert.deepEqual(errors, []);
   await writeFile(`${out}/${engine.name()}-report.json`, JSON.stringify({ passed: true, cases, errors }, null, 2));

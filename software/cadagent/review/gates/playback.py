@@ -93,7 +93,8 @@ def _captured(bundle: GuideBundle):
 
 def bind_playback_breps(bundle: GuideBundle, breps: Mapping[str, bytes], *,
                         producer_hash_platform: Mapping[str, str],
-                        placements: Mapping[str, Sequence[float]] | None = None):
+                        placements: Mapping[str, Sequence[float]] | None = None,
+                        source_closure_sha256: str | None = None, producer: str | None = None):
     """Bind ORIGINAL producer BREP bytes without importing or reserializing shapes.
 
     The producer's receipt must assert these and the guide meshes came from the
@@ -122,7 +123,8 @@ def bind_playback_breps(bundle: GuideBundle, breps: Mapping[str, bytes], *,
         instances[name] = {"brep_sha256": _sha(payload), "shape_sha256": brep_content_hash(payload),
                            "mesh_sha256": part["sha256"], "matrix": matrix}
     return {"schema": BINDING_SCHEMA, **inputs, "instances": instances,
-            "hash_platform": dict(producer_hash_platform)}
+            "hash_platform": dict(producer_hash_platform),
+            **({"source_closure_sha256": source_closure_sha256, "producer": producer} if source_closure_sha256 is not None else {})}
 
 
 def bind_playback_geometry(assembly: Any, bundle: GuideBundle):
@@ -306,7 +308,8 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
                   install_order_by_step: Mapping[str, Any] | None = None,
                   reference_step_ids: Sequence[str] = (), options: AccessOptions = AccessOptions(),
                   tol: Tolerances = Tolerances(), bounds_tolerance_mm: float = 0.5,
-                  preflight_only: bool = False, on_progress: Callable | None = None):
+                  preflight_only: bool = False, on_progress: Callable | None = None,
+                  tools=None, fastener_specs=(), reverse: bool = False):
     """Source-bound finite playback check over frozen BREP inputs from the guide producer.
 
     collect_guides(root, [guide_path]) supplies the captured bundle. Missing/stale
@@ -320,10 +323,13 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
     progress_complete, paths_checked, world = False, False, None
     try:
         from cadagent.review.evidence import brep_content_hash
+        if type(reverse) is not bool:
+            raise ValueError("reverse must be boolean")
         if type(preflight_only) is not bool or (on_progress is not None and not callable(on_progress)):
             raise ValueError("preflight_only must be boolean and on_progress callable or None")
         _emit(on_progress, {"event": "phase", "phase": "inputs", "state": "starting"})
         _validate_numeric_settings(options, tol, bounds_tolerance_mm)
+        fastener_specs = tuple(fastener_specs)
         guide, manifest, inputs = _captured(bundle)
         if (not isinstance(binding, Mapping) or binding.get("schema") != BINDING_SCHEMA
                 or any(binding.get(k) != v for k, v in inputs.items())):
@@ -348,10 +354,32 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
             if isinstance(order, Mapping):
                 # Product metadata may carry explicit empty reference entries; the player filters those too.
                 order = {k: v for k, v in order.items() if not (k in reference_step_ids and v == [])}
-        # Validate declarations before loading native inputs.
-        operations = playback_operations(guide, order, reference_step_ids)
-        if {o["instance"] for o in operations} != set(parts):
-            raise ValueError("playback must install the exact geometry instance set")
+        # Validate canonical intent before native loading; no legacy fallback for declared plans.
+        plan = None
+        if "assembly_plan" in guide:
+            from cadagent.review.dossier.plan import normalize_plan
+            from urllib.parse import unquote
+            ref = guide["assembly_plan"]
+            payload = bundle.files[posixpath.normpath(posixpath.join(posixpath.dirname(bundle.path), unquote(ref["file"])))]
+            if _sha(payload) != ref["sha256"]:
+                raise ValueError("stale assembly plan bytes")
+            plan = normalize_plan(json.loads(payload), mesh_hashes={name: p["sha256"] for name, p in parts.items()})
+            source = plan["source"]
+            if (source["revision"] != inputs["source_commit"] or source["closure_sha256"] != binding.get("source_closure_sha256")
+                    or source["producer"] != binding.get("producer")
+                    or any(source["instances"][name] != {k: entry[k] for k in ("mesh_sha256", "brep_sha256", "matrix")}
+                           for name, entry in instances.items())):
+                raise ValueError("stale assembly plan source/BREP/placement/producer binding")
+            if source["tooling_sha256"] != digest_of({"tools": tools or {}, "fastener_specs": [asdict(s) for s in fastener_specs]}):
+                raise ValueError("stale assembly plan tooling/axis declarations")
+            if ([s["id"] for s in guide["steps"]] != [op["id"] for op in plan["operations"]]
+                    or any(s["offsets_mm"] for s in guide["steps"])):
+                raise ValueError("guide must project exact plan operations without authored offsets")
+            inputs["assembly_plan_sha256"] = ref["sha256"]
+        else:
+            operations = playback_operations(guide, order, reference_step_ids)
+            if {o["instance"] for o in operations} != set(parts):
+                raise ValueError("playback must install the exact geometry instance set")
         from cadagent.review.evidence import hash_platform
         inputs.update(binding_digest=digest_of(binding), install_order_digest=digest_of(order),
                       options_digest=digest_of({**asdict(options), "bounds_tolerance_mm": bounds_tolerance_mm}),
@@ -372,8 +400,10 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
             checks.append(Check("paths", "warn", "input/frame preflight only: no insertion paths checked"))
             progress_complete = True
         else:
-            result = run_playback_sequence(world, guide, order, reference_step_ids=reference_step_ids,
-                                           options=options, tol=tol, on_progress=on_progress)
+            result = (run_plan_sequence(world, plan, options=options, tol=tol, tools=tools,
+                                       fastener_specs=fastener_specs, reverse=reverse, on_progress=on_progress)
+                      if plan else run_playback_sequence(world, guide, order, reference_step_ids=reference_step_ids,
+                                                        options=options, tol=tol, on_progress=on_progress))
             checks += result["checks"]
             rows = result["operations"]
             progress_complete = result.get("complete", True)
@@ -385,6 +415,8 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
         checks = [Check("inputs", "fail", f"playback validation not completed: {exc}")]
     if world is not None:
         stats = world.stats
+    if "assembly_plan_sha256" in inputs:
+        inputs["direction"] = "remove" if reverse else "install"
     checks.append(Check("support-stability", "warn", "unknown: gravity, retention and fixture support not simulated"))
     limits = {**asdict(options), "touch_mm": tol.touch_mm, "overlap_mm3": tol.overlap_mm3,
               "bounds_tolerance_mm": bounds_tolerance_mm, "model_bounds_rounding_allowance_mm": 0.01,
@@ -395,10 +427,136 @@ def playback_gate(bundle: GuideBundle, binding: Mapping[str, Any] | None, breps:
     if preflight_only or on_progress is not None:
         limits.update(paths_checked=paths_checked, progress_complete=progress_complete)
     gate = "assembly-playback-preflight" if preflight_only is True else "assembly-playback"
-    assumptions = list(ASSUMPTIONS)
+    assumptions = (list(ASSUMPTIONS[2:4]) + [
+        "Canonical serial piecewise translations with explicit occupied parked instances; reverse order and path.",
+        "Ordinary axial tool paths and engaged swing are separately sampled when declared; no hands, support, retention or process qualification.",
+        "Rigid-module internal assembly remains separately unverified; no whole-pair contact waivers."]
+        if "assembly_plan_sha256" in inputs else list(ASSUMPTIONS))
     if preflight_only is True:
         assumptions.append("Input/frame preflight only: no insertion pair was evaluated; this is not a clearance verdict.")
     return verdict(gate, checks, assumptions=assumptions,
                    limits=limits,
                    extra={"operations": rows, "inputs": inputs, "world_stats": stats, "frames": frames,
                           "support_stability": {"status": "unknown", "reason": "no stage physics inputs"}})
+
+
+class _PlanSegmentWorld(SequenceWorld):
+    """Translate a finite segment's endpoint and each stationary stage obstacle independently."""
+    def __init__(self, world, offsets):
+        self.world, self.offsets, self.names = world, offsets, world.names
+
+    def box(self, key):
+        return tuple(v + self.offsets[key][i % 3] for i, v in enumerate(self.world.box(key)))
+
+    def relate_at(self, key, shift, other):
+        # Common obstacle translation removed for the existing one-moving-body query.
+        from dataclasses import replace
+        delta = tuple(shift[i] + self.offsets[key][i] - self.offsets[other][i] for i in range(3))
+        rel = self.world.relate_at(key, delta, other)
+        witness = dict(rel.witness)
+        for k in ("point_a", "point_b", "overlap_centroid"):
+            if witness.get(k) is not None:
+                witness[k] = [v + self.offsets[other][i] for i, v in enumerate(witness[k])]
+        return replace(rel, witness=witness)
+
+
+def run_plan_sequence(world: SequenceWorld, plan, *, options: AccessOptions = AccessOptions(),
+                      tol: Tolerances = Tolerances(), tools=None, fastener_specs=(), reverse=False,
+                      on_progress=None):
+    """Finite occupied-stage paths; kernel-independent geometry rules and native existing tool checks.
+
+    This entry point alone establishes no source identity. playback_gate binds the captured resource.
+    Internal module qualification, support, retention/process and physical build remain unknown.
+    """
+    from cadagent.review.dossier.plan import normalize_plan, plan_state
+    plan = normalize_plan(plan)
+    _validate_numeric_settings(options, tol, 0)
+    if not options.tool_access:
+        raise ValueError("canonical plan tool checks cannot be disabled")
+    if set(world.names) != set(plan["source"]["instances"]):
+        raise ValueError("assembly plan must cover exact geometry instances")
+    if type(reverse) is not bool:
+        raise ValueError("reverse must be boolean")
+    specs = {s.instance_key(i): (s, i) for s in fastener_specs for i in range(len(s.axes))}
+    checks, rows, n = [], [], len(plan["operations"])
+    initial = plan_state(plan, n if reverse else 0)
+    initial_world = _PlanSegmentWorld(world, initial)
+    ownership = {name: op["id"] for op in plan["operations"] for name in op["members"]}
+    # Rigid members are not re-qualified internally here. All other initial occupied pairs are checked.
+    for i, name in enumerate(world.names):
+        for other in world.names[i + 1:]:
+            if ownership.get(name) is not None and ownership.get(name) == ownership.get(other):
+                continue
+            rel = initial_world.relate_at(name, (0, 0, 0), other)
+            if rel.interferes or rel.state in ("unknown", "unchecked"):
+                checks.append(Check(f"initial:{name}:{other}", "fail", "initial occupied-stage conflict or unknown",
+                                    [name, other], {"state": rel.state, "overlap_mm3": rel.overlap_mm3}))
+    for index in (range(n - 1, -1, -1) if reverse else range(n)):
+        op = plan["operations"][index]
+        try:
+            _emit(on_progress, {"event": "operation", "state": "starting", "operation_index": index, "instance": op["id"]})
+        except _ProgressError as exc:
+            checks.append(Check("progress", "fail", str(exc), evidence={"unchecked_operation": op["id"], **exc.context}))
+            return {"checks": checks, "operations": rows, "complete": False}
+        occupied = plan_state(plan, index)
+        path = list(reversed(op["path_mm"])) if reverse else op["path_mm"]
+        pairs, tool_rows = [], []
+        for segment, (start, end) in enumerate(zip(path, path[1:])):
+            length = math.dist(start, end)
+            direction = tuple((b - a) / length for a, b in zip(start, end))
+            offsets = dict(occupied)
+            offsets.update({name: end for name in op["members"]})
+            stage = _PlanSegmentWorld(world, offsets)
+            for name in op["members"]:
+                for other in world.names:
+                    if other in op["members"]:
+                        continue
+                    try:
+                        pair = sweep_pair(stage, name, direction, other, options=options, tol=tol, travel_mm=length)
+                    except Exception as exc:
+                        pair = {"part": other, "state": "unknown", "error": f"{type(exc).__name__}: {exc}"}
+                    if pair["state"] == "clear" and plan["clearance_mm"] > 0:
+                        measured, bound = pair.get("min_gap_mm"), pair.get("gap_lower_bound_mm")
+                        if measured is not None and measured < plan["clearance_mm"]:
+                            pair["state"] = "insufficient-clearance"
+                        elif bound is None or bound < plan["clearance_mm"]:
+                            pair["state"] = "clearance-unresolved"
+                    pairs.append({"moving": name, "segment": segment, "start_mm": start, "end_mm": end, **pair})
+        tool_offsets = plan_state(plan, index + 1)  # before removal / after insertion: identical physical stage
+        for ref in op["tools"]:
+            if ref["fastener"] not in specs or not hasattr(world, "staged"):
+                result = {"state": "unknown", "reason": "native fastener/tool declaration unavailable"}
+            else:
+                from cadagent.review.gates.fasteners import axial_tool_path
+                spec, axis = specs[ref["fastener"]]
+                try:
+                    if hasattr(world, "tool_sweeps"):
+                        world.tool_sweeps += 1
+                    result = axial_tool_path(world.staged(tool_offsets), spec, axis, ref["tool"],
+                        (tools or {}).get(ref["tool"]), world.names, ref["approach_mm"],
+                        max_step_mm=options.max_step_mm, max_samples=options.max_samples, tol=tol)
+                except Exception as exc:
+                    result = {"state": "unknown", "reason": f"{type(exc).__name__}: {exc}"}
+            if result["state"] == "sampled-clear" and plan["clearance_mm"] > 0:
+                result = {**result, "state": "clearance-unverified", "reason": "tool envelope allowance not measured by existing tool owner"}
+            tool_rows.append({**ref, **result})
+        missing = [name for name in op["members"] if name in specs and name not in {t["fastener"] for t in op["tools"]}]
+        tool_rows.extend({"fastener": name, "state": "unchecked", "reason": "no tool operation declared"} for name in missing)
+        failed = [p for p in pairs if p["state"] != "clear"]
+        tool_failed = [t for t in tool_rows if t["state"] != "sampled-clear"]
+        row = {"id": op["id"], "operation_index": index, "direction": "remove" if reverse else "install",
+               "pairs": pairs, "insertion": "blocked-or-undecided" if failed else "sampled-clear",
+               "tools": tool_rows, "tool_access": "blocked-or-undecided" if tool_failed else "sampled-clear" if tool_rows else "unchecked",
+               "support": "unknown", "retention_process": "unknown", "internal_qualification": "unknown" if len(op["members"]) > 1 else "not-applicable"}
+        rows.append(row)
+        checks.append(Check(f"operation:{op['id']}:insert", "fail" if failed else "pass",
+                            "finite occupied-stage path " + row["insertion"], op["members"], row))
+        if tool_rows:
+            checks.append(Check(f"operation:{op['id']}:tools", "fail" if tool_failed else "pass",
+                                "ordinary axial tool path " + row["tool_access"], op["members"], {"tools": tool_rows}))
+        try:
+            _emit(on_progress, {"event": "operation", "state": "complete", "operation_index": index, "result": row})
+        except _ProgressError as exc:
+            checks.append(Check("progress", "fail", str(exc), evidence=exc.context))
+            return {"checks": checks, "operations": rows, "complete": False}
+    return {"checks": checks, "operations": rows}

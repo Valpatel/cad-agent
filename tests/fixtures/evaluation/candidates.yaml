@@ -1,0 +1,645 @@
+schema: cad-agent-candidate-catalog/1
+purpose: Non-executable planning index. Existing v1 jobs remain authoritative; candidate prompts require frozen
+  inputs and qualified graders before execution.
+sources:
+  cad-agent-v1:
+    url: https://github.com/Valpatel/cad-agent/tree/ef2ad3fb/tests/fixtures/evaluation/jobs
+    reuse: Existing runnable analytical jobs; preserve manifests and independent graders.
+    license_note: Repository MIT; no new imported assets.
+  cad-agent-quickstart:
+    url: https://github.com/Valpatel/cad-agent/blob/ef2ad3fb/tools/quickstart_eval.py
+    reuse: Borrow observed install/discovery evidence, not its environment setup.
+    license_note: Repository MIT; existing collector isolation limits still apply.
+  cad-agent-design:
+    url: https://github.com/Valpatel/cad-agent/blob/ef2ad3fb/docs/practice/standard-evaluation.md
+    reuse: Existing native-CAD plan, acceptance controls and evidence contract.
+    license_note: Repository MIT; no new imported assets.
+  cadgenbench:
+    url: https://github.com/huggingface/cadgenbench
+    reuse: Generation/editing task families and reopened STEP checks; not shape similarity as requirement compliance.
+    license_note: Apache-2.0 code; verify each dataset asset before importing. Public inputs/private ground truth.
+  cadtestbench:
+    url: https://github.com/dimitrismallis/CADTestBench
+    reuse: Independent requirement checks on BREP, abstract and detailed prompt variants.
+    license_note: MIT code and dataset card declares MIT; retain attribution and verify chosen snapshot before import.
+  benchcad:
+    url: https://github.com/BenchCAD/BenchCAD-main
+    reuse: CAD understanding/editing/vision task taxonomy.
+    license_note: LICENSE distinguishes MIT code and CC-BY-4.0 data; no assets imported.
+  text2cad-bench:
+    url: https://huggingface.co/datasets/AICAD/Text2CAD-Bench
+    reuse: Difficulty and prompt-specificity axes only.
+    license_note: Data license not verified; link-only. Public prompts are partial and ground truth is withheld.
+  cadworld:
+    url: https://github.com/Zdong104/CADWORLD
+    reuse: Broader GUI task categories including assembly, manufacturing, measurement and simulation.
+    license_note: Repository-wide license not verified; link-only.
+  pcbench:
+    url: https://github.com/PCBench/PCBench
+    reuse: PCB routing constraints and source metadata as candidate input design.
+    license_note: MIT repository; original per-board licenses must be checked before any asset reuse.
+  pcb-bench:
+    url: https://github.com/digailab/PCB-Bench
+    reuse: Board understanding and QA task family.
+    license_note: Concrete dataset redistribution terms not verified; link-only.
+  original:
+    url: https://github.com/Valpatel/cad-agent/issues/657
+    reuse: Original experience/task briefs written for this catalog; no external dataset copied.
+    license_note: Repository MIT. Product/source inputs still need separate provenance before promotion.
+tasks:
+- id: snapfit-sizing
+  version: 1
+  status: existing-v1
+  domain: mechanical
+  area: compliant-mechanisms
+  difficulty: starter
+  job_manifest: jobs/snapfit-sizing/job.json
+  prompt: null
+  required_inputs: []
+  success_criteria: []
+  artifacts: []
+  limits: Use the linked job and grader as the authority; analytical declarations only, not native CAD or physical
+    qualification.
+  sources:
+  - cad-agent-v1
+- id: lid-rib-clearance
+  version: 1
+  status: existing-v1
+  domain: mechanical
+  area: housings-and-enclosures
+  difficulty: starter
+  job_manifest: jobs/lid-rib-clearance/job.json
+  prompt: null
+  required_inputs: []
+  success_criteria: []
+  artifacts: []
+  limits: Use the linked job and grader as the authority; analytical declarations only, not native CAD or physical
+    qualification.
+  sources:
+  - cad-agent-v1
+- id: connector-breakout
+  version: 1
+  status: existing-v1
+  domain: electrical
+  area: circuit-boards
+  difficulty: starter
+  job_manifest: jobs/connector-breakout/job.json
+  prompt: null
+  required_inputs: []
+  success_criteria: []
+  artifacts: []
+  limits: Use the linked job and grader as the authority; analytical declarations only, not native CAD or physical
+    qualification.
+  sources:
+  - cad-agent-v1
+- id: discover-and-install
+  version: 1
+  status: candidate
+  domain: practice
+  area: evaluation
+  difficulty: starter
+  job_manifest: null
+  prompt: Starting only from the public cad-agent URL, explain what the toolkit does, install it in the provided
+    cloud workspace, and create and check the starter project.
+  required_inputs:
+  - Pinned site snapshot or declared live-web condition; fresh supported environment; authorized package access;
+    frozen install budget
+  success_criteria:
+  - Retain actual discovery and installer command evidence.
+  - Execute the exported starter checks successfully; record skips and environmental failures separately.
+  - Provide artifact links the requester can open; do not claim a physical test.
+  artifacts:
+  - command transcript
+  - starter source and exports
+  - check report
+  limits: Setup success is not design competence or mobile UI usability.
+  sources:
+  - cad-agent-quickstart
+  - original
+- id: recover-off-path-install
+  version: 1
+  status: candidate
+  domain: practice
+  area: evaluation
+  difficulty: starter
+  job_manifest: null
+  prompt: Create and check a starter after the toolkit was installed outside PATH, using its documented output to
+    continue.
+  required_inputs:
+  - Pinned toolkit installation in a path containing spaces; bin excluded from PATH; no prior transcript
+  success_criteria:
+  - Execute the suggested next command without undocumented hand edits.
+  - Retain failure output if the handoff fails.
+  artifacts:
+  - transcript
+  - check report
+  limits: A deliberate environment condition, not a clean default install.
+  sources:
+  - cad-agent-quickstart
+  - original
+- id: cloud-capability-preflight
+  version: 1
+  status: candidate
+  domain: practice
+  area: evaluation
+  difficulty: starter
+  job_manifest: null
+  prompt: Determine which requested CAD export, slicing and rendering operations can run here; perform available
+    work and give an actionable report for missing capabilities.
+  required_inputs:
+  - Frozen environment capability matrix; one deliberately absent optional dependency; simple input model
+  success_criteria:
+  - Correctly distinguish available, absent and untested capabilities.
+  - Produce supported exports; do not report missing slicer checks as passed.
+  artifacts:
+  - capability report
+  - exports
+  - tool evidence
+  limits: Harness faults and toolkit faults must be classified separately.
+  sources:
+  - original
+- id: mobile-review-handoff
+  version: 1
+  status: candidate
+  domain: practice
+  area: publishing
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Prepare a review package for a phone user to inspect a small assembly and download individual print files.
+  required_inputs:
+  - Known assembly and expected file hashes; declared browser/device and viewport; touch/browser access; measurable
+    UI acceptance bounds
+  success_criteria:
+  - Verify downloads against hashes.
+  - Exercise navigation, model controls and file selection on the declared target.
+  - Check overflow, readable labels and access to limitations at frozen viewport bounds.
+  artifacts:
+  - review package
+  - browser trace or screenshots
+  - download receipts
+  limits: Desktop emulation is reported separately from real mobile-device evidence.
+  sources:
+  - original
+- id: dimensioned-bracket
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: housings-and-enclosures
+  difficulty: starter
+  job_manifest: null
+  prompt: Make an editable L-bracket from the provided drawing, including its hole pattern, and export STEP and
+    print-oriented STL.
+  required_inputs:
+  - Versioned dimensioned drawing with units, tolerances and datum frame; material/process specification
+  success_criteria:
+  - Reopen exports and independently measure envelope and hole axes.
+  - Require valid solid topology and orientation-compatible printable geometry.
+  artifacts:
+  - CAD source
+  - STEP
+  - STL
+  - measurement report
+  limits: Geometric compliance does not establish load capacity.
+  sources:
+  - cadtestbench
+  - cadgenbench
+- id: parameter-edit-with-invariants
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: housings-and-enclosures
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Change the specified enclosure width while preserving the supplied mounting and connector interfaces.
+  required_inputs:
+  - Unsolved editable model; requested dimension change; explicit invariant interfaces and tolerances
+  success_criteria:
+  - Independently measure changed dimension and all preserved interfaces.
+  - Reject a visually similar export with moved mounting axes.
+  artifacts:
+  - edited source
+  - STEP
+  - before/after constraints
+  limits: Reference similarity alone cannot grade intent.
+  sources:
+  - cadgenbench
+  - benchcad
+- id: repair-invalid-export
+  version: 1
+  status: candidate
+  domain: practice
+  area: evaluation
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Diagnose and repair the supplied CAD export so it preserves specified design intent and can be reopened
+    and manufactured.
+  required_inputs:
+  - Seeded invalid model; defect provenance withheld from subject; explicit required geometry; independent negative
+    control
+  success_criteria:
+  - Reopened repaired export satisfies topology and required dimensions.
+  - Explain the actual defect without silently deleting required features.
+  artifacts:
+  - repaired CAD and exports
+  - diagnosis
+  - constraint report
+  limits: Repair success is limited to frozen defects and requirements.
+  sources:
+  - cadgenbench
+  - original
+- id: suction-cup-window-mount
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: fasteners-and-hardware
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Design a printable mount for the supplied off-the-shelf suction cups, with replaceable cups and a removable
+    decoration.
+  required_inputs:
+  - Manufacturer cup/stud drawing and mounting recommendations; glass orientation; mass and load case; material
+    and print process
+  success_criteria:
+  - Verify cup interface dimensions and assembly/removal access on reopened geometry.
+  - State retention assumptions and produce a fit coupon before claiming fit.
+  artifacts:
+  - source
+  - STEP/STL
+  - coupon
+  - assembly plan
+  limits: CAD cannot validate adhesion, long-term retention or temperature aging.
+  sources:
+  - original
+- id: solar-holiday-window-light
+  version: 1
+  status: candidate
+  domain: electrical
+  area: circuit-boards
+  difficulty: advanced
+  job_manifest: null
+  prompt: Design a solar-powered holiday window decoration with printable housing, bought suction cups, LEDs, rechargeable
+    battery and a serviceable simple PCB.
+  required_inputs:
+  - Frozen panel/battery/charger/LED datasheets and dimensions; window sunlight assumptions; temperature range;
+    runtime goal; mounting load
+  success_criteria:
+  - Recompute energy budget for the stated irradiance assumptions.
+  - Verify charging/protection compatibility and trace each component interface to sources.
+  - Check CAD clearances, service access, electrical connectivity and available native ERC/DRC; preserve unresolved
+    checks.
+  artifacts:
+  - CAD exports
+  - schematic/PCB sources
+  - BOM
+  - energy worksheet
+  - assembly and test plan
+  limits: 'Candidate system task: no claim of charging safety, weather resistance or adhesion without physical evidence.'
+  sources:
+  - original
+- id: service-door-interface
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: housings-and-enclosures
+  difficulty: advanced
+  job_manifest: null
+  prompt: Design a removable printed cover for the supplied aperture, receivers and keepouts; allow multiple valid
+    rib and wall designs.
+  required_inputs:
+  - Pinned recipient-only Gyropup geometry; resolved screw-head/driver source conflict; frozen acceptance bounds;
+    no existing door solution
+  success_criteria:
+  - Independently check coverage, hole axes, collision clearance and driver access.
+  - Two distinct known-good designs and seeded wrong-axis/collision cases must qualify the grader before trials.
+  artifacts:
+  - editable CAD
+  - STEP/STL
+  - fit coupon
+  - source-linked decisions
+  limits: Blocked until required hardware facts and native grader controls are resolved.
+  sources:
+  - cad-agent-design
+- id: snap-lid-native-cad
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: compliant-mechanisms
+  difficulty: advanced
+  job_manifest: null
+  prompt: Design a repeatedly removable snap-fit lid for the supplied housing and print process.
+  required_inputs:
+  - Recipient model; displacement and cycles; material/process data; fit tolerances; frozen analytical applicability
+    limits
+  success_criteria:
+  - Recompute rule-card constraints and measure corresponding geometry.
+  - Verify insertion/removal clearance and coupon dimensions.
+  artifacts:
+  - source
+  - STEP/STL
+  - fit coupon
+  - calculation report
+  limits: No fatigue, creep or physical engagement qualification.
+  sources:
+  - cad-agent-v1
+  - cadtestbench
+- id: sheet-metal-electronics-tray
+  version: 1
+  status: candidate
+  domain: manufacturing
+  area: sheet-metal
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Design a bent sheet-metal tray around supplied electronics using the specified supplier process.
+  required_inputs:
+  - Supplier thickness/bend/hole limits; component envelopes; fastener and service-access dimensions
+  success_criteria:
+  - Verify bend/hole/edge constraints against applicable supplier facts.
+  - Check assembled clearances and a flat-pattern export using an independent qualified checker.
+  artifacts:
+  - editable CAD
+  - STEP
+  - flat pattern
+  - BOM
+  limits: Supplier acceptance remains unverified until quote/manufacturing review.
+  sources:
+  - cadworld
+  - original
+- id: cnc-fixture-plate
+  version: 1
+  status: candidate
+  domain: manufacturing
+  area: cnc-machining
+  difficulty: advanced
+  job_manifest: null
+  prompt: Design a fixture plate that locates and clamps the supplied workpiece with available tools and stock.
+  required_inputs:
+  - Workpiece/stock geometry; datum scheme; tool diameters and reach; clamp force/load assumptions; machining process
+    limits
+  success_criteria:
+  - Verify locator and clamp positions, tool access and stock envelope.
+  - Identify inaccessible features and state workholding assumptions.
+  artifacts:
+  - source
+  - STEP
+  - drawing
+  - setup plan
+  limits: Not a validated toolpath or machine-safe setup.
+  sources:
+  - cadworld
+  - original
+- id: laser-cut-interlocking-organizer
+  version: 1
+  status: candidate
+  domain: manufacturing
+  area: laser-cutting
+  difficulty: starter
+  job_manifest: null
+  prompt: Design a small interlocking organizer for a specified sheet stock and kerf, with a fit coupon.
+  required_inputs:
+  - Material thickness distribution; kerf convention; bed size; organizer dimensions
+  success_criteria:
+  - Measure closed nonduplicated cut paths and required compartments.
+  - Keep all parts within sheet bounds and include labeled clearance variants.
+  artifacts:
+  - DXF/SVG
+  - fit coupon
+  - layout
+  limits: Measured kerf/fit still required before a production run.
+  sources:
+  - original
+- id: four-bar-clearance
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: mechanisms
+  difficulty: advanced
+  job_manifest: null
+  prompt: Design the supplied four-bar mechanism to reach the requested poses without hitting defined keepouts.
+  required_inputs:
+  - Ground pivots; pose/load requirements; allowed dimensions; joint hardware and keepouts; tolerance bounds
+  success_criteria:
+  - Recompute kinematics and independently inspect collision/branch behavior across a frozen motion sample.
+  - Check joint hardware and assembly access.
+  artifacts:
+  - CAD assembly
+  - motion evidence
+  - calculations
+  limits: Sampled motion does not prove continuous clearance; disclose sampling limits.
+  sources:
+  - cadworld
+  - original
+- id: bearing-shaft-retention
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: mechanisms
+  difficulty: advanced
+  job_manifest: null
+  prompt: Choose bearings and model a retained shaft assembly for the stated loads, speed and life target.
+  required_inputs:
+  - Manufacturer bearing data; load cases; shaft/housing limits; fit/process specification; maintenance access
+  success_criteria:
+  - Recompute stated life/static checks and verify their assumptions.
+  - Check axial retention, interface dimensions and assembly order.
+  artifacts:
+  - assembly CAD
+  - BOM
+  - calculations
+  - assembly plan
+  limits: Catalog calculations do not prove installed life or lubrication behavior.
+  sources:
+  - original
+- id: fan-cooled-electronics
+  version: 1
+  status: candidate
+  domain: thermal
+  area: airflow-and-fans
+  difficulty: expert
+  job_manifest: null
+  prompt: Design a fan-cooled enclosure for the supplied heat sources and fan curves, showing why the cooling estimate
+    is credible.
+  required_inputs:
+  - Heat map; ambient conditions; fan pressure-flow curves; vent constraints; material data; solver qualification
+    and error bounds
+  success_criteria:
+  - Use operating-point estimates rather than free-air rating alone.
+  - Check conservation and mesh/parameter sensitivity with independent acceptance thresholds.
+  - Keep unsupported temperatures unresolved.
+  artifacts:
+  - CAD
+  - solver inputs/results
+  - convergence evidence
+  - design decisions
+  limits: Simulation is not measured thermal performance.
+  sources:
+  - original
+- id: structural-bracket-study
+  version: 1
+  status: candidate
+  domain: simulation
+  area: structural-fea
+  difficulty: expert
+  job_manifest: null
+  prompt: Improve a bracket for the stated loads while respecting mounting interfaces, material and print constraints.
+  required_inputs:
+  - Baseline model; loads/constraints; anisotropic material assumptions; allowable limits; validated reference problem
+  success_criteria:
+  - Check boundary-condition applicability, mesh sensitivity and equilibrium.
+  - Independently verify interfaces and disclose model limits.
+  artifacts:
+  - source/STEP
+  - solver case
+  - convergence and equilibrium report
+  limits: Computed stress is not physical strength certification.
+  sources:
+  - cadworld
+  - original
+- id: connector-board-native
+  version: 1
+  status: candidate
+  domain: electrical
+  area: circuit-boards
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Create a connector breakout PCB from authoritative pin numbers and mating views, then export fabrication
+    and mechanical files.
+  required_inputs:
+  - Connector datasheets and footprints; pin/net requirements; board outline and mounting; electrical clearances
+  success_criteria:
+  - Independently compare pin/net graph to requirements.
+  - Run native ERC/DRC and check connector orientation and mounting in reopened exports.
+  artifacts:
+  - schematic/PCB
+  - Gerbers
+  - BOM
+  - STEP
+  - ERC/DRC evidence
+  limits: ERC/DRC does not prove electrical performance or safety.
+  sources:
+  - cad-agent-v1
+  - pcbench
+- id: route-constrained-board
+  version: 1
+  status: candidate
+  domain: electrical
+  area: circuit-boards
+  difficulty: advanced
+  job_manifest: null
+  prompt: Route a supplied small board while preserving its netlist, keepouts, layer stack and manufacturing rules.
+  required_inputs:
+  - License-verified unrouted board snapshot; connectivity; stackup/rules; frozen native tool version
+  success_criteria:
+  - Verify exact connectivity and absence of new shorts/unrouted nets.
+  - Check native DRC and preserved mechanical keepouts.
+  artifacts:
+  - native PCB
+  - DRC report
+  - fabrication exports
+  limits: Do not count route length alone as correctness or signal-integrity proof.
+  sources:
+  - pcbench
+- id: board-interpretation
+  version: 1
+  status: candidate
+  domain: electrical
+  area: circuit-boards
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Explain the supplied board power path and connector roles, identifying evidence and unresolved ambiguities.
+  required_inputs:
+  - License-verified board/schematic; authoritative component sources; controller-only answer constraints
+  success_criteria:
+  - Ground claims in actual nets and source facts.
+  - Identify seeded ambiguous or missing facts rather than inventing connectivity.
+  artifacts:
+  - annotated explanation
+  - net evidence
+  limits: QA success is not board design or fabrication validation.
+  sources:
+  - pcb-bench
+  - benchcad
+- id: assembly-service-sequence
+  version: 1
+  status: candidate
+  domain: mechanical
+  area: fasteners-and-hardware
+  difficulty: advanced
+  job_manifest: null
+  prompt: Plan and verify an assembly and later battery-replacement sequence for the supplied enclosure and components.
+  required_inputs:
+  - Parts in common coordinates; fasteners/tools; allowed flexible parts; service requirements and access bounds
+  success_criteria:
+  - Check insertion and tool-access paths independently.
+  - Demonstrate that removing the battery does not require a forbidden destructive step.
+  artifacts:
+  - assembly CAD
+  - sequence
+  - access evidence
+  limits: Animation alone is not a collision or physical service test.
+  sources:
+  - cadworld
+  - original
+- id: requirements-conflict
+  version: 1
+  status: candidate
+  domain: practice
+  area: evaluation
+  difficulty: intermediate
+  job_manifest: null
+  prompt: Use the provided product brief and conflicting component documents to identify blocking facts before generating
+    final manufacturing files.
+  required_inputs:
+  - Versioned source packet containing a deliberate dimensional or pinout conflict; explicit rule for source authority
+  success_criteria:
+  - Identify and cite the conflict.
+  - Separate safe partial work from blocked acceptance; do not invent a resolution.
+  artifacts:
+  - requirements/unknowns record
+  - source evidence
+  limits: Refusal of an impossible request is not scored as a design failure.
+  sources:
+  - original
+- id: manufacturing-release-audit
+  version: 1
+  status: candidate
+  domain: practice
+  area: publishing
+  difficulty: advanced
+  job_manifest: null
+  prompt: Audit a mixed CAD/PCB release package for stale artifacts, wrong units and mismatched revisions before
+    release.
+  required_inputs:
+  - Seeded package; authoritative source hashes; intended manifest; declared downstream tooling
+  success_criteria:
+  - Independently detect each frozen integrity defect without trusting pass labels.
+  - Regenerate or clearly block stale artifacts; bind final package to sources.
+  artifacts:
+  - audit findings
+  - corrected manifest/package
+  - reproduction receipts
+  limits: Release integrity does not qualify the physical product.
+  sources:
+  - original
+- id: design-tradeoff-search
+  version: 1
+  status: candidate
+  domain: simulation
+  area: design-exploration
+  difficulty: expert
+  job_manifest: null
+  prompt: Compare several bought-part and geometry options for a compact mechanism against explicit cost, mass and
+    performance constraints.
+  required_inputs:
+  - License-verified part catalog; requirements and budget; sourced objective definitions; independent feasibility
+    controls
+  success_criteria:
+  - Reject infeasible candidates before ranking.
+  - Report measured/calculated objective provenance and uncertainty.
+  - Retain alternatives and explain tradeoffs without unsupported optimality claims.
+  artifacts:
+  - candidate designs
+  - comparison data
+  - chosen CAD/BOM
+  limits: A finite search is not proof of global optimality.
+  sources:
+  - original

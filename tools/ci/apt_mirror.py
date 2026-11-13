@@ -10,6 +10,7 @@ import json
 import re
 import sys
 import platform
+import hashlib
 from urllib.parse import urlsplit
 
 AZURE = "http://azure.archive.ubuntu.com/ubuntu/"
@@ -19,6 +20,9 @@ EC2 = "http://us-east-2.ec2.archive.ubuntu.com/ubuntu/"
 ARCHIVE = "https://archive.ubuntu.com/ubuntu/"
 SECURITY = "https://security.ubuntu.com/ubuntu/"
 MIRROR = "mirror+file:/etc/apt/apt-mirrors.txt"
+# Observed split security stanza in hosted full job 131567345145 (2026-11-12).
+# This source remains byte-identical; it is not rewritten or added as a mirror.
+SPLIT_SECURITY = "http://security.ubuntu.com/ubuntu"
 # Ubuntu Official Archive Mirrors: /ubuntu/+mirror/mirror.pilotfiber.com-archive.
 PREFERRED = "https://mirror.pilotfiber.com/ubuntu/"
 EXPECTED = {AZURE: "priority:1", EC2: "priority:1", PREFERRED: "priority:1",
@@ -53,10 +57,57 @@ def runner_codename(release: dict) -> str:
     return release["VERSION_CODENAME"]
 
 
+def source_profile(text: str) -> str:
+    """Failure evidence only: bounded known fields, no credentials or arbitrary values."""
+    visible_paths = {"/etc/apt/apt-mirrors.txt", "/etc/apt/mirrors/ubuntu.list",
+                     "/etc/apt/mirrors/ubuntu.sources"}  # Visibility, NOT accepted source URIs.
+    words = {"types": {"deb", "deb-src"}, "suites": {"noble", "noble-updates", "noble-backports", "noble-security"},
+             "components": {"main", "universe", "restricted", "multiverse"},
+             "enabled": {"yes", "no"}, "trusted": {"yes", "no"}}
+    result = {"sha256": hashlib.sha256(text.encode()).hexdigest(), "fields": [], "truncated": False}
+    current = None
+    for number, line in enumerate(text.splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        continuation = line[0].isspace() and current is not None
+        if continuation:
+            key, value = current, line.strip()
+        else:
+            key, separator, value = line.partition(":")
+            key = key.lower() if separator else "<malformed-field>"
+            current = key
+        tokens = value.split()
+        values = []
+        for token in tokens[:8]:
+            if key == "uris":
+                try:
+                    uri = urlsplit(token)
+                    if uri.scheme in ("file", "mirror+file"):
+                        values.append(uri.scheme + ":" + (uri.path if uri.path in visible_paths else "<other-path>"))
+                    else:
+                        profile = json.loads(mirror_profile(token + " priority:1"))
+                        values.append(profile[0]["uri"] if profile else "<malformed-uri>")
+                except ValueError:
+                    values.append("<malformed-uri>")
+            elif key == "signed-by":
+                values.append(token if token == "/usr/share/keyrings/ubuntu-archive-keyring.gpg" else "<other-keyring>")
+            elif key in words:
+                values.append(token if token in words[key] else "<other-value>")
+        record = {"line": number, "field": key if key in {*words, "uris", "signed-by"} else "<other-field>",
+                  "continuation": bool(continuation), "tokens": len(tokens), "values": values}
+        candidate = {**result, "fields": result["fields"] + [record]}
+        if len(result["fields"]) == 24 or len(json.dumps(candidate)) > 8000:
+            result["truncated"] = True
+            break
+        result = candidate
+    return json.dumps(result, sort_keys=True)
+
+
 def validate_source(text: str, codename: str) -> None:
     expected_suites = {codename, *(codename + "-" + suffix for suffix in ("updates", "backports", "security"))}
     seen_suites = set()
     active = 0
+    split_security = False
     for stanza in text.split("\n\n"):
         fields = {}
         current = None
@@ -76,9 +127,12 @@ def validate_source(text: str, codename: str) -> None:
         allowed = {"types", "uris", "suites", "components", "signed-by", "enabled"}
         if set(fields) - allowed or fields.get("enabled", "yes").lower() != "yes":
             raise ValueError("unsupported Ubuntu source fields or enabled state")
-        if fields.get("uris", "").split() != [MIRROR]:
-            raise ValueError("active Ubuntu source must use the expected mirror file")
         suites = fields.get("suites", "").split()
+        uris = fields.get("uris", "").split()
+        if uris == [SPLIT_SECURITY] and suites == [codename + "-security"]:
+            split_security = True
+        elif uris != [MIRROR]:
+            raise ValueError("active Ubuntu source must use the expected mirror file")
         components = fields.get("components", "").split()
         if (fields.get("types", "").split() != ["deb"] or
                 fields.get("signed-by") != "/usr/share/keyrings/ubuntu-archive-keyring.gpg" or
@@ -90,6 +144,8 @@ def validate_source(text: str, codename: str) -> None:
         active += 1
     if not active or seen_suites != expected_suites:
         raise ValueError("expected the complete active Ubuntu runner suite set")
+    if split_security and active != 2:
+        raise ValueError("expected the observed two-stanza split security source profile")
 
 
 def configure(path: Path, source: Path, codename: str = "noble") -> None:
@@ -105,7 +161,12 @@ def configure(path: Path, source: Path, codename: str = "noble") -> None:
         seen.add(tokens[0])
     if seen not in ({AZURE, ARCHIVE, SECURITY}, {EC2, ARCHIVE, SECURITY}, {PREFERRED, ARCHIVE, SECURITY}):
         raise ValueError("runner mirror list lacks the expected Canonical HTTPS fallbacks; observed=" + mirror_profile(original))
-    validate_source(source.read_text(), codename)
+    source_text = source.read_text()
+    try:
+        validate_source(source_text, codename)
+    except ValueError:
+        print("Rejected Ubuntu source; observed=" + source_profile(source_text), file=sys.stderr)
+        raise
     primary = next(uri for uri in (AZURE, EC2, PREFERRED) if uri in seen)
     updated = "".join(line.replace(primary, PREFERRED, 1) if line.strip() and line.split()[0] == primary else line
                       for line in lines)

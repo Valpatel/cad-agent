@@ -14,10 +14,12 @@ import tempfile
 import venv
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from cadagent import project
+from cadagent import cli
 from cadagent.cli import main
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +34,7 @@ def starter_files(folder: Path = STARTER) -> set:
 
 
 def test_init_copies_the_starter_and_says_what_to_run(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(shutil, "which", lambda name: "/installed/bin/cad-agent")
     monkeypatch.chdir(tmp_path)
     assert main(["init", "my box"]) == 0
     dest = tmp_path / "my box"
@@ -44,11 +47,44 @@ def test_init_copies_the_starter_and_says_what_to_run(tmp_path, monkeypatch, cap
 
 
 def test_init_here_says_only_cad_agent_all(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(shutil, "which", lambda name: "/installed/bin/cad-agent")
     monkeypatch.chdir(tmp_path)
     assert main(["init"]) == 0
     assert (tmp_path / "cad-agent.yaml").is_file()
     out = capsys.readouterr().out
     assert "cd " not in out and "  cad-agent all" in out
+
+
+@pytest.mark.skipif(os.name == "nt", reason="executes the POSIX shell handoff")
+@pytest.mark.parametrize("spaced_interpreter", [False, True])
+def test_init_next_command_runs_without_cad_agent_on_path(tmp_path, monkeypatch, capsys, spaced_interpreter):
+    """A custom install need not change PATH: execute the suggested command after its suggested cd."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setenv("PYTHONPATH", str(ROOT / "software"))
+    if spaced_interpreter:
+        interpreter = tmp_path / "python with 'quotes' and spaces"
+        interpreter.symlink_to(sys.executable)
+        monkeypatch.setattr(sys, "executable", str(interpreter))
+    assert shutil.which("cad-agent") is None
+    assert main(["init", "my box"]) == 0
+    lines = capsys.readouterr().out.split("next:\n", 1)[1].splitlines()
+    command = lines[-1].split("          #", 1)[0].strip()
+    # --help exercises command discovery, import and argument dispatch without requiring CAD extras.
+    result = subprocess.run(["/bin/sh", "-c", lines[0].strip() + "\n" + command + " --help"],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "cad-agent all" in result.stdout
+
+
+def test_init_windows_fallback_is_literal_powershell(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli, "os", SimpleNamespace(name="nt"))
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    monkeypatch.setattr(sys, "executable", "C:/Users/O'Brien/$tools/python.exe")
+    assert main(["init", "my box"]) == 0
+    out = capsys.readouterr().out
+    assert "  cd 'my box'\n  & 'C:/Users/O''Brien/$tools/python.exe' -m cadagent.cli all" in out
 
 
 def test_init_refuses_a_folder_that_is_not_empty_unless_forced(tmp_path, capsys):

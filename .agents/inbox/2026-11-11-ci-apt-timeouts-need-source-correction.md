@@ -195,3 +195,49 @@ packages are changed by that test. The complete focused apt/release/area/layout 
 a wildcard, a cloud-brand inference or a retry. A successful job on Azure does not prove the EC2 runner ran the
 corrected path. Fresh ordinary CI and its recognized-input log remain separate evidence. Other unobserved profiles
 must still fail with bounded diagnostics, and this correction does not promise all future provisioning succeeds.
+
+
+## Retain the rejected source shape without admitting it
+
+2026-11-12 UTC: release649 full job131538546246 (run43320195481, headf0ae99d6)
+failed before apt/extras/tests at `validate_source`: `active Ubuntu source must use the expected mirror file`.
+The actual Ubuntu source bytes were absent. Raw job-log SHA256:
+`ada6ee7f2157da06e6a79a5f1afe3711b5613177ad07effe1b4ff8e59ab23fd8`.
+Ubuntu24.04.5/image20261111.127.1/AWS us-west-2 metadata does not establish the missing URI or cause.
+The earlier observed mirror-list tuple correction and successful Azure-path runs remain separate evidence.
+
+**Correction and rule:** when the existing source validator rejects, emit bounded known-field and redacted
+URI-shape records plus the input hash, then rethrow the original ValueError before any write or success log.
+Credentials, queries, arbitrary paths/field values and excess data stay hidden; visibility of an alternate
+system path is not acceptance. Keep `validate_source`, mirror priorities, signatures and retry/deadline policy
+unchanged. Independent synthetic configure controls preserve both files/the original error, reject alternate
+source paths, and exercise continuation, malformed input, redaction and output bounds.19 tests and39 subtests
+passed locally; no real rejected runner source was reconstructed or newly admitted.
+
+**Limits and next:** the root cause remains UNKNOWN until a normal authorized diagnostic checkpoint captures
+sufficient actual producer evidence. The original failure is not rerun or waived by adding diagnostics. A
+source/configuration correction needs that evidence, independent review and all new normal CI. Release649
+remains held; no local apt configuration, dependency, workflow or model runtime was changed.
+
+## Recognize only the observed split security stanza
+
+2026-11-12 [full job 131567345145](https://github.com/Valpatel/cad-agent/actions/runs/43327783983/job/131567345145)
+rejected a two-stanza source before apt/tests. The untruncated diagnostic records the mirror-file source for
+`noble noble-updates noble-backports` and `http://security.ubuntu.com/ubuntu` for `noble-security`, both with
+`deb`, the four standard components and the Ubuntu archive keyring. Original source hash:
+`fc0fadce467e557a358c63f5532de4590c02933dfff8016028bb0a319b0e8b44`.
+This diagnoses that observed job; it does not reconstruct comments, blank lines, redacted URI components or
+identify the missing source of historical release649f0ae. The original failed runs remain failures.
+
+The bounded correction recognizes only that literal security URI with only the security suite, alongside
+exactly one mirror-file stanza covering the remaining suites. Existing all-mirror profiles still work.
+Complete suite/component coverage, no duplicates or unknown fields, active `deb` and the exact signed-by
+keyring remain required before writes. The security source is retained byte for byte, not rewritten to HTTP
+or added to the mirror list. The registered HTTPS preference affects the existing mirror file only. This
+preserves upstream transport and authentication; it does not claim security traffic uses that preference.
+
+Controls retain sources and verify idempotence for all three recognized mirror primaries. Modified hosts,
+credentials, queries/fragments, schemes, trailing slashes, paths, extra URIs, wrong suites/keyrings, unsigned
+options, inactive entries and extra stanzas fail without changing either file. The loopback apt test remains
+responsible for proving unsigned metadata is rejected. Hosted success on another profile cannot establish
+that the split profile was exercised, and no signature, retry, deadline or package-source bypass is introduced.

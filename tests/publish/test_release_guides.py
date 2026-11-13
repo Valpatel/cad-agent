@@ -338,3 +338,17 @@ def test_packaging_and_actual_reader_accept_same_contract(tmp_path, case):
                             capture_output=True, text=True, timeout=10)
     assert python_accepts is accepted, case
     assert (actual.returncode == 0) is accepted, case + ": " + actual.stderr
+
+
+def test_plan_bytes_are_collected_once_and_stale_bindings_fail(tmp_path):
+    import shutil
+    source = Path(__file__).resolve().parents[1] / "fixtures/assembly-plan"
+    shutil.copytree(source, tmp_path, dirs_exist_ok=True)
+    bundle = collect_guides(tmp_path, ["guide.json"])[0]
+    assert bundle.files["plan.json"] == (source / "plan.json").read_bytes()
+    guide = json.loads(bundle.files["guide.json"])
+    mini = json.loads((source / "mini.json").read_bytes())
+    assert mini["assembly_plan"] == guide["assembly_plan"]
+    (tmp_path / "plan.json").write_bytes(bundle.files["plan.json"] + b" ")
+    with pytest.raises(CadConfigError, match="hash mismatch"):
+        collect_guides(tmp_path, ["guide.json"])

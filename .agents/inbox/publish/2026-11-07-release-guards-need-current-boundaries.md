@@ -414,6 +414,14 @@ remains ancestry, and the consumed fragment stays deleted.
 the separate owned-diagram rendering check remains CI-only). Use a stable canonical destination
 when a fragment will move; do not repair historical changelog entries or add a broad link rewriter.
 
+During the v0.40.0 cut on 2026-11-12 UTC, the first local map run produced two `ENOENT`
+failures for consumed `docs/changelog.d/542-serial-assembly-plan.md`: the cutter had deleted it
+from the working tree, but it remained in `git ls-files --cached`. Stage only the owned canonical
+cut paths, including consumed-fragment deletions, before this cached-inventory consumer (or use
+an explicitly coherent projected inventory). Do not restore a consumed fragment or ignore
+arbitrary missing files to make the check pass. The original failed TAP remains separate from
+the staged-state result; this is index/working-tree coherency, not a source-link or CI failure.
+
 **Limits:** this preflight establishes source-link validity, not a public HTTP response, rendered
 browser pass or diagnosis of unrelated failures. The failed source CI and canceled Gates wrapper
 remain separate evidence; corrected exact-head review and all new normal CI are still required.

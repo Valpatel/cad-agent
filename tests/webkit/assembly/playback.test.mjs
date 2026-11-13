@@ -114,3 +114,36 @@ test('controller disposal still releases the viewer if a player observer throws'
   assert.throws(() => f.controller.dispose(), /observer failure/); assert.equal(f.viewer.disposed, true);
   f.controller.dispose();
 });
+
+// Source bench datums are independent expectations; agreeing Python/JS ports alone is insufficient.
+const bench = JSON.parse(await (await import('node:fs/promises')).readFile(new URL('../../fixtures/assembly-plan/plan.json', import.meta.url)));
+const { normalizePlan, planState, createPlanPlayback } = await import('../../../software/cadagent/webkit/assembly/playback.js');
+test('canonical plan preserves corners, attached ownership, occupied parking and reverse global time', () => {
+  const plan = normalizePlan(bench);
+  assert.deepEqual(planState(plan, .25).plate, [8.75, 0, 25]);
+  assert.deepEqual(planState(plan, .5).fastener, [0, 0, 22.5]);
+  assert.deepEqual(planState(plan, 1.5).lid, [7.5, 0, 20]);
+  assert.deepEqual(planState(plan, 0).lid, [35, 0, 20]);
+  assert.ok(Object.isFrozen(plan.operations[0].path_mm[0]));
+  let state, current, navigation;
+  const player = createPlanPlayback({ plan, viewer: { applyState: value => { state = value; } },
+    setCurrent: id => { current = id; }, subscribeNavigation: cb => { navigation = cb; return () => { navigation = null; }; } }, { durationMs: 100 });
+  player.seek(2); player.reverse(); player.play(); player.tick(.05);
+  assert.equal(current, 'lid'); assert.deepEqual(state.offsets_mm.lid, [7.5, 0, 20]);
+  assert.deepEqual(state.offsets_mm.plate, [0, 0, 0]);
+  player.tick(.1); assert.equal(current, 'plate'); assert.deepEqual(state.offsets_mm.plate, [0, 0, 22.5]);
+  player.reverse(); player.tick(.05); assert.deepEqual(state.offsets_mm.plate, [0, 0, 0]);
+  for (const value of [2, 0, 1.5, .25, 2, .5]) { player.seek(value); assert.deepEqual(state.offsets_mm, planState(plan, value)); }
+  player.reset(); assert.ok(Object.values(state.offsets_mm).every(v => v.every(n => n === 0)));
+  navigation({ type:'step', id:'lid' }); assert.equal(player.getState().position, 1); assert.equal(player.getState().status, 'paused');
+  player.dispose(); assert.equal(navigation, null); assert.throws(() => player.seek(0));
+});
+test('canonical contract rejects unsupported motion, serial/dependency ambiguity, source partition and numeric faults', () => {
+  for (const mutate of [p => { p.units = 'm'; }, p => { p.operations[0].type = 'rotate'; },
+    p => { p.operations[1].requires = []; }, p => { p.operations[0].members.push('lid'); },
+    p => { p.operations[0].concurrent = true; }, p => { p.operations[0].path_mm[1][0] = NaN; },
+    p => { p.source.instances.plate.matrix[0] = -1; }, p => { delete p.source.producer; }]) {
+    const plan = structuredClone(bench); mutate(plan); assert.throws(() => normalizePlan(plan));
+  }
+  assert.throws(() => normalizePlan(bench, { meshHashes: { plate:'0'.repeat(64) } }));
+});

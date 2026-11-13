@@ -126,7 +126,7 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
 
         # Config entries are filesystem paths; references inside JSON are URLs.
         path, guide = document(root, quote(configured, safe="/"))
-        _fields(guide, ("schema", "snapshot", "model", "subassemblies", "steps", "source"), "document")
+        _fields(guide, ("schema", "snapshot", "model", "subassemblies", "steps", "source", "assembly_plan"), "document")
         snapshot = guide.get("snapshot")
         _fields(snapshot, ("id", "revision", "status", "source_commit"), "snapshot")
         if (guide.get("schema") != SCHEMA or not isinstance(snapshot, dict)
@@ -167,6 +167,21 @@ def collect_guides(root: Path, paths: List[str]) -> List[GuideBundle]:
                 raise CadConfigError("assembly guide model has invalid bounds or presentation fields")
             names.add(part["name"])
             capture(model_path.parent, part.get("file"), part["sha256"])
+        if "assembly_plan" in guide:
+            from cadagent.review.dossier.plan import normalize_plan
+            plan_binding = guide["assembly_plan"]
+            _fields(plan_binding, ("file", "sha256"), "plan binding")
+            if not isinstance(plan_binding.get("sha256"), str) or not _HASH.fullmatch(plan_binding["sha256"]):
+                raise CadConfigError("assembly plan needs a SHA-256 binding")
+            _, plan = document(path.parent, plan_binding.get("file"), plan_binding["sha256"])
+            try:
+                plan = normalize_plan(plan, mesh_hashes={p["name"]: p["sha256"] for p in parts})
+                if (plan["source"]["revision"] != snapshot["source_commit"]
+                        or [s["id"] for s in guide["steps"]] != [op["id"] for op in plan["operations"]]
+                        or any(s["offsets_mm"] for s in guide["steps"])):
+                    raise ValueError("guide must project exact source/operations without authored offsets")
+            except (ValueError, KeyError, TypeError) as exc:
+                raise CadConfigError(f"invalid assembly plan: {exc}") from exc
         groups = guide.get("subassemblies")
         if not isinstance(groups, list) or not 1 <= len(groups) <= 2000:
             raise CadConfigError("assembly guide must contain subassemblies")

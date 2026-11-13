@@ -188,9 +188,9 @@ def _wheel_smoke(tmp_path):
         for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
                                           ("Linux", "aarch64", False), ("Darwin", "arm64", False),
                                           ("Darwin", "x86_64", False), ("Windows", "ARM64", False)):
-            env = {"platform_system": system, "platform_machine": machine}
-            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected_pardiso, env
-            assert not pardiso[0].marker.evaluate({**env, "extra": ""}), "PARDISO leaked into the core install"
+            marker_env = {"platform_system": system, "platform_machine": machine}
+            assert pardiso[0].marker.evaluate({**marker_env, "extra": "fea"}) is expected_pardiso, marker_env
+            assert not pardiso[0].marker.evaluate({**marker_env, "extra": ""}), "PARDISO leaked into the core install"
     shutil.rmtree(source)
     assert not source.exists()
     # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor

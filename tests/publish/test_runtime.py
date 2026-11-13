@@ -51,7 +51,7 @@ def test_actual_profile_is_minimal_and_does_not_grow_with_unrelated_assets(tmp_p
 
 
 @pytest.mark.parametrize("name", ["viewer.js", "assembly/guide.js", "vendor/fonts/fonts.css",
-                                  "vendor/fonts/inter.woff2", "vendor/file-parsers/THREE-LICENSE.txt"])
+                                  "vendor/fonts/inter.woff2", "assembly/NOTICE.txt", "vendor/file-parsers/THREE-LICENSE.txt"])
 @pytest.mark.parametrize("failure", ["missing", "changed"])
 def test_missing_or_tampered_runtime_fails(tmp_path, name, failure):
     kit, manifest, _ = fixture(tmp_path)

@@ -5,6 +5,10 @@
         "viewer.html"
       ],
       "files": {
+        "assembly/NOTICE.txt": {
+          "requires": [],
+          "sha256": "2a56932d6d0173cac37d2fcbc91e95e59a1de23641901109940bbd27f21fe202"
+        },
         "assembly/guide.js": {
           "requires": [
             "assembly/playback.js",
@@ -115,6 +119,7 @@
         }
       },
       "notices": [
+        "assembly/NOTICE.txt",
         "vendor/fonts/OFL-Inter.txt",
         "vendor/fonts/OFL-JetBrainsMono.txt",
         "vendor/file-parsers/THREE-LICENSE.txt"

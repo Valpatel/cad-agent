@@ -80,7 +80,7 @@ schema, name and canonical profile hash. Other profiles cannot change that ident
 
 The initial source baseline at `33c3f51b574bdfa9171da62c4573beaf840daa95` copied
 104 files / 13,674,991 uncompressed runtime bytes. The checked assembly closure
-contains 20 files / 901,944 bytes; these are runtime membership measurements,
+contains 21 files / 903,365 bytes; these are runtime membership measurements,
 not a full ZIP size or browser-performance benchmark. Full-copy `cad-agent webkit`
 behavior is unchanged. Future nested runtime folders need explicit package-data
 admission and an installed-wheel test; gallery ownership does not imply inclusion.

@@ -26,7 +26,7 @@ flowchart TD
   B --> D["P4b<br/>SCADA fixture"]
   C --> D
   B --> E["P3b / P6<br/>review / views"]
-  B --> G["P7<br/>domain views"]
+  B --> G["P7<br/>domains"]
   D --> F["P5<br/>reports and agents"]
   classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
   classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c

@@ -33,3 +33,8 @@ flowchart TD
 | [inspect_runtime_probe.py](inspect_runtime_probe.py) | Hash-bound metadata-only setup probe with offline frozen exports; no environment installation or image operations. Execution remains subject to action review. |
 
 [Repository tools](../README.md)
+
+The metadata probe uses its invoking Python interpreter and inherited HTTPS proxy/CA trust; it does not assume a
+system Python path or bypass a managed network proxy. The Docker client is resolved before the child PATH is
+narrowed. Failed commands retain their primary outcome even if an output hash or receipt write also fails.
+These portability checks do not replace the required retained user-service and Docker settlement evidence.

@@ -13,10 +13,11 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tarfile
 import tempfile
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, HTTPSHandler, ProxyHandler, build_opener
+from urllib.request import HTTPRedirectHandler, HTTPSHandler, Request, build_opener
 
 INSPECT_REVISION = 'ff0acb3de3cb2fec0b1b35d0f46d40e234289dc8'
 HELPER_HASHES = {
@@ -69,12 +70,12 @@ class ReleaseRedirects(HTTPRedirectHandler):
 
 
 def download(url, path, expected, limit):
-    # Public immutable artifacts only. Ignore ambient proxy/credential helpers.
+    # Public immutable artifacts only. Preserve the managed proxy and CA trust.
     if url not in (UV_URL, UV_URL + '.sha256', *(SOURCE + name for name in SOURCE_HASHES)):
         raise ValueError('URL is outside the reviewed public artifact scope')
-    opener = build_opener(ProxyHandler({}), HTTPSHandler(), ReleaseRedirects(url.startswith('https://github.com/')))
+    opener = build_opener(HTTPSHandler(), ReleaseRedirects(url.startswith('https://github.com/')))
     size = 0
-    with opener.open(url, timeout=20) as response, Path(path).open('xb') as out:
+    with opener.open(Request(url, headers={'User-Agent': 'cad-agent-inspect-probe/1'}), timeout=20) as response, Path(path).open('xb') as out:
         os.chmod(path, 0o600)
         while True:
             data = response.read(min(65536, limit-size+1))
@@ -155,12 +156,25 @@ def metadata_command(work, index, argv, source, env, timeout=15):
                     settled = False
         except (OSError, subprocess.SubprocessError) as exc:
             error = f'{type(exc).__name__}: {exc}'
-    hashes = {name: digest(source / name) if (source / name).is_file() else None for name in SOURCE_HASHES}
+    evidence_errors = {}
+    def observed_hash(name, path):
+        try:
+            return digest(path) if path.is_file() else None
+        except OSError as exc:
+            evidence_errors[name] = f'{type(exc).__name__}: {exc}'
+            return None
+    hashes = {name: observed_hash(name, source / name) for name in SOURCE_HASHES}
+    output_hashes = {name: observed_hash(name, path) for name, path in (('stdout', stdout), ('stderr', stderr))}
     receipt = dict(argv=argv, exit_code=code, timed_out=timed_out, error=error, group_settled=settled,
                    pid=child.pid if child else None,
-                   stdout_sha256=digest(stdout), stderr_sha256=digest(stderr), source_sha256=hashes)
-    runner.write_json(work / f'{index}.receipt.json', receipt)
-    if code != 0 or timed_out or error or settled is not True or hashes != SOURCE_HASHES:
+                   stdout_sha256=output_hashes['stdout'], stderr_sha256=output_hashes['stderr'],
+                   source_sha256=hashes, evidence_errors=evidence_errors)
+    try:
+        runner.write_json(work / f'{index}.receipt.json', receipt)
+    except OSError as exc:
+        # The caller retains this primary outcome in the phase failure receipt.
+        raise ValueError(f'metadata command {index} receipt write failed: {type(exc).__name__}: {exc}; primary outcome={json.dumps(receipt)}') from exc
+    if code != 0 or timed_out or error or settled is not True or evidence_errors or hashes != SOURCE_HASHES:
         raise ValueError(f'metadata command {index} failed; retain its receipt, do not retry setup')
     return receipt
 
@@ -173,6 +187,18 @@ def probe(work):
     if any(work.iterdir()):
         raise ValueError('work must be fresh and empty')
     work.chmod(0o700)
+    try:
+        return _probe(work)
+    except (OSError, ValueError, subprocess.SubprocessError, tarfile.TarError) as exc:
+        failure = dict(phase=1, passed=False, error=f'{type(exc).__name__}: {exc}')
+        try:
+            runner.write_json(work / 'phase-failure.json', failure)
+        except OSError as receipt_error:
+            raise ValueError(f'{failure["error"]}; phase receipt failed: {receipt_error}') from exc
+        raise
+
+
+def _probe(work):
     source = work / 'source'
     source.mkdir(mode=0o700)
     checksum = work / 'uv.sha256'
@@ -191,10 +217,10 @@ def probe(work):
         [uv, 'export', '--help'],
         [uv, 'tree', '--help'],
         [uv, '--no-config', 'export', '--offline', '--frozen', '--no-default-groups',
-         '--no-emit-project', '--no-header', '--no-annotate', '--python', '/usr/bin/python3.12',
+         '--no-emit-project', '--no-header', '--no-annotate', '--python', sys.executable,
          '--output-file', str(work / 'base.requirements.txt')],
         [uv, '--no-config', 'export', '--offline', '--frozen', '--no-default-groups', '--extra', 'dev',
-         '--no-emit-project', '--no-header', '--no-annotate', '--python', '/usr/bin/python3.12',
+         '--no-emit-project', '--no-header', '--no-annotate', '--python', sys.executable,
          '--output-file', str(work / 'dev-extra.requirements.txt')],
     ]
     env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'UV_OFFLINE': '1',

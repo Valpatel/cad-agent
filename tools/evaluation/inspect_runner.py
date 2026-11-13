@@ -17,6 +17,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -78,7 +79,10 @@ class Docker:
     """Only an explicitly local daemon; never enumerate or mutate by broad name."""
     def __init__(self):
         # Explicit context prevents ambient DOCKER_HOST/DOCKER_CONTEXT overrides.
-        self.prefix = ['docker', '--context', 'default']
+        executable = shutil.which('docker')
+        if not executable:
+            raise ValueError('Docker executable is unavailable on PATH')
+        self.prefix = [str(Path(executable).absolute()), '--context', 'default']
         self.env = {k: os.environ[k] for k in ('HOME', 'XDG_RUNTIME_DIR', 'LANG') if k in os.environ}
         self.env['PATH'] = '/usr/bin:/bin'
         endpoint = self.call('context', 'inspect', 'default', '--format', '{{.Endpoints.docker.Host}}').strip()

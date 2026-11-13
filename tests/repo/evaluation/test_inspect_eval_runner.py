@@ -9,7 +9,7 @@ import tarfile
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools/evaluation'))
 import inspect_runner as adapter
 import inspect_runtime_probe as probe
@@ -372,3 +372,97 @@ def test_actual_compatible_provider_missing_usage_and_request_counts():
     adapter.runtime(source)
     result = adapter.wire_qualification()
     assert result == dict(passed=True, requests=5, missing_usage=None, real_model_called=False)
+
+
+def test_metadata_hash_failure_preserves_timeout_and_settlement(tmp_path, monkeypatch):
+    monkeypatch.setattr(probe, 'SOURCE_HASHES', {})
+    real_digest = probe.digest
+    def fail_stdout(path):
+        if Path(path).name.endswith('.stdout'):
+            raise OSError('synthetic evidence failure')
+        return real_digest(path)
+    monkeypatch.setattr(probe, 'digest', fail_stdout)
+    with pytest.raises(ValueError, match='retain its receipt'):
+        probe.metadata_command(tmp_path, 0, [sys.executable, '-c', 'import time; time.sleep(60)'],
+                               tmp_path, {'PATH': '/usr/bin:/bin'}, timeout=.1)
+    receipt = json.loads((tmp_path / '0.receipt.json').read_text())
+    assert receipt['timed_out'] is True and receipt['group_settled'] is True
+    assert receipt['stdout_sha256'] is None
+    assert 'synthetic evidence failure' in receipt['evidence_errors']['stdout']
+
+
+def test_phase_failure_keeps_primary_outcome_when_command_receipt_fails(tmp_path, monkeypatch):
+    monkeypatch.setattr(probe, 'SOURCE_HASHES', {})
+    real_write = probe.runner.write_json
+    def fail_receipt(path, value):
+        if Path(path).name == '0.receipt.json':
+            raise OSError('synthetic receipt failure')
+        return real_write(path, value)
+    monkeypatch.setattr(probe.runner, 'write_json', fail_receipt)
+    def failure(work):
+        probe.metadata_command(work, 0, ['/absent/uv'], work, {'PATH': '/usr/bin:/bin'})
+    monkeypatch.setattr(probe, '_probe', failure)
+    work = tmp_path / 'attempt'
+    with pytest.raises(ValueError, match='receipt write failed'):
+        probe.probe(work)
+    receipt = json.loads((work / 'phase-failure.json').read_text())
+    assert 'FileNotFoundError' in receipt['error']
+    assert 'synthetic receipt failure' in receipt['error']
+    assert '"group_settled": null' in receipt['error']
+
+
+def test_metadata_download_uses_managed_proxy_and_scoped_request(tmp_path, monkeypatch):
+    from urllib.request import ProxyHandler
+    captured = []
+    monkeypatch.setenv('https_proxy', 'http://managed.invalid:8080')
+    real_build = probe.build_opener
+    class Response(io.BytesIO):
+        pass
+    def capture(*handlers):
+        opener = real_build(*handlers)
+        captured.extend(opener.handlers)
+        def open_request(request, timeout):
+            assert request.full_url == probe.UV_URL
+            assert request.get_header('User-agent') == 'cad-agent-inspect-probe/1'
+            assert timeout == 20
+            return Response(b'fixture')
+        opener.open = open_request
+        return opener
+    monkeypatch.setattr(probe, 'build_opener', capture)
+    probe.download(probe.UV_URL, tmp_path / 'artifact', adapter.sha256(b'fixture'), 100)
+    proxies = [handler.proxies for handler in captured if isinstance(handler, ProxyHandler)]
+    assert proxies and proxies[0]['https'] == 'http://managed.invalid:8080'
+
+
+def test_docker_resolves_executable_before_narrowing_child_path(monkeypatch):
+    monkeypatch.setattr(adapter.shutil, 'which', lambda name: '/opt/tool bin/docker')
+    seen = []
+    def call(self, *args):
+        seen.append(self.prefix)
+        return 'unix:///var/run/docker.sock' if args[0] == 'context' else 'local-daemon'
+    monkeypatch.setattr(adapter.Docker, 'call', call)
+    instance = adapter.Docker()
+    assert seen and instance.prefix == ['/opt/tool bin/docker', '--context', 'default']
+    assert instance.env['PATH'] == '/usr/bin:/bin'
+
+
+def test_metadata_probe_selects_current_interpreter_without_system_path_assumption(tmp_path, monkeypatch):
+    monkeypatch.setattr(probe.sys, 'executable', '/opt/isolated Python/bin/python')
+    monkeypatch.setattr(probe, 'SOURCE_HASHES', {})
+    def download(url, path, expected, limit):
+        Path(path).write_text(probe.UV_HASH + '  uv-x86_64-unknown-linux-gnu.tar.gz\n' if url.endswith('.sha256') else '')
+    monkeypatch.setattr(probe, 'download', download)
+    monkeypatch.setattr(probe, 'extract_uv', lambda archive, destination: destination.mkdir())
+    calls = []
+    def command(work, index, argv, source, env):
+        calls.append(argv)
+        (work / f'{index}.stdout').write_text('uv 0.13.4 fixture\n')
+        if '--output-file' in argv:
+            Path(argv[argv.index('--output-file') + 1]).write_text('# retained hashes\n')
+        return {'exit_code': 0}
+    monkeypatch.setattr(probe, 'metadata_command', command)
+    probe.probe(tmp_path / 'attempt')
+    exports = [argv for argv in calls if '--python' in argv]
+    assert len(exports) == 2
+    assert all(argv[argv.index('--python') + 1] == '/opt/isolated Python/bin/python' for argv in exports)
+    assert all('--offline' in argv and '--frozen' in argv for argv in exports)

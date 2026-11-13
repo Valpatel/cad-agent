@@ -1300,16 +1300,22 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Copy the starter project (docs/examples/starter-box: a box and lid on four M3 heat-set inserts) into a folder, and
     say what to run next."""
     import shlex
+    import shutil
 
     from cadagent.project import init_project
-    quote = shlex.quote if os.name != "nt" else (lambda s: f'"{s}"' if any(ch in s for ch in ' &()^') else s)
+    # Windows installation instructions use PowerShell; single quotes preserve literal path characters.
+    quote = shlex.quote if os.name != "nt" else (lambda s: "'" + s.replace("'", "''") + "'")
     dest = Path(args.dir)
     files = init_project(dest, force=args.force)
     _say(f"init: the starter box, {len(files)} files, in {dest.resolve()}")
     _say("next:")
     if dest.resolve() != Path.cwd().resolve():
         _say(f"  cd {quote(args.dir)}")
-    _say("  cad-agent all          # build, print files, every check, report; then edit cad/build.py (README.md)")
+    command = "cad-agent"
+    if shutil.which(command) is None:
+        # Keep this interpreter's installed dependencies (including its venv), independent of PATH or argv[0].
+        command = ("& " if os.name == "nt" else "") + quote(sys.executable) + " -m cadagent.cli"
+    _say(f"  {command} all          # build, print files, every check, report; then edit cad/build.py (README.md)")
     return 0
 
 

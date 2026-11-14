@@ -41,7 +41,7 @@ flowchart TD
 - **Limits:** Only declared omissions appear. Nothing detects a component nobody listed, and a declared component
   has no volume, so no clearance against it is checked until it is drawn.
 - **Source:** a project on cad-agent 0.35, reviewed 2026-11-14; `software/cadagent/review/gates/verdict.py`
-  (`note_not_drawn`), `tests/review/test_not_drawn.py`.
+  (`note_not_drawn`), `tests/review/test_gates_cli.py`.
 
 </details>
 

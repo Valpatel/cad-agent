@@ -826,3 +826,92 @@ def test_the_join_names_a_follower_whose_driver_is_missing_from_a_hand_written_r
     geo["parts"]["ball"]["instances"] = [{"key": "ball#3"}]
     geo["joints"]["I9"]["follows"] = None
     assert join(d, geo) == []                               # an instance key is a place for a point
+
+# ------------------------------------------------------------------- components declared not drawn (#722)
+
+
+def test_a_declaration_is_recorded_with_its_reason_and_neighbours():
+    reg = Registry()
+    decl = reg.not_drawn("bevel_pinion", reason="  sized in analysis;\n no solid yet ", near="wheel")
+    assert (decl.name, decl.reason, decl.near) == ("bevel_pinion", "sized in analysis; no solid yet", ["wheel"])
+    assert decl.where.rpartition(":")[0] == __file__ and len(reg) == 1
+    assert reg.not_drawn("shaft", reason="vendor STEP", near=("motor", "plate", "motor")).near == ["motor", "plate"]
+    reg.clear()
+    assert len(reg) == 0 and not reg.undrawn
+
+
+@pytest.mark.parametrize("args, kwargs, error", [
+    (("bad name",), {"reason": "x"}, "not a valid dossier id"),
+    (("pinion",), {"reason": "  "}, "needs a reason"),
+    (("pinion",), {"reason": None}, "needs a reason"),
+    (("pinion",), {"reason": "x", "near": ["bad name"]}, "not a valid dossier id"),
+    (("pinion",), {"reason": "x", "near": 3}, "near is a part name or a list"),
+    (("pinion",), {"reason": "x", "near": ["pinion"]}, "cannot be near itself"),
+])
+def test_a_bad_declaration_is_refused(args, kwargs, error):
+    with pytest.raises(RegistryError, match=error):
+        Registry().not_drawn(*args, **kwargs)
+
+
+def test_a_component_declared_twice_is_refused():
+    reg = Registry()
+    reg.not_drawn("pinion", reason="one")
+    with pytest.raises(RegistryError, match="declared twice"):
+        reg.not_drawn("pinion", reason="two")
+
+
+def test_dossier_items_takes_not_drawn_and_refuses_unknown_keys():
+    reg = Registry()
+    reg.add_build_items({}, {"not_drawn": [{"name": "pinion", "reason": "numbers only", "near": ["wheel"]}]},
+                        where="cad/build.py:0")
+    assert reg.undrawn["pinion"].near == ["wheel"] and "(not_drawn pinion)" in reg.undrawn["pinion"].where
+    for items, error in (({"not_drawn": [{"reason": "x"}]}, "without a 'name'"),
+                         ({"not_drawn": [{"name": "p", "reason": "x", "volume": 3}]}, "unknown keys"),
+                         ({"not_drawn": [{"name": "p"}]}, "needs a reason")):
+        with pytest.raises(RegistryError, match=error):
+            Registry().add_build_items({}, items, where="cad/build.py:0")
+
+DECLARED = BUILD.replace(
+    "from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly",
+    "from cadagent.review.dossier import Axis, part, cavity, joint, fastener, assembly, not_drawn") + (
+    '\nnot_drawn("flap_spring", reason="sized in analysis/spring.py; no solid yet", near=("hopper_flap", "hopper"))\n'
+    'not_drawn("vent_plug", reason="bought part, model not imported")\n')
+
+
+def test_a_build_carries_the_declarations_into_the_record_and_back(tmp_path):
+    pytest.importorskip("cadquery")
+    from cadagent.review.dossier import build_module, load_geometry
+    plain = build_module(make_project(tmp_path / "plain") / "cad" / "build.py")
+    assert "not_drawn" not in plain.geometry and '"not_drawn"' not in plain.path.read_text()
+    root = make_project(tmp_path / "declared", build=DECLARED)
+    result = build_module(root / "cad" / "build.py", root=root)
+    table = result.geometry["not_drawn"]
+    assert list(table) == ["flap_spring", "vent_plug"]
+    assert table["flap_spring"]["near"] == ["hopper_flap", "hopper"] and table["vent_plug"]["near"] == []
+    assert table["flap_spring"]["declared_at"].startswith("cad/build.py:")
+    assert "flap_spring" not in result.parts and "flap_spring" not in result.assembly_shapes()   # no geometry at all
+    back = load_geometry(result.path, shapes=False)
+    assert back.geometry["not_drawn"] == table
+    from cadagent.review.gates.verdict import not_drawn_of
+    assert not_drawn_of(back.geometry) == [
+        {"name": "flap_spring", "reason": "sized in analysis/spring.py; no solid yet",
+         "near": ["hopper_flap", "hopper"]},
+        {"name": "vent_plug", "reason": "bought part, model not imported", "near": []}]
+    assert set(result.geometry) - set(plain.geometry) == {"not_drawn"}          # one new key, nothing else moved
+    assert {k: v["sha256"] for k, v in result.geometry["parts"].items()} == \
+        {k: v["sha256"] for k, v in plain.geometry["parts"].items()}
+    issues = join(load_dossier(root / "dossier" / "project.yaml", strict=False), result)
+    assert sorted(i.message.split("'")[1] for i in issues if i.code == "not-drawn") == ["flap_spring", "vent_plug"]
+
+
+@pytest.mark.parametrize("line, error", [
+    ('not_drawn("hopper", reason="x")', "also a registered part"),
+    ('not_drawn("hopper_cavity", reason="x")', "also a registered cavity"),
+    ('not_drawn("spring", reason="x", near=["ghost"])', "which no part registers"),
+])
+def test_a_build_refuses_a_declaration_that_contradicts_the_parts(tmp_path, line, error):
+    pytest.importorskip("cadquery")
+    from cadagent.review.dossier import build_module
+    root = make_project(tmp_path, build=DECLARED + line + "\n")
+    with pytest.raises(RegistryError, match=error):
+        build_module(root / "cad" / "build.py", root=root)

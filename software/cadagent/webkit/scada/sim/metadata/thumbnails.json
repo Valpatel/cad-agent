@@ -161,7 +161,7 @@
     "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
     "software/cadagent/webkit/scada/explorer/selection.mjs": "a513e7bf6545805e8cc8efa0ee4c20b68ebe04ac28cf2eb56e92073044a7ad7a",
     "software/cadagent/webkit/scada/explorer/sound.mjs": "35b5fb0ea8f76d42477ef6ce75284da2e0064e466da5c08c7253f2088b2e49d5",
-    "software/cadagent/webkit/scada/explorer/styles.css": "81e0220509b5e2b37a41f2de0c7b3e9463d611d8eeb35ca528c5d75b142ead49",
+    "software/cadagent/webkit/scada/explorer/styles.css": "8974f0738939732ff533618c54d938f5ded5faef19b1913943fc49d25439219e",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/industrial.mjs": "9e00d1b0246ebce249a1d577541eeeed4f751b4207178761fd8d0b0e190af575",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/power.mjs": "91a40bc3f3626018b6ab046c222f23e701cc52cf0835946a897c10d0aea1ab48",
@@ -195,7 +195,7 @@
     "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "f5dc87384005460d0440565fa72f7bdb333b03c1a409b5ef64a73514353f721f",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085",
     "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
@@ -2313,8 +2313,8 @@
       "path": "img/thumbnails/power-utilities/power-hydro-impoundment/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 147457,
-      "sha256": "c81129130b07618e46d6f0f14bdd8c9649ea7f3859c4ad6aba47ca8aa6aff635"
+      "bytes": 147465,
+      "sha256": "0c7db6444dd55ed1f5394d3697e3686036bf0aa335c60ded44b9b9541da0b4a8"
     },
     {
       "id": "power-hydro-diversion",
@@ -3450,8 +3450,8 @@
       "path": "img/thumbnails/power-utilities/power-solar-pv/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 138356,
-      "sha256": "f051c635b5566c18029b5e99c20d7010f393ce568105d5dc2c3d3618c355fa8f"
+      "bytes": 138381,
+      "sha256": "e4354bb52b08ce83bd82b0e14ec84160505eb86e2d00c478acd03d4a49cb00d6"
     },
     {
       "id": "power-wind-collection",
@@ -3970,8 +3970,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 131711,
-      "sha256": "b60bf605cff07e4c4633f3672d1f7da3eaa52438b0e7bd5ed71d39870567fa64"
+      "bytes": 131736,
+      "sha256": "c9ef3f5ae1a013bfe27dd29117718e5396563de5a278a6e204cecc25f86f79db"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -4457,8 +4457,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 149365,
-      "sha256": "53799ec0031b8287626bf60a26c1cbd8ebaadfdd0a27f2da3cfc894a87f26523"
+      "bytes": 149343,
+      "sha256": "40266e13461f5bf2c97fb347b8937951f2c994639632d37526678290714cd854"
     },
     {
       "id": "greenhouse-drip",
@@ -4664,16 +4664,16 @@
       "path": "img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 122212,
-      "sha256": "05ab7e36da11f6af949f22d8fe807b6d9dbea22da90d08885c62b5f1b7c2e904"
+      "bytes": 122191,
+      "sha256": "d45474b6bf0b73178dc05b2654e38399c498ba35baafbd5ccdd84f933d32d0a9"
     }
   ],
   "contact_sheet": {
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 7389,
-    "bytes": 1795510,
-    "sha256": "954568a80596634bc11b05cb15baa0efd5efec115ff72f74f6f8453600f90002"
+    "bytes": 1795484,
+    "sha256": "94a54c1ea5a3686aff56558b9f76aa8c50ed812f5e5a730ebd5549092795484a"
   },
   "capture_implementation_sha256": "6be498cb860d8db344613576ad3934e3cafd137268f52a549d7b20cf6d77dc42"
 }

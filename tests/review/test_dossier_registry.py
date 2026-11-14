@@ -837,7 +837,7 @@ def test_a_declaration_is_recorded_with_its_reason_and_neighbours():
     assert decl.where.rpartition(":")[0] == __file__ and len(reg) == 1
     assert reg.not_drawn("shaft", reason="vendor STEP", near=("motor", "plate", "motor")).near == ["motor", "plate"]
     reg.clear()
-    assert len(reg) == 0 and not reg.undrawn
+    assert len(reg) == 0 and not reg.not_drawn_decls
 
 
 @pytest.mark.parametrize("args, kwargs, error", [
@@ -847,10 +847,25 @@ def test_a_declaration_is_recorded_with_its_reason_and_neighbours():
     (("pinion",), {"reason": "x", "near": ["bad name"]}, "not a valid dossier id"),
     (("pinion",), {"reason": "x", "near": 3}, "near is a part name or a list"),
     (("pinion",), {"reason": "x", "near": ["pinion"]}, "cannot be near itself"),
+    (("pinion",), {"reason": "x", "near": {"wheel", "fork"}}, "near is a part name or a list or tuple"),   # no order
+    (("pinion",), {"reason": "x", "near": {"wheel": 1}}, "near is a part name or a list or tuple"),
+    (("pinion",), {}, "needs a reason"),                                      # RegistryError, not TypeError
+    (("pinion", "sized in analysis"), {}, "reason and near are keyword arguments"),
+    (("pinion", "sized in analysis", ["wheel"]), {}, "got 2 more positional"),
 ])
 def test_a_bad_declaration_is_refused(args, kwargs, error):
     with pytest.raises(RegistryError, match=error):
         Registry().not_drawn(*args, **kwargs)
+    from cadagent.review.dossier import not_drawn, use_registry
+    with use_registry(Registry()), pytest.raises(RegistryError, match=error):       # the module-level function too
+        not_drawn(*args, **kwargs)
+
+
+def test_near_keeps_the_order_it_was_given_so_the_record_does_not_change_between_runs():
+    reg = Registry()
+    assert reg.not_drawn("a", reason="x", near=["wheel", "fork", "arm"]).near == ["wheel", "fork", "arm"]
+    assert reg.not_drawn("b", reason="x", near=("fork", "wheel")).near == ["fork", "wheel"]
+    assert reg.not_drawn("c", reason="x", near=None).near == [] and reg.not_drawn("d", reason="x").near == []
 
 
 def test_a_component_declared_twice_is_refused():
@@ -864,7 +879,8 @@ def test_dossier_items_takes_not_drawn_and_refuses_unknown_keys():
     reg = Registry()
     reg.add_build_items({}, {"not_drawn": [{"name": "pinion", "reason": "numbers only", "near": ["wheel"]}]},
                         where="cad/build.py:0")
-    assert reg.undrawn["pinion"].near == ["wheel"] and "(not_drawn pinion)" in reg.undrawn["pinion"].where
+    decl = reg.not_drawn_decls["pinion"]
+    assert decl.near == ["wheel"] and "(not_drawn pinion)" in decl.where
     for items, error in (({"not_drawn": [{"reason": "x"}]}, "without a 'name'"),
                          ({"not_drawn": [{"name": "p", "reason": "x", "volume": 3}]}, "unknown keys"),
                          ({"not_drawn": [{"name": "p"}]}, "needs a reason")):
@@ -907,6 +923,7 @@ def test_a_build_carries_the_declarations_into_the_record_and_back(tmp_path):
 @pytest.mark.parametrize("line, error", [
     ('not_drawn("hopper", reason="x")', "also a registered part"),
     ('not_drawn("hopper_cavity", reason="x")', "also a registered cavity"),
+    ('not_drawn("I9", reason="x")', "also a registered joint"),
     ('not_drawn("spring", reason="x", near=["ghost"])', "which no part registers"),
 ])
 def test_a_build_refuses_a_declaration_that_contradicts_the_parts(tmp_path, line, error):

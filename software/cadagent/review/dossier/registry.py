@@ -235,7 +235,7 @@ class NotDrawnDecl:
     """A component of the design that this build does not draw: no shape, so no gate sees it."""
     name: str
     reason: str
-    near: List[str] = field(default_factory=list)   # the drawn parts it sits in, on or next to
+    near: List[str] = field(default_factory=list)   # the drawn parts (part names, not instance keys) it is near
     where: str = ""
 
 
@@ -333,16 +333,16 @@ class Registry:
         self.joints: Dict[str, JointDecl] = {}
         self.fasteners: Dict[str, FastenerDecl] = {}
         self.steps: Dict[int, StepDecl] = {}
-        self.undrawn: Dict[str, NotDrawnDecl] = {}
+        self.not_drawn_decls: Dict[str, NotDrawnDecl] = {}
         self.assembly = _Steps(self)
 
     def clear(self) -> None:
-        for table in (self.parts, self.cavities, self.joints, self.fasteners, self.steps, self.undrawn):
+        for table in (self.parts, self.cavities, self.joints, self.fasteners, self.steps, self.not_drawn_decls):
             table.clear()
 
     def __len__(self) -> int:
         return sum(len(t) for t in (self.parts, self.cavities, self.joints, self.fasteners, self.steps,
-                                    self.undrawn))
+                                    self.not_drawn_decls))
 
     def _add(self, table: str, key: Any, decl: Any, what: str) -> None:
         items = getattr(self, table)
@@ -502,13 +502,19 @@ class Registry:
         self._add("fasteners", name, decl, f"fastener {name!r} (pass name= to tell two groups apart)")
         return decl
 
-    def not_drawn(self, name: str, *, reason: str, near: Union[str, Sequence[str]] = ()) -> NotDrawnDecl:
+    def not_drawn(self, name: str, *more: Any, reason: str = "",
+                  near: Union[str, Sequence[str]] = ()) -> NotDrawnDecl:
         """Declare a component that is part of the design but has no shape in this build: ``name`` (a dossier id
-        that no part, fastener or cavity uses), ``reason`` (why it is not drawn, and where it is specified instead)
-        and ``near``, the drawn parts it sits in, on or next to. It adds no geometry and no gate can see it; the
-        geometry record lists it and every gate verdict says so (``docs/practice/gates.md``, "What a pass
-        covers"). ``near`` names neighbours for the reader; it is not an extent, and no gate limits its warning to
-        those parts."""
+        that no part, fastener, cavity or joint uses), ``reason`` (why it is not drawn, and where it is specified
+        instead) and ``near``, the drawn parts it sits in, on or next to: part names as ``@part`` registers them
+        (``"ball"``), not instance keys (``"ball#3"``), in a list or tuple (kept in the order given). It adds no
+        geometry and no gate can see it; the geometry record lists it and every gate verdict says so
+        (``docs/practice/gates.md``, "What a pass covers"). ``near`` names neighbours for the reader; it is not an
+        extent, and no gate limits its warning to those parts. ``reason`` and ``near`` are keyword arguments; a
+        missing reason is a ``RegistryError``, like every other refusal here."""
+        if more:
+            raise RegistryError(f"not_drawn {name!r}: reason and near are keyword arguments "
+                                f"(not_drawn({name!r}, reason=..., near=...)), got {len(more)} more positional")
         return self._not_drawn(name, reason=reason, near=near, where=_caller_where())
 
     def _not_drawn(self, name: str, *, reason: str = "", near: Union[str, Sequence[str]] = (),
@@ -518,16 +524,18 @@ class Registry:
             raise RegistryError(f"not_drawn {name!r} needs a reason (why it is not drawn, and where it is specified)")
         if isinstance(near, str):
             near = [near]
-        try:
-            near = list(near or [])
-        except TypeError:
-            raise RegistryError(f"not_drawn {name!r}: near is a part name or a list of them, got {near!r}") from None
+        if near is None:
+            near = []
+        if not isinstance(near, (list, tuple)):     # a set or a dict has no order to keep: the record, and with it
+            raise RegistryError(                    # the geometry digest, would change from one run to the next
+                f"not_drawn {name!r}: near is a part name or a list or tuple of them, got {near!r}")
+        near = list(near)
         for n in near:
             _check_id(n, f"not_drawn {name!r} near")
         if name in near:
             raise RegistryError(f"not_drawn {name!r} cannot be near itself")
         decl = NotDrawnDecl(name=name, reason=" ".join(reason.split()), near=list(dict.fromkeys(near)), where=where)
-        self._add("undrawn", name, decl, f"not_drawn {name!r}")
+        self._add("not_drawn_decls", name, decl, f"not_drawn {name!r}")
         return decl
 
     # -- the migration path
@@ -610,8 +618,9 @@ class Registry:
         for cname in self.cavities:
             if cname in self.parts or cname in self.fasteners:
                 raise RegistryError(f"cavity name {cname!r} is also a part or fastener name; rename the cavity")
-        for name, nd in self.undrawn.items():
-            for table, what in ((self.parts, "part"), (self.fasteners, "fastener"), (self.cavities, "cavity")):
+        for name, nd in self.not_drawn_decls.items():
+            for table, what in ((self.parts, "part"), (self.fasteners, "fastener"), (self.cavities, "cavity"),
+                                (self.joints, "joint")):
                 if name in table:
                     raise RegistryError(f"not_drawn {name!r} ({nd.where}) is also a registered {what} "
                                         f"({table[name].where}): a component is drawn or not drawn, not both")
@@ -730,9 +739,9 @@ class Registry:
         steps = [self.steps[k] for k in sorted(self.steps)]
         geo["assembly"]["steps"] = [dict(s.to_dict(), declared_at=_rel(s.where, root)) for s in steps]
         result.steps = steps
-        if self.undrawn:                        # only when declared: a record without them keeps its bytes and digest
+        if self.not_drawn_decls:                        # only when declared: a record without them keeps its bytes and digest
             geo["not_drawn"] = {name: {"reason": nd.reason, "near": list(nd.near), "declared_at": _rel(nd.where, root)}
-                                for name, nd in self.undrawn.items()}
+                                for name, nd in self.not_drawn_decls.items()}
         result.geometry = geo
         if write:
             result.write()
@@ -1120,7 +1129,7 @@ def _copy_declarations(source: "Registry", target: "Registry", file: str) -> Non
         head = decl.where.partition(" (")[0].rpartition(":")[0]
         return bool(head) and os.path.normcase(os.path.abspath(head)) == file
 
-    for table in ("parts", "cavities", "joints", "fasteners", "steps", "undrawn"):
+    for table in ("parts", "cavities", "joints", "fasteners", "steps", "not_drawn_decls"):
         for key, decl in getattr(source, table).items():
             if mine(decl):
                 getattr(target, table)[key] = decl
@@ -1140,8 +1149,9 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
     def code_where(info: Mapping[str, Any]) -> Optional[Where]:
         return _parse_where(str(info.get("declared_at", "")))
 
-    def add(code: str, message: str, where: Optional[Where], severity: str = "error") -> None:
-        out.append(Issue(code, message, where, severity))
+    def add(code: str, message: str, where: Optional[Where], severity: str = "error",
+            parts: Optional[Sequence[str]] = None) -> None:
+        out.append(Issue(code, message, where, severity, None if parts is None else tuple(parts)))
 
     known = set(parts) | set(dossier.parts)
     for pid, card in dossier.parts.items():
@@ -1236,10 +1246,17 @@ def join(dossier: Any, geometry: Union[Mapping[str, Any], BuildResult]) -> List[
         add("not-drawn", f"component {name!r} of the design is not drawn"
                          + (f" (near {', '.join(repr(n) for n in near)})" if near else "")
                          + f": {nd.get('reason') or 'no reason recorded'}. No gate saw it; a gate pass says nothing "
-                           "about it", code_where(nd), "warning")
+                           "about it", code_where(nd), "warning", parts=[n for n in near if n in known])
         for n in near:
             if n not in known:
-                add("unknown-part", f"not_drawn {name!r} is near {n!r}, which is not a part", code_where(nd))
+                add("unknown-part", f"not_drawn {name!r} is near {n!r}, which is not a part", code_where(nd),
+                    parts=[])
+        used = next((what for table, what in ((parts, "part"), (fasteners, "fastener"), (cavities, "cavity"),
+                                              (joints, "joint"), (dossier.interfaces, "interface"))
+                     if name in table), None)
+        if used:
+            add("duplicate-id", f"not_drawn {name!r} is also the id of a {used}: a component is drawn or not "
+                                "drawn, and its name is its own", code_where(nd), parts=[])
     by_order = {s.order: s for s in dossier.assembly}
     for s in steps:
         w = code_where(s)
@@ -1307,9 +1324,9 @@ def fastener(key: str, **kwargs: Any) -> FastenerDecl:
     return current_registry().fastener(key, **kwargs)
 
 
-def not_drawn(name: str, **kwargs: Any) -> NotDrawnDecl:
+def not_drawn(name: str, *more: Any, **kwargs: Any) -> NotDrawnDecl:
     """``Registry.not_drawn`` on the current registry."""
-    return current_registry().not_drawn(name, **kwargs)
+    return current_registry().not_drawn(name, *more, **kwargs)
 
 
 def build(params: Union[Mapping[str, Any], str, Path, None] = None, **kwargs: Any) -> BuildResult:

@@ -28,7 +28,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from cadagent.manufacturing.process import ADDITIVE_RE as _ADDITIVE_RE   # one list of additive words (#577)
 from cadagent.review.evidence import hash_platform_note, record_hash_platform
 from .model import PART_STATUS, Dossier, Issue, PartCard, Section, Where
-from .review import actor_check, check_record, part_actors, record_platform
+from .review import actor_check, check_record, part_actors, record_platform, section_not_drawn
 
 STATUSES = PART_STATUS                       # draft, built, gated, reviewed, signed_off
 RANK = {s: i for i, s in enumerate(STATUSES)}
@@ -88,6 +88,8 @@ RULES: Dict[str, Tuple[str, str]] = {
     "review-incomplete": ("warning", "a current review judges every decision and traces every requirement of its "
                                      "section, and answers exactly the questions of the packet on disk (else it "
                                      "does not count; cadagent.review.dossier.review.check_record)"),
+    # (the text is written into every lint verdict, so it stays as it was: a review is also void when a component
+    # was declared not drawn near the section's parts after it, docs/practice/dossier.md)
     "review-stale": ("warning", "the latest review still matches the geometry (else its sign-off is void)"),
     "signoff-open-decision": ("error", "a section with an open decision is not signed off"),
     # inputs
@@ -500,6 +502,11 @@ class _Linter:
                 continue                    # recomputed below, split by field
             parts: Tuple[str, ...] = ()
             item = ""
+            if i.concerns is not None:      # stated by its maker (the join's not-drawn rows): nothing is guessed
+                parts = tuple(dict.fromkeys(p for p in i.concerns if p in known_parts))
+                self.out.append(Finding(i.code, i.message, i.where, i.severity, item=parts[0] if parts else "",
+                                        parts=parts))
+                continue
             if i.where:
                 pid = self._card_at(i.where)
                 if pid:
@@ -850,12 +857,20 @@ class _Linter:
             def stale(r: Review) -> List[str]:
                 return sorted(p for p, h in current.items() if not h or r.hashes.get(p) != h)
 
+            near_now = section_not_drawn(self.d, sid, self.ev.geometry) if self.ev.geometry is not None else []
+
+            def unseen(r: Review) -> List[str]:
+                """Components declared not drawn near the section's parts that the record does not list: they
+                were declared after the review, which so was made without knowing they are missing."""
+                listed = r.data.get("not_drawn") if isinstance(r.data.get("not_drawn"), list) else []
+                return [n for n in near_now if n not in listed]
+
             accepted = []
             for r in records:
-                if self.ev.geometry is not None and not stale(r) and not self._record_counts(r):
+                if self.ev.geometry is not None and not stale(r) and not unseen(r) and not self._record_counts(r):
                     continue
                 accepted.append(r)
-            matching = [r for r in accepted if not stale(r)]
+            matching = [r for r in accepted if not stale(r) and not unseen(r)]
             info: Dict[str, Any] = {"record": None}
             if matching:
                 info["record"] = matching[-1]
@@ -869,6 +884,17 @@ class _Linter:
                                          f"applies: {', '.join(changed)} changed or not built since"
                                          + (f" ({note})" if note else ""), Where(latest.file),
                          item=sid, parts=changed)
+            elif unseen(latest):
+                names = unseen(latest)
+                table = (self.ev.geometry or {}).get("not_drawn") or {}
+                beside = sorted({p for n in names for p in (table.get(n) or {}).get("near") or [] if p in current})
+                info["invalidated"] = {"record": latest.file, "date": latest.date, "signed_off": latest.signed_off,
+                                       "changed": beside, "not_drawn": names}
+                self.add("review-stale", f"the review of section {sid!r} on {latest.date} ({latest.file}) no longer "
+                                         f"applies: {', '.join(names)} declared not drawn near {', '.join(beside)} "
+                                         "since, and the record does not list "
+                                         f"{'them' if len(names) != 1 else 'it'} (not_drawn)", Where(latest.file),
+                         item=sid, parts=beside)
             rec = info["record"]
             self.current_records[sid] = rec
             if rec is not None and rec.signed_off and open_decisions.get(sid):

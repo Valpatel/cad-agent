@@ -45,7 +45,7 @@
     "src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
     "src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
-    "src/viewer/viewer.mjs": "f5dc87384005460d0440565fa72f7bdb333b03c1a409b5ef64a73514353f721f",
+    "src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
     "src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085"
   },
@@ -2118,8 +2118,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17388,
-      "sha256": "1fe602c03a9ad5a2d565a5dd569b8a5438ab78039a3060c4cdc51549dbef9e95"
+      "bytes": 17395,
+      "sha256": "89c1fa432ecc1f1e56d246a0709d76513869f4b95a51834bf3cb9ad0d64fb163"
     },
     {
       "type": "hydro-turbine",
@@ -2407,7 +2407,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 16204,
-      "sha256": "f5bd2a00e6ea3218551764b77710c723cf4fc173e25c9d605f0395e68ee8abdb"
+      "sha256": "b297dab47d19283b2592136276e0ef86fba29477337ed58d1579eba416546fcd"
     },
     {
       "type": "surge-arrester",
@@ -2447,7 +2447,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 18383,
-      "sha256": "2ee7769dc54511ea421dd870fb234eca132dff84120ffe99e54ffd76de13c915"
+      "sha256": "0d9005887b43c35e3d9c26663833fddc7f5ca57e10baf719e0751f1cb77696f7"
     },
     {
       "type": "shunt-reactor",
@@ -2530,8 +2530,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18286,
-      "sha256": "c41740274ab72e4867324e2a382ebf7a57e63a7c775622017ca10e45bd351a88"
+      "bytes": 18285,
+      "sha256": "6bacba8a4919b1176415c429b1c11e87851a9d2199bdd81bd364bea69cb30264"
     },
     {
       "type": "automatic-transfer-switch",
@@ -2551,8 +2551,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16909,
-      "sha256": "59a30449e3ce6ca9ee2ef064e97c062a25852a3e912e840daaae87649449bfed"
+      "bytes": 16913,
+      "sha256": "76bfa45b8f386abfb416fc988c6d21e77a639d7e2be6327ddbb76aa846ad3141"
     },
     {
       "type": "excitation-system",
@@ -2593,7 +2593,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15822,
-      "sha256": "831d407206d6c3fc18242706a0707e46727a1eafd1ee39d1825ef523a73663f5"
+      "sha256": "cd6d3730508da55f5386ef5c0c4d4c96597649fd9c074caebb68eeae2d0351a8"
     },
     {
       "type": "fish-tank",
@@ -2614,7 +2614,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 18256,
-      "sha256": "3cc44018be8010c6e910b73855890386292e3711ab0dcdfba4229e5fff65f423"
+      "sha256": "4da0ae22f0a4c212f341ed0d6b07c3ca6032f951a83fb5bbf47ca370072abb8c"
     },
     {
       "type": "biofilter",
@@ -2655,8 +2655,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 20533,
-      "sha256": "b10d677771e465904f3e2726d8cd1eec4d8d6b6e289c71a3f4e03019b2ba6c30"
+      "bytes": 20535,
+      "sha256": "bae43e3e89f11a7757053239d157e8f8c721d4df032d30c1871f887f46412a66"
     },
     {
       "type": "dwc-raft-bed",
@@ -2717,8 +2717,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 20008,
-      "sha256": "a192ba6da5e287178da4f25857143a5864e66165f5088673eaa7cc8f609375da"
+      "bytes": 20007,
+      "sha256": "6662c628f556f7d97a78706fb9dec18b749ff156b4cb5e1d5ccf2fcf8ae12383"
     },
     {
       "type": "drip-zone",
@@ -2738,7 +2738,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 18753,
-      "sha256": "1c98c0b2f3a5512ce407f467cbbc8f4a7bbd98438bc70eda18121bd586d54faf"
+      "sha256": "0c1c79d89dfb9b80251711b40beba3031b6d3ef7aa83f389956da746d1a0022f"
     },
     {
       "type": "aeroponic-chamber",
@@ -3739,8 +3739,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17048,
-      "sha256": "dc502284de251b9181b5847caf62a341dad0dd27dd0bdd339e438e91555ec60a"
+      "bytes": 17054,
+      "sha256": "2a02384a248935c213a27045456929a0e01191cff6e5f0e047f821b6b00ba3f7"
     },
     {
       "type": "gate-valve",
@@ -3781,8 +3781,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17835,
-      "sha256": "499d33b024908a4bbc9017b0d50beeef507c5f19c0388f100940836fb3e98687"
+      "bytes": 17816,
+      "sha256": "0612cd9903a367a19096bf65b0df178a9e426b780ff7834102657cfcf93c3b3e"
     },
     {
       "type": "gate-valve",
@@ -3823,8 +3823,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16819,
-      "sha256": "494f042a81e99f22cf1521532bd9324b776b816b4709c7a1b6206eb76ba2b106"
+      "bytes": 16818,
+      "sha256": "4d7f9fbe09dfe2a7c69b87ad56190f869983aaa9a2b21d3223a710f71ac363ac"
     },
     {
       "type": "control-valve",
@@ -3844,8 +3844,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16266,
-      "sha256": "46a9b5646426e78cc9c8b755cdc865ddfbfa116688e07ab2762d4c4bce2ad2c2"
+      "bytes": 16252,
+      "sha256": "5c4ed0f30a461223f032165426054cd073f8bdf65e5a129ddd47d176cbe3e761"
     },
     {
       "type": "control-valve",
@@ -3865,8 +3865,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17053,
-      "sha256": "2c2597c09b0d9174f074e9d1da99467c934729a92386732bbb3a74d405eb535a"
+      "bytes": 17050,
+      "sha256": "78d2e6576149dcd51871b8b47ff96b9fb7d83ebcf2f21ed001ce3971f590ccaf"
     },
     {
       "type": "control-valve",
@@ -3886,8 +3886,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16896,
-      "sha256": "68f0c7fa2a5773d69e3d40fa71193d374995ae69d7d5f374beb830e14eac390b"
+      "bytes": 16895,
+      "sha256": "3910ae44636a1fb30ba3a5d1d56caeb01beb5d8a3453feb4938be87eb38d01eb"
     },
     {
       "type": "control-valve",
@@ -3908,7 +3908,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 17272,
-      "sha256": "ebf827b86be46dd7bc34bf057a2cc029d4ec7a83dc8d528d565535a6e94a7325"
+      "sha256": "e351f4eef9906d7654b7922f8798591579851c168fb3b1fe5a710f80485a7a98"
     },
     {
       "type": "control-valve",
@@ -3949,8 +3949,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18078,
-      "sha256": "16c6d7673ba2e11de5f528ca2663d0d22e83509d0a0ab1702343076b2a934880"
+      "bytes": 18077,
+      "sha256": "f80d1e2d7da5cdf21c321be3cb15aa93bc50adad6cbe4feaa4a1c6caae45f227"
     },
     {
       "type": "control-valve",
@@ -4151,8 +4151,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15390,
-      "sha256": "ea60544076b093ff9cbb46b16b1df7917c22d1e40d7c3aa7280a447288f54577"
+      "bytes": 15389,
+      "sha256": "89435f239e74e0b165a3c8becdb3e8506e627b996ec53420c6eae5799c1ff0d9"
     },
     {
       "type": "relief-valve",
@@ -4172,7 +4172,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15314,
-      "sha256": "fd6f8cf4cea8adef571c1a0655ce0394146746987ce4a26f21b15d8cddd0ed31"
+      "sha256": "efd219e5c663c7187ed191f9cf78218e2ae5d1f10713ea2ffd96c0462b40562c"
     },
     {
       "type": "relief-valve",
@@ -4192,7 +4192,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 16133,
-      "sha256": "db83ba0e5d7988e5361ca3c22702b31a1c26d06659cbe29079a76df34c7c7238"
+      "sha256": "dcf6239203faa3d9f2965afda63b338e4ef707017c0705fef4c3d9f92859b289"
     },
     {
       "type": "relief-valve",
@@ -4231,8 +4231,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16250,
-      "sha256": "324301c2febcf86886bbee6a2de1e5f5b561e69807089fecb7dbc396d9619698"
+      "bytes": 16260,
+      "sha256": "48e924785f41a08fb64aaa41ac22da59246429f259f91440051c537adbedc364"
     },
     {
       "type": "relief-valve",
@@ -4251,8 +4251,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15841,
-      "sha256": "a5cf75b61f03a8b12658e143a770024e3e8a1c3f23a9cd9a97a1da48a6286ec5"
+      "bytes": 15842,
+      "sha256": "f8ad31b9f1d48b5ec9d988ae2ae6d9fb4f326c0800cce47c027f57fca669d747"
     },
     {
       "type": "relief-valve",
@@ -4271,8 +4271,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17157,
-      "sha256": "19b93166666a9daafc1ec7eb8b9e1d8643b7f24c004e482e1925e624c7e999f3"
+      "bytes": 17156,
+      "sha256": "a865cea793882963e234bf9af3050e2abca4ca12c26dcaed315f0c172d8be066"
     },
     {
       "type": "relief-valve",
@@ -4292,7 +4292,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 17526,
-      "sha256": "708095890327d71a5896cd57c236c4a422d54d7752478c0da25ba8cf48b1d18e"
+      "sha256": "1fbbede69699af15ad3cb4fa15d9cfc1d264133dd627ec01d83528e266e98134"
     },
     {
       "type": "relief-valve",
@@ -4312,7 +4312,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 16245,
-      "sha256": "b7613c9827f2d0203db33213cd4a5d5227da41aa87b009aa94a713ea58e4d37d"
+      "sha256": "6bc43a9b891079846fbfb48e63631a0a3e3fb64a0f6a65ef914ef01a868c9c93"
     },
     {
       "type": "butterfly-valve",
@@ -4374,8 +4374,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17329,
-      "sha256": "b7e9a1aa349f6fc442adddbe1d494c5ad32ff9ad22d8cad7390ced7ee111f89e"
+      "bytes": 17328,
+      "sha256": "67bfc3e6764bf967329344273ad8a70349562fd039fdd826982b28a693bdd2a6"
     },
     {
       "type": "butterfly-valve",
@@ -4438,7 +4438,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 18607,
-      "sha256": "59f0a7e86e6a6edf49c6e90240292a4b71fbb4e879cc8c41428f57ca644a76ad"
+      "sha256": "896f25695ad6895b44f83bf4b78753a66fab838e56f85c8e698f803bdd50fb88"
     },
     {
       "type": "butterfly-valve",
@@ -4560,7 +4560,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15091,
-      "sha256": "1896b8676f54fe115f214258ca15ec9f399ec48cb9736e3189f0f792b4dbe2ae"
+      "sha256": "206e7f8441602017f615eacd8e021efd4b5cedb2a68cf0df65d03bf105fb5a5a"
     },
     {
       "type": "pipe",
@@ -4580,7 +4580,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14592,
-      "sha256": "c5f80b4bb1dd4b91a3a007fe1e2b7cdbad0c1239af12194063f27de25f496981"
+      "sha256": "ce79024c94ba8f5efd0745be73302b324b648d048c19ad6936f69b6ccea7bd66"
     },
     {
       "type": "pipe",
@@ -4600,7 +4600,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15836,
-      "sha256": "d304828cb6ffefa1484faf1a80f29040358e0065b4ec2b05461b983bb096bb66"
+      "sha256": "b69e3dbd74381feac914ea2dbdfcbd654cc36cdb6bca3017d11affb54a06fb6e"
     },
     {
       "type": "pipe",
@@ -5175,8 +5175,8 @@
     "width": 1520,
     "height": 6589,
     "format": "jpeg",
-    "bytes": 1111286,
-    "sha256": "585803c22bb1a1905652f1c2a60a25aedc05f67e436e9d2a5007fa28e4629468"
+    "bytes": 1111278,
+    "sha256": "f12d324ba5b3f8a61408e1d2ea13c94081ff1dc5d03b543aa2534df12b5d8363"
   },
   "viewer": {
     "id": "generic-viewer",

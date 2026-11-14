@@ -6,10 +6,10 @@ standalone page and work with the kit's pinned local dependencies.
 
 ```mermaid
 flowchart LR
-  App[Application] --> Host[Contained host]
-  Host --> Views[Domain viewers]
-  Views --> Assets[Local assets]
-  App --> UI[Shared controls]
+  App[App] --> Host[Host]
+  Host --> Views[Viewers]
+  Views --> Assets[Assets]
+  App --> UI[Controls]
 ```
 
 | Owner | Responsibility |
@@ -42,13 +42,16 @@ Runtime profiles select the exact assets needed by a frozen reader. A complete
 copied kit and an installed wheel include the admitted owner folders; publication
 must validate every imported module, stylesheet, worker and decoder asset.
 
-## Extend an owner
+<details>
+<summary>Extend an owner</summary>
 
 Keep model equations, document/controller state and rendering responsibilities
 separate. Reuse a shared control only when real consumers need the same behavior.
 Add the new file to its owner's README, repair direct imports and distribution
 membership, and test actual mount, failure, resize and disposal behavior. No
 placeholder owner folders or universal renderer are needed to add a domain.
+
+</details>
 
 The stage and HUD are adapted from the MIT [Moxie simulator](https://github.com/mvalancy/moxie-robot-saver).
 Pinned browser dependencies include `three@0.160.0`, `mermaid@11.17.2` and

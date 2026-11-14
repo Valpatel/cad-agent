@@ -5,8 +5,7 @@ Interactive browser calculators backed by the toolkit formula definitions. Each 
 ```mermaid
 flowchart LR
   Inputs --> Formulas
-  Formulas --> Elements
-  Elements --> Drawings
+  Formulas --> View[Controls + plots]
 ```
 
 | File | Responsibility |

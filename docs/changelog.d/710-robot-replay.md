@@ -1,1 +1,3 @@
+**New**
+
 - Add an inspectable recorded MuJoCo arm simulation with play/pause, time scrubbing, speed and Fit; reusable bounded pose playback, editable illustrative inputs, solver/source receipts and a portable browser example.

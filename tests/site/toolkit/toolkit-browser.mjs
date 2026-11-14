@@ -84,12 +84,14 @@ export async function scadaNativeNavigationChecks({open,fail}) {
       try {
         const nav=page.getByRole('navigation',{name:'Main'});
         if(await nav.getByRole('link',{name:'Toolkit',exact:true}).getAttribute('aria-current')!=='page')fail('SCADA native frame',`${route}: Toolkit is not the current main section`);
-        if(await nav.getByRole('link',{name:'For agents',exact:true}).getAttribute('href')!=='/docs/agent-workflow')fail('SCADA native frame',`${route}: shared agent entrypoint missing`);
+        // The shared compact header intentionally hides secondary links; the overview's agent section stays usable.
+        const agents=nav.locator('a').filter({hasText:'For agents'});
+        if(await agents.getAttribute('href')!=='/docs/agent-workflow'||options.width>=650&&!await agents.isVisible())fail('SCADA native frame',`${route}: shared agent entrypoint missing`);
         if(!/MIT-licensed/.test(await page.locator('.toolkit-license').textContent()))fail('SCADA terms',`${route}: project-owned terms are stale`);
         if(await page.locator('.toolkit-shell a[href^="/kit/scada/"][href$=".md"]').count())fail('SCADA native guides',`${route}: human documentation exits to raw Markdown`);
         if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('SCADA native frame',`${route} @${options.width}: horizontal overflow`);
         if(route!=='/toolkit/scada')continue;
-        for(const label of ['UI library','Models & equations','Replace equations','For agents']) {
+        for(const label of ['Use & extend','UI library','Models & equations','Replace equations','For agents']) {
           const link=page.locator('.toolkit-shell').getByRole('link',{name:label,exact:true});
           const destination=new URL(await link.getAttribute('href'),page.url());
           await link.scrollIntoViewIfNeeded();await link.focus();

@@ -86,7 +86,7 @@ test('SCADA human documentation and agent workflows use the existing rendered si
   for(const page of pages.filter(page=>page.url.startsWith('/toolkit/scada'))) {
     assert.match(page.body,/MIT-licensed/);
     assert.doesNotMatch(page.body,/UNLICENSED|href="\/kit\/scada\/[^"#?]*\.md/);
-    assert.match(page.body,/href="\/docs\/practice\/scada\/README">Use &amp; extend|href="\/docs\/practice\/scada\/README">Use & extend/);
+    assert.match(page.body,/href="\/repo\/folders\/d-docs\/d-practice\/d-scada\/README">Use &(?:amp;)? extend/);
   }
   const overview=pages.find(page=>page.url==='/toolkit/scada');
   for(const name of ['component-authoring','system-authoring','model-adaptation','viewer-review','distribution-review']) {

@@ -11,7 +11,7 @@ const ownerPage = file => '/' + folderMapPath(file).replace(/\.md$/,'');
 const scadaDocs = {
   owner:ownerPage('software/cadagent/webkit/scada/README.md'),
   ui:ownerPage(UI+'README.md'), sim:ownerPage(SIM+'README.md'), gallery:ownerPage(UI+'img/README.md'),
-  use:documentPage('docs/practice/scada/README.md'), local:documentPage('docs/practice/scada/local-use.md'),
+  use:ownerPage('docs/practice/scada/README.md'), local:documentPage('docs/practice/scada/local-use.md'),
   agents:documentPage('docs/practice/agent-workflow.md'),
 };
 const scadaSkills = [

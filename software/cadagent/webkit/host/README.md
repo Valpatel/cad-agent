@@ -2,12 +2,15 @@
 
 A small, renderer-independent shell for mounting engineering viewers in a page.
 Each instance owns its toolbar, loading state, inspector, keyboard focus and lifetime.
-The ordinary assembly/STL and original-file adapters prove the same contract.
+The ordinary assembly/STL, original-file and [recorded-replay](../simulation/README.md) adapters use the same contract.
+SCADA and FEA are separate consumers with their own integration surfaces; this host does not own their models.
 
 ```mermaid
 flowchart TB
   H[Scoped host] --> A[Model adapter]
   H --> B[File adapter]
+  H --> R[Recorded replay]
+  R --> V
   A --> V[Domain viewers]
   B --> V
 ```

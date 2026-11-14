@@ -6,16 +6,10 @@ symbol to a wastewater-treatment simulation with multiple views.
 The picture shows implemented source ownership. Models and UI remain separate;
 the Explorer supplies the session and host policy.
 
-```mermaid
-flowchart TD
-  H["Explorer host"] --> M["Headless model"]
-  H --> V["SCADA viewer"]
-  M --> A["Snapshot adapter"]
-  A --> V
-  V --> S["Equipment symbols"]
-  classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
-  class H,M,V,A,S here
-```
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="../../img/architecture/scada-session-still.svg">
+  <img src="../../img/architecture/scada-session.svg" alt="A shared process session publishes snapshots to multiple diagram views." width="480">
+</picture>
 
 | Start here | What it explains |
 | --- | --- |

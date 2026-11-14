@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="350" viewBox="0 0 480 350" role="img" aria-labelledby="title desc"><title id="title">Skills guide the work</title><desc id="desc">Conceptual handoffs, not measured simulation. 1. Choose a skill: Read sources and limits. Source: .agents/skills/README.md. 2. Use the toolkit: Produce a scoped change. Source: software/cadagent/README.md. 3. Check the result: Tests and visible evidence. Source: tests/README.md. 4. Peer review: Approve or return findings. Source: .agents/agents/cad-pr-reviewer.md</desc>
+<style>text{font-family:system-ui,sans-serif;fill:#e9f5fb}.detail{fill:#b7d1de;font-size:14px}.flow{stroke:#3de0d4;stroke-width:3;stroke-dasharray:6 8;fill:none}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3de0d4"/></marker></defs>
+<rect width="480" height="350" rx="18" fill="#091a29"/>
+<text x="24" y="34" font-size="22" font-weight="700">Skills guide the work</text>
+<path class="flow" d="M218 125H258" marker-end="url(#arrow)"/><path class="flow" d="M362 170V202" marker-end="url(#arrow)"/><path class="flow" d="M262 251H222" marker-end="url(#arrow)"/>
+<rect x="20" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="39" cy="100" r="11" fill="#265269"/><text x="39" y="105" text-anchor="middle" font-size="14">1</text>
+<text x="32" y="129" font-size="18" font-weight="600">Choose a skill</text>
+<text class="detail" x="32" y="152">Read sources and limits</text>
+<rect x="262" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="281" cy="100" r="11" fill="#265269"/><text x="281" y="105" text-anchor="middle" font-size="14">2</text>
+<text x="274" y="129" font-size="18" font-weight="600">Use the toolkit</text>
+<text class="detail" x="274" y="152">Produce a scoped change</text>
+<rect x="262" y="206" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="281" cy="226" r="11" fill="#265269"/><text x="281" y="231" text-anchor="middle" font-size="14">3</text>
+<text x="274" y="255" font-size="18" font-weight="600">Check the result</text>
+<text class="detail" x="274" y="278">Tests and visible evidence</text>
+<rect x="20" y="206" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="39" cy="226" r="11" fill="#265269"/><text x="39" y="231" text-anchor="middle" font-size="14">4</text>
+<text x="32" y="255" font-size="18" font-weight="600">Peer review</text>
+<text class="detail" x="32" y="278">Approve or return findings</text>
+<text class="detail" x="24" y="326">Review is a separate step, not an automatic approval.</text>
+</svg>

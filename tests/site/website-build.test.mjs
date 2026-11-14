@@ -378,7 +378,7 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
 
 test('code samples keep their links as written (no rewriting inside code)', async () => {
   const viewer = await readFile(path.join(out, 'docs/file-viewer.html'), 'utf8');
-  assert.match(viewer, /<code[^>]*>[^<]*href="kit\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
+  assert.match(viewer, /<code[^>]*>[^<]*href="kit\/files\/file-viewer\.html\?file=/, 'the file-viewer snippet was rewritten');
   for (const f of files.filter(f => f.endsWith('.html') && !f.startsWith('kit/')))
     assert.ok(!(await readFile(path.join(out, f), 'utf8')).includes('&amp;amp;'), `${f}: an entity encoded twice`);
 });
@@ -389,7 +389,7 @@ test('the snap-arm explorer is on its page with its still, and only that page lo
   assert.ok(demo, 'no <cad-cantilever> on /docs/compliant');
   assert.match(demo[1], /<img src="\/docs\/img\/compliant\/cantilever-explorer\.svg" alt="[^"]{40,}" width="640" height="250" ?\/?>/);
   const head = page.slice(0, page.indexOf('</head>'));
-  assert.match(head, /<link rel="stylesheet" href="\/kit\/cantilever\.css"><link rel="modulepreload" href="\/kit\/cantilever\.js">/);
+  assert.match(head, /<link rel="stylesheet" href="\/kit\/calculators\/cantilever\.css"><link rel="modulepreload" href="\/kit\/calculators\/cantilever\.js">/);
   for (const f of ['kit/calculators/cantilever.js', 'kit/calculators/cantilever.css', 'kit/calculators/formulas.js', 'kit/calculators/formulas-data.js', 'docs/img/compliant/cantilever-explorer.svg'])
     assert.ok(files.includes(f), `${f} is not published`);
   assert.doesNotMatch(await readFile(path.join(out, 'docs/toolkit.html'), 'utf8'), /cantilever\.(css|js)/);
@@ -402,7 +402,7 @@ test('the four-bar animator is on its pages with its still, and only those pages
     assert.ok(demo, `no <cad-fourbar> on /docs/${name}`);
     assert.match(demo[1], /<img src="\/docs\/img\/formulas\/fourbar-animator\.svg" alt="[^"]{40,}" width="640" height="320" ?\/?>/);
     const head = page.slice(0, page.indexOf('</head>'));
-    assert.match(head, /<link rel="stylesheet" href="\/kit\/fourbar\.css"><link rel="modulepreload" href="\/kit\/fourbar\.js">/);
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/calculators\/fourbar\.css"><link rel="modulepreload" href="\/kit\/calculators\/fourbar\.js">/);
   }
   for (const f of ['kit/calculators/fourbar.js', 'kit/calculators/fourbar.css', 'kit/calculators/formulas.js', 'docs/img/formulas/fourbar-animator.svg'])
     assert.ok(files.includes(f), `${f} is not published`);
@@ -416,7 +416,7 @@ test('the fan-curve explorer is on its pages with its still, and only those page
     assert.ok(demo, `no <cad-fan-curve> on /docs/${name}`);
     assert.match(demo[1], /<img src="\/docs\/img\/thermal\/fan-curve-explorer\.svg" alt="[^"]{40,}" width="640" height="340" ?\/?>/);
     const head = page.slice(0, page.indexOf('</head>'));
-    assert.match(head, /<link rel="stylesheet" href="\/kit\/fan-curve\.css"><link rel="modulepreload" href="\/kit\/fan-curve\.js">/);
+    assert.match(head, /<link rel="stylesheet" href="\/kit\/calculators\/fan-curve\.css"><link rel="modulepreload" href="\/kit\/calculators\/fan-curve\.js">/);
   }
   for (const f of ['kit/calculators/fan-curve.js', 'kit/calculators/fan-curve.css', 'kit/calculators/formulas.js', 'kit/calculators/formulas-data.js', 'docs/img/thermal/fan-curve-explorer.svg'])
     assert.ok(files.includes(f), `${f} is not published`);
@@ -478,7 +478,7 @@ test('doc pages carry the page tree, with this page marked', async () => {
   // <details>, closed: phones open it with or without nav.js), the filter, and this page's outline (every h2/h3 with an
   // id) under it, again in the right-hand column.
   assert.match(toolkit, /<cad-nav [^>]*role="navigation" aria-label="Explore topics and pages"/);
-  assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/nav\.css">/);
+  assert.match(toolkit, /<link rel="stylesheet" href="\/kit\/documents\/nav\.css">/);
   assert.match(nav, /^<details class="cad-nav-fold"><summary class="cad-nav-toggle">Explore topics<\/summary><div class="cad-nav-panel">/);
   assert.match(nav, /<\/div><\/details>$/, 'the fold holds the whole panel and nothing else');
   assert.doesNotMatch(nav, /<button[^>]*class="cad-nav-toggle"/, 'tree toggle remains native');

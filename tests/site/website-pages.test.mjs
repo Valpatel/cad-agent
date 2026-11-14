@@ -29,7 +29,7 @@ test('a band (hero and tiles) goes under the title and its first paragraph, each
   assert.match(colon, /^<h1 id="a">A<\/h1><section class="page-band"[^]*?<\/section><p>Every review walks this list:<\/p><ol>/);
   assert.equal(await place('docs/b.md', PAGE), PAGE, 'a page without an entry or pictures is untouched');
   const kit = await pagePlacer({ ...base, spec: { 'docs/b.md': { hero: out({ tool: 'kit/assembly/part-table.js' }) } } })('docs/b.md', PAGE);
-  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
+  assert.match(kit, /<b class="shows-output">Real output<\/b> of <code>kit\/assembly\/part-table\.js<\/code>/, 'a web kit file is a tool, as the site publishes it');
   // A tile is one link: the Gyropup credit's own link would nest in it and split the tile (#217 review). The hero keeps it.
   const gyropup = await pagePlacer({ ...base, spec: { 'docs/a.md': { hero: out({ on: 'gyropup' }), band: [tile({ on: 'gyropup' }), tile()] } } })('docs/a.md', PAGE);
   for (const li of gyropup.match(/<li>[^]*?<\/li>/g)) assert.equal(li.match(/<a\b/g).length, 1, li);

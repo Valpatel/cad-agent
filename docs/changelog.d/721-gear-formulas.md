@@ -1,0 +1,5 @@
+**New**
+- `cadagent.formulas` has gears (`gears.py`): involute spur gears and straight bevel gears on 90 degree shafts, as a static or low-speed first check. No AGMA factors, pitting, wear or fatigue, and no allowable stress for printed plastic gears: see `docs/formulas.md`, "Gears" (#721).
+- Gear geometry: `gear_pitch_diameter`, `gear_centre_distance`, `gear_tip_diameter`, `gear_root_diameter`, `gear_base_diameter`, `gear_contact_ratio`, `gear_min_teeth`, `gear_max_mate_teeth`, `module_from_diametral_pitch`, `diametral_pitch_from_module`; for bevels `bevel_pitch_angles`, `bevel_cone_distance`, `bevel_mean_radius`, `bevel_face_width_limits`, `bevel_virtual_teeth` (#721).
+- Tooth forces: `gear_tangential_force`, `spur_gear_forces`, `bevel_gear_forces` (#721).
+- Lewis bending: `lewis_form_factor` (Shigley's Table 14-2 and Boston Gear's Table I, 14.5 and 20 degree full-depth teeth), `gear_velocity_factor`, `lewis_bending_stress`, `bevel_cone_factor`, `lewis_bevel_bending_stress`, and from a torque `spur_tooth_bending` and `bevel_tooth_bending`, which keeps the large-end force, the mean-radius force, the virtual tooth number and the cone factor apart (#721).

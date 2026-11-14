@@ -31,7 +31,7 @@ flowchart TD
 | Package or module | What it is for (its place in docs/areas.yaml) |
 |---|---|
 | [`geometry/`](geometry/README.md) | Shared CAD helpers: solids, print STLs, reproducible STEP, gaps, downward area, bed fit |
-| [`formulas/`](formulas/README.md) | Closed-form engineering equations with units, limits and sources: beams, snap arms, torsion, springs, screws, four-bars, heat flow and fans (shared core) |
+| [`formulas/`](formulas/README.md) | Closed-form engineering equations with units, limits and sources: beams, snap arms, torsion, springs, screws, welds, gears, four-bars, heat flow and fans (shared core) |
 | [`library/`](library/README.md) | The parts library: KiCad footprints and 3D bodies for real parts, hardware tables, and the audit that every placed part shows (shared core; electrical/circuit-boards/parts-library) |
 | [`mechanical/`](mechanical/README.md) | Holes, fasteners, McMaster-Carr parts, connector windows, markings, compliant features, motion traces (mechanical) |
 | [`manufacturing/`](manufacturing/README.md) | 3MF print files and slicer numbers (manufacturing) |

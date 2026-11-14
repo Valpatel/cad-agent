@@ -7,15 +7,16 @@ jobs:
   browser:
     runs-on: ubuntu-24.04
     # Same Playwright release as tools/site/package-lock.json; browsers and Noble system dependencies are baked in.
-    # Pin the registry manifest, not a mutable tag. Both prior push attempts spent >10m in apt and hit the
-    # unchanged 20m job cap before later suites ran; the image removes that redundant provisioning phase.
+    # Pin the registry manifest, not a mutable tag; the image avoids repeated browser and apt provisioning.
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
       options: --init --ipc=host
     defaults:
       run:
         shell: bash
-    timeout-minutes: 20
+    # The complete site now includes 704 folder maps. Both engines still visit every applicable page/theme/width;
+    # allow that expanded coverage plus the build and component suites without changing per-action timeouts.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

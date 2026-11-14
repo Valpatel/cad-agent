@@ -236,7 +236,9 @@ For schema-defined controls, the viewer looks up the declared command object and
 
 ### Construction and lifecycle
 
-`new ScadaViewer({definition, adapter, initialView, selected, zoom, scope, hooks, ...presentationOptions})` uses the first view/equipment and an automatically distinct scope. The managed viewer fits its layout on mount; an explicit constructor `zoom` or pre-mount `setZoom()` starts at that scale instead. Unmounted markup starts at zoom 1. Unknown view/equipment IDs and unsupported zoom values are rejected. Trusted host presentation options may provide `equipment`, `views`, `controls`, `system`, `renderNode`, `renderInspector`, `renderShell` and diagram callbacks instead of the portable definition.
+`new ScadaViewer({definition, adapter, initialView, selected, zoom, fitMaxZoom=1, scope, hooks, ...presentationOptions})` uses the first view/equipment and an automatically distinct scope. The managed viewer fits its layout on mount; an explicit constructor `zoom` or pre-mount `setZoom()` starts at that scale instead. Unmounted markup starts at zoom 1. Unknown view/equipment IDs and unsupported zoom values are rejected. Trusted host presentation options may provide `equipment`, `views`, `controls`, `system`, `renderNode`, `renderInspector`, `renderShell` and diagram callbacks instead of the portable definition.
+
+`fitMaxZoom` limits automatic fitting, including mount, layout changes, resize in fit mode and the **Zoom to fit** actions. Its default `1` keeps existing consumers at or below 100%; a host can choose `2` to enlarge compact layouts up to 200% when the viewport has room. It must be a finite positive number no greater than `3`; invalid values are rejected before reading the adapter or mounting DOM. Fitting still shrinks the diagram to preserve the recovery-control strip and edge gaps. The option does not limit manual zoom or change a manually positioned camera during resize. It is a host presentation option, not part of a system definition or physical model.
 
 | Method / property | Behavior |
 | --- | --- |
@@ -287,9 +289,9 @@ The viewport must have a bounded CSS width and height. `.scada-diagram-scroll` s
 
 | Camera member | Behavior |
 | --- | --- |
-| `new ScadaCamera({viewport, canvas, stage, width, height, fitOnMount=true, state, onChange})` | Owns camera events, a ResizeObserver when available, and a pinned **Zoom to fit** button outside the transformed world. Optional saved `state` takes precedence over `fitOnMount`. |
+| `new ScadaCamera({viewport, canvas, stage, width, height, fitOnMount=true, fitMaxZoom=1, state, onChange})` | Owns camera events, a ResizeObserver when available, and a pinned **Zoom to fit** button outside the transformed world. `fitMaxZoom` is a finite positive fit ceiling up to 3, validated before DOM changes. Optional saved `state` takes precedence over `fitOnMount`; a fitted state is recalculated for the current viewport and fit ceiling. |
 | `state` | Returns a copy of `{x, y, zoom, fitted}`. Offsets are CSS pixels in viewport coordinates; world transform is `translate(xpx, ypx) scale(zoom)`. |
-| `fit()` | Fits the complete world at up to 100%, reserving a 64px top strip for the button and 12px other edge gaps. |
+| `fit()` | Fits the complete world at up to `fitMaxZoom` (100% by default), reserving a 64px top strip for the button and 12px other edge gaps. |
 | `setZoom(zoom, {x,y}?)`, `zoomBy(factor, {x,y}?)` | Keeps the world point beneath the supplied viewport-local anchor fixed. The default anchor is the viewport center. Positive zoom is clamped to 3 and to the smaller of 0.05 or the fitted scale; huge layouts therefore zoom smoothly from their overview. |
 | `panBy(dx,dy)` | Moves the world by CSS pixels; leaves fit mode. |
 | `setState({x,y,zoom,fitted})` | Restores finite presentation offsets and a positive scale up to 3. Persist this per view in host preferences, separately from physical state. |

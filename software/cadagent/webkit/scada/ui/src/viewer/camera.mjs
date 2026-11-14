@@ -12,14 +12,16 @@ const center = points => ({x:(points[0].x + points[1].x) / 2, y:(points[0].y + p
 const distance = points => Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
 
 export class ScadaCamera {
-  #viewport; #canvas; #stage; #width; #height; #onChange; #fitButton;
+  #viewport; #canvas; #stage; #width; #height; #onChange; #fitButton; #fitMaxZoom;
   #state = {x:0, y:0, zoom:1, fitted:true};
   #size = {width:0, height:0}; #listeners = []; #restore = []; #observer;
   #pointers = new Map(); #dragging = false; #suppressClick = false; #destroyed = false;
 
   constructor({viewport, canvas = viewport?.querySelector('[data-scada-canvas]'), stage,
-    width, height, fitOnMount = true, state, onChange} = {}) {
+    width, height, fitOnMount = true, fitMaxZoom = 1, state, onChange} = {}) {
     if (!viewport?.ownerDocument || !canvas?.style || viewport === canvas || !viewport.contains(canvas)) throw new TypeError('A camera needs a viewport containing its canvas.');
+    this.#fitMaxZoom = positive(fitMaxZoom, 'fitMaxZoom');
+    if (this.#fitMaxZoom > 3) throw new RangeError('fitMaxZoom must not exceed 3.');
     this.#width = positive(width ?? Number(canvas.dataset.scadaWidth), 'Canvas width');
     this.#height = positive(height ?? Number(canvas.dataset.scadaHeight), 'Canvas height');
     if (stage && (!viewport.contains(stage) || !stage.contains(canvas) || stage === canvas || stage === viewport)) throw new TypeError('The optional stage must contain the canvas inside the viewport.');
@@ -90,7 +92,7 @@ export class ScadaCamera {
   #fitScale() {
     if (!this.#size.width || !this.#size.height) return 0;
     // Leave a screen-space strip for recovery controls, plus a 12px edge gap.
-    return Math.min(1, Math.max(1,this.#size.width - 24) / this.#width, Math.max(1,this.#size.height - 76) / this.#height);
+    return Math.min(this.#fitMaxZoom, Math.max(1,this.#size.width - 24) / this.#width, Math.max(1,this.#size.height - 76) / this.#height);
   }
   #fitState() {
     if (!this.#size.width || !this.#size.height) return {...this.#state, fitted:true};

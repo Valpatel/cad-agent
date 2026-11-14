@@ -29,8 +29,9 @@ flowchart TD
 | [sound.mjs](sound.mjs) | Opt-in browser audio and deduplicated current-state alarms |
 
 The public entry is `/kit/scada/explorer/index.html?scenario=wastewater-digester`.
-A source checkout can serve this folder over HTTP(S) with its sibling `ui/` and
-`sim/` libraries. No build step, external API, remote source repository or plant
+A source checkout can serve the web-kit folder over HTTP(S), including the sibling
+SCADA `ui/` and `sim/` libraries, shared `../../ui/theme.css` / `theme.js`, and
+`../../vendor/fonts/`. No build step, external API, remote source repository or plant
 workbook is needed at runtime.
 
 The default wastewater example connects treatment, sludge digestion, biogas
@@ -48,6 +49,17 @@ Reset preserves parameter edits, while choosing another scenario loads that
 scenario's initial configuration. One simulation minute advances per timer tick
 at 1×; the clock suspends while the document is hidden. Audio starts disabled
 and remains silent when the model is paused or the document is hidden.
+
+The host selects `fitMaxZoom:1.5`: Fit can enlarge a compact layout to 150% when
+space permits, without changing authored world positions or manual zoom.
+
+The host fills the available desktop window with a compact navigation and control
+frame. Smaller or short windows keep normal page flow; the diagram itself never
+uses native scrolling. The application follows the shared light/dark palette and
+system preference, and its theme button shares the `cad-theme` preference with
+other same-origin cad-agent pages. Direct entry and offline copied-kit serving
+use the same local files. Equipment artwork retains its dark, semantic-color
+stage in either application theme.
 
 Drag/pinch/wheel moves the camera inside a scrollbar-free viewport. **Zoom to fit**
 recovers the whole diagram. Normal document and long-inspector scrolling remains

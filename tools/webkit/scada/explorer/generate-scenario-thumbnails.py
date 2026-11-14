@@ -47,9 +47,13 @@ def source_hashes():
     roots = [PACKAGE / folder for folder in ('src', 'scenarios', 'examples')]
     roots.append(REPO / 'software/cadagent/webkit/scada/explorer')
     roots.append(UI / 'src')
-    return {path.relative_to(REPO).as_posix(): sha(path)
-            for root in roots for path in sorted(root.rglob('*'))
-            if path.suffix in ('.mjs', '.css', '.html', '.json')}
+    paths = [path for root in roots for path in sorted(root.rglob('*'))
+             if path.suffix in ('.mjs', '.css', '.html', '.json')]
+    kit = REPO / 'software/cadagent/webkit'
+    # The actual Explorer also consumes this shared application theme and its local fonts.
+    paths.extend(kit / relative for relative in ('ui/theme.js', 'ui/theme.css',
+                 'vendor/fonts/fonts.css', 'vendor/fonts/inter.woff2', 'vendor/fonts/jetbrains-mono.woff2'))
+    return {path.relative_to(REPO).as_posix(): sha(path) for path in paths}
 
 
 def image_info(path):

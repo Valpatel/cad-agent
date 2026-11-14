@@ -284,8 +284,7 @@ export function renderEnergyArt(type, {id = 'scada-energy', state = {}} = {}) {
   if(type==='fuel-pressure-regulator'&&damage==='leaking')anchor={x:110,y:79,medium:'gas'};
   if(type==='intake-gate')anchor=damage==='obstructed'?{x:87,y:108}:damage==='stuck'?{x:87,y:23}:{x:87,y:Math.max(40,83-(state.open===false?0:clamp(state.opening,100))*.5)};
   return `<g class="scada-power-art scada-energy-art" data-power-type="${type}" data-power-speed-zero="${speed===0}" data-power-drive-blocked="${driveBlocked}" style="--scada-power-cycle:${(4.6-speed*.036).toFixed(2)}s;--scada-power-load:${clamp(state.load,60)/100}">
-    ${DRAWINGS[type](instance,state)}
-    ${damageArt(damage,anchor)}
+    ${DRAWINGS[type](instance,state)}${damageArt(damage,anchor)}
   </g>`;
 }
 

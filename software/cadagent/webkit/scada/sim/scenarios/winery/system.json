@@ -5,7 +5,7 @@
   "system": {
     "id": "winery",
     "label": "Winery",
-    "description": "Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch."
+    "description": "Operate receiving, fermentation, cellar and packaging branches with instrument taps, local pump controls and PLC-controlled transfer valves."
   },
   "components": [
     {
@@ -601,13 +601,23 @@
           "id": "power",
           "side": "left",
           "offset": 0.5
+        },
+        {
+          "id": "network",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "io",
+          "side": "right",
+          "offset": 0.5
         }
       ]
     },
     {
       "id": "pressure",
       "type": "pressure-transmitter",
-      "label": "Transfer pressure monitor",
+      "label": "PT-101 Transfer pressure",
       "state": {
         "active": false,
         "running": false,
@@ -644,6 +654,379 @@
           "side": "left",
           "offset": 0.5
         }
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "mustValve",
+      "type": "control-valve",
+      "label": "FCV-101 Must feed",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mustValve/active",
+        "running": "/components/mustValve/running",
+        "fault": "/components/mustValve/fault",
+        "status": "/components/mustValve/status",
+        "open": "/components/mustValve/open",
+        "opening": "/components/mustValve/opening",
+        "damage": "/components/mustValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "cellarValve",
+      "type": "control-valve",
+      "label": "FCV-201 Cellar feed",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cellarValve/active",
+        "running": "/components/cellarValve/running",
+        "fault": "/components/cellarValve/fault",
+        "status": "/components/cellarValve/status",
+        "open": "/components/cellarValve/open",
+        "opening": "/components/cellarValve/opening",
+        "damage": "/components/cellarValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "fillValve",
+      "type": "control-valve",
+      "label": "FCV-301 Bottling feed",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fillValve/active",
+        "running": "/components/fillValve/running",
+        "fault": "/components/fillValve/fault",
+        "status": "/components/fillValve/status",
+        "open": "/components/fillValve/open",
+        "opening": "/components/fillValve/opening",
+        "damage": "/components/fillValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "mustFlow",
+      "type": "flow-meter",
+      "label": "FT-101 Must flow",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mustFlow/active",
+        "running": "/components/mustFlow/running",
+        "fault": "/components/mustFlow/fault",
+        "status": "/components/mustFlow/status",
+        "value": "/components/mustFlow/value",
+        "damage": "/components/mustFlow/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "fermenterTemperature",
+      "type": "temperature-sensor",
+      "label": "TT-201 Fermenter temp",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenterTemperature/active",
+        "running": "/components/fermenterTemperature/running",
+        "fault": "/components/fermenterTemperature/fault",
+        "status": "/components/fermenterTemperature/status",
+        "value": "/components/fermenterTemperature/value",
+        "damage": "/components/fermenterTemperature/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "fermenterLevel",
+      "type": "level-sensor",
+      "label": "LT-201 Fermenter level",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fermenterLevel/active",
+        "running": "/components/fermenterLevel/running",
+        "fault": "/components/fermenterLevel/fault",
+        "status": "/components/fermenterLevel/status",
+        "level": "/components/fermenterLevel/level",
+        "value": "/components/fermenterLevel/value",
+        "damage": "/components/fermenterLevel/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "cellarLevel",
+      "type": "level-sensor",
+      "label": "LT-202 Cellar level",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cellarLevel/active",
+        "running": "/components/cellarLevel/running",
+        "fault": "/components/cellarLevel/fault",
+        "status": "/components/cellarLevel/status",
+        "level": "/components/cellarLevel/level",
+        "value": "/components/cellarLevel/value",
+        "damage": "/components/cellarLevel/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "remoteIO",
+      "type": "remote-io",
+      "label": "RIO-01 Field I/O",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/remoteIO/active",
+        "running": "/components/remoteIO/running",
+        "fault": "/components/remoteIO/fault",
+        "status": "/components/remoteIO/status",
+        "connected": "/components/remoteIO/connected",
+        "load": "/components/remoteIO/load",
+        "damage": "/components/remoteIO/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        },
+        {
+          "id": "inputs",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
       ]
     }
   ],
@@ -691,34 +1074,6 @@
       "label": "Juice extraction separator \u2192 Must transfer pump"
     },
     {
-      "id": "mustTransfer-to-fermenter",
-      "from": {
-        "component": "mustTransfer",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "fermenter",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/mustTransfer-to-fermenter",
-      "label": "Must transfer pump \u2192 Fermentation vessel"
-    },
-    {
-      "id": "fermenter-to-aging",
-      "from": {
-        "component": "fermenter",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "aging",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/fermenter-to-aging",
-      "label": "Fermentation vessel \u2192 Aging buffer"
-    },
-    {
       "id": "aging-to-transferValve",
       "from": {
         "component": "aging",
@@ -745,20 +1100,6 @@
       "medium": "liquid",
       "flowBinding": "/flows/transferValve-to-polishing",
       "label": "Cellar transfer valve \u2192 Polishing filter"
-    },
-    {
-      "id": "polishing-to-bottler",
-      "from": {
-        "component": "polishing",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "bottler",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/polishing-to-bottler",
-      "label": "Polishing filter \u2192 Bottle filling"
     },
     {
       "id": "bottler-to-packer",
@@ -955,86 +1296,499 @@
       "medium": "data",
       "flowBinding": "/flows/pressure-to-controller",
       "label": "Transfer pressure monitor \u2192 Cellar controller"
+    },
+    {
+      "id": "mustTransfer-to-mustValve",
+      "from": {
+        "component": "mustTransfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mustValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Must transfer pump \u2192 Fermentation vessel",
+      "flowBinding": "/flows/mustTransfer-to-mustValve"
+    },
+    {
+      "id": "mustValve-to-fermenter",
+      "from": {
+        "component": "mustValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Must transfer pump \u2192 Fermentation vessel",
+      "flowBinding": "/flows/mustValve-to-fermenter"
+    },
+    {
+      "id": "fermenter-to-cellarValve",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cellarValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Fermentation vessel \u2192 Aging buffer",
+      "flowBinding": "/flows/fermenter-to-cellarValve"
+    },
+    {
+      "id": "cellarValve-to-aging",
+      "from": {
+        "component": "cellarValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aging",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Fermentation vessel \u2192 Aging buffer",
+      "flowBinding": "/flows/cellarValve-to-aging"
+    },
+    {
+      "id": "polishing-to-fillValve",
+      "from": {
+        "component": "polishing",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fillValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Polishing filter \u2192 Bottle filling",
+      "flowBinding": "/flows/polishing-to-fillValve"
+    },
+    {
+      "id": "fillValve-to-bottler",
+      "from": {
+        "component": "fillValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bottler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Polishing filter \u2192 Bottle filling",
+      "flowBinding": "/flows/fillValve-to-bottler"
+    },
+    {
+      "id": "mustTransfer-to-mustFlow",
+      "from": {
+        "component": "mustTransfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mustFlow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "FT-101 Must flow measurement",
+      "flowBinding": "/flows/mustTransfer-to-mustFlow"
+    },
+    {
+      "id": "mustFlow-to-controller",
+      "from": {
+        "component": "mustFlow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "FT-101 Must flow telemetry",
+      "flowBinding": "/flows/mustFlow-to-controller"
+    },
+    {
+      "id": "power-to-mustFlow",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mustFlow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-mustFlow"
+    },
+    {
+      "id": "fermenter-to-fermenterTemperature",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenterTemperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "TT-201 Fermenter temp measurement",
+      "flowBinding": "/flows/fermenter-to-fermenterTemperature"
+    },
+    {
+      "id": "fermenterTemperature-to-controller",
+      "from": {
+        "component": "fermenterTemperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "TT-201 Fermenter temp telemetry",
+      "flowBinding": "/flows/fermenterTemperature-to-controller"
+    },
+    {
+      "id": "power-to-fermenterTemperature",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "fermenterTemperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-fermenterTemperature"
+    },
+    {
+      "id": "fermenter-to-fermenterLevel",
+      "from": {
+        "component": "fermenter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "fermenterLevel",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "LT-201 Fermenter level measurement",
+      "flowBinding": "/flows/fermenter-to-fermenterLevel"
+    },
+    {
+      "id": "fermenterLevel-to-controller",
+      "from": {
+        "component": "fermenterLevel",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "LT-201 Fermenter level telemetry",
+      "flowBinding": "/flows/fermenterLevel-to-controller"
+    },
+    {
+      "id": "power-to-fermenterLevel",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "fermenterLevel",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-fermenterLevel"
+    },
+    {
+      "id": "aging-to-cellarLevel",
+      "from": {
+        "component": "aging",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cellarLevel",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "LT-202 Cellar level measurement",
+      "flowBinding": "/flows/aging-to-cellarLevel"
+    },
+    {
+      "id": "cellarLevel-to-controller",
+      "from": {
+        "component": "cellarLevel",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "LT-202 Cellar level telemetry",
+      "flowBinding": "/flows/cellarLevel-to-controller"
+    },
+    {
+      "id": "power-to-cellarLevel",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "cellarLevel",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/power-to-cellarLevel"
+    },
+    {
+      "id": "power-to-remoteIO",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "remoteIO",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "I/O supply",
+      "flowBinding": "/flows/power-to-remoteIO"
+    },
+    {
+      "id": "controller-to-remoteIO",
+      "from": {
+        "component": "controller",
+        "port": "io"
+      },
+      "to": {
+        "component": "remoteIO",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "PLC field commands",
+      "flowBinding": "/flows/controller-to-remoteIO"
+    },
+    {
+      "id": "remoteIO-to-mustValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "mustValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-mustValve"
+    },
+    {
+      "id": "remoteIO-to-cellarValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "cellarValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-cellarValve"
+    },
+    {
+      "id": "remoteIO-to-fillValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "fillValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-fillValve"
     }
   ],
   "views": [
     {
       "id": "process",
-      "label": "Main process",
+      "label": "Winery overview",
       "canvas": {
-        "width": 1280,
-        "height": 940
+        "width": 2400,
+        "height": 960
       },
       "placements": [
         {
           "component": "grapeIntake",
           "x": 60,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "crusher",
-          "x": 360,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "x": 350,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "extraction",
-          "x": 660,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "x": 640,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "mustTransfer",
-          "x": 960,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "x": 930,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mustValve",
+          "x": 1220,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "fermenter",
-          "x": 960,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 1510,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cellarValve",
+          "x": 1800,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "aging",
-          "x": 660,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 2090,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "pressure",
+          "x": 640,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "mustFlow",
+          "x": 930,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "fermenterTemperature",
+          "x": 1510,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "fermenterLevel",
+          "x": 1800,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "cellarLevel",
+          "x": 2090,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "power",
+          "x": 60,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluent",
+          "x": 350,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "biogasFlare",
+          "x": 640,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "transferValve",
-          "x": 360,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 930,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "polishing",
-          "x": 60,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 1220,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fillValve",
+          "x": 1510,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "bottler",
-          "x": 60,
-          "y": 620,
-          "width": 200,
-          "height": 190
+          "x": 1800,
+          "y": 690,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "packer",
-          "x": 360,
-          "y": 620,
-          "width": 200,
-          "height": 190
+          "x": 2090,
+          "y": 690,
+          "width": 210,
+          "height": 176
         }
       ],
       "routes": [
@@ -1042,12 +1796,12 @@
           "connection": "grapeIntake-to-crusher",
           "points": [
             {
-              "x": 260,
-              "y": 155
+              "x": 270,
+              "y": 178.0
             },
             {
-              "x": 360,
-              "y": 155
+              "x": 350,
+              "y": 178.0
             }
           ]
         },
@@ -1056,11 +1810,11 @@
           "points": [
             {
               "x": 560,
-              "y": 155
+              "y": 178.0
             },
             {
-              "x": 660,
-              "y": 155
+              "x": 640,
+              "y": 178.0
             }
           ]
         },
@@ -1068,38 +1822,12 @@
           "connection": "extraction-to-mustTransfer",
           "points": [
             {
-              "x": 860,
-              "y": 155
+              "x": 850,
+              "y": 178.0
             },
             {
-              "x": 960,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "mustTransfer-to-fermenter",
-          "points": [
-            {
-              "x": 1060,
-              "y": 250
-            },
-            {
-              "x": 1060,
-              "y": 340
-            }
-          ]
-        },
-        {
-          "connection": "fermenter-to-aging",
-          "points": [
-            {
-              "x": 960,
-              "y": 435
-            },
-            {
-              "x": 860,
-              "y": 435
+              "x": 930,
+              "y": 178.0
             }
           ]
         },
@@ -1107,12 +1835,28 @@
           "connection": "aging-to-transferValve",
           "points": [
             {
-              "x": 660,
-              "y": 435
+              "x": 2300,
+              "y": 178.0
             },
             {
-              "x": 560,
-              "y": 435
+              "x": 2316,
+              "y": 178.0
+            },
+            {
+              "x": 2316,
+              "y": 674
+            },
+            {
+              "x": 914,
+              "y": 674
+            },
+            {
+              "x": 914,
+              "y": 778.0
+            },
+            {
+              "x": 930,
+              "y": 778.0
             }
           ]
         },
@@ -1120,25 +1864,12 @@
           "connection": "transferValve-to-polishing",
           "points": [
             {
-              "x": 360,
-              "y": 435
+              "x": 1140,
+              "y": 778.0
             },
             {
-              "x": 260,
-              "y": 435
-            }
-          ]
-        },
-        {
-          "connection": "polishing-to-bottler",
-          "points": [
-            {
-              "x": 160,
-              "y": 530
-            },
-            {
-              "x": 160,
-              "y": 620
+              "x": 1220,
+              "y": 778.0
             }
           ]
         },
@@ -1146,215 +1877,132 @@
           "connection": "bottler-to-packer",
           "points": [
             {
-              "x": 260,
-              "y": 715
+              "x": 2010,
+              "y": 778.0
             },
             {
-              "x": 360,
-              "y": 715
+              "x": 2090,
+              "y": 778.0
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "utilities",
-      "label": "Utilities & control",
-      "canvas": {
-        "width": 980,
-        "height": 940
-      },
-      "placements": [
-        {
-          "component": "effluent",
-          "x": 60,
-          "y": 60,
-          "width": 200,
-          "height": 190
         },
         {
-          "component": "biogasFlare",
-          "x": 360,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "connection": "extraction-to-effluent",
+          "points": [
+            {
+              "x": 850,
+              "y": 178.0
+            },
+            {
+              "x": 866,
+              "y": 178.0
+            },
+            {
+              "x": 866,
+              "y": 674
+            },
+            {
+              "x": 334,
+              "y": 674
+            },
+            {
+              "x": 334,
+              "y": 778.0
+            },
+            {
+              "x": 350,
+              "y": 778.0
+            }
+          ]
         },
-        {
-          "component": "power",
-          "x": 660,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "controller",
-          "x": 660,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "pressure",
-          "x": 360,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "mustTransfer",
-          "x": 60,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "bottler",
-          "x": 60,
-          "y": 620,
-          "width": 200,
-          "height": 190
-        }
-      ],
-      "routes": [
         {
           "connection": "effluent-to-biogasFlare",
           "points": [
             {
-              "x": 260,
-              "y": 155
-            },
-            {
-              "x": 360,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "power-to-mustTransfer",
-          "points": [
-            {
-              "x": 660,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 316
-            },
-            {
-              "x": 284,
-              "y": 316
-            },
-            {
-              "x": 284,
-              "y": 435
-            },
-            {
-              "x": 260,
-              "y": 435
-            }
-          ]
-        },
-        {
-          "connection": "power-to-bottler",
-          "points": [
-            {
-              "x": 660,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 596
-            },
-            {
-              "x": 284,
-              "y": 596
-            },
-            {
-              "x": 284,
-              "y": 715
-            },
-            {
-              "x": 260,
-              "y": 715
-            }
-          ]
-        },
-        {
-          "connection": "power-to-effluent",
-          "points": [
-            {
-              "x": 660,
-              "y": 155
-            },
-            {
-              "x": 584,
-              "y": 155
-            },
-            {
-              "x": 584,
-              "y": 36
-            },
-            {
-              "x": 284,
-              "y": 36
-            },
-            {
-              "x": 284,
-              "y": 155
-            },
-            {
-              "x": 260,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "power-to-controller",
-          "points": [
-            {
-              "x": 760,
-              "y": 250
-            },
-            {
-              "x": 760,
-              "y": 340
-            }
-          ]
-        },
-        {
-          "connection": "power-to-pressure",
-          "points": [
-            {
-              "x": 660,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 155
-            },
-            {
-              "x": 636,
-              "y": 316
-            },
-            {
-              "x": 584,
-              "y": 316
-            },
-            {
-              "x": 584,
-              "y": 435
-            },
-            {
               "x": 560,
-              "y": 435
+              "y": 778.0
+            },
+            {
+              "x": 640,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-mustValve",
+          "points": [
+            {
+              "x": 1140,
+              "y": 178.0
+            },
+            {
+              "x": 1220,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "mustValve-to-fermenter",
+          "points": [
+            {
+              "x": 1430,
+              "y": 178.0
+            },
+            {
+              "x": 1510,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-cellarValve",
+          "points": [
+            {
+              "x": 1720,
+              "y": 178.0
+            },
+            {
+              "x": 1800,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "cellarValve-to-aging",
+          "points": [
+            {
+              "x": 2010,
+              "y": 178.0
+            },
+            {
+              "x": 2090,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "polishing-to-fillValve",
+          "points": [
+            {
+              "x": 1430,
+              "y": 778.0
+            },
+            {
+              "x": 1510,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "fillValve-to-bottler",
+          "points": [
+            {
+              "x": 1720,
+              "y": 778.0
+            },
+            {
+              "x": 1800,
+              "y": 778.0
             }
           ]
         },
@@ -1362,12 +2010,518 @@
           "connection": "mustTransfer-to-pressure",
           "points": [
             {
-              "x": 260,
-              "y": 435
+              "x": 1140,
+              "y": 178.0
             },
             {
-              "x": 360,
-              "y": 435
+              "x": 1156,
+              "y": 178.0
+            },
+            {
+              "x": 1156,
+              "y": 364
+            },
+            {
+              "x": 624,
+              "y": 364
+            },
+            {
+              "x": 624,
+              "y": 454.0
+            },
+            {
+              "x": 640,
+              "y": 454.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-mustFlow",
+          "points": [
+            {
+              "x": 1140,
+              "y": 178.0
+            },
+            {
+              "x": 1156,
+              "y": 178.0
+            },
+            {
+              "x": 1156,
+              "y": 282
+            },
+            {
+              "x": 1020.0,
+              "y": 282
+            },
+            {
+              "x": 1020.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-fermenterTemperature",
+          "points": [
+            {
+              "x": 1720,
+              "y": 178.0
+            },
+            {
+              "x": 1736,
+              "y": 178.0
+            },
+            {
+              "x": 1736,
+              "y": 364
+            },
+            {
+              "x": 1600.0,
+              "y": 364
+            },
+            {
+              "x": 1600.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-fermenterLevel",
+          "points": [
+            {
+              "x": 1720,
+              "y": 178.0
+            },
+            {
+              "x": 1752,
+              "y": 178.0
+            },
+            {
+              "x": 1752,
+              "y": 364
+            },
+            {
+              "x": 1890.0,
+              "y": 364
+            },
+            {
+              "x": 1890.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "aging-to-cellarLevel",
+          "points": [
+            {
+              "x": 2300,
+              "y": 178.0
+            },
+            {
+              "x": 2316,
+              "y": 178.0
+            },
+            {
+              "x": 2316,
+              "y": 364
+            },
+            {
+              "x": 2180.0,
+              "y": 364
+            },
+            {
+              "x": 2180.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "power-to-grapeIntake",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 282
+            },
+            {
+              "x": 44,
+              "y": 282
+            },
+            {
+              "x": 44,
+              "y": 178.0
+            },
+            {
+              "x": 60,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-crusher",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 334,
+              "y": 778.0
+            },
+            {
+              "x": 334,
+              "y": 178.0
+            },
+            {
+              "x": 350,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-extraction",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 302,
+              "y": 778.0
+            },
+            {
+              "x": 302,
+              "y": 282
+            },
+            {
+              "x": 624,
+              "y": 282
+            },
+            {
+              "x": 624,
+              "y": 178.0
+            },
+            {
+              "x": 640,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mustTransfer",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 658
+            },
+            {
+              "x": 914,
+              "y": 658
+            },
+            {
+              "x": 914,
+              "y": 178.0
+            },
+            {
+              "x": 930,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-bottler",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 882
+            },
+            {
+              "x": 1784,
+              "y": 882
+            },
+            {
+              "x": 1784,
+              "y": 778.0
+            },
+            {
+              "x": 1800,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-packer",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 898
+            },
+            {
+              "x": 2074,
+              "y": 898
+            },
+            {
+              "x": 2074,
+              "y": 778.0
+            },
+            {
+              "x": 2090,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-effluent",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 350,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 674
+            },
+            {
+              "x": 44,
+              "y": 674
+            },
+            {
+              "x": 44,
+              "y": 468.0
+            },
+            {
+              "x": 60,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-pressure",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 318,
+              "y": 778.0
+            },
+            {
+              "x": 318,
+              "y": 572
+            },
+            {
+              "x": 624,
+              "y": 572
+            },
+            {
+              "x": 624,
+              "y": 454.0
+            },
+            {
+              "x": 640,
+              "y": 454.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mustFlow",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 302,
+              "y": 778.0
+            },
+            {
+              "x": 302,
+              "y": 588
+            },
+            {
+              "x": 914,
+              "y": 588
+            },
+            {
+              "x": 914,
+              "y": 498.4
+            },
+            {
+              "x": 930,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fermenterTemperature",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 318,
+              "y": 778.0
+            },
+            {
+              "x": 318,
+              "y": 572
+            },
+            {
+              "x": 1494,
+              "y": 572
+            },
+            {
+              "x": 1494,
+              "y": 498.4
+            },
+            {
+              "x": 1510,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fermenterLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 674
+            },
+            {
+              "x": 576,
+              "y": 674
+            },
+            {
+              "x": 576,
+              "y": 544
+            },
+            {
+              "x": 1784,
+              "y": 544
+            },
+            {
+              "x": 1784,
+              "y": 498.4
+            },
+            {
+              "x": 1800,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "power-to-cellarLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 658
+            },
+            {
+              "x": 592,
+              "y": 658
+            },
+            {
+              "x": 592,
+              "y": 560
+            },
+            {
+              "x": 2074,
+              "y": 560
+            },
+            {
+              "x": 2074,
+              "y": 498.4
+            },
+            {
+              "x": 2090,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "power-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 334,
+              "y": 778.0
+            },
+            {
+              "x": 334,
+              "y": 520.8
+            },
+            {
+              "x": 350,
+              "y": 520.8
             }
           ]
         },
@@ -1375,73 +2529,348 @@
           "connection": "pressure-to-controller",
           "points": [
             {
-              "x": 560,
-              "y": 435
+              "x": 820,
+              "y": 454.0
             },
             {
-              "x": 660,
-              "y": 435
+              "x": 836,
+              "y": 454.0
+            },
+            {
+              "x": 836,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "mustFlow-to-controller",
+          "points": [
+            {
+              "x": 1020.0,
+              "y": 528
+            },
+            {
+              "x": 1020.0,
+              "y": 544
+            },
+            {
+              "x": 898,
+              "y": 544
+            },
+            {
+              "x": 898,
+              "y": 348
+            },
+            {
+              "x": 165.0,
+              "y": 348
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "fermenterTemperature-to-controller",
+          "points": [
+            {
+              "x": 1600.0,
+              "y": 528
+            },
+            {
+              "x": 1600.0,
+              "y": 544
+            },
+            {
+              "x": 1478,
+              "y": 544
+            },
+            {
+              "x": 1478,
+              "y": 298
+            },
+            {
+              "x": 165.0,
+              "y": 298
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "fermenterLevel-to-controller",
+          "points": [
+            {
+              "x": 1890.0,
+              "y": 528
+            },
+            {
+              "x": 1890.0,
+              "y": 544
+            },
+            {
+              "x": 1768,
+              "y": 544
+            },
+            {
+              "x": 1768,
+              "y": 348
+            },
+            {
+              "x": 165.0,
+              "y": 348
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "cellarLevel-to-controller",
+          "points": [
+            {
+              "x": 2180.0,
+              "y": 528
+            },
+            {
+              "x": 2180.0,
+              "y": 588
+            },
+            {
+              "x": 608,
+              "y": 588
+            },
+            {
+              "x": 608,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 572
+            },
+            {
+              "x": 455.0,
+              "y": 572
+            },
+            {
+              "x": 455.0,
+              "y": 556
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-mustValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 556
+            },
+            {
+              "x": 455.0,
+              "y": 572
+            },
+            {
+              "x": 592,
+              "y": 572
+            },
+            {
+              "x": 592,
+              "y": 282
+            },
+            {
+              "x": 1325.0,
+              "y": 282
+            },
+            {
+              "x": 1325.0,
+              "y": 266
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-cellarValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 556
+            },
+            {
+              "x": 455.0,
+              "y": 572
+            },
+            {
+              "x": 1204,
+              "y": 572
+            },
+            {
+              "x": 1204,
+              "y": 282
+            },
+            {
+              "x": 1905.0,
+              "y": 282
+            },
+            {
+              "x": 1905.0,
+              "y": 266
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fillValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 556
+            },
+            {
+              "x": 455.0,
+              "y": 658
+            },
+            {
+              "x": 1494,
+              "y": 658
+            },
+            {
+              "x": 1494,
+              "y": 882
+            },
+            {
+              "x": 1615.0,
+              "y": 882
+            },
+            {
+              "x": 1615.0,
+              "y": 866
             }
           ]
         }
       ]
     },
     {
-      "id": "finishing",
-      "label": "Finishing & storage",
+      "id": "fermentation",
+      "label": "Fermentation & cellar",
       "canvas": {
-        "width": 980,
-        "height": 940
+        "width": 1820,
+        "height": 680
       },
       "placements": [
         {
-          "component": "aging",
+          "component": "mustTransfer",
           "x": 60,
-          "y": 60,
-          "width": 200,
-          "height": 190
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mustValve",
+          "x": 350,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenter",
+          "x": 640,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cellarValve",
+          "x": 930,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "aging",
+          "x": 1220,
+          "y": 100,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "transferValve",
-          "x": 360,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "polishing",
-          "x": 660,
-          "y": 60,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "bottler",
-          "x": 660,
-          "y": 340,
-          "width": 200,
-          "height": 190
-        },
-        {
-          "component": "packer",
-          "x": 360,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "x": 1510,
+          "y": 100,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "controller",
           "x": 60,
-          "y": 340,
-          "width": 200,
-          "height": 190
+          "y": 410,
+          "width": 210,
+          "height": 176
         },
         {
-          "component": "pressure",
-          "x": 60,
-          "y": 620,
-          "width": 200,
-          "height": 190
+          "component": "remoteIO",
+          "x": 350,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mustFlow",
+          "x": 640,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterTemperature",
+          "x": 930,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterLevel",
+          "x": 1220,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cellarLevel",
+          "x": 1510,
+          "y": 410,
+          "width": 210,
+          "height": 176
         }
       ],
       "routes": [
@@ -1449,12 +2878,458 @@
           "connection": "aging-to-transferValve",
           "points": [
             {
-              "x": 260,
-              "y": 155
+              "x": 1430,
+              "y": 188.0
             },
             {
-              "x": 360,
-              "y": 155
+              "x": 1510,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-mustValve",
+          "points": [
+            {
+              "x": 270,
+              "y": 188.0
+            },
+            {
+              "x": 350,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "mustValve-to-fermenter",
+          "points": [
+            {
+              "x": 560,
+              "y": 188.0
+            },
+            {
+              "x": 640,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-cellarValve",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 930,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "cellarValve-to-aging",
+          "points": [
+            {
+              "x": 1140,
+              "y": 188.0
+            },
+            {
+              "x": 1220,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-mustFlow",
+          "points": [
+            {
+              "x": 270,
+              "y": 188.0
+            },
+            {
+              "x": 286,
+              "y": 188.0
+            },
+            {
+              "x": 286,
+              "y": 394
+            },
+            {
+              "x": 745.0,
+              "y": 394
+            },
+            {
+              "x": 745.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-fermenterTemperature",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 866,
+              "y": 188.0
+            },
+            {
+              "x": 866,
+              "y": 394
+            },
+            {
+              "x": 1035.0,
+              "y": 394
+            },
+            {
+              "x": 1035.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "fermenter-to-fermenterLevel",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 866,
+              "y": 188.0
+            },
+            {
+              "x": 866,
+              "y": 292
+            },
+            {
+              "x": 1325.0,
+              "y": 292
+            },
+            {
+              "x": 1325.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "aging-to-cellarLevel",
+          "points": [
+            {
+              "x": 1430,
+              "y": 188.0
+            },
+            {
+              "x": 1446,
+              "y": 188.0
+            },
+            {
+              "x": 1446,
+              "y": 394
+            },
+            {
+              "x": 1615.0,
+              "y": 394
+            },
+            {
+              "x": 1615.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "mustFlow-to-controller",
+          "points": [
+            {
+              "x": 745.0,
+              "y": 586
+            },
+            {
+              "x": 745.0,
+              "y": 602
+            },
+            {
+              "x": 286,
+              "y": 602
+            },
+            {
+              "x": 286,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "fermenterTemperature-to-controller",
+          "points": [
+            {
+              "x": 1035.0,
+              "y": 586
+            },
+            {
+              "x": 1035.0,
+              "y": 602
+            },
+            {
+              "x": 882,
+              "y": 602
+            },
+            {
+              "x": 882,
+              "y": 378
+            },
+            {
+              "x": 165.0,
+              "y": 378
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "fermenterLevel-to-controller",
+          "points": [
+            {
+              "x": 1325.0,
+              "y": 586
+            },
+            {
+              "x": 1325.0,
+              "y": 618
+            },
+            {
+              "x": 302,
+              "y": 618
+            },
+            {
+              "x": 302,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "cellarLevel-to-controller",
+          "points": [
+            {
+              "x": 1615.0,
+              "y": 586
+            },
+            {
+              "x": 1615.0,
+              "y": 602
+            },
+            {
+              "x": 318,
+              "y": 602
+            },
+            {
+              "x": 318,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 498.0
+            },
+            {
+              "x": 334,
+              "y": 498.0
+            },
+            {
+              "x": 334,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 586
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-mustValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 586
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 576,
+              "y": 602
+            },
+            {
+              "x": 576,
+              "y": 292
+            },
+            {
+              "x": 455.0,
+              "y": 292
+            },
+            {
+              "x": 455.0,
+              "y": 276
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-cellarValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 586
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 592,
+              "y": 602
+            },
+            {
+              "x": 592,
+              "y": 308
+            },
+            {
+              "x": 1035.0,
+              "y": 308
+            },
+            {
+              "x": 1035.0,
+              "y": 276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Bottling & packaging",
+      "canvas": {
+        "width": 1820,
+        "height": 680
+      },
+      "placements": [
+        {
+          "component": "aging",
+          "x": 60,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "transferValve",
+          "x": 350,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "polishing",
+          "x": 640,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fillValve",
+          "x": 930,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "bottler",
+          "x": 1220,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "packer",
+          "x": 1510,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cellarLevel",
+          "x": 640,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "power",
+          "x": 1220,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "aging-to-transferValve",
+          "points": [
+            {
+              "x": 270,
+              "y": 188.0
+            },
+            {
+              "x": 350,
+              "y": 188.0
             }
           ]
         },
@@ -1463,24 +3338,11 @@
           "points": [
             {
               "x": 560,
-              "y": 155
+              "y": 188.0
             },
             {
-              "x": 660,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "polishing-to-bottler",
-          "points": [
-            {
-              "x": 760,
-              "y": 250
-            },
-            {
-              "x": 760,
-              "y": 340
+              "x": 640,
+              "y": 188.0
             }
           ]
         },
@@ -1488,12 +3350,1008 @@
           "connection": "bottler-to-packer",
           "points": [
             {
-              "x": 660,
-              "y": 435
+              "x": 1430,
+              "y": 188.0
             },
             {
-              "x": 560,
-              "y": 435
+              "x": 1510,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "polishing-to-fillValve",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 930,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "fillValve-to-bottler",
+          "points": [
+            {
+              "x": 1140,
+              "y": 188.0
+            },
+            {
+              "x": 1220,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "aging-to-cellarLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 188.0
+            },
+            {
+              "x": 286,
+              "y": 188.0
+            },
+            {
+              "x": 286,
+              "y": 394
+            },
+            {
+              "x": 745.0,
+              "y": 394
+            },
+            {
+              "x": 745.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "power-to-bottler",
+          "points": [
+            {
+              "x": 1430,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 292
+            },
+            {
+              "x": 1204,
+              "y": 292
+            },
+            {
+              "x": 1204,
+              "y": 188.0
+            },
+            {
+              "x": 1220,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-packer",
+          "points": [
+            {
+              "x": 1430,
+              "y": 498.0
+            },
+            {
+              "x": 1494,
+              "y": 498.0
+            },
+            {
+              "x": 1494,
+              "y": 188.0
+            },
+            {
+              "x": 1510,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 1430,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 602
+            },
+            {
+              "x": 44,
+              "y": 602
+            },
+            {
+              "x": 44,
+              "y": 498.0
+            },
+            {
+              "x": 60,
+              "y": 498.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-cellarLevel",
+          "points": [
+            {
+              "x": 1430,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 618
+            },
+            {
+              "x": 624,
+              "y": 618
+            },
+            {
+              "x": 624,
+              "y": 550.8
+            },
+            {
+              "x": 640,
+              "y": 550.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-remoteIO",
+          "points": [
+            {
+              "x": 1430,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 498.0
+            },
+            {
+              "x": 1446,
+              "y": 660
+            },
+            {
+              "x": 334,
+              "y": 660
+            },
+            {
+              "x": 334,
+              "y": 550.8
+            },
+            {
+              "x": 350,
+              "y": 550.8
+            }
+          ]
+        },
+        {
+          "connection": "cellarLevel-to-controller",
+          "points": [
+            {
+              "x": 745.0,
+              "y": 586
+            },
+            {
+              "x": 745.0,
+              "y": 618
+            },
+            {
+              "x": 286,
+              "y": 618
+            },
+            {
+              "x": 286,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 498.0
+            },
+            {
+              "x": 318,
+              "y": 498.0
+            },
+            {
+              "x": 318,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 586
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fillValve",
+          "points": [
+            {
+              "x": 455.0,
+              "y": 586
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 576,
+              "y": 602
+            },
+            {
+              "x": 576,
+              "y": 292
+            },
+            {
+              "x": 1035.0,
+              "y": 292
+            },
+            {
+              "x": 1035.0,
+              "y": 276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Power & instruments",
+      "canvas": {
+        "width": 2240,
+        "height": 960
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "grapeIntake",
+          "x": 370,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "crusher",
+          "x": 680,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "extraction",
+          "x": 990,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mustTransfer",
+          "x": 1300,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "bottler",
+          "x": 1610,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "packer",
+          "x": 1920,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "pressure",
+          "x": 60,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mustFlow",
+          "x": 370,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterTemperature",
+          "x": 680,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fermenterLevel",
+          "x": 990,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cellarLevel",
+          "x": 1300,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluent",
+          "x": 1610,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "biogasFlare",
+          "x": 1920,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 370,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 680,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "mustValve",
+          "x": 990,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "cellarValve",
+          "x": 1300,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "fillValve",
+          "x": 1610,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grapeIntake-to-crusher",
+          "points": [
+            {
+              "x": 580,
+              "y": 168.0
+            },
+            {
+              "x": 680,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "crusher-to-extraction",
+          "points": [
+            {
+              "x": 890,
+              "y": 168.0
+            },
+            {
+              "x": 990,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "extraction-to-mustTransfer",
+          "points": [
+            {
+              "x": 1200,
+              "y": 168.0
+            },
+            {
+              "x": 1300,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "bottler-to-packer",
+          "points": [
+            {
+              "x": 1820,
+              "y": 168.0
+            },
+            {
+              "x": 1920,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "extraction-to-effluent",
+          "points": [
+            {
+              "x": 1200,
+              "y": 168.0
+            },
+            {
+              "x": 1216,
+              "y": 168.0
+            },
+            {
+              "x": 1216,
+              "y": 364
+            },
+            {
+              "x": 1594,
+              "y": 364
+            },
+            {
+              "x": 1594,
+              "y": 468.0
+            },
+            {
+              "x": 1610,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "effluent-to-biogasFlare",
+          "points": [
+            {
+              "x": 1820,
+              "y": 468.0
+            },
+            {
+              "x": 1920,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-mustValve",
+          "points": [
+            {
+              "x": 1510,
+              "y": 168.0
+            },
+            {
+              "x": 1526,
+              "y": 168.0
+            },
+            {
+              "x": 1526,
+              "y": 674
+            },
+            {
+              "x": 974,
+              "y": 674
+            },
+            {
+              "x": 974,
+              "y": 778.0
+            },
+            {
+              "x": 990,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "fillValve-to-bottler",
+          "points": [
+            {
+              "x": 1820,
+              "y": 778.0
+            },
+            {
+              "x": 1836,
+              "y": 778.0
+            },
+            {
+              "x": 1836,
+              "y": 272
+            },
+            {
+              "x": 1594,
+              "y": 272
+            },
+            {
+              "x": 1594,
+              "y": 168.0
+            },
+            {
+              "x": 1610,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-pressure",
+          "points": [
+            {
+              "x": 1510,
+              "y": 168.0
+            },
+            {
+              "x": 1526,
+              "y": 168.0
+            },
+            {
+              "x": 1526,
+              "y": 272
+            },
+            {
+              "x": 44,
+              "y": 272
+            },
+            {
+              "x": 44,
+              "y": 468.0
+            },
+            {
+              "x": 60,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "mustTransfer-to-mustFlow",
+          "points": [
+            {
+              "x": 1510,
+              "y": 168.0
+            },
+            {
+              "x": 1526,
+              "y": 168.0
+            },
+            {
+              "x": 1526,
+              "y": 288
+            },
+            {
+              "x": 475.0,
+              "y": 288
+            },
+            {
+              "x": 475.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "power-to-grapeIntake",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 370,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-crusher",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 64
+            },
+            {
+              "x": 664,
+              "y": 64
+            },
+            {
+              "x": 664,
+              "y": 168.0
+            },
+            {
+              "x": 680,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-extraction",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 48
+            },
+            {
+              "x": 974,
+              "y": 48
+            },
+            {
+              "x": 974,
+              "y": 168.0
+            },
+            {
+              "x": 990,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mustTransfer",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 64
+            },
+            {
+              "x": 1284,
+              "y": 64
+            },
+            {
+              "x": 1284,
+              "y": 168.0
+            },
+            {
+              "x": 1300,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-bottler",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 20
+            },
+            {
+              "x": 1594,
+              "y": 20
+            },
+            {
+              "x": 1594,
+              "y": 168.0
+            },
+            {
+              "x": 1610,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-packer",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 348
+            },
+            {
+              "x": 1904,
+              "y": 348
+            },
+            {
+              "x": 1904,
+              "y": 168.0
+            },
+            {
+              "x": 1920,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-effluent",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 364
+            },
+            {
+              "x": 1542,
+              "y": 364
+            },
+            {
+              "x": 1542,
+              "y": 468.0
+            },
+            {
+              "x": 1610,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 778.0
+            },
+            {
+              "x": 370,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-pressure",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 364
+            },
+            {
+              "x": 44,
+              "y": 364
+            },
+            {
+              "x": 44,
+              "y": 468.0
+            },
+            {
+              "x": 60,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "power-to-mustFlow",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 520.8
+            },
+            {
+              "x": 370,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fermenterTemperature",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 288
+            },
+            {
+              "x": 664,
+              "y": 288
+            },
+            {
+              "x": 664,
+              "y": 520.8
+            },
+            {
+              "x": 680,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-fermenterLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 572
+            },
+            {
+              "x": 974,
+              "y": 572
+            },
+            {
+              "x": 974,
+              "y": 520.8
+            },
+            {
+              "x": 990,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-cellarLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 588
+            },
+            {
+              "x": 1284,
+              "y": 588
+            },
+            {
+              "x": 1284,
+              "y": 520.8
+            },
+            {
+              "x": 1300,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "power-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 674
+            },
+            {
+              "x": 664,
+              "y": 674
+            },
+            {
+              "x": 664,
+              "y": 830.8
+            },
+            {
+              "x": 680,
+              "y": 830.8
             }
           ]
         },
@@ -1501,12 +4359,188 @@
           "connection": "pressure-to-controller",
           "points": [
             {
-              "x": 160,
-              "y": 620
+              "x": 270,
+              "y": 468.0
             },
             {
-              "x": 160,
-              "y": 530
+              "x": 286,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "mustFlow-to-controller",
+          "points": [
+            {
+              "x": 475.0,
+              "y": 556
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "fermenterTemperature-to-controller",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 556
+            },
+            {
+              "x": 785.0,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "fermenterLevel-to-controller",
+          "points": [
+            {
+              "x": 1095.0,
+              "y": 556
+            },
+            {
+              "x": 1095.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "cellarLevel-to-controller",
+          "points": [
+            {
+              "x": 1405.0,
+              "y": 556
+            },
+            {
+              "x": 1405.0,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 658
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 580,
+              "y": 778.0
+            },
+            {
+              "x": 596,
+              "y": 778.0
+            },
+            {
+              "x": 596,
+              "y": 882
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 785.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-mustValve",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 866
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 1095.0,
+              "y": 882
+            },
+            {
+              "x": 1095.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-cellarValve",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 866
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 1405.0,
+              "y": 882
+            },
+            {
+              "x": 1405.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-fillValve",
+          "points": [
+            {
+              "x": 785.0,
+              "y": 866
+            },
+            {
+              "x": 785.0,
+              "y": 898
+            },
+            {
+              "x": 1715.0,
+              "y": 898
+            },
+            {
+              "x": 1715.0,
+              "y": 866
             }
           ]
         }
@@ -2082,6 +5116,321 @@
       "label": "Reset dynamics \u00b7 keep edited parameters",
       "action": "reset",
       "arguments": {}
+    },
+    {
+      "id": "mustValve-enabled",
+      "label": "Enabled \u00b7 mustValve",
+      "component": "mustValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mustValve"
+      }
+    },
+    {
+      "id": "mustValve-open",
+      "label": "Open valve \u00b7 mustValve",
+      "component": "mustValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "mustValve"
+      }
+    },
+    {
+      "id": "mustValve-load",
+      "label": "Opening \u00b7 mustValve",
+      "component": "mustValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mustValve"
+      }
+    },
+    {
+      "id": "mustValve-fault",
+      "label": "Injected failure \u00b7 mustValve",
+      "component": "mustValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mustValve"
+      }
+    },
+    {
+      "id": "mustValve-repair",
+      "label": "Repair equipment \u00b7 mustValve",
+      "component": "mustValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mustValve"
+      }
+    },
+    {
+      "id": "cellarValve-enabled",
+      "label": "Enabled \u00b7 cellarValve",
+      "component": "cellarValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cellarValve"
+      }
+    },
+    {
+      "id": "cellarValve-open",
+      "label": "Open valve \u00b7 cellarValve",
+      "component": "cellarValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "cellarValve"
+      }
+    },
+    {
+      "id": "cellarValve-load",
+      "label": "Opening \u00b7 cellarValve",
+      "component": "cellarValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cellarValve"
+      }
+    },
+    {
+      "id": "cellarValve-fault",
+      "label": "Injected failure \u00b7 cellarValve",
+      "component": "cellarValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cellarValve"
+      }
+    },
+    {
+      "id": "cellarValve-repair",
+      "label": "Repair equipment \u00b7 cellarValve",
+      "component": "cellarValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cellarValve"
+      }
+    },
+    {
+      "id": "fillValve-enabled",
+      "label": "Enabled \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-open",
+      "label": "Open valve \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-load",
+      "label": "Opening \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-fault",
+      "label": "Injected failure \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "fillValve-repair",
+      "label": "Repair equipment \u00b7 fillValve",
+      "component": "fillValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fillValve"
+      }
+    },
+    {
+      "id": "mustFlow-enabled",
+      "label": "Enabled \u00b7 mustFlow",
+      "component": "mustFlow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mustFlow"
+      }
+    },
+    {
+      "id": "mustFlow-load",
+      "label": "Requested load \u00b7 mustFlow",
+      "component": "mustFlow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mustFlow"
+      }
+    },
+    {
+      "id": "mustFlow-fault",
+      "label": "Injected failure \u00b7 mustFlow",
+      "component": "mustFlow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mustFlow"
+      }
+    },
+    {
+      "id": "mustFlow-repair",
+      "label": "Repair equipment \u00b7 mustFlow",
+      "component": "mustFlow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mustFlow"
+      }
+    },
+    {
+      "id": "fermenterTemperature-enabled",
+      "label": "Enabled \u00b7 fermenterTemperature",
+      "component": "fermenterTemperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenterTemperature"
+      }
+    },
+    {
+      "id": "fermenterTemperature-load",
+      "label": "Requested load \u00b7 fermenterTemperature",
+      "component": "fermenterTemperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenterTemperature"
+      }
+    },
+    {
+      "id": "fermenterTemperature-fault",
+      "label": "Injected failure \u00b7 fermenterTemperature",
+      "component": "fermenterTemperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenterTemperature"
+      }
+    },
+    {
+      "id": "fermenterTemperature-repair",
+      "label": "Repair equipment \u00b7 fermenterTemperature",
+      "component": "fermenterTemperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenterTemperature"
+      }
+    },
+    {
+      "id": "fermenterLevel-enabled",
+      "label": "Enabled \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "fermenterLevel-load",
+      "label": "Requested load \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "fermenterLevel-fault",
+      "label": "Injected failure \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "fermenterLevel-repair",
+      "label": "Repair equipment \u00b7 fermenterLevel",
+      "component": "fermenterLevel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fermenterLevel"
+      }
+    },
+    {
+      "id": "cellarLevel-enabled",
+      "label": "Enabled \u00b7 cellarLevel",
+      "component": "cellarLevel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cellarLevel"
+      }
+    },
+    {
+      "id": "cellarLevel-load",
+      "label": "Requested load \u00b7 cellarLevel",
+      "component": "cellarLevel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cellarLevel"
+      }
+    },
+    {
+      "id": "cellarLevel-fault",
+      "label": "Injected failure \u00b7 cellarLevel",
+      "component": "cellarLevel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cellarLevel"
+      }
+    },
+    {
+      "id": "cellarLevel-repair",
+      "label": "Repair equipment \u00b7 cellarLevel",
+      "component": "cellarLevel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cellarLevel"
+      }
+    },
+    {
+      "id": "remoteIO-enabled",
+      "label": "Enabled \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-load",
+      "label": "Requested load \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-fault",
+      "label": "Injected failure \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-repair",
+      "label": "Repair equipment \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "repair",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
     }
   ],
   "controls": [
@@ -2621,6 +5970,302 @@
       "label": "Reset dynamics \u00b7 keep edited parameters",
       "kind": "button",
       "command": "plant-reset"
+    },
+    {
+      "id": "mustValve-enabled-control",
+      "label": "Enabled",
+      "component": "mustValve",
+      "kind": "toggle",
+      "command": "mustValve-enabled",
+      "binding": "/controls/mustValve/enabled"
+    },
+    {
+      "id": "mustValve-open-control",
+      "label": "Open valve",
+      "component": "mustValve",
+      "kind": "toggle",
+      "command": "mustValve-open",
+      "binding": "/controls/mustValve/open"
+    },
+    {
+      "id": "mustValve-load-control",
+      "label": "Opening",
+      "component": "mustValve",
+      "kind": "range",
+      "command": "mustValve-load",
+      "binding": "/controls/mustValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mustValve-fault-control",
+      "label": "Injected failure",
+      "component": "mustValve",
+      "kind": "toggle",
+      "command": "mustValve-fault",
+      "binding": "/controls/mustValve/fault"
+    },
+    {
+      "id": "mustValve-repair-control",
+      "label": "Repair equipment",
+      "component": "mustValve",
+      "kind": "button",
+      "command": "mustValve-repair"
+    },
+    {
+      "id": "cellarValve-enabled-control",
+      "label": "Enabled",
+      "component": "cellarValve",
+      "kind": "toggle",
+      "command": "cellarValve-enabled",
+      "binding": "/controls/cellarValve/enabled"
+    },
+    {
+      "id": "cellarValve-open-control",
+      "label": "Open valve",
+      "component": "cellarValve",
+      "kind": "toggle",
+      "command": "cellarValve-open",
+      "binding": "/controls/cellarValve/open"
+    },
+    {
+      "id": "cellarValve-load-control",
+      "label": "Opening",
+      "component": "cellarValve",
+      "kind": "range",
+      "command": "cellarValve-load",
+      "binding": "/controls/cellarValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cellarValve-fault-control",
+      "label": "Injected failure",
+      "component": "cellarValve",
+      "kind": "toggle",
+      "command": "cellarValve-fault",
+      "binding": "/controls/cellarValve/fault"
+    },
+    {
+      "id": "cellarValve-repair-control",
+      "label": "Repair equipment",
+      "component": "cellarValve",
+      "kind": "button",
+      "command": "cellarValve-repair"
+    },
+    {
+      "id": "fillValve-enabled-control",
+      "label": "Enabled",
+      "component": "fillValve",
+      "kind": "toggle",
+      "command": "fillValve-enabled",
+      "binding": "/controls/fillValve/enabled"
+    },
+    {
+      "id": "fillValve-open-control",
+      "label": "Open valve",
+      "component": "fillValve",
+      "kind": "toggle",
+      "command": "fillValve-open",
+      "binding": "/controls/fillValve/open"
+    },
+    {
+      "id": "fillValve-load-control",
+      "label": "Opening",
+      "component": "fillValve",
+      "kind": "range",
+      "command": "fillValve-load",
+      "binding": "/controls/fillValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fillValve-fault-control",
+      "label": "Injected failure",
+      "component": "fillValve",
+      "kind": "toggle",
+      "command": "fillValve-fault",
+      "binding": "/controls/fillValve/fault"
+    },
+    {
+      "id": "fillValve-repair-control",
+      "label": "Repair equipment",
+      "component": "fillValve",
+      "kind": "button",
+      "command": "fillValve-repair"
+    },
+    {
+      "id": "mustFlow-enabled-control",
+      "label": "Enabled",
+      "component": "mustFlow",
+      "kind": "toggle",
+      "command": "mustFlow-enabled",
+      "binding": "/controls/mustFlow/enabled"
+    },
+    {
+      "id": "mustFlow-load-control",
+      "label": "Requested load",
+      "component": "mustFlow",
+      "kind": "range",
+      "command": "mustFlow-load",
+      "binding": "/controls/mustFlow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mustFlow-fault-control",
+      "label": "Injected failure",
+      "component": "mustFlow",
+      "kind": "toggle",
+      "command": "mustFlow-fault",
+      "binding": "/controls/mustFlow/fault"
+    },
+    {
+      "id": "mustFlow-repair-control",
+      "label": "Repair equipment",
+      "component": "mustFlow",
+      "kind": "button",
+      "command": "mustFlow-repair"
+    },
+    {
+      "id": "fermenterTemperature-enabled-control",
+      "label": "Enabled",
+      "component": "fermenterTemperature",
+      "kind": "toggle",
+      "command": "fermenterTemperature-enabled",
+      "binding": "/controls/fermenterTemperature/enabled"
+    },
+    {
+      "id": "fermenterTemperature-load-control",
+      "label": "Requested load",
+      "component": "fermenterTemperature",
+      "kind": "range",
+      "command": "fermenterTemperature-load",
+      "binding": "/controls/fermenterTemperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenterTemperature-fault-control",
+      "label": "Injected failure",
+      "component": "fermenterTemperature",
+      "kind": "toggle",
+      "command": "fermenterTemperature-fault",
+      "binding": "/controls/fermenterTemperature/fault"
+    },
+    {
+      "id": "fermenterTemperature-repair-control",
+      "label": "Repair equipment",
+      "component": "fermenterTemperature",
+      "kind": "button",
+      "command": "fermenterTemperature-repair"
+    },
+    {
+      "id": "fermenterLevel-enabled-control",
+      "label": "Enabled",
+      "component": "fermenterLevel",
+      "kind": "toggle",
+      "command": "fermenterLevel-enabled",
+      "binding": "/controls/fermenterLevel/enabled"
+    },
+    {
+      "id": "fermenterLevel-load-control",
+      "label": "Requested load",
+      "component": "fermenterLevel",
+      "kind": "range",
+      "command": "fermenterLevel-load",
+      "binding": "/controls/fermenterLevel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fermenterLevel-fault-control",
+      "label": "Injected failure",
+      "component": "fermenterLevel",
+      "kind": "toggle",
+      "command": "fermenterLevel-fault",
+      "binding": "/controls/fermenterLevel/fault"
+    },
+    {
+      "id": "fermenterLevel-repair-control",
+      "label": "Repair equipment",
+      "component": "fermenterLevel",
+      "kind": "button",
+      "command": "fermenterLevel-repair"
+    },
+    {
+      "id": "cellarLevel-enabled-control",
+      "label": "Enabled",
+      "component": "cellarLevel",
+      "kind": "toggle",
+      "command": "cellarLevel-enabled",
+      "binding": "/controls/cellarLevel/enabled"
+    },
+    {
+      "id": "cellarLevel-load-control",
+      "label": "Requested load",
+      "component": "cellarLevel",
+      "kind": "range",
+      "command": "cellarLevel-load",
+      "binding": "/controls/cellarLevel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cellarLevel-fault-control",
+      "label": "Injected failure",
+      "component": "cellarLevel",
+      "kind": "toggle",
+      "command": "cellarLevel-fault",
+      "binding": "/controls/cellarLevel/fault"
+    },
+    {
+      "id": "cellarLevel-repair-control",
+      "label": "Repair equipment",
+      "component": "cellarLevel",
+      "kind": "button",
+      "command": "cellarLevel-repair"
+    },
+    {
+      "id": "remoteIO-enabled-control",
+      "label": "Enabled",
+      "component": "remoteIO",
+      "kind": "toggle",
+      "command": "remoteIO-enabled",
+      "binding": "/controls/remoteIO/enabled"
+    },
+    {
+      "id": "remoteIO-load-control",
+      "label": "Requested load",
+      "component": "remoteIO",
+      "kind": "range",
+      "command": "remoteIO-load",
+      "binding": "/controls/remoteIO/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "remoteIO-fault-control",
+      "label": "Injected failure",
+      "component": "remoteIO",
+      "kind": "toggle",
+      "command": "remoteIO-fault",
+      "binding": "/controls/remoteIO/fault"
+    },
+    {
+      "id": "remoteIO-repair-control",
+      "label": "Repair equipment",
+      "component": "remoteIO",
+      "kind": "button",
+      "command": "remoteIO-repair"
     }
   ],
   "units": {
@@ -2664,6 +6309,12 @@
       "label": "Utility equipment is illustrative and may be optional",
       "value": true,
       "provenance": "assumed-topology"
+    },
+    {
+      "id": "instrumentation",
+      "label": "Instrumentation and PLC behavior",
+      "value": "Measurement taps and normalized valve gating only; no calibrated process recipe or safety logic",
+      "provenance": "demo-model"
     }
   ]
 }

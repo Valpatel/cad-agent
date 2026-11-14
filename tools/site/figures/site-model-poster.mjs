@@ -44,8 +44,8 @@ img{position:absolute;left:700px;top:-10px;width:760px;height:760px}
 const dir = await mkdtemp(path.join(os.tmpdir(), 'cad-agent-poster-'));
 await symlink(path.join(root, 'software/cadagent/webkit'), path.join(dir, 'kit'));
 await symlink(path.join(root, 'tools/site/assets'), path.join(dir, 'web'));
-await writeFile(path.join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/kit/model.css">' +
-  '<script type="module" src="/kit/model.js"></script><body style="margin:0"></body>');
+await writeFile(path.join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/kit/model/model.css">' +
+  '<script type="module" src="/kit/model/model.js"></script><body style="margin:0"></body>');
 await writeFile(path.join(dir, 'banner.html'), BANNER_HTML);
 const server = spawn(process.execPath, [path.join(root, 'tools/site/preview-site.mjs'), '--dir', dir, '--port', '0']);
 let browser;
@@ -95,7 +95,7 @@ try {
       const record = JSON.parse(await readFile(file,'utf8'));
       record.poster = {file:'tools/site/assets/models/j501.webp',sha256:createHash('sha256').update(bytes).digest('hex'),width:SIZE,height:SIZE,
         model_sha256:createHash('sha256').update(await readFile(path.join(root,'tools/site/assets/models/j501.json'))).digest('hex'),
-        renderer_sha256:createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit/model.js'))).digest('hex'),
+        renderer_sha256:createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit/model/model.js'))).digest('hex'),
         actual_parts:frame.stats.parts,canvases:frame.canvases,controls:frame.controls,explode_and_reset:!!frame.exploded,
         method:'shared cad-model snapshot at its recorded opening view, turn=0'};
       await writeFile(file,JSON.stringify(record,null,2)+'\n');

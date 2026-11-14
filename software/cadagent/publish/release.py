@@ -589,7 +589,7 @@ def _linked_images(text: str, src_rel: str, root: Path) -> List[str]:
 def _guide_runtime() -> Dict[str, bytes]:
     """Capture the installed, pinned web kit; no dependency on a live website."""
     from cadagent.publish.site import KIT_DIR
-    required = ("viewer.html", "viewer.js", "stage.js", "assembly/guide.js")
+    required = ("model/viewer.html", "model/viewer.js", "model/stage.js", "assembly/guide.js")
     if any(not (KIT_DIR / name).is_file() for name in required):
         raise CadConfigError("assembly guide release needs the shared assembly-guide viewer runtime")
     files = {}
@@ -611,10 +611,10 @@ def _guide_page(bundle) -> str:
     guide = bundle.guide
     snapshot = guide["snapshot"]
     title = snapshot["revision"]
-    target = "../" + bundle.identifier + "/project/" + quote(bundle.path, safe="/")
-    back = "../" + bundle.identifier + "/index.html"
+    target = "../../" + bundle.identifier + "/project/" + quote(bundle.path, safe="/")
+    back = "../../" + bundle.identifier + "/index.html"
     guide_sha = hashlib.sha256(bundle.files[bundle.path]).hexdigest()
-    interactive = ("../_cadagent/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
+    interactive = ("../_cadagent/model/viewer.html?guide=" + quote(target, safe="") + "&back=" + quote(back, safe="")
                    + "&sha256=" + guide_sha)
     rows = []
     for step in guide["steps"]:

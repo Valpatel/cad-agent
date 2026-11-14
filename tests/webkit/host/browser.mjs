@@ -48,7 +48,7 @@ const out = process.env.TEST_OUTPUT || '/tmp/cad-agent-contained-viewers';
 await mkdir(out,{recursive:true});
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const runtimeFiles = ['host/viewer-host.js','host/adapters.js','host/stage-controls.js','host/viewer-host.css',
-  'viewer.js','file-viewer.js','file-loader.js','stage.js'];
+  'model/viewer.js','files/file-viewer.js','files/file-loader.js','model/stage.js'];
 const provenance = {
   sourceRevision:process.env.TEST_SOURCE_REVISION || 'unrecorded',
   harnessSha256:sha(await readFile(new URL(import.meta.url))),

@@ -1002,7 +1002,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 614 folders</summary>
+<summary>software — 619 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -1278,6 +1278,45 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
+<summary><code>software/cadagent/webkit/calculators/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-calculators/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/calculators/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/calculators` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/documents/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-documents/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/documents/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/documents` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/fea/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-fea/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/fea/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/fea` |
+
+</details>
+
+<details>
 <summary><code>software/cadagent/webkit/files/README.md</code> — 1 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-files/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/files/README.md)
@@ -1300,6 +1339,32 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `software/cadagent/webkit/host` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/model/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-model/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/model/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/model` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/ui/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-ui/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/ui/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/ui` |
 
 </details>
 

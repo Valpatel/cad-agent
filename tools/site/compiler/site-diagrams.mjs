@@ -2,9 +2,9 @@
  * while it loads, they show without script, and no page downloads Mermaid to draw them.
  *
  * Each `<pre><code class="language-mermaid">` block the Markdown renderer wrote is drawn once by the web kit's own
- * `drawDiagram` (kit/diagrams.js, the code that draws it in a reader's browser) with the vendored Mermaid, in headless
+ * `drawDiagram` (kit/documents/diagrams.js, the code that draws it in a reader's browser) with the vendored Mermaid, in headless
  * Chromium through Playwright, which the browser tests already use. The figure it returns, `<figure class="cad-diagram"
- * data-state="ready">` with the SVG and the source, replaces the block; kit/diagrams.js leaves such figures alone.
+ * data-state="ready">` with the SVG and the source, replaces the block; kit/documents/diagrams.js leaves such figures alone.
  *
  * - Deterministic, on one machine and browser build: the same source, theme, Mermaid, kit, font and drawing code give
  *   the same bytes. The SVG id comes from a hash of those; each drawing gets a fresh Mermaid (its sequence and class
@@ -20,13 +20,13 @@
  * - Safe: Mermaid draws in strict mode (DOMPurify on every label); a drawing with a script, an event handler or a
  *   javascript: link is refused, and the site's CSP (no inline script) still applies to the page around it.
  * - Never fatal: with no browser, or for a diagram Mermaid cannot draw, the block is left as it is, the build says so,
- *   and kit/diagrams.js draws it in the reader's browser as before. `client: true` (build-site's --client-diagrams)
+ *   and kit/documents/diagrams.js draws it in the reader's browser as before. `client: true` (build-site's --client-diagrams)
  *   leaves every block so, cache or not.
  *
  * Adopted vs built: the approach (Mermaid in Playwright's Chromium at build time, inline SVG, the block kept when no
  * browser is there) is mermaid-isomorphic's, behind rehype-mermaid (MIT, Remco Haszing). mermaid-cli (MIT) does the same
  * through Puppeteer. Neither is a dependency here: both bring their own Mermaid from npm, not the vendored, hash-checked
- * one; both return a bare SVG, not the kit's figure that kit/diagrams.js knows; and this site's Markdown goes through
+ * one; both return a bare SVG, not the kit's figure that kit/documents/diagrams.js knows; and this site's Markdown goes through
  * marked, not rehype. Playwright and Chromium themselves are credited in THIRD_PARTY_NOTICES.md.
  */
 import { createHash } from 'node:crypto';
@@ -38,12 +38,12 @@ export const BLOCK = /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/p
 // is about 5 % taller than Arial's, so 15px Inter reads at the size of the 16px Arial a reader's browser draws with,
 // and the diagrams come out as wide as they were (within 1 %), so each still fits the article column.
 export const FONT = "'Inter', Arial, sans-serif", FONT_SIZE = '15px';
-const KIT_FILES = ['diagrams.js', 'diagrams.css', 'vendor/mermaid/mermaid.min.js', 'vendor/fonts/fonts.css', 'vendor/fonts/inter.woff2'];
+const KIT_FILES = ['documents/diagrams.js', 'documents/diagrams.css', 'vendor/mermaid/mermaid.min.js', 'vendor/fonts/fonts.css', 'vendor/fonts/inter.woff2'];
 const TYPES = { '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.html': 'text/html' };
 const ORIGIN = 'http://cad-agent-diagrams.invalid';      // routed in the page, never fetched
 const sha = x => createHash('sha256').update(x).digest('hex');
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0' };
-/** HTML text back to the characters a browser's parser gives (what kit/diagrams.js reads as textContent). */
+/** HTML text back to the characters a browser's parser gives (what kit/documents/diagrams.js reads as textContent). */
 export const unescapeHtml = s => s.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === '#'
   ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e] ?? m));
 
@@ -63,7 +63,7 @@ export async function launchChromium() {
  * `kit(rel)` and `site(rel)` read a committed file of the web kit and of web/ (the build's readBuf). `theme` is the
  * pages' data-diagram-theme; `css` the stylesheets the pages load, which the drawing page loads too; `timeout` the ms
  * one diagram may take. */
-export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['/web/site.css', '/kit/diagrams.css'], cacheDir,
+export async function drawDiagrams(htmls, { kit, site, theme = 'light', css = ['/web/site.css', '/kit/documents/diagrams.css'], cacheDir,
   client = false, launch = launchChromium, log = console, timeout = 20000 } = {}) {
   const files = new Map();
   for (const f of KIT_FILES) files.set(`/kit/${f}`, await kit(f));
@@ -169,7 +169,7 @@ export const darkPalette = source => themePalette(source, 'dark');
 
 /** One page's HTML with each Mermaid block replaced by its two drawings, from `light` and `dark` (two drawDiagrams
  * results), each marked data-theme-only for the page's CSS to show the one for its theme. A block either drawing lacks
- * is left whole, for kit/diagrams.js to draw in the reader's browser, and added to `left`. A diagram drawn twice on one
+ * is left whole, for kit/documents/diagrams.js to draw in the reader's browser, and added to `left`. A diagram drawn twice on one
  * page gets numbered ids. */
 export function drawBoth(html, light, dark, left = new Set()) {
   const seen = new Map();
@@ -215,7 +215,7 @@ async function drawInBrowser(browser, todo, { files, theme, css, timeout = 20000
     await page.evaluate(async ({ theme, font, fontSize }) => {
       await document.fonts.load(`${fontSize} ${font.split(',')[0]}`);
       await document.fonts.ready;
-      const { drawDiagram } = await import('/kit/diagrams.js');
+      const { drawDiagram } = await import('/kit/documents/diagrams.js');
       // A fresh Mermaid for each drawing: the same script run again (V8 keeps its compiled code, so this is quick).
       const runtime = await (await fetch('/kit/vendor/mermaid/mermaid.min.js')).text();
       const freshMermaid = () => {

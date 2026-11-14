@@ -43,7 +43,7 @@ const DIAGRAM_SHIFT = 0.05;
 // without starving the checks that watch animations and scrolling.
 const LANES = 2;
 // The kit scripts web/site.js starts on every page.
-const SITE_KIT = ['/kit/diagrams.js', '/kit/copy.js', '/kit/nav.js'];
+const SITE_KIT = ['/kit/documents/diagrams.js', '/kit/documents/copy.js', '/kit/documents/nav.js'];
 /** The torsion-snap and screw-boss explorers (#161): what each one's page must show, and how to drive it. */
 const EXPLORERS = [
   { tag: 'cad-torsion-snap', prefix: 'ts', route: '/docs/compliant', script: 'torsion-snap', still: 'docs/img/compliant/torsion-snap-explorer.svg',
@@ -222,7 +222,7 @@ try {
         if (route === '/docs/toolkit') {                    // page tree: a column on wide screens, a toggle on phones
           await settled(page);                         // the component and its styles must exist before reader input
           const nav = page.locator('cad-nav');
-          // Nothing jumps while the page loads: the tree is styled and folded from the first paint (kit/nav.css).
+          // Nothing jumps while the page loads: the tree is styled and folded from the first paint (kit/documents/nav.css).
           // Settles in every engine: no shift at all is the goal, not a hang, and WebKit has no layout-shift entries.
           const shift = await page.evaluate(() => new Promise(done => {
             if (!PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) return done(0);
@@ -430,7 +430,7 @@ try {
           await page.evaluate(() => {
             const probe = window.__cadCopyBoundaryProbe = { status: 'running' };
             probe.task = (async () => {
-              const { enhance } = await import('/kit/copy.js');
+              const { enhance } = await import('/kit/documents/copy.js');
               const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
               const box = document.createElement('div');
               box.id = 'planted';
@@ -1119,9 +1119,9 @@ async function fanCurveProblems() {
       page.on('console', m => { if (m.type() === 'error' && script) say(`console: ${m.text()}`); });
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
-      if (!script) await page.route('**/kit/fan-curve.js', r => r.abort());
+      if (!script) await page.route('**/kit/calculators/fan-curve.js', r => r.abort());
       await page.goto(base + route);
-      await settled(page, '/kit/fan-curve.js');
+      await settled(page, '/kit/calculators/fan-curve.js');
       const demo = page.locator('cad-fan-curve');
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -1133,7 +1133,7 @@ async function fanCurveProblems() {
         if (width === 1366) {
           // the port in this engine, on the fan golden vectors (the Node test runs them in V8 only): bit for bit
           const wrong = await page.evaluate(async cases => {
-            const fx = await import('/kit/formulas.js');
+            const fx = await import('/kit/calculators/formulas.js');
             return cases.filter(c => JSON.stringify(fx[c.js](...c.args)) !== JSON.stringify(c.expected)).map(c => c.js);
           }, fans);
           if (wrong.length) say(`the port differs from the Python in this engine on ${wrong.length} fan vectors: ${wrong.slice(0, 3).join('; ')}`);
@@ -1221,7 +1221,7 @@ async function fanCurveProblems() {
   // Over 700 ms (the announcement delay) with no input, the polite live region stays empty on page load.
   const quiet = await browser.newPage();
   await quiet.goto(base + route);
-  await settled(quiet, '/kit/fan-curve.js');
+  await settled(quiet, '/kit/calculators/fan-curve.js');
   await quiet.waitForTimeout(800);
   if (await quiet.locator('cad-fan-curve .fc-status').textContent()) out.push('the fan-curve status line spoke on page load');
   await quiet.close();
@@ -1274,9 +1274,9 @@ async function explorerProblems(x) {
       page.on('console', m => { if (m.type() === 'error' && script) say(`console: ${m.text()}`); });
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
-      if (!script) await page.route(`**/kit/${x.script}.js`, r => r.abort());
+      if (!script) await page.route(`**/kit/calculators/${x.script}.js`, r => r.abort());
       await page.goto(base + route);
-      await settled(page, `/kit/${x.script}.js`);
+      await settled(page, `/kit/calculators/${x.script}.js`);
       const demo = page.locator(tag);
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -1288,7 +1288,7 @@ async function explorerProblems(x) {
         if (width === 1366) {
           // the port in this engine, on its golden vectors (the Node test runs them in V8 only): bit for bit
           const wrong = await page.evaluate(async cs => {
-            const fx = await import('/kit/formulas.js');
+            const fx = await import('/kit/calculators/formulas.js');
             return cs.filter(c => JSON.stringify(fx[c.js](...c.args)) !== JSON.stringify(c.expected)).map(c => c.js);
           }, cases);
           if (cases.length < 20) say(`only ${cases.length} vectors`);
@@ -1369,7 +1369,7 @@ async function explorerProblems(x) {
   }
   const quiet = await browser.newPage();
   await quiet.goto(base + route);
-  await settled(quiet, `/kit/${x.script}.js`);
+  await settled(quiet, `/kit/calculators/${x.script}.js`);
   await quiet.waitForTimeout(800);
   if (await quiet.locator(`${tag} .${px}-status`).textContent()) out.push(`the ${name} status line spoke on page load`);
   await quiet.close();
@@ -1738,7 +1738,7 @@ async function themeProblems() {
         if (st.diagrams.some(t => t !== theme)) out.push(`${where}: shows diagrams drawn for ${st.diagrams.join(' and ')}`);
         if (st.sideways > 0) out.push(`${where}: scrolls sideways by ${st.sideways}px`);
         for (const l of await lowContrast(page)) out.push(`${where}: low contrast: ${l}`);
-        // the copy buttons' other states (kit/copy.js): "Copied", and "manual", the fallback ("Press Ctrl+C") when the
+        // the copy buttons' other states (kit/documents/copy.js): "Copied", and "manual", the fallback ("Press Ctrl+C") when the
         // clipboard refuses; measured with the buttons' colour transition off, so the state's own colours are read
         for (const s of ['copied', 'manual']) {
           if (!(await page.evaluate(st => { const b = [...document.querySelectorAll('.cad-copy-btn')];
@@ -1800,9 +1800,9 @@ async function cantileverProblems() {
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       await page.addInitScript(firstFrame);
-      if (!script) await page.route('**/kit/cantilever.js', r => r.abort());
+      if (!script) await page.route('**/kit/calculators/cantilever.js', r => r.abort());
       await page.goto(base + '/docs/compliant');
-      await settled(page, '/kit/cantilever.js');
+      await settled(page, '/kit/calculators/cantilever.js');
       const demo = page.locator('cad-cantilever');
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -1869,15 +1869,15 @@ async function cantileverProblems() {
   // The script arriving late (after the hold of a cycle timed from navigation) still takes over without a jump.
   const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
   await late.addInitScript(firstFrame);
-  await late.route('**/kit/cantilever.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
+  await late.route('**/kit/calculators/cantilever.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
   await late.goto(base + '/docs/compliant');
-  await settled(late, '/kit/cantilever.js');
+  await settled(late, '/kit/calculators/cantilever.js');
   const lateJump = await firstFrameProblem(late);
   if (lateJump) out.push(`1366px /docs/compliant demo, its script 2.6 s late: ${lateJump}`);
   await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
   await reduced.goto(base + '/docs/compliant');
-  await settled(reduced, '/kit/cantilever.js');
+  await settled(reduced, '/kit/calculators/cantilever.js');
   const first = await beam(reduced);
   await reduced.waitForTimeout(800);                 // past the status line's 700 ms announcement delay (below)
   if (!first || (await beam(reduced)) !== first || (await reduced.locator('cad-cantilever .cc-play').textContent()) !== 'Play')
@@ -1945,9 +1945,9 @@ async function fourbarProblems() {
       page.on('pageerror', e => say(`page error: ${e.message}`));
       await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.violatedDirective} ${e.blockedURI}`)));
       await page.addInitScript(firstFrame);
-      if (!script) await page.route('**/kit/fourbar.js', r => r.abort());
+      if (!script) await page.route('**/kit/calculators/fourbar.js', r => r.abort());
       await page.goto(base + route);
-      await settled(page, '/kit/fourbar.js');
+      await settled(page, '/kit/calculators/fourbar.js');
       const demo = page.locator('cad-fourbar');
       await demo.scrollIntoViewIfNeeded();
       height[script] = (await demo.boundingBox())?.height;
@@ -1959,7 +1959,7 @@ async function fourbarProblems() {
         // the port in this engine, on the four-bar golden vectors (the Node test runs them in V8 only)
         if (width === 1366) {
           const wrong = await page.evaluate(async ([cases, tol]) => {
-            const fx = await import('/kit/formulas.js'), bad = [];
+            const fx = await import('/kit/calculators/formulas.js'), bad = [];
             const near = (g, w, t, angles) => {
               if (typeof w === 'number') {
                 if (typeof g !== 'number') return false;
@@ -2084,15 +2084,15 @@ async function fourbarProblems() {
   }
   const late = await browser.newPage({ viewport: { width: 1366, height: 900 } });
   await late.addInitScript(firstFrame);
-  await late.route('**/kit/fourbar.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
+  await late.route('**/kit/calculators/fourbar.js', async r => { await new Promise(ok => setTimeout(ok, 2600)); await r.continue(); });
   await late.goto(base + route);
-  await settled(late, '/kit/fourbar.js');
+  await settled(late, '/kit/calculators/fourbar.js');
   const lateJump = await firstFrameProblem(late);
   if (lateJump) out.push(`1366px ${route} four-bar, its script 2.6 s late: ${lateJump}`);
   await late.close();
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
   await reduced.goto(base + route);
-  await settled(reduced, '/kit/fourbar.js');
+  await settled(reduced, '/kit/calculators/fourbar.js');
   const first = await crank(reduced);
   await reduced.waitForTimeout(800);                 // past the status line's 700 ms announcement delay
   if (!first || (await crank(reduced)) !== first || (await reduced.locator('cad-fourbar .fb-play').textContent()) !== 'Play')
@@ -2140,9 +2140,9 @@ async function foldProblems() {
     const seen = [], say = s => seen.push(s);
     let arrive;
     const held = new Promise(ok => { arrive = ok; });
-    if (mode === 'slow') await page.route('**/kit/nav.js', async r => { await held; await r.continue(); });
-    if (mode === 'blocked') await page.route('**/kit/nav.js', r => r.abort());
-    if (mode === 'failing') await page.route('**/kit/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
+    if (mode === 'slow') await page.route('**/kit/documents/nav.js', async r => { await held; await r.continue(); });
+    if (mode === 'blocked') await page.route('**/kit/documents/nav.js', r => r.abort());
+    if (mode === 'failing') await page.route('**/kit/documents/nav.js', r => r.fulfill({ contentType: 'text/javascript', body: 'throw new Error("nav.js fails on purpose")' }));
     await page.goto(base + '/docs/toolkit', { waitUntil: mode === 'slow' ? 'domcontentloaded' : 'load' });
     const js = mode !== 'none';
     // nav.js has run or failed (with JavaScript off, Playwright cannot wait on a promise in the page; held back, it

@@ -8,7 +8,7 @@
  *   entries take an `areas:` list of their own; until they have one they are listed as not yet placed.
  * Agents first: an agent reads catalog/index.json (areas with counts and links), then one area file, then the entry.
  * The page is plain semantic HTML that shows every entry, grouped by kind, without script; the kit's <cad-gallery>
- * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/gallery.js).
+ * adds the kind tabs, the area tree, filters, sorting and the URL state (kit/ui/gallery.js).
  */
 import { GLYPHS, DOMAIN_GLYPH, TINT, STATUS_STYLE, FAMILIES, glyphSprite, outsideCover, pageCover, toolCover, chartCover, familyFor, shortNumber, stillFrame, isAnimated } from './catalog-art.mjs';
 
@@ -691,7 +691,7 @@ ${it.what ? `<p class="card-what">${esc(it.what)}</p>` : ''}${facts}${meta}${cal
   const glyphUse = slug => `<svg class="glyph" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#g-${esc(GLYPHS[slug] ? slug : DOMAIN_GLYPH[slug] || 'unplaced')}"/></svg>`;
   const count = slug => items.filter(it => it.areas.includes(slug) || it.domains.includes(slug)).length;
   // Domains with entries start open: on a wide screen the tree is the page's map. (The sheet on small screens folds
-  // them again, except the chosen one: kit/gallery.js.)
+  // them again, except the chosen one: kit/ui/gallery.js.)
   // The key: each level's bar and word, lowest first; hovering or focusing a word shows what the level means.
   const key = `<div class="tree-key"><p class="key-head"><span id="key-title">Maturity</span> <a href="${esc(levelsHref)}">What the levels mean</a></p>
 <ol class="key-scale" aria-labelledby="key-title">${areas.maturity.map(({ level, means }) => `<li tabindex="0">${bar(level, false)}<span class="key-word">${esc(level)}</span><span class="key-means"><span class="sr">: </span>${esc(means)}</span></li>`).join('')}</ol></div>`;
@@ -762,5 +762,5 @@ ${panels}
 <p class="cat-empty" data-gallery-empty-scope hidden>Nothing in <b data-gallery-scope-name></b> yet. No tool, guide or outside project is placed here so far; the panel above says what it covers and how far it has come.</p>
 <p class="cat-empty" data-gallery-empty-kind hidden>No <span data-gallery-kind-name></span> in <b data-gallery-scope-name></b> yet. <a href="/catalog?kind=" data-gallery-link>Show every kind in it</a></p>
 ${sections}</div></div>
-</cad-gallery><script type="module" src="/kit/gallery.js"></script>`;
+</cad-gallery><script type="module" src="/kit/ui/gallery.js"></script>`;
 }

@@ -153,7 +153,7 @@ def test_symlink_dependency_is_rejected_even_inside_project(tmp_path):
 def runtime(monkeypatch):
     # Packaging fixture, deliberately not a claim that a browser can run these
     # stub bytes. The actual pinned runtime/extracted-ZIP browser check is separate.
-    files = {"viewer.html": b"<title>Reader fixture</title>", "viewer.js": b"// viewer fixture",
+    files = {"model/viewer.html": b"<title>Reader fixture</title>", "model/viewer.js": b"// viewer fixture",
              "assembly/guide.js": b"// guide fixture", "vendor/three/three.module.min.js": b"// engine fixture"}
     monkeypatch.setattr(release, "_guide_runtime", lambda: dict(files))
     return files
@@ -190,7 +190,7 @@ def test_release_contains_distinct_snapshots_runtime_and_static_fallback(tmp_pat
         import html
         link = html.unescape(re.search(r'href="([^\"]+)">Open interactive', static).group(1))
         viewer = (result.folder / entry["href"]).parent / unquote(urlsplit(link).path)
-        assert viewer.resolve() == (result.folder / "guides/_cadagent/viewer.html").resolve()
+        assert viewer.resolve() == (result.folder / "guides/_cadagent/model/viewer.html").resolve()
         selected = parse_qs(urlsplit(link).query)["guide"][0]
         assert (viewer.parent / selected).resolve() == (result.folder / entry["guide"]).resolve()
         back = parse_qs(urlsplit(link).query)["back"][0]
@@ -261,8 +261,8 @@ def test_model_cannot_silently_skip_an_instance(tmp_path):
 def test_runtime_copies_resources_and_refuses_missing_reader_or_symlinks(tmp_path, monkeypatch):
     from cadagent.publish import site
     kit = tmp_path / "kit"
-    files = ["viewer.html", "viewer.js", "stage.js", "assembly/guide.js", "vendor/three/three.module.min.js",
-             "hud.css", "vendor/NOTICE.txt", "__pycache__/unused.pyc"]
+    files = ["model/viewer.html", "model/viewer.js", "model/stage.js", "assembly/guide.js", "vendor/three/three.module.min.js",
+             "ui/hud.css", "vendor/NOTICE.txt", "__pycache__/unused.pyc"]
     for name in files:
         path = kit / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -274,7 +274,7 @@ def test_runtime_copies_resources_and_refuses_missing_reader_or_symlinks(tmp_pat
     with pytest.raises(CadConfigError, match="runtime"):
         REAL_GUIDE_RUNTIME()
     (kit / "assembly/guide.js").write_text("guide")
-    (kit / "leak.txt").symlink_to(kit / "hud.css")
+    (kit / "leak.txt").symlink_to(kit / "ui/hud.css")
     with pytest.raises(CadConfigError, match="symlinks"):
         REAL_GUIDE_RUNTIME()
 

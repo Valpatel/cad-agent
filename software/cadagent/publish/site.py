@@ -296,8 +296,8 @@ def nav_html(cfg: "SiteConfig", current: str, prefix: str) -> str:
 
 def _diagrams(depth: int) -> str:
     prefix = ("../" * depth if depth else "./") + "assets/"
-    return (f'<link rel="stylesheet" href="{prefix}diagrams.css">'
-            f'<script type="module">import("{prefix}diagrams.js").then(m=>m.observeDiagrams()).catch(()=>{{'
+    return (f'<link rel="stylesheet" href="{prefix}documents/diagrams.css">'
+            f'<script type="module">import("{prefix}documents/diagrams.js").then(m=>m.observeDiagrams()).catch(()=>{{'
             'document.querySelectorAll("pre.mermaid,pre:has(>code.language-mermaid)").forEach(p=>{'
             'p.classList.add("cad-diagram-boot-error");const b=document.createElement("button");'
             'b.className="cad-diagram-reload";b.textContent="Reload diagrams";b.onclick=()=>location.reload();p.after(b);});'
@@ -315,7 +315,7 @@ def _page(title: str, body: str, accent: str, depth: int = 0, theme: str = "ligh
     diagram_theme = "dark" if theme == "hud" else "light"
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{_e(title)}</title>{fonts}<style>{css}</style>{_diagrams(depth)}</head><body data-diagram-theme="{diagram_theme}">{body}'
-            + '<script type="module">import { liveReload } from "/_cadagent/kit/appnav.js"; liveReload();</script></body></html>\n')
+            + '<script type="module">import { liveReload } from "/_cadagent/kit/ui/appnav.js"; liveReload();</script></body></html>\n')
 
 
 def _md_inline(text: str) -> str:
@@ -356,7 +356,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
     stamp = source_stamp(root, outputs=[out])          # first: a bad SOURCE_DATE_EPOCH writes nothing
     (out / "pages").mkdir(parents=True, exist_ok=True)
     # Ship the renderer with generated HTML; published sites must not depend on a CDN.
-    for rel in ("diagrams.js", "diagrams.css", "vendor/mermaid/mermaid.min.js",
+    for rel in ("documents/diagrams.js", "documents/diagrams.css", "vendor/mermaid/mermaid.min.js",
                 "vendor/mermaid/LICENSE", "vendor/mermaid/SOURCE.json"):
         target = out / "assets" / rel
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -398,7 +398,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
 
     all_links = list(cfg.links)
     if (root / "exports" / "view" / "view.json").is_file():   # written by `cad-agent view`
-        all_links.append({"title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
+        all_links.append({"title": "3D model", "href": KIT_URL.strip("/") + "/model/viewer.html"})
     links = "".join(f'<a href="{_e(href(l["href"]))}" class="{"primary" if i == 0 else ""}">{_e(l["title"])}</a>'
                     for i, l in enumerate(all_links))
     head = (f'<header class="top"><div class="wrap"><h1>{_e(cfg.title)}</h1><p class="tag">{_e(cfg.tagline)}</p>'
@@ -495,7 +495,7 @@ def build_site(root: Path, raw_site: Optional[Dict[str, Any]], default_title: st
         from cadagent.publish.site_review import CSS as review_css
     (out / "index.html").write_text(_page(cfg.title, nav_html(cfg, "overview", "../") + head + main, cfg.accent,
                                           theme=cfg.theme, extra_css=review_css))
-    # the same top bar for the project's own pages: they fetch site/nav.json and render it with webkit/appnav.js
+    # the same top bar for the project's own pages: they fetch site/nav.json and render it with webkit/ui/appnav.js
     (out / "nav.json").write_text(json.dumps({"title": cfg.title, "nav": cfg.nav}, indent=1) + "\n")
     summary = {"site": str(out), "pages": len(pages), "milestones": len(milestones), "decisions": len(decisions),
                "designs": len(designs), "progress_pct": pct}
@@ -518,7 +518,7 @@ def default_nav(root: Path, html_pages: Optional[List[str]] = None, site_pages: 
     if page_files(root, list(site_pages or [])):
         nav.append({"id": "docs", "title": "Docs", "href": "site/#documents"})
     if (root / "exports" / "view" / "view.json").is_file():
-        nav.append({"id": "model", "title": "3D model", "href": KIT_URL.strip("/") + "/viewer.html"})
+        nav.append({"id": "model", "title": "3D model", "href": KIT_URL.strip("/") + "/model/viewer.html"})
     nav += list(extra or [])
     seen = {n["href"] for n in nav}
     for rel in list(html_pages or []) + ["docs/cad-agent-report.html", "preview/simulation.html",
@@ -542,7 +542,7 @@ _OPT_OUT = re.compile(rb'<meta[^>]+name=["\']cadagent-nav["\'][^>]+content=["\']
 def inject_nav(page: bytes, request_path: str, nav: List[Dict[str, str]]) -> bytes:
     """Add the app-wide top bar to an HTML page the local server sends (bytes in, bytes out, so any encoding
     survives). Skipped when the page has a bar in its markup or opts out with <meta name="cadagent-nav" content="off">;
-    a bar a page mounts from its own script replaces the injected one in the browser (webkit/appnav.js)."""
+    a bar a page mounts from its own script replaces the injected one in the browser (webkit/ui/appnav.js)."""
     if not nav or b"appnav" in page or _OPT_OUT.search(page):
         return page
     path = unquote(request_path.split("?")[0].split("#")[0])

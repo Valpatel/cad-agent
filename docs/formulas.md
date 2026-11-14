@@ -100,7 +100,7 @@ flowchart TD
     C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
-    V --> J["kit/formulas.js<br/>(browser port)"]
+    V --> J["kit/calculators/formulas.js<br/>(browser port)"]
     J --> D["&lt;cad-cantilever&gt; · &lt;cad-fourbar&gt; · &lt;cad-fan-curve&gt;<br/>&lt;cad-torsion-snap&gt; · &lt;cad-printed-boss&gt;"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
@@ -273,9 +273,9 @@ piece welded the same way, and inspect the real joint.
 
 </details>
 
-In the browser, `kit/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
+In the browser, `kit/calculators/formulas.js` exports the functions the demos use (`snapArm`, `cantileverShape`,
 `cantileverStrainProfile`, `fourbarAngles`, `fanOperatingPoint` and the others in the golden vectors) in the same SI
-units. `kit/formulas-data.js` carries the demos' data: the printed filaments, and the fan curves of
+units. `kit/calculators/formulas-data.js` carries the demos' data: the printed filaments, and the fan curves of
 `cadagent.thermal.fans`.
 
 ## Tests that keep it honest

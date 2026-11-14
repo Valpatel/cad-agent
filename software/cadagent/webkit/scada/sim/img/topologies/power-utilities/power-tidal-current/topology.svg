@@ -33,7 +33,6 @@
     <g data-flowing="true"><path d="M118 78v38h45" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round" style="fill: none; stroke: rgb(141, 158, 170); stroke-width: 3px; stroke-linejoin: round;"/>
     <path d="M118 78v38h45" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7" style="fill: none; stroke: rgb(255, 211, 138); stroke-width: 1.6px; stroke-dasharray: 3px, 7px; opacity: 0.648;"/></g>
     <path d="M18 117q8-5 16 0t16 0m85 5q8-4 16 0t16 0" fill="none" stroke="#4a6e7e" stroke-width="2" style="fill: none; stroke: rgb(74, 110, 126); stroke-width: 2px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="deviceA">Tidal-current rotor A</text>
 </g>
@@ -57,7 +56,6 @@
     <g data-flowing="true"><path d="M118 78v38h45" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round" style="fill: none; stroke: rgb(141, 158, 170); stroke-width: 3px; stroke-linejoin: round;"/>
     <path d="M118 78v38h45" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7" style="fill: none; stroke: rgb(255, 211, 138); stroke-width: 1.6px; stroke-dasharray: 3px, 7px; opacity: 0.648;"/></g>
     <path d="M18 117q8-5 16 0t16 0m85 5q8-4 16 0t16 0" fill="none" stroke="#4a6e7e" stroke-width="2" style="fill: none; stroke: rgb(74, 110, 126); stroke-width: 2px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="deviceB">Tidal-current rotor B</text>
 </g>

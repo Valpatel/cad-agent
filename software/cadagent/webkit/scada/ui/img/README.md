@@ -14,7 +14,7 @@ All displayed values and selected states are illustrative, editable rendering in
 | --- | --- |
 | [gallery-map.svg](gallery-map.svg) | Compact ownership map for UI imagery. |
 | [symbols/](symbols/README.md) | Every default type and declared variant, grouped by equipment family. |
-| [states/](states/README.md) | 31 illustrative comparisons for motion, availability, damage and retained inventory. |
+| [states/](states/README.md) | 51 illustrative comparisons for motion, availability, damage and retained inventory. |
 | [thumbnails/](thumbnails/README.md) | Static equipment, variant, state and reusable UI captures. |
 
 Generate SVGs and these maps with `npm --prefix tools/webkit/scada run gallery:generate`; verify with `npm --prefix tools/webkit/scada run gallery:check`. See the [export contract](../docs/GALLERY_EXPORT.md) and [gallery manifest](../metadata/gallery.json) for provenance and checks.

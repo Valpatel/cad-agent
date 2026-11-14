@@ -13,7 +13,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** Existing viewer, with optional validated guide manifests and abortable loading. */
 export async function createViewer({ app, panel, title, manifestUrl, manifest: suppliedManifest,
-    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, assemblyPlan, onSelect = () => {}, onHover, onStateChange = () => {} }) {
+    signal, onProgress = () => {}, timeoutMs = 30000, assetRoot, guideBound = false, assemblyPlan, embedded = false, onError, onSelect = () => {}, onHover, onStateChange = () => {} }) {
   if (typeof guideBound !== 'boolean') throw new Error('Invalid guide mode');
   if (onHover !== undefined && typeof onHover !== 'function') throw new Error('Invalid hover callback');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Invalid viewer timeout');
@@ -78,7 +78,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   holder.add(model);
   model.position.set(-mid.x, -box.min.y, -mid.z);
   const height = Math.max(size.x, size.y, size.z);
-  stage = createStage(app, { height: height * 0.8, screenshots: true });
+  stage = createStage(app, { height: height * 0.8, screenshots: true, onError });
   // Instructions can inspect the underside; ordinary viewers retain the stage's ground-view orbit limit.
   if (guideBound) stage.controls.maxPolarAngle = Math.PI;
   stage.renderer.localClippingEnabled = true;
@@ -333,7 +333,7 @@ export async function createViewer({ app, panel, title, manifestUrl, manifest: s
   }, { passive: true, signal: events.signal });
   updateInsets(); frameParts(state.visible);
   opening.position.copy(stage.camera.position); opening.target.copy(stage.controls.target);
-  window.addEventListener('resize', () => { if (!disposed) { updateInsets(); frameParts(state.visible); } }, { signal: events.signal });
+  window.addEventListener('resize', () => { if (!disposed) { updateInsets(); if (!embedded) frameParts(state.visible); } }, { signal: events.signal });
   stage.start(); stage.renderer.render(stage.scene, stage.camera);
   await new Promise((resolve, reject) => {
     let frame;

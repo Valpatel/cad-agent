@@ -4,14 +4,7 @@
 
 Each library owns its own `img/` directory. This package owns equipment artwork, visual states and viewer/workspace previews. [Simulation scenario previews](../../sim/img/README.md) belong to the separate model package.
 
-```mermaid
-flowchart TD
-  UI["scada-ui / img"] --> Symbols["symbols / equipment families"]
-  UI --> States["states / selected visual comparisons"]
-  UI --> Captures["thumbnails / equipment and workspace JPEGs"]
-  Model["scada-sim / img"] --> Scenarios["model-owned scenario previews"]
-  UI -. "sibling library link" .-> Model
-```
+![UI image folder map](gallery-map.svg)
 
 The catalog contains 239 generated SVG previews. SVG images contain the canonical equipment artwork, native SVG text/readouts and inline CSS animation; no scripts, external styles, fonts or images. GitHub and other Markdown renderers can display them using ordinary relative image links. Animation support depends on the renderer; the first frame remains useful. The live examples provide interactive state controls.
 
@@ -19,6 +12,7 @@ All displayed values and selected states are illustrative, editable rendering in
 
 | Folder | Contents and use |
 | --- | --- |
+| [gallery-map.svg](gallery-map.svg) | Compact ownership map for UI imagery. |
 | [symbols/](symbols/README.md) | Every default type and declared variant, grouped by equipment family. |
 | [states/](states/README.md) | 31 illustrative comparisons for motion, availability, damage and retained inventory. |
 | [thumbnails/](thumbnails/README.md) | Static equipment, variant, state and reusable UI captures. |

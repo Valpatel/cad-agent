@@ -109,9 +109,10 @@
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "ceeb9735373404d0e761e7574f00e2b517dd1762e57fe94e803c02d3a2238de4",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085",
-    "tools/webkit/scada/explorer/scenario_gallery_docs.py": "8faca60c4e62aefa630292f7822cb3dc439a2687f8c90848e3c76e5f0119e1a9",
+    "tools/webkit/scada/explorer/scenario_gallery_docs.py": "01002aaf9078ff2652b7a45cf0e70844cb9e87c665a291e24b10fd5e5fae54f0",
+    "tools/webkit/scada/gallery_maps.py": "c214435eed106b21895f9bb3b60b1046cd200b2e81e2ac54c89ff89ed455b6c1",
     "tools/webkit/scada/scada_paths.py": "ded9de4f4bfb2c8d82bd6797bb7afc625baea629bcba0c4701809dd86572def2",
-    "tools/webkit/scada/sim/generate-topologies.py": "728e65e2d40efdc276f5dca898c2f306f5ba831773e30cf1e5e2b469932d96b7",
+    "tools/webkit/scada/sim/generate-topologies.py": "dd50e6cb3809b1c7d70c9ee19dc403d34af6fde9bf9cb60df8612be6afe13dad",
     "tools/webkit/scada/sim/topology/layout.py": "717abebda968e9789501471111d5f653f53d691e50634415b4f1fe2af6450b5b",
     "tools/webkit/scada/sim/topology/symbol-exporter.mjs": "178d2e763190bae31eda66f6a5be6300f40527e1fd6016277cd4e32bfe310c56"
   },
@@ -22839,7 +22840,7 @@
     }
   ],
   "outputs": {
-    "img/topologies/README.md": "26375e2e1e58af47468b07cd8c01c265e8ee18d539a96d2e58514dcb1f3a5e0c",
+    "img/topologies/README.md": "56e0d1847b4e8f224718a3742b32cee343bc1c0d789f7198ff30fb831f2d2abe",
     "img/topologies/agriculture-aquaculture/README.md": "a09c9e25719e0f633789d0bbb6fc8236b0b90bcb5d9085a3c85f4507805540b8",
     "img/topologies/agriculture-aquaculture/aquaponics-dwc/README.md": "b863f4534dc104a27fcad2f6a48ac1c2c276447108005f352c7fec8caa261cd0",
     "img/topologies/agriculture-aquaculture/aquaponics-dwc/topology.svg": "645e7ff561f1f45c31145efb5af29ec734ebed2b8d48a3264ea6825bb72c83fe",
@@ -22885,6 +22886,7 @@
     "img/topologies/food-beverage/fruit-juice/topology.svg": "5b183e3f80cace5dd27280125b8f5c03c2d0df59b330e6476c1c8145f962adea",
     "img/topologies/food-beverage/winery/README.md": "474a66b0d576d63ecf3776ecaebb2c5482489a05dbf38cfb83579a8f6d3713ca",
     "img/topologies/food-beverage/winery/topology.svg": "170d720e37d626e61d06c8ced457a90e067aeef7feab03120708b94caceb120f",
+    "img/topologies/gallery-map.svg": "8039b286f1787d65ac72899749b426c18987265b8218e7c9286fe3bb3627b9f5",
     "img/topologies/manufacturing-thermal-processing/README.md": "5927e57b53e4eeab62df42c70aaaec3fa571e07dcc0d66c1824e863372e4cbcf",
     "img/topologies/manufacturing-thermal-processing/electric-batch-oven/README.md": "f2c96bd2597c8ca366c67e7653d79921f11802f08011ea34ff1559e56c9928b7",
     "img/topologies/manufacturing-thermal-processing/electric-batch-oven/topology.svg": "fc463c8e53aff0cc719366b3f1eb8c71a23357976f75d96e18edec4015f2852d",

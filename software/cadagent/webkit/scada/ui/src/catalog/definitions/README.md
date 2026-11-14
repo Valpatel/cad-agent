@@ -9,11 +9,11 @@
 | [agriculture.mjs](./agriculture.mjs) | Growing, aquaculture and climate descriptors, fields and provenance. |
 
 ```mermaid
-flowchart LR
-  industrial[Industrial and process data] --> registry[Catalog registry]
-  power[Power and nuclear data] --> registry
-  agriculture[Agriculture and climate data] --> registry
-  registry --> discovery[Discovery and validators]
+flowchart TD
+  Industrial["industrial.mjs"] --> Registry["Catalog registry"]
+  Power["power.mjs"] --> Registry
+  Agriculture["agriculture.mjs"] --> Registry
+  Registry --> Discovery["Discovery + validation"]
 ```
 
 Keep identity, state fields, ports and assumed provenance here; put geometry in [symbols](../../symbols/README.md) and dynamics in the external model. Some baseline descriptors remain assembled in `registry.mjs`; this directory is not a second complete registry. Shared damage/variant metadata can inform artwork without importing that artwork back into the catalog.

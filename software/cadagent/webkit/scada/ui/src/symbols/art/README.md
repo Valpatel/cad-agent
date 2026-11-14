@@ -9,16 +9,11 @@
 | [industrial.mjs](./industrial.mjs) / [industrial.css](./industrial.css) | Manufacturing/solids mechanisms and independent process/fault cues. |
 | [agriculture.mjs](./agriculture.mjs) / [agriculture.css](./agriculture.css) | Water, media, crops, aquaculture, climate and typed observation cues. |
 | [twin.mjs](./twin.mjs) / [twin.css](./twin.css) | Original shared Digester Twin illustrations and host-supplied incident layers. |
+| [map.svg](./map.svg) | Compact source map of the parent renderer's artwork imports. |
 
-```mermaid
-flowchart TD
-  renderer[Equipment renderer] --> control[Automation]
-  renderer --> process[Process]
-  renderer --> industrial[Manufacturing]
-  renderer --> agriculture[Growing and climate]
-  renderer --> twin[Shared twin art]
-  catalog[Typed descriptors] --> renderer
-```
+The arrows show artwork imports from the parent renderer.
+
+![Process artwork source map](./map.svg)
 
 Baseline tanks, pumps, valves and some instruments also have canonical geometry in the parent [components.mjs](../components.mjs); do not add a second copy here. Catalog definitions stay in [catalog](../../catalog/README.md). Draw only supplied state: a picture does not run PLC logic, infer plant data or advance the simulation.
 

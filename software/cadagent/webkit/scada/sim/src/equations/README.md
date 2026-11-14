@@ -20,14 +20,14 @@ Import this contract from `@valpatel/scada-sim/equations`; use
 `@valpatel/scada-sim/equation-examples` for the supplied physical-law examples.
 
 ```mermaid
-flowchart LR
-  Registry[Trusted provider registration] --> Runtime[Equation runtime]
-  Bindings[Data selectors and parameters] --> Runtime
-  Engine[Engine phase and default proposal] --> Runtime
-  Runtime --> Proposal[Validated effective proposal]
-  Proposal --> Kernel[Kernel gates and allocation]
-  Kernel --> Advance[Accepted local results]
-  Advance --> State[Owned provider state]
+flowchart TD
+  Registry["Trusted registry"] --> Runtime["runtime.mjs"]
+  Bindings["bindings.mjs"] --> Runtime
+  Engine["Engine proposal"] --> Runtime
+  Runtime --> Proposal["Validated proposal"]
+  Proposal --> Kernel["Kernel allocation"]
+  Kernel --> Advance["Accepted results"]
+  Advance --> State["Provider state"]
   State --> Runtime
 ```
 

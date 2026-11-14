@@ -79,6 +79,6 @@
 .toolkit-capability .toolkit-image-link img.toolkit-contain{object-fit:contain}
 .toolkit-capability .toolkit-card-actions{gap:14px}
 .toolkit-model-stage{--cad-model-font:var(--font);--cad-model-mono:var(--mono);--cad-model-fg:var(--ink);--cad-model-chip:var(--glass);--cad-model-line:var(--line-3);--cad-model-chip-on:var(--cream);--cad-model-focus:var(--orange);height:clamp(420px,72dvh,1000px);aspect-ratio:auto;max-width:none}
-@media(max-width:650px){.toolkit-capabilities{grid-template-columns:minmax(0,1fr)}.toolkit-model-stage{height:clamp(360px,100vw,560px)}}
+@media(max-width:650px){.toolkit-capabilities{grid-template-columns:minmax(0,1fr)}.toolkit-model-stage{height:clamp(440px,120vw,640px)}}
 .toolkit-model-stage .cad-model-btn{min-height:44px;font-size:14px}.toolkit-model-stage .cad-model-label,.toolkit-model-stage .cad-model-status{font-size:12px}
 @media(min-width:1500px){.toolkit-capabilities{grid-template-columns:repeat(4,minmax(0,1fr))}}

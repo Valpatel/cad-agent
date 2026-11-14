@@ -89,6 +89,35 @@ try{
     await page.emulateMedia({colorScheme:'light'});await expect.poll(mode).toBe('light');
     assert.deepEqual(await session(),before);
   });
+  await check('equipment inspector actions and on/off labels retain readable contrast in both themes',async()=>{
+    receipt.inspectorContrast=[];
+    const before=await session();
+    for(const colorScheme of ['light','dark']){
+      await page.emulateMedia({colorScheme});
+      await page.locator('#lab-viewer [data-scada-inspect]').click();
+      const dialog=page.locator('#industry-viewer-inspector-dialog');await expect(dialog).toBeVisible();
+      const buttons=dialog.locator('.scada-viewer-button:not(:disabled)');
+      assert.ok(await buttons.count()>=6);
+      await expect(dialog.locator('.scada-viewer-toggle[aria-pressed=true] span')).toContainText('On / open');
+      assert.ok(await dialog.locator('.scada-viewer-toggle[aria-pressed=false] span').count()>0);
+      for(const button of await buttons.all())for(const state of ['default','hover']){
+        if(state==='hover')await button.hover();else await page.mouse.move(0,0);
+        const result=await button.evaluate(element=>{
+          const rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number);
+          const luminance=value=>rgb(value).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
+          const background=getComputedStyle(element).backgroundColor,b=luminance(background);
+          return [element,...element.querySelectorAll('span')].map(node=>{
+            const color=getComputedStyle(node).color,f=luminance(color);
+            return {text:node.textContent.trim(),color,background,ratio:(Math.max(f,b)+.05)/(Math.min(f,b)+.05)};
+          });
+        });
+        for(const item of result)assert.ok(item.ratio>=4.5,`${colorScheme} ${state}: ${JSON.stringify(item)}`);
+        receipt.inspectorContrast.push({colorScheme,state,readings:result});
+      }
+      await shot(`equipment-inspector-${colorScheme}`);await close();
+    }
+    await page.emulateMedia({colorScheme:'light'});assert.deepEqual(await session(),before);
+  });
   await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
     for(const scenario of ['winery','wastewater-digester'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
       await page.setViewportSize({width,height});await page.emulateMedia({colorScheme});

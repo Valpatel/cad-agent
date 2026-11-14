@@ -101,6 +101,9 @@ export async function toolkitExampleChecks({open,fail}) {
         const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
         await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
         if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered arm');
+        // Fonts can reflow the phone controls after mount; Fit is defined for the current viewport.
+        await page.evaluate(()=>document.fonts.ready);
+        await page.getByRole('button',{name:'Zoom to fit',exact:true}).click();
         const fitted=await page.evaluate(()=>window.__replay.getViewState().camera),viewport=page.locator('.cad-viewer-viewport');
         await viewport.focus();await viewport.press('ArrowRight');
         await page.waitForFunction(before=>JSON.stringify(window.__replay.getViewState().camera)!==JSON.stringify(before),fitted);

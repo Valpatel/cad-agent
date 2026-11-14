@@ -6,10 +6,10 @@ Generated scenario map. Edit the [canonical JSON catalog](../index.json) or the 
 
 [Scenario map](../README.md) · [Package map](../../README.md) · [Model API](../../docs/MODEL-API.md)
 
-Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch.
+Operate receiving, fermentation, cellar and packaging branches with instrument taps, local pump controls and PLC-controlled transfer valves.
 
 **Model contract:** `scada-placeholder-model` v1. **Diagram contract:** `scada-system` v1.
-This pair contains 15 equipment records, 22 declared connections and 3 focused views of one shared model.
+This pair contains 23 equipment records, 42 declared connections and 4 focused views of one shared model.
 
 <a href="../../img/thumbnails/food-beverage/winery/preview.jpg"><img src="../../img/thumbnails/food-beverage/winery/preview.jpg" width="640" alt="Winery initial focused view"></a>
 
@@ -28,7 +28,7 @@ Use the [v1 model schema](../../schema/placeholder-model-v1.schema.json) and mat
 Keep component IDs synchronized between the two JSON documents. Parameters and
 positions are authored teaching assumptions, not measured facility specifications.
 
-## Topology: Main process
+## Topology: Winery overview
 
 <a href="../../img/topologies/food-beverage/winery/topology.svg"><img src="../../img/topologies/food-beverage/winery/topology.svg" width="900" alt="Winery compact equipment-symbol topology of its first focused view"></a>
 
@@ -41,13 +41,14 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
 <details>
-<summary>3 focused views of this system</summary>
+<summary>4 focused views of this system</summary>
 
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
-| Main process | `process` | 10 |
-| Utilities & control | `utilities` | 7 |
-| Finishing & storage | `finishing` | 7 |
+| Winery overview | `process` | 23 |
+| Fermentation & cellar | `fermentation` | 12 |
+| Bottling & packaging | `finishing` | 10 |
+| Power & instruments | `utilities` | 19 |
 
 </details>
 
@@ -58,7 +59,7 @@ not imply a calibrated device equation. Circuit roles describe resource bookkeep
 energy roles describe declared supply/conversion/load relationships.
 
 <details>
-<summary>Inspect the 15 equipment records and model roles</summary>
+<summary>Inspect the 23 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -76,7 +77,15 @@ energy roles describe declared supply/conversion/load relationships.
 | `biogasFlare` · Illustrative biogas flare | `flare` | `heater` |
 | `power` · Demonstration site power | `generator` | `generator` |
 | `controller` · Cellar controller | `plc-rack` | `controller` |
-| `pressure` · Transfer pressure monitor | `pressure-transmitter` | `sensor` |
+| `pressure` · PT-101 Transfer pressure | `pressure-transmitter` | `sensor` |
+| `mustValve` · FCV-101 Must feed | `control-valve` | `valve` |
+| `cellarValve` · FCV-201 Cellar feed | `control-valve` | `valve` |
+| `fillValve` · FCV-301 Bottling feed | `control-valve` | `valve` |
+| `mustFlow` · FT-101 Must flow | `flow-meter` | `sensor` |
+| `fermenterTemperature` · TT-201 Fermenter temp | `temperature-sensor` | `sensor` |
+| `fermenterLevel` · LT-201 Fermenter level | `level-sensor` | `sensor` |
+| `cellarLevel` · LT-202 Cellar level | `level-sensor` | `sensor` |
+| `remoteIO` · RIO-01 Field I/O | `remote-io` | `controller` |
 
 </details>
 
@@ -86,10 +95,10 @@ The complete scenario and per-component assumptions are in [model.json](model.js
 Reference provenance and authored-layout declarations are in [system.json](system.json).
 Key scope statements from this model:
 
+- Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch.
 - All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.
 - Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.
 - Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.
-- Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance.
 
 ## Authored experiments
 
@@ -98,7 +107,7 @@ limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
 <details>
-<summary>Inspect 5 experiment recipes and commands</summary>
+<summary>Inspect 7 experiment recipes and commands</summary>
 
 | Experiment | Commands |
 | --- | --- |
@@ -107,6 +116,8 @@ Run or step the shared model to observe time-dependent effects.
 | Overload grape crusher (`overload-stage`) | `setParameter(equipment="crusher", key="capacity", value=25)`; `setLoad(equipment="crusher", value=95)` |
 | Break grape crusher (`break-stage`) | `setFault(equipment="crusher", value=true)` |
 | Trip the demonstration power source (`trip-power`) | `setFault(equipment="power", value=true)` |
+| Isolate fermenter feed (`isolate-must-feed`) | `setOpen(equipment="mustValve", value=false)` |
+| Lose winery control (`lose-winery-plc`) | `setEnabled(equipment="controller", value=false)` |
 
 </details>
 

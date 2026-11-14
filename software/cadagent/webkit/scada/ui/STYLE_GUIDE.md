@@ -6,7 +6,7 @@ Read [README.md](./README.md) for the API and component map, and [CONTRIBUTING.m
 
 Use recognizable equipment silhouettes, restrained metallic depth and translucent teal surfaces. A pump should read as a pump before motion starts. A PLC rack, CPU, remote IO unit and HMI must remain distinguishable at card size and without color. Prefer original SVG geometry to a generic box decorated with a different label.
 
-The hierarchy is equipment shape, current value/state, then context. Keep primary names and controls in HTML at readable sizes; tiny SVG labels are supplementary. Keep process maps compact and put detailed controls in the shared native dialog. A visual component has no private simulation, process timer or hardware connection.
+The hierarchy is equipment identity and shape, current value/state, then context. Keep canonical IDs, names and controls in HTML at readable sizes; tiny SVG labels are supplementary. Keep process maps compact: an anchored quick panel handles equipment actions, and **Details & model** opens the full inspection surface. A visual component has no private simulation, process timer or hardware connection.
 
 ## Palette and tokens
 
@@ -21,12 +21,12 @@ These values describe the current implementation. Reuse them for additions inste
 | Glass | Low-opacity cyan highlights over dark blue, with visible outlines |
 | Liquid / normal activity | `#57ffd0`, `#62ffbc`, `#68ffe1`, deep `#087a92` |
 | Electrical / warm flow | `#ffd38a` |
-| Focus / selection | Cyan `#00d7e4` or `#73eff6`, with an outline rather than color alone |
+| Keyboard focus / hover | Cyan `#00d7e4` or `#73eff6` outlines; equipment inspection does not add a persistent selected fill |
 | Warning | Amber `#ffd38a` and a triangular exclamation symbol |
 | Fault | Pink `#ff77ac` and an octagonal X symbol |
 | Inactive / offline | Reduced saturation and opacity while retaining the equipment silhouette |
 
-`scada-workspace.css` exposes `--scada-line`, `--scada-surface`, `--scada-raised`, `--scada-ink`, `--scada-muted` and `--scada-accent` on `.scada-workspace`. Its optional `--sim-*` fallbacks support the host app. The component stylesheet uses local variables such as `--scada-activity-duration`, `--scada-level` and `--scada-load`; render state is the public way to supply values. Do not make consumers set private transform/offset variables to achieve ordinary state changes.
+[`src/workspace/workspace.css`](src/workspace/workspace.css) exposes `--scada-line`, `--scada-surface`, `--scada-raised`, `--scada-ink`, `--scada-muted` and `--scada-accent` on `.scada-workspace`. Its optional `--sim-*` fallbacks support the host app. The component stylesheet uses local variables such as `--scada-activity-duration`, `--scada-level` and `--scada-load`; render state is the public way to supply values. Do not make consumers set private transform/offset variables to achieve ordinary state changes.
 
 Keep CSS within `.scada-component`, `.scada-workspace` or the viewer's own namespace. Do not add global `button`, `svg`, `input` or heading rules. Workspace styling works beneath a neutral `.scada-workspace` root; consumers do not need the reference app’s `#main` container.
 
@@ -97,7 +97,37 @@ Use native controls with at least 44 px targets, visible focus, associated label
 
 Pair foreground and background tokens for inspector buttons in every application theme. Measure at least 4.5:1 text contrast for default, pressed/unpressed and hovered actions, including the smaller on/off status spans.
 
-Dialogs use `ScadaWorkspace` for top-layer behavior, focus containment, Escape/backdrop dismissal and focus return. Keep controls mounted during live value updates; do not replace the whole modal on each tick. Destroy the view/dialog controller before removing its root, while preserving the externally owned system session.
+Every diagram equipment button shows its raw canonical ID in
+`.scada-viewer-equipment-id`, separately from its human name. Pickers use
+`ID · name`; quick and full inspection repeat the same ID. Never derive identity
+from labels, visual ordering or selection indexes. Equipment buttons open a
+dialog and use expanded state; they are not toggles and must not acquire
+`aria-pressed` or a persistent selection fill. Boolean command buttons retain
+their real pressed/on-off state.
+
+Quick equipment controls use `ScadaPopover` in screen space. The panel follows
+its equipment through pan/zoom, stays within the visible viewport and remains
+readable independently of diagram scale. Close, Escape and an outside click
+dismiss it. It does not trap focus or lock page scrolling. Show only that
+equipment's controls and compact readings; keep global actions in full details.
+
+Full native dialogs use `ScadaWorkspace` for top-layer behavior, focus containment,
+Escape/backdrop dismissal and focus return. A host details callback owns the same
+lifecycle for its surface. Returning from details should reach a meaningful
+connected opener. Outside quick-panel dismissal must preserve the target the
+user clicked. Nested inspection must dismiss the active inner surface first.
+
+Keep controls mounted across ticks for the same equipment so focused drafts
+survive. On an ID change, close or replace the inspection context before editing
+the new equipment; never route an old draft to the new ID. Destroy each camera,
+popover and dialog controller before removing its root, while preserving the
+externally owned session.
+
+Model details show the selected equipment's accepted configuration, parameter
+units and the active kernel/provider identity and implementation. A displayed
+equation must correspond to executable model code. Do not add decorative formulas
+or label illustrative indices as calibrated physics. Hosts own this model
+inspection; the reusable UI remains independent of a solver.
 
 Contained diagram viewers use a camera, not scrollbars, to navigate their 2D or
 3D content. Size the viewport to the available host/window, keep **Zoom to fit**

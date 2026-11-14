@@ -54,6 +54,22 @@ try{
   context=await browser.newContext({viewport:{width:1440,height:1100},colorScheme:'light',acceptDownloads:true});page=await context.newPage();
   page.on('pageerror',error=>errors.push(error.message));
   page.on('response',response=>{if(response.status()>=400)responses.push(`${response.status()} ${response.url()}`);});
+  await check('reusable diagram actions operate the declared equipment through pointer and keyboard without opening a modal',async()=>{
+    await page.goto(`${baseURL}/kit/scada/ui/examples/viewer/index.html`);
+    const root=page.locator('#utility-viewer'),action=root.locator('[data-scada-diagram-control="valveSwitch"]');
+    await expect(action).toHaveText('Close');await action.click();await expect(action).toHaveText('Open');
+    assert.equal(await root.locator('dialog[open]').count(),0);
+    await expect(root.locator('[data-scada-connection="deliveredWater"]')).toHaveAttribute('data-active','false');
+    await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');
+    await page.keyboard.press('Space');await expect(action).toHaveText('Open');
+    const before=await root.locator('[data-scada-canvas]').getAttribute('style'),box=await action.boundingBox();
+    await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+    await page.mouse.move(box.x+box.width/2+60,box.y+box.height/2+35,{steps:8});await page.mouse.up();
+    await expect(action).toHaveText('Open');assert.notEqual(await root.locator('[data-scada-canvas]').getAttribute('style'),before);
+    assert.equal(await page.locator('#utility-monitor [data-scada-diagram-control]').count(),0);
+    await root.locator('[data-scada-view-choice="power"]').click();await expect(action).toHaveText('Open');
+    await root.locator('[data-scada-camera-fit]').click();await shot('direct-equipment-actions');
+  });
   await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
   await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');
   await check('target-owned wastewater control room opens with three views and sound off',async()=>{

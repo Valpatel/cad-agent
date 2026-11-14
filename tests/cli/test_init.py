@@ -148,10 +148,10 @@ def _wheel_smoke(tmp_path):
     source, wheels, outside = (tmp_path / name for name in ("source", "wheels", "outside"))
     env_dir = outside / ".venv"
     source.mkdir(); wheels.mkdir(); outside.mkdir()
-    process_environment = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME", "NODE_PATH", "NODE_OPTIONS")}
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME", "NODE_PATH", "NODE_OPTIONS")}
 
     def run(args, *, cwd=outside, check=True):
-        result = subprocess.run([str(a) for a in args], cwd=cwd, env=process_environment, capture_output=True, text=True, timeout=180)
+        result = subprocess.run([str(a) for a in args], cwd=cwd, env=env, capture_output=True, text=True, timeout=180)
         if check and result.returncode:
             raise AssertionError(f"{args[0]} exited {result.returncode}\n{result.stdout}\n{result.stderr}")
         return result
@@ -188,9 +188,9 @@ def _wheel_smoke(tmp_path):
         for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
                                           ("Linux", "aarch64", False), ("Darwin", "arm64", False),
                                           ("Darwin", "x86_64", False), ("Windows", "ARM64", False)):
-            env = {"platform_system": system, "platform_machine": machine}
-            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected_pardiso, env
-            assert not pardiso[0].marker.evaluate({**env, "extra": ""}), "PARDISO leaked into the core install"
+            marker_env = {"platform_system": system, "platform_machine": machine}
+            assert pardiso[0].marker.evaluate({**marker_env, "extra": "fea"}) is expected_pardiso, marker_env
+            assert not pardiso[0].marker.evaluate({**marker_env, "extra": ""}), "PARDISO leaked into the core install"
     shutil.rmtree(source)
     assert not source.exists()
     # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor
@@ -224,7 +224,7 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
         assert hashlib.sha256(installed.read_bytes()).hexdigest() == digest, installed
     scopes = [parent / "package.json" for parent in (sdk, *sdk.parents) if (parent / "package.json").is_file()]
     assert scopes[:2] == [sdk / "package.json", outside / "package.json"], scopes
-    node = shutil.which("node", path=process_environment.get("PATH"))
+    node = shutil.which("node", path=env.get("PATH"))
     assert node, "the required wheel SDK consumer needs Node 22+; it must not be skipped"
     node_version = run([node, "-p", "process.versions.node"]).stdout.strip()
     assert int(node_version.split(".")[0]) >= 22, node_version
@@ -234,6 +234,27 @@ if (typeof sdk.snapArm !== 'function' || sdk.SMALL_DEFLECTION !== 0.1) throw new
 console.log('installed SDK ESM PASS');"""
     good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"])
     assert "installed SDK ESM PASS" in good_sdk.stdout
+    # Profiles must be installed data, resolving real nested files with no checkout fallback.
+    profile_probe = """import json
+from cadagent.publish.runtime import capture_profile
+bundle = capture_profile("assembly-reader")
+print(json.dumps({"identity": dict(bundle.identity), "files": sorted(bundle)}))"""
+    profile = json.loads(run([python, "-I", "-c", profile_probe]).stdout)
+    assert profile["identity"]["profile"] == "assembly-reader"
+    assert "assembly/playback.js" in profile["files"] and "vendor/fonts/fonts.css" in profile["files"]
+    module_probe = """import { pathToFileURL } from 'node:url';
+const reader = await import(pathToFileURL(process.argv[1]).href);
+if (typeof reader.validateGuide !== 'function') throw new Error('wrong installed reader');
+console.log('installed nested reader PASS');"""
+    assert "installed nested reader PASS" in run([node, "--input-type=module", "-e", module_probe,
+                                                    sdk / "assembly/guide.js"]).stdout
+    profile_file = sdk.parent / "publish/runtime-profiles.json"
+    declared = profile_file.read_bytes()
+    profile_file.unlink()
+    rejected_profile = run([python, "-I", "-c", profile_probe], check=False)
+    assert rejected_profile.returncode != 0 and "cannot read manifest" in rejected_profile.stderr
+    profile_file.write_bytes(declared)
+    print("installed runtime profile PASS: nested ESM and missing-manifest rejection")
     # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
     (sdk / "package.json").unlink()
     assert Path(paths["declared_config"]).is_file() and not source.exists()

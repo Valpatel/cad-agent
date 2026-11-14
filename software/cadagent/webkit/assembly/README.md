@@ -14,6 +14,7 @@ flowchart TD
 
 | File | Responsibility |
 |---|---|
+| [NOTICE.txt](NOTICE.txt) | Existing toolkit and adapted stage/HUD license terms carried by portable reader exports |
 | `guide.js` | Strict guide/view validation, bounded asset reads and absolute step controller |
 | `playback.js` | Canonical plan validation, absolute piecewise pose/parent adapter and reversible serial evaluation; legacy explicit instance order and absolute installation timing; caller supplies stage ticks |
 

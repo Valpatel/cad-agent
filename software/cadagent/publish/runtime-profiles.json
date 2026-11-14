@@ -1,0 +1,135 @@
+{
+  "profiles": {
+    "assembly-reader": {
+      "entrypoints": [
+        "model/viewer.html"
+      ],
+      "files": {
+        "assembly/NOTICE.txt": {
+          "requires": [],
+          "sha256": "2a56932d6d0173cac37d2fcbc91e95e59a1de23641901109940bbd27f21fe202"
+        },
+        "assembly/guide.js": {
+          "requires": [
+            "assembly/playback.js",
+            "model/viewer.js"
+          ],
+          "sha256": "e70c2d89fe631a159eefe8b0bb9a28013fa6ca621d10eb240f83322fd7779a5a"
+        },
+        "assembly/playback.js": {
+          "requires": [],
+          "sha256": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7"
+        },
+        "files/file-geometry.js": {
+          "requires": [],
+          "sha256": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd"
+        },
+        "model/stage.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "vendor/three/addons/controls/OrbitControls.js"
+          ],
+          "sha256": "30d2ce68020f2e1d37073468067847878eb8ecefd0a54c117c8568b8f7a01aa3"
+        },
+        "model/viewer.html": {
+          "requires": [
+            "ui/hud.css",
+            "model/viewer.js",
+            "assembly/guide.js",
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "92e3df9838e31e38b3752ba316b40b76337f2dcdfdc001bfd7e1cdfe8dfb8bdc"
+        },
+        "model/viewer.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "assembly/playback.js",
+            "vendor/three/addons/loaders/STLLoader.js",
+            "model/stage.js",
+            "ui/panel.js",
+            "assembly/guide.js",
+            "files/file-geometry.js"
+          ],
+          "sha256": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241"
+        },
+        "package.json": {
+          "requires": [],
+          "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+        },
+        "ui/hud.css": {
+          "requires": [
+            "vendor/fonts/fonts.css"
+          ],
+          "sha256": "f4933895d9676f014f8cff85d3cf439dfbad74fa2a84fd8a8b1b42adcf949d21"
+        },
+        "ui/panel.js": {
+          "requires": [],
+          "sha256": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b"
+        },
+        "vendor/file-parsers/THREE-LICENSE.txt": {
+          "requires": [],
+          "sha256": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d"
+        },
+        "vendor/fonts/OFL-Inter.txt": {
+          "requires": [],
+          "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+        },
+        "vendor/fonts/OFL-JetBrainsMono.txt": {
+          "requires": [],
+          "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+        },
+        "vendor/fonts/SOURCE.json": {
+          "requires": [],
+          "sha256": "d7ab379b752f78ec529c1f5f4072ac659842d143b2f288212f5c75123f4939df"
+        },
+        "vendor/fonts/fonts.css": {
+          "requires": [
+            "vendor/fonts/inter.woff2",
+            "vendor/fonts/jetbrains-mono.woff2"
+          ],
+          "sha256": "8d4d4568d1e6d4942045dadc47aae800a5cc759245bdd3c742e665072865afd4"
+        },
+        "vendor/fonts/inter.woff2": {
+          "requires": [],
+          "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+        },
+        "vendor/fonts/jetbrains-mono.woff2": {
+          "requires": [],
+          "sha256": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be"
+        },
+        "vendor/three/SOURCE.json": {
+          "requires": [],
+          "sha256": "a9e994c36cf9afda1bc0fc5ca72b19449654d98afdba1687d671873270008dbf"
+        },
+        "vendor/three/addons/controls/OrbitControls.js": {
+          "requires": [
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe"
+        },
+        "vendor/three/addons/loaders/STLLoader.js": {
+          "requires": [
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93"
+        },
+        "vendor/three/three.module.min.js": {
+          "requires": [],
+          "sha256": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
+        }
+      },
+      "notices": [
+        "assembly/NOTICE.txt",
+        "vendor/fonts/OFL-Inter.txt",
+        "vendor/fonts/OFL-JetBrainsMono.txt",
+        "vendor/file-parsers/THREE-LICENSE.txt"
+      ],
+      "resources": [
+        "package.json",
+        "vendor/fonts/SOURCE.json",
+        "vendor/three/SOURCE.json"
+      ]
+    }
+  },
+  "schema": "cad-agent.runtime-profiles/1"
+}

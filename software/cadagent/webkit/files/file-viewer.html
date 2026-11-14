@@ -26,7 +26,7 @@
     const sharedTheme=()=>{
       const css=getComputedStyle(document.documentElement),colors={};
       const tokens={background:'cream',canvas:'cream',surface:'card',text:'ink',muted:'text-2',border:'line-3',control:'soft',controlHover:'soft-3',controlText:'ink',focus:'focus',error:'bad',accent:'accent',grid:'line-3',glow:'accent'};
-      for(const [name,token] of Object.entries(tokens))colors[name]=css.getPropertyValue('--'+token).trim();
+      for(const [name,token] of Object.entries(tokens))colors[name]=css.getPropertyValue('--'+token).trim().replace(/^#([\da-f])([\da-f])([\da-f])$/i,(_,r,g,b)=>'#'+r+r+g+g+b+b);
       return {mode:document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),colors,fontFamily:css.getPropertyValue('--font').trim()};
     };
     const theme=explicitTheme?requestedTheme:sharedTheme();

@@ -7,15 +7,11 @@ reference dimensions of a gear and of a pair, so the script places two gears fro
 a pair that runs.** The strength formulas are a separate module (#721).
 
 ```python
-from cadagent.mechanical.gears import (gear_pair_dimensions, module_from_diametral_pitch, spur_gear,
-                                       external_ring_gear)
+from cadagent.mechanical.gears import (external_ring_gear, gear_pair_dimensions, module_from_diametral_pitch,
+                                       spur_gear)
 
 pair = gear_pair_dimensions(2.0, 18, 40, backlash=0.05)
-pinion = spur_gear(2.0, 18, 10, bore=6, backlash=0.05)                 # at the origin, tooth 0 on +X
-wheel = (spur_gear(2.0, 40, 10, bore=10, backlash=0.05)
-         .rotate((0, 0, 0), (0, 0, 1), pair['mesh_rotation_b_deg'])    # a tooth space faces the pinion
-         .translate((pair['centre_distance_mm'], 0, 0)))               # 58 mm
-ring = external_ring_gear(2.0, 60, 8, inner_diameter=100)              # teeth outside, plain bore
+pinion = spur_gear(2.0, 18, 10, bore=6, backlash=0.05)
 steel = spur_gear(module_from_diametral_pitch(12), 16, 12.7, pressure_angle=14.5)   # warns: undercut
 ```
 
@@ -60,6 +56,28 @@ that play. `tooth_thickness_mm` is π·m/2, plus 2·x·m·tan α for a profile s
 the profile shifts do not sum to zero), the ratio, the contact ratio, the tip clearance and the turn that puts a
 tooth space of the second gear against a tooth of the first.
 
+```mermaid
+flowchart TD
+    D["gear_pair_dimensions<br/>centre distance<br/>mesh rotation"] --> A["gear a<br/>at the origin<br/>tooth 0 on +X"]
+    D --> B["gear b<br/>turned by the mesh rotation<br/>moved to the centre distance"]
+    A --> C["collision check<br/>or export"]
+    B --> C
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class D,A,B here
+    class C near
+```
+
+```python
+wheel = (spur_gear(2.0, 40, 10, bore=10, backlash=0.05)
+         .rotate((0, 0, 0), (0, 0, 1), pair['mesh_rotation_b_deg'])    # a tooth space faces the pinion
+         .translate((pair['centre_distance_mm'], 0, 0)))               # 58 mm
+ring = external_ring_gear(2.0, 60, 8, inner_diameter=100)              # teeth outside, plain bore
+```
+
+`external_ring_gear` is the same gear with a large bore and a floor on the rim under the teeth (one module by
+default: a drawing floor, not a strength rating). It is not an internal gear.
+
 | Field | Meaning |
 |---|---|
 | `contact_ratio` | Counts contact on involute only, so an undercut gear lowers it; `contact_shortened` says when. Below 1.2 it adds a note. |
@@ -69,9 +87,20 @@ tooth space of the second gear against a tooth of the first.
 ## Straight bevel gears
 
 `bevel_gear(module, teeth, mate_teeth, face_width)` makes one gear of a 90° pair, with the pitch apex at the origin
-and the axis on Z; swap the two tooth counts for its mate. Turn the mate by its `mesh_rotation_deg` about Z, then by
-90° about Y: both apexes stay at the origin and the gears mesh. `bevel_gear_dimensions` gives the pitch, tip and root
-angles, the cone distance and the Z of the flat back and front faces, for the mounting distance.
+and the axis on Z; swap the two tooth counts for its mate.
+
+```mermaid
+flowchart TD
+    G["bevel_gear(m, z1, z2, b)<br/>axis Z<br/>apex at the origin"] --> P["meshed pair<br/>both apexes at the origin"]
+    M["bevel_gear(m, z2, z1, b)<br/>turn by mesh_rotation_deg about Z<br/>then 90° about Y"] --> P
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    class G,M here
+    class P near
+```
+
+`bevel_gear_dimensions` gives the pitch, tip and root angles, the cone distance and the Z of the flat back and front
+faces, for the mounting distance.
 
 The tooth form is **Tredgold's approximation**: the large-end tooth is that of a spur gear with
 teeth / cos(pitch angle) teeth, laid on the back cone, and every point of it runs straight to the apex. It is close
@@ -80,7 +109,13 @@ across the teeth, flat faces inside, a through bore.
 
 ## How it was checked
 
-The tests measure the solids ([`tests/mechanical/test_gears.py`](../../tests/mechanical/test_gears.py)):
+The tests measure the solids rather than only build them, and a meshed pair turns by the backlash it was given and no
+further.
+
+<details>
+<summary>What was measured, and the build times</summary>
+
+In [`tests/mechanical/test_gears.py`](../../tests/mechanical/test_gears.py):
 
 - tooth count, by turning the gear one tooth pitch onto itself; tip and root radii; one valid solid;
 - tooth thickness on the pitch circle and along the involute against the closed form, to 0.002 mm;
@@ -93,6 +128,8 @@ The tests measure the solids ([`tests/mechanical/test_gears.py`](../../tests/mec
 Build times on a desktop, CadQuery 2.8: a 176-tooth spur gear 0.2 s (0.8 s for the first solid of a session); bevel
 gears of 16, 32 and 60 teeth 1.1 s,
 1.9 s and 3.8 s.
+
+</details>
 
 ## What it does not do
 

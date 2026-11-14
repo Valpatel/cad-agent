@@ -17,6 +17,9 @@ flowchart TD
   class H,M,V here
 ```
 
+<details>
+<summary>Source owners and responsibilities</summary>
+
 | Owner | Responsibility |
 | --- | --- |
 | `software/cadagent/webkit/scada/ui/` | Equipment descriptors and SVG states, system validation, viewer/controller, workspace controls, styles and image gallery |
@@ -25,6 +28,8 @@ flowchart TD
 | `tools/webkit/scada/` | Schema/metadata, gallery, topology, scenario documentation and capture producers |
 | `tests/webkit/scada/` | UI/model/adapter/scenario and browser regression evidence |
 | `.agents/skills/scada-*/` | Repeatable authoring, model replacement, visual review and consumer verification |
+
+</details>
 
 Each owner has a README leading to its files, child domains and related tools.
 API and format guides stay beside their libraries so a source extraction has its

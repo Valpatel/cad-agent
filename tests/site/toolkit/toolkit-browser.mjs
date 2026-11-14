@@ -91,11 +91,12 @@ export async function scadaNativeNavigationChecks({open,fail}) {
         if(await page.locator('.toolkit-shell a[href^="/kit/scada/"][href$=".md"]').count())fail('SCADA native guides',`${route}: human documentation exits to raw Markdown`);
         if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('SCADA native frame',`${route} @${options.width}: horizontal overflow`);
         if(route!=='/toolkit/scada')continue;
-        for(const label of ['Use & extend','UI library','Models & equations','Replace equations','For agents']) {
+        for(const label of ['Use & extend','UI library','Models & equations','Local setup & packaging','Replace equations','For agents']) {
           const link=page.locator('.toolkit-shell').getByRole('link',{name:label,exact:true});
           const destination=new URL(await link.getAttribute('href'),page.url());
           await link.scrollIntoViewIfNeeded();await link.focus();
-          await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+          if(options.js)await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+          else await link.screenshot(); // Paint the focused native link without scheduling disabled page script.
           await Promise.all([page.waitForURL(url=>url.origin===destination.origin&&url.pathname===destination.pathname,{waitUntil:'domcontentloaded'}),link.press('Enter')]);
           await page.getByRole('navigation',{name:'Main'}).waitFor();
           if(!await page.getByRole('navigation',{name:'Main'}).getByRole('link',{name:'Toolkit',exact:true}).isVisible())fail('SCADA native guides',`${label}: shared navigation disappeared`);

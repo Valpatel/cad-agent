@@ -32,9 +32,9 @@ SCENES = {
   ('Keep the evidence', 'Source, result and limits', 'docs/validation/README.md')]),
  'scada-session': ('One process, several views', 'The host owns the session; diagrams observe its state.', [
   ('System + model', 'IDs, ports and equations', 'software/cadagent/webkit/scada/sim/README.md'),
-  ('Shared session', 'Commands and time steps', 'software/cadagent/webkit/scada/explorer/README.md'),
+  ('Shared session', 'Commands and steps', 'software/cadagent/webkit/scada/explorer/README.md'),
   ('Snapshot adapter', 'Readings and capabilities', 'software/cadagent/webkit/scada/sim/src/adapter.mjs'),
-  ('Diagram views', 'Symbols and quick controls', 'software/cadagent/webkit/scada/ui/README.md')]),
+  ('Diagram views', 'Symbols and controls', 'software/cadagent/webkit/scada/ui/README.md')]),
 }
 
 def render(title, subtitle, nodes, still=False):

@@ -114,12 +114,23 @@ teeth / cos(pitch angle) teeth, laid on the back cone, and every point of it run
 to, but not, the spherical involute or the octoid a bevel generator cuts. The body is plain: back and front cones
 across the teeth, flat faces inside, a through bore.
 
-| Limit | What happens |
-|---|---|
-| Face width up to a third of the cone distance | The usual range. Nothing is reported. |
-| Face width above a third | The gear is drawn, the dimensions carry a note and `bevel_gear` raises a `UserWarning`: the small-end teeth get very fine. |
-| Face width above 0.9 of the cone distance | Refused with a `ValueError` that names the limit in mm: the teeth vanish toward the apex. |
-| Too few teeth for a back face (4 teeth against 40, say) | Refused with a `ValueError` that names the tooth counts; a smaller `backing` may fit. |
+The face width is checked against the cone distance (apex to large end, `cone_distance_mm`):
+
+```mermaid
+flowchart TD
+    W{"face width<br/>÷ cone distance"} -->|"up to a third"| A["drawn<br/>the usual range"]
+    W -->|"above a third"| B["drawn, UserWarning<br/>note in the dimensions<br/>fine small-end teeth"]
+    W -->|"above 0.9"| C["refused: ValueError<br/>limit named in mm<br/>teeth vanish at the apex"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class W,A here
+    class B near
+    class C out
+```
+
+A gear with too few teeth for a back face (4 teeth against 40, say) is refused with a `ValueError` that names the
+tooth counts; a smaller `backing` may fit.
 
 **Backlash shrinks toward the apex.** `backlash` thins the large-end tooth, and the allowance scales with the tooth
 along the face. A pair has the same angular play all along the tooth, but the gap between the flanks is smaller at the

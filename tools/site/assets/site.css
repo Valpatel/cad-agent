@@ -35,7 +35,8 @@ img,svg,video{max-width:100%}img{height:auto}
 /* the theme button (web/theme.js): the system's theme until the reader picks; hidden without script, which it needs */
 .theme-toggle{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;padding:0;border:1px solid var(--line-2);border-radius:50%;
   background:var(--card);color:var(--ink);cursor:pointer}
-.theme-toggle:hover{border-color:var(--ink)}.theme-toggle[hidden]{display:none}
+/* Reserve the button's responsive box before startup, without showing or focusing an inactive control. */
+.theme-toggle:hover{border-color:var(--ink)}.theme-toggle[hidden]{display:inline-grid;visibility:hidden}
 .theme-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .theme-toggle .moon,[aria-pressed=true]>.sun{display:none}[aria-pressed=true]>.moon{display:block}
 .eyebrow{font:650 11px/1.7 var(--mono);letter-spacing:.11em;margin:0 0 22px;text-transform:uppercase;color:var(--eyebrow)}

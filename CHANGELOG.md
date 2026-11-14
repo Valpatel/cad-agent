@@ -9,6 +9,30 @@ are described on the [tags page](https://github.com/Valpatel/cad-agent/tags).
 
 ## Unreleased
 
+## v0.42.0 (2026-11-14)
+
+**New**
+- Add a contained viewer host for ordinary assembly and original CAD-file viewing, with independent cameras, scoped controls and lifecycle handling (#691).
+- Native Toolkit sections for animated SCADA equipment and 61 example simulations, including a wastewater digester with shared treatment, sludge/energy and control views.
+- Local SCADA UI and simulation libraries, editable equation providers, browsable asset galleries and agent skills for components, models, system definitions and visual review.
+
+**Changed**
+- Agent issue tracking distinguishes ongoing programs, bounded work, understood quick fixes and pending design reviews, with a bundled label guide and evidence-based issue templates (#679).
+- Bound portable assembly-guide exports to a checked runtime dependency profile containing the required modules, notices and source-bound assets.
+- SCADA runtime, library images, maintenance tools and tests have distinct canonical owners. Equipment and scenario galleries are grouped by domain and type.
+- Folder maps support compact owned SVGs, and JavaScript-only test folders no longer require Python package markers.
+- Organize browser modules under their actual model, file, UI, document, assembly, analysis and calculator owners (#696).
+
+**Fixed**
+- Prevent broad filled floor-grid polygons in WebKit's shared 3D stage while preserving the camera range, grid axes, themes, dimming, ground shadows, and viewer controls.
+- The homepage’s recorded thermal and airflow examples and diagnosis card now link to their CFD evidence and its limits, instead of the unrelated contact-FEA survey (#677).
+- FEA `Study.converge()` compares unrounded design stresses, so tiny loads cannot falsely pass after rounding to zero; its stress pair and relative change retain full numerical precision (#687).
+- Mobile Toolkit readability, element-filter reset, nested application routing and draft asset selection.
+
+**Projects must change**
+- Refresh copied kits with `cad-agent webkit` and update direct imports and entry URLs to the [canonical owner paths](software/cadagent/webkit/README.md), such as `model/viewer.html` and `files/file-viewer.html`. Flat module URLs are removed; generated guides use the current paths (#696).
+- Re-run FEA convergence checks whose stress changes were affected by rounding to 0.01 MPa; convergence records now contain unrounded numerical values. Display summaries remain rounded (#687).
+
 ## v0.41.1 (2026-11-13)
 
 **Fixed**

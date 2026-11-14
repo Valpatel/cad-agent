@@ -111,7 +111,9 @@ test('capabilities open owned working examples, with real previews and explicit 
   const inputs=Object.fromEntries(Object.entries(SCADA_INPUTS).map(([key,file])=>[key,read(file)]));
   const has=file=>existsSync(path.join(root,file));
   const model=scadaToolkitModel({...inputs,has});
-  const cards=toolkitCapabilities(model,{has});
+  const cards=toolkitCapabilities(model,{has,catalog:[{id:'demo-fourbar-animator',url:'https://cad-agent.valpatel.com/docs/linkages#try-it-the-four-bar-animator'}]});
+  assert.equal(cards.find(card=>card.id==='mechanisms').href,'/docs/linkages#try-it-the-four-bar-animator');
+  assert.throws(()=>toolkitCapabilities(model,{catalog:[{id:'demo-fourbar-animator',url:'https://external.invalid/demo'}]}),/must be locally published/);
   assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','files','assembly','mechanisms','calculators']);
   for(const card of cards) {
     assert.ok(card.image.startsWith('/') && card.alt.length>20,card.id);

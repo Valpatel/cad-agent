@@ -109,7 +109,11 @@ export function toolkitFullText(pages, origin) {
 /** Capability cards are a presentation index of existing, locally owned examples. */
 export function toolkitCapabilities(m, {catalog = [], has} = {}) {
   const scenario = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
-  const demo = (id, fallback) => catalog.find(c=>c.id===id)?.url || fallback;
+  const demo = (id, fallback) => {
+    const url = new URL(catalog.find(c=>c.id===id)?.url || fallback, 'https://cad-agent.valpatel.com');
+    if (url.origin !== 'https://cad-agent.valpatel.com') throw new Error(`Toolkit: example ${id} must be locally published`);
+    return url.pathname + url.search + url.hash;
+  };
   const cards = [
     {id:'scada-elements', title:'SCADA elements', kind:'Visual component library',
       description:'Explore animated equipment and change its operating, warning and fault states.',
@@ -128,7 +132,7 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',
       href:'/kit/files/file-viewer.html?file=/kit/host/example.stl', action:'Open file example', docs:'/docs/file-viewer'},
     {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
-      description:'Follow a synthetic rail assembly, inspect its parts and follow the declared insertion sequence.',
+      description:'Inspect a synthetic rail assembly and step through its declared insertion sequence.',
       image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer displaying the synthetic rail assembly and its instruction controls',
       href:'/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
     {id:'mechanisms', title:'Mechanism motion', kind:'Interactive kinematics',

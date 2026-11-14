@@ -12,7 +12,7 @@ Build and browser consumers
 flowchart TD
     U["website-*.test.mjs"]
     T["tools/site/build-site.mjs<br/>tools/site/compiler/*.mjs"]
-    B["website-*-browser.mjs<br/>site-*.mjs"]
+    B["website-*-browser.mjs<br/>site-*.mjs<br/>layout/*.mjs"]
     D["dist/<br/>the built site"]
     U -->|"imports"| T
     B -->|"serves"| D
@@ -46,9 +46,7 @@ flowchart TD
 | `built-site.mjs` | Helper: the built site the `website-*` tests read, from `CAD_AGENT_SITE` or a fresh build of HEAD |
 | `site-diagrams-browser.mjs` | The Python site consumer of the diagram renderer, in a real browser |
 | `npm-context.mjs` | Test-only dependency resolution anchored at tools/site/package.json, without a root manifest or node_modules link |
-| `site-outline.mjs` | Helper: actual scroll/frame readiness, strict marked-entry geometry, shared WCAG predicate, same-section/manual-panel regression and bounded failure-only reader navigation receipts |
-| `site-motion.mjs` | Helper: rendered reduced-motion hero still and a hidden-drawing negative control |
-| `site-walls.mjs` | Helper: measures walls of text in a real browser (imported by `website-browser.mjs`) |
+| [layout/](layout/README.md) | Shared browser geometry, reader navigation, motion and text-wall checks, including representative widescreen layouts |
 | `test_catalog_content.py` | Every outside catalogue entry has a plain `what` line and a place in the topic tree |
 | `test_research_figures.py` | The research charts are drawn from the tables on their pages |
 | `website-browser.mjs` | The site's pages in a real browser, served as Cloudflare Pages serves them (a reference area page's filters included) |

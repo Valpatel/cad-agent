@@ -6,10 +6,10 @@ Generated scenario map. Edit the [canonical JSON catalog](../index.json) or the 
 
 [Scenario map](../README.md) · [Package map](../../README.md) · [Model API](../../docs/MODEL-API.md)
 
-Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches.
+Operate brewhouse, cooling, fermentation and filling branches with instrument taps, a wort pump and PLC-controlled valves.
 
 **Model contract:** `scada-placeholder-model` v1. **Diagram contract:** `scada-system` v1.
-This pair contains 16 equipment records, 22 declared connections and 3 focused views of one shared model.
+This pair contains 25 equipment records, 42 declared connections and 4 focused views of one shared model.
 
 <a href="../../img/thumbnails/food-beverage/brewery/preview.jpg"><img src="../../img/thumbnails/food-beverage/brewery/preview.jpg" width="640" alt="Brewery initial focused view"></a>
 
@@ -28,7 +28,7 @@ Use the [v1 model schema](../../schema/placeholder-model-v1.schema.json) and mat
 Keep component IDs synchronized between the two JSON documents. Parameters and
 positions are authored teaching assumptions, not measured facility specifications.
 
-## Topology: Main process
+## Topology: Brewery overview
 
 <a href="../../img/topologies/food-beverage/brewery/topology.svg"><img src="../../img/topologies/food-beverage/brewery/topology.svg" width="900" alt="Brewery compact equipment-symbol topology of its first focused view"></a>
 
@@ -41,13 +41,14 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
 <details>
-<summary>3 focused views of this system</summary>
+<summary>4 focused views of this system</summary>
 
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
-| Main process | `process` | 10 |
-| Utilities & control | `utilities` | 8 |
-| Finishing & storage | `finishing` | 7 |
+| Brewery overview | `process` | 25 |
+| Brewhouse & cooling | `brewhouse` | 13 |
+| Fermentation & filling | `finishing` | 13 |
+| Power & instruments | `utilities` | 19 |
 
 </details>
 
@@ -58,7 +59,7 @@ not imply a calibrated device equation. Circuit roles describe resource bookkeep
 energy roles describe declared supply/conversion/load relationships.
 
 <details>
-<summary>Inspect the 16 equipment records and model roles</summary>
+<summary>Inspect the 25 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -77,7 +78,16 @@ energy roles describe declared supply/conversion/load relationships.
 | `power` · Demonstration site power | `generator` | `generator` |
 | `controller` · Brew-house controller | `plc-rack` | `controller` |
 | `network` · Control network switch | `network-switch` | `network` |
-| `temperature` · Cooling outlet monitor | `temperature-sensor` | `sensor` |
+| `temperature` · TT-201 Wort temperature | `temperature-sensor` | `sensor` |
+| `mashValve` · FCV-101 Mash transfer | `control-valve` | `valve` |
+| `kettleValve` · XV-201 Kettle outlet | `gate-valve` | `valve` |
+| `transferPump` · P-201 Wort transfer | `pump` | `pump` |
+| `fermenterValve` · FCV-202 Fermenter feed | `control-valve` | `valve` |
+| `fillValve` · FCV-301 Filling feed | `control-valve` | `valve` |
+| `wortFlow` · FT-201 Wort flow | `flow-meter` | `sensor` |
+| `fermenterLevel` · LT-202 Fermenter level | `level-sensor` | `sensor` |
+| `brewPressure` · PT-201 Wort pressure | `pressure-transmitter` | `sensor` |
+| `remoteIO` · RIO-01 Field I/O | `remote-io` | `controller` |
 
 </details>
 
@@ -87,10 +97,10 @@ The complete scenario and per-component assumptions are in [model.json](model.js
 Reference provenance and authored-layout declarations are in [system.json](system.json).
 Key scope statements from this model:
 
+- Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches.
 - All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.
 - Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.
 - Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.
-- Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance.
 
 ## Authored experiments
 
@@ -99,7 +109,7 @@ limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
 <details>
-<summary>Inspect 4 experiment recipes and commands</summary>
+<summary>Inspect 6 experiment recipes and commands</summary>
 
 | Experiment | Commands |
 | --- | --- |
@@ -107,6 +117,8 @@ Run or step the shared model to observe time-dependent effects.
 | Overload grain mill (`overload-stage`) | `setParameter(equipment="mill", key="capacity", value=25)`; `setLoad(equipment="mill", value=95)` |
 | Break grain mill (`break-stage`) | `setFault(equipment="mill", value=true)` |
 | Trip the demonstration power source (`trip-power`) | `setFault(equipment="power", value=true)` |
+| Close the kettle outlet (`isolate-kettle`) | `setOpen(equipment="kettleValve", value=false)` |
+| Lose brewery control (`lose-brewery-plc`) | `setEnabled(equipment="controller", value=false)` |
 
 </details>
 

@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Parallel NFT channels | `water` | 8 |
 | Preparation & typed readings | `preparation` | 6 |
 | Light, power & control | `utilities` | 9 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 17 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -72,6 +80,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `ecProbe` · Conductivity · illustrative index | `water-quality-probe` | `sensor`; energy: load; explicit observation |
 | `doProbe` · Dissolved oxygen · illustrative index | `water-quality-probe` | `sensor`; energy: load; explicit observation |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -91,12 +101,17 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 4 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Close channel A feed (`isolate-channel`) | `setOpen(equipment="valveA", value=false)` |
 | Block channel B (`block-channel`) | `setFault(equipment="channelB", value="blocked")` |
 | Bias the EC illustration (`bias-ec`) | `setFault(equipment="ecProbe", value="drift")` |
 | Enable finite makeup feed (`add-makeup`) | `setEnabled(equipment="metering", value=true)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=hydroponics-nft); see the

@@ -40,10 +40,15 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>2 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Batch heating cell | `cell` | 3 |
 | Oven and supply detail | `equipment` | 3 |
+
+</details>
 
 ## Equipment and model roles
 
@@ -51,11 +56,16 @@ Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
 
+<details>
+<summary>Inspect the 3 equipment records and model roles</summary>
+
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
 | `supply` · Explicit electrical supply boundary | `transformer` | `processor`; energy: source |
 | `breaker` · Batch cell electrical isolation | `breaker` | `valve`; energy: relay |
 | `oven` · Electric rack / batch oven | `rack-oven` | `heater`; material: material (storage); air: air (passage); exhaust: air (passage); energy: load; retained heat |
+
+</details>
 
 ## Editable assumptions
 
@@ -74,6 +84,9 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 6 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Open the electrical breaker (`isolate-supply`) | `setOpen(equipment="breaker", value=true)` |
@@ -82,6 +95,8 @@ Run or step the shared model to observe time-dependent effects.
 | Show a door seal leak (`seal-leak`) | `setFault(equipment="oven", value="door-seal-leak")` |
 | Open the inspection door (`open-door`) | `setOpen(equipment="oven", value=true)` |
 | Break the oven (`break-oven`) | `setDamage(equipment="oven", value=100)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=electric-batch-oven); see the

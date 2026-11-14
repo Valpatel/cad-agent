@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Main process | `process` | 10 |
 | Utilities & control | `utilities` | 7 |
 | Finishing & storage | `finishing` | 7 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 15 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -70,6 +78,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `controller` · Cellar controller | `plc-rack` | `controller` |
 | `pressure` · Transfer pressure monitor | `pressure-transmitter` | `sensor` |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -87,6 +97,9 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 5 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop grape receiving belt (`starve-feed`) | `setEnabled(equipment="grapeIntake", value=false)` |
@@ -94,6 +107,8 @@ Run or step the shared model to observe time-dependent effects.
 | Overload grape crusher (`overload-stage`) | `setParameter(equipment="crusher", key="capacity", value=25)`; `setLoad(equipment="crusher", value=95)` |
 | Break grape crusher (`break-stage`) | `setFault(equipment="crusher", value=true)` |
 | Trip the demonstration power source (`trip-power`) | `setFault(equipment="power", value=true)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=winery); see the

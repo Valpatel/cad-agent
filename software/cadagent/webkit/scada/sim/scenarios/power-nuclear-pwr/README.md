@@ -40,6 +40,9 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>4 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Primary coolant and containment | `primary` | 5 |
@@ -47,11 +50,16 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 | Independent heat rejection | `cooling` | 8 |
 | Heat source and valid observation | `control` | 8 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 22 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -78,6 +86,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `poolPump` · Independent pool circulation | `pump` / `water` | `pump`; process: pool-water (passage); energy: load |
 | `poolCooler` · Pool-water heat exchanger | `heat-exchanger` / `water-water` | `heater`; hot: pool-water (passage); cold: cooling-water (passage); retained heat |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -98,6 +108,9 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 5 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop PWR core · primary water (`stop-source`) | `setEnabled(equipment="core", value=false)` |
@@ -105,6 +118,8 @@ Run or step the shared model to observe time-dependent effects.
 | Isolate Export breaker (`isolate-output`) | `setOpen(equipment="exportBreaker", value=true)` |
 | Raise the selected stage demand (`stress-stage`) | `setParameter(equipment="core", key="capacity", value=25)`; `setLoad(equipment="core", value=95)` |
 | Reduce fictional core heat demand (`insert-rods`) | `setRodPosition(equipment="core", value=100)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=power-nuclear-pwr); see the

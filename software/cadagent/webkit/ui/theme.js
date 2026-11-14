@@ -11,26 +11,31 @@
   const apply = value => { if (value === 'light' || value === 'dark') root.dataset.theme = value; else delete root.dataset.theme; };
   apply(load());
   const current = () => root.dataset.theme || (system.matches ? 'dark' : 'light');
+  let effective = current(), started = false;
   const show = () => {
     for (const button of document.querySelectorAll('.theme-toggle')) {
-      button.hidden = false;
+      if (started) button.hidden = false;
       button.setAttribute('aria-pressed', String(current() === 'dark'));
     }
   };
   const tell = () => {
     document.dispatchEvent(new CustomEvent('cad-themechange', { detail: { theme: current() } }));
   };
+  const changed = () => {
+    const next = current(); show();
+    if (next !== effective) { effective = next; tell(); }
+  };
   const press = () => {
     const next = current() === 'dark' ? 'light' : 'dark';
     if (next === (system.matches ? 'dark' : 'light')) { delete root.dataset.theme; save(null); }
     else { root.dataset.theme = next; save(next); }
-    show(); tell();
+    changed();
   };
-  system.addEventListener?.('change', show);
+  system.addEventListener?.('change', changed);
   // a choice made in another tab, or kept while this page sat in the back/forward cache
-  const reload = () => { const before = current(); apply(load()); show(); if (current() !== before) tell(); };
+  const reload = () => { apply(load()); changed(); };
   addEventListener('storage', e => { if (e.key === KEY || e.key === null) reload(); });
   addEventListener('pageshow', e => { if (e.persisted) reload(); });
-  const start = () => { show(); for (const button of document.querySelectorAll('.theme-toggle')) button.addEventListener('click', press); };
+  const start = () => { started = true; show(); for (const button of document.querySelectorAll('.theme-toggle')) button.addEventListener('click', press); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

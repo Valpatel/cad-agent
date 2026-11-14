@@ -29,7 +29,7 @@ cad-agent webkit designer/kit      # copies this kit into your project (re-run t
 
 | File | What it gives you |
 |---|---|
-| `stage.js` | `createStage(el, {height, zoomSpeed = 0.25, dragZoomSpeed = 1})`: renderer, orbit camera, control-room lighting, shadowed floor, grid, glow pad, `setSceneLight(0..1)`, `onFrame(cb)`, `stop()`, `dispose()`, `setInsets({left,right,top,bottom})` (keep the model out from under overlay panels), `fitView(points)`. Metres, y up |
+| `stage.js` | `createStage(el, {height, zoomSpeed = 0.25, dragZoomSpeed = 1})`: renderer, orbit camera, control-room lighting, shadowed floor, finite antialiased mesh grid, glow pad, `setSceneLight(0..1)`, `onFrame(cb)`, `stop()`, `dispose()`, `setInsets({left,right,top,bottom})` (keep the model out from under overlay panels), `fitView(points)`. Metres, y up |
 | [assembly/](assembly/README.md) | Optional version-bound assembly instructions over the existing viewer; absolute part states and authored CAD-frame offsets |
 | `panel.js` | `section`, `slider`, `jointSliders`, `chips`, `toggle`, `readouts`: HUD panel controls; `collapsiblePanel(hud, panel)` (hide/show the side panel) and `overlayInsets(hud)` (pixels the overlays cover, for `setInsets`) |
 | `face.js` | `createFace({palette})`: a canvas-texture cartoon face with eased expressions, blinks, gaze drift and talking; `faceGlyph(name)` for buttons. Palettes `warm` and `visor` |

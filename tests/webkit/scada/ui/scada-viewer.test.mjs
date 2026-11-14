@@ -384,3 +384,27 @@ test('explicit detailed inspector keeps modal lifecycle and host details receive
     assert.equal(host.root.querySelector('dialog').open,false);assert.equal(host.root.querySelector('[data-scada-popover]').hidden,true);
   } finally {host.destroy();dom.window.close();}
 });
+
+test('trusted host renderers retain custom equipment types without fabricating catalog readings', () => {
+  const dom=setup(), calls=[], equipment=[{id:'V-101',type:'host-owned-vessel',label:'Process vessel'}];
+  const viewer=new ScadaViewer({
+    equipment,views:[{id:'plant',nodes:[{id:'V-101',x:20,y:20}]}],
+    adapter:{getSnapshot:()=>({}),subscribe:()=>()=>{},dispatch:command=>calls.push(command)},
+    renderNode:()=>'<button data-scada-equipment="V-101">V-101 · Process vessel</button>',
+    renderInspector:component=>`<p>Host equations for ${component.id}</p>`,
+    controls:[{id:'host-command',component:'V-101',kind:'button',label:'Sample',command:{action:'sample',arguments:{equipment:'V-101'}}}],
+  }).mount(dom.window.document.querySelector('#editable'));
+  try {
+    click(dom.window,'[data-scada-equipment="V-101"]',viewer.root);
+    const panel=viewer.root.querySelector('[data-scada-popover]');
+    assert.equal(panel.hidden,false);assert.match(panel.textContent,/Readings unavailable/);
+    assert.equal(panel.querySelector('[data-scada-state-field]'),null);
+    click(dom.window,'[data-scada-control="host-command"]',panel);
+    assert.deepEqual(calls,[{action:'sample',arguments:{equipment:'V-101'}}]);
+    click(dom.window,'[data-scada-details]',panel);
+    const details=viewer.root.querySelector('[data-scada-dialog="inspector"]');
+    assert.equal(details.open,true);assert.match(details.textContent,/Host equations for V-101/);
+    const portable=structuredClone(definition);portable.components[0].type='host-owned-vessel';
+    assert.throws(()=>normalizeViewerDefinition(portable),/Invalid SCADA system definition/);
+  } finally {viewer.destroy();dom.window.close();}
+});

@@ -251,7 +251,11 @@ export class ScadaViewer {
     return `<label class="scada-viewer-field"><span>${esc(control.label ?? control.id)} <output>${current.found ? esc(current.value) : 'Unavailable'}</output></span><input type="${control.kind}" ${attributes} value="${current.found ? esc(current.value) : ''}"${control.min == null ? '' : ` min="${esc(control.min)}"`}${control.max == null ? '' : ` max="${esc(control.max)}"`} step="${esc(control.step ?? 'any')}">${feedback}</label>`;
   }
   #readings(component, {compact = false} = {}) {
-    const resolved = this.#state(component), fields = getScadaComponent(component.type ?? 'pump').stateFields;
+    const resolved = this.#state(component);
+    // Trusted hosts can render types outside the portable catalog. Their own
+    // inspector supplies those readings; the generic quick panel cannot infer them.
+    if (!resolved.state) return '<p class="scada-viewer-data-note">Readings unavailable. Open details for host-supplied equipment information.</p>';
+    const fields = getScadaComponent(component.type, {variant:component.variant}).stateFields;
     const values = Object.entries(resolved.state).filter(([key, value]) => !compact || typeof value === 'number').slice(0, compact ? 3 : undefined);
     return `<dl class="scada-viewer-readings${compact ? ' scada-quick-readings' : ''}">${values.map(([key, value]) => {
       const field = fields.find(item => item.key === key), title = field?.label ?? key;

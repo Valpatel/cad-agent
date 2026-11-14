@@ -5,11 +5,11 @@ and its ordinary assembly/STL and original-file adapters. The fixture uses expli
 small STL geometry and the existing STEP worker; it does not require a CAD kernel.
 
 ```mermaid
-flowchart LR
+flowchart TB
   T["browser.mjs"] --> H["Shared host"]
-  H --> M["Assembly / STL viewer"]
-  H --> F["Original-file viewer"]
-  T --> L["Lifecycle and camera evidence"]
+  H --> M["Assembly / STL"]
+  H --> F["Original file"]
+  T --> L["Lifecycle + camera"]
 ```
 
 | File | Coverage |

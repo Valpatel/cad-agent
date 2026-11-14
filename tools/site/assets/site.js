@@ -31,3 +31,5 @@ if (document.querySelector('cad-printed-boss')) import('/kit/printed-boss.js').c
 if (document.querySelector('cad-model')) import('/kit/model.js').catch(() => {});
 // Rich entry details are an enhancement of compact Explore results; the existing JSON feed is authoritative.
 if (document.querySelector('details[data-catalogue-id]')) import('/web/discovery.js').catch(() => {});
+// The Toolkit keeps all cards and SVG links usable without JavaScript; this adds search and state controls.
+if (document.querySelector('[data-scada-browser]')) import('/web/toolkit.js').catch(() => {});

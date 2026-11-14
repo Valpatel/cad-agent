@@ -2,7 +2,7 @@
 
 Research reviewed on 2026-11-13. This is an integration map, not an installed dependency list. The current kit uses its own editable teaching models. No source from the projects below has been copied into the package, and none is required to open the examples.
 
-The reusable viewer already accepts an external adapter. A calibrated model can replace the placeholder while retaining equipment IDs, system layouts, symbols and controls. Start with [the model interface](./MODEL-API.md), [package integration](./INTEGRATION.md) and the UI package's [viewer contract](../../ui/docs/SYSTEM_FORMAT.md).
+The reusable viewer already accepts an external adapter. A calibrated model can replace the placeholder while retaining equipment IDs, system layouts, symbols and controls. Start with [the model interface](./MODEL-API.md), [package integration](./INTEGRATION.md) and the UI package's [viewer contract](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/SYSTEM_FORMAT.md).
 
 ## Candidates by problem
 

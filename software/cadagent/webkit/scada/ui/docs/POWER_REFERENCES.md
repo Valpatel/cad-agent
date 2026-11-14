@@ -1,6 +1,6 @@
 # Power-sector design references
 
-Reviewed 2026-11-13 for the proposed [power-sector expansion](https://github.com/mvalancy/digester-insight/blob/main/docs/coverage/power-sector-plan.md). These references inform equipment names, recognizable geometry, media and structural connections. They do not validate the project's placeholder equations, capacities, efficiencies, protection logic or incident probabilities. All new illustrations should remain original artwork; do not copy agency diagrams or vendor imagery into the package.
+Reviewed 2026-11-13 for the [power-equipment coverage](POWER_COVERAGE.md). These references inform equipment names, recognizable geometry, media and structural connections. They do not validate the project's placeholder equations, capacities, efficiencies, protection logic or incident probabilities. All new illustrations should remain original artwork; do not copy agency diagrams or vendor imagery into the package.
 
 The entries below distinguish material actually opened/read from inaccessible follow-up references. Publication dates belong to the source; the review date is not a claim that historical performance or project-status statements remain current.
 

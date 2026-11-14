@@ -183,14 +183,17 @@ def _wheel_smoke(tmp_path):
         metadata_paths = [name for name in names if name.endswith(".dist-info/METADATA")]
         assert len(metadata_paths) == 1
         metadata = BytesParser().parsebytes(wheel.read(metadata_paths[0]))
+        assert metadata["License"] == "MIT AND LicenseRef-SCADA-Retained-Terms"
+        for notice in ("LICENSE.txt", "ui/LICENSE.txt", "sim/LICENSE.txt"):
+            assert "UNLICENSED" in wheel.read(f"cadagent/webkit/scada/{notice}").decode()
         pardiso = [Requirement(r) for r in metadata.get_all("Requires-Dist", []) if Requirement(r).name == "pypardiso"]
         assert len(pardiso) == 1 and pardiso[0].marker is not None
         for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
                                           ("Linux", "aarch64", False), ("Darwin", "arm64", False),
                                           ("Darwin", "x86_64", False), ("Windows", "ARM64", False)):
-            env = {"platform_system": system, "platform_machine": machine}
-            assert pardiso[0].marker.evaluate({**env, "extra": "fea"}) is expected_pardiso, env
-            assert not pardiso[0].marker.evaluate({**env, "extra": ""}), "PARDISO leaked into the core install"
+            marker_env = {"platform_system": system, "platform_machine": machine}
+            assert pardiso[0].marker.evaluate({**marker_env, "extra": "fea"}) is expected_pardiso, marker_env
+            assert not pardiso[0].marker.evaluate({**marker_env, "extra": ""}), "PARDISO leaked into the core install"
     shutil.rmtree(source)
     assert not source.exists()
     # Package type follows the installed file's physical ancestors, not the process CWD. This explicit ancestor
@@ -234,6 +237,51 @@ if (typeof sdk.snapArm !== 'function' || sdk.SMALL_DEFLECTION !== 0.1) throw new
 console.log('installed SDK ESM PASS');"""
     good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"])
     assert "installed SDK ESM PASS" in good_sdk.stdout
+    # Consume the actual copied SDK after installation and source removal. This
+    # catches missing nested assets as well as imports that reach into a checkout.
+    run([cli, "webkit", "--project", target, "webkit"])
+    copied_sdk = target / "webkit"
+    assert {p.relative_to(copied_sdk).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in copied_sdk.rglob("*") if p.is_file()} == sdk_expected
+    scada_probe = """import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+const root = pathToFileURL(process.argv[1] + '/');
+const read = name => JSON.parse(readFileSync(new URL(name, root), 'utf8'));
+for (const key of ['fetch', 'setInterval', 'setTimeout']) globalThis[key] = () => { throw Error('unexpected IO: ' + key); };
+const ui = await import(new URL('ui/src/index.mjs', root));
+const sim = await import(new URL('sim/src/index.mjs', root));
+const types = ui.SCADA_COMPONENTS;
+assert.ok(types.length >= 142);
+for (const item of types) assert.match(ui.renderScadaComponent(item.type), /<svg/);
+for (const item of read('sim/scenarios/index.json').scenarios) {
+  const system = read('sim/scenarios/' + item.system);
+  const definition = read('sim/scenarios/' + item.model);
+  assert.equal(ui.validateSystemDefinition(system).ok, true, item.id);
+  const model = new sim.PlaceholderSystemModel(system, definition);
+  model.step(.1);
+  const before = model.exportSnapshot();
+  model.step(.1); const after = model.exportSnapshot();
+  model.importSnapshot(before); model.step(.1);
+  assert.deepEqual(model.exportSnapshot(), after, item.id);
+  model.destroy();
+}
+const system = read('sim/scenarios/wastewater-digester/system.json');
+const model = new sim.PlaceholderSystemModel(system, read('sim/scenarios/wastewater-digester/model.json'));
+model.dispatch({action:'setEnabled', arguments:{equipment:'liftPump',value:false}});
+assert.equal(model.exportSnapshot().state.components.liftPump.enabled, false);
+model.destroy();
+for (const name of ['explorer/index.html', 'explorer/main.mjs', 'ui/src/styles.css',
+                   'ui/schema/scada-system.schema.json', 'ui/metadata/gallery.json',
+                   'ui/img/README.md', 'sim/img/README.md', 'sim/docs/INTEGRATION.md'])
+  assert.ok(existsSync(new URL(name, root)), name);
+console.log('installed copied SCADA PASS: all symbols, scenarios, commands and replay without IO');"""
+    scada = run([node, "--input-type=module", "-e", scada_probe, copied_sdk / "scada"])
+    assert "installed copied SCADA PASS" in scada.stdout
+    equations = json.loads(run([node, copied_sdk / "scada/sim/examples/equation-models/run.mjs"]).stdout)
+    assert equations["replay"] == "exact saved-state continuation verified"
+    assert len(equations["results"]) == 4
+    print("installed copied SCADA PASS: full bytes, retained terms, all scenarios and swappable equations")
     # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
     (sdk / "package.json").unlink()
     assert Path(paths["declared_config"]).is_file() and not source.exists()

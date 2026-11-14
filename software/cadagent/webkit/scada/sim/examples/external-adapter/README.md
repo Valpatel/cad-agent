@@ -12,7 +12,7 @@ installed cad-agent integration.
 | --- | --- |
 | [adapter.mjs](./adapter.mjs) | Read snapshots, translate raw units into bounded visual fields, translate two allowed commands and unsubscribe cleanly |
 | [fake-engine.mjs](./fake-engine.mjs) | Explicitly supplied observations and separate requested inputs; no generated physical response |
-| [Contract tests](../../../../../../../tests/webkit/scada/sim/external-adapter.test.mjs) | Unit mapping, invalid/stale observations, command rejection, shared subscriptions and no implicit browser/clock dependencies |
+| [Contract tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/external-adapter.test.mjs) | Unit mapping, invalid/stale observations, command rejection, shared subscriptions and no implicit browser/clock dependencies |
 
 ```mermaid
 flowchart LR
@@ -24,7 +24,7 @@ flowchart LR
   Adapter --> Requests
 ```
 
-Run this from the `packages/scada-sim` directory; Node 20.18+ is sufficient:
+Run this from the `software/cadagent/webkit/scada/sim` directory; Node 20.18+ is sufficient:
 
 ```sh
 node --input-type=module <<'JS'
@@ -93,7 +93,7 @@ engine, not behavior to infer from this illustration.
 From the repository root, run the independent contract tests:
 
 ```sh
-node --test packages/scada-sim/tests/external-adapter.test.mjs
+node --test tests/webkit/scada/sim/external-adapter.test.mjs
 node --test tests/integration/external-adapter-render.test.mjs
 ```
 
@@ -104,7 +104,7 @@ dependencies. Mounting them in a browser still requires the separately installed
 UI package and a validated system document as described in the
 [integration guide](../../docs/INTEGRATION.md).
 
-<a href="../../img/topologies/electric-batch-oven.svg"><img src="../../img/topologies/electric-batch-oven.svg" alt="Existing illustrative oven topology demonstrating separate equipment and supply identities" width="480"></a>
+<a href="../../img/topologies/manufacturing-thermal-processing/electric-batch-oven/topology.svg"><img src="../../img/topologies/manufacturing-thermal-processing/electric-batch-oven/topology.svg" alt="Existing illustrative oven topology demonstrating separate equipment and supply identities" width="480"></a>
 
 This existing package-owned topology illustrates explicit equipment relationships;
 it is not a capture of this pump adapter or evidence of its physical accuracy.

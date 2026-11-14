@@ -24,7 +24,7 @@ flowchart LR
   Core --> CLI[SI diagnostics and replay check]
 ```
 
-<a href="../../img/thumbnails/electric-batch-oven.jpg"><img src="../../img/thumbnails/electric-batch-oven.jpg" width="420" alt="Existing electric oven scenario with supply and retained heat"></a>
+<a href="../../img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg"><img src="../../img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg" width="420" alt="Existing electric oven scenario with supply and retained heat"></a>
 
 The preview is an existing scenario using the same model package, not a capture
 of this command-line fixture or evidence of calibrated heat transfer.
@@ -32,8 +32,8 @@ of this command-line fixture or evidence of calibrated heat transfer.
 From the repository root:
 
 ```sh
-node packages/scada-sim/examples/equation-models/run.mjs
-npm --prefix packages/scada-sim test
+node software/cadagent/webkit/scada/sim/examples/equation-models/run.mjs
+npm --prefix tools/webkit/scada test
 ```
 
 The CLI prints both laws' accepted flow, electrical allocation, developed head

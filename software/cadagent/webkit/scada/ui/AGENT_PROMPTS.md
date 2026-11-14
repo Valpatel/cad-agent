@@ -11,7 +11,7 @@ Replace the bracketed fields before using a prompt. These prompts assume a check
 
 ```text
 Add a reusable [equipment name] component with stable type ID [type-id] in
-packages/scada-ui. Read packages/scada-ui/README.md, STYLE_GUIDE.md,
+software/cadagent/webkit/scada/ui. Read software/cadagent/webkit/scada/ui/README.md, STYLE_GUIDE.md,
 CONTRIBUTING.md and AGENTS.md first, plus the system-format contract if the
 component will appear in a system definition.
 
@@ -23,10 +23,10 @@ an actual external model adapter is part of this task. Renderers must not start
 timers, model sessions or network/PLC IO. Preserve unique instance IDs and
 accessible labels; make warning/fault/offline states meaningful without motion.
 
-Add focused behavior/validation tests, run npm run build:library and the relevant
+Add focused behavior/validation tests, run npm --prefix tools/webkit/scada run build:metadata and the relevant
 scada Node suites, then inspect real Chromium renders at card, modal and system
 sizes, including reduced motion and applicable inactive/fault/open states.
-Regenerate thumbnails with npm run thumbnails, update the
+Regenerate thumbnails with npm --prefix tools/webkit/scada run thumbnails, update the
 README family table and metadata, and verify package imports/build freshness.
 Report the actual checks and images inspected. Do not publish or deploy.
 ```
@@ -34,7 +34,7 @@ Report the actual checks and images inspected. Do not publish or deploy.
 ## Add an equipment family
 
 ```text
-Add the [family name] family to packages/scada-ui with these types: [type list].
+Add the [family name] family to software/cadagent/webkit/scada/ui with these types: [type list].
 First read README.md, STYLE_GUIDE.md, CONTRIBUTING.md, AGENTS.md and the existing
 registry. Plan distinct silhouettes and declared state/port semantics for each
 type; avoid reusing one generic box under several names.
@@ -54,7 +54,7 @@ results without claiming unperformed visual checks or publication.
 ## Add or change a visual state
 
 ```text
-Add [state field] to [component types] in packages/scada-ui. Read the package
+Add [state field] to [component types] in software/cadagent/webkit/scada/ui. Read the package
 README, style guide, contributing guide, current normalizer and public system
 binding contract before editing. Define its exact visual semantics, type,
 default, bounds/options and units. Explain how it combines with active, running,
@@ -75,7 +75,7 @@ remaining limitation. Do not publish or deploy.
 ## Review visuals and regenerate thumbnails
 
 ```text
-Review [types/family/all components] in packages/scada-ui. Read README.md,
+Review [types/family/all components] in software/cadagent/webkit/scada/ui. Read README.md,
 STYLE_GUIDE.md and CONTRIBUTING.md, then verify generated assets with the library
 build/check command. Use the actual renderer, public state metadata and real
 Chromium, not replacement illustrations.
@@ -89,7 +89,7 @@ system views are involved, confirm that they observe one external model session
 and that navigation does not reset readings, commands or incident state.
 
 Fix only demonstrated issues in canonical source. Run affected tests, regenerate
-thumbnails using npm run thumbnails and inspect the contact
+thumbnails using npm --prefix tools/webkit/scada run thumbnails and inspect the contact
 sheet plus representative individual files. Check metadata/thumbnails.json and
 README links against all declared types and UI primitives. Report evidence paths
 and actual results; do not claim that static thumbnails prove animation behavior.
@@ -179,7 +179,7 @@ instance IDs, accessible state descriptions and reduced motion. Keep this
 library's gallery under img/; another library gets its own img/ owner.
 
 Confirm every new type/variant appears in the generated family index. Add a
-representative comparison to scripts/gallery/samples.json when a new state
+representative comparison to tools/webkit/scada/ui/gallery/samples.json when a new state
 needs explanation; do not create a private process model or animation clock.
 Run gallery:generate, gallery:check and qa:gallery from the workspace root,
 then regenerate/check static thumbnails. Inspect card labels, gauge clearance,

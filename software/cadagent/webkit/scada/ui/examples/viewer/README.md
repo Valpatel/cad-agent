@@ -28,6 +28,6 @@ flowchart TD
 
 From the package root, run `python -m http.server 8000` and open `http://localhost:8000/examples/viewer/`. The model advances one fictional minute per visible running tick. Step pauses first. Page visibility gates automatic advancement; page teardown stops the model and destroys owned viewer subscriptions/listeners. The view never owns the plant clock.
 
-Use this separation when integrating another model: keep the system document, replace `UtilityModel` and adapter translation, and retain the shared viewer/workspace interfaces. This small example does not implement the full [SCADA simulation package](../../../sim/README.md), calibrated equipment or a complete fault lifecycle.
+Use this separation when integrating another model: keep the system document, replace `UtilityModel` and adapter translation, and retain the shared viewer/workspace interfaces. This small example does not implement the full [SCADA simulation package](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/README.md), calibrated equipment or a complete fault lifecycle.
 
-<a href="../../img/thumbnails/generic-viewer.jpg"><img src="../../img/thumbnails/generic-viewer.jpg" width="680" alt="Reusable utility system viewer with diagram and controls"></a>
+<a href="../../img/thumbnails/workspace/generic-viewer.jpg"><img src="../../img/thumbnails/workspace/generic-viewer.jpg" width="680" alt="Reusable utility system viewer with diagram and controls"></a>

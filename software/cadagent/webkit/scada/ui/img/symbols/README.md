@@ -1,30 +1,25 @@
 # Equipment previews
 
-[Parent gallery](../README.md) · [Package owner](../../README.md) · [State comparisons](../states/README.md)
+[Parent map](../README.md) · [Package owner](../../README.md) · [Image gallery](../README.md)
 
-**239 default and variant previews** share the canonical equipment renderer. Each family folder contains its own Markdown index with image thumbnails, editable fields and descriptions.
+Generated previews from canonical equipment artwork and supplied illustrative state. Images do not run a process model. Open a preview for its full size.
 
 ```mermaid
 flowchart LR
-  Catalog["Canonical equipment catalog"] --> Families["Family folders"]
-  Families --> Default["type.svg"]
-  Families --> Variant["type--variant.svg"]
-  Default --> Index["Family README thumbnails"]
-  Variant --> Index
+  Source["Library artwork"] --> Preview["Generated images"]
+  Preview --> Browse["Browsable folder maps"]
 ```
 
-These files are generated rendering examples. Catalog definitions and artwork live under the [source owner](../../src/README.md). Run `npm run gallery:generate` after changing an asset; `npm run gallery:check` verifies inventory and output freshness.
-
-| Family folder | Previews | Sample |
-| --- | --- | --- |
-| [Process vessels](process/README.md) | 39 | <img src="process/digester.svg" alt="Process vessels example" width="200"> |
-| [Pumps &amp; machinery](rotating/README.md) | 24 | <img src="rotating/pump.svg" alt="Pumps &amp; machinery example" width="200"> |
-| [Power &amp; energy](power/README.md) | 55 | <img src="power/generator.svg" alt="Power &amp; energy example" width="200"> |
-| [Valves](valves/README.md) | 45 | <img src="valves/gate-valve.svg" alt="Valves example" width="200"> |
-| [Instruments](instruments/README.md) | 8 | <img src="instruments/pressure-transmitter.svg" alt="Instruments example" width="200"> |
-| [PLC &amp; networks](automation/README.md) | 7 | <img src="automation/plc-rack.svg" alt="PLC &amp; networks example" width="200"> |
-| [Connections](connections/README.md) | 10 | <img src="connections/pipe.svg" alt="Connections example" width="200"> |
-| [Manufacturing &amp; solids](manufacturing/README.md) | 18 | <img src="manufacturing/conveyor.svg" alt="Manufacturing &amp; solids example" width="200"> |
-| [Nuclear systems](nuclear/README.md) | 19 | <img src="nuclear/pwr-reactor-vessel.svg" alt="Nuclear systems example" width="200"> |
-| [Growing &amp; aquaculture](agriculture/README.md) | 10 | <img src="agriculture/fish-tank.svg" alt="Growing &amp; aquaculture example" width="200"> |
-| [Climate control](climate/README.md) | 4 | <img src="climate/greenhouse-vent.svg" alt="Climate control example" width="200"> |
+| Folder | Previews | Example |
+| --- | ---: | --- |
+| [Growing &amp; aquaculture](agriculture/README.md) | 10 | <a href="agriculture/fish-tank/default.svg"><img src="agriculture/fish-tank/default.svg" width="160" alt="Growing &amp; aquaculture preview"></a> |
+| [PLC &amp; networks](automation/README.md) | 7 | <a href="automation/plc-rack/default.svg"><img src="automation/plc-rack/default.svg" width="160" alt="PLC &amp; networks preview"></a> |
+| [Climate control](climate/README.md) | 4 | <a href="climate/greenhouse-vent/default.svg"><img src="climate/greenhouse-vent/default.svg" width="160" alt="Climate control preview"></a> |
+| [Connections](connections/README.md) | 10 | <a href="connections/pipe/default.svg"><img src="connections/pipe/default.svg" width="160" alt="Connections preview"></a> |
+| [Instruments](instruments/README.md) | 8 | <a href="instruments/pressure-transmitter/default.svg"><img src="instruments/pressure-transmitter/default.svg" width="160" alt="Instruments preview"></a> |
+| [Manufacturing &amp; solids](manufacturing/README.md) | 18 | <a href="manufacturing/conveyor/default.svg"><img src="manufacturing/conveyor/default.svg" width="160" alt="Manufacturing &amp; solids preview"></a> |
+| [Nuclear systems](nuclear/README.md) | 19 | <a href="nuclear/pwr-reactor-vessel/default.svg"><img src="nuclear/pwr-reactor-vessel/default.svg" width="160" alt="Nuclear systems preview"></a> |
+| [Power &amp; energy](power/README.md) | 55 | <a href="power/generator/default.svg"><img src="power/generator/default.svg" width="160" alt="Power &amp; energy preview"></a> |
+| [Process vessels](process/README.md) | 39 | <a href="process/digester/default.svg"><img src="process/digester/default.svg" width="160" alt="Process vessels preview"></a> |
+| [Pumps &amp; machinery](rotating/README.md) | 24 | <a href="rotating/pump/default.svg"><img src="rotating/pump/default.svg" width="160" alt="Pumps &amp; machinery preview"></a> |
+| [Valves](valves/README.md) | 45 | <a href="valves/gate-valve/default.svg"><img src="valves/gate-valve/default.svg" width="160" alt="Valves preview"></a> |

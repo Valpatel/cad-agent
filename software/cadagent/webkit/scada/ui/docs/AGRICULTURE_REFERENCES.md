@@ -1,8 +1,8 @@
 # Agriculture and controlled-environment growing references
 
-Research accessed **13 November 2026**. This is a source map for the [agriculture extension](https://github.com/mvalancy/digester-insight/blob/main/docs/coverage/agriculture-plan.md), not a calibration document. The local release candidate now implements its six examples and 17 agriculture types within 141 component types and 59 scenarios. The interpretation notes below preserve the original planning context; the previous release's 80-type/20-example baseline is historical. Structural citations do not validate model coefficients, and local implementation does not establish publication.
+Research accessed **13 November 2026**. This source map supports the [agriculture equipment and example coverage](AGRICULTURE_COVERAGE.md). It records structural research and interpretation limits; it does not calibrate the illustrative model coefficients or establish plant performance.
 
-The sources below were read beyond their search summaries. Their useful contribution is equipment identity, process topology and measurement semantics. Numerical operating targets, construction dimensions, chemical recipes, crop yields and fish stocking recommendations have **not** been imported into the placeholder models. The planned model values remain editable demonstration guesses. Source drawings, photographs and PDF text are not redistributed in the library.
+The sources below were read beyond their search summaries. Their useful contribution is equipment identity, process topology and measurement semantics. Numerical operating targets, construction dimensions, chemical recipes, crop yields and fish stocking recommendations have **not** been imported into the placeholder models. The model values remain editable demonstration guesses. Source drawings, photographs and PDF text are not redistributed in the library.
 
 ## Primary sources read
 
@@ -25,7 +25,7 @@ The sources below were read beyond their search summaries. Their useful contribu
 
 - **Lighting guidance has changed.** A2 contains a dated statement about LED suitability. A5 also describes older lighting equipment and costs. Those historical recommendations are not current procurement guidance. A11/A12 provide newer facility context, but none of these documents supplies the simulator's light-response coefficients.
 - **Cornell's example is not universal.** Its handbook identifies cultivar and system context. Do not copy one lettuce installation's operating values into arbitrary crops, fish systems or indoor rooms.
-- **A source describes a design, not every possible design.** The FAO examples include alternative loop arrangements. The planned scenarios choose readable arrangements and declare their simplifications; they do not claim to standardize aquaponics plumbing.
+- **A source describes a design, not every possible design.** The FAO examples include alternative loop arrangements. The scenarios choose readable arrangements and declare their simplifications; they do not claim to standardize aquaponics plumbing.
 - **PDF access was checked independently.** The web connector could not retrieve the FAO record/PDF and Cornell PDF consistently. Ordinary HTTPS downloads of the linked official PDFs succeeded; their extracted text was read locally. Complete source PDFs remain research scratch files, not package assets.
 - **Two UMass pages were unavailable for direct reading:** [Reducing Humidity in the Greenhouse](https://www.umass.edu/agriculture-food-environment/greenhouse-floriculture/fact-sheets/reducing-humidity-in-greenhouse) and [Horizontal Air Flow Is Best for Greenhouse Air Circulation](https://www.umass.edu/agriculture-food-environment/greenhouse-floriculture/fact-sheets/horizontal-air-flow-is-best-for-greenhouse-air-circulation). Requests returned access errors or timed out. Search summaries are not treated as inspected evidence; the plan relies on the other read sources above.
 

@@ -20,4 +20,4 @@ Keep identity, state fields, ports and assumed provenance here; put geometry in 
 
 Declare only supported states. A new field needs a meaningful rendering or explicit readout-only rationale and model mapping/limit documentation; consult [state coverage](../../../docs/STATE_COVERAGE.md) before claiming completeness.
 
-<a href="../../../img/symbols/agriculture/fish-tank.svg"><img src="../../../img/symbols/agriculture/fish-tank.svg" width="190" alt="Aquaculture component described by family metadata"></a>
+<a href="../../../img/symbols/agriculture/fish-tank/default.svg"><img src="../../../img/symbols/agriculture/fish-tank/default.svg" width="190" alt="Aquaculture component described by family metadata"></a>

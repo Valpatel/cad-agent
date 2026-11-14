@@ -6,7 +6,7 @@ These **61 vector maps** show each scenario’s first declared view using the UI
 
 These are static process schematics. Symbol appearance is illustrative, link colors identify declared media, and arrows indicate declared direction rather than measured flow. Isolated equipment remains visible when it provides context. Other views may show additional connections. The separate [captured-view gallery](../README.md) records real Explorer screenshots.
 
-Generate with `npm run topologies:generate`; verify source and output freshness with `npm run topologies:check`. The [owner tools in source](https://github.com/Valpatel/cad-agent/tree/main/software/cadagent/webkit/scada/sim/scripts) describe the developer-only UI dependency. Do not edit generated SVGs, this index or the manifest.
+Generate with `npm --prefix tools/webkit/scada run topologies:generate`; verify source and output freshness with `npm --prefix tools/webkit/scada run topologies:check`. The [owner tools in source](https://github.com/Valpatel/cad-agent/tree/main/tools/webkit/scada/sim) describe the developer-only UI dependency. Do not edit generated SVGs, this index or the manifest.
 
 ## Agriculture &amp; aquaculture
 

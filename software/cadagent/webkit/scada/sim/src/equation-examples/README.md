@@ -24,7 +24,7 @@ flowchart LR
   State --> Provider
 ```
 
-<a href="../../img/thumbnails/winery.jpg"><img src="../../img/thumbnails/winery.jpg" width="420" alt="Existing winery SCADA scenario showing equipment and material connections"></a>
+<a href="../../img/thumbnails/food-beverage/winery/preview.jpg"><img src="../../img/thumbnails/food-beverage/winery/preview.jpg" width="420" alt="Existing winery SCADA scenario showing equipment and material connections"></a>
 
 The preview is an existing illustrative scenario, not evidence of pump calibration.
 The [model-switching bench](../../examples/model-switching/README.md) exercises these
@@ -153,10 +153,10 @@ must explicitly configure the compatible capacity and temperature mapping.
 
 ## Evidence, references and ownership
 
-Run the complete package checks with `npm --prefix packages/scada-sim test`.
+Run the complete package checks with `npm --prefix tools/webkit/scada test`.
 The focused source tests are
-[equation-physics.test.mjs](../../../../../../../tests/webkit/scada/sim/equation-physics.test.mjs)
-and [equation-examples.test.mjs](../../../../../../../tests/webkit/scada/sim/equation-examples.test.mjs).
+[equation-physics.test.mjs](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-physics.test.mjs)
+and [equation-examples.test.mjs](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-examples.test.mjs).
 They cover independent analytic points, affinity scaling, invalid inputs,
 finite power, core flow/power/pressure changes in both engines, acceptance
 clipping, unit bridges, state replay and actual heater energy accounting.

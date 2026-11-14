@@ -1,6 +1,6 @@
 # Integrating the SCADA simulation kit
 
-The kit separates reusable UI, a system description and a replaceable model. Start with [the industry explorer](../../explorer/index.html) to operate 60 example systems, or with [the scenario catalog](../scenarios/index.json) to select a system as data. The 20 original industry examples retain version 1 behavior; 33 power, six agriculture and one electric batch-oven example explicitly select version 2. All placeholder behavior and numeric values are illustrative. The examples prove connections, state changes, commands and UI lifecycle; they are not validated engineering models or manufacturing recipes.
+The kit separates reusable UI, a system description and a replaceable model. Start with [the industry explorer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/index.html) to operate 60 example systems, or with [the scenario catalog](../scenarios/index.json) to select a system as data. The 20 original industry examples retain version 1 behavior; 33 power, six agriculture and one electric batch-oven example explicitly select version 2. All placeholder behavior and numeric values are illustrative. The examples prove connections, state changes, commands and UI lifecycle; they are not validated engineering models or manufacturing recipes.
 
 Both engines also accept trusted registered equation providers for replacing
 constitutive laws and per-component dynamic state within the existing kernel.
@@ -16,24 +16,18 @@ complete external network solver can instead implement the adapter directly.
 
 | Layer | Source | Owns |
 | --- | --- | --- |
-| Symbols and workspace | [`@valpatel/scada-ui`](../../ui/README.md) | Original SVG artwork, typed visual states, animation, accessible controls and native dialogs |
-| System description | [`scada-system` v1 JSON](../../ui/docs/SYSTEM_FORMAT.md) | Component identities, ports, connections, layouts, snapshot bindings and declared controls |
-| Viewer/controller | [`ScadaViewer`](../../ui/docs/API.md#viewer-api) | Selection, layout, zoom, inspector and command dispatch through an injected adapter |
+| Symbols and workspace | [`@valpatel/scada-ui`](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/README.md) | Original SVG artwork, typed visual states, animation, accessible controls and native dialogs |
+| System description | [`scada-system` v1 JSON](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/SYSTEM_FORMAT.md) | Component identities, ports, connections, layouts, snapshot bindings and declared controls |
+| Viewer/controller | [`ScadaViewer`](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/API.md#viewer-api) | Selection, layout, zoom, inspector and command dispatch through an injected adapter |
 | Placeholder model | [`@valpatel/scada-sim`](../README.md) | Deterministic equipment behavior, shared readings, parameters, failures and snapshots |
-| Example application | [`apps/scada-explorer`](../../explorer), delivered as [`examples/explorer/`](../../explorer/) | Scenario loading, one clock, browser file downloads/imports and the surrounding control room |
+| Example application | [sibling Explorer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/README.md) | Scenario loading, one clock, browser file downloads/imports and the surrounding control room |
 | Your CAD or operations host | Your application | Document/session identity, persistence, authorization, real model or historian/PLC integration, if any |
 
 Neither package has to know your application framework. Importing either package creates no process clock or hardware connection. The UI never creates its own model per diagram view.
 
-For a local integration, copy or install both package directories. Their manifests are private and `UNLICENSED`; a tarball is a distribution format and does not grant additional license rights. The browser explorer expects sibling `scada-ui` and `scada-sim` directories. Serve their common parent over HTTP(S), then open `scada-sim/examples/explorer/`. The root app's hosted build preserves this sibling layout under `/packages/`; legacy `/sim/scada-sim/examples/explorer/` links redirect to the canonical Explorer entry.
+For a local integration, copy or install the `ui/` and `sim/` source packages. Their manifests are private and `UNLICENSED`; a tarball is a distribution format and grants no additional license rights. Runtime module graphs are package-owned. Development tools and tests are repository-owned outside the runtime packages.
 
-The delivered Explorer is generated from the source repository's
-`apps/scada-explorer/src/`. `npm run build:explorer` maps its real package-source
-references to the portable sibling-package paths; `npm run check:explorer` checks
-that copy without writing. Edit the app source, not `examples/explorer/`. This
-retains existing example URLs without making the model package own application
-state, browser lifecycle or presentation policy. A host integrating the model's
-public exports does not need this example application.
+The [Explorer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/README.md) is a separate source owner beside both libraries. Serve `software/cadagent/webkit/` to use `/scada/explorer/`, or use the compiled site's `/kit/scada/explorer/`. The application owns the clock, navigation, browser file IO and audio. There is no generated Explorer copy inside `sim/examples/`.
 
 ## Mount one model into a viewer
 
@@ -144,7 +138,7 @@ Normalized pressure, flow, quality and process indices are not physical design p
 
 ## JSON, YAML and industry exchange formats
 
-`scada-system` version 1 is this kit's portable JSON contract. Its [JSON Schema](../../ui/schema/scada-system.schema.json) validates document shape, while runtime validation also checks references and bindings. This is not a claim that there is one universal SCADA diagram standard.
+`scada-system` version 1 is this kit's portable JSON contract. Its [JSON Schema](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/schema/scada-system.schema.json) validates document shape, while runtime validation also checks references and bindings. This is not a claim that there is one universal SCADA diagram standard.
 
 YAML can be an authoring convenience in a host application, provided a safe parser converts it to the same plain JSON structure and the result passes the same validators. The kit does not bundle a YAML parser or support executable YAML tags.
 
@@ -172,10 +166,10 @@ Treat imported JSON as untrusted data even when an agent generated it. Validate 
 
 ## Extending the kit
 
-Use the [UI style guide](../../ui/STYLE_GUIDE.md), [contribution workflow](../../ui/CONTRIBUTING.md) and [agent prompts](../../ui/AGENT_PROMPTS.md) for visual additions. Add a corresponding descriptor/model and a runnable scenario placement for each new equipment type. Verify off/on, low/high activity, warning, fault, offline and relevant damage states. Render the symbol at card size, inspector size and its actual system layout, and regenerate its thumbnail from source.
+Use the [UI style guide](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/STYLE_GUIDE.md), [contribution workflow](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/CONTRIBUTING.md) and [agent prompts](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/AGENT_PROMPTS.md) for visual additions. Add a corresponding descriptor/model and a runnable scenario placement for each new equipment type. Verify off/on, low/high activity, warning, fault, offline and relevant damage states. Render the symbol at card size, inspector size and its actual system layout, and regenerate its thumbnail from source.
 
 The explorer intentionally uses `ScadaViewer` and `ScadaWorkspace` as a consumer. Keep app-specific scenario browsing, file import/export and clock policy here rather than expanding the model-free UI package with application behavior.
 
 ## Optional sound in the host
 
-The explorer’s [`sound.mjs`](../../explorer/sound.mjs) is a separate, optional browser example. It reads aggregate model snapshots and generates a quiet machinery mix and warning/fault tones with Web Audio. The simulation engine and UI renderer do not create audio. Sound starts off on each reload, creates its AudioContext only after the user enables it, and goes silent while the model is paused or the tab is hidden. Acknowledgment silences current alarms; clearing and reintroducing a condition makes it eligible again. Audio does not replace visible warning or fault states.
+The explorer’s [`sound.mjs`](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/sound.mjs) is a separate, optional browser example. It reads aggregate model snapshots and generates a quiet machinery mix and warning/fault tones with Web Audio. The simulation engine and UI renderer do not create audio. Sound starts off on each reload, creates its AudioContext only after the user enables it, and goes silent while the model is paused or the tab is hidden. Acknowledgment silences current alarms; clearing and reintroducing a condition makes it eligible again. Audio does not replace visible warning or fault states.

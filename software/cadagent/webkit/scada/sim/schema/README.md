@@ -32,7 +32,7 @@ flowchart TB
 
 Schema shape and bounds do not prove that referenced component IDs, ports, circuit
 identities or model behavior are correct. Use the matching runtime validator before
-constructing a model or restoring a snapshot. The [tests map](../../../../../../tests/webkit/scada/sim/README.md)
+constructing a model or restoring a snapshot. The [tests map](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/README.md)
 separates package checks from cross-package scenario and browser checks.
 
 See [the scenario maps](../scenarios/README.md) for concrete inputs and their

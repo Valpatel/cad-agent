@@ -29,4 +29,13 @@ steam and cooling circuits. The [electric batch oven](../../scenarios/electric-b
 provides a smaller three-device example with explicit supply and retained heat.
 Both use editable indices, not calibrated operating values.
 
-<a href="../../img/thumbnails/electric-batch-oven.jpg"><img src="../../img/thumbnails/electric-batch-oven.jpg" width="420" alt="Small v2 oven scenario: supply, breaker and retained-heat oven"></a>
+<a href="../../img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg"><img src="../../img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg" width="420" alt="Small v2 oven scenario: supply, breaker and retained-heat oven"></a>
+
+## Files
+
+| File | Purpose |
+| --- | --- |
+| [circuit-system.mjs](circuit-system.mjs) | Version 2 circuit model session and state progression. |
+| [contract.mjs](contract.mjs) | Version 2 fields, quantities and domain contracts. |
+| [type-contracts.mjs](type-contracts.mjs) | Version 2 per-type and variant model descriptors. |
+| [validation.mjs](validation.mjs) | Runtime validation of explicit version 2 definitions. |

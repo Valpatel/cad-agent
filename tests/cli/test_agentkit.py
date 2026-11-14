@@ -21,7 +21,9 @@ def test_real_kit_is_valid():
     root = agentkit.kit_root()
     found = {(i.kind, i.name) for i in agentkit.items(root)}
     assert found == {('skill', name) for name in ('cad-motion-validation', 'cad-pr-review', 'cad-remote-runs',
-                     'cad-supply-chain', 'cad-work-tracking', 'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware')} | \
+                     'cad-supply-chain', 'cad-work-tracking', 'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware',
+                     'scada-component-authoring', 'scada-system-authoring', 'scada-model-adaptation',
+                     'scada-viewer-review', 'scada-distribution-review', 'repository-documentation')} | \
                     {('agent', 'cad-pr-reviewer'), ('agent', 'cad-resume')}
     for item in agentkit.items(root):
         if item.kind == 'agent':      # the generated Codex skill parses and keeps the description
@@ -234,6 +236,10 @@ def test_codex_home(tmp_path, monkeypatch):
 NEEDS = {'cad-pr-review': (('gh', 'write-access'), ()), 'cad-work-tracking': (('git', 'gh', 'write-access'), ()),
          'cad-remote-runs': (('git', 'gh', 'ssh', 'compute-host'), ('rsync',)), 'mcmaster-parts': ((), ('playwright',)),
          'cad-pr-reviewer': (('gh',), ()), 'cad-resume': (('git', 'gh'), ())}
+NEEDS.update({name: (('node', 'npm'), ('scada-browser',)) for name in (
+    'scada-component-authoring', 'scada-system-authoring', 'scada-model-adaptation',
+    'repository-documentation', 'scada-distribution-review')})
+NEEDS['scada-viewer-review'] = (('node', 'npm', 'scada-browser'), ())
 
 
 def _top(item):
@@ -330,6 +336,64 @@ def test_checks_are_local(monkeypatch):
     assert calls == [['gh', 'auth', 'token']]                          # reads gh's own config: no network call
     monkeypatch.setattr(agentkit.importlib.util, 'find_spec', lambda name: None)
     assert 'Playwright is not installed' in agentkit._playwright()
+
+
+def test_node_readiness_checks_version_without_package_or_network_calls(monkeypatch):
+    monkeypatch.setattr(agentkit.shutil, 'which', lambda name: None)
+    assert 'not on PATH' in agentkit._node()
+    assert 'not on PATH' in agentkit.REQUIREMENTS['npm'].check()
+    monkeypatch.setattr(agentkit.shutil, 'which', lambda name: '/usr/bin/' + name)
+    calls = []
+
+    def version(text, code=0):
+        def run(cmd, **kwargs):
+            calls.append(cmd)
+            assert kwargs == {'capture_output': True, 'text': True, 'timeout': 5}
+            return agentkit.subprocess.CompletedProcess(cmd, code, text, '')
+        monkeypatch.setattr(agentkit.subprocess, 'run', run)
+
+    for text in ('v20.18.0\n', 'unrecognized\n', ''):
+        version(text)
+        assert '22 or newer' in agentkit._node()
+    version('v22.0.0\n')
+    assert agentkit._node() is None
+    version('v24.3.1\n')
+    assert agentkit._node() is None
+    version('v22.0.0\n', 1)
+    assert agentkit._node() is not None
+    assert all(call == ['node', '--version'] for call in calls)
+
+
+def test_scada_browser_readiness_matches_capture_binary_choice(tmp_path, monkeypatch):
+    monkeypatch.setattr(agentkit.importlib.util, 'find_spec', lambda name: None)
+    assert 'Python Playwright is missing' in agentkit._scada_browser()
+    monkeypatch.setattr(agentkit.importlib.util, 'find_spec', lambda name: object())
+    monkeypatch.setattr(agentkit.shutil, 'which', lambda name: '/usr/bin/chromium' if name == 'chromium' else None)
+    monkeypatch.setattr(agentkit.subprocess, 'run', lambda *args, **kwargs: pytest.fail('PATH binary needs no driver probe'))
+    assert agentkit._scada_browser() is None
+    monkeypatch.setattr(agentkit.shutil, 'which', lambda name: None)
+    binary = tmp_path / 'chromium'
+    binary.write_bytes(b'executable fixture')
+    calls = []
+
+    def probe(cmd, **kwargs):
+        calls.append(cmd)
+        assert cmd[:2] == [agentkit.sys.executable, '-c']
+        assert 'chromium.executable_path' in cmd[2] and 'launch' not in cmd[2]
+        assert kwargs == {'capture_output': True, 'text': True, 'timeout': 10}
+        return agentkit.subprocess.CompletedProcess(cmd, 0, str(binary) + '\n', '')
+
+    monkeypatch.setattr(agentkit.subprocess, 'run', probe)
+    assert agentkit._scada_browser() is None
+    binary.unlink()
+    assert 'Chromium was not found' in agentkit._scada_browser()
+
+    def timeout(*args, **kwargs):
+        raise agentkit.subprocess.TimeoutExpired('probe', 10)
+
+    monkeypatch.setattr(agentkit.subprocess, 'run', timeout)
+    assert 'Chromium was not found' in agentkit._scada_browser()
+    assert len(calls) == 2
 
 
 def test_the_workflow_page_lists_who_needs_what():

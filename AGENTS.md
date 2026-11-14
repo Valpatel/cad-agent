@@ -103,7 +103,9 @@ its failures says where the file goes.
   package). ✓ `test_layout.py` fails a folder newly over 20 files; the folders over it today are on a list that may
   only shrink, and each is split in the next PR that touches it.
 - **Don't pre-create folders** for one or two files, and never create an empty one.
-- **Every new folder gets a `README.md`** with a short Mermaid map ([style guide](docs/practice/style-guide.md), #113), and
+- **Every new folder gets a `README.md`** with a compact Mermaid or owned SVG map ([style guide](docs/practice/style-guide.md), #113), and
   the parent README's table links it.
 - **Move with `git mv`** so history follows, update every reference (code, tests, docs, skills, agents, workflows,
-  `docs/areas.yaml`), and leave stubs or redirects where #145 says (published pages).
+  `docs/areas.yaml`). Repair consumers directly; do not add compatibility facades, generated aliases or migration
+  ledgers. Track any unresolved path repair in a bounded issue with a completion check. Maintained docs describe
+  the current structure; completed moves remain in Git history and closed issues.

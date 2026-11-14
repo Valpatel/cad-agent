@@ -2,7 +2,7 @@
 
 [Package map and public API](../README.md) · [Documentation](../docs/README.md) · [Examples](../examples/README.md)
 
-The package separates data contracts, equipment artwork, interaction primitives and diagram controllers. The host owns simulation, authorization, persistence and IO. Existing flat entries remain thin compatibility facades for npm exports, downloaded kits and deployed URLs; new implementation belongs in the domains below.
+The package separates data contracts, equipment artwork, interaction primitives and diagram controllers. The host owns simulation, authorization, persistence and IO. Public exports point directly to the domain implementations below.
 
 ```mermaid
 flowchart TD
@@ -23,15 +23,14 @@ flowchart TD
 | [workspace](./workspace/README.md) | Dialogs, keyboard/focus handling, toolbars and teardown. |
 | [viewer](./viewer/README.md) | Diagram layout, contained pan/zoom camera, selection, equipment inspector and adapter commands. |
 | [index.mjs](./index.mjs), [metadata.mjs](./metadata.mjs), [styles.css](./styles.css) | Public aggregate entries. |
-| Flat `scada-*`, `twin-art.*`, `system-definition.mjs` | Compatibility entry points. They forward to the owners above and contain no implementation. |
 
-Do not import a compatibility facade from a new internal implementation. Import the actual dependency owner, keeping catalog and contracts independent of renderer/controller code. Do not move a public entry without a versioned consumer migration. The site composer projects this tree under `packages/scada-ui/`, preserving package-local facade paths; historical root website module URLs are not retained. `build:library` generates metadata only. Packaged consumers use this source tree directly without a build.
+Import the actual dependency owner, keeping catalog and contracts independent of renderer/controller code. The package export map points directly to these implementations. Metadata generation changes data outputs only; package consumers use the browser-ready source tree without a build. The site compiler exposes this owner at `/kit/scada/ui/`.
 
 ## Entry points and nearby contracts
 
-Consumer imports come from the [package export map](../package.json). `index.mjs` is the public aggregate; `metadata.mjs` offers pure discovery without a DOM or model session. `styles.css` composes the package skin. Historical flat modules forward to the domain owners listed above; they are not alternate implementations.
+Consumer imports come from the [package export map](../package.json). `index.mjs` is the public aggregate; `metadata.mjs` offers pure discovery without a DOM or model session. `styles.css` composes the package skin. Domain modules contain the implementations; there are no historical path wrappers.
 
 Use the [schema map](../schema/README.md) for document validation, [generated metadata](../metadata/README.md) for portable discovery and [state coverage](../docs/STATE_COVERAGE.md) for verified state behavior and open design work. A new SCADA view should share an external adapter rather than fork the host's model or clock. Future non-SCADA viewers may reuse interaction primitives, but their domain contracts and geometry should remain explicit.
 
-<a href="../img/symbols/automation/plc-rack.svg"><img src="../img/symbols/automation/plc-rack.svg" width="190" alt="Reusable PLC rack artwork"></a>
-<a href="../img/thumbnails/generic-viewer.jpg"><img src="../img/thumbnails/generic-viewer.jpg" width="390" alt="Reusable SCADA viewer consuming library artwork"></a>
+<a href="../img/symbols/automation/plc-rack/default.svg"><img src="../img/symbols/automation/plc-rack/default.svg" width="190" alt="Reusable PLC rack artwork"></a>
+<a href="../img/thumbnails/workspace/generic-viewer.jpg"><img src="../img/thumbnails/workspace/generic-viewer.jpg" width="390" alt="Reusable SCADA viewer consuming library artwork"></a>

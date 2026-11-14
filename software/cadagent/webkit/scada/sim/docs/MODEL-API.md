@@ -276,7 +276,7 @@ Resource/media connections cannot be relabeled to electrical/data ports. Measure
 
 `MODEL_DESCRIPTORS` retains the original 80 version 1 contracts. Each descriptor includes family, typed ports, visual fields, inputs, outputs, eight parameter specifications with units/defaults/bounds, assumptions, failure modes and a complete `defaultModel`. `metadata/model-registry.json` is the same serializable data. `V2_MODEL_DESCRIPTORS` and `V2_VARIANT_DESCRIPTORS`, also shipped in `metadata/model-registry-v2.json`, describe the 142-type v2 circuit runtime. A component template cannot contain system-specific thermal reference IDs; `createV2ModelDefinition` adds those default links after equipment IDs are known. [MODEL-MATRIX.md](./MODEL-MATRIX.md) summarizes the mappings.
 
-After changing public descriptors, run `npm run build:model-metadata` from the repository root to regenerate both registry JSON files. Use `npm run check:model-metadata` in validation; it reports missing or stale files without writing them. The generator preserves the separate v1 and v2 metadata contracts.
+After changing public descriptors, run `npm --prefix tools/webkit/scada run build:metadata` from the repository root to regenerate both registry JSON files. Use `npm --prefix tools/webkit/scada run check:metadata` in validation; it reports missing or stale files without writing them. The generator preserves the separate v1 and v2 metadata contracts.
 
 To replace built-in equations, register independently checked providers at the
 core phase boundary. To replace the entire solver, retain the viewer adapter

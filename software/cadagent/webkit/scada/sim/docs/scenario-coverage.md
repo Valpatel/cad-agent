@@ -1,8 +1,8 @@
 # Scenario coverage
 
-The canonical library contains **60 runnable scenarios, 142 symbol types, 911 equipment instances and 195 focused views**. The accepted 20 industry system/model pairs retain version 1 behavior. The 33 power, six agriculture and one electric batch-oven examples explicitly opt into version 2 circuits, finite stores, conversions and observations.
+The canonical library contains **61 runnable scenarios, 142 symbol types, 928 equipment instances and 198 focused views**. The 20 original industry examples and wastewater digester use version 1 behavior. The 33 power, six agriculture and one electric batch-oven examples explicitly opt into version 2 circuits, finite stores, conversions and observations.
 
-Every scenario contains editable `system.json` and `model.json` source. The [catalog](../scenarios/index.json) indexes every used `componentTypes` ID and a sorted, duplicate-free `componentVariants` array of `{type, variant}` objects. Facility and technology filters, the type/variant index and keyword search help humans and agents locate a relevant example. The [Explorer](../../explorer/index.html) also accepts `?scenario=power-nuclear-pwr` or `?componentType=fish-tank`.
+Every scenario contains editable `system.json` and `model.json` source. The [catalog](../scenarios/index.json) indexes every used `componentTypes` ID and a sorted, duplicate-free `componentVariants` array of `{type, variant}` objects. Facility and technology filters, the type/variant index and keyword search help humans and agents locate a relevant example. The [Explorer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/index.html) also accepts `?scenario=power-nuclear-pwr` or `?componentType=fish-tank`.
 
 | Group | Scenarios | Equipment | Views | Model |
 | --- | ---: | ---: | ---: | --- |
@@ -10,6 +10,7 @@ Every scenario contains editable `system.json` and `model.json` source. The [cat
 | Power and utilities | 33 | 515 | 115 | Version 2 |
 | Agriculture and aquaculture | 6 | 96 | 18 | Version 2 |
 | Electric batch heating | 1 | 3 | 2 | Version 2 |
+| Wastewater digestion | 1 | 17 | 3 | Version 1 |
 
 ## Shared state and editable assumptions
 
@@ -25,6 +26,7 @@ Nuclear diagrams are conceptual heat-source and circulation examples: PWR and th
 
 | Scenario | Facility / sector | Assets / views | Primary focus | References |
 | --- | --- | ---: | --- | --- |
+| [Wastewater digester](../scenarios/wastewater-digester/system.json) | Wastewater treatment | 17 / 3 | Sludge feed and digestion → Gas storage and treatment → CHP, boiler and flare; shared thermal and electrical services | Illustrative authored process |
 | [Winery](../scenarios/winery/system.json) | Food & beverage | 15 / 3 | Grape receiving belt → Grape crusher → Juice extraction separator → Must transfer pump → Fermentation vessel → Aging buffer → Cellar transfer valve → Polishing filter → Bottle filling → Bottle packing | Illustrative authored process |
 | [Brewery](../scenarios/brewery/system.json) | Food & beverage | 16 / 3 | Grain receiving silo → Grain mill → Mash vessel → Lauter separation → Brew kettle → Wort heat exchanger → Fermentation vessel → Conditioning buffer → Container filling → Case packing | Illustrative authored process |
 | [Fortune-cookie factory](../scenarios/fortune-cookies/system.json) | Food & beverage | 15 / 3 | Ingredient weighing hopper → Batter mixing vessel → Batter metering pump → Sheet depositing station → Baking tunnel → Warm product transfer → Cookie folding station → Cooling transfer belt → Cookie wrapping | Illustrative authored process |
@@ -245,4 +247,4 @@ These are engineering-inspired teaching systems, not recipes, plant designs, equ
 
 ## References and previews
 
-Each power/agriculture system carries full source citations, reviewed sections and the supported structural claim. The [power reference register](./power-sector-references.md) and [agriculture reference register](./agriculture-references.md) retain access limits and distinguish read material from attempted sources. Unread sources are not treated as evidence. The [scenario gallery](./scenario-gallery.md) links actual viewer captures and editable definitions; thumbnail freshness is checked against source hashes.
+Each power/agriculture system carries full source citations, reviewed sections and the supported structural claim. The [power reference register](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/POWER_REFERENCES.md) and [agriculture reference register](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/AGRICULTURE_REFERENCES.md) retain access limits and distinguish read material from attempted sources. Unread sources are not treated as evidence. The [scenario gallery](./scenario-gallery.md) links actual viewer captures and editable definitions; thumbnail freshness is checked against source hashes.

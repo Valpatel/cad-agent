@@ -8,9 +8,11 @@
 #     id      stable slug (the catalogue entry is demo-<id>)
 #     title   what people see; what: one plain line
 #     mode    interactive (you drive it), animated (it plays) or render (a still result from our tools)
-#     cover   a figure in docs/img, or snap-demo (the landing page's animation, computed by tools/site/compiler/snap-demo.mjs)
+#     cover   a figure in docs/img or software/cadagent/webkit, or snap-demo (the landing animation)
 #     url     where it lives: a page (docs/x.md, with an optional #anchor that must exist). Without one: the page that
 #             shows the cover, at the heading above it
+#             Generated Toolkit routes are explicitly checked against the compiler's emitted route list.
+#     license optional explicit package terms; defaults to MIT for existing first-party demos
 #     still   animated covers: the moment the still frame shows, as a fraction of the loop (default 0.5)
 #     areas   slugs from docs/areas.yaml (default: the areas of the page it lives on)
 #     tools   cad-agent commands this demo shows (their entries link to it)
@@ -27,10 +29,38 @@
 # Every figure is a cover once: the demos take theirs first, then the tools, then our pages (the main guides first);
 # a page whose figures are all taken gets a cover drawn from its outline.
 #
+# Source-owned package terms, also applied to automatically indexed guides and skills.
+# Prefixes are repository directories; the longest matching prefix wins.
+license_overrides:
+  - {prefix: software/cadagent/webkit/scada/, license: UNLICENSED}
+  - {prefix: docs/practice/scada/, license: UNLICENSED}
+  - {prefix: .agents/skills/scada-component-authoring/, license: UNLICENSED}
+  - {prefix: .agents/skills/scada-system-authoring/, license: UNLICENSED}
+  - {prefix: .agents/skills/scada-model-adaptation/, license: UNLICENSED}
+  - {prefix: .agents/skills/scada-viewer-review/, license: UNLICENSED}
+  - {prefix: .agents/skills/repository-documentation/, license: UNLICENSED}
+  - {prefix: .agents/skills/scada-distribution-review/, license: UNLICENSED}
+
 # dense: figures that are never covers, because at card size (300 px, 170 on a phone) they read as a grey box.
 dense:
   - docs/img/explore/two-wheel-compare.png      # a whole comparison page: title, chart and leaderboard
 demos:
+  - id: scada-elements
+    title: SCADA elements and states
+    what: Browse animated equipment, variants and fault states, then change the visual inputs in an interactive preview.
+    mode: interactive
+    cover: software/cadagent/webkit/scada/ui/img/symbols/rotating/pump/default.svg
+    url: /toolkit/scada/elements
+    areas: [publishing]
+    license: UNLICENSED
+  - id: scada-simulations
+    title: Connected SCADA simulations
+    what: Run editable process examples, switch views of one session and explore equipment controls and injected faults.
+    mode: interactive
+    cover: software/cadagent/webkit/scada/sim/img/thumbnails/water-utilities/wastewater-digester/preview.jpg
+    url: /toolkit/scada/simulations
+    areas: [publishing]
+    license: UNLICENSED
   - id: snap-arm-explorer
     title: Snap-arm explorer
     what: Size a cantilever snap arm and watch it bend, coloured by strain, with pass or fail for the print direction.

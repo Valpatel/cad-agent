@@ -1,35 +1,32 @@
 # Manufacturing & solids
 
-[Parent map](../README.md) · [Gallery](../../README.md) · [Package owner](../../../README.md) · [Interactive equipment example](../../../examples/components/index.html)
+[Parent map](../README.md) · [Package owner](../../../README.md) · [Image gallery](../../README.md)
 
-Generated from the library renderer. These images show supplied illustrative visual state; they do not run a system model. Motion follows the image viewer’s reduced-motion preference where supported. Static renderers retain the equipment and readouts.
+Generated previews from canonical equipment artwork and supplied illustrative state. Images do not run a process model. Open a preview for its full size.
 
 ```mermaid
 flowchart LR
-  Catalog["Equipment descriptor"] --> State["Supplied visual state"]
-  State --> Art["Canonical SVG artwork"]
-  Art --> Preview["Portable animated image"]
+  Source["Library artwork"] --> Preview["Generated images"]
+  Preview --> Browse["Browsable folder maps"]
 ```
 
-This folder contains **18 previews**. Open an image for its full size; use the interactive example to change fields. The table lists the rendering inputs for each asset. Regenerate this map with `npm run gallery:generate`; do not edit generated SVGs or indexes.
-
-| Preview | Equipment and supplied state |
-| --- | --- |
-| <a href="conveyor.svg"><img src="conveyor.svg" alt="Belt conveyor. Active illustrative preview" width="320"></a> | **Belt conveyor**<br>`conveyor`<br>Active illustrative preview<br><br>Powered material belt with support rollers, travelling product and a distinct jam state.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="crusher.svg"><img src="crusher.svg" alt="Jaw crusher. Active illustrative preview" width="320"></a> | **Jaw crusher**<br>`crusher`<br>Active illustrative preview<br><br>Feed hopper, crushing jaws and material discharge with wear and blockage detail.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="vibrating-screen.svg"><img src="vibrating-screen.svg" alt="Vibrating screen. Active illustrative preview" width="320"></a> | **Vibrating screen**<br>`vibrating-screen`<br>Active illustrative preview<br><br>Multi-deck separation screen with visible feed, vibration and screened output.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="grinding-mill.svg"><img src="grinding-mill.svg" alt="Grinding mill. Active illustrative preview" width="320"></a> | **Grinding mill**<br>`grinding-mill`<br>Active illustrative preview<br><br>Rotating grinding chamber and a separate drive, with worn liner and overheating states.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="rotary-kiln.svg"><img src="rotary-kiln.svg" alt="Rotary kiln. Active illustrative preview" width="320"></a> | **Rotary kiln**<br>`rotary-kiln`<br>Active illustrative preview<br><br>Long heated rotating drum with burner, support tyres and refractory-damage detail.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `temperature`, `damage`. |
-| <a href="oven.svg"><img src="oven.svg" alt="Conveyor oven. Active illustrative preview" width="320"></a> | **Conveyor oven**<br>`oven`<br>Active illustrative preview<br><br>Cutaway heating tunnel with upper and lower heating coils, a moving metal belt and traveling product trays.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `temperature`, `damage`. |
-| <a href="rack-oven.svg"><img src="rack-oven.svg" alt="Rack / batch oven. Active illustrative preview" width="320"></a> | **Rack / batch oven**<br>`rack-oven`<br>Active illustrative preview<br><br>Front-loading electric batch oven with stationary product shelves, a hinged inspection door, recirculating air and retained thermal glow.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `temperature`, `open`, `damage`. |
-| <a href="dryer.svg"><img src="dryer.svg" alt="Rotary dryer. Active illustrative preview" width="320"></a> | **Rotary dryer**<br>`dryer`<br>Active illustrative preview<br><br>Heated tumbling drum with vapor discharge and drying-load illustration.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `temperature`, `damage`. |
-| <a href="extruder.svg"><img src="extruder.svg" alt="Screw extruder. Active illustrative preview" width="320"></a> | **Screw extruder**<br>`extruder`<br>Active illustrative preview<br><br>Heated barrel and screw drive that advance feed into a formed product.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="tablet-press.svg"><img src="tablet-press.svg" alt="Tablet press. Active illustrative preview" width="320"></a> | **Tablet press**<br>`tablet-press`<br>Active illustrative preview<br><br>Rotary turret, compression tooling and tablet discharge with an explicit jam state.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="filling-line.svg"><img src="filling-line.svg" alt="Filling line. Active illustrative preview" width="320"></a> | **Filling line**<br>`filling-line`<br>Active illustrative preview<br><br>Metered filling heads and a moving line of containers.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="packaging-line.svg"><img src="packaging-line.svg" alt="Packaging line. Active illustrative preview" width="320"></a> | **Packaging line**<br>`packaging-line`<br>Active illustrative preview<br><br>Product conveyor, wrapping station and sealed packages.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="granulator.svg"><img src="granulator.svg" alt="Granulator. Active illustrative preview" width="320"></a> | **Granulator**<br>`granulator`<br>Active illustrative preview<br><br>Granulating rotor and screened outlet for particle-size processing.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="forming-machine.svg"><img src="forming-machine.svg" alt="Forming machine. Active illustrative preview" width="320"></a> | **Forming machine**<br>`forming-machine`<br>Active illustrative preview<br><br>Tooling station with a controlled forming stroke and product outfeed.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="drum-mixer.svg"><img src="drum-mixer.svg" alt="Drum mixer. Active illustrative preview" width="320"></a> | **Drum mixer**<br>`drum-mixer`<br>Active illustrative preview<br><br>Rotating mixing drum with inlet and discharge for bulk blending.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="paper-machine.svg"><img src="paper-machine.svg" alt="Paper machine. Active illustrative preview" width="320"></a> | **Paper machine**<br>`paper-machine`<br>Active illustrative preview<br><br>Stock feed, forming belt and drying rollers leading to a paper reel.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
-| <a href="weigh-hopper.svg"><img src="weigh-hopper.svg" alt="Weigh hopper. Active illustrative preview" width="320"></a> | **Weigh hopper**<br>`weigh-hopper`<br>Active illustrative preview<br><br>Weighing hopper, support load cells and a controlled solids discharge.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `level`, `load`, `damage`. |
-| <a href="screw-feeder.svg"><img src="screw-feeder.svg" alt="Screw feeder. Active illustrative preview" width="320"></a> | **Screw feeder**<br>`screw-feeder`<br>Active illustrative preview<br><br>Enclosed screw transport with a visible helix, intake and metered discharge.<br><br>Editable fields: `active`, `running`, `fault`, `status`, `load`, `speed`, `damage`. |
+| Folder | Previews | Example |
+| --- | ---: | --- |
+| [Belt conveyor](conveyor/README.md) | 1 | <a href="conveyor/default.svg"><img src="conveyor/default.svg" width="160" alt="Belt conveyor preview"></a> |
+| [Jaw crusher](crusher/README.md) | 1 | <a href="crusher/default.svg"><img src="crusher/default.svg" width="160" alt="Jaw crusher preview"></a> |
+| [Drum mixer](drum-mixer/README.md) | 1 | <a href="drum-mixer/default.svg"><img src="drum-mixer/default.svg" width="160" alt="Drum mixer preview"></a> |
+| [Rotary dryer](dryer/README.md) | 1 | <a href="dryer/default.svg"><img src="dryer/default.svg" width="160" alt="Rotary dryer preview"></a> |
+| [Screw extruder](extruder/README.md) | 1 | <a href="extruder/default.svg"><img src="extruder/default.svg" width="160" alt="Screw extruder preview"></a> |
+| [Filling line](filling-line/README.md) | 1 | <a href="filling-line/default.svg"><img src="filling-line/default.svg" width="160" alt="Filling line preview"></a> |
+| [Forming machine](forming-machine/README.md) | 1 | <a href="forming-machine/default.svg"><img src="forming-machine/default.svg" width="160" alt="Forming machine preview"></a> |
+| [Granulator](granulator/README.md) | 1 | <a href="granulator/default.svg"><img src="granulator/default.svg" width="160" alt="Granulator preview"></a> |
+| [Grinding mill](grinding-mill/README.md) | 1 | <a href="grinding-mill/default.svg"><img src="grinding-mill/default.svg" width="160" alt="Grinding mill preview"></a> |
+| [Conveyor oven](oven/README.md) | 1 | <a href="oven/default.svg"><img src="oven/default.svg" width="160" alt="Conveyor oven preview"></a> |
+| [Packaging line](packaging-line/README.md) | 1 | <a href="packaging-line/default.svg"><img src="packaging-line/default.svg" width="160" alt="Packaging line preview"></a> |
+| [Paper machine](paper-machine/README.md) | 1 | <a href="paper-machine/default.svg"><img src="paper-machine/default.svg" width="160" alt="Paper machine preview"></a> |
+| [Rack / batch oven](rack-oven/README.md) | 1 | <a href="rack-oven/default.svg"><img src="rack-oven/default.svg" width="160" alt="Rack / batch oven preview"></a> |
+| [Rotary kiln](rotary-kiln/README.md) | 1 | <a href="rotary-kiln/default.svg"><img src="rotary-kiln/default.svg" width="160" alt="Rotary kiln preview"></a> |
+| [Screw feeder](screw-feeder/README.md) | 1 | <a href="screw-feeder/default.svg"><img src="screw-feeder/default.svg" width="160" alt="Screw feeder preview"></a> |
+| [Tablet press](tablet-press/README.md) | 1 | <a href="tablet-press/default.svg"><img src="tablet-press/default.svg" width="160" alt="Tablet press preview"></a> |
+| [Vibrating screen](vibrating-screen/README.md) | 1 | <a href="vibrating-screen/default.svg"><img src="vibrating-screen/default.svg" width="160" alt="Vibrating screen preview"></a> |
+| [Weigh hopper](weigh-hopper/README.md) | 1 | <a href="weigh-hopper/default.svg"><img src="weigh-hopper/default.svg" width="160" alt="Weigh hopper preview"></a> |

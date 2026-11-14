@@ -26,5 +26,5 @@ Technology, circuit and fuel descriptors belong in [power metadata](../../catalo
 
 [State coverage](../../../docs/STATE_COVERAGE.md) records verified distinctions and open design/model limitations. Nuclear drawings use fictional illustrative readings and original schematic geometry; reference notes do not make them validated safety or design models.
 
-<a href="../../../img/symbols/power/solar-panel.svg"><img src="../../../img/symbols/power/solar-panel.svg" width="195" alt="Solar photovoltaic equipment preview"></a>
-<a href="../../../img/symbols/nuclear/pwr-reactor-vessel.svg"><img src="../../../img/symbols/nuclear/pwr-reactor-vessel.svg" width="195" alt="Conceptual pressurized-water reactor vessel preview"></a>
+<a href="../../../img/symbols/power/solar-panel/default.svg"><img src="../../../img/symbols/power/solar-panel/default.svg" width="195" alt="Solar photovoltaic equipment preview"></a>
+<a href="../../../img/symbols/nuclear/pwr-reactor-vessel/default.svg"><img src="../../../img/symbols/nuclear/pwr-reactor-vessel/default.svg" width="195" alt="Conceptual pressurized-water reactor vessel preview"></a>

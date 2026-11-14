@@ -23,5 +23,11 @@ Render functions own no model clock, network, audio, repair latch or accident sc
 
 [State coverage](../../docs/STATE_COVERAGE.md) records what has actually been checked and what remains incomplete. Use [the single-component example](../../examples/components/README.md) for integration and the package-owned gallery for review. Add geometry here rather than editing generated SVG/JPEG previews.
 
-<a href="../../img/symbols/rotating/submersible-pump.svg"><img src="../../img/symbols/rotating/submersible-pump.svg" width="200" alt="Submersible pump symbol"></a>
-<a href="../../img/symbols/power/solar-panel.svg"><img src="../../img/symbols/power/solar-panel.svg" width="200" alt="Solar panel symbol"></a>
+<a href="../../img/symbols/rotating/submersible-pump/default.svg"><img src="../../img/symbols/rotating/submersible-pump/default.svg" width="200" alt="Submersible pump symbol"></a>
+<a href="../../img/symbols/power/solar-panel/default.svg"><img src="../../img/symbols/power/solar-panel/default.svg" width="200" alt="Solar panel symbol"></a>
+
+## Files
+
+| File | Purpose |
+| --- | --- |
+| [index.mjs](index.mjs) | Public aggregate exports for this owner. |

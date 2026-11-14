@@ -1,0 +1,58 @@
+/** Toolkit uses the same site frame, local assets and browser/error recorder as Explore. */
+export async function toolkitBrowserChecks({open,fail}) {
+  for(const width of [320,1366]) for(const color of ['light','dark']) {
+    const {page,done}=await open('/toolkit/scada/elements?q=pump&category=rotating&kind=equipment',{width,color});
+    try {
+      await page.locator('[data-scada-filters]:visible').waitFor();
+      const nav=page.getByRole('navigation',{name:'Main'}).getByRole('link',{name:'Toolkit',exact:true});
+      if(await nav.getAttribute('href')!=='/toolkit'||await nav.getAttribute('aria-current')!=='page')fail('Toolkit navigation','missing canonical capability tab');
+      if(await page.getByRole('searchbox').inputValue()!=='pump')fail('Toolkit filters','URL query was not restored');
+      const visible=page.locator('[data-scada-card]:visible');
+      const ids=await visible.evaluateAll(xs=>xs.map(x=>x.id));
+      if(!ids.includes('equipment--pump')||ids.some(id=>!id.startsWith('equipment--')||!id.includes('pump')))fail('Toolkit filters',JSON.stringify(ids));
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('Toolkit layout',`${width}px ${color} overflows`);
+      const pump=page.locator('#equipment--pump'), image=pump.locator('img');
+      await image.scrollIntoViewIfNeeded();
+      await page.waitForFunction(()=>{const img=document.querySelector('#equipment--pump img');return img.complete&&img.naturalWidth>0;});
+      const button=pump.getByRole('button',{name:'Try states'});await button.click();
+      const art=page.locator('[data-scada-preview-art] [data-scada-type="pump"]');await art.waitFor();
+      const running=page.locator('[data-scada-state-fields] [name="running"]');await running.uncheck();
+      if(await art.getAttribute('data-running')!=='false')fail('Toolkit preview','state field did not reach the actual renderer');
+      const load=page.locator('[data-scada-state-fields] [name="load"]');
+      if(await load.count()) {await load.fill('25');await load.press('Enter');if(!await page.locator('.toolkit-preview').isVisible())fail('Toolkit preview','Enter submitted the state form as navigation');await load.fill('');await running.check();if((await art.getAttribute('style')).includes('NaN'))fail('Toolkit preview','empty numeric input poisoned the renderer');}
+      await page.keyboard.press('Escape');
+      if(!await button.evaluate(el=>el===document.activeElement))fail('Toolkit preview','closing the modal lost keyboard focus');
+      await page.getByRole('searchbox').fill('no-matching-equipment-123');
+      if(await visible.count()||!await page.locator('[data-scada-empty]').isVisible())fail('Toolkit empty state','no-match state was not announced');
+      await page.getByRole('button',{name:'Clear filters'}).click();
+      if(new URL(page.url()).search)fail('Toolkit reset','filters were not removed from the URL');
+    } finally {await done();}
+  }
+  for(const js of [true,false]) {
+    const {page,done}=await open('/toolkit/scada/simulations',{js,width:390});
+    try {
+      const first=page.locator('[data-scada-card]').first();
+      if(!(await first.getByRole('link',{name:'Run simulation'}).getAttribute('href')).endsWith('?scenario=wastewater-digester'))fail('Toolkit simulations','wastewater is not the featured target-owned launch');
+      if(js) {
+        await page.getByRole('searchbox').fill('winery');
+        const cards=page.locator('[data-scada-card]:visible');
+        if(await cards.count()!==1||!(await cards.first().textContent()).includes('Winery'))fail('Toolkit simulations','scenario search does not select the real inventory');
+      } else if(await page.locator('[data-scada-card]').count()<60||await page.locator('[data-scada-filters]').isVisible())fail('Toolkit fallback','native simulation cards/controls are not usable without script');
+    } finally {await done();}
+  }
+  const {page,done}=await open('/toolkit/scada/elements',{js:false,width:390});
+  try {
+    if(await page.locator('[data-scada-card]').count()<239||await page.locator('[data-scada-preview]:visible').count())fail('Toolkit native assets','gallery fallback lost the symbols or exposes inert buttons');
+  } finally {await done();}
+  const retry=await open('/toolkit/scada/elements?q=pump&kind=equipment');
+  try {
+    await retry.page.route('**/toolkit/scada/catalog.json',route=>route.fulfill({contentType:'application/json',body:'{"schema":"unsupported","elements":[]}'}));
+    const pump=retry.page.locator('#equipment--pump'),button=pump.getByRole('button',{name:'Try states'});
+    await button.click();await retry.page.locator('[data-scada-preview-error]').filter({hasText:'could not load'}).waitFor();
+    await retry.page.keyboard.press('Escape');
+    if(!await pump.getByRole('link',{name:'SVG asset'}).isVisible())fail('Toolkit preview failure','native asset link disappeared');
+    await retry.page.unroute('**/toolkit/scada/catalog.json');
+    await button.click();await retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]').waitFor();
+    await retry.page.keyboard.press('Escape');
+  } finally {await retry.done();}
+}

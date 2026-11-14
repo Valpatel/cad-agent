@@ -84,7 +84,12 @@ model.step(1);</pre></details>`})}
     if (id === 'session') renderEvents(true);
     if (id === 'sound') updateSound();
     if (id === 'observer') openObserver();
-  }, onClose:({id}) => {if(id==='observer'){observer?.destroy();observer=null;}}});
+  }, onClose:({id}) => {
+    if(id==='observer'){
+      observer?.destroy();observer=null;
+      tools.querySelector('[data-observer-viewer]')?.replaceChildren();
+    }
+  }});
   extendedEditor=new ExtendedModelEditor($('[data-extended-model]'),{dispatch:command,onMessage:text=>dialogMessage('model',text)});
   tools.addEventListener('click', onClick);
   tools.addEventListener('change', onChange);

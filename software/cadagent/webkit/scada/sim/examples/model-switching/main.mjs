@@ -1,7 +1,7 @@
 import {createPlaceholderAdapter} from '../../src/index.mjs';
 import {pumpEquationProviders, quadraticPumpProvider, solveQuadraticPump, solveLinearPump} from '../../src/equation-examples/index.mjs';
-import {ScadaViewer} from '../../../ui/src/scada-viewer.mjs';
-import {ScadaWorkspace, renderScadaDialog} from '../../../ui/src/scada-workspace.mjs';
+import {ScadaViewer} from '../../../ui/src/viewer/viewer.mjs';
+import {ScadaWorkspace, renderScadaDialog} from '../../../ui/src/workspace/workspace.mjs';
 import {createBenchModel, createSessionFile, readSessionFile} from './bench.mjs';
 
 const $ = selector => document.querySelector(selector);

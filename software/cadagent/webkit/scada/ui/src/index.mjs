@@ -7,13 +7,13 @@ export {
   getScadaVariants,
   normalizeScadaState,
   renderScadaComponent,
-} from './scada-components.mjs';
-export {findScadaComponents,getScadaFacets,CAPACITY_PRESETS} from './scada-catalog.mjs';
-export {ScadaWorkspace, renderScadaDialog, renderScadaToolbar} from './scada-workspace.mjs';
-export {ScadaViewer, ScadaCamera, renderScadaDiagram, normalizeViewerDefinition} from './scada-viewer.mjs';
+} from './symbols/index.mjs';
+export {findScadaComponents,getScadaFacets,CAPACITY_PRESETS} from './catalog/discovery.mjs';
+export {ScadaWorkspace, renderScadaDialog, renderScadaToolbar} from './workspace/workspace.mjs';
+export {ScadaViewer, ScadaCamera, renderScadaDiagram, normalizeViewerDefinition} from './viewer/viewer.mjs';
 export {
   SYSTEM_DEFINITION_VERSION,
   validateSystemDefinition,
   resolveBinding,
   resolveComponentState,
-} from './system-definition.mjs';
+} from './contracts/system-definition.mjs';

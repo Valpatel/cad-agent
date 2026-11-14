@@ -27,6 +27,13 @@ flowchart LR
 
 Start with [the style guide](../STYLE_GUIDE.md) for appearance and state semantics, [contributing](../CONTRIBUTING.md) for the change workflow, and [agent prompts](../AGENT_PROMPTS.md) for reusable tasks. Keep limitations beside claims: typed state, model availability and a moving picture are different kinds of evidence.
 
-<a href="../img/symbols/process/separator.svg"><img src="../img/symbols/process/separator.svg" width="220" alt="Animated separator gallery preview"></a>
+<a href="../img/symbols/process/separator/default.svg"><img src="../img/symbols/process/separator/default.svg" width="220" alt="Animated separator gallery preview"></a>
 
 The preview links to this package's existing gallery. It is an illustrative supplied state; image animation depends on the Markdown renderer.
+
+## Files
+
+| File | Purpose |
+| --- | --- |
+| [AGRICULTURE_COVERAGE.md](AGRICULTURE_COVERAGE.md) | Current growing-system coverage and extension boundaries. |
+| [POWER_COVERAGE.md](POWER_COVERAGE.md) | Current power-system coverage and extension boundaries. |

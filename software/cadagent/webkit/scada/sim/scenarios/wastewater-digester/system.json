@@ -2426,7 +2426,7 @@
     },
     {
       "id": "sludgeValve-load-control",
-      "label": "Requested load",
+      "label": "Opening",
       "component": "sludgeValve",
       "kind": "range",
       "command": "sludgeValve-load",

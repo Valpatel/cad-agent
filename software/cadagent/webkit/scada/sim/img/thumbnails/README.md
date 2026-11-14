@@ -22,4 +22,4 @@ A fitted thumbnail is a navigation aid, not proof of operating-scale readability
 
 <a href="wastewater-digester.jpg"><img src="wastewater-digester.jpg" alt="Wastewater &amp; biogas digital twin initial diagram" width="640"></a>
 
-Regenerate images with `npm run thumbnails:scenarios`; check their provenance with `npm run thumbnails:scenarios -- --check`. The generator also owns this README. For documentation-only changes, use `--indexes-only`; it preserves the historical capture receipt and validates existing image bytes before writing maps.
+Regenerate images with `npm --prefix tools/webkit/scada run thumbnails:scenarios`; check their provenance with `npm --prefix tools/webkit/scada run thumbnails:scenarios -- --check`. The generator also owns this README. For documentation-only changes, use `--indexes-only`; it preserves the historical capture receipt and validates existing image bytes before writing maps.

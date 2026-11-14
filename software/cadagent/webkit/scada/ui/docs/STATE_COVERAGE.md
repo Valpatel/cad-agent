@@ -194,18 +194,18 @@ For each component, write a small state-design record before adding animation:
 6. Verify healthy → fault → repaired, off/zero/paused/offline/disconnected combinations where applicable, small and large renders, unique SVG IDs, readable labels and reduced motion.
 7. Record actual evidence and remaining gaps. A common wrapper, passing schema or nonzero animation count is insufficient for a “complete” label.
 
-Use [the style guide](../STYLE_GUIDE.md), [rendering API](./API.md), and the separate [placeholder model API](../../sim/docs/MODEL-API.md). The renderer must remain free of model clocks, IO and accident logic.
+Use [the style guide](../STYLE_GUIDE.md), [rendering API](./API.md), and the separate [placeholder model API](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/docs/MODEL-API.md). The renderer must remain free of model clocks, IO and accident logic.
 
 ## Reusable checks
 
 From a repository checkout:
 
 ```sh
-node --test packages/scada-ui/tests/scada-components.test.mjs packages/scada-ui/tests/scada-fault-semantics.test.mjs packages/scada-ui/tests/scada-general-art.test.mjs packages/scada-ui/tests/scada-protection-art.test.mjs
-python packages/scada-ui/scripts/qa/check-fault-semantics.py
-python packages/scada-ui/scripts/qa/check-component-states.py --expected-count 142 --expected-variants 97
+node --test tests/webkit/scada/ui/scada-components.test.mjs tests/webkit/scada/ui/scada-fault-semantics.test.mjs tests/webkit/scada/ui/scada-general-art.test.mjs tests/webkit/scada/ui/scada-protection-art.test.mjs
+python tools/webkit/scada/ui/qa/check-fault-semantics.py
+python tools/webkit/scada/ui/qa/check-component-states.py --expected-count 142 --expected-variants 97
 ```
 
 The first two were run during this focused review: 22 Node tests and 55 browser state cases passed. The full existing component-state QA remains the integrated release check, not a substitute for semantic design review. Browser checks require Playwright and Chromium and write evidence to an ignored work directory.
 
-Source-linked evidence: [fault/readout regression](../../../../../../tests/webkit/scada/ui/scada-fault-semantics.test.mjs), [actual motion regression](../../../../../../tools/webkit/scada/ui/qa/check-fault-semantics.py), [all-component state QA](../../../../../../tools/webkit/scada/ui/qa/check-component-states.py), [v2 model semantics regression](../../../../../../tests/webkit/scada/sim/v2-presentation-semantics.test.mjs). Full raw probes are development evidence; the portable JSON carries their measurements and hashed source identity without depending on ignored files.
+Source-linked evidence: [fault/readout regression](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/ui/scada-fault-semantics.test.mjs), [actual motion regression](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/ui/qa/check-fault-semantics.py), [all-component state QA](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/ui/qa/check-component-states.py), [v2 model semantics regression](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/v2-presentation-semantics.test.mjs). Full raw probes are development evidence; the portable JSON carries their measurements and hashed source identity without depending on ignored files.

@@ -10,10 +10,10 @@ kernel through the viewer adapter. A measured pump curve improves a defined
 part of a system without establishing accuracy for unrelated equipment. The UI
 and its animations convey supplied state; they do not calculate physics.
 
-The repository's [model-adaptation agent skill](../../../../../../.agents/skills/scada-model-adaptation/SKILL.md)
+The repository's [model-adaptation agent skill](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-model-adaptation/SKILL.md)
 turns this guide into a repeatable implementation/review workflow. Its presence
 does not install a skill or viewer into cad-agent. Transfer remains governed by
-the [cad-agent integration design](https://github.com/mvalancy/digester-insight/blob/main/integrations/cad-agent/README.md).
+the [cad-agent integration design](https://github.com/Valpatel/cad-agent/blob/dev/docs/practice/scada/architecture.md).
 
 ## Choose one of three paths
 
@@ -60,7 +60,7 @@ Keep a machine-readable evidence sidecar with the host's own documented schema
 when structured provenance is needed. Placeholder model JSON accepts assumption
 strings at model/component level; it does **not** accept arbitrary provenance,
 solver or unit fields. The UI system document has separate provenance and
-assumption records; see the [system format](../../ui/docs/SYSTEM_FORMAT.md).
+assumption records; see the [system format](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/SYSTEM_FORMAT.md).
 Record evidence identifiers in those supported strings or records and link the
 sidecar from the host's manifest/README. Never hide an extra payload in a numeric
 field or silently weaken a validator.
@@ -363,7 +363,7 @@ semantics are required.
 
 ## Path C: adapt an external session
 
-The [viewer](../../ui/src/viewer/viewer.mjs) accepts this existing shape:
+The [viewer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs) accepts this existing shape:
 
 ```js
 const adapter = {
@@ -434,7 +434,7 @@ The current v2 protection relay has no protection decision law and reports
 `tripped:false`; equipment damage does not establish a successful trip. Rod
 position edits are instantaneous and `moving:false`; they do not imply a travel
 model. Other visual-only placeholders and state coverage are cataloged in
-[STATE_COVERAGE.md](../../ui/docs/STATE_COVERAGE.md). A qualified safety or
+[STATE_COVERAGE.md](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/STATE_COVERAGE.md). A qualified safety or
 protection model must come from separately defined behavior and evidence, not from
 the renderer. A thermal solver alone does not add nuclear kinetics or protection.
 
@@ -456,42 +456,42 @@ inputs from a symbol. For other domains select equally bounded reference cases.
 
 | Check | Required evidence | Existing source test owner to extend or follow |
 | --- | --- | --- |
-| Definition/reference validity | Accepted intended topology; rejected unknown IDs, units/fields, modes and mismatched circuits without mutation | [v1 tests](../../../../../../tests/webkit/scada/sim/scada-sim.test.mjs), [v2 tests](../../../../../../tests/webkit/scada/sim/scada-sim-v2.test.mjs) |
+| Definition/reference validity | Accepted intended topology; rejected unknown IDs, units/fields, modes and mismatched circuits without mutation | [v1 tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/scada-sim.test.mjs), [v2 tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/scada-sim-v2.test.mjs) |
 | Physical/reference behavior | Named dataset/equation case, independent expected results, tolerance and valid domain; step refinement where dynamic | New domain fixtures beside the model tests; current toy tests are insufficient proof |
-| Bounds and balances | Empty/full/zero supply, branch totals, signed/reversed transfer, leakage, retained heat/stock and boundary ledger over time | [Circuit conservation](../../../../../../tests/webkit/scada/sim/scada-circuit-conservation.test.mjs) |
-| Registered laws and state | Actual pre-allocation/state changes, nonlinear rate above old default within rating, absolute gates, repeated pure evaluation, once-per-substep state, hot swap and late-step rollback | [Shared runtime](../../../../../../tests/webkit/scada/sim/equation-runtime.test.mjs), [v1 integration](../../../../../../tests/webkit/scada/sim/equation-providers-v1.test.mjs), [v2 integration](../../../../../../tests/webkit/scada/sim/equation-providers-v2.test.mjs) |
-| SI bridge and analytic references | Independent physical duty points, off-design distinction, explicit units and finite accepted power/stock | [Physical helpers](../../../../../../tests/webkit/scada/sim/equation-physics.test.mjs), [physical provider integration](../../../../../../tests/webkit/scada/sim/equation-examples.test.mjs) |
-| Commands and quality | Unknown/rejected command leaves state intact; requested vs observed behavior; valid zero, stale, drift, failure and recovery | [Presentation semantics](../../../../../../tests/webkit/scada/sim/v2-presentation-semantics.test.mjs), [external adapter tests](../../../../../../tests/webkit/scada/sim/external-adapter.test.mjs) |
-| Lifetime and replay | No import-time timers/IO; one clock and shared subscribers; deterministic compatible restoration or an explicit unsupported-restart statement | [v1 lifecycle/replay](../../../../../../tests/webkit/scada/sim/scada-sim.test.mjs), [v2 continuation](../../../../../../tests/webkit/scada/sim/scada-sim-v2.test.mjs) |
-| Model to visual | Canonical source state, inspector reading, glyph and connection agree in two simultaneous views; meaningful animated/paused/fault/reduced-motion states | [Viewer tests](../../../../../../tests/webkit/scada/ui/scada-viewer.test.mjs), [viewer review skill](../../../../../../.agents/skills/scada-viewer-review/SKILL.md) |
+| Bounds and balances | Empty/full/zero supply, branch totals, signed/reversed transfer, leakage, retained heat/stock and boundary ledger over time | [Circuit conservation](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/scada-circuit-conservation.test.mjs) |
+| Registered laws and state | Actual pre-allocation/state changes, nonlinear rate above old default within rating, absolute gates, repeated pure evaluation, once-per-substep state, hot swap and late-step rollback | [Shared runtime](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-runtime.test.mjs), [v1 integration](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-providers-v1.test.mjs), [v2 integration](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-providers-v2.test.mjs) |
+| SI bridge and analytic references | Independent physical duty points, off-design distinction, explicit units and finite accepted power/stock | [Physical helpers](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-physics.test.mjs), [physical provider integration](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-examples.test.mjs) |
+| Commands and quality | Unknown/rejected command leaves state intact; requested vs observed behavior; valid zero, stale, drift, failure and recovery | [Presentation semantics](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/v2-presentation-semantics.test.mjs), [external adapter tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/external-adapter.test.mjs) |
+| Lifetime and replay | No import-time timers/IO; one clock and shared subscribers; deterministic compatible restoration or an explicit unsupported-restart statement | [v1 lifecycle/replay](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/scada-sim.test.mjs), [v2 continuation](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/scada-sim-v2.test.mjs) |
+| Model to visual | Canonical source state, inspector reading, glyph and connection agree in two simultaneous views; meaningful animated/paused/fault/reduced-motion states | [Viewer tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/ui/scada-viewer.test.mjs), [viewer review skill](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-viewer-review/SKILL.md) |
 
 Run applicable package checks from the source repository:
 
 ```sh
-npm --prefix packages/scada-sim test
-npm --prefix packages/scada-sim run check:metadata
-node --test packages/scada-sim/tests/external-adapter.test.mjs
-npm run docs:check
-npm run docs:mermaid -- --file packages/scada-sim/docs/REAL_MODEL_ADAPTATION.md
+npm --prefix tools/webkit/scada test
+npm --prefix tools/webkit/scada run check:metadata
+node --test tests/webkit/scada/sim/external-adapter.test.mjs
+node tools/site/compiler/site-repo-map.mjs --check
+python -m pytest -q tests/repo/test_areas.py tests/repo/test_skills.py
 ```
 
 The package suite is Node built-in code plus Python standard-library topology
 checks. The documentation renderer additionally needs the repository's pinned
 Mermaid, Python Playwright and Chromium; see the
-[documentation tools](https://github.com/mvalancy/digester-insight/blob/main/scripts/docs/README.md).
+[documentation tools](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/repository-documentation/SKILL.md).
 Metadata/schema edits may require regeneration through
-[the model tools](../../../../../../tools/webkit/scada/sim/README.md)
+[the model tools](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/sim/README.md)
 before the read-only check. Browser model/viewer checks require the separate UI
 and host setup; do not report them from headless test results.
 
 Finish with changed source owners, model/data versions, calibrated range,
 assumptions, executed checks, inspected UI states and known unsupported behavior.
 Link the acceptance fixtures and evidence from the model's README. Packaging,
-transfer into cad-agent and live publication are separate verification steps.
+consumer packaging and live publication are separate verification steps.
 The same adapter boundary can later serve SCADA and other design viewers without
 coupling the headless model to their cameras or HUDs.
 
-<a href="../img/topologies/power-nuclear-pwr.svg"><img src="../img/topologies/power-nuclear-pwr.svg" alt="Illustrative PWR topology with separate primary, steam and cooling equipment" width="640"></a>
+<a href="../img/topologies/power-utilities/power-nuclear-pwr/topology.svg"><img src="../img/topologies/power-utilities/power-nuclear-pwr/topology.svg" alt="Illustrative PWR topology with separate primary, steam and cooling equipment" width="640"></a>
 
 This existing topology is a navigation aid for circuit separation, not a
 calibrated reactor model or evidence of a safety/interlock implementation.

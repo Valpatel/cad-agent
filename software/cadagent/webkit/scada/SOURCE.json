@@ -1,0 +1,20 @@
+{
+  "format": "cad-agent-scada-source",
+  "version": 1,
+  "sourceRevision": "e4fd8965b5ac7058a88ca6924cf7ef2cf5d2dbac",
+  "runtimeReleaseRevision": "1360585c76987e79f1b36a35b04a19f387d32286",
+  "sourceRelease": "9.3.0",
+  "initialCadAgentImportCommit": "6a3f011dd57a0658ebca035b0fa82c674e34ac2c",
+  "sourceInventorySha256": "137c61c250db805bc54949300cbc12cf7788a4f688c79be4dbe8c3a8c5f6aca4",
+  "authorization": "Maintainer-authorized physical transfer and public cad-agent integration; original package terms retained.",
+  "packageTerms": {
+    "private": true,
+    "license": "UNLICENSED"
+  },
+  "ownership": {
+    "ui": "symbols, system contracts, renderer, gallery and UI API",
+    "sim": "headless models, equation providers, scenarios and model API",
+    "explorer": "example application using local UI and simulation libraries"
+  },
+  "maintenance": "Current source, dependencies and generated asset receipts are owned by this repository. Git history records the initial import and subsequent changes."
+}

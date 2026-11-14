@@ -782,7 +782,7 @@ async function headerProblems() {
           }
           return true;
         };
-        for (const selector of ['.wordmark', 'nav a[href="/explore"]', 'nav .pill-link', '.theme-toggle']) {
+        for (const selector of ['.wordmark', 'nav a[href="/explore"]', 'nav a[href="/toolkit"]', 'nav .pill-link', '.theme-toggle']) {
           if (!shown(document.querySelector('.site-header ' + selector))) out.push(`missing visible ${selector}`);
         }
         const controls = [...document.querySelectorAll('.site-header .wordmark,.site-header nav a,.site-header button')].filter(shown);

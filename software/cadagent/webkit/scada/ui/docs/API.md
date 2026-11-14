@@ -2,11 +2,11 @@
 
 The component library provides 142 original SVG equipment types across 11 visual families, including power generation, substations, conceptual nuclear equipment, aquaculture, hydroponics and climate control. It uses the same glass, metal and teal visual language as the digester twin.
 
-These are presentation components. They do not calculate process physics, execute PLC logic, communicate with hardware or implement equipment protection. The host supplies state. The reference app's **Components** route (`#components`) is an isolated visual catalog: its controls change previews without changing the shared plant simulation.
+These are presentation components. They do not calculate process physics, execute PLC logic, communicate with hardware or implement equipment protection. The host supplies state. The isolated [component example](../examples/components/README.md) changes visual state without creating a plant simulation.
 
 ## Package and browser entry points
 
-[The package README](../README.md) maps installation and the package-owned [image gallery](../img/README.md). Canonical files live in `src/`; `npm run build:library` refreshes metadata, and the workspace `npm run build` projects the package into `dist/client/packages/scada-ui/`. Consumers use the package directly and do not need the website composition scripts.
+[The package README](../README.md) maps installation and the package-owned [image gallery](../img/README.md). Canonical files live in `src/`; `npm --prefix tools/webkit/scada run build:metadata` refreshes metadata. The site compiler publishes the package under `/kit/scada/ui/`. Consumers use the package directly without website tooling.
 
 Use `@valpatel/scada-ui` for the public JavaScript entry, or `/components`, `/catalog`, `/workspace`, `/viewer` and `/system-definition` for focused entry points. `/metadata` exposes the registry without constructing a DOM or model session; `/metadata.json` exposes the generated JSON registry. `/thumbnails.json` and `/thumbnails/*` expose the JPEG preview manifest and images; the latter remains an alias for `img/thumbnails/`. `/img/*` exposes package-owned image files and `/gallery.json` exposes the generated animated SVG gallery manifest. `/schema` (or `/schema.json`) resolves the system JSON Schema. Styles are exported as `/styles` (or `/styles.css`), `/components.css`, `/workspace.css` and `/viewer.css`. The package's export map is authoritative.
 
@@ -26,9 +26,9 @@ For a browser without a bundler, serve the package directory and load relative U
 </script>
 ```
 
-`src/styles.css` combines the component, workspace and viewer styles. Stable flat entries forward to the organized implementation under `src/catalog`, `src/contracts`, `src/symbols`, `src/workspace` and `src/viewer`; preserve the complete `src/` tree when copying browser assets. Catalog, metadata and system validation load only data contracts, not SVG renderers. The component renderer imports the artwork it needs. No framework, external service or process engine is required. See [the source map](../src/README.md).
+`src/styles.css` combines the component, workspace and viewer styles. Public exports point directly to implementation under `src/catalog`, `src/contracts`, `src/symbols`, `src/workspace` and `src/viewer`; preserve the complete `src/` tree when copying browser assets. Catalog, metadata and system validation load only data contracts, not SVG renderers. The component renderer imports the artwork it needs. No framework, external service or process engine is required. See [the source map](../src/README.md).
 
-The standalone ZIP preserves the package tree and includes an `index.html` starter; npm tarballs retain the examples under `examples/`. From the extracted package directory run `python -m http.server 8000`, then open `http://localhost:8000/examples/components/` or `http://localhost:8000/examples/viewer/`. The standalone ZIP's root starter is also available at `/`. ES-module loading over `file:` URLs may be blocked by browser restrictions.
+Npm tarballs retain examples under `examples/`. From the package directory run `python -m http.server 8000`, then open `http://localhost:8000/examples/components/` or `/examples/viewer/`. Serve ES modules over HTTP; `file:` loading is browser-dependent.
 
 ## Public API
 
@@ -159,12 +159,12 @@ For another equipment type, add a descriptor, unique artwork, state-specific CSS
 In the full source checkout, with Python Playwright and Chromium installed, run from the repository root:
 
 ```sh
-npm run qa:component-states -- --output work/component-states
+python tools/webkit/scada/ui/qa/check-component-states.py --output /tmp/scada-component-states
 ```
 
-This browser check loads only the component styles and rendering dependencies. It checks every declared type for active motion, stopped motion when off/paused/offline, fault behavior, visible and accessible warning/fault cues, disconnected and open/closed paths, numeric readouts and reduced motion. It also checks multiple-instance SVG references and confirms that standalone defaults do not override the live host's buffer fill. Results are written to `work/component-states/component-states.json`.
+This browser check loads only the component styles and rendering dependencies. It checks every declared type for active motion, stopped motion when off/paused/offline, fault behavior, visible and accessible warning/fault cues, disconnected and open/closed paths, numeric readouts and reduced motion. It also checks multiple-instance SVG references and confirms that standalone defaults do not override the live host's buffer fill. Results are written to `/tmp/scada-component-states/component-states.json`.
 
-The check complements visual review of equipment shapes, contrast, spacing and responsiveness; computed styles alone do not establish visual quality or complete equipment-specific state coverage. Generic warning/fault cues and the gallery state examples do not prove that every physical failure or model-to-view mapping is represented. Use `npm run qa:components` for the separate standalone kit smoke check.
+The check complements visual review of equipment shapes, contrast, spacing and responsiveness; computed styles alone do not establish visual quality or complete equipment-specific state coverage. Generic warning/fault cues and the gallery state examples do not prove that every physical failure or model-to-view mapping is represented. Use the [packed consumer tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/ui/README.md) to verify a separate runtime distribution.
 
 ## Workspace API
 

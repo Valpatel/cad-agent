@@ -25,10 +25,10 @@ flowchart TD
 | [explorer/](explorer/README.md) | Runnable host: scenario selection, one clock/session, editable assumptions, faults, sound and shared views |
 | [AGENTS.md](AGENTS.md) | Domain boundaries and maintenance rules |
 | [LICENSE.txt](LICENSE.txt) | Retained SCADA package terms and authorized integration scope |
-| [transfer.json](transfer.json) | Original source identity, physical destination and file provenance; not a remote dependency |
+| [SOURCE.json](SOURCE.json) | Source identity, retained terms and local ownership |
 
-<a href="ui/img/README.md"><img src="ui/img/symbols/automation/plc-rack.svg" width="220" alt="Animated PLC rack from the SCADA equipment library"></a>
-<a href="sim/img/README.md"><img src="sim/img/thumbnails/winery.jpg" width="320" alt="An illustrative winery process rendered by the shared viewer"></a>
+<a href="ui/img/README.md"><img src="ui/img/symbols/automation/plc-rack/default.svg" width="220" alt="Animated PLC rack from the SCADA equipment library"></a>
+<a href="sim/img/README.md"><img src="sim/img/thumbnails/food-beverage/winery/preview.jpg" width="320" alt="An illustrative winery process rendered by the shared viewer"></a>
 
 ## Use and maintain
 
@@ -39,12 +39,12 @@ here; the historical development repository is not needed to run or maintain the
 
 The two libraries retain their public package names and source exports. Their
 `img/` folders stay with the libraries. Generators live under the repository's
-[SCADA tools](../../../../../tools/webkit/scada/README.md), and executable
-regressions live under [SCADA tests](../../../../../tests/webkit/scada/README.md).
+[SCADA tools](../../../../tools/webkit/scada/README.md), and executable
+regressions live under [SCADA tests](../../../../tests/webkit/scada/README.md).
 This separates reusable assets from maintenance commands without duplicating them.
 
 Models are explicitly illustrative unless an independently qualified provider is
 installed. Equipment artwork does not establish physical accuracy. Keep assumptions
 editable and preserve the documented SI/index conversions when changing equations.
 
-[Web kit](../README.md) · [User and integration guides](../../../../../docs/practice/scada/README.md)
+[Web kit](../README.md) · [User and integration guides](../../../../docs/practice/scada/README.md)

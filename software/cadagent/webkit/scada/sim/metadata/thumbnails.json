@@ -141,7 +141,7 @@
     "software/cadagent/webkit/scada/sim/scenarios/tablets/model.json": "aa50cbab2e1f312a0a93ddc54b2060a7ac7a2d03d37c28a344bd4353006ef2a7",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/system.json": "554d26afda550592b675c246624cfaf03f5f5a59e9637b6d3be85cbb6d7e7f1a",
     "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "de0bce5e0bb09f74ad4e3cd2104bca19848bf7ffecd1cd07fbbf0b5a8d1f0f85",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "c98caa4016a3c07d74a55e17c76ffc451e408528087a8e363fcdc5c2aa5e58df",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "2e105259b5e0a9a9929ded27321ef24b7235c5b15e052f4ee8bf7d687d3e53ea",
     "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "5d69288356914f610617d1f55e139dc484e10020cc88aad9668edcc0dd3951e1",
     "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "5b34ef9975887e5ebe4348d1465cfe0ecf98e43a8da3f1d5a20a09fcde9b0da9",
     "software/cadagent/webkit/scada/sim/examples/equation-models/heater-bench.mjs": "ee0f6adff8a60b7501c315ccc76d25058021a5d77fa786d1c66ebe38446b5cba",
@@ -152,16 +152,16 @@
     "software/cadagent/webkit/scada/sim/examples/external-adapter/fake-engine.mjs": "199c3a9a2e2b3654d51e95f764060d7e79e31dd7d03180931413c11cb662e534",
     "software/cadagent/webkit/scada/sim/examples/model-switching/bench.mjs": "cb074dcac44c6c22ef0688c5abb1f1ed2cb76d99094b2d7884f0850f69aa2e71",
     "software/cadagent/webkit/scada/sim/examples/model-switching/index.html": "95c6cb3be582242d8c211d40c33e1a903033554d0e02f7abf1ee66af383483cb",
-    "software/cadagent/webkit/scada/sim/examples/model-switching/main.mjs": "61405ef08688dfbd13c530b3d12ac7d2d2ea8ee1d34f1a2cb05e47bb26c8d229",
+    "software/cadagent/webkit/scada/sim/examples/model-switching/main.mjs": "a0154594f7d2b4a8178708fea92f0355e8d719d3ec46b845fa43787fbf767836",
     "software/cadagent/webkit/scada/sim/examples/model-switching/styles.css": "fbcdf6da77f1d806d599a932a914a692df68e37e3edc178b4f36dad45707f156",
     "software/cadagent/webkit/scada/sim/examples/model-switching/system.json": "da880bbece64b0e5da801f513a73e17fb8251d5dc57ac926ab6fe1f84c0da88a",
     "software/cadagent/webkit/scada/explorer/index.html": "b727159649ed1369094aa7904c25ed620552f59d6bf0258b65e086bc401dc768",
-    "software/cadagent/webkit/scada/explorer/main.mjs": "2d1461ea31aae8d0bbf2e9ed43f6327173176872f1f1023195bd5f19357ce8a4",
+    "software/cadagent/webkit/scada/explorer/main.mjs": "cf98ec971884d5e59c0b4aab99914abcc6f1a8e237ea53d6d12eabe65835c5c3",
     "software/cadagent/webkit/scada/explorer/model-editor.mjs": "4e887bb9896bb7bf1e23d30984773903cba0a860116c1b405c806fb966a99061",
     "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
     "software/cadagent/webkit/scada/explorer/selection.mjs": "a513e7bf6545805e8cc8efa0ee4c20b68ebe04ac28cf2eb56e92073044a7ad7a",
     "software/cadagent/webkit/scada/explorer/sound.mjs": "35b5fb0ea8f76d42477ef6ce75284da2e0064e466da5c08c7253f2088b2e49d5",
-    "software/cadagent/webkit/scada/explorer/styles.css": "af312e95852d038d31ec1b31ab6348f0d9fe8ed8213e50e9969eea55cf5ccd7a",
+    "software/cadagent/webkit/scada/explorer/styles.css": "3bc08c6b37e09b0a38944ccb56d31e44d32751a941d5e236e98c630bd5e3cf74",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/industrial.mjs": "9e00d1b0246ebce249a1d577541eeeed4f751b4207178761fd8d0b0e190af575",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/power.mjs": "91a40bc3f3626018b6ab046c222f23e701cc52cf0835946a897c10d0aea1ab48",
@@ -170,35 +170,9 @@
     "software/cadagent/webkit/scada/ui/src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "software/cadagent/webkit/scada/ui/src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
     "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
-    "software/cadagent/webkit/scada/ui/src/index.mjs": "4bdb88afb8fdd2ba31ae694db2b18992d6c6303c3cd8586b86e21fcc59d03f97",
+    "software/cadagent/webkit/scada/ui/src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
     "software/cadagent/webkit/scada/ui/src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
-    "software/cadagent/webkit/scada/ui/src/scada-agriculture-art.css": "32c0eaa50ca095c128041ecebb092ab75984685e968e8274ea50ae5b61e5f337",
-    "software/cadagent/webkit/scada/ui/src/scada-agriculture-art.mjs": "8ae56df8632593157e2932371c03fedb3bccaa2e0b4b23e42734b0ff2d50bcc6",
-    "software/cadagent/webkit/scada/ui/src/scada-agriculture-definitions.mjs": "3070263e9baf9d75492a50c19c457814ffb3d5f89bfa503611884443bf021015",
-    "software/cadagent/webkit/scada/ui/src/scada-catalog.mjs": "ea8646112588e4d0688daaafe0bdefc6ff4bceafbd84ba33da7ff24c5fe85285",
-    "software/cadagent/webkit/scada/ui/src/scada-components.css": "204cca86073193d953dfc79244904b535b97172f674b3f36a2c42e328035e671",
-    "software/cadagent/webkit/scada/ui/src/scada-components.mjs": "8621053efdfd03aa7482d81c669d8415b4ff331c44f780f6a3adb2c729cf9843",
-    "software/cadagent/webkit/scada/ui/src/scada-control-art.mjs": "4a3c8febcadb5cd34e4998909f8be084189820de91b0d3df3563335966988f67",
-    "software/cadagent/webkit/scada/ui/src/scada-electrical-art.mjs": "7216894ff0df211fcabda43dd5a34d955660bd366337a3dea01a569aa3e2027a",
-    "software/cadagent/webkit/scada/ui/src/scada-energy-art.mjs": "bcec93b778360c3e7eb6c43adeddddce21e411d2559c0ef690f7d8fda2a97810",
-    "software/cadagent/webkit/scada/ui/src/scada-expansion.mjs": "6b9ca92dd7e17dad252b0da3ce9b7326d6574c1266ab5b22526b98a9c6fbc346",
-    "software/cadagent/webkit/scada/ui/src/scada-genset-art.mjs": "d014f381d1297143b74f691e11e9f8daafc1c4cc74295612fd5fa0bef1d3c1b0",
-    "software/cadagent/webkit/scada/ui/src/scada-industrial-art.css": "632e7b0a9b4441b6ed014e580da4c5a71f59d2b0c3204ff326fab7f8683f47be",
-    "software/cadagent/webkit/scada/ui/src/scada-industrial-art.mjs": "22151fe5026301b1109b8c08dc018526a5bb7b5544ab14a802d07abd9542ed68",
-    "software/cadagent/webkit/scada/ui/src/scada-nuclear-art.css": "e6657c2dedd286e0a0c41bbdc36178b0b75d4b2248be0b31f2b259f0bb8d38ac",
-    "software/cadagent/webkit/scada/ui/src/scada-nuclear-art.mjs": "133c2216f86f635c4cedfac963f259968c3dc3f48299e2c04433b05852c5539d",
-    "software/cadagent/webkit/scada/ui/src/scada-power-art-primitives.mjs": "62304d20eeb106ac492d9a23e228893a52e7fc8a05f7f15f637773b8f7d22ad3",
-    "software/cadagent/webkit/scada/ui/src/scada-power-art.css": "91669024277dbd0ad84b1a814f84c7281975be497715a94d7446212f0e0d598f",
-    "software/cadagent/webkit/scada/ui/src/scada-power-expansion.mjs": "b729257c3c2241fe7e9213f404534eef01328e2738500d866a2e15e5c8ee2d0b",
-    "software/cadagent/webkit/scada/ui/src/scada-process-art.css": "6f3cfcd6060930cca9021a0da8404fd763e25d91cb44baa4f4d1f6ed6af2dc07",
-    "software/cadagent/webkit/scada/ui/src/scada-process-art.mjs": "dffbb04a8a15328af75af09624b9595098f29c38692c8971fadebff1ea2579da",
-    "software/cadagent/webkit/scada/ui/src/scada-selection.mjs": "aff94d1d84ba257f80c166e6771dc21c2206262a301f3be00ecec97fcf26896b",
-    "software/cadagent/webkit/scada/ui/src/scada-utility-variants.mjs": "e28627aaad6653d1558e29303dcef708522ae1fe71fe29fb35b842a0cddc0e66",
-    "software/cadagent/webkit/scada/ui/src/scada-viewer.css": "19bc734f7924f7ffe3c9278c97902b2aede29064d1b5229f15d621d74244a87c",
-    "software/cadagent/webkit/scada/ui/src/scada-viewer.mjs": "c759c0295b4a7e8621271374cdc7c1bca2a3e9c08deb4c7ba54876a27868159a",
-    "software/cadagent/webkit/scada/ui/src/scada-workspace.css": "008cd6b4c854e73ce8ecf1fd76e96c72880afea7eac69f5a9ba55dcac977e289",
-    "software/cadagent/webkit/scada/ui/src/scada-workspace.mjs": "87f8cafa7a795dbd38d89f00dd5df8510bb0a10bdec82b1efb7b6d916c6ac806",
-    "software/cadagent/webkit/scada/ui/src/styles.css": "6827e63a1875820905ee63f8d61d8562df088e65aa9b9a7007963d5862643d1c",
+    "software/cadagent/webkit/scada/ui/src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
     "software/cadagent/webkit/scada/ui/src/symbols/art/agriculture.css": "619c06b0a6eaf25e2dad45e5e102cb8b4549598f422c6d7b24b7d1886a2ac1b7",
     "software/cadagent/webkit/scada/ui/src/symbols/art/agriculture.mjs": "949ba99f9bd1e4bc788f34fca83df26d1e09892241128f18eeb0693a18e826fb",
     "software/cadagent/webkit/scada/ui/src/symbols/art/control.mjs": "ee5edd0d3aa567c0dd2fbbe3914552999afeae1cee645598c6a8ec1e814c8dda",
@@ -210,6 +184,7 @@
     "software/cadagent/webkit/scada/ui/src/symbols/art/twin.mjs": "bd79eb3521fc4c98bececa67679c00c1fa2c2d98ba465ba471aa08d98745c4a7",
     "software/cadagent/webkit/scada/ui/src/symbols/components.css": "9291ad91717ac0f770bc2a79291d4191e8b269f966e2b81ca7b377b846aacdd3",
     "software/cadagent/webkit/scada/ui/src/symbols/components.mjs": "72b2c4843229f54e0e347678b776b1a640a12dcfc756313eac238e2ee2874ab6",
+    "software/cadagent/webkit/scada/ui/src/symbols/index.mjs": "cd2bb85f8acc61ab0ceface262cc1aa6e2221517061e53a4249fc23f6f400528",
     "software/cadagent/webkit/scada/ui/src/symbols/power/electrical.mjs": "7d27d7978e8cf260e71ce8f6120f9a9e98a00e3db94a2f65224ab12177746f1d",
     "software/cadagent/webkit/scada/ui/src/symbols/power/energy.mjs": "fbdca8a2ae023d523ec7c102329a87b51ad7005824993ec63de65ab3eabb9531",
     "software/cadagent/webkit/scada/ui/src/symbols/power/generators.mjs": "3248da64356d6314cc68e2a4e5183592b55d3bbd9549d56037d002d944b32e3f",
@@ -217,9 +192,6 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/nuclear.mjs": "b669848e4bad9eb88e058941e57c3d9df733353c524634a700c22ee8c056e1c4",
     "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
-    "software/cadagent/webkit/scada/ui/src/system-definition.mjs": "6bad8dee0b2e300ea229fcea8f26c668ef25044992e62bc09fb53cea1577c4a1",
-    "software/cadagent/webkit/scada/ui/src/twin-art.css": "d894e4897da2d5ddf0d0b807a5f1b66f243a3efe21837453968aa2c781c130d7",
-    "software/cadagent/webkit/scada/ui/src/twin-art.mjs": "e820d8e0f926278af7cd95549caf291c2fc90aa55fc012740bbfd083180a581d",
     "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "7f605bd3676000c99db8fd89e653410b03cb11b6fda0e5e10b61131740c8880b",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "bb0cc5abb96379872649d1ce88e10ca979721180eb80da7873d626ffce3f543a",
     "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "ceeb9735373404d0e761e7574f00e2b517dd1762e57fe94e803c02d3a2238de4",
@@ -303,8 +275,8 @@
       "path": "img/thumbnails/wastewater-digester.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 108175,
-      "sha256": "17d406e39a4886fb0f4d90ef7ac982f6d37e83852dd34849027f3feb0813f6d7"
+      "bytes": 108177,
+      "sha256": "50590ae3d3e3d4b2b53f4499b815e5417bdc4a0075476d7f00739a00dadf3878"
     },
     {
       "id": "winery",
@@ -1313,8 +1285,8 @@
       "path": "img/thumbnails/polymer-extrusion.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 115176,
-      "sha256": "ced7124da8cbfae32d45d93d6aa5cafc8bbe72b741df63c21dcae1b8b089c20d"
+      "bytes": 115190,
+      "sha256": "37bd0b0bb756a9d723ab7d52a0dce64597f64ddc8c4eae39dcd4f0d7ab3b4d27"
     },
     {
       "id": "concrete-batching",
@@ -2057,8 +2029,8 @@
       "path": "img/thumbnails/power-hydro-impoundment.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 109077,
-      "sha256": "f1ea9dbe39fdf80d66eb2f56b01d4cb42776f02ffbd602291aa5e49eb3c22141"
+      "bytes": 109076,
+      "sha256": "cb3fbb055d8f55566fd0a15fd71e1fb41ec296ca0ba097396fd4bf3f8d947123"
     },
     {
       "id": "power-hydro-diversion",
@@ -2871,8 +2843,8 @@
       "path": "img/thumbnails/power-substation-distribution.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 111848,
-      "sha256": "92967148c5ed23400e9162641686bd9c637148d7eb47d2cec264cff8ea9cc16a"
+      "bytes": 111832,
+      "sha256": "d279d1635223b60e9af81f762eca40e46f6fc752c2826a6d4514c030f4295790"
     },
     {
       "id": "power-substation-gsu",
@@ -2991,8 +2963,8 @@
       "path": "img/thumbnails/power-substation-gis.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 99368,
-      "sha256": "9a87c982ceead57c9db852be2f0ad5e9772f341cf9e999742e0c7ddd9384c3fa"
+      "bytes": 99360,
+      "sha256": "be61432111a7d4b99f1ebcd1221da129d33bdd80e70ed41df330cd95f552be07"
     },
     {
       "id": "power-hvdc-interface",
@@ -3049,8 +3021,8 @@
       "path": "img/thumbnails/power-hvdc-interface.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 93221,
-      "sha256": "10beafb99e45a15d647623e0fc2bd2af32c0b775cbb4dcff674eb34beea0796b"
+      "bytes": 93230,
+      "sha256": "d3a20d2a4d148e3646e5bc1134f7e12beb417415ea267a7d275c173a78568714"
     },
     {
       "id": "power-solar-pv",
@@ -3109,8 +3081,8 @@
       "path": "img/thumbnails/power-solar-pv.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 102443,
-      "sha256": "d023cb5d5c5727f2316147ccd1ce0a1cfe982973d1d2b3bb7a348d3d6a69b8d3"
+      "bytes": 102442,
+      "sha256": "05eb8762e1e5bff802a8617b16b05bcea641bf533705e5db2301881778462977"
     },
     {
       "id": "power-wind-collection",
@@ -3225,8 +3197,8 @@
       "path": "img/thumbnails/power-tidal-current.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 96580,
-      "sha256": "f1d532155f3657280b6aeec83a8969e5654873038bf812a541c5ef59e7f57787"
+      "bytes": 96581,
+      "sha256": "1461717fed11f6ff31ca1ed7b259e0c5db081bd608fde27eb2ae4387324bab38"
     },
     {
       "id": "power-wave-point-absorber",
@@ -3283,8 +3255,8 @@
       "path": "img/thumbnails/power-wave-point-absorber.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 96716,
-      "sha256": "9c3c6385c057d76359f91de77c8cddc231fb42d8b811775d8880e68760ec82f9"
+      "bytes": 96699,
+      "sha256": "e7e64a97432a0df7a3c4e146428ad27fff04a07b0fd2f67f15f8f567d0625d7f"
     },
     {
       "id": "power-csp-tower",
@@ -3347,8 +3319,8 @@
       "path": "img/thumbnails/power-csp-tower.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 122053,
-      "sha256": "4090c88a1d5f3eab3c5e6e1ab778e1b908eec167373ac4fd10c49e4ee90e44b3"
+      "bytes": 122030,
+      "sha256": "b55db294cc121766ac7acf8ff4dfaf43f80b39c8d2a66151566810cf013ee5d9"
     },
     {
       "id": "power-csp-trough",
@@ -3589,8 +3561,8 @@
       "path": "img/thumbnails/power-geothermal-binary.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 100432,
-      "sha256": "17067d765ff9cae5e8ab2fe39ae2b4218384e12ea0fe9516d84d25c3d2c81d93"
+      "bytes": 100466,
+      "sha256": "ac6d994c5ddb140a75519d5b6f4158dc7c773dab16d0b5344dc03d711f39d232"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -4041,8 +4013,8 @@
       "path": "img/thumbnails/hydroponics-ebb-flow.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 106945,
-      "sha256": "c52d6400eef5e7170d75ae34f2a13393e18d5368ccf9655ed0e604f7d87bfe78"
+      "bytes": 106933,
+      "sha256": "81f6016100d341ff3d85d788bffb2de0d7ad77b1a77bf5ce839f68d5d307982b"
     },
     {
       "id": "greenhouse-drip",
@@ -4241,8 +4213,8 @@
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 6426,
-    "bytes": 1406828,
-    "sha256": "1e04b39eca1ffec83e049b14bf87259b6f5e959c2387ab3ef5949caf90660dfb"
+    "bytes": 1406898,
+    "sha256": "13666589d6a9f24c5d945608fcdb74e13b0be02d80ac1cff50910bcfbd3f52ae"
   },
   "capture_implementation_sha256": "8f66bb49d4c672df66053123585eb1047c7b6db249f8f9ab9c03c5504d539585"
 }

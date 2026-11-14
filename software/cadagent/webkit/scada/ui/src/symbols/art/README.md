@@ -24,5 +24,5 @@ Baseline tanks, pumps, valves and some instruments also have canonical geometry 
 
 Use [reference notes](../../../docs/VISUAL_REFERENCES.md), [agriculture references](../../../docs/AGRICULTURE_REFERENCES.md) and [state coverage](../../../docs/STATE_COVERAGE.md) to distinguish researched relationships from invented proportions and incomplete lifecycles. Regenerate previews through the owning tools after a source change.
 
-<a href="../../../img/symbols/process/separator.svg"><img src="../../../img/symbols/process/separator.svg" width="195" alt="Layered separator preview"></a>
-<a href="../../../img/symbols/manufacturing/conveyor.svg"><img src="../../../img/symbols/manufacturing/conveyor.svg" width="195" alt="Conveyor mechanism preview"></a>
+<a href="../../../img/symbols/process/separator/default.svg"><img src="../../../img/symbols/process/separator/default.svg" width="195" alt="Layered separator preview"></a>
+<a href="../../../img/symbols/manufacturing/conveyor/default.svg"><img src="../../../img/symbols/manufacturing/conveyor/default.svg" width="195" alt="Conveyor mechanism preview"></a>

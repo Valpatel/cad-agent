@@ -2,12 +2,12 @@
   "format": "scada-ui-thumbnails",
   "version": 1,
   "package": "@valpatel/scada-ui",
-  "source": "src/scada-components.mjs",
+  "source": "src/index.mjs",
   "source_hashes": {
-    "examples/components/index.html": "856fd0384d26426c98dd24d15fd2e3dfd2b0c34568c4ee1c2f4898e2e42505b2",
+    "examples/components/index.html": "f2df63fa06d65c79f4e43e0cd503b2168cd1effbfca4c88de8864c99df0ef6bc",
     "examples/minimal-system.json": "3b99bb51340f6580d9428afdc072f2d4416b9615f010a4f61b904f378af884b3",
-    "examples/viewer/index.html": "93d026c7a43124e77c07e1a418f5bc9b5af0a2d3d91bde7fa69366eae4295106",
-    "examples/viewer/main.mjs": "a670a407874b1a09e107eca651a54eb988418a67e07b5999ab367745984147a8",
+    "examples/viewer/index.html": "53eb433fc87ec199f0a821e62002304ce42281d0f5574f29a1738749c0ce7139",
+    "examples/viewer/main.mjs": "dca1fb05df77e8d02bf54da5b40425ff5897e2c2f6ff9cc098925a8ea2e2df0d",
     "examples/viewer/styles.css": "590e89e3379b29c97235041735f26ee2dd186b9175a88d3674590a0a1e8c5620",
     "examples/viewer/system.json": "4598b33d313c1ff2cb63529c1a6d9cf0f3a3807089ff8f2941f80b6305bde8ec",
     "examples/viewer/utility-adapter.mjs": "6117cc6ef5e4a04656e6b8f49159716a9050b85dbd7fedc8c779819897d29e68",
@@ -20,35 +20,9 @@
     "src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
     "src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
-    "src/index.mjs": "4bdb88afb8fdd2ba31ae694db2b18992d6c6303c3cd8586b86e21fcc59d03f97",
+    "src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
     "src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
-    "src/scada-agriculture-art.css": "32c0eaa50ca095c128041ecebb092ab75984685e968e8274ea50ae5b61e5f337",
-    "src/scada-agriculture-art.mjs": "8ae56df8632593157e2932371c03fedb3bccaa2e0b4b23e42734b0ff2d50bcc6",
-    "src/scada-agriculture-definitions.mjs": "3070263e9baf9d75492a50c19c457814ffb3d5f89bfa503611884443bf021015",
-    "src/scada-catalog.mjs": "ea8646112588e4d0688daaafe0bdefc6ff4bceafbd84ba33da7ff24c5fe85285",
-    "src/scada-components.css": "204cca86073193d953dfc79244904b535b97172f674b3f36a2c42e328035e671",
-    "src/scada-components.mjs": "8621053efdfd03aa7482d81c669d8415b4ff331c44f780f6a3adb2c729cf9843",
-    "src/scada-control-art.mjs": "4a3c8febcadb5cd34e4998909f8be084189820de91b0d3df3563335966988f67",
-    "src/scada-electrical-art.mjs": "7216894ff0df211fcabda43dd5a34d955660bd366337a3dea01a569aa3e2027a",
-    "src/scada-energy-art.mjs": "bcec93b778360c3e7eb6c43adeddddce21e411d2559c0ef690f7d8fda2a97810",
-    "src/scada-expansion.mjs": "6b9ca92dd7e17dad252b0da3ce9b7326d6574c1266ab5b22526b98a9c6fbc346",
-    "src/scada-genset-art.mjs": "d014f381d1297143b74f691e11e9f8daafc1c4cc74295612fd5fa0bef1d3c1b0",
-    "src/scada-industrial-art.css": "632e7b0a9b4441b6ed014e580da4c5a71f59d2b0c3204ff326fab7f8683f47be",
-    "src/scada-industrial-art.mjs": "22151fe5026301b1109b8c08dc018526a5bb7b5544ab14a802d07abd9542ed68",
-    "src/scada-nuclear-art.css": "e6657c2dedd286e0a0c41bbdc36178b0b75d4b2248be0b31f2b259f0bb8d38ac",
-    "src/scada-nuclear-art.mjs": "133c2216f86f635c4cedfac963f259968c3dc3f48299e2c04433b05852c5539d",
-    "src/scada-power-art-primitives.mjs": "62304d20eeb106ac492d9a23e228893a52e7fc8a05f7f15f637773b8f7d22ad3",
-    "src/scada-power-art.css": "91669024277dbd0ad84b1a814f84c7281975be497715a94d7446212f0e0d598f",
-    "src/scada-power-expansion.mjs": "b729257c3c2241fe7e9213f404534eef01328e2738500d866a2e15e5c8ee2d0b",
-    "src/scada-process-art.css": "6f3cfcd6060930cca9021a0da8404fd763e25d91cb44baa4f4d1f6ed6af2dc07",
-    "src/scada-process-art.mjs": "dffbb04a8a15328af75af09624b9595098f29c38692c8971fadebff1ea2579da",
-    "src/scada-selection.mjs": "aff94d1d84ba257f80c166e6771dc21c2206262a301f3be00ecec97fcf26896b",
-    "src/scada-utility-variants.mjs": "e28627aaad6653d1558e29303dcef708522ae1fe71fe29fb35b842a0cddc0e66",
-    "src/scada-viewer.css": "19bc734f7924f7ffe3c9278c97902b2aede29064d1b5229f15d621d74244a87c",
-    "src/scada-viewer.mjs": "c759c0295b4a7e8621271374cdc7c1bca2a3e9c08deb4c7ba54876a27868159a",
-    "src/scada-workspace.css": "008cd6b4c854e73ce8ecf1fd76e96c72880afea7eac69f5a9ba55dcac977e289",
-    "src/scada-workspace.mjs": "87f8cafa7a795dbd38d89f00dd5df8510bb0a10bdec82b1efb7b6d916c6ac806",
-    "src/styles.css": "6827e63a1875820905ee63f8d61d8562df088e65aa9b9a7007963d5862643d1c",
+    "src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
     "src/symbols/art/agriculture.css": "619c06b0a6eaf25e2dad45e5e102cb8b4549598f422c6d7b24b7d1886a2ac1b7",
     "src/symbols/art/agriculture.mjs": "949ba99f9bd1e4bc788f34fca83df26d1e09892241128f18eeb0693a18e826fb",
     "src/symbols/art/control.mjs": "ee5edd0d3aa567c0dd2fbbe3914552999afeae1cee645598c6a8ec1e814c8dda",
@@ -60,6 +34,7 @@
     "src/symbols/art/twin.mjs": "bd79eb3521fc4c98bececa67679c00c1fa2c2d98ba465ba471aa08d98745c4a7",
     "src/symbols/components.css": "9291ad91717ac0f770bc2a79291d4191e8b269f966e2b81ca7b377b846aacdd3",
     "src/symbols/components.mjs": "72b2c4843229f54e0e347678b776b1a640a12dcfc756313eac238e2ee2874ab6",
+    "src/symbols/index.mjs": "cd2bb85f8acc61ab0ceface262cc1aa6e2221517061e53a4249fc23f6f400528",
     "src/symbols/power/electrical.mjs": "7d27d7978e8cf260e71ce8f6120f9a9e98a00e3db94a2f65224ab12177746f1d",
     "src/symbols/power/energy.mjs": "fbdca8a2ae023d523ec7c102329a87b51ad7005824993ec63de65ab3eabb9531",
     "src/symbols/power/generators.mjs": "3248da64356d6314cc68e2a4e5183592b55d3bbd9549d56037d002d944b32e3f",
@@ -67,9 +42,6 @@
     "src/symbols/power/nuclear.mjs": "b669848e4bad9eb88e058941e57c3d9df733353c524634a700c22ee8c056e1c4",
     "src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
-    "src/system-definition.mjs": "6bad8dee0b2e300ea229fcea8f26c668ef25044992e62bc09fb53cea1577c4a1",
-    "src/twin-art.css": "d894e4897da2d5ddf0d0b807a5f1b66f243a3efe21837453968aa2c781c130d7",
-    "src/twin-art.mjs": "e820d8e0f926278af7cd95549caf291c2fc90aa55fc012740bbfd083180a581d",
     "src/viewer/camera.mjs": "7f605bd3676000c99db8fd89e653410b03cb11b6fda0e5e10b61131740c8880b",
     "src/viewer/viewer.css": "bb0cc5abb96379872649d1ce88e10ca979721180eb80da7873d626ffce3f543a",
     "src/viewer/viewer.mjs": "ceeb9735373404d0e761e7574f00e2b517dd1762e57fe94e803c02d3a2238de4",
@@ -78,7 +50,7 @@
   },
   "generator": {
     "path": "tools/webkit/scada/ui/generate-thumbnails.py",
-    "sha256": "0cbc7ea9cc75b64831b9773d484ed3936c18bf8b184142ff199452a82a0fce8b",
+    "sha256": "6cfbace03b9cb5f118c61ac829e1e84dfb2058cacea9aa23d6a46d786127a206",
     "capture_helper_sha256": "2d767c6b3ab41936f2d199969612c12150c228e8259c30623fccf72d95bf1ffa"
   },
   "capture": {
@@ -106,7 +78,7 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/digester.jpg",
+      "path": "img/thumbnails/equipment/process/digester/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -125,7 +97,7 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/tank.jpg",
+      "path": "img/thumbnails/equipment/process/tank/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -144,7 +116,7 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/gas-holder.jpg",
+      "path": "img/thumbnails/equipment/process/gas-holder/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -163,12 +135,12 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/mixing-tank.jpg",
+      "path": "img/thumbnails/equipment/process/mixing-tank/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 15114,
-      "sha256": "94e5ae51ef8b1b44e1083c6ac684ae3278dafadb90d898393d27d09cfee0aa89"
+      "sha256": "778db90762e03c24da2eefa1fbeb173748a8ad91b7531022d36019a90e217f55"
     },
     {
       "type": "reactor",
@@ -182,12 +154,12 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/reactor.jpg",
+      "path": "img/thumbnails/equipment/process/reactor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 15528,
-      "sha256": "02e4055c710a53d23a8ec6fef0aa3f69c226fdf46cedcbfa82f54857f6033696"
+      "sha256": "d8d4276d840fd31da83b7d0bf042986b0fadef03bdeee17b5622673a07c98c23"
     },
     {
       "type": "clarifier",
@@ -201,12 +173,12 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/clarifier.jpg",
+      "path": "img/thumbnails/equipment/process/clarifier/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 15623,
-      "sha256": "1bc6bfab5c4b92d0529e291d3be503b7dc689b93e23923e2b8add6469a434595"
+      "sha256": "c6a86841cbb8f4a4c7638ed2a76f41b7811aee0eb512923fb8a33e0044482b6f"
     },
     {
       "type": "silo",
@@ -220,12 +192,12 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/silo.jpg",
+      "path": "img/thumbnails/equipment/process/silo/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 13907,
-      "sha256": "2fcdb8f764a4e472e13481e3c912efeca75c2a766dc07270ad0774e5feaf803e"
+      "sha256": "67ebfcf93a085f6aff9275668c7b2069daf35008cc4c89667cdd09ce39107e1e"
     },
     {
       "type": "heat-exchanger",
@@ -240,12 +212,12 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/heat-exchanger.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17264,
-      "sha256": "954dffbdd2d94aa1a98496f24fede79badcb6e6f4fd48c2533b208280af7de0c"
+      "bytes": 17265,
+      "sha256": "12b2f7c74007bfa111cfc191f2f68e7538738b822aeccc01ef9a38e5f961ead6"
     },
     {
       "type": "filter",
@@ -259,12 +231,12 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/filter.jpg",
+      "path": "img/thumbnails/equipment/process/filter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15111,
-      "sha256": "f6af850be4bfdf2373de0e6bcf479670ff555b276428535b361c185f08d27462"
+      "bytes": 15117,
+      "sha256": "1de125a6dda402e2c1714d7725d7b8aa0b684882b0912fb580cf6d422fe299a2"
     },
     {
       "type": "gas-treatment",
@@ -278,12 +250,12 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/gas-treatment.jpg",
+      "path": "img/thumbnails/equipment/process/gas-treatment/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16663,
-      "sha256": "ed8b0db42e1e60fd937f4770cd05a97246c8ab3688ec250c6ee78ff10c0c68b6"
+      "bytes": 16664,
+      "sha256": "527911357f83f9a06c010ae1d94063b7e095a86e1bcf91be12d97ddbf37724f4"
     },
     {
       "type": "boiler",
@@ -298,12 +270,12 @@
         "temperature": 180,
         "damage": "none"
       },
-      "path": "img/thumbnails/boiler.jpg",
+      "path": "img/thumbnails/equipment/process/boiler/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 16139,
-      "sha256": "df9b9ea94abf7a4644c6d20f85ff750ac8ff8d91c2a489400679d92f892600ab"
+      "sha256": "123d58c587e3820e064d585e01fd4eb831551d4131a5d8c4d05cd3121d2cfde4"
     },
     {
       "type": "flare",
@@ -317,12 +289,12 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/flare.jpg",
+      "path": "img/thumbnails/equipment/process/flare/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 13579,
-      "sha256": "8fab245409cb94c970b83297eae34838694fa26b1463852b2342a075449accc0"
+      "bytes": 13578,
+      "sha256": "328ff27939faabb9995cc376ea400a7af9582cfcfbb70924dc52c6d168aaef6a"
     },
     {
       "type": "pump",
@@ -337,7 +309,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/pump.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -357,7 +329,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/submersible-pump.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -377,7 +349,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/dosing-pump.jpg",
+      "path": "img/thumbnails/equipment/rotating/dosing-pump/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -397,12 +369,12 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/blower.jpg",
+      "path": "img/thumbnails/equipment/rotating/blower/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16799,
-      "sha256": "070fc1230a33b9a50b0385cde0107605dfc9ea186ac742ba74c3e7d3ee7aabbe"
+      "bytes": 16809,
+      "sha256": "653710fa696829ee8de2f20fed330ae732429bb0678e0ae57425590b9e004f93"
     },
     {
       "type": "compressor",
@@ -417,7 +389,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/compressor.jpg",
+      "path": "img/thumbnails/equipment/rotating/compressor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -437,7 +409,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/motor.jpg",
+      "path": "img/thumbnails/equipment/rotating/motor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -457,7 +429,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/generator.jpg",
+      "path": "img/thumbnails/equipment/power/generator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -476,7 +448,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/transformer.jpg",
+      "path": "img/thumbnails/equipment/power/transformer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -495,7 +467,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/breaker.jpg",
+      "path": "img/thumbnails/equipment/power/breaker/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -514,7 +486,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/busbar.jpg",
+      "path": "img/thumbnails/equipment/power/busbar/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -533,7 +505,7 @@
         "level": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/battery.jpg",
+      "path": "img/thumbnails/equipment/power/battery/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -553,7 +525,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/ups.jpg",
+      "path": "img/thumbnails/equipment/power/ups/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -572,7 +544,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/solar-panel.jpg",
+      "path": "img/thumbnails/equipment/power/solar-panel/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -591,7 +563,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/electrical-meter.jpg",
+      "path": "img/thumbnails/equipment/power/electrical-meter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -611,7 +583,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/gate-valve.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -631,7 +603,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/control-valve.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -650,7 +622,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/check-valve.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -669,7 +641,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/relief-valve.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -689,7 +661,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/butterfly-valve.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -708,7 +680,7 @@
         "value": 42,
         "damage": "none"
       },
-      "path": "img/thumbnails/pressure-transmitter.jpg",
+      "path": "img/thumbnails/equipment/instruments/pressure-transmitter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -727,7 +699,7 @@
         "value": 42,
         "damage": "none"
       },
-      "path": "img/thumbnails/flow-meter.jpg",
+      "path": "img/thumbnails/equipment/instruments/flow-meter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -746,7 +718,7 @@
         "value": 42,
         "damage": "none"
       },
-      "path": "img/thumbnails/temperature-sensor.jpg",
+      "path": "img/thumbnails/equipment/instruments/temperature-sensor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -766,7 +738,7 @@
         "value": 42,
         "damage": "none"
       },
-      "path": "img/thumbnails/level-sensor.jpg",
+      "path": "img/thumbnails/equipment/instruments/level-sensor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -785,7 +757,7 @@
         "value": 42,
         "damage": "none"
       },
-      "path": "img/thumbnails/gas-analyzer.jpg",
+      "path": "img/thumbnails/equipment/instruments/gas-analyzer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -805,7 +777,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/plc-rack.jpg",
+      "path": "img/thumbnails/equipment/automation/plc-rack/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -825,7 +797,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/plc-cpu.jpg",
+      "path": "img/thumbnails/equipment/automation/plc-cpu/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -845,7 +817,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/remote-io.jpg",
+      "path": "img/thumbnails/equipment/automation/remote-io/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -864,7 +836,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/hmi.jpg",
+      "path": "img/thumbnails/equipment/automation/hmi/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -884,7 +856,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/scada-server.jpg",
+      "path": "img/thumbnails/equipment/automation/scada-server/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -904,7 +876,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/network-switch.jpg",
+      "path": "img/thumbnails/equipment/automation/network-switch/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -923,7 +895,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/radio.jpg",
+      "path": "img/thumbnails/equipment/automation/radio/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -942,7 +914,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/pipe.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -961,12 +933,12 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/junction.jpg",
+      "path": "img/thumbnails/equipment/connections/junction/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 14247,
-      "sha256": "fb2fe0003d9df67ef15467754b28360bfed0790ca209c8197a607b778122117d"
+      "bytes": 14248,
+      "sha256": "1683603ad6eb02de27dd36096d51b4e978e8b2df47197da20e31699413ea884b"
     },
     {
       "type": "conveyor",
@@ -981,12 +953,12 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/conveyor.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/conveyor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17449,
-      "sha256": "12f35e792110909a906bf15c69a30cbc8edd1a531588b178dda0599157f14509"
+      "bytes": 17450,
+      "sha256": "12fee4db457a1d47b4fea7623f3ec7a3026ab3d99803f8fc58d542126f94074c"
     },
     {
       "type": "crusher",
@@ -1001,7 +973,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/crusher.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/crusher/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1021,7 +993,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/vibrating-screen.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/vibrating-screen/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1041,7 +1013,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/grinding-mill.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/grinding-mill/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1062,7 +1034,7 @@
         "temperature": 500,
         "damage": "none"
       },
-      "path": "img/thumbnails/rotary-kiln.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/rotary-kiln/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1082,7 +1054,7 @@
         "temperature": 180,
         "damage": "none"
       },
-      "path": "img/thumbnails/oven.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/oven/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1103,7 +1075,7 @@
         "open": false,
         "damage": "none"
       },
-      "path": "img/thumbnails/rack-oven.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/rack-oven/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1124,7 +1096,7 @@
         "temperature": 90,
         "damage": "none"
       },
-      "path": "img/thumbnails/dryer.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/dryer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1144,7 +1116,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/extruder.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/extruder/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1164,7 +1136,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/tablet-press.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/tablet-press/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1184,7 +1156,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/filling-line.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/filling-line/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1204,7 +1176,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/packaging-line.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/packaging-line/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1224,7 +1196,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/granulator.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/granulator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1244,7 +1216,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/forming-machine.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/forming-machine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1264,7 +1236,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/drum-mixer.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/drum-mixer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1284,7 +1256,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/paper-machine.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/paper-machine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1304,7 +1276,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/weigh-hopper.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/weigh-hopper/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1324,7 +1296,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/screw-feeder.jpg",
+      "path": "img/thumbnails/equipment/manufacturing/screw-feeder/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1344,7 +1316,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/centrifuge.jpg",
+      "path": "img/thumbnails/equipment/process/centrifuge/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1365,7 +1337,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/flotation-cell.jpg",
+      "path": "img/thumbnails/equipment/process/flotation-cell/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1384,7 +1356,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/membrane-filter.jpg",
+      "path": "img/thumbnails/equipment/process/membrane-filter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1403,7 +1375,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/reverse-osmosis.jpg",
+      "path": "img/thumbnails/equipment/process/reverse-osmosis/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1424,7 +1396,7 @@
         "temperature": 120,
         "damage": "none"
       },
-      "path": "img/thumbnails/distillation-column.jpg",
+      "path": "img/thumbnails/equipment/process/distillation-column/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1444,7 +1416,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/separator.jpg",
+      "path": "img/thumbnails/equipment/process/separator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1463,7 +1435,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/cyclone.jpg",
+      "path": "img/thumbnails/equipment/process/cyclone/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1483,7 +1455,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/scrubber.jpg",
+      "path": "img/thumbnails/equipment/process/scrubber/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1504,7 +1476,7 @@
         "temperature": 32,
         "damage": "none"
       },
-      "path": "img/thumbnails/cooling-tower.jpg",
+      "path": "img/thumbnails/equipment/process/cooling-tower/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1524,7 +1496,7 @@
         "temperature": 7,
         "damage": "none"
       },
-      "path": "img/thumbnails/chiller.jpg",
+      "path": "img/thumbnails/equipment/process/chiller/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1545,7 +1517,7 @@
         "temperature": 85,
         "damage": "none"
       },
-      "path": "img/thumbnails/evaporator.jpg",
+      "path": "img/thumbnails/equipment/process/evaporator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1565,7 +1537,7 @@
         "temperature": 65,
         "damage": "none"
       },
-      "path": "img/thumbnails/electrolyzer.jpg",
+      "path": "img/thumbnails/equipment/power/electrolyzer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1585,7 +1557,7 @@
         "temperature": 80,
         "damage": "none"
       },
-      "path": "img/thumbnails/fuel-cell.jpg",
+      "path": "img/thumbnails/equipment/power/fuel-cell/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1606,7 +1578,7 @@
         "value": 350,
         "damage": "none"
       },
-      "path": "img/thumbnails/wellhead.jpg",
+      "path": "img/thumbnails/equipment/process/wellhead/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1626,7 +1598,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/wind-turbine.jpg",
+      "path": "img/thumbnails/equipment/power/wind-turbine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1646,7 +1618,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/aeration-basin.jpg",
+      "path": "img/thumbnails/equipment/process/aeration-basin/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1667,7 +1639,7 @@
         "temperature": 450,
         "damage": "none"
       },
-      "path": "img/thumbnails/steam-turbine.jpg",
+      "path": "img/thumbnails/equipment/power/steam-turbine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1687,7 +1659,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/fan.jpg",
+      "path": "img/thumbnails/equipment/rotating/fan/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1709,12 +1681,12 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/gas-turbine.jpg",
+      "path": "img/thumbnails/equipment/power/gas-turbine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 19216,
-      "sha256": "a261b74d41ddc01d85ceb503b45abd57da159ffa774f9883672479703786e3e2"
+      "bytes": 19222,
+      "sha256": "295d25fa2031110ae0e3f7a12a0fca2ff8af60b0921af95f272f86ec1a51f3a4"
     },
     {
       "type": "heat-recovery-steam-generator",
@@ -1731,7 +1703,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/heat-recovery-steam-generator.jpg",
+      "path": "img/thumbnails/equipment/power/heat-recovery-steam-generator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1753,7 +1725,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/surface-condenser.jpg",
+      "path": "img/thumbnails/equipment/power/surface-condenser/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1774,7 +1746,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/deaerator.jpg",
+      "path": "img/thumbnails/equipment/power/deaerator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1795,7 +1767,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/cooling-radiator.jpg",
+      "path": "img/thumbnails/equipment/power/cooling-radiator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1817,7 +1789,7 @@
         "flow": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/fuel-pressure-regulator.jpg",
+      "path": "img/thumbnails/equipment/power/fuel-pressure-regulator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1840,7 +1812,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/pwr-reactor-vessel.jpg",
+      "path": "img/thumbnails/equipment/nuclear/pwr-reactor-vessel/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1863,7 +1835,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/bwr-reactor-vessel.jpg",
+      "path": "img/thumbnails/equipment/nuclear/bwr-reactor-vessel/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1886,7 +1858,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/phwr-calandria.jpg",
+      "path": "img/thumbnails/equipment/nuclear/phwr-calandria/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1908,7 +1880,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/gas-cooled-reactor.jpg",
+      "path": "img/thumbnails/equipment/nuclear/gas-cooled-reactor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1931,7 +1903,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/sodium-reactor-vessel.jpg",
+      "path": "img/thumbnails/equipment/nuclear/sodium-reactor-vessel/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1954,7 +1926,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/molten-salt-reactor.jpg",
+      "path": "img/thumbnails/equipment/nuclear/molten-salt-reactor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1976,7 +1948,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/nuclear-steam-generator.jpg",
+      "path": "img/thumbnails/equipment/nuclear/nuclear-steam-generator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -1997,7 +1969,7 @@
         "pressure": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/pressurizer.jpg",
+      "path": "img/thumbnails/equipment/nuclear/pressurizer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2019,7 +1991,7 @@
         "heat": 10,
         "damage": "none"
       },
-      "path": "img/thumbnails/containment-structure.jpg",
+      "path": "img/thumbnails/equipment/nuclear/containment-structure/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2040,7 +2012,7 @@
         "heat": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/used-fuel-pool.jpg",
+      "path": "img/thumbnails/equipment/nuclear/used-fuel-pool/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2061,7 +2033,7 @@
         "moving": false,
         "damage": "none"
       },
-      "path": "img/thumbnails/control-rod-drive.jpg",
+      "path": "img/thumbnails/equipment/nuclear/control-rod-drive/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2081,7 +2053,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/neutron-monitor.jpg",
+      "path": "img/thumbnails/equipment/nuclear/neutron-monitor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2101,7 +2073,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/radiation-monitor.jpg",
+      "path": "img/thumbnails/equipment/nuclear/radiation-monitor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2121,7 +2093,7 @@
         "flow": 40,
         "damage": "none"
       },
-      "path": "img/thumbnails/reservoir.jpg",
+      "path": "img/thumbnails/equipment/power/reservoir/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2141,7 +2113,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/intake-gate.jpg",
+      "path": "img/thumbnails/equipment/power/intake-gate/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2162,7 +2134,7 @@
         "flow": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/hydro-turbine.jpg",
+      "path": "img/thumbnails/equipment/power/hydro-turbine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2184,7 +2156,7 @@
         "mode": "generating",
         "damage": "none"
       },
-      "path": "img/thumbnails/reversible-pump-turbine.jpg",
+      "path": "img/thumbnails/equipment/power/reversible-pump-turbine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2204,7 +2176,7 @@
         "direction": "forward",
         "damage": "none"
       },
-      "path": "img/thumbnails/power-inverter.jpg",
+      "path": "img/thumbnails/equipment/power/power-inverter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2224,7 +2196,7 @@
         "irradiance": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/heliostat.jpg",
+      "path": "img/thumbnails/equipment/power/heliostat/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2244,7 +2216,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/solar-receiver.jpg",
+      "path": "img/thumbnails/equipment/power/solar-receiver/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2266,7 +2238,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/parabolic-trough.jpg",
+      "path": "img/thumbnails/equipment/power/parabolic-trough/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2288,7 +2260,7 @@
         "direction": "flood",
         "damage": "none"
       },
-      "path": "img/thumbnails/tidal-turbine.jpg",
+      "path": "img/thumbnails/equipment/power/tidal-turbine/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2308,7 +2280,7 @@
         "wave": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/wave-energy-converter.jpg",
+      "path": "img/thumbnails/equipment/power/wave-energy-converter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2330,7 +2302,7 @@
         "field": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/alternator.jpg",
+      "path": "img/thumbnails/equipment/power/alternator/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2350,7 +2322,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/hv-circuit-breaker.jpg",
+      "path": "img/thumbnails/equipment/power/hv-circuit-breaker/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2370,12 +2342,12 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/disconnect-switch.jpg",
+      "path": "img/thumbnails/equipment/power/disconnect-switch/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16946,
-      "sha256": "49da007afd29436145af17ccdfea78e1e032449c6ba7c62ba1d6f31536c29e2d"
+      "bytes": 16938,
+      "sha256": "997dba88f0843ef9d87fdf53af03fe7714846f40f278434bcdfaa4b942e1d6cd"
     },
     {
       "type": "earthing-switch",
@@ -2389,7 +2361,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/earthing-switch.jpg",
+      "path": "img/thumbnails/equipment/power/earthing-switch/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2409,7 +2381,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/current-transformer.jpg",
+      "path": "img/thumbnails/equipment/power/current-transformer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2429,7 +2401,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/voltage-transformer.jpg",
+      "path": "img/thumbnails/equipment/power/voltage-transformer/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2448,7 +2420,7 @@
         "stress": 5,
         "damage": "none"
       },
-      "path": "img/thumbnails/surge-arrester.jpg",
+      "path": "img/thumbnails/equipment/power/surge-arrester/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2469,7 +2441,7 @@
         "steps": 2,
         "damage": "none"
       },
-      "path": "img/thumbnails/capacitor-bank.jpg",
+      "path": "img/thumbnails/equipment/power/capacitor-bank/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2490,7 +2462,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/shunt-reactor.jpg",
+      "path": "img/thumbnails/equipment/power/shunt-reactor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2511,7 +2483,7 @@
         "tripped": false,
         "damage": "none"
       },
-      "path": "img/thumbnails/protection-relay.jpg",
+      "path": "img/thumbnails/equipment/power/protection-relay/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2532,7 +2504,7 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/switchgear-panel.jpg",
+      "path": "img/thumbnails/equipment/power/switchgear-panel/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2553,7 +2525,7 @@
         "pressure": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/gis-bay.jpg",
+      "path": "img/thumbnails/equipment/power/gis-bay/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2574,12 +2546,12 @@
         "automatic": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/automatic-transfer-switch.jpg",
+      "path": "img/thumbnails/equipment/power/automatic-transfer-switch/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 16909,
-      "sha256": "23b4034af10149b69d06875fc06ece9f348d5215ad38630dafea4d099844ca33"
+      "sha256": "59a30449e3ce6ca9ee2ef064e97c062a25852a3e912e840daaae87649449bfed"
     },
     {
       "type": "excitation-system",
@@ -2595,12 +2567,12 @@
         "connected": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/excitation-system.jpg",
+      "path": "img/thumbnails/equipment/power/excitation-system/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 19086,
-      "sha256": "e670e2438d8e7ef4748e87e589ee83a1c3f6d0ba5bb17d999d7f3e822a8b1827"
+      "bytes": 19085,
+      "sha256": "d169d4408b982f0b572e785ff918975bdd6342c3df79196ffd8fca1c3a14588f"
     },
     {
       "type": "power-rectifier",
@@ -2615,7 +2587,7 @@
         "direction": "forward",
         "damage": "none"
       },
-      "path": "img/thumbnails/power-rectifier.jpg",
+      "path": "img/thumbnails/equipment/power/power-rectifier/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2636,12 +2608,12 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/fish-tank.jpg",
+      "path": "img/thumbnails/equipment/agriculture/fish-tank/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 18256,
-      "sha256": "4da0ae22f0a4c212f341ed0d6b07c3ca6032f951a83fb5bbf47ca370072abb8c"
+      "sha256": "3cc44018be8010c6e910b73855890386292e3711ab0dcdfba4229e5fff65f423"
     },
     {
       "type": "biofilter",
@@ -2657,12 +2629,12 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/biofilter.jpg",
+      "path": "img/thumbnails/equipment/agriculture/biofilter/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
       "bytes": 19986,
-      "sha256": "cc59a48cae0c71e7e1627f7a254331746dc3667bdc8aab0179b709affc56fabc"
+      "sha256": "b505d6d493f57380a67f6719f2ca66e992851bf8d9a00726ee14f7ef5c50fa89"
     },
     {
       "type": "media-grow-bed",
@@ -2678,7 +2650,7 @@
         "phase": "holding",
         "damage": "none"
       },
-      "path": "img/thumbnails/media-grow-bed.jpg",
+      "path": "img/thumbnails/equipment/agriculture/media-grow-bed/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2699,7 +2671,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/dwc-raft-bed.jpg",
+      "path": "img/thumbnails/equipment/agriculture/dwc-raft-bed/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2719,7 +2691,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/nft-channel.jpg",
+      "path": "img/thumbnails/equipment/agriculture/nft-channel/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2740,7 +2712,7 @@
         "phase": "holding",
         "damage": "none"
       },
-      "path": "img/thumbnails/ebb-flow-table.jpg",
+      "path": "img/thumbnails/equipment/agriculture/ebb-flow-table/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2760,7 +2732,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/drip-zone.jpg",
+      "path": "img/thumbnails/equipment/agriculture/drip-zone/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2780,7 +2752,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/aeroponic-chamber.jpg",
+      "path": "img/thumbnails/equipment/agriculture/aeroponic-chamber/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2800,7 +2772,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/grow-light.jpg",
+      "path": "img/thumbnails/equipment/agriculture/grow-light/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2820,7 +2792,7 @@
         "airflow": 50,
         "damage": "none"
       },
-      "path": "img/thumbnails/greenhouse-vent.jpg",
+      "path": "img/thumbnails/equipment/climate/greenhouse-vent/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2840,7 +2812,7 @@
         "light": 50,
         "damage": "none"
       },
-      "path": "img/thumbnails/shade-screen.jpg",
+      "path": "img/thumbnails/equipment/climate/shade-screen/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2861,7 +2833,7 @@
         "humidity": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/evaporative-pad.jpg",
+      "path": "img/thumbnails/equipment/climate/evaporative-pad/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2882,7 +2854,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/dehumidifier.jpg",
+      "path": "img/thumbnails/equipment/climate/dehumidifier/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2903,7 +2875,7 @@
         "value": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/water-quality-probe.jpg",
+      "path": "img/thumbnails/equipment/instruments/water-quality-probe/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2923,7 +2895,7 @@
         "humidity": 55,
         "damage": "none"
       },
-      "path": "img/thumbnails/humidity-sensor.jpg",
+      "path": "img/thumbnails/equipment/instruments/humidity-sensor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2943,7 +2915,7 @@
         "light": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/light-sensor.jpg",
+      "path": "img/thumbnails/equipment/instruments/light-sensor/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2963,7 +2935,7 @@
         "oxygen": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/air-diffuser.jpg",
+      "path": "img/thumbnails/equipment/agriculture/air-diffuser/default.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -2986,7 +2958,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--water-water.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/water-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3007,7 +2979,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--heavy-water-water.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/heavy-water-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3028,7 +3000,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--helium-water.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/helium-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3049,7 +3021,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--sodium-sodium.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/sodium-sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3070,7 +3042,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--salt-salt.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/salt-salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3091,7 +3063,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--salt-water.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/salt-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3112,7 +3084,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--thermal-fluid-water.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/thermal-fluid-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3133,7 +3105,7 @@
         "temperature": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/heat-exchanger--geothermal-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/process/heat-exchanger/geothermal-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3154,7 +3126,7 @@
         "temperature": 180,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/boiler--gas-fired.jpg",
+      "path": "img/thumbnails/equipment/process/boiler/gas-fired.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3175,7 +3147,7 @@
         "temperature": 180,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/boiler--solid-fuel.jpg",
+      "path": "img/thumbnails/equipment/process/boiler/solid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3196,7 +3168,7 @@
         "temperature": 180,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/boiler--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/process/boiler/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3217,7 +3189,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--water.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3238,7 +3210,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3259,7 +3231,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--helium.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3280,7 +3252,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--sodium.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3301,7 +3273,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--salt.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3322,7 +3294,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3343,7 +3315,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3364,7 +3336,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pump--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/rotating/pump/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3385,7 +3357,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--water.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3406,7 +3378,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3427,7 +3399,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--helium.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3448,7 +3420,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--sodium.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3469,7 +3441,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--salt.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3490,7 +3462,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3511,7 +3483,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3532,7 +3504,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/submersible-pump--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/rotating/submersible-pump/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3553,7 +3525,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/blower--helium.jpg",
+      "path": "img/thumbnails/equipment/rotating/blower/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3574,7 +3546,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/generator--natural-gas-enclosed.jpg",
+      "path": "img/thumbnails/equipment/power/generator/natural-gas-enclosed.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3595,7 +3567,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/generator--natural-gas-industrial.jpg",
+      "path": "img/thumbnails/equipment/power/generator/natural-gas-industrial.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3616,7 +3588,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/generator--diesel-skid.jpg",
+      "path": "img/thumbnails/equipment/power/generator/diesel-skid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3637,7 +3609,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/generator--diesel-enclosed.jpg",
+      "path": "img/thumbnails/equipment/power/generator/diesel-enclosed.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3658,7 +3630,7 @@
         "speed": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/generator--gasoline-portable.jpg",
+      "path": "img/thumbnails/equipment/power/generator/gasoline-portable.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3678,7 +3650,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/busbar--bidirectional.jpg",
+      "path": "img/thumbnails/equipment/power/busbar/bidirectional.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3699,7 +3671,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--water.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3720,7 +3692,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3741,7 +3713,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--helium.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3762,7 +3734,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--sodium.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3783,12 +3755,12 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--salt.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16526,
-      "sha256": "80ad5f82114205b3e574f32d98fa3de15df7ae11ec9d1a66ed0472dbf0d088b3"
+      "bytes": 16520,
+      "sha256": "c14ba256a066e8a9ba2fb58a7f0c30161b2a864b4b3152f2258c9fc0a2bbf79f"
     },
     {
       "type": "gate-valve",
@@ -3804,7 +3776,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3825,7 +3797,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3846,7 +3818,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/gate-valve--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/valves/gate-valve/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3867,7 +3839,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--water.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3888,7 +3860,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3909,7 +3881,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--helium.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3930,7 +3902,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--sodium.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3951,7 +3923,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--salt.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -3972,12 +3944,12 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18092,
-      "sha256": "05bcc447b55f4e0356e8ac190dfe97d98a4fac5194d1fabab65de0c0747964c0"
+      "bytes": 18078,
+      "sha256": "16c6d7673ba2e11de5f528ca2663d0d22e83509d0a0ab1702343076b2a934880"
     },
     {
       "type": "control-valve",
@@ -3993,7 +3965,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4014,7 +3986,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/control-valve--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/valves/control-valve/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4034,12 +4006,12 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--water.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 14548,
-      "sha256": "df4becd457c67ff5eb2bfb880906b08a0efad897e917fd5b367caa0f4b0ca5f8"
+      "bytes": 14544,
+      "sha256": "2b860d4e74585607e74807b39151d603967e60cc916f6f88dda5c47822d6b3ce"
     },
     {
       "type": "check-valve",
@@ -4054,7 +4026,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4074,7 +4046,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--helium.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4094,7 +4066,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--sodium.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4114,7 +4086,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--salt.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4134,7 +4106,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4154,7 +4126,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4174,12 +4146,12 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/check-valve--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/valves/check-valve/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15389,
-      "sha256": "1b458c7a219c61c36ce9724caac371b3fcfad1acc6183689290a70b03839da91"
+      "bytes": 15390,
+      "sha256": "ea60544076b093ff9cbb46b16b1df7917c22d1e40d7c3aa7280a447288f54577"
     },
     {
       "type": "relief-valve",
@@ -4194,7 +4166,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--water.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4214,7 +4186,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4234,7 +4206,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--helium.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4254,7 +4226,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--sodium.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4274,7 +4246,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--salt.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4294,7 +4266,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4314,7 +4286,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4334,7 +4306,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/relief-valve--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/valves/relief-valve/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4355,7 +4327,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--water.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4376,7 +4348,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4397,7 +4369,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--helium.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4418,7 +4390,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--sodium.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4439,7 +4411,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--salt.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4460,7 +4432,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4481,7 +4453,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4502,7 +4474,7 @@
         "opening": 100,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/butterfly-valve--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/valves/butterfly-valve/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4522,7 +4494,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--water.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4542,7 +4514,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--thermal-fluid.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/thermal-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4562,7 +4534,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--helium.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/helium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4582,7 +4554,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--sodium.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/sodium.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4602,7 +4574,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--salt.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/salt.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4622,12 +4594,12 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--heavy-water.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/heavy-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15839,
-      "sha256": "5e96a7a04c5c422b59a2c7429d9c089236a2242e44ff1a918e8fec4b63fb1dd4"
+      "bytes": 15836,
+      "sha256": "d304828cb6ffefa1484faf1a80f29040358e0065b4ec2b05461b983bb096bb66"
     },
     {
       "type": "pipe",
@@ -4642,7 +4614,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--organic-working-fluid.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/organic-working-fluid.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4662,7 +4634,7 @@
         "open": true,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/pipe--liquid-fuel.jpg",
+      "path": "img/thumbnails/equipment/connections/pipe/liquid-fuel.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4683,7 +4655,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/separator--flash-water.jpg",
+      "path": "img/thumbnails/equipment/process/separator/flash-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4705,7 +4677,7 @@
         "value": 350,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/wellhead--steam-well.jpg",
+      "path": "img/thumbnails/equipment/process/wellhead/steam-well.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4727,7 +4699,7 @@
         "value": 350,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/wellhead--geothermal-water.jpg",
+      "path": "img/thumbnails/equipment/process/wellhead/geothermal-water.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4751,7 +4723,7 @@
         "rodPosition": 30,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/molten-salt-reactor--solid-fuel-salt-cooled.jpg",
+      "path": "img/thumbnails/equipment/nuclear/molten-salt-reactor/solid-fuel-salt-cooled.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4774,7 +4746,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/nuclear-steam-generator--water-primary.jpg",
+      "path": "img/thumbnails/equipment/nuclear/nuclear-steam-generator/water-primary.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4797,7 +4769,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/nuclear-steam-generator--heavy-water-primary.jpg",
+      "path": "img/thumbnails/equipment/nuclear/nuclear-steam-generator/heavy-water-primary.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4820,7 +4792,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/nuclear-steam-generator--helium-primary.jpg",
+      "path": "img/thumbnails/equipment/nuclear/nuclear-steam-generator/helium-primary.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4843,7 +4815,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/nuclear-steam-generator--sodium-primary.jpg",
+      "path": "img/thumbnails/equipment/nuclear/nuclear-steam-generator/sodium-primary.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4866,7 +4838,7 @@
         "heat": 45,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/nuclear-steam-generator--salt-primary.jpg",
+      "path": "img/thumbnails/equipment/nuclear/nuclear-steam-generator/salt-primary.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4887,7 +4859,7 @@
         "direction": "forward",
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/power-inverter--dc-to-ac.jpg",
+      "path": "img/thumbnails/equipment/power/power-inverter/dc-to-ac.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4908,7 +4880,7 @@
         "direction": "forward",
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/power-inverter--bidirectional.jpg",
+      "path": "img/thumbnails/equipment/power/power-inverter/bidirectional.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4931,7 +4903,7 @@
         "field": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/alternator--generator.jpg",
+      "path": "img/thumbnails/equipment/power/alternator/generator.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4954,7 +4926,7 @@
         "field": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/alternator--motor-generator.jpg",
+      "path": "img/thumbnails/equipment/power/alternator/motor-generator.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4975,7 +4947,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/disconnect-switch--ac-isolator.jpg",
+      "path": "img/thumbnails/equipment/power/disconnect-switch/ac-isolator.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -4996,7 +4968,7 @@
         "load": 60,
         "damage": "none"
       },
-      "path": "img/thumbnails/variants/disconnect-switch--dc-isolator.jpg",
+      "path": "img/thumbnails/equipment/power/disconnect-switch/dc-isolator.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5011,7 +4983,7 @@
         "renderScadaToolbar"
       ],
       "css_class": ".scada-toolbar",
-      "path": "img/thumbnails/workspace-toolbar.jpg",
+      "path": "img/thumbnails/workspace/toolbar.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5025,7 +4997,7 @@
         "ScadaWorkspace"
       ],
       "css_class": ".scada-dialog",
-      "path": "img/thumbnails/workspace-dialog.jpg",
+      "path": "img/thumbnails/workspace/dialog.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5036,7 +5008,7 @@
       "id": "statusbar",
       "exports": [],
       "css_class": ".scada-statusbar",
-      "path": "img/thumbnails/workspace-statusbar.jpg",
+      "path": "img/thumbnails/workspace/statusbar.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5047,7 +5019,7 @@
       "id": "buttons",
       "exports": [],
       "css_class": ".scada-toolbutton",
-      "path": "img/thumbnails/workspace-buttons.jpg",
+      "path": "img/thumbnails/workspace/buttons.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5058,7 +5030,7 @@
       "id": "panels",
       "exports": [],
       "css_class": ".scada-panel-section",
-      "path": "img/thumbnails/workspace-panels.jpg",
+      "path": "img/thumbnails/workspace/panels.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5069,7 +5041,7 @@
       "id": "metrics",
       "exports": [],
       "css_class": ".scada-metric-strip",
-      "path": "img/thumbnails/workspace-metrics.jpg",
+      "path": "img/thumbnails/workspace/metrics.jpg",
       "width": 480,
       "height": 360,
       "format": "jpeg",
@@ -5202,8 +5174,8 @@
     "width": 1520,
     "height": 6589,
     "format": "jpeg",
-    "bytes": 1111296,
-    "sha256": "53ed6a46538ce0515577fa372b5a711a188574d9ee227687177a00c471834ec9"
+    "bytes": 1111264,
+    "sha256": "25a8afa2b293f9d7ae936d0b8c0387bdfbbf457db4ab3a5f5281e0f4e09a6b72"
   },
   "viewer": {
     "id": "generic-viewer",
@@ -5254,7 +5226,7 @@
         "valve"
       ]
     },
-    "path": "img/thumbnails/generic-viewer.jpg",
+    "path": "img/thumbnails/workspace/generic-viewer.jpg",
     "width": 1152,
     "height": 799,
     "format": "jpeg",

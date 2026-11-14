@@ -23,4 +23,4 @@ flowchart LR
 
 Keep this layer independent of symbols, workspace, viewer, model sessions and host code. A field range or capacity preset is a presentation/discovery contract, not a verified equipment rating. The simulation package owns separate versioned model descriptors and checks catalog parity explicitly. Compatibility variants may reuse geometry; see [variants](../../docs/VARIANTS.md) and [state coverage](../../docs/STATE_COVERAGE.md).
 
-<a href="../../img/symbols/valves/control-valve.svg"><img src="../../img/symbols/valves/control-valve.svg" width="190" alt="Catalog control-valve symbol preview"></a>
+<a href="../../img/symbols/valves/control-valve/default.svg"><img src="../../img/symbols/valves/control-valve/default.svg" width="190" alt="Catalog control-valve symbol preview"></a>

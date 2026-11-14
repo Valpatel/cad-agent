@@ -1,6 +1,6 @@
 # Placeholder model matrix
 
-Version 0.4.0 includes version 2 model descriptors for all 142 symbol types. The original 80-type version 1 registry and behavior remain available. The 60 scenarios contain 20 version 1 industrial examples and 40 version 2 power, agriculture and electric batch-oven examples.
+Version 0.4.0 includes version 2 model descriptors for all 142 symbol types. The original 80-type version 1 registry and behavior remain available. The [scenario catalog](../scenarios/README.md) identifies each example’s model contract, including version 1 industrial/wastewater examples and version 2 power, growing and heating systems.
 
 Select the contract explicitly when creating a new model: `createModelDefinition(system)` retains version 1; `createModelDefinition(system, {version:2})` or `createV2ModelDefinition(system)` creates version 2. Existing files select their runtime by `model.version`. A dash in the version 1 column means the type requires version 2.
 

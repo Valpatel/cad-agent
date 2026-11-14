@@ -19,9 +19,9 @@ flowchart LR
   viewer --> renderer
 ```
 
-From `packages/scada-ui/`, run `python -m http.server 8000`, then open `/examples/components/` or `/examples/viewer/` at `http://localhost:8000`. HTTP serving is required for reliable ES-module loading and JSON fetches. No repository build is needed for these source examples.
+From `software/cadagent/webkit/scada/ui/`, run `python -m http.server 8000`, then open `/examples/components/` or `/examples/viewer/` at `http://localhost:8000`. HTTP serving is required for reliable ES-module loading and JSON fetches. No repository build is needed for these source examples.
 
-The examples illustrate API plumbing. Their numbers, timing and failure behavior are editable guesses. For the separate shared simulation runtime and scenario collection, start at [SCADA simulation](../../sim/README.md); do not grow a second model inside a symbol or viewer.
+The examples illustrate API plumbing. Their numbers, timing and failure behavior are editable guesses. For the separate shared simulation runtime and scenario collection, start at [SCADA simulation](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/README.md); do not grow a second model inside a symbol or viewer.
 
-<a href="../img/symbols/rotating/submersible-pump.svg"><img src="../img/symbols/rotating/submersible-pump.svg" width="190" alt="Animated pump component preview"></a>
-<a href="../img/thumbnails/generic-viewer.jpg"><img src="../img/thumbnails/generic-viewer.jpg" width="420" alt="Reusable system viewer preview"></a>
+<a href="../img/symbols/rotating/submersible-pump/default.svg"><img src="../img/symbols/rotating/submersible-pump/default.svg" width="190" alt="Animated pump component preview"></a>
+<a href="../img/thumbnails/workspace/generic-viewer.jpg"><img src="../img/thumbnails/workspace/generic-viewer.jpg" width="420" alt="Reusable system viewer preview"></a>

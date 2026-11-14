@@ -34,7 +34,8 @@
     "docs",
     "img/",
     "metadata",
-    "README.md"
+    "README.md",
+    "LICENSE.txt"
   ],
   "engines": {
     "node": ">=20.18"

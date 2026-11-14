@@ -82,14 +82,14 @@ state lifecycle, public session usage and meaningful acceptance fixtures.
 Run the independent core tests from the repository root:
 
 ```sh
-node --test packages/scada-sim/tests/equation-runtime.test.mjs
+node --test tests/webkit/scada/sim/equation-runtime.test.mjs
 ```
 
-The [source tests](../../../../../../../tests/webkit/scada/sim/equation-runtime.test.mjs)
+The [source tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/equation-runtime.test.mjs)
 cover contracts and defensive boundaries; engine-specific tests additionally
 prove that the proposals change actual allocation/state and remain atomic.
 
-<a href="../../img/topologies/electric-batch-oven.svg"><img src="../../img/topologies/electric-batch-oven.svg" alt="Existing oven topology illustrating explicit supply, isolation and thermal equipment" width="480"></a>
+<a href="../../img/topologies/manufacturing-thermal-processing/electric-batch-oven/topology.svg"><img src="../../img/topologies/manufacturing-thermal-processing/electric-batch-oven/topology.svg" alt="Existing oven topology illustrating explicit supply, isolation and thermal equipment" width="480"></a>
 
 This package-owned topology illustrates the kernel's explicit boundaries. It is
 not a capture of a registered physical-law provider or a calibration receipt.

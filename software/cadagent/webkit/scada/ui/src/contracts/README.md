@@ -2,7 +2,7 @@
 
 [Source map](../README.md) · [Package map](../../README.md) · [System format](../../docs/SYSTEM_FORMAT.md) · [Schema map](../../schema/README.md)
 
-[system-definition.mjs](./system-definition.mjs) is the sole implementation in this domain. It validates presentation documents and resolves explicit snapshot bindings. The public `src/system-definition.mjs` file is a compatibility facade.
+[system-definition.mjs](./system-definition.mjs) is the sole implementation in this domain. It validates presentation documents and resolves explicit snapshot bindings. The package system-definition export points directly to this file.
 
 | Export | Responsibility |
 | --- | --- |
@@ -22,4 +22,10 @@ flowchart LR
 
 The contract does not fetch URLs, acquire credentials, execute commands, mount UI or create a model. Those remain host responsibilities. Start a new document from [the minimal example](../../examples/minimal-system.json), then validate it before passing it to [the viewer](../viewer/README.md). JSON Schema complements these semantic checks; it does not replace them.
 
-<a href="../../img/symbols/process/tank.svg"><img src="../../img/symbols/process/tank.svg" width="190" alt="Storage tank with state supplied through a system definition"></a>
+<a href="../../img/symbols/process/tank/default.svg"><img src="../../img/symbols/process/tank/default.svg" width="190" alt="Storage tank with state supplied through a system definition"></a>
+
+## Files
+
+| File | Purpose |
+| --- | --- |
+| [system-definition.mjs](system-definition.mjs) | System validation, bindings and view resolution. |

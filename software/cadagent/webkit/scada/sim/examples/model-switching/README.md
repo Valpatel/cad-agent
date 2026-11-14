@@ -1,6 +1,6 @@
 # Pump equation bench
 
-[Examples map](../README.md) · [Model API](../../docs/MODEL-API.md) · [Equation providers](../../src/equation-examples/README.md) · [Viewer API](../../../ui/docs/API.md)
+[Examples map](../README.md) · [Model API](../../docs/MODEL-API.md) · [Equation providers](../../src/equation-examples/README.md) · [Viewer API](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/docs/API.md)
 
 A framework-free browser host for live equation replacement in one version 2
 simulation session. The quadratic and linear pump laws are registered providers:
@@ -27,7 +27,7 @@ flowchart LR
   Model <--> File[Versioned session file]
 ```
 
-<a href="../../../ui/img/symbols/rotating/pump.svg"><img src="../../../ui/img/symbols/rotating/pump.svg" width="260" alt="Animated pump symbol used in this example; illustrative artwork, not a screenshot or model validation"></a>
+<a href="../../../ui/img/symbols/rotating/pump/default.svg"><img src="../../../ui/img/symbols/rotating/pump/default.svg" width="260" alt="Animated pump symbol used in this example; illustrative artwork, not a screenshot or model validation"></a>
 
 ## Run and explore
 
@@ -98,12 +98,12 @@ provider code must already be registered by the host. This example does not
 connect to live equipment, acquire telemetry, load arbitrary code or add audio.
 
 For maintenance use the repository
-[viewer review workflow](../../../../../../../.agents/skills/scada-viewer-review/SKILL.md)
-and [model adaptation workflow](../../../../../../../.agents/skills/scada-model-adaptation/SKILL.md).
+[viewer review workflow](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-viewer-review/SKILL.md)
+and [model adaptation workflow](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-model-adaptation/SKILL.md).
 Verify law/parameter changes against actual snapshot readings, same-clock view
 switches, valid replay, rejected import without mutation, fault/repair, keyboard
 dialogs, reduced motion and responsive contained-camera behavior.
 The source repository's repeatable browser acceptance command is
-`npm run qa:model-switching -- --output work/model-switching-review`; use
+`python tools/webkit/scada/sim/check-model-switching-browser.py --output /tmp/model-switching-review`; use
 `--url` to select an existing served entry and `--sizes` for viewport coverage.
-See the [source tooling map](../../../../../../../tools/webkit/scada/sim/README.md).
+See the [source tooling map](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/sim/README.md).

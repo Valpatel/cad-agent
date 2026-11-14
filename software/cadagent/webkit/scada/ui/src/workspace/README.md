@@ -20,4 +20,4 @@ The host supplies trusted body/footer/control markup and keeps untrusted text es
 
 Use [the viewer example](../../examples/viewer/README.md) to see the primitives inside an equipment inspector. The package-owned [workspace gallery](../../img/thumbnails/README.md) also shows toolbars, status bars, buttons, panels and metric strips. Shared CAD HUD extraction is an integration direction, not a separate shared-HUD API implemented here.
 
-<a href="../../img/thumbnails/workspace-dialog.jpg"><img src="../../img/thumbnails/workspace-dialog.jpg" width="430" alt="Native equipment workspace dialog preview"></a>
+<a href="../../img/thumbnails/workspace/dialog.jpg"><img src="../../img/thumbnails/workspace/dialog.jpg" width="430" alt="Native equipment workspace dialog preview"></a>

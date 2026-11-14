@@ -1,10 +1,10 @@
 # Valpatel SCADA simulation kernels and models
 
-Version 0.4.0 supplies replaceable equation providers and runnable illustrative models for all 142 SCADA symbol types and a 60-scenario collection: 20 existing version 1 industrial examples, 33 version 2 power examples, six version 2 agriculture examples, and one version 2 electric batch-oven example. It is separate from `@valpatel/scada-ui`: the UI owns presentation, while this package owns illustrative state, topology, commands, faults, and deterministic replay.
+This package supplies replaceable equation providers and runnable illustrative models across the equipment catalog and [scenario collection](./scenarios/README.md), including wastewater digestion, industrial processes, power generation and agriculture. It is separate from `@valpatel/scada-ui`: the UI owns presentation, while this package owns illustrative state, topology, commands, faults, and deterministic replay.
 
 Built-in scenario quantities are editable normalized assumptions. Pressure, temperature, flow, power, chemistry, and crop responses are illustrative indices; visual engineering units do not turn them into predicted measurements. Both engines also support registered constitutive laws and per-component state, with physical SI examples and explicit unit bridges. A custom provider needs its own evidence and operating domain; the defaults do not establish plant operating instructions, protection settings, nuclear design calculations or crop recipes. No CAD, live-plant connection, network access, or persistence is built in. Importing the package starts no timers.
 
-[Packages map](../README.md) · [Browse all 60 scenarios](./scenarios/README.md) · [Scenario thumbnails](./img/README.md) · [Topology SVGs](./img/topologies/README.md)
+[Packages map](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/README.md) · [Browse scenarios](./scenarios/README.md) · [Scenario thumbnails](./img/README.md) · [Topology SVGs](./img/topologies/README.md)
 
 ## Folder map
 
@@ -12,13 +12,13 @@ Built-in scenario quantities are editable normalized assumptions. Pressure, temp
 | --- | --- |
 | [src](./src/README.md) | Headless engines, descriptors, validation and adapters; [v2](./src/v2/README.md) adds explicit resource/energy domains |
 | [schema](./schema/README.md) | Separate versioned model and saved-snapshot JSON contracts |
-| [scenarios](./scenarios/README.md) | 60 system/model pairs, experiment catalog and a local guide for each example |
+| [scenarios](./scenarios/README.md) | System/model pairs, experiment catalog and a local guide for each example |
 | [docs](./docs/README.md) | API, integration, model matrix, references and documented limits |
 | [metadata](./metadata/README.md) | Generated descriptor projections and thumbnail provenance |
-| [examples](./examples/README.md) | Portable Explorer, interactive equation bench, physical pump/heater fixtures and a fake-engine adapter |
+| [examples](./examples/README.md) | Interactive equation bench, physical pump/heater fixtures and a fake-engine adapter; the Explorer is a sibling host |
 | [img](./img/README.md) | Captured scenario previews and [compact topology SVGs](./img/topologies/README.md) owned by this package; canonical equipment artwork stays with `scada-ui` |
-| [scripts](../../../../../tools/webkit/scada/sim/README.md) | Package-owned metadata, topology, documentation and verification tools |
-| [tests](../../../../../tests/webkit/scada/sim/README.md) | Package-focused model, validation, conservation and replay checks |
+| [Source tools](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/sim/README.md) | Development-only metadata, topology, documentation and verification tools |
+| [Source tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/README.md) | Development-only model, validation, conservation and replay checks |
 
 ```mermaid
 flowchart TB
@@ -29,7 +29,7 @@ flowchart TB
   UI -->|commands through adapter| Model
 ```
 
-<a href="./img/thumbnails/aquaponics-dwc.jpg"><img src="./img/thumbnails/aquaponics-dwc.jpg" width="520" alt="Raft aquaponics scenario with a shared water-treatment model"></a>
+<a href="./img/thumbnails/agriculture-aquaculture/aquaponics-dwc/preview.jpg"><img src="./img/thumbnails/agriculture-aquaculture/aquaponics-dwc/preview.jpg" width="520" alt="Raft aquaponics scenario with a shared water-treatment model"></a>
 
 The [local aquaponics guide](./scenarios/aquaponics-dwc/README.md) connects this
 captured view to its actual topology, model roles and assumptions.
@@ -87,7 +87,7 @@ Each scenario has two independent JSON files. `system.json` uses the UI package'
 | Model contract | Coverage | Template and descriptor selection | Behavior |
 | --- | --- | --- | --- |
 | Version 1 | Original 80 types and 20 industrial scenarios | `createModelDefinition(system)`; `getModelDescriptor(type)`; `MODEL_DESCRIPTORS` | Preserves the existing shared-family equations, defaults, bench-supply assumptions, commands, and snapshot format. |
-| Version 2 | All 142 types, explicit registered variants, and 40 added scenarios | `createModelDefinition(system, {version:2})`; `getModelDescriptor(type, {version:2, variant})`; `V2_MODEL_DESCRIPTORS` and `V2_VARIANT_DESCRIPTORS` | Adds explicit resource circuits and energy supplies, finite stores, thermal links, tracer amounts, zones, and signed mode-dependent connections. |
+| Version 2 | All 142 types, explicit registered variants, and the explicit-circuit scenarios | `createModelDefinition(system, {version:2})`; `getModelDescriptor(type, {version:2, variant})`; `V2_MODEL_DESCRIPTORS` and `V2_VARIANT_DESCRIPTORS` | Adds explicit resource circuits and energy supplies, finite stores, thermal links, tracer amounts, zones, and signed mode-dependent connections. |
 
 The default remains version 1. Selecting version 2 creates a different model contract; existing version 1 files and snapshots are not automatically migrated. `PlaceholderSystemModel` and `validatePlaceholderModelDefinition` dispatch from the file's `version`. For an explicitly version 2 integration, use `CircuitSystemModel`, `createV2ModelDefinition`, and `validateV2ModelDefinition`.
 
@@ -139,16 +139,22 @@ Stored heat and transported tracer amounts follow declared circuits. Separate th
 
 ## Examples and checks
 
-The [60 scenario folder maps](./scenarios/README.md) link each JSON pair, thumbnail and experiment recipe. With sibling `scada-ui` and `scada-sim` folders served over HTTP, open `scada-sim/examples/explorer/`. The explorer owns its clock and routes; it demonstrates equipment controls, model assumptions, faults, alternate views, snapshots, and read-only monitoring. See [INTEGRATION.md](./docs/INTEGRATION.md), [scenario-coverage.md](./docs/scenario-coverage.md), and the [scenario gallery](./docs/scenario-gallery.md).
+The [scenario folder maps](./scenarios/README.md) link each JSON pair, thumbnail and experiment recipe. Serve `software/cadagent/webkit/` and open `/scada/explorer/?scenario=wastewater-digester`. The [Explorer](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/explorer/README.md) is a sibling application that consumes both libraries, owns one clock, and demonstrates controls, assumptions, faults, alternate views and snapshots. It is not embedded in this model package. See [INTEGRATION.md](./docs/INTEGRATION.md), [scenario-coverage.md](./docs/scenario-coverage.md) and the [scenario gallery](./docs/scenario-gallery.md).
 
-The Explorer's canonical application source is
-[`apps/scada-explorer`](../explorer).
-`examples/explorer/` is generated by `npm run build:explorer` in the source
-repository and is included here for portable, build-free package use. Application
-DOM, audio, downloads and the clock remain outside the headless model runtime.
-
-The package's [tests map](../../../../../tests/webkit/scada/sim/README.md) links the owning workflow. `tests/scada-sim.test.mjs` covers version 1 behavior. `tests/scada-sim-v2.test.mjs` exercises version 2 templates, isolated circuits, supply coupling, commands, and replay. `tests/scada-circuit-conservation.test.mjs` checks boundary accounting, stores, thermal/tracer bounds, cyclic energy, invalid-command/import atomicity, and extended deterministic runs. `tests/v2-presentation-semantics.test.mjs` checks model-to-visual field meaning for source selection, degraded readings, relay output, operating stress and instantaneous actuator position. Workspace scenario/schema integration checks cover system/model pairs; distribution tests exercise the produced package in a separate consumer. These checks establish software behavior under declared teaching assumptions.
+The package's [tests map](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/README.md) links the owning workflow. `tests/scada-sim.test.mjs` covers version 1 behavior. `tests/scada-sim-v2.test.mjs` exercises version 2 templates, isolated circuits, supply coupling, commands, and replay. `tests/scada-circuit-conservation.test.mjs` checks boundary accounting, stores, thermal/tracer bounds, cyclic energy, invalid-command/import atomicity, and extended deterministic runs. `tests/v2-presentation-semantics.test.mjs` checks model-to-visual field meaning for source selection, degraded readings, relay output, operating stress and instantaneous actuator position. Workspace scenario/schema integration checks cover system/model pairs; distribution tests exercise the produced package in a separate consumer. These checks establish software behavior under declared teaching assumptions.
 
 ## Package-owned scenario gallery
 
-[Browse the scenario image gallery](./img/README.md). This model library owns its scenario captures under `img/thumbnails/`, with exact state/source metadata in `metadata/thumbnails.json`. Its [topology gallery](./img/topologies/README.md) provides compact SVG diagrams using the first focused view's actual equipment and declared connections; [topology metadata](./metadata/topologies.json) records their sources. These static schematics are separate from captured model state. The separate [SCADA UI gallery](../ui/img/README.md) owns canonical equipment symbols, visual state images and viewer/workspace previews. Keep these galleries with their reusable owners when extracting the toolkit; do not collect them in a host application's top-level `img/` folder.
+[Browse the scenario image gallery](./img/README.md). This model library owns its scenario captures under `img/thumbnails/`, with exact state/source metadata in `metadata/thumbnails.json`. Its [topology gallery](./img/topologies/README.md) provides compact SVG diagrams using the first focused view's actual equipment and declared connections; [topology metadata](./metadata/topologies.json) records their sources. These static schematics are separate from captured model state. The separate [SCADA UI gallery](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/ui/img/README.md) owns canonical equipment symbols, visual state images and viewer/workspace previews. Keep these galleries with their reusable owners when extracting the toolkit; do not collect them in a host application's top-level `img/` folder.
+
+## Files
+
+| File | Purpose |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | Scoped authoring and verification instructions. |
+| [package.json](package.json) | Private package metadata and explicit public exports. |
+| [LICENSE.txt](LICENSE.txt) | Retained package terms, included in runtime distributions. |
+
+The notice’s source-identity and authorization record is the repository-owned
+[source provenance](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/SOURCE.json);
+the package includes the actual retained terms in `LICENSE.txt`.

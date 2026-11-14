@@ -25,4 +25,4 @@ The default `ScadaViewer` mounts a camera and preserves its transform across sna
 
 The child dependencies have their own maps: [symbols](../symbols/README.md), [workspace](../workspace/README.md) and [system contracts](../contracts/README.md). The viewer accepts a validated document and adapter, not a URL to a plant or a hidden model constructor. Missing readings stay diagnosable; read-only adapters omit command dispatch.
 
-<a href="../../img/thumbnails/generic-viewer.jpg"><img src="../../img/thumbnails/generic-viewer.jpg" width="680" alt="Shared SCADA viewer with contained diagram and equipment controls"></a>
+<a href="../../img/thumbnails/workspace/generic-viewer.jpg"><img src="../../img/thumbnails/workspace/generic-viewer.jpg" width="680" alt="Shared SCADA viewer with contained diagram and equipment controls"></a>

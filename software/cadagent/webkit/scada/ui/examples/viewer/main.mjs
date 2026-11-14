@@ -1,4 +1,4 @@
-import {ScadaViewer} from '../../src/scada-viewer.mjs';
+import {ScadaViewer} from '../../src/viewer/viewer.mjs';
 import {UtilityModel} from './utility-model.mjs';
 import {createUtilityAdapter} from './utility-adapter.mjs';
 

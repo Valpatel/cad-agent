@@ -64,12 +64,15 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
   try {
     await writeFile(path.join(wt, 'tools/site/assets/site.css'), 'body{display:none}\n');
     await writeFile(path.join(wt, 'docs/planted.md'), '# Planted\n\nnot committed\n');
+    await writeFile(path.join(wt, 'tools/site/assets/planted-module.js'), 'export const draftOnly = true;\n');
+    execFileSync('git',['add','tools/site/assets/planted-module.js'],{cwd:wt});
     await plant(wt, 'docs/toolkit.md', '# Toolkit\n\nlocal edit <scr<script>x</script>ipt>window.__x=1</script>\n');
     const run = (...a) => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, ...a], { cwd: root }).toString();
     const clean = path.join(tmp, 'clean'), draft = path.join(tmp, 'draft');
     run('--out', clean);
     assert.equal(await readFile(path.join(clean, 'web/site.css'), 'utf8'), git('show', 'HEAD:tools/site/assets/site.css'));
     assert.ok(!existsSync(path.join(clean, 'docs/planted.html')), 'an untracked page was published');
+    assert.ok(!existsSync(path.join(clean, 'web/planted-module.js')), 'a staged-only module was published as committed output');
     assert.doesNotMatch(await readFile(path.join(clean, 'docs/toolkit.html'), 'utf8'), /local edit/);
     // Drawn by the reader's browser: this stylesheet would redraw every diagram (it is in their cache key) to no purpose.
     run('--worktree', '--client-diagrams', '--out', draft);
@@ -78,6 +81,8 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
     assert.match(toolkit, /\+ local changes/);
     assert.match(toolkit, /This page has uncommitted changes/);
     assert.equal(await readFile(path.join(draft, 'web/site.css'), 'utf8'), 'body{display:none}\n');
+    assert.equal(await readFile(path.join(draft,'web/planted-module.js'),'utf8'),'export const draftOnly = true;\n','draft includes staged new assets');
+    assert.ok(!existsSync(path.join(draft,'docs/planted.html')),'draft still excludes untracked files');
     assert.doesNotMatch(toolkit, /<script>|window\.__x=1<\/script>/, 'a nested script survived the sanitizer');
     assert.throws(() => run('--release', '--out', path.join(tmp, 'rel')), /clean working tree/);
     await mkdir(path.join(wt, 'web'), { recursive: true });
@@ -774,7 +779,7 @@ test('every page names its cad-agent.valpatel.com address as canonical, and the 
   const checked = [];
   for (const f of html) {
     const text = await readFile(path.join(out, f), 'utf8');
-    const served = '/' + f.replace(/\.html$/, '');
+    const served = '/' + f.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
     if (f.startsWith('kit/')) {  // copied byte for byte from the kit: the canonical comes as a Link header
       assert.doesNotMatch(text, /rel="canonical"/, `${f} must stay as the kit ships it`);
       const links = rules.filter(r => r.pattern.test(served)).flatMap(r => r.headers).filter(([k]) => k.toLowerCase() === 'link');

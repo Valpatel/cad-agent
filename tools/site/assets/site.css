@@ -310,8 +310,9 @@ cad-nav input::placeholder{color:var(--faint);opacity:1}
 .hero{grid-template-columns:1fr;padding:28px 0 48px}.hero-scene{min-height:400px}.stamp{display:none}
 .ticker .wrap{flex-wrap:wrap;justify-content:center;column-gap:14px;row-gap:4px;font-size:9px}.section{padding:60px 0}
 .lead,.band-green{grid-template-columns:1fr}.hero-3d{grid-template-columns:1fr;grid-template-areas:"head" "model" "actions";gap:20px}.reel{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:min(80%,320px);overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;padding-bottom:12px;scrollbar-width:thin}.reel-tile{scroll-snap-align:start}.reel-tile:hover{transform:none}.hero-3d .hero-head{padding-top:0}.hero-model cad-model{border-radius:calc(24px*var(--round))}.fits-make ul,.fits-ours ul,.projects{grid-template-columns:1fr}.reel-band{padding:56px 0 64px}.missions{grid-template-columns:1fr}.mission{min-height:0}.filters{top:68px}.band-green{padding:26px 20px}}
-@media(max-width:480px){.site-header nav a[href="/docs/toolkit"]{display:none}}
-/* down to 320 px (WCAG's reflow width) the header keeps the catalogue, GitHub and the theme button on one line */
+/* Keep both primary destinations available on narrow screens; the header can use a second row. */
+@media(max-width:480px){.site-header .wrap{flex-wrap:wrap;justify-content:center;padding-top:10px;padding-bottom:10px;row-gap:8px}}
+/* At reflow width the header keeps Explore, Toolkit, GitHub and the theme button readable. */
 @media(max-width:410px){.site-header nav{gap:8px}.site-header nav .pill-link{padding:9px 10px}.theme-toggle{width:34px;height:34px}.wordmark{font-size:20px;gap:6px}.wordmark img{width:24px;height:24px}}
 /* The name remains readable at reflow width; the decorative mark can yield its room. */
 @media(max-width:360px){.site-header .wrap{width:calc(100% - 24px)}.wordmark img{display:none}}

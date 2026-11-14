@@ -8,10 +8,10 @@ mutable state or an alternate authoring source.
 
 | File | Contents | Owner |
 | --- | --- | --- |
-| [model-registry.json](./model-registry.json) | v1 type descriptors, bounds, defaults, ports and assumptions | `npm run build:model-metadata` |
-| [model-registry-v2.json](./model-registry-v2.json) | v2 base/variant descriptors and explicit circuit/energy contracts | `npm run build:model-metadata` |
+| [model-registry.json](./model-registry.json) | v1 type descriptors, bounds, defaults, ports and assumptions | `npm --prefix tools/webkit/scada run build:metadata` |
+| [model-registry-v2.json](./model-registry-v2.json) | v2 base/variant descriptors and explicit circuit/energy contracts | `npm --prefix tools/webkit/scada run build:metadata` |
 | [thumbnails.json](./thumbnails.json) | Scenario capture/source hashes, view/state information and image paths | Explorer capture workflow |
-| [topologies.json](./topologies.json) | Compact topology SVG sources, selected views and output inventory | `npm run topologies:generate` |
+| [topologies.json](./topologies.json) | Compact topology SVG sources, selected views and output inventory | `npm --prefix tools/webkit/scada run topologies:generate` |
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
   Capture --> Receipt[Thumbnail manifest]
 ```
 
-<a href="../img/thumbnails/winery.jpg"><img src="../img/thumbnails/winery.jpg" width="360" alt="Captured winery initial view"></a>
+<a href="../img/thumbnails/food-beverage/winery/preview.jpg"><img src="../img/thumbnails/food-beverage/winery/preview.jpg" width="360" alt="Captured winery initial view"></a>
 
 [Open the complete capture contact sheet](../img/thumbnails/contact-sheet.jpg).
 

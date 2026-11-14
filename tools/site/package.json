@@ -14,7 +14,7 @@
     "preview:site": "node build-site.mjs --worktree && node preview-site.mjs",
     "deploy:site": "node build-site.mjs --release && WRANGLER_SEND_METRICS=false WRANGLER_SEND_ERROR_REPORTS=false npx --yes wrangler@4.86.0 pages deploy ../../dist --config wrangler.toml --project-name cad-agent --branch main --commit-dirty=false",
     "build:site:draft": "node build-site.mjs --worktree",
-    "test:site": "node --test ../../tests/site/website-*.test.mjs && node ../../tests/site/website-browser.mjs && node ../../tests/site/website-catalog-browser.mjs"
+    "test:site": "node --test ../../tests/site/website-*.test.mjs ../../tests/site/toolkit/website-*.test.mjs && node ../../tests/site/website-browser.mjs && node ../../tests/site/toolkit/website-catalog-browser.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

@@ -7,7 +7,7 @@ This is the `@valpatel/scada-ui` presentation format. JSON, JSON Schema 2020-12 
 - [Complete two-view utility-water example](../examples/minimal-system.json)
 - [Runnable five-device utility demo](../examples/viewer/index.html) and its [system JSON](../examples/viewer/system.json)
 - [Machine-readable schema](../schema/scada-system.schema.json), identified by `urn:valpatel:scada-system:1`
-- [Runtime validator and binding resolver](../src/system-definition.mjs)
+- [Runtime validator and binding resolver](../src/contracts/system-definition.mjs)
 - [Component and viewer APIs](./API.md)
 
 ## Load one definition
@@ -201,4 +201,4 @@ For a future incompatible revision, add a new schema/URN and a separate explicit
 
 YAML may be offered later as an authoring convenience, provided it converts to exactly the same JSON data model before validation. That would require a safe parser with duplicate-key detection and limits, no custom tags/functions or object construction, and explicit handling of aliases. No YAML parser is shipped today. Export canonical JSON for supported interchange; JSON and YAML are not competing layout formats.
 
-From the source checkout, run `node --test tests/ui/scada-system.test.mjs` for boundary cases and `npm run build:library` to synchronize generated modules. A JSON Schema 2020-12 validator can validate the example against `schema/scada-system.schema.json`; no schema-validator runtime dependency is required by the browser package.
+From the source checkout, run `node --test tests/webkit/scada/ui/scada-system.test.mjs` for boundary cases and `npm --prefix tools/webkit/scada run build:metadata` to synchronize discovery metadata. A JSON Schema 2020-12 validator can validate the example against `schema/scada-system.schema.json`; no schema-validator runtime dependency is required by the browser package.

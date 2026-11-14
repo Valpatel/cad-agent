@@ -1,8 +1,8 @@
 # Engineering formulas
 
 `cadagent.formulas` holds the closed-form equations that mechanisms and frames keep needing: beams, tube sections and
-snap arms, torsion bars, springs, screws, riveted joints, fillet welds, four-bar and five-bar linkages, wall
-conduction and fan operating points. Agents call it from Python
+snap arms, torsion bars, springs, screws, riveted joints, fillet welds, spur and straight bevel gears, four-bar and
+five-bar linkages, wall conduction and fan operating points. Agents call it from Python
 instead of re-deriving the equations. The website's demonstrations call a browser port of the same functions, and the
 two are tested against one set of golden vectors, so a demo never shows a number an agent would not get. Every
 function states its SI units and its validity limits, and cites its source by author, title, edition and section.
@@ -58,6 +58,8 @@ in a printed boss).
 - **Welds.** Static load only, on a sound weld, of a member on a plate or a stiff part. [Fillet welds](#fillet-welds)
   says what the weld functions leave out: fatigue, weld quality, the heat-affected zone, residual stress,
   burn-through and tube-to-tube joints.
+- **Gears.** The Lewis bending stress is a static or low-speed first check of one tooth as a cantilever. [Gears](#gears)
+  says what it leaves out: AGMA's factors, pitting, wear, fatigue, and any allowable stress for a printed gear.
 
 ## Why it is built, not adopted
 
@@ -96,7 +98,7 @@ How the sources, the Python, the golden vectors and the browser port connect:
 
 ```mermaid
 flowchart TD
-    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton · Bulten<br/>Incropera · White · ISO 68-1, 898-1 · AISC 360-16"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
+    S["Books, guides, standards<br/>Roark · Shigley · Covestro · Norton · Bulten<br/>Incropera · White · ISO 68-1, 898-1 · AISC 360-16<br/>Khurmi and Gupta · Boston Gear"] --> P["cadagent.formulas<br/>(Python, SI, cited)"]
     C["cadagent.mechanical.compliant<br/>snapfit · allowables"] --> P
     P --> A["agents<br/>catalogue() · snap_arm() …"]
     P --> V["tools/formula_vectors.py<br/>golden vectors · demo materials"]
@@ -170,6 +172,17 @@ SI units throughout: metres, newtons, pascals, kelvin, watts, radians, m³/s. A 
 | `weld_metal_strength` | what the throat may carry: 0.60 FEXX times φ = 0.75 (LRFD) or over Ω = 2.00 (ASD) | AISC 360-16, Section J2.4(a) and Table J2.5 | steel, matching filler metal; no directional increase |
 | `base_metal_shear_strength` | what the metal beside the weld may carry per unit length: the lower of 0.60 Fy t (φ 1.00, Ω 1.50) and 0.60 Fu t (φ 0.75, Ω 2.00) | AISC 360-16, Section J4.2, Eqs. (J4-3) and (J4-4) | the metal as it is beside the weld; heat-affected-zone softening not covered |
 | `fillet_weld_check` | a throat stress against both, kept apart: the weld metal's ratio, the base metal's ratio, and which governs | AISC 360-16, Section J2.4(a), Eqs. (J2-2) and (J2-3) | a pass has only the specification's factor; not proof that the weld is sound |
+| `module_from_diametral_pitch`, `diametral_pitch_from_module`, `gear_pitch_diameter`, `gear_centre_distance` | a gear's module from its diametral pitch and back (m = 25.4 mm / P), pitch diameter m N and an external pair's centre distance m (N1 + N2) / 2 | Shigley 10th ed., Chapter 13, "Nomenclature", Eqs. (13-1) and (13-2), and Example 13-1 | standard pitch circles, no profile shift, no backlash allowance |
+| `gear_tip_diameter`, `gear_root_diameter`, `gear_base_diameter` | tip m (N + 2), root m (N − 2.5) and base m N cos φ diameters of a full-depth involute spur gear | Shigley 10th ed., Chapter 13, Table 13-1 and "Involute Properties" | addendum 1 m, dedendum 1.25 m; the fillet and any undercut depend on the cutter |
+| `gear_contact_ratio` | the mean number of tooth pairs in contact of an external spur pair: the path of contact between the tip circles over the base pitch | Shigley 10th ed., Chapter 13, "Contact Ratio", Eq. (13-9) | rigid involutes without interference; aim for at least 1.2 |
+| `gear_min_teeth`, `gear_max_mate_teeth` | the least pinion tooth count free of interference (undercut) with a mate of a given ratio or a rack (2 k / sin² φ: 17.1 at 20°), and the largest mate a pinion runs with | Shigley 10th ed., Chapter 13, "Interference", Eqs. (13-10) to (13-13) | teeth without profile shift; a smaller pinion needs undercut or shift, not modelled |
+| `bevel_pitch_angles`, `bevel_cone_distance`, `bevel_mean_radius`, `bevel_virtual_teeth` | a straight bevel pair: pitch cone angles tan γ = NP / NG, cone distance (m / 2) √(NP² + NG²), mean pitch radius (L − b / 2) d / 2L, and the virtual tooth number N / cos γ | Shigley 10th ed., Chapter 13, Eqs. (13-14) and (13-15); Khurmi and Gupta 14th ed., Sections 30.4 and 30.6 to 30.8 | shafts at 90° only; module, diameter and cone distance at the large end; Tredgold's approximation |
+| `bevel_face_width_limits` | the largest face width commonly recommended for a bevel gear: a third of the cone distance and ten modules, whichever is smaller | Shigley 10th ed., Chapter 15, Eq. (15-24); Khurmi and Gupta 14th ed., Section 30.7 | a recommendation; Shigley prints 0.3 of the cone distance |
+| `gear_tangential_force`, `spur_gear_forces`, `bevel_gear_forces` | tooth forces from a torque: T / r; a spur gear's radial force Wt tan φ; a straight bevel gear's radial Wt tan φ cos γ and axial Wt tan φ sin γ at its mean radius | Shigley 10th ed., Chapter 13, "Force Analysis", Eqs. (13-37) and (13-38) (Example 13-8); Khurmi and Gupta 14th ed., Section 30.8 | statics of rigid gears, no friction, no dynamic allowance; the bevel force at the mean radius is for bearings, not for the Lewis equation |
+| `lewis_form_factor` | the Lewis form factor Y of a full-depth tooth by tooth count, 14.5° or 20°, interpolated linearly in 1 / N | Shigley 10th ed., Chapter 14, Table 14-2 (20°); Boston Gear, *Engineering Information: Spur Gears* (P-1930-BG, 4/19), Table I (14.5° and 20°) | load at the tip of one tooth, no stress concentration; from 12 teeth (Shigley) or 10 (Boston Gear) up to a rack |
+| `gear_velocity_factor` | the velocity (Barth) factor Kv on the Lewis stress for cast, cut, hobbed or ground teeth, by pitch-line speed | Shigley 10th ed., Chapter 14, "Dynamic Effects", Eqs. (14-6a) to (14-6d); Khurmi and Gupta 14th ed., Section 28.18 | empirical, metal teeth; not a dynamic analysis |
+| `lewis_bending_stress`, `spur_tooth_bending` | the Lewis bending stress at a spur tooth's root, Kv Wt / (b m Y), from a force or from the torque on the gear | Shigley 10th ed., Chapter 14, "The Lewis Bending Equation", Eq. (14-8) (Example 14-1) | a static or low-speed first check: no AGMA factors, pitting or fatigue; the allowable is the caller's |
+| `bevel_cone_factor`, `lewis_bevel_bending_stress`, `bevel_tooth_bending` | a straight bevel tooth: the cone factor (L − b) / L, and the Lewis stress Kv Wt L / (b m Y′ (L − b)) with the force at the large-end pitch radius and Y′ at the virtual tooth number; from the torque, with the mean-radius forces returned beside it | Khurmi and Gupta 14th ed., Section 30.7 | as the spur check, and shafts at 90°; the cone factor drops a term worth up to 5.3 % at a face of a third of the cone distance |
 | `grashof` | Grashof class, whether the input crank turns fully, and the inversion (crank-rocker, double crank, rocker-crank, double rocker, triple rocker) | Norton 5th ed., Chapter 2 | rigid links |
 | `fourbar_angles` | coupler and output angles, open or crossed | Freudenstein (1955); Norton 5th ed., Chapter 4 | position only; a gap under 1e-12 of the longest link counts as closed |
 | `transmission_angle` | angle between coupler and rocker | Norton 5th ed., Chapter 4 | position only; the same closing test |
@@ -205,6 +218,92 @@ arm["strain"], arm["force"], arm["passes"]                        # 0.0090, 3.1 
 fx.preload_from_torque(torque=0.5, diameter=0.003)                # 833 N with K = 0.2
 fx.fan_operating_point(fx.fan_curve_line(15.2, 0.0108), k=2e6)   # flow, pressure, stability
 ```
+
+### Gears
+
+A straight bevel pinion of 18 teeth, module 2 mm, driving a 36-tooth gear on a shaft at 90°, with 2 N m on the pinion:
+
+```python
+r = fx.bevel_tooth_bending(torque=2.0, module=0.002, teeth=18, mate_teeth=36, face_width=0.012)
+r["stress"]             # 20.4 MPa at the root, by the Lewis equation with the cone factor
+r["force_large_end"]    # 111 N: the torque over the large-end pitch radius, the force the Lewis equation takes
+r["force_mean"]         # 131 N: the torque over the mean pitch radius, the force on the shaft and bearings
+r["virtual_teeth"], r["form_factor"], r["cone_factor"]      # 20.1 teeth, Y' = 0.323, (L - b) / L = 0.702
+fx.spur_tooth_bending(torque=2.0, module=0.002, teeth=18, face_width=0.012)["stress"]   # a spur gear: 15.0 MPa
+```
+
+Arrows: each function's result is the next one's input.
+
+```mermaid
+flowchart TD
+    A["bevel_pitch_angles<br/>bevel_cone_distance"] --> V["bevel_virtual_teeth<br/>N / cos γ"]
+    V --> Y["lewis_form_factor<br/>Y′ from the table"]
+    A --> M["bevel_mean_radius"]
+    T["torque"] --> FL["gear_tangential_force<br/>at the large-end radius"]
+    T --> M
+    M --> FM["bevel_gear_forces<br/>at the mean radius"]
+    Y --> S["lewis_bevel_bending_stress<br/>with the cone factor"]
+    FL --> S
+    S --> R["root stress, Pa<br/>against your allowable"]
+    FM --> B["shaft and<br/>bearing loads"]
+    classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
+    classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
+    classDef out fill:#ffe1cc,stroke:#bd3a12,color:#173d3c
+    class A,V,Y,M,FL,FM,S here
+    class T near
+    class R,B out
+```
+
+Lengths are in metres, so a 2 mm module is `0.002`; angles are in radians. Teeth are standard full depth: addendum
+one module, dedendum 1.25 modules, no profile shift. A bevel gear's module, pitch diameter and cone distance are those
+of the large end of its teeth.
+
+A straight bevel tooth tapers toward the apex of its cone, so three lengths matter, and a hand calculation goes
+wrong by mixing them:
+
+- **The large-end pitch radius**, d / 2. The module is defined there, and the Lewis equation takes its force there:
+  the torque over d / 2.
+- **The mean pitch radius**, at the middle of the face. The tooth force acts there on the shaft and its bearings, so
+  it is larger than the Lewis force for the same torque. `bevel_gear_forces` gives its tangential, radial and axial
+  parts as Shigley does [ref:shigley].
+- **The cone distance** L, from the apex to the large end. A face width b uses only part of a full tooth, so the
+  spur equation's strength is multiplied by the cone factor (L − b) / L, and the form factor is read at the virtual
+  tooth number N / cos γ, as Khurmi and Gupta give it [ref:khurmi].
+
+Leaving the cone factor out reads the stress 30 % low in the example above. Putting the mean-radius force through
+the bevel equation reads it 18 % high. `bevel_tooth_bending` returns every one of these values, so a stress is
+never worked out with the force of one radius and the tooth of another. Compare a stress with an allowable
+stress, and a force with a force at the same radius: a maker's breaking load for a tooth is not comparable with a
+force at another radius.
+
+The form factor Y comes from two published tables: Shigley's Table 14-2 for 20° teeth, and Boston Gear's Table I
+for 14.5° and 20° teeth [ref:boston-gear-spur]. The two 20° columns differ by up to 0.003. Between tabulated tooth
+counts Y is interpolated linearly in 1 / N.
+
+**The Lewis equation is a static or low-speed first check, not a gear rating.** It treats one tooth as a
+cantilever with the whole load at its tip. A stress under your allowable does not show that a gear will last.
+
+<details>
+<summary>What the gear functions leave out</summary>
+
+- **AGMA's factors.** No geometry factor with load sharing and root stress concentration, no load-distribution,
+  size, rim-thickness or reliability factor. Shigley presents the Lewis equation as the basis of the AGMA method
+  and as a rough estimate, not for important applications.
+- **Pitting.** Surface contact (Hertz) stress often governs a metal gear before bending does. It is not computed.
+- **Fatigue, wear and scuffing.** A tooth is loaded once per turn. Nothing here counts cycles.
+- **Dynamics.** `gear_velocity_factor` is an old empirical allowance for the profile errors of cut metal teeth. It
+  is not a dynamic analysis, and it was not fitted to plastic gears.
+- **An allowable stress.** None is supplied. For a steel, bring your own with a design factor. **For a printed
+  plastic gear there is no agreed allowable**: the strength depends on the layer direction, the infill, the
+  temperature and creep, and teeth usually fail between layers or by wear and heat. Size a printed gear by
+  testing it.
+- **Other gears.** Helical, spiral bevel, Zerol, hypoid, worm and internal gears, bevel pairs on shafts not at
+  90°, profile-shifted teeth, and the long-addendum bevel pinions whose form factors the makers tabulate apart.
+- **The cone factor's dropped term.** Adding the Lewis strength of thin slices along the tapered tooth gives
+  1 − b / L + b² / 3L². The formula drops the last term, so it reads the strength up to 5.3 % low for a face up to
+  a third of the cone distance. `bevel_face_width_limits` gives that limit and ten modules.
+
+</details>
 
 ### Fillet welds
 
@@ -284,7 +383,7 @@ units. `kit/calculators/formulas-data.js` carries the demos' data: the printed f
 in the test.
 
 <details>
-<summary>What each family is tested against: beams, torsion, springs, screws, riveted joints, welds, linkages, heat and air</summary>
+<summary>What each family is tested against: beams, torsion, springs, screws, riveted joints, welds, gears, linkages, heat and air</summary>
 
 - **Beams.**
   - Beam stiffness by the direct stiffness method.
@@ -319,6 +418,18 @@ in the test.
   - The critical point against a search of the whole weld.
   - AISC 360-16's Table J2.5 and Section J4.2 factors, Table J2.4's minimum sizes, and the Steel Tube Institute's
     full-capacity fillet: a 3/4 in leg develops its example's rectangular tube wall and 11/16 in does not.
+- **Gears** (`tests/formulas/test_gear_formulas.py`).
+  - Shigley's Example 13-1 (pitch diameters, centre distance, base circles), its table of the largest
+    interference-free mate for pinions of 13 to 17 teeth, and the 13 and 18 tooth minimums at 20°.
+  - Its Example 13-8, a bevel pair: pitch angles 18.4° and 71.6°, 406 lbf tangential, 46.6 lbf radial and 140 lbf
+    axial on the gear. Its Example 14-1, a stock spur gear by the Lewis equation: Kv = 1.52, Y = 0.296, 365 lbf and
+    6.95 hp. All three were read in the publisher's lecture slides for the 9th edition; the book itself was not
+    opened.
+  - The form factors as Shigley's Table 14-2 and Boston Gear's Table I print them, and the two 20° columns within
+    0.003 of each other.
+  - The contact ratio against the path of contact constructed from the two tip circles.
+  - The bevel cone factor against the Lewis equation applied to thin slices of the tapered tooth, the bevel stress
+    reducing to the spur stress as the face width goes to zero, and force times radius returning the torque.
 - **Linkages.**
   - Loop closure, and an independent circle-intersection construction, at every input angle.
   - Kites (a = b, c = d) and near-kites, every 0.1 degree, where the textbook root divides 0 by 0.

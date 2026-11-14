@@ -1703,8 +1703,8 @@ sources:
       (hijazi-shigley-ch9).
       2026-11-14 (#721): Chapters 13, 14 and 15 (gears) were not opened in the book either.
       cadagent.formulas.gears cites their sections by title, and their equations, tables and examples by the
-      numbers the publisher's slides for the 9th edition print (shigley-9e-gear-slides); the 10th edition's
-      numbering was not checked against them.
+      numbers the publisher's slides for the 9th edition print (shigley-9e-gear-slides-ch13, -ch14 and -ch15); the
+      10th edition's numbering was not checked against them.
 
   - id: shigley-8e
     title: Shigley's Mechanical Engineering Design, 8th edition
@@ -3354,8 +3354,35 @@ sources:
       Welded Joints (the parent metal near a weld taken as hot rolled; Examples 9-2 and 9-4). It names the
       sections by title, not by number, so cadagent.formulas cites them by title.
 
-  - id: shigley-9e-gear-slides
-    title: "Lecture Slides: Gears - General (Chapter 13), Spur and Helical Gears (Chapter 14), Bevel and Worm Gears (Chapter 15) (Shigley's Mechanical Engineering Design, 9th edition)"
+  # Three PDFs, one entry each: every entry's url is the file that entry's reading came from.
+  - id: shigley-9e-gear-slides-ch13
+    title: "Lecture Slides: Gears - General (Shigley's Mechanical Engineering Design, 9th edition, Chapter 13)"
+    authors: []
+    org: The McGraw-Hill Companies
+    year: 2012
+    url: https://www.philadelphia.edu.jo/academics/mgogazeh/uploads/DESIGN2%20CH13.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied; the worked examples' inputs and answers are used as test vectors
+    areas: [gears, formulas]
+    used_for:
+      - tests/formulas/test_gear_formulas.py
+    verified: >-
+      2026-11-14: opened the 105-page PDF (the publisher's slides, copyright 2012, as a course at Philadelphia
+      University, Jordan, hosts them; the url answered with the PDF again later that day). Equations, tables and
+      examples are images, read by eye. Table 13-1 (full depth: addendum 1 m, dedendum 1.25 m or 1.35 m; 20, 22.5
+      and 25 degrees); Example 13-1 (16 and 40 teeth, P = 2: p = 1.57 in, dP = 8 in, dG = 20 in, C = 14 in, rb =
+      3.76 and 9.40 in); Eq. (13-9), mc = Lab / (p cos phi), "should be at least 1.2"; Eqs. (13-10) to (13-13) on
+      interference, and the table for 20 degrees (minimum NP 13, 14, 15, 16, 17 with max NG 16.45, 26.12, 45.49,
+      101.07, 1309.86); Eq. (13-14), tan gamma = NP / NG and tan Gamma = NG / NP; Eq. (13-15), N' = 2 pi rb / p;
+      the face-width rule 3p to 5p; Eqs. (13-37) and (13-38), Wt = T / rav, Wr = Wt tan phi cos gamma, Wa = Wt
+      tan phi sin gamma; Example 13-8 (15 and 45 teeth, P = 5, 600 rev/min, 5 hp, average pitch radii 1.293 and
+      3.88 in: gamma = 18.4 deg, Gamma = 71.6 deg, V = 406 ft/min, Wt = 406 lbf, Wr = 46.6 lbf, Wa = 140 lbf on
+      the gear). These are the 9th edition's numbers; cadagent.formulas cites the 10th edition (the entry
+      shigley) by section title and adds that the numbers are the 9th's. Chapters 14 and 15 are the entries
+      shigley-9e-gear-slides-ch14 and shigley-9e-gear-slides-ch15.
+
+  - id: shigley-9e-gear-slides-ch14
+    title: "Lecture Slides: Spur and Helical Gears (Shigley's Mechanical Engineering Design, 9th edition, Chapter 14)"
     authors: []
     org: The McGraw-Hill Companies
     year: 2012
@@ -3366,27 +3393,35 @@ sources:
     used_for:
       - tests/formulas/test_gear_formulas.py
     verified: >-
-      2026-11-14: opened the three PDFs (the publisher's slides, copyright 2012, as a course at Philadelphia
-      University, Jordan, hosts them: Chapter 13, 105 pages; Chapter 14, 92; Chapter 15, 93). The url is Chapter
-      14's; Chapters 13 and 15 are beside it as DESIGN2%20CH13.pdf and DESIGN2%20CH15.pdf. Equations, tables and
-      examples are images, read by eye. Chapter 13: Table 13-1 (full depth: addendum 1 m, dedendum 1.25 m or 1.35
-      m; 20, 22.5 and 25 degrees); Example 13-1 (16 and 40 teeth, P = 2: p = 1.57 in, dP = 8 in, dG = 20 in, C =
-      14 in, rb = 3.76 and 9.40 in); Eq. (13-9), mc = Lab / (p cos phi), "should be at least 1.2"; Eqs. (13-10) to
-      (13-13) on interference, and the table for 20 degrees (minimum NP 13, 14, 15, 16, 17 with max NG 16.45,
-      26.12, 45.49, 101.07, 1309.86); Eq. (13-14), tan gamma = NP / NG and tan Gamma = NG / NP; Eq. (13-15), N' =
-      2 pi rb / p; the face-width rule 3p to 5p; Eqs. (13-37) and (13-38), Wt = T / rav, Wr = Wt tan phi cos
-      gamma, Wa = Wt tan phi sin gamma; Example 13-8 (15 and 45 teeth, P = 5, 600 rev/min, 5 hp, average pitch
-      radii 1.293 and 3.88 in: gamma = 18.4 deg, Gamma = 71.6 deg, V = 406 ft/min, Wt = 406 lbf, Wr = 46.6 lbf,
-      Wa = 140 lbf on the gear). Chapter 14: Eqs. (14-1) to (14-3); Table 14-2, all 26 rows, as
-      cadagent.formulas.gears ships them (12: 0.245 ... 400: 0.480, rack 0.485); Eqs. (14-4a) to (14-6d), the
-      velocity factors in ft/min and m/s; Eqs. (14-7) and (14-8); Example 14-1 (P = 8, F = 1.5 in, 16 teeth, 10
-      kpsi, 1200 rev/min: V = 628 ft/min, Kv = 1.52, Y = 0.296, Wt = 365 lbf, 6.95 hp), with its remark that the
-      approach is a rough estimate. Chapter 15: Eq. (15-24), F = min(0.3 A0, 10 / Pd), and Eq. (15-25), A0 = dP /
-      (2 sin gamma). The slide of Table 14-2 does not print the table's note (a normal pressure angle of 20
-      degrees, full-depth teeth), so that was not read; the table agrees within 0.003 with the 20 degree
-      full-depth column of Boston Gear's Table I (boston-gear-spur) at every tooth count they share. These are the 9th edition's numbers;
-      cadagent.formulas cites the 10th edition (the entry shigley) by section title and adds that the numbers
-      are the 9th's.
+      2026-11-14: opened the 92-page PDF (the publisher's slides, copyright 2012, on the same course page as
+      shigley-9e-gear-slides-ch13). Equations, tables and examples are images, read by eye. Eqs. (14-1) to (14-3);
+      Table 14-2 (slide 5), all 26 rows, as cadagent.formulas.gears ships them (12: 0.245 ... 400: 0.480, rack
+      0.485); Eqs. (14-4a) to (14-6d), the velocity factors in ft/min and m/s; Eqs. (14-7) and (14-8); Example
+      14-1 (P = 8, F = 1.5 in, 16 teeth, 10 kpsi, 1200 rev/min: V = 628 ft/min, Kv = 1.52, Y = 0.296, Wt = 365
+      lbf, 6.95 hp), with its remark that the approach is a rough estimate. The slide of Table 14-2 does not
+      print the table's note (a normal pressure angle of 20 degrees, full-depth teeth), so that was not read; the
+      table agrees within 0.003 with the 20 degree full-depth column of Boston Gear's Table I (boston-gear-spur)
+      at each of the 23 tooth counts both tabulate. Table 14-2 was read a second time the same day, from the
+      slide rendered as an image, and typed into tests/formulas/test_gear_formulas.py separately from the
+      implementation's table; the two agree on all 26 rows. These are the 9th edition's numbers, as for
+      shigley-9e-gear-slides-ch13.
+
+  - id: shigley-9e-gear-slides-ch15
+    title: "Lecture Slides: Bevel and Worm Gears (Shigley's Mechanical Engineering Design, 9th edition, Chapter 15)"
+    authors: []
+    org: The McGraw-Hill Companies
+    year: 2012
+    url: https://www.philadelphia.edu.jo/academics/mgogazeh/uploads/DESIGN2%20CH15.pdf
+    access: free
+    terms: cited and summarised with attribution, never copied
+    areas: [gears, formulas]
+    used_for:
+      - tests/formulas/test_gear_formulas.py
+    verified: >-
+      2026-11-14: opened the 93-page PDF (the publisher's slides, copyright 2012, on the same course page as
+      shigley-9e-gear-slides-ch13). Equations are images, read by eye. Eq. (15-24), F = min(0.3 A0, 10 / Pd), and
+      Eq. (15-25), A0 = dP / (2 sin gamma). Nothing else of the chapter (the AGMA bevel rating, worm gears) is
+      used. These are the 9th edition's numbers, as for shigley-9e-gear-slides-ch13.
 
   - id: khurmi
     title: A Textbook of Machine Design, 14th edition
@@ -3402,14 +3437,22 @@ sources:
       - software/cadagent/formulas/gears.py
       - docs/formulas.md
     verified: >-
-      2026-11-14: Chapter 30 (Bevel Gears) and Section 28.18 were read as the OCR text of a scan of the 2005
-      (fourteenth edition) printing held by the Internet Archive, not in a printed copy. The ISBN is
-      the Open Library record's for the 2005 printing (1230 pages), which names the publisher's parent, S.
-      Chand; the scan's title page says Eurasia Publishing House. Read: Section 30.4, the pitch angles for a shaft angle of 90 degrees,
-      theta_P1 = atan(TP / TG); Section 30.5, proportions; Section 30.6, the formative number of teeth TE = T
+      2026-11-14: THE PRINTED BOOK WAS NOT OPENED. `access: print` and the ISBN say what the source is, a printed
+      book cited by section; they do not say how it was read. Chapter 30 (Bevel Gears) and Section 28.18 were
+      read as the machine OCR text of a scan of the 2005 (fourteenth edition) printing on the Internet Archive.
+      The copy in which note 2 of Section 30.7 was read again that day is a user's upload (added 2025-03-06, OCR
+      by Tesseract), not the publisher's and not known to be authorised, so no url is recorded for it and
+      nothing is quoted beyond the short phrases below. The ISBN is the Open Library record's for the 2005
+      printing (1230 pages), which names the publisher's parent, S. Chand; the scan's title page says Eurasia
+      Publishing House. Read: Section 30.4, the pitch angles for a shaft angle of 90 degrees, theta_P1 =
+      atan(TP / TG); Section 30.5, proportions; Section 30.6, the formative number of teeth TE = T
       sec(theta_P) (Tredgold's approximation); Section 30.7, WT = (sigma_o Cv) b pi m y' (L - b) / L with y' the
       form factor for the equivalent number of teeth and L = sqrt((DG / 2)^2 + (DP / 2)^2), note 1 (the factor
-      (L - b) / L "may be called as bevel factor") and note 2 (face width 6.3 m to 9.5 m, L / b not above 3);
+      (L - b) / L "may be called as bevel factor") and note 2 (face width "from 6.3 m to 9.5 m", and "the ratio
+      L/b should not exceed 3"). As printed, that last sentence asks for a face of at least a third of the cone
+      distance, the other way round from the usual upper limit on the face width (Shigley's Eq. (15-24), F at
+      most 0.3 A0). Whether the book means b / L is not known, so cadagent.formulas.gears does not cite it for a
+      face-width limit: bevel_face_width_limits stands on Shigley alone and only notes this sentence;
       Section 30.8, forces at the mean radius Rm = (L - b / 2) DP / (2 L): WT = T / Rm, axial WT tan phi
       sin(theta_P), radial WT tan phi cos(theta_P); Section 28.18, the Barth formula sigma_w = sigma_o Cv. The
       book writes the Lewis factor as y = Y / pi with the circular pitch pi m; cadagent.formulas.gears uses Y
@@ -3438,7 +3481,9 @@ sources:
       gears at pitch circle velocities of up to 1500 FPM", considering "beam strength but not wear"; Table I,
       Tooth Form Factor (Y), 35 rows from 10 teeth to a rack in two columns, 14-1/2 degree full depth involute
       (0.176 ... 0.390) and 20 degree full depth involute (0.201 ... 0.484), all as cadagent.formulas.gears
-      ships them (read as text from the PDF and compared row by row); Table II, safe static stresses, which
+      ships them (read as text from the PDF and compared row by row; read again the same day and typed into
+      tests/formulas/test_gear_formulas.py separately from the implementation's table: all 35 rows of both
+      columns agree); Table II, safe static stresses, which
       cad-agent does not use. The companion sheet on miter and bevel gears (P-1930-BG 6/18, pp. 315-317) was
       opened too: it rates straight bevels with the same formula times 0.75 and a table for long-addendum
       pinions, which cadagent.formulas.gears does not use.

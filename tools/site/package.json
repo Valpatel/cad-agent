@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:webkit-unit": "node --test ../../tests/webkit/webkit-*.test.mjs ../../tests/webkit/assembly/*.test.mjs",
+    "test:webkit-unit": "node --test ../../tests/webkit/webkit-*.test.mjs ../../tests/webkit/assembly/*.test.mjs ../../tests/webkit/simulation/*.test.mjs",
     "test:assembly-guide": "node ../../tests/webkit/assembly/browser.mjs",
     "test:assembly-release": "node ../../tests/webkit/assembly/release-browser.mjs",
+    "test:simulation-replay": "node ../../tests/webkit/simulation/browser.mjs",
     "test:stage": "node ../../tests/webkit/webkit-stage-browser.mjs",
     "test:part-table": "node ../../tests/webkit/webkit-part-table-browser.mjs",
     "test:file-viewer": "node ../../tests/webkit/webkit-file-viewer-browser.mjs && npm run test:viewer-host",
@@ -16,7 +17,7 @@
     "deploy:site": "node build-site.mjs --release && WRANGLER_SEND_METRICS=false WRANGLER_SEND_ERROR_REPORTS=false npx --yes wrangler@4.86.0 pages deploy ../../dist --config wrangler.toml --project-name cad-agent --branch main --commit-dirty=false",
     "build:site:draft": "node build-site.mjs --worktree",
     "test:site": "node --test ../../tests/site/website-*.test.mjs ../../tests/site/toolkit/website-*.test.mjs && node ../../tests/site/website-browser.mjs && node ../../tests/site/toolkit/website-catalog-browser.mjs",
-    "test:viewer-host": "node ../../tests/webkit/host/browser.mjs"
+    "test:viewer-host": "node ../../tests/webkit/host/browser.mjs && npm run test:simulation-replay"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

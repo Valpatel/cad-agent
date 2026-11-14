@@ -1755,7 +1755,7 @@ async function themeProblems() {
           await page.evaluate(() => document.querySelectorAll('.cad-copy-btn').forEach(x => { if (x.dataset.was) x.dataset.state = x.dataset.was; else delete x.dataset.state; delete x.dataset.was; x.style.transition = ''; }));
         }
         if (how === 'button') {
-          // remembered on the next page (web/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
+          // remembered on the next page (kit/ui/theme.js runs ahead of the stylesheets: tests/site/website-theme.test.mjs)
           await page.goto(base + '/docs/toolkit', { waitUntil: 'load' });
           const next = await state(page);
           if (next.chosen !== theme || next.scheme !== theme) out.push(`${where}: the choice is not kept on the next page (${next.chosen}, ${next.scheme})`);

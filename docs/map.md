@@ -412,7 +412,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>docs — 52 folders</summary>
+<summary>docs — 53 folders</summary>
 
 <details>
 <summary><code>docs/README.md</code> — 1 folders</summary>
@@ -515,6 +515,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `docs/examples/numbered-coupons` |
+
+</details>
+
+<details>
+<summary><code>docs/examples/robot-replay/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-docs/d-examples/d-robot-replay/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/docs/examples/robot-replay/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `docs/examples/robot-replay` |
 
 </details>
 
@@ -1093,7 +1106,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>software — 1181 folders</summary>
+<summary>software — 1184 folders</summary>
 
 <details>
 <summary><code>software/README.md</code> — 1 folders</summary>
@@ -8753,6 +8766,45 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
+<summary><code>software/cadagent/webkit/simulation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-simulation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/simulation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/simulation` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/simulation/examples/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-simulation/d-examples/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/simulation/examples/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/simulation/examples` |
+
+</details>
+
+<details>
+<summary><code>software/cadagent/webkit/simulation/examples/two-link-arm/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-simulation/d-examples/d-two-link-arm/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/simulation/examples/two-link-arm/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `software/cadagent/webkit/simulation/examples/two-link-arm` |
+
+</details>
+
+<details>
 <summary><code>software/cadagent/webkit/ui/README.md</code> — 1 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-software/d-cadagent/d-webkit/d-ui/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/ui/README.md)
@@ -9450,7 +9502,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 361 folders</summary>
+<summary>tests — 362 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -10122,6 +10174,19 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | Folder |
 |---|
 | `tests/webkit/scada/ui` |
+
+</details>
+
+<details>
+<summary><code>tests/webkit/simulation/README.md</code> — 1 folders</summary>
+
+[Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-webkit/d-simulation/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/simulation/README.md)
+
+- Owned folder map.
+
+| Folder |
+|---|
+| `tests/webkit/simulation` |
 
 </details>
 

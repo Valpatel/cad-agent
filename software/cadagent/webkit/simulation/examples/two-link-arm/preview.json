@@ -1,0 +1,34 @@
+{
+  "schema": "cad-agent.browser-capture/1",
+  "description": "Real recorded simulation at 3.2 seconds; dark theme, paused",
+  "browser": "141.0.7390.37",
+  "viewport": {
+    "width": 960,
+    "height": 960
+  },
+  "capture": {
+    "width": 908,
+    "height": 502
+  },
+  "sources": {
+    "docs/examples/robot-replay/capture.mjs": "b5eec835aeefbcb08ea2078b772bc70b1bae219bdf990be5753f01ecf15137c6",
+    "software/cadagent/webkit/simulation/replay.js": "05e8100dae4804e20c3aab6f32710fd1aa30ae728bd5e79466f90ff18862ddd3",
+    "software/cadagent/webkit/simulation/viewer.js": "553eac53a20e5dd62c3e779b1dbad34f43d3e99c1443683cfd800b179e4a5a4a",
+    "software/cadagent/webkit/simulation/scene.js": "7dde3f5f0adb52a7ddd9f76b3027ff82ea60ee73be1f560e04bd472d6ef88867",
+    "software/cadagent/webkit/simulation/page.js": "2b1433207eefc314849739792a68377241ed374b92f9594de11229f0241a4745",
+    "software/cadagent/webkit/simulation/viewer.html": "ffb3d84a484eb465f88eb8cb524c7cee829102c668b0d3126b85b626d896eeda",
+    "software/cadagent/webkit/simulation/viewer.css": "ada218fcb9f05c55cfd5bc362ea7272318b64cb2032804261ce74a2b8803a490",
+    "software/cadagent/webkit/simulation/examples/two-link-arm/recording.json": "c090649e245efee73d4f55a4a765cf691061833bbcc6bf211fde143e6ca3535a",
+    "software/cadagent/webkit/simulation/examples/two-link-arm/receipt.json": "edbdcafba372773bb6228c5750e5200c0f051739e3ce44bd17f9e73229ebe2f5",
+    "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+    "software/cadagent/webkit/host/viewer-host.js": "2a1f42a3f86c33932b1c423bb4f9b503c940a657513ae5c9e015b5aff9f9f619",
+    "software/cadagent/webkit/host/viewer-host.css": "53f17e42664222f055707daa0e16b7a8ebb3d5e199a4ebfa5098c3d56454972d",
+    "software/cadagent/webkit/host/stage-controls.js": "557891644146253c768531caedd79bc9909f36fee6538902018f601a9a54836d",
+    "software/cadagent/webkit/ui/theme.js": "4167b92c8dff380e354387182c21ff64ecaa6014065233d871b427a915659993",
+    "software/cadagent/webkit/ui/theme.css": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47"
+  },
+  "artifact": {
+    "path": "preview.webp",
+    "sha256": "ef4ee578cc66a7f4e810c0daafea2d35f509ba01e53ed3a574b647481200b00a"
+  }
+}

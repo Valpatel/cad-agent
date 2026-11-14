@@ -11,6 +11,8 @@ flowchart TD
     class S here
 ```
 
+The application theme is owned by the [shared browser UI](../../../software/cadagent/webkit/ui/README.md); the site loads its `/kit/ui/theme.css` and `/kit/ui/theme.js` directly.
+
 [Site tooling](../README.md) · [Tests](../../../tests/site/README.md)
 
 ## File and child ownership
@@ -30,7 +32,6 @@ flowchart TD
 | [site.css](site.css) | Shared site layout and typography. |
 | [site.js](site.js) | Shared site navigation and interaction. |
 | [toolkit.css](toolkit.css), [toolkit.js](toolkit.js) | Scoped Toolkit browsing, filters and lazy interactive SCADA state previews. |
-| [theme.js](theme.js) | Theme preference/bootstrap behavior. |
 | [models/](models/README.md) | Coherent homepage model/poster bundle. |
 | [toolkit/](toolkit/README.md) | Closed synthetic assembly example and source-bound captures of the shipped guide and original-file viewers. |
 

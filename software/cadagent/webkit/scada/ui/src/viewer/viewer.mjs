@@ -156,12 +156,14 @@ let nextViewerId = 0;
  */
 export class ScadaViewer {
   #adapter; #equipment; #views; #commands; #controls; #hooks; #options;
-  #viewId; #selected; #zoom; #zoomRequested = false; #snapshot; #root = null; #workspace = null; #camera = null; #cameraView = null;
+  #viewId; #selected; #zoom; #zoomRequested = false; #fitMaxZoom; #snapshot; #root = null; #workspace = null; #camera = null; #cameraView = null;
   #unsubscribe = null; #listeners = []; #managed = true; #error = ''; #fieldErrors = new Map(); #revision = 0; #attachmentEpoch = 0; #scope;
 
   constructor(options = {}) {
-    const {adapter, definition, hooks = {}} = options;
+    const {adapter, definition, hooks = {}, fitMaxZoom = 1} = options;
     if (!adapter || typeof adapter.getSnapshot !== 'function' || typeof adapter.subscribe !== 'function' || (adapter.dispatch != null && typeof adapter.dispatch !== 'function')) throw new TypeError('A viewer adapter needs getSnapshot(), subscribe(), and optional dispatch().');
+    if (typeof fitMaxZoom !== 'number' || !Number.isFinite(fitMaxZoom) || fitMaxZoom <= 0 || fitMaxZoom > 3) throw new RangeError('fitMaxZoom must be a finite positive number up to 3.');
+    this.#fitMaxZoom = fitMaxZoom;
     const normalized = definition ? normalizeViewerDefinition(definition) : options;
     this.#equipment = entries(normalized.equipment);
     this.#views = entries(normalized.views);
@@ -257,7 +259,7 @@ export class ScadaViewer {
     if (!this.#camera || this.#camera.viewport !== viewport || this.#camera.canvas !== canvas) {
       const state = changedView ? undefined : this.#camera?.state;
       this.#camera?.destroy();
-      this.#camera = new ScadaCamera({viewport, canvas, width, height, state,
+      this.#camera = new ScadaCamera({viewport, canvas, width, height, state, fitMaxZoom:this.#fitMaxZoom,
         fitOnMount:!this.#zoomRequested,
         ...(state || !this.#zoomRequested ? {} : {state:{x:0,y:0,zoom:this.#zoom,fitted:false}}),
         onChange:(camera, reason) => {

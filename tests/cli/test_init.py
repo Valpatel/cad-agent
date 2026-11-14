@@ -282,6 +282,28 @@ console.log('installed copied SCADA PASS: all symbols, scenarios, commands and r
     assert equations["replay"] == "exact saved-state continuation verified"
     assert len(equations["results"]) == 4
     print("installed copied SCADA PASS: full bytes, retained terms, all scenarios and swappable equations")
+    replay_probe = """import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
+const root = pathToFileURL(process.argv[1] + '/');
+const read = name => JSON.parse(readFileSync(new URL(name, root), 'utf8'));
+const {validateRecording, samplePose, createPlayback} = await import(new URL('replay.js', root));
+const recording = validateRecording(read('examples/two-link-arm/recording.json'));
+const receipt = read('examples/two-link-arm/receipt.json');
+assert.equal(recording.duration, 10); assert.equal(recording.frames.length, 501);
+assert.equal(receipt.engine.name, 'MuJoCo');
+for (const [name, hash] of Object.entries(receipt.artifacts))
+  assert.equal(createHash('sha256').update(readFileSync(new URL('examples/two-link-arm/' + name, root))).digest('hex'), hash);
+const initial = samplePose(recording, 0), later = samplePose(recording, 3.2);
+assert.deepEqual(initial[0], later[0]); assert.notDeepEqual(initial[2], later[2]);
+const clock = createPlayback(recording); clock.play(); clock.advance(.1); assert.equal(clock.state().time, .1); clock.dispose();
+for (const name of ['viewer.html', 'viewer.js', 'viewer.css', 'scene.js', 'page.js', 'examples/two-link-arm/preview.webp', 'examples/two-link-arm/README.md'])
+  assert.ok(existsSync(new URL(name, root)), name);
+console.log('installed copied robot replay PASS');"""
+    replay = run([node, "--input-type=module", "-e", replay_probe, copied_sdk / "simulation"])
+    assert "installed copied robot replay PASS" in replay.stdout
+    print("installed copied robot replay PASS: recorded poses, solver hashes, interpolation and clock")
     # Profiles must be installed data, resolving real nested files with no checkout fallback.
     profile_probe = """import json
 from cadagent.publish.runtime import capture_profile

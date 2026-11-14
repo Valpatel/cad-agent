@@ -13,6 +13,34 @@ const click = (window, selector, root = window.document) => {
   element.dispatchEvent(new window.MouseEvent('click', {bubbles:true})); return element;
 };
 
+test('viewer fit ceiling reaches every layout and rejects invalid options before reading the model', () => {
+  const dom = setup(), root = dom.window.document.querySelector('#editable');
+  let reads = 0, subscriptions = 0;
+  const adapter = {getSnapshot:() => { reads++; return {}; }, subscribe:() => { subscriptions++; return () => subscriptions--; }};
+  const options = {adapter,equipment:[{id:'pump',type:'pump'}],views:[
+    {id:'water',width:1000,height:500,nodes:[{id:'pump',x:100,y:100,w:160,h:160}]},
+    {id:'detail',width:500,height:400,nodes:[{id:'pump',x:100,y:100,w:160,h:160}]},
+  ]};
+  const original = root.outerHTML;
+  for (const fitMaxZoom of [0,-1,3.01,NaN,Infinity,-Infinity,null,'2',true]) {
+    assert.throws(() => new ScadaViewer({...options,fitMaxZoom}), /fitMaxZoom/);
+    assert.equal(reads,0); assert.equal(subscriptions,0); assert.equal(root.outerHTML,original);
+  }
+  for (const [fitOptions,expected] of [[{},1],[{fitMaxZoom:2},2]]) {
+    const viewer = new ScadaViewer({...options,...fitOptions}).mount(root);
+    try {
+      Object.defineProperties(viewer.camera.viewport,{clientWidth:{value:4000},clientHeight:{value:2200}});
+      viewer.camera.refresh(); assert.equal(viewer.zoom,expected);
+      viewer.setView('detail'); assert.equal(viewer.zoom,expected);
+      viewer.setZoom(2.5); assert.equal(viewer.zoom,2.5);
+      viewer.fit(); assert.equal(viewer.zoom,expected);
+      assert.equal(viewer.camera.state.fitted,true);
+    } finally { viewer.destroy(); }
+    assert.equal(subscriptions,0);
+  }
+  dom.window.close();
+});
+
 test('portable definition normalizes without mutation and geometry resolves ports with escaped labels', () => {
   const original = structuredClone(definition), normalized = normalizeViewerDefinition(definition);
   assert.equal(normalized.views.length, 2);

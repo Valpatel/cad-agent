@@ -18,6 +18,7 @@ flowchart LR
 | [scada/](scada/README.md) | Process symbols, shared diagram views, headless models, equation providers and owned galleries/examples |
 | [model/](model/README.md) | Ordinary assembly/STL viewer, inline packed model element and shared 3D stage. |
 | [files/](files/README.md) | Original CAD file viewer, parsers, workers and themes. |
+| [simulation/](simulation/README.md) | Recorded rigid-body pose playback and solver-bound examples. |
 | [assembly/](assembly/README.md) | Build instructions, playback, part tracking and part tables. |
 | [fea/](fea/README.md) | Analysis result viewing and deformed-shape playback. |
 | [ui/](ui/README.md) | HUD, panel controls, app navigation and reusable galleries. |

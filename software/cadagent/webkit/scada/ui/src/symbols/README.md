@@ -10,13 +10,14 @@
 | [power/](./power/README.md) | Energy, electrical, generator and conceptual nuclear geometry. |
 
 ```mermaid
-flowchart LR
-  state[Supplied visual state] --> components[Component renderer]
-  components --> catalog[Catalog validation]
-  components --> art[General artwork families]
-  components --> power[Power artwork families]
-  components --> markup[SVG, gauges and accessible description]
-  skin[Component and family CSS] --> markup
+flowchart TD
+  State["Visual state"] --> Components["components.mjs"]
+  Components --> Catalog["Catalog validation"]
+  Components --> Art["art/ + power/"]
+  Components --> Markup["SVG + gauges<br/>+ description"]
+  Skin["Family CSS"] --> Markup
+  Catalog ~~~ Markup
+  Art ~~~ Markup
 ```
 
 Render functions own no model clock, network, audio, repair latch or accident scheduler. Preserve instance-local SVG IDs, escaping, declared fields and the documented `hostState` bridge. Production, observation, retained conditions and fault effects need separate gates; a global stop must not silently erase supplied inventory or heat.

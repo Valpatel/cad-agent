@@ -19,13 +19,13 @@ describe authored examples; they do not establish engineering accuracy.
 | [EXTERNAL-ENGINES.md](./EXTERNAL-ENGINES.md) | Candidate engineering solvers, licensing and adapter responsibilities; none is bundled here |
 
 ```mermaid
-flowchart TB
-  Integrate[Integration guide] --> API[Model API]
-  API --> Schemas[Versioned schemas]
-  API --> Examples[Scenario JSON pairs]
-  References[Structural references] --> Examples
-  Examples --> Gallery[Captured previews]
-  API --> Replace[External engine adapter]
+flowchart TD
+  Integrate["INTEGRATION.md"] --> API["MODEL-API.md"]
+  API --> Schemas["Schemas"]
+  API --> Examples["Scenario JSON"]
+  API --> Replace["External adapter"]
+  References["References"] --> Examples
+  Examples --> Gallery["Captured previews"]
 ```
 
 <a href="../img/thumbnails/power-utilities/power-diesel-standby/preview.jpg"><img src="../img/thumbnails/power-utilities/power-diesel-standby/preview.jpg" width="420" alt="Diesel standby example with two transfer-switch sources"></a>

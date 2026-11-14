@@ -3,13 +3,14 @@
 Validate the website's shared catalogue identities, searchable capability pages and actual SCADA state previews.
 
 ```mermaid
-flowchart LR
-    M["Owned metadata"] --> C["Catalogue + Toolkit compilers"]
-    C --> B["Built pages + browser checks"]
+flowchart TD
+    M["Owned metadata"] --> C["Catalogue + Toolkit"]
+    C --> B["Built pages"]
+    B --> T["Browser assertions"]
     classDef here fill:#fffdf5,stroke:#173d3c,color:#173d3c
     classDef near fill:#eef1e4,stroke:#6f8a80,color:#173d3c
-    class B here
-    class M,C near
+    class T here
+    class M,C,B near
 ```
 
 | File | Responsibility |

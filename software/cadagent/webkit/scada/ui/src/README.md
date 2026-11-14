@@ -2,17 +2,16 @@
 
 [Package map and public API](../README.md) · [Documentation](../docs/README.md) · [Examples](../examples/README.md)
 
-The package separates data contracts, equipment artwork, interaction primitives and diagram controllers. The host owns simulation, authorization, persistence and IO. Public exports point directly to the domain implementations below.
+The package separates data contracts, equipment artwork, interaction primitives and diagram controllers. The host owns simulation, authorization, persistence and IO. Public exports point directly to the domain implementations below. Agents and validators can read the pure catalog without loading a viewer.
 
 ```mermaid
 flowchart TD
-  host[Host application and external session] --> viewer[viewer: diagram and controller]
-  viewer --> workspace[workspace: dialogs and controls]
-  viewer --> symbols[symbols: equipment renderers]
-  viewer --> contracts[contracts: system document and bindings]
-  symbols --> catalog[catalog: descriptors and visual state]
-  contracts --> catalog
-  agents[Agents and validators] --> catalog
+  Host["Host + session"] --> Viewer["viewer/"]
+  Viewer --> Workspace["workspace/"]
+  Viewer --> Symbols["symbols/"]
+  Viewer --> Contracts["contracts/"]
+  Symbols --> Catalog["catalog/"]
+  Contracts --> Catalog
 ```
 
 | Owner | Responsibility |

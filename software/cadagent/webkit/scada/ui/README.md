@@ -26,18 +26,21 @@ This is cad-agent’s canonical equipment and diagram library. The SCADA Explore
 | [Source tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/ui/README.md) | Contract, rendering and export checks, outside this runtime package. |
 
 ```mermaid
-flowchart LR
-  host[Host application and model adapter] --> viewer[Viewer and workspace]
-  document[Versioned system document] --> viewer
-  viewer --> symbols[Equipment symbols]
-  symbols --> catalog[Pure typed catalog]
-  catalog --> metadata[Portable metadata]
-  symbols --> gallery[Package-owned image gallery]
+flowchart TD
+  Host["Host + adapter"] --> Viewer["viewer/ + workspace/"]
+  Document["System document"] --> Viewer
+  Viewer --> Symbols["symbols/"]
+  Symbols --> Catalog["catalog/"]
+  Catalog --> Metadata["metadata/"]
+  Symbols --> Gallery["img/ gallery"]
 ```
 
 The arrows show ownership/use, not a second simulation engine. The host owns one canonical model/session; the package supplies reusable views and controls for that session. Gallery and metadata outputs are generated from those same source owners.
 
 ## Find the right layer
+
+<details>
+<summary>Task lookup, source tree and development ownership</summary>
 
 | You need to… | Start here |
 | --- | --- |
@@ -79,11 +82,15 @@ software/cadagent/webkit/scada/ui/
 
 `src/` is canonical. Run `npm --prefix tools/webkit/scada run build:metadata` from the repository root to regenerate discovery metadata. The cad-agent site compiler publishes the same package at `/kit/scada/ui/`; never repair an output copy. The package does not own the host application's model, clock, persistence or plant connection.
 
+</details>
+
 ## Package-owned image gallery
 
 [Browse animated symbols by family](./img/README.md), [visual state examples](./img/states/README.md), and [viewer/workspace snapshots](./img/thumbnails/README.md). Every equipment type and declared variant has a source-derived preview. The SVG files contain the canonical artwork and inline decorative CSS animation; they require no JavaScript, external styles, fonts or live model. Static renderers retain the silhouette and readouts. Image animation support is renderer-dependent; use the interactive examples to change state.
 
 The gallery travels with this library under `img/`. [Scenario diagrams](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/sim/img/README.md) belong to the model library's own `img/`, and future electrical-panel or harness libraries should own their galleries in the same way. Root documentation links to owners; it does not become a shared asset bucket. Machine-readable [gallery metadata](./metadata/gallery.json) records the exact supplied state, source hashes and output hashes. Use `@valpatel/scada-ui/img/*` for package-owned assets.
+
+<a href="./img/symbols/automation/plc-rack/default.svg"><img src="./img/symbols/automation/plc-rack/default.svg" width="280" alt="Canonical PLC rack artwork used by the component quickstart"></a>
 
 ## Use it
 
@@ -109,6 +116,9 @@ container.innerHTML = renderScadaComponent('plc-rack', {
 });
 ```
 
+<details>
+<summary>Run directly in a browser without a bundler</summary>
+
 For a browser without a bundler, serve the package directory and use relative URLs:
 
 ```html
@@ -127,6 +137,8 @@ For a browser without a bundler, serve the package directory and use relative UR
 
 Use `python -m http.server 8000` from the package directory, then open `http://localhost:8000/examples/components/` for the [equipment example](./examples/components/index.html) or `/examples/viewer/` for the system viewer. ES-module loading from `file:` URLs is browser-dependent. The package is already browser-ready; consumers need no repository build script. Individual component/workspace entry points and styles are available through the explicit `package.json` export map. [The API reference](./docs/API.md) explains all fields, dependencies and lifecycle details.
 
+</details>
+
 ## Viewer and model adapter
 
 The reusable viewer follows a model/view/controller boundary:
@@ -137,6 +149,9 @@ The reusable viewer follows a model/view/controller boundary:
 - **Controller:** `ScadaViewer` manages active layout, selection, zoom, the inspector and dispatch through the supplied adapter.
 
 An adapter provides `getSnapshot()` and `subscribe(listener)`. `dispatch(command)` is optional; omitting it creates a read-only viewer. Share the same adapter/model between views so a valve change, fault, clock or reading is consistent everywhere. Switching layout or destroying a presentation must not reset that external model.
+
+<details>
+<summary>Validated viewer mount and teardown example</summary>
 
 ```js
 import {ScadaViewer, validateSystemDefinition} from '@valpatel/scada-ui';
@@ -153,6 +168,8 @@ export function mountSystem(root, definition, adapter) {
 }
 ```
 
+</details>
+
 Use the [minimal definition](./examples/minimal-system.json) and [system-format guide](./docs/SYSTEM_FORMAT.md) rather than inventing a JSON structure. [API.md](./docs/API.md) records the actual viewer methods and adapter contract. The [independent viewer demo](./examples/viewer/index.html) keeps its [utility model](./examples/viewer/utility-model.mjs) separate from the package UI.
 
 [![Reusable system viewer](img/thumbnails/workspace/generic-viewer.jpg)](./examples/viewer/index.html)
@@ -160,6 +177,9 @@ Use the [minimal definition](./examples/minimal-system.json) and [system-format 
 ## Equipment catalog
 
 The registry is authoritative for exact fields and ports. Each preview is rendered from its canonical source with a fixed visual pose. Variant choices preserve the type ID; use discovery filters and resolved metadata before connecting a system. All capacities and model values remain external, editable assumptions.
+
+<details>
+<summary>Browse all equipment types by family</summary>
 
 ### Process vessels
 
@@ -357,6 +377,8 @@ The registry is authoritative for exact fields and ports. Each preview is render
 | <a href="img/thumbnails/equipment/climate/shade-screen/default.jpg"><img src="img/thumbnails/equipment/climate/shade-screen/default.jpg" alt="Retractable shade screen preview" width="112"></a> | **Retractable shade screen**<br>`shade-screen`<br>[API](./docs/API.md#public-api) · [source](src/symbols/art/agriculture.mjs) | `opening`, `light`, `damage` | 4 | Visual only |
 | <a href="img/thumbnails/equipment/climate/evaporative-pad/default.jpg"><img src="img/thumbnails/equipment/climate/evaporative-pad/default.jpg" alt="Evaporative cooling pad preview" width="112"></a> | **Evaporative cooling pad**<br>`evaporative-pad`<br>[API](./docs/API.md#public-api) · [source](src/symbols/art/agriculture.mjs) | `moisture`, `airflow`, `humidity`, `damage` | 5 | Visual only |
 | <a href="img/thumbnails/equipment/climate/dehumidifier/default.jpg"><img src="img/thumbnails/equipment/climate/dehumidifier/default.jpg" alt="Air dehumidifier preview" width="112"></a> | **Air dehumidifier**<br>`dehumidifier`<br>[API](./docs/API.md#public-api) · [source](src/symbols/art/agriculture.mjs) | `humidity`, `level`, `load`, `damage` | 5 | Visual only |
+
+</details>
 
 ## Workspace primitives
 

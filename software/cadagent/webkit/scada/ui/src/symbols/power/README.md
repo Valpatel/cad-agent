@@ -10,17 +10,11 @@
 | [nuclear.mjs](./nuclear.mjs) | Conceptual nuclear vessels, circuits, rods and monitoring. |
 | [primitives.mjs](./primitives.mjs) | Shared original geometry, materials and detail helpers. |
 | [power.css](./power.css) / [nuclear.css](./nuclear.css) | Scoped motion, state gates and static/reduced-motion presentations. |
+| [map.svg](./map.svg) | Compact source map of renderer imports and shared geometry ownership. |
 
-```mermaid
-flowchart TD
-  renderer[Equipment renderer] --> energy[Energy art]
-  renderer --> electrical[Electrical art]
-  renderer --> generators[Genset variants]
-  renderer --> nuclear[Nuclear concepts]
-  energy --> primitives[Shared primitives]
-  electrical --> primitives
-  generators --> primitives
-```
+The arrows show artwork imports from the parent renderer; the footer names the shared helper's consumers.
+
+![Power artwork source map](./map.svg)
 
 Technology, circuit and fuel descriptors belong in [power metadata](../../catalog/definitions/power.mjs). The artwork receives state; it does not decide protection trips, solve electrical networks or simulate reactor dynamics. Keep source production, external circulation, retained heat and telemetry validity separate. A fault label does not imply a successful protective action.
 

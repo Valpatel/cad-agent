@@ -15,12 +15,12 @@ replacement boundary; they are not calibrated equipment or a plant hydraulic sol
 | [index.mjs](./index.mjs) | Portable exports for browser and headless hosts |
 
 ```mermaid
-flowchart LR
-  Parameters[Editable parameters and unit scales] --> Provider[Registered equipment provider]
-  Physics[Pure SI equations] --> Provider
-  Provider --> Kernel[Core allocation and limits]
-  Kernel --> Accepted[Accepted flow and energy]
-  Accepted --> State[Serialized provider state]
+flowchart TD
+  Parameters["Parameters<br/>+ unit scales"] --> Provider["providers.mjs"]
+  Physics["physics.mjs<br/>pure SI laws"] --> Provider
+  Provider --> Kernel["Core allocation<br/>+ limits"]
+  Kernel --> Accepted["Accepted flow<br/>+ energy"]
+  Accepted --> State["Provider state"]
   State --> Provider
 ```
 
@@ -31,6 +31,9 @@ The [model-switching bench](../../examples/model-switching/README.md) exercises 
 providers with the reusable viewer. No artwork, DOM, clock or timer is imported here.
 
 ## Pumps: two characteristics, one replacement contract
+
+<details>
+<summary>Pump equations, allocation and operating limits</summary>
 
 Both providers have version `1.0.0`, state version `1`, and support engines 1 and 2:
 
@@ -80,7 +83,12 @@ isolation and supply gates, ratings, finite stock and receiver limits. It does
 not multiply the provider's fractional law a second time. These are not
 cavitation, wear, torque, motor-starting or protection models.
 
+</details>
+
 ## State, units and acceptance
+
+<details>
+<summary>Explicit unit bridges, state and acceptance rules</summary>
 
 The exact first-order commanded-shaft response is
 `snext = target + (sprevious - target) exp(-dt / τ)`.
@@ -134,7 +142,12 @@ v2 sets the next circuit pressure directly. It is not absolute node pressure.
 An index beyond the configured 0–100 range fails transactionally; enlarge the
 explicit display scale instead of silently clipping an engineering result.
 
+</details>
+
 ## Heater and thermal helper
+
+<details>
+<summary>Resistive power and lumped thermal equations</summary>
 
 `engineering.heater.resistive@1.0.0` supports v2 `energy` and `thermal-source`.
 For constant resistance and RMS voltage, `P = V²/R × duty`. Accepted electricity
@@ -150,6 +163,8 @@ watts and seconds. It returns signed heat loss and stored-energy change. This
 pure helper is tested independently; it is **not** silently applied on top of
 the resistor provider's kernel-owned heat store. A replacement thermal provider
 must explicitly configure the compatible capacity and temperature mapping.
+
+</details>
 
 ## Evidence, references and ownership
 

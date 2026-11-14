@@ -5,10 +5,10 @@
 These focused examples exercise replaceable models and the adapter boundary. The full Explorer is a sibling application, outside the headless model package.
 
 ```mermaid
-flowchart LR
-  Host[Example host] --> Model[Headless session]
-  Model -->|snapshot adapter| UI[SCADA viewer]
-  UI -->|commands| Model
+flowchart TD
+  Host["Example host"] --> Model["Headless session"]
+  Model -->|"via adapter"| UI["SCADA viewer"]
+  UI -->|"commands"| Model
 ```
 
 | Folder | Purpose |

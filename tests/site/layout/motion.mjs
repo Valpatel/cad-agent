@@ -210,8 +210,8 @@ export async function learningPictureProblems(browser, base) {
 /** A tiny real packed fixture isolates post-allocation GPU rollback from model size. */
 export async function homepageLateDrawProblems(browser, base, receipt = {}) {
   const out=[], errors=[];
-  const fixture=JSON.parse(await readFile(new URL('../fixtures/model/two-parts.json',import.meta.url),'utf8'));
-  const binary=await readFile(new URL('../fixtures/model/two-parts.bin',import.meta.url));
+  const fixture=JSON.parse(await readFile(new URL('../../fixtures/model/two-parts.json',import.meta.url),'utf8'));
+  const binary=await readFile(new URL('../../fixtures/model/two-parts.bin',import.meta.url));
   const ctx=await browser.newContext({viewport:{width:1100,height:800},reducedMotion:'reduce'});
   const page=await ctx.newPage(); page.on('pageerror',e=>errors.push(e.message));
   try {

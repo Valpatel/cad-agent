@@ -223,6 +223,7 @@ cad-gallery[data-filtered] .play,cad-gallery:not([data-overview]) .play{display:
 @media(scripting:enabled){cad-gallery[data-ready][data-overview]:not([data-filtered]):not([data-failed]) [data-group=demos]{display:none}}
 #cat-results{scroll-margin-top:calc(var(--bar-top) + 64px)}
 .cat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(min-width:1500px){.cat-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}}
 .cat-card{display:flex;flex-direction:column;padding:0 0 14px;overflow:hidden;background:var(--card);border-color:var(--line);scroll-margin-top:calc(var(--bar-top) + 70px)}
 .cat-card:target{box-shadow:0 0 0 3px var(--orange)}
 .cat-card p{display:block;-webkit-line-clamp:unset;overflow:visible;margin:0}

@@ -69,7 +69,7 @@ observed state and subsequent paint; neither a quiet later frame nor passing geo
 
 ### Verify the SVG still itself, not only its parent's reduced-motion preference
 - **Rule:** A parent page's media query and animation list do not establish the state of an SVG loaded through an image. Inspect the rendered SVG document and its visible drawing, fills and marks.
-- **Check:** `tests/site/site-motion.mjs` loads the actual hero as an SVG document with reduced motion, checks zero animations, visible assembled geometry and check marks, then rejects a hidden-drawing control that retains the valid media rule and zero animations. The existing browser suite calls this check; normal-motion tests keep their existing launch options.
+- **Check:** `tests/site/layout/motion.mjs` loads the actual hero as an SVG document with reduced motion, checks zero animations, visible assembled geometry and check marks, then rejects a hidden-drawing control that retains the valid media rule and zero animations. The existing browser suite calls this check; normal-motion tests keep their existing launch options.
 
 <details>
 <summary>2026-11-05 incident, command/output evidence and limits</summary>
@@ -84,7 +84,7 @@ observed state and subsequent paint; neither a quiet later frame nor passing geo
 
   Launching Chromium with `args: ['--force-prefers-reduced-motion']` and a reduced-motion context produced the assembled embedded still, with identical image PNG bytes at the start and after 6.6 seconds, `matchMedia=true` and zero horizontal overflow. The generator and its geometry were unchanged.
 - **Control:** A routed copy adds only `@media(prefers-reduced-motion:reduce){.draw{opacity:0!important}}`. It still reports `reduced:true, animations:0`, but `drawing:false, visibleFills:0`; the new rendered-state check rejects it. Merely counting animations would accept this blank result.
-- **Reproduce:** Serve a built site with `node tools/preview-site.mjs --dir <built-site> --port <port>`. In a Node/Playwright session import `reducedHeroProblems` from `tests/site/site-motion.mjs`, launch the installed browser and call it with that browser and the preview URL. The normal browser suite runs the same function. The browser-wide flag above is for the separate embedded-image validation only.
+- **Reproduce:** Serve a built site with `node tools/preview-site.mjs --dir <built-site> --port <port>`. In a Node/Playwright session import `reducedHeroProblems` from `tests/site/layout/motion.mjs`, launch the installed browser and call it with that browser and the preview URL. The normal browser suite runs the same function. The browser-wide flag above is for the separate embedded-image validation only.
 - **Limits:** This establishes an emulation limitation in the observed configuration, not a generator bug or a guarantee about every engine/OS. A screenshot near the draw-in start is not evidence of a missing final still. Checks displayed in the figure are CAD/simulation evidence, not physical qualification.
 - **Source:** 2026-11-05, #122; `docs/img/hero/gyropup-leg.svg` (SHA-256 `7f7eecd02551a1fa67a8e229526c8423cd15194968e7956715ea2949fee57358`), `src/cadagent/publish/anim/hero.py`, the real/control browser output above and fleet 162's unchanged generated hero.
 

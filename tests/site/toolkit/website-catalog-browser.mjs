@@ -1,4 +1,4 @@
-import {lowContrast} from '../site-outline.mjs';
+import {lowContrast} from '../layout/outline.mjs';
 /** Explore browsing, legacy catalogue bookmarks and focused readers, in both hosted engines.
  * Existing gallery predicates/URL states remain tested; no old maturity bar or modal-sheet presentation is required.
  * Native fallback, hostile data, runtime/CSP, exact legacy filters/hash/history and current contrast remain hard gates.
@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, webkit } from '../npm-context.mjs';
 import { builtSite } from '../built-site.mjs';
-import { longestStretch, VISUAL, WALL_LIMIT } from '../site-walls.mjs';
+import { longestStretch, VISUAL, WALL_LIMIT } from '../layout/walls.mjs';
 import {toolkitBrowserChecks} from './toolkit-browser.mjs';
 
 const root = path.resolve(import.meta.dirname, '../../..');

@@ -167,7 +167,7 @@ Each command is validated atomically. Rejected parameter edits, imports, and ste
 | `setMeasurement` | Water-quality probe `equipment`, `value` (`ph`, `ec`, `do`); updates its observed quantity together |
 | `setRodPosition` | `equipment`, illustrative index `value` from 0 to 100 |
 
-Descriptor `circuitParameters`, `energyParameters`, `tracers` and `zoneFields` provide editor labels, units and bounds. The explorer's extended inspector uses only these public descriptors and commands. `createPlaceholderAdapter(model, {readOnly:true})` works with either version and omits dispatch. The explicit `createV2Adapter` convenience export exposes a dispatch method that throws when read-only; subscribers still share one model.
+Descriptor `circuitParameters`, `energyParameters`, `tracers` and `zoneFields` provide editor labels, units and bounds. The explorer's extended inspector uses only these public descriptors and commands. Both `createPlaceholderAdapter(model, {readOnly:true})` and `createV2Adapter(model, {readOnly:true})` omit `dispatch`, so the viewer disables command controls while continuing to observe the shared model. Removing a view unsubscribes that view; it does not stop or reset the host's session.
 
 ## Version 2 state, conservation and replay
 

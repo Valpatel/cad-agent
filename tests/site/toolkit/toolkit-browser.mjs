@@ -30,6 +30,8 @@ export async function toolkitBrowserChecks({open,fail}) {
         }));
       });
       if(contrast<4.5)fail('Toolkit preview readability',`${color} gauge-label contrast ${contrast.toFixed(2)}:1`);
+      const smallestLabel=await art.locator('.scada-component-gauges small,.scada-component-gauges strong').evaluateAll(labels=>Math.min(...labels.map(label=>parseFloat(getComputedStyle(label).fontSize))));
+      if(smallestLabel<12)fail('Toolkit preview readability',`dedicated preview gauge labels are ${smallestLabel}px`);
       const running=page.locator('[data-scada-state-fields] [name="running"]');await running.uncheck();
       if(await art.getAttribute('data-running')!=='false')fail('Toolkit preview','state field did not reach the actual renderer');
       const load=page.locator('[data-scada-state-fields] [name="load"]');

@@ -19,7 +19,7 @@ flowchart TD
 | [search.test.mjs](search.test.mjs) | Search aliases, independent facets and component discovery |
 | [selection.test.mjs](selection.test.mjs) | Scenario/type/variant identity and explicit fallback |
 | [wastewater.test.mjs](wastewater.test.mjs) | Connected pump/valve/generator faults, repair, readonly adapter, overload and deterministic snapshot replay |
-| [browser.mjs](browser.mjs) | Real controls, independent views, observer lifetime, sound, imports and contained viewport behavior |
+| [browser.mjs](browser.mjs) | Real controls, independent views, direct v2 read-only command capability, observer lifetime, sound, imports and contained viewport behavior |
 
 Run the Node checks from the repository root:
 
@@ -46,6 +46,8 @@ serves the canonical toolkit files through the shared test-only HTTP server.
 
 The fault test downloads the actual browser session and rehydrates that export
 to check connected load power; it does not reach into a hidden page model.
+The direct v2 adapter case mounts a separate public model/viewer consumer in the
+browser to verify native disabled controls and a borrowed session's lifetime.
 Screenshots cover both control-room views, generator failure, readonly observer,
 editable v2 assumptions, narrow diagrams, faults and the narrow observer.
 

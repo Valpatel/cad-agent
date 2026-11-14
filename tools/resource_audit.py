@@ -655,10 +655,14 @@ def spec_floor(spec):
     return None
 
 
-def python_packages(text):
+PYTHON_MAINTAINER_REQUIREMENTS = ('tools/webkit/scada/ui/requirements.txt',)
+
+
+def python_packages(text, additional_groups=None):
     proj = (load_toml(text) or {}).get('project', {})
     groups = {'required': proj.get('dependencies') or []}
     groups.update(proj.get('optional-dependencies') or {})
+    groups.update(additional_groups or {})
     pkgs, bad = {}, []
     for group, reqs in groups.items():
         for raw in reqs:
@@ -670,6 +674,24 @@ def python_packages(text):
             p['groups'].append(group)
             p['specs'][group] = r['spec']
     return groups, pkgs, bad
+
+
+def python_context_packages(tree):
+    """The package's extras and explicit, pinned maintainer-only capture tools."""
+    additional = {}
+    for source in PYTHON_MAINTAINER_REQUIREMENTS:
+        if not any(f.startswith(str(Path(source).parent) + '/') for f in tree.files):
+            continue
+        text = tree.read(source)
+        if text is None:
+            raise FileNotFoundError(f'required current Python requirements {source} is missing')
+        requirements = [line.split('#', 1)[0].strip() for line in text.splitlines()]
+        additional[source] = [raw for raw in requirements if raw]
+        for raw in additional[source]:
+            parsed = parse_req(raw)
+            if not parsed or not re.fullmatch(r'==\d+\.\d+\.\d+', parsed['spec']) or parsed['marker']:
+                raise ValueError(f'{source}: capture dependencies must use exact name==X.Y.Z pins: {raw!r}')
+    return python_packages(tree.read('pyproject.toml') or '', additional)
 
 
 def lowest_release(releases, floor):
@@ -693,7 +715,7 @@ def check_python(rep, net, installed=False):
     text = read_text(rep.root / 'pyproject.toml')
     if text is None:
         return
-    groups, pkgs, bad = python_packages(text)
+    groups, pkgs, bad = python_context_packages(WorkTree(rep.root))
     notices = (read_text(rep.root / 'software' / 'vendor' / 'THIRD_PARTY_NOTICES.md') or '').lower()
     for group, raw in bad:
         rep.add('py-unparsed', 'low', f'pypi:{raw}', 'a requirement this report cannot read', f'{group}: {raw!r}',
@@ -702,6 +724,7 @@ def check_python(rep, net, installed=False):
         floors = {g: spec_floor(s) for g, s in p['specs'].items()}
         row = rep.item('python', id=p['id'], name=name, groups=sorted(set(p['groups'])),
                        range={g: s or 'any' for g, s in sorted(p['specs'].items())})
+        row['pins'] = sorted({s[2:] for s in p['specs'].values() if re.fullmatch(r'==\d+\.\d+\.\d+', s)})
         nofloor = sorted(g for g, f in floors.items() if f is None)
         if nofloor:
             sev = 'info' if set(nofloor) <= {'dev'} else 'low'
@@ -757,14 +780,20 @@ def check_python(rep, net, installed=False):
             if ver and not (ctx != 'latest' and ver == latest):
                 asks.append(dict(q={'package': {'ecosystem': 'PyPI', 'name': row['name']}, 'version': ver}, row=row, ctx=ctx,
                                  ver=ver, subject=row['id']))
+        for ver in row['pins']:
+            if ver != latest:
+                asks.append(dict(q={'package': {'ecosystem': 'PyPI', 'name': row['name']}, 'version': ver}, row=row,
+                                 ctx='locked', ver=ver, subject=row['id']))
     for a in osv_lookup(rep, net, asks):
         if a.get('vulns') is None:
             continue
-        a['row'].setdefault('advisories', {})[a['ctx']] = sorted(v['id'] for v in a['vulns'])
+        advisories = a['row'].setdefault('advisories', {})
+        advisories[a['ctx']] = sorted(set(advisories.get(a['ctx'], [])) | {v['id'] for v in a['vulns']})
         scope = ' (dev extra only)' if set(a['row']['groups']) <= {'dev'} else ''
         advisory_finding(rep, a['row']['id'], a['row']['name'], a['ver'], a['vulns'], a['ctx'],
                          {'floor': 'Raise the floor to >={target} in pyproject.toml.',
                           'latest': 'Upgrade to >={target} when it is released.',
+                          'locked': 'Update the exact pin to >={target} in its owning requirements file.',
                           'installed': 'Upgrade this environment to >={target}.'}[a['ctx']], scope)
     # deps.dev: the resolved graph of each newest release, for "direct plus transitive" per extra.
     rep.sources['deps.dev'] = 'api.deps.dev v3 dependency graphs (newest releases)'
@@ -3016,9 +3045,7 @@ def npm_context_items(tree):
 def item_ids(tree):
     """The report items a tree has, without any check: the units a PR must show a row for."""
     ids = set(npm_context_items(tree).values())
-    py = tree.read('pyproject.toml')
-    if py:
-        ids |= {p['id'] for p in python_packages(py)[1].values()}
+    ids |= {p['id'] for p in python_context_packages(tree)[1].values()}
     man = tree.read('software/vendor/manifest.json')
     if man:
         ids |= {f"vendor:{e['name']}" for e in json.loads(man).get('projects') or []}
@@ -3044,6 +3071,9 @@ def added_items(root, base):
     ids = item_ids(h) - item_ids(b)
     before, after = npm_context_items(b), npm_context_items(h)
     ids.update(after[key] for key in after.keys() - before.keys())
+    old_python, new_python = python_context_packages(b)[1], python_context_packages(h)[1]
+    ids.update(row['id'] for name, row in new_python.items()
+               if row['specs'] != old_python.get(name, {}).get('specs'))
     old = set(b.files)
     new_files = [f for f in h.files if f not in old and (f.startswith('software/vendor/') or f.startswith(KIT + '/'))]
     for f in new_files:

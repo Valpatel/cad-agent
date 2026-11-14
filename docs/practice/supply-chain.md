@@ -17,7 +17,7 @@ this repository. A test redraws it from the report's JSON, so the two cannot dis
 
 | Area | Offline, on every PR (seconds, no network) | Online, weekly or on demand |
 |---|---|---|
-| Python dependencies (`pyproject.toml`, every extra) | lower bounds, readable requirements | OSV advisories at the newest release and the lowest one each range allows, and for every transitive package deps.dev resolves; PyPI releases, licences, "inactive" |
+| Python dependencies (`pyproject.toml`, every extra, pinned SCADA capture requirements) | lower bounds, readable requirements, exact capture pins | OSV advisories at the newest release, each exact pin and the lowest release each range allows, and for every transitive package deps.dev resolves; PyPI releases, licences, "inactive" |
 | npm packages (site, Mermaid rebuild and SCADA maintenance locks) | registry source over HTTPS, sha512 integrity, install scripts, licences, lockfile in step | OSV and `npm audit` in each explicit package context, deprecations |
 | Vendored projects (`software/vendor/`) | full-commit pins, licence files, reviewed baselines, notices | every file against upstream at the pinned commit (git blob hashes), upstream advisories since the import, archived or moved, Scorecard |
 | Web kit (`software/cadagent/webkit/vendor/`) | every file against the SHA-256 in its receipt; each receipt names its npm tarball and integrity, or `"npm": false` and each file's URL; the versions of the libraries a file bundles are in that file | OSV for each library, including DOMPurify and KaTeX inside `mermaid.min.js`; the tarball against its integrity, and each file against the package's bytes (a `patched` file must differ, from the file its `upstream_sha256` names) |
@@ -36,6 +36,10 @@ and [SCADA maintenance](../../tools/webkit/scada/README.md). Their dependency ro
 and pin. A new context or changed lock entry requires a PR row even when another context already uses that
 package name. Both maintainer contexts use exact compiler/test inputs and disabled install hooks; production
 website installation does not install those dependencies. This is not an arbitrary manifest-discovery mechanism.
+
+The pinned Python [capture requirements](../../tools/webkit/scada/ui/requirements.txt) are a separate maintained
+group in the same inventory. Their exact versions receive advisory checks even when a package extra allows a
+different floor or newest release. Missing capture inputs fail the audit; those tools are not Python runtime extras.
 
 The maintenance decision in [issue 153](https://github.com/Valpatel/cad-agent/issues/153) keeps grouped weekly
 GitHub Actions version PRs. npm and pip version campaigns are deliberately deferred during backlog closure:

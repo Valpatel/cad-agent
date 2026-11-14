@@ -414,9 +414,11 @@ unless the chosen host implements and tests them.
 `createPlaceholderAdapter` wraps the bundled model contract and requires
 `getSnapshot`, `subscribe` and `dispatch` even when its read-only option omits the
 returned dispatch. An external read-only source can instead implement the viewer
-contract directly. `createV2Adapter(model, {readOnly:true})` retains a dispatch
-function that throws; for disabled read-only controls use the omission pattern
-of `createPlaceholderAdapter(model, {readOnly:true})` or the example.
+contract directly. `createV2Adapter(model, {readOnly:true})` uses the same validated
+model contract and omits `dispatch` too. The viewer detects command authority by
+the presence of `dispatch`, so a read-only adapter must omit it rather than expose
+a function that throws. Test this boundary with a mounted viewer: controls remain
+disabled, observations continue, and destroying the view only unsubscribes it.
 
 ## State, lifecycle and replay agreements
 

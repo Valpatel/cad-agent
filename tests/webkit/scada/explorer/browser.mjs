@@ -132,6 +132,31 @@ try{
     await expect(page.locator('[data-dialog-message="model"]')).toContainText('edits applied');await shot('v2-energy-editor');await close();
     assert.equal((await session()).version,2);
   });
+  await check('direct v2 readonly capability disables native controls without taking ownership of the model',async()=>{
+    const result=await page.evaluate(async()=>{
+      const [{CircuitSystemModel,createV2Adapter},{ScadaViewer},definition,configuration]=await Promise.all([
+        import('/kit/scada/sim/src/index.mjs'),import('/kit/scada/ui/src/index.mjs'),
+        fetch('/kit/scada/sim/scenarios/hydroponics-nft/system.json').then(response=>response.json()),
+        fetch('/kit/scada/sim/scenarios/hydroponics-nft/model.json').then(response=>response.json())
+      ]);
+      const model=new CircuitSystemModel(definition,configuration),container=document.createElement('div');
+      const dispatch=model.dispatch.bind(model);let commands=0;
+      model.dispatch=command=>{commands++;return dispatch(command);};
+      document.body.append(container);model.step(1);
+      const adapter=createV2Adapter(model,{readOnly:true}),viewer=new ScadaViewer({definition,adapter,scope:'direct-v2-observer'});
+      try{
+        const before=JSON.stringify(model.exportSnapshot());viewer.mount(container).select('supplyPump',{open:true});
+        const controls=[...container.querySelectorAll('[data-scada-control]')];
+        const capability={readOnly:viewer.readOnly,dispatchPresent:Object.hasOwn(adapter,'dispatch'),count:controls.length,disabled:controls.every(control=>control.disabled)};
+        for(const control of controls){control.click();control.dispatchEvent(new Event('change',{bubbles:true}));}
+        const unchanged=JSON.stringify(model.exportSnapshot())===before;
+        model.step(.25);const observed=viewer.snapshot===model.getSnapshot()&&viewer.snapshot.minutes===1.25;
+        const last=viewer.snapshot;viewer.destroy();model.step(.25);
+        return {...capability,commands,unchanged,observed,detached:viewer.snapshot===last,continued:model.getSnapshot().minutes===1.5};
+      }finally{viewer.destroy();model.destroy();container.remove();}
+    });
+    assert.ok(result.count>=4);assert.deepEqual({...result,count:undefined},{readOnly:true,dispatchPresent:false,count:undefined,disabled:true,commands:0,unchanged:true,observed:true,detached:true,continued:true});
+  });
   await check('narrow viewport and reduced motion preserve readable controls and camera recovery',async()=>{
     await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
@@ -148,7 +173,7 @@ try{
   receipt.status='passed';
 }catch(error){receipt.status='failed';receipt.failure=error.stack;if(page)await shot('failure').catch(()=>{});throw error;}
 finally{
-  for(const relative of ['explorer/main.mjs','explorer/model-editor.mjs','explorer/styles.css','ui/src/viewer/viewer.mjs','ui/src/viewer/camera.mjs','sim/scenarios/wastewater-digester/system.json','sim/scenarios/wastewater-digester/model.json']){
+  for(const relative of ['explorer/main.mjs','explorer/model-editor.mjs','explorer/styles.css','ui/src/viewer/viewer.mjs','ui/src/viewer/camera.mjs','sim/src/adapter.mjs','sim/src/v2/circuit-system.mjs','sim/scenarios/wastewater-digester/system.json','sim/scenarios/wastewater-digester/model.json']){
     receipt.sources[relative]=createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit/scada',relative))).digest('hex');
   }
   await writeFile(path.join(output,`${browserName}-receipt.json`),`${JSON.stringify(receipt,null,2)}\n`);

@@ -56,7 +56,13 @@
 .toolkit-preview-heading .eyebrow{margin-bottom:0}
 .toolkit-preview-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(230px,1fr);gap:24px;align-items:start}
 .toolkit-preview-art{overflow:hidden;min-height:280px;border:1px solid var(--line-2);border-radius:10px;background:#071522;color:#dbeef5;color-scheme:dark;display:grid;place-items:center;padding:16px}
-.toolkit-preview-art .scada-component{max-width:100%;width:100%}
+.toolkit-preview-art .scada-component{max-width:100%;width:100%;height:320px}
+.toolkit-preview-art .scada-component-with-gauges{padding-bottom:calc(var(--scada-gauge-height,22px)*1.7)}
+.toolkit-preview-art .scada-component>.twin-equipment-art{width:min(100%,300px);height:240px;max-height:250px}
+.toolkit-preview-art .scada-component-gauges{width:280px;font-size:12px;gap:5px}
+.toolkit-preview-art .scada-component-gauges>span{line-height:16px}
+.toolkit-preview-art .scada-component-gauges small{font-size:12px;width:50px}
+.toolkit-preview-art .scada-component-gauges strong{font-size:12px;width:65px}
 .toolkit-preview-art svg{max-width:100%;max-height:420px;display:block;margin:auto}
 [data-scada-state-fields]{display:grid;gap:13px}
 .toolkit-preview label:has(input[type=checkbox]){display:flex;align-items:center;gap:12px;min-height:44px}

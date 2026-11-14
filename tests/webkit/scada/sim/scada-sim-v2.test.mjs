@@ -127,7 +127,18 @@ test('source off retains stored heat and does not drain nuclear coolant',()=>{
 });
 
 test('saved circuit state resumes deterministically and readonly adapters share state',()=>{
-  const model=loop(),saved=model.exportSnapshot(),readOnly=createV2Adapter(model,{readOnly:true});let updates=0;const unsubscribe=readOnly.subscribe(()=>updates++);assert.throws(()=>readOnly.dispatch({action:'reset'}),/read-only/);model.step(5);assert.equal(updates,1);unsubscribe();const first=model.exportSnapshot();model.importSnapshot(saved);model.step(5);assert.deepEqual(model.exportSnapshot(),first);assert.equal(readOnly.getSnapshot(),model.getSnapshot());
+  const model=loop(),saved=model.exportSnapshot(),readOnly=createV2Adapter(model,{readOnly:true});let updates=0;const unsubscribe=readOnly.subscribe(()=>updates++);assert.equal(Object.hasOwn(readOnly,'dispatch'),false);model.step(5);assert.equal(updates,1);unsubscribe();const first=model.exportSnapshot();model.importSnapshot(saved);model.step(5);assert.deepEqual(model.exportSnapshot(),first);assert.equal(readOnly.getSnapshot(),model.getSnapshot());
+});
+
+test('direct v2 adapters validate the shared model contract and boolean command authority',()=>{
+  const model=loop();
+  for(const readOnly of ['false',0,null])assert.throws(()=>createV2Adapter(model,{readOnly}),/readOnly must be boolean/);
+  assert.throws(()=>createV2Adapter({getSnapshot(){},subscribe(){}},{readOnly:true}),/model instance/);
+  const adapter=createV2Adapter(model);
+  assert.equal(adapter.readOnly,false);assert.ok(Object.isFrozen(adapter));
+  adapter.dispatch({action:'setEnabled',arguments:{equipment:'pump',value:false}});
+  assert.equal(adapter.getSnapshot().controls.pump.enabled,false);
+  model.destroy();
 });
 
 test('invalid model edits and negative imported heat leave canonical state unchanged',()=>{

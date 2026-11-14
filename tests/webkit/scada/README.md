@@ -11,7 +11,7 @@ flowchart TD
 | File or folder | Purpose |
 | --- | --- |
 | [dependencies.mjs](dependencies.mjs) | Resolve DOM/bundler development dependencies from the tooling manifest. |
-| [external-adapter-render.test.mjs](external-adapter-render.test.mjs) | Render external telemetry with correct units, validity and command boundaries. |
+| [external-adapter-render.test.mjs](external-adapter-render.test.mjs) | Render external telemetry and mount direct circuit-model adapters to verify units, validity, read-only controls and shared session lifetime. |
 | [explorer/](explorer/README.md) | Explorer search, audio, selection and wastewater integration checks. |
 | [sim/](sim/README.md) | Equations, conservation, providers, external adapters and scenario generation. |
 | [ui/](ui/README.md) | Portable exports, artwork, discovery, camera, viewer and workspace behavior. |

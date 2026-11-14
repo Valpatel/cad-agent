@@ -594,6 +594,48 @@ def test_existing_npm_name_cannot_hide_a_new_context_or_changed_pin(repo_with_ba
     assert 'npm:marked' in ra.added_items(root, 'HEAD')[0]
 
 
+def test_capture_python_context_is_inventory_and_changed_pins_require_rows(repo_with_base):
+    root = repo_with_base
+    directory, requirements = ra.NPM_SCADA_DIR, ra.PYTHON_MAINTAINER_REQUIREMENTS[0]
+    write(root, f'{directory}/package.json', '{}')
+    write(root, f'{directory}/package-lock.json', '{"lockfileVersion":3,"packages":{}}')
+    write(root, f'{directory}/ui/README.md', '# Capture tools\n')
+    write(root, requirements, '# Capture only\nplaywright==1.62.0\nPillow==13.0.0\n')
+    git(root, 'add', directory)
+    rows = {row['id']: row for row in run(root)['inventory']['python']}
+    assert rows['pypi:playwright']['range'] == {requirements: '==1.62.0'}
+    assert rows['pypi:pillow']['range'][requirements] == '==13.0.0'
+    assert {'pypi:playwright', 'pypi:pillow'} <= set(ra.added_items(root, 'HEAD')[0])
+    git(root, 'commit', '-m', 'add capture tools')
+    write(root, requirements, 'playwright==1.63.0\nPillow==13.0.0\n')
+    assert 'pypi:playwright' in ra.added_items(root, 'HEAD')[0]
+    write(root, requirements, 'playwright>=1.63.0\n')
+    with pytest.raises(ValueError, match='exact name==X.Y.Z'):
+        run(root)
+    (root / requirements).unlink()
+    with pytest.raises(FileNotFoundError, match='required current Python requirements'):
+        run(root)
+
+
+def test_capture_exact_pin_is_advisory_checked_even_between_package_floor_and_latest(tmp_path):
+    root = checkout(tmp_path)
+    requirements = ra.PYTHON_MAINTAINER_REQUIREMENTS[0]
+    write(root, requirements, 'Pillow==11.0.0\n')
+    queries = []
+    def osv(query):
+        queries.append(query)
+        return ['GHSA-capture'] if query['package']['name'] == 'pillow' and query['version'] == '11.0.0' else []
+    net = online_net(tmp_path, osv=osv,
+        http={f'{ra.OSV}/vulns/GHSA-capture': vuln('GHSA-capture', 'HIGH', '11.1.0', 'PyPI', 'pillow')})
+    rep = ra.Report(root, AS_OF, True)
+    ra.check_python(rep, net)
+    row = next(row for row in rep.inventory['python'] if row['name'] == 'pillow')
+    assert row['pins'] == ['11.0.0']
+    assert any(q['version'] == '11.0.0' for q in queries)
+    finding = next(f for f in rep.findings if f['check'] == 'advisory')
+    assert finding['severity'] == 'high' and '11.0.0 in the lockfile' in finding['title']
+
+
 @pytest.mark.parametrize("missing", ["package.json", "package-lock.json"])
 def test_missing_renderer_inputs_cannot_use_the_site_or_stale_root(tmp_path, missing):
     root = checkout(tmp_path)

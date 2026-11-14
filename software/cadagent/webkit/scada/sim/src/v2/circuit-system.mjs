@@ -1,6 +1,7 @@
 import {validateV2Definition,safeClone} from './validation.mjs';
 import {createEquationRuntime} from '../equations/runtime.mjs';
 import {formatEquationError} from '../equations/contracts.mjs';
+import {createPlaceholderAdapter} from '../adapter.mjs';
 import {getV2Descriptor,channel,domain,clamp,freeze,clone,TRACERS,ZONE_FIELDS} from './contract.mjs';
 
 const EPS=1e-9, sum=items=>items.reduce((a,b)=>a+b,0), sorted=object=>Object.entries(object).sort(([a],[b])=>a.localeCompare(b));
@@ -547,4 +548,7 @@ export class CircuitSystemModel {
   destroy(){this.stop();this.#listeners.clear();}
 }
 
-export function createV2Adapter(model,{readOnly=false}={}){return Object.freeze({readOnly,getSnapshot:()=>model.getSnapshot(),subscribe:listener=>model.subscribe(listener),dispatch:command=>{if(readOnly)throw new Error('This adapter is read-only.');return model.dispatch(command);}});}
+/** Read-only capability is represented by the absence of dispatch, as in the viewer contract. */
+export function createV2Adapter(model,{readOnly=false}={}){
+  return Object.freeze({readOnly,...createPlaceholderAdapter(model,{readOnly})});
+}

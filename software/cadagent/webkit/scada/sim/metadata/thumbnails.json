@@ -16,7 +16,7 @@
     "software/cadagent/webkit/scada/sim/src/model-registry.mjs": "3064d717657ccb07b569587c62106ca8a849ad6bc02745b6ac465ca8b88e9c59",
     "software/cadagent/webkit/scada/sim/src/placeholder-system.mjs": "4e351901d39ba6a380c855137fecf25604054d3f32a2bc58aec2192320ac8efc",
     "software/cadagent/webkit/scada/sim/src/type-contracts.mjs": "61fb76fe68e4986c3d050b411258e6ce9eb2efa883ed28cf704d20111d9bfb66",
-    "software/cadagent/webkit/scada/sim/src/v2/circuit-system.mjs": "c284691d92ac39ae3f8837d9e2fe43520dce7af5c02255f40659853e6b35e377",
+    "software/cadagent/webkit/scada/sim/src/v2/circuit-system.mjs": "7e876b5dabc9fcbb6c2119c59452ad6338734238fb093bf1bbb1da2eba1e8232",
     "software/cadagent/webkit/scada/sim/src/v2/contract.mjs": "b91b9685f9b81b635dd1233989049a9cf11a4293f0b05e80df8a7e6aea7a0bb2",
     "software/cadagent/webkit/scada/sim/src/v2/type-contracts.mjs": "b8570c2ae1ad74ccb915710ebb69cf086c232e51cf60d72450e43c1b453724f7",
     "software/cadagent/webkit/scada/sim/src/v2/validation.mjs": "1bf59536660dd20d8d5b9f21261902591b34a9303e251c9f641563b74f98e374",
@@ -2029,8 +2029,8 @@
       "path": "img/thumbnails/power-utilities/power-hydro-impoundment/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 109077,
-      "sha256": "f1ea9dbe39fdf80d66eb2f56b01d4cb42776f02ffbd602291aa5e49eb3c22141"
+      "bytes": 109076,
+      "sha256": "cb3fbb055d8f55566fd0a15fd71e1fb41ec296ca0ba097396fd4bf3f8d947123"
     },
     {
       "id": "power-hydro-diversion",
@@ -2149,8 +2149,8 @@
       "path": "img/thumbnails/power-utilities/power-pumped-storage/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 93711,
-      "sha256": "ffa0023106379a3570840cefaf604a35d11d9c2f00978f91a7323343bec20b70"
+      "bytes": 93713,
+      "sha256": "ec1c766672393f2bcbdb935ef6aee8bd0b0da2ef4c42447504dc523e7338720e"
     },
     {
       "id": "power-nuclear-pwr",
@@ -2843,8 +2843,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-distribution/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 111832,
-      "sha256": "d279d1635223b60e9af81f762eca40e46f6fc752c2826a6d4514c030f4295790"
+      "bytes": 111848,
+      "sha256": "92967148c5ed23400e9162641686bd9c637148d7eb47d2cec264cff8ea9cc16a"
     },
     {
       "id": "power-substation-gsu",
@@ -2963,8 +2963,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-gis/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 99368,
-      "sha256": "9a87c982ceead57c9db852be2f0ad5e9772f341cf9e999742e0c7ddd9384c3fa"
+      "bytes": 99379,
+      "sha256": "b29a6ecee1229c3923c6ace555b36e3c4993059793cc4b699edb73f1bc469601"
     },
     {
       "id": "power-hvdc-interface",
@@ -3021,8 +3021,8 @@
       "path": "img/thumbnails/power-utilities/power-hvdc-interface/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 93230,
-      "sha256": "d3a20d2a4d148e3646e5bc1134f7e12beb417415ea267a7d275c173a78568714"
+      "bytes": 93228,
+      "sha256": "4a4681d65eae0bde2b8465a80b71304f36450b3e4be4e07ac603d251f03bd152"
     },
     {
       "id": "power-solar-pv",
@@ -3081,8 +3081,8 @@
       "path": "img/thumbnails/power-utilities/power-solar-pv/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 102442,
-      "sha256": "05eb8762e1e5bff802a8617b16b05bcea641bf533705e5db2301881778462977"
+      "bytes": 102444,
+      "sha256": "9a87718aad58dd219eb02f4ec5ee2e7fc242e8f68c5c7fe142cd8bbd05a32bb3"
     },
     {
       "id": "power-wind-collection",
@@ -3255,8 +3255,8 @@
       "path": "img/thumbnails/power-utilities/power-wave-point-absorber/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 96695,
-      "sha256": "d94ea5e115041b402baec78c7bcfe5db118ca3866cc99d9ad6fbead45ee796db"
+      "bytes": 96699,
+      "sha256": "e7e64a97432a0df7a3c4e146428ad27fff04a07b0fd2f67f15f8f567d0625d7f"
     },
     {
       "id": "power-csp-tower",
@@ -3319,8 +3319,8 @@
       "path": "img/thumbnails/power-utilities/power-csp-tower/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 122053,
-      "sha256": "4090c88a1d5f3eab3c5e6e1ab778e1b908eec167373ac4fd10c49e4ee90e44b3"
+      "bytes": 122030,
+      "sha256": "b55db294cc121766ac7acf8ff4dfaf43f80b39c8d2a66151566810cf013ee5d9"
     },
     {
       "id": "power-csp-trough",
@@ -3561,8 +3561,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 100427,
-      "sha256": "8527dd0b432986b67227c808b77dba6a58534cc6119293dee117db819d6ac88c"
+      "bytes": 100434,
+      "sha256": "f8546e6c29e1ab476e03804adad028617ac3581a644d44a21c9219955bd8f8c0"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -4205,16 +4205,16 @@
       "path": "img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg",
       "width": 1354,
       "height": 975,
-      "bytes": 89551,
-      "sha256": "0ba398b3e5079e436e65139dcaff7483b0749940f4178985e1452af50bca7dae"
+      "bytes": 89529,
+      "sha256": "c94e3270185f7f80cec48c232748a10d317c3da6772809f16b875342245ea6f7"
     }
   ],
   "contact_sheet": {
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 6426,
-    "bytes": 1406966,
-    "sha256": "4772b550fec8c118bd66a524e4abb0550417bf5b0f8fa69ba0474c1dbf35039c"
+    "bytes": 1406971,
+    "sha256": "a0ff612c5ad7c14da41b567b715a2515e9a55f04426eb33b8fd301b7ecea7149"
   },
   "capture_implementation_sha256": "7ce20b5672d6e5af2dec7ed0ce2bbb0fd4e4f0a7af5fbff3ce04439770760a5e"
 }

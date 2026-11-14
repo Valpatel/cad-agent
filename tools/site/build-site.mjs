@@ -83,7 +83,8 @@ const copyTracked = async (f, dest) => { await mkdir(path.dirname(dest), { recur
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 const ASSETS = 'tools/site/assets';
-for (const f of tracked.filter(f => f.startsWith(ASSETS + '/') && f !== ASSETS + '/README.md'))
+// Owner maps are compiled below with source-relative links; only runtime assets belong under /web/.
+for (const f of tracked.filter(f => f.startsWith(ASSETS + '/') && !folderPaths.has(f)))
   await copyTracked(f, path.join(out, 'web', f.slice(ASSETS.length + 1)));
 // Browsers ask for /favicon.ico on pages without an icon link (llms.txt, the .md twins).
 if (tracked.includes(ASSETS + '/favicon.ico')) await copyTracked(ASSETS + '/favicon.ico', path.join(out, 'favicon.ico'));

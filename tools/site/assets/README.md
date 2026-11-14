@@ -1,6 +1,6 @@
 # Website assets
 
-These files keep their public /web/ addresses. The build also copies favicon.ico, install.sh and install.ps1 to their existing root URLs; this owning README is source-only.
+Runtime files keep their public /web/ addresses. The build also copies favicon.ico, install.sh and install.ps1 to their root URLs. Owner README maps become native repository pages with rewritten links, separate from the byte-exact runtime assets.
 
 ```mermaid
 flowchart TD

@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mujoco model="original_two_link_arm">
+  <compiler angle="radian" inertiafromgeom="false" />
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast" solver="Newton" iterations="50" tolerance="1e-10" />
+  <worldbody>
+    <geom name="floor" type="plane" size="2 2 .1" rgba=".2 .2 .2 1" />
+    <body name="base">
+      <geom name="base_shape" type="cylinder" size="0.13 0.09" pos="0 0 0.09" rgba=".22 .32 .44 1" />
+      <body name="upper" pos="0 0 0.22">
+        <inertial pos="0 0 0.19" mass="1.2" diaginertia="0.01525 0.0150025 0.0013725" />
+        <joint name="upper_hinge" type="hinge" axis="0 1 0" limited="true" range="-1.75 1.75" damping="0.08" />
+        <geom name="upper_shape" type="box" size="0.0375 0.045 0.19" pos="0 0 0.19" rgba=".04 .75 .84 1" />
+        <geom name="upper_joint" type="sphere" size=".052" rgba=".6 .69 .8 1" contype="0" conaffinity="0" />
+        <body name="forearm" pos="0 0 0.38">
+          <inertial pos="0 0 0.15" mass="0.7" diaginertia="0.005578125 0.00546 0.000538125" />
+          <joint name="forearm_hinge" type="hinge" axis="0 1 0" limited="true" range="-1.75 1.75" damping="0.05" />
+          <geom name="forearm_shape" type="box" size="0.03 0.0375 0.15" pos="0 0 0.15" rgba="1 .45 .13 1" />
+          <geom name="forearm_joint" type="sphere" size=".052" rgba=".6 .69 .8 1" contype="0" conaffinity="0" />
+          <geom name="tool_marker" type="sphere" size=".04" pos="0 0 0.3" rgba=".18 .85 .5 1" contype="0" conaffinity="0" />
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <motor name="upper_motor" joint="upper_hinge" gear="1" ctrllimited="true" ctrlrange="-22 22" />
+    <motor name="forearm_motor" joint="forearm_hinge" gear="1" ctrllimited="true" ctrlrange="-12 12" />
+  </actuator>
+</mujoco>

@@ -21,18 +21,15 @@ flowchart TD
 
 | File | What it tests |
 |---|---|
+| [simulation/](simulation/README.md) | Recorded solver poses, interpolation and replay controls |
+| [files/](files/README.md) | Original CAD file geometry, parser workers, shared themes and browser controls |
 | [assembly/](assembly/README.md) | Instruction contract, bounded loading and real multipart presentation/lifecycle |
 | [scada/](scada/README.md) | Equipment states, model contracts, scenario regression and real simulation controls |
 | [host/](host/README.md) | Two real viewers, scoped interaction, cancellation and independent teardown |
 | `__init__.py` | Empty: makes the folder a package, so a test here may share a file name with one in another folder |
 | `webkit-diagrams-browser.mjs` | Real diagram lifecycle/themes/math, hostile labels, and advisory boundaries on hash-bound emitted sanitizer/math inputs |
+| `webkit-fea-browser.mjs` | Actual projected-surface hover, shared tooltip/marker/readout contrast, normal and overload states, and a rejected mixed-palette control in both engines |
 | `webkit-fan-curve.test.mjs` | `<cad-fan-curve>` without a browser: every setting gives a point on both curves |
-| `webkit-file-corpus.mjs` | Parses a bounded manifest of published originals with the real workers (run by hand) |
-| `webkit-file-geometry.test.mjs` | `file-geometry.js`: mesh normalising and model and STL validation |
-| `webkit-file-theme-browser.mjs` | Helper: the file viewer's themes in a browser (imported by the file-viewer suite) |
-| `webkit-file-theme.test.mjs` | `file-viewer-theme.js`: theme normalising |
-| `webkit-file-viewer-browser.mjs` | The original-file viewer in a real browser, on `fixtures/file-viewer/` |
-| `webkit-file-worker-node.mjs` | Helper: runs the shipped parser workers in Node, without a browser |
 | `webkit-formulas.test.mjs` | `formulas.js` against the golden vectors the Python writes |
 | `webkit-fourbar.test.mjs` | `<cad-fourbar>`'s pure parts in Node |
 | `webkit-gallery.test.mjs` | `<cad-gallery>`'s pure parts: URL state, search, facets and sorting |
@@ -40,12 +37,12 @@ flowchart TD
 | `webkit-part-table-browser.mjs` | The part table in a real browser |
 | `webkit-part-tracker.test.mjs` | `part-tracker.js`: statuses per project, atomic imports, storage denial, cross-tab sync |
 | `webkit-printed-boss.test.mjs` | `<cad-printed-boss>` without a browser, against `cadagent.mechanical.bosses` |
-| `webkit-server.mjs` | Helper: serves `software/cadagent/webkit/` for the browser suites |
+| `webkit-server.mjs` | Helper: serves `software/cadagent/webkit/`; no-store by default, with an explicit cacheable mode for native history tests |
 | `webkit-stage-browser.mjs` | Actual floor-grid pixels against projected mathematical lines, filled-floor negative control, themes, shadows, dimming, camera changes and cleanup |
 | `webkit-torsion-snap.test.mjs` | `<cad-torsion-snap>` without a browser: the port's numbers, Saint-Venant scaling |
 | `webkit-vendor.test.mjs` | The kit's vendored libraries match their receipts |
 
-Run: `node --test tests/webkit/*.test.mjs` and `npm --prefix tools/site run test:part-table`, `test:file-viewer`, `test:diagrams`.
+Run: `npm --prefix tools/site run test:webkit-unit` and `npm --prefix tools/site run test:part-table`, `test:file-viewer`, `test:fea`, `test:diagrams`.
 The shared-stage regression runs with `npm --prefix tools/site run test:stage` and `PLAYWRIGHT_BROWSER=chromium` or
 `webkit`. It writes actual browser PNGs and JSON measurements under `TEST_OUTPUT` (default `/tmp/cad-agent-stage-grid`);
 `TEST_SOURCE_REVISION` records the source commit. `CHROMIUM_EXECUTABLE` can select a local Chromium binary.

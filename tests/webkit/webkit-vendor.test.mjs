@@ -126,7 +126,7 @@ test('the vendored unzipSync rejects a malformed ZIP64 directory instead of loop
 
 /** The shipped 3MF worker's answer for these bytes: {error} or {model}, through the test-only Node adapter. */
 async function viewer3MF(bytes) {
-  const worker = new Worker(new URL('./webkit-file-worker-node.mjs', import.meta.url), { workerData: { format: '3mf' } });
+  const worker = new Worker(new URL('./files/worker-node.mjs', import.meta.url), { workerData: { format: '3mf' } });
   try {
     const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     return await new Promise((resolve, reject) => {

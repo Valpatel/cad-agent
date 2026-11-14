@@ -33,12 +33,13 @@
         },
         "model/viewer.html": {
           "requires": [
+            "ui/theme.js",
             "ui/hud.css",
             "model/viewer.js",
             "assembly/guide.js",
             "vendor/three/three.module.min.js"
           ],
-          "sha256": "92e3df9838e31e38b3752ba316b40b76337f2dcdfdc001bfd7e1cdfe8dfb8bdc"
+          "sha256": "5257149b2f9523840e49c66501678a3ff4ba9721aef3c457d8c5c75c14b5c927"
         },
         "model/viewer.js": {
           "requires": [
@@ -58,13 +59,23 @@
         },
         "ui/hud.css": {
           "requires": [
-            "vendor/fonts/fonts.css"
+            "ui/theme.css"
           ],
-          "sha256": "f4933895d9676f014f8cff85d3cf439dfbad74fa2a84fd8a8b1b42adcf949d21"
+          "sha256": "0a1fbf7e9e796c7bf5d7cb9062b34374da937975e851ad2cce6b8cdb1827325a"
         },
         "ui/panel.js": {
           "requires": [],
           "sha256": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b"
+        },
+        "ui/theme.css": {
+          "requires": [
+            "vendor/fonts/fonts.css"
+          ],
+          "sha256": "370dfb29b28c760d48332316651492d0853c3e3aa9bc355e8a7edb1a4b12cf47"
+        },
+        "ui/theme.js": {
+          "requires": [],
+          "sha256": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2"
         },
         "vendor/file-parsers/THREE-LICENSE.txt": {
           "requires": [],

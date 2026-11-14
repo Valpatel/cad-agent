@@ -1,0 +1,314 @@
+{
+  "format": "scada-default-model-inputs",
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "winery",
+      "title": "Winery",
+      "sector": "Food & beverage",
+      "description": "Follow grape handling, extraction, fermentation vessels and bottling, with a separately labeled illustrative effluent-energy branch.",
+      "tags": [
+        "fermentation",
+        "liquid transfer",
+        "bottling"
+      ],
+      "system": "winery.system.json",
+      "model": "winery.model.json",
+      "processSteps": [
+        "Grape receiving belt",
+        "Grape crusher",
+        "Juice extraction separator",
+        "Must transfer pump",
+        "Fermentation vessel",
+        "Aging buffer",
+        "Cellar transfer valve",
+        "Polishing filter",
+        "Bottle filling",
+        "Bottle packing"
+      ],
+      "views": [
+        {
+          "id": "process",
+          "label": "Main process"
+        },
+        {
+          "id": "utilities",
+          "label": "Utilities & control"
+        },
+        {
+          "id": "finishing",
+          "label": "Finishing & storage"
+        }
+      ],
+      "experiments": [
+        {
+          "id": "starve-feed",
+          "title": "Stop grape receiving belt",
+          "commands": [
+            {
+              "action": "setEnabled",
+              "arguments": {
+                "equipment": "grapeIntake",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Upstream supply stops. Connected downstream flow should fall as any demonstration buffers are consumed; other views show the same change.",
+          "limitation": "The delay is a generic inventory/response rule, not residence-time or biological calibration."
+        },
+        {
+          "id": "isolate-transfer",
+          "title": "Close cellar transfer valve",
+          "commands": [
+            {
+              "action": "setOpen",
+              "arguments": {
+                "equipment": "transferValve",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Transfer through the valve stops. Upstream buffers/pressure may rise and downstream inventory may fall under the toy model.",
+          "limitation": "Pressure indices do not represent real equipment ratings or safety limits."
+        },
+        {
+          "id": "overload-stage",
+          "title": "Overload grape crusher",
+          "commands": [
+            {
+              "action": "setParameter",
+              "arguments": {
+                "equipment": "crusher",
+                "key": "capacity",
+                "value": 25
+              }
+            },
+            {
+              "action": "setLoad",
+              "arguments": {
+                "equipment": "crusher",
+                "value": 95
+              }
+            }
+          ],
+          "expected": "Requested load exceeds the edited demonstration capacity. Observe warning/damage accumulation and reduced downstream throughput while the shared clock advances.",
+          "limitation": "Thresholds and damage progression are fictional, editable playground rules."
+        },
+        {
+          "id": "break-stage",
+          "title": "Break grape crusher",
+          "commands": [
+            {
+              "action": "setFault",
+              "arguments": {
+                "equipment": "crusher",
+                "value": true
+              }
+            }
+          ],
+          "expected": "The selected stage shows damage/fault and loses availability; dependent streams react while unrelated branches remain inspectable.",
+          "limitation": "This is an injected toy failure, not equipment failure-mode analysis."
+        },
+        {
+          "id": "trip-power",
+          "title": "Trip the demonstration power source",
+          "commands": [
+            {
+              "action": "setFault",
+              "arguments": {
+                "equipment": "power",
+                "value": true
+              }
+            }
+          ],
+          "expected": "Explicitly supplied equipment loses power availability. Inspect both process and utility views to see the shared dependency.",
+          "limitation": "No electrical protection coordination, grid dynamics or real isolation procedure is modeled."
+        }
+      ],
+      "previewTypes": [
+        "conveyor",
+        "crusher",
+        "separator"
+      ],
+      "componentTypes": [
+        "conveyor",
+        "crusher",
+        "digester",
+        "filling-line",
+        "filter",
+        "flare",
+        "gate-valve",
+        "generator",
+        "packaging-line",
+        "plc-rack",
+        "pressure-transmitter",
+        "pump",
+        "reactor",
+        "separator",
+        "tank"
+      ],
+      "processAssetCount": 10,
+      "utilityAssetCount": 5,
+      "measurements": [
+        {
+          "sensor": "pressure",
+          "asset": "mustTransfer"
+        }
+      ],
+      "searchTerms": [
+        "wine making",
+        "winemaking",
+        "wines",
+        "grapes",
+        "vineyard"
+      ],
+      "componentVariants": []
+    },
+    {
+      "id": "brewery",
+      "title": "Brewery",
+      "sector": "Food & beverage",
+      "description": "Move grain through milling, mash separation, cooling, fermentation and packaging. Effluent and heat service remain independent utility branches.",
+      "tags": [
+        "grain handling",
+        "fermentation",
+        "effluent"
+      ],
+      "system": "brewery.system.json",
+      "model": "brewery.model.json",
+      "processSteps": [
+        "Grain receiving silo",
+        "Grain mill",
+        "Mash vessel",
+        "Lauter separation",
+        "Brew kettle",
+        "Wort heat exchanger",
+        "Fermentation vessel",
+        "Conditioning buffer",
+        "Container filling",
+        "Case packing"
+      ],
+      "views": [
+        {
+          "id": "process",
+          "label": "Main process"
+        },
+        {
+          "id": "utilities",
+          "label": "Utilities & control"
+        },
+        {
+          "id": "finishing",
+          "label": "Finishing & storage"
+        }
+      ],
+      "experiments": [
+        {
+          "id": "starve-feed",
+          "title": "Stop grain receiving silo",
+          "commands": [
+            {
+              "action": "setEnabled",
+              "arguments": {
+                "equipment": "grainSilo",
+                "value": false
+              }
+            }
+          ],
+          "expected": "Upstream supply stops. Connected downstream flow should fall as any demonstration buffers are consumed; other views show the same change.",
+          "limitation": "The delay is a generic inventory/response rule, not residence-time or biological calibration."
+        },
+        {
+          "id": "overload-stage",
+          "title": "Overload grain mill",
+          "commands": [
+            {
+              "action": "setParameter",
+              "arguments": {
+                "equipment": "mill",
+                "key": "capacity",
+                "value": 25
+              }
+            },
+            {
+              "action": "setLoad",
+              "arguments": {
+                "equipment": "mill",
+                "value": 95
+              }
+            }
+          ],
+          "expected": "Requested load exceeds the edited demonstration capacity. Observe warning/damage accumulation and reduced downstream throughput while the shared clock advances.",
+          "limitation": "Thresholds and damage progression are fictional, editable playground rules."
+        },
+        {
+          "id": "break-stage",
+          "title": "Break grain mill",
+          "commands": [
+            {
+              "action": "setFault",
+              "arguments": {
+                "equipment": "mill",
+                "value": true
+              }
+            }
+          ],
+          "expected": "The selected stage shows damage/fault and loses availability; dependent streams react while unrelated branches remain inspectable.",
+          "limitation": "This is an injected toy failure, not equipment failure-mode analysis."
+        },
+        {
+          "id": "trip-power",
+          "title": "Trip the demonstration power source",
+          "commands": [
+            {
+              "action": "setFault",
+              "arguments": {
+                "equipment": "power",
+                "value": true
+              }
+            }
+          ],
+          "expected": "Explicitly supplied equipment loses power availability. Inspect both process and utility views to see the shared dependency.",
+          "limitation": "No electrical protection coordination, grid dynamics or real isolation procedure is modeled."
+        }
+      ],
+      "previewTypes": [
+        "grinding-mill",
+        "mixing-tank",
+        "reactor"
+      ],
+      "componentTypes": [
+        "aeration-basin",
+        "boiler",
+        "filling-line",
+        "filter",
+        "generator",
+        "grinding-mill",
+        "heat-exchanger",
+        "mixing-tank",
+        "network-switch",
+        "packaging-line",
+        "plc-rack",
+        "reactor",
+        "silo",
+        "tank",
+        "temperature-sensor"
+      ],
+      "processAssetCount": 10,
+      "utilityAssetCount": 6,
+      "measurements": [
+        {
+          "sensor": "temperature",
+          "asset": "cooler"
+        }
+      ],
+      "searchTerms": [
+        "beer",
+        "beers",
+        "brewing beer",
+        "breweries"
+      ],
+      "componentVariants": []
+    }
+  ]
+}

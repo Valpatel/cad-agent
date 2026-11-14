@@ -17,6 +17,10 @@ do not edit or fetch the historical example repository as a build step.
 - Contained diagrams pan/zoom with mouse, touch and keyboard and keep Fit visible.
   They have no canvas scrollbars. Preserve accessible inspector/form scrolling,
   focus, reduced motion and host-owned sound controls.
+- Frequent equipment actions use explicit `control.diagram` toggle metadata and
+  the same bound command as the inspector. Keep the viewer independent of action
+  names and model families. Test actual downstream effects, read-only observation,
+  rejected commands, keyboard/touch operation and drag-without-command behavior.
 - Every equipment addition needs distinct artwork, meaningful operating/warning/
   failure states, metadata/schema coverage, a placeholder or explicit model limit,
   and an owned gallery preview. Do not advertise unsupported states or physics.

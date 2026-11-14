@@ -360,7 +360,7 @@
       "parameters": {
         "capacity": 80,
         "response": 0.35,
-        "demand": 8,
+        "demand": 4,
         "loss": 0.02,
         "pressureGain": 8,
         "heatGain": 4,
@@ -379,7 +379,8 @@
         "damage": 0
       },
       "assumptions": [
-        "Electrical loads: editable normalized demo parameters, not manufacturer or plant measurements."
+        "Electrical loads: editable normalized demo parameters, not manufacturer or plant measurements.",
+        "Nominal demand is deliberately below sustained illustrative CHP supply; the overload experiment edits this demand independently."
       ]
     },
     "standby": {
@@ -419,13 +420,13 @@
         "loss": 0.02,
         "pressureGain": 8,
         "heatGain": 4,
-        "warningAt": 85,
+        "warningAt": 100,
         "damageRate": 0.6
       },
       "initial": {
         "enabled": true,
         "open": true,
-        "load": 60,
+        "load": 75,
         "level": 55,
         "inventory": 55,
         "temperature": 25,
@@ -463,6 +464,310 @@
       "assumptions": [
         "Digester pressure: editable normalized demo parameters, not manufacturer or plant measurements."
       ]
+    },
+    "inletValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FCV-101 Inlet control: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "effluentValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "XV-102 Effluent outlet: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "digestateValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 90,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "XV-201 Digestate outlet: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "chpValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 85,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FCV-301 CHP fuel: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "flareValve": {
+      "kind": "valve",
+      "parameters": {
+        "capacity": 100,
+        "response": 1,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 0,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 65,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FCV-302 Flare fuel: editable normalized demonstration values; no measured hardware curve or calibrated instrument range."
+      ]
+    },
+    "inletFlow": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FT-101 Inlet flow: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "effluentFlow": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "FT-102 Outlet flow: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "digesterTemperature": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "TT-201 Digester temp: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "digesterLevel": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "LT-201 Digester level: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "gasQuality": {
+      "kind": "sensor",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.9,
+        "demand": 0.5,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 2,
+        "warningAt": 95,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 60,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "AT-301 Gas quality: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates."
+      ]
+    },
+    "remoteIO": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.8,
+        "demand": 1,
+        "loss": 0,
+        "pressureGain": 0,
+        "heatGain": 8,
+        "warningAt": 100,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "open": true,
+        "load": 100,
+        "level": 60,
+        "inventory": 60,
+        "temperature": 20,
+        "pressure": 15,
+        "failed": false,
+        "damage": 0
+      },
+      "assumptions": [
+        "RIO-01 Field I/O: editable normalized demonstration values; no measured hardware curve or calibrated instrument range.",
+        "PLC and remote-I/O data links drive the registered control-valve control inputs. Loss of PLC or I/O communication removes their modeled throughput. This is an illustrative availability gate, not a safety PLC program or validated control loop.",
+        "The generic I/O family response is held at a high normalized demand so a healthy upstream PLC leaves positive valve capacity; this is not a real I/O transfer function."
+      ]
     }
   },
   "assumptions": [
@@ -470,6 +775,10 @@
     "Water and sludge connections are generic resource indices. The digester branch does not predict methane yield or real gas pressure.",
     "Influent is replenished; treated-water output is an external sink. Initial inventories prime the gas pathway. Standby generator fuel is an assumed external boundary.",
     "The CHP generator is connected to the gas pathway and the electrical load; its failure has an explicit downstream effect.",
-    "Opening another diagram does not create a second simulation or reset equipment state."
+    "Opening another diagram does not create a second simulation or reset equipment state.",
+    "Instruments use explicit measurement taps on equipment outlet or vessel readings; they do not create a material sink or claim physical inline pressure loss. All displayed measurements remain normalized estimates.",
+    "PLC and remote-I/O data links drive the registered control-valve control inputs. Loss of PLC or I/O communication removes their modeled throughput. This is an illustrative availability gate, not a safety PLC program or validated control loop.",
+    "Pumps and generators retain local operator enable commands. Their electrical drive ports are not misrepresented as PLC data inputs; no automatic start, transfer or synchronization is implemented.",
+    "The auxiliary generator is a continuously enabled independent supply with assumed fuel. It is not an automatic standby-transfer system."
   ]
 }

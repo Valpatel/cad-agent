@@ -131,7 +131,11 @@ test('capabilities open owned working examples, with real previews and explicit 
   const cards=toolkitCapabilities(model,{has,catalog:[{id:'demo-fourbar-animator',url:'https://cad-agent.valpatel.com/docs/linkages#try-it-the-four-bar-animator'}]});
   assert.equal(cards.find(card=>card.id==='mechanisms').href,'/docs/linkages#try-it-the-four-bar-animator');
   assert.throws(()=>toolkitCapabilities(model,{catalog:[{id:'demo-fourbar-animator',url:'https://external.invalid/demo'}]}),/must be locally published/);
-  assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','files','assembly','mechanisms','calculators']);
+  assert.deepEqual(cards.map(card=>card.id),['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators']);
+  const replay=cards.find(card=>card.id==='robot-replay');
+  assert.match(replay.description,/real MuJoCo run of an illustrative two-link arm/);
+  assert.equal(replay.href,'/kit/simulation/viewer.html');
+  assert.ok(replay.docs.startsWith('/repo/folders/'));
   for(const card of cards) {
     assert.ok(card.image.startsWith('/') && card.alt.length>20,card.id);
     assert.ok(card.href.startsWith('/') && card.action.length>3 && card.docs.startsWith('/'),card.id);
@@ -148,6 +152,7 @@ test('capabilities open owned working examples, with real previews and explicit 
   assert.deepEqual(models.css,['/kit/model/model.css']);
   assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('file-review.webp')}),/missing example asset.*file-review.webp/);
   assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('model/viewer.html')}),/missing example asset.*model\/viewer.html/);
+  assert.throws(()=>toolkitPages(model,{has:file=>has(file) && !file.endsWith('two-link-arm/preview.webp')}),/missing example asset.*two-link-arm\/preview.webp/);
 });
 
 test('published assembly example preserves the complete source-bound fixture closure',()=>{

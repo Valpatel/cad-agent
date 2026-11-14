@@ -1,23 +1,36 @@
 <!doctype html>
-<html lang="en" data-file-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark light">
   <title>Original CAD file viewer</title>
+  <script src="../ui/theme.js"></script>
+  <link rel="stylesheet" href="../ui/theme.css">
   <link rel="stylesheet" href="./file-viewer.css">
   <script type="importmap">{"imports":{"three":"../vendor/three/three.module.min.js","three/addons/":"../vendor/three/addons/"}}</script>
 </head>
 <body>
   <main id="file-viewer" aria-label="Original CAD file viewer">
-    <section class="file-bootstrap" role="status" aria-live="polite"><h1>Original CAD file viewer</h1><p>Starting the 3D viewer…</p><button type="button" hidden>Retry viewer</button></section>
+    <button id="page-theme" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme" hidden style="position:absolute;top:16px;right:16px;z-index:3"><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg></button>
+    <section class="file-bootstrap" role="status" aria-live="polite"><h1>Original CAD file viewer</h1><p>Starting the 3D viewer…</p><button type="button" class="file-link" hidden>Retry viewer</button></section>
     <noscript>This interactive preview needs JavaScript. Return to the parts list to download the original CAD file.</noscript>
   </main>
   <script type="module">
     const host=document.querySelector('#file-viewer'),fallback=host.querySelector('.file-bootstrap');
     const requestedTheme=new URLSearchParams(location.search).get('theme');
-    const theme=['light','dark','auto'].includes(requestedTheme)?requestedTheme:document.documentElement.dataset.fileTheme;
-    document.documentElement.dataset.fileTheme=theme==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;
+    const explicitTheme=['light','dark','auto'].includes(requestedTheme);
+    document.documentElement.toggleAttribute('data-file-shared-theme',!explicitTheme);
+    const themeButton=document.getElementById('page-theme');
+    if(explicitTheme)themeButton.remove();
+    const sharedTheme=()=>{
+      const css=getComputedStyle(document.documentElement),colors={};
+      const tokens={background:'cream',canvas:'cream',surface:'card',text:'ink',muted:'text-2',border:'line-3',control:'soft',controlHover:'soft-3',controlText:'ink',focus:'focus',error:'bad',accent:'accent',grid:'line-3',glow:'accent'};
+      for(const [name,token] of Object.entries(tokens))colors[name]=css.getPropertyValue('--'+token).trim().replace(/^#([\da-f])([\da-f])([\da-f])$/i,(_,r,g,b)=>'#'+r+r+g+g+b+b);
+      return {mode:document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),colors,fontFamily:css.getPropertyValue('--font').trim()};
+    };
+    const theme=explicitTheme?requestedTheme:sharedTheme();
+    document.documentElement.dataset.fileTheme=explicitTheme?(theme==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme):theme.mode;
     fallback.querySelector('button').addEventListener('click',()=>location.reload());
     // The original remains downloadable even when the entry graph cannot load.
     try{
@@ -29,6 +42,13 @@
     try{
       const {createFileViewer}=await import('./file-viewer.js');
       window.__fileViewer=createFileViewer(host,{file:new URLSearchParams(location.search).get('file'),back:new URLSearchParams(location.search).get('back'),theme});
+      if(!explicitTheme){
+        themeButton.removeAttribute('style');window.__fileViewer.root.querySelector('.file-nav').append(themeButton);
+        const update=()=>{const next=sharedTheme();document.documentElement.dataset.fileTheme=next.mode;window.__fileViewer.setTheme(next);};
+        document.addEventListener('cad-themechange',update);
+        // A preference may have changed while the renderer module was loading.
+        update();
+      }
       fallback.remove();
     }catch(error){
       fallback.querySelector('p').textContent='The 3D viewer could not start. Retry to load its renderer and controls.';

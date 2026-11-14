@@ -1,6 +1,6 @@
 # Compact topology diagrams
 
-Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
+Static SVG schematics of a declared view, selected by the catalog topologyView when present. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.
 
 [Library image gallery](../README.md) · [Scenario definitions](../../scenarios/README.md) · [Generation metadata](../../metadata/topologies.json)
 

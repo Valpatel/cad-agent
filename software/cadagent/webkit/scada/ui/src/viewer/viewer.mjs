@@ -1,6 +1,7 @@
 /** Framework-neutral SCADA presentation. Models, clocks and persistence belong
  * to the injected adapter. HTML returned by render hooks is trusted host code. */
 import {ScadaCamera} from './camera.mjs';
+import {projectProcessLayout} from './process-layout.mjs';
 export {ScadaCamera} from './camera.mjs';
 import {renderScadaComponent} from '../symbols/components.mjs';
 import {ScadaWorkspace, renderScadaDialog} from '../workspace/workspace.mjs';
@@ -118,11 +119,18 @@ export function renderScadaDiagram({view, equipment = [], snapshot = {}, selecte
     const point = portPosition(node, port.id), item = {...port, ...point, component:node.id};
     return renderPort ? renderPort(item, context) : `<circle data-scada-port="${esc(node.id)}:${esc(port.id)}" cx="${point.x}" cy="${point.y}" r="3"><title>${esc(port.label ?? port.id)}</title></circle>`;
   })).join('');
-  return `<div class="${esc(classes.scroll)}" data-scada-scroll tabindex="0" aria-label="${esc(view.ariaLabel ?? `${view.label ?? view.title ?? view.id} diagram. Drag to pan, wheel or pinch to zoom. Arrow keys pan; Home fits the diagram.`)}"${htmlAttributes(attributes.scroll)}><div class="${esc(classes.stage)}" data-scada-stage style="${zoomProperty}:${zoom};--scada-canvas-width:${width}px;--scada-canvas-height:${height}px;width:100%;height:100%"${htmlAttributes(attributes.stage)}><div class="${esc(classes.canvas)}" data-scada-canvas data-scada-width="${width}" data-scada-height="${height}" style="${zoomProperty}:${zoom};width:${width}px;min-width:${width}px;height:${height}px;transform:scale(var(${zoomProperty}));transform-origin:top left"${htmlAttributes(attributes.canvas)}><svg class="${esc(classes.svg)}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(view.ariaLabel ?? view.label ?? view.title ?? view.id)}"${htmlAttributes(attributes.svg)}>${renderBackground(context)}<g class="${esc(classes.edges)}">${edgeMarkup}</g><g class="${esc(classes.labels)}">${(view.labels ?? []).map(label => renderLabel(label, context)).join('')}</g><g class="${esc(classes.junctions)}">${(view.junctions ?? []).map(junction => renderJunction(junction, context)).join('')}</g><g class="${esc(classes.ports)}">${portMarkup}</g></svg>${nodes.map(node => renderNode(node, context)).join('')}${(view.portals ?? view.overlays ?? []).map(overlay => renderOverlay(overlay, context)).join('')}</div></div></div>`;
+  return `<div class="${esc(classes.scroll)}" data-scada-scroll tabindex="0" aria-label="${esc(view.ariaLabel ?? `${view.label ?? view.title ?? view.id} diagram. Drag to pan, wheel or pinch to zoom. Arrow keys pan; Home fits the diagram.`)}"${htmlAttributes(attributes.scroll)}><div class="${esc(classes.stage)}" data-scada-stage style="${zoomProperty}:${zoom};--scada-canvas-width:${width}px;--scada-canvas-height:${height}px;width:100%;height:100%"${htmlAttributes(attributes.stage)}><div class="${esc(classes.canvas)}" data-scada-canvas data-scada-view="${esc(view.id ?? "")}" data-scada-width="${width}" data-scada-height="${height}" style="${zoomProperty}:${zoom};width:${width}px;min-width:${width}px;height:${height}px;transform:scale(var(${zoomProperty}));transform-origin:top left"${htmlAttributes(attributes.canvas)}><svg class="${esc(classes.svg)}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(view.ariaLabel ?? view.label ?? view.title ?? view.id)}"${htmlAttributes(attributes.svg)}>${renderBackground(context)}<g class="${esc(classes.edges)}">${edgeMarkup}</g><g class="${esc(classes.labels)}">${(view.labels ?? []).map(label => renderLabel(label, context)).join('')}</g><g class="${esc(classes.junctions)}">${(view.junctions ?? []).map(junction => renderJunction(junction, context)).join('')}</g><g class="${esc(classes.ports)}">${portMarkup}</g></svg>${nodes.map(node => renderNode(node, context)).join('')}${(view.portals ?? view.overlays ?? []).map(overlay => renderOverlay(overlay, context)).join('')}</div></div></div>`;
 }
 
 function patchElement(target, source, document) {
   if (target.nodeType !== source.nodeType || target.nodeName !== source.nodeName) { target.replaceWith(source.cloneNode(true)); return; }
+  // A different view owns a different equipment/gradient tree. Mount it atomically:
+  // morphing equipment by position can leave WebKit's URL paint servers bound to removed defs.
+  // Same-view snapshots still patch in place, preserving animation and command focus.
+  if (target.nodeType === 1 && target.hasAttribute('data-scada-canvas') &&
+      target.getAttribute('data-scada-view') !== source.getAttribute('data-scada-view')) {
+    target.replaceWith(source.cloneNode(true)); return;
+  }
   if (target.nodeType === 3) { if (target.nodeValue !== source.nodeValue) target.nodeValue = source.nodeValue; return; }
   if (target.nodeType !== 1) return;
   const editing = target === document.activeElement && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName);
@@ -155,13 +163,17 @@ let nextViewerId = 0;
  * commands and model state; destroying a viewer never stops or destroys it.
  */
 export class ScadaViewer {
+  #projection = null; #projectionPending = false;
   #adapter; #equipment; #views; #commands; #controls; #hooks; #options;
-  #viewId; #selected; #zoom; #zoomRequested = false; #snapshot; #root = null; #workspace = null; #camera = null; #cameraView = null;
+  #viewId; #selected; #zoom; #zoomRequested = false; #fitMaxZoom; #snapshot; #root = null; #workspace = null; #camera = null; #cameraView = null;
   #unsubscribe = null; #listeners = []; #managed = true; #error = ''; #fieldErrors = new Map(); #revision = 0; #attachmentEpoch = 0; #scope;
 
   constructor(options = {}) {
-    const {adapter, definition, hooks = {}} = options;
+    const {adapter, definition, hooks = {}, fitMaxZoom = 1, responsiveLayout = null} = options;
+    if (responsiveLayout !== null && responsiveLayout !== 'process-chain') throw new TypeError('responsiveLayout must be null or process-chain.');
     if (!adapter || typeof adapter.getSnapshot !== 'function' || typeof adapter.subscribe !== 'function' || (adapter.dispatch != null && typeof adapter.dispatch !== 'function')) throw new TypeError('A viewer adapter needs getSnapshot(), subscribe(), and optional dispatch().');
+    if (typeof fitMaxZoom !== 'number' || !Number.isFinite(fitMaxZoom) || fitMaxZoom <= 0 || fitMaxZoom > 3) throw new RangeError('fitMaxZoom must be a finite positive number up to 3.');
+    this.#fitMaxZoom = fitMaxZoom;
     const normalized = definition ? normalizeViewerDefinition(definition) : options;
     this.#equipment = entries(normalized.equipment);
     this.#views = entries(normalized.views);
@@ -181,7 +193,7 @@ export class ScadaViewer {
     this.#snapshot = adapter.getSnapshot();
   }
   get snapshot() { return this.#snapshot; }
-  get view() { return this.#views.find(view => view.id === this.#viewId); }
+  get view() { return this.#projection?.id === this.#viewId ? this.#projection : this.#views.find(view => view.id === this.#viewId); }
   get selected() { return this.#selected; }
   get zoom() { return this.#zoom; }
   get root() { return this.#root; }
@@ -201,7 +213,11 @@ export class ScadaViewer {
     const visualId = `${this.#scope}-${node.id}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 100);
     const art = renderScadaComponent(node.type ?? 'pump', {id:visualId, variant:node.variant, label:node.label ?? node.id, state:resolved.state, decorative:true});
     const status = resolved.state.fault ? 'Fault' : resolved.state.status === 'offline' ? 'Offline' : resolved.state.status === 'warning' ? 'Warning' : resolved.state.active ? 'Active' : 'Inactive';
-    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-pressed="${node.id === this.#selected}" aria-haspopup="dialog" aria-controls="${this.#scope}-inspector-dialog" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>`;
+    const control = this.readOnly ? null : this.#controlList(node).find(item => item.component === node.id && item.kind === 'toggle' && item.diagram);
+    const current = control ? this.#controlValue(control) : null;
+    const action = current?.found ? control.diagram[current.value ? 'whenTrue' : 'whenFalse'] : 'Unavailable';
+    const quick = control ? `<button type="button" class="scada-equipment-action" data-scada-diagram-control="${esc(control.id)}" aria-label="${esc(`${action} ${node.label ?? node.id}`)}"${current.found ? '' : ' disabled title="A current control value is unavailable."'} style="left:${100 * (node.x + 10) / width}%;top:${100 * (node.y + node.h - 48) / height}%;width:${100 * (node.w - 20) / width}%">${esc(action)}</button>` : '';
+    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-diagram-action="${Boolean(control)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-pressed="${node.id === this.#selected}" aria-haspopup="dialog" aria-controls="${this.#scope}-inspector-dialog" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>${quick}`;
   }
   #controlList(component) {
     const controls = typeof this.#controls === 'function' ? this.#controls(component, this.#context()) : this.#controls;
@@ -234,7 +250,7 @@ export class ScadaViewer {
     const context = this.#context(), component = this.#equipment.find(item => item.id === this.#selected);
     if (this.#options.renderShell) return this.#options.renderShell(context);
     const diagram = renderScadaDiagram({view:this.view, equipment:this.#equipment, snapshot:this.#snapshot, selected:this.#selected, zoom:this.#zoom, scope:this.#scope, ...this.#options.diagram, renderNode:(node, itemContext) => this.#node(node, itemContext)});
-    return `<section class="scada-viewer" data-scada-viewer="${this.#scope}" data-readonly="${this.readOnly}" data-running="${this.#snapshot?.running !== false}"><header class="scada-viewer-header"><div><span class="scada-viewer-eyebrow">${this.readOnly ? 'READ-ONLY SCADA VIEW' : 'CONNECTED SCADA VIEW'}</span><h2>${esc(this.#options.system?.label ?? 'System viewer')}</h2></div><p>${esc(this.#options.system?.description ?? 'Select equipment to inspect its state and available commands.')}</p></header><nav class="scada-viewer-tabs" aria-label="System views">${this.#views.map(view => `<button type="button" data-scada-view-choice="${esc(view.id)}"${view.id === this.#viewId ? ' aria-current="page"' : ''}>${esc(view.label ?? view.shortTitle ?? view.title ?? view.id)}</button>`).join('')}</nav><div class="scada-viewer-toolbar"><label>Equipment <select data-scada-picker>${this.#equipment.map(item => `<option value="${esc(item.id)}"${item.id === this.#selected ? ' selected' : ''}>${esc(item.label ?? item.id)}</option>`).join('')}</select></label><div class="scada-viewer-zoom"><button type="button" data-scada-zoom="fit" title="Fit the complete layout; use 100% to read equipment details">Zoom to fit</button><button type="button" data-scada-zoom="out" aria-label="Zoom diagram out">−</button><button type="button" data-scada-zoom="reset" title="Return to readable 100% scale; drag to explore">${Math.round(this.#zoom * 100)}%</button><button type="button" data-scada-zoom="in" aria-label="Zoom diagram in">+</button></div></div>${diagram}<footer class="scada-viewer-status"><span data-scada-scale-note>${this.#zoom < .8 ? 'Overview scale · use 100% for details' : 'Drag to pan · wheel or pinch to zoom · Home to fit'}</span><span>Selected: <strong>${esc(component.label ?? component.id)}</strong></span><button type="button" data-scada-inspect>Equipment controls</button></footer><p class="scada-viewer-error" data-scada-viewer-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${renderScadaDialog({id:'inspector', title:component.label ?? component.id, scope:this.#scope, kind:'equipment', body:`<p id="${this.#scope}-inspector-error" class="scada-viewer-error" data-scada-viewer-dialog-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${this.#inspector()}`})}</section>`;
+    return `<section class="scada-viewer" data-scada-viewer="${this.#scope}" data-readonly="${this.readOnly}" data-running="${this.#snapshot?.running !== false}"><header class="scada-viewer-header"><div><span class="scada-viewer-eyebrow">${this.readOnly ? 'READ-ONLY SCADA VIEW' : 'CONNECTED SCADA VIEW'}</span><h2>${esc(this.#options.system?.label ?? 'System viewer')}</h2></div><p>${esc(this.#options.system?.description ?? 'Select equipment to inspect its state and available commands.')}</p></header><nav class="scada-viewer-tabs" aria-label="System views">${this.#views.map(view => `<button type="button" data-scada-view-choice="${esc(view.id)}"${view.id === this.#viewId ? ' aria-current="page"' : ''}>${esc(view.label ?? view.shortTitle ?? view.title ?? view.id)}</button>`).join('')}</nav><div class="scada-viewer-toolbar"><label>Equipment <select data-scada-picker>${this.#equipment.map(item => `<option value="${esc(item.id)}"${item.id === this.#selected ? ' selected' : ''}>${esc(item.label ?? item.id)}</option>`).join('')}</select></label></div>${diagram}<footer class="scada-viewer-status"><span data-scada-scale-note>${this.#zoom < .8 ? 'Overview scale · use 100% for details' : 'Drag to pan · wheel or pinch to zoom · Home to fit'}</span><span>Selected: <strong>${esc(component.label ?? component.id)}</strong></span><button type="button" data-scada-inspect>Equipment controls</button></footer><p class="scada-viewer-error" data-scada-viewer-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${renderScadaDialog({id:'inspector', title:component.label ?? component.id, scope:this.#scope, kind:'equipment', body:`<p id="${this.#scope}-inspector-error" class="scada-viewer-error" data-scada-viewer-dialog-error role="alert"${this.#error ? '' : ' hidden'}>${esc(this.#error)}</p>${this.#inspector()}`})}</section>`;
   }
   #paint() {
     if (!this.#root || !this.#managed) return;
@@ -244,9 +260,7 @@ export class ScadaViewer {
     patchElement(this.#root, holder, this.#root.ownerDocument);
     this.#syncCamera();
   }
-  #cameraControls() {
-    const reset = this.#root?.querySelector('[data-scada-zoom="reset"]');
-    if (reset) reset.textContent = `${Math.round(this.#zoom * 100)}%`;
+  #cameraStatus() {
     const note = this.#root?.querySelector('[data-scada-scale-note]');
     if (note) note.textContent = this.#zoom < .8 ? 'Overview scale · use 100% for details · drag or pinch to explore' : 'Drag to pan · wheel or pinch to zoom · Home to fit';
   }
@@ -257,18 +271,35 @@ export class ScadaViewer {
     if (!this.#camera || this.#camera.viewport !== viewport || this.#camera.canvas !== canvas) {
       const state = changedView ? undefined : this.#camera?.state;
       this.#camera?.destroy();
-      this.#camera = new ScadaCamera({viewport, canvas, width, height, state,
+      this.#camera = new ScadaCamera({viewport, canvas, width, height, state, fitMaxZoom:this.#fitMaxZoom,
         fitOnMount:!this.#zoomRequested,
         ...(state || !this.#zoomRequested ? {} : {state:{x:0,y:0,zoom:this.#zoom,fitted:false}}),
         onChange:(camera, reason) => {
           const zoomChanged = this.#zoom !== camera.zoom;
           if (camera.fitted) this.#zoomRequested = false;
-          this.#zoom = camera.zoom; this.#cameraControls();
+          this.#zoom = camera.zoom; this.#cameraStatus();
           if (zoomChanged) this.#hooks.zoomChange?.({zoom:camera.zoom, viewer:this, reason});
+          if (camera.fitted && ['resize','fit'].includes(reason)) this.#scheduleProjection();
         }});
     } else this.#camera.setSize(width,height,{fit:changedView});
     this.#cameraView = this.#viewId;
-    this.#zoom = this.#camera.state.zoom; this.#cameraControls();
+    this.#zoom = this.#camera.state.zoom; this.#cameraStatus();
+  }
+  #scheduleProjection() {
+    if (this.#options.responsiveLayout !== 'process-chain' || this.#projectionPending) return;
+    this.#projectionPending = true;
+    const epoch = this.#attachmentEpoch;
+    queueMicrotask(() => {
+      this.#projectionPending = false;
+      if (epoch !== this.#attachmentEpoch || !this.#root || !this.#camera?.state.fitted) return;
+      const viewport = this.#camera.viewport, authored = this.#views.find(view => view.id === this.#viewId);
+      const next = projectProcessLayout(authored,{width:viewport.clientWidth,height:viewport.clientHeight,fitMaxZoom:this.#fitMaxZoom});
+      const current = this.view;
+      if (next.width === current.width && next.height === current.height &&
+          next.layoutProjection?.columns === current.layoutProjection?.columns) return;
+      this.#projection = next === authored ? null : next;
+      this.#paint();
+    });
   }
   refresh(reason = 'refresh', event = null) {
     this.#snapshot = this.#adapter.getSnapshot(); this.#revision++;
@@ -294,7 +325,7 @@ export class ScadaViewer {
   setView(id) {
     if (!this.#views.some(view => view.id === id)) throw new RangeError(`Unknown view: ${id}`);
     if (id === this.#viewId) return this;
-    this.closeInspector(); this.#viewId = id;
+    this.closeInspector(); this.#projection = null; this.#viewId = id;
     this.#hooks.viewChange?.({id, viewer:this}); this.refresh('view');
     return this;
   }
@@ -336,16 +367,20 @@ export class ScadaViewer {
     const target = event.target, field = target.closest?.('[data-scada-control]');
     try {
       if (event.type === 'click') {
+        const quick = target.closest('[data-scada-diagram-control]');
+        if (quick) {
+          if (quick.disabled || this.readOnly) return;
+          const component = this.#equipment.find(item => this.#controlList(item).some(control => control.component === item.id && control.id === quick.dataset.scadaDiagramControl && control.diagram));
+          const control = component && this.#controlList(component).find(item => item.id === quick.dataset.scadaDiagramControl && item.kind === 'toggle');
+          const current = control && this.#controlValue(control);
+          if (!current?.found) return;
+          this.select(component.id);
+          void Promise.resolve(this.#runControl(control, !current.value)).catch(() => {});
+          return;
+        }
         const node = target.closest('[data-scada-equipment]'); if (node) { this.select(node.dataset.scadaEquipment, {open:true, opener:node}); return; }
         const view = target.closest('[data-scada-view-choice]'); if (view) { this.setView(view.dataset.scadaViewChoice); safeFocus([...this.#root.querySelectorAll('[data-scada-view-choice]')].find(item => item.dataset.scadaViewChoice === this.#viewId)); return; }
         const inspect = target.closest('[data-scada-inspect]'); if (inspect) { this.openInspector({opener:inspect}); return; }
-        const zoom = target.closest('[data-scada-zoom]'); if (zoom) {
-          const action = zoom.dataset.scadaZoom;
-          if (action === 'fit') this.fit();
-          else if (this.#camera) action === 'reset' ? this.#camera.setZoom(1) : this.#camera.zoomBy(action === 'in' ? 1.25 : .8);
-          else this.setZoom(Math.max(.05, Math.min(3, action === 'reset' ? 1 : this.#zoom * (action === 'in' ? 1.25 : .8))));
-          return;
-        }
       }
       if (event.type === 'change' && target.matches('[data-scada-picker]')) { this.select(target.value, {open:true, opener:target}); return; }
       const element = field;

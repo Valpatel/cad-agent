@@ -23,6 +23,7 @@ flowchart TD
 | [scada-general-art.test.mjs](scada-general-art.test.mjs) | Separator phases, material inventory, direction and pumping artwork. |
 | [scada-industrial-art.test.mjs](scada-industrial-art.test.mjs) | Machine geometry, bounded speed/inventory and isolated fault overlays. |
 | [scada-nuclear-art.test.mjs](scada-nuclear-art.test.mjs) | Separate heat, circulation, control and residual-incident visual layers. |
+| [scada-process-layout.test.mjs](scada-process-layout.test.mjs) | Responsive chain projections preserve topology, port endpoints, route clearance and authored fallbacks. |
 | [scada-protection-art.test.mjs](scada-protection-art.test.mjs) | Current-transformer topology and relay observation/trip semantics. |
 | [scada-system.test.mjs](scada-system.test.mjs) | Versioned graph normalization, shared identities, ports and typed bindings. |
 | [scada-viewer.test.mjs](scada-viewer.test.mjs) | Adapter commands, inspectors, selection, geometry and lifecycle cleanup. |

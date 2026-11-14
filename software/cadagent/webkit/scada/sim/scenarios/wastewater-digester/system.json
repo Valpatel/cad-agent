@@ -5,7 +5,7 @@
   "system": {
     "id": "wastewater-digester",
     "label": "Wastewater & biogas digital twin",
-    "description": "Explore an illustrative wastewater process, shared sludge digestion, biogas storage, generator and flare. All views observe the same editable model."
+    "description": "Operate treatment, sludge, biogas and power branches from one connected plant, with instrument taps and PLC-controlled valves. All views share editable illustrative equations."
   },
   "components": [
     {
@@ -215,7 +215,7 @@
         },
         {
           "id": "sludge",
-          "side": "right",
+          "side": "bottom",
           "offset": 0.5
         }
       ]
@@ -333,7 +333,7 @@
         },
         {
           "id": "biogas",
-          "side": "top",
+          "side": "bottom",
           "offset": 0.5
         },
         {
@@ -582,7 +582,7 @@
     {
       "id": "standby",
       "type": "generator",
-      "label": "Standby generator",
+      "label": "Auxiliary generator",
       "state": {
         "active": true,
         "running": true,
@@ -652,7 +652,7 @@
       "ports": [
         {
           "id": "network",
-          "side": "left",
+          "side": "top",
           "offset": 0.5
         },
         {
@@ -662,7 +662,7 @@
         },
         {
           "id": "io",
-          "side": "left",
+          "side": "right",
           "offset": 0.5
         }
       ]
@@ -670,7 +670,7 @@
     {
       "id": "pressure",
       "type": "pressure-transmitter",
-      "label": "Digester pressure",
+      "label": "PT-201 Digester pressure",
       "state": {
         "active": true,
         "running": true,
@@ -707,6 +707,501 @@
           "side": "left",
           "offset": 0.8
         }
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "inletValve",
+      "type": "control-valve",
+      "label": "FCV-101 Inlet control",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/inletValve/active",
+        "running": "/components/inletValve/running",
+        "fault": "/components/inletValve/fault",
+        "status": "/components/inletValve/status",
+        "open": "/components/inletValve/open",
+        "opening": "/components/inletValve/opening",
+        "damage": "/components/inletValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "effluentValve",
+      "type": "gate-valve",
+      "label": "XV-102 Effluent outlet",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/effluentValve/active",
+        "running": "/components/effluentValve/running",
+        "fault": "/components/effluentValve/fault",
+        "status": "/components/effluentValve/status",
+        "open": "/components/effluentValve/open",
+        "opening": "/components/effluentValve/opening",
+        "damage": "/components/effluentValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "digestateValve",
+      "type": "gate-valve",
+      "label": "XV-201 Digestate outlet",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/digestateValve/active",
+        "running": "/components/digestateValve/running",
+        "fault": "/components/digestateValve/fault",
+        "status": "/components/digestateValve/status",
+        "open": "/components/digestateValve/open",
+        "opening": "/components/digestateValve/opening",
+        "damage": "/components/digestateValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "chpValve",
+      "type": "control-valve",
+      "label": "FCV-301 CHP fuel",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/chpValve/active",
+        "running": "/components/chpValve/running",
+        "fault": "/components/chpValve/fault",
+        "status": "/components/chpValve/status",
+        "open": "/components/chpValve/open",
+        "opening": "/components/chpValve/opening",
+        "damage": "/components/chpValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "flareValve",
+      "type": "control-valve",
+      "label": "FCV-302 Flare fuel",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/flareValve/active",
+        "running": "/components/flareValve/running",
+        "fault": "/components/flareValve/fault",
+        "status": "/components/flareValve/status",
+        "open": "/components/flareValve/open",
+        "opening": "/components/flareValve/opening",
+        "damage": "/components/flareValve/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ]
+    },
+    {
+      "id": "inletFlow",
+      "type": "flow-meter",
+      "label": "FT-101 Inlet flow",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/inletFlow/active",
+        "running": "/components/inletFlow/running",
+        "fault": "/components/inletFlow/fault",
+        "status": "/components/inletFlow/status",
+        "value": "/components/inletFlow/value",
+        "damage": "/components/inletFlow/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "effluentFlow",
+      "type": "flow-meter",
+      "label": "FT-102 Outlet flow",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/effluentFlow/active",
+        "running": "/components/effluentFlow/running",
+        "fault": "/components/effluentFlow/fault",
+        "status": "/components/effluentFlow/status",
+        "value": "/components/effluentFlow/value",
+        "damage": "/components/effluentFlow/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "digesterTemperature",
+      "type": "temperature-sensor",
+      "label": "TT-201 Digester temp",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/digesterTemperature/active",
+        "running": "/components/digesterTemperature/running",
+        "fault": "/components/digesterTemperature/fault",
+        "status": "/components/digesterTemperature/status",
+        "value": "/components/digesterTemperature/value",
+        "damage": "/components/digesterTemperature/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "digesterLevel",
+      "type": "level-sensor",
+      "label": "LT-201 Digester level",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/digesterLevel/active",
+        "running": "/components/digesterLevel/running",
+        "fault": "/components/digesterLevel/fault",
+        "status": "/components/digesterLevel/status",
+        "level": "/components/digesterLevel/level",
+        "value": "/components/digesterLevel/value",
+        "damage": "/components/digesterLevel/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "gasQuality",
+      "type": "gas-analyzer",
+      "label": "AT-301 Gas quality",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gasQuality/active",
+        "running": "/components/gasQuality/running",
+        "fault": "/components/gasQuality/fault",
+        "status": "/components/gasQuality/status",
+        "value": "/components/gasQuality/value",
+        "damage": "/components/gasQuality/damage"
+      },
+      "ports": [
+        {
+          "id": "process",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "units": {
+        "value": "normalized index",
+        "level": "normalized index"
+      }
+    },
+    {
+      "id": "remoteIO",
+      "type": "remote-io",
+      "label": "RIO-01 Field I/O",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/remoteIO/active",
+        "running": "/components/remoteIO/running",
+        "fault": "/components/remoteIO/fault",
+        "status": "/components/remoteIO/status",
+        "connected": "/components/remoteIO/connected",
+        "load": "/components/remoteIO/load",
+        "damage": "/components/remoteIO/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        },
+        {
+          "id": "inputs",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
       ]
     }
   ],
@@ -740,20 +1235,6 @@
       "label": "Water"
     },
     {
-      "id": "liftPump-to-aeration",
-      "from": {
-        "component": "liftPump",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "aeration",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/liftPump-to-aeration",
-      "label": "Water"
-    },
-    {
       "id": "aeration-to-clarifier",
       "from": {
         "component": "aeration",
@@ -765,20 +1246,6 @@
       },
       "medium": "liquid",
       "flowBinding": "/flows/aeration-to-clarifier",
-      "label": "Water"
-    },
-    {
-      "id": "clarifier-to-effluent",
-      "from": {
-        "component": "clarifier",
-        "port": "effluent"
-      },
-      "to": {
-        "component": "effluent",
-        "port": "inlet"
-      },
-      "medium": "liquid",
-      "flowBinding": "/flows/clarifier-to-effluent",
       "label": "Water"
     },
     {
@@ -810,20 +1277,6 @@
       "label": "Sludge"
     },
     {
-      "id": "digester-to-digestate",
-      "from": {
-        "component": "digester",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "digestate",
-        "port": "inlet"
-      },
-      "medium": "sludge",
-      "flowBinding": "/flows/digester-to-digestate",
-      "label": "Sludge"
-    },
-    {
       "id": "digester-to-gasHolder",
       "from": {
         "component": "digester",
@@ -849,34 +1302,6 @@
       },
       "medium": "gas",
       "flowBinding": "/flows/gasHolder-to-gasClean",
-      "label": "Biogas"
-    },
-    {
-      "id": "gasClean-to-chp",
-      "from": {
-        "component": "gasClean",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "chp",
-        "port": "fuel"
-      },
-      "medium": "gas",
-      "flowBinding": "/flows/gasClean-to-chp",
-      "label": "Biogas"
-    },
-    {
-      "id": "gasClean-to-flare",
-      "from": {
-        "component": "gasClean",
-        "port": "outlet"
-      },
-      "to": {
-        "component": "flare",
-        "port": "fuel"
-      },
-      "medium": "gas",
-      "flowBinding": "/flows/gasClean-to-flare",
       "label": "Biogas"
     },
     {
@@ -990,58 +1415,632 @@
       "medium": "data",
       "flowBinding": "/flows/pressure-to-controller",
       "label": "Telemetry"
+    },
+    {
+      "id": "liftPump-to-inletValve",
+      "from": {
+        "component": "liftPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "inletValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Water",
+      "flowBinding": "/flows/liftPump-to-inletValve"
+    },
+    {
+      "id": "inletValve-to-aeration",
+      "from": {
+        "component": "inletValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aeration",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Water",
+      "flowBinding": "/flows/inletValve-to-aeration"
+    },
+    {
+      "id": "clarifier-to-effluentValve",
+      "from": {
+        "component": "clarifier",
+        "port": "effluent"
+      },
+      "to": {
+        "component": "effluentValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Water",
+      "flowBinding": "/flows/clarifier-to-effluentValve"
+    },
+    {
+      "id": "effluentValve-to-effluent",
+      "from": {
+        "component": "effluentValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "effluent",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "Water",
+      "flowBinding": "/flows/effluentValve-to-effluent"
+    },
+    {
+      "id": "digester-to-digestateValve",
+      "from": {
+        "component": "digester",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "digestateValve",
+        "port": "inlet"
+      },
+      "medium": "sludge",
+      "label": "Sludge",
+      "flowBinding": "/flows/digester-to-digestateValve"
+    },
+    {
+      "id": "digestateValve-to-digestate",
+      "from": {
+        "component": "digestateValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "digestate",
+        "port": "inlet"
+      },
+      "medium": "sludge",
+      "label": "Sludge",
+      "flowBinding": "/flows/digestateValve-to-digestate"
+    },
+    {
+      "id": "gasClean-to-chpValve",
+      "from": {
+        "component": "gasClean",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "chpValve",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "Biogas",
+      "flowBinding": "/flows/gasClean-to-chpValve"
+    },
+    {
+      "id": "chpValve-to-chp",
+      "from": {
+        "component": "chpValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "chp",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "label": "Biogas",
+      "flowBinding": "/flows/chpValve-to-chp"
+    },
+    {
+      "id": "gasClean-to-flareValve",
+      "from": {
+        "component": "gasClean",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "flareValve",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "Biogas",
+      "flowBinding": "/flows/gasClean-to-flareValve"
+    },
+    {
+      "id": "flareValve-to-flare",
+      "from": {
+        "component": "flareValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "flare",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "label": "Biogas",
+      "flowBinding": "/flows/flareValve-to-flare"
+    },
+    {
+      "id": "liftPump-to-inletFlow",
+      "from": {
+        "component": "liftPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "inletFlow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "FT-101 Inlet flow measurement",
+      "flowBinding": "/flows/liftPump-to-inletFlow"
+    },
+    {
+      "id": "inletFlow-to-controller",
+      "from": {
+        "component": "inletFlow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "FT-101 Inlet flow telemetry",
+      "flowBinding": "/flows/inletFlow-to-controller"
+    },
+    {
+      "id": "standby-to-inletFlow",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "inletFlow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/standby-to-inletFlow"
+    },
+    {
+      "id": "effluentValve-to-effluentFlow",
+      "from": {
+        "component": "effluentValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "effluentFlow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "FT-102 Outlet flow measurement",
+      "flowBinding": "/flows/effluentValve-to-effluentFlow"
+    },
+    {
+      "id": "effluentFlow-to-controller",
+      "from": {
+        "component": "effluentFlow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "FT-102 Outlet flow telemetry",
+      "flowBinding": "/flows/effluentFlow-to-controller"
+    },
+    {
+      "id": "standby-to-effluentFlow",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "effluentFlow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/standby-to-effluentFlow"
+    },
+    {
+      "id": "digester-to-digesterTemperature",
+      "from": {
+        "component": "digester",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "digesterTemperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "TT-201 Digester temp measurement",
+      "flowBinding": "/flows/digester-to-digesterTemperature"
+    },
+    {
+      "id": "digesterTemperature-to-controller",
+      "from": {
+        "component": "digesterTemperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "TT-201 Digester temp telemetry",
+      "flowBinding": "/flows/digesterTemperature-to-controller"
+    },
+    {
+      "id": "standby-to-digesterTemperature",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "digesterTemperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/standby-to-digesterTemperature"
+    },
+    {
+      "id": "digester-to-digesterLevel",
+      "from": {
+        "component": "digester",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "digesterLevel",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "LT-201 Digester level measurement",
+      "flowBinding": "/flows/digester-to-digesterLevel"
+    },
+    {
+      "id": "digesterLevel-to-controller",
+      "from": {
+        "component": "digesterLevel",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "LT-201 Digester level telemetry",
+      "flowBinding": "/flows/digesterLevel-to-controller"
+    },
+    {
+      "id": "standby-to-digesterLevel",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "digesterLevel",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/standby-to-digesterLevel"
+    },
+    {
+      "id": "gasClean-to-gasQuality",
+      "from": {
+        "component": "gasClean",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "gasQuality",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "label": "AT-301 Gas quality measurement",
+      "flowBinding": "/flows/gasClean-to-gasQuality"
+    },
+    {
+      "id": "gasQuality-to-controller",
+      "from": {
+        "component": "gasQuality",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "AT-301 Gas quality telemetry",
+      "flowBinding": "/flows/gasQuality-to-controller"
+    },
+    {
+      "id": "standby-to-gasQuality",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "gasQuality",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Instrument supply",
+      "flowBinding": "/flows/standby-to-gasQuality"
+    },
+    {
+      "id": "standby-to-remoteIO",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "remoteIO",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "I/O supply",
+      "flowBinding": "/flows/standby-to-remoteIO"
+    },
+    {
+      "id": "controller-to-remoteIO",
+      "from": {
+        "component": "controller",
+        "port": "io"
+      },
+      "to": {
+        "component": "remoteIO",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "PLC field commands",
+      "flowBinding": "/flows/controller-to-remoteIO"
+    },
+    {
+      "id": "remoteIO-to-inletValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "inletValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-inletValve"
+    },
+    {
+      "id": "remoteIO-to-chpValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "chpValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-chpValve"
+    },
+    {
+      "id": "remoteIO-to-flareValve",
+      "from": {
+        "component": "remoteIO",
+        "port": "outputs"
+      },
+      "to": {
+        "component": "flareValve",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Valve command",
+      "flowBinding": "/flows/remoteIO-to-flareValve"
     }
   ],
   "views": [
     {
-      "id": "treatment",
-      "label": "Water treatment",
+      "id": "overview",
+      "label": "Whole plant",
       "canvas": {
-        "width": 1160,
-        "height": 660
+        "width": 2860,
+        "height": 960
       },
       "placements": [
         {
           "component": "influent",
           "x": 60,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "screen",
-          "x": 410,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "x": 340,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "liftPump",
-          "x": 760,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "x": 620,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "inletValve",
+          "x": 900,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "aeration",
-          "x": 60,
-          "y": 380,
-          "width": 200,
-          "height": 170
+          "x": 1180,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "clarifier",
-          "x": 410,
-          "y": 380,
-          "width": 200,
-          "height": 170
+          "x": 1460,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluentValve",
+          "x": 1740,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "effluent",
-          "x": 760,
+          "x": 2020,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "standby",
+          "x": 2580,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 60,
           "y": 380,
-          "width": 200,
-          "height": 170
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "inletFlow",
+          "x": 340,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "pressure",
+          "x": 620,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "digesterTemperature",
+          "x": 900,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "digesterLevel",
+          "x": 1180,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "effluentFlow",
+          "x": 1460,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "gasQuality",
+          "x": 1740,
+          "y": 380,
+          "width": 180,
+          "height": 148
+        },
+        {
+          "component": "flareValve",
+          "x": 2020,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "flare",
+          "x": 2300,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "sludgeValve",
+          "x": 340,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digester",
+          "x": 620,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digestateValve",
+          "x": 900,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digestate",
+          "x": 1180,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "gasHolder",
+          "x": 1460,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "gasClean",
+          "x": 1740,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "chpValve",
+          "x": 2020,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "chp",
+          "x": 2300,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "loads",
+          "x": 2580,
+          "y": 690,
+          "width": 210,
+          "height": 176
         }
       ],
       "routes": [
@@ -1049,12 +2048,12 @@
           "connection": "influent-to-screen",
           "points": [
             {
-              "x": 260,
-              "y": 155
+              "x": 270,
+              "y": 178.0
             },
             {
-              "x": 410,
-              "y": 155
+              "x": 340,
+              "y": 178.0
             }
           ]
         },
@@ -1062,41 +2061,12 @@
           "connection": "screen-to-liftPump",
           "points": [
             {
-              "x": 610,
-              "y": 155
+              "x": 550,
+              "y": 178.0
             },
             {
-              "x": 760,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "liftPump-to-aeration",
-          "points": [
-            {
-              "x": 960,
-              "y": 155
-            },
-            {
-              "x": 1000,
-              "y": 155
-            },
-            {
-              "x": 1000,
-              "y": 305
-            },
-            {
-              "x": 30,
-              "y": 305
-            },
-            {
-              "x": 30,
-              "y": 465
-            },
-            {
-              "x": 60,
-              "y": 465
+              "x": 620,
+              "y": 178.0
             }
           ]
         },
@@ -1104,25 +2074,1335 @@
           "connection": "aeration-to-clarifier",
           "points": [
             {
-              "x": 260,
-              "y": 465
+              "x": 1390,
+              "y": 178.0
             },
             {
-              "x": 410,
-              "y": 465
+              "x": 1460,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "clarifier-to-effluent",
+          "connection": "clarifier-to-sludgeValve",
           "points": [
             {
-              "x": 610,
-              "y": 465
+              "x": 1565.0,
+              "y": 266
             },
             {
-              "x": 760,
-              "y": 465
+              "x": 1565.0,
+              "y": 282
+            },
+            {
+              "x": 324,
+              "y": 282
+            },
+            {
+              "x": 324,
+              "y": 778.0
+            },
+            {
+              "x": 340,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "sludgeValve-to-digester",
+          "points": [
+            {
+              "x": 550,
+              "y": 778.0
+            },
+            {
+              "x": 620,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-gasHolder",
+          "points": [
+            {
+              "x": 725.0,
+              "y": 866
+            },
+            {
+              "x": 725.0,
+              "y": 882
+            },
+            {
+              "x": 1444,
+              "y": 882
+            },
+            {
+              "x": 1444,
+              "y": 778.0
+            },
+            {
+              "x": 1460,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "gasHolder-to-gasClean",
+          "points": [
+            {
+              "x": 1670,
+              "y": 778.0
+            },
+            {
+              "x": 1740,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "liftPump-to-inletValve",
+          "points": [
+            {
+              "x": 830,
+              "y": 178.0
+            },
+            {
+              "x": 900,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "inletValve-to-aeration",
+          "points": [
+            {
+              "x": 1110,
+              "y": 178.0
+            },
+            {
+              "x": 1180,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "clarifier-to-effluentValve",
+          "points": [
+            {
+              "x": 1670,
+              "y": 178.0
+            },
+            {
+              "x": 1740,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "effluentValve-to-effluent",
+          "points": [
+            {
+              "x": 1950,
+              "y": 178.0
+            },
+            {
+              "x": 2020,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digestateValve",
+          "points": [
+            {
+              "x": 830,
+              "y": 778.0
+            },
+            {
+              "x": 900,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "digestateValve-to-digestate",
+          "points": [
+            {
+              "x": 1110,
+              "y": 778.0
+            },
+            {
+              "x": 1180,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-chpValve",
+          "points": [
+            {
+              "x": 1950,
+              "y": 778.0
+            },
+            {
+              "x": 2020,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "chpValve-to-chp",
+          "points": [
+            {
+              "x": 2230,
+              "y": 778.0
+            },
+            {
+              "x": 2300,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-flareValve",
+          "points": [
+            {
+              "x": 1950,
+              "y": 778.0
+            },
+            {
+              "x": 1966,
+              "y": 778.0
+            },
+            {
+              "x": 1966,
+              "y": 468.0
+            },
+            {
+              "x": 2020,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "flareValve-to-flare",
+          "points": [
+            {
+              "x": 2230,
+              "y": 468.0
+            },
+            {
+              "x": 2300,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-pressure",
+          "points": [
+            {
+              "x": 830,
+              "y": 778.0
+            },
+            {
+              "x": 846,
+              "y": 778.0
+            },
+            {
+              "x": 846,
+              "y": 544
+            },
+            {
+              "x": 604,
+              "y": 544
+            },
+            {
+              "x": 604,
+              "y": 454.0
+            },
+            {
+              "x": 620,
+              "y": 454.0
+            }
+          ]
+        },
+        {
+          "connection": "liftPump-to-inletFlow",
+          "points": [
+            {
+              "x": 830,
+              "y": 178.0
+            },
+            {
+              "x": 846,
+              "y": 178.0
+            },
+            {
+              "x": 846,
+              "y": 364
+            },
+            {
+              "x": 430.0,
+              "y": 364
+            },
+            {
+              "x": 430.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "effluentValve-to-effluentFlow",
+          "points": [
+            {
+              "x": 1950,
+              "y": 178.0
+            },
+            {
+              "x": 1966,
+              "y": 178.0
+            },
+            {
+              "x": 1966,
+              "y": 364
+            },
+            {
+              "x": 1550.0,
+              "y": 364
+            },
+            {
+              "x": 1550.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digesterTemperature",
+          "points": [
+            {
+              "x": 830,
+              "y": 778.0
+            },
+            {
+              "x": 862,
+              "y": 778.0
+            },
+            {
+              "x": 862,
+              "y": 364
+            },
+            {
+              "x": 990.0,
+              "y": 364
+            },
+            {
+              "x": 990.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digesterLevel",
+          "points": [
+            {
+              "x": 830,
+              "y": 778.0
+            },
+            {
+              "x": 884,
+              "y": 778.0
+            },
+            {
+              "x": 884,
+              "y": 364
+            },
+            {
+              "x": 1270.0,
+              "y": 364
+            },
+            {
+              "x": 1270.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-gasQuality",
+          "points": [
+            {
+              "x": 1950,
+              "y": 778.0
+            },
+            {
+              "x": 1966,
+              "y": 778.0
+            },
+            {
+              "x": 1966,
+              "y": 364
+            },
+            {
+              "x": 1830.0,
+              "y": 364
+            },
+            {
+              "x": 1830.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "chp-to-loads",
+          "points": [
+            {
+              "x": 2510,
+              "y": 778.0
+            },
+            {
+              "x": 2526,
+              "y": 778.0
+            },
+            {
+              "x": 2526,
+              "y": 830.8
+            },
+            {
+              "x": 2580,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-liftPump",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 298
+            },
+            {
+              "x": 604,
+              "y": 298
+            },
+            {
+              "x": 604,
+              "y": 230.8
+            },
+            {
+              "x": 620,
+              "y": 230.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digester",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 674
+            },
+            {
+              "x": 604,
+              "y": 674
+            },
+            {
+              "x": 604,
+              "y": 830.8
+            },
+            {
+              "x": 620,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-gasClean",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 282
+            },
+            {
+              "x": 1724,
+              "y": 282
+            },
+            {
+              "x": 1724,
+              "y": 830.8
+            },
+            {
+              "x": 1740,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-controller",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2822,
+              "y": 178.0
+            },
+            {
+              "x": 2822,
+              "y": 658
+            },
+            {
+              "x": 44,
+              "y": 658
+            },
+            {
+              "x": 44,
+              "y": 830.8
+            },
+            {
+              "x": 60,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-pressure",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 348
+            },
+            {
+              "x": 604,
+              "y": 348
+            },
+            {
+              "x": 604,
+              "y": 498.4
+            },
+            {
+              "x": 620,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-inletFlow",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 74
+            },
+            {
+              "x": 324,
+              "y": 74
+            },
+            {
+              "x": 324,
+              "y": 498.4
+            },
+            {
+              "x": 340,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-effluentFlow",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 364
+            },
+            {
+              "x": 1444,
+              "y": 364
+            },
+            {
+              "x": 1444,
+              "y": 498.4
+            },
+            {
+              "x": 1460,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digesterTemperature",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2840,
+              "y": 178.0
+            },
+            {
+              "x": 2840,
+              "y": 572
+            },
+            {
+              "x": 884,
+              "y": 572
+            },
+            {
+              "x": 884,
+              "y": 498.4
+            },
+            {
+              "x": 900,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digesterLevel",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 58
+            },
+            {
+              "x": 1164,
+              "y": 58
+            },
+            {
+              "x": 1164,
+              "y": 498.4
+            },
+            {
+              "x": 1180,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-gasQuality",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 178.0
+            },
+            {
+              "x": 2806,
+              "y": 282
+            },
+            {
+              "x": 1724,
+              "y": 282
+            },
+            {
+              "x": 1724,
+              "y": 498.4
+            },
+            {
+              "x": 1740,
+              "y": 498.4
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-remoteIO",
+          "points": [
+            {
+              "x": 2790,
+              "y": 178.0
+            },
+            {
+              "x": 2822,
+              "y": 178.0
+            },
+            {
+              "x": 2822,
+              "y": 588
+            },
+            {
+              "x": 44,
+              "y": 588
+            },
+            {
+              "x": 44,
+              "y": 520.8
+            },
+            {
+              "x": 60,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 800,
+              "y": 454.0
+            },
+            {
+              "x": 816,
+              "y": 454.0
+            },
+            {
+              "x": 816,
+              "y": 572
+            },
+            {
+              "x": 165.0,
+              "y": 572
+            },
+            {
+              "x": 165.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "inletFlow-to-controller",
+          "points": [
+            {
+              "x": 430.0,
+              "y": 528
+            },
+            {
+              "x": 430.0,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "effluentFlow-to-controller",
+          "points": [
+            {
+              "x": 1550.0,
+              "y": 528
+            },
+            {
+              "x": 1550.0,
+              "y": 560
+            },
+            {
+              "x": 286,
+              "y": 560
+            },
+            {
+              "x": 286,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "digesterTemperature-to-controller",
+          "points": [
+            {
+              "x": 990.0,
+              "y": 528
+            },
+            {
+              "x": 990.0,
+              "y": 544
+            },
+            {
+              "x": 302,
+              "y": 544
+            },
+            {
+              "x": 302,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "digesterLevel-to-controller",
+          "points": [
+            {
+              "x": 1270.0,
+              "y": 528
+            },
+            {
+              "x": 1270.0,
+              "y": 544
+            },
+            {
+              "x": 868,
+              "y": 544
+            },
+            {
+              "x": 868,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 674
+            },
+            {
+              "x": 165.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "gasQuality-to-controller",
+          "points": [
+            {
+              "x": 1830.0,
+              "y": 528
+            },
+            {
+              "x": 1830.0,
+              "y": 544
+            },
+            {
+              "x": 990.0,
+              "y": 544
+            },
+            {
+              "x": 990.0,
+              "y": 658
+            },
+            {
+              "x": 165.0,
+              "y": 658
+            },
+            {
+              "x": 165.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 778.0
+            },
+            {
+              "x": 286,
+              "y": 572
+            },
+            {
+              "x": 165.0,
+              "y": 572
+            },
+            {
+              "x": 165.0,
+              "y": 556
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-inletValve",
+          "points": [
+            {
+              "x": 270,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 298
+            },
+            {
+              "x": 1005.0,
+              "y": 298
+            },
+            {
+              "x": 1005.0,
+              "y": 266
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-chpValve",
+          "points": [
+            {
+              "x": 270,
+              "y": 468.0
+            },
+            {
+              "x": 308,
+              "y": 468.0
+            },
+            {
+              "x": 308,
+              "y": 898
+            },
+            {
+              "x": 2125.0,
+              "y": 898
+            },
+            {
+              "x": 2125.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-flareValve",
+          "points": [
+            {
+              "x": 270,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 468.0
+            },
+            {
+              "x": 286,
+              "y": 560
+            },
+            {
+              "x": 2004,
+              "y": 560
+            },
+            {
+              "x": 2004,
+              "y": 572
+            },
+            {
+              "x": 2125.0,
+              "y": 572
+            },
+            {
+              "x": 2125.0,
+              "y": 556
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treatment",
+      "label": "Water treatment",
+      "canvas": {
+        "width": 2400,
+        "height": 680
+      },
+      "placements": [
+        {
+          "component": "influent",
+          "x": 60,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "screen",
+          "x": 350,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "liftPump",
+          "x": 640,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "inletValve",
+          "x": 930,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "aeration",
+          "x": 1220,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "clarifier",
+          "x": 1510,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluentValve",
+          "x": 1800,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluent",
+          "x": 2090,
+          "y": 100,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "inletFlow",
+          "x": 740,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluentFlow",
+          "x": 1840,
+          "y": 410,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "influent-to-screen",
+          "points": [
+            {
+              "x": 270,
+              "y": 188.0
+            },
+            {
+              "x": 350,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "screen-to-liftPump",
+          "points": [
+            {
+              "x": 560,
+              "y": 188.0
+            },
+            {
+              "x": 640,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "aeration-to-clarifier",
+          "points": [
+            {
+              "x": 1430,
+              "y": 188.0
+            },
+            {
+              "x": 1510,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "liftPump-to-inletValve",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 930,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "inletValve-to-aeration",
+          "points": [
+            {
+              "x": 1140,
+              "y": 188.0
+            },
+            {
+              "x": 1220,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "clarifier-to-effluentValve",
+          "points": [
+            {
+              "x": 1720,
+              "y": 188.0
+            },
+            {
+              "x": 1800,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "effluentValve-to-effluent",
+          "points": [
+            {
+              "x": 2010,
+              "y": 188.0
+            },
+            {
+              "x": 2090,
+              "y": 188.0
+            }
+          ]
+        },
+        {
+          "connection": "liftPump-to-inletFlow",
+          "points": [
+            {
+              "x": 850,
+              "y": 188.0
+            },
+            {
+              "x": 866,
+              "y": 188.0
+            },
+            {
+              "x": 866,
+              "y": 394
+            },
+            {
+              "x": 845.0,
+              "y": 394
+            },
+            {
+              "x": 845.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "effluentValve-to-effluentFlow",
+          "points": [
+            {
+              "x": 2010,
+              "y": 188.0
+            },
+            {
+              "x": 2026,
+              "y": 188.0
+            },
+            {
+              "x": 2026,
+              "y": 394
+            },
+            {
+              "x": 1945.0,
+              "y": 394
+            },
+            {
+              "x": 1945.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "inletFlow-to-controller",
+          "points": [
+            {
+              "x": 845.0,
+              "y": 586
+            },
+            {
+              "x": 845.0,
+              "y": 602
+            },
+            {
+              "x": 286,
+              "y": 602
+            },
+            {
+              "x": 286,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "effluentFlow-to-controller",
+          "points": [
+            {
+              "x": 1945.0,
+              "y": 586
+            },
+            {
+              "x": 1945.0,
+              "y": 602
+            },
+            {
+              "x": 966,
+              "y": 602
+            },
+            {
+              "x": 966,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 394
+            },
+            {
+              "x": 165.0,
+              "y": 410
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 498.0
+            },
+            {
+              "x": 334,
+              "y": 498.0
+            },
+            {
+              "x": 334,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 602
+            },
+            {
+              "x": 455.0,
+              "y": 586
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-inletValve",
+          "points": [
+            {
+              "x": 560,
+              "y": 498.0
+            },
+            {
+              "x": 576,
+              "y": 498.0
+            },
+            {
+              "x": 576,
+              "y": 292
+            },
+            {
+              "x": 1035.0,
+              "y": 292
+            },
+            {
+              "x": 1035.0,
+              "y": 276
             }
           ]
         }
@@ -1132,72 +3412,135 @@
       "id": "sludge-energy",
       "label": "Sludge & biogas",
       "canvas": {
-        "width": 1160,
-        "height": 930
+        "width": 2400,
+        "height": 960
       },
       "placements": [
         {
           "component": "clarifier",
-          "x": 50,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "x": 60,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "sludgeValve",
-          "x": 330,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "x": 350,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "digester",
-          "x": 610,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "x": 640,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digestateValve",
+          "x": 930,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "digestate",
-          "x": 890,
-          "y": 70,
-          "width": 200,
-          "height": 170
+          "x": 1220,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "pressure",
+          "x": 1510,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digesterTemperature",
+          "x": 1800,
+          "y": 90,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digesterLevel",
+          "x": 2090,
+          "y": 90,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "gasHolder",
-          "x": 50,
-          "y": 390,
-          "width": 200,
-          "height": 170
+          "x": 640,
+          "y": 400,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "gasClean",
-          "x": 330,
-          "y": 390,
-          "width": 200,
-          "height": 170
+          "x": 930,
+          "y": 400,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "chpValve",
+          "x": 1220,
+          "y": 400,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "chp",
-          "x": 610,
-          "y": 390,
-          "width": 200,
-          "height": 170
+          "x": 1510,
+          "y": 400,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "loads",
-          "x": 890,
-          "y": 390,
-          "width": 200,
-          "height": 170
+          "x": 1800,
+          "y": 400,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 710,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 350,
+          "y": 710,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "gasQuality",
+          "x": 930,
+          "y": 710,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "flareValve",
+          "x": 1220,
+          "y": 710,
+          "width": 210,
+          "height": 176
         },
         {
           "component": "flare",
-          "x": 610,
-          "y": 700,
-          "width": 200,
-          "height": 170
+          "x": 1510,
+          "y": 710,
+          "width": 210,
+          "height": 176
         }
       ],
       "routes": [
@@ -1205,12 +3548,24 @@
           "connection": "clarifier-to-sludgeValve",
           "points": [
             {
-              "x": 250,
-              "y": 155
+              "x": 165.0,
+              "y": 266
             },
             {
-              "x": 330,
-              "y": 155
+              "x": 165.0,
+              "y": 282
+            },
+            {
+              "x": 334,
+              "y": 282
+            },
+            {
+              "x": 334,
+              "y": 178.0
+            },
+            {
+              "x": 350,
+              "y": 178.0
             }
           ]
         },
@@ -1218,25 +3573,12 @@
           "connection": "sludgeValve-to-digester",
           "points": [
             {
-              "x": 530,
-              "y": 155
+              "x": 560,
+              "y": 178.0
             },
             {
-              "x": 610,
-              "y": 155
-            }
-          ]
-        },
-        {
-          "connection": "digester-to-digestate",
-          "points": [
-            {
-              "x": 810,
-              "y": 155
-            },
-            {
-              "x": 890,
-              "y": 155
+              "x": 640,
+              "y": 178.0
             }
           ]
         },
@@ -1244,24 +3586,24 @@
           "connection": "digester-to-gasHolder",
           "points": [
             {
-              "x": 710,
-              "y": 70
+              "x": 745.0,
+              "y": 266
             },
             {
-              "x": 710,
-              "y": 25
+              "x": 745.0,
+              "y": 282
             },
             {
-              "x": 20,
-              "y": 25
+              "x": 624,
+              "y": 282
             },
             {
-              "x": 20,
-              "y": 475
+              "x": 624,
+              "y": 488.0
             },
             {
-              "x": 50,
-              "y": 475
+              "x": 640,
+              "y": 488.0
             }
           ]
         },
@@ -1269,249 +3611,98 @@
           "connection": "gasHolder-to-gasClean",
           "points": [
             {
-              "x": 250,
-              "y": 475
+              "x": 850,
+              "y": 488.0
             },
             {
-              "x": 330,
-              "y": 475
+              "x": 930,
+              "y": 488.0
             }
           ]
         },
         {
-          "connection": "gasClean-to-chp",
+          "connection": "digester-to-digestateValve",
           "points": [
-            {
-              "x": 530,
-              "y": 475
-            },
-            {
-              "x": 610,
-              "y": 475
-            }
-          ]
-        },
-        {
-          "connection": "gasClean-to-flare",
-          "points": [
-            {
-              "x": 530,
-              "y": 475
-            },
-            {
-              "x": 565,
-              "y": 475
-            },
-            {
-              "x": 565,
-              "y": 785
-            },
-            {
-              "x": 610,
-              "y": 785
-            }
-          ]
-        },
-        {
-          "connection": "chp-to-loads",
-          "points": [
-            {
-              "x": 810,
-              "y": 475
-            },
             {
               "x": 850,
-              "y": 475
+              "y": 178.0
             },
             {
-              "x": 850,
-              "y": 526
-            },
-            {
-              "x": 890,
-              "y": 526
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "power-control",
-      "label": "Power & control",
-      "canvas": {
-        "width": 1160,
-        "height": 930
-      },
-      "placements": [
-        {
-          "component": "standby",
-          "x": 50,
-          "y": 70,
-          "width": 200,
-          "height": 170
-        },
-        {
-          "component": "liftPump",
-          "x": 430,
-          "y": 70,
-          "width": 200,
-          "height": 170
-        },
-        {
-          "component": "controller",
-          "x": 890,
-          "y": 70,
-          "width": 200,
-          "height": 170
-        },
-        {
-          "component": "digester",
-          "x": 430,
-          "y": 390,
-          "width": 200,
-          "height": 170
-        },
-        {
-          "component": "pressure",
-          "x": 890,
-          "y": 390,
-          "width": 200,
-          "height": 170
-        },
-        {
-          "component": "chp",
-          "x": 430,
-          "y": 700,
-          "width": 200,
-          "height": 170
-        },
-        {
-          "component": "loads",
-          "x": 890,
-          "y": 700,
-          "width": 200,
-          "height": 170
-        }
-      ],
-      "routes": [
-        {
-          "connection": "chp-to-loads",
-          "points": [
-            {
-              "x": 630,
-              "y": 785
-            },
-            {
-              "x": 654,
-              "y": 785
-            },
-            {
-              "x": 654,
-              "y": 836
-            },
-            {
-              "x": 890,
-              "y": 836
+              "x": 930,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "standby-to-liftPump",
+          "connection": "digestateValve-to-digestate",
           "points": [
             {
-              "x": 250,
-              "y": 155
+              "x": 1140,
+              "y": 178.0
             },
             {
-              "x": 284,
-              "y": 155
-            },
-            {
-              "x": 284,
-              "y": 206
-            },
-            {
-              "x": 430,
-              "y": 206
+              "x": 1220,
+              "y": 178.0
             }
           ]
         },
         {
-          "connection": "standby-to-digester",
+          "connection": "gasClean-to-chpValve",
           "points": [
             {
-              "x": 250,
-              "y": 155
+              "x": 1140,
+              "y": 488.0
             },
             {
-              "x": 294,
-              "y": 155
-            },
-            {
-              "x": 294,
-              "y": 526
-            },
-            {
-              "x": 430,
-              "y": 526
+              "x": 1220,
+              "y": 488.0
             }
           ]
         },
         {
-          "connection": "standby-to-controller",
+          "connection": "chpValve-to-chp",
           "points": [
             {
-              "x": 250,
-              "y": 155
+              "x": 1430,
+              "y": 488.0
             },
             {
-              "x": 280,
-              "y": 155
-            },
-            {
-              "x": 280,
-              "y": 25
-            },
-            {
-              "x": 850,
-              "y": 25
-            },
-            {
-              "x": 850,
-              "y": 206
-            },
-            {
-              "x": 890,
-              "y": 206
+              "x": 1510,
+              "y": 488.0
             }
           ]
         },
         {
-          "connection": "standby-to-pressure",
+          "connection": "gasClean-to-flareValve",
           "points": [
             {
-              "x": 250,
-              "y": 155
+              "x": 1140,
+              "y": 488.0
             },
             {
-              "x": 300,
-              "y": 155
+              "x": 1156,
+              "y": 488.0
             },
             {
-              "x": 300,
-              "y": 320
+              "x": 1156,
+              "y": 798.0
             },
             {
-              "x": 850,
-              "y": 320
+              "x": 1220,
+              "y": 798.0
+            }
+          ]
+        },
+        {
+          "connection": "flareValve-to-flare",
+          "points": [
+            {
+              "x": 1430,
+              "y": 798.0
             },
             {
-              "x": 850,
-              "y": 526
-            },
-            {
-              "x": 890,
-              "y": 526
+              "x": 1510,
+              "y": 798.0
             }
           ]
         },
@@ -1519,12 +3710,124 @@
           "connection": "digester-to-pressure",
           "points": [
             {
-              "x": 630,
-              "y": 475
+              "x": 850,
+              "y": 178.0
             },
             {
-              "x": 890,
-              "y": 475
+              "x": 866,
+              "y": 178.0
+            },
+            {
+              "x": 866,
+              "y": 74
+            },
+            {
+              "x": 1494,
+              "y": 74
+            },
+            {
+              "x": 1494,
+              "y": 178.0
+            },
+            {
+              "x": 1510,
+              "y": 178.0
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digesterTemperature",
+          "points": [
+            {
+              "x": 850,
+              "y": 178.0
+            },
+            {
+              "x": 866,
+              "y": 178.0
+            },
+            {
+              "x": 866,
+              "y": 58
+            },
+            {
+              "x": 1905.0,
+              "y": 58
+            },
+            {
+              "x": 1905.0,
+              "y": 90
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digesterLevel",
+          "points": [
+            {
+              "x": 850,
+              "y": 178.0
+            },
+            {
+              "x": 914,
+              "y": 178.0
+            },
+            {
+              "x": 914,
+              "y": 74
+            },
+            {
+              "x": 2195.0,
+              "y": 74
+            },
+            {
+              "x": 2195.0,
+              "y": 90
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-gasQuality",
+          "points": [
+            {
+              "x": 1140,
+              "y": 488.0
+            },
+            {
+              "x": 1156,
+              "y": 488.0
+            },
+            {
+              "x": 1156,
+              "y": 694
+            },
+            {
+              "x": 1035.0,
+              "y": 694
+            },
+            {
+              "x": 1035.0,
+              "y": 710
+            }
+          ]
+        },
+        {
+          "connection": "chp-to-loads",
+          "points": [
+            {
+              "x": 1720,
+              "y": 488.0
+            },
+            {
+              "x": 1736,
+              "y": 488.0
+            },
+            {
+              "x": 1736,
+              "y": 540.8
+            },
+            {
+              "x": 1800,
+              "y": 540.8
             }
           ]
         },
@@ -1532,28 +3835,1076 @@
           "connection": "pressure-to-controller",
           "points": [
             {
-              "x": 1090,
-              "y": 475
+              "x": 1720,
+              "y": 178.0
             },
             {
-              "x": 1120,
-              "y": 475
+              "x": 1736,
+              "y": 178.0
             },
             {
-              "x": 1120,
-              "y": 285
+              "x": 1736,
+              "y": 384
             },
             {
-              "x": 870,
-              "y": 285
+              "x": 165.0,
+              "y": 384
             },
             {
-              "x": 870,
-              "y": 155
+              "x": 165.0,
+              "y": 710
+            }
+          ]
+        },
+        {
+          "connection": "digesterTemperature-to-controller",
+          "points": [
+            {
+              "x": 1905.0,
+              "y": 266
             },
+            {
+              "x": 1905.0,
+              "y": 282
+            },
+            {
+              "x": 866,
+              "y": 282
+            },
+            {
+              "x": 866,
+              "y": 694
+            },
+            {
+              "x": 165.0,
+              "y": 694
+            },
+            {
+              "x": 165.0,
+              "y": 710
+            }
+          ]
+        },
+        {
+          "connection": "digesterLevel-to-controller",
+          "points": [
+            {
+              "x": 2195.0,
+              "y": 266
+            },
+            {
+              "x": 2195.0,
+              "y": 678
+            },
+            {
+              "x": 165.0,
+              "y": 678
+            },
+            {
+              "x": 165.0,
+              "y": 710
+            }
+          ]
+        },
+        {
+          "connection": "gasQuality-to-controller",
+          "points": [
+            {
+              "x": 1035.0,
+              "y": 886
+            },
+            {
+              "x": 1035.0,
+              "y": 902
+            },
+            {
+              "x": 286,
+              "y": 902
+            },
+            {
+              "x": 286,
+              "y": 694
+            },
+            {
+              "x": 165.0,
+              "y": 694
+            },
+            {
+              "x": 165.0,
+              "y": 710
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 798.0
+            },
+            {
+              "x": 334,
+              "y": 798.0
+            },
+            {
+              "x": 334,
+              "y": 902
+            },
+            {
+              "x": 455.0,
+              "y": 902
+            },
+            {
+              "x": 455.0,
+              "y": 886
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-chpValve",
+          "points": [
+            {
+              "x": 560,
+              "y": 798.0
+            },
+            {
+              "x": 576,
+              "y": 798.0
+            },
+            {
+              "x": 576,
+              "y": 592
+            },
+            {
+              "x": 1325.0,
+              "y": 592
+            },
+            {
+              "x": 1325.0,
+              "y": 576
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-flareValve",
+          "points": [
+            {
+              "x": 560,
+              "y": 798.0
+            },
+            {
+              "x": 914,
+              "y": 798.0
+            },
+            {
+              "x": 914,
+              "y": 902
+            },
+            {
+              "x": 1325.0,
+              "y": 902
+            },
+            {
+              "x": 1325.0,
+              "y": 886
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power-control",
+      "label": "Power & instruments",
+      "canvas": {
+        "width": 2240,
+        "height": 960
+      },
+      "placements": [
+        {
+          "component": "standby",
+          "x": 60,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "liftPump",
+          "x": 370,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digester",
+          "x": 680,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "gasClean",
+          "x": 990,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "chp",
+          "x": 1610,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "loads",
+          "x": 1920,
+          "y": 80,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "inletFlow",
+          "x": 60,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "effluentFlow",
+          "x": 370,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "pressure",
+          "x": 680,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digesterTemperature",
+          "x": 990,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "digesterLevel",
+          "x": 1300,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "gasQuality",
+          "x": 1610,
+          "y": 380,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "controller",
+          "x": 370,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "remoteIO",
+          "x": 680,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "inletValve",
+          "x": 990,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "chpValve",
+          "x": 1300,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        },
+        {
+          "component": "flareValve",
+          "x": 1610,
+          "y": 690,
+          "width": 210,
+          "height": 176
+        }
+      ],
+      "routes": [
+        {
+          "connection": "liftPump-to-inletValve",
+          "points": [
+            {
+              "x": 580,
+              "y": 168.0
+            },
+            {
+              "x": 596,
+              "y": 168.0
+            },
+            {
+              "x": 596,
+              "y": 674
+            },
+            {
+              "x": 974,
+              "y": 674
+            },
+            {
+              "x": 974,
+              "y": 778.0
+            },
+            {
+              "x": 990,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-chpValve",
+          "points": [
+            {
+              "x": 1200,
+              "y": 168.0
+            },
+            {
+              "x": 1216,
+              "y": 168.0
+            },
+            {
+              "x": 1216,
+              "y": 778.0
+            },
+            {
+              "x": 1300,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "chpValve-to-chp",
+          "points": [
+            {
+              "x": 1510,
+              "y": 778.0
+            },
+            {
+              "x": 1526,
+              "y": 778.0
+            },
+            {
+              "x": 1526,
+              "y": 168.0
+            },
+            {
+              "x": 1610,
+              "y": 168.0
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-flareValve",
+          "points": [
+            {
+              "x": 1200,
+              "y": 168.0
+            },
+            {
+              "x": 1594,
+              "y": 168.0
+            },
+            {
+              "x": 1594,
+              "y": 778.0
+            },
+            {
+              "x": 1610,
+              "y": 778.0
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-pressure",
+          "points": [
             {
               "x": 890,
-              "y": 155
+              "y": 168.0
+            },
+            {
+              "x": 906,
+              "y": 168.0
+            },
+            {
+              "x": 906,
+              "y": 364
+            },
+            {
+              "x": 664,
+              "y": 364
+            },
+            {
+              "x": 664,
+              "y": 468.0
+            },
+            {
+              "x": 680,
+              "y": 468.0
+            }
+          ]
+        },
+        {
+          "connection": "liftPump-to-inletFlow",
+          "points": [
+            {
+              "x": 580,
+              "y": 168.0
+            },
+            {
+              "x": 596,
+              "y": 168.0
+            },
+            {
+              "x": 596,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 364
+            },
+            {
+              "x": 165.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digesterTemperature",
+          "points": [
+            {
+              "x": 890,
+              "y": 168.0
+            },
+            {
+              "x": 974,
+              "y": 168.0
+            },
+            {
+              "x": 974,
+              "y": 364
+            },
+            {
+              "x": 1095.0,
+              "y": 364
+            },
+            {
+              "x": 1095.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digesterLevel",
+          "points": [
+            {
+              "x": 890,
+              "y": 168.0
+            },
+            {
+              "x": 906,
+              "y": 168.0
+            },
+            {
+              "x": 906,
+              "y": 272
+            },
+            {
+              "x": 1405.0,
+              "y": 272
+            },
+            {
+              "x": 1405.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-gasQuality",
+          "points": [
+            {
+              "x": 1200,
+              "y": 168.0
+            },
+            {
+              "x": 1232,
+              "y": 168.0
+            },
+            {
+              "x": 1232,
+              "y": 364
+            },
+            {
+              "x": 1715.0,
+              "y": 364
+            },
+            {
+              "x": 1715.0,
+              "y": 380
+            }
+          ]
+        },
+        {
+          "connection": "chp-to-loads",
+          "points": [
+            {
+              "x": 1820,
+              "y": 168.0
+            },
+            {
+              "x": 1836,
+              "y": 168.0
+            },
+            {
+              "x": 1836,
+              "y": 220.8
+            },
+            {
+              "x": 1920,
+              "y": 220.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-liftPump",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 220.8
+            },
+            {
+              "x": 370,
+              "y": 220.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digester",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 272
+            },
+            {
+              "x": 664,
+              "y": 272
+            },
+            {
+              "x": 664,
+              "y": 220.8
+            },
+            {
+              "x": 680,
+              "y": 220.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-gasClean",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 288
+            },
+            {
+              "x": 974,
+              "y": 288
+            },
+            {
+              "x": 974,
+              "y": 220.8
+            },
+            {
+              "x": 990,
+              "y": 220.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-controller",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 830.8
+            },
+            {
+              "x": 370,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-pressure",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 348
+            },
+            {
+              "x": 664,
+              "y": 348
+            },
+            {
+              "x": 664,
+              "y": 520.8
+            },
+            {
+              "x": 680,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-inletFlow",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 272
+            },
+            {
+              "x": 44,
+              "y": 272
+            },
+            {
+              "x": 44,
+              "y": 520.8
+            },
+            {
+              "x": 60,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-effluentFlow",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 168.0
+            },
+            {
+              "x": 338,
+              "y": 520.8
+            },
+            {
+              "x": 370,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digesterTemperature",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 348
+            },
+            {
+              "x": 974,
+              "y": 348
+            },
+            {
+              "x": 974,
+              "y": 520.8
+            },
+            {
+              "x": 990,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digesterLevel",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 168.0
+            },
+            {
+              "x": 302,
+              "y": 288
+            },
+            {
+              "x": 1284,
+              "y": 288
+            },
+            {
+              "x": 1284,
+              "y": 520.8
+            },
+            {
+              "x": 1300,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-gasQuality",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 168.0
+            },
+            {
+              "x": 286,
+              "y": 572
+            },
+            {
+              "x": 1594,
+              "y": 572
+            },
+            {
+              "x": 1594,
+              "y": 520.8
+            },
+            {
+              "x": 1610,
+              "y": 520.8
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-remoteIO",
+          "points": [
+            {
+              "x": 270,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 168.0
+            },
+            {
+              "x": 354,
+              "y": 658
+            },
+            {
+              "x": 664,
+              "y": 658
+            },
+            {
+              "x": 664,
+              "y": 830.8
+            },
+            {
+              "x": 680,
+              "y": 830.8
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 890,
+              "y": 468.0
+            },
+            {
+              "x": 906,
+              "y": 468.0
+            },
+            {
+              "x": 906,
+              "y": 588
+            },
+            {
+              "x": 475.0,
+              "y": 588
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "inletFlow-to-controller",
+          "points": [
+            {
+              "x": 165.0,
+              "y": 556
+            },
+            {
+              "x": 165.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "effluentFlow-to-controller",
+          "points": [
+            {
+              "x": 475.0,
+              "y": 556
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "digesterTemperature-to-controller",
+          "points": [
+            {
+              "x": 1095.0,
+              "y": 556
+            },
+            {
+              "x": 1095.0,
+              "y": 658
+            },
+            {
+              "x": 612,
+              "y": 658
+            },
+            {
+              "x": 612,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "digesterLevel-to-controller",
+          "points": [
+            {
+              "x": 1405.0,
+              "y": 556
+            },
+            {
+              "x": 1405.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 674
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "gasQuality-to-controller",
+          "points": [
+            {
+              "x": 1715.0,
+              "y": 556
+            },
+            {
+              "x": 1715.0,
+              "y": 588
+            },
+            {
+              "x": 475.0,
+              "y": 588
+            },
+            {
+              "x": 475.0,
+              "y": 690
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-remoteIO",
+          "points": [
+            {
+              "x": 580,
+              "y": 778.0
+            },
+            {
+              "x": 596,
+              "y": 778.0
+            },
+            {
+              "x": 596,
+              "y": 882
+            },
+            {
+              "x": 785.0,
+              "y": 882
+            },
+            {
+              "x": 785.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-inletValve",
+          "points": [
+            {
+              "x": 890,
+              "y": 778.0
+            },
+            {
+              "x": 906,
+              "y": 778.0
+            },
+            {
+              "x": 906,
+              "y": 882
+            },
+            {
+              "x": 1095.0,
+              "y": 882
+            },
+            {
+              "x": 1095.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-chpValve",
+          "points": [
+            {
+              "x": 890,
+              "y": 778.0
+            },
+            {
+              "x": 974,
+              "y": 778.0
+            },
+            {
+              "x": 974,
+              "y": 882
+            },
+            {
+              "x": 1405.0,
+              "y": 882
+            },
+            {
+              "x": 1405.0,
+              "y": 866
+            }
+          ]
+        },
+        {
+          "connection": "remoteIO-to-flareValve",
+          "points": [
+            {
+              "x": 890,
+              "y": 778.0
+            },
+            {
+              "x": 906,
+              "y": 778.0
+            },
+            {
+              "x": 906,
+              "y": 898
+            },
+            {
+              "x": 1715.0,
+              "y": 898
+            },
+            {
+              "x": 1715.0,
+              "y": 866
             }
           ]
         }
@@ -1563,7 +4914,7 @@
   "commands": [
     {
       "id": "influent-enabled",
-      "label": "Influent boundary · Enabled",
+      "label": "Influent boundary \u00b7 Enabled",
       "component": "influent",
       "action": "setEnabled",
       "arguments": {
@@ -1572,7 +4923,7 @@
     },
     {
       "id": "influent-load",
-      "label": "Influent boundary · Requested load",
+      "label": "Influent boundary \u00b7 Requested load",
       "component": "influent",
       "action": "setLoad",
       "arguments": {
@@ -1581,7 +4932,7 @@
     },
     {
       "id": "influent-fault",
-      "label": "Influent boundary · Injected failure",
+      "label": "Influent boundary \u00b7 Injected failure",
       "component": "influent",
       "action": "setFault",
       "arguments": {
@@ -1590,7 +4941,7 @@
     },
     {
       "id": "influent-repair",
-      "label": "Influent boundary · Repair component",
+      "label": "Influent boundary \u00b7 Repair component",
       "component": "influent",
       "action": "repair",
       "arguments": {
@@ -1599,7 +4950,7 @@
     },
     {
       "id": "screen-enabled",
-      "label": "Inlet screening · Enabled",
+      "label": "Inlet screening \u00b7 Enabled",
       "component": "screen",
       "action": "setEnabled",
       "arguments": {
@@ -1608,7 +4959,7 @@
     },
     {
       "id": "screen-load",
-      "label": "Inlet screening · Requested load",
+      "label": "Inlet screening \u00b7 Requested load",
       "component": "screen",
       "action": "setLoad",
       "arguments": {
@@ -1617,7 +4968,7 @@
     },
     {
       "id": "screen-fault",
-      "label": "Inlet screening · Injected failure",
+      "label": "Inlet screening \u00b7 Injected failure",
       "component": "screen",
       "action": "setFault",
       "arguments": {
@@ -1626,7 +4977,7 @@
     },
     {
       "id": "screen-repair",
-      "label": "Inlet screening · Repair component",
+      "label": "Inlet screening \u00b7 Repair component",
       "component": "screen",
       "action": "repair",
       "arguments": {
@@ -1635,7 +4986,7 @@
     },
     {
       "id": "liftPump-enabled",
-      "label": "Lift pump · Enabled",
+      "label": "Lift pump \u00b7 Enabled",
       "component": "liftPump",
       "action": "setEnabled",
       "arguments": {
@@ -1644,7 +4995,7 @@
     },
     {
       "id": "liftPump-load",
-      "label": "Lift pump · Requested load",
+      "label": "Lift pump \u00b7 Requested load",
       "component": "liftPump",
       "action": "setLoad",
       "arguments": {
@@ -1653,7 +5004,7 @@
     },
     {
       "id": "liftPump-fault",
-      "label": "Lift pump · Injected failure",
+      "label": "Lift pump \u00b7 Injected failure",
       "component": "liftPump",
       "action": "setFault",
       "arguments": {
@@ -1662,7 +5013,7 @@
     },
     {
       "id": "liftPump-repair",
-      "label": "Lift pump · Repair component",
+      "label": "Lift pump \u00b7 Repair component",
       "component": "liftPump",
       "action": "repair",
       "arguments": {
@@ -1671,7 +5022,7 @@
     },
     {
       "id": "aeration-enabled",
-      "label": "Aeration basin · Enabled",
+      "label": "Aeration basin \u00b7 Enabled",
       "component": "aeration",
       "action": "setEnabled",
       "arguments": {
@@ -1680,7 +5031,7 @@
     },
     {
       "id": "aeration-load",
-      "label": "Aeration basin · Requested load",
+      "label": "Aeration basin \u00b7 Requested load",
       "component": "aeration",
       "action": "setLoad",
       "arguments": {
@@ -1689,7 +5040,7 @@
     },
     {
       "id": "aeration-fault",
-      "label": "Aeration basin · Injected failure",
+      "label": "Aeration basin \u00b7 Injected failure",
       "component": "aeration",
       "action": "setFault",
       "arguments": {
@@ -1698,7 +5049,7 @@
     },
     {
       "id": "aeration-repair",
-      "label": "Aeration basin · Repair component",
+      "label": "Aeration basin \u00b7 Repair component",
       "component": "aeration",
       "action": "repair",
       "arguments": {
@@ -1707,7 +5058,7 @@
     },
     {
       "id": "clarifier-enabled",
-      "label": "Secondary clarifier · Enabled",
+      "label": "Secondary clarifier \u00b7 Enabled",
       "component": "clarifier",
       "action": "setEnabled",
       "arguments": {
@@ -1716,7 +5067,7 @@
     },
     {
       "id": "clarifier-load",
-      "label": "Secondary clarifier · Requested load",
+      "label": "Secondary clarifier \u00b7 Requested load",
       "component": "clarifier",
       "action": "setLoad",
       "arguments": {
@@ -1725,7 +5076,7 @@
     },
     {
       "id": "clarifier-fault",
-      "label": "Secondary clarifier · Injected failure",
+      "label": "Secondary clarifier \u00b7 Injected failure",
       "component": "clarifier",
       "action": "setFault",
       "arguments": {
@@ -1734,7 +5085,7 @@
     },
     {
       "id": "clarifier-repair",
-      "label": "Secondary clarifier · Repair component",
+      "label": "Secondary clarifier \u00b7 Repair component",
       "component": "clarifier",
       "action": "repair",
       "arguments": {
@@ -1743,7 +5094,7 @@
     },
     {
       "id": "effluent-enabled",
-      "label": "Treated-water outlet · Enabled",
+      "label": "Treated-water outlet \u00b7 Enabled",
       "component": "effluent",
       "action": "setEnabled",
       "arguments": {
@@ -1752,7 +5103,7 @@
     },
     {
       "id": "effluent-load",
-      "label": "Treated-water outlet · Requested load",
+      "label": "Treated-water outlet \u00b7 Requested load",
       "component": "effluent",
       "action": "setLoad",
       "arguments": {
@@ -1761,7 +5112,7 @@
     },
     {
       "id": "effluent-fault",
-      "label": "Treated-water outlet · Injected failure",
+      "label": "Treated-water outlet \u00b7 Injected failure",
       "component": "effluent",
       "action": "setFault",
       "arguments": {
@@ -1770,7 +5121,7 @@
     },
     {
       "id": "effluent-repair",
-      "label": "Treated-water outlet · Repair component",
+      "label": "Treated-water outlet \u00b7 Repair component",
       "component": "effluent",
       "action": "repair",
       "arguments": {
@@ -1779,7 +5130,7 @@
     },
     {
       "id": "sludgeValve-enabled",
-      "label": "Sludge isolation · Enabled",
+      "label": "Sludge isolation \u00b7 Enabled",
       "component": "sludgeValve",
       "action": "setEnabled",
       "arguments": {
@@ -1788,7 +5139,7 @@
     },
     {
       "id": "sludgeValve-open",
-      "label": "Sludge isolation · Open valve",
+      "label": "Sludge isolation \u00b7 Open valve",
       "component": "sludgeValve",
       "action": "setOpen",
       "arguments": {
@@ -1797,7 +5148,7 @@
     },
     {
       "id": "sludgeValve-load",
-      "label": "Sludge isolation · Requested load",
+      "label": "Sludge isolation \u00b7 Requested load",
       "component": "sludgeValve",
       "action": "setLoad",
       "arguments": {
@@ -1806,7 +5157,7 @@
     },
     {
       "id": "sludgeValve-fault",
-      "label": "Sludge isolation · Injected failure",
+      "label": "Sludge isolation \u00b7 Injected failure",
       "component": "sludgeValve",
       "action": "setFault",
       "arguments": {
@@ -1815,7 +5166,7 @@
     },
     {
       "id": "sludgeValve-repair",
-      "label": "Sludge isolation · Repair component",
+      "label": "Sludge isolation \u00b7 Repair component",
       "component": "sludgeValve",
       "action": "repair",
       "arguments": {
@@ -1824,7 +5175,7 @@
     },
     {
       "id": "digester-enabled",
-      "label": "Anaerobic digester · Enabled",
+      "label": "Anaerobic digester \u00b7 Enabled",
       "component": "digester",
       "action": "setEnabled",
       "arguments": {
@@ -1833,7 +5184,7 @@
     },
     {
       "id": "digester-load",
-      "label": "Anaerobic digester · Requested load",
+      "label": "Anaerobic digester \u00b7 Requested load",
       "component": "digester",
       "action": "setLoad",
       "arguments": {
@@ -1842,7 +5193,7 @@
     },
     {
       "id": "digester-fault",
-      "label": "Anaerobic digester · Injected failure",
+      "label": "Anaerobic digester \u00b7 Injected failure",
       "component": "digester",
       "action": "setFault",
       "arguments": {
@@ -1851,7 +5202,7 @@
     },
     {
       "id": "digester-repair",
-      "label": "Anaerobic digester · Repair component",
+      "label": "Anaerobic digester \u00b7 Repair component",
       "component": "digester",
       "action": "repair",
       "arguments": {
@@ -1860,7 +5211,7 @@
     },
     {
       "id": "digestate-enabled",
-      "label": "Digestate storage · Enabled",
+      "label": "Digestate storage \u00b7 Enabled",
       "component": "digestate",
       "action": "setEnabled",
       "arguments": {
@@ -1869,7 +5220,7 @@
     },
     {
       "id": "digestate-load",
-      "label": "Digestate storage · Requested load",
+      "label": "Digestate storage \u00b7 Requested load",
       "component": "digestate",
       "action": "setLoad",
       "arguments": {
@@ -1878,7 +5229,7 @@
     },
     {
       "id": "digestate-fault",
-      "label": "Digestate storage · Injected failure",
+      "label": "Digestate storage \u00b7 Injected failure",
       "component": "digestate",
       "action": "setFault",
       "arguments": {
@@ -1887,7 +5238,7 @@
     },
     {
       "id": "digestate-repair",
-      "label": "Digestate storage · Repair component",
+      "label": "Digestate storage \u00b7 Repair component",
       "component": "digestate",
       "action": "repair",
       "arguments": {
@@ -1896,7 +5247,7 @@
     },
     {
       "id": "gasHolder-enabled",
-      "label": "Biogas buffer · Enabled",
+      "label": "Biogas buffer \u00b7 Enabled",
       "component": "gasHolder",
       "action": "setEnabled",
       "arguments": {
@@ -1905,7 +5256,7 @@
     },
     {
       "id": "gasHolder-load",
-      "label": "Biogas buffer · Requested load",
+      "label": "Biogas buffer \u00b7 Requested load",
       "component": "gasHolder",
       "action": "setLoad",
       "arguments": {
@@ -1914,7 +5265,7 @@
     },
     {
       "id": "gasHolder-fault",
-      "label": "Biogas buffer · Injected failure",
+      "label": "Biogas buffer \u00b7 Injected failure",
       "component": "gasHolder",
       "action": "setFault",
       "arguments": {
@@ -1923,7 +5274,7 @@
     },
     {
       "id": "gasHolder-repair",
-      "label": "Biogas buffer · Repair component",
+      "label": "Biogas buffer \u00b7 Repair component",
       "component": "gasHolder",
       "action": "repair",
       "arguments": {
@@ -1932,7 +5283,7 @@
     },
     {
       "id": "gasClean-enabled",
-      "label": "Biogas conditioning · Enabled",
+      "label": "Biogas conditioning \u00b7 Enabled",
       "component": "gasClean",
       "action": "setEnabled",
       "arguments": {
@@ -1941,7 +5292,7 @@
     },
     {
       "id": "gasClean-load",
-      "label": "Biogas conditioning · Requested load",
+      "label": "Biogas conditioning \u00b7 Requested load",
       "component": "gasClean",
       "action": "setLoad",
       "arguments": {
@@ -1950,7 +5301,7 @@
     },
     {
       "id": "gasClean-fault",
-      "label": "Biogas conditioning · Injected failure",
+      "label": "Biogas conditioning \u00b7 Injected failure",
       "component": "gasClean",
       "action": "setFault",
       "arguments": {
@@ -1959,7 +5310,7 @@
     },
     {
       "id": "gasClean-repair",
-      "label": "Biogas conditioning · Repair component",
+      "label": "Biogas conditioning \u00b7 Repair component",
       "component": "gasClean",
       "action": "repair",
       "arguments": {
@@ -1968,7 +5319,7 @@
     },
     {
       "id": "chp-enabled",
-      "label": "Biogas CHP generator · Enabled",
+      "label": "Biogas CHP generator \u00b7 Enabled",
       "component": "chp",
       "action": "setEnabled",
       "arguments": {
@@ -1977,7 +5328,7 @@
     },
     {
       "id": "chp-load",
-      "label": "Biogas CHP generator · Requested load",
+      "label": "Biogas CHP generator \u00b7 Requested load",
       "component": "chp",
       "action": "setLoad",
       "arguments": {
@@ -1986,7 +5337,7 @@
     },
     {
       "id": "chp-fault",
-      "label": "Biogas CHP generator · Injected failure",
+      "label": "Biogas CHP generator \u00b7 Injected failure",
       "component": "chp",
       "action": "setFault",
       "arguments": {
@@ -1995,7 +5346,7 @@
     },
     {
       "id": "chp-repair",
-      "label": "Biogas CHP generator · Repair component",
+      "label": "Biogas CHP generator \u00b7 Repair component",
       "component": "chp",
       "action": "repair",
       "arguments": {
@@ -2004,7 +5355,7 @@
     },
     {
       "id": "flare-enabled",
-      "label": "Biogas flare · Enabled",
+      "label": "Biogas flare \u00b7 Enabled",
       "component": "flare",
       "action": "setEnabled",
       "arguments": {
@@ -2013,7 +5364,7 @@
     },
     {
       "id": "flare-load",
-      "label": "Biogas flare · Requested load",
+      "label": "Biogas flare \u00b7 Requested load",
       "component": "flare",
       "action": "setLoad",
       "arguments": {
@@ -2022,7 +5373,7 @@
     },
     {
       "id": "flare-fault",
-      "label": "Biogas flare · Injected failure",
+      "label": "Biogas flare \u00b7 Injected failure",
       "component": "flare",
       "action": "setFault",
       "arguments": {
@@ -2031,7 +5382,7 @@
     },
     {
       "id": "flare-repair",
-      "label": "Biogas flare · Repair component",
+      "label": "Biogas flare \u00b7 Repair component",
       "component": "flare",
       "action": "repair",
       "arguments": {
@@ -2040,7 +5391,7 @@
     },
     {
       "id": "loads-enabled",
-      "label": "Electrical loads · Enabled",
+      "label": "Electrical loads \u00b7 Enabled",
       "component": "loads",
       "action": "setEnabled",
       "arguments": {
@@ -2049,7 +5400,7 @@
     },
     {
       "id": "loads-load",
-      "label": "Electrical loads · Requested load",
+      "label": "Electrical loads \u00b7 Requested load",
       "component": "loads",
       "action": "setLoad",
       "arguments": {
@@ -2058,7 +5409,7 @@
     },
     {
       "id": "loads-fault",
-      "label": "Electrical loads · Injected failure",
+      "label": "Electrical loads \u00b7 Injected failure",
       "component": "loads",
       "action": "setFault",
       "arguments": {
@@ -2067,7 +5418,7 @@
     },
     {
       "id": "loads-repair",
-      "label": "Electrical loads · Repair component",
+      "label": "Electrical loads \u00b7 Repair component",
       "component": "loads",
       "action": "repair",
       "arguments": {
@@ -2076,7 +5427,7 @@
     },
     {
       "id": "standby-enabled",
-      "label": "Standby generator · Enabled",
+      "label": "Standby generator \u00b7 Enabled",
       "component": "standby",
       "action": "setEnabled",
       "arguments": {
@@ -2085,7 +5436,7 @@
     },
     {
       "id": "standby-load",
-      "label": "Standby generator · Requested load",
+      "label": "Standby generator \u00b7 Requested load",
       "component": "standby",
       "action": "setLoad",
       "arguments": {
@@ -2094,7 +5445,7 @@
     },
     {
       "id": "standby-fault",
-      "label": "Standby generator · Injected failure",
+      "label": "Standby generator \u00b7 Injected failure",
       "component": "standby",
       "action": "setFault",
       "arguments": {
@@ -2103,7 +5454,7 @@
     },
     {
       "id": "standby-repair",
-      "label": "Standby generator · Repair component",
+      "label": "Standby generator \u00b7 Repair component",
       "component": "standby",
       "action": "repair",
       "arguments": {
@@ -2112,7 +5463,7 @@
     },
     {
       "id": "controller-enabled",
-      "label": "Plant PLC · Enabled",
+      "label": "Plant PLC \u00b7 Enabled",
       "component": "controller",
       "action": "setEnabled",
       "arguments": {
@@ -2121,7 +5472,7 @@
     },
     {
       "id": "controller-load",
-      "label": "Plant PLC · Requested load",
+      "label": "Plant PLC \u00b7 Requested load",
       "component": "controller",
       "action": "setLoad",
       "arguments": {
@@ -2130,7 +5481,7 @@
     },
     {
       "id": "controller-fault",
-      "label": "Plant PLC · Injected failure",
+      "label": "Plant PLC \u00b7 Injected failure",
       "component": "controller",
       "action": "setFault",
       "arguments": {
@@ -2139,7 +5490,7 @@
     },
     {
       "id": "controller-repair",
-      "label": "Plant PLC · Repair component",
+      "label": "Plant PLC \u00b7 Repair component",
       "component": "controller",
       "action": "repair",
       "arguments": {
@@ -2148,7 +5499,7 @@
     },
     {
       "id": "pressure-enabled",
-      "label": "Digester pressure · Enabled",
+      "label": "Digester pressure \u00b7 Enabled",
       "component": "pressure",
       "action": "setEnabled",
       "arguments": {
@@ -2157,7 +5508,7 @@
     },
     {
       "id": "pressure-load",
-      "label": "Digester pressure · Requested load",
+      "label": "Digester pressure \u00b7 Requested load",
       "component": "pressure",
       "action": "setLoad",
       "arguments": {
@@ -2166,7 +5517,7 @@
     },
     {
       "id": "pressure-fault",
-      "label": "Digester pressure · Injected failure",
+      "label": "Digester pressure \u00b7 Injected failure",
       "component": "pressure",
       "action": "setFault",
       "arguments": {
@@ -2175,7 +5526,7 @@
     },
     {
       "id": "pressure-repair",
-      "label": "Digester pressure · Repair component",
+      "label": "Digester pressure \u00b7 Repair component",
       "component": "pressure",
       "action": "repair",
       "arguments": {
@@ -2201,6 +5552,447 @@
       "label": "Reset state; keep assumptions",
       "action": "reset",
       "arguments": {}
+    },
+    {
+      "id": "inletValve-enabled",
+      "label": "Enabled \u00b7 inletValve",
+      "component": "inletValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "inletValve"
+      }
+    },
+    {
+      "id": "inletValve-open",
+      "label": "Open valve \u00b7 inletValve",
+      "component": "inletValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "inletValve"
+      }
+    },
+    {
+      "id": "inletValve-load",
+      "label": "Opening \u00b7 inletValve",
+      "component": "inletValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "inletValve"
+      }
+    },
+    {
+      "id": "inletValve-fault",
+      "label": "Injected failure \u00b7 inletValve",
+      "component": "inletValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "inletValve"
+      }
+    },
+    {
+      "id": "inletValve-repair",
+      "label": "Repair equipment \u00b7 inletValve",
+      "component": "inletValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "inletValve"
+      }
+    },
+    {
+      "id": "effluentValve-enabled",
+      "label": "Enabled \u00b7 effluentValve",
+      "component": "effluentValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "effluentValve"
+      }
+    },
+    {
+      "id": "effluentValve-open",
+      "label": "Open valve \u00b7 effluentValve",
+      "component": "effluentValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "effluentValve"
+      }
+    },
+    {
+      "id": "effluentValve-load",
+      "label": "Opening \u00b7 effluentValve",
+      "component": "effluentValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "effluentValve"
+      }
+    },
+    {
+      "id": "effluentValve-fault",
+      "label": "Injected failure \u00b7 effluentValve",
+      "component": "effluentValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "effluentValve"
+      }
+    },
+    {
+      "id": "effluentValve-repair",
+      "label": "Repair equipment \u00b7 effluentValve",
+      "component": "effluentValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "effluentValve"
+      }
+    },
+    {
+      "id": "digestateValve-enabled",
+      "label": "Enabled \u00b7 digestateValve",
+      "component": "digestateValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "digestateValve"
+      }
+    },
+    {
+      "id": "digestateValve-open",
+      "label": "Open valve \u00b7 digestateValve",
+      "component": "digestateValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "digestateValve"
+      }
+    },
+    {
+      "id": "digestateValve-load",
+      "label": "Opening \u00b7 digestateValve",
+      "component": "digestateValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "digestateValve"
+      }
+    },
+    {
+      "id": "digestateValve-fault",
+      "label": "Injected failure \u00b7 digestateValve",
+      "component": "digestateValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "digestateValve"
+      }
+    },
+    {
+      "id": "digestateValve-repair",
+      "label": "Repair equipment \u00b7 digestateValve",
+      "component": "digestateValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "digestateValve"
+      }
+    },
+    {
+      "id": "chpValve-enabled",
+      "label": "Enabled \u00b7 chpValve",
+      "component": "chpValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "chpValve"
+      }
+    },
+    {
+      "id": "chpValve-open",
+      "label": "Open valve \u00b7 chpValve",
+      "component": "chpValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "chpValve"
+      }
+    },
+    {
+      "id": "chpValve-load",
+      "label": "Opening \u00b7 chpValve",
+      "component": "chpValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "chpValve"
+      }
+    },
+    {
+      "id": "chpValve-fault",
+      "label": "Injected failure \u00b7 chpValve",
+      "component": "chpValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "chpValve"
+      }
+    },
+    {
+      "id": "chpValve-repair",
+      "label": "Repair equipment \u00b7 chpValve",
+      "component": "chpValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "chpValve"
+      }
+    },
+    {
+      "id": "flareValve-enabled",
+      "label": "Enabled \u00b7 flareValve",
+      "component": "flareValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "flareValve"
+      }
+    },
+    {
+      "id": "flareValve-open",
+      "label": "Open valve \u00b7 flareValve",
+      "component": "flareValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "flareValve"
+      }
+    },
+    {
+      "id": "flareValve-load",
+      "label": "Opening \u00b7 flareValve",
+      "component": "flareValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "flareValve"
+      }
+    },
+    {
+      "id": "flareValve-fault",
+      "label": "Injected failure \u00b7 flareValve",
+      "component": "flareValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "flareValve"
+      }
+    },
+    {
+      "id": "flareValve-repair",
+      "label": "Repair equipment \u00b7 flareValve",
+      "component": "flareValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "flareValve"
+      }
+    },
+    {
+      "id": "inletFlow-enabled",
+      "label": "Enabled \u00b7 inletFlow",
+      "component": "inletFlow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "inletFlow"
+      }
+    },
+    {
+      "id": "inletFlow-load",
+      "label": "Requested load \u00b7 inletFlow",
+      "component": "inletFlow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "inletFlow"
+      }
+    },
+    {
+      "id": "inletFlow-fault",
+      "label": "Injected failure \u00b7 inletFlow",
+      "component": "inletFlow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "inletFlow"
+      }
+    },
+    {
+      "id": "inletFlow-repair",
+      "label": "Repair equipment \u00b7 inletFlow",
+      "component": "inletFlow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "inletFlow"
+      }
+    },
+    {
+      "id": "effluentFlow-enabled",
+      "label": "Enabled \u00b7 effluentFlow",
+      "component": "effluentFlow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "effluentFlow"
+      }
+    },
+    {
+      "id": "effluentFlow-load",
+      "label": "Requested load \u00b7 effluentFlow",
+      "component": "effluentFlow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "effluentFlow"
+      }
+    },
+    {
+      "id": "effluentFlow-fault",
+      "label": "Injected failure \u00b7 effluentFlow",
+      "component": "effluentFlow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "effluentFlow"
+      }
+    },
+    {
+      "id": "effluentFlow-repair",
+      "label": "Repair equipment \u00b7 effluentFlow",
+      "component": "effluentFlow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "effluentFlow"
+      }
+    },
+    {
+      "id": "digesterTemperature-enabled",
+      "label": "Enabled \u00b7 digesterTemperature",
+      "component": "digesterTemperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "digesterTemperature"
+      }
+    },
+    {
+      "id": "digesterTemperature-load",
+      "label": "Requested load \u00b7 digesterTemperature",
+      "component": "digesterTemperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "digesterTemperature"
+      }
+    },
+    {
+      "id": "digesterTemperature-fault",
+      "label": "Injected failure \u00b7 digesterTemperature",
+      "component": "digesterTemperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "digesterTemperature"
+      }
+    },
+    {
+      "id": "digesterTemperature-repair",
+      "label": "Repair equipment \u00b7 digesterTemperature",
+      "component": "digesterTemperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "digesterTemperature"
+      }
+    },
+    {
+      "id": "digesterLevel-enabled",
+      "label": "Enabled \u00b7 digesterLevel",
+      "component": "digesterLevel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "digesterLevel"
+      }
+    },
+    {
+      "id": "digesterLevel-load",
+      "label": "Requested load \u00b7 digesterLevel",
+      "component": "digesterLevel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "digesterLevel"
+      }
+    },
+    {
+      "id": "digesterLevel-fault",
+      "label": "Injected failure \u00b7 digesterLevel",
+      "component": "digesterLevel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "digesterLevel"
+      }
+    },
+    {
+      "id": "digesterLevel-repair",
+      "label": "Repair equipment \u00b7 digesterLevel",
+      "component": "digesterLevel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "digesterLevel"
+      }
+    },
+    {
+      "id": "gasQuality-enabled",
+      "label": "Enabled \u00b7 gasQuality",
+      "component": "gasQuality",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasQuality-load",
+      "label": "Requested load \u00b7 gasQuality",
+      "component": "gasQuality",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasQuality-fault",
+      "label": "Injected failure \u00b7 gasQuality",
+      "component": "gasQuality",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "gasQuality-repair",
+      "label": "Repair equipment \u00b7 gasQuality",
+      "component": "gasQuality",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gasQuality"
+      }
+    },
+    {
+      "id": "remoteIO-enabled",
+      "label": "Enabled \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-load",
+      "label": "Requested load \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-fault",
+      "label": "Injected failure \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
+    },
+    {
+      "id": "remoteIO-repair",
+      "label": "Repair equipment \u00b7 remoteIO",
+      "component": "remoteIO",
+      "action": "repair",
+      "arguments": {
+        "equipment": "remoteIO"
+      }
     }
   ],
   "controls": [
@@ -2808,6 +6600,420 @@
       "label": "Reset state; keep assumptions",
       "kind": "button",
       "command": "plant-reset"
+    },
+    {
+      "id": "inletValve-enabled-control",
+      "label": "Enabled",
+      "component": "inletValve",
+      "kind": "toggle",
+      "command": "inletValve-enabled",
+      "binding": "/controls/inletValve/enabled"
+    },
+    {
+      "id": "inletValve-open-control",
+      "label": "Open valve",
+      "component": "inletValve",
+      "kind": "toggle",
+      "command": "inletValve-open",
+      "binding": "/controls/inletValve/open"
+    },
+    {
+      "id": "inletValve-load-control",
+      "label": "Opening",
+      "component": "inletValve",
+      "kind": "range",
+      "command": "inletValve-load",
+      "binding": "/controls/inletValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "inletValve-fault-control",
+      "label": "Injected failure",
+      "component": "inletValve",
+      "kind": "toggle",
+      "command": "inletValve-fault",
+      "binding": "/controls/inletValve/fault"
+    },
+    {
+      "id": "inletValve-repair-control",
+      "label": "Repair equipment",
+      "component": "inletValve",
+      "kind": "button",
+      "command": "inletValve-repair"
+    },
+    {
+      "id": "effluentValve-enabled-control",
+      "label": "Enabled",
+      "component": "effluentValve",
+      "kind": "toggle",
+      "command": "effluentValve-enabled",
+      "binding": "/controls/effluentValve/enabled"
+    },
+    {
+      "id": "effluentValve-open-control",
+      "label": "Open valve",
+      "component": "effluentValve",
+      "kind": "toggle",
+      "command": "effluentValve-open",
+      "binding": "/controls/effluentValve/open"
+    },
+    {
+      "id": "effluentValve-load-control",
+      "label": "Opening",
+      "component": "effluentValve",
+      "kind": "range",
+      "command": "effluentValve-load",
+      "binding": "/controls/effluentValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "effluentValve-fault-control",
+      "label": "Injected failure",
+      "component": "effluentValve",
+      "kind": "toggle",
+      "command": "effluentValve-fault",
+      "binding": "/controls/effluentValve/fault"
+    },
+    {
+      "id": "effluentValve-repair-control",
+      "label": "Repair equipment",
+      "component": "effluentValve",
+      "kind": "button",
+      "command": "effluentValve-repair"
+    },
+    {
+      "id": "digestateValve-enabled-control",
+      "label": "Enabled",
+      "component": "digestateValve",
+      "kind": "toggle",
+      "command": "digestateValve-enabled",
+      "binding": "/controls/digestateValve/enabled"
+    },
+    {
+      "id": "digestateValve-open-control",
+      "label": "Open valve",
+      "component": "digestateValve",
+      "kind": "toggle",
+      "command": "digestateValve-open",
+      "binding": "/controls/digestateValve/open"
+    },
+    {
+      "id": "digestateValve-load-control",
+      "label": "Opening",
+      "component": "digestateValve",
+      "kind": "range",
+      "command": "digestateValve-load",
+      "binding": "/controls/digestateValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "digestateValve-fault-control",
+      "label": "Injected failure",
+      "component": "digestateValve",
+      "kind": "toggle",
+      "command": "digestateValve-fault",
+      "binding": "/controls/digestateValve/fault"
+    },
+    {
+      "id": "digestateValve-repair-control",
+      "label": "Repair equipment",
+      "component": "digestateValve",
+      "kind": "button",
+      "command": "digestateValve-repair"
+    },
+    {
+      "id": "chpValve-enabled-control",
+      "label": "Enabled",
+      "component": "chpValve",
+      "kind": "toggle",
+      "command": "chpValve-enabled",
+      "binding": "/controls/chpValve/enabled"
+    },
+    {
+      "id": "chpValve-open-control",
+      "label": "Open valve",
+      "component": "chpValve",
+      "kind": "toggle",
+      "command": "chpValve-open",
+      "binding": "/controls/chpValve/open"
+    },
+    {
+      "id": "chpValve-load-control",
+      "label": "Opening",
+      "component": "chpValve",
+      "kind": "range",
+      "command": "chpValve-load",
+      "binding": "/controls/chpValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "chpValve-fault-control",
+      "label": "Injected failure",
+      "component": "chpValve",
+      "kind": "toggle",
+      "command": "chpValve-fault",
+      "binding": "/controls/chpValve/fault"
+    },
+    {
+      "id": "chpValve-repair-control",
+      "label": "Repair equipment",
+      "component": "chpValve",
+      "kind": "button",
+      "command": "chpValve-repair"
+    },
+    {
+      "id": "flareValve-enabled-control",
+      "label": "Enabled",
+      "component": "flareValve",
+      "kind": "toggle",
+      "command": "flareValve-enabled",
+      "binding": "/controls/flareValve/enabled"
+    },
+    {
+      "id": "flareValve-open-control",
+      "label": "Open valve",
+      "component": "flareValve",
+      "kind": "toggle",
+      "command": "flareValve-open",
+      "binding": "/controls/flareValve/open"
+    },
+    {
+      "id": "flareValve-load-control",
+      "label": "Opening",
+      "component": "flareValve",
+      "kind": "range",
+      "command": "flareValve-load",
+      "binding": "/controls/flareValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "flareValve-fault-control",
+      "label": "Injected failure",
+      "component": "flareValve",
+      "kind": "toggle",
+      "command": "flareValve-fault",
+      "binding": "/controls/flareValve/fault"
+    },
+    {
+      "id": "flareValve-repair-control",
+      "label": "Repair equipment",
+      "component": "flareValve",
+      "kind": "button",
+      "command": "flareValve-repair"
+    },
+    {
+      "id": "inletFlow-enabled-control",
+      "label": "Enabled",
+      "component": "inletFlow",
+      "kind": "toggle",
+      "command": "inletFlow-enabled",
+      "binding": "/controls/inletFlow/enabled"
+    },
+    {
+      "id": "inletFlow-load-control",
+      "label": "Requested load",
+      "component": "inletFlow",
+      "kind": "range",
+      "command": "inletFlow-load",
+      "binding": "/controls/inletFlow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "inletFlow-fault-control",
+      "label": "Injected failure",
+      "component": "inletFlow",
+      "kind": "toggle",
+      "command": "inletFlow-fault",
+      "binding": "/controls/inletFlow/fault"
+    },
+    {
+      "id": "inletFlow-repair-control",
+      "label": "Repair equipment",
+      "component": "inletFlow",
+      "kind": "button",
+      "command": "inletFlow-repair"
+    },
+    {
+      "id": "effluentFlow-enabled-control",
+      "label": "Enabled",
+      "component": "effluentFlow",
+      "kind": "toggle",
+      "command": "effluentFlow-enabled",
+      "binding": "/controls/effluentFlow/enabled"
+    },
+    {
+      "id": "effluentFlow-load-control",
+      "label": "Requested load",
+      "component": "effluentFlow",
+      "kind": "range",
+      "command": "effluentFlow-load",
+      "binding": "/controls/effluentFlow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "effluentFlow-fault-control",
+      "label": "Injected failure",
+      "component": "effluentFlow",
+      "kind": "toggle",
+      "command": "effluentFlow-fault",
+      "binding": "/controls/effluentFlow/fault"
+    },
+    {
+      "id": "effluentFlow-repair-control",
+      "label": "Repair equipment",
+      "component": "effluentFlow",
+      "kind": "button",
+      "command": "effluentFlow-repair"
+    },
+    {
+      "id": "digesterTemperature-enabled-control",
+      "label": "Enabled",
+      "component": "digesterTemperature",
+      "kind": "toggle",
+      "command": "digesterTemperature-enabled",
+      "binding": "/controls/digesterTemperature/enabled"
+    },
+    {
+      "id": "digesterTemperature-load-control",
+      "label": "Requested load",
+      "component": "digesterTemperature",
+      "kind": "range",
+      "command": "digesterTemperature-load",
+      "binding": "/controls/digesterTemperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "digesterTemperature-fault-control",
+      "label": "Injected failure",
+      "component": "digesterTemperature",
+      "kind": "toggle",
+      "command": "digesterTemperature-fault",
+      "binding": "/controls/digesterTemperature/fault"
+    },
+    {
+      "id": "digesterTemperature-repair-control",
+      "label": "Repair equipment",
+      "component": "digesterTemperature",
+      "kind": "button",
+      "command": "digesterTemperature-repair"
+    },
+    {
+      "id": "digesterLevel-enabled-control",
+      "label": "Enabled",
+      "component": "digesterLevel",
+      "kind": "toggle",
+      "command": "digesterLevel-enabled",
+      "binding": "/controls/digesterLevel/enabled"
+    },
+    {
+      "id": "digesterLevel-load-control",
+      "label": "Requested load",
+      "component": "digesterLevel",
+      "kind": "range",
+      "command": "digesterLevel-load",
+      "binding": "/controls/digesterLevel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "digesterLevel-fault-control",
+      "label": "Injected failure",
+      "component": "digesterLevel",
+      "kind": "toggle",
+      "command": "digesterLevel-fault",
+      "binding": "/controls/digesterLevel/fault"
+    },
+    {
+      "id": "digesterLevel-repair-control",
+      "label": "Repair equipment",
+      "component": "digesterLevel",
+      "kind": "button",
+      "command": "digesterLevel-repair"
+    },
+    {
+      "id": "gasQuality-enabled-control",
+      "label": "Enabled",
+      "component": "gasQuality",
+      "kind": "toggle",
+      "command": "gasQuality-enabled",
+      "binding": "/controls/gasQuality/enabled"
+    },
+    {
+      "id": "gasQuality-load-control",
+      "label": "Requested load",
+      "component": "gasQuality",
+      "kind": "range",
+      "command": "gasQuality-load",
+      "binding": "/controls/gasQuality/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gasQuality-fault-control",
+      "label": "Injected failure",
+      "component": "gasQuality",
+      "kind": "toggle",
+      "command": "gasQuality-fault",
+      "binding": "/controls/gasQuality/fault"
+    },
+    {
+      "id": "gasQuality-repair-control",
+      "label": "Repair equipment",
+      "component": "gasQuality",
+      "kind": "button",
+      "command": "gasQuality-repair"
+    },
+    {
+      "id": "remoteIO-enabled-control",
+      "label": "Enabled",
+      "component": "remoteIO",
+      "kind": "toggle",
+      "command": "remoteIO-enabled",
+      "binding": "/controls/remoteIO/enabled"
+    },
+    {
+      "id": "remoteIO-load-control",
+      "label": "Requested load",
+      "component": "remoteIO",
+      "kind": "range",
+      "command": "remoteIO-load",
+      "binding": "/controls/remoteIO/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "remoteIO-fault-control",
+      "label": "Injected failure",
+      "component": "remoteIO",
+      "kind": "toggle",
+      "command": "remoteIO-fault",
+      "binding": "/controls/remoteIO/fault"
+    },
+    {
+      "id": "remoteIO-repair-control",
+      "label": "Repair equipment",
+      "component": "remoteIO",
+      "kind": "button",
+      "command": "remoteIO-repair"
     }
   ],
   "units": {
@@ -2849,6 +7055,12 @@
       "label": "Sludge/water and gas branching",
       "value": "Generic acceptance-based allocation; no measured split ratio",
       "provenance": "assumed-topology"
+    },
+    {
+      "id": "instrumentation",
+      "label": "Instrumentation and PLC behavior",
+      "value": "Measurement taps and normalized valve gating only; no calibrated process recipe or safety logic",
+      "provenance": "demo-model"
     }
   ]
 }

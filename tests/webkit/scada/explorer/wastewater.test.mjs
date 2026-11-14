@@ -11,7 +11,7 @@ const command=(model,action,equipment,value)=>model.dispatch({action,arguments:{
 
 test('wastewater views and controls resolve against one explicitly assumed system',()=>{
  assert.equal(validateSystemDefinition(system).ok,true);
- assert.deepEqual(system.views.map(v=>v.id),['treatment','sludge-energy','power-control']);
+ assert.deepEqual(system.views.map(v=>v.id),['overview','treatment','sludge-energy','power-control']);
  const ids=new Set(system.components.map(c=>c.id));
  for(const id of ids)assert.ok(system.views.some(v=>v.placements.some(p=>p.component===id)),`${id} needs a view`);
  assert.equal(definition.scenarioId,system.system.id);
@@ -20,12 +20,12 @@ test('wastewater views and controls resolve against one explicitly assumed syste
  assert.ok(power.placements.find(p=>p.component==='loads').x>power.placements.find(p=>p.component==='chp').x);
 });
 test('lift-pump stop removes its connected flow and repair preserves deliberate controls',()=>{
- const model=make();model.step(2);assert.equal(model.getSnapshot().flows['liftPump-to-aeration'],true);
+ const model=make();model.step(2);assert.equal(model.getSnapshot().flows['liftPump-to-inletValve'],true);
  command(model,'setEnabled','liftPump',false);model.step(1);
- assert.equal(model.getSnapshot().flows['liftPump-to-aeration'],false);assert.equal(model.getSnapshot().readings.liftPump.resourceOut,0);
+ assert.equal(model.getSnapshot().flows['liftPump-to-inletValve'],false);assert.equal(model.getSnapshot().readings.liftPump.resourceOut,0);
  command(model,'setFault','liftPump',true);command(model,'repair','liftPump');
  assert.equal(model.getSnapshot().controls.liftPump.enabled,false);
- command(model,'setEnabled','liftPump',true);model.step(2);assert.equal(model.getSnapshot().flows['liftPump-to-aeration'],true);model.destroy();
+ command(model,'setEnabled','liftPump',true);model.step(2);assert.equal(model.getSnapshot().flows['liftPump-to-inletValve'],true);model.destroy();
 });
 test('generator fault removes electrical supply while the separate flare stays available',()=>{
  const model=make();model.step(2);assert.ok(model.getSnapshot().readings.loads.powerIn>0);

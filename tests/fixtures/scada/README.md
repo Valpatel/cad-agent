@@ -10,6 +10,7 @@ flowchart TD
 
 | File or folder | Purpose |
 | --- | --- |
+| [default-model-inputs/](default-model-inputs/README.md) | Original inputs for live examples that have since evolved; test-only and never shipped. |
 | [default-baseline.json](default-baseline.json) | Frozen default-state compatibility fixture. |
 
 [Runtime library map](../../../software/cadagent/webkit/scada/README.md) · [Parent map](../README.md)

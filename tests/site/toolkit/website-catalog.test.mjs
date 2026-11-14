@@ -273,7 +273,7 @@ test('Toolkit is a native capability with package terms and the same catalogue i
 test('Toolkit working-example cards resolve to published local pages and complete owned assets', async () => {
   const overview=await readFile(path.join(out,'toolkit.html'),'utf8');
   const cards=[...overview.matchAll(/<article[^>]*data-toolkit-capability="([^"]+)"[^>]*>([\s\S]*?)<\/article>/g)];
-  assert.equal(cards.length,7);
+  assert.equal(cards.length,8);
   for(const [,id,body] of cards) {
     const image=body.match(/<img[^>]*src="([^"]+)"/)[1];
     assert.ok(existsSync(local(image)),`${id} preview`);
@@ -281,6 +281,9 @@ test('Toolkit working-example cards resolve to published local pages and complet
     assert.ok(href.startsWith('/') && !href.startsWith('//'),`${id} must stay on the current site`);
     const route=local(href), target=existsSync(route)?route:route+'.html';
     assert.ok(existsSync(target),`${id} destination ${href}`);
+    const guideHref=body.match(/<a href="([^"]+)">(?:Guide|All simulations)<\/a>/)[1];
+    const guideTarget=local(guideHref);
+    assert.ok(existsSync(guideTarget)||existsSync(guideTarget+'.html'),`${id} guide destination ${guideHref}`);
     const url=new URL(href,ORIGIN);
     if(url.hash) assert.ok((await readFile(target,'utf8')).includes(`id="${url.hash.slice(1)}"`),`${id} destination anchor`);
     for(const key of ['guide','file']) if(url.searchParams.has(key)) assert.ok(existsSync(local(url.searchParams.get(key))),`${id} input asset`);

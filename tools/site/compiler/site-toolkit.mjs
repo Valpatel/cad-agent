@@ -1,6 +1,7 @@
 /** Target-owned Toolkit pages and working examples. SCADA metadata stays library-owned.
  * This projection does not replace component, model or scenario schemas. Its JSON is a browser index.
  */
+import {folderMapPath} from '../publication.mjs';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SLUG = /^[a-z][a-z0-9-]*$/;
 const UI = 'software/cadagent/webkit/scada/ui/';
@@ -127,6 +128,10 @@ export function toolkitCapabilities(m, {catalog = [], has} = {}) {
       description:'Orbit and explode the source-bound Gyropup robot model. Inspect geometry without a CAD installation.',
       image:'/web/models/gyropup.webp', alt:'Gyropup wheel-legged robot, captured from the owned 3D CAD model',
       href:'/toolkit/models', action:'Open 3D model', docs:'/docs/web-parts', fit:'contain'},
+    {id:'robot-replay', title:'Robot simulation replay', kind:'Recorded dynamics',
+      description:'Replay a real MuJoCo run of an illustrative two-link arm. Orbit, scrub time and change playback speed; source inputs are editable.',
+      image:'/kit/simulation/examples/two-link-arm/preview.webp', alt:'Two-link robot arm rendered from an actual MuJoCo recording at 3.2 seconds',
+      href:'/kit/simulation/viewer.html', action:'Play robot recording', docs:'/'+folderMapPath('docs/examples/robot-replay/README.md').replace(/\.md$/,'')},
     {id:'files', title:'Original CAD files', kind:'File viewer',
       description:'Inspect an original STL with the shared camera and display tools. The viewer also supports STEP and other CAD formats.',
       image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',

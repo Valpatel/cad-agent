@@ -1,6 +1,6 @@
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
 export async function toolkitExampleChecks({open,fail}) {
-  const ids=['scada-elements','scada-simulations','models','files','assembly','mechanisms','calculators'];
+  const ids=['scada-elements','scada-simulations','models','robot-replay','files','assembly','mechanisms','calculators'];
   for(const width of [320,1366,1920,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
     const {page,done}=await open('/toolkit',{width,color,js,motion:'reduce'});
     const where=`Toolkit examples @${width} ${color}${js?'':' no-JS'}`;
@@ -41,7 +41,7 @@ export async function toolkitExampleChecks({open,fail}) {
   }
 
   // Follow the actual card links, including catalogue-projected demo URLs: no test-only route substitutes.
-  for(const width of [320,1366]) for(const color of ['light','dark']) for(const id of ['models','files','assembly','mechanisms','calculators']) {
+  for(const width of [320,1366]) for(const color of ['light','dark']) for(const id of ['models','robot-replay','files','assembly','mechanisms','calculators']) {
     const {page,done}=await open('/toolkit',{width,color,motion:'reduce'});
     const where=`Toolkit launch ${id} @${width} ${color}`;
     try {
@@ -63,6 +63,49 @@ export async function toolkitExampleChecks({open,fail}) {
         if(before.image===after)fail(where,'Explode changed the button but not the rendered geometry');
         await explode.click();
         if(await explode.getAttribute('aria-pressed')!=='false')fail(where,'Explode could not return to the assembly');
+      } else if(id==='robot-replay') {
+        await page.waitForFunction(()=>document.body.dataset.ready==='1'&&window.__replay?.stage.renderer.info.render.triangles>0);
+        const identity=await page.evaluate(async()=>{
+          const base=new URL('./examples/two-link-arm/',location.href);
+          const bytes=await (await fetch(new URL('recording.json',base))).arrayBuffer(),recording=JSON.parse(new TextDecoder().decode(bytes));
+          const receipt=await (await fetch(new URL('receipt.json',base))).json();
+          const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
+          return {schema:recording.schema,title:recording.title,frames:recording.frames.length,bodyIds:recording.bodies.map(body=>body.id),
+            loadedIds:window.__replay.scene.groups.map(group=>group.name),duration:window.__replay.playback.state().duration,
+            engine:receipt.engine,verified:hash===receipt.artifacts['recording.json'],sources:receipt.sources,
+            status:document.querySelector('#receipt-status').textContent};
+        });
+        if(identity.schema!=='cad-agent.pose-recording/1'||identity.title!=='Two-link arm · recorded simulation'||identity.frames!==501||identity.duration!==10
+          ||JSON.stringify(identity.bodyIds)!==JSON.stringify(['base','upper','forearm'])||JSON.stringify(identity.loadedIds)!==JSON.stringify(identity.bodyIds))fail(where,`wrong default recording or rendered body identity: ${JSON.stringify(identity)}`);
+        if(identity.engine?.name!=='MuJoCo'||identity.engine?.version!=='3.3.7'||!identity.verified||!/hash verified/.test(identity.status)
+          ||!['docs/examples/robot-replay/produce.py','docs/examples/robot-replay/config.json'].every(name=>/^[0-9a-f]{64}$/.test(identity.sources?.[name])))fail(where,'recording is not bound to its actual solver/source receipt');
+        await page.getByRole('button',{name:'Play recording',exact:true}).click();
+        await page.waitForFunction(()=>window.__replay.playback.state().time>.1);
+        await page.getByRole('button',{name:'Pause recording',exact:true}).click();
+        await page.waitForFunction(()=>!window.__replay.playback.state().playing);
+        const paused=await page.evaluate(()=>({time:window.__replay.playback.state().time,frame:window.__replay.stage.renderer.info.render.frame}));
+        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,paused.frame);
+        if(await page.evaluate(()=>window.__replay.playback.state().time)!==paused.time)fail(where,'paused recording advanced while the stage rendered');
+        await page.getByRole('combobox',{name:'Playback speed',exact:true}).selectOption('2');
+        if(await page.evaluate(()=>window.__replay.playback.state().speed)!==2)fail(where,'speed control did not update the playback clock');
+        const slider=page.getByRole('slider',{name:'Recording time',exact:true});
+        await slider.scrollIntoViewIfNeeded();await slider.focus();
+        await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+        if(!await slider.evaluate(input=>input===document.activeElement))fail(where,'recording time could not receive keyboard focus');
+        await slider.press('Home');await page.waitForFunction(()=>window.__replay.playback.state().time===0);
+        const before=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
+        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,before.frame);
+        const canvas=page.locator('#replay canvas'),image=await canvas.screenshot();
+        await slider.scrollIntoViewIfNeeded();await slider.focus();await slider.press('End');
+        await page.waitForFunction(()=>window.__replay.playback.state().time===10);
+        const after=await page.evaluate(()=>({matrix:window.__replay.scene.groups.find(group=>group.name==='forearm').matrixWorld.toArray(),frame:window.__replay.stage.renderer.info.render.frame}));
+        await page.waitForFunction(frame=>window.__replay.stage.renderer.info.render.frame>frame+1,after.frame);
+        if(JSON.stringify(after.matrix)===JSON.stringify(before.matrix)||image.equals(await canvas.screenshot()))fail(where,'scrubbing changed time without changing the actual rendered arm');
+        const fitted=await page.evaluate(()=>window.__replay.getViewState().camera),viewport=page.locator('.cad-viewer-viewport');
+        await viewport.focus();await viewport.press('ArrowRight');
+        await page.waitForFunction(before=>JSON.stringify(window.__replay.getViewState().camera)!==JSON.stringify(before),fitted);
+        await page.getByRole('button',{name:'Zoom to fit',exact:true}).click();
+        await page.waitForFunction(before=>{const camera=window.__replay.getViewState().camera;return ['position','target'].every(key=>camera[key].every((value,i)=>Math.abs(value-before[key][i])<1e-8));},fitted);
       } else if(id==='files') {
         await page.waitForFunction(()=>window.__fileViewer?.root.dataset.state==='ready'&&window.__fileViewer.stage.renderer.info.render.triangles>0);
         const before=await page.evaluate(()=>({camera:window.__fileViewer.stage.camera.position.toArray(),source:window.__fileViewer.info.sourceName}));

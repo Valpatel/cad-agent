@@ -29,7 +29,7 @@ flowchart TD
 | `webkit-fan-curve.test.mjs` | `<cad-fan-curve>` without a browser: every setting gives a point on both curves |
 | `webkit-file-corpus.mjs` | Parses a bounded manifest of published originals with the real workers (run by hand) |
 | `webkit-file-geometry.test.mjs` | `file-geometry.js`: mesh normalising and model and STL validation |
-| `webkit-file-theme-browser.mjs` | Helper: the file viewer's themes in a browser (imported by the file-viewer suite) |
+| `webkit-file-theme-browser.mjs` | File-viewer suite helper: shared stored/system themes, explicit query overrides, live OS and delayed-import cross-tab changes, measured contrast, phone loading/error surfaces, and native toggle scene preservation |
 | `webkit-file-theme.test.mjs` | `file-viewer-theme.js`: theme normalising |
 | `webkit-file-viewer-browser.mjs` | The original-file viewer in a real browser, on `fixtures/file-viewer/` |
 | `webkit-file-worker-node.mjs` | Helper: runs the shipped parser workers in Node, without a browser |

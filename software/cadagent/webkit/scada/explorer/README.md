@@ -41,6 +41,9 @@ state. All process values are editable normalized estimates. This example does
 not model biological removal, methane stoichiometry, hydraulic design, electrical
 protection or treatment-quality acceptance.
 
+<details>
+<summary>Session controls, timing and model limits</summary>
+
 Use **Fault lab** to inject failures, **Model & guesses** to edit declared
 parameters, and **Session** to save/restore state or open the read-only observer.
 The observer has its own camera and layout but no process-command capability.
@@ -49,6 +52,17 @@ Reset preserves parameter edits, while choosing another scenario loads that
 scenario's initial configuration. One simulation minute advances per timer tick
 at 1×; the clock suspends while the document is hidden. Audio starts disabled
 and remains silent when the model is paused or the document is hidden.
+
+The bundled pump/heater equation providers support compatible saved sessions.
+The linked equation bench demonstrates live law replacement; the ordinary
+parameter form is not a generic provider editor. Complete external solvers can
+implement the same snapshot/subscription/command adapter without using the
+placeholder kernel.
+
+</details>
+
+<details>
+<summary>Responsive layout, camera and shared theme</summary>
 
 The host selects `fitMaxZoom:1.5`: Fit can enlarge a compact layout to 150% when
 space permits, without changing authored world positions or manual zoom.
@@ -66,17 +80,13 @@ recovers the whole diagram. Normal document and long-inspector scrolling remains
 available. Equipment inspectors keep their text readable independently of diagram
 zoom. Keyboard focus, reduced motion and optional sound use the library's controls.
 
-The bundled pump/heater equation providers support compatible saved sessions.
-The linked equation bench demonstrates live law replacement; the ordinary
-parameter form is not a generic provider editor. Complete external solvers can
-implement the same snapshot/subscription/command adapter without using the
-placeholder kernel.
+The primary Explorer opts into `responsiveLayout: 'process-chain'`: unbranched diagrams can use fewer rows on a wide screen while card sizes and declared connections remain intact. Complex diagrams keep their authored geometry. Manual pan/zoom preserves the arrangement on resize; **Zoom to fit** recalculates it. The observer remains an independent presentation of the same session. Browser checks measure occupied equipment width, not only the canvas frame.
+
+The camera owns the single in-view **Fit / − / percentage / +** toolbar. Equipment selection stays in the host row; no second camera toolbar is rendered above the process. Inspector buttons and on/off status text use paired application palette tokens in both themes; browser regression checks require at least 4.5:1 text contrast in default and hovered states.
+
+</details>
 
 [SCADA owner](../README.md) · [UI library](../ui/README.md) ·
 [Simulation library](../sim/README.md) ·
 [Model/API contract](../sim/docs/MODEL-API.md) ·
 [Explorer tests](https://github.com/Valpatel/cad-agent/tree/dev/tests/webkit/scada/explorer)
-
-The primary Explorer opts into `responsiveLayout: 'process-chain'`: unbranched diagrams can use fewer rows on a wide screen while card sizes and declared connections remain intact. Complex diagrams keep their authored geometry. Manual pan/zoom preserves the arrangement on resize; **Zoom to fit** recalculates it. The observer remains an independent presentation of the same session. Browser checks measure occupied equipment width, not only the canvas frame.
-
-The camera owns the single in-view **Fit / − / percentage / +** toolbar. Equipment selection stays in the host row; no second camera toolbar is rendered above the process. Inspector buttons and on/off status text use paired application palette tokens in both themes; browser regression checks require at least 4.5:1 text contrast in default and hovered states.

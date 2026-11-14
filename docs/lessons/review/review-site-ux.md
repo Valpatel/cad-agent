@@ -34,7 +34,7 @@ flowchart TD
 - **Cause and correction:** The component transitions both `color` and `background`. The site's override now
   transitions only the border; the browser check inspects intermediate colours as well as settled themes.
 - **Source:** [issue #347](https://github.com/Valpatel/cad-agent/issues/347), `web/site.css`, and
-  `tests/site/website-browser.mjs` (`themeProblems`). Probe: load both site stylesheets and `kit/copy.js`, set
+  `tests/site/website-browser.mjs` (`themeProblems`). Probe: load both site stylesheets and `kit/documents/copy.js`, set
   `data-theme="light"` under system dark, then read the button's computed colours and animation time.
 - **Limits:** This checks the website's copy controls. Other components and consumer styles need their own
   foreground/background contrast checks; neither this incident nor a passing endpoint check proves them.
@@ -197,4 +197,4 @@ observed state and subsequent paint; neither a quiet later frame nor passing geo
 - **Rule:** Use a moderate shared zoom sensitivity and preserve continuous wheel/trackpad deltas. Do not add a different zoom implementation to each project.
 - **Incident:** During a later CAN-housing review on 2026-10-27, the user asked for more fine-grained wheel control in the standard viewer. The shared stage now uses OrbitControls `zoomSpeed: 0.25`; custom integrations can override it. This also affects dolly and pinch gestures.
 - **Check:** In the browser at device pixel ratio 1, a 100-pixel wheel event changed camera distance by 1.29059%, versus 5.26316% at the prior sensitivity. Four fine increments matched one old increment; reversing the wheel restored distance. A 1-pixel delta moved only 0.012824%, with no JavaScript exceptions.
-- **Source:** CAN breakout review, 2026-10-27; `src/cadagent/webkit/stage.js` and a browser check on the served project viewer. This is a later-project follow-up, not evidence from the original J501 transcript.
+- **Source:** CAN breakout review, 2026-10-27; `src/cadagent/webkit/model/stage.js` and a browser check on the served project viewer. This is a later-project follow-up, not evidence from the original J501 transcript.

@@ -2,10 +2,10 @@
 """Golden test vectors for the browser port of cadagent.formulas, and the demos' material, fan and screw tables, from
 the Python.
 
-    python3 tools/formula_vectors.py            # write tests/fixtures/formula-vectors.json and webkit/formulas-data.js
+    python3 tools/formula_vectors.py            # write tests/fixtures/formula-vectors.json and webkit/calculators/formulas-data.js
     python3 tools/formula_vectors.py --check    # exit 1 if either committed file differs (the tests run this)
 
-The Python is the source: ``tests/webkit/webkit-formulas.test.mjs`` runs ``software/cadagent/webkit/formulas.js`` on the same
+The Python is the source: ``tests/webkit/webkit-formulas.test.mjs`` runs ``software/cadagent/webkit/calculators/formulas.js`` on the same
 vectors, so the browser can never compute a different number from the one agents get. Stdlib only.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ from cadagent.thermal.fans import FANS                                          
 from cadagent.mechanical import bosses                                            # noqa: E402
 
 VECTORS = ROOT / "tests" / "fixtures" / "formula-vectors.json"
-DATA = ROOT / "software" / "cadagent" / "webkit" / "formulas-data.js"
+DATA = ROOT / "software" / "cadagent" / "webkit" / "calculators" / "formulas-data.js"
 # Every function the browser port has, by its Python name (the JS name is the camelCase of it).
 PORTED = ("snap_root_strain", "snap_deflection_force", "snap_arm", "cantilever_shape", "cantilever_strain_profile",
           "cantilever_thickness_profile", "grashof", "fourbar_angles", "transmission_angle", "fourbar_input_limits",

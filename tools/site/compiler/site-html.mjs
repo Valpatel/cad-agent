@@ -17,8 +17,8 @@ export const SANITIZE = {
     source: ['srcset', 'media', 'type'],
     '*': ['id', 'align'], code: ['class'], pre: ['class'], div: ['class'], span: ['class'], td: ['align', 'width'],
     th: ['align', 'width'], input: ['type', 'checked', 'disabled'], ol: ['start'],
-    // the kit's interactive demos (kit/cantilever.js, kit/fourbar.js, kit/fan-curve.js, kit/torsion-snap.js,
-    // kit/printed-boss.js): their own attributes only, no style, no handlers
+    // the kit's interactive demos (kit/calculators/cantilever.js, kit/calculators/fourbar.js, kit/calculators/fan-curve.js, kit/calculators/torsion-snap.js,
+    // kit/calculators/printed-boss.js): their own attributes only, no style, no handlers
     'cad-cantilever': ['material', 'direction', 'design', 'repeated', 'length', 'thickness', 'width', 'deflection'],
     'cad-fourbar': ['crank', 'coupler', 'rocker', 'ground', 'branch', 'angle', 'theme'],
     'cad-fan-curve': ['fan', 'system', 'count', 'arrangement', 'theme'],

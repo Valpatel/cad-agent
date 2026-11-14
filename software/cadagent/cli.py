@@ -372,7 +372,7 @@ def cmd_view(project: CadProject, args: argparse.Namespace) -> int:
 
     r = export_view(project)
     _say(f"view: {r['manifest']} ({r['parts']} parts" + (f"; no STEP for {', '.join(r['skipped'])}" if r["skipped"] else "") + ")")
-    _say("open it with `cad-agent site --serve` (3D model link) or webkit/viewer.html")
+    _say("open it with `cad-agent site --serve` (3D model link) or webkit/model/viewer.html")
     return 0
 
 def cmd_webkit(project: CadProject, args: argparse.Namespace) -> int:

@@ -4,7 +4,7 @@
     python tests/fixtures/model/make_fixture.py      # rewrites two-parts.{json,bin} and two-parts.decoded.json
 
 tests/publish/test_view.py checks that pack_view still writes these exact bytes and that cadagent.publish.view.unpack_model reads
-back two-parts.decoded.json; tests/webkit/webkit-model.test.mjs checks that kit/model.js's decodeModel reads back the same.
+back two-parts.decoded.json; tests/webkit/webkit-model.test.mjs checks that kit/model/model.js's decodeModel reads back the same.
 The parts: a tetrahedron (with one triangle whose corners meet, which the packer drops) and a box offset in x,
 so the delta coding, the vertex numbering and the assembly-wide quantisation are all exercised."""
 from __future__ import annotations

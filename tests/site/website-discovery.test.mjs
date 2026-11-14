@@ -6,7 +6,7 @@ import {readFile} from 'node:fs/promises';
 import {gzipSync} from 'node:zlib';
 import path from 'node:path';
 import {builtSite} from './built-site.mjs';
-import {searchPatterns} from '../../software/cadagent/webkit/gallery.js';
+import {searchPatterns} from '../../software/cadagent/webkit/ui/gallery.js';
 import {discoveryModel,discoveryHTML,prepareDiscoveryPage} from '../../tools/site/compiler/site-discovery.mjs';
 const site=await builtSite('cad-agent-discovery-site-');test.after(()=>site.done());
 const json=async f=>JSON.parse(await readFile(path.join(site.dir,f),'utf8'));

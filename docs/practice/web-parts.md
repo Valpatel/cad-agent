@@ -43,8 +43,8 @@ Include `part-table.css`, then progressively enhance a semantic table. Keep nume
 ```
 
 ```js
-import { createPartTracker } from './kit/part-tracker.js';
-import { enhancePartTable, mountProgressTools } from './kit/part-table.js';
+import { createPartTracker } from './kit/assembly/part-tracker.js';
+import { enhancePartTable, mountProgressTools } from './kit/assembly/part-table.js';
 const tracker = createPartTracker({ project: 'my-project' });
 const tools = mountProgressTools(document.getElementById('progress'), tracker);
 const table = enhancePartTable(document.getElementById('parts'), {

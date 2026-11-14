@@ -60,7 +60,7 @@ for (const variant of ['serial', 'serial-wrong-axis', 'serial-wrong-order', 'ser
   routes.set(`/${variant}/mini.json`, (_, res) => res.end(encode(mini)));
   routes.set(`/${variant}/index.html`, (_, res) => {
     res.setHeader('Content-Type','text/html');
-    res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:44vh;min-height:230px}</style><script type="module" src="/kit/model.js"></script><cad-model src="/${variant}/mini.json" loading="eager" turn="0"></cad-model><cad-model src="/serial/mini.json" loading="eager" turn="0"></cad-model>`);
+    res.end(`<!doctype html><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/kit/model/model.css"><style>body{margin:0}cad-model{display:block;width:100%;height:44vh;min-height:230px}</style><script type="module" src="/kit/model/model.js"></script><cad-model src="/${variant}/mini.json" loading="eager" turn="0"></cad-model><cad-model src="/serial/mini.json" loading="eager" turn="0"></cad-model>`);
   });
 }
 const engine = process.env.PLAYWRIGHT_BROWSER === 'webkit' ? webkit : chromium;
@@ -87,11 +87,11 @@ function checkSerial(actual, position, tolerance = .002) {
 async function serialBrowserChecks(page, browser) {
   const packet = { sourceRevision:process.env.TEST_SOURCE_REVISION || 'unrecorded', engine:engine.name(), browserVersion:browser.version(),
     sourcePlan:hash(serialFiles.get('plan.json')), fixtureMeshes:Object.fromEntries([...serialFiles].filter(([n])=>n.endsWith('.stl')).map(([n,b])=>[n,hash(b)])),
-    runtimeHashes:Object.fromEntries(await Promise.all(['assembly/playback.js','assembly/guide.js','viewer.js','model.js'].map(async n=>[n,hash(await readFile(new URL('../../../software/cadagent/webkit/'+n,import.meta.url)))]))),
+    runtimeHashes:Object.fromEntries(await Promise.all(['assembly/playback.js','assembly/guide.js','model/viewer.js','model/model.js'].map(async n=>[n,hash(await readFile(new URL('../../../software/cadagent/webkit/'+n,import.meta.url)))]))),
     harnessSha256:hash(await readFile(new URL(import.meta.url))), cases:[], samples:[], maxToleranceMm:.002 };
   for (const consumer of ['guide','mini']) {
     const open = async variant => {
-      await page.goto(consumer === 'guide' ? `${site.url}/kit/viewer.html?guide=/${variant}/guide.json` : `${site.url}/${variant}/index.html`);
+      await page.goto(consumer === 'guide' ? `${site.url}/kit/model/viewer.html?guide=/${variant}/guide.json` : `${site.url}/${variant}/index.html`);
       await page.waitForFunction(kind => kind === 'guide' ? document.body.dataset.ready === '1' : [...document.querySelectorAll('cad-model')].every(m => m.dataset.state === 'ready'), consumer);
       await page.evaluate(async ({ consumer, corners }) => {
         const THREE = await import('/kit/vendor/three/three.module.min.js');
@@ -104,7 +104,7 @@ async function serialBrowserChecks(page, browser) {
             throw new Error('Native source landmark missing');
           })]));
         } else {
-          const el = document.querySelector('cad-model'), {decodeModel,inflate} = await import('/kit/model.js');
+          const el = document.querySelector('cad-model'), {decodeModel,inflate} = await import('/kit/model/model.js');
           const model = await (await fetch(el.getAttribute('src'))).json(), bin = await (await fetch(new URL(model.bin,new URL(el.getAttribute('src'),location.href)))).arrayBuffer();
           const decoded = decodeModel(model,await inflate(bin));
           window.__serialIndices = Object.fromEntries(model.parts.map((p,i) => [p.name,corners[p.name].map(point => {
@@ -184,7 +184,7 @@ async function serialBrowserChecks(page, browser) {
       await open(variant);const mutant=await seek(position);assert.throws(()=>checkSerial(mutant,position),`${consumer} ${variant} must fail independent physical oracle`);
       packet.cases.push({consumer,case:variant,rejectedByIndependentOracle:true});
     }
-    await page.goto(consumer==='guide'?`${site.url}/kit/viewer.html?guide=/serial-stale/guide.json`:`${site.url}/serial-stale/index.html`);
+    await page.goto(consumer==='guide'?`${site.url}/kit/model/viewer.html?guide=/serial-stale/guide.json`:`${site.url}/serial-stale/index.html`);
     if(consumer==='guide'){await page.getByRole('button',{name:'Retry model',exact:true}).waitFor();assert.equal(await page.locator('#app canvas').count(),0);}
     else {await page.waitForFunction(()=>document.querySelector('cad-model').dataset.state==='error');assert.match(await page.locator('cad-model').first().getAttribute('data-error'),/SHA-256/);}
     packet.cases.push({consumer,case:'stale-plan-refused',radialFallback:false});
@@ -224,7 +224,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message)); page.on('console', message => {if(message.type()==='error')consoleErrors.push(message.text());});
   const visit = async (version, viewport = { width: 1100, height: 800 }) => {
     await page.setViewportSize(viewport);
-    await page.goto(`${site.url}/kit/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);
+    await page.goto(`${site.url}/kit/model/viewer.html?guide=${encodeURIComponent(`/${version}/guide.json`)}`);
     await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 15000 });
   };
   const inspect = () => page.evaluate(async () => {
@@ -401,7 +401,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   cases.push({ actualOrthogonalClipping: sections });
   // Mount the same shared viewer with optional callbacks, then drive real pointer events over a hard-coded CAD face.
   await page.evaluate(async () => {
-    const { createViewer } = await import('/kit/viewer.js'); window.__viewer.dispose(); window.__hoverEvents = []; window.__selectEvents = [];
+    const { createViewer } = await import('/kit/model/viewer.js'); window.__viewer.dispose(); window.__hoverEvents = []; window.__selectEvents = [];
     window.__viewer = await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'),
       manifestUrl: new URL('/v1/view.json', location.href).href, manifest: window.__guide.manifest, guideBound: true,
       onHover: (name, point) => window.__hoverEvents.push({ name, point }),
@@ -451,11 +451,11 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.deepEqual(disposedCallbacks.before, disposedCallbacks.after); cases.push({ actualHoverSelectionDragHiddenDispose: true });
   const touchContext = await browser.newContext({ viewport: { width: 1100, height: 800 }, hasTouch: true });
   const touchPage = await touchContext.newPage(); touchPage.on('pageerror', error => errors.push(error.message));
-  await touchPage.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`);
+  await touchPage.goto(`${site.url}/kit/model/viewer.html?guide=/v1/guide.json`);
   await touchPage.waitForFunction(() => document.body?.dataset.ready === '1', null, { timeout: 15000 });
   const touchPoint = await touchPage.evaluate(async () => {
     const loaded = window.__guide; loaded.dispose();
-    const { createViewer } = await import('/kit/viewer.js'); window.__touchSelections = []; window.__touchHovers = [];
+    const { createViewer } = await import('/kit/model/viewer.js'); window.__touchSelections = []; window.__touchHovers = [];
     const v = window.__viewer = await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'),
       manifestUrl: loaded.manifestUrl, manifest: loaded.manifest, guideBound: true,
       onSelect: (name, interaction) => window.__touchSelections.push({ name, interaction }), onHover: name => window.__touchHovers.push(name) });
@@ -468,7 +468,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.deepEqual(await touchPage.evaluate(() => window.__touchHovers), [], 'Touch selects without a synthetic hover tooltip');
   await touchPage.evaluate(() => window.__viewer.dispose()); await touchContext.close(); cases.push({ nativeTouchSelection: true });
   // Legacy manifest path and API remain usable.
-  await page.goto(`${site.url}/kit/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
+  await page.goto(`${site.url}/kit/model/viewer.html?manifest=/v1/view.json&explode=0.5&section=0.5`);
   await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.equal(await page.locator('#panel input[type=range]').nth(0).inputValue(), '0.5');
   assert.equal(await page.locator('#panel input[type=range]').nth(1).inputValue(), '0.5');
@@ -489,10 +489,10 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   assert.equal((await inspect())[0].color, 0xaa0011, 'Legacy colour choice survives explode');
   await page.evaluate(() => window.__viewer.reset()); assert.equal((await inspect())[0].color, 0x487ca8);
   cases.push({ legacy: true });
-  await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/view.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
+  await page.goto(`${site.url}/kit/model/viewer.html?manifest=/legacy/view.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
   assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacySpacesAndCSSColor: true });
   for (const kind of ['absolute', 'root', 'cors', 'redirect']) {
-    await page.goto(`${site.url}/kit/viewer.html?manifest=/legacy/${kind}.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
+    await page.goto(`${site.url}/kit/model/viewer.html?manifest=/legacy/${kind}.json`); await page.waitForFunction(() => document.body.dataset.ready === '1');
     assert.equal((await inspect())[0].color, 0x4682b4); cases.push({ legacyURL: kind });
   }
   await visit('proto');
@@ -509,7 +509,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   cases.push({ prototypePartName: true, prototypePlayback });
   // Corrupted mesh or cancelled/late load never mounts a partial scene.
   await page.route('**/v1/1.stl', route => route.fulfill({ body: Buffer.from('wrong bytes') }));
-  await page.goto(`${site.url}/kit/viewer.html?guide=/v1/guide.json`); await page.getByRole('button', { name: 'Retry model', exact: true }).waitFor();
+  await page.goto(`${site.url}/kit/model/viewer.html?guide=/v1/guide.json`); await page.getByRole('button', { name: 'Retry model', exact: true }).waitFor();
   assert.equal(await page.locator('#app canvas').count(), 0); assert.match(await page.locator('#panel').innerText(), /SHA-256/);
   await page.unroute('**/v1/1.stl'); await page.getByRole('button', { name: 'Retry model', exact: true }).click(); await page.waitForFunction(() => document.body.dataset.ready === '1');
   // Abort a held mesh, then release its late response: the retained scene cannot be replaced.
@@ -518,7 +518,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
   const downloading = new Promise(resolve => { began = resolve; });
   await page.route('**/late/0.stl', route => { began(); return new Promise(resolve => { releaseLate = async () => { try { await route.fulfill({ body: cube([0, 0, 0], [40, 30, 8]).bytes }); } catch {} resolve(); }; }); });
   await page.evaluate(async () => {
-    const { createViewer } = await import('/kit/viewer.js');
+    const { createViewer } = await import('/kit/model/viewer.js');
     window.__pendingApp = document.createElement('div'); window.__pendingPanel = document.createElement('div');
     document.body.append(window.__pendingApp, window.__pendingPanel); window.__pendingAbort = new AbortController();
     window.__pendingResult = 'loading';
@@ -536,7 +536,7 @@ routes.set('/legacy/redirect.json', (_, res) => res.end(encode({ parts: [{ name:
     const sentinel = document.createElement('p'); sentinel.textContent = 'Caller-owned controls'; document.querySelector('#panel').append(sentinel);
     for (const p of v.parts) { p.mesh.geometry.addEventListener('dispose', () => geometries++); p.mesh.material.addEventListener('dispose', () => materials++); }
     v.dispose(); v.dispose(); let rejected = false; try { v.reset(); } catch { rejected = true; }
-    const { createViewer } = await import('/kit/viewer.js'); const controller = new AbortController(); controller.abort();
+    const { createViewer } = await import('/kit/model/viewer.js'); const controller = new AbortController(); controller.abort();
     let cancelled = false; try { await createViewer({ app: document.querySelector('#app'), panel: document.querySelector('#panel'), manifestUrl: '/v1/view.json', signal: controller.signal }); } catch { cancelled = true; }
     return { geometries, materials, canvases: document.querySelectorAll('#app canvas').length, rejected, cancelled, callerControlsPreserved: sentinel.isConnected };
   }); assert.deepEqual(teardown, { geometries: 3, materials: 3, canvases: 0, rejected: true, cancelled: true, callerControlsPreserved: true }); cases.push({ teardown });

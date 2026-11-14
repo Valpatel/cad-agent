@@ -20,7 +20,7 @@ export async function checkFileThemes({page,site,out,engine,cases}){
   for(const viewport of [{width:1440,height:900},{width:320,height:568},{width:568,height:320}]){
     await page.setViewportSize(viewport);
     for(const theme of ['light','dark']){
-      await page.goto(site.url+'/kit/file-viewer.html?file=/block.stl&back=/parts&theme='+theme);
+      await page.goto(site.url+'/kit/files/file-viewer.html?file=/block.stl&back=/parts&theme='+theme);
       await page.waitForFunction(()=>window.__fileViewer?.root.dataset.state==='ready');
       const palette=await appearance();assert.equal(palette.mode,theme);
       assert.ok(contrast(palette.button.color,palette.button.background)>=4.5);

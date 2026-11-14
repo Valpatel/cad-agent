@@ -1,19 +1,25 @@
-# Original-file presentation styles
+# Original CAD file viewing
 
-Scoped styles for the existing STL/STEP/3MF viewer. The standalone page adds its
-own page layout; contained viewers import only `viewer.css`.
+Read and inspect original CAD files with bounded parsing workers, independently scoped presentation and a standalone page. File meshes use document-local selection IDs.
 
 ```mermaid
 flowchart LR
-  Legacy[Legacy file-viewer.css] --> Page[page.css]
-  Legacy --> Viewer[viewer.css]
-  Host[Contained host] --> Viewer
+  File --> Loader
+  Loader --> Worker
+  Worker --> Viewer
 ```
 
 | File | Responsibility |
 | --- | --- |
-| `viewer.css` | Original-file component tokens, controls and canvas layout |
-| `page.css` | Standalone page dimensions and initial fallback palette |
+| [file-viewer.js](file-viewer.js) | Original-file viewer lifecycle, loading, camera and status. |
+| [file-viewer.html](file-viewer.html) | Standalone file-viewer entry page. |
+| [file-viewer.css](file-viewer.css) | Standalone stylesheet composing page and scoped viewer styles. |
+| [page.css](page.css) | Full-page layout and default palette. |
+| [viewer.css](viewer.css) | Scoped viewer surface, loading, error and local controls. |
+| [file-viewer-theme.js](file-viewer-theme.js) | Palette and theme validation. |
+| [file-loader.js](file-loader.js) | File routing, limits, worker ownership and cancellation. |
+| [file-geometry.js](file-geometry.js) | Geometry validation and normalized mesh records. |
+| [file-mesh-worker.js](file-mesh-worker.js) | Bounded mesh-format parsing worker. |
+| [file-step-worker.js](file-step-worker.js) | Bounded STEP parsing worker and decoder resources. |
 
-The existing JavaScript entrypoints remain in the parent kit pending their
-compatibility-aware domain move. [Web kit](../README.md) · [Host](../host/README.md)
+[Web kit](../README.md)

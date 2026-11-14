@@ -13,12 +13,12 @@ for(const [name,file] of [['purifier','dompurify/dist/purify.es.mjs'],['math','k
  assert.equal(createHash('sha256').update(bytes).digest('hex'),source.sha256,'library regression must use the actual emitted input');
  libraryInputs.set('/fixed-'+name+'.mjs',bytes);
 }
-const html=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/diagrams.css"><style>body{margin:16px;font:16px system-ui;background:${theme==='dark'?'#10141b':'#fffaf2'};color:${theme==='dark'?'white':'#263e35'}}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Design evidence</h1><pre><code class="language-mermaid">${diagram}</code></pre><pre class="mermaid">sequenceDiagram\nDesigner->>Robot: Test safely\nRobot-->>Designer: Results</pre><div id="dynamic"></div></main><script type="module">import {observeDiagrams} from '/kit/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;
+const html=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/documents/diagrams.css"><style>body{margin:16px;font:16px system-ui;background:${theme==='dark'?'#10141b':'#fffaf2'};color:${theme==='dark'?'white':'#263e35'}}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Design evidence</h1><pre><code class="language-mermaid">${diagram}</code></pre><pre class="mermaid">sequenceDiagram\nDesigner->>Robot: Test safely\nRobot-->>Designer: Results</pre><div id="dynamic"></div></main><script type="module">import {observeDiagrams} from '/kit/documents/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;
 // A page whose diagram was drawn ahead of time (drawDiagram, as the cad-agent site build does, #132), in `theme`.
-const ahead={figure:''},aheadHtml=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/diagrams.css"><style>body{margin:16px;font:16px system-ui}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Drawn ahead</h1>${ahead.figure}<p id="after">After the diagram</p></main><script type="module">import {observeDiagrams} from '/kit/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;
+const ahead={figure:''},aheadHtml=theme=>`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/kit/documents/diagrams.css"><style>body{margin:16px;font:16px system-ui}main{max-width:900px;margin:auto}</style><body data-diagram-theme="${theme}"><main><h1>Drawn ahead</h1>${ahead.figure}<p id="after">After the diagram</p></main><script type="module">import {observeDiagrams} from '/kit/documents/diagrams.js';window.diagrams=observeDiagrams();</script></body></html>`;
 const site=await serveWebkit(new Map([['/light',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(html('light'));}],['/dark',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(html('dark'));}],
  ...[...libraryInputs].map(([url,bytes])=>[url,(_q,r)=>{r.writeHead(200,{'Content-Type':'text/javascript'});r.end(bytes);}]),
- ['/blank',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end('<!doctype html><link rel="stylesheet" href="/kit/diagrams.css"><body><main></main></body>');}],
+ ['/blank',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end('<!doctype html><link rel="stylesheet" href="/kit/documents/diagrams.css"><body><main></main></body>');}],
  ['/ahead-light',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(aheadHtml('light'));}],['/ahead-dark',(_q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(aheadHtml('dark'));}]]));
 const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch(engine===chromium?{channel:process.env.PLAYWRIGHT_CHANNEL==='chromium'?undefined:'chrome',headless:true}:{headless:true});
@@ -101,7 +101,7 @@ try{
   const page=await browser.newPage({viewport:{width,height:900},colorScheme:theme});page.on('pageerror',e=>errors.push(e.message));
   try{
    await page.goto(site.url+'/blank');
-   const rendered=await page.evaluate(async({sources,theme})=>{const {drawDiagram}=await import('/kit/diagrams.js');const main=document.querySelector('main'),results=[];
+   const rendered=await page.evaluate(async({sources,theme})=>{const {drawDiagram}=await import('/kit/documents/diagrams.js');const main=document.querySelector('main'),results=[];
     for(let i=0;i<sources.length;i++){const figure=await drawDiagram(sources[i],{theme,id:'cad-math-'+i,parent:main});
      if(!figure){results.push({failed:true});continue;}main.append(figure);const svg=figure.querySelector('svg');
      results.push({state:figure.dataset.state,math:figure.querySelectorAll('math').length,box:[svg.getBoundingClientRect().width,svg.getBoundingClientRect().height]});}
@@ -112,7 +112,7 @@ try{
  }
  // Drawn ahead of time: drawDiagram returns the finished figure (light and dark), or null for a source Mermaid cannot draw.
  const drawer=await browser.newPage();drawer.on('pageerror',e=>errors.push(e.message));await drawer.goto(site.url+'/blank');
- const drawn=await drawer.evaluate(async source=>{const {drawDiagram}=await import('/kit/diagrams.js');const main=document.querySelector('main');
+ const drawn=await drawer.evaluate(async source=>{const {drawDiagram}=await import('/kit/documents/diagrams.js');const main=document.querySelector('main');
   const light=await drawDiagram(source,{theme:'light',id:'cad-diagram-sahead',parent:main}),dark=await drawDiagram(source,{theme:'dark',id:'cad-diagram-sdark',parent:main});
   const bad=await drawDiagram('not a supported diagram',{parent:main});
   return {light:light.outerHTML,dark:dark.dataset.theme,darkState:dark.dataset.state,bad,left:main.children.length};},diagram);
@@ -125,7 +125,7 @@ try{
   const page=await browser.newPage({viewport:{width,height:700}}),fetched=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('request',q=>{if(/mermaid\.min\.js/.test(q.url()))fetched.push(q.url());});
   // Measured while the module is held back (after the stylesheet, which a reader's first paint has too).
-  await page.route('**/kit/diagrams.js',async route=>{await page.evaluate(async()=>{const link=document.querySelector('link[rel=stylesheet]');
+  await page.route('**/kit/documents/diagrams.js',async route=>{await page.evaluate(async()=>{const link=document.querySelector('link[rel=stylesheet]');
    if(!link.sheet)await new Promise(r=>link.addEventListener('load',r,{once:true}));window.firstBox=document.querySelector('#after').getBoundingClientRect().top;window.firstHint=document.querySelector('.cad-diagram-hint').getBoundingClientRect().height;}).catch(()=>{});await route.continue();});
   await page.goto(site.url+'/ahead-light');await page.waitForFunction(()=>window.diagrams);await page.waitForLoadState('networkidle');
   const seen=await page.evaluate(()=>({id:document.querySelector('.cad-diagram svg').id,state:document.querySelector('.cad-diagram').dataset.state,
@@ -150,13 +150,13 @@ try{
  const only=await browser.newPage(),onlyFetched=[];only.on('pageerror',e=>errors.push(e.message));only.on('request',q=>{if(/mermaid\.min\.js/.test(q.url()))onlyFetched.push(q.url());});
  await only.route('**/ahead-only',route=>route.fulfill({contentType:'text/html',body:aheadHtml('dark').replace('<figure class="cad-diagram"','<figure class="cad-diagram" data-theme-only="light"')}));
  await only.goto(site.url+'/ahead-only');await only.waitForFunction(()=>window.diagrams);await only.waitForLoadState('networkidle');
- const kept=await only.evaluate(async()=>{const {refreshDiagramThemes}=await import('/kit/diagrams.js');await refreshDiagramThemes();const f=document.querySelector('.cad-diagram');return {theme:f.dataset.theme,id:f.querySelector('svg').id};});
+ const kept=await only.evaluate(async()=>{const {refreshDiagramThemes}=await import('/kit/documents/diagrams.js');await refreshDiagramThemes();const f=document.querySelector('.cad-diagram');return {theme:f.dataset.theme,id:f.querySelector('svg').id};});
  assert.deepEqual(kept,{theme:'light',id:'cad-diagram-sahead'},'a data-theme-only figure was redrawn');assert.deepEqual(onlyFetched,[],'a data-theme-only figure needs no Mermaid');
  await only.close();
  // After the page switches theme with no media change (a theme button), refreshDiagramThemes redraws the others.
  const switcher=await browser.newPage();switcher.on('pageerror',e=>errors.push(e.message));await switcher.goto(site.url+'/ahead-light');
  await switcher.waitForFunction(()=>window.diagrams);await switcher.waitForLoadState('networkidle');
- const switched=await switcher.evaluate(async()=>{const {refreshDiagramThemes}=await import('/kit/diagrams.js');document.body.dataset.diagramTheme='dark';
+ const switched=await switcher.evaluate(async()=>{const {refreshDiagramThemes}=await import('/kit/documents/diagrams.js');document.body.dataset.diagramTheme='dark';
   await refreshDiagramThemes();const f=document.querySelector('.cad-diagram');return {theme:f.dataset.theme,state:f.dataset.state,id:f.querySelector('svg')?.id};});
  assert.deepEqual([switched.theme,switched.state],['dark','ready'],'refreshDiagramThemes did not redraw the figure dark');assert.notEqual(switched.id,'cad-diagram-sahead');
  await switcher.close();cases.push({themeOnly:'kept',refresh:'redrawn'});

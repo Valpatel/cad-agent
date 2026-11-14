@@ -1,8 +1,8 @@
-// <cad-gallery>'s pure parts: the URL state, search matching, facets and sorting (software/cadagent/webkit/gallery.js).
+// <cad-gallery>'s pure parts: the URL state, search matching, facets and sorting (software/cadagent/webkit/ui/gallery.js).
 // The element itself is driven in real browsers by tests/site/website-catalog-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compareBy, countLine, matches, parseState, searchPatterns, stateToSearch } from '../../software/cadagent/webkit/gallery.js';
+import { compareBy, countLine, matches, parseState, searchPatterns, stateToSearch } from '../../software/cadagent/webkit/ui/gallery.js';
 
 const opts = { tabParam: 'kind', facets: ['area', 'status', 'licence'], single: ['area'], defaultSort: 'featured' };
 

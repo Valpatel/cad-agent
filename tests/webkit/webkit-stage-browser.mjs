@@ -9,7 +9,7 @@ const html = `<!doctype html><html lang="en"><meta name="viewport" content="widt
 <title>Shared stage grid regression</title><style>body{margin:0;background:#0b1018}#stage{width:100vw;height:100vh}</style>
 <script type="importmap">{"imports":{"three":"/kit/vendor/three/three.module.min.js","three/addons/":"/kit/vendor/three/addons/"}}</script>
 <div id="stage"></div><script type="module">
-import * as THREE from 'three';import {createStage} from '/kit/stage.js';
+import * as THREE from 'three';import {createStage} from '/kit/model/stage.js';
 window.THREE=THREE;window.height=.024;
 window.stage=createStage(document.querySelector('#stage'),{height,screenshots:true});
 window.model=new THREE.Mesh(new THREE.BoxGeometry(.01,.03,.02),new THREE.MeshStandardMaterial({color:'#4bb9cc'}));
@@ -191,7 +191,7 @@ try {
   await fallback.close();
   const hash=data=>createHash('sha256').update(data).digest('hex');
   const report={engine:engine.name(),browserVersion:browser.version(),sourceRevision:process.env.TEST_SOURCE_REVISION||'unrecorded',
-    stageSha256:hash(await readFile(new URL('../../software/cadagent/webkit/stage.js',import.meta.url))),
+    stageSha256:hash(await readFile(new URL('../../software/cadagent/webkit/model/stage.js',import.meta.url))),
     harnessSha256:hash(await readFile(new URL(import.meta.url))),cases,nativeControl,filledControl,corrected,palette,disposal,
     fallback:{...fallbackInfo,errors:fallbackErrors},errors};
   await writeFile(`${out}/${engine.name()}-result.json`,JSON.stringify(report,null,2));

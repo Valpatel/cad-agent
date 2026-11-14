@@ -1,13 +1,13 @@
-// <cad-fourbar>'s pure parts (software/cadagent/webkit/fourbar.js) in Node: the state it reads from attributes, what it
-// computes from the tested port (kit/formulas.js), that its animation never asks the links for a position they cannot
+// <cad-fourbar>'s pure parts (software/cadagent/webkit/calculators/fourbar.js) in Node: the state it reads from attributes, what it
+// computes from the tested port (kit/calculators/formulas.js), that its animation never asks the links for a position they cannot
 // reach (a dead point stops the crank instead of making it jump), and that its still is what it draws.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { readState, compute, angleAt, drawFourbar, drawChart, summary, travelText, className, pill, chartMarker, DEFAULTS, CONTROLS }
-  from '../../software/cadagent/webkit/fourbar.js';
-import { fourbarAngles, fourbarInputLimits, grashof, transmissionAngle } from '../../software/cadagent/webkit/formulas.js';
+  from '../../software/cadagent/webkit/calculators/fourbar.js';
+import { fourbarAngles, fourbarInputLimits, grashof, transmissionAngle } from '../../software/cadagent/webkit/calculators/formulas.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const RAD = Math.PI / 180;

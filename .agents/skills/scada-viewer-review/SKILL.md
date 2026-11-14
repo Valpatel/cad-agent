@@ -27,8 +27,12 @@ Read the [style guide](../../../software/cadagent/webkit/scada/ui/STYLE_GUIDE.md
    Name historical/resumed evidence separately from fresh checks.
 2. Select a meaningful state matrix: off/on, idle/zero, low/normal/high, unavailable,
    connected/disconnected, open/closed, warning, supported damage and recovery.
-   Include small cards, full diagrams and equipment inspectors. Add phone and short
-   landscape sizes for layout changes. Name omitted cases rather than claiming all.
+   Include small cards, full diagrams and equipment inspectors. For layout changes,
+   add phone, short landscape, ordinary desktop and ultrawide windows. Measure the
+   actual fitted artwork as well as its containing frame; preserve manual camera
+   focus during resize. Check both application themes, persisted choices, system
+   preference changes and direct/copied-kit entry. Name omitted cases rather than
+   claiming all.
 
 Compare visible output against model evidence, and test the interaction path in
 the opposite direction. A moving symbol alone does not establish either contract.

@@ -51,7 +51,7 @@ const session=async()=>{
 
 try{
   browser=await engine.launch(launch);receipt.version=browser.version();
-  context=await browser.newContext({viewport:{width:1440,height:1100},acceptDownloads:true});page=await context.newPage();
+  context=await browser.newContext({viewport:{width:1440,height:1100},colorScheme:'light',acceptDownloads:true});page=await context.newPage();
   page.on('pageerror',error=>errors.push(error.message));
   page.on('response',response=>{if(response.status()>=400)responses.push(`${response.status()} ${response.url()}`);});
   await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
@@ -61,6 +61,54 @@ try{
     await expect(page.locator('#lab-viewer [data-scada-view-choice]')).toHaveCount(3);
     await expect(page.locator('[data-sound-label]')).toHaveText('Sound off');
     await paused();await noHorizontalOverflow();await viewportContract('#lab-viewer [data-scada-scroll]');await shot('treatment');
+  });
+  await check('shared application theme follows system, persists across entry and leaves the session unchanged',async()=>{
+    const before=await session();
+    await page.evaluate(()=>{window.themeEvents=[];document.addEventListener('cad-themechange',event=>window.themeEvents.push(event.detail.theme));});
+    const mode=()=>page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme);
+    assert.equal(await mode(),'light');
+    assert.match(await page.locator('body').evaluate(element=>getComputedStyle(element).fontFamily),/Inter/);
+    await page.emulateMedia({colorScheme:'dark'});await expect.poll(mode).toBe('dark');
+    await expect.poll(()=>page.evaluate(()=>window.themeEvents)).toEqual(['dark']);
+    await page.locator('.theme-toggle').click();await expect.poll(mode).toBe('light');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),'light');
+    await page.emulateMedia({colorScheme:'light'});await page.emulateMedia({colorScheme:'dark'});
+    assert.equal(await mode(),'light');assert.deepEqual(await page.evaluate(()=>window.themeEvents),['dark','light']);
+    const another=await context.newPage();
+    try{
+      await another.emulateMedia({colorScheme:'dark'});
+      await another.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=winery`);
+      await expect(another.locator('#industry-lab')).toHaveAttribute('aria-busy','false');
+      assert.equal(await another.evaluate(()=>getComputedStyle(document.documentElement).colorScheme),'light');
+      await another.reload();await expect(another.locator('#industry-lab')).toHaveAttribute('aria-busy','false');
+      assert.equal(await another.evaluate(()=>getComputedStyle(document.documentElement).colorScheme),'light');
+      await another.locator('.theme-toggle').click();
+      await expect.poll(mode).toBe('dark');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),null);
+    }finally{await another.close();await page.bringToFront();}
+    await page.emulateMedia({colorScheme:'light'});await expect.poll(mode).toBe('light');
+    assert.deepEqual(await session(),before);
+  });
+  await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
+    for(const scenario of ['winery','wastewater-digester'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
+      await page.setViewportSize({width,height});await page.emulateMedia({colorScheme});
+      await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=${scenario}`);
+      await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+      const viewport=page.locator('#lab-viewer [data-scada-scroll]');
+      await viewport.locator('[data-scada-camera-fit]').click();await viewportContract('#lab-viewer [data-scada-scroll]');
+      const bounds=await viewport.boundingBox(),fit=await viewport.locator('[data-scada-camera-fit]').boundingBox();
+      assert.ok(bounds.width>width*.9,`${scenario}: unused desktop width ${JSON.stringify(bounds)}`);
+      assert.ok(bounds.height>height*.35,`${scenario}: controls consume the diagram ${JSON.stringify(bounds)}`);
+      assert.ok(bounds.y>=0&&bounds.y+bounds.height<=height,`${scenario}: diagram escapes window`);
+      assert.ok(fit.x>=0&&fit.y>=0&&fit.x+fit.width<=width&&fit.y+fit.height<=height,'Fit is outside the window');
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true);
+      const zoom=Number(await viewport.getAttribute('data-camera-zoom'));assert.ok(zoom>0&&zoom<=1.5);
+      if(scenario==='wastewater-digester'&&width===3440)assert.ok(zoom>1,'The explicit host fit policy must use extra room');
+      await noHorizontalOverflow();await shot(`${scenario}-${colorScheme}-${width}`);
+    }
+    await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
   });
   await check('one step and layout switches preserve one shared session',async()=>{
     const before=await minutes();await page.locator('[data-action="step"]').click();assert.equal(await minutes(),before+1);
@@ -176,6 +224,7 @@ finally{
   for(const relative of ['explorer/main.mjs','explorer/model-editor.mjs','explorer/styles.css','ui/src/viewer/viewer.mjs','ui/src/viewer/camera.mjs','sim/src/adapter.mjs','sim/src/v2/circuit-system.mjs','sim/scenarios/wastewater-digester/system.json','sim/scenarios/wastewater-digester/model.json']){
     receipt.sources[relative]=createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit/scada',relative))).digest('hex');
   }
+  for(const relative of ['ui/theme.css','ui/theme.js','vendor/fonts/fonts.css'])receipt.sources[`webkit/${relative}`]=createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit',relative))).digest('hex');
   await writeFile(path.join(output,`${browserName}-receipt.json`),`${JSON.stringify(receipt,null,2)}\n`);
   await context?.close();await browser?.close();await server.close();
 }

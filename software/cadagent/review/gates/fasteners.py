@@ -66,7 +66,7 @@ from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from cadagent._deps import require
-from cadagent.review.gates.verdict import Check, verdict, write_verdict
+from cadagent.review.gates.verdict import Check, not_drawn_markdown, note_not_drawn, verdict, write_verdict
 
 GATE = "fasteners"
 Vec = Tuple[float, float, float]
@@ -1385,9 +1385,11 @@ def fastener_gate(assembly: Any, fasteners: Any, *, steps: Iterable[Any] = (),
     data = verdict(GATE, checks, assumptions=ASSUMPTIONS, limits=limits, exclusions=exclusions,
                    extra={"table": table, "tools": {k: v for k, v in tools.items()},
                           "relation_stats": rel_table.stats if rel_table is not None else None})
+    note_not_drawn(data, getattr(assembly, "not_drawn", None) or [])     # a build's assembly says what it lacks
     if out is not None:
         path = write_verdict(out, data)
-        path.with_suffix(".md").write_text("# Fasteners\n\n" + table_markdown(data))
+        path.with_suffix(".md").write_text("# Fasteners\n\n" + "\n".join(not_drawn_markdown(data) + [""])
+                                           .lstrip("\n") + table_markdown(data))
     return data
 
 

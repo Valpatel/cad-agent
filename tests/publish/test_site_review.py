@@ -441,6 +441,60 @@ def test_a_failing_finding_that_names_no_part_shows_on_every_section(bench):
         assert "two steps share order 3" in findings and "counts against every part" in findings, sid
 
 
+def _declare_not_drawn(root: Path, table) -> None:
+    """Add ``not_drawn`` to the bench's geometry record, as a build with ``not_drawn()`` writes it, and bring the
+    verdicts and the lint up to date the way ``cad-agent gates`` does (no kernel: the gates' results are kept)."""
+    from cadagent.review.gates.verdict import geometry_digest, note_not_drawn
+    geo_path = root / "exports" / "dossier-geometry.json"
+    geo = _json(geo_path)
+    geo["not_drawn"] = table
+    _dump(geo_path, geo)
+    for path in sorted((root / "exports" / "gates").glob("*.json")):
+        if path.stem == "dossier-lint":
+            continue
+        v = note_not_drawn(_json(path), geo)
+        v["inputs"]["geometry"]["digest"] = geometry_digest(geo)
+        _dump(path, v)
+    assert main(["dossier", "--project", str(root)]) == 0
+
+
+def test_components_declared_not_drawn_are_stated_on_every_review_page(bench):
+    """#722: one component near a part of S-store and one declared without ``near``. Every section page lists every
+    gate's not-drawn warning and both lint warnings, each page carries the banner, and the counts say what no gate
+    saw."""
+    _declare_not_drawn(bench, {
+        "flap_spring": {"reason": "sized in analysis/spring.py; no solid yet", "near": ["hopper"],
+                        "declared_at": "cad/build.py:90"},
+        "vent_plug": {"reason": "bought part, model not imported", "near": [], "declared_at": "cad/build.py:91"}})
+    _site(bench)
+    _links_ok(bench)
+    banner = "Not in the model: 2 components of the design are declared not drawn, so no gate saw them: flap_spring (near hopper), vent_plug"
+    for page in ("index.html", "gates.html", "requirements.html", "section-s-arm.html", "section-s-store.html"):
+        assert banner in _read(bench, f"review/{page}"), page
+    for sid in ("s-arm", "s-bracket", "s-frame", "s-store"):        # S-arm, S-bracket and S-frame hold no `near` part
+        findings = _read(bench, f"review/section-{sid}.html").split('id="findings"')[1].split('id="packet"')[0]
+        for gate in ("connectivity", "containment", "fasteners", "motion", "assembly"):
+            assert f"<code>{gate}:not-drawn</code>" in findings, (sid, gate)
+        assert "<code>wall:not-drawn</code>" not in findings              # the wall gate records the list only
+        assert "every section: a component that is not drawn has no extent" in findings
+        assert findings.count("<code>not-drawn</code>") == 2, sid           # the lint's two warnings
+        assert "flap_spring" in findings and "vent_plug" in findings and "bought part, model not imported" in findings
+        assert "No gate or lint finding names this section" not in findings
+    gates = _read(bench, "review/gates.html")
+    assert gates.count('<span class="pill warn">warn</span>') >= 5 and "not in the model: flap_spring" in gates
+    index = _read(bench, "review/index.html")
+    assert "gates pass on the current geometry · 2 components not drawn, not seen by any gate" in index
+    assert ("<b>6 / 6</b><span>integrity gates pass · 2 components not drawn, not seen by any gate</span>"
+            in _read(bench, "index.html"))
+
+
+def test_without_a_declaration_no_review_page_mentions_one(bench):
+    _site(bench)
+    for page in sorted((bench / "site").rglob("*.html")):
+        text = page.read_text()
+        assert "not drawn" not in text and "Not in the model" not in text and "not-drawn" not in text, page.name
+
+
 def test_numbers_from_the_files_are_escaped(bench):
     path = bench / "exports" / "gates" / "wall.json"
     v = _json(path)

@@ -154,6 +154,46 @@ def test_views_cover_the_section(tmp_path):
     assert m["not_rendered"] == [{"what": "part ghost", "why": "its card has no registered shape"}]
 
 
+def test_a_component_declared_not_drawn_reaches_every_section_s_packet(tmp_path):
+    """A gate's ``<gate>:not-drawn`` row and the lint's ``not-drawn`` warning are in the packet of every section,
+    whether or not the declaration's ``near`` names one of its parts (#722): the component has no extent, so no
+    section is known to be clear of it. Without a declaration no packet changes."""
+    from cadagent.review.gates.verdict import note_not_drawn
+    d = load_dossier(write_dossier(tmp_path), strict=False, root=tmp_path)
+
+    def packets(table):
+        rec = record()
+        if table:
+            rec["not_drawn"] = table
+        vs = {"motion": bind_inputs({"schema": "cadagent.gate/1", "gate": "motion", "pass": True, "status": "pass",
+                                     "checks": [{"id": "joint:I-arm", "status": "pass", "message": "clear",
+                                                 "parts": ["arm"]}], "findings": [], "assumptions": ["a"],
+                                     "counts": {"pass": 1, "warn": 0, "fail": 0}}, rec)}
+        lint = {"schema": "cadagent.gate/1", "gate": "dossier-lint", "pass": True, "status": "warn", "checks": [
+            {"id": f"not-drawn@cad/build.py:{40 + i}", "status": "warn", "message": f"component '{name}' of the "
+             "design is not drawn", "parts": list(info.get("near") or []), "evidence": {"code": "not-drawn"}}
+            for i, (name, info) in enumerate((table or {}).items())]}
+        return {sid: pk.plan_packet(sid, rec, d, vs, None, lint=lint, lint_current=True) for sid in ("S0", "S1", "S2")}
+
+    for table, parts in (({"spring": {"reason": "sized in analysis", "near": ["hopper"]}}, ["hopper"]),   # in S1 only
+                         ({"plug": {"reason": "bought part"}}, [])):                                     # no near at all
+        name = next(iter(table))
+        for sid, m in packets(table).items():
+            rows = [f for f in m["findings"] if f["check"] == "motion:not-drawn"]
+            assert len(rows) == 1 and rows[0]["scope"] == "section" and rows[0]["status"] == "warn", (sid, name)
+            assert f"not in the model: {name}" in rows[0]["message"] and rows[0]["parts"] == parts
+            assert rows[0]["stale"] is None
+            assert "motion:not-drawn" in [c["id"] for c in m["measurements"]["gates"]["motion"]["section_checks"]]
+            assert m["measurements"]["gates"]["motion"]["status"] == "warn"
+            lint_rows = [f for f in m["findings"] if f["gate"] == pk.LINT_GATE]
+            assert [f["check"] for f in lint_rows] == ["not-drawn@cad/build.py:40"], (sid, name)
+            assert [c["id"] for c in m["measurements"]["lint"]["section_checks"]] == ["not-drawn@cad/build.py:40"]
+    for sid, m in packets(None).items():
+        assert not [f for f in m["findings"] if "not-drawn" in str(f["check"])], sid
+        assert m["measurements"]["gates"]["motion"]["status"] == "pass"
+    assert note_not_drawn({"gate": "motion"}, record()) == {"gate": "motion"}
+
+
 def test_parts_hashes_and_context(tmp_path):
     m = plan(tmp_path)
     rec = record()

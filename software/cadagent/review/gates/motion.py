@@ -59,7 +59,7 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Seque
 
 from cadagent.review.gates.cache import PairCache, matrix_key
 from cadagent.review.gates.relations import Relation, Tolerances
-from cadagent.review.gates.verdict import Check, verdict, write_verdict
+from cadagent.review.gates.verdict import Check, note_not_drawn, verdict, write_verdict
 
 GATE = "motion"
 RANGED = ("revolute", "slider", "cylindrical")
@@ -1232,6 +1232,7 @@ def motion_gate(assembly: Any, joints: Optional[Mapping[str, Any]] = None, *, to
                       intended_contacts=intended_contacts, intended_overlaps=intended_overlaps,
                       ignore_pairs=ignore_pairs, strict_contacts=strict_contacts, refine_steps=refine_steps,
                       max_poses=max_poses, containment=hook)
+    note_not_drawn(data, getattr(assembly, "not_drawn", None) or [])     # a build's assembly says what it lacks
     if out is not None:
         write_verdict(out, data)
     return data

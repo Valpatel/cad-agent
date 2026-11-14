@@ -382,7 +382,10 @@ def _gate_names(findings_parts: Iterable[Any], rec: _Record, parts: Set[str], fa
 
 def _section_checks(verdict: Mapping[str, Any], rec: _Record, sid: str, parts: Set[str],
                     fasteners: Set[str]) -> Tuple[List[Dict[str, Any]], List[Tuple[Dict[str, Any], str]]]:
-    """The verdict's checks for the section, and its findings with their scope (``section`` or ``unattributed``)."""
+    """The verdict's checks for the section, and its findings with their scope (``section`` or ``unattributed``).
+    A gate's ``<gate>:not-drawn`` row and the lint's ``not-drawn`` warning belong to every section, whatever parts
+    they name: a component that is not drawn has no extent, so no section is known to be clear of it."""
+    from cadagent.review.gates.verdict import is_not_drawn_check
     rows: List[Dict[str, Any]] = []
     found: List[Tuple[Dict[str, Any], str]] = []
     for c in verdict.get("checks") or []:
@@ -394,7 +397,7 @@ def _section_checks(verdict: Mapping[str, Any], rec: _Record, sid: str, parts: S
         if item:
             names.append(item)
         mine, known = _gate_names(names, rec, parts, fasteners)
-        mine |= item == sid
+        mine |= item == sid or is_not_drawn_check(c)
         if mine:
             rows.append({"id": c.get("id"), "status": c.get("status"), "message": c.get("message", "")})
         if c.get("status") in ("fail", "warn"):

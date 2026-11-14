@@ -484,6 +484,7 @@ def _frame(cfg: Any, current: str, title: str, body: str, *, crumbs: str = "") -
 
 
 def _banners(data: ReviewData, links: _Links) -> str:
+    from cadagent.review.gates.verdict import not_drawn_of, not_drawn_summary
     out = []
     if data.has_dossier and data.status is None:
         out.append(f'<div class="banner bad">No dossier status yet ({_e(data.status_error)}): run '
@@ -496,6 +497,11 @@ def _banners(data: ReviewData, links: _Links) -> str:
         files = ", ".join(links.file(f) for f in data.yaml_newer[:6])
         out.append(f'<div class="banner">The dossier changed after the status file was written ({files}); run '
                    f'<code>cad-agent dossier</code> to recompute the statuses.</div>')
+    missing = not_drawn_of(data.geometry)
+    if missing:                 # on every review page: no gate status below is read without what no gate saw
+        out.append(f'<div class="banner">Not in the model: {_e(not_drawn_summary(missing))}. A gate that passes '
+                   'says nothing about them: each such gate reads <b>warn</b> (<code>&lt;gate&gt;:not-drawn</code>), '
+                   'and the warning is listed on every section.</div>')
     if data.dossier_error:
         out.append(f'<div class="banner bad">The YAML dossier did not load: {_e(data.dossier_error)}</div>')
     bad = [r for r in data.rows if not str(r.get("name", "")).startswith("gate ")]
@@ -528,6 +534,8 @@ def _review_state(row: Mapping[str, Any]) -> Tuple[str, str]:
             return f'{rev["findings"]} finding(s) open', "warn"     # _pill escapes it
         return "reviewed", "pass"
     if row.get("invalidated"):
+        if row["invalidated"].get("not_drawn"):
+            return "review void (a component was declared not drawn)", "stale"
         return "review void (geometry changed)", "stale"
     return "unreviewed", "none"
 
@@ -560,12 +568,15 @@ def index_page(data: ReviewData, cfg: Any) -> str:
     verified = sum(1 for r in reqs.values() if r.get("status") == "verified")
     states = gate_states(data)
     gpass = sum(1 for s in states.values() if s in ("pass", "warn"))
+    from cadagent.review.gates.verdict import not_drawn_of
+    n_missing = len(not_drawn_of(data.geometry))
+    unseen = f" · {n_missing} component{'s' if n_missing != 1 else ''} not drawn, not seen by any gate" if n_missing else ""
     stats = ('<div class="stats">'
              f'<div class="stat"><b>{_e(sec_counts.get("signed_off", 0))} / {len(data.section_ids())}</b><span>sections signed off</span></div>'
              f'<div class="stat"><b>{_e(sum(_int(sec_counts.get(s)) for s in ("gated", "reviewed", "signed_off")))} / '
              f'{len(data.section_ids())}</b><span>sections gated or better (required: {_e(st.get("required_section_status") or "—")})</span></div>'
              f'<a class="stat" href="requirements.html"><b>{verified} / {len(reqs)}</b><span>requirements verified</span></a>'
-             f'<a class="stat" href="gates.html"><b>{gpass} / {len(states)}</b><span>gates pass on the current geometry</span></a>'
+             f'<a class="stat" href="gates.html"><b>{gpass} / {len(states)}</b><span>gates pass on the current geometry{unseen}</span></a>'
              f'<div class="stat"><b>{_e(c.get("error", "—"))} / {_e(c.get("warning", "—"))}</b><span>lint errors / warnings</span></div></div>')
     findings = st.get("findings") or []
     lint = ("".join(f'<tr><td>{_pill("fail" if f.get("severity") == "error" else "warn", f.get("severity"))}</td>'
@@ -594,9 +605,11 @@ def _interfaces_for(data: ReviewData, sid: str) -> List[Any]:
 
 
 def _findings_for(data: ReviewData, sid: str) -> List[Tuple[str, Dict[str, Any], Set[str]]]:
-    """The gate findings that concern the section: those naming one of its parts, and every failing finding that
+    """The gate findings that concern the section: those naming one of its parts, every failing finding that
     names no known part (the dossier lint counts those against every part, so they block this section too; they come
-    back with an empty set of named parts)."""
+    back with an empty set of named parts), and every gate's ``<gate>:not-drawn`` warning, whatever parts it names
+    (a component that is not drawn has no extent, so no section is known to be clear of it)."""
+    from cadagent.review.gates.verdict import is_not_drawn_check
     cards = set(data.section_of_part())
     mine = set(data.part_ids(sid))
     out = []
@@ -607,7 +620,7 @@ def _findings_for(data: ReviewData, sid: str) -> List[Tuple[str, Dict[str, Any],
             if not isinstance(f, dict):
                 continue
             named = parts_named(f.get("parts") or [], cards, data.geometry)
-            if named & mine or (not named and f.get("status") == "fail" and mine):
+            if named & mine or (not named and f.get("status") == "fail" and mine) or is_not_drawn_check(f):
                 out.append((gate, f, named))
     return out
 
@@ -619,8 +632,9 @@ def _part_card(data: ReviewData, pid: str, links: _Links, shown_interfaces: Set[
     head = [f'<h3 id="part-{_slug(pid)}">{_e(pid)} {_pill(status or "none")}']
     if row.get("invalidated"):
         inv = row["invalidated"]
+        what = (f'{", ".join(inv["not_drawn"])} declared not drawn' if inv.get("not_drawn") else "geometry changed")
         head.append(f'<span class="badge" title="the review of {_e(inv.get("date"))} no longer matches the geometry">'
-                    f'stale: geometry changed since the review of {_e(inv.get("date"))}</span>')
+                    f'stale: {_e(what)} since the review of {_e(inv.get("date"))}</span>')
     claimed = row.get("claimed")
     if claimed and status in LADDER and claimed in LADDER and LADDER.index(claimed) > LADDER.index(status):
         head.append(f'<span class="badge">YAML claims {_e(claimed)}</span>')
@@ -825,8 +839,10 @@ def section_page_html(data: ReviewData, sid: str, cfg: Any) -> str:
     if row.get("invalidated"):
         inv = row["invalidated"]
         top.append(f'<div class="banner"><span class="badge">stale</span> The review of {_e(inv.get("date"))} '
-                   f'({links.file(inv.get("record"), "record")}) no longer applies: {_e(", ".join(inv.get("changed") or []))} '
-                   'changed since. The status fell back to what the current evidence supports.</div>')
+                   f'({links.file(inv.get("record"), "record")}) no longer applies: '
+                   + (f'{_e(", ".join(inv["not_drawn"]))} declared not drawn near {_e(", ".join(inv.get("changed") or []))} '
+                      'since' if inv.get("not_drawn") else f'{_e(", ".join(inv.get("changed") or []))} changed since')
+                   + '. The status fell back to what the current evidence supports.</div>')
     if row.get("blocked_by"):
         top.append('<p class="small muted">Not higher because:</p><ul class="small">'
                    + "".join(f"<li>{_e(b)}</li>" for b in row["blocked_by"]) + "</ul>")
@@ -868,6 +884,7 @@ def section_page_html(data: ReviewData, sid: str, cfg: Any) -> str:
                        if dec.scope == "section" and dec.section == sid)
     cards = "".join(_part_card(data, pid, links, {i.id for i in itfs}) for pid in data.part_ids(sid))
 
+    from cadagent.review.gates.verdict import is_not_drawn_check
     states = gate_states(data)
     f_rows = []
     sec_of = data.section_of_part()
@@ -875,14 +892,17 @@ def section_page_html(data: ReviewData, sid: str, cfg: Any) -> str:
         stale = (' <span class="badge">verdict ' + _e(states[gate]) + "</span>") if states.get(gate) in ("stale", "invalid") else ""
         parts = " ".join(f'<a href="{section_page(sec_of[p]) if sec_of.get(p) != sid else ""}#part-{_slug(p)}">{_e(p)}</a>'
                          if p in sec_of else _e(p) for p in sorted(named))
-        if not named:
+        if is_not_drawn_check(f):
+            parts = ((parts + " ") if named else "") + ('<span class="small muted">every section: a component '
+                                                        'that is not drawn has no extent</span>')
+        elif not named:
             raw = ", ".join(str(x) for x in f.get("parts") or [])
             parts = (f'<span class="small muted">{_e(raw) + ": " if raw else ""}names no known part, so it counts '
                      'against every part</span>')
         f_rows.append(f'<tr><td><a href="gates.html#gate-{_slug(gate)}">{_e(gate)}</a>{stale}</td><td><code>{_e(f.get("id"))}</code></td>'
                       f'<td>{_pill(f.get("status"))}</td><td>{parts}</td><td>{_e(f.get("message"))}<br>{_witness(f.get("evidence"))}</td></tr>')
     lint_rows = [f for f in (st.get("findings") or []) if f.get("item") == sid or set(f.get("parts") or []) & set(data.part_ids(sid))
-                 or f.get("item") in data.part_ids(sid)]
+                 or f.get("item") in data.part_ids(sid) or is_not_drawn_check(f)]
     lint_html = "".join(f'<tr><td>dossier lint</td><td><code>{_e(f.get("code"))}</code></td>'
                         f'<td>{_pill("fail" if f.get("severity") == "error" else "warn", f.get("severity"))}</td>'
                         f'<td>{_e(", ".join(f.get("parts") or []))}</td><td>{_e(f.get("message"))}<br>'

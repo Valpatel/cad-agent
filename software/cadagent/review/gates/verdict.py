@@ -26,9 +26,15 @@ current record (or that it carries no inputs), so a verdict from an earlier buil
 **Not in the model.** A gate sees the shapes the build registered and nothing else. When the geometry record lists
 components declared not drawn (``cadagent.review.dossier.not_drawn``), ``cad-agent gates`` runs ``note_not_drawn`` on
 every verdict: ``not_drawn`` (``[{"name", "reason", "near"}]``), an assumption that names them, and, in every gate
-but those in ``NOT_DRAWN_NOTE_ONLY``, a ``<gate>:not-drawn`` check with status ``warn``. So a gate that would have
-passed reads ``warn``; ``pass`` stays true, and a declaration alone never fails a gate. Only declared components
-appear: nothing detects an omission nobody declared.
+but those in ``NOT_DRAWN_NOTE_ONLY``, a ``<gate>:not-drawn`` check with status ``warn``. So the ``status`` of a gate
+that would have passed is ``warn``; ``pass`` stays true, and a declaration alone never fails a gate. Only declared
+components appear: nothing detects an omission nobody declared.
+
+The same statement is applied wherever a verdict is made for a build: a gate given ``Assembly.from_build(result)``
+applies it before it returns or writes (the assembly carries ``not_drawn``), and ``bind_inputs`` applies it to
+whatever it binds (a project's own gate). ``stale_reason`` refuses a verdict that does not name the components the
+record declares, so no verdict is current for such a record without the statement. The one exception is a gate
+called on a hand-built ``Assembly``, which has no record to read.
 """
 
 from __future__ import annotations
@@ -145,15 +151,43 @@ def not_drawn_summary(items: Sequence[Mapping[str, Any]], limit: int = 0) -> str
             f"no gate saw {'them' if n != 1 else 'it'}: {not_drawn_names(items, limit)}")
 
 
-def note_not_drawn(data: Dict[str, Any], record: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+def not_drawn_markdown(data: Mapping[str, Any]) -> List[str]:
+    """The "Not in the model" section of a verdict's Markdown, as lines (``[]`` when the verdict names none)."""
+    missing = [m for m in data.get("not_drawn") or [] if isinstance(m, Mapping)]
+    if not missing:
+        return []
+    n = len(missing)
+
+    def cell(value: Any) -> str:
+        return str(value if value is not None else "").replace("|", "\\|").replace("\n", " ")
+    lines = ["## Not in the model", "",
+             f"**{n} component{'s' if n != 1 else ''} of the design {'are' if n != 1 else 'is'} declared not "
+             f"drawn. This gate did not see {'them' if n != 1 else 'it'}, and its result does not cover "
+             f"{'them' if n != 1 else 'it'}.**", "",
+             "| Component | Near | Why it is not drawn |", "|---|---|---|"]
+    lines += [f"| `{cell(m.get('name'))}` | {cell(', '.join(m.get('near') or []) or '-')} "
+              f"| {cell(m.get('reason'))} |" for m in missing]
+    return lines + [""]
+
+
+def is_not_drawn_check(check: Mapping[str, Any]) -> bool:
+    """Whether a check or finding is a gate's ``<gate>:not-drawn`` row or the lint's ``not-drawn`` warning. Such a
+    row concerns every part and every section: the component has no extent, so nothing limits what it reaches."""
+    ev = check.get("evidence") if isinstance(check.get("evidence"), Mapping) else {}
+    return (str(check.get("id") or "").endswith(f":{NOT_DRAWN_CHECK}") or ev.get("code") == NOT_DRAWN_CHECK
+            or check.get("code") == NOT_DRAWN_CHECK)
+
+
+def note_not_drawn(data: Dict[str, Any], record: Any) -> Dict[str, Any]:
     """State in a verdict (in place, and returned) which components of the design the geometry record declares not
-    drawn. Without any, or on a verdict that already carries ``not_drawn``, nothing changes.
+    drawn. ``record`` is the geometry record, or the list ``not_drawn_of`` made from it (``Assembly.not_drawn``).
+    Without any, or on a verdict that already carries ``not_drawn``, nothing changes.
 
     Adds ``not_drawn``, one assumption, and (unless the gate is in ``NOT_DRAWN_NOTE_ONLY``) a ``<gate>:not-drawn``
     check with status ``warn`` whose ``parts`` are the declared neighbours. A ``pass`` status becomes ``warn``; a
     ``fail`` stays a fail, and ``pass`` (the boolean) never changes. The warning is not limited to the declared
     neighbours: the gate has no geometry for the component, so it cannot tell what the component would reach."""
-    items = not_drawn_of(record)
+    items = [dict(i) for i in record] if isinstance(record, (list, tuple)) else not_drawn_of(record)
     if not items or "not_drawn" in data:
         return data
     gate = str(data.get("gate") or "")
@@ -255,7 +289,12 @@ def record_hashes(record: Mapping[str, Any]) -> Dict[str, str]:
 def bind_inputs(data: Dict[str, Any], record: Mapping[str, Any], *, record_file: str = "",
                 declarations: Any = None, options: Any = None) -> Dict[str, Any]:
     """Add ``inputs`` to a verdict dict (in place, and returned): what it was computed from. ``declarations`` and
-    ``options`` are digested (``digest_of``) when given, so a change to them makes the verdict stale too."""
+    ``options`` are digested (``digest_of``) when given, so a change to them makes the verdict stale too.
+
+    When the record declares components that are not drawn, the verdict is first made to name them
+    (``note_not_drawn``), so nothing is bound to such a record without that statement: a project's own gate gets
+    it here. A record without declarations leaves the verdict as it was."""
+    note_not_drawn(data, record)
     inputs: Dict[str, Any] = {"geometry": {"file": record_file, "digest": geometry_digest(record),
                                            "hashes": record_hashes(record)}, "toolkit": _toolkit_version()}
     if declarations is not None:
@@ -280,7 +319,8 @@ def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *
                  options: Any = None) -> Optional[str]:
     """None when the verdict's ``inputs`` match ``record`` (and, when given, the declarations and options digests);
     otherwise why not: no inputs, a different geometry (naming the keys whose content hash changed, appeared or
-    went), or changed declarations or options. With no record, a verdict cannot be current."""
+    went), changed declarations or options, or a verdict that does not name the components the record declares
+    not drawn. With no record, a verdict cannot be current."""
     inputs = data.get("inputs")
     if not isinstance(inputs, Mapping) or not isinstance(inputs.get("geometry"), Mapping):
         return "not bound to a geometry record (no inputs): rerun cad-agent gates"
@@ -295,6 +335,14 @@ def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *
                 if changed else "the declarations in the record changed (flags, joints, fasteners, steps or "
                                 "components declared not drawn)")
         return f"geometry changed since this verdict ({what})"
+    declared = not_drawn_of(record)
+    if declared:                                    # same digest, yet the verdict does not say what no gate saw
+        named = {str(m.get("name")) for m in data.get("not_drawn") or [] if isinstance(m, Mapping)}
+        unnamed = [i["name"] for i in declared if i["name"] not in named]
+        if unnamed:
+            return ("does not name the component(s) the record declares not drawn "
+                    f"({', '.join(unnamed[:6])}{' ...' if len(unnamed) > 6 else ''}): apply note_not_drawn, or "
+                    "rerun cad-agent gates")
     if declarations is not None and inputs.get("declarations") != digest_of(declarations):
         return "the gate's declarations changed since this verdict"
     if options is not None and inputs.get("options") != digest_of(options):

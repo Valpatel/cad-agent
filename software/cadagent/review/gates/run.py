@@ -36,8 +36,9 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from cadagent.review.gates.verdict import (SCHEMA, Check, bind_inputs, not_drawn_names, not_drawn_of,
-                                           note_not_drawn, record_hashes, stale_reason, verdict, write_verdict)
+from cadagent.review.gates.verdict import (SCHEMA, Check, bind_inputs, is_not_drawn_check, not_drawn_markdown,
+                                           not_drawn_names, not_drawn_of, note_not_drawn, record_hashes,
+                                           stale_reason, verdict, write_verdict)
 
 GATES = ("connectivity", "containment", "fasteners", "motion", "assembly", "wall")   # geometric gates, run order
 LINT = "dossier-lint"
@@ -389,17 +390,7 @@ def verdict_markdown(data: Mapping[str, Any]) -> str:
     if geo:
         lines += [f"Geometry: `{geo.get('file', '')}` digest `{str(geo.get('digest', ''))[:16]}`, "
                   f"{len(geo.get('hashes') or {})} shapes", ""]
-    missing = data.get("not_drawn") or []
-    if missing:
-        n = len(missing)
-        lines += ["## Not in the model", "",
-                  f"**{n} component{'s' if n != 1 else ''} of the design {'are' if n != 1 else 'is'} declared not "
-                  f"drawn. This gate did not see {'them' if n != 1 else 'it'}, and its result does not cover "
-                  f"{'them' if n != 1 else 'it'}.**", "",
-                  "| Component | Near | Why it is not drawn |", "|---|---|---|"]
-        lines += [f"| `{_cell(m.get('name'))}` | {_cell(', '.join(m.get('near') or []) or '-')} "
-                  f"| {_cell(m.get('reason'))} |" for m in missing]
-        lines.append("")
+    lines += not_drawn_markdown(data)
     findings = data.get("findings") or []
     lines += ["## Findings", ""]
     if findings:
@@ -566,13 +557,21 @@ def build_geometry(project: Any) -> Path:
 
 @dataclass
 class GateRun:
-    """The outcome of one gate in a run: ``status`` is ``pass``, ``fail``, ``na`` or ``skip``."""
+    """The outcome of one gate in a run: ``status`` is ``pass``, ``fail``, ``na`` or ``skip``. ``caveat`` is true
+    for a passing gate whose verdict warns that components of the design are not drawn (its ``<gate>:not-drawn``
+    check): ``word`` is then ``WARN``, and ``status`` stays ``pass``, so counts and exit codes do not move."""
     gate: str
     status: str
     message: str = ""
     seconds: float = 0.0
     log: str = ""
     counts: Dict[str, int] = field(default_factory=dict)
+    caveat: bool = False
+
+    @property
+    def word(self) -> str:
+        """The word printed for the row: ``WARN`` for a pass with the not-drawn warning, else the status."""
+        return "WARN" if self.caveat and self.status == "pass" else self.status.upper()
 
 
 @dataclass
@@ -720,14 +719,15 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
                         **expected_inputs(gate, cfg, dossier, extra))
             write_outputs(gates_dir, data)
         status = "pass" if data.get("pass") is True else "fail"
-        return GateRun(gate, status, _summary(data), secs, log, dict(data.get("counts") or {}))
+        caveat = any(isinstance(f, Mapping) and is_not_drawn_check(f) for f in data.get("findings") or [])
+        return GateRun(gate, status, _summary(data), secs, log, dict(data.get("counts") or {}), caveat)
 
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         futures = {pool.submit(one, g): g for g in todo}
         for fut in as_completed(futures):
             row = fut.result()
             rows[row.gate] = row
-            progress(f"  {row.status.upper():<4} {row.gate:<13} {row.seconds:6.1f} s  {row.message}"
+            progress(f"  {row.word:<4} {row.gate:<13} {row.seconds:6.1f} s  {row.message}"
                      + (f" · log {row.log}" if row.status == "fail" and row.log else ""))
     if any(p.gate == LINT and p.state == "run" for p in planned):
         rows[LINT] = run_lint(project)
@@ -817,7 +817,8 @@ def _verdict_row(name: str, path: Path, record: Mapping[str, Any], expected: Map
 def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
     """``{"pass", "total", "stale"}`` over the gate verdicts in ``<exports_dir>/gates/`` (the lint's left out):
     a verdict counts as passing only when it passes and its geometry matches the current record. None when there
-    are no verdicts. For the site overview, which reads files only."""
+    are no verdicts. For the site overview, which reads files only. ``not_drawn`` (how many components the record
+    declares not drawn) is added when there are any: a pass counted here says nothing about them."""
     exports = Path(exports_dir)
     gates_dir = exports / "gates"
     paths = [p for p in sorted(gates_dir.glob("*.json")) if p.stem != LINT] if gates_dir.is_dir() else []
@@ -838,6 +839,8 @@ def site_counts(exports_dir: Path) -> Optional[Dict[str, int]]:
             out["stale"] += 1
         elif data.get("pass") is True:
             out["pass"] += 1
+    if not_drawn_of(record):
+        out["not_drawn"] = len(not_drawn_of(record))
     return out
 
 

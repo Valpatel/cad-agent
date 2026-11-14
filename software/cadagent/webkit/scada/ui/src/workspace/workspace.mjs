@@ -10,6 +10,8 @@
  * body, footer and toolbar content are trusted application HTML, not user text.
  * Other strings are escaped. Use a distinct scope for simultaneous workspaces.
  */
+export {ScadaPopover} from './popover.mjs';
+
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[character]));

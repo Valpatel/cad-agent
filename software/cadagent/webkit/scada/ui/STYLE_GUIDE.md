@@ -6,7 +6,7 @@ Read [README.md](./README.md) for the API and component map, and [CONTRIBUTING.m
 
 Use recognizable equipment silhouettes, restrained metallic depth and translucent teal surfaces. A pump should read as a pump before motion starts. A PLC rack, CPU, remote IO unit and HMI must remain distinguishable at card size and without color. Prefer original SVG geometry to a generic box decorated with a different label.
 
-The hierarchy is equipment shape, current value/state, then context. Keep primary names and controls in HTML at readable sizes; tiny SVG labels are supplementary. Keep process maps compact and put detailed controls in the shared native dialog. A visual component has no private simulation, process timer or hardware connection.
+The hierarchy is equipment identity and shape, current value/state, then context. Keep canonical IDs, names and controls in HTML at readable sizes; tiny SVG labels are supplementary. Keep process maps compact: an anchored quick panel handles equipment actions, and **Details & model** opens the full inspection surface. A visual component has no private simulation, process timer or hardware connection.
 
 ## Palette and tokens
 
@@ -20,13 +20,14 @@ These values describe the current implementation. Reuse them for additions inste
 | Steel | Gradient through `#16374a`, `#659bae`, `#acd5de`, `#396a81`, `#122e42` |
 | Glass | Low-opacity cyan highlights over dark blue, with visible outlines |
 | Liquid / normal activity | `#57ffd0`, `#62ffbc`, `#68ffe1`, deep `#087a92` |
+| Valve position | Green `#62ffbc` OPEN, red `#ff8585` CLOSED, teal `#7ee9ef` percentage OPEN, neutral `#b4c4d0` unavailable; each has readable text |
 | Electrical / warm flow | `#ffd38a` |
-| Focus / selection | Cyan `#00d7e4` or `#73eff6`, with an outline rather than color alone |
+| Keyboard focus / hover | Cyan `#00d7e4` or `#73eff6` outlines; equipment inspection does not add a persistent selected fill |
 | Warning | Amber `#ffd38a` and a triangular exclamation symbol |
 | Fault | Pink `#ff77ac` and an octagonal X symbol |
 | Inactive / offline | Reduced saturation and opacity while retaining the equipment silhouette |
 
-`scada-workspace.css` exposes `--scada-line`, `--scada-surface`, `--scada-raised`, `--scada-ink`, `--scada-muted` and `--scada-accent` on `.scada-workspace`. Its optional `--sim-*` fallbacks support the host app. The component stylesheet uses local variables such as `--scada-activity-duration`, `--scada-level` and `--scada-load`; render state is the public way to supply values. Do not make consumers set private transform/offset variables to achieve ordinary state changes.
+[`src/workspace/workspace.css`](src/workspace/workspace.css) exposes `--scada-line`, `--scada-surface`, `--scada-raised`, `--scada-ink`, `--scada-muted` and `--scada-accent` on `.scada-workspace`. Its optional `--sim-*` fallbacks support the host app. The component stylesheet uses local variables such as `--scada-activity-duration`, `--scada-level` and `--scada-load`; render state is the public way to supply values. Do not make consumers set private transform/offset variables to achieve ordinary state changes.
 
 Keep CSS within `.scada-component`, `.scada-workspace` or the viewer's own namespace. Do not add global `button`, `svg`, `input` or heading rules. Workspace styling works beneath a neutral `.scada-workspace` root; consumers do not need the reference app’s `#main` container.
 
@@ -69,13 +70,21 @@ Declare all accepted visual fields in the component descriptor. Keep units, defa
 | Fault | Visible fault symbol and text; activity responds to the supplied fault state. A renderer does not create or repair damage. |
 | Offline | Inactive presentation and an accessible offline description. |
 | Disconnected | PLC/network activity stops and the description remains truthful. A picture does not open a network connection. |
-| Open / closed | A meaningful geometric distinction. An open valve permits its indicated path; an open breaker interrupts its electrical path. |
-| Valve opening | Gate, control and butterfly valve position interpolates from 0–100%, with proportional flow highlighting. Closed overrides the supplied position; the old boolean-only open state remains fully open. |
+| Open / closed | A meaningful geometric distinction. Valve position is separate from activity and fault; an open breaker interrupts its electrical path. |
+| Valve opening | Shared SVG and HTML cues show OPEN, CLOSED or percentage OPEN from supplied position. `open: false` overrides `opening` to zero; continuous opening applies only to types declaring it. See the [state contract](./docs/API.md#declared-state). |
 | Numeric state | Visible level/load/readout where declared, with units or an explicit illustrative label. Bounds remain a UI contract, not equipment ratings. |
 | Speed | Driven motion stops at zero and changes cadence across low, middle and high values. Status lights and monitoring displays are separate from production motion. |
 | Damage | Type-specific physical detail: a leak, fracture, wear marks, blockage, heat plume, lost signal or failed device part. Keep generic fault symbols in addition to, not in place of, this detail. |
 
 State combinations need deliberate precedence. A disconnected PLC must not be captioned “Active”; a fault should remain visible when motion is paused. Do not rely on a changed CSS variable alone if the device has no visible feature using it.
+
+For the seven valve families covered by the shared position helper, inactive,
+paused and fault states preserve supplied position. CLOSED red is a position
+cue, not a fault alarm. An offline valve uses neutral UNKNOWN artwork and
+POSITION UNAVAILABLE text, with unavailable numeric readings. Failed viewer
+bindings retain Data unavailable; retained geometry is not current telemetry.
+Position cues do not establish flow, a valve
+coefficient or actuator feedback. Keep activity, warnings and damage distinct.
 
 Use the `damage` options declared by the registry. A stopped drive may still have an animated spill or heat plume; gate production and incident motion separately. A jam, seized rotor or lost power must not keep its mechanism running. Wear, corrosion and fouling have persistent static marks, and every damage option remains distinguishable with reduced motion. Numeric temperature, speed, load and inventory values stay readable while those effects move. The separate headless model owns any trip, escalation or repair rule.
 
@@ -97,7 +106,37 @@ Use native controls with at least 44 px targets, visible focus, associated label
 
 Pair foreground and background tokens for inspector buttons in every application theme. Measure at least 4.5:1 text contrast for default, pressed/unpressed and hovered actions, including the smaller on/off status spans.
 
-Dialogs use `ScadaWorkspace` for top-layer behavior, focus containment, Escape/backdrop dismissal and focus return. Keep controls mounted during live value updates; do not replace the whole modal on each tick. Destroy the view/dialog controller before removing its root, while preserving the externally owned system session.
+Every diagram equipment button shows its raw canonical ID in
+`.scada-viewer-equipment-id`, separately from its human name. Pickers use
+`ID · name`; quick and full inspection repeat the same ID. Never derive identity
+from labels, visual ordering or selection indexes. Equipment buttons open a
+dialog and use expanded state; they are not toggles and must not acquire
+`aria-pressed` or a persistent selection fill. Boolean command buttons retain
+their real pressed/on-off state.
+
+Quick equipment controls use `ScadaPopover` in screen space. The panel follows
+its equipment through pan/zoom, stays within the visible viewport and remains
+readable independently of diagram scale. Close, Escape and an outside click
+dismiss it. It does not trap focus or lock page scrolling. Show only that
+equipment's controls and compact readings; keep global actions in full details.
+
+Full native dialogs use `ScadaWorkspace` for top-layer behavior, focus containment,
+Escape/backdrop dismissal and focus return. A host details callback owns the same
+lifecycle for its surface. Returning from details should reach a meaningful
+connected opener. Outside quick-panel dismissal must preserve the target the
+user clicked. Nested inspection must dismiss the active inner surface first.
+
+Keep controls mounted across ticks for the same equipment so focused drafts
+survive. On an ID change, close or replace the inspection context before editing
+the new equipment; never route an old draft to the new ID. Destroy each camera,
+popover and dialog controller before removing its root, while preserving the
+externally owned session.
+
+Model details show the selected equipment's accepted configuration, parameter
+units and the active kernel/provider identity and implementation. A displayed
+equation must correspond to executable model code. Do not add decorative formulas
+or label illustrative indices as calibrated physics. Hosts own this model
+inspection; the reusable UI remains independent of a solver.
 
 Contained diagram viewers use a camera, not scrollbars, to navigate their 2D or
 3D content. Size the viewport to the available host/window, keep **Zoom to fit**

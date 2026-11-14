@@ -99,7 +99,28 @@ Every type declares:
 
 Additional fields are declared only where relevant. Power/nuclear fields include normalized `heat`, `flow`, `primaryFlow`, `secondaryFlow`, `rodPosition`, `pressure`, `integrity`, `field`, `irradiance`, `current`, `wave` and device-specific switches/modes. Agriculture adds `oxygen`, `moisture`, `light`, `humidity`, `airflow` and irrigation phase. These new readings are percentages or fictional indices, not calibrated radiation, chemistry or operating values. Legacy fields include: `level`, `load`, `speed` and `opening` (0–100), `temperature` (type-specific illustrative °C bounds), `value` (an illustrative instrument reading), `open` and `connected`. An invalid/offline/broken/disconnected instrument displays an em dash and an unavailable accessible description rather than an unqualified numeric gauge. Drift may retain a clearly marked reading. Every numeric field has a visible keyed reading: `[data-scada-reading="field"]`; its companion gauge uses the declared bounds. An open process valve permits its flow animation; an open circuit breaker interrupts its electrical flow. Speed zero stops driven motion, while powered status indicators may remain visible. Offline, disconnected or fault states suppress production activity. Separately supplied coolant circulation, environmental wave/current motion and retained heat may continue after a production stop or fault; `running:false`, offline and reduced motion govern their animation too. The host remains responsible for deciding which state is appropriate.
 
-Gate, control and butterfly valves support continuous `opening`: their stem or disc position and flow highlight interpolate across 0–100%. Its default is 100, preserving boolean-only callers. `open: false` overrides the rendered position and reading to 0 regardless of the supplied opening; `normalizeScadaState()` retains the supplied input position so the host can keep a separate setpoint. At opening 0, indicated flow stops. This is an illustrative aperture, not a valve flow coefficient or hydraulic calculation.
+Seven families share valve position cues: `gate-valve`, `control-valve`,
+`check-valve`, `relief-valve`, `butterfly-valve`, `fuel-pressure-regulator` and
+`intake-gate`. Their SVG artwork and viewer card status use green **OPEN** at
+100%, red **CLOSED** at 0%, and teal **percentage OPEN** between those endpoints.
+The text and geometry carry the meaning independently of color.
+
+Gate, control and butterfly valves, fuel pressure regulators and intake gates
+declare continuous `opening` from 0–100%; check and relief valves use boolean
+`open`. `open: false` overrides the rendered position and reading to 0 regardless
+of supplied `opening`. Otherwise the declared opening applies, defaulting to
+100 for boolean-only callers. `normalizeScadaState()` retains the supplied input
+position. Partial labels remain distinct from both exact endpoints after rounding.
+
+Inactive, paused and fault states do not close a valve or erase its supplied
+position; activity and condition text remain separate. An offline valve
+uses neutral **POSITION UNAVAILABLE** text and **UNKNOWN** in the compact SVG
+cue, with unavailable numeric readings. Failed viewer bindings retain the
+**Data unavailable** card diagnostic. Geometry may retain the supplied position
+without claiming current telemetry. This is presentation of supplied aperture,
+not measured flow, a valve coefficient, hydraulic calculation or actuator feedback.
+The shared helper is internal; consumers continue to supply declared state through
+`renderScadaComponent()` and their viewer adapter.
 
 Every type also declares a `damage` select field. Read its descriptor options: vessels can leak, rupture or corrode; machines can jam, wear or overheat; electrical equipment can short, burn or overheat; instruments can drift, break or foul; automation hardware can lose communication, IO or power. New equipment adds specific membrane, blade, gearbox, refractory, diffuser and stack conditions. These produce physical visual details rather than only a label or generic warning badge. The common `fault` flag remains separate: wear or a leak may be shown while a drive is still active, whereas a jam stops the affected mechanism. Heat, spill or leak effects can continue after a drive fault. `running: false`, offline state and reduced motion freeze incident animation while retaining static evidence. These are presentation rules, not protection-system behavior.
 

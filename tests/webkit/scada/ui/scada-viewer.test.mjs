@@ -34,16 +34,67 @@ test('diagram actions dispatch the declared asset without opening a dialog and p
   try {
     const action=viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]');
     assert.equal(action.textContent,'Close');assert.equal(action.closest('[data-scada-equipment]'),null);
+    assert.equal(viewer.root.querySelector('[data-scada-equipment="valve"] .scada-valve-position-label').textContent,'OPEN');
     assert.equal(observer.root.querySelector('[data-scada-diagram-control]'),null);
     action.focus();click(window,'[data-scada-diagram-control="valveSwitch"]',viewer.root);
     assert.equal(model.getSnapshot().valveOpen,false);assert.equal(viewer.selected,'valve');
     assert.equal(action.textContent,'Open');assert.equal(window.document.activeElement,action);
     assert.equal(viewer.root.querySelector('dialog').hasAttribute('open'),false);
     assert.equal(observer.snapshot.controls.valveOpen,false);
+    for(const instance of [viewer,observer])assert.equal(instance.root.querySelector('[data-scada-equipment="valve"] .scada-valve-position-label').textContent,'CLOSED');
     viewer.setView('power');assert.equal(viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]').textContent,'Open');
     click(window,'[data-scada-diagram-control="pumpSwitch"]',viewer.root);
     assert.equal(model.getSnapshot().pumpOn,false);
     assert.equal(model.getSnapshot().valveOpen,false);
+  } finally {viewer.destroy();observer.destroy();dom.window.close();}
+});
+
+test('valve cards use supplied position rather than commands and keep unavailable readings neutral', async () => {
+  const dom=setup(),model=new UtilityModel();
+  let snapshot=createUtilityAdapter(model).getSnapshot();
+  snapshot.controls.valveOpen=false;
+  snapshot.components.valve={active:true,open:true,opening:35};
+  const adapter={getSnapshot:()=>snapshot,subscribe:()=>()=>{},dispatch:()=>Promise.reject(new Error('Valve interlock'))};
+  const viewer=new ScadaViewer({definition,adapter}).mount(dom.window.document.querySelector('#editable'));
+  const observer=new ScadaViewer({definition,adapter:{getSnapshot:adapter.getSnapshot,subscribe:adapter.subscribe}}).mount(dom.window.document.querySelector('#monitor'));
+  const card=instance=>instance.root.querySelector('[data-scada-equipment="valve"]');
+  const status=instance=>card(instance).querySelector('.scada-viewer-equipment-status');
+  try {
+    assert.equal(status(viewer).textContent,'35% OPEN');
+    assert.equal(status(observer).textContent,'35% OPEN');
+    assert.equal(status(viewer).dataset.valvePosition,'partial');
+    assert.equal(viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]').textContent,'Open','button describes the next command');
+    click(dom.window,'[data-scada-diagram-control="valveSwitch"]',viewer.root);
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.match(viewer.root.querySelector('[data-scada-viewer-error]').textContent,/Valve interlock/);
+    assert.equal(status(viewer).textContent,'35% OPEN','rejected commands cannot repaint the supplied position');
+    for(const state of [{active:false,open:true,opening:85},{active:false,open:false,opening:73},{active:true,open:true,opening:100,fault:true}]){
+      snapshot={...snapshot,components:{...snapshot.components,valve:state}};
+      viewer.refresh();observer.refresh();
+      const expected=state.fault?'OPEN · Fault':state.open?'85% OPEN · Inactive':'CLOSED · Inactive';
+      for(const instance of [viewer,observer])assert.equal(status(instance).textContent,expected);
+      if(state.open===false){
+        viewer.select('valve');viewer.openInspector();
+        assert.equal(viewer.root.querySelector('[data-scada-popover] [data-scada-state-field="opening"] dd').textContent,'0','quick reading follows the effective closed position');
+        viewer.openDetails();
+        assert.equal(viewer.root.querySelector('[data-scada-dialog] [data-scada-state-field="opening"] dd').textContent,'0','detailed reading agrees with the symbol');
+        assert.equal(snapshot.components.valve.opening,73,'presentation does not rewrite the supplied model state');
+        viewer.closeInspector();
+      }
+    }
+    snapshot={...snapshot,components:{...snapshot.components,valve:{status:'offline'}}};
+    viewer.refresh();observer.refresh();
+    for(const instance of [viewer,observer]){
+      assert.equal(status(instance).textContent,'POSITION UNAVAILABLE');
+      assert.equal(card(instance).querySelector('[data-scada-type]').dataset.valvePosition,'unavailable');
+      instance.select('valve');instance.openInspector();
+      assert.equal(instance.root.querySelector('[data-scada-popover] [data-scada-state-field="opening"] dd').textContent,'Unavailable');
+    }
+    snapshot={...snapshot,components:{...snapshot.components}};delete snapshot.components.valve;
+    viewer.refresh();
+    assert.equal(status(viewer).textContent,'Data unavailable');
+    assert.equal(status(viewer).dataset.valvePosition,'unavailable');
+    assert.equal(card(viewer).querySelector('.scada-valve-position-tag text').textContent,'UNKNOWN');
   } finally {viewer.destroy();observer.destroy();dom.window.close();}
 });
 

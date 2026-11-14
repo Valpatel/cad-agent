@@ -1,4 +1,5 @@
 import {equipmentArt} from './art/twin.mjs';
+import {getValvePosition} from './valve-position.mjs';
 import {renderControlArt} from './art/control.mjs';
 import {renderIndustrialArt} from './art/industrial.mjs';
 import {renderProcessArt,renderDamageArt} from './art/process.mjs';
@@ -68,12 +69,22 @@ function power(type,id,state){
 }
 
 function valveArt(type,id,state){
- const opening=state.open?(state.opening??100)/100:0;
+ const position=getValvePosition(type,state),opening=position.opening/100;
+ const body=`fill="${position.fill}" stroke="${position.color}" stroke-width="3"`;
  const standard=`${pipe('M8 88H172')}<path d="M38 72v32M142 72v32" stroke="#b0d6df" stroke-width="5"/>`;
- if(type==='relief-valve')return `${pipe('M90 128V91H154V64')}<path d="M68 65h44v44H68Z" fill="${steel(id)}" stroke="#9ecbd6"/><path d="M76 65V22h28v43" fill="#12364c" stroke="#82b6c8"/><path class="scada-spring" d="M78 29l24 5-24 6 24 6-24 6 24 5" fill="none" stroke="#b9e3e7" stroke-width="2.2"/><path class="scada-valve-disc" d="M72 80h36" stroke="#62ffbc" stroke-width="5" style="transform:translateY(${state.open?-10:0}px)"/><path d="M79 17h23" stroke="#83baca" stroke-width="5"/>`;
- if(type==='butterfly-valve')return `${standard}<circle cx="90" cy="88" r="28" fill="#0b2a3c" stroke="#99cbd6" stroke-width="5"/><ellipse class="scada-valve-disc" cx="90" cy="88" rx="${23-18*opening}" ry="23" fill="${steel(id)}" stroke="#5af4d0"/><path d="M90 64V30" stroke="#8bbccd" stroke-width="6"/><g class="scada-valve-lever" style="transform-origin:90px 30px;transform:rotate(${-60*opening}deg)"><path d="M90 30h41" stroke="#8bbccd" stroke-width="6"/><path d="M128 24h14v11h-14Z" fill="#33b6af"/></g>`;
- if(type==='check-valve')return `${standard}<path d="M55 63h70v50H55Z" fill="${steel(id)}" stroke="#8ec9d7"/><path d="M66 74l21 14-21 14Z" fill="#102c42" stroke="#81d2d7"/><path class="scada-valve-disc" d="M100 73v30" stroke="#91eee5" stroke-width="5" style="transform-origin:100px 73px;transform:rotate(${state.open?-45:0}deg)"/><circle cx="100" cy="72" r="4" fill="#c8e7ee"/>`;
- return `${standard}<path d="M51 65l39 23 39-23v46L90 88l-39 23Z" fill="${steel(id)}" stroke="#9fd6dc"/><path d="M77 91h26" stroke="#173e50" stroke-width="4"/><path class="scada-valve-disc" d="M79 88h22" stroke="#5af4d0" stroke-width="5" style="transform:translateY(${-12*opening}px)"/><path class="scada-valve-stem" d="M90 89V43" stroke="#8ec8d5" stroke-width="5" style="transform:translateY(${-12*opening}px)"/>${type==='control-valve'?'<path d="M62 43a28 19 0 0 1 56 0Z" fill="#2b687c" stroke="#9fd6dc"/><path d="M68 47h44" stroke="#9fd6dc" stroke-width="4"/><path class="scada-signal" d="M118 32h30v-17" fill="none" stroke="#63e8dd" stroke-width="2"/>':'<ellipse cx="90" cy="33" rx="29" ry="8" fill="none" stroke="#87d8d7" stroke-width="4"/><path d="M61 33h58M90 25v16" stroke="#b3dfe3" stroke-width="2"/>'}`;
+ if(type==='relief-valve')return `${pipe('M90 128V91H154V64')}<path class="scada-valve-body" d="M68 65h44v44H68Z" ${body}/><path d="M76 65V22h28v43" fill="#12364c" stroke="#82b6c8"/><path class="scada-spring" d="M78 29l24 5-24 6 24 6-24 6 24 5" fill="none" stroke="#b9e3e7" stroke-width="2.2"/><path class="scada-valve-disc" d="M72 91h36" stroke="${position.color}" stroke-width="7" style="transform:translateY(${-15*opening}px)"/><path d="M79 17h23" stroke="#83baca" stroke-width="5"/>`;
+ if(type==='butterfly-valve')return `${standard}<circle class="scada-valve-body" cx="90" cy="88" r="28" ${body}/><ellipse class="scada-valve-disc" cx="90" cy="88" rx="${23-18*opening}" ry="23" fill="${steel(id)}" stroke="${position.color}" stroke-width="3"/><path d="M90 64V43" stroke="#8bbccd" stroke-width="6"/><g class="scada-valve-lever" style="transform-origin:90px 43px;transform:rotate(${-40*opening}deg)"><path d="M90 43h41" stroke="#8bbccd" stroke-width="6"/><path class="scada-valve-handle" d="M128 37h14v11h-14Z" fill="${position.color}"/></g>`;
+ if(type==='check-valve')return `${standard}<path class="scada-valve-body" d="M55 63h70v50H55Z" ${body}/><path d="M66 74l21 14-21 14Z" fill="#102c42" stroke="#c6e6e7"/><path class="scada-valve-disc" d="M100 73v30" stroke="${position.color}" stroke-width="7" style="transform-origin:100px 73px;transform:rotate(${-65*opening}deg)"/><circle cx="100" cy="72" r="4" fill="#c8e7ee"/>`;
+ return `${standard}<path class="scada-valve-body" d="M51 65l39 23 39-23v46L90 88l-39 23Z" ${body}/><path d="M77 91h26" stroke="#173e50" stroke-width="4"/><path class="scada-valve-disc" d="M84 73h12v30H84Z" fill="${position.color}" stroke="#d5ede9" stroke-width="1" style="transform:translateY(${-24*opening}px)"/><path class="scada-valve-stem" d="M90 77V43" stroke="#8ec8d5" stroke-width="5" style="transform:translateY(${-24*opening}px)"/>${type==='control-valve'?'<path d="M62 43a28 19 0 0 1 56 0Z" fill="#2b687c" stroke="#9fd6dc"/><path d="M68 47h44" stroke="#9fd6dc" stroke-width="4"/><path class="scada-signal" d="M118 32h30v-17" fill="none" stroke="#63e8dd" stroke-width="2"/>':'<ellipse cx="90" cy="33" rx="29" ry="8" fill="none" stroke="#87d8d7" stroke-width="4"/><path d="M61 33h58M90 25v16" stroke="#b3dfe3" stroke-width="2"/>'}`;
+}
+
+function valvePositionIndicator(type,position){
+ if(!position)return '';
+ const rightSide=['intake-gate','relief-valve'].includes(type),x=rightSide?112:6,width=rightSide?64:78;
+ const bar=position.available
+  ? `<path class="scada-valve-position-bar" d="M${x+8} 18h${(width-16)*position.opening/100}" stroke="${position.color}" stroke-width="2"/>`
+  : `<path d="M${x+8} 18h${width-16}" stroke="${position.color}" stroke-width="2" stroke-dasharray="3 3"/>`;
+ return `<g class="scada-valve-position-tag" data-valve-position="${position.kind}"><rect x="${x}" y="2" width="${width}" height="21" rx="4" fill="#0b202e" stroke="${position.color}" stroke-width="1.2"/><text x="${x+width/2}" y="14" text-anchor="middle" fill="${position.color}">${esc(position.shortLabel)}</text><path d="M${x+8} 18h${width-16}" stroke="#405b69" stroke-width="2"/>${bar}</g>`;
 }
 
 function instrument(type,id,state){
@@ -112,9 +123,10 @@ export function renderScadaComponent(type,{id,label,state={},variant,decorative=
  if(hostState&&variant!==undefined)throw new TypeError('hostState uses the existing twin artwork contract; select variants in standalone mode.');
  if(id!==undefined&&(typeof id!=='string'||!/^[A-Za-z][A-Za-z0-9_-]{0,99}$/.test(id)))throw new TypeError('Component id must start with a letter and contain only letters, numbers, underscore or dash.');
  const instanceId=`scada-${id??`${type}-${++automaticId}`}`;
- // A closed isolation command overrides the supplied position. Keeping the
+ // A supplied closed state overrides the supplied position. Keeping the
  // default at 100 preserves the original boolean-only open/closed API.
  if(current.opening!==undefined&&current.open===false)current.opening=0;
+ const valvePosition=getValvePosition(type,current);
  const controlPowerLost=['plc-rack','plc-cpu','remote-io','hmi','scada-server','network-switch','radio'].includes(type)&&current.damage==='power-loss';
  const active=current.active&&!current.fault&&current.status!=='offline'&&current.connected!==false&&!controlPowerLost;
  const electricalSwitch=['breaker','hv-circuit-breaker','disconnect-switch','earthing-switch','capacitor-bank','shunt-reactor','switchgear-panel','gis-bay'].includes(type);
@@ -124,13 +136,13 @@ export function renderScadaComponent(type,{id,label,state={},variant,decorative=
  // commanded PLC loads, whose supplied values remain meaningful when offline.
  const instrumentType=descriptor.modelFamily==='sensor'||descriptor.category==='instruments'||['protection-relay','electrical-meter'].includes(type);
  const damagedObservation=['broken','disconnected','comms-loss','power-loss'].includes(current.damage)||(['current-transformer','voltage-transformer'].includes(type)&&current.damage==='insulation-fault');
- const invalidReading=instrumentType&&(!active||damagedObservation);
+ const invalidReading=(instrumentType&&(!active||damagedObservation))||Boolean(valvePosition&&!valvePosition.available);
  const readings=numericFields.map(field=>invalidReading?`, ${field.key} unavailable`:', illustrative '+field.key+' '+current[field.key]+(field.unit||'')).join('');
- const description=`${label??descriptor.label}${variant?` (${descriptor.selectedVariant.label})`:''}. ${current.fault?'Fault':current.status==='offline'?'Offline':current.status==='warning'?`Warning, ${active?'active':'inactive'}`:active?'Active':'Inactive'}${current.open===undefined?'':`, ${current.open&&current.opening!==0?'open':'closed'}`}${readings}${current.damage&&current.damage!=='none'?`, damage: ${current.damage.replaceAll('-',' ')}`:''}.`;
+ const description=`${label??descriptor.label}${variant?` (${descriptor.selectedVariant.label})`:''}. ${current.fault?'Fault':current.status==='offline'?'Offline':current.status==='warning'?`Warning, ${active?'active':'inactive'}`:active?'Active':'Inactive'}${valvePosition?`, ${valvePosition.label.toLowerCase()}`:current.open===undefined?'':`, ${current.open&&current.opening!==0?'open':'closed'}`}${readings}${current.damage&&current.damage!=='none'?`, damage: ${current.damage.replaceAll('-',' ')}`:''}.`;
  const gauges=hostState?[]:numericFields;
  const activity=current.speed??current.load??60;
  const visualStyle=hostState?'':` style="--scada-level:${current.level??55};--scada-load:${current.load??60};--scada-flow-opacity:${.95*(current.opening??100)/100};--scada-gauge-height:${gauges.length*13+4}px;--scada-activity-duration:${4-activity*.03}s;--activity-speed:${4-activity*.03}s;--buffer-fraction:${(current.level??55)/100};--scada-level-offset:${(55-(current.level??55))*.68}px;--flame-scale:${.45+(current.load??75)*.007}"`;
- const attrs=`class="scada-component${hostState?' scada-component-host':''}${gauges.length?' scada-component-with-gauges':''}" data-scada-type="${type}" data-scada-instance="${instanceId}"${variant?` data-scada-variant="${esc(variant)}"`:''} data-scada-host-state="${hostState}" data-active="${active}" data-failed="${current.fault}" data-running="${current.running}" data-status="${current.status}" data-flow="${flow}" data-damage="${current.damage||'none'}" data-speed-zero="${current.speed===0}"${instrumentType?` data-reading-valid="${!invalidReading}"`: ''}${current.open===undefined?'':` data-open="${current.open}"`}${current.opening===undefined?'':` data-opening="${current.opening}"`}${current.connected===undefined?'':` data-connected="${current.connected}"`}${visualStyle}`;
+ const attrs=`class="scada-component${hostState?' scada-component-host':''}${gauges.length?' scada-component-with-gauges':''}" data-scada-type="${type}" data-scada-instance="${instanceId}"${variant?` data-scada-variant="${esc(variant)}"`:''}${valvePosition?` data-valve-position="${valvePosition.kind}"`:''} data-scada-host-state="${hostState}" data-active="${active}" data-failed="${current.fault}" data-running="${current.running}" data-status="${current.status}" data-flow="${flow}" data-damage="${current.damage||'none'}" data-speed-zero="${current.speed===0}"${instrumentType?` data-reading-valid="${!invalidReading}"`: ''}${current.open===undefined?'':` data-open="${current.open}"`}${current.opening===undefined?'':` data-opening="${current.opening}"`}${current.connected===undefined?'':` data-connected="${current.connected}"`}${visualStyle}`;
  const accessible=decorative?'aria-hidden="true"':`role="img" aria-label="${esc(description)}"`;
  let drawing;
  const explicitGenset=type==='generator'&&variant!==undefined;
@@ -153,7 +165,7 @@ export function renderScadaComponent(type,{id,label,state={},variant,decorative=
   else if(ENERGY_ART_TYPES.includes(type))art=renderEnergyArt(type,{id:instanceId,state:drawState});
   else if(ELECTRICAL_ART_TYPES.includes(type))art=renderElectricalArt(type,{id:instanceId,state:drawState});
   else art=customArt(type,instanceId,drawState);
-  drawing=`<svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false">${definitions(instanceId)}<ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#${instanceId}-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing">${art}</g>${!hostState&&!descriptor.drawingFamily?renderDamageArt(type,{state:drawState}):''}</svg>`;
+  drawing=`<svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false">${definitions(instanceId)}<ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#${instanceId}-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing">${art}</g>${!hostState&&!descriptor.drawingFamily?renderDamageArt(type,{state:drawState}):''}${valvePositionIndicator(type,valvePosition)}</svg>`;
  }
  if(!hostState&&!explicitGenset&&descriptor.sharedKind&&current.damage!=='none')drawing+=`<svg class="scada-damage-overlay" viewBox="0 0 180 136" aria-hidden="true" focusable="false">${renderDamageArt(type,{state:current})}</svg>`;
  const gaugeLabels={temperature:'TEMP',opening:'OPEN',rodPosition:'RODS',primaryFlow:'PRI',secondaryFlow:'SEC',integrity:'INT',pressure:'PRESS',irradiance:'SUN',humidity:'RH',moisture:'MOIST',airflow:'AIR',oxygen:'O₂',position:'POS',current:'CURR'};

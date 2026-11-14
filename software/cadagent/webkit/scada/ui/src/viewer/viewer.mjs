@@ -4,6 +4,7 @@ import {ScadaCamera} from './camera.mjs';
 import {projectProcessLayout} from './process-layout.mjs';
 export {ScadaCamera} from './camera.mjs';
 import {renderScadaComponent} from '../symbols/components.mjs';
+import {getValvePosition} from '../symbols/valve-position.mjs';
 import {getScadaComponent} from '../catalog/registry.mjs';
 import {ScadaWorkspace, renderScadaDialog} from '../workspace/workspace.mjs';
 import {ScadaPopover} from '../workspace/popover.mjs';
@@ -223,11 +224,18 @@ export class ScadaViewer {
     const visualId = `${this.#scope}-${node.id}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 100);
     const art = renderScadaComponent(node.type ?? 'pump', {id:visualId, variant:node.variant, label:node.label ?? node.id, state:resolved.state, decorative:true});
     const status = resolved.state.fault ? 'Fault' : resolved.state.status === 'offline' ? 'Offline' : resolved.state.status === 'warning' ? 'Warning' : resolved.state.active ? 'Active' : 'Inactive';
+    const position = getValvePosition(node.type,resolved.state);
+    const condition = resolved.state.fault ? 'Fault' : resolved.state.status === 'warning' ? 'Warning' : !resolved.state.active ? 'Inactive' : '';
+    const conditionMarkup = condition && (position?.available || resolved.state.fault)
+      ? `<span class="scada-valve-condition" data-condition="${condition.toLowerCase()}"> · ${condition}</span>` : '';
+    const statusMarkup = !resolved.ok ? 'Data unavailable' : position
+      ? `<span class="scada-valve-position-label" style="--scada-valve-color:${position.color}">${esc(position.label)}</span>${conditionMarkup}`
+      : esc(status);
     const control = this.readOnly ? null : this.#controlList(node).find(item => item.component === node.id && item.kind === 'toggle' && item.diagram);
     const current = control ? this.#controlValue(control) : null;
     const action = current?.found ? control.diagram[current.value ? 'whenTrue' : 'whenFalse'] : 'Unavailable';
     const quick = control ? `<button type="button" class="scada-equipment-action" data-scada-diagram-control="${esc(control.id)}" aria-label="${esc(`${action} ${node.label ?? node.id}`)}"${current.found ? '' : ' disabled title="A current control value is unavailable."'} style="left:${100 * (node.x + 10) / width}%;top:${100 * (node.y + node.h - 48) / height}%;width:${100 * (node.w - 20) / width}%">${esc(action)}</button>` : '';
-    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-diagram-action="${Boolean(control)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-haspopup="dialog" aria-expanded="${Boolean(this.#popover?.activePanel && node.id === this.#selected)}" aria-controls="${this.#scope}-quick-panel" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-id">${esc(node.id)}</span><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>${quick}`;
+    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-diagram-action="${Boolean(control)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-haspopup="dialog" aria-expanded="${Boolean(this.#popover?.activePanel && node.id === this.#selected)}" aria-controls="${this.#scope}-quick-panel" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-id">${esc(node.id)}</span><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status"${position?` data-valve-position="${position.kind}"`:''}>${statusMarkup}</span></button>${quick}`;
   }
   #controlList(component) {
     const controls = typeof this.#controls === 'function' ? this.#controls(component, this.#context()) : this.#controls;
@@ -256,10 +264,13 @@ export class ScadaViewer {
     // inspector supplies those readings; the generic quick panel cannot infer them.
     if (!resolved.state) return '<p class="scada-viewer-data-note">Readings unavailable. Open details for host-supplied equipment information.</p>';
     const fields = getScadaComponent(component.type, {variant:component.variant}).stateFields;
+    const position = getValvePosition(component.type,resolved.state);
     const values = Object.entries(resolved.state).filter(([key, value]) => !compact || typeof value === 'number').slice(0, compact ? 3 : undefined);
     return `<dl class="scada-viewer-readings${compact ? ' scada-quick-readings' : ''}">${values.map(([key, value]) => {
       const field = fields.find(item => item.key === key), title = field?.label ?? key;
-      const displayed = !resolved.ok ? 'Unavailable' : typeof value === 'number' ? String(Math.round(value * 100) / 100) : typeof value === 'object' ? JSON.stringify(value) : String(value);
+      const unavailable = !resolved.ok || (position && !position.available && (key === 'open' || typeof value === 'number'));
+      const reading = position && key === 'opening' ? position.opening : value;
+      const displayed = unavailable ? 'Unavailable' : typeof reading === 'number' ? String(Math.round(reading * 100) / 100) : typeof reading === 'object' ? JSON.stringify(reading) : String(reading);
       return `<div data-scada-state-field="${esc(key)}"><dt>${esc(title)}</dt><dd>${esc(displayed)}</dd></div>`;
     }).join('')}</dl>`;
   }

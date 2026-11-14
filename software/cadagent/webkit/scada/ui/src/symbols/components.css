@@ -45,6 +45,9 @@
 .scada-component .scada-screen-pulse{opacity:.55;animation:scada-screen 3s ease-in-out var(--scada-phase,0s) infinite;animation-play-state:paused}
 .scada-component .scada-electric{opacity:.45;animation:scada-electric 2.5s ease-in-out infinite;animation-play-state:paused}
 .scada-component :is(.scada-valve-disc,.scada-valve-stem,.scada-valve-lever,.scada-contact,.scada-needle){transform-box:view-box;transition:transform .45s ease,rx .45s ease,fill .3s ease}
+.scada-component :is(.scada-valve-body,.scada-valve-disc,.scada-valve-handle){transition:transform .45s ease,rx .45s ease,fill .3s ease,stroke .3s ease}
+.scada-component .scada-valve-position-tag text{font:700 9px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.1px}
+.scada-component .scada-valve-position-tag{pointer-events:none}
 .scada-component .scada-charge-fill{transition:y .5s ease,height .5s ease}
 .scada-component[data-scada-host-state=false] .scada-charge-fill,.scada-component[data-scada-host-state=false][data-scada-type=gas-holder] .twin-art-buffer-fill{animation:scada-inventory 3.6s ease-in-out infinite;animation-play-state:paused}
 .scada-component .scada-load-bar,.scada-component .scada-ups-charge{transition:width .5s ease}

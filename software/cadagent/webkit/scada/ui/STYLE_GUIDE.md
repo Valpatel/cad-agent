@@ -20,6 +20,7 @@ These values describe the current implementation. Reuse them for additions inste
 | Steel | Gradient through `#16374a`, `#659bae`, `#acd5de`, `#396a81`, `#122e42` |
 | Glass | Low-opacity cyan highlights over dark blue, with visible outlines |
 | Liquid / normal activity | `#57ffd0`, `#62ffbc`, `#68ffe1`, deep `#087a92` |
+| Valve position | Green `#62ffbc` OPEN, red `#ff8585` CLOSED, teal `#7ee9ef` percentage OPEN, neutral `#b4c4d0` unavailable; each has readable text |
 | Electrical / warm flow | `#ffd38a` |
 | Keyboard focus / hover | Cyan `#00d7e4` or `#73eff6` outlines; equipment inspection does not add a persistent selected fill |
 | Warning | Amber `#ffd38a` and a triangular exclamation symbol |
@@ -69,13 +70,21 @@ Declare all accepted visual fields in the component descriptor. Keep units, defa
 | Fault | Visible fault symbol and text; activity responds to the supplied fault state. A renderer does not create or repair damage. |
 | Offline | Inactive presentation and an accessible offline description. |
 | Disconnected | PLC/network activity stops and the description remains truthful. A picture does not open a network connection. |
-| Open / closed | A meaningful geometric distinction. An open valve permits its indicated path; an open breaker interrupts its electrical path. |
-| Valve opening | Gate, control and butterfly valve position interpolates from 0–100%, with proportional flow highlighting. Closed overrides the supplied position; the old boolean-only open state remains fully open. |
+| Open / closed | A meaningful geometric distinction. Valve position is separate from activity and fault; an open breaker interrupts its electrical path. |
+| Valve opening | Shared SVG and HTML cues show OPEN, CLOSED or percentage OPEN from supplied position. `open: false` overrides `opening` to zero; continuous opening applies only to types declaring it. See the [state contract](./docs/API.md#declared-state). |
 | Numeric state | Visible level/load/readout where declared, with units or an explicit illustrative label. Bounds remain a UI contract, not equipment ratings. |
 | Speed | Driven motion stops at zero and changes cadence across low, middle and high values. Status lights and monitoring displays are separate from production motion. |
 | Damage | Type-specific physical detail: a leak, fracture, wear marks, blockage, heat plume, lost signal or failed device part. Keep generic fault symbols in addition to, not in place of, this detail. |
 
 State combinations need deliberate precedence. A disconnected PLC must not be captioned “Active”; a fault should remain visible when motion is paused. Do not rely on a changed CSS variable alone if the device has no visible feature using it.
+
+For the seven valve families covered by the shared position helper, inactive,
+paused and fault states preserve supplied position. CLOSED red is a position
+cue, not a fault alarm. An offline valve uses neutral UNKNOWN artwork and
+POSITION UNAVAILABLE text, with unavailable numeric readings. Failed viewer
+bindings retain Data unavailable; retained geometry is not current telemetry.
+Position cues do not establish flow, a valve
+coefficient or actuator feedback. Keep activity, warnings and damage distinct.
 
 Use the `damage` options declared by the registry. A stopped drive may still have an animated spill or heat plume; gate production and incident motion separately. A jam, seized rotor or lost power must not keep its mechanism running. Wear, corrosion and fouling have persistent static marks, and every damage option remains distinguishable with reduced motion. Numeric temperature, speed, load and inventory values stay readable while those effects move. The separate headless model owns any trip, escalation or repair rule.
 

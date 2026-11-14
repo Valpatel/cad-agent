@@ -25,6 +25,10 @@ flowchart TD
      its upstream (`git log --oneline @{u}..HEAD` or `git log --oneline --branches --not --remotes`).
    - Open issues and PRs (`gh issue list --state open`, `gh pr list --state open`), the tracking issue named in the
      brief or found by the branch's PR (`Closes #N`), its checklist and its last few comments.
+   - Compare each issue's scope and pending design-review labels with the current evidence using the bundled
+     `issue-labels.md` in the installed `cad-work-tracking` skill. Read later comments and linked merged PRs before
+     assuming the original body still describes the work. Report missing/conflicting scope labels, stale design
+     stage, or an unresolved investigation marked quick-fix; this read-only role does not change labels.
    - CI state of the open PRs (`gh pr checks <n>`) and unresolved review threads.
    - Work claims on those issues (comments starting `<!-- work v1 `): who holds each one, until when, and which
      claims have expired (lease passed with no newer `checkpoint`) and are open for grabs.
@@ -41,5 +45,7 @@ flowchart TD
    unresolved threads; active and expired work claims); local-only state found (unpushed commits, uncommitted
    files, stashes) and whether you pushed it; the next three steps, specific enough to start; and anything that contradicts the issue (a run the issue says
    is running but is not, a checklist item ticked without a commit).
+   Distinguish planning acceptance, implementation evidence and ongoing program progress. Describe outcomes and
+   evidence without owner quotations or timestamped chat history; retain work-claim leases and run provenance.
    When a graph is configured, include the goal-to-issue mapping and evidence awaiting a goal update. This resume
    remains read-only: report the handoff, do not write to the graph or mark goals complete.

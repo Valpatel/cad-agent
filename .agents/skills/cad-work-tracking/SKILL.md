@@ -32,7 +32,10 @@ flowchart TD
 1. **Find or open the issue first.** Search before opening:
    `gh issue list --state all --search "<words>"`. Open one per piece of work that will take more than a few
    minutes: `gh issue create --title "<outcome, not activity>" --body-file <file>`. Write the body with
-   [the template below](#issue-template). A large job gets a tracking issue that links smaller ones.
+   [the template below](#issue-template). Classify it with the bundled [issue-label guide](issue-labels.md):
+   exactly one scope label in cad-agent, pending design review separately, preserving existing context labels.
+   Read the current body, latest comments, linked PRs and evidence before deciding; an unresolved investigation
+   is not a quick fix. A large job gets a program issue that links bounded deliverables.
    **Then check who holds it and claim it.** Several agents on different tools and machines work the same repos.
    Read the issue's latest [work-claim comments](#work-claims-sharing-issues-between-agents): if another agent holds
    an unexpired claim, pick other work or claim a separate scope. Otherwise post a `claim` before changing anything.
@@ -53,12 +56,16 @@ flowchart TD
    - tick the issue checklist and add a short comment: what changed, what is running, the exact next step;
    - for each run in flight, the host, command, log path and how to collect its results (see `cad-remote-runs`).
    Ask yourself: "if this session ended now, could someone else continue from GitHub without asking me?"
-   If not, checkpoint. Post it as a work-claim `checkpoint` so it renews your lease (at least once a day).
+   If not, checkpoint. Reconcile scope and pending design status with new evidence using the
+   [label transitions](issue-labels.md#maintaining-labels). Post it as a work-claim `checkpoint` so it renews your
+   lease (at least once a day).
 6. **Close out as you go.** When a PR merges, its `Closes #N` closes the issue; check that it did, tick the tracking
    issue and comment with the merge commit. Close issues that turned out to be unnecessary, with the reason.
    Delete your own merged branches and remove your own worktrees (after checking no virtualenv imports from them);
    never touch another session's branch or worktree. End your claim with `done` (PR, commit, evidence), or
-   `release` with resume notes if you stop before the end.
+   `release` with resume notes if you stop before the end. Completing one child does not complete an ongoing
+   program. A design deliverable closes on its planning acceptance; link remaining implementation work and never
+   describe the accepted design as shipped functionality.
 
 ## Goals and issues
 
@@ -153,12 +160,20 @@ git stash list
 
 Read the tracking issue's latest comment for the next step and the runs in flight; check each run's log on its host
 before starting it again (it may have finished). The `cad-resume` agent does this and reports a plan. If local commits
-exist that are not on the remote, push them first.
+exist that are not on the remote, push them first. Check the scope and pending design-review labels against current
+comments and merged work, using [the guide](issue-labels.md); a read-only resume reports mismatches for the writer
+to reconcile rather than changing labels itself.
 
 ## Issue template
 
 ```markdown
-<one paragraph: the outcome wanted and why; who asked and when>
+<one paragraph: the outcome, why it matters, and current technical evidence>
+
+**Scope:** <the finite deliverable or ongoing program, and what is outside it>
+**Labels:** <one scope; stage:design-review only while a design decision is pending; optional areas>
+
+**Acceptance**
+- [ ] <observable completion criterion, with the evidence that will establish it>
 
 **Done**
 - [x] <step> (<commit or PR>)
@@ -172,12 +187,19 @@ exist that are not on the remote, push them first.
 **Resume:** branch `<branch>`, PR #<n>. <anything a fresh agent must know first>
 ```
 
+For a pending design, add the [design-review sections](issue-labels.md#design-review-proposals): source-backed
+current state, alternatives, Mermaid diagrams, boundaries, dependencies and separate planning acceptance from
+future implementation evidence. Ordinary repairs do not need an architecture proposal.
+
 ## Rules that go with it
 
 - Follow the repo's own branch rules: never push to protected branches, never force-push a branch you did not
   create, merge only when the repo's rules allow (CI green, review done, threads resolved, the user's go-ahead
   where the repo requires it).
 - Write issue and PR text for a reader who was not in the session: no "as discussed", no chat references.
+  Describe autonomous project work through outcomes, source evidence, decisions and next steps; do not quote the
+  owner or reconstruct timestamped conversations. Keep machine-readable work claims, lease timestamps and dated
+  run or measurement receipts: those establish coordination and evidence freshness, not conversational provenance.
 - Do not post private infrastructure details (host names, addresses, credentials) in public repos. Name a run host
   by role ("the CFD host") and keep its address in the private notes the team already uses.
 

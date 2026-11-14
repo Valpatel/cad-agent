@@ -165,12 +165,25 @@ Partial views may route toward canonical equipment that is not placed on that vi
     "component": "supplyPump",
     "kind": "toggle",
     "command": "pumpEnabled",
-    "binding": "/components/supplyPump/active"
+    "binding": "/controls/supplyPump/enabled",
+    "diagram": {"whenTrue": "Stop", "whenFalse": "Start"}
   }]
 }
 ```
 
 A command has `id`, `label`, `action`, optional `component`, and optional JSON-object `arguments`. The action is an adapter-defined identifier, not executable source. A control has `id`, `label`, `kind`, `command`, optional `component` and optional `binding`. Toggles and ranges require a binding for their current value. Ranges also require finite `min < max`; positive `step` defaults to 1. Buttons cannot have numeric bounds.
+
+A component-specific toggle can opt into a direct diagram button with
+`diagram: {whenTrue, whenFalse}`. Each label names the **next action** for the
+current boolean reading: a valve uses `{"whenTrue":"Close","whenFalse":"Open"}`.
+Only one direct action is allowed per component; detailed controls remain in its
+inspector. Labels are plain text, at most 40 characters. The viewer forwards the
+same declared command with the opposite boolean and never interprets equipment
+types, action names or physical equations. Bind the operator's switch state,
+such as `enabled` or `open`, rather than flow or visual activity: an enabled pump
+may have no flow. Missing/wrong-type readings disable the action; read-only
+adapters omit direct actions. Rejected commands display the adapter's error and
+retain the last accepted state. Clicking the artwork still opens the inspector.
 
 For a toggle or range, the viewer dispatches the referenced command with `arguments.value` set to the new boolean or numeric value. Buttons retain the command's arguments. For the example above:
 

@@ -3958,6 +3958,26 @@
             },
             "kind": {
               "const": "toggle"
+            },
+            "diagram": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "whenTrue",
+                "whenFalse"
+              ],
+              "properties": {
+                "whenTrue": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "whenFalse": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                }
+              }
             }
           },
           "required": [
@@ -3966,7 +3986,12 @@
             "command",
             "kind",
             "binding"
-          ]
+          ],
+          "dependentRequired": {
+            "diagram": [
+              "component"
+            ]
+          }
         },
         {
           "type": "object",

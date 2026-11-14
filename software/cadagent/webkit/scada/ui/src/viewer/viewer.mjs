@@ -206,7 +206,11 @@ export class ScadaViewer {
     const visualId = `${this.#scope}-${node.id}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 100);
     const art = renderScadaComponent(node.type ?? 'pump', {id:visualId, variant:node.variant, label:node.label ?? node.id, state:resolved.state, decorative:true});
     const status = resolved.state.fault ? 'Fault' : resolved.state.status === 'offline' ? 'Offline' : resolved.state.status === 'warning' ? 'Warning' : resolved.state.active ? 'Active' : 'Inactive';
-    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-pressed="${node.id === this.#selected}" aria-haspopup="dialog" aria-controls="${this.#scope}-inspector-dialog" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>`;
+    const control = this.readOnly ? null : this.#controlList(node).find(item => item.component === node.id && item.kind === 'toggle' && item.diagram);
+    const current = control ? this.#controlValue(control) : null;
+    const action = current?.found ? control.diagram[current.value ? 'whenTrue' : 'whenFalse'] : 'Unavailable';
+    const quick = control ? `<button type="button" class="scada-equipment-action" data-scada-diagram-control="${esc(control.id)}" aria-label="${esc(`${action} ${node.label ?? node.id}`)}"${current.found ? '' : ' disabled title="A current control value is unavailable."'} style="left:${100 * (node.x + 10) / width}%;top:${100 * (node.y + node.h - 48) / height}%;width:${100 * (node.w - 20) / width}%">${esc(action)}</button>` : '';
+    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-diagram-action="${Boolean(control)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-pressed="${node.id === this.#selected}" aria-haspopup="dialog" aria-controls="${this.#scope}-inspector-dialog" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>${quick}`;
   }
   #controlList(component) {
     const controls = typeof this.#controls === 'function' ? this.#controls(component, this.#context()) : this.#controls;
@@ -358,6 +362,17 @@ export class ScadaViewer {
     const target = event.target, field = target.closest?.('[data-scada-control]');
     try {
       if (event.type === 'click') {
+        const quick = target.closest('[data-scada-diagram-control]');
+        if (quick) {
+          if (quick.disabled || this.readOnly) return;
+          const component = this.#equipment.find(item => this.#controlList(item).some(control => control.component === item.id && control.id === quick.dataset.scadaDiagramControl && control.diagram));
+          const control = component && this.#controlList(component).find(item => item.id === quick.dataset.scadaDiagramControl && item.kind === 'toggle');
+          const current = control && this.#controlValue(control);
+          if (!current?.found) return;
+          this.select(component.id);
+          void Promise.resolve(this.#runControl(control, !current.value)).catch(() => {});
+          return;
+        }
         const node = target.closest('[data-scada-equipment]'); if (node) { this.select(node.dataset.scadaEquipment, {open:true, opener:node}); return; }
         const view = target.closest('[data-scada-view-choice]'); if (view) { this.setView(view.dataset.scadaViewChoice); safeFocus([...this.#root.querySelectorAll('[data-scada-view-choice]')].find(item => item.dataset.scadaViewChoice === this.#viewId)); return; }
         const inspect = target.closest('[data-scada-inspect]'); if (inspect) { this.openInspector({opener:inspect}); return; }

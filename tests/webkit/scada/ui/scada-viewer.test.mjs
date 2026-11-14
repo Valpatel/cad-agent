@@ -13,6 +13,40 @@ const click = (window, selector, root = window.document) => {
   element.dispatchEvent(new window.MouseEvent('click', {bubbles:true})); return element;
 };
 
+test('diagram actions dispatch the declared asset without opening a dialog and preserve focused DOM', () => {
+  const dom=setup(),{window}=dom,model=new UtilityModel();
+  const viewer=new ScadaViewer({definition,adapter:createUtilityAdapter(model),selected:'tank'}).mount(window.document.querySelector('#editable'));
+  const observer=new ScadaViewer({definition,adapter:createUtilityAdapter(model,{readOnly:true})}).mount(window.document.querySelector('#monitor'));
+  try {
+    const action=viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]');
+    assert.equal(action.textContent,'Close');assert.equal(action.closest('[data-scada-equipment]'),null);
+    assert.equal(observer.root.querySelector('[data-scada-diagram-control]'),null);
+    action.focus();click(window,'[data-scada-diagram-control="valveSwitch"]',viewer.root);
+    assert.equal(model.getSnapshot().valveOpen,false);assert.equal(viewer.selected,'valve');
+    assert.equal(action.textContent,'Open');assert.equal(window.document.activeElement,action);
+    assert.equal(viewer.root.querySelector('dialog').hasAttribute('open'),false);
+    assert.equal(observer.snapshot.controls.valveOpen,false);
+    viewer.setView('power');assert.equal(viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]').textContent,'Open');
+    click(window,'[data-scada-diagram-control="pumpSwitch"]',viewer.root);
+    assert.equal(model.getSnapshot().pumpOn,false);
+    assert.equal(model.getSnapshot().valveOpen,false);
+  } finally {viewer.destroy();observer.destroy();dom.window.close();}
+});
+
+test('diagram actions require a typed live binding and expose adapter rejection without changing state', async () => {
+  const dom=setup(),model=new UtilityModel();let writes=0;
+  const adapter={getSnapshot:()=>({...model.getSnapshot(),controls:{pumpOn:'true',valveOpen:true}}),subscribe:()=>()=>{},dispatch:()=>{writes++;return Promise.reject(new Error('Interlock refuses this command'));}};
+  const viewer=new ScadaViewer({definition,adapter}).mount(dom.window.document.querySelector('#editable'));
+  try {
+    const pump=viewer.root.querySelector('[data-scada-diagram-control="pumpSwitch"]');
+    assert.equal(pump.disabled,true);click(dom.window,'[data-scada-diagram-control="pumpSwitch"]',viewer.root);assert.equal(writes,0);
+    click(dom.window,'[data-scada-diagram-control="valveSwitch"]',viewer.root);
+    await new Promise(resolve=>setTimeout(resolve,0));assert.equal(writes,1);
+    assert.match(viewer.root.querySelector('[data-scada-viewer-error]').textContent,/Interlock refuses/);
+    assert.equal(viewer.root.querySelector('[data-scada-diagram-control="valveSwitch"]').textContent,'Close');
+  } finally {viewer.destroy();dom.window.close();}
+});
+
 test('viewer fit ceiling reaches every layout and rejects invalid options before reading the model', () => {
   const dom = setup(), root = dom.window.document.querySelector('#editable');
   let reads = 0, subscriptions = 0;

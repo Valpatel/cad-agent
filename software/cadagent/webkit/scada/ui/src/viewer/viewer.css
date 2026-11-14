@@ -23,6 +23,11 @@ html.motion-paused .scada-diagram-flow{animation-play-state:paused!important}
 .scada-diagram-connection[data-medium=mechanical] .scada-diagram-pipe{stroke:#a6b9d1;stroke-width:5;stroke-dasharray:3 4}
 .scada-diagram-connection[data-medium=mechanical] .scada-diagram-flow{stroke:#d5e2f2;stroke-width:2;stroke-dasharray:3 11}
 
+/* Actions are sibling buttons, never nested inside the equipment inspector button. */
+.scada-viewer .scada-viewer-equipment[data-diagram-action=true]{padding-bottom:54px}
+.scada-viewer .scada-equipment-action{position:absolute;z-index:2;min-height:44px;padding:6px 10px;font-size:14px;font-weight:700;line-height:1.2;color:var(--scada-text);background:var(--scada-panel);border-color:var(--scada-border);touch-action:manipulation}
+.scada-viewer .scada-equipment-action:hover{border-color:var(--scada-accent)}
+
 [data-scada-camera]{overflow:clip;touch-action:none;cursor:grab;overscroll-behavior:contain}[data-scada-camera][data-camera-dragging=true],[data-scada-camera][data-camera-dragging=true] *{cursor:grabbing!important}
 .scada-camera-fit{position:absolute;z-index:20;top:10px;right:10px;min-height:44px;padding:9px 13px;border:1px solid #76e7d0;border-radius:9px;background:#102d3fee;color:#eafff9;font:600 14px/1.4 system-ui,sans-serif;box-shadow:0 3px 12px #0007;cursor:pointer;touch-action:manipulation}.scada-camera-fit:focus-visible{outline:3px solid #7cebdc;outline-offset:2px}
 @media(max-height:520px){.scada-diagram-scroll{height:var(--scada-viewport-height,55dvh);min-height:100px}}

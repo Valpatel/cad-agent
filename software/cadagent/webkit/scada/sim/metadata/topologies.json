@@ -1,7 +1,7 @@
 {
   "format": "scada-scenario-topologies",
   "version": 1,
-  "purpose": "Static declared first-view topology, not instantaneous flow or sampled simulation state.",
+  "purpose": "Static declared selected-view topology, not instantaneous flow or sampled simulation state.",
   "icon_state": {
     "active": true,
     "running": false,
@@ -15,7 +15,7 @@
     "software/cadagent/webkit/scada/sim/scenarios/aquaponics-dwc/system.json": "1babc5c7cc9d25a969175820c20ef24e4bba815365a8611401a145b59f1c190d",
     "software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/system.json": "78f503b0baead3ff4c3a8eb1f3b868b156fab74a0589e21eb883d226b5852642",
     "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/system.json": "043c54e2e7552fd281c591310060db8de998b1b3c1fdd10df347eb900eb0cb3b",
-    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "688bf5df79f984f06fa0fbd522b4d34d3603aa1f3f9167dc4410580917f66c79",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "b3a00baa0d5693fc071dca72bab0225d8b22e5bf711ced699ae8ad3de6d94963",
     "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/system.json": "994c724b5fa6647db78f5f6b5c7e11643fcc4fe7938e21944bb4df426a1fab43",
     "software/cadagent/webkit/scada/sim/scenarios/cement/system.json": "da0aea9eac5bb68c325cd4d2cab0ddd5f6a9a2d8593e65cba95adb1ed4bd2a7f",
     "software/cadagent/webkit/scada/sim/scenarios/concrete-batching/system.json": "dd492c4d2e9874a5bebb9b9b55b30f5709163bb6b94933d9ae1e9b50946707b2",
@@ -26,7 +26,7 @@
     "software/cadagent/webkit/scada/sim/scenarios/greenhouse-drip/system.json": "564771e91e59dc4bf1aff61d3eabb5c40ff013d4ff8de37485da3ffa9c6f31db",
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/system.json": "820d566f30912f05e103a34156abf8722341a4263b87436b72e105f879a66cd7",
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/system.json": "6b276fef885f43b220bdde06a10941a6aa613bed9fcb5c42ceed23f994075742",
-    "software/cadagent/webkit/scada/sim/scenarios/index.json": "96d824b31317dcfe8088b1bbf5c5ded21acfc1d6d20025885d71ca9bbb87c1e9",
+    "software/cadagent/webkit/scada/sim/scenarios/index.json": "16bf0061724df7027a0d3db8d4a0553dc8bee8e852c2526fc042511978bfc823",
     "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/system.json": "aec3a5cb63f2293b48640abdb5df4cf5d8a4a40d3dedda7fc6d1ea0805011792",
     "software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/system.json": "e5a17e6ea928b4adf3ab8f072b8199aa9e505b08f803e9a740f0cdc05b502ccf",
     "software/cadagent/webkit/scada/sim/scenarios/metal-finishing/system.json": "ad161655c4fbf76b8b172f53a79db337707d8a8494ae80027a02f5ed9ccd7ea7",
@@ -72,8 +72,8 @@
     "software/cadagent/webkit/scada/sim/scenarios/shampoo/system.json": "37c5b006585d1dff3033b202f731c1740b3947142b9f6539b14d5a3467dcbaf1",
     "software/cadagent/webkit/scada/sim/scenarios/sterile-filling/system.json": "230c13cc69caff1928358ed52c4d6aed557c9c3be32ea36ec9f2f4a6db75bf07",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/system.json": "554d26afda550592b675c246624cfaf03f5f5a59e9637b6d3be85cbb6d7e7f1a",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "32ba2b6c35a4a1a8e8544e72467e0f39dddc371bc0768c8a69ac969db454fa31",
-    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "5b34ef9975887e5ebe4348d1465cfe0ecf98e43a8da3f1d5a20a09fcde9b0da9",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "b058ec04a6afd016def2a40d80331a3c0d94b11b23d75ec4f74b1bfae67314a6",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "18824d874aca60adbbc73f934ca600bca3b064faed2f0a3211c9c42c27a034a9",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/industrial.mjs": "9e00d1b0246ebce249a1d577541eeeed4f751b4207178761fd8d0b0e190af575",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/power.mjs": "91a40bc3f3626018b6ab046c222f23e701cc52cf0835946a897c10d0aea1ab48",
@@ -81,7 +81,7 @@
     "software/cadagent/webkit/scada/ui/src/catalog/registry.mjs": "41ade040fa118a07758a757ca903885377393ebb5053cdf7d63a05bbbd1c64e9",
     "software/cadagent/webkit/scada/ui/src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "software/cadagent/webkit/scada/ui/src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
-    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
+    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "45a5ddd87ec69952c09e0522774acdd20c86ea7d73f852a21807bde18f4232cb",
     "software/cadagent/webkit/scada/ui/src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
     "software/cadagent/webkit/scada/ui/src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
     "software/cadagent/webkit/scada/ui/src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
@@ -108,15 +108,15 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
     "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "bd1504dbfe3e9e021e228173333beddf585a490320e1035a116a08a0d485b4fe",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "4398492353972ca1814d9bd932d10d4638888cca9fb64ad9f15bd3ed1053fec9",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085",
-    "tools/webkit/scada/explorer/scenario_gallery_docs.py": "01002aaf9078ff2652b7a45cf0e70844cb9e87c665a291e24b10fd5e5fae54f0",
+    "tools/webkit/scada/explorer/scenario_gallery_docs.py": "29f638eb3de50d7cb85f3de6f6101a0d0855c446df6475395301ed1cb16f5856",
     "tools/webkit/scada/gallery_maps.py": "c214435eed106b21895f9bb3b60b1046cd200b2e81e2ac54c89ff89ed455b6c1",
     "tools/webkit/scada/scada_paths.py": "ded9de4f4bfb2c8d82bd6797bb7afc625baea629bcba0c4701809dd86572def2",
-    "tools/webkit/scada/sim/generate-topologies.py": "dd50e6cb3809b1c7d70c9ee19dc403d34af6fde9bf9cb60df8612be6afe13dad",
-    "tools/webkit/scada/sim/topology/layout.py": "717abebda968e9789501471111d5f653f53d691e50634415b4f1fe2af6450b5b",
+    "tools/webkit/scada/sim/generate-topologies.py": "d6883773b6795e3801773475054ef30e7927a3c64f3a32ce23689fa16006dda7",
+    "tools/webkit/scada/sim/topology/layout.py": "a8d7ee468421c193f117551cd13aaba0d524a82044655d54deb64c86f5596147",
     "tools/webkit/scada/sim/topology/symbol-exporter.mjs": "178d2e763190bae31eda66f6a5be6300f40527e1fd6016277cd4e32bfe310c56"
   },
   "scenarios": [
@@ -127,8 +127,8 @@
       "view": "treatment",
       "system": "wastewater-digester/system.json",
       "path": "img/topologies/water-utilities/wastewater-digester/topology.svg",
-      "width": 900,
-      "height": 434,
+      "width": 2239,
+      "height": 452,
       "nodes": [
         {
           "id": "influent",
@@ -149,6 +149,12 @@
           "label": "Lift pump"
         },
         {
+          "id": "inletValve",
+          "type": "control-valve",
+          "variant": null,
+          "label": "FCV-101 Inlet control"
+        },
+        {
           "id": "aeration",
           "type": "reactor",
           "variant": null,
@@ -161,10 +167,40 @@
           "label": "Secondary clarifier"
         },
         {
+          "id": "effluentValve",
+          "type": "gate-valve",
+          "variant": null,
+          "label": "XV-102 Effluent outlet"
+        },
+        {
           "id": "effluent",
           "type": "tank",
           "variant": null,
           "label": "Treated-water outlet"
+        },
+        {
+          "id": "controller",
+          "type": "plc-rack",
+          "variant": null,
+          "label": "Plant PLC"
+        },
+        {
+          "id": "remoteIO",
+          "type": "remote-io",
+          "variant": null,
+          "label": "RIO-01 Field I/O"
+        },
+        {
+          "id": "inletFlow",
+          "type": "flow-meter",
+          "variant": null,
+          "label": "FT-101 Inlet flow"
+        },
+        {
+          "id": "effluentFlow",
+          "type": "flow-meter",
+          "variant": null,
+          "label": "FT-102 Outlet flow"
         }
       ],
       "edges": [
@@ -193,18 +229,6 @@
           "medium": "liquid"
         },
         {
-          "id": "liftPump-to-aeration",
-          "from": {
-            "component": "liftPump",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "aeration",
-            "port": "inlet"
-          },
-          "medium": "liquid"
-        },
-        {
           "id": "aeration-to-clarifier",
           "from": {
             "component": "aeration",
@@ -217,23 +241,131 @@
           "medium": "liquid"
         },
         {
-          "id": "clarifier-to-effluent",
+          "id": "liftPump-to-inletValve",
+          "from": {
+            "component": "liftPump",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "inletValve",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "inletValve-to-aeration",
+          "from": {
+            "component": "inletValve",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "aeration",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "clarifier-to-effluentValve",
           "from": {
             "component": "clarifier",
             "port": "effluent"
+          },
+          "to": {
+            "component": "effluentValve",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "effluentValve-to-effluent",
+          "from": {
+            "component": "effluentValve",
+            "port": "outlet"
           },
           "to": {
             "component": "effluent",
             "port": "inlet"
           },
           "medium": "liquid"
+        },
+        {
+          "id": "liftPump-to-inletFlow",
+          "from": {
+            "component": "liftPump",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "inletFlow",
+            "port": "process"
+          },
+          "medium": "measurement"
+        },
+        {
+          "id": "effluentValve-to-effluentFlow",
+          "from": {
+            "component": "effluentValve",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "effluentFlow",
+            "port": "process"
+          },
+          "medium": "measurement"
+        },
+        {
+          "id": "inletFlow-to-controller",
+          "from": {
+            "component": "inletFlow",
+            "port": "signal"
+          },
+          "to": {
+            "component": "controller",
+            "port": "network"
+          },
+          "medium": "data"
+        },
+        {
+          "id": "effluentFlow-to-controller",
+          "from": {
+            "component": "effluentFlow",
+            "port": "signal"
+          },
+          "to": {
+            "component": "controller",
+            "port": "network"
+          },
+          "medium": "data"
+        },
+        {
+          "id": "controller-to-remoteIO",
+          "from": {
+            "component": "controller",
+            "port": "io"
+          },
+          "to": {
+            "component": "remoteIO",
+            "port": "network"
+          },
+          "medium": "data"
+        },
+        {
+          "id": "remoteIO-to-inletValve",
+          "from": {
+            "component": "remoteIO",
+            "port": "outputs"
+          },
+          "to": {
+            "component": "inletValve",
+            "port": "control"
+          },
+          "medium": "data"
         }
       ],
       "layout": {
         "nodes": [
           {
             "id": "influent",
-            "x": 137.0,
+            "x": 26.0,
             "y": 78,
             "width": 180,
             "height": 132,
@@ -241,7 +373,7 @@
           },
           {
             "id": "screen",
-            "x": 360.0,
+            "x": 249.0,
             "y": 78,
             "width": 180,
             "height": 132,
@@ -249,35 +381,83 @@
           },
           {
             "id": "liftPump",
-            "x": 583.0,
+            "x": 472.0,
             "y": 78,
             "width": 180,
             "height": 132,
             "index": 3
           },
           {
-            "id": "aeration",
-            "x": 137.0,
-            "y": 244,
+            "id": "inletValve",
+            "x": 918.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 4
           },
           {
-            "id": "clarifier",
-            "x": 360.0,
-            "y": 244,
+            "id": "aeration",
+            "x": 1141.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 5
           },
           {
-            "id": "effluent",
-            "x": 583.0,
-            "y": 244,
+            "id": "clarifier",
+            "x": 1364.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 6
+          },
+          {
+            "id": "effluentValve",
+            "x": 1587.0,
+            "y": 78,
+            "width": 180,
+            "height": 132,
+            "index": 7
+          },
+          {
+            "id": "effluent",
+            "x": 2033.0,
+            "y": 78,
+            "width": 180,
+            "height": 132,
+            "index": 8
+          },
+          {
+            "id": "controller",
+            "x": 26.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 9
+          },
+          {
+            "id": "remoteIO",
+            "x": 249.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 10
+          },
+          {
+            "id": "inletFlow",
+            "x": 695.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 11
+          },
+          {
+            "id": "effluentFlow",
+            "x": 1810.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 12
           }
         ],
         "routes": [
@@ -296,11 +476,11 @@
             "label": "Water",
             "points": [
               {
-                "x": 317.0,
+                "x": 206.0,
                 "y": 144.0
               },
               {
-                "x": 360.0,
+                "x": 249.0,
                 "y": 144.0
               }
             ],
@@ -322,58 +502,16 @@
             "label": "Water",
             "points": [
               {
-                "x": 540.0,
+                "x": 429.0,
                 "y": 144.0
               },
               {
-                "x": 583.0,
+                "x": 472.0,
                 "y": 144.0
               }
             ],
             "from_side": "right",
             "to_side": "left"
-          },
-          {
-            "id": "liftPump-to-aeration",
-            "from": {
-              "component": "liftPump",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "aeration",
-              "port": "inlet"
-            },
-            "medium": "liquid",
-            "flowBinding": "/flows/liftPump-to-aeration",
-            "label": "Water",
-            "points": [
-              {
-                "x": 583.0,
-                "y": 158.0
-              },
-              {
-                "x": 548.0,
-                "y": 158.0
-              },
-              {
-                "x": 548.0,
-                "y": 236
-              },
-              {
-                "x": 325.0,
-                "y": 236
-              },
-              {
-                "x": 325.0,
-                "y": 296.0
-              },
-              {
-                "x": 317.0,
-                "y": 296.0
-              }
-            ],
-            "from_side": "left",
-            "to_side": "right"
           },
           {
             "id": "aeration-to-clarifier",
@@ -390,11 +528,289 @@
             "label": "Water",
             "points": [
               {
-                "x": 317.0,
+                "x": 1321.0,
+                "y": 144.0
+              },
+              {
+                "x": 1364.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "liftPump-to-inletValve",
+            "from": {
+              "component": "liftPump",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "inletValve",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Water",
+            "flowBinding": "/flows/liftPump-to-inletValve",
+            "points": [
+              {
+                "x": 652.0,
+                "y": 144.0
+              },
+              {
+                "x": 918.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "inletValve-to-aeration",
+            "from": {
+              "component": "inletValve",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "aeration",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Water",
+            "flowBinding": "/flows/inletValve-to-aeration",
+            "points": [
+              {
+                "x": 1098.0,
+                "y": 144.0
+              },
+              {
+                "x": 1141.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "clarifier-to-effluentValve",
+            "from": {
+              "component": "clarifier",
+              "port": "effluent"
+            },
+            "to": {
+              "component": "effluentValve",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Water",
+            "flowBinding": "/flows/clarifier-to-effluentValve",
+            "points": [
+              {
+                "x": 1544.0,
+                "y": 144.0
+              },
+              {
+                "x": 1587.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "effluentValve-to-effluent",
+            "from": {
+              "component": "effluentValve",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "effluent",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Water",
+            "flowBinding": "/flows/effluentValve-to-effluent",
+            "points": [
+              {
+                "x": 1767.0,
+                "y": 144.0
+              },
+              {
+                "x": 2033.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "liftPump-to-inletFlow",
+            "from": {
+              "component": "liftPump",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "inletFlow",
+              "port": "process"
+            },
+            "medium": "measurement",
+            "label": "FT-101 Inlet flow measurement",
+            "flowBinding": "/flows/liftPump-to-inletFlow",
+            "points": [
+              {
+                "x": 652.0,
+                "y": 158.0
+              },
+              {
+                "x": 687.0,
+                "y": 158.0
+              },
+              {
+                "x": 687.0,
+                "y": 296.0
+              },
+              {
+                "x": 695.0,
+                "y": 296.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "effluentValve-to-effluentFlow",
+            "from": {
+              "component": "effluentValve",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "effluentFlow",
+              "port": "process"
+            },
+            "medium": "measurement",
+            "label": "FT-102 Outlet flow measurement",
+            "flowBinding": "/flows/effluentValve-to-effluentFlow",
+            "points": [
+              {
+                "x": 1767.0,
+                "y": 158.0
+              },
+              {
+                "x": 1802.0,
+                "y": 158.0
+              },
+              {
+                "x": 1802.0,
+                "y": 296.0
+              },
+              {
+                "x": 1810.0,
+                "y": 296.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "inletFlow-to-controller",
+            "from": {
+              "component": "inletFlow",
+              "port": "signal"
+            },
+            "to": {
+              "component": "controller",
+              "port": "network"
+            },
+            "medium": "data",
+            "label": "FT-101 Inlet flow telemetry",
+            "flowBinding": "/flows/inletFlow-to-controller",
+            "points": [
+              {
+                "x": 695.0,
+                "y": 324.0
+              },
+              {
+                "x": 437.0,
+                "y": 324.0
+              },
+              {
+                "x": 437.0,
+                "y": 384
+              },
+              {
+                "x": 214.0,
+                "y": 384
+              },
+              {
+                "x": 214.0,
+                "y": 324.0
+              },
+              {
+                "x": 206.0,
+                "y": 324.0
+              }
+            ],
+            "from_side": "left",
+            "to_side": "right"
+          },
+          {
+            "id": "effluentFlow-to-controller",
+            "from": {
+              "component": "effluentFlow",
+              "port": "signal"
+            },
+            "to": {
+              "component": "controller",
+              "port": "network"
+            },
+            "medium": "data",
+            "label": "FT-102 Outlet flow telemetry",
+            "flowBinding": "/flows/effluentFlow-to-controller",
+            "points": [
+              {
+                "x": 1810.0,
+                "y": 324.0
+              },
+              {
+                "x": 883.0,
+                "y": 324.0
+              },
+              {
+                "x": 883.0,
+                "y": 394
+              },
+              {
+                "x": 130.0,
+                "y": 394
+              },
+              {
+                "x": 130.0,
+                "y": 376
+              }
+            ],
+            "from_side": "left",
+            "to_side": "bottom"
+          },
+          {
+            "id": "controller-to-remoteIO",
+            "from": {
+              "component": "controller",
+              "port": "io"
+            },
+            "to": {
+              "component": "remoteIO",
+              "port": "network"
+            },
+            "medium": "data",
+            "label": "PLC field commands",
+            "flowBinding": "/flows/controller-to-remoteIO",
+            "points": [
+              {
+                "x": 206.0,
                 "y": 310.0
               },
               {
-                "x": 360.0,
+                "x": 249.0,
                 "y": 310.0
               }
             ],
@@ -402,38 +818,58 @@
             "to_side": "left"
           },
           {
-            "id": "clarifier-to-effluent",
+            "id": "remoteIO-to-inletValve",
             "from": {
-              "component": "clarifier",
-              "port": "effluent"
+              "component": "remoteIO",
+              "port": "outputs"
             },
             "to": {
-              "component": "effluent",
-              "port": "inlet"
+              "component": "inletValve",
+              "port": "control"
             },
-            "medium": "liquid",
-            "flowBinding": "/flows/clarifier-to-effluent",
-            "label": "Water",
+            "medium": "data",
+            "label": "Valve command",
+            "flowBinding": "/flows/remoteIO-to-inletValve",
             "points": [
               {
-                "x": 540.0,
-                "y": 310.0
+                "x": 325.0,
+                "y": 244
               },
               {
-                "x": 583.0,
-                "y": 310.0
+                "x": 325.0,
+                "y": 218
+              },
+              {
+                "x": 18.0,
+                "y": 218
+              },
+              {
+                "x": 18.0,
+                "y": 70
+              },
+              {
+                "x": 910.0,
+                "y": 70
+              },
+              {
+                "x": 910.0,
+                "y": 116.0
+              },
+              {
+                "x": 918.0,
+                "y": 116.0
               }
             ],
-            "from_side": "right",
+            "from_side": "top",
             "to_side": "left"
           }
         ],
-        "width": 900,
+        "width": 2239,
         "height": 414,
         "bounds": {
-          "left": 137.0,
+          "left": 26.0,
           "top": 78,
-          "right": 763.0,
+          "right": 2213.0,
           "bottom": 376
         },
         "diagnostics": {
@@ -442,37 +878,19 @@
           "crossings": []
         }
       },
-      "bytes": 34020,
-      "sha256": "a39752c4781bd6d4c0ad5b512305887d02d51967c6d324afc9eefe04c65f5ecc"
+      "bytes": 76679,
+      "sha256": "ef5fc5e109caa13e370533e2a4c7f5bfbf16682c8794c83b50cf33a097a2b84c"
     },
     {
       "id": "winery",
       "title": "Winery",
       "sector": "Food & beverage",
-      "view": "process",
+      "view": "fermentation",
       "system": "winery/system.json",
       "path": "img/topologies/food-beverage/winery/topology.svg",
-      "width": 900,
-      "height": 600,
+      "width": 1347,
+      "height": 442,
       "nodes": [
-        {
-          "id": "grapeIntake",
-          "type": "conveyor",
-          "variant": null,
-          "label": "Grape receiving belt"
-        },
-        {
-          "id": "crusher",
-          "type": "crusher",
-          "variant": null,
-          "label": "Grape crusher"
-        },
-        {
-          "id": "extraction",
-          "type": "separator",
-          "variant": null,
-          "label": "Juice extraction separator"
-        },
         {
           "id": "mustTransfer",
           "type": "pump",
@@ -480,10 +898,22 @@
           "label": "Must transfer pump"
         },
         {
+          "id": "mustValve",
+          "type": "control-valve",
+          "variant": null,
+          "label": "FCV-101 Must feed"
+        },
+        {
           "id": "fermenter",
           "type": "reactor",
           "variant": null,
           "label": "Fermentation vessel"
+        },
+        {
+          "id": "cellarValve",
+          "type": "control-valve",
+          "variant": null,
+          "label": "FCV-201 Cellar feed"
         },
         {
           "id": "aging",
@@ -498,85 +928,31 @@
           "label": "Cellar transfer valve"
         },
         {
-          "id": "polishing",
-          "type": "filter",
+          "id": "mustFlow",
+          "type": "flow-meter",
           "variant": null,
-          "label": "Polishing filter"
+          "label": "FT-101 Must flow"
         },
         {
-          "id": "bottler",
-          "type": "filling-line",
+          "id": "fermenterTemperature",
+          "type": "temperature-sensor",
           "variant": null,
-          "label": "Bottle filling"
+          "label": "TT-201 Fermenter temp"
         },
         {
-          "id": "packer",
-          "type": "packaging-line",
+          "id": "fermenterLevel",
+          "type": "level-sensor",
           "variant": null,
-          "label": "Bottle packing"
+          "label": "LT-201 Fermenter level"
+        },
+        {
+          "id": "cellarLevel",
+          "type": "level-sensor",
+          "variant": null,
+          "label": "LT-202 Cellar level"
         }
       ],
       "edges": [
-        {
-          "id": "grapeIntake-to-crusher",
-          "from": {
-            "component": "grapeIntake",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "crusher",
-            "port": "inlet"
-          },
-          "medium": "solids"
-        },
-        {
-          "id": "crusher-to-extraction",
-          "from": {
-            "component": "crusher",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "extraction",
-            "port": "inlet"
-          },
-          "medium": "solids"
-        },
-        {
-          "id": "extraction-to-mustTransfer",
-          "from": {
-            "component": "extraction",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "mustTransfer",
-            "port": "inlet"
-          },
-          "medium": "fluid"
-        },
-        {
-          "id": "mustTransfer-to-fermenter",
-          "from": {
-            "component": "mustTransfer",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "fermenter",
-            "port": "inlet"
-          },
-          "medium": "liquid"
-        },
-        {
-          "id": "fermenter-to-aging",
-          "from": {
-            "component": "fermenter",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "aging",
-            "port": "inlet"
-          },
-          "medium": "liquid"
-        },
         {
           "id": "aging-to-transferValve",
           "from": {
@@ -590,46 +966,106 @@
           "medium": "liquid"
         },
         {
-          "id": "transferValve-to-polishing",
+          "id": "mustTransfer-to-mustValve",
           "from": {
-            "component": "transferValve",
+            "component": "mustTransfer",
             "port": "outlet"
           },
           "to": {
-            "component": "polishing",
+            "component": "mustValve",
             "port": "inlet"
           },
           "medium": "liquid"
         },
         {
-          "id": "polishing-to-bottler",
+          "id": "mustValve-to-fermenter",
           "from": {
-            "component": "polishing",
+            "component": "mustValve",
             "port": "outlet"
           },
           "to": {
-            "component": "bottler",
+            "component": "fermenter",
             "port": "inlet"
           },
           "medium": "liquid"
         },
         {
-          "id": "bottler-to-packer",
+          "id": "fermenter-to-cellarValve",
           "from": {
-            "component": "bottler",
+            "component": "fermenter",
             "port": "outlet"
           },
           "to": {
-            "component": "packer",
+            "component": "cellarValve",
             "port": "inlet"
           },
-          "medium": "product"
+          "medium": "liquid"
+        },
+        {
+          "id": "cellarValve-to-aging",
+          "from": {
+            "component": "cellarValve",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "aging",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "mustTransfer-to-mustFlow",
+          "from": {
+            "component": "mustTransfer",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "mustFlow",
+            "port": "process"
+          },
+          "medium": "measurement"
+        },
+        {
+          "id": "fermenter-to-fermenterTemperature",
+          "from": {
+            "component": "fermenter",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "fermenterTemperature",
+            "port": "process"
+          },
+          "medium": "measurement"
+        },
+        {
+          "id": "fermenter-to-fermenterLevel",
+          "from": {
+            "component": "fermenter",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "fermenterLevel",
+            "port": "process"
+          },
+          "medium": "measurement"
+        },
+        {
+          "id": "aging-to-cellarLevel",
+          "from": {
+            "component": "aging",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "cellarLevel",
+            "port": "process"
+          },
+          "medium": "measurement"
         }
       ],
       "layout": {
         "nodes": [
           {
-            "id": "grapeIntake",
+            "id": "mustTransfer",
             "x": 26.0,
             "y": 78,
             "width": 180,
@@ -637,209 +1073,79 @@
             "index": 1
           },
           {
-            "id": "crusher",
-            "x": 248.66666666666666,
+            "id": "mustValve",
+            "x": 249.0,
             "y": 78,
             "width": 180,
             "height": 132,
             "index": 2
           },
           {
-            "id": "extraction",
-            "x": 471.3333333333333,
+            "id": "fermenter",
+            "x": 472.0,
             "y": 78,
             "width": 180,
             "height": 132,
             "index": 3
           },
           {
-            "id": "mustTransfer",
-            "x": 694.0,
+            "id": "cellarValve",
+            "x": 695.0,
             "y": 78,
             "width": 180,
             "height": 132,
             "index": 4
           },
           {
-            "id": "fermenter",
-            "x": 694.0,
-            "y": 244,
+            "id": "aging",
+            "x": 918.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 5
           },
           {
-            "id": "aging",
-            "x": 471.3333333333333,
-            "y": 244,
+            "id": "transferValve",
+            "x": 1141.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 6
           },
           {
-            "id": "transferValve",
-            "x": 248.66666666666666,
+            "id": "mustFlow",
+            "x": 472.0,
             "y": 244,
             "width": 180,
             "height": 132,
             "index": 7
           },
           {
-            "id": "polishing",
-            "x": 26.0,
+            "id": "fermenterTemperature",
+            "x": 695.0,
             "y": 244,
             "width": 180,
             "height": 132,
             "index": 8
           },
           {
-            "id": "bottler",
-            "x": 26.0,
-            "y": 410,
+            "id": "fermenterLevel",
+            "x": 918.0,
+            "y": 244,
             "width": 180,
             "height": 132,
             "index": 9
           },
           {
-            "id": "packer",
-            "x": 248.66666666666666,
-            "y": 410,
+            "id": "cellarLevel",
+            "x": 1141.0,
+            "y": 244,
             "width": 180,
             "height": 132,
             "index": 10
           }
         ],
         "routes": [
-          {
-            "id": "grapeIntake-to-crusher",
-            "from": {
-              "component": "grapeIntake",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "crusher",
-              "port": "inlet"
-            },
-            "medium": "solids",
-            "flowBinding": "/flows/grapeIntake-to-crusher",
-            "label": "Grape receiving belt \u2192 Grape crusher",
-            "points": [
-              {
-                "x": 206.0,
-                "y": 144.0
-              },
-              {
-                "x": 248.66666666666666,
-                "y": 144.0
-              }
-            ],
-            "from_side": "right",
-            "to_side": "left"
-          },
-          {
-            "id": "crusher-to-extraction",
-            "from": {
-              "component": "crusher",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "extraction",
-              "port": "inlet"
-            },
-            "medium": "solids",
-            "flowBinding": "/flows/crusher-to-extraction",
-            "label": "Grape crusher \u2192 Juice extraction separator",
-            "points": [
-              {
-                "x": 428.66666666666663,
-                "y": 144.0
-              },
-              {
-                "x": 471.3333333333333,
-                "y": 144.0
-              }
-            ],
-            "from_side": "right",
-            "to_side": "left"
-          },
-          {
-            "id": "extraction-to-mustTransfer",
-            "from": {
-              "component": "extraction",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "mustTransfer",
-              "port": "inlet"
-            },
-            "medium": "fluid",
-            "flowBinding": "/flows/extraction-to-mustTransfer",
-            "label": "Juice extraction separator \u2192 Must transfer pump",
-            "points": [
-              {
-                "x": 651.3333333333333,
-                "y": 144.0
-              },
-              {
-                "x": 694.0,
-                "y": 144.0
-              }
-            ],
-            "from_side": "right",
-            "to_side": "left"
-          },
-          {
-            "id": "mustTransfer-to-fermenter",
-            "from": {
-              "component": "mustTransfer",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "fermenter",
-              "port": "inlet"
-            },
-            "medium": "liquid",
-            "flowBinding": "/flows/mustTransfer-to-fermenter",
-            "label": "Must transfer pump \u2192 Fermentation vessel",
-            "points": [
-              {
-                "x": 784.0,
-                "y": 210
-              },
-              {
-                "x": 784.0,
-                "y": 244
-              }
-            ],
-            "from_side": "bottom",
-            "to_side": "top"
-          },
-          {
-            "id": "fermenter-to-aging",
-            "from": {
-              "component": "fermenter",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "aging",
-              "port": "inlet"
-            },
-            "medium": "liquid",
-            "flowBinding": "/flows/fermenter-to-aging",
-            "label": "Fermentation vessel \u2192 Aging buffer",
-            "points": [
-              {
-                "x": 694.0,
-                "y": 310.0
-              },
-              {
-                "x": 651.3333333333333,
-                "y": 310.0
-              }
-            ],
-            "from_side": "left",
-            "to_side": "right"
-          },
           {
             "id": "aging-to-transferValve",
             "from": {
@@ -855,103 +1161,273 @@
             "label": "Aging buffer \u2192 Cellar transfer valve",
             "points": [
               {
-                "x": 471.3333333333333,
-                "y": 310.0
+                "x": 1098.0,
+                "y": 144.0
               },
               {
-                "x": 428.66666666666663,
-                "y": 310.0
+                "x": 1141.0,
+                "y": 144.0
               }
             ],
-            "from_side": "left",
-            "to_side": "right"
+            "from_side": "right",
+            "to_side": "left"
           },
           {
-            "id": "transferValve-to-polishing",
+            "id": "mustTransfer-to-mustValve",
             "from": {
-              "component": "transferValve",
+              "component": "mustTransfer",
               "port": "outlet"
             },
             "to": {
-              "component": "polishing",
+              "component": "mustValve",
               "port": "inlet"
             },
             "medium": "liquid",
-            "flowBinding": "/flows/transferValve-to-polishing",
-            "label": "Cellar transfer valve \u2192 Polishing filter",
+            "label": "Must transfer pump \u2192 Fermentation vessel",
+            "flowBinding": "/flows/mustTransfer-to-mustValve",
             "points": [
               {
-                "x": 248.66666666666666,
-                "y": 310.0
+                "x": 206.0,
+                "y": 144.0
               },
               {
-                "x": 206.0,
-                "y": 310.0
+                "x": 249.0,
+                "y": 144.0
               }
             ],
-            "from_side": "left",
-            "to_side": "right"
+            "from_side": "right",
+            "to_side": "left"
           },
           {
-            "id": "polishing-to-bottler",
+            "id": "mustValve-to-fermenter",
             "from": {
-              "component": "polishing",
+              "component": "mustValve",
               "port": "outlet"
             },
             "to": {
-              "component": "bottler",
+              "component": "fermenter",
               "port": "inlet"
             },
             "medium": "liquid",
-            "flowBinding": "/flows/polishing-to-bottler",
-            "label": "Polishing filter \u2192 Bottle filling",
+            "label": "Must transfer pump \u2192 Fermentation vessel",
+            "flowBinding": "/flows/mustValve-to-fermenter",
             "points": [
               {
-                "x": 116.0,
-                "y": 376
+                "x": 429.0,
+                "y": 144.0
               },
               {
-                "x": 116.0,
-                "y": 410
+                "x": 472.0,
+                "y": 144.0
               }
             ],
-            "from_side": "bottom",
-            "to_side": "top"
+            "from_side": "right",
+            "to_side": "left"
           },
           {
-            "id": "bottler-to-packer",
+            "id": "fermenter-to-cellarValve",
             "from": {
-              "component": "bottler",
+              "component": "fermenter",
               "port": "outlet"
             },
             "to": {
-              "component": "packer",
+              "component": "cellarValve",
               "port": "inlet"
             },
-            "medium": "product",
-            "flowBinding": "/flows/bottler-to-packer",
-            "label": "Bottle filling \u2192 Bottle packing",
+            "medium": "liquid",
+            "label": "Fermentation vessel \u2192 Aging buffer",
+            "flowBinding": "/flows/fermenter-to-cellarValve",
+            "points": [
+              {
+                "x": 652.0,
+                "y": 144.0
+              },
+              {
+                "x": 695.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "cellarValve-to-aging",
+            "from": {
+              "component": "cellarValve",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "aging",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Fermentation vessel \u2192 Aging buffer",
+            "flowBinding": "/flows/cellarValve-to-aging",
+            "points": [
+              {
+                "x": 875.0,
+                "y": 144.0
+              },
+              {
+                "x": 918.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "mustTransfer-to-mustFlow",
+            "from": {
+              "component": "mustTransfer",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "mustFlow",
+              "port": "process"
+            },
+            "medium": "measurement",
+            "label": "FT-101 Must flow measurement",
+            "flowBinding": "/flows/mustTransfer-to-mustFlow",
             "points": [
               {
                 "x": 206.0,
-                "y": 476.0
+                "y": 158.0
               },
               {
-                "x": 248.66666666666666,
-                "y": 476.0
+                "x": 241.0,
+                "y": 158.0
+              },
+              {
+                "x": 241.0,
+                "y": 296.0
+              },
+              {
+                "x": 472.0,
+                "y": 296.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "fermenter-to-fermenterTemperature",
+            "from": {
+              "component": "fermenter",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "fermenterTemperature",
+              "port": "process"
+            },
+            "medium": "measurement",
+            "label": "TT-201 Fermenter temp measurement",
+            "flowBinding": "/flows/fermenter-to-fermenterTemperature",
+            "points": [
+              {
+                "x": 652.0,
+                "y": 158.0
+              },
+              {
+                "x": 687.0,
+                "y": 158.0
+              },
+              {
+                "x": 687.0,
+                "y": 296.0
+              },
+              {
+                "x": 695.0,
+                "y": 296.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "fermenter-to-fermenterLevel",
+            "from": {
+              "component": "fermenter",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "fermenterLevel",
+              "port": "process"
+            },
+            "medium": "measurement",
+            "label": "LT-201 Fermenter level measurement",
+            "flowBinding": "/flows/fermenter-to-fermenterLevel",
+            "points": [
+              {
+                "x": 652.0,
+                "y": 172.0
+              },
+              {
+                "x": 673.5,
+                "y": 172.0
+              },
+              {
+                "x": 673.5,
+                "y": 384
+              },
+              {
+                "x": 910.0,
+                "y": 384
+              },
+              {
+                "x": 910.0,
+                "y": 324.0
+              },
+              {
+                "x": 918.0,
+                "y": 324.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "aging-to-cellarLevel",
+            "from": {
+              "component": "aging",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "cellarLevel",
+              "port": "process"
+            },
+            "medium": "measurement",
+            "label": "LT-202 Cellar level measurement",
+            "flowBinding": "/flows/aging-to-cellarLevel",
+            "points": [
+              {
+                "x": 1098.0,
+                "y": 158.0
+              },
+              {
+                "x": 1133.0,
+                "y": 158.0
+              },
+              {
+                "x": 1133.0,
+                "y": 296.0
+              },
+              {
+                "x": 1141.0,
+                "y": 296.0
               }
             ],
             "from_side": "right",
             "to_side": "left"
           }
         ],
-        "width": 900,
-        "height": 580,
+        "width": 1347,
+        "height": 414,
         "bounds": {
           "left": 26.0,
           "top": 78,
-          "right": 874.0,
-          "bottom": 542
+          "right": 1321.0,
+          "bottom": 376
         },
         "diagnostics": {
           "node_collisions": [],
@@ -959,18 +1435,18 @@
           "crossings": []
         }
       },
-      "bytes": 76662,
-      "sha256": "170d720e37d626e61d06c8ced457a90e067aeef7feab03120708b94caceb120f"
+      "bytes": 50985,
+      "sha256": "c4e52ce39041dd224a3160f42206a2f086f9f9712ba67cee25c79158b0e97693"
     },
     {
       "id": "brewery",
       "title": "Brewery",
       "sector": "Food & beverage",
-      "view": "process",
+      "view": "brewhouse",
       "system": "brewery/system.json",
       "path": "img/topologies/food-beverage/brewery/topology.svg",
-      "width": 900,
-      "height": 600,
+      "width": 1793,
+      "height": 452,
       "nodes": [
         {
           "id": "grainSilo",
@@ -991,6 +1467,12 @@
           "label": "Mash vessel"
         },
         {
+          "id": "mashValve",
+          "type": "control-valve",
+          "variant": null,
+          "label": "FCV-101 Mash transfer"
+        },
+        {
           "id": "lauter",
           "type": "filter",
           "variant": null,
@@ -1003,34 +1485,46 @@
           "label": "Brew kettle"
         },
         {
+          "id": "kettleValve",
+          "type": "gate-valve",
+          "variant": null,
+          "label": "XV-201 Kettle outlet"
+        },
+        {
           "id": "cooler",
           "type": "heat-exchanger",
           "variant": null,
           "label": "Wort heat exchanger"
         },
         {
-          "id": "fermenter",
-          "type": "reactor",
+          "id": "controller",
+          "type": "plc-rack",
           "variant": null,
-          "label": "Fermentation vessel"
+          "label": "Brew-house controller"
         },
         {
-          "id": "conditioning",
-          "type": "tank",
+          "id": "remoteIO",
+          "type": "remote-io",
           "variant": null,
-          "label": "Conditioning buffer"
+          "label": "RIO-01 Field I/O"
         },
         {
-          "id": "filler",
-          "type": "filling-line",
+          "id": "heatService",
+          "type": "boiler",
           "variant": null,
-          "label": "Container filling"
+          "label": "Illustrative heat service"
         },
         {
-          "id": "packer",
-          "type": "packaging-line",
+          "id": "temperature",
+          "type": "temperature-sensor",
           "variant": null,
-          "label": "Case packing"
+          "label": "TT-201 Wort temperature"
+        },
+        {
+          "id": "effluent",
+          "type": "aeration-basin",
+          "variant": null,
+          "label": "Effluent aeration basin"
         }
       ],
       "edges": [
@@ -1059,18 +1553,6 @@
           "medium": "solids"
         },
         {
-          "id": "mash-to-lauter",
-          "from": {
-            "component": "mash",
-            "port": "outlet"
-          },
-          "to": {
-            "component": "lauter",
-            "port": "inlet"
-          },
-          "medium": "liquid"
-        },
-        {
           "id": "lauter-to-kettle",
           "from": {
             "component": "lauter",
@@ -1083,9 +1565,69 @@
           "medium": "liquid"
         },
         {
-          "id": "kettle-to-cooler",
+          "id": "lauter-to-effluent",
+          "from": {
+            "component": "lauter",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "effluent",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "heatService-to-cooler",
+          "from": {
+            "component": "heatService",
+            "port": "heat"
+          },
+          "to": {
+            "component": "cooler",
+            "port": "hot-in"
+          },
+          "medium": "thermal"
+        },
+        {
+          "id": "mash-to-mashValve",
+          "from": {
+            "component": "mash",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "mashValve",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "mashValve-to-lauter",
+          "from": {
+            "component": "mashValve",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "lauter",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "kettle-to-kettleValve",
           "from": {
             "component": "kettle",
+            "port": "outlet"
+          },
+          "to": {
+            "component": "kettleValve",
+            "port": "inlet"
+          },
+          "medium": "liquid"
+        },
+        {
+          "id": "kettleValve-to-cooler",
+          "from": {
+            "component": "kettleValve",
             "port": "outlet"
           },
           "to": {
@@ -1095,52 +1637,52 @@
           "medium": "liquid"
         },
         {
-          "id": "cooler-to-fermenter",
+          "id": "cooler-to-temperature",
           "from": {
             "component": "cooler",
             "port": "hot-out"
           },
           "to": {
-            "component": "fermenter",
-            "port": "inlet"
+            "component": "temperature",
+            "port": "process"
           },
-          "medium": "thermal-fluid"
+          "medium": "measurement"
         },
         {
-          "id": "fermenter-to-conditioning",
+          "id": "temperature-to-controller",
           "from": {
-            "component": "fermenter",
-            "port": "outlet"
+            "component": "temperature",
+            "port": "signal"
           },
           "to": {
-            "component": "conditioning",
-            "port": "inlet"
+            "component": "controller",
+            "port": "network"
           },
-          "medium": "liquid"
+          "medium": "data"
         },
         {
-          "id": "conditioning-to-filler",
+          "id": "controller-to-remoteIO",
           "from": {
-            "component": "conditioning",
-            "port": "outlet"
+            "component": "controller",
+            "port": "io"
           },
           "to": {
-            "component": "filler",
-            "port": "inlet"
+            "component": "remoteIO",
+            "port": "network"
           },
-          "medium": "liquid"
+          "medium": "data"
         },
         {
-          "id": "filler-to-packer",
+          "id": "remoteIO-to-mashValve",
           "from": {
-            "component": "filler",
-            "port": "outlet"
+            "component": "remoteIO",
+            "port": "outputs"
           },
           "to": {
-            "component": "packer",
-            "port": "inlet"
+            "component": "mashValve",
+            "port": "control"
           },
-          "medium": "product"
+          "medium": "data"
         }
       ],
       "layout": {
@@ -1155,7 +1697,7 @@
           },
           {
             "id": "mill",
-            "x": 248.66666666666666,
+            "x": 249.0,
             "y": 78,
             "width": 180,
             "height": 132,
@@ -1163,67 +1705,91 @@
           },
           {
             "id": "mash",
-            "x": 471.3333333333333,
+            "x": 472.0,
             "y": 78,
             "width": 180,
             "height": 132,
             "index": 3
           },
           {
-            "id": "lauter",
-            "x": 694.0,
+            "id": "mashValve",
+            "x": 695.0,
             "y": 78,
             "width": 180,
             "height": 132,
             "index": 4
           },
           {
-            "id": "kettle",
-            "x": 694.0,
-            "y": 244,
+            "id": "lauter",
+            "x": 918.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 5
           },
           {
-            "id": "cooler",
-            "x": 471.3333333333333,
-            "y": 244,
+            "id": "kettle",
+            "x": 1141.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 6
           },
           {
-            "id": "fermenter",
-            "x": 248.66666666666666,
-            "y": 244,
+            "id": "kettleValve",
+            "x": 1364.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 7
           },
           {
-            "id": "conditioning",
-            "x": 26.0,
-            "y": 244,
+            "id": "cooler",
+            "x": 1587.0,
+            "y": 78,
             "width": 180,
             "height": 132,
             "index": 8
           },
           {
-            "id": "filler",
+            "id": "controller",
             "x": 26.0,
-            "y": 410,
+            "y": 244,
             "width": 180,
             "height": 132,
             "index": 9
           },
           {
-            "id": "packer",
-            "x": 248.66666666666666,
-            "y": 410,
+            "id": "remoteIO",
+            "x": 249.0,
+            "y": 244,
             "width": 180,
             "height": 132,
             "index": 10
+          },
+          {
+            "id": "heatService",
+            "x": 918.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 11
+          },
+          {
+            "id": "temperature",
+            "x": 1364.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 12
+          },
+          {
+            "id": "effluent",
+            "x": 1587.0,
+            "y": 244,
+            "width": 180,
+            "height": 132,
+            "index": 13
           }
         ],
         "routes": [
@@ -1246,7 +1812,7 @@
                 "y": 144.0
               },
               {
-                "x": 248.66666666666666,
+                "x": 249.0,
                 "y": 144.0
               }
             ],
@@ -1268,37 +1834,11 @@
             "label": "Grain mill \u2192 Mash vessel",
             "points": [
               {
-                "x": 428.66666666666663,
+                "x": 429.0,
                 "y": 144.0
               },
               {
-                "x": 471.3333333333333,
-                "y": 144.0
-              }
-            ],
-            "from_side": "right",
-            "to_side": "left"
-          },
-          {
-            "id": "mash-to-lauter",
-            "from": {
-              "component": "mash",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "lauter",
-              "port": "inlet"
-            },
-            "medium": "liquid",
-            "flowBinding": "/flows/mash-to-lauter",
-            "label": "Mash vessel \u2192 Lauter separation",
-            "points": [
-              {
-                "x": 651.3333333333333,
-                "y": 144.0
-              },
-              {
-                "x": 694.0,
+                "x": 472.0,
                 "y": 144.0
               }
             ],
@@ -1320,21 +1860,203 @@
             "label": "Lauter separation \u2192 Brew kettle",
             "points": [
               {
-                "x": 784.0,
-                "y": 210
+                "x": 1098.0,
+                "y": 144.0
               },
               {
-                "x": 784.0,
-                "y": 244
+                "x": 1141.0,
+                "y": 144.0
               }
             ],
-            "from_side": "bottom",
-            "to_side": "top"
+            "from_side": "right",
+            "to_side": "left"
           },
           {
-            "id": "kettle-to-cooler",
+            "id": "lauter-to-effluent",
+            "from": {
+              "component": "lauter",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "effluent",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "flowBinding": "/flows/lauter-to-effluent",
+            "label": "Lauter separation \u2192 Effluent aeration basin",
+            "points": [
+              {
+                "x": 1098.0,
+                "y": 158.0
+              },
+              {
+                "x": 1133.0,
+                "y": 158.0
+              },
+              {
+                "x": 1133.0,
+                "y": 236
+              },
+              {
+                "x": 1579.0,
+                "y": 236
+              },
+              {
+                "x": 1579.0,
+                "y": 296.0
+              },
+              {
+                "x": 1587.0,
+                "y": 296.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "heatService-to-cooler",
+            "from": {
+              "component": "heatService",
+              "port": "heat"
+            },
+            "to": {
+              "component": "cooler",
+              "port": "hot-in"
+            },
+            "medium": "thermal",
+            "flowBinding": "/flows/heatService-to-cooler",
+            "label": "Illustrative heat service \u2192 Wort heat exchanger",
+            "points": [
+              {
+                "x": 994.0,
+                "y": 244
+              },
+              {
+                "x": 994.0,
+                "y": 218
+              },
+              {
+                "x": 910.0,
+                "y": 218
+              },
+              {
+                "x": 910.0,
+                "y": 70
+              },
+              {
+                "x": 1579.0,
+                "y": 70
+              },
+              {
+                "x": 1579.0,
+                "y": 130.0
+              },
+              {
+                "x": 1587.0,
+                "y": 130.0
+              }
+            ],
+            "from_side": "top",
+            "to_side": "left"
+          },
+          {
+            "id": "mash-to-mashValve",
+            "from": {
+              "component": "mash",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "mashValve",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Mash vessel \u2192 Lauter separation",
+            "flowBinding": "/flows/mash-to-mashValve",
+            "points": [
+              {
+                "x": 652.0,
+                "y": 144.0
+              },
+              {
+                "x": 695.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "mashValve-to-lauter",
+            "from": {
+              "component": "mashValve",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "lauter",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Mash vessel \u2192 Lauter separation",
+            "flowBinding": "/flows/mashValve-to-lauter",
+            "points": [
+              {
+                "x": 875.0,
+                "y": 158.0
+              },
+              {
+                "x": 896.5,
+                "y": 158.0
+              },
+              {
+                "x": 896.5,
+                "y": 384
+              },
+              {
+                "x": 1106.0,
+                "y": 384
+              },
+              {
+                "x": 1106.0,
+                "y": 172.0
+              },
+              {
+                "x": 1098.0,
+                "y": 172.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "right"
+          },
+          {
+            "id": "kettle-to-kettleValve",
             "from": {
               "component": "kettle",
+              "port": "outlet"
+            },
+            "to": {
+              "component": "kettleValve",
+              "port": "inlet"
+            },
+            "medium": "liquid",
+            "label": "Brew kettle \u2192 Wort heat exchanger",
+            "flowBinding": "/flows/kettle-to-kettleValve",
+            "points": [
+              {
+                "x": 1321.0,
+                "y": 144.0
+              },
+              {
+                "x": 1364.0,
+                "y": 144.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "kettleValve-to-cooler",
+            "from": {
+              "component": "kettleValve",
               "port": "outlet"
             },
             "to": {
@@ -1342,133 +2064,177 @@
               "port": "hot-in"
             },
             "medium": "liquid",
-            "flowBinding": "/flows/kettle-to-cooler",
             "label": "Brew kettle \u2192 Wort heat exchanger",
+            "flowBinding": "/flows/kettleValve-to-cooler",
             "points": [
               {
-                "x": 694.0,
-                "y": 310.0
+                "x": 1544.0,
+                "y": 144.0
               },
               {
-                "x": 651.3333333333333,
-                "y": 310.0
+                "x": 1587.0,
+                "y": 144.0
               }
             ],
-            "from_side": "left",
-            "to_side": "right"
+            "from_side": "right",
+            "to_side": "left"
           },
           {
-            "id": "cooler-to-fermenter",
+            "id": "cooler-to-temperature",
             "from": {
               "component": "cooler",
               "port": "hot-out"
             },
             "to": {
-              "component": "fermenter",
-              "port": "inlet"
+              "component": "temperature",
+              "port": "process"
             },
-            "medium": "thermal-fluid",
-            "flowBinding": "/flows/cooler-to-fermenter",
-            "label": "Wort heat exchanger \u2192 Fermentation vessel",
+            "medium": "measurement",
+            "flowBinding": "/flows/cooler-to-temperature",
+            "label": "Wort heat exchanger \u2192 Cooling outlet monitor",
             "points": [
               {
-                "x": 471.3333333333333,
-                "y": 310.0
+                "x": 1691.0,
+                "y": 210
               },
               {
-                "x": 428.66666666666663,
-                "y": 310.0
-              }
-            ],
-            "from_side": "left",
-            "to_side": "right"
-          },
-          {
-            "id": "fermenter-to-conditioning",
-            "from": {
-              "component": "fermenter",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "conditioning",
-              "port": "inlet"
-            },
-            "medium": "liquid",
-            "flowBinding": "/flows/fermenter-to-conditioning",
-            "label": "Fermentation vessel \u2192 Conditioning buffer",
-            "points": [
-              {
-                "x": 248.66666666666666,
-                "y": 310.0
+                "x": 1691.0,
+                "y": 236
               },
               {
-                "x": 206.0,
-                "y": 310.0
-              }
-            ],
-            "from_side": "left",
-            "to_side": "right"
-          },
-          {
-            "id": "conditioning-to-filler",
-            "from": {
-              "component": "conditioning",
-              "port": "outlet"
-            },
-            "to": {
-              "component": "filler",
-              "port": "inlet"
-            },
-            "medium": "liquid",
-            "flowBinding": "/flows/conditioning-to-filler",
-            "label": "Conditioning buffer \u2192 Container filling",
-            "points": [
-              {
-                "x": 116.0,
-                "y": 376
+                "x": 1775.0,
+                "y": 236
               },
               {
-                "x": 116.0,
-                "y": 410
+                "x": 1775.0,
+                "y": 384
+              },
+              {
+                "x": 1552.0,
+                "y": 384
+              },
+              {
+                "x": 1552.0,
+                "y": 324.0
+              },
+              {
+                "x": 1544.0,
+                "y": 324.0
               }
             ],
             "from_side": "bottom",
-            "to_side": "top"
+            "to_side": "right"
           },
           {
-            "id": "filler-to-packer",
+            "id": "temperature-to-controller",
             "from": {
-              "component": "filler",
-              "port": "outlet"
+              "component": "temperature",
+              "port": "signal"
             },
             "to": {
-              "component": "packer",
-              "port": "inlet"
+              "component": "controller",
+              "port": "network"
             },
-            "medium": "product",
-            "flowBinding": "/flows/filler-to-packer",
-            "label": "Container filling \u2192 Case packing",
+            "medium": "data",
+            "flowBinding": "/flows/temperature-to-controller",
+            "label": "Cooling outlet monitor \u2192 Brew-house controller",
+            "points": [
+              {
+                "x": 1364.0,
+                "y": 324.0
+              },
+              {
+                "x": 1119.5,
+                "y": 324.0
+              },
+              {
+                "x": 1119.5,
+                "y": 394
+              },
+              {
+                "x": 214.0,
+                "y": 394
+              },
+              {
+                "x": 214.0,
+                "y": 324.0
+              },
+              {
+                "x": 206.0,
+                "y": 324.0
+              }
+            ],
+            "from_side": "left",
+            "to_side": "right"
+          },
+          {
+            "id": "controller-to-remoteIO",
+            "from": {
+              "component": "controller",
+              "port": "io"
+            },
+            "to": {
+              "component": "remoteIO",
+              "port": "network"
+            },
+            "medium": "data",
+            "label": "PLC field commands",
+            "flowBinding": "/flows/controller-to-remoteIO",
             "points": [
               {
                 "x": 206.0,
-                "y": 476.0
+                "y": 310.0
               },
               {
-                "x": 248.66666666666666,
-                "y": 476.0
+                "x": 249.0,
+                "y": 310.0
+              }
+            ],
+            "from_side": "right",
+            "to_side": "left"
+          },
+          {
+            "id": "remoteIO-to-mashValve",
+            "from": {
+              "component": "remoteIO",
+              "port": "outputs"
+            },
+            "to": {
+              "component": "mashValve",
+              "port": "control"
+            },
+            "medium": "data",
+            "label": "Valve command",
+            "flowBinding": "/flows/remoteIO-to-mashValve",
+            "points": [
+              {
+                "x": 429.0,
+                "y": 296.0
+              },
+              {
+                "x": 687.0,
+                "y": 296.0
+              },
+              {
+                "x": 687.0,
+                "y": 158.0
+              },
+              {
+                "x": 695.0,
+                "y": 158.0
               }
             ],
             "from_side": "right",
             "to_side": "left"
           }
         ],
-        "width": 900,
-        "height": 580,
+        "width": 1793,
+        "height": 414,
         "bounds": {
           "left": 26.0,
           "top": 78,
-          "right": 874.0,
-          "bottom": 542
+          "right": 1767.0,
+          "bottom": 376
         },
         "diagnostics": {
           "node_collisions": [],
@@ -1476,8 +2242,8 @@
           "crossings": []
         }
       },
-      "bytes": 60952,
-      "sha256": "459f684a15530dc813d7323c2b5d70b8ecdec1d3c492439672a65a509cf4511c"
+      "bytes": 80328,
+      "sha256": "bd0c3933395be219efee6c23ef33f95997036ea7a124b384afab3c0c95252e2f"
     },
     {
       "id": "fortune-cookies",
@@ -22843,143 +23609,143 @@
     }
   ],
   "outputs": {
-    "img/topologies/README.md": "56e0d1847b4e8f224718a3742b32cee343bc1c0d789f7198ff30fb831f2d2abe",
-    "img/topologies/agriculture-aquaculture/README.md": "a09c9e25719e0f633789d0bbb6fc8236b0b90bcb5d9085a3c85f4507805540b8",
-    "img/topologies/agriculture-aquaculture/aquaponics-dwc/README.md": "b863f4534dc104a27fcad2f6a48ac1c2c276447108005f352c7fec8caa261cd0",
+    "img/topologies/README.md": "89f515607082cdaa78e801141b994c3059028a5b307cb5c540e49fc3d32b9ce8",
+    "img/topologies/agriculture-aquaculture/README.md": "8a61c1624f57cb2dca3109bb34637f971b1352e0499822a51a2ad26c59a69d25",
+    "img/topologies/agriculture-aquaculture/aquaponics-dwc/README.md": "c696f3195d2ae9baed69a6619ada34d92432af5fb8c699861f0e49fc8f3f54a5",
     "img/topologies/agriculture-aquaculture/aquaponics-dwc/topology.svg": "645e7ff561f1f45c31145efb5af29ec734ebed2b8d48a3264ea6825bb72c83fe",
-    "img/topologies/agriculture-aquaculture/aquaponics-media-bed/README.md": "8e8e06c60f1d11f2b70a62dd01b8243bfd0b2d720742e4aa277369f703a962ad",
+    "img/topologies/agriculture-aquaculture/aquaponics-media-bed/README.md": "d603ff86dcdcc91ab4a85e746dd4620c1a6259fe77f2977976971341b3932dcc",
     "img/topologies/agriculture-aquaculture/aquaponics-media-bed/topology.svg": "57f58c4fe13caa9dbc01e3abe169f238eeb754a29b2b257677ed50c4d689949c",
-    "img/topologies/agriculture-aquaculture/greenhouse-drip/README.md": "24fc2940f235aeee87b60c6867cc631248fe3e98aef8116427d4a8b8f706d48c",
+    "img/topologies/agriculture-aquaculture/greenhouse-drip/README.md": "5e78f8809f23de434b03c125c7450ee0f6268ace49078562885c027508faeecf",
     "img/topologies/agriculture-aquaculture/greenhouse-drip/topology.svg": "8d2bb8a3431c5c3722a66b1d4788a78ae19663de947b94fc963c6ed32c5b6145",
-    "img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/README.md": "bba7e33a54ce67d76043a6f8f6f0815e35daa2fa4eccb3bdf3cf8a9cf749bd07",
+    "img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/README.md": "d0449beae180f3023068df34a3885665aba606b724364cdb274efd1f3b009908",
     "img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/topology.svg": "e273f32c600dac557c29a2c51365b97b58fd5d89fd6259e55332f2c3d85c37b0",
-    "img/topologies/agriculture-aquaculture/hydroponics-nft/README.md": "f6c0f8c49966236d95296865b62559375aaafcd1b049c76153271557a2ceb445",
+    "img/topologies/agriculture-aquaculture/hydroponics-nft/README.md": "31cff49210fb5b9b40401630504fda6cca0ceddb1d55ff9aaf349599c2930d31",
     "img/topologies/agriculture-aquaculture/hydroponics-nft/topology.svg": "59d88621a718a0cbef0c81e7bf6d7670410a65ec8c6d8158ffd7cc757ac60c8d",
-    "img/topologies/agriculture-aquaculture/indoor-aeroponics/README.md": "81e68d2a0d528161d1a5902439226130ef07a9196ea6a8b28e5c4e14f26d0fd2",
+    "img/topologies/agriculture-aquaculture/indoor-aeroponics/README.md": "d61612c7be1e98b139091fc76b4f6d7dfa19280c87e08afc2930af9d698cd8c3",
     "img/topologies/agriculture-aquaculture/indoor-aeroponics/topology.svg": "9428ea6b440179f2284effc817df74472f534871638f19c926e363a903612634",
-    "img/topologies/biopharma/README.md": "79e110a712ed1baf5d0afd459e77b6ad38ecb45b933f261361c1e134e0c18bff",
-    "img/topologies/biopharma/biopharma-fermentation/README.md": "618543389ea63d7929ce8c0afc9bdad18792460ee04f05407cd7544da86b651c",
+    "img/topologies/biopharma/README.md": "f937a43eaf860e02c4c5b954f6f41d087b160a9e9ab89e497a60044695d9abc6",
+    "img/topologies/biopharma/biopharma-fermentation/README.md": "a7a4e89288de54e31082af1a89e3d6fc57707b7dd7ce29aa4dc7ace48d54be4f",
     "img/topologies/biopharma/biopharma-fermentation/topology.svg": "eb16286b6f35ea9207ea57a573ed4527814c5bcc8ea029b30922d827d52648f8",
-    "img/topologies/chemicals/README.md": "bee5f0dba59d8f03f87bb1adaa0894044a4166999bc46558abe3b18abea764a2",
-    "img/topologies/chemicals/industrial-detergent/README.md": "98c709166fc2dceb584b0f9fb4b84e214e17cf38bcf0482d8d8e6473a8504db4",
+    "img/topologies/chemicals/README.md": "14d1cd0f803b72a229e136e7f85c982bbeb87e9ce51f9592d54a561f22bf125f",
+    "img/topologies/chemicals/industrial-detergent/README.md": "3578b5dd6081e07bd4370e2a1d1d708bb9e4cd331ff4a610f4b0ddd83029d226",
     "img/topologies/chemicals/industrial-detergent/topology.svg": "de46ea16ccce926e3b82854c9f3408e5d6a2a1d4cbaf461220544c531f2c742a",
-    "img/topologies/chemicals/paint-blending/README.md": "80b5b4ed756ea108e6c7fda4f7c382ddcc7af54df270192bec7512aeee2e30a9",
+    "img/topologies/chemicals/paint-blending/README.md": "ec8538971fdf1ecf0bf7d615b530c8f0aa0f712b1d7b542819c1633cf6253cd7",
     "img/topologies/chemicals/paint-blending/topology.svg": "0754b35b10effc49b495ec50a03244a920c6e956bec99c98cb11175ca8c3737b",
-    "img/topologies/construction-materials/README.md": "0a7b960ef21177f9ed43407a5add435fe3126c99d8be6038c14187005f146050",
-    "img/topologies/construction-materials/cement/README.md": "c93890c464e2c0d769dc07e955465703a1f770fc01d3094a868424f35e61badf",
+    "img/topologies/construction-materials/README.md": "ae8cae55c67ce7d864e92789a03c8b7e8aa40d47e99f18520b4b02d1a17bea4a",
+    "img/topologies/construction-materials/cement/README.md": "b791bd65d79b75c9d73c3f5772f7a1810c0e81ed36e9600af6582fe37c42bb66",
     "img/topologies/construction-materials/cement/topology.svg": "62fce7a02c14386bfd53895ace2b3939747a29a97904889118f4ec21be743f10",
-    "img/topologies/construction-materials/concrete-batching/README.md": "786df3f3d80f99796559622d94488c25b6c2e87cdace13d919c1a8b133852176",
+    "img/topologies/construction-materials/concrete-batching/README.md": "bdbe65e9138d2b44066c674d75ad8a479a9bd88c6fe1cc6d65227f3a982fb7d3",
     "img/topologies/construction-materials/concrete-batching/topology.svg": "ad89681c1a55602424f051a2f02faffd4144229a19344292808f22e91baf26c2",
-    "img/topologies/consumer-products/README.md": "becd496becbbfc8dac00335fe9167fc7c0038e4f72f68c904d61b93f369528fb",
-    "img/topologies/consumer-products/shampoo/README.md": "821e87175dee5c478fe60504587e51372fd239dee576f8c3160b1b9e0d14ab8a",
+    "img/topologies/consumer-products/README.md": "3a386bb05bb15043885d97eb7cad57a7fb33ff63647a55015f76db41f59eb04a",
+    "img/topologies/consumer-products/shampoo/README.md": "67fa1c895e4315e4cb8a26e9962a1c08688aa2eb0e98b650e48aa10ae6651882",
     "img/topologies/consumer-products/shampoo/topology.svg": "3c21d5689fc345d44f6f482f2a8a504c33013cbd3f01eec71d9717daf6615095",
-    "img/topologies/fiber-processing/README.md": "708af7e94abc9e103e869feab20b1ee054609cd3d1f682c9c669da86a49611ed",
-    "img/topologies/fiber-processing/pulp-paper/README.md": "920d17031d0d7a655009f64a87910cd0c54adc99598210e53b5c83537ce21905",
+    "img/topologies/fiber-processing/README.md": "6a1cb6fa94ad362a760d8c4f2cbd6f4dbc0d60bb7d4831cd4baca2c245f14eff",
+    "img/topologies/fiber-processing/pulp-paper/README.md": "303d578fc889ca3fda12f04e3d828c21418603db5c0445e1b011c97e535eee1a",
     "img/topologies/fiber-processing/pulp-paper/topology.svg": "4a4f0bcc24f7e59fa58f762ad8f75efe00196fabf18c7956add1bf2f5d6e2102",
-    "img/topologies/food-beverage/README.md": "00aba61a2bc287ec61acd275c43f2adb2f0fd6774b53e2278f0927f06abb6e05",
-    "img/topologies/food-beverage/brewery/README.md": "647a23cabcfa963fdf8576b814d1ae248cf18491373bfc896edca5a1515a525f",
-    "img/topologies/food-beverage/brewery/topology.svg": "459f684a15530dc813d7323c2b5d70b8ecdec1d3c492439672a65a509cf4511c",
-    "img/topologies/food-beverage/carbonated-beverages/README.md": "97fa4f4b4f1da15073482a7eab40311b67c05874526817f50f779afd5821d13d",
+    "img/topologies/food-beverage/README.md": "34750f4ac9269695f8ca07d9a98988b68c1d34de12f3799c52caa89b086a0443",
+    "img/topologies/food-beverage/brewery/README.md": "0e5b7a25d12147d60c19620cb098cbf5d0d0c43f6ab8b85b743c5eb9222a7784",
+    "img/topologies/food-beverage/brewery/topology.svg": "bd0c3933395be219efee6c23ef33f95997036ea7a124b384afab3c0c95252e2f",
+    "img/topologies/food-beverage/carbonated-beverages/README.md": "90107911a4b81a7385e4fe6f56d986a174102b49130924badc154b0a4750bc59",
     "img/topologies/food-beverage/carbonated-beverages/topology.svg": "8657df0c92363c7dd6e5cf411857cbbfcf503319a2757a39052a6fc9882df199",
-    "img/topologies/food-beverage/dairy/README.md": "fb8864b41081daac1e58157c630ae75f98dd1c7b754a21a91d313cf2732c3f80",
+    "img/topologies/food-beverage/dairy/README.md": "ba298cc0a197d8b1744d3b8b42e6a8e47696c0124fb60c945aaac8277c6822a3",
     "img/topologies/food-beverage/dairy/topology.svg": "59fca79755f98840f71942c89133a6389daaec0b429de8b4ac766f31aadcbc9b",
-    "img/topologies/food-beverage/fortune-cookies/README.md": "26dd03a412ad91cdd519fdb551057d01f82fc71ad2896812318dcb6a6e651f60",
+    "img/topologies/food-beverage/fortune-cookies/README.md": "faf80c8f0463478b492267a17cf8c045944953a9d65633376096f088bb8bd2f2",
     "img/topologies/food-beverage/fortune-cookies/topology.svg": "322683a613f49c3028784f470f84f88436eee0e54d0002632778d685ed05a432",
-    "img/topologies/food-beverage/fruit-juice/README.md": "9b4897d1eeea7b4f94051258961d4d6d16f4efba09f0bcfb61d4712a9a45e448",
+    "img/topologies/food-beverage/fruit-juice/README.md": "85f07b98fbbd7df04650625579d04a71960fe6585baf4aec72e5884abeb8e48d",
     "img/topologies/food-beverage/fruit-juice/topology.svg": "5b183e3f80cace5dd27280125b8f5c03c2d0df59b330e6476c1c8145f962adea",
-    "img/topologies/food-beverage/winery/README.md": "474a66b0d576d63ecf3776ecaebb2c5482489a05dbf38cfb83579a8f6d3713ca",
-    "img/topologies/food-beverage/winery/topology.svg": "170d720e37d626e61d06c8ced457a90e067aeef7feab03120708b94caceb120f",
+    "img/topologies/food-beverage/winery/README.md": "b01445085cc534c5879efc37de68ce06935648cc38514560bae3b59df0981938",
+    "img/topologies/food-beverage/winery/topology.svg": "c4e52ce39041dd224a3160f42206a2f086f9f9712ba67cee25c79158b0e97693",
     "img/topologies/gallery-map.svg": "8039b286f1787d65ac72899749b426c18987265b8218e7c9286fe3bb3627b9f5",
-    "img/topologies/manufacturing-thermal-processing/README.md": "5927e57b53e4eeab62df42c70aaaec3fa571e07dcc0d66c1824e863372e4cbcf",
-    "img/topologies/manufacturing-thermal-processing/electric-batch-oven/README.md": "f2c96bd2597c8ca366c67e7653d79921f11802f08011ea34ff1559e56c9928b7",
+    "img/topologies/manufacturing-thermal-processing/README.md": "b98b82703ff5082feff6f1da0811c850a84b83913362a9fe9e2872ef2ce2f089",
+    "img/topologies/manufacturing-thermal-processing/electric-batch-oven/README.md": "8ad64b537e9fa3d64a6afba4f9963a96e4449301c2a2aaa6739c821a763278ac",
     "img/topologies/manufacturing-thermal-processing/electric-batch-oven/topology.svg": "fc463c8e53aff0cc719366b3f1eb8c71a23357976f75d96e18edec4015f2852d",
-    "img/topologies/materials/README.md": "fe641c938d76eb1f51e9d541df9c2c0f311234f3c3a5ca14ad6ff6b94ca8cb3d",
-    "img/topologies/materials/polymer-extrusion/README.md": "8515b69e495333a7e855bd9053ab1f8c341e142d25de824db6fe88d8d15581c3",
+    "img/topologies/materials/README.md": "d4bda87e95f596991c24dcfa402f1c097d4726d3ca46e7c7409a89bc71ada10e",
+    "img/topologies/materials/polymer-extrusion/README.md": "c027392544903f44e384fd5a1a7ca917d1945049300a7befce4b9e30cac96e30",
     "img/topologies/materials/polymer-extrusion/topology.svg": "a953f55be490323765463298a5ac075e080b2879820e0492410440cdd04f9b2a",
-    "img/topologies/mineral-processing/README.md": "5d5728f7837eca93daadf2cc6ae914df566c7fcfcc58137bbeaeffc19c4cb555",
-    "img/topologies/mineral-processing/mineral-crushing/README.md": "d82a37ccb970edbd970f89fdea248886927bb545ec404ab1aea3261fb23ec065",
+    "img/topologies/mineral-processing/README.md": "1ccfc961a0be6a6091d59b9db55606e56704e3f6ac2bea0ec4b74940fc14b63c",
+    "img/topologies/mineral-processing/mineral-crushing/README.md": "d9423796dc12a51c221ec72e5a796b33bbd65fe5f99948bc10ea4154a9eb406a",
     "img/topologies/mineral-processing/mineral-crushing/topology.svg": "025e7e0b5925d9b40e9f753204e24edf76c78d5466824da17ecfb42bf6912ce8",
-    "img/topologies/mineral-processing/mineral-flotation/README.md": "20faa98d86b0b21b94652c765d4da6f39be6e92e625942fc50253170241a4c28",
+    "img/topologies/mineral-processing/mineral-flotation/README.md": "a53581f1f45b9b60e6865a93e23661fc90b772019dd0326146026fc50ca2bc42",
     "img/topologies/mineral-processing/mineral-flotation/topology.svg": "1397cd9f82f6ca2775fa47962cd7b2099ceaa818d983ef82a4cf2a9a9018c70d",
-    "img/topologies/pharmaceuticals/README.md": "7a4a30503fd8763ea969bd80d63432fbb4d8c781bfe11937db63322e62b5e563",
-    "img/topologies/pharmaceuticals/pharma-oral-liquid/README.md": "5554601fecea0bef19010a256531c76c3b45737646cc28cc2c1f9e666ce09659",
+    "img/topologies/pharmaceuticals/README.md": "7b65d335beac0bf8532ff503e8412996675dd791fad230405591ee22707e0e06",
+    "img/topologies/pharmaceuticals/pharma-oral-liquid/README.md": "4c2c10af7c0c8ee43fe636797c37609d38c26902f0f422c49233acfd8f64e206",
     "img/topologies/pharmaceuticals/pharma-oral-liquid/topology.svg": "74bc002fff9054cbd1a8c72b9273d79eed0085279a00e56e86ab37f6997a77fe",
-    "img/topologies/pharmaceuticals/sterile-filling/README.md": "51c6a454d34cabd53fa83a5b76f5e193955c1290c1fe642e6c51588127c3294e",
+    "img/topologies/pharmaceuticals/sterile-filling/README.md": "e1942a8d18e6fe53b11449b6d92d3c0b71563543ad9a745c26d4fb07cec24d83",
     "img/topologies/pharmaceuticals/sterile-filling/topology.svg": "7126303173b522ff49680e9c032df19f38e4d06a0bae80a69d88bf8b935bb843",
-    "img/topologies/pharmaceuticals/tablets/README.md": "9f8288222b6eeb9560bf3b0eed65ce4a86b6b9b67a5b56ccfafaf9bd26b00ab2",
+    "img/topologies/pharmaceuticals/tablets/README.md": "d4c0d24125a6a493bb12647e8a1d231296b7390b1d4b7ead5f91597a372e5b5a",
     "img/topologies/pharmaceuticals/tablets/topology.svg": "627b9eb458b32e5573243a9e45352da2747d45c5edc2280107295f70edbf0a34",
-    "img/topologies/power-utilities/README.md": "eb5793c0fd7c1bd29a89274005f47193ff3b5bf47acc5fe59df807fd0999c1ba",
-    "img/topologies/power-utilities/power-battery-storage/README.md": "4d821076aa56cc0eb628a404d5d998d929344485f0e8b92529af66978a3c92bd",
+    "img/topologies/power-utilities/README.md": "79ef013369e69cf8533f15212b6e91707faeeff0a1165c3fea0a50f329b72bae",
+    "img/topologies/power-utilities/power-battery-storage/README.md": "9db86a7e7c6ccb502e97da8580918be7ca268cb22312b2f4c9820d7e0f3e2527",
     "img/topologies/power-utilities/power-battery-storage/topology.svg": "06c16a4e6fc0c2511c2a0fc7f3497125164142d74461180a7c6a02b3ea8fec3f",
-    "img/topologies/power-utilities/power-biomass-chp/README.md": "2ccca95a84bceb1c9e87f965d1fe9405a16411a63deac709b0d88dcd7e604c04",
+    "img/topologies/power-utilities/power-biomass-chp/README.md": "c7c4cc8df11a72e9e672ffe469776cfd2e6dc959b0bfb73406335143329444b0",
     "img/topologies/power-utilities/power-biomass-chp/topology.svg": "ba6fc48c6b019be1814d006fb46dddb6e0df8667f8d649d1fd0124dd9a8f4504",
-    "img/topologies/power-utilities/power-coal-steam/README.md": "0539814e21c0d8773e09d7db56329e458ffd4d98a9f322e324d39a9fc5d1ac2f",
+    "img/topologies/power-utilities/power-coal-steam/README.md": "6cd7d419dd4e8d99d01656b8ebef5f943293d3ba509c1b097b53c7cff13f86d8",
     "img/topologies/power-utilities/power-coal-steam/topology.svg": "b382c2cf8bac809c582c82688d48346b1be1c0d1230b2fde11d083ff0db5f5db",
-    "img/topologies/power-utilities/power-csp-tower/README.md": "0cff70c52801ffd1821a595f887a39d30f09a33fbd257c34475b8649a61e0b98",
+    "img/topologies/power-utilities/power-csp-tower/README.md": "2273c9c002f0e0b4884ba2250fda25af7738be158ef2e30bb0aea21379f31d6e",
     "img/topologies/power-utilities/power-csp-tower/topology.svg": "9b6fcdf88b17bd891f970f7e7afbe86ea5f073310a9f961b5ed46a5cc49b6e36",
-    "img/topologies/power-utilities/power-csp-trough/README.md": "514d0305c7263ff8506977d4464e3b75ab7824745a7117b6f9f9f1affee66577",
+    "img/topologies/power-utilities/power-csp-trough/README.md": "0e29929e5858614e3146f6ee226b1dcbeb6f57623aa3274050fcc0e299a5dcf1",
     "img/topologies/power-utilities/power-csp-trough/topology.svg": "c2d0195d8b98057c4a45294225a1fbf66a18b4dcd573d2001c9c14902e51ee2b",
-    "img/topologies/power-utilities/power-diesel-standby/README.md": "e0d219aa0787ec75fb4bb87551171c7ef62375ba8e41a3f311fda61efeff3a19",
+    "img/topologies/power-utilities/power-diesel-standby/README.md": "0fa5975c2f907cb3eae5414256c18fc05e251908e456de4028013f0cb589d364",
     "img/topologies/power-utilities/power-diesel-standby/topology.svg": "c1e220fdbb4352ddab133a1a35a64bfb210b6ce71b3152b4414b829bad54e38e",
-    "img/topologies/power-utilities/power-fuel-cell/README.md": "34450e3ca1a83e5179cc41eb76c2d2d2fe3bdab60dcc50c2724ec33d64c3ef3b",
+    "img/topologies/power-utilities/power-fuel-cell/README.md": "d57ca69dc1fb200ddc4443fcdc3cc66243959ac84933dc157618ce1fab1e576a",
     "img/topologies/power-utilities/power-fuel-cell/topology.svg": "3067b56514f823ee1d989c9947a9094584802af7f3e4cf4e71c4e5e63aeff59a",
-    "img/topologies/power-utilities/power-gas-combined-cycle/README.md": "4e1336849186de079aa52d7c3b290715e445e03d8015f6c243571a7dc75f68de",
+    "img/topologies/power-utilities/power-gas-combined-cycle/README.md": "6a3debc9440c777902e36308364e5648ff9f1c877fe6d6bae1025c340bf83f23",
     "img/topologies/power-utilities/power-gas-combined-cycle/topology.svg": "c396ce9115319a36cd83f0d73b8cefd704698cc5b30dbc00f2c9b9ccf8320980",
-    "img/topologies/power-utilities/power-gas-simple-cycle/README.md": "200fd06d832d3e73bb6163f42f9376e44cfff2670c3ce3010ab763f9d2fa6ff7",
+    "img/topologies/power-utilities/power-gas-simple-cycle/README.md": "327b1bd134935da13dfc3434b6b2c6f7c3644efd99b9bc0837e803c927885fe3",
     "img/topologies/power-utilities/power-gas-simple-cycle/topology.svg": "faa0980399256b87c3f358257140ff4d501c89cb2278a49e6b7f62d0603fc947",
-    "img/topologies/power-utilities/power-gasoline-portable/README.md": "6f0dbce3ad5d57bcde192d649e2fe506f9f3af5c99243b2f0acb39736b374bf2",
+    "img/topologies/power-utilities/power-gasoline-portable/README.md": "732c1b256b1f78890ea0c2b717eaf371f8a334132f0d275e5a3928f7bcb073d5",
     "img/topologies/power-utilities/power-gasoline-portable/topology.svg": "32fe637885fc3be3b29e2615c72e09cc0c7ef74c53364458f32739dcce175a6e",
-    "img/topologies/power-utilities/power-geothermal-binary/README.md": "7a6ae835d478f006c7d6435a68a07d7a9f69d6b097d27c269ce784d040df1796",
+    "img/topologies/power-utilities/power-geothermal-binary/README.md": "4558fa7afc7a87d1f0a55dbe43172c7d932d847ceb559b3ed4a84d1be9a54371",
     "img/topologies/power-utilities/power-geothermal-binary/topology.svg": "fdbd257e8bf7ff9d683fd9b90cbc5814250b6b7a4ea4c26a11896eec62201c30",
-    "img/topologies/power-utilities/power-geothermal-dry-steam/README.md": "fcad6ebae8fd3274eb547b9a6d223ae4300718cfceb1879be1315c47fae238a4",
+    "img/topologies/power-utilities/power-geothermal-dry-steam/README.md": "456cf1d3172ae1ede5069a5181ecc6edc8fc96ea9ad9908cfa55ecaebc8f0ede",
     "img/topologies/power-utilities/power-geothermal-dry-steam/topology.svg": "974f1e7b1f1637ad115328435b9fe0e670716251fa5d4ea29c6e5c63472ffdd0",
-    "img/topologies/power-utilities/power-geothermal-flash/README.md": "6c4729020433748d36fedebd24e40f5f5e7cd1ecae2cf1c0338115674da9f141",
+    "img/topologies/power-utilities/power-geothermal-flash/README.md": "17b3ba2740198b0dbf2c3f526798b7be6ea26f8778008659f1ec967849f63dd2",
     "img/topologies/power-utilities/power-geothermal-flash/topology.svg": "ba07597a632ac587055be19e15b95e1d6d7571eccb2b670bbe6f923120661a92",
-    "img/topologies/power-utilities/power-hvdc-interface/README.md": "dda6eb6fd355facb126de0c35f8135d5bb556c960a8c6b9fc88e03cf0401d722",
+    "img/topologies/power-utilities/power-hvdc-interface/README.md": "56791d48b764d08f28eeecb724801817fb2163d1b74afb6ff516644b49c3e29e",
     "img/topologies/power-utilities/power-hvdc-interface/topology.svg": "b9955b3daf2522bc888753ed1d1080b598809629809714a0f6d5b4e5c4effe59",
-    "img/topologies/power-utilities/power-hybrid-microgrid/README.md": "b4b11c295d194a28f7455b4a74ac21fee9d285bc82227e24789d0008e00177df",
+    "img/topologies/power-utilities/power-hybrid-microgrid/README.md": "5e2aacac285eeec323188b17c5c4742f84728704d3f4f41a5824482f41673126",
     "img/topologies/power-utilities/power-hybrid-microgrid/topology.svg": "a750ed4122851d7cb7a2dd2b4eb98b4de3e62d854b7e8b4b4bae9984359ffe0f",
-    "img/topologies/power-utilities/power-hydro-diversion/README.md": "eab2359822e4a7bdef42643ef8edcc476978cb08b069cfc47eb8b7f60eb29013",
+    "img/topologies/power-utilities/power-hydro-diversion/README.md": "f2ae75fbd92afebed11a8f80df1cd9509f8816e05b02840a521190c4867f0662",
     "img/topologies/power-utilities/power-hydro-diversion/topology.svg": "0dd7b8c4197f92d137ad0c27c242496a2f18d7e8f953b6e527ca5032f6531eaf",
-    "img/topologies/power-utilities/power-hydro-impoundment/README.md": "0772c249af81f24902ba919b27eb392403364588d15fb362a9f7ce46f3ca3446",
+    "img/topologies/power-utilities/power-hydro-impoundment/README.md": "244d4ce3006ebcf077154d2b755f9f6e7803016d7e195004d6b6a83e7f263ba1",
     "img/topologies/power-utilities/power-hydro-impoundment/topology.svg": "6146c4a372e0ddf691fa2a375708a110d7b520d625b00a8f5664835cb3179422",
-    "img/topologies/power-utilities/power-ng-engine-chp/README.md": "3feae0155b7554473f513c85da9d9ca70fd91275aad2dae6044d2578222816fe",
+    "img/topologies/power-utilities/power-ng-engine-chp/README.md": "8c56e9eaa47f01fb9e6c1506d6b0b000280d63b16500a52e0e4fb41667598904",
     "img/topologies/power-utilities/power-ng-engine-chp/topology.svg": "488a9dfc191a3b97fd132eb451104e5e6ca056193424a2ac0d0be99f6e1bea2a",
-    "img/topologies/power-utilities/power-nuclear-bwr/README.md": "e0b2753c456d5d058b66ba4ee08a108d0f63f9032a5f103f01762ce93a5c0871",
+    "img/topologies/power-utilities/power-nuclear-bwr/README.md": "4bc233421017960f862f9aa16f25f21f9dfda846111033c2a59a2ad35b91cdc1",
     "img/topologies/power-utilities/power-nuclear-bwr/topology.svg": "1bbfe75d3a57172824c28367288d385e6abd96717828025ae931e326bda7f91b",
-    "img/topologies/power-utilities/power-nuclear-htgr/README.md": "ec392087b19f7e057825aada822251cde2f900ea9e662e80f1df762ca05f3fde",
+    "img/topologies/power-utilities/power-nuclear-htgr/README.md": "ef787ef981f3470d8fae2a2835be50efd3e85a51b4721a18f2b056492cc5252e",
     "img/topologies/power-utilities/power-nuclear-htgr/topology.svg": "5a8a523401791946f6b6074864681908722d7b81ed62f726edd14cffc69d68ad",
-    "img/topologies/power-utilities/power-nuclear-lw-smr/README.md": "fd42dd9717438046e8d27e900d2f513135f277bf7d75575119bc67081efdb90b",
+    "img/topologies/power-utilities/power-nuclear-lw-smr/README.md": "8e03cfaf8424f54f488b3ba3cae6209f3f34a12c6fa681ce866450eec7c09497",
     "img/topologies/power-utilities/power-nuclear-lw-smr/topology.svg": "a421dc4b649b73737151b64b379e16312aa77604c5b405b90c913a50ecda3b25",
-    "img/topologies/power-utilities/power-nuclear-molten-salt/README.md": "db2423b76c7c0ae1fdff521fcde484789fca1985f5a5e8ab6425f02d376fd4f7",
+    "img/topologies/power-utilities/power-nuclear-molten-salt/README.md": "4ec9dffb5809eaf3ad455be9c948b4ba8f5936ae696b90f53e41589dd1f6dbb7",
     "img/topologies/power-utilities/power-nuclear-molten-salt/topology.svg": "be396d6cdf8ca12539fbd8a921cd68cf575b3e1081ea34bcf065f52d626dbad0",
-    "img/topologies/power-utilities/power-nuclear-phwr/README.md": "a140daf74ce46ec71ffb680983f5f3c85e842111dcb0ffc372c8e12b45722cb6",
+    "img/topologies/power-utilities/power-nuclear-phwr/README.md": "8c82d58ce007ee3c2d06dffef9e9e4b1df7926e4481626812e243fd4c2ec3a5e",
     "img/topologies/power-utilities/power-nuclear-phwr/topology.svg": "98b66e27a54124c5ffc17d8fe4134a9d058b406b067ccf8ca3e046dd562345f0",
-    "img/topologies/power-utilities/power-nuclear-pwr/README.md": "a5db1aefa4eb73a32a6d2a052c704b2509a0c1f8475054d8157624c48fae3fa5",
+    "img/topologies/power-utilities/power-nuclear-pwr/README.md": "1266290101155b5d8a2fc0c5f3f5025fd4a5f162863d71b0d209b05aa5fbcda8",
     "img/topologies/power-utilities/power-nuclear-pwr/topology.svg": "c201213a3bb4266ca0bd18a9b87e7db0f906286a9776b2a27c8c7ac2f292166b",
-    "img/topologies/power-utilities/power-nuclear-sodium-fast/README.md": "17d45573d8dbedc7d0cb06ccb2a47e8f10cc33dcfe787d2c079f0c0de398a970",
+    "img/topologies/power-utilities/power-nuclear-sodium-fast/README.md": "51aa95cd7d40d2f3d81b2f98cf8b828817550e6bb7ae76ce2a09f5eeaf1baf6a",
     "img/topologies/power-utilities/power-nuclear-sodium-fast/topology.svg": "fe960b5b791196f55e789c1d941b51f22a909ebe0806f4eb32074f3611a09db5",
-    "img/topologies/power-utilities/power-pumped-storage/README.md": "90d5c1fcc8c82bff9579610b20175565d44fd43955e3bb9fb867d80c295513c4",
+    "img/topologies/power-utilities/power-pumped-storage/README.md": "3d9c12c34ce8d2d9cd4e6cf3342f326bcf732906415cc5ee4bf2bd5dfcb0b992",
     "img/topologies/power-utilities/power-pumped-storage/topology.svg": "7cb16e9d8b5a23a2220fbe223d59df8c26bd588cfdab384a603c7d9827549eec",
-    "img/topologies/power-utilities/power-solar-pv/README.md": "42693fbd0ef3f8027f0e9f58d73aba43795434cafc98bec3f8632f39b43cdfe8",
+    "img/topologies/power-utilities/power-solar-pv/README.md": "db741037db5d0b5cf47b80b241c3afbf104f7f4526925e4e95addd51607015da",
     "img/topologies/power-utilities/power-solar-pv/topology.svg": "1389a3670261833a206ad77a5bf037c9c2f3606cff7e45af1121cf9b5da9b9f5",
-    "img/topologies/power-utilities/power-substation-distribution/README.md": "0045a5becd20536369a53c51b2b88a2b05d5688cbbaeabf8c3e2ec2056d67b34",
+    "img/topologies/power-utilities/power-substation-distribution/README.md": "56bc6e2dd57a71b416e5b502a3251f105d4826d612ce68b249e8ff0d4cd7eb7d",
     "img/topologies/power-utilities/power-substation-distribution/topology.svg": "16405c1e9e429ca9d1b9b0b6a0c020b7754860882be18c16d158aa8cc0383df8",
-    "img/topologies/power-utilities/power-substation-gis/README.md": "3e0db9fa1c7e9944f8e79c825d100fe900c7af45740607a0449bab8287c1fac6",
+    "img/topologies/power-utilities/power-substation-gis/README.md": "d8d81b5383e8b3cfc96f27fde93587f9e80f3254615d06ef71d83cc39271a275",
     "img/topologies/power-utilities/power-substation-gis/topology.svg": "f10cce36c5eb7bbdfd06c71ff09e3a180eb2ed2aa7da0b7f6935392a25aa9035",
-    "img/topologies/power-utilities/power-substation-gsu/README.md": "388789d47e7219b76ca5b0d5f35ff368538d0d6cc10c9ac965d4df8270119569",
+    "img/topologies/power-utilities/power-substation-gsu/README.md": "505ed6aa876e7778d721ea189efcaf90859d715014764d9d93ebd07995af3ed7",
     "img/topologies/power-utilities/power-substation-gsu/topology.svg": "22571246f8a009c3fe3af6285726d4b9e352fad29f20ac48210efde5a1d2d457",
-    "img/topologies/power-utilities/power-tidal-current/README.md": "9f021f8f30966f24fef77a9b82105d6423ac5902c234adc9ad934e854dd47fca",
+    "img/topologies/power-utilities/power-tidal-current/README.md": "70c33984a9f215e1915250b4f443d7130a8fb3711c90596146552838e3365c4a",
     "img/topologies/power-utilities/power-tidal-current/topology.svg": "4745e1060db028d5cf79d32c5cbfbf1fc3dc1e60f9d3add3d1e1f9b56df33e1b",
-    "img/topologies/power-utilities/power-wave-point-absorber/README.md": "eafc82b08d899ab3daf73d1eea421c88182c970e41c6b6dfd55ffd23df1a8d9d",
+    "img/topologies/power-utilities/power-wave-point-absorber/README.md": "f147ae34f4bc4b27a145ac0ab45fe2e994e6c4a64a943c7189ce61897c9c3530",
     "img/topologies/power-utilities/power-wave-point-absorber/topology.svg": "b68f58639dfc10b2a980e73ab1708cf1ade2521d914989de92cbf241754f6c97",
-    "img/topologies/power-utilities/power-wind-collection/README.md": "5c150eb4d834e8325cb37861fdfed17feec8bd37e7ccd7e7c7791252205c09e8",
+    "img/topologies/power-utilities/power-wind-collection/README.md": "677a412390d945384f177b2e18e0163e8f07d3e61df8c21cfdf7292821bcc44b",
     "img/topologies/power-utilities/power-wind-collection/topology.svg": "d4d04d7946306c0bec2620708bfcb5ab286f14d874e400416cc3b3ef4c97f04a",
-    "img/topologies/surface-treatment/README.md": "aca26fddc9e4463d54a0313f407c34017491aff57fa7072cbfb49c1fdb70499b",
-    "img/topologies/surface-treatment/metal-finishing/README.md": "85db31f9cf8f2e0283c2591b034abf0179d37201867309567bed7ed575a7b1bc",
+    "img/topologies/surface-treatment/README.md": "c12e12961ab26c2064498652ff4fb32abd870963734ba84251d9a179eaa37d1b",
+    "img/topologies/surface-treatment/metal-finishing/README.md": "0e928c45af0ff19528e4802269637f8e2d85cbe6c23213e220d7f5f57a224c70",
     "img/topologies/surface-treatment/metal-finishing/topology.svg": "5c855709847e360c6e0573deb45b52ee679f981292d6a6914c4b4185b87f45b1",
-    "img/topologies/water-utilities/README.md": "d964f84dadc5dd5496e74150b8a2c9fe2ce50988df248accddaf5a1e18ab6e7e",
-    "img/topologies/water-utilities/wastewater-digester/README.md": "44f2d3cf495a7b2e5b941b4a904bd413aa4d93d5b8c4f4e02959d08a0a7eda36",
-    "img/topologies/water-utilities/wastewater-digester/topology.svg": "a39752c4781bd6d4c0ad5b512305887d02d51967c6d324afc9eefe04c65f5ecc"
+    "img/topologies/water-utilities/README.md": "86f2898892c18f200fa35917cd566971d1fb5ca7f49e6436610558ec45f6c8f3",
+    "img/topologies/water-utilities/wastewater-digester/README.md": "7a972e667c813a97c36ee505f8c2eebe729bfb21b50e2816e185cc0952e82141",
+    "img/topologies/water-utilities/wastewater-digester/topology.svg": "ef5fc5e109caa13e370533e2a4c7f5bfbf16682c8794c83b50cf33a097a2b84c"
   }
 }

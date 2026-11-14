@@ -119,11 +119,18 @@ export function renderScadaDiagram({view, equipment = [], snapshot = {}, selecte
     const point = portPosition(node, port.id), item = {...port, ...point, component:node.id};
     return renderPort ? renderPort(item, context) : `<circle data-scada-port="${esc(node.id)}:${esc(port.id)}" cx="${point.x}" cy="${point.y}" r="3"><title>${esc(port.label ?? port.id)}</title></circle>`;
   })).join('');
-  return `<div class="${esc(classes.scroll)}" data-scada-scroll tabindex="0" aria-label="${esc(view.ariaLabel ?? `${view.label ?? view.title ?? view.id} diagram. Drag to pan, wheel or pinch to zoom. Arrow keys pan; Home fits the diagram.`)}"${htmlAttributes(attributes.scroll)}><div class="${esc(classes.stage)}" data-scada-stage style="${zoomProperty}:${zoom};--scada-canvas-width:${width}px;--scada-canvas-height:${height}px;width:100%;height:100%"${htmlAttributes(attributes.stage)}><div class="${esc(classes.canvas)}" data-scada-canvas data-scada-width="${width}" data-scada-height="${height}" style="${zoomProperty}:${zoom};width:${width}px;min-width:${width}px;height:${height}px;transform:scale(var(${zoomProperty}));transform-origin:top left"${htmlAttributes(attributes.canvas)}><svg class="${esc(classes.svg)}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(view.ariaLabel ?? view.label ?? view.title ?? view.id)}"${htmlAttributes(attributes.svg)}>${renderBackground(context)}<g class="${esc(classes.edges)}">${edgeMarkup}</g><g class="${esc(classes.labels)}">${(view.labels ?? []).map(label => renderLabel(label, context)).join('')}</g><g class="${esc(classes.junctions)}">${(view.junctions ?? []).map(junction => renderJunction(junction, context)).join('')}</g><g class="${esc(classes.ports)}">${portMarkup}</g></svg>${nodes.map(node => renderNode(node, context)).join('')}${(view.portals ?? view.overlays ?? []).map(overlay => renderOverlay(overlay, context)).join('')}</div></div></div>`;
+  return `<div class="${esc(classes.scroll)}" data-scada-scroll tabindex="0" aria-label="${esc(view.ariaLabel ?? `${view.label ?? view.title ?? view.id} diagram. Drag to pan, wheel or pinch to zoom. Arrow keys pan; Home fits the diagram.`)}"${htmlAttributes(attributes.scroll)}><div class="${esc(classes.stage)}" data-scada-stage style="${zoomProperty}:${zoom};--scada-canvas-width:${width}px;--scada-canvas-height:${height}px;width:100%;height:100%"${htmlAttributes(attributes.stage)}><div class="${esc(classes.canvas)}" data-scada-canvas data-scada-view="${esc(view.id ?? "")}" data-scada-width="${width}" data-scada-height="${height}" style="${zoomProperty}:${zoom};width:${width}px;min-width:${width}px;height:${height}px;transform:scale(var(${zoomProperty}));transform-origin:top left"${htmlAttributes(attributes.canvas)}><svg class="${esc(classes.svg)}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(view.ariaLabel ?? view.label ?? view.title ?? view.id)}"${htmlAttributes(attributes.svg)}>${renderBackground(context)}<g class="${esc(classes.edges)}">${edgeMarkup}</g><g class="${esc(classes.labels)}">${(view.labels ?? []).map(label => renderLabel(label, context)).join('')}</g><g class="${esc(classes.junctions)}">${(view.junctions ?? []).map(junction => renderJunction(junction, context)).join('')}</g><g class="${esc(classes.ports)}">${portMarkup}</g></svg>${nodes.map(node => renderNode(node, context)).join('')}${(view.portals ?? view.overlays ?? []).map(overlay => renderOverlay(overlay, context)).join('')}</div></div></div>`;
 }
 
 function patchElement(target, source, document) {
   if (target.nodeType !== source.nodeType || target.nodeName !== source.nodeName) { target.replaceWith(source.cloneNode(true)); return; }
+  // A different view owns a different equipment/gradient tree. Mount it atomically:
+  // morphing equipment by position can leave WebKit's URL paint servers bound to removed defs.
+  // Same-view snapshots still patch in place, preserving animation and command focus.
+  if (target.nodeType === 1 && target.hasAttribute('data-scada-canvas') &&
+      target.getAttribute('data-scada-view') !== source.getAttribute('data-scada-view')) {
+    target.replaceWith(source.cloneNode(true)); return;
+  }
   if (target.nodeType === 3) { if (target.nodeValue !== source.nodeValue) target.nodeValue = source.nodeValue; return; }
   if (target.nodeType !== 1) return;
   const editing = target === document.activeElement && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName);
@@ -206,7 +213,11 @@ export class ScadaViewer {
     const visualId = `${this.#scope}-${node.id}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 100);
     const art = renderScadaComponent(node.type ?? 'pump', {id:visualId, variant:node.variant, label:node.label ?? node.id, state:resolved.state, decorative:true});
     const status = resolved.state.fault ? 'Fault' : resolved.state.status === 'offline' ? 'Offline' : resolved.state.status === 'warning' ? 'Warning' : resolved.state.active ? 'Active' : 'Inactive';
-    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-pressed="${node.id === this.#selected}" aria-haspopup="dialog" aria-controls="${this.#scope}-inspector-dialog" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>`;
+    const control = this.readOnly ? null : this.#controlList(node).find(item => item.component === node.id && item.kind === 'toggle' && item.diagram);
+    const current = control ? this.#controlValue(control) : null;
+    const action = current?.found ? control.diagram[current.value ? 'whenTrue' : 'whenFalse'] : 'Unavailable';
+    const quick = control ? `<button type="button" class="scada-equipment-action" data-scada-diagram-control="${esc(control.id)}" aria-label="${esc(`${action} ${node.label ?? node.id}`)}"${current.found ? '' : ' disabled title="A current control value is unavailable."'} style="left:${100 * (node.x + 10) / width}%;top:${100 * (node.y + node.h - 48) / height}%;width:${100 * (node.w - 20) / width}%">${esc(action)}</button>` : '';
+    return `<button type="button" class="scada-viewer-equipment" data-scada-equipment="${esc(node.id)}" data-diagram-action="${Boolean(control)}" data-data-status="${resolved.ok ? 'available' : 'missing'}" aria-pressed="${node.id === this.#selected}" aria-haspopup="dialog" aria-controls="${this.#scope}-inspector-dialog" style="left:${100 * node.x / width}%;top:${100 * node.y / height}%;width:${100 * node.w / width}%;height:${100 * node.h / height}%"><span class="scada-viewer-equipment-label">${esc(node.label ?? node.id)}</span>${art}<span class="scada-viewer-equipment-status">${resolved.ok ? esc(status) : 'Data unavailable'}</span></button>${quick}`;
   }
   #controlList(component) {
     const controls = typeof this.#controls === 'function' ? this.#controls(component, this.#context()) : this.#controls;
@@ -356,6 +367,17 @@ export class ScadaViewer {
     const target = event.target, field = target.closest?.('[data-scada-control]');
     try {
       if (event.type === 'click') {
+        const quick = target.closest('[data-scada-diagram-control]');
+        if (quick) {
+          if (quick.disabled || this.readOnly) return;
+          const component = this.#equipment.find(item => this.#controlList(item).some(control => control.component === item.id && control.id === quick.dataset.scadaDiagramControl && control.diagram));
+          const control = component && this.#controlList(component).find(item => item.id === quick.dataset.scadaDiagramControl && item.kind === 'toggle');
+          const current = control && this.#controlValue(control);
+          if (!current?.found) return;
+          this.select(component.id);
+          void Promise.resolve(this.#runControl(control, !current.value)).catch(() => {});
+          return;
+        }
         const node = target.closest('[data-scada-equipment]'); if (node) { this.select(node.dataset.scadaEquipment, {open:true, opener:node}); return; }
         const view = target.closest('[data-scada-view-choice]'); if (view) { this.setView(view.dataset.scadaViewChoice); safeFocus([...this.#root.querySelectorAll('[data-scada-view-choice]')].find(item => item.dataset.scadaViewChoice === this.#viewId)); return; }
         const inspect = target.closest('[data-scada-inspect]'); if (inspect) { this.openInspector({opener:inspect}); return; }

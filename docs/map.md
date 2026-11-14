@@ -9502,7 +9502,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary>tests — 363 folders</summary>
+<summary>tests — 364 folders</summary>
 
 <details>
 <summary><code>tests/README.md</code> — 1 folders</summary>
@@ -9544,7 +9544,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 </details>
 
 <details>
-<summary><code>tests/fixtures/README.md</code> — 336 folders</summary>
+<summary><code>tests/fixtures/README.md</code> — 337 folders</summary>
 
 [Published folder map](https://cad-agent.valpatel.com/repo/folders/d-tests/d-fixtures/README) · [Canonical source owner](https://github.com/Valpatel/cad-agent/blob/dev/tests/fixtures/README.md)
 
@@ -9888,6 +9888,7 @@ Guides explain how to use the toolkit. Folder maps lead into its code, tests and
 | `tests/fixtures/prusa_config/vendor` |
 | `tests/fixtures/prusa_logs` |
 | `tests/fixtures/scada` |
+| `tests/fixtures/scada/default-model-inputs` |
 
 </details>
 

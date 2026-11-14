@@ -23,7 +23,8 @@ Experiments live in `index.json`, not in separate files. Thumbnails belong to
 [SCADA UI gallery](../../ui/img/README.md). Do not copy either into a host app.
 
 The [topology SVGs](../img/topologies/README.md) reuse those equipment symbols in
-compact schematics of each first focused view. They show declared relationships
+compact schematics of a declared focused view. `topologyView` in the catalog can
+select that static view explicitly; otherwise it uses the initial view. They show declared relationships
 with illustrative icon states; captured thumbnails separately show a model state.
 Use `npm --prefix tools/webkit/scada run topologies:generate` in the source repository to regenerate the SVGs
 from their canonical inputs, or `npm --prefix tools/webkit/scada run topologies:check` to check for drift.
@@ -51,14 +52,14 @@ interaction. Counts below come from the declared JSON, not a completeness claim.
 
 | Scenario map | Model | Equipment / views | Preview |
 | --- | --- | --- | --- |
-| [Wastewater & biogas digital twin](wastewater-digester/README.md) | v1 | 17 / 3 | <a href="../img/thumbnails/water-utilities/wastewater-digester/preview.jpg"><img src="../img/thumbnails/water-utilities/wastewater-digester/preview.jpg" width="180" alt="Wastewater &amp; biogas digital twin preview"></a> |
+| [Wastewater & biogas digital twin](wastewater-digester/README.md) | v1 | 28 / 4 | <a href="../img/thumbnails/water-utilities/wastewater-digester/preview.jpg"><img src="../img/thumbnails/water-utilities/wastewater-digester/preview.jpg" width="180" alt="Wastewater &amp; biogas digital twin preview"></a> |
 
 ### Food & beverage
 
 | Scenario map | Model | Equipment / views | Preview |
 | --- | --- | --- | --- |
-| [Winery](winery/README.md) | v1 | 15 / 3 | <a href="../img/thumbnails/food-beverage/winery/preview.jpg"><img src="../img/thumbnails/food-beverage/winery/preview.jpg" width="180" alt="Winery preview"></a> |
-| [Brewery](brewery/README.md) | v1 | 16 / 3 | <a href="../img/thumbnails/food-beverage/brewery/preview.jpg"><img src="../img/thumbnails/food-beverage/brewery/preview.jpg" width="180" alt="Brewery preview"></a> |
+| [Winery](winery/README.md) | v1 | 23 / 4 | <a href="../img/thumbnails/food-beverage/winery/preview.jpg"><img src="../img/thumbnails/food-beverage/winery/preview.jpg" width="180" alt="Winery preview"></a> |
+| [Brewery](brewery/README.md) | v1 | 25 / 4 | <a href="../img/thumbnails/food-beverage/brewery/preview.jpg"><img src="../img/thumbnails/food-beverage/brewery/preview.jpg" width="180" alt="Brewery preview"></a> |
 | [Fortune-cookie factory](fortune-cookies/README.md) | v1 | 15 / 3 | <a href="../img/thumbnails/food-beverage/fortune-cookies/preview.jpg"><img src="../img/thumbnails/food-beverage/fortune-cookies/preview.jpg" width="180" alt="Fortune-cookie factory preview"></a> |
 | [Carbonated beverages](carbonated-beverages/README.md) | v1 | 19 / 3 | <a href="../img/thumbnails/food-beverage/carbonated-beverages/preview.jpg"><img src="../img/thumbnails/food-beverage/carbonated-beverages/preview.jpg" width="180" alt="Carbonated beverages preview"></a> |
 | [Dairy processing](dairy/README.md) | v1 | 13 / 3 | <a href="../img/thumbnails/food-beverage/dairy/preview.jpg"><img src="../img/thumbnails/food-beverage/dairy/preview.jpg" width="180" alt="Dairy processing preview"></a> |

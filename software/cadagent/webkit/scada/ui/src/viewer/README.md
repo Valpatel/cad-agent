@@ -15,6 +15,12 @@ flowchart TD
 
 `viewer.mjs` and `viewer.css` own diagram layout, selection, zoom, equipment inspection and command dispatch. `renderScadaDiagram` is presentation; `ScadaViewer` is the adapter-driven controller. The external adapter owns snapshots, subscriptions and optional command execution. Several views can share that adapter. Switching or destroying a view must never reset the external model, and rendering motion is separate from simulation time.
 
+Declared toggle controls can opt into one direct equipment action through
+`control.diagram` ([format](../../docs/SYSTEM_FORMAT.md#commands-and-controls)).
+The action is a separate native button beside the inspector button and dispatches
+through the same adapter. It follows the bound switch state, never inferred flow,
+and stays absent in read-only views. No plant-specific commands live here.
+
 | Source | Ownership |
 | --- | --- |
 | [viewer.mjs](./viewer.mjs) | Pure diagram geometry renderer and adapter-driven selection, inspection and command controller. Public camera re-export. |

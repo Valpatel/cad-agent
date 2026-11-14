@@ -6,10 +6,10 @@ Generated scenario map. Edit the [canonical JSON catalog](../index.json) or the 
 
 [Scenario map](../README.md) · [Package map](../../README.md) · [Model API](../../docs/MODEL-API.md)
 
-Explore an illustrative wastewater process, shared sludge digestion, biogas storage, generator and flare. All views observe the same editable model.
+Operate treatment, sludge, biogas and power branches from one connected plant, with instrument taps and PLC-controlled valves. All views share editable illustrative equations.
 
 **Model contract:** `scada-placeholder-model` v1. **Diagram contract:** `scada-system` v1.
-This pair contains 17 equipment records, 20 declared connections and 3 focused views of one shared model.
+This pair contains 28 equipment records, 45 declared connections and 4 focused views of one shared model.
 
 <a href="../../img/thumbnails/water-utilities/wastewater-digester/preview.jpg"><img src="../../img/thumbnails/water-utilities/wastewater-digester/preview.jpg" width="640" alt="Wastewater &amp; biogas digital twin initial focused view"></a>
 
@@ -30,9 +30,9 @@ positions are authored teaching assumptions, not measured facility specification
 
 ## Topology: Water treatment
 
-<a href="../../img/topologies/water-utilities/wastewater-digester/topology.svg"><img src="../../img/topologies/water-utilities/wastewater-digester/topology.svg" width="900" alt="Wastewater &amp; biogas digital twin compact equipment-symbol topology of its first focused view"></a>
+<a href="../../img/topologies/water-utilities/wastewater-digester/topology.svg"><img src="../../img/topologies/water-utilities/wastewater-digester/topology.svg" width="900" alt="Wastewater &amp; biogas digital twin compact equipment-symbol topology of the selected focused view"></a>
 
-**Legend:** equipment symbols identify the first focused view's assets; connectors
+**Legend:** equipment symbols identify the selected focused view's assets; connectors
 show declared relationships between them. The SVG is a compact schematic with
 illustrative icon states, not a live snapshot or a prediction of instantaneous
 flow. [system.json](system.json) retains full port identities, other views and
@@ -41,13 +41,14 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
 <details>
-<summary>3 focused views of this system</summary>
+<summary>4 focused views of this system</summary>
 
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
-| Water treatment | `treatment` | 6 |
-| Sludge & biogas | `sludge-energy` | 9 |
-| Power & control | `power-control` | 7 |
+| Whole plant | `overview` | 28 |
+| Water treatment | `treatment` | 12 |
+| Sludge & biogas | `sludge-energy` | 18 |
+| Power & instruments | `power-control` | 17 |
 
 </details>
 
@@ -58,7 +59,7 @@ not imply a calibrated device equation. Circuit roles describe resource bookkeep
 energy roles describe declared supply/conversion/load relationships.
 
 <details>
-<summary>Inspect the 17 equipment records and model roles</summary>
+<summary>Inspect the 28 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -76,9 +77,20 @@ energy roles describe declared supply/conversion/load relationships.
 | `chp` · Biogas CHP generator | `generator` | `generator` |
 | `flare` · Biogas flare | `flare` | `heater` |
 | `loads` · Electrical loads | `motor` | `load` |
-| `standby` · Standby generator | `generator` | `generator` |
+| `standby` · Auxiliary generator | `generator` | `generator` |
 | `controller` · Plant PLC | `plc-rack` | `controller` |
-| `pressure` · Digester pressure | `pressure-transmitter` | `sensor` |
+| `pressure` · PT-201 Digester pressure | `pressure-transmitter` | `sensor` |
+| `inletValve` · FCV-101 Inlet control | `control-valve` | `valve` |
+| `effluentValve` · XV-102 Effluent outlet | `gate-valve` | `valve` |
+| `digestateValve` · XV-201 Digestate outlet | `gate-valve` | `valve` |
+| `chpValve` · FCV-301 CHP fuel | `control-valve` | `valve` |
+| `flareValve` · FCV-302 Flare fuel | `control-valve` | `valve` |
+| `inletFlow` · FT-101 Inlet flow | `flow-meter` | `sensor` |
+| `effluentFlow` · FT-102 Outlet flow | `flow-meter` | `sensor` |
+| `digesterTemperature` · TT-201 Digester temp | `temperature-sensor` | `sensor` |
+| `digesterLevel` · LT-201 Digester level | `level-sensor` | `sensor` |
+| `gasQuality` · AT-301 Gas quality | `gas-analyzer` | `sensor` |
+| `remoteIO` · RIO-01 Field I/O | `remote-io` | `controller` |
 
 </details>
 
@@ -100,7 +112,7 @@ limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
 <details>
-<summary>Inspect 5 experiment recipes and commands</summary>
+<summary>Inspect 8 experiment recipes and commands</summary>
 
 | Experiment | Commands |
 | --- | --- |
@@ -109,6 +121,9 @@ Run or step the shared model to observe time-dependent effects.
 | Inject a digester leak (`leak-digester`) | `setFault(equipment="digester", value="leaking")` |
 | Overload the electrical branch (`overload-generator`) | `setParameter(equipment="loads", key="demand", value=95)`; `setLoad(equipment="loads", value=100)` |
 | Break the biogas generator (`break-generator`) | `setFault(equipment="chp", value=true)` |
+| Isolate CHP fuel (`close-chp-fuel`) | `setOpen(equipment="chpValve", value=false)` |
+| Lose the plant PLC (`lose-plant-plc`) | `setEnabled(equipment="controller", value=false)` |
+| Close the digestate outlet (`close-digestate`) | `setOpen(equipment="digestateValve", value=false)` |
 
 </details>
 

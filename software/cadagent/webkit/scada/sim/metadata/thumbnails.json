@@ -27,8 +27,8 @@
     "software/cadagent/webkit/scada/sim/scenarios/aquaponics-media-bed/system.json": "78f503b0baead3ff4c3a8eb1f3b868b156fab74a0589e21eb883d226b5852642",
     "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/model.json": "515e813653a5130b8830a5e8c156760f3af099fc22543cc3960c9bf75414d394",
     "software/cadagent/webkit/scada/sim/scenarios/biopharma-fermentation/system.json": "043c54e2e7552fd281c591310060db8de998b1b3c1fdd10df347eb900eb0cb3b",
-    "software/cadagent/webkit/scada/sim/scenarios/brewery/model.json": "23fd7a230d0ff2ffc11ab99d3b127f1fa781a328149e26cda1e4ebbd4174caec",
-    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "688bf5df79f984f06fa0fbd522b4d34d3603aa1f3f9167dc4410580917f66c79",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/model.json": "a7a44a11a5d5a8d50dfba06bd3f919b56072e8ad06f718dfd5d33070f7694beb",
+    "software/cadagent/webkit/scada/sim/scenarios/brewery/system.json": "b3a00baa0d5693fc071dca72bab0225d8b22e5bf711ced699ae8ad3de6d94963",
     "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/model.json": "194b851476c5f164a06f7e4a1b2cefd7a29c248b8a30db20ff5123da5a4abc86",
     "software/cadagent/webkit/scada/sim/scenarios/carbonated-beverages/system.json": "994c724b5fa6647db78f5f6b5c7e11643fcc4fe7938e21944bb4df426a1fab43",
     "software/cadagent/webkit/scada/sim/scenarios/cement/model.json": "d1168d767e57baadaecdf5625fab989c234e9e72f8a5cdc644fa651efefb145e",
@@ -49,7 +49,7 @@
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-ebb-flow/system.json": "820d566f30912f05e103a34156abf8722341a4263b87436b72e105f879a66cd7",
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/model.json": "045e76e36a81137af619d14ca316232a7127a1677645060a4f322e30855fbf52",
     "software/cadagent/webkit/scada/sim/scenarios/hydroponics-nft/system.json": "6b276fef885f43b220bdde06a10941a6aa613bed9fcb5c42ceed23f994075742",
-    "software/cadagent/webkit/scada/sim/scenarios/index.json": "96d824b31317dcfe8088b1bbf5c5ded21acfc1d6d20025885d71ca9bbb87c1e9",
+    "software/cadagent/webkit/scada/sim/scenarios/index.json": "16bf0061724df7027a0d3db8d4a0553dc8bee8e852c2526fc042511978bfc823",
     "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/model.json": "e552362f01bd27564335ff6eb49375762bb2f93d555fed7994dde48e60324ae7",
     "software/cadagent/webkit/scada/sim/scenarios/indoor-aeroponics/system.json": "aec3a5cb63f2293b48640abdb5df4cf5d8a4a40d3dedda7fc6d1ea0805011792",
     "software/cadagent/webkit/scada/sim/scenarios/industrial-detergent/model.json": "b0027e1338f600cb07bee17b8db4a89675c426711ed668418b793203f7956108",
@@ -140,10 +140,10 @@
     "software/cadagent/webkit/scada/sim/scenarios/sterile-filling/system.json": "230c13cc69caff1928358ed52c4d6aed557c9c3be32ea36ec9f2f4a6db75bf07",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/model.json": "aa50cbab2e1f312a0a93ddc54b2060a7ac7a2d03d37c28a344bd4353006ef2a7",
     "software/cadagent/webkit/scada/sim/scenarios/tablets/system.json": "554d26afda550592b675c246624cfaf03f5f5a59e9637b6d3be85cbb6d7e7f1a",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "de0bce5e0bb09f74ad4e3cd2104bca19848bf7ffecd1cd07fbbf0b5a8d1f0f85",
-    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "32ba2b6c35a4a1a8e8544e72467e0f39dddc371bc0768c8a69ac969db454fa31",
-    "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "5d69288356914f610617d1f55e139dc484e10020cc88aad9668edcc0dd3951e1",
-    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "5b34ef9975887e5ebe4348d1465cfe0ecf98e43a8da3f1d5a20a09fcde9b0da9",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/model.json": "2a916b2351cf75b2b280c20848c02b1b00d3253295b8d99eeaf5e44e7fa69037",
+    "software/cadagent/webkit/scada/sim/scenarios/wastewater-digester/system.json": "b058ec04a6afd016def2a40d80331a3c0d94b11b23d75ec4f74b1bfae67314a6",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/model.json": "e2e6161938bd5ea7e9923a9233be5089133cd82af9f38784018d2dec9150adb0",
+    "software/cadagent/webkit/scada/sim/scenarios/winery/system.json": "18824d874aca60adbbc73f934ca600bca3b064faed2f0a3211c9c42c27a034a9",
     "software/cadagent/webkit/scada/sim/examples/equation-models/heater-bench.mjs": "ee0f6adff8a60b7501c315ccc76d25058021a5d77fa786d1c66ebe38446b5cba",
     "software/cadagent/webkit/scada/sim/examples/equation-models/pump-bench.mjs": "796519288c6ee2a6d6fa1dd86e5dc327ee9521ecab4956c7720744decd9d8276",
     "software/cadagent/webkit/scada/sim/examples/equation-models/pump-parameters.json": "d7b91d4d148c761387388170de32b246e9d14b024a66b2357547c9d5179dc275",
@@ -161,7 +161,7 @@
     "software/cadagent/webkit/scada/explorer/search.mjs": "904fc7534c27ba62a257050bdcd68b12e0beaa61f0cb43ddfca23130bbdbf700",
     "software/cadagent/webkit/scada/explorer/selection.mjs": "a513e7bf6545805e8cc8efa0ee4c20b68ebe04ac28cf2eb56e92073044a7ad7a",
     "software/cadagent/webkit/scada/explorer/sound.mjs": "35b5fb0ea8f76d42477ef6ce75284da2e0064e466da5c08c7253f2088b2e49d5",
-    "software/cadagent/webkit/scada/explorer/styles.css": "45c1966ab98fff31bcfba3b58ebf67f2fd5b8125d2742622a4fd860ee7f9a848",
+    "software/cadagent/webkit/scada/explorer/styles.css": "8974f0738939732ff533618c54d938f5ded5faef19b1913943fc49d25439219e",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/industrial.mjs": "9e00d1b0246ebce249a1d577541eeeed4f751b4207178761fd8d0b0e190af575",
     "software/cadagent/webkit/scada/ui/src/catalog/definitions/power.mjs": "91a40bc3f3626018b6ab046c222f23e701cc52cf0835946a897c10d0aea1ab48",
@@ -169,7 +169,7 @@
     "software/cadagent/webkit/scada/ui/src/catalog/registry.mjs": "41ade040fa118a07758a757ca903885377393ebb5053cdf7d63a05bbbd1c64e9",
     "software/cadagent/webkit/scada/ui/src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "software/cadagent/webkit/scada/ui/src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
-    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
+    "software/cadagent/webkit/scada/ui/src/contracts/system-definition.mjs": "45a5ddd87ec69952c09e0522774acdd20c86ea7d73f852a21807bde18f4232cb",
     "software/cadagent/webkit/scada/ui/src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
     "software/cadagent/webkit/scada/ui/src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
     "software/cadagent/webkit/scada/ui/src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
@@ -194,8 +194,8 @@
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
     "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "bd1504dbfe3e9e021e228173333beddf585a490320e1035a116a08a0d485b4fe",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "4398492353972ca1814d9bd932d10d4638888cca9fb64ad9f15bd3ed1053fec9",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085",
     "software/cadagent/webkit/ui/theme.js": "bec818983711f705b48f9df993ed4ee53a82093f1f750252103d0c1f8366b0e2",
@@ -224,34 +224,34 @@
       "id": "wastewater-digester",
       "title": "Wastewater & biogas digital twin",
       "sector": "Water & utilities",
-      "view": "treatment",
+      "view": "overview",
       "system": "wastewater-digester/system.json",
       "model": "wastewater-digester/model.json",
-      "components": 17,
+      "components": 28,
       "camera_coverage": {
         "worldSize": {
-          "width": 920,
-          "height": 550
+          "width": 2660,
+          "height": 1020
         },
         "layoutSize": {
-          "width": 920,
-          "height": 550
+          "width": 2660,
+          "height": 1020
         },
         "viewportSize": {
           "width": 1361,
-          "height": 1045
+          "height": 1021
         },
         "camera": {
           "x": 12,
-          "y": 148.85326086956525,
-          "zoom": 1.4532608695652174,
+          "y": 280.1578947368421,
+          "zoom": 0.5026315789473684,
           "fitted": true
         },
         "canvasRect": {
           "x": 12,
-          "y": 148.853271484375,
-          "width": 1337,
-          "height": 799.29345703125
+          "y": 280.15789794921875,
+          "width": 1337.0001220703125,
+          "height": 512.6842651367188
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -259,11 +259,33 @@
         "canvasOverflowPx": 0,
         "renderedIds": [
           "aeration",
+          "chp",
+          "chpValve",
           "clarifier",
+          "controller",
+          "digestate",
+          "digestateValve",
+          "digester",
+          "digesterLevel",
+          "digesterTemperature",
           "effluent",
+          "effluentFlow",
+          "effluentValve",
+          "flare",
+          "flareValve",
+          "gasClean",
+          "gasHolder",
+          "gasQuality",
           "influent",
+          "inletFlow",
+          "inletValve",
           "liftPump",
-          "screen"
+          "loads",
+          "pressure",
+          "remoteIO",
+          "screen",
+          "sludgeValve",
+          "standby"
         ],
         "clippedIds": [],
         "clippedLabelIds": [],
@@ -271,27 +293,45 @@
         "maxOverflowPx": 0,
         "expectedIds": [
           "aeration",
+          "chp",
+          "chpValve",
           "clarifier",
+          "controller",
+          "digestate",
+          "digestateValve",
+          "digester",
+          "digesterLevel",
+          "digesterTemperature",
           "effluent",
+          "effluentFlow",
+          "effluentValve",
+          "flare",
+          "flareValve",
+          "gasClean",
+          "gasHolder",
+          "gasQuality",
           "influent",
+          "inletFlow",
+          "inletValve",
           "liftPump",
-          "screen"
+          "loads",
+          "pressure",
+          "remoteIO",
+          "screen",
+          "sludgeValve",
+          "standby"
         ],
         "authoredWorldSize": {
-          "width": 1160,
-          "height": 660
+          "width": 2660,
+          "height": 1020
         },
-        "layoutProjection": {
-          "kind": "process-chain",
-          "columns": 3,
-          "rows": 2
-        }
+        "layoutProjection": null
       },
       "path": "img/thumbnails/water-utilities/wastewater-digester/preview.jpg",
       "width": 1398,
-      "height": 1196,
-      "bytes": 147982,
-      "sha256": "5d50f77fbde2bbdc8b0b5cdc610817dc5fdf189765d4d97c167247c2923c3c6a"
+      "height": 1173,
+      "bytes": 167107,
+      "sha256": "3c7e4548f4ea5f5d34c06a58f3cc72024cb9c5b160620debd48c532e87671cdd"
     },
     {
       "id": "winery",
@@ -300,15 +340,15 @@
       "view": "process",
       "system": "winery/system.json",
       "model": "winery/model.json",
-      "components": 15,
+      "components": 23,
       "camera_coverage": {
         "worldSize": {
-          "width": 1220,
-          "height": 870
+          "width": 2400,
+          "height": 960
         },
         "layoutSize": {
-          "width": 1220,
-          "height": 870
+          "width": 2400,
+          "height": 960
         },
         "viewportSize": {
           "width": 1361,
@@ -316,15 +356,15 @@
         },
         "camera": {
           "x": 12,
-          "y": 71.78278688524591,
-          "zoom": 1.0959016393442622,
+          "y": 281.09999999999997,
+          "zoom": 0.5570833333333334,
           "fitted": true
         },
         "canvasRect": {
           "x": 12,
-          "y": 71.78277587890625,
+          "y": 281.0999755859375,
           "width": 1337,
-          "height": 953.4343872070312
+          "height": 534.800048828125
         },
         "finite": true,
         "layoutMatchesWorld": true,
@@ -332,14 +372,27 @@
         "canvasOverflowPx": 0,
         "renderedIds": [
           "aging",
+          "biogasFlare",
           "bottler",
+          "cellarLevel",
+          "cellarValve",
+          "controller",
           "crusher",
+          "effluent",
           "extraction",
           "fermenter",
+          "fermenterLevel",
+          "fermenterTemperature",
+          "fillValve",
           "grapeIntake",
+          "mustFlow",
           "mustTransfer",
+          "mustValve",
           "packer",
           "polishing",
+          "power",
+          "pressure",
+          "remoteIO",
           "transferValve"
         ],
         "clippedIds": [],
@@ -348,31 +401,40 @@
         "maxOverflowPx": 0,
         "expectedIds": [
           "aging",
+          "biogasFlare",
           "bottler",
+          "cellarLevel",
+          "cellarValve",
+          "controller",
           "crusher",
+          "effluent",
           "extraction",
           "fermenter",
+          "fermenterLevel",
+          "fermenterTemperature",
+          "fillValve",
           "grapeIntake",
+          "mustFlow",
           "mustTransfer",
+          "mustValve",
           "packer",
           "polishing",
+          "power",
+          "pressure",
+          "remoteIO",
           "transferValve"
         ],
         "authoredWorldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 2400,
+          "height": 960
         },
-        "layoutProjection": {
-          "kind": "process-chain",
-          "columns": 4,
-          "rows": 3
-        }
+        "layoutProjection": null
       },
       "path": "img/thumbnails/food-beverage/winery/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 176757,
-      "sha256": "68063c9930ba0296edea31b0fcd428121210633f037d765d0cacd2518aa62884"
+      "bytes": 174006,
+      "sha256": "a7a7f045d9f1b548d32af05cee788e392bf1667b171d484a27d3b6ed08d27946"
     },
     {
       "id": "brewery",
@@ -381,15 +443,15 @@
       "view": "process",
       "system": "brewery/system.json",
       "model": "brewery/model.json",
-      "components": 16,
+      "components": 25,
       "camera_coverage": {
         "worldSize": {
-          "width": 1220,
-          "height": 870
+          "width": 2680,
+          "height": 960
         },
         "layoutSize": {
-          "width": 1220,
-          "height": 870
+          "width": 2680,
+          "height": 960
         },
         "viewportSize": {
           "width": 1361,
@@ -397,63 +459,89 @@
         },
         "camera": {
           "x": 12,
-          "y": 71.78278688524591,
-          "zoom": 1.0959016393442622,
+          "y": 309.03731343283584,
+          "zoom": 0.4988805970149254,
           "fitted": true
         },
         "canvasRect": {
           "x": 12,
-          "y": 71.78277587890625,
+          "y": 309.037353515625,
           "width": 1337,
-          "height": 953.4343872070312
+          "height": 478.92529296875
         },
         "finite": true,
         "layoutMatchesWorld": true,
         "dimensionsMatchScale": true,
         "canvasOverflowPx": 0,
         "renderedIds": [
+          "brewPressure",
           "conditioning",
+          "controller",
           "cooler",
+          "effluent",
           "fermenter",
+          "fermenterLevel",
+          "fermenterValve",
+          "fillValve",
           "filler",
           "grainSilo",
+          "heatService",
           "kettle",
+          "kettleValve",
           "lauter",
           "mash",
+          "mashValve",
           "mill",
-          "packer"
+          "network",
+          "packer",
+          "power",
+          "remoteIO",
+          "temperature",
+          "transferPump",
+          "wortFlow"
         ],
         "clippedIds": [],
         "clippedLabelIds": [],
         "controlOverlapIds": [],
         "maxOverflowPx": 0,
         "expectedIds": [
+          "brewPressure",
           "conditioning",
+          "controller",
           "cooler",
+          "effluent",
           "fermenter",
+          "fermenterLevel",
+          "fermenterValve",
+          "fillValve",
           "filler",
           "grainSilo",
+          "heatService",
           "kettle",
+          "kettleValve",
           "lauter",
           "mash",
+          "mashValve",
           "mill",
-          "packer"
+          "network",
+          "packer",
+          "power",
+          "remoteIO",
+          "temperature",
+          "transferPump",
+          "wortFlow"
         ],
         "authoredWorldSize": {
-          "width": 1280,
-          "height": 940
+          "width": 2680,
+          "height": 960
         },
-        "layoutProjection": {
-          "kind": "process-chain",
-          "columns": 4,
-          "rows": 3
-        }
+        "layoutProjection": null
       },
       "path": "img/thumbnails/food-beverage/brewery/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 173657,
-      "sha256": "c18ccd5bb687a00d56c54c3d8f2125b74406df7dac2e90e1a7e246eccc913390"
+      "bytes": 176358,
+      "sha256": "5233a01d9769a31dc3a7b33e6458bc2a7d6684e70372575c7c2d7c3ed41b7ad5"
     },
     {
       "id": "fortune-cookies",
@@ -531,8 +619,8 @@
       "path": "img/thumbnails/food-beverage/fortune-cookies/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 173772,
-      "sha256": "bdadf7e27359dad190ef8b514f06f70a5a9c983673a124f0125efc52c7badb04"
+      "bytes": 178723,
+      "sha256": "63976a54175f4727569eeea3d54054f7c4fc42ea8759ec1624fd81525136c208"
     },
     {
       "id": "shampoo",
@@ -608,8 +696,8 @@
       "path": "img/thumbnails/consumer-products/shampoo/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 155330,
-      "sha256": "4adb01f6b3730994423e5774eb10bd98c805fd8dcefcbd9dc6558bae0f9c1d8d"
+      "bytes": 157925,
+      "sha256": "11171621021d08f86b33b3329d5879fca2a0b393252443a82f6e4259ed229932"
     },
     {
       "id": "carbonated-beverages",
@@ -689,8 +777,8 @@
       "path": "img/thumbnails/food-beverage/carbonated-beverages/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 162285,
-      "sha256": "064518fb1e1045e17aef1d6b9b9d070d3e0ad74ba09d93c91752f89cc4ec2d02"
+      "bytes": 165395,
+      "sha256": "dbbb18a75ecbf5795a9181e5f1b176872aae8bdd29b4ca78f42d16a124871d79"
     },
     {
       "id": "dairy",
@@ -768,8 +856,8 @@
       "path": "img/thumbnails/food-beverage/dairy/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 165471,
-      "sha256": "511119da18c870cc85e388f4b4d8417ee347299838ddeb3cb20a7f0b89bff4d9"
+      "bytes": 170390,
+      "sha256": "d47b4e9aca264091329dfa54f08c68389081684e55a6ea4b6820230140991ac2"
     },
     {
       "id": "fruit-juice",
@@ -849,8 +937,8 @@
       "path": "img/thumbnails/food-beverage/fruit-juice/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 179703,
-      "sha256": "114641a6b0bbc2aa89dacf6908782958f4ec570df69d9ee2f423cfe937906dd0"
+      "bytes": 179910,
+      "sha256": "e51e442f433b2bc4e2bb4c4ff46cfed949cb11e8084f3e705b37f5fb219bd11b"
     },
     {
       "id": "pharma-oral-liquid",
@@ -930,8 +1018,8 @@
       "path": "img/thumbnails/pharmaceuticals/pharma-oral-liquid/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 163576,
-      "sha256": "b1126fb0261ba588bbe0b28ceba73397d94331e6dc00d5bd69edb88fe01a8a4e"
+      "bytes": 166533,
+      "sha256": "7e34f9ff51c9adeea9f21f1b573059e1c419336e483ac3e30bf2e3686e881c78"
     },
     {
       "id": "tablets",
@@ -1013,8 +1101,8 @@
       "path": "img/thumbnails/pharmaceuticals/tablets/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 188775,
-      "sha256": "ff346b553c3aaa3e99440a741632922e667f7cb3560aa55a234805da9db58786"
+      "bytes": 186594,
+      "sha256": "1198c85a8597e88ad495ae795428bb3f20f67cdec8dbe5d236545fb4b947945f"
     },
     {
       "id": "biopharma-fermentation",
@@ -1092,8 +1180,8 @@
       "path": "img/thumbnails/biopharma/biopharma-fermentation/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 164952,
-      "sha256": "b0b49b518caf868eaaa43fc5d22ed25f818ca507e74b7187c9b1a59b27ba8df6"
+      "bytes": 164421,
+      "sha256": "b03986c3fdcb0c4fd603bdade4ba090be7e277013a53da1bfe36b746c0f980a0"
     },
     {
       "id": "sterile-filling",
@@ -1171,8 +1259,8 @@
       "path": "img/thumbnails/pharmaceuticals/sterile-filling/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 167804,
-      "sha256": "9bb95228f1b642f7448b646a51b164760303952c08d157bd9952a88e5d7696c9"
+      "bytes": 167774,
+      "sha256": "04a699fb2d2f2bab84be0211ffc5918ba7aa597bfa1e98419c845cd2196ecd25"
     },
     {
       "id": "paint-blending",
@@ -1246,8 +1334,8 @@
       "path": "img/thumbnails/chemicals/paint-blending/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 150299,
-      "sha256": "808ac6a81f85d3e25016ea33b2635dff4ed112cb1c62351f21f27c894a7dea1d"
+      "bytes": 152329,
+      "sha256": "f7b5aca9329d1c1bcc20b5709b1c5216b0ef683e950e1f3c1fb7bde189c0907d"
     },
     {
       "id": "industrial-detergent",
@@ -1325,8 +1413,8 @@
       "path": "img/thumbnails/chemicals/industrial-detergent/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 158743,
-      "sha256": "3a3e74983b28a9d25678918cc20f9e22c9f59bfffd3ad952a5119ea88f783a54"
+      "bytes": 161681,
+      "sha256": "ca70755cf33f08ff03b31f2d74a5537d004d6d8b913c77238992b715a46fb1b3"
     },
     {
       "id": "polymer-extrusion",
@@ -1406,8 +1494,8 @@
       "path": "img/thumbnails/materials/polymer-extrusion/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 183758,
-      "sha256": "cf9aeacd4aeba3045bd43e7918bd70db7456a56307ec77f449a70eba745104bd"
+      "bytes": 181160,
+      "sha256": "ba6a179b9e53b8b2926f3ee5010f7843eb62b98b5bffb939e39498e5f0c11d19"
     },
     {
       "id": "concrete-batching",
@@ -1483,8 +1571,8 @@
       "path": "img/thumbnails/construction-materials/concrete-batching/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 159848,
-      "sha256": "eac5051603c1af3ff61c726e2ffc20e0347fe19d780262f2d538c9a48e3fc9b8"
+      "bytes": 161586,
+      "sha256": "cd08bf8e4dfc3471b8c8adde14cfca92cb2d0bfb4588f80890124718134a94c7"
     },
     {
       "id": "cement",
@@ -1562,8 +1650,8 @@
       "path": "img/thumbnails/construction-materials/cement/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 170608,
-      "sha256": "d9f00018b94061fc965bd804eff5c186b156ecec5cc54e09f91f1532f85f88d7"
+      "bytes": 169539,
+      "sha256": "5483bed3e3664d0a939fa78354878538dfb8a0b6ca15c02e1b57948a698321bd"
     },
     {
       "id": "mineral-crushing",
@@ -1641,8 +1729,8 @@
       "path": "img/thumbnails/mineral-processing/mineral-crushing/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 169933,
-      "sha256": "eedbca3bffa457d0204f7abd3c6f8eb6228e9a3e59b9f18c03d56c816d9e8b0c"
+      "bytes": 177593,
+      "sha256": "566b99f1a016e2ba8f63f1a94ebc84dfc262bf44e33571e70ae0447a8c5fc90e"
     },
     {
       "id": "mineral-flotation",
@@ -1720,8 +1808,8 @@
       "path": "img/thumbnails/mineral-processing/mineral-flotation/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 169227,
-      "sha256": "aa81d141cc903b8dfb16d96d52c6616dae7181e96e83eb55298a0a578fd9a27b"
+      "bytes": 171664,
+      "sha256": "fcce85cdc9e7d4a7f0a6065c66c469f06474e750d02890d603fa475e44cd865e"
     },
     {
       "id": "metal-finishing",
@@ -1797,8 +1885,8 @@
       "path": "img/thumbnails/surface-treatment/metal-finishing/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 150883,
-      "sha256": "10fa23d56c48bc2dae97cdac291f9f079d3c400546f8a4c2663d2662aa0ff91b"
+      "bytes": 150601,
+      "sha256": "b1f964e59476de8b339edabf7f779318860b20ea597f18ba30bcf00649e85e6d"
     },
     {
       "id": "pulp-paper",
@@ -1878,8 +1966,8 @@
       "path": "img/thumbnails/fiber-processing/pulp-paper/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 181977,
-      "sha256": "9a7f085ca01d74d986a4444e252614227bc9099f6991ec2381f1bef0d3fd0491"
+      "bytes": 180768,
+      "sha256": "4d96aa9d79545b8ea207b1e47f92f8c75c41b7d42f2d238f61854d92b73318b5"
     },
     {
       "id": "power-gas-simple-cycle",
@@ -1945,8 +2033,8 @@
       "path": "img/thumbnails/power-utilities/power-gas-simple-cycle/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 141496,
-      "sha256": "b6f649ab65d0ce02afd9fcbc424660c37e18f53e3fca8fa51548cc56e701ccba"
+      "bytes": 144274,
+      "sha256": "6b4ac21a4989a4921f7393cacd30efbf1d10e9e8a131129bf8d443b6f45c23bd"
     },
     {
       "id": "power-gas-combined-cycle",
@@ -2014,8 +2102,8 @@
       "path": "img/thumbnails/power-utilities/power-gas-combined-cycle/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 154611,
-      "sha256": "6258f010a5514c1838c35119bf82493a2f27f58e6feb492bc1b1b75c86dde756"
+      "bytes": 154294,
+      "sha256": "ef1b3905b05bd9edf407aa603cd3cbfac50b5aeafa2eea8db043c0d6d2b55e4b"
     },
     {
       "id": "power-coal-steam",
@@ -2085,8 +2173,8 @@
       "path": "img/thumbnails/power-utilities/power-coal-steam/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 146365,
-      "sha256": "365bdef06d62b13d26520742dee457ae12314e321b48a21b9403cb346f4ad941"
+      "bytes": 148545,
+      "sha256": "fa948b95ba47c2fa393918545c4e8917672ab0d2e2937e083a302469f2562110"
     },
     {
       "id": "power-biomass-chp",
@@ -2156,8 +2244,8 @@
       "path": "img/thumbnails/power-utilities/power-biomass-chp/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 147066,
-      "sha256": "68cf77789b126c9216e9aaa68e08831421583c56652d563373997e7d9638a01c"
+      "bytes": 149338,
+      "sha256": "8ef59b2c471058fa49e6df25a2cb6332bbb101b31603b6b2563122d53041977c"
     },
     {
       "id": "power-hydro-impoundment",
@@ -2225,8 +2313,8 @@
       "path": "img/thumbnails/power-utilities/power-hydro-impoundment/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 144827,
-      "sha256": "f520f377340308120ea532b54da14b25883caa02acb10f8a8d3d5cfb33ba1184"
+      "bytes": 147465,
+      "sha256": "0c7db6444dd55ed1f5394d3697e3686036bf0aa335c60ded44b9b9541da0b4a8"
     },
     {
       "id": "power-hydro-diversion",
@@ -2292,8 +2380,8 @@
       "path": "img/thumbnails/power-utilities/power-hydro-diversion/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 138321,
-      "sha256": "8f055542e081cb2099cae3a1250b863d7c005d7ade37cbfe458593f598bbe867"
+      "bytes": 139914,
+      "sha256": "e2f38fede2ddd7e3cbad9ea005a1c27a16de671ccdc41e2b8d6c640d8c0eb197"
     },
     {
       "id": "power-pumped-storage",
@@ -2355,8 +2443,8 @@
       "path": "img/thumbnails/power-utilities/power-pumped-storage/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 123671,
-      "sha256": "eb4cacf26bb26c491e4c24fd29f70b5028d314480c0d595cfa7e9b002e94f32b"
+      "bytes": 123400,
+      "sha256": "46ca920311f86fd4221f955176d6a24ddab873b512b274cbcbd68fb21db1a50e"
     },
     {
       "id": "power-nuclear-pwr",
@@ -2422,8 +2510,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-pwr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 154462,
-      "sha256": "532ba9b1811516fda1332aa683808df51f13dbdb62d9cc3299b1ab43a110cd12"
+      "bytes": 155335,
+      "sha256": "2546e113ecd82207f3745e0ec3144648f6b2788f6297dd096c90c06ceaa3d84f"
     },
     {
       "id": "power-nuclear-phwr",
@@ -2489,8 +2577,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-phwr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 156384,
-      "sha256": "f212c8cc6a6292ca5f0f5d192640db09064b951e53862fa570b879eb39435665"
+      "bytes": 157812,
+      "sha256": "5d389dfaaf4ddf6d3861766ece69e46eaf98fa58d2768b15ad2163bee9562945"
     },
     {
       "id": "power-nuclear-htgr",
@@ -2554,8 +2642,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-htgr/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 141236,
-      "sha256": "3f734be625900d9d4921fbf3d22e0ba2d58909969eb507d2528f03f9df0d175d"
+      "bytes": 144598,
+      "sha256": "e318d47017dce610dc927e4df90ebe9cb2940e58eb20bf43c76efa1114a50722"
     },
     {
       "id": "power-nuclear-sodium-fast",
@@ -2623,8 +2711,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-sodium-fast/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 168813,
-      "sha256": "82234ccb5b112ad7260abf4e05005fd2416db3adaf7043c833054cc0606c9445"
+      "bytes": 169656,
+      "sha256": "e563fa79aadb30fbadb0d93edd247e71627ead7d20758053c616f8ad1e759cc7"
     },
     {
       "id": "power-nuclear-molten-salt",
@@ -2692,8 +2780,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-molten-salt/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 166255,
-      "sha256": "05071c12a208756636c7d22973fa7c9172821f27d3875f241c213902a6b631cd"
+      "bytes": 166434,
+      "sha256": "418abf4776bcc04a873f2f17086000aecb49d6804695e77f9c98243527997c49"
     },
     {
       "id": "power-nuclear-bwr",
@@ -2757,8 +2845,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-bwr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 138922,
-      "sha256": "47a9e5a5c82cf0555860afd6d5106c7430fa99997ad4346706827de08ab93e42"
+      "bytes": 140518,
+      "sha256": "55c786b7890402e914faa1c286d5830d7722a1372e498eabc07862f59ad09a12"
     },
     {
       "id": "power-nuclear-lw-smr",
@@ -2832,8 +2920,8 @@
       "path": "img/thumbnails/power-utilities/power-nuclear-lw-smr/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 172006,
-      "sha256": "cc8f6e23be857cbf034fd6803fa21291dd942534f2f7f50f5e2c9b2054106b71"
+      "bytes": 173694,
+      "sha256": "bc452a6164a78c20f00ec781e51e7b7bebf48cd79ba4ef2c36b1a71388c32880"
     },
     {
       "id": "power-ng-engine-chp",
@@ -2899,8 +2987,8 @@
       "path": "img/thumbnails/power-utilities/power-ng-engine-chp/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 147389,
-      "sha256": "b4a3c1c6c4ef0e7b8b41d0da847e3d8ce2baab6f11a89ac763152522fee60abc"
+      "bytes": 149414,
+      "sha256": "1c7ac4f23ef87f93453b197d3c4f7ccf541a8f0a83427bb141ff0e8af77e588f"
     },
     {
       "id": "power-diesel-standby",
@@ -2966,8 +3054,8 @@
       "path": "img/thumbnails/power-utilities/power-diesel-standby/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 145700,
-      "sha256": "43627d0b3e0618136ffd4355dba69895ccfbad3291ffc50fdd63d99a5dc1acd4"
+      "bytes": 144981,
+      "sha256": "ffdd7319242cd66aaf71aafadf659b0ad795573b52d38080a7105ad97a90b0e9"
     },
     {
       "id": "power-gasoline-portable",
@@ -3037,8 +3125,8 @@
       "path": "img/thumbnails/power-utilities/power-gasoline-portable/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 145975,
-      "sha256": "33fd7cd7aa401e1fe7afa75e0261907f402ad69be3fad346beb9d1355c014f50"
+      "bytes": 144946,
+      "sha256": "413af6d4c5236bad98260beb20f00341b8c78006921a1d5a9190976b148e0637"
     },
     {
       "id": "power-substation-distribution",
@@ -3104,8 +3192,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-distribution/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 143313,
-      "sha256": "7afadd1c19e36d56127719e413d23815b8061329383207f3dfbce251fc640544"
+      "bytes": 143118,
+      "sha256": "48cbf51b1eb035e7a26e71023ce51275736cdfe22916c623e28e6ecfb71092d6"
     },
     {
       "id": "power-substation-gsu",
@@ -3169,8 +3257,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-gsu/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 135656,
-      "sha256": "7accc580161cc8df0b6a261a1efc91b0a2ac42a65a40c556099cd089e6a02485"
+      "bytes": 134608,
+      "sha256": "d46082aebc08cb4f0257e47880ac067aaf8eaebb24d045fadce7518723884755"
     },
     {
       "id": "power-substation-gis",
@@ -3234,8 +3322,8 @@
       "path": "img/thumbnails/power-utilities/power-substation-gis/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 129877,
-      "sha256": "4606ee928e815b61191b6e0c1d57c6697c66d9119a771da1cdae197231347d25"
+      "bytes": 130742,
+      "sha256": "ff1850200f082483e90c82a22745605d6202485381370467a98e5e0690d7f62d"
     },
     {
       "id": "power-hvdc-interface",
@@ -3297,8 +3385,8 @@
       "path": "img/thumbnails/power-utilities/power-hvdc-interface/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 123196,
-      "sha256": "f28eede5586a63ece05a8c241b93fe8c6f116bd5f54fac8d0bc9b0511f222093"
+      "bytes": 122241,
+      "sha256": "65579fa3b559354c9c522f5b68572f3ed42a6913be94d60b000d709cc5353224"
     },
     {
       "id": "power-solar-pv",
@@ -3362,8 +3450,8 @@
       "path": "img/thumbnails/power-utilities/power-solar-pv/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 137007,
-      "sha256": "a529b5b3a1e1640d3afa0209e192e125ea43fcdddec336c414321fe0433e11d8"
+      "bytes": 138381,
+      "sha256": "e4354bb52b08ce83bd82b0e14ec84160505eb86e2d00c478acd03d4a49cb00d6"
     },
     {
       "id": "power-wind-collection",
@@ -3425,8 +3513,8 @@
       "path": "img/thumbnails/power-utilities/power-wind-collection/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 124463,
-      "sha256": "ec661f87dc5c833c3764a31b284e0c62d79907e6adfc8e34459bba8a8179b201"
+      "bytes": 124845,
+      "sha256": "2358fa2fccec12c3496eb6df23b3864a2585930914be76e986c8549b860d7f87"
     },
     {
       "id": "power-tidal-current",
@@ -3488,8 +3576,8 @@
       "path": "img/thumbnails/power-utilities/power-tidal-current/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 127910,
-      "sha256": "9043244043359561403b57272c5fe0ae376b99b2df7538e88b25c7d10914cc7c"
+      "bytes": 125460,
+      "sha256": "4351c9a2accaf0e4959f4df49d610d7bfc2aeae389b96388145c59ec5f4986ef"
     },
     {
       "id": "power-wave-point-absorber",
@@ -3551,8 +3639,8 @@
       "path": "img/thumbnails/power-utilities/power-wave-point-absorber/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 125972,
-      "sha256": "49eff634ed629ac1c7a74bfdd283085696d8fb00325f19f59245ee2b73a1c2e2"
+      "bytes": 125613,
+      "sha256": "19dbb0b177fd391bff737916969d9caa38dbcf4bbfa632c18d7cb279f31fe5a0"
     },
     {
       "id": "power-csp-tower",
@@ -3620,8 +3708,8 @@
       "path": "img/thumbnails/power-utilities/power-csp-tower/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 161957,
-      "sha256": "ed328c5f98ab8d4fed8d7f69ff3facd196b7ef4e6521981804e46253ccb5ecb1"
+      "bytes": 162321,
+      "sha256": "61d37e9465f00cce169de012e78cf58e3bef4945d215287a25723336c31bc78a"
     },
     {
       "id": "power-csp-trough",
@@ -3689,8 +3777,8 @@
       "path": "img/thumbnails/power-utilities/power-csp-trough/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 161731,
-      "sha256": "8fff7ae6f16ca03dc2a9f1f46ff6c438c57effa89b99371fe2e1bc8faa10778c"
+      "bytes": 164788,
+      "sha256": "0bc17b985a0ac71457cc325b07e0d9d91e7811be7a82cc9a00c839f3b248a5c4"
     },
     {
       "id": "power-fuel-cell",
@@ -3756,8 +3844,8 @@
       "path": "img/thumbnails/power-utilities/power-fuel-cell/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 143672,
-      "sha256": "89adaece45847132a6a29ca4de79b6ea2970e3f2025333b14fbafc50e788798c"
+      "bytes": 147552,
+      "sha256": "a29e5aad3f79c2039d80c429887321aac4cbae9d0864c8c2a8e7eb54c4e86317"
     },
     {
       "id": "power-geothermal-flash",
@@ -3819,8 +3907,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-flash/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 129232,
-      "sha256": "020403034429cea6d154fd51c87521dd303d6e7cfe15225e0f1acd98e67efd26"
+      "bytes": 131869,
+      "sha256": "301855779a0e565503d82e3ba3d233992cf96c1ab33946fe0e40b9d84fae8cab"
     },
     {
       "id": "power-geothermal-binary",
@@ -3882,8 +3970,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-binary/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 132712,
-      "sha256": "70707ec6bef750640f866caf4d2cefbae8708142c294741a3c694f8b1edba8eb"
+      "bytes": 131736,
+      "sha256": "c9ef3f5ae1a013bfe27dd29117718e5396563de5a278a6e204cecc25f86f79db"
     },
     {
       "id": "power-geothermal-dry-steam",
@@ -3945,8 +4033,8 @@
       "path": "img/thumbnails/power-utilities/power-geothermal-dry-steam/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 124055,
-      "sha256": "ffd7addcb73c2dd520d3c556b50867a25effd9f5eee4cbbed82cf195c2814c79"
+      "bytes": 125069,
+      "sha256": "ab79732e2ac430747647c72f7a5fb0bbaf25fedd1f68a4b5b7c934e36fc9e2e1"
     },
     {
       "id": "power-battery-storage",
@@ -4010,8 +4098,8 @@
       "path": "img/thumbnails/power-utilities/power-battery-storage/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 135930,
-      "sha256": "694d371e27887623e4852e53fd42a367887970fb46da1d79d7fcc71f1900f10c"
+      "bytes": 136698,
+      "sha256": "d8dde73d94e9e93cb663729bcbdd275c3293de0694e2621299d26210db75d00f"
     },
     {
       "id": "power-hybrid-microgrid",
@@ -4085,8 +4173,8 @@
       "path": "img/thumbnails/power-utilities/power-hybrid-microgrid/preview.jpg",
       "width": 1398,
       "height": 1173,
-      "bytes": 156559,
-      "sha256": "a27bef0ec02a943997f922477e2d991bf2d9d8daeb57de1beb3297c81a5f33b4"
+      "bytes": 158224,
+      "sha256": "2b10e03ac9485ba481054a02f938e0e08f2b73e1a870b98de4b9336105e94178"
     },
     {
       "id": "aquaponics-media-bed",
@@ -4152,8 +4240,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/aquaponics-media-bed/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 151932,
-      "sha256": "4dbc2f51a2476a8d0f63a698f0adf590e5e3fb302b154c8f55b15e7f917c255d"
+      "bytes": 151927,
+      "sha256": "771c3e2db5cf9dd30e988797da49565faa2d1da22bfca55044518335d718f3ef"
     },
     {
       "id": "aquaponics-dwc",
@@ -4225,8 +4313,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/aquaponics-dwc/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 156810,
-      "sha256": "e702a8bca45656a76079e8c84d80d65147b38a5cb7b1d381449bd2076804d5c5"
+      "bytes": 156642,
+      "sha256": "40491e5dbc45e75ade081ec2b5aae35088be9bc9596ef3512dac626c49a5b28f"
     },
     {
       "id": "hydroponics-nft",
@@ -4298,8 +4386,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-nft/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 156737,
-      "sha256": "f562bda593540e23268650cdfc3caa8b419567c3907b21e8fee94e8d1a4ab116"
+      "bytes": 156763,
+      "sha256": "ef44cf0dc2de1fd92a9518506b0be3a31881c55d6fbbf9ecca4f1cbcbfa22b60"
     },
     {
       "id": "hydroponics-ebb-flow",
@@ -4369,8 +4457,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/hydroponics-ebb-flow/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 147086,
-      "sha256": "b37e7a8360bddec48db3a4c4ac631c5229b22839da56f602f6b4d9734983c997"
+      "bytes": 149343,
+      "sha256": "40266e13461f5bf2c97fb347b8937951f2c994639632d37526678290714cd854"
     },
     {
       "id": "greenhouse-drip",
@@ -4442,8 +4530,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/greenhouse-drip/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 160207,
-      "sha256": "49aa53c6baf307d9f5ac0c1ba4a8330f57dcdceb94b3f7ce21c63f124a2594c7"
+      "bytes": 162269,
+      "sha256": "f0bec428f92202d3aa774a6179e686943393f0724e340306e6f1327fce691436"
     },
     {
       "id": "indoor-aeroponics",
@@ -4513,8 +4601,8 @@
       "path": "img/thumbnails/agriculture-aquaculture/indoor-aeroponics/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 155600,
-      "sha256": "0ceae9f8f4a6888e138d344c0d2da1888619fc95d286585d01f260b0ee678e39"
+      "bytes": 157178,
+      "sha256": "7074556611ede181f9d86202bd03a2e9d472538075dcd6585e6b3b75da19912a"
     },
     {
       "id": "electric-batch-oven",
@@ -4576,16 +4664,16 @@
       "path": "img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg",
       "width": 1398,
       "height": 1196,
-      "bytes": 121976,
-      "sha256": "cc35b8b85f96d5318c59fc3e489c6ecc8f356b344d80e198423e8b261b6aa73d"
+      "bytes": 122191,
+      "sha256": "d45474b6bf0b73178dc05b2654e38399c498ba35baafbd5ccdd84f933d32d0a9"
     }
   ],
   "contact_sheet": {
     "path": "img/thumbnails/contact-sheet.jpg",
     "width": 2000,
     "height": 7389,
-    "bytes": 1791828,
-    "sha256": "4cece6439e64fd0c066d1a2b9f27088e760439f4cea10d5d20e815c45a40c5d8"
+    "bytes": 1795484,
+    "sha256": "94a54c1ea5a3686aff56558b9f76aa8c50ed812f5e5a730ebd5549092795484a"
   },
   "capture_implementation_sha256": "6be498cb860d8db344613576ad3934e3cafd137268f52a549d7b20cf6d77dc42"
 }

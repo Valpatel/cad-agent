@@ -9,7 +9,7 @@
     "examples/viewer/index.html": "53eb433fc87ec199f0a821e62002304ce42281d0f5574f29a1738749c0ce7139",
     "examples/viewer/main.mjs": "dca1fb05df77e8d02bf54da5b40425ff5897e2c2f6ff9cc098925a8ea2e2df0d",
     "examples/viewer/styles.css": "590e89e3379b29c97235041735f26ee2dd186b9175a88d3674590a0a1e8c5620",
-    "examples/viewer/system.json": "4598b33d313c1ff2cb63529c1a6d9cf0f3a3807089ff8f2941f80b6305bde8ec",
+    "examples/viewer/system.json": "ad4f4aac179c36ca1970624ab3a9d95f9be3bc6109e5e1647ac0208d2389f220",
     "examples/viewer/utility-adapter.mjs": "6117cc6ef5e4a04656e6b8f49159716a9050b85dbd7fedc8c779819897d29e68",
     "examples/viewer/utility-model.mjs": "5bc83e939a77c6ccf0b505582fe15bdd163b3c33f1151bcb77291069c24efbb6",
     "src/catalog/definitions/agriculture.mjs": "499d3bbf17783f3e6994e9cb9f5ce33a7995c336e948bb1e51131b3e1b7bb1c3",
@@ -19,7 +19,7 @@
     "src/catalog/registry.mjs": "41ade040fa118a07758a757ca903885377393ebb5053cdf7d63a05bbbd1c64e9",
     "src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
-    "src/contracts/system-definition.mjs": "99f247b1cca2c7a207197c28de0b7a6a8f92dae9724c842338888965f1d1599e",
+    "src/contracts/system-definition.mjs": "45a5ddd87ec69952c09e0522774acdd20c86ea7d73f852a21807bde18f4232cb",
     "src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
     "src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
     "src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
@@ -44,8 +44,8 @@
     "src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
     "src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
-    "src/viewer/viewer.css": "bd1504dbfe3e9e021e228173333beddf585a490320e1035a116a08a0d485b4fe",
-    "src/viewer/viewer.mjs": "4398492353972ca1814d9bd932d10d4638888cca9fb64ad9f15bd3ed1053fec9",
+    "src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
+    "src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
     "src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
     "src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085"
   },
@@ -667,7 +667,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14698,
-      "sha256": "108f416f6cfed7889d7b9057d9a2e59c3de9eb7de3f27995efbc924cfad996a1"
+      "sha256": "1f211bad0b9023c238a41261d35c8ae8548e0c78f578348c8931fda3c7f88880"
     },
     {
       "type": "pressure-transmitter",
@@ -686,7 +686,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 16273,
-      "sha256": "06bccc7651bee149c77ed1c3636db7a04b6c52178eccb8182ed697b6c9a94db3"
+      "sha256": "a9397a7a0390b0dcfd3c11d788b60780b0221bf4530167a2bb4782e63fc7077b"
     },
     {
       "type": "flow-meter",
@@ -2118,8 +2118,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17388,
-      "sha256": "1fe602c03a9ad5a2d565a5dd569b8a5438ab78039a3060c4cdc51549dbef9e95"
+      "bytes": 17395,
+      "sha256": "89c1fa432ecc1f1e56d246a0709d76513869f4b95a51834bf3cb9ad0d64fb163"
     },
     {
       "type": "hydro-turbine",
@@ -2181,8 +2181,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16835,
-      "sha256": "2f5f60a25bcff82b3c91fe68f4cbaf2202567997c439918405265b96f14af6b2"
+      "bytes": 16824,
+      "sha256": "81aab6a3d33139f0a34e1aa6ddebfa304a22841b07422df827688ce3543dba81"
     },
     {
       "type": "heliostat",
@@ -2201,8 +2201,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17050,
-      "sha256": "ce81511f5cda859357f5039494675cb20ba3849fe57273a26c26ccbd7a0ad6e4"
+      "bytes": 17051,
+      "sha256": "b2eefb3979bc911e12ca5c4cbdca797616f4b729d30a210f8581c5ff7429dffe"
     },
     {
       "type": "solar-receiver",
@@ -2328,7 +2328,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 17931,
-      "sha256": "5c23733734eb3a6f355f7da9d237ce28a5a0a4bbc401bb30df62da495b11ac1f"
+      "sha256": "06bd2ead9479be939c8f20c7968da3c3b19414c9a24ea491d5978517c14188c3"
     },
     {
       "type": "disconnect-switch",
@@ -2367,7 +2367,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14012,
-      "sha256": "dc4bdbd8f78e2ac31b4eaf9147e4176d2d69a6b206ec6c7c3e3fa1fd633b09b9"
+      "sha256": "a83fb44baa8981fcf585c6b63608dbef73a759afa4dccc1095c62b53fb628832"
     },
     {
       "type": "current-transformer",
@@ -2467,8 +2467,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 19386,
-      "sha256": "8875a981f471015d8b4af2737743516a1e0c501f44a62e360ac8507d12d0ac1b"
+      "bytes": 19385,
+      "sha256": "fa0d79cc999683f59231bbedeae2b7199f6e12de6d77404b8dbb06feb2c7e1cc"
     },
     {
       "type": "protection-relay",
@@ -2489,7 +2489,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 17919,
-      "sha256": "56227cf4d8bbc2de5d17ef70c67e51391c94c89a6618c239344a696a76a3d765"
+      "sha256": "3fe8f543793a08986ab9835410fae1ba4732fd072e072f04b9e6749443bba822"
     },
     {
       "type": "switchgear-panel",
@@ -2509,8 +2509,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18236,
-      "sha256": "d5d2c8734b1e54305955dbb30a89aa662351633072e2bacf77d987deab7d3b2c"
+      "bytes": 18235,
+      "sha256": "6112b4a37c63181078df1fbf7e7e4e11c4546b6d0b58d2088f8c94764b576ee6"
     },
     {
       "type": "gis-bay",
@@ -2572,8 +2572,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 19086,
-      "sha256": "e670e2438d8e7ef4748e87e589ee83a1c3f6d0ba5bb17d999d7f3e822a8b1827"
+      "bytes": 19085,
+      "sha256": "d169d4408b982f0b572e785ff918975bdd6342c3df79196ffd8fca1c3a14588f"
     },
     {
       "type": "power-rectifier",
@@ -2593,7 +2593,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15822,
-      "sha256": "831d407206d6c3fc18242706a0707e46727a1eafd1ee39d1825ef523a73663f5"
+      "sha256": "cd6d3730508da55f5386ef5c0c4d4c96597649fd9c074caebb68eeae2d0351a8"
     },
     {
       "type": "fish-tank",
@@ -2696,8 +2696,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 19308,
-      "sha256": "9d8b8964283184dbe9b99d42339c18dd19a1158cab7b4e800edb253a57655f03"
+      "bytes": 19309,
+      "sha256": "6a030ee65c88d97d3d681ad5534b40ad14e0a9ae918d3d5f0006253e55c86f4d"
     },
     {
       "type": "ebb-flow-table",
@@ -2717,8 +2717,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 20008,
-      "sha256": "a192ba6da5e287178da4f25857143a5864e66165f5088673eaa7cc8f609375da"
+      "bytes": 20007,
+      "sha256": "6662c628f556f7d97a78706fb9dec18b749ff156b4cb5e1d5ccf2fcf8ae12383"
     },
     {
       "type": "drip-zone",
@@ -3739,8 +3739,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17048,
-      "sha256": "dc502284de251b9181b5847caf62a341dad0dd27dd0bdd339e438e91555ec60a"
+      "bytes": 17054,
+      "sha256": "2a02384a248935c213a27045456929a0e01191cff6e5f0e047f821b6b00ba3f7"
     },
     {
       "type": "gate-valve",
@@ -3781,8 +3781,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17835,
-      "sha256": "499d33b024908a4bbc9017b0d50beeef507c5f19c0388f100940836fb3e98687"
+      "bytes": 17816,
+      "sha256": "0612cd9903a367a19096bf65b0df178a9e426b780ff7834102657cfcf93c3b3e"
     },
     {
       "type": "gate-valve",
@@ -3865,8 +3865,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17049,
-      "sha256": "7288320d77845295aaf29e5a2a2aa6fd710c29d23de6dd8de5f2e32a4345144b"
+      "bytes": 17050,
+      "sha256": "78d2e6576149dcd51871b8b47ff96b9fb7d83ebcf2f21ed001ce3971f590ccaf"
     },
     {
       "type": "control-valve",
@@ -3928,8 +3928,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16760,
-      "sha256": "b92692773b7f82f0c8eef3dbbb814b60601bdade8f0764311fc82f28160b5ce3"
+      "bytes": 16756,
+      "sha256": "96194281aadbaf6c9fdbacabde4659b605e42ec4571abae3ea8e1b24aaaea101"
     },
     {
       "type": "control-valve",
@@ -3970,8 +3970,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18479,
-      "sha256": "a519c68f7f1785fc32464d75a8e472312a6380a92795ef9d9698b4947d141e10"
+      "bytes": 18487,
+      "sha256": "f5bb3d56d5d46d36e81236636e2653659b6677ab33b0f20fd35cb15fadad1029"
     },
     {
       "type": "control-valve",
@@ -3991,8 +3991,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17163,
-      "sha256": "29eff7405c8549fc6fad5bddafe177d0861a6a6fdd3284cbde57e06243611ddd"
+      "bytes": 17156,
+      "sha256": "8db989f74f69787c110eba03a291a6bfe09e4158b42aabe949de48abd44e7d72"
     },
     {
       "type": "check-valve",
@@ -4032,7 +4032,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15266,
-      "sha256": "bba59b8451d459185f991f0e279a8149a1f9cf2fb954212b2580f8029fedb6e2"
+      "sha256": "d283f855ce9bc741bd98f61c65db79d4dd7a3b94c2d98b3bd7d5d6f2a55030de"
     },
     {
       "type": "check-valve",
@@ -4072,7 +4072,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15519,
-      "sha256": "388b0a966baf5849baaea501577f68ad8af79a46786ce5b0f8f86e80ec5851a4"
+      "sha256": "35fb86b1517881bfc68cb3f71dcf1105719622e14781e0f5568217d0ce5569a2"
     },
     {
       "type": "check-valve",
@@ -4111,8 +4111,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16383,
-      "sha256": "fe3cd4aafbdcc59f44ca081eabcd4564680d79d2a30c5e9521ffb3da45cc5188"
+      "bytes": 16382,
+      "sha256": "848da9ca24c01a6e2b959c780fd6bd920431eeabedf9c056df7f5d860182404e"
     },
     {
       "type": "check-valve",
@@ -4131,8 +4131,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16707,
-      "sha256": "c58eae0971bde502c93a3040fa49dc84e2ee2a64aac5ba002468d8d8cf2d8add"
+      "bytes": 16708,
+      "sha256": "11a188320f8969274ec2f9ff44d11778771f1c407aa57b55a5939688ed3ba6ad"
     },
     {
       "type": "check-valve",
@@ -4151,8 +4151,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15390,
-      "sha256": "ea60544076b093ff9cbb46b16b1df7917c22d1e40d7c3aa7280a447288f54577"
+      "bytes": 15389,
+      "sha256": "89435f239e74e0b165a3c8becdb3e8506e627b996ec53420c6eae5799c1ff0d9"
     },
     {
       "type": "relief-valve",
@@ -4172,7 +4172,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15314,
-      "sha256": "fd6f8cf4cea8adef571c1a0655ce0394146746987ce4a26f21b15d8cddd0ed31"
+      "sha256": "efd219e5c663c7187ed191f9cf78218e2ae5d1f10713ea2ffd96c0462b40562c"
     },
     {
       "type": "relief-valve",
@@ -4192,7 +4192,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 16133,
-      "sha256": "db83ba0e5d7988e5361ca3c22702b31a1c26d06659cbe29079a76df34c7c7238"
+      "sha256": "dcf6239203faa3d9f2965afda63b338e4ef707017c0705fef4c3d9f92859b289"
     },
     {
       "type": "relief-valve",
@@ -4212,7 +4212,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15961,
-      "sha256": "4b98a0d8ffb11c2325c370985f859f422268eeb2bf6adbe0e12aff7389f98db1"
+      "sha256": "0693ace982b1650b9d6e2231376c516e9b2409aa7fd42de1764d5f3af072352c"
     },
     {
       "type": "relief-valve",
@@ -4251,8 +4251,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15841,
-      "sha256": "a5cf75b61f03a8b12658e143a770024e3e8a1c3f23a9cd9a97a1da48a6286ec5"
+      "bytes": 15842,
+      "sha256": "f8ad31b9f1d48b5ec9d988ae2ae6d9fb4f326c0800cce47c027f57fca669d747"
     },
     {
       "type": "relief-valve",
@@ -4271,8 +4271,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17157,
-      "sha256": "19b93166666a9daafc1ec7eb8b9e1d8643b7f24c004e482e1925e624c7e999f3"
+      "bytes": 17156,
+      "sha256": "a865cea793882963e234bf9af3050e2abca4ca12c26dcaed315f0c172d8be066"
     },
     {
       "type": "relief-valve",
@@ -4292,7 +4292,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 17526,
-      "sha256": "708095890327d71a5896cd57c236c4a422d54d7752478c0da25ba8cf48b1d18e"
+      "sha256": "1fbbede69699af15ad3cb4fa15d9cfc1d264133dd627ec01d83528e266e98134"
     },
     {
       "type": "relief-valve",
@@ -4311,8 +4311,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16248,
-      "sha256": "cec1702357dc60a8788faa6c05f458f84a6fb2576973b120673afb51efac6cb1"
+      "bytes": 16245,
+      "sha256": "6bc43a9b891079846fbfb48e63631a0a3e3fb64a0f6a65ef914ef01a868c9c93"
     },
     {
       "type": "butterfly-valve",
@@ -4374,8 +4374,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17329,
-      "sha256": "b7e9a1aa349f6fc442adddbe1d494c5ad32ff9ad22d8cad7390ced7ee111f89e"
+      "bytes": 17328,
+      "sha256": "67bfc3e6764bf967329344273ad8a70349562fd039fdd826982b28a693bdd2a6"
     },
     {
       "type": "butterfly-valve",
@@ -4416,8 +4416,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17294,
-      "sha256": "fc58fb2aa66ffc82629eb32942313e69cf52441c50be128c79941c1426d58831"
+      "bytes": 17293,
+      "sha256": "376453d1b03d8c48594730229665a12f526da14cbe68d094d3a30ea34f32c70f"
     },
     {
       "type": "butterfly-valve",
@@ -4458,8 +4458,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18941,
-      "sha256": "fd63e2e0f79e72dd0d510531f8f99a5bfc290a6cd13b4bcf8d6e466514d0b16f"
+      "bytes": 18939,
+      "sha256": "c58c85d1f047ea050ec5787c570be50537d4fbf68c46376c5f1b78968500db44"
     },
     {
       "type": "butterfly-valve",
@@ -4559,8 +4559,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15072,
-      "sha256": "a8a484893f69c64b9f0808f72cf54d63b34102cc00a09c70bca8a17308d1f343"
+      "bytes": 15091,
+      "sha256": "206e7f8441602017f615eacd8e021efd4b5cedb2a68cf0df65d03bf105fb5a5a"
     },
     {
       "type": "pipe",
@@ -4580,7 +4580,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14592,
-      "sha256": "c5f80b4bb1dd4b91a3a007fe1e2b7cdbad0c1239af12194063f27de25f496981"
+      "sha256": "ce79024c94ba8f5efd0745be73302b324b648d048c19ad6936f69b6ccea7bd66"
     },
     {
       "type": "pipe",
@@ -4619,8 +4619,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16262,
-      "sha256": "a7e9cc621f3f2811bc78c3de9da158ba717aeaf1e0d1de48721a22d9a9a3fd95"
+      "bytes": 16261,
+      "sha256": "be6af4d6026d874d694edf8903084e53484a7da69340324d7262b9707149fc4b"
     },
     {
       "type": "pipe",
@@ -4640,7 +4640,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14918,
-      "sha256": "ab94c73fb7ce0a8709f7158ac10c65285a2851aa04af20c9ec01ef97e1a2e609"
+      "sha256": "72c53f75289c00f921ed53c7dbee27d56eaf8d59ebd605809a21f9f392ae75ad"
     },
     {
       "type": "separator",
@@ -4682,8 +4682,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 19567,
-      "sha256": "b10a6486fb591390d1ecd7113d3030c027f4fb66d80d3a465e8183cbe1f0f022"
+      "bytes": 19575,
+      "sha256": "202c879b54a9e3d93da26499870882233d22cc0866dc7dd91d2b58977cb58dff"
     },
     {
       "type": "wellhead",
@@ -5175,8 +5175,8 @@
     "width": 1520,
     "height": 6589,
     "format": "jpeg",
-    "bytes": 1111124,
-    "sha256": "0b1a49ee3186e0dfe08fa82f6b2b9a7d5ae3acaabf0c3765fbf2d241fc9ed6d7"
+    "bytes": 1111278,
+    "sha256": "f12d324ba5b3f8a61408e1d2ea13c94081ff1dc5d03b543aa2534df12b5d8363"
   },
   "viewer": {
     "id": "generic-viewer",
@@ -5231,7 +5231,7 @@
     "width": 1152,
     "height": 799,
     "format": "jpeg",
-    "bytes": 70970,
-    "sha256": "b58dd04ad485c26b526cbf435eb4c2309c3ab4a85e022bb665400f5cae471a86"
+    "bytes": 71622,
+    "sha256": "5c29324792128ede3d1de5e68306017192f1dbd7066e3c280e7e98a354d5fa42"
   }
 }

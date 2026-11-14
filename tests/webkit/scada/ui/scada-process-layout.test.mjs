@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {projectProcessLayout} from '../../../../software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs';
 import {normalizeViewerDefinition} from '../../../../software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs';
 const scenario = id => normalizeViewerDefinition(JSON.parse(fs.readFileSync(new URL(`../../../../software/cadagent/webkit/scada/sim/scenarios/${id}/system.json`,import.meta.url)))).views[0];
+const originalChain = () => normalizeViewerDefinition(JSON.parse(fs.readFileSync(new URL('../../../fixtures/scada/default-model-inputs/winery.system.json',import.meta.url)))).views[0];
 const viewport = {width:3320,height:950,fitMaxZoom:1.5};
 const point = (node,id) => {const port=node.ports.find(item=>item.id===id);return{x:node.x+(port.side==='right'?node.w:0),y:node.y+node.h*(port.offset??.5)};};
 function checkRoutes(view){
@@ -20,9 +21,12 @@ function checkRoutes(view){
     }
   }
 }
-test('wide winery and wastewater projections preserve model identities, ports and readable card sizes',()=>{
-  for(const [id,columns,rows] of [['winery',5,2],['wastewater-digester',6,1]]){
-    const original=scenario(id),before=structuredClone(original),next=projectProcessLayout(original,viewport);
+test('long and short process chains preserve model identities, ports and readable card sizes',()=>{
+  const chain=originalChain(),six=chain.nodes.slice(0,6),ids=new Set(six.map(node=>node.id));
+  const edges=chain.edges.filter(edge=>ids.has(edge.from.component)&&ids.has(edge.to.component)),edgeIds=new Set(edges.map(edge=>edge.id));
+  const short={...chain,nodes:six,edges,placements:chain.placements.filter(item=>ids.has(item.component)),routes:chain.routes.filter(item=>edgeIds.has(item.connection))};
+  for(const [original,columns,rows] of [[chain,5,2],[short,6,1]]){
+    const before=structuredClone(original),next=projectProcessLayout(original,viewport);
     assert.deepEqual(original,before);assert.deepEqual(next,projectProcessLayout(original,viewport));
     assert.deepEqual(next.layoutProjection,{kind:'process-chain',columns,rows});
     assert.deepEqual(next.nodes.map(n=>n.id).sort(),original.nodes.map(n=>n.id).sort());
@@ -30,13 +34,13 @@ test('wide winery and wastewater projections preserve model identities, ports an
     for(const node of next.nodes){const source=original.nodes.find(n=>n.id===node.id);assert.equal(node.w,source.w);assert.equal(node.h,source.h);assert.deepEqual(node.ports,source.ports);}
     const scale=Math.min(1.5,(viewport.width-24)/next.width,(viewport.height-76)/next.height);
     const span=Math.max(...next.nodes.map(n=>n.x+n.w))-Math.min(...next.nodes.map(n=>n.x));
-    assert.ok(scale>1);assert.ok(span*scale/viewport.width>.6,`${id}: insufficient real equipment span`);
+    assert.ok(scale>1);assert.ok(span*scale/viewport.width>.6,'Insufficient real equipment span');
     checkRoutes(next);
   }
 });
 test('authored complex, annotated and unsupported port diagrams remain untouched',()=>{
-  const view=scenario('winery');
-  for(const invalid of [scenario('hydroponics-ebb-flow'),{...view,labels:[{x:0,y:0,text:'Keep here'}]},
+  const view=originalChain();
+  for(const invalid of [scenario('winery'),scenario('wastewater-digester'),scenario('brewery'),scenario('hydroponics-ebb-flow'),{...view,labels:[{x:0,y:0,text:'Keep here'}]},
     {...view,edges:[...view.edges,{...view.edges[0],id:'branch'}]},
     {...view,nodes:view.nodes.map((node,i)=>i?node:{...node,ports:node.ports.map(p=>p.id==='outlet'?{...p,side:'bottom'}:p)})},
     {...view,edges:view.edges.map((edge,i)=>i?edge:{...edge,to:{...edge.to,component:edge.from.component}})}]){

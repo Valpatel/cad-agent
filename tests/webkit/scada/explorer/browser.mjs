@@ -9,6 +9,7 @@ import {PlaceholderSystemModel} from '../../../../software/cadagent/webkit/scada
 import {serveWebkit} from '../../webkit-server.mjs';
 
 const root=fileURLToPath(new URL('../../../../',import.meta.url));
+const rootPathForScenario=id=>path.join(root,'software/cadagent/webkit/scada/sim/scenarios',id);
 const output=path.resolve(process.env.TEST_OUTPUT??'/tmp/cad-agent-scada-explorer');
 const browserName=process.env.PLAYWRIGHT_BROWSER??'chromium';
 const engine=browserName==='webkit'?webkit:chromium;
@@ -53,17 +54,39 @@ const session=async()=>{
   await open('session');const promise=page.waitForEvent('download');await page.locator('[data-action="export"]').click();
   const download=await promise;const payload=JSON.parse(await readFile(await download.path(),'utf8'));await close();return payload;
 };
+function buttonContrast(element){
+  const luminance=value=>value.match(/[\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
+  const background=getComputedStyle(element).backgroundColor,b=luminance(background);
+  return [element,...element.querySelectorAll('span')].map(node=>{const color=getComputedStyle(node).color,f=luminance(color);return{text:node.textContent.trim(),color,background,ratio:(Math.max(f,b)+.05)/(Math.min(f,b)+.05)};});
+}
 
 try{
   browser=await engine.launch(launch);receipt.version=browser.version();
   context=await browser.newContext({viewport:{width:1440,height:1100},colorScheme:'light',acceptDownloads:true});page=await context.newPage();
   page.on('pageerror',error=>errors.push(error.message));
   page.on('response',response=>{if(response.status()>=400)responses.push(`${response.status()} ${response.url()}`);});
+  await check('reusable diagram actions operate the declared equipment through pointer and keyboard without opening a modal',async()=>{
+    await page.goto(`${baseURL}/kit/scada/ui/examples/viewer/index.html`);
+    const root=page.locator('#utility-viewer'),action=root.locator('[data-scada-diagram-control="valveSwitch"]');
+    await expect(action).toHaveText('Close');await action.click();await expect(action).toHaveText('Open');
+    assert.equal(await root.locator('dialog[open]').count(),0);
+    await expect(root.locator('[data-scada-connection="deliveredWater"]')).toHaveAttribute('data-active','false');
+    await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');
+    await page.keyboard.press('Space');await expect(action).toHaveText('Open');
+    const before=await root.locator('[data-scada-canvas]').getAttribute('style'),box=await action.boundingBox();
+    await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+    await page.mouse.move(box.x+box.width/2+60,box.y+box.height/2+35,{steps:8});await page.mouse.up();
+    await expect(action).toHaveText('Open');assert.notEqual(await root.locator('[data-scada-canvas]').getAttribute('style'),before);
+    assert.equal(await page.locator('#utility-monitor [data-scada-diagram-control]').count(),0);
+    await root.locator('[data-scada-view-choice="power"]').click();await expect(action).toHaveText('Open');
+    await root.locator('[data-scada-camera-fit]').click();await shot('direct-equipment-actions');
+  });
   await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
   await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');
-  await check('target-owned wastewater control room opens with three views and sound off',async()=>{
+  await check('target-owned wastewater control room opens with a whole-plant overview and sound off',async()=>{
     await expect(page.locator('[data-scenario-title]')).toContainText('Wastewater');
-    await expect(page.locator('#lab-viewer [data-scada-view-choice]')).toHaveCount(3);
+    await expect(page.locator('#lab-viewer [data-scada-view-choice]')).toHaveCount(4);
+    await expect(page.locator('#lab-viewer [data-scada-view-choice="overview"]')).toHaveAttribute('aria-current','page');
     await expect(page.locator('[data-sound-label]')).toHaveText('Sound off');
     await paused();await noHorizontalOverflow();await viewportContract('#lab-viewer [data-scada-scroll]');await shot('treatment');
   });
@@ -72,8 +95,11 @@ try{
     await page.evaluate(()=>{window.themeEvents=[];document.addEventListener('cad-themechange',event=>window.themeEvents.push(event.detail.theme));});
     const mode=()=>page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme);
     assert.equal(await mode(),'light');
+    const equipmentScheme=()=>page.locator('#lab-viewer .scada-viewer-toolbar select').evaluate(element=>getComputedStyle(element).colorScheme);
+    assert.equal(await equipmentScheme(),'light');
     assert.match(await page.locator('body').evaluate(element=>getComputedStyle(element).fontFamily),/Inter/);
     await page.emulateMedia({colorScheme:'dark'});await expect.poll(mode).toBe('dark');
+    assert.equal(await equipmentScheme(),'dark','Native equipment menus must inherit the application palette');
     await expect.poll(()=>page.evaluate(()=>window.themeEvents)).toEqual(['dark']);
     await page.locator('.theme-toggle').click();await expect.poll(mode).toBe('light');
     assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),'light');
@@ -101,21 +127,14 @@ try{
       await page.emulateMedia({colorScheme});
       await page.locator('#lab-viewer [data-scada-inspect]').click();
       const dialog=page.locator('#industry-viewer-inspector-dialog');await expect(dialog).toBeVisible();
+      assert.equal(await dialog.evaluate(element=>getComputedStyle(element).colorScheme),colorScheme,'Inspector native controls must inherit the application palette');
       const buttons=dialog.locator('.scada-viewer-button:not(:disabled)');
       assert.ok(await buttons.count()>=6);
       await expect(dialog.locator('.scada-viewer-toggle[aria-pressed=true] span')).toContainText('On / open');
       assert.ok(await dialog.locator('.scada-viewer-toggle[aria-pressed=false] span').count()>0);
       for(const button of await buttons.all())for(const state of ['default','hover']){
         if(state==='hover')await button.hover();else await page.mouse.move(0,0);
-        const result=await button.evaluate(element=>{
-          const rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number);
-          const luminance=value=>rgb(value).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
-          const background=getComputedStyle(element).backgroundColor,b=luminance(background);
-          return [element,...element.querySelectorAll('span')].map(node=>{
-            const color=getComputedStyle(node).color,f=luminance(color);
-            return {text:node.textContent.trim(),color,background,ratio:(Math.max(f,b)+.05)/(Math.min(f,b)+.05)};
-          });
-        });
+        const result=await button.evaluate(buttonContrast);
         for(const item of result)assert.ok(item.ratio>=4.5,`${colorScheme} ${state}: ${JSON.stringify(item)}`);
         receipt.inspectorContrast.push({colorScheme,state,readings:result});
       }
@@ -123,8 +142,52 @@ try{
     }
     await page.emulateMedia({colorScheme:'light'});assert.deepEqual(await session(),before);
   });
+  await check('instrumented examples operate branch valves directly and share the result across focused views',async()=>{
+    receipt.directControls=[];
+    for(const [scenario,valve] of [['wastewater-digester','inletValve'],['winery','mustValve'],['brewery','mashValve']])for(const colorScheme of ['light','dark']){
+      await page.setViewportSize({width:3440,height:1440});await page.emulateMedia({colorScheme});
+      await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=${scenario}`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+      const root=page.locator('#lab-viewer'),viewport=root.locator('[data-scada-scroll]'),action=root.locator(`[data-scada-diagram-control="${valve}-open-control"]`);
+      await expect(action).toHaveText('Close');
+      for(const button of await root.locator('[data-scada-diagram-control]').all()){
+        const ratios=await button.evaluate(buttonContrast);for(const result of ratios)assert.ok(result.ratio>=4.5,JSON.stringify({scenario,colorScheme,...result}));
+        receipt.directControls.push({scenario,colorScheme,ratios});
+      }
+      const camera=()=>viewport.evaluate(e=>[e.dataset.cameraX,e.dataset.cameraY,e.dataset.cameraZoom]);
+      const before=await camera(),time=await minutes();await action.click();await expect(action).toHaveText('Open');
+      assert.equal(await root.locator('dialog[open]').count(),0);assert.deepEqual(await camera(),before);assert.equal(await minutes(),time);
+      const saved=await session(),definition=JSON.parse(await readFile(path.join(rootPathForScenario(scenario),'system.json'),'utf8'));
+      const model=new PlaceholderSystemModel(definition,saved.model);model.importSnapshot(saved);
+      try{assert.equal(model.getSnapshot().controls[valve].open,false);assert.equal(model.getSnapshot().readings[valve].resourceOut,0);}finally{model.destroy();}
+      const detail=definition.views.slice(1).find(view=>view.placements.some(item=>item.component===valve));assert.ok(detail);
+      await root.locator(`[data-scada-view-choice="${detail.id}"]`).click();await expect(action).toHaveText('Open');
+      await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');assert.equal(await minutes(),time);
+      await shot(`${scenario}-${colorScheme}-direct-controls`);
+    }
+    await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+  });
+  await check('view changes preserve painted SVG fills while a fresh equivalent SVG paints identically',async()=>{
+    await page.setViewportSize({width:1920,height:1080});
+    await page.emulateMedia({colorScheme:'dark',reducedMotion:'reduce'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=winery`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+    for(const view of ['fermentation','process']){
+      await page.locator(`[data-scada-view-choice="${view}"]`).click();
+      await expect(page.locator(`[data-scada-view-choice="${view}"]`)).toHaveAttribute('aria-current','page');
+      const art=page.locator('#lab-viewer [data-scada-equipment="aging"] svg');
+      const before=await art.screenshot({animations:'disabled'});
+      // A detached clone has identical markup but forces the browser to resolve its SVG paint servers afresh.
+      await art.evaluate(element=>element.replaceWith(element.cloneNode(true)));
+      const fresh=await art.screenshot({animations:'disabled'});
+      await writeFile(path.join(output,`${browserName}-${view}-aging-painted.png`),before);
+      assert.deepEqual(before,fresh,`${view}: changing views must not lose gradient fills`);
+      await viewportContract('#lab-viewer [data-scada-scroll]');
+    }
+    await page.emulateMedia({reducedMotion:'no-preference'});
+  });
   await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
-    for(const scenario of ['winery','wastewater-digester'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
+    for(const scenario of ['winery','wastewater-digester','brewery','fortune-cookies'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
       await page.setViewportSize({width,height});await page.emulateMedia({colorScheme});
       await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=${scenario}`);
       await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
@@ -138,14 +201,18 @@ try{
       assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true);
       const zoom=Number(await viewport.getAttribute('data-camera-zoom'));assert.ok(zoom>0&&zoom<=1.5);
       if(width===3440){
-        assert.ok(zoom>1,'The explicit host fit policy must use extra room');
         const occupied=await viewport.locator('[data-scada-equipment]').evaluateAll(nodes=>{
           const rects=nodes.map(node=>node.getBoundingClientRect());
-          return {span:Math.max(...rects.map(r=>r.right))-Math.min(...rects.map(r=>r.left)),minimumWidth:Math.min(...rects.map(r=>r.width)),rows:new Set(rects.map(r=>Math.round(r.top))).size};
+          return {span:Math.max(...rects.map(r=>r.right))-Math.min(...rects.map(r=>r.left)),minimumWidth:Math.min(...rects.map(r=>r.width)),rows:new Set(rects.map(r=>Math.round(r.top))).size,labelSize:Math.min(...nodes.map(node=>parseFloat(getComputedStyle(node.querySelector('.scada-viewer-equipment-label')).fontSize)*Number(node.closest('[data-scada-scroll]').dataset.cameraZoom)))};
         });
-        assert.ok(occupied.span/bounds.width>(scenario==='winery'?.6:.75),`${scenario}: equipment leaves the wide canvas unused ${JSON.stringify(occupied)}`);
-        assert.ok(occupied.minimumWidth>290,'Fitted equipment must remain readable');
-        assert.equal(occupied.rows,scenario==='winery'?2:1);
+        assert.ok(occupied.span/bounds.width>.6,`${scenario}: equipment leaves the wide canvas unused ${JSON.stringify(occupied)}`);
+        if(scenario==='fortune-cookies'){
+          assert.ok(zoom>1,'The explicit host fit policy must enlarge simple chains');
+          assert.ok(occupied.minimumWidth>290,'Simple-chain equipment must use available space');assert.equal(occupied.rows,2);
+        }else{
+          assert.ok(occupied.minimumWidth>130,'Instruments must remain identifiable in the whole-plant overview');
+          assert.ok(occupied.labelSize>=14,`${scenario}: whole-plant labels are too small ${JSON.stringify(occupied)}`);
+        }
       }
       await noHorizontalOverflow();await shot(`${scenario}-${colorScheme}-${width}`);
       if(scenario==='winery'&&colorScheme==='light'&&width===3440){

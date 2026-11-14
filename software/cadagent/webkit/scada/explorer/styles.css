@@ -45,8 +45,6 @@ body{margin:0;background:var(--grid-bg),var(--cream)}
 #lab-viewer .scada-diagram-scroll{width:100%;height:clamp(240px,60dvh,760px);max-height:none;min-height:0;overflow:hidden;background-image:radial-gradient(circle,#2c4c5e6b .65px,transparent .8px),radial-gradient(ellipse at 45% 40%,#153344,#081523 70%);background-size:18px 18px,auto}
 #lab-viewer .scada-viewer-equipment{box-shadow:0 8px 18px #020d1670}
 #lab-viewer .scada-viewer-equipment:hover{border-color:#89ead7;background:linear-gradient(150deg,#194554,#123247)}
-#lab-viewer .scada-viewer-equipment-label{font-size:15px}
-#lab-viewer .scada-viewer-equipment-status{font-size:13px}
 .lab-footer{display:flex;justify-content:space-between;gap:16px;align-items:center;color:var(--muted);font-size:13px;padding:18px 2px 0}
 .lab-footer span{max-width:85ch}
 .lab-footer a{white-space:nowrap;font-size:13px}
@@ -296,7 +294,7 @@ body{margin:0;background:var(--grid-bg),var(--cream)}
 }
 
 /* Application chrome follows the shared theme; the process stage retains semantic art colors. */
-.industry-lab .scada-viewer{--scada-bg:var(--card);--scada-panel:var(--soft-2);--scada-border:var(--line-3);--scada-text:var(--ink);--scada-muted:var(--muted);--scada-accent:var(--accent);font-family:var(--font);color-scheme:normal}
+.industry-lab .scada-viewer{--scada-bg:var(--card);--scada-panel:var(--soft-2);--scada-border:var(--line-3);--scada-text:var(--ink);--scada-muted:var(--muted);--scada-accent:var(--accent);font-family:var(--font);color-scheme:inherit}
 
 .industry-lab .scada-viewer :is(.scada-viewer-tabs,.scada-viewer-toolbar,.scada-viewer-status) :is(button,select),
 .industry-lab .scada-toolbutton,.industry-lab .scada-viewer-button{background:var(--soft-2);color:var(--ink);border-color:var(--line-3)}
@@ -309,9 +307,9 @@ body{margin:0;background:var(--grid-bg),var(--cream)}
 
 .industry-lab .scada-viewer-status{color:var(--muted)}
 
-.industry-lab .scada-diagram-scroll{--scada-text:#e8f6ff;--scada-muted:#acc7d8;color:#e8f6ff;color-scheme:dark}
+.industry-lab .scada-diagram-scroll{--scada-panel:#102237;--scada-border:#345269;--scada-accent:#66ffca;--scada-text:#e8f6ff;--scada-muted:#acc7d8;color:#e8f6ff;color-scheme:dark}
 
-.industry-lab .scada-dialog{background:var(--card);color:var(--ink);border-color:var(--line-3);font-family:var(--font);color-scheme:normal}
+.industry-lab .scada-dialog{background:var(--card);color:var(--ink);border-color:var(--line-3);font-family:var(--font);color-scheme:inherit}
 
 .industry-lab .scada-dialog :is(.scada-dialog-header,.scada-dialog-footer){background:var(--soft-2);border-color:var(--line-2)}
 

@@ -39,8 +39,8 @@
     {"id":"repairGenerator","label":"Repair generator","component":"generator","action":"fault","arguments":{"equipment":"generator","value":false}}
   ],
   "controls": [
-    {"id":"pumpSwitch","label":"Delivery pump","component":"pump","command":"pumpSwitch","kind":"toggle","binding":"/controls/pumpOn"},
-    {"id":"valveSwitch","label":"Delivery valve","component":"valve","command":"valveSwitch","kind":"toggle","binding":"/controls/valveOpen"},
+    {"id":"pumpSwitch","label":"Delivery pump","component":"pump","command":"pumpSwitch","kind":"toggle","binding":"/controls/pumpOn","diagram":{"whenTrue":"Stop","whenFalse":"Start"}},
+    {"id":"valveSwitch","label":"Delivery valve","component":"valve","command":"valveSwitch","kind":"toggle","binding":"/controls/valveOpen","diagram":{"whenTrue":"Close","whenFalse":"Open"}},
     {"id":"demand","label":"Assumed demand (%)","component":"pump","command":"demand","kind":"range","binding":"/controls/demandPct","min":0,"max":100,"step":1},
     {"id":"breakGenerator","label":"Inject generator fault","component":"generator","command":"breakGenerator","kind":"button"},
     {"id":"repairGenerator","label":"Repair generator","component":"generator","command":"repairGenerator","kind":"button"}

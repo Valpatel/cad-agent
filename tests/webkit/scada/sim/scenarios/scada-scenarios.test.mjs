@@ -14,7 +14,12 @@ const scenarios=catalog.scenarios.map(entry=>({entry,system:read(entry.system),m
 // The original v1 teaching corpus has specific named views/recipes. Engine version
 // does not impose those authoring choices on newly integrated systems.
 const transferredScenarioIds=new Set(JSON.parse(readFileSync(new URL('../../../../fixtures/scada/default-baseline.json',import.meta.url))).records.map(record=>record.id));
-const legacyScenarios=scenarios.filter(({entry,model})=>model.version===1&&transferredScenarioIds.has(entry.id));
+const originalInputs=new URL('../../../../fixtures/scada/default-model-inputs/',import.meta.url);
+const originalEntries=new Map(JSON.parse(readFileSync(new URL('index.json',originalInputs))).scenarios.map(entry=>[entry.id,entry]));
+const legacyScenarios=scenarios.filter(({entry,model})=>model.version===1&&transferredScenarioIds.has(entry.id)).map(item=>{
+  const entry=originalEntries.get(item.entry.id);
+  return entry?{entry,system:JSON.parse(readFileSync(new URL(entry.system,originalInputs))),model:JSON.parse(readFileSync(new URL(entry.model,originalInputs)))}:item;
+});
 const expandedScenarios=scenarios.filter(({model})=>model.version===2);
 const required=['winery','brewery','fortune-cookies','shampoo','carbonated-beverages','dairy','fruit-juice','pharma-oral-liquid','tablets','biopharma-fermentation','sterile-filling','paint-blending','industrial-detergent','polymer-extrusion','concrete-batching','cement','mineral-crushing','mineral-flotation','metal-finishing','pulp-paper'];
 const protectedMedia=new Set(['electricity','electrical','power','mechanical','data','signal','control','network','communication','measurement','sensor','thermal','heat','energy']);
@@ -34,7 +39,7 @@ test('industry catalog preserves all requested sectors and indexes real runnable
     const configuration=validatePlaceholderModelDefinition(system,model);assert.equal(configuration.ok,true,entry.id+JSON.stringify(configuration.errors));
     assert.deepEqual(entry.componentTypes,[...new Set(system.components.map(item=>item.type))].sort());
     assert.equal(new Set(entry.previewTypes).size,3);for(const type of entry.previewTypes)assert.ok(entry.componentTypes.includes(type));
-    const originalV1=model.version===1&&transferredScenarioIds.has(entry.id);
+    const originalV1=model.version===1&&transferredScenarioIds.has(entry.id)&&!originalEntries.has(entry.id);
     assert.ok(entry.processSteps.length>=(originalV1?8:3)&&entry.processSteps.length<=14);
     if(model.version===1){if(originalV1)assert.equal(entry.processAssetCount,entry.processSteps.length);assert.equal(entry.processAssetCount+entry.utilityAssetCount,system.components.length);}
     assert.deepEqual(entry.componentVariants,[...new Map(system.components.filter(c=>c.variant).map(c=>[c.type+'/'+c.variant,{type:c.type,variant:c.variant}])).values()].sort((a,b)=>a.type.localeCompare(b.type)||a.variant.localeCompare(b.variant)));

@@ -10,6 +10,7 @@ export {
 } from './symbols/index.mjs';
 export {findScadaComponents,getScadaFacets,CAPACITY_PRESETS} from './catalog/discovery.mjs';
 export {ScadaWorkspace, renderScadaDialog, renderScadaToolbar} from './workspace/workspace.mjs';
+export {ScadaPopover} from './workspace/popover.mjs';
 export {ScadaViewer, ScadaCamera, renderScadaDiagram, normalizeViewerDefinition} from './viewer/viewer.mjs';
 export {
   SYSTEM_DEFINITION_VERSION,

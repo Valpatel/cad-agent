@@ -206,6 +206,27 @@ The root may be a neutral container; no `#main` ID is required. `renderScadaTool
 
 The stylesheet includes `.scada-toolbutton` variants, `.scada-toolbadge`, `.scada-panel-grid`, `.scada-panel-section`, `.scada-actions`, `.scada-metric-strip` and `.scada-statusbar`. These are CSS/markup primitives, not additional JavaScript factories. See their thumbnails in the [README](../README.md#workspace-primitives).
 
+### Nonmodal equipment popovers
+
+`ScadaPopover` is exported from the main entry and `@valpatel/scada-ui/workspace`.
+It positions host-supplied `[data-scada-popover]` markup in screen space, using
+the native popover top layer when available and a positioned fallback otherwise.
+Load `/styles` or `/viewer.css` for its styles; the viewer stylesheet imports
+`src/workspace/popover.css`.
+
+| Method / property | Contract |
+| --- | --- |
+| `new ScadaPopover(root, {onClose} = {})` | Owns panel positioning and dismissal within a mounted root. `onClose` receives `{panel, reason}`. |
+| `open(panel, {anchor, opener, focus} = {})` | Opens connected panel markup owned by the root. `anchor` is an element or a function returning its current element; `focus` is an element or selector within the panel. Returns whether opening succeeded. |
+| `reposition()` | Measures the current anchor and clamps the panel to the visible viewport in CSS pixels. Call after camera transforms; window/visual-viewport resize, scroll and observed size changes are also handled. |
+| `close({restoreFocus=true, reason='close'} = {})` | Hides the panel and normally returns focus to a connected opener. Outside-click dismissal preserves the clicked target's focus. |
+| `activePanel`, `destroy()` | Read the active element, or remove owned listeners/observers and close without returning focus. |
+
+The panel has `role="dialog"` and `aria-modal="false"`. Close and Escape dismiss it;
+clicking outside also dismisses it. It neither traps Tab nor locks document
+scrolling. The topmost popover handles Escape without closing its enclosing
+workspace dialog. The host owns panel content, command routing and model state.
+
 ## Viewer API
 
 `ScadaViewer` combines the renderer and workspace shell around an external model adapter. Import it from the public entry or `@valpatel/scada-ui/viewer`. A portable `definition` is validated with the [versioned system contract](./SYSTEM_FORMAT.md); trusted host code may instead supply `equipment`, `views`, `controls` and rendering hooks directly. Functions/hooks are never part of imported JSON.
@@ -244,19 +265,50 @@ For schema-defined controls, the viewer looks up the declared command object and
 
 | Method / property | Behavior |
 | --- | --- |
-| `mount(root, {render=true, bindEvents=true, workspace=true} = {})` | Mounts or attaches the viewer and subscribes to the adapter. The normal mode renders view tabs, picker, zoom, equipment and native inspector. |
-| `setView(id)` | Changes the active layout, fits its geometry and closes its inspector. External state/time remain unchanged. |
-| `select(id, {open=false, opener})` | Selects canonical equipment and optionally opens its inspector. |
+| `mount(root, {render=true, bindEvents=true, workspace=true} = {})` | Mounts or attaches the viewer and subscribes to the adapter. Normal mode owns the camera, equipment popover and full native inspector. |
+| `setView(id)` | Changes the active layout, fits its geometry and closes inspection UI. External state/time remain unchanged. |
+| `select(id, {open=false, opener})` | Selects canonical equipment and optionally opens its quick controls. Changing the ID closes the old inspection context. |
 | `setZoom(value)` | Sets a finite scale from 0.05 to 3 around the viewport center. |
 | `fit()` | Fits the complete layout below the pinned recovery control; very large layouts may fit below 0.05. |
-| `openInspector({opener})`, `closeInspector()` | Uses the shared modal lifecycle for the current selection. |
+| `openInspector({opener})` | Opens nonmodal quick controls anchored to the current equipment; returns whether opening succeeded. |
+| `openDetails({opener})` | Closes quick controls and opens the full native inspector, or calls the host's `onDetails` option. |
+| `closeInspector({restoreFocus=true} = {})` | Closes both viewer-owned inspection levels; normally restores opener focus. |
 | `dispatch(command)` | Passes a command to the adapter, refreshes when needed and reports failures. Throws when read-only. |
 | `refresh(reason='refresh', event=null)` | Reads the current snapshot and patches the presentation. |
 | `render()` | Returns the current viewer markup for trusted host composition. |
-| `destroy()` | Unsubscribes, removes owned DOM listeners, destroys the camera and destroys owned dialogs. Leaves the model/adapter/clock intact. |
+| `destroy()` | Unsubscribes, removes owned listeners/observers and destroys the camera, popover and dialogs. Leaves the model/adapter/clock intact. |
 | `snapshot`, `view`, `selected`, `zoom`, `root`, `workspace`, `camera`, `readOnly`, `equipment`, `views` | Read current presentation context. |
 
-Snapshot updates preserve the camera transform, focused input drafts, screen-space recovery controls and open dialogs. View changes update selection/layout context without invoking a plant reset. A custom host rendering hook is responsible for retaining those same interaction guarantees.
+Snapshot updates for the same equipment preserve the camera, focused input drafts,
+screen-space recovery controls and open inspection UI. Changing the equipment ID
+closes the old panel and clears its validation context before presenting the new
+equipment, so a draft cannot move to a different command target. View changes do
+not reset the plant. Custom host rendering hooks retain these guarantees.
+
+### Equipment identity and inspection levels
+
+The raw canonical equipment ID appears in `.scada-viewer-equipment-id`, the
+`ID · name` picker/status text and both inspection levels. Labels and positions
+never determine identity. Equipment buttons open inspection UI; they have
+`aria-haspopup="dialog"` and `aria-expanded`, not toggle `aria-pressed` or a
+persistent selected fill. Actual boolean command controls retain toggle semantics.
+
+Quick controls show the selected equipment's status, up to three numeric readings
+and controls explicitly scoped with `control.component === component.id`. Global
+controls remain in full details. Missing readings stay unavailable; read-only or
+missing-value command controls stay disabled. Quick, full and direct diagram
+controls all dispatch through the same adapter.
+
+**Details & model** calls `openDetails()`. By default, it uses `ScadaWorkspace` for
+the full native inspector, all resolved readings and applicable component/global
+controls. The existing `renderInspector(component, context)` hook customizes this
+full view, not the quick panel. Trusted host types outside the component catalog
+show unavailable quick readings and still use their custom details renderer.
+A host may instead supply
+`onDetails({id, component, opener, viewer})` as a constructor option; it owns that
+surface's content, cleanup and focus return. This callback is trusted application
+code, never a JSON expression. Explorer uses it to show the selected equipment's
+accepted model configuration and the actual registered equation/kernel source.
 
 ### Integrating existing markup
 

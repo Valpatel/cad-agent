@@ -46,15 +46,30 @@ with sync_playwright() as runtime:
    assert page.evaluate('document.documentElement.scrollWidth')==width
    assert not errors,errors
   def close():
+   quick=page.locator('[data-scada-popover-open=true]')
+   if quick.count():quick.locator('[data-scada-popover-close]').click()
    if page.locator('dialog[open]').count():page.locator('dialog[open] [data-scada-close]').click()
+   assert page.locator('[data-scada-popover-open=true],dialog[open]').count()==0
   def selected(expected,kind,variant=None):
    assert page.locator('[data-scenario-title]').inner_text()==expected['title']
    assert urlparse(page.url).query.find('scenario='+expected['id'])>=0
-   inspector=page.locator('#lab-viewer dialog[open]');assert inspector.count()==1
-   assert inspector.evaluate('el=>el.matches(":modal")&&el.contains(document.activeElement)')
+   inspector=page.locator('#lab-viewer [data-scada-popover-open=true]');assert inspector.count()==1
+   assert inspector.evaluate('el=>el.matches(":popover-open")&&el.contains(document.activeElement)')
+   assert inspector.get_attribute('aria-modal')=='false'
+   assert page.locator('dialog[open]').count()==0
+   assert page.evaluate('document.documentElement.style.overflow')==''
+   box=inspector.bounding_box();height=1000 if width>500 else 844
+   assert box and box['x']>=11 and box['y']>=11 and box['x']+box['width']<=width-11 and box['y']+box['height']<=height-11,box
+   assert box['width']<=min(360,width-24)+1 and box['height']<=441,box
    system=json.loads((scenario_root/expected['system']).read_text());model=json.loads((scenario_root/expected['model']).read_text())
    equipment_id=page.locator('[data-scada-picker]').input_value();equipment=next(item for item in system['components'] if item['id']==equipment_id)
    assert equipment['type']==kind,(kind,equipment)
+   assert inspector.get_attribute('data-scada-inspection-equipment')==equipment_id
+   assert inspector.locator('.scada-inspection-id').inner_text()==equipment_id
+   assert page.locator('[data-scada-picker] option:checked').inner_text().startswith(equipment_id+' · ')
+   assert page.locator('#lab-viewer [data-scada-equipment][aria-pressed]').count()==0
+   tags=page.locator('#lab-viewer [data-scada-equipment]').evaluate_all('els=>els.map(el=>({id:el.dataset.scadaEquipment,tag:el.querySelector(".scada-viewer-equipment-id").textContent}))')
+   assert len({item['id'] for item in tags})==len(tags) and all(item['id']==item['tag'] for item in tags)
    if variant is not None:assert equipment.get('variant',model['components'][equipment_id].get('variant'))==variant,(kind,variant,equipment_id)
    assert page.locator('[data-lab-message]').is_hidden(),page.locator('[data-lab-message]').inner_text()
    return equipment_id

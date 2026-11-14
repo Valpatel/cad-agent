@@ -236,8 +236,14 @@ cad-nav,.doc-rail{--cad-nav-font:13px/1.5 var(--font);--cad-nav-fg:var(--ink);--
 .doc-rail{display:none;font:13px/1.5 var(--font)}
 .doc-rail-title{margin:0 0 8px;font-weight:700;font-size:.78em;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 @media(min-width:1100px){.doc-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:52px;align-items:start}cad-nav{margin-top:28px;align-self:stretch}}
-@media(min-width:1500px){body:has(.doc-layout) .wrap{width:min(1500px,calc(100% - 96px))}
-  .doc-layout{grid-template-columns:260px minmax(0,880px) minmax(200px,1fr);gap:48px}
+/* Wide displays give collections and engineering surfaces the available space.
+   Reading measure belongs to prose, rather than limiting the whole application. */
+@media(min-width:1500px){.wrap{width:calc(100% - clamp(96px,6vw,192px))}
+  .doc-layout{grid-template-columns:260px minmax(0,1fr) 240px;gap:clamp(28px,2vw,48px)}
+  .doc-main{max-width:none}
+  .doc-main .prose :where(p,ul,ol,blockquote):not(:has(img,picture,svg,canvas,video,table)){max-width:80ch}
+  .doc-main .prose>:is(h1,h2,h3,h4){max-width:32ch}
+  .doc-main :is(cad-cantilever,cad-fourbar,cad-fan-curve,cad-torsion-snap,cad-printed-boss){max-width:1200px}
   .doc-rail{display:block;position:sticky;top:96px;max-height:calc(100vh - 112px);overflow:auto;margin-top:28px;padding-right:4px;scrollbar-width:thin}
   cad-nav .cad-nav-panel .cad-nav-outline{display:none}}
 /* On paper: no page tree (kit/documents/nav.css) and no right-hand outline, so the article keeps the whole width, not the tree's column */

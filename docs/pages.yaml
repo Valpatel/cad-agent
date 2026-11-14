@@ -28,7 +28,7 @@
 # heading the page does not have, or a missing caption, alt text, `shows` or `on`.
 #
 # Owner (2026-10-31): "CAD is graphical, so our site should be too. Not a wall of text." The browser suite measures each
-# page's longest stretch with nothing to look at (tests/site/site-walls.mjs, #179).
+# page's longest stretch with nothing to look at (tests/site/layout/walls.mjs, #179).
 #
 # The gate bench pictures (docs/img/gates/) come from tools/site/figures/site-bench-pictures.mjs, which builds the review site with
 # `cad-agent site` from the bench's committed run (tests/fixtures/gate_bench/site_snapshot). The bench as built: six

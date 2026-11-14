@@ -196,7 +196,7 @@ body{margin:0;background:var(--grid-bg),var(--cream)}
 #industry-lab .scada-dialog-footer .lab-actions{margin:0}
 #industry-lab .scada-dialog-footer .lab-form-message{margin:6px 0 0;min-height:0}
 
-@media(max-width:650px){#industry-lab .lab-toolbar-group:first-child{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:8px}
+@media(max-width:650px){#industry-lab .lab-toolbar-group:first-child{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) max-content;width:100%;gap:8px}
 #industry-lab .lab-toolbar .lab-choose{grid-column:1/-1;min-width:0;width:100%}
 #industry-lab .lab-toolbar .lab-run{min-width:0}
 #industry-lab .lab-speed{padding:0;justify-content:flex-end;gap:5px}

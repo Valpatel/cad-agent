@@ -282,6 +282,19 @@ try{
     assert.ok(result.count>=4);assert.deepEqual({...result,count:undefined},{readOnly:true,dispatchPresent:false,count:undefined,disabled:true,commands:0,unchanged:true,observed:true,detached:true,continued:true});
   });
   await check('narrow viewport and reduced motion preserve readable controls and camera recovery',async()=>{
+    for(const width of [320,390]){
+      await page.setViewportSize({width,height:844});
+      const geometry=await page.locator('.lab-toolbar-group').first().evaluate(group=>{
+        const speed=group.querySelector('.lab-speed'),select=speed.querySelector('select'),step=group.querySelector('[data-action=step]');
+        const text=[...speed.childNodes].find(node=>node.nodeType===3&&node.textContent.trim()),range=document.createRange();range.selectNodeContents(text);
+        const label=range.getBoundingClientRect(),field=select.getBoundingClientRect(),button=step.getBoundingClientRect(),bounds=group.getBoundingClientRect();
+        return {label:{left:label.left,right:label.right},select:{left:field.left,right:field.right,height:field.height},step:{right:button.right,height:button.height},right:bounds.right};
+      });
+      assert.ok(geometry.label.left>=geometry.step.right+3,`Speed label overlaps Step at ${width}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.label.right<=geometry.select.left,`Speed label overlaps its field: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.select.right<=geometry.right+1);assert.ok(geometry.select.height>=44&&geometry.step.height>=44);
+      await noHorizontalOverflow();
+    }
     await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
     for(const view of ['treatment','sludge-energy','power-control']){

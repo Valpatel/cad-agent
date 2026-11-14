@@ -33,3 +33,18 @@ flowchart TD
 | [theme.js](theme.js) | Theme preference/bootstrap behavior. |
 | [models/](models/README.md) | Coherent homepage model/poster bundle. |
 | [toolkit/](toolkit/README.md) | Closed synthetic assembly example and source-bound captures of the shipped guide and original-file viewers. |
+
+## Screen layouts
+
+Wide page shells use the available display with responsive gutters. Reading widths
+belong to narrative paragraphs and lists; they must not cap an entire diagram,
+table, gallery or application. Collection grids add useful columns rather than
+stretching a few cards across an ultrawide monitor. Homepage art keeps its aspect
+ratio and a bounded height beside the introduction.
+
+An application owns its available viewport and passes that space to its viewers.
+Camera surfaces use pan/zoom and a visible Fit control, with native canvas
+scrolling disabled; documents and inspectors can scroll normally. Review the
+actual 3440×1440 layout as well as ordinary desktop and mobile sizes. The
+[site browser checks](../../../tests/site/README.md) cover the built pages rather
+than treating the absence of overflow as evidence that the screen is used well.

@@ -46,7 +46,8 @@ where = ["software"]
 include = ["cadagent*"]
 
 [tool.setuptools.package-data]
-cadagent = ["webkit/*", "webkit/assembly/*", "webkit/vendor/**/*"]
+cadagent = ["webkit/*", "webkit/assembly/*", "webkit/vendor/**/*", "publish/runtime-profiles.json",
+            "webkit/host/*", "webkit/files/*"]
 
 # `cad-agent init`'s starter, for a wheel install: docs/examples/starter-box installed under <prefix>/share/cad-agent/. A
 # checkout's own docs/examples/starter-box comes first (cadagent.project.starter_dir); tests/cli/test_init.py keeps this list

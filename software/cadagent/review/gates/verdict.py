@@ -22,6 +22,13 @@ The file has no timestamp, so an unchanged run rewrites identical bytes.
 (``geometry_digest``), the content hash of every part instance, placed fastener and cavity in it, and digests of
 the gate's declarations and options. ``stale_reason(verdict, record)`` says why a verdict no longer describes the
 current record (or that it carries no inputs), so a verdict from an earlier build is never taken as current.
+
+**Not in the model.** A gate sees the shapes the build registered and nothing else. When the geometry record lists
+components declared not drawn (``cadagent.review.dossier.not_drawn``), ``cad-agent gates`` runs ``note_not_drawn`` on
+every verdict: ``not_drawn`` (``[{"name", "reason", "near"}]``), an assumption that names them, and, in every gate
+but those in ``NOT_DRAWN_NOTE_ONLY``, a ``<gate>:not-drawn`` check with status ``warn``. So a gate that would have
+passed reads ``warn``; ``pass`` stays true, and a declaration alone never fails a gate. Only declared components
+appear: nothing detects an omission nobody declared.
 """
 
 from __future__ import annotations
@@ -98,6 +105,83 @@ def verdict(gate: str, checks: Iterable[Check], *, assumptions: Sequence[str],
     return out
 
 
+# gates whose result an absent component cannot change, so they record the list without a warning. The wall gate
+# measures each drawn part's own walls. Every other gate's result depends on which solids are present.
+NOT_DRAWN_NOTE_ONLY = frozenset({"wall"})
+NOT_DRAWN_CHECK = "not-drawn"
+
+
+def not_drawn_of(record: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """The components a geometry record declares not drawn, as ``[{"name", "reason", "near"}]`` in name order
+    (``[]`` for a record without any, or with a malformed table)."""
+    table = (record or {}).get("not_drawn")
+    if not isinstance(table, Mapping):
+        return []
+    out = []
+    for name in sorted(table, key=str):
+        info = table[name] if isinstance(table[name], Mapping) else {}
+        near = info.get("near")
+        out.append({"name": str(name), "reason": str(info.get("reason") or ""),
+                    "near": [str(n) for n in near] if isinstance(near, (list, tuple)) else []})
+    return out
+
+
+def not_drawn_names(items: Sequence[Mapping[str, Any]], limit: int = 0) -> str:
+    """``"bevel_pinion (near wheel), motor_shaft"``: the names with their neighbours, the first ``limit`` when
+    given, then how many more."""
+    shown = list(items[:limit] if limit else items)
+    text = ", ".join(str(i.get("name")) + (f" (near {', '.join(map(str, i['near']))})" if i.get("near") else "")
+                     for i in shown)
+    return text + (f" and {len(items) - len(shown)} more" if len(items) > len(shown) else "")
+
+
+def not_drawn_summary(items: Sequence[Mapping[str, Any]], limit: int = 0) -> str:
+    """One sentence for a report: how many components are not drawn, which, and that no gate saw them (``""`` for
+    none)."""
+    if not items:
+        return ""
+    n = len(items)
+    return (f"{n} component{'s' if n != 1 else ''} of the design {'are' if n != 1 else 'is'} declared not drawn, so "
+            f"no gate saw {'them' if n != 1 else 'it'}: {not_drawn_names(items, limit)}")
+
+
+def note_not_drawn(data: Dict[str, Any], record: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+    """State in a verdict (in place, and returned) which components of the design the geometry record declares not
+    drawn. Without any, or on a verdict that already carries ``not_drawn``, nothing changes.
+
+    Adds ``not_drawn``, one assumption, and (unless the gate is in ``NOT_DRAWN_NOTE_ONLY``) a ``<gate>:not-drawn``
+    check with status ``warn`` whose ``parts`` are the declared neighbours. A ``pass`` status becomes ``warn``; a
+    ``fail`` stays a fail, and ``pass`` (the boolean) never changes. The warning is not limited to the declared
+    neighbours: the gate has no geometry for the component, so it cannot tell what the component would reach."""
+    items = not_drawn_of(record)
+    if not items or "not_drawn" in data:
+        return data
+    gate = str(data.get("gate") or "")
+    names = not_drawn_names(items)
+    n = len(items)
+    data["not_drawn"] = items
+    data["assumptions"] = list(data.get("assumptions") or []) + [
+        f"{n} component{'s' if n != 1 else ''} of the design {'are' if n != 1 else 'is'} declared not drawn "
+        f"({names}): this gate did not see {'them' if n != 1 else 'it'}, and its result says nothing about "
+        f"{'them' if n != 1 else 'it'} or about what {'they' if n != 1 else 'it'} would touch, block, carry or fill"]
+    if gate in NOT_DRAWN_NOTE_ONLY:
+        return data
+    near = sorted({p for i in items for p in i["near"]})
+    check = Check(f"{gate}:{NOT_DRAWN_CHECK}", "warn",
+                  f"not in the model: {names}. This gate checked the drawn parts only; its result does not cover "
+                  f"{'these components' if n != 1 else 'this component'}. Draw {'them' if n != 1 else 'it'} and "
+                  "remove the not_drawn declaration to clear this warning",
+                  parts=near, evidence={"not_drawn": items}).to_dict()
+    data["checks"] = list(data.get("checks") or []) + [check]
+    data["findings"] = list(data.get("findings") or []) + [check]
+    counts = dict(data.get("counts") or {})
+    counts["warn"] = int(counts.get("warn", 0)) + 1
+    data["counts"] = counts
+    if data.get("status") == "pass":
+        data["status"] = "warn"
+    return data
+
+
 def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
     """Write a verdict dict as indented JSON (parent directories created). Returns the path."""
     if data.get("schema") != SCHEMA or "pass" not in data:
@@ -115,7 +199,7 @@ def write_verdict(path: Any, data: Mapping[str, Any]) -> Path:
 # where they were made, not what was built. The hashes themselves are in the parts and stay in the digest.
 VOLATILE_TOP = frozenset({"actor", "parameters", "shapes_dir", "out_dir", "hash"})
 VOLATILE_ENTRY = frozenset({"declared_at", "file", "actor"})  # in an entry of parts, cavities, joints, fasteners,
-                                                               # steps (``actor``: who built a part, plan T11)
+                                                               # steps, not_drawn (``actor``: who built a part, T11)
 VOLATILE_KEYS = VOLATILE_TOP | VOLATILE_ENTRY
 
 
@@ -137,7 +221,7 @@ def _entry(value: Any) -> Any:
 
 def _strip_volatile(record: Mapping[str, Any]) -> Dict[str, Any]:
     out: Dict[str, Any] = {k: v for k, v in record.items() if k not in VOLATILE_TOP}
-    for table in ("parts", "cavities", "joints", "fasteners"):
+    for table in ("parts", "cavities", "joints", "fasteners", "not_drawn"):
         if isinstance(out.get(table), Mapping):
             out[table] = {name: _entry(v) for name, v in out[table].items()}
     asm = out.get("assembly")
@@ -208,7 +292,8 @@ def stale_reason(data: Mapping[str, Any], record: Optional[Mapping[str, Any]], *
         new = record_hashes(record)
         changed = sorted(k for k in set(old) | set(new) if old.get(k) != new.get(k))
         what = (f"{len(changed)} shape(s) changed: {', '.join(changed[:6])}" + (" ..." if len(changed) > 6 else "")
-                if changed else "the declarations in the record changed (flags, joints, fasteners or steps)")
+                if changed else "the declarations in the record changed (flags, joints, fasteners, steps or "
+                                "components declared not drawn)")
         return f"geometry changed since this verdict ({what})"
     if declarations is not None and inputs.get("declarations") != digest_of(declarations):
         return "the gate's declarations changed since this verdict"

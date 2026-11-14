@@ -36,8 +36,8 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from cadagent.review.gates.verdict import (SCHEMA, Check, bind_inputs, record_hashes, stale_reason, verdict,
-                                           write_verdict)
+from cadagent.review.gates.verdict import (SCHEMA, Check, bind_inputs, not_drawn_names, not_drawn_of,
+                                           note_not_drawn, record_hashes, stale_reason, verdict, write_verdict)
 
 GATES = ("connectivity", "containment", "fasteners", "motion", "assembly", "wall")   # geometric gates, run order
 LINT = "dossier-lint"
@@ -389,6 +389,17 @@ def verdict_markdown(data: Mapping[str, Any]) -> str:
     if geo:
         lines += [f"Geometry: `{geo.get('file', '')}` digest `{str(geo.get('digest', ''))[:16]}`, "
                   f"{len(geo.get('hashes') or {})} shapes", ""]
+    missing = data.get("not_drawn") or []
+    if missing:
+        n = len(missing)
+        lines += ["## Not in the model", "",
+                  f"**{n} component{'s' if n != 1 else ''} of the design {'are' if n != 1 else 'is'} declared not "
+                  f"drawn. This gate did not see {'them' if n != 1 else 'it'}, and its result does not cover "
+                  f"{'them' if n != 1 else 'it'}.**", "",
+                  "| Component | Near | Why it is not drawn |", "|---|---|---|"]
+        lines += [f"| `{_cell(m.get('name'))}` | {_cell(', '.join(m.get('near') or []) or '-')} "
+                  f"| {_cell(m.get('reason'))} |" for m in missing]
+        lines.append("")
     findings = data.get("findings") or []
     lines += ["## Findings", ""]
     if findings:
@@ -464,6 +475,7 @@ def run_one(project: Any, gate: str, *, no_cache: bool = False) -> Dict[str, Any
         _ensure_cache_ignored(cfg.root)
         cache = PairCache(cfg.cache)
     data = ADAPTERS[gate](result, dossier, extra, cache, kwargs, opts)
+    note_not_drawn(data, result.geometry)       # before the files are written: no pass without the caveat
     exp = expected_inputs(gate, cfg, dossier, extra)
     bind_inputs(data, result.geometry, record_file=cfg.rel(cfg.geometry), **exp)
     write_outputs(Path(project.exports_dir) / "gates", data)
@@ -569,6 +581,7 @@ class RunResult:
     seconds: float
     record: str = ""
     built: bool = False
+    not_drawn: List[Dict[str, Any]] = field(default_factory=list)   # verdict.not_drawn_of(the geometry record)
 
     @property
     def passed(self) -> bool:
@@ -626,6 +639,9 @@ def _summary(data: Mapping[str, Any]) -> str:
     fails = [f.get("id", "") for f in data.get("findings") or [] if f.get("status") == "fail"]
     if fails:
         text = f"{len(fails)} failed: {', '.join(fails[:3])}" + (" ..." if len(fails) > 3 else "") + f" ({text})"
+    missing = data.get("not_drawn") or []
+    if missing:
+        text += f"; {len(missing)} not drawn, not seen: {not_drawn_names(missing, 3)}"
     return text
 
 
@@ -679,7 +695,7 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
             rows[g] = GateRun(g, "run", "would run")
         if any(p.gate == LINT and p.state == "run" for p in planned):
             rows[LINT] = GateRun(LINT, "run", "would run")
-        return RunResult([rows[p.gate] for p in planned], 0.0, cfg.rel(cfg.geometry), built)
+        return RunResult([rows[p.gate] for p in planned], 0.0, cfg.rel(cfg.geometry), built, not_drawn_of(record))
     for g in todo:
         remove_outputs(gates_dir, g)
     jobs = max(1, int(jobs or cfg.jobs))
@@ -699,6 +715,7 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
         if data is None or data.get("schema") != SCHEMA:
             why = reason or f"exit code {code}, no verdict written"
             data = crash_verdict(gate, f"{why}; log {log}: {_tail(cfg.root / log)}")
+            note_not_drawn(data, record)
             bind_inputs(data, record or {}, record_file=cfg.rel(cfg.geometry),
                         **expected_inputs(gate, cfg, dossier, extra))
             write_outputs(gates_dir, data)
@@ -716,7 +733,7 @@ def run_gates(project: Any, *, only: Sequence[str] = (), skip: Sequence[str] = (
         rows[LINT] = run_lint(project)
         progress(f"  {rows[LINT].status.upper():<4} {LINT:<13} {rows[LINT].seconds:6.1f} s  {rows[LINT].message}")
     return RunResult([rows[p.gate] for p in planned], round(time.monotonic() - started, 2),
-                     cfg.rel(cfg.geometry), built)
+                     cfg.rel(cfg.geometry), built, not_drawn_of(record))
 
 
 def run_lint(project: Any) -> GateRun:

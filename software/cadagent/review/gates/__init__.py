@@ -8,6 +8,8 @@ The machinery here is shared by every gate (the plan, ``docs/practice/design-pro
 * ``relate_pair(assembly, a, b)``: one cached exact pair by name (a part against a declared cavity);
 * ``relate(a, b)``: one exact pair of bare shapes, uncached;
 * ``verdict(...)`` / ``write_verdict(...)``: the pass/warn/fail file with its assumptions.
+* ``note_not_drawn(data, record)``: names in a verdict the components the build declared not drawn
+  (``cadagent.review.dossier.not_drawn``), which no gate can see.
 
 Gates built on it: ``cadagent.review.gates.wall`` (minimum wall); ``cadagent.review.gates.connectivity`` (floating
 parts, contacts against interfaces); ``cadagent.review.gates.containment`` (contents inside their container's registered
@@ -25,9 +27,9 @@ from cadagent.review.gates.cache import DEFAULT_CACHE_DIR, PairCache
 from cadagent.review.gates.relations import (CONTACT_STATES, INTERFERENCE_STATES, STATES, Assembly, Part, Relation,
                                              RelationTable, Tolerances, aabb_distances, bounding_box, relate,
                                              relate_pair, relation_table, solid_interference)
-from cadagent.review.gates.verdict import SCHEMA, Check, verdict, write_verdict
+from cadagent.review.gates.verdict import SCHEMA, Check, not_drawn_of, note_not_drawn, verdict, write_verdict
 
 __all__ = ["Assembly", "Part", "Tolerances", "Relation", "RelationTable", "relation_table", "relate", "relate_pair",
            "solid_interference", "aabb_distances", "bounding_box", "STATES", "CONTACT_STATES", "INTERFERENCE_STATES",
            "PairCache", "shape_content_hash",
-           "DEFAULT_CACHE_DIR", "Check", "verdict", "write_verdict", "SCHEMA"]
+           "DEFAULT_CACHE_DIR", "Check", "verdict", "write_verdict", "SCHEMA", "not_drawn_of", "note_not_drawn"]

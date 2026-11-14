@@ -35,11 +35,17 @@ const originalScenarios=catalog.scenarios.filter(entry=>expectedRecords.has(entr
 assert.deepEqual(originalScenarios.map(entry=>entry.id).sort(),[...expectedRecords.keys()].sort(),'An original scenario was removed from the frozen baseline');
 const additions=catalog.scenarios.filter(entry=>!expectedRecords.has(entry.id)).map(entry=>entry.id);
 assert.ok(additions.every(id=>id==='wastewater-digester'),'Review new scenarios explicitly; separate fixtures cover additions');
+const frozenInputs=await readJson(join(FIXTURES,'default-model-inputs/index.json'));
+assert.equal(frozenInputs.format,'scada-default-model-inputs');assert.equal(frozenInputs.version,1);
+const frozenEntries=new Map(frozenInputs.scenarios.map(entry=>[entry.id,entry]));
+assert.deepEqual([...frozenEntries.keys()].sort(),['brewery','winery'],'Only explicitly evolved examples use retained oracle inputs');
 const results=[],failures=[];
 
-for(const entry of originalScenarios){
- const system=await readJson(join(pkg,'scenarios',entry.system));
- const definition=await readJson(join(pkg,'scenarios',entry.model));
+for(const liveEntry of originalScenarios){
+ const entry=frozenEntries.get(liveEntry.id)??liveEntry;
+ const inputRoot=frozenEntries.has(entry.id)?join(FIXTURES,'default-model-inputs'):join(pkg,'scenarios');
+ const system=await readJson(join(inputRoot,entry.system));
+ const definition=await readJson(join(inputRoot,entry.model));
  const record={scenario:entry.id,version:definition.version,seed:definition.seed,system,definition,branches:{}};
  const create=(modelDefinition=definition)=>new PlaceholderSystemModel(system,modelDefinition,{clock:{setInterval(){throw Error('Baseline must not start a clock');},clearInterval(){}}});
  const capture=(model,label,list)=>{

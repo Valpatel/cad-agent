@@ -9,6 +9,7 @@ import {PlaceholderSystemModel} from '../../../../software/cadagent/webkit/scada
 import {serveWebkit} from '../../webkit-server.mjs';
 
 const root=fileURLToPath(new URL('../../../../',import.meta.url));
+const rootPathForScenario=id=>path.join(root,'software/cadagent/webkit/scada/sim/scenarios',id);
 const output=path.resolve(process.env.TEST_OUTPUT??'/tmp/cad-agent-scada-explorer');
 const browserName=process.env.PLAYWRIGHT_BROWSER??'chromium';
 const engine=browserName==='webkit'?webkit:chromium;
@@ -53,6 +54,11 @@ const session=async()=>{
   await open('session');const promise=page.waitForEvent('download');await page.locator('[data-action="export"]').click();
   const download=await promise;const payload=JSON.parse(await readFile(await download.path(),'utf8'));await close();return payload;
 };
+function buttonContrast(element){
+  const luminance=value=>value.match(/[\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
+  const background=getComputedStyle(element).backgroundColor,b=luminance(background);
+  return [element,...element.querySelectorAll('span')].map(node=>{const color=getComputedStyle(node).color,f=luminance(color);return{text:node.textContent.trim(),color,background,ratio:(Math.max(f,b)+.05)/(Math.min(f,b)+.05)};});
+}
 
 try{
   browser=await engine.launch(launch);receipt.version=browser.version();
@@ -124,21 +130,38 @@ try{
       assert.ok(await dialog.locator('.scada-viewer-toggle[aria-pressed=false] span').count()>0);
       for(const button of await buttons.all())for(const state of ['default','hover']){
         if(state==='hover')await button.hover();else await page.mouse.move(0,0);
-        const result=await button.evaluate(element=>{
-          const rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number);
-          const luminance=value=>rgb(value).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
-          const background=getComputedStyle(element).backgroundColor,b=luminance(background);
-          return [element,...element.querySelectorAll('span')].map(node=>{
-            const color=getComputedStyle(node).color,f=luminance(color);
-            return {text:node.textContent.trim(),color,background,ratio:(Math.max(f,b)+.05)/(Math.min(f,b)+.05)};
-          });
-        });
+        const result=await button.evaluate(buttonContrast);
         for(const item of result)assert.ok(item.ratio>=4.5,`${colorScheme} ${state}: ${JSON.stringify(item)}`);
         receipt.inspectorContrast.push({colorScheme,state,readings:result});
       }
       await shot(`equipment-inspector-${colorScheme}`);await close();
     }
     await page.emulateMedia({colorScheme:'light'});assert.deepEqual(await session(),before);
+  });
+  await check('instrumented examples operate branch valves directly and share the result across focused views',async()=>{
+    receipt.directControls=[];
+    for(const [scenario,valve] of [['wastewater-digester','inletValve'],['winery','mustValve'],['brewery','mashValve']])for(const colorScheme of ['light','dark']){
+      await page.setViewportSize({width:3440,height:1440});await page.emulateMedia({colorScheme});
+      await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=${scenario}`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+      const root=page.locator('#lab-viewer'),viewport=root.locator('[data-scada-scroll]'),action=root.locator(`[data-scada-diagram-control="${valve}-open-control"]`);
+      await expect(action).toHaveText('Close');
+      for(const button of await root.locator('[data-scada-diagram-control]').all()){
+        const ratios=await button.evaluate(buttonContrast);for(const result of ratios)assert.ok(result.ratio>=4.5,JSON.stringify({scenario,colorScheme,...result}));
+        receipt.directControls.push({scenario,colorScheme,ratios});
+      }
+      const camera=()=>viewport.evaluate(e=>[e.dataset.cameraX,e.dataset.cameraY,e.dataset.cameraZoom]);
+      const before=await camera(),time=await minutes();await action.click();await expect(action).toHaveText('Open');
+      assert.equal(await root.locator('dialog[open]').count(),0);assert.deepEqual(await camera(),before);assert.equal(await minutes(),time);
+      const saved=await session(),definition=JSON.parse(await readFile(path.join(rootPathForScenario(scenario),'system.json'),'utf8'));
+      const model=new PlaceholderSystemModel(definition,saved.model);model.importSnapshot(saved);
+      try{assert.equal(model.getSnapshot().controls[valve].open,false);assert.equal(model.getSnapshot().readings[valve].resourceOut,0);}finally{model.destroy();}
+      const detail=definition.views.slice(1).find(view=>view.placements.some(item=>item.component===valve));assert.ok(detail);
+      await root.locator(`[data-scada-view-choice="${detail.id}"]`).click();await expect(action).toHaveText('Open');
+      await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');assert.equal(await minutes(),time);
+      await shot(`${scenario}-${colorScheme}-direct-controls`);
+    }
+    await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
   });
   await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
     for(const scenario of ['winery','wastewater-digester','brewery','fortune-cookies'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){

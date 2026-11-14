@@ -1,7 +1,7 @@
 """Generate compact static scenario process maps using canonical UI symbols.
 
 This is a developer-only dependency on the sibling UI library. The model runtime
-remains headless. SVGs describe the selected first view, never sampled telemetry.
+remains headless. SVGs describe the selected declared view, never sampled telemetry.
 """
 import argparse
 import hashlib
@@ -25,14 +25,14 @@ PACKAGE = SIM
 
 SUPPORT = Path(__file__).resolve().parent / 'topology'
 sys.path.insert(0, str(SUPPORT))
-from layout import layout, validate_layout
+from layout import layout, validate_layout, select_view
 
 BASE = 'https://topology-export.test'
 FORMAT = 'scada-scenario-topologies'
 COLORS = {'solids': '#dfbc78', 'fluid': '#63ded6', 'liquid': '#63ded6',
           'product': '#b0baff', 'electricity': '#ffd16d', 'gas': '#fbab7b',
           'air': '#a3d8ed', 'steam': '#e6eaf4', 'measurement': '#d1a1ee',
-          'data': '#c894e3', 'heat': '#ff8e8e', 'mechanical': '#a3d397',
+          'data': '#c894e3', 'heat': '#ff8e8e', 'thermal': '#ff8e8e', 'mechanical': '#a3d397',
           'chemical': '#dca8f2', 'thermal-fluid': '#ff8f9f', 'material': '#c0d69a',
           'optical': '#8ab4ff', 'slurry': '#b9a788'}
 
@@ -55,7 +55,7 @@ def source_hashes():
 
 def selection(entry):
     system = json.loads((PACKAGE / 'scenarios' / entry['system']).read_text())
-    view = system['views'][0]
+    view = select_view(system, entry.get('topologyView'))
     components = {component['id']: component for component in system['components']}
     connections = {connection['id']: connection for connection in system['connections']}
     nodes = [components[placement['component']] for placement in view['placements']]
@@ -80,7 +80,7 @@ def render(entry, icons, labels):
     nodes = {node['id']: node for node in graph['nodes']}
     bottom = max([node['y'] + node['height'] for node in graph['nodes']] +
                  [point['y'] for route in graph['routes'] for point in route['points']])
-    width, height = 900, bottom + 58
+    width, height = graph['width'], bottom + 58
     title = system['system']['label']
     description = f"{view['label']}. {len(components)} equipment references and {len(edges)} declared directed connections. Static illustrative symbols; arrows do not show instantaneous flow. This selected view does not include every plant connection."
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="topology-title topology-description">',
@@ -211,7 +211,7 @@ def generate(target, only=None):
         browser_version = browser.version
         browser.close()
     files.update({name: content.encode() for name, content in asset_gallery_maps(records, 'topologies').items()})
-    manifest = {'format': FORMAT, 'version': 1, 'purpose': 'Static declared first-view topology, not instantaneous flow or sampled simulation state.',
+    manifest = {'format': FORMAT, 'version': 1, 'purpose': 'Static declared selected-view topology, not instantaneous flow or sampled simulation state.',
                 'icon_state': {'active': True, 'running': False, 'status': 'normal', 'fault': False, 'damage': 'none', 'unspecified_fields': 'Canonical UI descriptor defaults; illustrative appearance only.'},
                 'browser': browser_version, 'source_hashes': initial, 'scenarios': records,
                 'outputs': {name: digest(data) for name, data in sorted(files.items())}}

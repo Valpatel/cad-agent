@@ -245,7 +245,8 @@
         "wastewater",
         "anaerobic-digestion",
         "biogas-chp"
-      ]
+      ],
+      "topologyView": "treatment"
     },
     {
       "id": "winery",
@@ -462,7 +463,8 @@
         "grapes",
         "vineyard"
       ],
-      "componentVariants": []
+      "componentVariants": [],
+      "topologyView": "fermentation"
     },
     {
       "id": "brewery",
@@ -661,7 +663,8 @@
         "brewing beer",
         "breweries"
       ],
-      "componentVariants": []
+      "componentVariants": [],
+      "topologyView": "brewhouse"
     },
     {
       "id": "fortune-cookies",

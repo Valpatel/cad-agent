@@ -137,13 +137,13 @@
     "maxRuntimeAssetBytes": 7604031
   },
   "sourceSha256": {
-    "src/cadagent/webkit/files/file-viewer.css": "823d9c5e7d8eaa1c43644486578dad960e7caa13ed02c77610051547c2dcd88f",
-    "src/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
-    "src/cadagent/webkit/files/file-viewer.js": "2e847e493fae7106e7db933826ec32425d26264b049fac6ec2e0c7a49c21704d",
-    "src/cadagent/webkit/files/file-loader.js": "09a7368fb7c0cf3f6d7cbb16eed173e7d48a8f7fc7fcff690621de65df4ec594",
-    "src/cadagent/webkit/files/file-mesh-worker.js": "3311c66e3adb40d0ea9123ded955655befa932797419f144a90ce06dcf64a9a9",
-    "src/cadagent/webkit/files/file-viewer.html": "dc5435a7e15087e6153d702771cf5c4980909c90d00431ca3c15dd950be7a9dc",
-    "src/cadagent/webkit/files/file-step-worker.js": "0e41118376d923b17b496820f6a2a3f151cb288757bdcf43ac159a159fa7a1fe"
+    "src/cadagent/webkit/file-viewer.css": "823d9c5e7d8eaa1c43644486578dad960e7caa13ed02c77610051547c2dcd88f",
+    "src/cadagent/webkit/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
+    "src/cadagent/webkit/file-viewer.js": "2e847e493fae7106e7db933826ec32425d26264b049fac6ec2e0c7a49c21704d",
+    "src/cadagent/webkit/file-loader.js": "09a7368fb7c0cf3f6d7cbb16eed173e7d48a8f7fc7fcff690621de65df4ec594",
+    "src/cadagent/webkit/file-mesh-worker.js": "3311c66e3adb40d0ea9123ded955655befa932797419f144a90ce06dcf64a9a9",
+    "src/cadagent/webkit/file-viewer.html": "dc5435a7e15087e6153d702771cf5c4980909c90d00431ca3c15dd950be7a9dc",
+    "src/cadagent/webkit/file-step-worker.js": "0e41118376d923b17b496820f6a2a3f151cb288757bdcf43ac159a159fa7a1fe"
   },
   "corpus": {
     "manifestSha256": "9fd0962b2e2d2eeb04883de8bdd92390f291ebf98bc3753ad29a220b6eced5ea",

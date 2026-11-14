@@ -333,7 +333,7 @@ test('headers: stable assets revalidate, each header has one rule, and inline sc
   const rules = parseHeaders(text);
   const vendorPaths = files.filter(f => f.startsWith('kit/vendor/')).map(f => '/' + f);
   assert.ok(vendorPaths.includes('/kit/vendor/fonts/fonts.css') && vendorPaths.includes('/kit/vendor/fonts/SOURCE.json'));
-  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/viewer', ...vendorPaths]) {
+  for (const p of ['/', '/docs/toolkit', '/docs/toolkit.md', '/llms.txt', '/install.sh', '/install.ps1', '/kit/model/viewer', ...vendorPaths]) {
     const seen = {};
     for (const r of rules) if (r.pattern.test(p)) for (const [k] of r.headers) seen[k.toLowerCase()] = (seen[k.toLowerCase()] || 0) + 1;
     for (const [k, n] of Object.entries(seen)) assert.equal(n, 1, `${p}: ${k} is set by ${n} rules and Pages would join them`);

@@ -35,8 +35,8 @@ const browser = await engine.launch(launchOptions);
 // theme part's text walk stays short; the walls part measures every reference page).
 const REFS = '/references/laser-cutting';
 const ROUTES = ['/', '/explore', '/catalog', '/docs/compliant', '/docs/toolkit', '/README', '/research/landscape', '/agents/cad-resume',
-  '/lessons/mechanical/design-rules', REFS, '/kit/file-viewer', '/missing-page'];
-// /kit/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
+  '/lessons/mechanical/design-rules', REFS, '/kit/files/file-viewer', '/missing-page'];
+// /kit/model/viewer is the kit's project viewer: it needs a project's exports/view/view.json, so it is not a site page.
 // The most a page with a diagram may move while it loads (#132; Google calls a page good under 0.1).
 const DIAGRAM_SHIFT = 0.05;
 // How many parts of this test (inLanes, below) run at once, each in its own pages: two keep a 4-CPU CI runner busy

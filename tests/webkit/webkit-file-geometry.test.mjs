@@ -4,7 +4,7 @@ import {normalizeMesh,validateModel,validateSTL,MAX_TRIANGLES} from '../../softw
 import {fileURL} from '../../software/cadagent/webkit/files/file-loader.js';
 const triangle=()=>({positions:[0,0,0,10,0,0,0,20,0],indices:[0,1,2]});
 test('original URL permits only same-origin supported originals',()=>{
-  assert.equal(fileURL('/part.STEP?revision=1','https://example.test/kit/viewer').format,'step');
+  assert.equal(fileURL('/part.STEP?revision=1','https://example.test/kit/files/file-viewer').format,'step');
   for(const url of ['https://other.test/a.stl','javascript:a.stl','/a.png','https://u:p@example.test/a.stl'])assert.throws(()=>fileURL(url,'https://example.test/'));
 });
 test('geometry contract rejects invalid vertices, indices and materials before scene construction',()=>{

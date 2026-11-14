@@ -50,8 +50,10 @@ Add the new file to its owner's README, repair direct imports and distribution
 membership, and test actual mount, failure, resize and disposal behavior. No
 placeholder owner folders or universal renderer are needed to add a domain.
 
-The stage and HUD originate in the MIT Moxie simulator; pinned third-party code
-and licenses remain under [vendor/](vendor/README.md). Geometry fixtures in the
-host example are original illustrative blocks.
+The stage and HUD are adapted from the MIT [Moxie simulator](https://github.com/mvalancy/moxie-robot-saver).
+Pinned browser dependencies include `three@0.160.0`, `mermaid@11.17.2` and
+`fflate@0.8.3`; their source receipts, authorship and licenses remain under
+[vendor/](vendor/README.md). Host-example geometry fixtures are original
+illustrative blocks.
 
 [Package map](../README.md)

@@ -59,9 +59,10 @@ export function interpolateQuaternion(a,b,t) {
   let dot=a.reduce((sum,x,i)=>sum+x*b[i],0), target=b;
   if(dot<0){target=b.map(x=>-x);dot=-dot;}
   dot=Math.min(1,dot);
-  let q;
-  if(dot>.9995)q=a.map((x,i)=>x+(target[i]-x)*t);
-  else {const angle=Math.acos(dot),s=Math.sin(angle);q=a.map((x,i)=>(x*Math.sin((1-t)*angle)+target[i]*Math.sin(t*angle))/s);}
+  // Orthonormal form keeps uniform SLERP stable near coincident endpoints without NLERP.
+  const perpendicular=target.map((x,i)=>x-dot*a[i]),sine=Math.hypot(...perpendicular);
+  if(sine<1e-15)return [...a];
+  const angle=Math.atan2(sine,dot),q=a.map((x,i)=>x*Math.cos(t*angle)+perpendicular[i]*Math.sin(t*angle)/sine);
   const length=Math.hypot(...q);return q.map(x=>x/length);
 }
 

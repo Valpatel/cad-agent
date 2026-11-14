@@ -52,7 +52,7 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
       listen(speed,'change',()=>ownedClock.setSpeed(+speed.value));
       listen(document,'visibilitychange',()=>{if(document.hidden)ownedClock.pause();});
       listen(document,'cad-themechange',palette);system.addEventListener('change',palette);palette();
-      const heading=el('h3','Recorded evidence'),description=el('p',`${data.bodies.length} bodies · ${data.frames.length} captured poses · ${data.duration.toFixed(2)} seconds.`);
+      const heading=el('h3','Recorded evidence'),description=el('p',`${data.bodies.length} bodies · ${data.frames.length} captured frames · ${data.duration.toFixed(2)} seconds.`);
       const limits=el('p','Playback interpolates a completed solver run. Changing speed or time does not change forces or recompute dynamics.');
       const list=el('ul');for(const body of data.bodies)list.append(el('li',body.label));inspector.append(heading,description,list,limits);
       const selection=root.querySelector('.cad-viewer-selection');selection.textContent='Drag to orbit · two fingers to pan/zoom · Home to fit';selection.removeAttribute('aria-live');

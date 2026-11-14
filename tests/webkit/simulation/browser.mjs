@@ -81,6 +81,25 @@ try{
     const ready=await viewer.ready,count=container.childElementCount;viewer.dispose();container.remove();return{ready,count};
   });
   assert.deepEqual(aborted,{ready:false,count:0});cases.push({name:'aborted pending load leaves no host or canvas'});await context.close();
+  const boundaryContext=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),boundary=await boundaryContext.newPage();
+  boundary.on('pageerror',e=>errors.push(e.message));
+  await boundary.route('**/simulation/examples/two-link-arm/receipt.json',route=>route.fulfill({status:503,body:'unavailable'}));
+  await boundary.goto(base+'/kit/simulation/viewer.html');await boundary.waitForFunction(()=>document.body.dataset.ready==='error');
+  assert.ok(await boundary.getByRole('button',{name:'Retry recording',exact:true}).isVisible());
+  await boundary.unroute('**/simulation/examples/two-link-arm/receipt.json');await boundary.getByRole('button',{name:'Retry recording',exact:true}).click();
+  await boundary.waitForFunction(()=>document.body.dataset.ready==='1');cases.push({name:'receipt outage has an explicit working retry'});
+  const sparse=await boundary.evaluate(async()=>{
+    const THREE=await import('three'),{createReplayViewer}=await import('./viewer.js');
+    const source={schema:'cad-agent.pose-recording/1',title:'Sparse rotation counterexample',convention:{length:'m',up:'z',handedness:'right',quaternion:'xyzw'},bodies:[{id:'bar',label:'Rotating bar',geometry:[{shape:'box',size:[4,.1,.1],position:[0,0,0],quaternion:[0,0,0,1],color:'#00aabb'}]}],frames:[{time_s:0,poses:[{position:[0,0,3],quaternion:[0,0,0,1]}]},{time_s:2,poses:[{position:[0,0,3],quaternion:[0,1,0,0]}]}]};
+    const container=document.createElement('div');container.style.cssText='width:900px;height:500px';document.body.append(container);
+    const viewer=createReplayViewer(container,{recording:source});await viewer.ready;const peaks=[];
+    for(const time of [0,.25,.5,.75,1,1.25,1.5,1.75,2]){
+      viewer.playback.seek(time);const mesh=viewer.scene.groups[0].children[0],box=mesh.geometry.boundingBox;viewer.stage.camera.updateMatrixWorld(true);
+      let max=0;for(let i=0;i<8;i++){const p=new THREE.Vector3(i&1?box.max.x:box.min.x,i&2?box.max.y:box.min.y,i&4?box.max.z:box.min.z).applyMatrix4(mesh.matrixWorld).project(viewer.stage.camera);max=Math.max(max,Math.abs(p.x),Math.abs(p.y));}peaks.push({time,max});
+    }
+    viewer.dispose();container.remove();return peaks;
+  });
+  assert.ok(sparse.every(p=>p.max<1),JSON.stringify(sparse));cases.push({name:'Fit contains sparse180-degree rotation between endpoints',sparse});await boundaryContext.close();
   assert.deepEqual(errors,[]);
   await writeFile(`${out}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),base,sourceRevision:process.env.TEST_SOURCE_REVISION||'unrecorded',...provenance,cases,errors},null,2));
   console.log(`${engine.name()}: ${cases.length} recorded replay layout/theme/controls/pose/disposal cases passed`);

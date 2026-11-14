@@ -23,10 +23,20 @@ export function createPoseScene(stage,recording) {
   }
   // Fit the complete recorded motion, including geometry; moving links stay in view after Fit.
   const bounds=new THREE.Box3(),point=new THREE.Vector3(),rotation=new THREE.Quaternion(),position=new THREE.Vector3();
-  for(const frame of recording.frames)frame.poses.forEach((pose,i)=>{
+  const bodyBounds=groups.map(()=>new THREE.Box3()),padding=groups.map(()=>0),radii=localCorners.map(corners=>Math.max(...corners.map(p=>p.length())));
+  for(const [frameIndex,frame] of recording.frames.entries())frame.poses.forEach((pose,i)=>{
     rotation.fromArray(pose.quaternion);position.fromArray(pose.position);
-    for(const corner of localCorners[i]){point.copy(corner).applyQuaternion(rotation).add(position);const {x,y,z}=point;bounds.expandByPoint(point.set(x,z,-y));}
+    for(const corner of localCorners[i]){point.copy(corner).applyQuaternion(rotation).add(position);const {x,y,z}=point;bodyBounds[i].expandByPoint(point.set(x,z,-y));}
+    if(frameIndex){
+      const previous=recording.frames[frameIndex-1].poses[i].quaternion;
+      const dot=Math.min(1,Math.abs(previous.reduce((sum,n,k)=>sum+n*pose.quaternion[k],0))),theta=2*Math.acos(dot);
+      // Rotation R(t)p has |f''(t)| <= radius*theta^2. Linear interpolation's remainder is
+      // <= max|f''|/8 on [0,1]; translation is already linear. Expand endpoint bounds by
+      // that conservative error so sparse rotations cannot escape Fit between samples.
+      padding[i]=Math.max(padding[i],radii[i]*(theta*theta/8+1e-10)); // unit-normalization/near-coincident roundoff margin
+    }
   });
+  bodyBounds.forEach((box,i)=>bounds.union(box.expandByScalar(padding[i])));
   root.updateMatrixWorld(true);
   const size=bounds.getSize(new THREE.Vector3());
   return {root,groups,bounds,height:Math.max(.01,size.x,size.y,size.z),

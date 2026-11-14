@@ -1,12 +1,14 @@
 import {createReplayViewer} from './viewer.js';
 import {loadReceipt} from './replay.js';
 
-const lifetime=new AbortController(),status=document.querySelector('#receipt-status');
+const lifetime=new AbortController(),status=document.querySelector('#receipt-status'),container=document.querySelector('#replay');
 let viewer;
 async function start(){
+  status.textContent='Checking the recording receipt…';document.body.dataset.ready='loading';
+  const placeholder=document.createElement('p');placeholder.className='replay-load-message';placeholder.textContent='Loading recorded simulation…';container.replaceChildren(placeholder);
   try{
     const receipt=await loadReceipt(new URL('./examples/two-link-arm/receipt.json',import.meta.url),{signal:lifetime.signal});
-    viewer=createReplayViewer(document.querySelector('#replay'),{title:'Recorded robot simulation',recordingUrl:new URL('./examples/two-link-arm/recording.json',import.meta.url),expectedHash:receipt.artifacts['recording.json'],signal:lifetime.signal});
+    placeholder.remove();viewer=createReplayViewer(container,{title:'Recorded robot simulation',recordingUrl:new URL('./examples/two-link-arm/recording.json',import.meta.url),expectedHash:receipt.artifacts['recording.json'],signal:lifetime.signal});
     window.__replay=viewer;
     const ready=()=>{
       status.textContent=`MuJoCo ${receipt.engine.version} · ${receipt.effective_settings.frame_count} captured frames · exact recording hash verified`;
@@ -16,7 +18,10 @@ async function start(){
     viewer.host.subscribe(event=>{if(event.type==='status'&&event.state==='ready')ready();});
     if(!await viewer.ready)throw new Error('Recording could not be loaded; use Retry viewer to retry.');
     ready();
-  }catch(error){if(lifetime.signal.aborted)return;status.textContent=`Could not open recorded simulation: ${error.message}`;document.body.dataset.ready='error';}
+  }catch(error){
+    if(lifetime.signal.aborted)return;status.textContent=`Could not open recorded simulation: ${error.message}`;document.body.dataset.ready='error';
+    if(!viewer){placeholder.textContent='The recording receipt could not load.';const retry=document.createElement('button');retry.className='replay-retry';retry.type='button';retry.textContent='Retry recording';retry.addEventListener('click',start,{once:true,signal:lifetime.signal});placeholder.append(document.createElement('br'),retry);}
+  }
 }
 window.addEventListener('pagehide',()=>{lifetime.abort();viewer?.dispose();},{once:true});
 start();

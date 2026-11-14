@@ -12,12 +12,12 @@
   },
   "sources": {
     "docs/examples/robot-replay/capture.mjs": "b5eec835aeefbcb08ea2078b772bc70b1bae219bdf990be5753f01ecf15137c6",
-    "software/cadagent/webkit/simulation/replay.js": "a4b81fbae83914d34258417440c86e103d3a33fb3a5ab5566126d8ee5acbba30",
-    "software/cadagent/webkit/simulation/viewer.js": "df965d67aa6fad44545f77a79f0f5821728db83b097f3c5a9b9963757d1a984f",
-    "software/cadagent/webkit/simulation/scene.js": "d9bbdbb4711c380e0fbc4a493608711c02bd36204182964fd7899c23999f9896",
-    "software/cadagent/webkit/simulation/page.js": "1948d9bed800d4d5371055566be6ea3de5f133419cf2e71892051b9e06be3c8a",
+    "software/cadagent/webkit/simulation/replay.js": "05e8100dae4804e20c3aab6f32710fd1aa30ae728bd5e79466f90ff18862ddd3",
+    "software/cadagent/webkit/simulation/viewer.js": "5ececa70a70ed1096243f651ac572598ac0371a2449228386c339f4a4850002a",
+    "software/cadagent/webkit/simulation/scene.js": "7dde3f5f0adb52a7ddd9f76b3027ff82ea60ee73be1f560e04bd472d6ef88867",
+    "software/cadagent/webkit/simulation/page.js": "976a705a78a14380090f80185523324821ae44f31629de954b6e19bf493168a7",
     "software/cadagent/webkit/simulation/viewer.html": "ffb3d84a484eb465f88eb8cb524c7cee829102c668b0d3126b85b626d896eeda",
-    "software/cadagent/webkit/simulation/viewer.css": "76e06a46b7a1de59ecf10e90d9a5b0a53cadc9d6a4289cdbf61208e852fc0711",
+    "software/cadagent/webkit/simulation/viewer.css": "ada218fcb9f05c55cfd5bc362ea7272318b64cb2032804261ce74a2b8803a490",
     "software/cadagent/webkit/simulation/examples/two-link-arm/recording.json": "c090649e245efee73d4f55a4a765cf691061833bbcc6bf211fde143e6ca3535a",
     "software/cadagent/webkit/simulation/examples/two-link-arm/receipt.json": "edbdcafba372773bb6228c5750e5200c0f051739e3ce44bd17f9e73229ebe2f5",
     "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
@@ -29,6 +29,6 @@
   },
   "artifact": {
     "path": "preview.webp",
-    "sha256": "4078721982d2491d3846addb62f2d96ec73be169ebd1cdb0ebb4bdd662471400"
+    "sha256": "ef4ee578cc66a7f4e810c0daafea2d35f509ba01e53ed3a574b647481200b00a"
   }
 }

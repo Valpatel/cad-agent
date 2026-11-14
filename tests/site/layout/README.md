@@ -4,10 +4,10 @@ Browser helpers for the site's rendered layout. The parent runners choose the br
 actual built site; these helpers keep geometry, navigation and motion checks together.
 
 ```mermaid
-flowchart LR
-    R["website-browser.mjs"] --> L["motion · outline · walls · wide"]
-    C["toolkit/website-catalog-browser.mjs"] --> O["outline · walls"]
-    L --> S["Built pages in Chromium / WebKit"]
+flowchart TB
+    R["Site suite"] --> L["Layout · motion"]
+    C["Toolkit suite"] --> O["Reader checks"]
+    L --> S["Rendered pages · both engines"]
     O --> S
 ```
 
@@ -20,7 +20,7 @@ flowchart LR
 
 `wide.mjs` runs through [the ordinary website browser suite](../website-browser.mjs) in each CI browser engine.
 Its four viewports include 3440×1440. The checks measure real boxes after fonts and layout settle, then plant
-the old shell cap, three-column gallery and an oversized hero to prove that each defect is detected. Pure
+the old shell cap, three-column gallery, unused Explore columns and an oversized hero to prove that each defect is detected. Pure
 measurement controls live in [website-pages.test.mjs](../website-pages.test.mjs). This is representative layout
 acceptance, not a visual audit of every published page; existing phone, reader and motion coverage still runs.
 

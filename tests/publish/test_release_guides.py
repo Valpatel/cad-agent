@@ -258,24 +258,24 @@ def test_model_cannot_silently_skip_an_instance(tmp_path):
         collect(tmp_path, path)
 
 
-def test_runtime_copies_resources_and_refuses_missing_reader_or_symlinks(tmp_path, monkeypatch):
+def test_runtime_copies_checked_resources_and_refuses_missing_reader_or_symlinks(tmp_path, monkeypatch):
     from cadagent.publish import site
     kit = tmp_path / "kit"
-    files = ["viewer.html", "viewer.js", "stage.js", "assembly/guide.js", "vendor/three/three.module.min.js",
-             "hud.css", "vendor/NOTICE.txt", "__pycache__/unused.pyc"]
-    for name in files:
+    expected = REAL_GUIDE_RUNTIME()
+    for name, data in expected.items():
         path = kit / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(name)
+        path.write_bytes(data)
+    (kit / "unrelated.js").write_text("not a reader dependency")
     monkeypatch.setattr(site, "KIT_DIR", kit)
     captured = REAL_GUIDE_RUNTIME()
-    assert set(captured) == set(files) - {"__pycache__/unused.pyc"}
-    (kit / "assembly/guide.js").unlink()
+    assert dict(captured) == dict(expected)
+    target = kit / "assembly/guide.js"
+    target.unlink()
     with pytest.raises(CadConfigError, match="runtime"):
         REAL_GUIDE_RUNTIME()
-    (kit / "assembly/guide.js").write_text("guide")
-    (kit / "leak.txt").symlink_to(kit / "hud.css")
-    with pytest.raises(CadConfigError, match="symlinks"):
+    target.symlink_to(kit / "viewer.js")
+    with pytest.raises(CadConfigError, match="symlink"):
         REAL_GUIDE_RUNTIME()
 
 

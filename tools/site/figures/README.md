@@ -28,6 +28,7 @@ flowchart TD
 | [site-bench-pictures.mjs](site-bench-pictures.mjs) | Draw benchmark pictures. |
 | [site-explore-pictures.mjs](site-explore-pictures.mjs) | Capture exploration examples. |
 | [site-kit-pictures.mjs](site-kit-pictures.mjs) | Capture web-kit examples. |
+| [toolkit-examples.mjs](toolkit-examples.mjs) | Copy the existing synthetic assembly closure and capture the actual guide and original-file viewers with hash receipts. |
 | [site-model-poster.mjs](site-model-poster.mjs) | Draw matching model poster/card. |
 | [site-packet-pictures.py](site-packet-pictures.py) | Render delivery packet pictures. |
 | [torsion-snap-still.mjs](torsion-snap-still.mjs) | Snapshot the torsion snap example. |

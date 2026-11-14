@@ -383,12 +383,12 @@ const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildC
   generatedRoutes: TOOLKIT_ROUTES,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
-const toolkit = toolkitPages(scada, {catalog:catalog.items});
+const toolkit = toolkitPages(scada, {catalog:catalog.items,has:file=>tracked.includes(file)});
 for (const [file,text] of toolkit.files) {await mkdir(path.dirname(path.join(out,file)),{recursive:true});await writeFile(path.join(out,file),text);}
 for (const p of toolkit.pages) {
   const filename=p.url.slice(1);
   await mkdir(path.dirname(path.join(out,filename)),{recursive:true});
-  await writeFile(path.join(out,filename+'.html'),frame({title:p.title,body:p.body,description:p.description,current:p.url,page:'toolkit',md:p.url+'.md',css:['/web/toolkit.css',...(p.url.endsWith('/elements')?['/kit/scada/ui/src/styles.css']:[])]}));
+  await writeFile(path.join(out,filename+'.html'),frame({title:p.title,body:p.body,description:p.description,current:p.url,page:'toolkit',md:p.url+'.md',css:['/web/toolkit.css',...(p.css || []),...(p.url.endsWith('/elements')?['/kit/scada/ui/src/styles.css']:[])]}));
   await writeFile(path.join(out,filename+'.md'),p.markdown);
 }
 // Each ### entry in a lesson file is one lesson (docs/lessons/README.md#lesson-format); the area READMEs are maps, not lessons.

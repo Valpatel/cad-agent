@@ -1,0 +1,161 @@
+{
+  "schema": "cad-agent.toolkit-examples/1",
+  "scope": "Actual viewer previews and byte-identical synthetic assembly fixture; no physical or project qualification.",
+  "sourceHead": "f019f23da9e7e63a0b7c041e547e62ab431522b2",
+  "fixtureRevision": "1111111111111111111111111111111111111111",
+  "generator": {
+    "path": "tools/site/figures/toolkit-examples.mjs",
+    "sha256": "9c97fbd6794f14d5e25eb246369ac80ad113768607b4a60f9f38db09d61c0081"
+  },
+  "browser": {
+    "engine": "chromium",
+    "version": "156.0.8078.79",
+    "selection": "executable:chromium"
+  },
+  "copies": {
+    "guide.json": {
+      "source": "tests/fixtures/assembly-plan/guide.json",
+      "sha256": "e5b2f93ce6826bfe600dac6f34959a7c476adc45b0de349dcbb1c2e8faf9c30f",
+      "bytes": 1318
+    },
+    "view.json": {
+      "source": "tests/fixtures/assembly-plan/view.json",
+      "sha256": "bee31d8cbd34e12c9fdfa18af8cfa801f1736311a474e192b9bd8dd6861edcd1",
+      "bytes": 1563
+    },
+    "plan.json": {
+      "source": "tests/fixtures/assembly-plan/plan.json",
+      "sha256": "67126dfab8ca7648a2d9a81388d1edcc43dee0be2a11a62b7a45016bc84c2e2d",
+      "bytes": 2911
+    },
+    "base.stl": {
+      "source": "tests/fixtures/assembly-plan/base.stl",
+      "sha256": "d200e907a9e7e414f9e7d764189a033b32f2eebf5fbaecd811f17d26b90cd1bd",
+      "bytes": 684
+    },
+    "rail.stl": {
+      "source": "tests/fixtures/assembly-plan/rail.stl",
+      "sha256": "774aecf78f7fd69f2f0bbf3b2506d223d32304db555e8fd760ba272e29fb0bc0",
+      "bytes": 1284
+    },
+    "plate.stl": {
+      "source": "tests/fixtures/assembly-plan/plate.stl",
+      "sha256": "bcfcbb2e396da36084ad961112a89836ce6c52e5a68e022b8503b4018f2877a8",
+      "bytes": 684
+    },
+    "fastener.stl": {
+      "source": "tests/fixtures/assembly-plan/fastener.stl",
+      "sha256": "054f51f7691b78d320ce7c66501fbdba2b748f2963b16dd7350e23b157270886",
+      "bytes": 684
+    },
+    "lid.stl": {
+      "source": "tests/fixtures/assembly-plan/lid.stl",
+      "sha256": "fe32664fd39263bc01c1f2b6b45e2e3daa0bd741d48ea050b119ef7ee109150e",
+      "bytes": 684
+    }
+  },
+  "captures": {
+    "assembly": {
+      "file": "assembly.webp",
+      "route": "/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json",
+      "sha256": "141c49949327046207aec1fe7316c3eff6f87901a4e579a0872b721ae96af8dd",
+      "bytes": 55986,
+      "viewport": {
+        "width": 960,
+        "height": 640
+      },
+      "deviceScaleFactor": 1,
+      "colorScheme": "dark",
+      "reducedMotion": "reduce",
+      "scene": {
+        "triangles": 186,
+        "camera": [
+          0.0686949572158483,
+          0.04356781479353427,
+          0.09827125917413707
+        ],
+        "target": [
+          0.011999999999999995,
+          0.019000000000000003,
+          0
+        ],
+        "parts": [
+          "base",
+          "rail",
+          "plate",
+          "fastener",
+          "lid"
+        ],
+        "instruction": "plate",
+        "display": "solid"
+      },
+      "runtimeInputs": {
+        "software/cadagent/webkit/assembly/guide.js": "e70c2d89fe631a159eefe8b0bb9a28013fa6ca621d10eb240f83322fd7779a5a",
+        "software/cadagent/webkit/assembly/playback.js": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7",
+        "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
+        "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+        "software/cadagent/webkit/model/viewer.html": "92e3df9838e31e38b3752ba316b40b76337f2dcdfdc001bfd7e1cdfe8dfb8bdc",
+        "software/cadagent/webkit/model/viewer.js": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241",
+        "software/cadagent/webkit/ui/hud.css": "f4933895d9676f014f8cff85d3cf439dfbad74fa2a84fd8a8b1b42adcf949d21",
+        "software/cadagent/webkit/ui/panel.js": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b",
+        "software/cadagent/webkit/vendor/fonts/fonts.css": "8d4d4568d1e6d4942045dadc47aae800a5cc759245bdd3c742e665072865afd4",
+        "software/cadagent/webkit/vendor/fonts/inter.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+        "software/cadagent/webkit/vendor/fonts/jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be",
+        "software/cadagent/webkit/vendor/three/addons/controls/OrbitControls.js": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe",
+        "software/cadagent/webkit/vendor/three/addons/loaders/STLLoader.js": "896d006a48b8f125385a485ccae154dadee801a953f0b45ceffe7ddd8a29ca93",
+        "software/cadagent/webkit/vendor/three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6",
+        "tools/site/assets/toolkit/assembly/base.stl": "d200e907a9e7e414f9e7d764189a033b32f2eebf5fbaecd811f17d26b90cd1bd",
+        "tools/site/assets/toolkit/assembly/fastener.stl": "054f51f7691b78d320ce7c66501fbdba2b748f2963b16dd7350e23b157270886",
+        "tools/site/assets/toolkit/assembly/guide.json": "e5b2f93ce6826bfe600dac6f34959a7c476adc45b0de349dcbb1c2e8faf9c30f",
+        "tools/site/assets/toolkit/assembly/lid.stl": "fe32664fd39263bc01c1f2b6b45e2e3daa0bd741d48ea050b119ef7ee109150e",
+        "tools/site/assets/toolkit/assembly/plan.json": "67126dfab8ca7648a2d9a81388d1edcc43dee0be2a11a62b7a45016bc84c2e2d",
+        "tools/site/assets/toolkit/assembly/plate.stl": "bcfcbb2e396da36084ad961112a89836ce6c52e5a68e022b8503b4018f2877a8",
+        "tools/site/assets/toolkit/assembly/rail.stl": "774aecf78f7fd69f2f0bbf3b2506d223d32304db555e8fd760ba272e29fb0bc0",
+        "tools/site/assets/toolkit/assembly/view.json": "bee31d8cbd34e12c9fdfa18af8cfa801f1736311a474e192b9bd8dd6861edcd1"
+      }
+    },
+    "file-review": {
+      "file": "file-review.webp",
+      "route": "/kit/files/file-viewer.html?file=/kit/host/example.stl",
+      "sha256": "50d2b707f399c972d2a3685a2448e12d75d5dda428c463f1940677bda05e55ac",
+      "bytes": 35206,
+      "viewport": {
+        "width": 960,
+        "height": 640
+      },
+      "deviceScaleFactor": 1,
+      "colorScheme": "dark",
+      "reducedMotion": "reduce",
+      "scene": {
+        "triangles": 126,
+        "camera": [
+          0.03701358065828023,
+          0.03490950646079616,
+          0.048117654855764316
+        ],
+        "target": [
+          0,
+          0.009000000000000005,
+          -1.734723475976807e-18
+        ],
+        "source": "example.stl"
+      },
+      "runtimeInputs": {
+        "software/cadagent/webkit/files/file-geometry.js": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd",
+        "software/cadagent/webkit/files/file-loader.js": "09a7368fb7c0cf3f6d7cbb16eed173e7d48a8f7fc7fcff690621de65df4ec594",
+        "software/cadagent/webkit/files/file-mesh-worker.js": "27a1755b197504c75aafb52b56c2a26ac206497002072f232fd671e51b045876",
+        "software/cadagent/webkit/files/file-viewer-theme.js": "36ac086d6f6d439a6b9f35f449d82bf5e3bc5ec984f7a2eb6d95f348e75ad8b5",
+        "software/cadagent/webkit/files/file-viewer.css": "3b82348293bba0a214ecec2b31ce2830ef3044f4454ffcdc188012857bd87963",
+        "software/cadagent/webkit/files/file-viewer.html": "631fd68a5530fc4edabc8c8de1bc05835d01eb3effa9f91b5f4def3823a5c267",
+        "software/cadagent/webkit/files/file-viewer.js": "7e6c3a1bdcf18574af036ac2399382bd620ca057491f6433ca5565b2ae693f37",
+        "software/cadagent/webkit/files/page.css": "3b07475c74348d5bbbcc8bbe673eab384f9d82d1f4132c1a7d9a1da4a3c990ca",
+        "software/cadagent/webkit/files/viewer.css": "62ab9439282d6aa2b0bc0e739f1b80d2084942da46e7c47e5e011be19c629168",
+        "software/cadagent/webkit/host/example.stl": "6ebc1638b6e3839f620f0dc9e84f819c7dc15f66a9e27d14a72b48a749c60a7d",
+        "software/cadagent/webkit/model/stage.js": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486",
+        "software/cadagent/webkit/vendor/file-parsers/STLLoader.js": "5008202cece503fd1ba8c04c0dd9000f6c311e19391b10d6390b90ac42235d6d",
+        "software/cadagent/webkit/vendor/three/addons/controls/OrbitControls.js": "a861339c938d6ce76a8bd37d0b66679ba296be3de930811e864a041768bac9fe",
+        "software/cadagent/webkit/vendor/three/three.module.min.js": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
+      }
+    }
+  }
+}

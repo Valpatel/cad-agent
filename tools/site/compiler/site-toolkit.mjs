@@ -1,11 +1,11 @@
-/** Target-owned Toolkit pages. Metadata is read from the SCADA libraries, never a remote app.
+/** Target-owned Toolkit pages and working examples. SCADA metadata stays library-owned.
  * This projection does not replace component, model or scenario schemas. Its JSON is a browser index.
  */
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SLUG = /^[a-z][a-z0-9-]*$/;
 const UI = 'software/cadagent/webkit/scada/ui/';
 const SIM = 'software/cadagent/webkit/scada/sim/';
-export const TOOLKIT_ROUTES = ['/toolkit', '/toolkit/scada', '/toolkit/scada/elements', '/toolkit/scada/simulations'];
+export const TOOLKIT_ROUTES = ['/toolkit', '/toolkit/scada', '/toolkit/scada/elements', '/toolkit/scada/simulations', '/toolkit/models'];
 export const SCADA_INPUTS = {components:UI+'metadata/components.json', gallery:UI+'metadata/gallery.json', scenarios:SIM+'scenarios/index.json', thumbnails:SIM+'metadata/thumbnails.json'};
 
 function requireValue(test, message) { if (!test) throw new Error(`SCADA Toolkit: ${message}`); }
@@ -106,19 +106,72 @@ export function toolkitFullText(pages, origin) {
   }).join('');
 }
 
+/** Capability cards are a presentation index of existing, locally owned examples. */
+export function toolkitCapabilities(m, {catalog = [], has} = {}) {
+  const scenario = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
+  const demo = (id, fallback) => catalog.find(c=>c.id===id)?.url || fallback;
+  const cards = [
+    {id:'scada-elements', title:'SCADA elements', kind:'Visual component library',
+      description:'Explore animated equipment and change its operating, warning and fault states.',
+      image:m.elements.find(e=>e.kind==='equipment' && e.type==='pump')?.image || m.elements[0].image, alt:'Animated centrifugal pump with operating gauges',
+      href:'/toolkit/scada/elements', action:'Try equipment states', docs:'/kit/scada/ui/README.md', fit:'contain'},
+    {id:'scada-simulations', title:'Connected systems', kind:'Shared simulation',
+      description:'Run a wastewater digester or another process. Operate equipment, inject faults and change assumptions.',
+      image:scenario.image, alt:`${scenario.title}: connected equipment in the shared simulation`,
+      href:scenario.href, action:'Run the digester', docs:'/toolkit/scada/simulations'},
+    {id:'models', title:'3D model review', kind:'Interactive CAD assembly',
+      description:'Orbit and explode the source-bound Gyropup robot model. Inspect geometry without a CAD installation.',
+      image:'/web/models/gyropup.webp', alt:'Gyropup wheel-legged robot, captured from the owned 3D CAD model',
+      href:'/toolkit/models', action:'Open 3D model', docs:'/docs/web-parts', fit:'contain'},
+    {id:'files', title:'Original CAD files', kind:'File viewer',
+      description:'Inspect an original STL with the shared camera and display tools. The viewer also supports STEP and other CAD formats.',
+      image:'/web/toolkit/file-review.webp', alt:'The original-file viewer displaying the example fixture STL',
+      href:'/kit/files/file-viewer.html?file=/kit/host/example.stl', action:'Open file example', docs:'/docs/file-viewer'},
+    {id:'assembly', title:'Assembly & build guides', kind:'Step-by-step instructions',
+      description:'Follow a synthetic rail assembly, inspect its parts and follow the declared insertion sequence.',
+      image:'/web/toolkit/assembly.webp', alt:'The build-guide viewer displaying the synthetic rail assembly and its instruction controls',
+      href:'/kit/model/viewer.html?guide=/web/toolkit/assembly/guide.json', action:'Follow the build', docs:'/docs/practice/assembly-guide'},
+    {id:'mechanisms', title:'Mechanism motion', kind:'Interactive kinematics',
+      description:'Change a four-bar linkage’s dimensions and drive its motion. See reachable positions and geometric limits.',
+      image:'/docs/img/formulas/fourbar-animator.svg', alt:'Four-bar linkage with a driven crank and moving coupler',
+      href:demo('demo-fourbar-animator','/docs/linkages#try-it-the-four-bar-animator'), action:'Try the linkage', docs:'/docs/linkages', fit:'contain'},
+    {id:'calculators', title:'Engineering calculators', kind:'Editable equations',
+      description:'Adjust a cantilever snap arm and compare deflection, strain and force under the stated assumptions.',
+      image:'/docs/img/compliant/cantilever-explorer.svg', alt:'Cantilever snap-arm explorer showing geometry, load and deflection',
+      href:demo('demo-snap-arm-explorer','/docs/compliant#try-it-the-snap-arm-explorer'), action:'Try the snap arm', docs:'/docs/compliant', fit:'contain'},
+  ];
+  if (has) for (const card of cards) {
+    for (const asset of [card.image, card.href]) {
+      const pathname = new URL(asset, 'https://cad.example').pathname;
+      const source = pathname.startsWith('/kit/') ? 'software/cadagent/webkit/' + pathname.slice(5)
+        : pathname.startsWith('/web/') ? 'tools/site/assets/' + pathname.slice(5)
+        : pathname.startsWith('/docs/img/') ? pathname.slice(1) : null;
+      if (source && !has(source)) throw new Error(`Toolkit: missing example asset ${source}`);
+    }
+  }
+  return cards;
+}
+
+const capabilityCard = c => `<article class="toolkit-card toolkit-capability" data-toolkit-capability="${esc(c.id)}"><a class="toolkit-image-link" href="${esc(c.href)}" tabindex="-1"><img src="${esc(c.image)}" alt="${esc(c.alt)}" width="800" height="500" loading="lazy"${c.fit==='contain'?' class="toolkit-contain"':''}></a><div class="toolkit-card-body"><p class="toolkit-card-kicker">${esc(c.kind)}</p><h2>${esc(c.title)}</h2><p>${esc(c.description)}</p><div class="toolkit-card-actions"><a class="button" data-toolkit-launch href="${esc(c.href)}">${esc(c.action)}</a><a href="${esc(c.docs)}">${c.id==='scada-simulations'?'All simulations':'Guide'}</a></div></div></article>`;
+
 /** Generated routes remain in the existing site frame, with Markdown twins and a machine-readable index. */
-export function toolkitPages(m, {catalog = []} = {}) {
+export function toolkitPages(m, {catalog = [], has} = {}) {
+  const capabilities = toolkitCapabilities(m,{catalog,has});
   const feature = m.simulations.find(s=>s.id==='wastewater-digester') || m.simulations[0];
-  const mechanical = catalog.find(c=>c.id==='demo-fourbar-animator');
   const body = content => `<div class="toolkit-shell">${content}</div>`;
   const pages = [
     {url:'/toolkit',title:'Engineering toolkit',description:'Reusable viewers, SCADA elements, simulations, build instructions and agent workflows.',
-      body:body(heading('Tools that make designs understandable.','Inspect models, explore live systems, follow assembly steps and review the evidence — with reusable tools for your own projects.','cad-agent toolkit')+
-        `<div class="toolkit-grid toolkit-capabilities"><article class="toolkit-card toolkit-feature"><img src="${esc(feature.image)}" alt="${esc(feature.title)} simulation" width="960" height="640"><div class="toolkit-card-body"><p class="toolkit-card-kicker">Live systems</p><h2>SCADA toolkit</h2><p>Animated equipment, editable simulation models and connected process diagrams. Browse the parts or run a whole system.</p>${actions}</div></article><article class="toolkit-card"><div class="toolkit-card-body"><p class="toolkit-card-kicker">Mechanical · 2D / 3D</p><h2>Models, motion & assembly</h2><p>Inspect original CAD files, explore mechanisms, review simulation results and follow source-bound build instructions.</p><ul><li><a href="/docs/file-viewer">Original-file viewer</a></li><li><a href="/docs/practice/assembly-guide">Assembly & build guides</a></li><li><a href="${esc(mechanical?.url || '/docs/mechanical/linkages')}">Mechanisms & motion</a></li><li><a href="/docs/toolkit#stiffness-and-strength-cadagentsimulationfea">Simulation & results</a></li></ul></div></article><article class="toolkit-card"><div class="toolkit-card-body"><p class="toolkit-card-kicker">Evidence & automation</p><h2>Review, report & build</h2><p>Keep design assumptions, checks and instructions connected to the source that produced them.</p><ul><li><a href="/docs/review-packet">Review packets</a></li><li><a href="/docs/web-parts">Reusable web components</a></li><li><a href="/docs/agent-workflow">Agent skills & workflows</a></li><li><a href="/docs/toolkit">Command & Python reference</a></li></ul></div></article></div><section class="toolkit-roadmap"><h2>Growing the workbench</h2><p>PCB layer review, electrical-panel diagrams and harness views are planned extensions. Existing <a href="/docs/toolkit">electrical checks</a> remain available; KiCad stays the PCB editor.</p><a href="/explore">Explore designs, guides and evidence →</a></section>`),
-      markdown:'# Engineering toolkit\n\nReusable viewers, simulation, assembly, evidence and agent tools.\n\n- [SCADA elements](/toolkit/scada/elements)\n- [SCADA simulations](/toolkit/scada/simulations)\n- [Original-file viewer](/docs/file-viewer)\n- [Assembly guide](/docs/practice/assembly-guide)\n- [Command and Python reference](/docs/toolkit)\n- [Agent workflows](/docs/agent-workflow)\n\nPCB, panel and harness viewers are planned, not launched capabilities.\n'},
+      body:body(heading('Tools that make designs understandable.','Open a working example, explore its controls, then use the same components in your own project.','cad-agent toolkit')+
+        `<div class="toolkit-grid toolkit-capabilities">${capabilities.map(capabilityCard).join('')}</div><section class="toolkit-roadmap"><h2>Connect the work</h2><p>Keep assumptions, checks and instructions with the source that produced them.</p><div class="toolkit-actions"><a href="/docs/review-packet">Review packets</a><a href="/docs/agent-workflow">Agent skills & workflows</a><a href="/docs/toolkit">Command & Python reference</a></div></section><section class="toolkit-roadmap"><h2>Growing the workbench</h2><p>PCB layer review, electrical-panel diagrams and harness views are planned extensions. Existing <a href="/docs/toolkit">electrical checks</a> remain available; KiCad stays the PCB editor.</p><a href="/explore">Explore designs, guides and evidence →</a></section>`),
+      markdown:'# Engineering toolkit\n\nOpen working examples of reusable viewers, simulation and build instructions.\n\n'+capabilities.map(c=>`- [${c.title}: ${c.action}](${c.href}) — ${c.description} [Guide](${c.docs})`).join('\n')+'\n\n[Agent workflows](/docs/agent-workflow) · [Review packets](/docs/review-packet) · [Command and Python reference](/docs/toolkit)\n\nPCB, panel and harness viewers are planned, not launched capabilities.\n'},
     {url:'/toolkit/scada',title:'SCADA toolkit',description:'Animated equipment and connected simulation examples, owned and maintained in cad-agent.',body:body(tabs('overview')+heading('Build a living system.','Animated SCADA elements and shared simulation models for process, energy, manufacturing and growing systems.')+stats(m)+actions+`<section class="toolkit-feature-row"><a href="${esc(feature.href)}"><img src="${esc(feature.image)}" alt="${esc(feature.title)} diagram" width="960" height="640"></a><div><p class="eyebrow">Start with a system</p><h2>${esc(feature.title)}</h2><p>${esc(feature.description)}</p><p>Open equipment, change operating values, close valves and inject faults. Every layout observes the same session.</p><a class="button" href="${esc(feature.href)}">Open simulation ↗</a></div></section>`+limits+`<section class="toolkit-roadmap"><h2>Use it in your own project</h2><p>The viewer, headless model and equation providers are separate library modules. Keep the artwork, replace the equations, or connect a complete external model through the adapter.</p><div class="toolkit-actions"><a href="/kit/scada/ui/README.md">UI library</a><a href="/kit/scada/sim/README.md">Models & equations</a><a href="/kit/scada/sim/examples/model-switching/">Equation switching example</a></div></section>`+license),markdown:`# SCADA toolkit\n\n${m.counts.equipment} equipment types, ${m.counts.variants} variants, ${m.counts.states} visual state examples and ${m.counts.simulations} simulations.\n\n- [Elements and states](/toolkit/scada/elements)\n- [Example simulations](/toolkit/scada/simulations)\n- [Machine-readable browser index](/toolkit/scada/catalog.json)\n- [UI library](/kit/scada/ui/README.md)\n- [Models and equations](/kit/scada/sim/README.md)\n\nIllustrative editable models; package terms remain UNLICENSED.\n`},
     {url:'/toolkit/scada/elements',title:'SCADA elements & states',description:'Browse animated SCADA symbols, variants and states, then try editable visual inputs.',body:body(tabs('elements')+heading('Equipment with character.','Pumps, vessels, generators, PLCs and more — one consistent visual language, with editable operating and fault states.')+browser(m,'elements')+preview+limits+license),markdown:'# SCADA elements and states\n\nBrowse and filter the [equipment gallery](/toolkit/scada/elements).\n\n[Metadata and state fields](/toolkit/scada/catalog.json) describe the [SVG library](/kit/scada/ui/img/README.md). State controls are visual inputs, not physical simulations.\n'},
-    {url:'/toolkit/scada/simulations',title:'SCADA example simulations',description:'Run connected simulations for wastewater, food, energy, manufacturing and agriculture.',body:body(tabs('simulations')+heading('Turn the system on.','Explore connected equipment, try failures and change assumptions. Each example offers multiple views of one shared simulation.')+limits+browser(m,'simulations')+license),markdown:'# SCADA example simulations\n\nIllustrative, editable process models with one session across named views.\n\n'+m.simulations.map(s=>`- [${s.title}](${s.href}): ${s.description}`).join('\n')+'\n'}
+    {url:'/toolkit/scada/simulations',title:'SCADA example simulations',description:'Run connected simulations for wastewater, food, energy, manufacturing and agriculture.',body:body(tabs('simulations')+heading('Turn the system on.','Explore connected equipment, try failures and change assumptions. Each example offers multiple views of one shared simulation.')+limits+browser(m,'simulations')+license),markdown:'# SCADA example simulations\n\nIllustrative, editable process models with one session across named views.\n\n'+m.simulations.map(s=>`- [${s.title}](${s.href}): ${s.description}`).join('\n')+'\n'},
+    {url:'/toolkit/models', title:'3D model review', description:'Inspect the source-bound Gyropup robot CAD assembly with the shared model viewer.',
+      css:['/kit/model/model.css'],
+      body:body(heading('Inspect a real CAD assembly.','Orbit and explode Gyropup with the same model component used in other cad-agent pages.','3D model viewer')+
+        '<cad-model class="toolkit-model-stage" src="/web/models/gyropup.json" label="Gyropup robot CAD assembly"><img class="cad-model-poster" src="/web/models/gyropup.webp" width="1200" height="1200" alt="Gyropup robot CAD assembly"></cad-model><p class="toolkit-note">This is a source-bound CAD display, not a robot dynamics simulation. The simplified model omits interior hardware; viewing it does not verify physical fit or strength.</p><div class="toolkit-actions"><a href="/web/models/gyropup.json">Model and source identity</a><a href="/docs/web-parts">Use the model component</a><a href="/toolkit">All Toolkit examples</a></div>'),
+      markdown:'# 3D model review\n\nInspect the [interactive Gyropup CAD assembly](/toolkit/models). Orbit and explode the model.\n\n[Model and source identity](/web/models/gyropup.json) · [Component guide](/docs/web-parts)\n\nThis is a simplified CAD display, not a robot dynamics simulation or a physical fit/strength qualification.\n'},
   ];
   return {pages, files:new Map([['toolkit/scada/catalog.json',JSON.stringify(m)+'\n']])};
 }

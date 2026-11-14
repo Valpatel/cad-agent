@@ -32,3 +32,4 @@ flowchart TD
 | [toolkit.css](toolkit.css), [toolkit.js](toolkit.js) | Scoped Toolkit browsing, filters and lazy interactive SCADA state previews. |
 | [theme.js](theme.js) | Theme preference/bootstrap behavior. |
 | [models/](models/README.md) | Coherent homepage model/poster bundle. |
+| [toolkit/](toolkit/README.md) | Closed synthetic assembly example and source-bound captures of the shipped guide and original-file viewers. |

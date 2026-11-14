@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
+import {execFileSync} from 'node:child_process';
 import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText, toolkitCapabilities} from '../../../tools/site/compiler/site-toolkit.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
@@ -145,4 +146,5 @@ test('published assembly example preserves the complete source-bound fixture clo
   assert.equal(manifest.schema,'cad-agent.toolkit-examples/1');
   assert.equal(Object.keys(manifest.copies).length,8);
   assert.match(manifest.scope,/no physical or project qualification/);
+  execFileSync(process.execPath,['tools/site/figures/toolkit-examples.mjs','--check'],{cwd:root,stdio:'pipe'});
 });

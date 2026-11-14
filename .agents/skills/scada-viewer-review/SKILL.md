@@ -33,6 +33,11 @@ Read the [style guide](../../../software/cadagent/webkit/scada/ui/STYLE_GUIDE.md
    focus during resize. Check both application themes, persisted choices, system
    preference changes and direct/copied-kit entry. Name omitted cases rather than
    claiming all.
+3. Verify a single in-view camera toolbar owns zoom, readable/reset scale and Fit,
+   with visible focus and at least 44 px targets. Measure inspector action and
+   toggle text against their actual surfaces in both themes, including pressed,
+   unpressed and hovered states; require at least 4.5:1 for normal text and status
+   spans. Wait for the camera's resize update before comparing manual world focus.
 
 Compare visible output against model evidence, and test the interaction path in
 the opposite direction. A moving symbol alone does not establish either contract.

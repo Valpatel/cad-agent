@@ -5,6 +5,7 @@ never executed. This checks names, not argument correctness or universal lesson 
 from __future__ import annotations
 
 import importlib
+import json
 import re
 import shlex
 from pathlib import Path
@@ -221,6 +222,8 @@ def test_announced_review_section_exception_still_requires_its_explanation(tmp_p
 
 def test_scada_skills_declare_mit_and_use_the_shared_workflow():
     """Installed skill declarations must agree with project-owned source terms and shared process."""
+    plugin = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+    assert plugin["license"] == "MIT", "native plugin terms must match its project-owned skills"
     names = ["scada-component-authoring", "scada-system-authoring", "scada-model-adaptation",
              "scada-viewer-review", "scada-distribution-review", "repository-documentation"]
     for name in names:

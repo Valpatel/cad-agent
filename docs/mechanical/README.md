@@ -16,7 +16,7 @@ flowchart TD
 | Task | Start here |
 |---|---|
 | Join printed parts | [Inserts](inserts.md), [screw bosses](screw-bosses.md), [printed joints](printed-joints.md) |
-| Support or move a part | [Bearings](bearings.md), [linkages](linkages.md), [rendered motion](rendered-motion.md) |
+| Support or move a part | [Bearings](bearings.md), [gears](gears.md), [linkages](linkages.md), [rendered motion](rendered-motion.md) |
 | Flex or assemble a part | [Compliant mechanisms](compliant.md), [subassembly insertion](subassembly-insertion.md) |
 
 [All guides](../README.md) · [Mechanical lessons](../lessons/mechanical/README.md) · [Skills](../../.agents/skills/README.md)

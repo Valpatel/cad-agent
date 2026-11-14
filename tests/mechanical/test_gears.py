@@ -324,7 +324,7 @@ def test_a_176_tooth_gear_builds_in_seconds(cq):
     gear = spur_gear(1.5, 176, 10, bore=200)
     elapsed = time.perf_counter() - start
     assert gear.isValid() and len(gear.Solids()) == 1
-    assert elapsed < 20                                            # about 0.3 s on a desktop; the bound is for slow CI
+    assert elapsed < 20                                            # 0.2 to 0.8 s on a desktop; the bound is for slow CI
     assert gear.BoundingBox().xmax == pytest.approx(1.5 * 178 / 2, abs=1e-4)
 
 

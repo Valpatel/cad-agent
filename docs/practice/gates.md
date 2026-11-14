@@ -852,7 +852,7 @@ The synthetic 100-part assembly (`tools/gate_timing.py --motion 20`) with three 
 the queries to the pairs that come near: real parts cost more per query (see the relation table), not more queries.
 Repeating poses (#724): a shaft that is a body of revolution and a 12-lug wheel, each on a full-turn joint at
 `max_step_deg=2` with two neighbours: 362 poses, 720 kernel queries and 12.1 s with `symmetry=False`; 32 kernel
-queries and 1.3 s with it, the two symmetry measurements (0.4 s) included.
+queries and 1.2 s with it, the two symmetry measurements (0.4 s) included.
 
 Limits. Sampled poses, not a swept volume. Rigid bodies on ideal axes: no backlash, play, deflection or tolerance
 stack, so a clear pose in the model does not prove printed parts clear. Contacts are classified by the relation

@@ -20,7 +20,7 @@
     "src/catalog/selection.mjs": "84e4ee4508a707c21ffb277735d93940d0a1f70f25b6832c0b4e46c941658226",
     "src/catalog/utility-variants.mjs": "7cc4fcbbec4e3e749eacdbd14150772e21843c29bcdaebc58363c15967af1458",
     "src/contracts/system-definition.mjs": "45a5ddd87ec69952c09e0522774acdd20c86ea7d73f852a21807bde18f4232cb",
-    "src/index.mjs": "5cad33b47f700fdbf86cf5bd27ac78b45d9d1736a37aff5d97b72baca48e8481",
+    "src/index.mjs": "0f9c8786fdb2bdcb8878aa38ebf5c98200d960438354f8766a0d7cef8436e52e",
     "src/metadata.mjs": "d5e1b713e8b0e49973df520a07f44d66f3b3b7cd6539734bf2aed96524318c0b",
     "src/styles.css": "6f80066f25761d5b379553e21a52f5db344c726c693bebb449b25dde5f8f949a",
     "src/symbols/art/agriculture.css": "619c06b0a6eaf25e2dad45e5e102cb8b4549598f422c6d7b24b7d1886a2ac1b7",
@@ -32,26 +32,29 @@
     "src/symbols/art/process.mjs": "f9f73f097e5534f9119425fad9a5aa20ea402264da042581aa862e16bcb17ce0",
     "src/symbols/art/twin.css": "b530ab2fdc6319d0c0e56ddfe814e0a1f8ca3fbd412bb0e45b25b2ddabde8fac",
     "src/symbols/art/twin.mjs": "bd79eb3521fc4c98bececa67679c00c1fa2c2d98ba465ba471aa08d98745c4a7",
-    "src/symbols/components.css": "9291ad91717ac0f770bc2a79291d4191e8b269f966e2b81ca7b377b846aacdd3",
-    "src/symbols/components.mjs": "72b2c4843229f54e0e347678b776b1a640a12dcfc756313eac238e2ee2874ab6",
+    "src/symbols/components.css": "aec3ba590791f908cd02dfe068cb08cb6f176d07eff93bd6a0571d81eeef4c39",
+    "src/symbols/components.mjs": "742993d3a280d6c00797f166d6b933d5f01a562526e6041c76bccdb0a01db8ec",
     "src/symbols/index.mjs": "cd2bb85f8acc61ab0ceface262cc1aa6e2221517061e53a4249fc23f6f400528",
     "src/symbols/power/electrical.mjs": "7d27d7978e8cf260e71ce8f6120f9a9e98a00e3db94a2f65224ab12177746f1d",
-    "src/symbols/power/energy.mjs": "fbdca8a2ae023d523ec7c102329a87b51ad7005824993ec63de65ab3eabb9531",
+    "src/symbols/power/energy.mjs": "3ff229100ca646194ad4a96608831218a5577eaa0e206b11209203ffea5565cb",
     "src/symbols/power/generators.mjs": "3248da64356d6314cc68e2a4e5183592b55d3bbd9549d56037d002d944b32e3f",
     "src/symbols/power/nuclear.css": "abcabbaf7128784b50000e27796d0486c39125918d2905188dda79fe67c595d1",
     "src/symbols/power/nuclear.mjs": "b669848e4bad9eb88e058941e57c3d9df733353c524634a700c22ee8c056e1c4",
     "src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
+    "src/symbols/valve-position.mjs": "f72f818fded726024ebd87f0c5eeaf6632308bfb328d9a1e994e51e385ce6382",
     "src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
-    "src/viewer/viewer.css": "6991b3250b7a67785ab091a95baaf195f1d8cc031feadf8001206c203ee88c5b",
-    "src/viewer/viewer.mjs": "7f31b768417688bf204c61be98ad0ea560efee789aadb2fe789a73d4c13bea65",
+    "src/viewer/viewer.css": "658e5ae5555c3e38c4a139e9462e638620c19178bdf9de9d0e7af125262a85c6",
+    "src/viewer/viewer.mjs": "cf48bc2f75c0a88a807d865bfd011b4c47319774bb66d2fa414f0c03bd4e368b",
+    "src/workspace/popover.css": "7192413b02f647ac2b21960ab35cfc5ec3e7a0232568816c574d0862cbc937fc",
+    "src/workspace/popover.mjs": "4fdd4689d24712ca312aeaa9444d46140fa26300a6bb822d63326ba0d50606d5",
     "src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
-    "src/workspace/workspace.mjs": "c7e1561841fe5af19b041f1da66ae1a502976496e54731218cfeb048d5f17085"
+    "src/workspace/workspace.mjs": "f5b61854a6bd3df76885abef47c55e9e5be7ae08c789afc7c5c33c938261a5e6"
   },
   "generator": {
     "path": "tools/webkit/scada/ui/generate-thumbnails.py",
-    "sha256": "6cfbace03b9cb5f118c61ac829e1e84dfb2058cacea9aa23d6a46d786127a206",
+    "sha256": "d451802120bae6385391f80b4414d03617e6a6c3522286cc9bff9bb4708ff804",
     "capture_helper_sha256": "2d767c6b3ab41936f2d199969612c12150c228e8259c30623fccf72d95bf1ffa"
   },
   "capture": {
@@ -588,8 +591,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 13830,
-      "sha256": "157c6fa7eaa5d7513805efb74fef8fbcfdb00c09e6692eba588720cd49839b82"
+      "bytes": 15918,
+      "sha256": "e73a22f91422a6f21543cdbbdac0ac86f2d03985042d7afb318cc21df4a32c35"
     },
     {
       "type": "control-valve",
@@ -608,8 +611,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 14146,
-      "sha256": "a044381c8d2cad6bf7e4bc731ff875a998b1e921d827428ec7c5b039f522ba32"
+      "bytes": 16202,
+      "sha256": "fdd27ba7a354403e1cd2dd7c759cd119e070a72711b64528f353425ba73a03d4"
     },
     {
       "type": "check-valve",
@@ -627,8 +630,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 12300,
-      "sha256": "2da9933e2dd2e09ad3f03a9fbbdc022f00e64ae6cf18e6780494ccd514da559f"
+      "bytes": 14216,
+      "sha256": "de6e4c83871b9bee1f4c1b371e00ebd56ea5d5adc389876044263a5e800f0df2"
     },
     {
       "type": "relief-valve",
@@ -646,8 +649,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 13239,
-      "sha256": "089dfde95e1c54b8e898ed755ee01ec851c3d41d6df4bb7ddd1707dff68b73f9"
+      "bytes": 14740,
+      "sha256": "2d8be63e580af4439844d6b135651c1bbdd8920a45f512fb3173d4215cb43449"
     },
     {
       "type": "butterfly-valve",
@@ -666,8 +669,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 14698,
-      "sha256": "1f211bad0b9023c238a41261d35c8ae8548e0c78f578348c8931fda3c7f88880"
+      "bytes": 16231,
+      "sha256": "d9356eb372834f2b3ca269a4f1c2f5feffcefbbdce3ba8b15b933d34de8433a1"
     },
     {
       "type": "pressure-transmitter",
@@ -920,7 +923,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 11888,
-      "sha256": "b280613f94ce47e378f0214567b3bdc7ebc01ab97f4b390a0d7424d0f4f0687a"
+      "sha256": "23f1dee042a6833ab236f2021a3920df3c6b75f72be3082bb382b71bded98b18"
     },
     {
       "type": "junction",
@@ -1421,8 +1424,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18580,
-      "sha256": "69794ec82435a09c76f761ebde1de882b703b9dd16854860416faf25f62727fb"
+      "bytes": 18581,
+      "sha256": "614f586aaecb3163920505f6b559015793aae83bbe82509cd72bbb272acea645"
     },
     {
       "type": "cyclone",
@@ -1794,8 +1797,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17393,
-      "sha256": "f2f99388fa1e48160af1e12abc27ad30a4bbc21be30e4b86c36d67c0b30cbd1d"
+      "bytes": 19005,
+      "sha256": "8e42955b25d00b7e59902841e42c8df89977e9604e023277dbc2ea99cd92c2da"
     },
     {
       "type": "pwr-reactor-vessel",
@@ -2118,8 +2121,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17395,
-      "sha256": "89c1fa432ecc1f1e56d246a0709d76513869f4b95a51834bf3cb9ad0d64fb163"
+      "bytes": 18882,
+      "sha256": "6248706847a72d8a84823a4467f510432f76ad1f492bb8e5e64eb1ddfa860260"
     },
     {
       "type": "hydro-turbine",
@@ -2347,8 +2350,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16946,
-      "sha256": "49da007afd29436145af17ccdfea78e1e032449c6ba7c62ba1d6f31536c29e2d"
+      "bytes": 16945,
+      "sha256": "c2d547a92c589ba03e97aed4bc91bb70338df9b83a148840773b82310e50c57d"
     },
     {
       "type": "earthing-switch",
@@ -2551,8 +2554,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16913,
-      "sha256": "76bfa45b8f386abfb416fc988c6d21e77a639d7e2be6327ddbb76aa846ad3141"
+      "bytes": 16909,
+      "sha256": "59a30449e3ce6ca9ee2ef064e97c062a25852a3e912e840daaae87649449bfed"
     },
     {
       "type": "excitation-system",
@@ -2593,7 +2596,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15822,
-      "sha256": "cd6d3730508da55f5386ef5c0c4d4c96597649fd9c074caebb68eeae2d0351a8"
+      "sha256": "831d407206d6c3fc18242706a0707e46727a1eafd1ee39d1825ef523a73663f5"
     },
     {
       "type": "fish-tank",
@@ -2677,7 +2680,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 18744,
-      "sha256": "f7c526cb2bc611b94414a74e8a39ad2a27e9a0d2f03e3a7e4b2154b3fb9a3c9d"
+      "sha256": "8f9691b4846e769e49531e1dd3e7946155d75e5d1459cff4702a56e332e11358"
     },
     {
       "type": "nft-channel",
@@ -2738,7 +2741,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 18753,
-      "sha256": "0c1c79d89dfb9b80251711b40beba3031b6d3ef7aa83f389956da746d1a0022f"
+      "sha256": "1c98c0b2f3a5512ce407f467cbbc8f4a7bbd98438bc70eda18121bd586d54faf"
     },
     {
       "type": "aeroponic-chamber",
@@ -3676,8 +3679,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16022,
-      "sha256": "3680c92d833c3a6e2a7f03d07fbe8178d382f4719acd88770fa59646c0f49c68"
+      "bytes": 18102,
+      "sha256": "0d116b9e0a4ec8e409ff66636bdbdb3fb4eb185741da74d289c91e5870ace563"
     },
     {
       "type": "gate-valve",
@@ -3697,8 +3700,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16734,
-      "sha256": "d5d03d299fd4f09bd4267ebbdd3935a7c421aaf1d9c286045af54b87b67677f9"
+      "bytes": 18796,
+      "sha256": "376ad5f1229a0df72a656dbbb581b3b529d3d40b71fd941421709c5be9e3e880"
     },
     {
       "type": "gate-valve",
@@ -3718,8 +3721,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16559,
-      "sha256": "575dfb623b389e412874699bd54375bf21675eb6be1014759c821b5759452704"
+      "bytes": 18638,
+      "sha256": "951dcd709b6ae94ab68976bd21cacbab4c8f7f2b420487781487666922a9bbb0"
     },
     {
       "type": "gate-valve",
@@ -3739,8 +3742,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17054,
-      "sha256": "2a02384a248935c213a27045456929a0e01191cff6e5f0e047f821b6b00ba3f7"
+      "bytes": 19100,
+      "sha256": "58f490916288e6aceb1e5da8951876ec11d36051f67da208e5e8d5a39a83d39e"
     },
     {
       "type": "gate-valve",
@@ -3760,8 +3763,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16520,
-      "sha256": "c14ba256a066e8a9ba2fb58a7f0c30161b2a864b4b3152f2258c9fc0a2bbf79f"
+      "bytes": 18610,
+      "sha256": "485a2a376c3f6b168905569c39c28c9fcce364770f7d07059ea8b68ec137ba29"
     },
     {
       "type": "gate-valve",
@@ -3781,8 +3784,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17816,
-      "sha256": "0612cd9903a367a19096bf65b0df178a9e426b780ff7834102657cfcf93c3b3e"
+      "bytes": 19896,
+      "sha256": "9fb241866e1042927e8e4b12818d98940304995300fd13686285b4d3398b2c41"
     },
     {
       "type": "gate-valve",
@@ -3802,8 +3805,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18118,
-      "sha256": "607bdb0a564c12a2a2f694e62bf85afa177cd77d7d6b608b63f0da4bdb0f8e42"
+      "bytes": 20198,
+      "sha256": "5fa5091c54dff1641ef26de63bb435f38411b6688bb9f6a3e7adcef322c62a44"
     },
     {
       "type": "gate-valve",
@@ -3823,8 +3826,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16818,
-      "sha256": "4d7f9fbe09dfe2a7c69b87ad56190f869983aaa9a2b21d3223a710f71ac363ac"
+      "bytes": 18891,
+      "sha256": "6d440c43e0be788bdc3c7f08b5ebacc4ff84b7a276ae6ced726fce021539768d"
     },
     {
       "type": "control-valve",
@@ -3844,8 +3847,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16252,
-      "sha256": "5c4ed0f30a461223f032165426054cd073f8bdf65e5a129ddd47d176cbe3e761"
+      "bytes": 18323,
+      "sha256": "ac1f0e0f49a363222960c143ada0f6d4ecb4d463b16d0b5394d712afdcaf9f10"
     },
     {
       "type": "control-valve",
@@ -3865,8 +3868,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17050,
-      "sha256": "78d2e6576149dcd51871b8b47ff96b9fb7d83ebcf2f21ed001ce3971f590ccaf"
+      "bytes": 19081,
+      "sha256": "ef1ac497303fab572e4c50c54865c9125902ac68cb07b4cefb57c33a44ca1ac2"
     },
     {
       "type": "control-valve",
@@ -3886,8 +3889,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16895,
-      "sha256": "3910ae44636a1fb30ba3a5d1d56caeb01beb5d8a3453feb4938be87eb38d01eb"
+      "bytes": 18915,
+      "sha256": "85e5aa4e443ab0d17739123a816a512932e2a9b67dbf518d169856432aa699c2"
     },
     {
       "type": "control-valve",
@@ -3907,8 +3910,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17272,
-      "sha256": "e351f4eef9906d7654b7922f8798591579851c168fb3b1fe5a710f80485a7a98"
+      "bytes": 19276,
+      "sha256": "ebdbe783a7bb5f18e829e46a782ad8178b0bbd3af5c2e9c20bfcd9caac3078a9"
     },
     {
       "type": "control-valve",
@@ -3928,8 +3931,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16756,
-      "sha256": "96194281aadbaf6c9fdbacabde4659b605e42ec4571abae3ea8e1b24aaaea101"
+      "bytes": 18783,
+      "sha256": "f5a696e58464589706e384490546e7716958aba5800072c49cfeae17934a87a6"
     },
     {
       "type": "control-valve",
@@ -3949,8 +3952,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18077,
-      "sha256": "f80d1e2d7da5cdf21c321be3cb15aa93bc50adad6cbe4feaa4a1c6caae45f227"
+      "bytes": 20112,
+      "sha256": "83e3009cb4fdc9b1ee3ec3742edb3c17f848ef66f05a3a06a0bd5790b06db294"
     },
     {
       "type": "control-valve",
@@ -3970,8 +3973,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18487,
-      "sha256": "f5bb3d56d5d46d36e81236636e2653659b6677ab33b0f20fd35cb15fadad1029"
+      "bytes": 20515,
+      "sha256": "b139e2a44b38bcd14a9e809347feee3b6c613341caf469f9553dded84ff5e2b3"
     },
     {
       "type": "control-valve",
@@ -3991,8 +3994,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17156,
-      "sha256": "8db989f74f69787c110eba03a291a6bfe09e4158b42aabe949de48abd44e7d72"
+      "bytes": 19200,
+      "sha256": "459f3367b3e3e4ec477088ce8a8b3c5605f9035bcc87d410229cb04ed11a7f39"
     },
     {
       "type": "check-valve",
@@ -4011,8 +4014,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 14544,
-      "sha256": "2b860d4e74585607e74807b39151d603967e60cc916f6f88dda5c47822d6b3ce"
+      "bytes": 16458,
+      "sha256": "c642b3977066d7368496e33695f0eeca689125532951e679586f20cd3306c29c"
     },
     {
       "type": "check-valve",
@@ -4031,8 +4034,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15266,
-      "sha256": "d283f855ce9bc741bd98f61c65db79d4dd7a3b94c2d98b3bd7d5d6f2a55030de"
+      "bytes": 17179,
+      "sha256": "abb71429139cee5714a375d33a278c61bbf8a6451c6698afc3fd2abde0e5d277"
     },
     {
       "type": "check-valve",
@@ -4051,8 +4054,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15041,
-      "sha256": "5cc07ff650d9ec94cf6eb6f1b39295bf252324688057f140793ef5f96edf01dc"
+      "bytes": 16960,
+      "sha256": "83a4576964aaae558d1f76eb7420aa527bccf7a214fd8d2e5d85944b9bee376f"
     },
     {
       "type": "check-valve",
@@ -4071,8 +4074,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15519,
-      "sha256": "35fb86b1517881bfc68cb3f71dcf1105719622e14781e0f5568217d0ce5569a2"
+      "bytes": 17444,
+      "sha256": "bf44f57cd39346a17472a80b4c712e0d187aa5ab6c37c15c68de1290be206491"
     },
     {
       "type": "check-valve",
@@ -4091,8 +4094,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15051,
-      "sha256": "a10d97be0ea3e88f26f2fc0c0bceab2d5503475e35b321ffe7ef69309ec836a9"
+      "bytes": 16965,
+      "sha256": "1dceac1f02d4b9adf608a1088fd5daa104cfde67f79a6e84401df1b4d4e373d9"
     },
     {
       "type": "check-valve",
@@ -4111,8 +4114,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16382,
-      "sha256": "848da9ca24c01a6e2b959c780fd6bd920431eeabedf9c056df7f5d860182404e"
+      "bytes": 18290,
+      "sha256": "a4ffd71357a2ad053064e9aa66037777b05efa1b21d1c5ba2badc27c9e92a041"
     },
     {
       "type": "check-valve",
@@ -4131,8 +4134,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16708,
-      "sha256": "11a188320f8969274ec2f9ff44d11778771f1c407aa57b55a5939688ed3ba6ad"
+      "bytes": 18603,
+      "sha256": "ea8b1965d51530d0199583ba976e8c97292f52dc078dc97eeb464ff0f4dcd702"
     },
     {
       "type": "check-valve",
@@ -4151,8 +4154,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15389,
-      "sha256": "89435f239e74e0b165a3c8becdb3e8506e627b996ec53420c6eae5799c1ff0d9"
+      "bytes": 17297,
+      "sha256": "a49930d675ec05f5b067e4ee181acdb028e2553081953f9d127093092101ac95"
     },
     {
       "type": "relief-valve",
@@ -4171,8 +4174,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15314,
-      "sha256": "efd219e5c663c7187ed191f9cf78218e2ae5d1f10713ea2ffd96c0462b40562c"
+      "bytes": 16811,
+      "sha256": "f25d8c39467b994db88233b3c52febd88f4ce16f8991b4b22b97a58247bbd39b"
     },
     {
       "type": "relief-valve",
@@ -4191,8 +4194,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16133,
-      "sha256": "dcf6239203faa3d9f2965afda63b338e4ef707017c0705fef4c3d9f92859b289"
+      "bytes": 17624,
+      "sha256": "0b5c5c3cf93ea1da92dcc2555e3441da4f64b8801a87d9cbe414b9fceaba094e"
     },
     {
       "type": "relief-valve",
@@ -4211,8 +4214,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15961,
-      "sha256": "0693ace982b1650b9d6e2231376c516e9b2409aa7fd42de1764d5f3af072352c"
+      "bytes": 17444,
+      "sha256": "56bbed501c5938a142404384da4ae21351c3a0bd8c925927a43e97a1caff850d"
     },
     {
       "type": "relief-valve",
@@ -4231,8 +4234,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16260,
-      "sha256": "48e924785f41a08fb64aaa41ac22da59246429f259f91440051c537adbedc364"
+      "bytes": 17884,
+      "sha256": "2641c4c1ecf5a0c8cd61e3dcca78950c4facfcbf674ac37042b6fd11174b2ae7"
     },
     {
       "type": "relief-valve",
@@ -4251,8 +4254,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 15842,
-      "sha256": "f8ad31b9f1d48b5ec9d988ae2ae6d9fb4f326c0800cce47c027f57fca669d747"
+      "bytes": 17320,
+      "sha256": "f9ef78768512619c215060b5c4cf662131a4562b7137b82e51972c410a0cb30f"
     },
     {
       "type": "relief-valve",
@@ -4271,8 +4274,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17156,
-      "sha256": "a865cea793882963e234bf9af3050e2abca4ca12c26dcaed315f0c172d8be066"
+      "bytes": 18781,
+      "sha256": "cd7bf0b56390f2dfc9488da275f255aba3fd846093fbcec5c38ff4f1ac8a8ef2"
     },
     {
       "type": "relief-valve",
@@ -4291,8 +4294,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17526,
-      "sha256": "1fbbede69699af15ad3cb4fa15d9cfc1d264133dd627ec01d83528e266e98134"
+      "bytes": 19137,
+      "sha256": "b12d95a11e3f4a944241bfe23703436bd8269b57098965b31e129fd2e0b10f1a"
     },
     {
       "type": "relief-valve",
@@ -4311,8 +4314,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16245,
-      "sha256": "6bc43a9b891079846fbfb48e63631a0a3e3fb64a0f6a65ef914ef01a868c9c93"
+      "bytes": 17727,
+      "sha256": "a8e37d6ee14a17e71a917e81882dc4a861bbbfe2875aca473abc00a7487195fd"
     },
     {
       "type": "butterfly-valve",
@@ -4332,8 +4335,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16821,
-      "sha256": "3121ef9608b7b0fcbff484e06706f4695a2fe1f530cc9c09200d124be6c62221"
+      "bytes": 18365,
+      "sha256": "116a117cdeb35ed698a0276924557b397b889039ef28c8736db1f98b7e8dfcb4"
     },
     {
       "type": "butterfly-valve",
@@ -4353,8 +4356,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17525,
-      "sha256": "29c68dfdcca8af55c63febcdef7e8d1bd7047f785eba2491804658d3c85e8081"
+      "bytes": 19094,
+      "sha256": "d527312c2466f4af8079f9d3d677cff178ac6cf68377c57abfb86f176dfd2de6"
     },
     {
       "type": "butterfly-valve",
@@ -4374,8 +4377,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17328,
-      "sha256": "67bfc3e6764bf967329344273ad8a70349562fd039fdd826982b28a693bdd2a6"
+      "bytes": 18892,
+      "sha256": "80858eee05e8e194e898963aa684ab56902ae35fb2b2a762a569432aa887e61b"
     },
     {
       "type": "butterfly-valve",
@@ -4395,8 +4398,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17813,
-      "sha256": "46178ae06e67a6bdd0107aea7a8acd89a418ca08f47f9bb1d567e55559aea3b2"
+      "bytes": 19365,
+      "sha256": "f585a827d938bca7fcc5fd20f1dec73f98473ca3a5d59da237727b2ae697996d"
     },
     {
       "type": "butterfly-valve",
@@ -4416,8 +4419,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17293,
-      "sha256": "376453d1b03d8c48594730229665a12f526da14cbe68d094d3a30ea34f32c70f"
+      "bytes": 18848,
+      "sha256": "58139d0e2f038da3844cbb4f42589b728d96f2acfed96b4d72c178eb70600221"
     },
     {
       "type": "butterfly-valve",
@@ -4437,8 +4440,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18607,
-      "sha256": "896f25695ad6895b44f83bf4b78753a66fab838e56f85c8e698f803bdd50fb88"
+      "bytes": 20156,
+      "sha256": "87add2a9396b9d831b77ee4730a4bd5c216bc38457f284e6039c0ad78cbf01d6"
     },
     {
       "type": "butterfly-valve",
@@ -4458,8 +4461,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 18939,
-      "sha256": "c58c85d1f047ea050ec5787c570be50537d4fbf68c46376c5f1b78968500db44"
+      "bytes": 20478,
+      "sha256": "fc235c62e3c750dbd5f2f6992037fbc481efcb9f21c49e57b632b468660564d7"
     },
     {
       "type": "butterfly-valve",
@@ -4479,8 +4482,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17587,
-      "sha256": "79cea07fc091b816d71e8627f84776f9442e0e8d7e0908f76a35f134b7b40cff"
+      "bytes": 19136,
+      "sha256": "dba6fe6bfcfde2c2fcc3cfbd7cfedc98acdaa6ef2e036ea1fbe346f4653b78f5"
     },
     {
       "type": "pipe",
@@ -4560,7 +4563,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15091,
-      "sha256": "206e7f8441602017f615eacd8e021efd4b5cedb2a68cf0df65d03bf105fb5a5a"
+      "sha256": "1896b8676f54fe115f214258ca15ec9f399ec48cb9736e3189f0f792b4dbe2ae"
     },
     {
       "type": "pipe",
@@ -4580,7 +4583,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14592,
-      "sha256": "ce79024c94ba8f5efd0745be73302b324b648d048c19ad6936f69b6ccea7bd66"
+      "sha256": "c5f80b4bb1dd4b91a3a007fe1e2b7cdbad0c1239af12194063f27de25f496981"
     },
     {
       "type": "pipe",
@@ -4600,7 +4603,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 15836,
-      "sha256": "b69e3dbd74381feac914ea2dbdfcbd654cc36cdb6bca3017d11affb54a06fb6e"
+      "sha256": "d304828cb6ffefa1484faf1a80f29040358e0065b4ec2b05461b983bb096bb66"
     },
     {
       "type": "pipe",
@@ -4619,8 +4622,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 16261,
-      "sha256": "be6af4d6026d874d694edf8903084e53484a7da69340324d7262b9707149fc4b"
+      "bytes": 16262,
+      "sha256": "a7e9cc621f3f2811bc78c3de9da158ba717aeaf1e0d1de48721a22d9a9a3fd95"
     },
     {
       "type": "pipe",
@@ -4640,7 +4643,7 @@
       "height": 360,
       "format": "jpeg",
       "bytes": 14918,
-      "sha256": "72c53f75289c00f921ed53c7dbee27d56eaf8d59ebd605809a21f9f392ae75ad"
+      "sha256": "ab94c73fb7ce0a8709f7158ac10c65285a2851aa04af20c9ec01ef97e1a2e609"
     },
     {
       "type": "separator",
@@ -5006,6 +5009,19 @@
       "sha256": "fd9c387ec0ba52c7128d1b1c2fb7ddd58b91186ba19c1b5542e30589ec0a87b4"
     },
     {
+      "id": "popover",
+      "exports": [
+        "ScadaPopover"
+      ],
+      "css_class": "[data-scada-popover]",
+      "path": "img/thumbnails/workspace/popover.jpg",
+      "width": 480,
+      "height": 360,
+      "format": "jpeg",
+      "bytes": 21659,
+      "sha256": "6ee7f18d4e0a84cbcc45c9be1bed46117b1d8e2a09c35b6ec9bcb9e204cfdc8d"
+    },
+    {
       "id": "statusbar",
       "exports": [],
       "css_class": ".scada-statusbar",
@@ -5024,8 +5040,8 @@
       "width": 480,
       "height": 360,
       "format": "jpeg",
-      "bytes": 17998,
-      "sha256": "d439fbf7bcf2306aaa120f6ff5d2ed026afac5ce81b57e43937e2b281cc241f3"
+      "bytes": 17999,
+      "sha256": "27899aa5ae6041b608b3209c2141ad5aec02fa0cced4324251241fbe6bb304d4"
     },
     {
       "id": "panels",
@@ -5175,8 +5191,8 @@
     "width": 1520,
     "height": 6589,
     "format": "jpeg",
-    "bytes": 1111278,
-    "sha256": "f12d324ba5b3f8a61408e1d2ea13c94081ff1dc5d03b543aa2534df12b5d8363"
+    "bytes": 1117581,
+    "sha256": "663ba90d454cbaaf10f4d2b0813af8c5c5cca741700f852ef686a30fc200d8e6"
   },
   "viewer": {
     "id": "generic-viewer",
@@ -5231,7 +5247,7 @@
     "width": 1152,
     "height": 799,
     "format": "jpeg",
-    "bytes": 71622,
-    "sha256": "5c29324792128ede3d1de5e68306017192f1dbd7066e3c280e7e98a354d5fa42"
+    "bytes": 72605,
+    "sha256": "f8f2fa352750d54a5b61293c35dfd01abc32b98d2a57f717b1cd78a3a22bfd5e"
   }
 }

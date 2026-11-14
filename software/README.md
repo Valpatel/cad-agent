@@ -2,6 +2,11 @@
 
 The installable Python toolkit and pinned third-party source live together here. Product CAD, firmware and application source stay in their product repository.
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="../docs/img/architecture/toolkit-workflow-still.svg">
+  <img src="../docs/img/architecture/toolkit-workflow.svg" alt="Project inputs pass through domain methods to result artifacts and human review." width="480">
+</picture>
+
 Package, checks and guides
 
 ```mermaid

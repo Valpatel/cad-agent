@@ -106,9 +106,25 @@ with sync_playwright() as playwright:
         assert page.evaluate('document.documentElement.scrollWidth') == width
 
         def close():
+            if page.locator('[data-scada-popover-open=true]').count():
+                page.keyboard.press('Escape')
             if page.locator('dialog[open]').count():
                 page.keyboard.press('Escape')
+            assert page.locator('[data-scada-popover-open=true],dialog[open]').count() == 0
+
+        def quick_bounds(panel):
+            assert panel.get_attribute('aria-modal') == 'false'
+            assert panel.evaluate('el=>el.matches(":popover-open")')
+            assert panel.get_attribute('data-scada-popover-open') == 'true'
+            box = panel.bounding_box()
+            assert box and box['x'] >= 11 and box['y'] >= 11, box
+            assert box['width'] <= min(360, width - 24) + 1 and box['height'] <= 441, box
+            assert box['x'] + box['width'] <= width - 11 and box['y'] + box['height'] <= height - 11, box
+            assert panel.evaluate('el=>el.scrollWidth<=el.clientWidth+1')
+            assert panel.locator('[data-scada-popover-close]').bounding_box()['height'] >= 43
             assert page.locator('dialog[open]').count() == 0
+            assert page.evaluate('document.documentElement.style.overflow') == ''
+            assert page.evaluate('document.documentElement.scrollWidth') == width
 
         def dialog_bounds(dialog):
             assert dialog.evaluate('el=>el.open && el.matches(":modal")')
@@ -121,13 +137,25 @@ with sync_playwright() as playwright:
             assert dialog.locator('[data-scada-close]').bounding_box()['height'] >= 43
             assert dialog.evaluate('el=>el.contains(document.activeElement)')
 
-        def inspect(root, equipment):
-            close()
-            root.locator('[data-scada-picker]').select_option(equipment)
+        def details(root, panel):
+            panel.locator('[data-scada-details]').click()
             dialog = root.locator('[data-scada-dialog=inspector]')
             dialog.wait_for(state='visible')
             dialog_bounds(dialog)
+            assert panel.is_hidden()
             return dialog
+
+        def inspect(root, equipment, deep=False):
+            close()
+            root.locator('[data-scada-picker]').select_option(equipment)
+            panel = root.locator('[data-scada-popover-open=true]')
+            panel.wait_for(state='visible')
+            quick_bounds(panel)
+            assert panel.get_attribute('data-scada-inspection-equipment') == equipment
+            assert panel.locator('.scada-inspection-id').inner_text() == equipment
+            assert root.locator('[data-scada-picker] option:checked').inner_text().startswith(equipment + ' · ')
+            assert root.locator('[data-scada-equipment][aria-pressed]').count() == 0
+            return details(root, panel) if deep else panel
 
         def view(root, name):
             close()
@@ -141,11 +169,11 @@ with sync_playwright() as playwright:
             return root.locator('[data-scada-equipment=' + name + '] .scada-component')
 
         def readings(dialog):
-            return dialog.locator('.scada-viewer-readings').evaluate('el=>Object.fromEntries([...el.children].map(row=>[row.querySelector("dt").textContent,row.querySelector("dd").textContent]))')
+            return dialog.locator('.scada-viewer-readings').evaluate('el=>Object.fromEntries([...el.children].map(row=>[row.dataset.scadaStateField,row.querySelector("dd").textContent]))')
 
         def photo(label, dialog=None):
             if dialog:
-                dialog.locator('[data-scada-dialog-body]').evaluate('el=>el.scrollTop=0')
+                dialog.locator('[data-scada-dialog-body],.scada-popover-body').evaluate('el=>el.scrollTop=0')
                 dialog.screenshot(path=str(OUT / f'viewer-{label}-{width}.png'))
             else:
                 page.evaluate('window.scrollTo({top:0,left:0,behavior:"instant"})')
@@ -155,26 +183,50 @@ with sync_playwright() as playwright:
         expected_equipment = {'tank', 'pump', 'valve', 'meter', 'generator'}
         for root in (editable, monitor):
             assert set(root.locator('[data-scada-picker] option').evaluate_all('els=>els.map(el=>el.value)')) == expected_equipment
+            tags = root.locator('[data-scada-equipment]').evaluate_all('els=>els.map(el=>({id:el.dataset.scadaEquipment,tag:el.querySelector(".scada-viewer-equipment-id").textContent}))')
+            assert len({item['id'] for item in tags}) == len(tags)
+            assert all(item['id'] == item['tag'] and item['id'] in expected_equipment for item in tags)
             for equipment in sorted(expected_equipment):
                 dialog = inspect(root, equipment)
-                assert dialog.locator('[data-scada-dialog-title]').inner_text().strip()
+                assert dialog.locator('.scada-popover-heading h2').inner_text().strip()
                 if root == monitor:
                     assert all(dialog.locator('[data-scada-control]').nth(i).is_disabled() for i in range(dialog.locator('[data-scada-control]').count()))
                 close()
                 assert root.locator('[data-scada-picker]').evaluate('el=>el===document.activeElement')
 
-        # Native keyboard focus stays within each open inspector and returns to its opener.
-        dialog = inspect(editable, 'pump')
+        # Quick controls leave the rest of the diagram reachable and return focus only
+        # on explicit Close/Escape, not when an outside control is activated.
+        panel = inspect(editable, 'pump')
+        panel.locator('[data-scada-details]').focus()
+        page.keyboard.press('Tab')
+        assert not panel.evaluate('el=>el.contains(document.activeElement)'), 'Quick controls must not trap Tab'
+        panel.locator('[data-scada-popover-close]').focus()
+        page.keyboard.press('Shift+Tab')
+        assert not panel.evaluate('el=>el.contains(document.activeElement)'), 'Quick controls must not trap Shift+Tab'
+        photo('pump-quick-controls', panel)
+        close()
+        assert editable.locator('[data-scada-picker]').evaluate('el=>el===document.activeElement')
+        editable.locator('[data-scada-inspect]').focus()
+        page.keyboard.press('Enter')
+        quick_bounds(editable.locator('[data-scada-popover-open=true]'))
+        destination = editable.locator('[data-scada-view-choice=water]')
+        destination.click()
+        assert not page.locator('[data-scada-popover-open=true]').count()
+        assert destination.evaluate('el=>el===document.activeElement')
+        assert editable.locator('[data-scada-equipment][aria-pressed]').count() == 0
+
+        # Full details intentionally retain the native modal focus and dismissal contract.
+        dialog = inspect(editable, 'pump', deep=True)
         dialog.locator('[data-scada-control=demand]').focus()
         page.keyboard.press('Tab')
         assert dialog.locator('[data-scada-close]').evaluate('el=>el===document.activeElement')
         page.keyboard.press('Shift+Tab')
         assert dialog.locator('[data-scada-control=demand]').evaluate('el=>el===document.activeElement')
-        photo('pump-controls', dialog)
+        photo('pump-details', dialog)
         close()
         editable.locator('[data-scada-inspect]').focus()
         page.keyboard.press('Enter')
-        dialog_bounds(editable.locator('dialog[open]'))
+        details(editable, editable.locator('[data-scada-popover-open=true]'))
         page.mouse.click(1, 1)
         assert not page.locator('dialog[open]').count()
         assert editable.locator('[data-scada-inspect]').evaluate('el=>el===document.activeElement')
@@ -207,7 +259,7 @@ with sync_playwright() as playwright:
         close()
         for root in (editable, monitor):
             view(root, 'water')
-            meter = inspect(root, 'meter')
+            meter = inspect(root, 'meter', deep=True)
             assert readings(meter)['value'] == '70'
             close()
         dialog = inspect(editable, 'valve')
@@ -224,6 +276,7 @@ with sync_playwright() as playwright:
             view(root, 'power')
         dialog = inspect(editable, 'generator')
         dialog.locator('[data-scada-control=breakGenerator]').click()
+        dialog = details(editable, dialog)
         assert readings(dialog)['fault'] == 'true'
         photo('generator-fault', dialog)
         close()
@@ -298,10 +351,10 @@ with sync_playwright() as playwright:
         assert page.evaluate('__viewerFixture.counts.dispatches') == 1
         page.evaluate('__viewerFixture.reject=true')
         dialog.locator('[data-scada-control=pumpSwitch]').click()
-        rejection = dialog.locator('[data-scada-viewer-dialog-error]')
+        rejection = dialog.locator('[data-scada-viewer-quick-error]')
         rejection.wait_for(state='visible')
         assert 'Host adapter rejected' in rejection.inner_text()
-        dialog_bounds(dialog)
+        quick_bounds(dialog)
         assert page.evaluate('__viewerFixture.model.getSnapshot().pumpOn') is False
         photo('host-rejection', dialog)
         lifecycle = page.evaluate('''() => {
@@ -311,7 +364,7 @@ with sync_playwright() as playwright:
           const html=f.root.innerHTML,dispatches=f.counts.dispatches,updates=f.counts.updates,minutes=f.model.getSnapshot().minutes;
           oldControl.click();
           f.model.dispatch({action:'step'});
-          const result={subscriptions:f.counts.subscriptions,modalClosed:!f.root.querySelector('dialog[open]'),staleControlDetached:f.counts.dispatches===dispatches,domStopped:f.root.innerHTML===html,updatesStopped:f.counts.updates===updates,modelStillUsable:f.model.getSnapshot().minutes===minutes+1,externalClockRetained:__consumerClock.summary().active===activeBefore,viewerRootReleased:f.viewer.root===null};
+          const result={subscriptions:f.counts.subscriptions,modalClosed:!f.root.querySelector('dialog[open]'),popoverClosed:!f.root.querySelector('[data-scada-popover-open=true]'),staleControlDetached:f.counts.dispatches===dispatches,domStopped:f.root.innerHTML===html,updatesStopped:f.counts.updates===updates,modelStillUsable:f.model.getSnapshot().minutes===minutes+1,externalClockRetained:__consumerClock.summary().active===activeBefore,viewerRootReleased:f.viewer.root===null};
           f.model.stop();f.root.remove();delete window.__viewerFixture;return result;
         }''')
         assert all(value for key, value in lifecycle.items() if key != 'subscriptions'), lifecycle
@@ -324,9 +377,10 @@ with sync_playwright() as playwright:
         assert 'src/viewer/viewer.mjs' in loaded and 'examples/viewer/utility-model.mjs' in loaded
         result = {'width': width, 'package_root': str(ROOT) if ROOT else BASE, 'loaded_assets': sorted(loaded),
                   'equipment_per_viewer': sorted(expected_equipment), 'shared_commands_and_flows': True,
-                  'read_only_adapter': True, 'native_focus_escape_backdrop': True,
+                  'read_only_adapter': True, 'nonmodal_quick_controls': True, 'canonical_equipment_ids': True,
+                  'native_details_focus_escape_backdrop': True,
                   'single_model_clock': True, 'step_pause_reset': True, 'fit_zoom': True,
-                  'host_rejection_inside_modal': True, 'lifecycle': lifecycle, 'errors': errors, 'denied_assets': denied}
+                  'host_rejection_inside_quick_panel': True, 'lifecycle': lifecycle, 'errors': errors, 'denied_assets': denied}
         results.append(result)
         (OUT / 'scada-viewer-browser-results.json').write_text(json.dumps(results, indent=2))
         print(json.dumps(result), flush=True)

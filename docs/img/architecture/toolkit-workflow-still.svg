@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="350" viewBox="0 0 480 350" role="img" aria-labelledby="title desc"><title id="title">From a project to review</title><desc id="desc">Conceptual handoffs, not measured simulation. 1. Project inputs: Models and assumptions. Source: software/cadagent/project.py. 2. Domain methods: Calculate, build, check. Source: software/cadagent/README.md. 3. Result artifacts: Values, files, evidence. Source: software/cadagent/publish/README.md. 4. Human review: View, inspect, decide. Source: software/cadagent/webkit/README.md</desc>
+<style>text{font-family:system-ui,sans-serif;fill:#e9f5fb}.detail{fill:#b7d1de;font-size:14px}.flow{stroke:#3de0d4;stroke-width:3;stroke-dasharray:6 8;fill:none}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3de0d4"/></marker></defs>
+<rect width="480" height="350" rx="18" fill="#091a29"/>
+<text x="24" y="34" font-size="22" font-weight="700">From a project to review</text>
+<path class="flow" d="M218 125H258" marker-end="url(#arrow)"/><path class="flow" d="M362 170V202" marker-end="url(#arrow)"/><path class="flow" d="M262 251H222" marker-end="url(#arrow)"/>
+<rect x="20" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="39" cy="100" r="11" fill="#265269"/><text x="39" y="105" text-anchor="middle" font-size="14">1</text>
+<text x="32" y="129" font-size="18" font-weight="600">Project inputs</text>
+<text class="detail" x="32" y="152">Models and assumptions</text>
+<rect x="262" y="80" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="281" cy="100" r="11" fill="#265269"/><text x="281" y="105" text-anchor="middle" font-size="14">2</text>
+<text x="274" y="129" font-size="18" font-weight="600">Domain methods</text>
+<text class="detail" x="274" y="152">Calculate, build, check</text>
+<rect x="262" y="206" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="281" cy="226" r="11" fill="#265269"/><text x="281" y="231" text-anchor="middle" font-size="14">3</text>
+<text x="274" y="255" font-size="18" font-weight="600">Result artifacts</text>
+<text class="detail" x="274" y="278">Values, files, evidence</text>
+<rect x="20" y="206" width="198" height="90" rx="12" fill="#132f43" stroke="#4e8499"/>
+<circle cx="39" cy="226" r="11" fill="#265269"/><text x="39" y="231" text-anchor="middle" font-size="14">4</text>
+<text x="32" y="255" font-size="18" font-weight="600">Human review</text>
+<text class="detail" x="32" y="278">View, inspect, decide</text>
+<text class="detail" x="24" y="326">Workflows connect tools and reusable presentation.</text>
+</svg>

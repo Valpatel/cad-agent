@@ -302,6 +302,57 @@ def main():
           return results;
         }""")
 
+        # Position remains readable without animation or color alone, independently
+        # of activity/fault. The fixture calls the public renderer with real fields.
+        page.evaluate(r"""() => { window.auditValvePositions=()=>{
+          const host=document.querySelector('#fixture'),results=[];
+          for(const type of ['gate-valve','control-valve','check-valve','butterfly-valve','relief-valve','fuel-pressure-regulator','intake-gate']){
+            const descriptor=library.getScadaComponent(type),continuous=descriptor.stateFields.some(field=>field.key==='opening'),samples={};
+            const poses=[['open','open',{}],['closed','closed',{open:false}],['inactive','open',{active:false}],['fault','open',{fault:true}],['offline','unavailable',{status:'offline'}],...(continuous?[['partial','partial',{opening:35}]]:[])];
+            for(const [pose,kind,extra] of poses){
+              host.innerHTML=library.renderScadaComponent(type,{id:'position-'+type,state:{...descriptor.defaultState,running:false,open:true,...(continuous?{opening:100}:{}),...extra}});
+              const root=host.querySelector('.scada-component'),body=root.querySelector('.scada-valve-body'),tag=root.querySelector('.scada-valve-position-tag');
+              const label=kind==='partial'?'35% OPEN':kind==='unavailable'?'UNKNOWN':kind.toUpperCase();
+              if(root.dataset.valvePosition!==kind||tag?.textContent.trim()!==label)throw Error(type+' '+pose+' has no explicit position label');
+              if(!body||body.getBBox().width<20||body.getBBox().height<20)throw Error(type+' position color is not on a substantial body area');
+              const fill=getComputedStyle(body).fill,[r,g,b]=fill.match(/[\d.]+/g).map(Number);
+              if(kind==='open'&&!(g>r+20&&g>b))throw Error(type+' open body is not visibly green');
+              if(kind==='closed'&&!(r>g+20))throw Error(type+' closed body is not visibly red');
+              if(kind==='unavailable'){
+                if(!root.getAttribute('aria-label').toLowerCase().includes('position unavailable'))throw Error(type+' offline accessibility claims a position');
+                if(continuous&&root.querySelector('[data-scada-reading=opening]').textContent.trim()!=='—')throw Error(type+' offline opening is presented as an observation');
+              }
+              const geometry=[...root.querySelectorAll('.scada-valve-disc')].map(element=>{const m=element.getCTM();return [element.getAttribute('d'),element.getAttribute('rx'),element.getAttribute('ry'),m.a,m.b,m.c,m.d,m.e,m.f];});
+              samples[pose]={kind,label,fill,geometry};
+            }
+            if(JSON.stringify(samples.open.geometry)===JSON.stringify(samples.closed.geometry))throw Error(type+' color alone distinguishes endpoints');
+            for(const pose of ['inactive','fault'])if(samples[pose].fill!==samples.open.fill||JSON.stringify(samples[pose].geometry)!==JSON.stringify(samples.open.geometry))throw Error(type+' '+pose+' changes the supplied open position');
+            if(samples.offline.fill===samples.open.fill||samples.offline.fill===samples.closed.fill)throw Error(type+' unavailable position uses a confident endpoint color');
+            if(continuous&&[samples.open,samples.closed].some(sample=>JSON.stringify(sample.geometry)===JSON.stringify(samples.partial.geometry)))throw Error(type+' partial position lacks intermediate geometry');
+            results.push({type,samples});
+          }
+          return results;
+        }; }""")
+        report['valve_position'] = {'normal': page.evaluate('auditValvePositions()')}
+        page.emulate_media(reduced_motion='reduce')
+        report['valve_position']['reduced_motion'] = page.evaluate('auditValvePositions()')
+        assert report['valve_position']['normal'] == report['valve_position']['reduced_motion'], 'Valve position depends on animation.'
+        page.emulate_media(reduced_motion='no-preference')
+        report['valve_condition_clearance'] = page.evaluate("""() => {
+          const host=document.querySelector('#fixture'),results=[];
+          for(const type of ['intake-gate','relief-valve'])for(const [width,height] of [[180,136],[210,160],[380,280]])for(const condition of ['fault','warning'])for(const opening of type==='intake-gate'?[.001,99.999]:[100]){
+            const state={running:false,open:true,...(type==='intake-gate'?{opening}:{}),...(condition==='fault'?{fault:true}:{status:'warning'})};
+            host.innerHTML=library.renderScadaComponent(type,{id:'clearance',state});
+            const root=host.querySelector('.scada-component');root.style.width=width+'px';root.style.height=height+'px';
+            const tag=root.querySelector('.scada-valve-position-tag'),text=tag.querySelector('text').getBoundingClientRect(),background=tag.querySelector('rect').getBoundingClientRect(),badge=root.querySelector('.scada-component-condition').getBoundingClientRect();
+            const overlapX=Math.max(0,Math.min(background.right,badge.right)-Math.max(background.left,badge.left)),overlapY=Math.max(0,Math.min(background.bottom,badge.bottom)-Math.max(background.top,badge.top));
+            if(overlapX>0&&overlapY>0)throw Error(type+' '+width+' '+condition+' condition obscures position');
+            if(text.left<background.left||text.right>background.right||text.top<background.top||text.bottom>background.bottom)throw Error(type+' '+width+' position label escapes its tag');
+            results.push({type,width,height,condition,opening,label:tag.textContent.trim(),overlapX,overlapY});
+          }
+          return results;
+        }""")
+
         # A speed field must control real driven motion, not only its gauge.
         report['speed_motion']=page.evaluate("""() => {
           const host=document.querySelector('#fixture'),results=[];

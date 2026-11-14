@@ -1,0 +1,29 @@
+/* Screen-space detailed settings; diagram zoom never scales these controls. */
+#industry-model-dialog{width:min(880px,calc(100vw - 32px));max-height:min(82dvh,900px)}
+#industry-model-dialog .scada-dialog-header{padding:16px 20px}
+#industry-model-dialog .scada-dialog-header h2{font-size:21px;line-height:1.25;overflow-wrap:anywhere}
+#industry-model-dialog .scada-dialog-body{padding:18px 20px}
+#industry-model-dialog .lab-notice{margin:0 0 16px;padding:8px 12px;font-size:13px}
+#industry-model-dialog .lab-model-equipment{margin-bottom:12px}
+.lab-model-identity{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.lab-model-identity>code{font:600 13px var(--mono,monospace);color:var(--link);background:var(--soft-2);border:1px solid var(--line-3);border-radius:5px;padding:4px 7px;overflow-wrap:anywhere}
+.lab-equation-meta{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px;margin:12px 0}
+.lab-equation-meta>div{min-width:0}.lab-equation-meta dt{font-size:12px;color:var(--muted)}
+.lab-equation-meta dd{margin:4px 0 0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.lab-model-section{border-top:1px solid var(--line-3);padding:2px 0;margin-top:12px}
+.lab-model-section>summary{min-height:44px;padding:11px 0;font-size:15px;font-weight:650;cursor:pointer;color:var(--ink)}
+.lab-model-section>.lab-model-description{margin-top:4px}
+.lab-equation-source{margin:8px 0;border:1px solid var(--line-3);border-radius:7px;overflow:hidden}
+.lab-equation-source>summary{min-height:44px;padding:10px 12px;font-size:14px;color:var(--link);background:var(--soft-2);cursor:pointer}
+.lab-equation-source pre{max-height:300px;overflow:auto;margin:0;padding:14px;background:var(--soft);color:var(--ink);font:13px/1.6 var(--mono,monospace);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2}
+.lab-equation-contracts{padding:4px 16px 12px 32px;font-size:13px}.lab-equation-contracts p{margin:6px 0;color:var(--muted)}
+.lab-equation-contracts code{white-space:pre-wrap;overflow-wrap:anywhere}
+.lab-equation-parameters{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.lab-equation-parameters caption{text-align:left;color:var(--muted);padding:10px 0}
+.lab-equation-parameters :is(th,td){border-bottom:1px solid var(--line-2);padding:8px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.lab-equation-parameters th{font-weight:600}.lab-equation-parameters th:first-child{width:42%}
+#industry-model-dialog .lab-parameter-row{padding:10px 0;gap:14px}
+#industry-model-dialog .lab-parameter-row:first-child{border-top:0}
+#industry-model-dialog .lab-parameter-row p{line-height:1.45}
+#industry-model-dialog .lab-code-disclosure{margin-top:12px}
+@media(max-width:650px){#industry-model-dialog{width:calc(100vw - 24px);max-height:calc(100dvh - 32px)}#industry-model-dialog .scada-dialog-body{padding:14px}.lab-equation-meta{grid-template-columns:1fr}.lab-equation-parameters{font-size:12px}}

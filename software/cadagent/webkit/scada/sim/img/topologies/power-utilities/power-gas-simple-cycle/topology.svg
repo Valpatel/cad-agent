@@ -92,16 +92,16 @@
     <g data-flowing="true"><path d="M8 85H171" fill="none" stroke="#183c50" stroke-width="16" stroke-linejoin="round" style="fill: none; stroke: rgb(24, 60, 80); stroke-width: 16px; stroke-linejoin: round;"/>
     <path d="M8 85H171" fill="none" stroke="#80adbd" stroke-width="13" stroke-linejoin="round" style="fill: none; stroke: rgb(128, 173, 189); stroke-width: 13px; stroke-linejoin: round;"/>
     <path d="M8 85H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8" style="fill: none; stroke: rgb(101, 246, 208); stroke-width: 2px; stroke-dasharray: 4px, 8px; opacity: 0.648;"/></g>
-    <path d="M59 68H118V102H59Z" fill="url(#scada-topology-power-gas-simple-cycle-regulator-steel)" stroke="#a9d0da" stroke-width="1.6" style="fill: url(&quot;#scada-topology-power-gas-simple-cycle-regulator-steel&quot;); stroke: rgb(169, 208, 218); stroke-width: 1.6px;"/>
-    <path d="M64 73l25 12 24-12v23L89 85 64 96Z" fill="#163b4f" stroke="#7fc7cc" style="fill: rgb(22, 59, 79); stroke: rgb(127, 199, 204);"/>
+    <path d="M59 68H118V102H59Z" fill="#16563f" stroke="#62ffbc" stroke-width="3" style="fill: rgb(22, 86, 63); stroke: rgb(98, 255, 188); stroke-width: 3px;"/>
+    <path d="M64 73l25 12 24-12v23L89 85 64 96Z" fill="#163b4f" stroke="#c1e3e4" style="fill: rgb(22, 59, 79); stroke: rgb(193, 227, 228);"/>
+    <path d="M85 76h9v21h-9Z" fill="#62ffbc" style="fill: rgb(98, 255, 188); transform: matrix(1, 0, 0, 1, 0, -23);"/>
     <path d="M90 75V43" stroke="#a5cbd5" stroke-width="5" style="stroke: rgb(165, 203, 213); stroke-width: 5px;"/>
     <g transform="translate(0 -6.5)" style="transform: matrix(1, 0, 0, 1, 0, -6.5);"><path d="M62 44a28 18 0 0 1 56 0Z" fill="#315f77" stroke="#a9cfd8" stroke-width="1.5" style="fill: rgb(49, 95, 119); stroke: rgb(169, 207, 216); stroke-width: 1.5px;"/><path d="M69 47h42" stroke="#96cbd8" stroke-width="3" style="stroke: rgb(150, 203, 216); stroke-width: 3px;"/></g>
     <path d="M116 71h24V47" fill="none" stroke="#7db4c4" stroke-width="3" style="fill: none; stroke: rgb(125, 180, 196); stroke-width: 3px;"/>
     <circle cx="140" cy="32" r="16" fill="#0b2b3d" stroke="#afd8de" stroke-width="2" style="fill: rgb(11, 43, 61); stroke: rgb(175, 216, 222); stroke-width: 2px;"/>
     <path d="M140 32v-11" stroke="#8af6df" stroke-width="2" transform="rotate(-6 140 32)" style="stroke: rgb(138, 246, 223); stroke-width: 2px; transform: matrix(0.994522, -0.104528, 0.104528, 0.994522, -2.57798, 14.8093);"/><circle cx="140" cy="32" r="2.5" fill="#b9dce0" style="fill: rgb(185, 220, 224);"/>
     <path d="M45 83v-9m0 9v9m87-9v-9m0 9v9" stroke="#a2d4dd" stroke-width="3" style="stroke: rgb(162, 212, 221); stroke-width: 3px;"/>
-
-  </g></g></svg></svg></g>
+  </g></g><g data-valve-position="open"><rect x="6" y="2" width="78" height="21" rx="4" fill="#0b202e" stroke="#62ffbc" stroke-width="1.2" style="fill: rgb(11, 32, 46); stroke: rgb(98, 255, 188); stroke-width: 1.2px;"/><text x="45" y="14" text-anchor="middle" fill="#62ffbc" style="fill: rgb(98, 255, 188); display: block; font-size: 9px; font-weight: 700; text-anchor: middle;">OPEN</text><path d="M14 18h62" stroke="#405b69" stroke-width="2" style="stroke: rgb(64, 91, 105); stroke-width: 2px;"/><path d="M14 18h62" stroke="#62ffbc" stroke-width="2" style="stroke: rgb(98, 255, 188); stroke-width: 2px;"/></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="regulator">Fuel-gas pressure</text>
 <text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="regulator">regulator</text>
 </g>
@@ -147,7 +147,6 @@
     <path d="M45 112h22m-22 5h16" stroke="#75f2ce" stroke-width="1.5" style="stroke: rgb(117, 242, 206); stroke-width: 1.5px;"/>
     <circle cx="67" cy="118" r="1.5" fill="#8affd6" style="fill: rgb(138, 255, 214);"/>
   </g><path d="M153 82h20" stroke="#ffd38a" stroke-width="3" style="stroke: rgb(255, 211, 138); stroke-width: 3px;"/>
-
   </g></g></svg></svg></g>
 <text x="90" y="98" font-size="14" text-anchor="middle" font-weight="600" data-label="turbine">Combustion turbine /</text>
 <text x="90" y="116" font-size="14" text-anchor="middle" font-weight="600" data-label="turbine">shaft output</text>

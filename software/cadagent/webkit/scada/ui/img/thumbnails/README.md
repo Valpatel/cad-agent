@@ -14,7 +14,7 @@ Generated previews from canonical equipment artwork and supplied illustrative st
 | --- | ---: | --- |
 | [Equipment](equipment/README.md) | 239 | <a href="equipment/process/digester/default.jpg"><img src="equipment/process/digester/default.jpg" width="160" alt="Equipment preview"></a> |
 | [States](states/README.md) | 6 | <a href="states/pump-running.jpg"><img src="states/pump-running.jpg" width="160" alt="States preview"></a> |
-| [Workspace](workspace/README.md) | 7 | <a href="workspace/toolbar.jpg"><img src="workspace/toolbar.jpg" width="160" alt="Workspace preview"></a> |
+| [Workspace](workspace/README.md) | 8 | <a href="workspace/toolbar.jpg"><img src="workspace/toolbar.jpg" width="160" alt="Workspace preview"></a> |
 
 | File | Preview | Equipment and supplied state |
 | --- | --- | --- |

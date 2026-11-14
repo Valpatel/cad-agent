@@ -1,5 +1,7 @@
+import {toolkitExampleChecks} from './toolkit-examples-browser.mjs';
 /** Toolkit uses the same site frame, local assets and browser/error recorder as Explore. */
 export async function toolkitBrowserChecks({open,fail}) {
+  await toolkitExampleChecks({open,fail});
   for(const width of [320,1366]) for(const color of ['light','dark']) {
     const {page,done}=await open('/toolkit/scada/elements?q=pump&category=rotating&kind=equipment',{width,color});
     try {

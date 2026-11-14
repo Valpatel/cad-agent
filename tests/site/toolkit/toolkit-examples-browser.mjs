@@ -1,7 +1,7 @@
 /** Real capability cards and their existing viewer/calculator consumers; reuse the suite's error recorder. */
 export async function toolkitExampleChecks({open,fail}) {
   const ids=['scada-elements','scada-simulations','models','files','assembly','mechanisms','calculators'];
-  for(const width of [320,1366,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
+  for(const width of [320,1366,1920,3440]) for(const color of ['light','dark']) for(const js of [true,false]) {
     const {page,done}=await open('/toolkit',{width,color,js,motion:'reduce'});
     const where=`Toolkit examples @${width} ${color}${js?'':' no-JS'}`;
     try {
@@ -27,6 +27,14 @@ export async function toolkitExampleChecks({open,fail}) {
         if(!await launch.isVisible()||await launch.getAttribute('aria-disabled')==='true')fail(where,`${id}: native launch is not available`);
       }
       if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail(where,'horizontal page overflow');
+      if(width>=1920) {
+        const row=await page.locator('.toolkit-capabilities').evaluate(grid=>{
+          const cards=[...grid.querySelectorAll('[data-toolkit-capability]')].map(card=>card.getBoundingClientRect());
+          const first=cards.filter(card=>Math.abs(card.top-cards[0].top)<=1),bounds=grid.getBoundingClientRect();
+          return {count:first.length,usage:(Math.max(...first.map(card=>card.right))-Math.min(...first.map(card=>card.left)))/bounds.width};
+        });
+        if(row.count<3||row.count>5||row.usage<.9)fail(where,`wide overview has tiny cards or unused tracks: ${JSON.stringify(row)}`);
+      }
       const roadmap=await page.locator('.toolkit-roadmap').filter({hasText:'Growing the workbench'}).textContent();
       if(!/PCB.*electrical.*harness.*planned/i.test(roadmap))fail(where,'future viewers are not clearly distinguished from working examples');
     } finally {await done();}
@@ -39,8 +47,11 @@ export async function toolkitExampleChecks({open,fail}) {
     try {
       const launch=page.locator(`[data-toolkit-capability="${id}"] [data-toolkit-launch]`),href=await launch.getAttribute('href');
       const destination=new URL(href,page.url());
+      await launch.scrollIntoViewIfNeeded();await launch.focus();
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+      if(!await launch.evaluate(link=>link===document.activeElement))fail(where,'native launch could not receive keyboard focus');
       // Pages redirects an HTML file to its extensionless public route while preserving its bound input query.
-      await Promise.all([page.waitForURL(url=>url.origin===destination.origin&&[destination.pathname,destination.pathname.replace(/\.html$/,'')].includes(url.pathname)&&url.search===destination.search&&url.hash===destination.hash,{waitUntil:'domcontentloaded'}),launch.click()]);
+      await Promise.all([page.waitForURL(url=>url.origin===destination.origin&&[destination.pathname,destination.pathname.replace(/\.html$/,'')].includes(url.pathname)&&url.search===destination.search&&url.hash===destination.hash,{waitUntil:'domcontentloaded'}),launch.press('Enter')]);
       if(id==='models') {
         const model=page.locator('cad-model');await model.scrollIntoViewIfNeeded();
         await page.waitForFunction(()=>document.querySelector('cad-model')?.dataset.state==='ready'&&document.querySelector('cad-model').frames>0);

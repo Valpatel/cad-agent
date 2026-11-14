@@ -21,6 +21,7 @@ flowchart TD
 
 | File | What it tests |
 |---|---|
+| [simulation/](simulation/README.md) | Recorded solver poses, interpolation and replay controls |
 | [assembly/](assembly/README.md) | Instruction contract, bounded loading and real multipart presentation/lifecycle |
 | [scada/](scada/README.md) | Equipment states, model contracts, scenario regression and real simulation controls |
 | [host/](host/README.md) | Two real viewers, scoped interaction, cancellation and independent teardown |

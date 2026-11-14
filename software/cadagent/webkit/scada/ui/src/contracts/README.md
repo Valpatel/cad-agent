@@ -12,12 +12,12 @@
 | `SYSTEM_DEFINITION_VERSION` | Version the presentation document independently of package/model versions. |
 
 ```mermaid
-flowchart LR
-  document[Authored system JSON] --> validator[System validator]
-  validator --> registry[Pure catalog contracts]
-  snapshot[External snapshot] --> binding[Binding resolver]
-  document --> binding
-  binding --> state[Explicit component state or diagnostics]
+flowchart TD
+  Document["System JSON"] --> Validator["System validator"]
+  Validator --> Registry["Catalog contracts"]
+  Document --> Binding["Binding resolver"]
+  Snapshot["External snapshot"] --> Binding
+  Binding --> State["State + diagnostics"]
 ```
 
 The contract does not fetch URLs, acquire credentials, execute commands, mount UI or create a model. Those remain host responsibilities. Start a new document from [the minimal example](../../examples/minimal-system.json), then validate it before passing it to [the viewer](../viewer/README.md). JSON Schema complements these semantic checks; it does not replace them.

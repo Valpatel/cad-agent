@@ -4,11 +4,11 @@
 
 Generated previews from canonical equipment artwork and supplied illustrative state. Images do not run a process model. Open a preview for its full size.
 
-```mermaid
-flowchart LR
-  Source["Library artwork"] --> Preview["Generated images"]
-  Preview --> Browse["Browsable folder maps"]
-```
+![Equipment previews folder map](gallery-map.svg)
+
+| Map | Purpose |
+| --- | --- |
+| [gallery-map.svg](gallery-map.svg) | Shared ownership map for this generated gallery. |
 
 | Folder | Previews | Example |
 | --- | ---: | --- |

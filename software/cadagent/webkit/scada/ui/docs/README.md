@@ -17,12 +17,12 @@ This folder explains the public contracts, design evidence and known limits. Run
 | [AGRICULTURE_REFERENCES.md](./AGRICULTURE_REFERENCES.md) | Growing, aquaculture and climate reference boundaries. |
 
 ```mermaid
-flowchart LR
-  intent[Integration or design task] --> api[API and system format]
-  api --> examples[Executable examples]
-  intent --> designGuide[Style guide and references]
-  designGuide --> coverage[State coverage and remaining gaps]
-  coverage --> implementation[Canonical source owners]
+flowchart TD
+  Task["Integration or design"] --> API["API + system format"]
+  Task --> Design["Style + references"]
+  API --> Examples["Runnable examples"]
+  Design --> Coverage["State coverage"]
+  Coverage --> Source["Source owners"]
 ```
 
 Start with [the style guide](../STYLE_GUIDE.md) for appearance and state semantics, [contributing](../CONTRIBUTING.md) for the change workflow, and [agent prompts](../AGENT_PROMPTS.md) for reusable tasks. Keep limitations beside claims: typed state, model availability and a moving picture are different kinds of evidence.

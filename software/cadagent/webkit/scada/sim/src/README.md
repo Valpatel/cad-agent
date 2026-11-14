@@ -15,11 +15,11 @@ code and starts no timer, network request or browser persistence operation.
 | Registered constitutive laws | [`equations/`](./equations/README.md): provider selection, phase/unit contracts, owned custom state and compatible replay |
 
 ```mermaid
-flowchart LR
-  Contracts[Versioned contracts] --> Validation
-  Validation --> Model[Model state and transitions]
-  Model --> Adapter[Snapshot and commands]
-  Host[External session clock] --> Model
+flowchart TD
+  Contracts["Versioned contracts"] --> Validation["validation.mjs"]
+  Validation --> Model["Model state<br/>+ transitions"]
+  Host["Host clock"] --> Model
+  Model --> Adapter["adapter.mjs<br/>snapshots + commands"]
 ```
 
 The original v1 documents retain their original contracts. The checked-in

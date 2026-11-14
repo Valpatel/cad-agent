@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Fish treatment & raft return | `water` | 8 |
 | Rafts, light & oxygen | `roots` | 6 |
 | Three aeration branches | `utilities` | 9 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 17 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -72,6 +80,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `fishProbe` · Fish oxygen · illustrative index | `water-quality-probe` | `sensor`; energy: load; explicit observation |
 | `raftProbe` · Raft oxygen · illustrative index | `water-quality-probe` | `sensor`; energy: load; explicit observation |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -91,12 +101,17 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 4 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop raft A transfer (`isolate-raft`) | `setEnabled(equipment="raftA", value=false)` |
 | Foul the solids filter (`foul-treatment`) | `setFault(equipment="solidsFilter", value="fouled")` |
 | Stop the biofilter diffuser (`stop-bio-air`) | `setEnabled(equipment="bioAir", value=false)` |
 | Disconnect the controller (`break-controller`) | `setFault(equipment="plc", value="comms-loss")` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=aquaponics-dwc); see the

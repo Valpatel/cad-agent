@@ -4,6 +4,10 @@ This module changes documentation only. Capture provenance is checked by the
 owning generator before these maps can be refreshed without new screenshots.
 """
 import html
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from gallery_maps import folder_map_svg
 
 
 def gallery_index(manifest):
@@ -15,7 +19,7 @@ def gallery_index(manifest):
              'Each image shows the real viewer after resetting the model, pausing the host clock and using Zoom to fit. Diagram layout is illustrative; overview text size depends on the system bounds. Open the portable Explorer example to zoom, inspect equipment and issue commands.', '',
              '[Package owner](../README.md) · [Compact SVG topology maps](topologies/README.md) · [Thumbnail folder map](thumbnails/README.md) · [Explorer instructions](../../explorer/README.md) · [Contact sheet](thumbnails/contact-sheet.jpg) · [Capture manifest](../metadata/thumbnails.json)', '',
              'The UI library owns its separate [symbol and workspace gallery](../../ui/img/README.md). Each library keeps its own image directory; there is no shared root asset bucket.', '',
-             '```mermaid', 'flowchart LR', '  Definitions["scada-sim scenarios / system and model JSON"] --> Host["Explorer host and shared UI viewer"]', '  Host --> Capture["Reset, pause and Zoom to fit"]', '  Capture --> Images["scada-sim img / thumbnails"]', '  Images --> Map["Sector gallery and contact sheet"]', '```', '',
+             '![Simulation image folder map](thumbnails/gallery-map.svg)', '',
              '| Folder or file | Purpose |', '| --- | --- |', '| [topologies/](topologies/README.md) | Compact static vector process maps with equipment symbols and declared directed connections. |', '| [thumbnails/](thumbnails/README.md) | One real initial-view JPEG per scenario, plus the complete contact sheet. |', '| [Capture manifest](../metadata/thumbnails.json) | Source hashes, captured view, camera coverage and image dimensions. |', '',
              'The SCADA development tools own capture tooling; this model package owns the resulting images. Regenerate captures only when rendering or model inputs change. Documentation-only map refreshes use `npm --prefix tools/webkit/scada run thumbnails:scenarios -- --indexes-only` after the existing capture provenance and bytes pass validation.', '']
     for sector in sectors:
@@ -51,7 +55,7 @@ def asset_gallery_maps(records, kind):
     heading = 'Captured simulation views' if captured else 'Compact topology diagrams'
     explanation = ('Real Explorer images captured after reset, pause and Zoom to fit. Values and behavior remain illustrative; overview text size is not an operating-scale readability guarantee.' if captured else 'Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.')
     manifest = 'metadata/' + ('thumbnails.json' if captured else 'topologies.json')
-    maps = {}
+    maps = {base + '/gallery-map.svg': folder_map_svg('scada/sim/' + base + '/', [('sector / scenario /', 'Stable system identity'), ('preview.jpg' if captured else 'topology.svg', 'Fitted initial view' if captured else 'Declared equipment and links'), ('README.md', 'Definitions and companion view')], 'Each sector contains a folder per scenario, with its preview and links to system definitions.')}
 
     def safe(value):
         return html.escape(str(value), quote=True).replace('|', '&#124;')
@@ -66,7 +70,8 @@ def asset_gallery_maps(records, kind):
     root = base + '/README.md'
     lines = [f'# {heading}', '', explanation, '',
              link('Library image gallery', 'img/README.md', root) + ' · ' + link('Scenario definitions', 'scenarios/README.md', root) + ' · ' + link('Generation metadata', manifest, root), '',
-             '```mermaid', 'flowchart LR', '  Catalog[Scenario definitions] --> Sectors[Sector folders]', '  Sectors --> Scenario[Stable scenario folder]', '  Scenario --> Asset[Preview and local map]', '```', '',
+             '![Scenario image folder map](gallery-map.svg)', '',
+             '| Map | Purpose |', '| --- | --- |', '| [gallery-map.svg](gallery-map.svg) | Shared sector, scenario and image ownership map. |', '',
              f'Browse {len(records)} scenarios in {len(groups)} sectors. Paths use `sector/scenario/preview.jpg` for captures and `sector/scenario/topology.svg` for topology maps.', '',
              '| Sector | Scenarios | Representative preview |', '| --- | ---: | --- |']
     for slug, label, entries in groups:

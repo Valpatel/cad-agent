@@ -15,13 +15,12 @@ installed cad-agent integration.
 | [Contract tests](https://github.com/Valpatel/cad-agent/blob/dev/tests/webkit/scada/sim/external-adapter.test.mjs) | Unit mapping, invalid/stale observations, command rejection, shared subscriptions and no implicit browser/clock dependencies |
 
 ```mermaid
-flowchart LR
-  Samples[Supplied fake observations] --> Engine[One host source]
-  Requests[Requested inputs] --> Engine
-  Engine --> Adapter[Projection and command adapter]
-  Adapter --> Views[Many viewer instances]
-  Views -->|permitted commands| Adapter
-  Adapter --> Requests
+flowchart TD
+  Samples["Supplied samples"] --> Engine["fake-engine.mjs"]
+  Engine -->|"observations"| Adapter["adapter.mjs"]
+  Adapter --> Views["Shared viewers"]
+  Views -->|"commands"| Adapter
+  Adapter -->|"requested inputs"| Engine
 ```
 
 Run this from the `software/cadagent/webkit/scada/sim` directory; Node 20.18+ is sufficient:
@@ -46,6 +45,9 @@ values and units remain under `telemetry.pump`. Real integration must replace
 these scales with documented choices. No density is assumed and kg/s is never
 relabeled as m³/h. Above-range observations retain their raw value, cap the visual
 percentage at 100 and show warning status.
+
+<details>
+<summary>Snapshot bindings, command vocabulary and observation validity</summary>
 
 `getSnapshot()` exposes `components.pump` and `components.meter`, so system
 components with IDs `pump`/`meter` and types `pump`/`flow-meter` can use the viewer's
@@ -90,11 +92,13 @@ conservation ledger, automatic fault/repair lifecycle, interlock, motor coast-do
 or physics validation; those are explicit follow-on acceptance work for a real
 engine, not behavior to infer from this illustration.
 
+</details>
+
 From the repository root, run the independent contract tests:
 
 ```sh
 node --test tests/webkit/scada/sim/external-adapter.test.mjs
-node --test tests/integration/external-adapter-render.test.mjs
+node --test tests/webkit/scada/external-adapter-render.test.mjs
 ```
 
 Tests are source-repository development files and are excluded from npm runtime

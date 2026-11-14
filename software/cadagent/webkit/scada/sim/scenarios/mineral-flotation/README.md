@@ -40,17 +40,25 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>3 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Main process | `process` | 9 |
 | Utilities & control | `utilities` | 6 |
 | Finishing & storage | `finishing` | 7 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 13 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -67,6 +75,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `power` · Demonstration site power | `generator` | `generator` |
 | `controller` · Recovery-circuit controller | `plc-rack` | `controller` |
 | `flow` · Slurry transfer monitor | `flow-meter` | `sensor` |
+
+</details>
 
 ## Editable assumptions
 
@@ -85,12 +95,17 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 4 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop ore receiving hopper (`starve-feed`) | `setEnabled(equipment="feed", value=false)` |
 | Overload slurry preparation mill (`overload-stage`) | `setParameter(equipment="mill", key="capacity", value=25)`; `setLoad(equipment="mill", value=95)` |
 | Break slurry preparation mill (`break-stage`) | `setFault(equipment="mill", value=true)` |
 | Trip the demonstration power source (`trip-power`) | `setFault(equipment="power", value=true)` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=mineral-flotation); see the

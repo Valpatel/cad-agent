@@ -15,13 +15,12 @@ not constitute a calibrated plant or a nonlinear hydraulic network solver.
 | [heater-bench.mjs](./heater-bench.mjs) | V2 resistor with actual electric demand and accepted heat; isolated store for a measurable energy balance |
 
 ```mermaid
-flowchart LR
-  JSON[Assumed parameters] --> Bench[Headless bench factory]
-  Providers[Registered equation implementations] --> Bench
-  Bench --> Core[One engine session]
-  Core --> Saved[JSON snapshot and provider state]
-  Saved --> Core
-  Core --> CLI[SI diagnostics and replay check]
+flowchart TD
+  JSON["Assumed parameters"] --> Bench["Bench factory"]
+  Providers["Equation providers"] --> Bench
+  Bench --> Core["One engine session"]
+  Core <-->|"save / restore"| Saved["JSON snapshot"]
+  Core --> CLI["SI diagnostics<br/>+ replay check"]
 ```
 
 <a href="../../img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg"><img src="../../img/thumbnails/manufacturing-thermal-processing/electric-batch-oven/preview.jpg" width="420" alt="Existing electric oven scenario with supply and retained heat"></a>
@@ -67,6 +66,9 @@ state are rejected. A runtime binding change retains core inventories and
 resets the chosen provider's state; importing a snapshot restores its binding
 and state when that registered version is available.
 
+<details>
+<summary>Kernel ratings, SI conversion and heater assumptions</summary>
+
 `powerRating` and `flowRating` are kernel ratings, independent of the equation's
 SI scales. Lowering `powerRating` below the requested motor envelope lowers
 effective speed; a supply below running idle power produces zero flow. Lowering
@@ -90,3 +92,5 @@ Those assumptions are fixture choices, not changed rack-oven defaults. With
 240 V, 24 Ω and efficiency 0.9, six seconds accepts 14,400 J electricity and
 12,960 J heat when supply and receiver capacity allow. Finite supply and retained
 store limits remain enforced by the core.
+
+</details>

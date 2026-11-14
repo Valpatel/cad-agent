@@ -1038,8 +1038,10 @@ async function inLanes(parts) {
   const lane = async () => {
     while (next < parts.length && !errors.length) {
       const i = next++, t = Date.now();
+      console.log(`${engine.name()}: starting ${parts[i][0]}`);
       try { found[i] = await parts[i][1](); } catch (e) { errors.push(e); }
       took[i] = Math.round((Date.now() - t) / 1000);
+      console.log(`${engine.name()}: finished ${parts[i][0]} in ${took[i]} s; ${found[i].length} findings, ${errors.length} errors so far`);
     }
   };
   await Promise.all(Array.from({ length: LANES }, lane));

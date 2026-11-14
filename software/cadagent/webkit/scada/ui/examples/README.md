@@ -11,12 +11,12 @@ These are authored browser examples that import the package source directly. The
 | [minimal-system.json](./minimal-system.json) | A small versioned presentation document with provenance, assumptions, bindings and views; it is data, not a running model. |
 
 ```mermaid
-flowchart LR
-  components[Single-component example] --> renderer[Package renderer]
-  system[Authored system JSON] --> viewer[Viewer example]
-  model[Example utility model] --> adapter[Example adapter]
-  adapter --> viewer
-  viewer --> renderer
+flowchart TD
+  Components["components/"] --> Renderer["Symbol renderer"]
+  System["System JSON"] --> Viewer["viewer/"]
+  Model["Utility model"] --> Adapter["Model adapter"]
+  Adapter --> Viewer
+  Viewer --> Renderer
 ```
 
 From `software/cadagent/webkit/scada/ui/`, run `python -m http.server 8000`, then open `/examples/components/` or `/examples/viewer/` at `http://localhost:8000`. HTTP serving is required for reliable ES-module loading and JSON fetches. No repository build is needed for these source examples.

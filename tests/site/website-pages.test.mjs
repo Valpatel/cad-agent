@@ -142,6 +142,21 @@ test('long tables and code blocks fold, with a summary of what is inside; short 
   assert.equal(fold(diagram), diagram, 'a diagram source is a picture, not reference text');
 });
 
+test('authored references open with one action and automatic folding is idempotent', () => {
+  const table = '<div class="table-scroll"><table><tbody>' + '<tr><td>Equipment</td></tr>'.repeat(FOLD_ROWS + 1) + '</tbody></table></div>';
+  const code = '<cad-copy><pre><code>' + 'parameter = 1\n'.repeat(FOLD_LINES + 1) + '</code></pre></cad-copy>';
+  const nested = '<details><summary>Units</summary>' + code + '</details>';
+  const authored = '<DETAILS data-label="A > B"><summary>Equipment and units</summary>' + table + nested + '</DETAILS>';
+  assert.equal(fold(authored), authored, 'keep the authored title, table and intentional nested reference intact');
+  const comment = '<!-- <details><summary>Example only</summary> -->';
+  assert.equal(fold(comment + authored + table + code), comment + authored + fold(table) + fold(code),
+    'comment markup does not hide the subsequent ordinary references from automatic folding');
+  assert.equal(fold('<details-card>' + table + '</details-card>'), '<details-card>' + fold(table) + '</details-card>',
+    'a similarly named custom element is not a native disclosure');
+  const once = fold(table + code);
+  assert.equal(fold(once), once, 'a second compiler pass must not introduce another click');
+});
+
 
 test('the real source selector keeps moved identities and rejects missing current sources', () => {
   const extras = ['THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', '.github/SECURITY.md', 'SECURITY.md', 'docs/a b.md', 'docs/a\tb.md', 'docs/AGENTS.md'];

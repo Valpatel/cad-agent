@@ -4,12 +4,11 @@ Static SVG schematics of the first declared view. Symbols identify equipment; ar
 
 [Library image gallery](../README.md) · [Scenario definitions](../../scenarios/README.md) · [Generation metadata](../../metadata/topologies.json)
 
-```mermaid
-flowchart LR
-  Catalog[Scenario definitions] --> Sectors[Sector folders]
-  Sectors --> Scenario[Stable scenario folder]
-  Scenario --> Asset[Preview and local map]
-```
+![Scenario image folder map](gallery-map.svg)
+
+| Map | Purpose |
+| --- | --- |
+| [gallery-map.svg](gallery-map.svg) | Shared sector, scenario and image ownership map. |
 
 Browse 61 scenarios in 14 sectors. Paths use `sector/scenario/preview.jpg` for captures and `sector/scenario/topology.svg` for topology maps.
 

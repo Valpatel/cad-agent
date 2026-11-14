@@ -8,13 +8,7 @@ Each image shows the real viewer after resetting the model, pausing the host clo
 
 The UI library owns its separate [symbol and workspace gallery](../../ui/img/README.md). Each library keeps its own image directory; there is no shared root asset bucket.
 
-```mermaid
-flowchart LR
-  Definitions["scada-sim scenarios / system and model JSON"] --> Host["Explorer host and shared UI viewer"]
-  Host --> Capture["Reset, pause and Zoom to fit"]
-  Capture --> Images["scada-sim img / thumbnails"]
-  Images --> Map["Sector gallery and contact sheet"]
-```
+![Simulation image folder map](thumbnails/gallery-map.svg)
 
 | Folder or file | Purpose |
 | --- | --- |

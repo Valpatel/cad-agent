@@ -17,23 +17,23 @@ inventories, fault state and host clock.
 | [styles.css](./styles.css) | Example layout; component, viewer and workspace styles come from the sibling UI package |
 
 ```mermaid
-flowchart LR
-  Config[Validated law and parameters] --> Model[One v2 session]
-  Providers[Registered SI pump providers] --> Model
-  Clock[Host clock] --> Model
-  Model --> Adapter[Shared snapshot adapter]
-  Adapter --> Water[Hydraulic view]
-  Adapter --> Drive[Drive view]
-  Model <--> File[Versioned session file]
+flowchart TD
+  Config["Law + parameters"] --> Model["One v2 session"]
+  Providers["SI providers"] --> Model
+  Clock["Host clock"] --> Model
+  Model --> Adapter["Shared adapter"]
+  Adapter --> Water["Water view"]
+  Adapter --> Drive["Drive view"]
+  Model <-->|"save / restore"| File["Session file"]
 ```
 
 <a href="../../../ui/img/symbols/rotating/pump/default.svg"><img src="../../../ui/img/symbols/rotating/pump/default.svg" width="260" alt="Animated pump symbol used in this example; illustrative artwork, not a screenshot or model validation"></a>
 
 ## Run and explore
 
-From the repository root, run `python -m http.server 8000 --directory packages`
+From the repository root, run `python -m http.server 8000 --directory software/cadagent/webkit/scada`
 and open
-`http://localhost:8000/scada-sim/examples/model-switching/`.
+`http://localhost:8000/sim/examples/model-switching/`.
 The two sibling packages must remain adjacent when using extracted packages.
 Opening the HTML directly from disk is unsupported because the host fetches JSON.
 
@@ -83,6 +83,9 @@ replacing assumptions with equipment data.
 
 ## Embedding and lifecycle
 
+<details>
+<summary>Host lifecycle, developer controls and browser acceptance</summary>
+
 Reuse the model providers and public viewer separately from this host. The UI
 package receives only an adapter and never imports the model. The host uses one
 animation-frame clock, skips hidden-page time, and bounds any one elapsed frame
@@ -107,3 +110,5 @@ The source repository's repeatable browser acceptance command is
 `python tools/webkit/scada/sim/check-model-switching-browser.py --output /tmp/model-switching-review`; use
 `--url` to select an existing served entry and `--sizes` for viewport coverage.
 See the [source tooling map](https://github.com/Valpatel/cad-agent/blob/dev/tools/webkit/scada/sim/README.md).
+
+</details>

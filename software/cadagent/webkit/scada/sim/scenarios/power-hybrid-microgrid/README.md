@@ -40,6 +40,9 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 
 [Browse topology SVGs](../../img/topologies/README.md) · [Generation metadata](../../metadata/topologies.json)
 
+<details>
+<summary>4 focused views of this system</summary>
+
 | Focused view | ID | Equipment placements |
 | --- | --- | ---: |
 | Local solar and engine sources | `sources` | 9 |
@@ -47,11 +50,16 @@ connections; [model.json](model.json) owns behavior and editable assumptions.
 | Explicit grid-tie and local load | `island` | 5 |
 | Shared controls and station service | `controls` | 6 |
 
+</details>
+
 ## Equipment and model roles
 
 Roles below are the actual records in this scenario. A shared family name does
 not imply a calibrated device equation. Circuit roles describe resource bookkeeping;
 energy roles describe declared supply/conversion/load relationships.
+
+<details>
+<summary>Inspect the 17 equipment records and model roles</summary>
 
 | Equipment ID and label | Symbol | Model / declared domains |
 | --- | --- | --- |
@@ -73,6 +81,8 @@ energy roles describe declared supply/conversion/load relationships.
 | `engineExhaust` · Explicit combustion-exhaust boundary | `gas-holder` | `storage`; gas: combustion-gas (sink) |
 | `acBus` · Common AC bus · import / storage / export | `busbar` / `bidirectional` | `processor`; energy: relay |
 
+</details>
+
 ## Editable assumptions
 
 The complete scenario and per-component assumptions are in [model.json](model.json).
@@ -93,6 +103,9 @@ The [catalog entry](../index.json) stores each recipe, expected observation and
 limitation. These are editable playground commands, not operating procedures.
 Run or step the shared model to observe time-dependent effects.
 
+<details>
+<summary>Inspect 6 experiment recipes and commands</summary>
+
 | Experiment | Commands |
 | --- | --- |
 | Stop Local natural-gas genset (`stop-source`) | `setEnabled(equipment="engine", value=false)` |
@@ -101,6 +114,8 @@ Run or step the shared model to observe time-dependent effects.
 | Raise the selected stage demand (`stress-stage`) | `setParameter(equipment="engine", key="capacity", value=25)`; `setLoad(equipment="engine", value=95)` |
 | Discharge finite storage (`discharge`) | `setEnabled(equipment="grid", value=false)`; `setMode(equipment="storageConverter", value="forward")`; `setMode(equipment="battery", value="discharge")` |
 | Charge finite storage (`charge`) | `setEnabled(equipment="grid", value=true)`; `setMode(equipment="storageConverter", value="reverse")`; `setMode(equipment="battery", value="charge")` |
+
+</details>
 
 Serve the sibling packages over HTTP and open
 [Explorer](../../../explorer/index.html?scenario=power-hybrid-microgrid); see the

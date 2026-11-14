@@ -37,7 +37,7 @@ flowchart LR
 | [assembly.py](assembly.py) | Declared sequence and insertion/tool access. |
 | [playback.py](playback.py) | Finite ordered guide paths, bound to captured mesh and BREP bytes. |
 | [subassembly.py](subassembly.py) | Internal scopes and rigid module insertion adapter. |
-| [symmetry.py](symmetry.py) | Measured rotational symmetry of a solid about a joint axis. |
+| [symmetry.py](symmetry.py) | Measured rotational symmetry of a solid about a joint axis, to limits under the gate's own. |
 | [cache.py](cache.py) | Content-and-placement-keyed pairwise cache. |
 | [connectivity.py](connectivity.py) | Contact graph and declared connection evidence. |
 | [containment.py](containment.py) | Registered contents versus cavity geometry. |

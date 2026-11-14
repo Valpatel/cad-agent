@@ -1,4 +1,5 @@
 import {toolkitExampleChecks} from './toolkit-examples-browser.mjs';
+import {expect} from '../npm-context.mjs';
 /** Toolkit uses the same site frame, local assets and browser/error recorder as Explore. */
 export async function toolkitBrowserChecks({open,fail}) {
   await toolkitExampleChecks({open,fail});
@@ -40,7 +41,10 @@ export async function toolkitBrowserChecks({open,fail}) {
       const load=page.locator('[data-scada-state-fields] [name="load"]');
       if(await load.count()) {await load.fill('25');await load.press('Enter');if(!await page.locator('.toolkit-preview').isVisible())fail('Toolkit preview','Enter submitted the state form as navigation');await load.fill('');await running.check();if((await art.getAttribute('style')).includes('NaN'))fail('Toolkit preview','empty numeric input poisoned the renderer');}
       await page.keyboard.press('Escape');
-      if(!await button.evaluate(el=>el===document.activeElement))fail('Toolkit preview','closing the modal lost keyboard focus');
+      // Native close events restore focus asynchronously after the Escape key event.
+      await expect(page.locator('.toolkit-preview')).not.toBeVisible();
+      await expect(art).toHaveCount(0); // Preview teardown proves the close handler finished.
+      await expect(button,'closing the modal restores its opening button').toBeFocused();
       await page.getByRole('searchbox').fill('no-matching-equipment-123');
       if(await visible.count()||!await page.locator('[data-scada-empty]').isVisible())fail('Toolkit empty state','no-match state was not announced');
       await page.getByRole('button',{name:'Clear filters'}).click();

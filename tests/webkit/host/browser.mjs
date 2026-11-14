@@ -12,7 +12,8 @@ stl.writeUInt32LE(faces.length, 80);
 faces.forEach((face,i) => face.forEach((v,j) => vertices[v].forEach((n,k) => stl.writeFloatLE(n,84+i*50+12+j*12+k*4))));
 const manifest = {
   title:'Fixture assembly', units:'mm', up:'z',
-  parts:[{name:'block',file:'block.stl',bounds_mm:[0,0,0,10,20,30],color:'#4bb9cc',sha256:createHash('sha256').update(stl).digest('hex')}],
+  parts:[{name:'block',file:'block.stl',bounds_mm:[0,0,0,10,20,30],color:'#4bb9cc',sha256:createHash('sha256').update(stl).digest('hex')},
+    {name:'hidden-reference',file:'block.stl',bounds_mm:[0,0,0,10,20,30],color:'#4bb9cc',sha256:createHash('sha256').update(stl).digest('hex'),visible:false}],
 };
 const step = await readFile(new URL('../../fixtures/file-viewer/block.step', import.meta.url));
 const html = `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -94,6 +95,7 @@ try {
   }));
   assert.equal(initial.body.margin,'17px');assert.notEqual(initial.body.overflow,'hidden');
   assert.equal(initial.body.ready,undefined);assert.equal(initial.body.stageError,undefined);
+  assert.equal(await page.locator('#left option[value="hidden-reference"]').evaluate(option=>option.disabled),true);
   assert.equal(new Set(initial.ids).size,initial.ids.length);assert.ok(!initial.ids.some(id=>['app','hud','panel','topbar'].includes(id)));
   assert.equal(initial.canvas.length,2);
   for (const box of initial.canvas){assert.ok(box.width>200&&box.height>120);assert.ok(box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1);}
@@ -152,6 +154,22 @@ try {
   assert.equal(fileSelection.selected,'mesh:0');assert.deepEqual(fileSelection.left,fileSelection.before);
   await page.evaluate(()=>right.select(null));
   cases.push({name:'both domain selections remain local',events:selection.events});
+
+  // An authored hidden part must never be offered before the first state update.
+  await page.locator('#left').getByRole('button',{name:'Inspector',exact:true}).click();
+  const partSelect=page.locator('#left').getByLabel('Part selection');
+  const hiddenOption=partSelect.locator('option[value="hidden-reference"]');
+  assert.equal(await hiddenOption.evaluate(option=>option.disabled),true);
+  // Synthetic/stale changes cannot leave a disabled choice displayed as selected.
+  await partSelect.selectOption('hidden-reference');
+  assert.equal(await partSelect.inputValue(),'');assert.equal((await state('left')).selection,null);
+  const referenceToggle=page.locator('#left input[data-part="hidden-reference"]');
+  await referenceToggle.check();assert.equal(await hiddenOption.evaluate(option=>option.disabled),false);
+  await partSelect.selectOption('hidden-reference');assert.equal((await state('left')).selection,'hidden-reference');
+  await referenceToggle.uncheck();assert.equal(await hiddenOption.evaluate(option=>option.disabled),true);
+  assert.equal(await partSelect.inputValue(),'');assert.equal((await state('left')).selection,null);
+  await page.locator('#left').getByRole('button',{name:'Inspector',exact:true}).click();
+  cases.push({name:'initially hidden selection stays synchronized with visibility'});
 
   // A saved presentation round-trips; malformed input is rejected without mutation.
   const restore = await page.evaluate(()=>{

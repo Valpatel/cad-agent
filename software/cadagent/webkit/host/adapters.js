@@ -14,9 +14,14 @@ export function createModelHost(container, { title = 'Assembly model', manifestU
   return createViewerHost(container, { title, signal: options.signal,
     async mount({ viewport, inspector, signal, onProgress, onSelect, onState }) {
       let selector;
+      function syncSelection(state) {
+        if (!selector) return;
+        selector.value = state.selected ?? '';
+        for (const option of selector.options) option.disabled = !!option.value && (!state.visible.includes(option.value) || state.isolate !== null && !state.isolate.includes(option.value));
+      }
       const viewer = await createViewer({ ...options, app: viewport, panel: inspector, title: null, manifestUrl, signal,
         embedded: true, onProgress, onSelect: value => { if (selector) selector.value = value ?? ''; onSelect(value); },
-        onStateChange: state => { if (selector) for (const option of selector.options) option.disabled = !!option.value && (!state.visible.includes(option.value) || state.isolate !== null && !state.isolate.includes(option.value)); onState(state); }, onError: error => onState({ state: 'error', message: error.message }) });
+        onStateChange: state => { syncSelection(state); onState(state); }, onError: error => onState({ state: 'error', message: error.message }) });
       let unbind;
       try {
         const documentId = crypto.randomUUID();
@@ -28,7 +33,12 @@ export function createModelHost(container, { title = 'Assembly model', manifestU
         for (const [value, text] of [['', 'No selection'], ...viewer.parts.map(part => [part.name, part.name])]) {
           const option = document.createElement('option'); option.value = value; option.textContent = text; selector.append(option);
         }
-        selector.onchange = () => viewer.setSelection(selector.value || null); label.append(selector); inspector.prepend(label);
+        syncSelection(viewer.getState());
+        selector.onchange = () => {
+          if (selector.selectedOptions[0]?.disabled) { syncSelection(viewer.getState()); return; }
+          viewer.setSelection(selector.value || null);
+        };
+        label.append(selector); inspector.prepend(label);
         unbind = bindStageControls(viewport, viewer.stage, fit);
         return { fit, select: value => viewer.setSelection(value),
           getViewState: () => ({ version: 1, kind: 'assembly', documentId, camera: captureCamera(viewer.stage), selection: viewer.getState().selected, domain: viewer.getState() }),

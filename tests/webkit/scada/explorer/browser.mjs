@@ -25,7 +25,24 @@ const wastewaterSystem=JSON.parse(await readFile(new URL('../../../../software/c
 const observedSnapshot=saved=>{const model=new PlaceholderSystemModel(wastewaterSystem,saved.model);model.importSnapshot(saved);const snapshot=model.getSnapshot();model.destroy();return snapshot;};
 const receipt={browser:browserName,baseURL,checks,errors,responses,screenshots,sources:{}};
 const check=async(name,fn)=>{await fn();checks.push(name);console.log(`PASS ${name}`);};
-const shot=async name=>{const filename=`${browserName}-${name}.png`;await page.screenshot({path:path.join(output,filename),fullPage:await page.locator('dialog[open], [data-scada-popover-open=true]').count()===0});screenshots.push(filename);};
+const shot=async(name,element=null)=>{const filename=`${browserName}-${name}.png`,target=path.join(output,filename);if(element)await element.screenshot({path:target});else await page.screenshot({path:target,fullPage:await page.locator('dialog[open], [data-scada-popover-open=true]').count()===0});screenshots.push(filename);};
+const valvePosition=async(node,kind,label)=>{
+  await expect(node.locator('.scada-component')).toHaveAttribute('data-valve-position',kind);
+  await expect(node.locator('.scada-valve-position-label')).toBeVisible();
+  await expect(node.locator('.scada-valve-position-label')).toHaveText(label);
+  await expect(node.locator('.scada-valve-position-tag')).toHaveText(label);
+  // Inspect the painted body, independently of the state attribute and text.
+  await expect.poll(()=>node.locator('.scada-valve-body').evaluate((body,kind)=>{
+    const [r,g,b]=getComputedStyle(body).fill.match(/[\d.]+/g).map(Number);
+    return kind==='closed'?r>g+20:kind==='open'?g>r+20&&g>b:b>g&&g>r;
+  },kind)).toBe(true);
+  const geometry=await node.evaluate(node=>{
+    const label=node.querySelector('.scada-valve-position-label'),body=node.querySelector('.scada-valve-body'),a=node.getBoundingClientRect(),b=label.getBoundingClientRect();
+    return {card:{width:a.width,height:a.height},label:{left:b.left-a.left,right:b.right-a.left,top:b.top-a.top,bottom:b.bottom-a.top},fill:getComputedStyle(body).fill,stroke:getComputedStyle(body).stroke,text:label.textContent};
+  });
+  assert.ok(geometry.label.left>=0&&geometry.label.right<=geometry.card.width+1&&geometry.label.top>=0&&geometry.label.bottom<=geometry.card.height+1,JSON.stringify(geometry));
+  return geometry;
+};
 const minutes=async()=>parseFloat(await page.locator('[data-kpi="time"]').innerText());
 const close=async()=>{
   const quick=page.locator('[data-scada-popover-open=true]').last();
@@ -73,12 +90,14 @@ try{
   await check('reusable diagram actions operate the declared equipment through pointer and keyboard without opening a modal',async()=>{
     await page.goto(`${baseURL}/kit/scada/ui/examples/viewer/index.html`);
     const root=page.locator('#utility-viewer'),action=root.locator('[data-scada-diagram-control="valveSwitch"]');
-    await expect(action).toHaveText('Close');await action.click();await expect(action).toHaveText('Open');
+    const valve=root.locator('[data-scada-equipment=valve]');
+    await expect(action).toHaveText('Close');const opened=await valvePosition(valve,'open','OPEN');await shot('utility-valve-open-card',valve);
+    await action.click();await expect(action).toHaveText('Open');const closed=await valvePosition(valve,'closed','CLOSED');assert.notEqual(opened.fill,closed.fill);await shot('utility-valve-closed-card',valve);
     assert.equal(await root.locator('dialog[open]').count(),0);
     await expect(root.locator('[data-scada-popover-open=true]')).toHaveCount(0);await expect(root.locator('[data-scada-equipment][aria-pressed]')).toHaveCount(0);
     await expect(root.locator('[data-scada-connection="deliveredWater"]')).toHaveAttribute('data-active','false');
-    await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');
-    await page.keyboard.press('Space');await expect(action).toHaveText('Open');
+    await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');await valvePosition(valve,'open','OPEN');
+    await page.keyboard.press('Space');await expect(action).toHaveText('Open');await valvePosition(valve,'closed','CLOSED');
     const before=await root.locator('[data-scada-canvas]').getAttribute('style'),box=await action.boundingBox();
     await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
     await page.mouse.move(box.x+box.width/2+60,box.y+box.height/2+35,{steps:8});await page.mouse.up();
@@ -156,19 +175,35 @@ try{
       await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=${scenario}`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
       const root=page.locator('#lab-viewer'),viewport=root.locator('[data-scada-scroll]'),action=root.locator(`[data-scada-diagram-control="${valve}-open-control"]`);
       await expect(action).toHaveText('Close');
+      const node=root.locator(`[data-scada-equipment="${valve}"]`);
+      const partial=await valvePosition(node,'partial','85% OPEN');
+      if(scenario==='wastewater-digester')await shot(`valve-${colorScheme}-partial-card`,node);
       for(const button of await root.locator('[data-scada-diagram-control]').all()){
         const ratios=await button.evaluate(buttonContrast);for(const result of ratios)assert.ok(result.ratio>=4.5,JSON.stringify({scenario,colorScheme,...result}));
         receipt.directControls.push({scenario,colorScheme,ratios});
       }
       const camera=()=>viewport.evaluate(e=>[e.dataset.cameraX,e.dataset.cameraY,e.dataset.cameraZoom]);
       const before=await camera(),time=await minutes();await action.click();await expect(action).toHaveText('Open');
+      const closed=await valvePosition(node,'closed','CLOSED');assert.notEqual(closed.fill,partial.fill);
+      if(scenario==='wastewater-digester')await shot(`valve-${colorScheme}-closed-card`,node);
       assert.equal(await root.locator('dialog[open]').count(),0);assert.deepEqual(await camera(),before);assert.equal(await minutes(),time);
       const saved=await session(),definition=JSON.parse(await readFile(path.join(rootPathForScenario(scenario),'system.json'),'utf8'));
       const model=new PlaceholderSystemModel(definition,saved.model);model.importSnapshot(saved);
       try{assert.equal(model.getSnapshot().controls[valve].open,false);assert.equal(model.getSnapshot().readings[valve].resourceOut,0);}finally{model.destroy();}
       const detail=definition.views.slice(1).find(view=>view.placements.some(item=>item.component===valve));assert.ok(detail);
-      await root.locator(`[data-scada-view-choice="${detail.id}"]`).click();await expect(action).toHaveText('Open');
+      await root.locator(`[data-scada-view-choice="${detail.id}"]`).click();await expect(action).toHaveText('Open');await valvePosition(node,'closed','CLOSED');
       await action.focus();await page.keyboard.press('Enter');await expect(action).toHaveText('Close');assert.equal(await minutes(),time);
+      await valvePosition(node,'partial','85% OPEN');
+      if(scenario==='wastewater-digester'){
+        await node.click();const quick=page.locator('#industry-viewer-quick-panel');await expect(quick).toBeVisible();
+        await quick.locator('[data-scada-control="inletValve-load-control"]').press('End');
+        await expect(quick.locator('[data-scada-control="inletValve-load-control"]')).toHaveValue('100');await close();
+        // A paused model retains its observed 85% position after a 100% command.
+        // The green endpoint is checked with real UtilityModel toggles above.
+        await valvePosition(node,'partial','85% OPEN');const commanded=await session();
+        assert.equal(commanded.state.components.inletValve.load,100);assert.equal(commanded.state.components.inletValve.operating,85);assert.equal(await minutes(),time);
+        receipt.directControls.push({scenario,colorScheme,valvePosition:{partial,closed,commandedOpening:100,observedOpening:85}});
+      }
       await shot(`${scenario}-${colorScheme}-direct-controls`);
     }
     await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
@@ -395,7 +430,7 @@ try{
   receipt.status='passed';
 }catch(error){receipt.status='failed';receipt.failure=error.stack;if(page)await shot('failure').catch(()=>{});throw error;}
 finally{
-  for(const relative of ['explorer/main.mjs','explorer/model-editor.mjs','explorer/equipment-model.mjs','explorer/equipment-model.css','explorer/styles.css','ui/src/viewer/viewer.mjs','ui/src/viewer/viewer.css','ui/src/viewer/camera.mjs','ui/src/workspace/popover.mjs','ui/src/workspace/popover.css','sim/src/adapter.mjs','sim/src/v2/circuit-system.mjs','sim/scenarios/wastewater-digester/system.json','sim/scenarios/wastewater-digester/model.json']){
+  for(const relative of ['explorer/main.mjs','explorer/model-editor.mjs','explorer/equipment-model.mjs','explorer/equipment-model.css','explorer/styles.css','ui/src/viewer/viewer.mjs','ui/src/viewer/viewer.css','ui/src/symbols/valve-position.mjs','ui/src/symbols/components.mjs','ui/src/symbols/components.css','ui/src/symbols/power/energy.mjs','ui/src/viewer/camera.mjs','ui/src/workspace/popover.mjs','ui/src/workspace/popover.css','sim/src/adapter.mjs','sim/src/v2/circuit-system.mjs','sim/scenarios/wastewater-digester/system.json','sim/scenarios/wastewater-digester/model.json']){
     receipt.sources[relative]=createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit/scada',relative))).digest('hex');
   }
   for(const relative of ['ui/theme.css','ui/theme.js','vendor/fonts/fonts.css'])receipt.sources[`webkit/${relative}`]=createHash('sha256').update(await readFile(path.join(root,'software/cadagent/webkit',relative))).digest('hex');

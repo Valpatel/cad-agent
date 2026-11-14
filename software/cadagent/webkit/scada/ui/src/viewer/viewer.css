@@ -66,3 +66,8 @@ html.motion-paused .scada-diagram-flow{animation-play-state:paused!important}
 .scada-viewer .scada-dialog-equipment{width:min(760px,calc(100vw - 32px));max-height:min(780px,calc(100dvh - 48px))}
 .scada-viewer .scada-dialog-equipment .scada-viewer-readings{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media(max-width:600px){.scada-viewer .scada-dialog-equipment .scada-viewer-readings{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Position is supplied model state; command buttons still name the next action. */
+.scada-viewer-equipment-status .scada-valve-position-label{font-weight:750;color:var(--scada-valve-color);border-left:4px solid currentColor;padding-left:6px}
+.scada-viewer-equipment-status .scada-valve-condition[data-condition=fault]{color:#ff9abb}
+.scada-viewer-equipment-status .scada-valve-condition[data-condition=warning]{color:#ffd38a}

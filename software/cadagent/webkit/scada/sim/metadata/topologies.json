@@ -95,21 +95,22 @@
     "software/cadagent/webkit/scada/ui/src/symbols/art/process.mjs": "f9f73f097e5534f9119425fad9a5aa20ea402264da042581aa862e16bcb17ce0",
     "software/cadagent/webkit/scada/ui/src/symbols/art/twin.css": "b530ab2fdc6319d0c0e56ddfe814e0a1f8ca3fbd412bb0e45b25b2ddabde8fac",
     "software/cadagent/webkit/scada/ui/src/symbols/art/twin.mjs": "bd79eb3521fc4c98bececa67679c00c1fa2c2d98ba465ba471aa08d98745c4a7",
-    "software/cadagent/webkit/scada/ui/src/symbols/components.css": "9291ad91717ac0f770bc2a79291d4191e8b269f966e2b81ca7b377b846aacdd3",
-    "software/cadagent/webkit/scada/ui/src/symbols/components.mjs": "72b2c4843229f54e0e347678b776b1a640a12dcfc756313eac238e2ee2874ab6",
+    "software/cadagent/webkit/scada/ui/src/symbols/components.css": "aec3ba590791f908cd02dfe068cb08cb6f176d07eff93bd6a0571d81eeef4c39",
+    "software/cadagent/webkit/scada/ui/src/symbols/components.mjs": "742993d3a280d6c00797f166d6b933d5f01a562526e6041c76bccdb0a01db8ec",
     "software/cadagent/webkit/scada/ui/src/symbols/index.mjs": "cd2bb85f8acc61ab0ceface262cc1aa6e2221517061e53a4249fc23f6f400528",
     "software/cadagent/webkit/scada/ui/src/symbols/power/electrical.mjs": "7d27d7978e8cf260e71ce8f6120f9a9e98a00e3db94a2f65224ab12177746f1d",
-    "software/cadagent/webkit/scada/ui/src/symbols/power/energy.mjs": "fbdca8a2ae023d523ec7c102329a87b51ad7005824993ec63de65ab3eabb9531",
+    "software/cadagent/webkit/scada/ui/src/symbols/power/energy.mjs": "3ff229100ca646194ad4a96608831218a5577eaa0e206b11209203ffea5565cb",
     "software/cadagent/webkit/scada/ui/src/symbols/power/generators.mjs": "3248da64356d6314cc68e2a4e5183592b55d3bbd9549d56037d002d944b32e3f",
     "software/cadagent/webkit/scada/ui/src/symbols/power/map.svg": "b1b76d0037d7a9f4667e66a5a65d73b7df60bbc06c442f99747cc90a82ffb505",
     "software/cadagent/webkit/scada/ui/src/symbols/power/nuclear.css": "abcabbaf7128784b50000e27796d0486c39125918d2905188dda79fe67c595d1",
     "software/cadagent/webkit/scada/ui/src/symbols/power/nuclear.mjs": "b669848e4bad9eb88e058941e57c3d9df733353c524634a700c22ee8c056e1c4",
     "software/cadagent/webkit/scada/ui/src/symbols/power/power.css": "61ef55ffc564a2cb9b6f7b1b96e7b3b938131ff4d811fa6a0b143b0e52accabf",
     "software/cadagent/webkit/scada/ui/src/symbols/power/primitives.mjs": "fda1571381fc728b315cc09701ef76be5c921f8eb12670c54614019c3a4a4f79",
+    "software/cadagent/webkit/scada/ui/src/symbols/valve-position.mjs": "f72f818fded726024ebd87f0c5eeaf6632308bfb328d9a1e994e51e385ce6382",
     "software/cadagent/webkit/scada/ui/src/viewer/camera.mjs": "cafafc6b51100907108cd9c8e4cd85d8620769ca0c13b90f7959ba7cb0916273",
     "software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs": "f19c06cc6d086d63f880f9dfbe4db41c5a2143ab4b169bb63a06f000ebfc292d",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "2061dc8a1089fafac0bbd4e8a2d5e42f6c4ba468f7e5d1c7626568c1675f34f5",
-    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "ec7c769e96c523f096271b9e99b03fc8463f4f66f967aa5121e9c3bc24c61bf2",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.css": "658e5ae5555c3e38c4a139e9462e638620c19178bdf9de9d0e7af125262a85c6",
+    "software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs": "cf48bc2f75c0a88a807d865bfd011b4c47319774bb66d2fa414f0c03bd4e368b",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.css": "7192413b02f647ac2b21960ab35cfc5ec3e7a0232568816c574d0862cbc937fc",
     "software/cadagent/webkit/scada/ui/src/workspace/popover.mjs": "4fdd4689d24712ca312aeaa9444d46140fa26300a6bb822d63326ba0d50606d5",
     "software/cadagent/webkit/scada/ui/src/workspace/workspace.css": "ab34edc9ab0e19d181b50a7cb33c8f33f406113d195dd367728f16688e05fafd",
@@ -880,8 +881,8 @@
           "crossings": []
         }
       },
-      "bytes": 76679,
-      "sha256": "ef5fc5e109caa13e370533e2a4c7f5bfbf16682c8794c83b50cf33a097a2b84c"
+      "bytes": 77833,
+      "sha256": "3ca1c5af1147d02c3876090c9c42fab2df44a1abe4401d252d49818f44d7a588"
     },
     {
       "id": "winery",
@@ -1437,8 +1438,8 @@
           "crossings": []
         }
       },
-      "bytes": 50985,
-      "sha256": "c4e52ce39041dd224a3160f42206a2f086f9f9712ba67cee25c79158b0e97693"
+      "bytes": 52797,
+      "sha256": "ccbfbab5992aefcf2e53da4aa7db6bfa0e8d147047f279739e2ea99588057da9"
     },
     {
       "id": "brewery",
@@ -2244,8 +2245,8 @@
           "crossings": []
         }
       },
-      "bytes": 80328,
-      "sha256": "bd0c3933395be219efee6c23ef33f95997036ea7a124b384afab3c0c95252e2f"
+      "bytes": 81536,
+      "sha256": "0a55a94a2371ae774948ccc5636d9ed2e603a5a663008882365e8d69197b288c"
     },
     {
       "id": "fortune-cookies",
@@ -3863,8 +3864,8 @@
           "crossings": []
         }
       },
-      "bytes": 75386,
-      "sha256": "8657df0c92363c7dd6e5cf411857cbbfcf503319a2757a39052a6fc9882df199"
+      "bytes": 75960,
+      "sha256": "66da9dcbbc5739fe91b6b8c7b01f2c98cc171e6977a17c3824dc9231e504198e"
     },
     {
       "id": "dairy",
@@ -5482,8 +5483,8 @@
           "crossings": []
         }
       },
-      "bytes": 75463,
-      "sha256": "74bc002fff9054cbd1a8c72b9273d79eed0085279a00e56e86ab37f6997a77fe"
+      "bytes": 75996,
+      "sha256": "7362634579eeaf9ac1fe051d161e3db01a199205fe43d0f6042eb92e4eb1964d"
     },
     {
       "id": "tablets",
@@ -6981,8 +6982,8 @@
           "crossings": []
         }
       },
-      "bytes": 69272,
-      "sha256": "7126303173b522ff49680e9c032df19f38e4d06a0bae80a69d88bf8b935bb843"
+      "bytes": 69870,
+      "sha256": "5ae6d3c7142dd4647adc8c23b5261f567ccff12958aa58fb248209dffd8f54cf"
     },
     {
       "id": "paint-blending",
@@ -8047,8 +8048,8 @@
           "crossings": []
         }
       },
-      "bytes": 63662,
-      "sha256": "de46ea16ccce926e3b82854c9f3408e5d6a2a1d4cbaf461220544c531f2c742a"
+      "bytes": 64308,
+      "sha256": "8dedb287af5121eca33e3e1d8f9c0f751a66141290f2d9d55a7e0e1eaa4d5c84"
     },
     {
       "id": "polymer-extrusion",
@@ -11703,8 +11704,8 @@
           "crossings": []
         }
       },
-      "bytes": 46714,
-      "sha256": "faa0980399256b87c3f358257140ff4d501c89cb2278a49e6b7f62d0603fc947"
+      "bytes": 47319,
+      "sha256": "ef3923c369be8d67e0c2006df5a15d9e2df1a5df93419e5b9c3864e8b61f387a"
     },
     {
       "id": "power-gas-combined-cycle",
@@ -12058,8 +12059,8 @@
           "crossings": []
         }
       },
-      "bytes": 51920,
-      "sha256": "c396ce9115319a36cd83f0d73b8cefd704698cc5b30dbc00f2c9b9ccf8320980"
+      "bytes": 52520,
+      "sha256": "33f49de61478df92e2fc516755714a09cbe855ae43be997f81fcf830abaf7c31"
     },
     {
       "id": "power-coal-steam",
@@ -13105,8 +13106,8 @@
           "crossings": []
         }
       },
-      "bytes": 34057,
-      "sha256": "6146c4a372e0ddf691fa2a375708a110d7b520d625b00a8f5664835cb3179422"
+      "bytes": 34287,
+      "sha256": "70da5e8724117857fdfc46a63e64b4eaecb9e86cf646566d44a699d6c1d375f1"
     },
     {
       "id": "power-hydro-diversion",
@@ -13362,8 +13363,8 @@
           "crossings": []
         }
       },
-      "bytes": 28584,
-      "sha256": "0dd7b8c4197f92d137ad0c27c242496a2f18d7e8f953b6e527ca5032f6531eaf"
+      "bytes": 28815,
+      "sha256": "480b5b3a0bf945a2c551dd8d9ae38055f8cc9d78b398dbfc7906c4e6b9786245"
     },
     {
       "id": "power-pumped-storage",
@@ -13515,8 +13516,8 @@
           "crossings": []
         }
       },
-      "bytes": 19634,
-      "sha256": "7cb16e9d8b5a23a2220fbe223d59df8c26bd588cfdab384a603c7d9827549eec"
+      "bytes": 19631,
+      "sha256": "030e2e33175687434ea0b824596502373b2dbb981bce73b262aa0837600391e3"
     },
     {
       "id": "power-nuclear-pwr",
@@ -16131,8 +16132,8 @@
           "crossings": []
         }
       },
-      "bytes": 47540,
-      "sha256": "488a9dfc191a3b97fd132eb451104e5e6ca056193424a2ac0d0be99f6e1bea2a"
+      "bytes": 48152,
+      "sha256": "c6f3b10c8b7347c62e76228ff735baa683d58e51eef1886ca98c531deee1db98"
     },
     {
       "id": "power-diesel-standby",
@@ -17305,8 +17306,8 @@
           "crossings": []
         }
       },
-      "bytes": 29559,
-      "sha256": "22571246f8a009c3fe3af6285726d4b9e352fad29f20ac48210efde5a1d2d457"
+      "bytes": 29558,
+      "sha256": "3cc2bcb5794e7a8917341dc8ad2ae4b3c42509b9c9d4a597f721302c1f0c1825"
     },
     {
       "id": "power-substation-gis",
@@ -18222,8 +18223,8 @@
           "crossings": []
         }
       },
-      "bytes": 19691,
-      "sha256": "4745e1060db028d5cf79d32c5cbfbf1fc3dc1e60f9d3add3d1e1f9b56df33e1b"
+      "bytes": 19689,
+      "sha256": "20d41a179d996285e9d76f54600b2f02e69da431ad831fb643d8f043baad5d81"
     },
     {
       "id": "power-wave-point-absorber",
@@ -18391,8 +18392,8 @@
           "crossings": []
         }
       },
-      "bytes": 17119,
-      "sha256": "b68f58639dfc10b2a980e73ab1708cf1ade2521d914989de92cbf241754f6c97"
+      "bytes": 17117,
+      "sha256": "4044aafc374ba3c87cdcbc4b50091a988b6d8fd415e7adedb569944ea63f7d2a"
     },
     {
       "id": "power-csp-tower",
@@ -18762,8 +18763,8 @@
           "crossings": []
         }
       },
-      "bytes": 34286,
-      "sha256": "9b6fcdf88b17bd891f970f7e7afbe86ea5f073310a9f961b5ed46a5cc49b6e36"
+      "bytes": 34283,
+      "sha256": "09d5630d143db7b58b53334134efc753ca9af05f17b2245efe6b60da0d354cf0"
     },
     {
       "id": "power-csp-trough",
@@ -19157,8 +19158,8 @@
           "crossings": []
         }
       },
-      "bytes": 40078,
-      "sha256": "c2d0195d8b98057c4a45294225a1fbf66a18b4dcd573d2001c9c14902e51ee2b"
+      "bytes": 40077,
+      "sha256": "0e03c2ee98dcbdeeb074bd69b071ab8922663a4394ed39fd9352009d66160111"
     },
     {
       "id": "power-fuel-cell",
@@ -19422,8 +19423,8 @@
           "crossings": []
         }
       },
-      "bytes": 36329,
-      "sha256": "3067b56514f823ee1d989c9947a9094584802af7f3e4cf4e71c4e5e63aeff59a"
+      "bytes": 36949,
+      "sha256": "599ba6f51a08af3bf165d5500d768e1c917051831bec2211d044887e1a7790b6"
     },
     {
       "id": "power-geothermal-flash",
@@ -19881,8 +19882,8 @@
           "crossings": []
         }
       },
-      "bytes": 18652,
-      "sha256": "974f1e7b1f1637ad115328435b9fe0e670716251fa5d4ea29c6e5c63472ffdd0"
+      "bytes": 18651,
+      "sha256": "3a475de9ffa45d16e193b625adab2df874a0c1a92cd3b83aa2390af85e68a70a"
     },
     {
       "id": "power-battery-storage",
@@ -20579,8 +20580,8 @@
           "crossings": []
         }
       },
-      "bytes": 78764,
-      "sha256": "a750ed4122851d7cb7a2dd2b4eb98b4de3e62d854b7e8b4b4bae9984359ffe0f"
+      "bytes": 79370,
+      "sha256": "dbde34980b02e1dccb050b0895c2ce644ab28a684432f0d675f8aed5bac1a01c"
     },
     {
       "id": "aquaponics-media-bed",
@@ -21978,8 +21979,8 @@
           "crossings": []
         }
       },
-      "bytes": 54697,
-      "sha256": "59d88621a718a0cbef0c81e7bf6d7670410a65ec8c6d8158ffd7cc757ac60c8d"
+      "bytes": 55889,
+      "sha256": "a3754701e2a41536b3566123cadea241f1c47c65bf1fb5307290d279e9303633"
     },
     {
       "id": "hydroponics-ebb-flow",
@@ -22451,8 +22452,8 @@
           "crossings": []
         }
       },
-      "bytes": 43557,
-      "sha256": "e273f32c600dac557c29a2c51365b97b58fd5d89fd6259e55332f2c3d85c37b0"
+      "bytes": 44729,
+      "sha256": "71b1c6234497513eeb1c4f900b29b09cbe6569149d0c88dc06a87ddbe3c0a167"
     },
     {
       "id": "greenhouse-drip",
@@ -23620,9 +23621,9 @@
     "img/topologies/agriculture-aquaculture/greenhouse-drip/README.md": "5e78f8809f23de434b03c125c7450ee0f6268ace49078562885c027508faeecf",
     "img/topologies/agriculture-aquaculture/greenhouse-drip/topology.svg": "8d2bb8a3431c5c3722a66b1d4788a78ae19663de947b94fc963c6ed32c5b6145",
     "img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/README.md": "d0449beae180f3023068df34a3885665aba606b724364cdb274efd1f3b009908",
-    "img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/topology.svg": "e273f32c600dac557c29a2c51365b97b58fd5d89fd6259e55332f2c3d85c37b0",
+    "img/topologies/agriculture-aquaculture/hydroponics-ebb-flow/topology.svg": "71b1c6234497513eeb1c4f900b29b09cbe6569149d0c88dc06a87ddbe3c0a167",
     "img/topologies/agriculture-aquaculture/hydroponics-nft/README.md": "31cff49210fb5b9b40401630504fda6cca0ceddb1d55ff9aaf349599c2930d31",
-    "img/topologies/agriculture-aquaculture/hydroponics-nft/topology.svg": "59d88621a718a0cbef0c81e7bf6d7670410a65ec8c6d8158ffd7cc757ac60c8d",
+    "img/topologies/agriculture-aquaculture/hydroponics-nft/topology.svg": "a3754701e2a41536b3566123cadea241f1c47c65bf1fb5307290d279e9303633",
     "img/topologies/agriculture-aquaculture/indoor-aeroponics/README.md": "d61612c7be1e98b139091fc76b4f6d7dfa19280c87e08afc2930af9d698cd8c3",
     "img/topologies/agriculture-aquaculture/indoor-aeroponics/topology.svg": "9428ea6b440179f2284effc817df74472f534871638f19c926e363a903612634",
     "img/topologies/biopharma/README.md": "f937a43eaf860e02c4c5b954f6f41d087b160a9e9ab89e497a60044695d9abc6",
@@ -23630,7 +23631,7 @@
     "img/topologies/biopharma/biopharma-fermentation/topology.svg": "eb16286b6f35ea9207ea57a573ed4527814c5bcc8ea029b30922d827d52648f8",
     "img/topologies/chemicals/README.md": "14d1cd0f803b72a229e136e7f85c982bbeb87e9ce51f9592d54a561f22bf125f",
     "img/topologies/chemicals/industrial-detergent/README.md": "3578b5dd6081e07bd4370e2a1d1d708bb9e4cd331ff4a610f4b0ddd83029d226",
-    "img/topologies/chemicals/industrial-detergent/topology.svg": "de46ea16ccce926e3b82854c9f3408e5d6a2a1d4cbaf461220544c531f2c742a",
+    "img/topologies/chemicals/industrial-detergent/topology.svg": "8dedb287af5121eca33e3e1d8f9c0f751a66141290f2d9d55a7e0e1eaa4d5c84",
     "img/topologies/chemicals/paint-blending/README.md": "ec8538971fdf1ecf0bf7d615b530c8f0aa0f712b1d7b542819c1633cf6253cd7",
     "img/topologies/chemicals/paint-blending/topology.svg": "0754b35b10effc49b495ec50a03244a920c6e956bec99c98cb11175ca8c3737b",
     "img/topologies/construction-materials/README.md": "ae8cae55c67ce7d864e92789a03c8b7e8aa40d47e99f18520b4b02d1a17bea4a",
@@ -23646,9 +23647,9 @@
     "img/topologies/fiber-processing/pulp-paper/topology.svg": "4a4f0bcc24f7e59fa58f762ad8f75efe00196fabf18c7956add1bf2f5d6e2102",
     "img/topologies/food-beverage/README.md": "34750f4ac9269695f8ca07d9a98988b68c1d34de12f3799c52caa89b086a0443",
     "img/topologies/food-beverage/brewery/README.md": "0e5b7a25d12147d60c19620cb098cbf5d0d0c43f6ab8b85b743c5eb9222a7784",
-    "img/topologies/food-beverage/brewery/topology.svg": "bd0c3933395be219efee6c23ef33f95997036ea7a124b384afab3c0c95252e2f",
+    "img/topologies/food-beverage/brewery/topology.svg": "0a55a94a2371ae774948ccc5636d9ed2e603a5a663008882365e8d69197b288c",
     "img/topologies/food-beverage/carbonated-beverages/README.md": "90107911a4b81a7385e4fe6f56d986a174102b49130924badc154b0a4750bc59",
-    "img/topologies/food-beverage/carbonated-beverages/topology.svg": "8657df0c92363c7dd6e5cf411857cbbfcf503319a2757a39052a6fc9882df199",
+    "img/topologies/food-beverage/carbonated-beverages/topology.svg": "66da9dcbbc5739fe91b6b8c7b01f2c98cc171e6977a17c3824dc9231e504198e",
     "img/topologies/food-beverage/dairy/README.md": "ba298cc0a197d8b1744d3b8b42e6a8e47696c0124fb60c945aaac8277c6822a3",
     "img/topologies/food-beverage/dairy/topology.svg": "59fca79755f98840f71942c89133a6389daaec0b429de8b4ac766f31aadcbc9b",
     "img/topologies/food-beverage/fortune-cookies/README.md": "faf80c8f0463478b492267a17cf8c045944953a9d65633376096f088bb8bd2f2",
@@ -23656,7 +23657,7 @@
     "img/topologies/food-beverage/fruit-juice/README.md": "85f07b98fbbd7df04650625579d04a71960fe6585baf4aec72e5884abeb8e48d",
     "img/topologies/food-beverage/fruit-juice/topology.svg": "5b183e3f80cace5dd27280125b8f5c03c2d0df59b330e6476c1c8145f962adea",
     "img/topologies/food-beverage/winery/README.md": "b01445085cc534c5879efc37de68ce06935648cc38514560bae3b59df0981938",
-    "img/topologies/food-beverage/winery/topology.svg": "c4e52ce39041dd224a3160f42206a2f086f9f9712ba67cee25c79158b0e97693",
+    "img/topologies/food-beverage/winery/topology.svg": "ccbfbab5992aefcf2e53da4aa7db6bfa0e8d147047f279739e2ea99588057da9",
     "img/topologies/gallery-map.svg": "8039b286f1787d65ac72899749b426c18987265b8218e7c9286fe3bb3627b9f5",
     "img/topologies/manufacturing-thermal-processing/README.md": "b98b82703ff5082feff6f1da0811c850a84b83913362a9fe9e2872ef2ce2f089",
     "img/topologies/manufacturing-thermal-processing/electric-batch-oven/README.md": "8ad64b537e9fa3d64a6afba4f9963a96e4449301c2a2aaa6739c821a763278ac",
@@ -23671,9 +23672,9 @@
     "img/topologies/mineral-processing/mineral-flotation/topology.svg": "1397cd9f82f6ca2775fa47962cd7b2099ceaa818d983ef82a4cf2a9a9018c70d",
     "img/topologies/pharmaceuticals/README.md": "7b65d335beac0bf8532ff503e8412996675dd791fad230405591ee22707e0e06",
     "img/topologies/pharmaceuticals/pharma-oral-liquid/README.md": "4c2c10af7c0c8ee43fe636797c37609d38c26902f0f422c49233acfd8f64e206",
-    "img/topologies/pharmaceuticals/pharma-oral-liquid/topology.svg": "74bc002fff9054cbd1a8c72b9273d79eed0085279a00e56e86ab37f6997a77fe",
+    "img/topologies/pharmaceuticals/pharma-oral-liquid/topology.svg": "7362634579eeaf9ac1fe051d161e3db01a199205fe43d0f6042eb92e4eb1964d",
     "img/topologies/pharmaceuticals/sterile-filling/README.md": "e1942a8d18e6fe53b11449b6d92d3c0b71563543ad9a745c26d4fb07cec24d83",
-    "img/topologies/pharmaceuticals/sterile-filling/topology.svg": "7126303173b522ff49680e9c032df19f38e4d06a0bae80a69d88bf8b935bb843",
+    "img/topologies/pharmaceuticals/sterile-filling/topology.svg": "5ae6d3c7142dd4647adc8c23b5261f567ccff12958aa58fb248209dffd8f54cf",
     "img/topologies/pharmaceuticals/tablets/README.md": "d4c0d24125a6a493bb12647e8a1d231296b7390b1d4b7ead5f91597a372e5b5a",
     "img/topologies/pharmaceuticals/tablets/topology.svg": "627b9eb458b32e5573243a9e45352da2747d45c5edc2280107295f70edbf0a34",
     "img/topologies/power-utilities/README.md": "79ef013369e69cf8533f15212b6e91707faeeff0a1165c3fea0a50f329b72bae",
@@ -23684,35 +23685,35 @@
     "img/topologies/power-utilities/power-coal-steam/README.md": "6cd7d419dd4e8d99d01656b8ebef5f943293d3ba509c1b097b53c7cff13f86d8",
     "img/topologies/power-utilities/power-coal-steam/topology.svg": "b382c2cf8bac809c582c82688d48346b1be1c0d1230b2fde11d083ff0db5f5db",
     "img/topologies/power-utilities/power-csp-tower/README.md": "2273c9c002f0e0b4884ba2250fda25af7738be158ef2e30bb0aea21379f31d6e",
-    "img/topologies/power-utilities/power-csp-tower/topology.svg": "9b6fcdf88b17bd891f970f7e7afbe86ea5f073310a9f961b5ed46a5cc49b6e36",
+    "img/topologies/power-utilities/power-csp-tower/topology.svg": "09d5630d143db7b58b53334134efc753ca9af05f17b2245efe6b60da0d354cf0",
     "img/topologies/power-utilities/power-csp-trough/README.md": "0e29929e5858614e3146f6ee226b1dcbeb6f57623aa3274050fcc0e299a5dcf1",
-    "img/topologies/power-utilities/power-csp-trough/topology.svg": "c2d0195d8b98057c4a45294225a1fbf66a18b4dcd573d2001c9c14902e51ee2b",
+    "img/topologies/power-utilities/power-csp-trough/topology.svg": "0e03c2ee98dcbdeeb074bd69b071ab8922663a4394ed39fd9352009d66160111",
     "img/topologies/power-utilities/power-diesel-standby/README.md": "0fa5975c2f907cb3eae5414256c18fc05e251908e456de4028013f0cb589d364",
     "img/topologies/power-utilities/power-diesel-standby/topology.svg": "c1e220fdbb4352ddab133a1a35a64bfb210b6ce71b3152b4414b829bad54e38e",
     "img/topologies/power-utilities/power-fuel-cell/README.md": "d57ca69dc1fb200ddc4443fcdc3cc66243959ac84933dc157618ce1fab1e576a",
-    "img/topologies/power-utilities/power-fuel-cell/topology.svg": "3067b56514f823ee1d989c9947a9094584802af7f3e4cf4e71c4e5e63aeff59a",
+    "img/topologies/power-utilities/power-fuel-cell/topology.svg": "599ba6f51a08af3bf165d5500d768e1c917051831bec2211d044887e1a7790b6",
     "img/topologies/power-utilities/power-gas-combined-cycle/README.md": "6a3debc9440c777902e36308364e5648ff9f1c877fe6d6bae1025c340bf83f23",
-    "img/topologies/power-utilities/power-gas-combined-cycle/topology.svg": "c396ce9115319a36cd83f0d73b8cefd704698cc5b30dbc00f2c9b9ccf8320980",
+    "img/topologies/power-utilities/power-gas-combined-cycle/topology.svg": "33f49de61478df92e2fc516755714a09cbe855ae43be997f81fcf830abaf7c31",
     "img/topologies/power-utilities/power-gas-simple-cycle/README.md": "327b1bd134935da13dfc3434b6b2c6f7c3644efd99b9bc0837e803c927885fe3",
-    "img/topologies/power-utilities/power-gas-simple-cycle/topology.svg": "faa0980399256b87c3f358257140ff4d501c89cb2278a49e6b7f62d0603fc947",
+    "img/topologies/power-utilities/power-gas-simple-cycle/topology.svg": "ef3923c369be8d67e0c2006df5a15d9e2df1a5df93419e5b9c3864e8b61f387a",
     "img/topologies/power-utilities/power-gasoline-portable/README.md": "732c1b256b1f78890ea0c2b717eaf371f8a334132f0d275e5a3928f7bcb073d5",
     "img/topologies/power-utilities/power-gasoline-portable/topology.svg": "32fe637885fc3be3b29e2615c72e09cc0c7ef74c53364458f32739dcce175a6e",
     "img/topologies/power-utilities/power-geothermal-binary/README.md": "4558fa7afc7a87d1f0a55dbe43172c7d932d847ceb559b3ed4a84d1be9a54371",
     "img/topologies/power-utilities/power-geothermal-binary/topology.svg": "fdbd257e8bf7ff9d683fd9b90cbc5814250b6b7a4ea4c26a11896eec62201c30",
     "img/topologies/power-utilities/power-geothermal-dry-steam/README.md": "456cf1d3172ae1ede5069a5181ecc6edc8fc96ea9ad9908cfa55ecaebc8f0ede",
-    "img/topologies/power-utilities/power-geothermal-dry-steam/topology.svg": "974f1e7b1f1637ad115328435b9fe0e670716251fa5d4ea29c6e5c63472ffdd0",
+    "img/topologies/power-utilities/power-geothermal-dry-steam/topology.svg": "3a475de9ffa45d16e193b625adab2df874a0c1a92cd3b83aa2390af85e68a70a",
     "img/topologies/power-utilities/power-geothermal-flash/README.md": "17b3ba2740198b0dbf2c3f526798b7be6ea26f8778008659f1ec967849f63dd2",
     "img/topologies/power-utilities/power-geothermal-flash/topology.svg": "ba07597a632ac587055be19e15b95e1d6d7571eccb2b670bbe6f923120661a92",
     "img/topologies/power-utilities/power-hvdc-interface/README.md": "56791d48b764d08f28eeecb724801817fb2163d1b74afb6ff516644b49c3e29e",
     "img/topologies/power-utilities/power-hvdc-interface/topology.svg": "b9955b3daf2522bc888753ed1d1080b598809629809714a0f6d5b4e5c4effe59",
     "img/topologies/power-utilities/power-hybrid-microgrid/README.md": "5e2aacac285eeec323188b17c5c4742f84728704d3f4f41a5824482f41673126",
-    "img/topologies/power-utilities/power-hybrid-microgrid/topology.svg": "a750ed4122851d7cb7a2dd2b4eb98b4de3e62d854b7e8b4b4bae9984359ffe0f",
+    "img/topologies/power-utilities/power-hybrid-microgrid/topology.svg": "dbde34980b02e1dccb050b0895c2ce644ab28a684432f0d675f8aed5bac1a01c",
     "img/topologies/power-utilities/power-hydro-diversion/README.md": "f2ae75fbd92afebed11a8f80df1cd9509f8816e05b02840a521190c4867f0662",
-    "img/topologies/power-utilities/power-hydro-diversion/topology.svg": "0dd7b8c4197f92d137ad0c27c242496a2f18d7e8f953b6e527ca5032f6531eaf",
+    "img/topologies/power-utilities/power-hydro-diversion/topology.svg": "480b5b3a0bf945a2c551dd8d9ae38055f8cc9d78b398dbfc7906c4e6b9786245",
     "img/topologies/power-utilities/power-hydro-impoundment/README.md": "244d4ce3006ebcf077154d2b755f9f6e7803016d7e195004d6b6a83e7f263ba1",
-    "img/topologies/power-utilities/power-hydro-impoundment/topology.svg": "6146c4a372e0ddf691fa2a375708a110d7b520d625b00a8f5664835cb3179422",
+    "img/topologies/power-utilities/power-hydro-impoundment/topology.svg": "70da5e8724117857fdfc46a63e64b4eaecb9e86cf646566d44a699d6c1d375f1",
     "img/topologies/power-utilities/power-ng-engine-chp/README.md": "8c56e9eaa47f01fb9e6c1506d6b0b000280d63b16500a52e0e4fb41667598904",
-    "img/topologies/power-utilities/power-ng-engine-chp/topology.svg": "488a9dfc191a3b97fd132eb451104e5e6ca056193424a2ac0d0be99f6e1bea2a",
+    "img/topologies/power-utilities/power-ng-engine-chp/topology.svg": "c6f3b10c8b7347c62e76228ff735baa683d58e51eef1886ca98c531deee1db98",
     "img/topologies/power-utilities/power-nuclear-bwr/README.md": "4bc233421017960f862f9aa16f25f21f9dfda846111033c2a59a2ad35b91cdc1",
     "img/topologies/power-utilities/power-nuclear-bwr/topology.svg": "1bbfe75d3a57172824c28367288d385e6abd96717828025ae931e326bda7f91b",
     "img/topologies/power-utilities/power-nuclear-htgr/README.md": "ef787ef981f3470d8fae2a2835be50efd3e85a51b4721a18f2b056492cc5252e",
@@ -23728,7 +23729,7 @@
     "img/topologies/power-utilities/power-nuclear-sodium-fast/README.md": "51aa95cd7d40d2f3d81b2f98cf8b828817550e6bb7ae76ce2a09f5eeaf1baf6a",
     "img/topologies/power-utilities/power-nuclear-sodium-fast/topology.svg": "fe960b5b791196f55e789c1d941b51f22a909ebe0806f4eb32074f3611a09db5",
     "img/topologies/power-utilities/power-pumped-storage/README.md": "3d9c12c34ce8d2d9cd4e6cf3342f326bcf732906415cc5ee4bf2bd5dfcb0b992",
-    "img/topologies/power-utilities/power-pumped-storage/topology.svg": "7cb16e9d8b5a23a2220fbe223d59df8c26bd588cfdab384a603c7d9827549eec",
+    "img/topologies/power-utilities/power-pumped-storage/topology.svg": "030e2e33175687434ea0b824596502373b2dbb981bce73b262aa0837600391e3",
     "img/topologies/power-utilities/power-solar-pv/README.md": "db741037db5d0b5cf47b80b241c3afbf104f7f4526925e4e95addd51607015da",
     "img/topologies/power-utilities/power-solar-pv/topology.svg": "1389a3670261833a206ad77a5bf037c9c2f3606cff7e45af1121cf9b5da9b9f5",
     "img/topologies/power-utilities/power-substation-distribution/README.md": "56bc6e2dd57a71b416e5b502a3251f105d4826d612ce68b249e8ff0d4cd7eb7d",
@@ -23736,11 +23737,11 @@
     "img/topologies/power-utilities/power-substation-gis/README.md": "d8d81b5383e8b3cfc96f27fde93587f9e80f3254615d06ef71d83cc39271a275",
     "img/topologies/power-utilities/power-substation-gis/topology.svg": "f10cce36c5eb7bbdfd06c71ff09e3a180eb2ed2aa7da0b7f6935392a25aa9035",
     "img/topologies/power-utilities/power-substation-gsu/README.md": "505ed6aa876e7778d721ea189efcaf90859d715014764d9d93ebd07995af3ed7",
-    "img/topologies/power-utilities/power-substation-gsu/topology.svg": "22571246f8a009c3fe3af6285726d4b9e352fad29f20ac48210efde5a1d2d457",
+    "img/topologies/power-utilities/power-substation-gsu/topology.svg": "3cc2bcb5794e7a8917341dc8ad2ae4b3c42509b9c9d4a597f721302c1f0c1825",
     "img/topologies/power-utilities/power-tidal-current/README.md": "70c33984a9f215e1915250b4f443d7130a8fb3711c90596146552838e3365c4a",
-    "img/topologies/power-utilities/power-tidal-current/topology.svg": "4745e1060db028d5cf79d32c5cbfbf1fc3dc1e60f9d3add3d1e1f9b56df33e1b",
+    "img/topologies/power-utilities/power-tidal-current/topology.svg": "20d41a179d996285e9d76f54600b2f02e69da431ad831fb643d8f043baad5d81",
     "img/topologies/power-utilities/power-wave-point-absorber/README.md": "f147ae34f4bc4b27a145ac0ab45fe2e994e6c4a64a943c7189ce61897c9c3530",
-    "img/topologies/power-utilities/power-wave-point-absorber/topology.svg": "b68f58639dfc10b2a980e73ab1708cf1ade2521d914989de92cbf241754f6c97",
+    "img/topologies/power-utilities/power-wave-point-absorber/topology.svg": "4044aafc374ba3c87cdcbc4b50091a988b6d8fd415e7adedb569944ea63f7d2a",
     "img/topologies/power-utilities/power-wind-collection/README.md": "677a412390d945384f177b2e18e0163e8f07d3e61df8c21cfdf7292821bcc44b",
     "img/topologies/power-utilities/power-wind-collection/topology.svg": "d4d04d7946306c0bec2620708bfcb5ab286f14d874e400416cc3b3ef4c97f04a",
     "img/topologies/surface-treatment/README.md": "c12e12961ab26c2064498652ff4fb32abd870963734ba84251d9a179eaa37d1b",
@@ -23748,6 +23749,6 @@
     "img/topologies/surface-treatment/metal-finishing/topology.svg": "5c855709847e360c6e0573deb45b52ee679f981292d6a6914c4b4185b87f45b1",
     "img/topologies/water-utilities/README.md": "86f2898892c18f200fa35917cd566971d1fb5ca7f49e6436610558ec45f6c8f3",
     "img/topologies/water-utilities/wastewater-digester/README.md": "7a972e667c813a97c36ee505f8c2eebe729bfb21b50e2816e185cc0952e82141",
-    "img/topologies/water-utilities/wastewater-digester/topology.svg": "ef5fc5e109caa13e370533e2a4c7f5bfbf16682c8794c83b50cf33a097a2b84c"
+    "img/topologies/water-utilities/wastewater-digester/topology.svg": "3ca1c5af1147d02c3876090c9c42fab2df44a1abe4401d252d49818f44d7a588"
   }
 }

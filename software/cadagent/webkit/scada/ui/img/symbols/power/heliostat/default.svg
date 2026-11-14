@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-heliostat-base-active-title gallery-heliostat-base-active-desc"><title id="gallery-heliostat-base-active-title">Heliostat mirror</title><desc id="gallery-heliostat-base-active-desc">Heliostat mirror. Active, illustrative position 50%, illustrative irradiance 60%. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component .scada-power-art{--scada-power-cycle:2.4s}
+.scada-component .scada-power-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component :is(.scada-power-monitor,.scada-power-charge,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-protection-pulse,.scada-power-signal){animation:scada-power-pulse var(--scada-power-cycle) ease-in-out infinite paused}
+.scada-component .scada-power-solar-glint{animation:scada-power-glint 4.7s ease-in-out infinite paused}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor){animation-play-state:running}
+.scada-component[data-running=true]:not([data-status=offline]) .scada-power-art :is(.scada-power-flow-lane .scada-energy-flow,.scada-power-incident .scada-power-motion,.scada-power-incident.scada-power-arc,.scada-power-environment .scada-power-motion,.scada-power-thermal .scada-power-motion){animation-play-state:running}
+@keyframes scada-power-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes scada-power-glint{0%,100%{opacity:.4}50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.scada-component .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc){animation:none!important;transform:none!important}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-heliostat-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-heliostat-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">POWER &amp; ENERGY</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Heliostat mirror</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="heliostat" data-scada-instance="scada-gallery-heliostat-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:30px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.9750000000000001" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-heliostat-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-heliostat-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-heliostat-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-heliostat-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-heliostat-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-power-art scada-energy-art" data-power-type="heliostat" data-power-speed-zero="false" data-power-drive-blocked="false" style="--scada-power-cycle:2.44s;--scada-power-load:0.6">
+    <ellipse cx="90" cy="125" rx="65" ry="4.5" fill="#020d18" opacity=".72"/><path d="M78 84v38m24-39v39M62 123h56" stroke="#6c9aac" stroke-width="7"/>
+    <path d="M67 99l21-21 25 24" fill="none" stroke="#a6cbd4" stroke-width="3"/>
+    <g transform="rotate(0 90 66)"><path d="M30 28H147L159 94H42Z" fill="url(#scada-gallery-heliostat-base-active-steel)" stroke="#bddae1" stroke-width="1.5"/>
+    <path d="M37 35H141L151 87H47Z" fill="#23546b" stroke="#91c5d6"/>
+    <path d="M38 35l10 52" stroke="#a5d6e4" stroke-width="1.2"/><path d="M64 35l10 52" stroke="#a5d6e4" stroke-width="1.2"/><path d="M90 35l10 52" stroke="#a5d6e4" stroke-width="1.2"/><path d="M116 35l10 52" stroke="#a5d6e4" stroke-width="1.2"/><path d="M42 60h104" stroke="#a5d6e4" stroke-width="1.2"/>
+    <g class="scada-power-environment" style="opacity:0.42"><path class="scada-power-motion scada-power-solar-glint" d="M43 40l19 4 69 35-18 3Z" fill="#acf3f8"/></g>
+    </g>
+    <g class="scada-power-environment" style="opacity:0.6"><path d="M14 8L54 37m-17-30 41 29m-18-29 40 29" stroke="#ffe7a7" stroke-width="1.5"/><path class="scada-power-motion scada-power-solar-glint" d="M121 40l45-27m-37 36 42-25" stroke="#a5f4f5" stroke-width="1.4" stroke-dasharray="6 5"/></g>
+    <g class="scada-power-indicator">
+    <rect x="116" y="104" width="26" height="15" rx="2" fill="#082633" stroke="#77a8bc"/>
+    <path d="M120 109h18m-18 5h12" stroke="#75f2ce" stroke-width="1.5"/>
+    <circle class="scada-power-monitor" cx="138" cy="115" r="1.5" fill="#8affd6"/>
+  </g>
+    
+  </g></g></svg></g></g><g data-scada-gauge="position"><text class="gallery-code" x="90" y="288" font-size="10">POS</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="72.5" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">50%</text></g><g data-scada-gauge="irradiance"><text class="gallery-code" x="90" y="300" font-size="10">SUN</text><rect x="155" y="294" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="294" width="87" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="300" font-size="10" text-anchor="end">60%</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">heliostat</text></svg>

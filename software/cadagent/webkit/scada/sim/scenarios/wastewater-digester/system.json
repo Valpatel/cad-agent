@@ -1,0 +1,2854 @@
+{
+  "$schema": "../../../ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "wastewater-digester",
+    "label": "Wastewater & biogas digital twin",
+    "description": "Explore an illustrative wastewater process, shared sludge digestion, biogas storage, generator and flare. All views observe the same editable model."
+  },
+  "components": [
+    {
+      "id": "influent",
+      "type": "tank",
+      "label": "Influent boundary",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/influent/active",
+        "running": "/components/influent/running",
+        "fault": "/components/influent/fault",
+        "status": "/components/influent/status",
+        "level": "/components/influent/level",
+        "damage": "/components/influent/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "type": "filter",
+      "label": "Inlet screening",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/screen/active",
+        "running": "/components/screen/running",
+        "fault": "/components/screen/fault",
+        "status": "/components/screen/status",
+        "load": "/components/screen/load",
+        "damage": "/components/screen/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "liftPump",
+      "type": "submersible-pump",
+      "label": "Lift pump",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/liftPump/active",
+        "running": "/components/liftPump/running",
+        "fault": "/components/liftPump/fault",
+        "status": "/components/liftPump/status",
+        "load": "/components/liftPump/load",
+        "speed": "/components/liftPump/speed",
+        "damage": "/components/liftPump/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.8
+        }
+      ]
+    },
+    {
+      "id": "aeration",
+      "type": "reactor",
+      "label": "Aeration basin",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/aeration/active",
+        "running": "/components/aeration/running",
+        "fault": "/components/aeration/fault",
+        "status": "/components/aeration/status",
+        "level": "/components/aeration/level",
+        "damage": "/components/aeration/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "clarifier",
+      "type": "clarifier",
+      "label": "Secondary clarifier",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/clarifier/active",
+        "running": "/components/clarifier/running",
+        "fault": "/components/clarifier/fault",
+        "status": "/components/clarifier/status",
+        "level": "/components/clarifier/level",
+        "damage": "/components/clarifier/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "feed",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "effluent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "sludge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "effluent",
+      "type": "tank",
+      "label": "Treated-water outlet",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/effluent/active",
+        "running": "/components/effluent/running",
+        "fault": "/components/effluent/fault",
+        "status": "/components/effluent/status",
+        "level": "/components/effluent/level",
+        "damage": "/components/effluent/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "sludgeValve",
+      "type": "gate-valve",
+      "label": "Sludge isolation",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/sludgeValve/active",
+        "running": "/components/sludgeValve/running",
+        "fault": "/components/sludgeValve/fault",
+        "status": "/components/sludgeValve/status",
+        "open": "/components/sludgeValve/open",
+        "opening": "/components/sludgeValve/opening",
+        "damage": "/components/sludgeValve/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "digester",
+      "type": "digester",
+      "label": "Anaerobic digester",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/digester/active",
+        "running": "/components/digester/running",
+        "fault": "/components/digester/fault",
+        "status": "/components/digester/status",
+        "level": "/components/digester/level",
+        "damage": "/components/digester/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "biogas",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.8
+        }
+      ]
+    },
+    {
+      "id": "digestate",
+      "type": "tank",
+      "label": "Digestate storage",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/digestate/active",
+        "running": "/components/digestate/running",
+        "fault": "/components/digestate/fault",
+        "status": "/components/digestate/status",
+        "level": "/components/digestate/level",
+        "damage": "/components/digestate/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "gasHolder",
+      "type": "gas-holder",
+      "label": "Biogas buffer",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gasHolder/active",
+        "running": "/components/gasHolder/running",
+        "fault": "/components/gasHolder/fault",
+        "status": "/components/gasHolder/status",
+        "level": "/components/gasHolder/level",
+        "damage": "/components/gasHolder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "gasClean",
+      "type": "gas-treatment",
+      "label": "Biogas conditioning",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/gasClean/active",
+        "running": "/components/gasClean/running",
+        "fault": "/components/gasClean/fault",
+        "status": "/components/gasClean/status",
+        "load": "/components/gasClean/load",
+        "damage": "/components/gasClean/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.8
+        }
+      ]
+    },
+    {
+      "id": "chp",
+      "type": "generator",
+      "label": "Biogas CHP generator",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/chp/active",
+        "running": "/components/chp/running",
+        "fault": "/components/chp/fault",
+        "status": "/components/chp/status",
+        "load": "/components/chp/load",
+        "speed": "/components/chp/speed",
+        "damage": "/components/chp/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "flare",
+      "type": "flare",
+      "label": "Biogas flare",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/flare/active",
+        "running": "/components/flare/running",
+        "fault": "/components/flare/fault",
+        "status": "/components/flare/status",
+        "load": "/components/flare/load",
+        "damage": "/components/flare/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "loads",
+      "type": "motor",
+      "label": "Electrical loads",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/loads/active",
+        "running": "/components/loads/running",
+        "fault": "/components/loads/fault",
+        "status": "/components/loads/status",
+        "load": "/components/loads/load",
+        "speed": "/components/loads/speed",
+        "damage": "/components/loads/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.8
+        },
+        {
+          "id": "shaft",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "standby",
+      "type": "generator",
+      "label": "Standby generator",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/standby/active",
+        "running": "/components/standby/running",
+        "fault": "/components/standby/fault",
+        "status": "/components/standby/status",
+        "load": "/components/standby/load",
+        "speed": "/components/standby/speed",
+        "damage": "/components/standby/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Plant PLC",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "network",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        },
+        {
+          "id": "io",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "type": "pressure-transmitter",
+      "label": "Digester pressure",
+      "state": {
+        "active": true,
+        "running": true,
+        "fault": false,
+        "status": "normal",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pressure/active",
+        "running": "/components/pressure/running",
+        "fault": "/components/pressure/fault",
+        "status": "/components/pressure/status",
+        "value": "/components/pressure/value",
+        "damage": "/components/pressure/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.8
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "influent-to-screen",
+      "from": {
+        "component": "influent",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "screen",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/influent-to-screen",
+      "label": "Water"
+    },
+    {
+      "id": "screen-to-liftPump",
+      "from": {
+        "component": "screen",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "liftPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/screen-to-liftPump",
+      "label": "Water"
+    },
+    {
+      "id": "liftPump-to-aeration",
+      "from": {
+        "component": "liftPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "aeration",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/liftPump-to-aeration",
+      "label": "Water"
+    },
+    {
+      "id": "aeration-to-clarifier",
+      "from": {
+        "component": "aeration",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "clarifier",
+        "port": "feed"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/aeration-to-clarifier",
+      "label": "Water"
+    },
+    {
+      "id": "clarifier-to-effluent",
+      "from": {
+        "component": "clarifier",
+        "port": "effluent"
+      },
+      "to": {
+        "component": "effluent",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/clarifier-to-effluent",
+      "label": "Water"
+    },
+    {
+      "id": "clarifier-to-sludgeValve",
+      "from": {
+        "component": "clarifier",
+        "port": "sludge"
+      },
+      "to": {
+        "component": "sludgeValve",
+        "port": "inlet"
+      },
+      "medium": "sludge",
+      "flowBinding": "/flows/clarifier-to-sludgeValve",
+      "label": "Sludge"
+    },
+    {
+      "id": "sludgeValve-to-digester",
+      "from": {
+        "component": "sludgeValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "digester",
+        "port": "inlet"
+      },
+      "medium": "sludge",
+      "flowBinding": "/flows/sludgeValve-to-digester",
+      "label": "Sludge"
+    },
+    {
+      "id": "digester-to-digestate",
+      "from": {
+        "component": "digester",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "digestate",
+        "port": "inlet"
+      },
+      "medium": "sludge",
+      "flowBinding": "/flows/digester-to-digestate",
+      "label": "Sludge"
+    },
+    {
+      "id": "digester-to-gasHolder",
+      "from": {
+        "component": "digester",
+        "port": "biogas"
+      },
+      "to": {
+        "component": "gasHolder",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/digester-to-gasHolder",
+      "label": "Biogas"
+    },
+    {
+      "id": "gasHolder-to-gasClean",
+      "from": {
+        "component": "gasHolder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "gasClean",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/gasHolder-to-gasClean",
+      "label": "Biogas"
+    },
+    {
+      "id": "gasClean-to-chp",
+      "from": {
+        "component": "gasClean",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "chp",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/gasClean-to-chp",
+      "label": "Biogas"
+    },
+    {
+      "id": "gasClean-to-flare",
+      "from": {
+        "component": "gasClean",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "flare",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "flowBinding": "/flows/gasClean-to-flare",
+      "label": "Biogas"
+    },
+    {
+      "id": "chp-to-loads",
+      "from": {
+        "component": "chp",
+        "port": "output"
+      },
+      "to": {
+        "component": "loads",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/chp-to-loads",
+      "label": "Power"
+    },
+    {
+      "id": "standby-to-liftPump",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "liftPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/standby-to-liftPump",
+      "label": "Power"
+    },
+    {
+      "id": "standby-to-digester",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "digester",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/standby-to-digester",
+      "label": "Power"
+    },
+    {
+      "id": "standby-to-gasClean",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "gasClean",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/standby-to-gasClean",
+      "label": "Power"
+    },
+    {
+      "id": "standby-to-controller",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/standby-to-controller",
+      "label": "Power"
+    },
+    {
+      "id": "standby-to-pressure",
+      "from": {
+        "component": "standby",
+        "port": "output"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/standby-to-pressure",
+      "label": "Power"
+    },
+    {
+      "id": "digester-to-pressure",
+      "from": {
+        "component": "digester",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/digester-to-pressure",
+      "label": "Pressure signal"
+    },
+    {
+      "id": "pressure-to-controller",
+      "from": {
+        "component": "pressure",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/pressure-to-controller",
+      "label": "Telemetry"
+    }
+  ],
+  "views": [
+    {
+      "id": "treatment",
+      "label": "Water treatment",
+      "canvas": {
+        "width": 1160,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "influent",
+          "x": 60,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "screen",
+          "x": 410,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "liftPump",
+          "x": 760,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "aeration",
+          "x": 60,
+          "y": 380,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "clarifier",
+          "x": 410,
+          "y": 380,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "effluent",
+          "x": 760,
+          "y": 380,
+          "width": 200,
+          "height": 170
+        }
+      ],
+      "routes": [
+        {
+          "connection": "influent-to-screen",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 410,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "screen-to-liftPump",
+          "points": [
+            {
+              "x": 610,
+              "y": 155
+            },
+            {
+              "x": 760,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "liftPump-to-aeration",
+          "points": [
+            {
+              "x": 960,
+              "y": 155
+            },
+            {
+              "x": 1000,
+              "y": 155
+            },
+            {
+              "x": 1000,
+              "y": 305
+            },
+            {
+              "x": 30,
+              "y": 305
+            },
+            {
+              "x": 30,
+              "y": 465
+            },
+            {
+              "x": 60,
+              "y": 465
+            }
+          ]
+        },
+        {
+          "connection": "aeration-to-clarifier",
+          "points": [
+            {
+              "x": 260,
+              "y": 465
+            },
+            {
+              "x": 410,
+              "y": 465
+            }
+          ]
+        },
+        {
+          "connection": "clarifier-to-effluent",
+          "points": [
+            {
+              "x": 610,
+              "y": 465
+            },
+            {
+              "x": 760,
+              "y": 465
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sludge-energy",
+      "label": "Sludge & biogas",
+      "canvas": {
+        "width": 1160,
+        "height": 930
+      },
+      "placements": [
+        {
+          "component": "clarifier",
+          "x": 50,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "sludgeValve",
+          "x": 330,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "digester",
+          "x": 610,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "digestate",
+          "x": 890,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "gasHolder",
+          "x": 50,
+          "y": 390,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "gasClean",
+          "x": 330,
+          "y": 390,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "chp",
+          "x": 610,
+          "y": 390,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "loads",
+          "x": 890,
+          "y": 390,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "flare",
+          "x": 610,
+          "y": 700,
+          "width": 200,
+          "height": 170
+        }
+      ],
+      "routes": [
+        {
+          "connection": "clarifier-to-sludgeValve",
+          "points": [
+            {
+              "x": 250,
+              "y": 155
+            },
+            {
+              "x": 330,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "sludgeValve-to-digester",
+          "points": [
+            {
+              "x": 530,
+              "y": 155
+            },
+            {
+              "x": 610,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-digestate",
+          "points": [
+            {
+              "x": 810,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-gasHolder",
+          "points": [
+            {
+              "x": 710,
+              "y": 70
+            },
+            {
+              "x": 710,
+              "y": 25
+            },
+            {
+              "x": 20,
+              "y": 25
+            },
+            {
+              "x": 20,
+              "y": 475
+            },
+            {
+              "x": 50,
+              "y": 475
+            }
+          ]
+        },
+        {
+          "connection": "gasHolder-to-gasClean",
+          "points": [
+            {
+              "x": 250,
+              "y": 475
+            },
+            {
+              "x": 330,
+              "y": 475
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-chp",
+          "points": [
+            {
+              "x": 530,
+              "y": 475
+            },
+            {
+              "x": 610,
+              "y": 475
+            }
+          ]
+        },
+        {
+          "connection": "gasClean-to-flare",
+          "points": [
+            {
+              "x": 530,
+              "y": 475
+            },
+            {
+              "x": 565,
+              "y": 475
+            },
+            {
+              "x": 565,
+              "y": 785
+            },
+            {
+              "x": 610,
+              "y": 785
+            }
+          ]
+        },
+        {
+          "connection": "chp-to-loads",
+          "points": [
+            {
+              "x": 810,
+              "y": 475
+            },
+            {
+              "x": 850,
+              "y": 475
+            },
+            {
+              "x": 850,
+              "y": 526
+            },
+            {
+              "x": 890,
+              "y": 526
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power-control",
+      "label": "Power & control",
+      "canvas": {
+        "width": 1160,
+        "height": 930
+      },
+      "placements": [
+        {
+          "component": "standby",
+          "x": 50,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "liftPump",
+          "x": 430,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "controller",
+          "x": 890,
+          "y": 70,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "digester",
+          "x": 430,
+          "y": 390,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "pressure",
+          "x": 890,
+          "y": 390,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "chp",
+          "x": 430,
+          "y": 700,
+          "width": 200,
+          "height": 170
+        },
+        {
+          "component": "loads",
+          "x": 890,
+          "y": 700,
+          "width": 200,
+          "height": 170
+        }
+      ],
+      "routes": [
+        {
+          "connection": "chp-to-loads",
+          "points": [
+            {
+              "x": 630,
+              "y": 785
+            },
+            {
+              "x": 654,
+              "y": 785
+            },
+            {
+              "x": 654,
+              "y": 836
+            },
+            {
+              "x": 890,
+              "y": 836
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-liftPump",
+          "points": [
+            {
+              "x": 250,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 206
+            },
+            {
+              "x": 430,
+              "y": 206
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-digester",
+          "points": [
+            {
+              "x": 250,
+              "y": 155
+            },
+            {
+              "x": 294,
+              "y": 155
+            },
+            {
+              "x": 294,
+              "y": 526
+            },
+            {
+              "x": 430,
+              "y": 526
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-controller",
+          "points": [
+            {
+              "x": 250,
+              "y": 155
+            },
+            {
+              "x": 280,
+              "y": 155
+            },
+            {
+              "x": 280,
+              "y": 25
+            },
+            {
+              "x": 850,
+              "y": 25
+            },
+            {
+              "x": 850,
+              "y": 206
+            },
+            {
+              "x": 890,
+              "y": 206
+            }
+          ]
+        },
+        {
+          "connection": "standby-to-pressure",
+          "points": [
+            {
+              "x": 250,
+              "y": 155
+            },
+            {
+              "x": 300,
+              "y": 155
+            },
+            {
+              "x": 300,
+              "y": 320
+            },
+            {
+              "x": 850,
+              "y": 320
+            },
+            {
+              "x": 850,
+              "y": 526
+            },
+            {
+              "x": 890,
+              "y": 526
+            }
+          ]
+        },
+        {
+          "connection": "digester-to-pressure",
+          "points": [
+            {
+              "x": 630,
+              "y": 475
+            },
+            {
+              "x": 890,
+              "y": 475
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 1090,
+              "y": 475
+            },
+            {
+              "x": 1120,
+              "y": 475
+            },
+            {
+              "x": 1120,
+              "y": 285
+            },
+            {
+              "x": 870,
+              "y": 285
+            },
+            {
+              "x": 870,
+              "y": 155
+            },
+            {
+              "x": 890,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "influent-enabled",
+      "label": "Influent boundary · Enabled",
+      "component": "influent",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "influent"
+      }
+    },
+    {
+      "id": "influent-load",
+      "label": "Influent boundary · Requested load",
+      "component": "influent",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "influent"
+      }
+    },
+    {
+      "id": "influent-fault",
+      "label": "Influent boundary · Injected failure",
+      "component": "influent",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "influent"
+      }
+    },
+    {
+      "id": "influent-repair",
+      "label": "Influent boundary · Repair component",
+      "component": "influent",
+      "action": "repair",
+      "arguments": {
+        "equipment": "influent"
+      }
+    },
+    {
+      "id": "screen-enabled",
+      "label": "Inlet screening · Enabled",
+      "component": "screen",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-load",
+      "label": "Inlet screening · Requested load",
+      "component": "screen",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-fault",
+      "label": "Inlet screening · Injected failure",
+      "component": "screen",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-repair",
+      "label": "Inlet screening · Repair component",
+      "component": "screen",
+      "action": "repair",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "liftPump-enabled",
+      "label": "Lift pump · Enabled",
+      "component": "liftPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "liftPump"
+      }
+    },
+    {
+      "id": "liftPump-load",
+      "label": "Lift pump · Requested load",
+      "component": "liftPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "liftPump"
+      }
+    },
+    {
+      "id": "liftPump-fault",
+      "label": "Lift pump · Injected failure",
+      "component": "liftPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "liftPump"
+      }
+    },
+    {
+      "id": "liftPump-repair",
+      "label": "Lift pump · Repair component",
+      "component": "liftPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "liftPump"
+      }
+    },
+    {
+      "id": "aeration-enabled",
+      "label": "Aeration basin · Enabled",
+      "component": "aeration",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "aeration"
+      }
+    },
+    {
+      "id": "aeration-load",
+      "label": "Aeration basin · Requested load",
+      "component": "aeration",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "aeration"
+      }
+    },
+    {
+      "id": "aeration-fault",
+      "label": "Aeration basin · Injected failure",
+      "component": "aeration",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "aeration"
+      }
+    },
+    {
+      "id": "aeration-repair",
+      "label": "Aeration basin · Repair component",
+      "component": "aeration",
+      "action": "repair",
+      "arguments": {
+        "equipment": "aeration"
+      }
+    },
+    {
+      "id": "clarifier-enabled",
+      "label": "Secondary clarifier · Enabled",
+      "component": "clarifier",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "clarifier-load",
+      "label": "Secondary clarifier · Requested load",
+      "component": "clarifier",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "clarifier-fault",
+      "label": "Secondary clarifier · Injected failure",
+      "component": "clarifier",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "clarifier-repair",
+      "label": "Secondary clarifier · Repair component",
+      "component": "clarifier",
+      "action": "repair",
+      "arguments": {
+        "equipment": "clarifier"
+      }
+    },
+    {
+      "id": "effluent-enabled",
+      "label": "Treated-water outlet · Enabled",
+      "component": "effluent",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-load",
+      "label": "Treated-water outlet · Requested load",
+      "component": "effluent",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-fault",
+      "label": "Treated-water outlet · Injected failure",
+      "component": "effluent",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "effluent-repair",
+      "label": "Treated-water outlet · Repair component",
+      "component": "effluent",
+      "action": "repair",
+      "arguments": {
+        "equipment": "effluent"
+      }
+    },
+    {
+      "id": "sludgeValve-enabled",
+      "label": "Sludge isolation · Enabled",
+      "component": "sludgeValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "sludgeValve"
+      }
+    },
+    {
+      "id": "sludgeValve-open",
+      "label": "Sludge isolation · Open valve",
+      "component": "sludgeValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "sludgeValve"
+      }
+    },
+    {
+      "id": "sludgeValve-load",
+      "label": "Sludge isolation · Requested load",
+      "component": "sludgeValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "sludgeValve"
+      }
+    },
+    {
+      "id": "sludgeValve-fault",
+      "label": "Sludge isolation · Injected failure",
+      "component": "sludgeValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "sludgeValve"
+      }
+    },
+    {
+      "id": "sludgeValve-repair",
+      "label": "Sludge isolation · Repair component",
+      "component": "sludgeValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "sludgeValve"
+      }
+    },
+    {
+      "id": "digester-enabled",
+      "label": "Anaerobic digester · Enabled",
+      "component": "digester",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "digester"
+      }
+    },
+    {
+      "id": "digester-load",
+      "label": "Anaerobic digester · Requested load",
+      "component": "digester",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "digester"
+      }
+    },
+    {
+      "id": "digester-fault",
+      "label": "Anaerobic digester · Injected failure",
+      "component": "digester",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "digester"
+      }
+    },
+    {
+      "id": "digester-repair",
+      "label": "Anaerobic digester · Repair component",
+      "component": "digester",
+      "action": "repair",
+      "arguments": {
+        "equipment": "digester"
+      }
+    },
+    {
+      "id": "digestate-enabled",
+      "label": "Digestate storage · Enabled",
+      "component": "digestate",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "digestate"
+      }
+    },
+    {
+      "id": "digestate-load",
+      "label": "Digestate storage · Requested load",
+      "component": "digestate",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "digestate"
+      }
+    },
+    {
+      "id": "digestate-fault",
+      "label": "Digestate storage · Injected failure",
+      "component": "digestate",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "digestate"
+      }
+    },
+    {
+      "id": "digestate-repair",
+      "label": "Digestate storage · Repair component",
+      "component": "digestate",
+      "action": "repair",
+      "arguments": {
+        "equipment": "digestate"
+      }
+    },
+    {
+      "id": "gasHolder-enabled",
+      "label": "Biogas buffer · Enabled",
+      "component": "gasHolder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gasHolder"
+      }
+    },
+    {
+      "id": "gasHolder-load",
+      "label": "Biogas buffer · Requested load",
+      "component": "gasHolder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gasHolder"
+      }
+    },
+    {
+      "id": "gasHolder-fault",
+      "label": "Biogas buffer · Injected failure",
+      "component": "gasHolder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gasHolder"
+      }
+    },
+    {
+      "id": "gasHolder-repair",
+      "label": "Biogas buffer · Repair component",
+      "component": "gasHolder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gasHolder"
+      }
+    },
+    {
+      "id": "gasClean-enabled",
+      "label": "Biogas conditioning · Enabled",
+      "component": "gasClean",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "gasClean"
+      }
+    },
+    {
+      "id": "gasClean-load",
+      "label": "Biogas conditioning · Requested load",
+      "component": "gasClean",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "gasClean"
+      }
+    },
+    {
+      "id": "gasClean-fault",
+      "label": "Biogas conditioning · Injected failure",
+      "component": "gasClean",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "gasClean"
+      }
+    },
+    {
+      "id": "gasClean-repair",
+      "label": "Biogas conditioning · Repair component",
+      "component": "gasClean",
+      "action": "repair",
+      "arguments": {
+        "equipment": "gasClean"
+      }
+    },
+    {
+      "id": "chp-enabled",
+      "label": "Biogas CHP generator · Enabled",
+      "component": "chp",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "chp"
+      }
+    },
+    {
+      "id": "chp-load",
+      "label": "Biogas CHP generator · Requested load",
+      "component": "chp",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "chp"
+      }
+    },
+    {
+      "id": "chp-fault",
+      "label": "Biogas CHP generator · Injected failure",
+      "component": "chp",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "chp"
+      }
+    },
+    {
+      "id": "chp-repair",
+      "label": "Biogas CHP generator · Repair component",
+      "component": "chp",
+      "action": "repair",
+      "arguments": {
+        "equipment": "chp"
+      }
+    },
+    {
+      "id": "flare-enabled",
+      "label": "Biogas flare · Enabled",
+      "component": "flare",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "flare"
+      }
+    },
+    {
+      "id": "flare-load",
+      "label": "Biogas flare · Requested load",
+      "component": "flare",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "flare"
+      }
+    },
+    {
+      "id": "flare-fault",
+      "label": "Biogas flare · Injected failure",
+      "component": "flare",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "flare"
+      }
+    },
+    {
+      "id": "flare-repair",
+      "label": "Biogas flare · Repair component",
+      "component": "flare",
+      "action": "repair",
+      "arguments": {
+        "equipment": "flare"
+      }
+    },
+    {
+      "id": "loads-enabled",
+      "label": "Electrical loads · Enabled",
+      "component": "loads",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "loads"
+      }
+    },
+    {
+      "id": "loads-load",
+      "label": "Electrical loads · Requested load",
+      "component": "loads",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "loads"
+      }
+    },
+    {
+      "id": "loads-fault",
+      "label": "Electrical loads · Injected failure",
+      "component": "loads",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "loads"
+      }
+    },
+    {
+      "id": "loads-repair",
+      "label": "Electrical loads · Repair component",
+      "component": "loads",
+      "action": "repair",
+      "arguments": {
+        "equipment": "loads"
+      }
+    },
+    {
+      "id": "standby-enabled",
+      "label": "Standby generator · Enabled",
+      "component": "standby",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "standby"
+      }
+    },
+    {
+      "id": "standby-load",
+      "label": "Standby generator · Requested load",
+      "component": "standby",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "standby"
+      }
+    },
+    {
+      "id": "standby-fault",
+      "label": "Standby generator · Injected failure",
+      "component": "standby",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "standby"
+      }
+    },
+    {
+      "id": "standby-repair",
+      "label": "Standby generator · Repair component",
+      "component": "standby",
+      "action": "repair",
+      "arguments": {
+        "equipment": "standby"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Plant PLC · Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Plant PLC · Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Plant PLC · Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Plant PLC · Repair component",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "pressure-enabled",
+      "label": "Digester pressure · Enabled",
+      "component": "pressure",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-load",
+      "label": "Digester pressure · Requested load",
+      "component": "pressure",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-fault",
+      "label": "Digester pressure · Injected failure",
+      "component": "pressure",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-repair",
+      "label": "Digester pressure · Repair component",
+      "component": "pressure",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "plant-running",
+      "label": "Run shared system",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model minute",
+      "action": "step",
+      "arguments": {
+        "minutes": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset state; keep assumptions",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "influent-enabled-control",
+      "label": "Enabled",
+      "component": "influent",
+      "kind": "toggle",
+      "command": "influent-enabled",
+      "binding": "/controls/influent/enabled"
+    },
+    {
+      "id": "influent-load-control",
+      "label": "Requested load",
+      "component": "influent",
+      "kind": "range",
+      "command": "influent-load",
+      "binding": "/controls/influent/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "influent-fault-control",
+      "label": "Injected failure",
+      "component": "influent",
+      "kind": "toggle",
+      "command": "influent-fault",
+      "binding": "/controls/influent/fault"
+    },
+    {
+      "id": "influent-repair-control",
+      "label": "Repair component",
+      "component": "influent",
+      "kind": "button",
+      "command": "influent-repair"
+    },
+    {
+      "id": "screen-enabled-control",
+      "label": "Enabled",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-enabled",
+      "binding": "/controls/screen/enabled"
+    },
+    {
+      "id": "screen-load-control",
+      "label": "Requested load",
+      "component": "screen",
+      "kind": "range",
+      "command": "screen-load",
+      "binding": "/controls/screen/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "screen-fault-control",
+      "label": "Injected failure",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-fault",
+      "binding": "/controls/screen/fault"
+    },
+    {
+      "id": "screen-repair-control",
+      "label": "Repair component",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-repair"
+    },
+    {
+      "id": "liftPump-enabled-control",
+      "label": "Enabled",
+      "component": "liftPump",
+      "kind": "toggle",
+      "command": "liftPump-enabled",
+      "binding": "/controls/liftPump/enabled"
+    },
+    {
+      "id": "liftPump-load-control",
+      "label": "Requested load",
+      "component": "liftPump",
+      "kind": "range",
+      "command": "liftPump-load",
+      "binding": "/controls/liftPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "liftPump-fault-control",
+      "label": "Injected failure",
+      "component": "liftPump",
+      "kind": "toggle",
+      "command": "liftPump-fault",
+      "binding": "/controls/liftPump/fault"
+    },
+    {
+      "id": "liftPump-repair-control",
+      "label": "Repair component",
+      "component": "liftPump",
+      "kind": "button",
+      "command": "liftPump-repair"
+    },
+    {
+      "id": "aeration-enabled-control",
+      "label": "Enabled",
+      "component": "aeration",
+      "kind": "toggle",
+      "command": "aeration-enabled",
+      "binding": "/controls/aeration/enabled"
+    },
+    {
+      "id": "aeration-load-control",
+      "label": "Requested load",
+      "component": "aeration",
+      "kind": "range",
+      "command": "aeration-load",
+      "binding": "/controls/aeration/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "aeration-fault-control",
+      "label": "Injected failure",
+      "component": "aeration",
+      "kind": "toggle",
+      "command": "aeration-fault",
+      "binding": "/controls/aeration/fault"
+    },
+    {
+      "id": "aeration-repair-control",
+      "label": "Repair component",
+      "component": "aeration",
+      "kind": "button",
+      "command": "aeration-repair"
+    },
+    {
+      "id": "clarifier-enabled-control",
+      "label": "Enabled",
+      "component": "clarifier",
+      "kind": "toggle",
+      "command": "clarifier-enabled",
+      "binding": "/controls/clarifier/enabled"
+    },
+    {
+      "id": "clarifier-load-control",
+      "label": "Requested load",
+      "component": "clarifier",
+      "kind": "range",
+      "command": "clarifier-load",
+      "binding": "/controls/clarifier/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "clarifier-fault-control",
+      "label": "Injected failure",
+      "component": "clarifier",
+      "kind": "toggle",
+      "command": "clarifier-fault",
+      "binding": "/controls/clarifier/fault"
+    },
+    {
+      "id": "clarifier-repair-control",
+      "label": "Repair component",
+      "component": "clarifier",
+      "kind": "button",
+      "command": "clarifier-repair"
+    },
+    {
+      "id": "effluent-enabled-control",
+      "label": "Enabled",
+      "component": "effluent",
+      "kind": "toggle",
+      "command": "effluent-enabled",
+      "binding": "/controls/effluent/enabled"
+    },
+    {
+      "id": "effluent-load-control",
+      "label": "Requested load",
+      "component": "effluent",
+      "kind": "range",
+      "command": "effluent-load",
+      "binding": "/controls/effluent/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "effluent-fault-control",
+      "label": "Injected failure",
+      "component": "effluent",
+      "kind": "toggle",
+      "command": "effluent-fault",
+      "binding": "/controls/effluent/fault"
+    },
+    {
+      "id": "effluent-repair-control",
+      "label": "Repair component",
+      "component": "effluent",
+      "kind": "button",
+      "command": "effluent-repair"
+    },
+    {
+      "id": "sludgeValve-enabled-control",
+      "label": "Enabled",
+      "component": "sludgeValve",
+      "kind": "toggle",
+      "command": "sludgeValve-enabled",
+      "binding": "/controls/sludgeValve/enabled"
+    },
+    {
+      "id": "sludgeValve-open-control",
+      "label": "Open valve",
+      "component": "sludgeValve",
+      "kind": "toggle",
+      "command": "sludgeValve-open",
+      "binding": "/controls/sludgeValve/open"
+    },
+    {
+      "id": "sludgeValve-load-control",
+      "label": "Opening",
+      "component": "sludgeValve",
+      "kind": "range",
+      "command": "sludgeValve-load",
+      "binding": "/controls/sludgeValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sludgeValve-fault-control",
+      "label": "Injected failure",
+      "component": "sludgeValve",
+      "kind": "toggle",
+      "command": "sludgeValve-fault",
+      "binding": "/controls/sludgeValve/fault"
+    },
+    {
+      "id": "sludgeValve-repair-control",
+      "label": "Repair component",
+      "component": "sludgeValve",
+      "kind": "button",
+      "command": "sludgeValve-repair"
+    },
+    {
+      "id": "digester-enabled-control",
+      "label": "Enabled",
+      "component": "digester",
+      "kind": "toggle",
+      "command": "digester-enabled",
+      "binding": "/controls/digester/enabled"
+    },
+    {
+      "id": "digester-load-control",
+      "label": "Requested load",
+      "component": "digester",
+      "kind": "range",
+      "command": "digester-load",
+      "binding": "/controls/digester/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "digester-fault-control",
+      "label": "Injected failure",
+      "component": "digester",
+      "kind": "toggle",
+      "command": "digester-fault",
+      "binding": "/controls/digester/fault"
+    },
+    {
+      "id": "digester-repair-control",
+      "label": "Repair component",
+      "component": "digester",
+      "kind": "button",
+      "command": "digester-repair"
+    },
+    {
+      "id": "digestate-enabled-control",
+      "label": "Enabled",
+      "component": "digestate",
+      "kind": "toggle",
+      "command": "digestate-enabled",
+      "binding": "/controls/digestate/enabled"
+    },
+    {
+      "id": "digestate-load-control",
+      "label": "Requested load",
+      "component": "digestate",
+      "kind": "range",
+      "command": "digestate-load",
+      "binding": "/controls/digestate/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "digestate-fault-control",
+      "label": "Injected failure",
+      "component": "digestate",
+      "kind": "toggle",
+      "command": "digestate-fault",
+      "binding": "/controls/digestate/fault"
+    },
+    {
+      "id": "digestate-repair-control",
+      "label": "Repair component",
+      "component": "digestate",
+      "kind": "button",
+      "command": "digestate-repair"
+    },
+    {
+      "id": "gasHolder-enabled-control",
+      "label": "Enabled",
+      "component": "gasHolder",
+      "kind": "toggle",
+      "command": "gasHolder-enabled",
+      "binding": "/controls/gasHolder/enabled"
+    },
+    {
+      "id": "gasHolder-load-control",
+      "label": "Requested load",
+      "component": "gasHolder",
+      "kind": "range",
+      "command": "gasHolder-load",
+      "binding": "/controls/gasHolder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gasHolder-fault-control",
+      "label": "Injected failure",
+      "component": "gasHolder",
+      "kind": "toggle",
+      "command": "gasHolder-fault",
+      "binding": "/controls/gasHolder/fault"
+    },
+    {
+      "id": "gasHolder-repair-control",
+      "label": "Repair component",
+      "component": "gasHolder",
+      "kind": "button",
+      "command": "gasHolder-repair"
+    },
+    {
+      "id": "gasClean-enabled-control",
+      "label": "Enabled",
+      "component": "gasClean",
+      "kind": "toggle",
+      "command": "gasClean-enabled",
+      "binding": "/controls/gasClean/enabled"
+    },
+    {
+      "id": "gasClean-load-control",
+      "label": "Requested load",
+      "component": "gasClean",
+      "kind": "range",
+      "command": "gasClean-load",
+      "binding": "/controls/gasClean/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "gasClean-fault-control",
+      "label": "Injected failure",
+      "component": "gasClean",
+      "kind": "toggle",
+      "command": "gasClean-fault",
+      "binding": "/controls/gasClean/fault"
+    },
+    {
+      "id": "gasClean-repair-control",
+      "label": "Repair component",
+      "component": "gasClean",
+      "kind": "button",
+      "command": "gasClean-repair"
+    },
+    {
+      "id": "chp-enabled-control",
+      "label": "Enabled",
+      "component": "chp",
+      "kind": "toggle",
+      "command": "chp-enabled",
+      "binding": "/controls/chp/enabled"
+    },
+    {
+      "id": "chp-load-control",
+      "label": "Requested load",
+      "component": "chp",
+      "kind": "range",
+      "command": "chp-load",
+      "binding": "/controls/chp/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "chp-fault-control",
+      "label": "Injected failure",
+      "component": "chp",
+      "kind": "toggle",
+      "command": "chp-fault",
+      "binding": "/controls/chp/fault"
+    },
+    {
+      "id": "chp-repair-control",
+      "label": "Repair component",
+      "component": "chp",
+      "kind": "button",
+      "command": "chp-repair"
+    },
+    {
+      "id": "flare-enabled-control",
+      "label": "Enabled",
+      "component": "flare",
+      "kind": "toggle",
+      "command": "flare-enabled",
+      "binding": "/controls/flare/enabled"
+    },
+    {
+      "id": "flare-load-control",
+      "label": "Requested load",
+      "component": "flare",
+      "kind": "range",
+      "command": "flare-load",
+      "binding": "/controls/flare/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "flare-fault-control",
+      "label": "Injected failure",
+      "component": "flare",
+      "kind": "toggle",
+      "command": "flare-fault",
+      "binding": "/controls/flare/fault"
+    },
+    {
+      "id": "flare-repair-control",
+      "label": "Repair component",
+      "component": "flare",
+      "kind": "button",
+      "command": "flare-repair"
+    },
+    {
+      "id": "loads-enabled-control",
+      "label": "Enabled",
+      "component": "loads",
+      "kind": "toggle",
+      "command": "loads-enabled",
+      "binding": "/controls/loads/enabled"
+    },
+    {
+      "id": "loads-load-control",
+      "label": "Requested load",
+      "component": "loads",
+      "kind": "range",
+      "command": "loads-load",
+      "binding": "/controls/loads/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "loads-fault-control",
+      "label": "Injected failure",
+      "component": "loads",
+      "kind": "toggle",
+      "command": "loads-fault",
+      "binding": "/controls/loads/fault"
+    },
+    {
+      "id": "loads-repair-control",
+      "label": "Repair component",
+      "component": "loads",
+      "kind": "button",
+      "command": "loads-repair"
+    },
+    {
+      "id": "standby-enabled-control",
+      "label": "Enabled",
+      "component": "standby",
+      "kind": "toggle",
+      "command": "standby-enabled",
+      "binding": "/controls/standby/enabled"
+    },
+    {
+      "id": "standby-load-control",
+      "label": "Requested load",
+      "component": "standby",
+      "kind": "range",
+      "command": "standby-load",
+      "binding": "/controls/standby/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "standby-fault-control",
+      "label": "Injected failure",
+      "component": "standby",
+      "kind": "toggle",
+      "command": "standby-fault",
+      "binding": "/controls/standby/fault"
+    },
+    {
+      "id": "standby-repair-control",
+      "label": "Repair component",
+      "component": "standby",
+      "kind": "button",
+      "command": "standby-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "pressure-enabled-control",
+      "label": "Enabled",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-enabled",
+      "binding": "/controls/pressure/enabled"
+    },
+    {
+      "id": "pressure-load-control",
+      "label": "Requested load",
+      "component": "pressure",
+      "kind": "range",
+      "command": "pressure-load",
+      "binding": "/controls/pressure/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pressure-fault-control",
+      "label": "Injected failure",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-fault",
+      "binding": "/controls/pressure/fault"
+    },
+    {
+      "id": "pressure-repair-control",
+      "label": "Repair component",
+      "component": "pressure",
+      "kind": "button",
+      "command": "pressure-repair"
+    },
+    {
+      "id": "plant-running-control",
+      "label": "Run shared system",
+      "kind": "toggle",
+      "command": "plant-running",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset state; keep assumptions",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized thermal index"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable demonstration estimates",
+      "kind": "assumed",
+      "description": "Original generic fixture; no plant workbook, measured operating data, equipment ratings or safety settings."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative wastewater topology",
+      "kind": "illustrative",
+      "description": "Teaching flow from water treatment into sludge digestion, gas handling and power. Not a plant P&ID, treatment-performance model or operating procedure."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "biology",
+      "label": "Biological removal and methane chemistry",
+      "value": "Not modeled; normalized resource conversion only",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "power",
+      "label": "Standby fuel and untreated-water supply",
+      "value": "Explicitly replenished boundaries",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "split",
+      "label": "Sludge/water and gas branching",
+      "value": "Generic acceptance-based allocation; no measured split ratio",
+      "provenance": "assumed-topology"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
 import { createPublication, selectPages, folderMapSources } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
+import {markdown as mapMarkdown} from '../../tools/site/compiler/site-repo-map.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const execFileAsync = promisify(execFile);
@@ -64,12 +65,15 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
   try {
     await writeFile(path.join(wt, 'tools/site/assets/site.css'), 'body{display:none}\n');
     await writeFile(path.join(wt, 'docs/planted.md'), '# Planted\n\nnot committed\n');
+    await writeFile(path.join(wt, 'tools/site/assets/planted-module.js'), 'export const draftOnly = true;\n');
+    execFileSync('git',['add','tools/site/assets/planted-module.js'],{cwd:wt});
     await plant(wt, 'docs/toolkit.md', '# Toolkit\n\nlocal edit <scr<script>x</script>ipt>window.__x=1</script>\n');
     const run = (...a) => execFileSync(process.execPath, ['tools/site/build-site.mjs', '--root', wt, ...a], { cwd: root }).toString();
     const clean = path.join(tmp, 'clean'), draft = path.join(tmp, 'draft');
     run('--out', clean);
     assert.equal(await readFile(path.join(clean, 'web/site.css'), 'utf8'), git('show', 'HEAD:tools/site/assets/site.css'));
     assert.ok(!existsSync(path.join(clean, 'docs/planted.html')), 'an untracked page was published');
+    assert.ok(!existsSync(path.join(clean, 'web/planted-module.js')), 'a staged-only module was published as committed output');
     assert.doesNotMatch(await readFile(path.join(clean, 'docs/toolkit.html'), 'utf8'), /local edit/);
     // Drawn by the reader's browser: this stylesheet would redraw every diagram (it is in their cache key) to no purpose.
     run('--worktree', '--client-diagrams', '--out', draft);
@@ -78,6 +82,8 @@ test('a dirty checkout publishes HEAD, and a draft says it has local changes', a
     assert.match(toolkit, /\+ local changes/);
     assert.match(toolkit, /This page has uncommitted changes/);
     assert.equal(await readFile(path.join(draft, 'web/site.css'), 'utf8'), 'body{display:none}\n');
+    assert.equal(await readFile(path.join(draft,'web/planted-module.js'),'utf8'),'export const draftOnly = true;\n','draft includes staged new assets');
+    assert.ok(!existsSync(path.join(draft,'docs/planted.html')),'draft still excludes untracked files');
     assert.doesNotMatch(toolkit, /<script>|window\.__x=1<\/script>/, 'a nested script survived the sanitizer');
     assert.throws(() => run('--release', '--out', path.join(tmp, 'rel')), /clean working tree/);
     await mkdir(path.join(wt, 'web'), { recursive: true });
@@ -659,7 +665,8 @@ test('diagrams in files agents load leave the palette to the site', async () => 
     .filter(p => ['skills', 'agents'].includes(p.section.id)).map(p => p.file);
   assert.deepEqual(new Set(sources), new Set([
     ...['cad-motion-validation', 'cad-pr-review', 'cad-remote-runs', 'cad-supply-chain', 'cad-work-tracking',
-      'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware']
+      'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware', 'repository-documentation',
+      'scada-component-authoring', 'scada-distribution-review', 'scada-model-adaptation', 'scada-system-authoring', 'scada-viewer-review']
       .map(name => `.agents/skills/${name}/SKILL.md`),
     '.agents/agents/cad-pr-reviewer.md', '.agents/agents/cad-resume.md',
   ]), 'the exact canonical skills and roles must reach the palette consumer');
@@ -944,6 +951,16 @@ test('repository map publishes folder details without flooding the catalogue', a
   const actual = new Set([...html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>Published folder map<\/a>/g)].map(m => m[1]));
   assert.deepEqual(actual, expected, 'every source-derived owned map needs its actual detail route');
   const folderPaths = new Map(maps.map(p => [p.file, p.public]));
+  const sources = new Set(tracked), sourceBytes = new Map();
+  const readSource = file => {
+    if(!sourceBytes.has(file))sourceBytes.set(file,execFileSync('git',['show',`HEAD:${file}`],{cwd:root}));
+    return sourceBytes.get(file);
+  };
+  const assertOwnedSVGs = (page, figures, file) => {
+    const images=new Set([...page.matchAll(/<img\b[^>]*\bsrc="([^"#?]+)(?:[?#][^"]*)?"/g)].map(m=>m[1]));
+    for(const source of figures)assert.ok(images.has('/'+source),`${file}: must show owned SVG ${source}`);
+  };
+  let mermaidMaps=0, svgMaps=0, negativeSVGChecked=false;
   for (const p of maps) {
     const dest = p.public.replace(/\.md$/, '.html');
     assert.ok(files.includes(dest) && files.includes(p.public), `${p.file}: both HTML and Markdown must exist`);
@@ -951,10 +968,33 @@ test('repository map publishes folder details without flooding the catalogue', a
     assert.match(page, /href="\/docs\/map">Repository map<\/a>/);
     const parent = '/' + (folderPaths.get(p.parent) || publication.publicPath(p.parent)).replace(/\.md$/, '');
     assert.ok(page.includes(`href="${parent}">Parent folder</a>`), `${p.file}: current parent route`);
-    assert.match(page, /<figure class="cad-diagram" data-theme-only="light"/);
-    assert.match(page, /<figure class="cad-diagram" data-theme-only="dark"/);
+    const source=mapMarkdown(readSource(p.file).toString('utf8'));
+    const ownedSVGs=[...new Set(source.figures.filter(href=>!/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(href)).map(href=>{
+      const file=decodeURIComponent(href.split(/[?#]/)[0]);
+      return file.startsWith('/') ? file.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(p.file),file));
+    }).filter(file=>file.endsWith('.svg')))];
+    assert.ok(source.diagrams.length || ownedSVGs.length,`${p.file}: source must declare a diagram or owned SVG`);
+    if(source.diagrams.length) {
+      mermaidMaps++;
+      assert.match(page, /<figure class="cad-diagram" data-theme-only="light"/,p.file);
+      assert.match(page, /<figure class="cad-diagram" data-theme-only="dark"/,p.file);
+    }
+    if(ownedSVGs.length) {
+      svgMaps++;assertOwnedSVGs(page,ownedSVGs,p.file);
+      for(const svg of ownedSVGs) {
+        assert.ok(sources.has(svg),`${p.file}: SVG must be committed: ${svg}`);
+        assert.match(readSource(svg).toString('utf8'),/<svg\b/,svg);
+        assert.ok((await readFile(path.join(out,svg))).equals(readSource(svg)),`${svg}: published SVG matches its owned source`);
+      }
+      if(!negativeSVGChecked) {
+        assert.throws(()=>assertOwnedSVGs(page.replace(/<img\b[^>]*>/g,''),ownedSVGs,p.file),/must show owned SVG/);
+        assert.throws(()=>assertOwnedSVGs(page.replaceAll('/'+ownedSVGs[0],'/unrelated.svg'),ownedSVGs,p.file),/must show owned SVG/);
+        negativeSVGChecked=true;
+      }
+    }
     assert.ok(!catalog.items.some(i => i.source?.endsWith('/' + p.file)), `${p.file}: folder map became a catalogue item`);
   }
+  assert.ok(mermaidMaps>0 && svgMaps>0 && negativeSVGChecked,'both actual map formats and missing/misrouted SVG controls are exercised');
   const version = JSON.parse(await readFile(path.join(out, 'version.json'), 'utf8'));
   assert.equal(version.folder_maps, maps.length);
   assert.equal(version.pages, publication.selectPages(tracked).length);

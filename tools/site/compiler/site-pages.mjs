@@ -1,7 +1,7 @@
 /** Visual-first doc pages (#179): real outputs placed on a page from docs/pages.yaml, section cards, and long
  * reference parts folded.
  *
- * The owner, 2026-10-31: "CAD is graphical, so our site should be too. Not a wall of text." Pictures are placed by the
+ * CAD documentation shows real outputs alongside its explanations. Pictures are placed by the
  * site build, never written into the Markdown, so the .md twins and llms.txt stay exactly as written and GitHub shows
  * the page as before. Every placed picture says what it is: a real output of a tool, or a diagram (a drawing of
  * something real), which tool made it and what it was computed on. Used by tools/site/build-site.mjs; tested in
@@ -37,7 +37,7 @@ export const CARDS_MIN = 2;
 
 /** Fold long tables (as the build wraps them: <div class="table-scroll">) and long code blocks (<cad-copy><pre>). */
 export function fold(html, { rows = FOLD_ROWS, lines = FOLD_LINES } = {}) {
-  return html
+  const reference = chunk => chunk
     .replace(/<div class="table-scroll"><table>([\s\S]*?)<\/table><\/div>/g, (all, inner) => {
       const n = (inner.split('<tbody>')[1] || '').match(/<tr>/g)?.length || 0;
       if (n <= rows) return all;
@@ -51,6 +51,35 @@ export function fold(html, { rows = FOLD_ROWS, lines = FOLD_LINES } = {}) {
       if (n <= lines) return all;
       return `<details class="fold"><summary><span class="fold-kind">Code</span> ${n} lines${lang ? ` of ${esc(lang)}` : ''}</summary>${all}</details>`;
     });
+
+  // An authored disclosure already owns its title and visibility. Preserve it whole, including nested
+  // disclosures, so opening an equipment or API reference exposes its table/code with one action.
+  // Comments are opaque: markup examples inside them must not alter the disclosure nesting.
+  const tags = /<!--[\s\S]*?-->|<\/?details(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+  const chunks = [];
+  let cursor = 0, depth = 0;
+  for (const tag of html.matchAll(tags)) {
+    const end = tag.index + tag[0].length;
+    if (tag[0].startsWith('<!--')) {
+      if (depth === 0) {
+        chunks.push(reference(html.slice(cursor, tag.index)), tag[0]);
+        cursor = end;
+      }
+    } else if (/^<\/details\b/i.test(tag[0])) {
+      if (depth > 0 && --depth === 0) {
+        chunks.push(html.slice(cursor, end));
+        cursor = end;
+      }
+    } else {
+      if (depth === 0) {
+        chunks.push(reference(html.slice(cursor, tag.index)));
+        cursor = tag.index;
+      }
+      depth++;
+    }
+  }
+  chunks.push(depth ? html.slice(cursor) : reference(html.slice(cursor)));
+  return chunks.join('');
 }
 
 /** Section cards: one per h2 section that shows a picture (its first local one, from docs/img/), linking to the

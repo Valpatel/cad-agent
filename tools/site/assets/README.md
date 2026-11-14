@@ -29,5 +29,6 @@ flowchart TD
 | [references.js](references.js) | Reference search/filter interaction. |
 | [site.css](site.css) | Shared site layout and typography. |
 | [site.js](site.js) | Shared site navigation and interaction. |
+| [toolkit.css](toolkit.css), [toolkit.js](toolkit.js) | Scoped Toolkit browsing, filters and lazy interactive SCADA state previews. |
 | [theme.js](theme.js) | Theme preference/bootstrap behavior. |
 | [models/](models/README.md) | Coherent homepage model/poster bundle. |

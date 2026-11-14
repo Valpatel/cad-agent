@@ -15,6 +15,7 @@ flowchart LR
 | Owner | Responsibility |
 | --- | --- |
 | [host/](host/README.md) | Renderer-independent frame, accessible controls, mount/dispose and two real 3D adapters. |
+| [scada/](scada/README.md) | Process symbols, shared diagram views, headless models, equation providers and owned galleries/examples |
 | [model/](model/README.md) | Ordinary assembly/STL viewer, inline packed model element and shared 3D stage. |
 | [files/](files/README.md) | Original CAD file viewer, parsers, workers and themes. |
 | [assembly/](assembly/README.md) | Build instructions, playback, part tracking and part tables. |

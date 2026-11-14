@@ -1,5 +1,5 @@
 // <cad-gallery>'s pure parts: the URL state, search matching, facets and sorting (software/cadagent/webkit/ui/gallery.js).
-// The element itself is driven in real browsers by tests/site/website-catalog-browser.mjs.
+// The element itself is driven in real browsers by tests/site/toolkit/website-catalog-browser.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compareBy, countLine, matches, parseState, searchPatterns, stateToSearch } from '../../software/cadagent/webkit/ui/gallery.js';

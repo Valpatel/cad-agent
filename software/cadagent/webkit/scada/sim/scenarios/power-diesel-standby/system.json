@@ -1,0 +1,1828 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-diesel-standby",
+    "label": "Diesel standby supply",
+    "description": "Explicit liquid-fuel tank/day supply \u2192 diesel packaged generator; external utility supply and standby source connect to different transfer-switch inputs before critical loads."
+  },
+  "components": [
+    {
+      "id": "fuel",
+      "type": "tank",
+      "label": "Diesel external fuel boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fuel/active",
+        "running": "/components/fuel/running",
+        "fault": "/components/fuel/fault",
+        "status": "/components/fuel/status",
+        "level": "/components/fuel/level",
+        "damage": "/components/fuel/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "feed",
+      "type": "pump",
+      "label": "Liquid-fuel transfer",
+      "variant": "liquid-fuel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feed/active",
+        "running": "/components/feed/running",
+        "fault": "/components/feed/fault",
+        "status": "/components/feed/status",
+        "load": "/components/feed/load",
+        "speed": "/components/feed/speed",
+        "damage": "/components/feed/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "generator",
+      "label": "Standby diesel enclosure",
+      "variant": "diesel-enclosed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/engine/active",
+        "running": "/components/engine/running",
+        "fault": "/components/engine/fault",
+        "status": "/components/engine/status",
+        "load": "/components/engine/load",
+        "speed": "/components/engine/speed",
+        "damage": "/components/engine/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "stack",
+      "type": "gas-holder",
+      "label": "Explicit engine-exhaust boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/stack/active",
+        "running": "/components/stack/running",
+        "fault": "/components/stack/fault",
+        "status": "/components/stack/status",
+        "level": "/components/stack/level",
+        "damage": "/components/stack/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "load",
+      "type": "motor",
+      "label": "Isolated demonstration demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/load/active",
+        "running": "/components/load/running",
+        "fault": "/components/load/fault",
+        "status": "/components/load/status",
+        "load": "/components/load/load",
+        "speed": "/components/load/speed",
+        "damage": "/components/load/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "grid",
+      "type": "transformer",
+      "label": "Explicit utility source boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/grid/active",
+        "running": "/components/grid/running",
+        "fault": "/components/grid/fault",
+        "status": "/components/grid/status",
+        "load": "/components/grid/load",
+        "damage": "/components/grid/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "transfer",
+      "type": "automatic-transfer-switch",
+      "label": "Utility / standby changeover",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "source": "a",
+        "load": 60,
+        "automatic": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transfer/active",
+        "running": "/components/transfer/running",
+        "fault": "/components/transfer/fault",
+        "status": "/components/transfer/status",
+        "source": "/components/transfer/source",
+        "load": "/components/transfer/load",
+        "automatic": "/components/transfer/automatic",
+        "damage": "/components/transfer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    },
+    {
+      "id": "engineAir",
+      "type": "fan",
+      "label": "Explicit combustion-air boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/engineAir/active",
+        "running": "/components/engineAir/running",
+        "fault": "/components/engineAir/fault",
+        "status": "/components/engineAir/status",
+        "load": "/components/engineAir/load",
+        "speed": "/components/engineAir/speed",
+        "damage": "/components/engineAir/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P02",
+        "P20"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "fuel-outlet-to-feed-inlet",
+      "from": {
+        "component": "fuel",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "feed",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "diesel",
+      "flowBinding": "/flows/fuel-outlet-to-feed-inlet"
+    },
+    {
+      "id": "feed-outlet-to-engine-liquid-fuel",
+      "from": {
+        "component": "feed",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "engine",
+        "port": "liquid-fuel"
+      },
+      "medium": "liquid",
+      "label": "diesel",
+      "flowBinding": "/flows/feed-outlet-to-engine-liquid-fuel"
+    },
+    {
+      "id": "engine-exhaust-to-stack-inlet",
+      "from": {
+        "component": "engine",
+        "port": "exhaust"
+      },
+      "to": {
+        "component": "stack",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "gas",
+      "flowBinding": "/flows/engine-exhaust-to-stack-inlet"
+    },
+    {
+      "id": "grid-secondary-to-transfer-source-a",
+      "from": {
+        "component": "grid",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "source-a"
+      },
+      "medium": "electricity",
+      "label": "Utility source",
+      "flowBinding": "/flows/grid-secondary-to-transfer-source-a"
+    },
+    {
+      "id": "engine-output-to-transfer-source-b",
+      "from": {
+        "component": "engine",
+        "port": "output"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "source-b"
+      },
+      "medium": "electricity",
+      "label": "Standby source",
+      "flowBinding": "/flows/engine-output-to-transfer-source-b"
+    },
+    {
+      "id": "transfer-load-to-load-supply",
+      "from": {
+        "component": "transfer",
+        "port": "load"
+      },
+      "to": {
+        "component": "load",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Selected source only",
+      "flowBinding": "/flows/transfer-load-to-load-supply"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "station-secondary-to-feed-drive",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "feed",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-feed-drive"
+    },
+    {
+      "id": "dcService-dc-to-transfer-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-transfer-supply"
+    },
+    {
+      "id": "plc-io-to-transfer-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-transfer-control"
+    },
+    {
+      "id": "engineAir-outlet-to-engine-air",
+      "from": {
+        "component": "engineAir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "engine",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "Combustion air",
+      "flowBinding": "/flows/engineAir-outlet-to-engine-air"
+    },
+    {
+      "id": "station-secondary-to-engineAir-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "engineAir",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Air supply power",
+      "flowBinding": "/flows/station-secondary-to-engineAir-supply"
+    }
+  ],
+  "views": [
+    {
+      "id": "changeover",
+      "label": "Utility and standby changeover",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "grid",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "engine",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "load",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "engineAir",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "grid-secondary-to-transfer-source-a",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "engine-output-to-transfer-source-b",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transfer-load-to-load-supply",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "engineAir-outlet-to-engine-air",
+          "points": [
+            {
+              "x": 460,
+              "y": 340
+            },
+            {
+              "x": 460,
+              "y": 250
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "label": "Independent station service",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feed",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-feed-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-transfer-supply",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-transfer-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fuel",
+      "label": "Explicit liquid fuel and exhaust",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "fuel",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feed",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "engine",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "stack",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fuel-outlet-to-feed-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "feed-outlet-to-engine-liquid-fuel",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "engine-exhaust-to-stack-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "fuel-enabled",
+      "label": "Equipment enabled",
+      "component": "fuel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "fuel-load",
+      "label": "Requested output / load (%)",
+      "component": "fuel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "fuel-fault",
+      "label": "Inject fictional fault",
+      "component": "fuel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fuel",
+        "value": true
+      }
+    },
+    {
+      "id": "fuel-repair",
+      "label": "Repair damage",
+      "component": "fuel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "feed-enabled",
+      "label": "Equipment enabled",
+      "component": "feed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-load",
+      "label": "Requested output / load (%)",
+      "component": "feed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-fault",
+      "label": "Inject fictional fault",
+      "component": "feed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feed",
+        "value": true
+      }
+    },
+    {
+      "id": "feed-repair",
+      "label": "Repair damage",
+      "component": "feed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "engine-enabled",
+      "label": "Equipment enabled",
+      "component": "engine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "engine"
+      }
+    },
+    {
+      "id": "engine-load",
+      "label": "Requested output / load (%)",
+      "component": "engine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "engine"
+      }
+    },
+    {
+      "id": "engine-fault",
+      "label": "Inject fictional fault",
+      "component": "engine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "engine",
+        "value": true
+      }
+    },
+    {
+      "id": "engine-repair",
+      "label": "Repair damage",
+      "component": "engine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "engine"
+      }
+    },
+    {
+      "id": "stack-enabled",
+      "label": "Equipment enabled",
+      "component": "stack",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "stack"
+      }
+    },
+    {
+      "id": "stack-load",
+      "label": "Requested output / load (%)",
+      "component": "stack",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "stack"
+      }
+    },
+    {
+      "id": "stack-fault",
+      "label": "Inject fictional fault",
+      "component": "stack",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "stack",
+        "value": true
+      }
+    },
+    {
+      "id": "stack-repair",
+      "label": "Repair damage",
+      "component": "stack",
+      "action": "repair",
+      "arguments": {
+        "equipment": "stack"
+      }
+    },
+    {
+      "id": "load-enabled",
+      "label": "Equipment enabled",
+      "component": "load",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-load",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-fault",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "load",
+        "value": true
+      }
+    },
+    {
+      "id": "load-repair",
+      "label": "Repair damage",
+      "component": "load",
+      "action": "repair",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "grid-enabled",
+      "label": "Equipment enabled",
+      "component": "grid",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "grid-load",
+      "label": "Requested output / load (%)",
+      "component": "grid",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "grid-fault",
+      "label": "Inject fictional fault",
+      "component": "grid",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "grid",
+        "value": true
+      }
+    },
+    {
+      "id": "grid-repair",
+      "label": "Repair damage",
+      "component": "grid",
+      "action": "repair",
+      "arguments": {
+        "equipment": "grid"
+      }
+    },
+    {
+      "id": "transfer-enabled",
+      "label": "Equipment enabled",
+      "component": "transfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-load",
+      "label": "Requested output / load (%)",
+      "component": "transfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-fault",
+      "label": "Inject fictional fault",
+      "component": "transfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transfer",
+        "value": true
+      }
+    },
+    {
+      "id": "transfer-repair",
+      "label": "Repair damage",
+      "component": "transfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-mode-source-a",
+      "label": "Select utility source A",
+      "component": "transfer",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "transfer",
+        "value": "source-a"
+      }
+    },
+    {
+      "id": "transfer-mode-source-b",
+      "label": "Select standby source B",
+      "component": "transfer",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "transfer",
+        "value": "source-b"
+      }
+    },
+    {
+      "id": "transfer-mode-off",
+      "label": "All sources off",
+      "component": "transfer",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "transfer",
+        "value": "off"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "engineAir-enabled",
+      "label": "Equipment enabled",
+      "component": "engineAir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "engineAir"
+      }
+    },
+    {
+      "id": "engineAir-load",
+      "label": "Requested output / load (%)",
+      "component": "engineAir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "engineAir"
+      }
+    },
+    {
+      "id": "engineAir-fault",
+      "label": "Inject fictional fault",
+      "component": "engineAir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "engineAir",
+        "value": true
+      }
+    },
+    {
+      "id": "engineAir-repair",
+      "label": "Repair damage",
+      "component": "engineAir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "engineAir"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "fuel-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fuel",
+      "kind": "toggle",
+      "command": "fuel-enabled",
+      "binding": "/controls/fuel/enabled"
+    },
+    {
+      "id": "fuel-load-control",
+      "label": "Requested output / load (%)",
+      "component": "fuel",
+      "kind": "range",
+      "command": "fuel-load",
+      "binding": "/controls/fuel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fuel-fault-control",
+      "label": "Inject fictional fault",
+      "component": "fuel",
+      "kind": "button",
+      "command": "fuel-fault"
+    },
+    {
+      "id": "fuel-repair-control",
+      "label": "Repair damage",
+      "component": "fuel",
+      "kind": "button",
+      "command": "fuel-repair"
+    },
+    {
+      "id": "feed-enabled-control",
+      "label": "Equipment enabled",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-enabled",
+      "binding": "/controls/feed/enabled"
+    },
+    {
+      "id": "feed-load-control",
+      "label": "Requested output / load (%)",
+      "component": "feed",
+      "kind": "range",
+      "command": "feed-load",
+      "binding": "/controls/feed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feed-fault-control",
+      "label": "Inject fictional fault",
+      "component": "feed",
+      "kind": "button",
+      "command": "feed-fault"
+    },
+    {
+      "id": "feed-repair-control",
+      "label": "Repair damage",
+      "component": "feed",
+      "kind": "button",
+      "command": "feed-repair"
+    },
+    {
+      "id": "engine-enabled-control",
+      "label": "Equipment enabled",
+      "component": "engine",
+      "kind": "toggle",
+      "command": "engine-enabled",
+      "binding": "/controls/engine/enabled"
+    },
+    {
+      "id": "engine-load-control",
+      "label": "Requested output / load (%)",
+      "component": "engine",
+      "kind": "range",
+      "command": "engine-load",
+      "binding": "/controls/engine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "engine-fault-control",
+      "label": "Inject fictional fault",
+      "component": "engine",
+      "kind": "button",
+      "command": "engine-fault"
+    },
+    {
+      "id": "engine-repair-control",
+      "label": "Repair damage",
+      "component": "engine",
+      "kind": "button",
+      "command": "engine-repair"
+    },
+    {
+      "id": "stack-enabled-control",
+      "label": "Equipment enabled",
+      "component": "stack",
+      "kind": "toggle",
+      "command": "stack-enabled",
+      "binding": "/controls/stack/enabled"
+    },
+    {
+      "id": "stack-load-control",
+      "label": "Requested output / load (%)",
+      "component": "stack",
+      "kind": "range",
+      "command": "stack-load",
+      "binding": "/controls/stack/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "stack-fault-control",
+      "label": "Inject fictional fault",
+      "component": "stack",
+      "kind": "button",
+      "command": "stack-fault"
+    },
+    {
+      "id": "stack-repair-control",
+      "label": "Repair damage",
+      "component": "stack",
+      "kind": "button",
+      "command": "stack-repair"
+    },
+    {
+      "id": "load-enabled-control",
+      "label": "Equipment enabled",
+      "component": "load",
+      "kind": "toggle",
+      "command": "load-enabled",
+      "binding": "/controls/load/enabled"
+    },
+    {
+      "id": "load-load-control",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "kind": "range",
+      "command": "load-load",
+      "binding": "/controls/load/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "load-fault-control",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "kind": "button",
+      "command": "load-fault"
+    },
+    {
+      "id": "load-repair-control",
+      "label": "Repair damage",
+      "component": "load",
+      "kind": "button",
+      "command": "load-repair"
+    },
+    {
+      "id": "grid-enabled-control",
+      "label": "Equipment enabled",
+      "component": "grid",
+      "kind": "toggle",
+      "command": "grid-enabled",
+      "binding": "/controls/grid/enabled"
+    },
+    {
+      "id": "grid-load-control",
+      "label": "Requested output / load (%)",
+      "component": "grid",
+      "kind": "range",
+      "command": "grid-load",
+      "binding": "/controls/grid/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "grid-fault-control",
+      "label": "Inject fictional fault",
+      "component": "grid",
+      "kind": "button",
+      "command": "grid-fault"
+    },
+    {
+      "id": "grid-repair-control",
+      "label": "Repair damage",
+      "component": "grid",
+      "kind": "button",
+      "command": "grid-repair"
+    },
+    {
+      "id": "transfer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-enabled",
+      "binding": "/controls/transfer/enabled"
+    },
+    {
+      "id": "transfer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "transfer",
+      "kind": "range",
+      "command": "transfer-load",
+      "binding": "/controls/transfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transfer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-fault"
+    },
+    {
+      "id": "transfer-repair-control",
+      "label": "Repair damage",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-repair"
+    },
+    {
+      "id": "transfer-mode-source-a-control",
+      "label": "Select utility source A",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-mode-source-a"
+    },
+    {
+      "id": "transfer-mode-source-b-control",
+      "label": "Select standby source B",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-mode-source-b"
+    },
+    {
+      "id": "transfer-mode-off-control",
+      "label": "All sources off",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-mode-off"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "engineAir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "engineAir",
+      "kind": "toggle",
+      "command": "engineAir-enabled",
+      "binding": "/controls/engineAir/enabled"
+    },
+    {
+      "id": "engineAir-load-control",
+      "label": "Requested output / load (%)",
+      "component": "engineAir",
+      "kind": "range",
+      "command": "engineAir-load",
+      "binding": "/controls/engineAir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "engineAir-fault-control",
+      "label": "Inject fictional fault",
+      "component": "engineAir",
+      "kind": "button",
+      "command": "engineAir-fault"
+    },
+    {
+      "id": "engineAir-repair-control",
+      "label": "Repair damage",
+      "component": "engineAir",
+      "kind": "button",
+      "command": "engineAir-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P02",
+      "label": "P02 \u00b7 structural reference",
+      "kind": "external",
+      "source": "EPA/DOE, [Catalog of CHP Technologies, Section 2: Reciprocating Internal Combustion Engines](https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P1010CL4.txt), September 2014",
+      "description": "Sections 2.1\u20132.3; emergency/standby applications; spark-ignition and diesel descriptions | Supports: Natural-gas, diesel and gasoline presets share a reciprocating-engine family while retaining fuel and application distinctions. Portable gasoline, permanent gas and commercial diesel examples are explicitly discussed. Historical size examples are not universal class boundaries. | Reviewed 2026-11-13. Does not validate toy parameters."
+    },
+    {
+      "id": "P20",
+      "label": "P20 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Distributed Energy Resources and Microgrids Basics](https://www.energy.gov/cmei/systems/solar-integration-distributed-energy-resources-and-microgrids-basics), updated 2026-05-05",
+      "description": "DER and islands/microgrids sections | Supports: A microgrid composition needs local sources, loads, controls and a defined grid connection. Islanded is a system connection state, not a new generator icon. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    },
+    {
+      "id": "engineRatedPowerKW",
+      "label": "Standby diesel enclosure illustrative nameplate preset",
+      "value": 100,
+      "unit": "kW",
+      "description": "Editable illustrative label, not a verified product rating or a calibrated equation. Capacity, fuel and enclosure are independent choices.",
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "enginePowerDisplayScale",
+      "label": "Optional power display scale for this isolated example",
+      "value": 1.25,
+      "unit": "kW per normalized power unit",
+      "description": "Explicit authoring mapping only. The headless model remains normalized; this label never silently changes equations or another scenario.",
+      "provenance": "assumed-model"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

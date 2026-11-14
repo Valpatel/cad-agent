@@ -1,0 +1,132 @@
+/* Standalone component skin. The twin artwork is shared, never copied. */
+@import url('./art/twin.css');
+@import url('./art/process.css');
+@import url('./art/industrial.css');
+@import url('./power/power.css');
+@import url('./power/nuclear.css');
+@import url('./art/agriculture.css');
+
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component[data-scada-host-state=true]{display:contents}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component-gauges{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);display:grid;gap:3px;width:164px;max-width:96%;font:9px ui-monospace,SFMono-Regular,Consolas,monospace;color:#bfdce7}
+.scada-component-gauges>span{display:flex;gap:6px;align-items:center;line-height:10px}
+.scada-component-gauges small{font:inherit;font-size:8px;letter-spacing:.8px;width:34px}
+.scada-component-gauges strong{font:inherit;font-size:9px;width:48px;text-align:right;white-space:nowrap}
+.scada-component-gauges i{display:block;height:4px;flex:1;background:#153c50;border:1px solid #537d90;border-radius:3px;overflow:hidden}
+.scada-component-gauges b{display:block;height:100%;background:#63e6d9;box-shadow:0 0 5px #63e6d9;transition:width .5s ease}
+.scada-component-condition{position:absolute;top:6px;right:7px;width:24px;height:24px;filter:drop-shadow(0 0 5px #ffd38a60);pointer-events:none}
+.scada-component-condition svg{display:block;width:100%;height:100%;overflow:visible}
+.scada-component-condition svg path:first-child{fill:#493c22;stroke:#ffd38a;stroke-width:1.4;stroke-linejoin:round}
+.scada-component-condition svg path:last-child{fill:none;stroke:#ffe7b4;stroke-width:2.4;stroke-linecap:round}
+.scada-component-condition[data-condition=fault]{filter:drop-shadow(0 0 5px #ff77ac70);animation:scada-fault 3s ease-in-out infinite}
+.scada-component-condition[data-condition=fault] svg path:first-child{fill:#492239;stroke:#ff77ac}
+.scada-component-condition[data-condition=fault] svg path:last-child{stroke:#ffc4dc}
+.scada-component[data-status=warning] .scada-component-gauges b{background:#ffd38a;box-shadow:0 0 5px #ffd38a}
+.scada-component[data-failed=true] .scada-component-gauges b{background:#ff77ac;box-shadow:0 0 5px #ff77ac}
+.scada-component[data-scada-host-state=false]>.twin-equipment-art{width:180px;max-width:100%;height:100%;max-height:100%;flex:none}
+.scada-component>.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component .scada-readout{fill:#9ffff0;font:600 10px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.2px}
+.scada-component .scada-unit{fill:#b6d9e2;font:600 6px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.4px}
+.scada-component .scada-led{fill:#557080;transition:fill .25s,filter .25s}
+.scada-component .scada-flow{stroke:#68ffe1;stroke-dasharray:5 11;stroke-linecap:round;opacity:.15;animation:scada-flow 1.4s linear infinite;animation-play-state:paused}
+.scada-component .scada-hot-flow,.scada-component .scada-electric-flow{stroke:#ffd38a}
+.scada-component .scada-rotor{transform-box:view-box;animation:scada-spin var(--scada-activity-duration) linear infinite;animation-play-state:paused}
+.scada-component .scada-piston{animation:scada-piston var(--scada-activity-duration) ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-wave{animation:scada-wave 4s linear infinite;animation-play-state:paused}
+.scada-component .scada-mixer{transform-box:view-box;animation:scada-mix 1.5s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-scraper{transform-box:view-box;animation:scada-scraper 9s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-shaft{transform-box:fill-box;transform-origin:center;animation:scada-mix calc(var(--scada-activity-duration)*.5) linear infinite;animation-play-state:paused}
+.scada-component .scada-solar-cell{animation:scada-solar 3.4s ease-in-out var(--scada-delay,0s) infinite;animation-play-state:paused}
+.scada-component .scada-sensor-pulse{transform-box:fill-box;transform-origin:center;opacity:.25;animation:scada-sense 2.8s ease-out infinite;animation-play-state:paused}
+.scada-component .scada-trace{stroke-dasharray:130;animation:scada-trace 3.6s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-scan{opacity:.2;animation:scada-scan 2.8s ease-in-out var(--scada-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-traffic{opacity:.18;stroke-dasharray:4 8;animation:scada-traffic 1.8s linear var(--scada-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-screen-pulse{opacity:.55;animation:scada-screen 3s ease-in-out var(--scada-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-electric{opacity:.45;animation:scada-electric 2.5s ease-in-out infinite;animation-play-state:paused}
+.scada-component :is(.scada-valve-disc,.scada-valve-stem,.scada-valve-lever,.scada-contact,.scada-needle){transform-box:view-box;transition:transform .45s ease,rx .45s ease,fill .3s ease}
+.scada-component .scada-charge-fill{transition:y .5s ease,height .5s ease}
+.scada-component[data-scada-host-state=false] .scada-charge-fill,.scada-component[data-scada-host-state=false][data-scada-type=gas-holder] .twin-art-buffer-fill{animation:scada-inventory 3.6s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-load-bar,.scada-component .scada-ups-charge{transition:width .5s ease}
+.scada-component .scada-flow-meter[data-meter-flow=reverse] .scada-flow{animation-direction:reverse}
+.scada-component .scada-flow-meter[data-meter-flow=stopped] .scada-flow{animation-play-state:paused!important;opacity:0}
+.scada-component .scada-fault-mark{display:none}
+
+/* Photovoltaic light and DC output use supplied activity/load, never a clock. */
+.scada-component .scada-solar-light{stroke-dasharray:3 7;opacity:.25;animation:scada-flow calc(var(--scada-activity-duration)*.7) linear infinite;animation-play-state:paused}
+.scada-component .scada-solar-current{stroke-dasharray:4 7;stroke-linecap:round;opacity:.15;animation:scada-solar-current var(--scada-activity-duration) linear infinite;animation-play-state:paused}
+.scada-component .scada-solar-glint{opacity:.18;animation:scada-solar-glint 5s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-solar-rays{transform-box:view-box;transform-origin:30px 22px;animation:scada-solar-rays 8s ease-in-out infinite;animation-play-state:paused}
+.scada-component[data-scada-type=solar-panel][data-active=true] :is(.scada-solar-light,.scada-solar-current){opacity:calc(.25 + var(--scada-load,60)*.0075)}
+.scada-component[data-scada-type=solar-panel][data-active=true][data-running=true] :is(.scada-solar-light,.scada-solar-current,.scada-solar-glint,.scada-solar-rays){animation-play-state:running}
+.scada-component .scada-solar-array[data-output-zero=true] :is(.scada-solar-current,.scada-solar-light,.scada-solar-glint,.scada-solar-rays,.scada-solar-cell){animation-play-state:paused!important}
+.scada-component .scada-solar-array[data-output-zero=true] .scada-solar-current{opacity:0}
+.scada-component[data-scada-type=solar-panel]:is([data-damage=short-circuit],[data-damage=burnt]) .scada-solar-current{animation-play-state:paused!important;opacity:.1}
+@keyframes scada-solar-current{to{stroke-dashoffset:-44}}
+@keyframes scada-solar-glint{0%,15%{transform:translateX(-40px);opacity:0}35%,65%{opacity:.6}85%,100%{transform:translateX(165px);opacity:0}}
+@keyframes scada-solar-rays{0%,100%{opacity:.55;transform:rotate(-7deg)}50%{opacity:1;transform:rotate(7deg)}}
+
+/* State has local scope: no SCADA page, model instance, or timer is required. */
+.scada-component[data-scada-host-state=false][data-active=true] .scada-led{fill:#62ffbc;filter:drop-shadow(0 0 2px #62ffbc80)}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] :is(.scada-rotor,.scada-piston,.scada-wave,.scada-mixer,.scada-scraper,.scada-shaft,.scada-solar-cell,.scada-sensor-pulse,.scada-trace,.scada-scan,.scada-traffic,.scada-screen-pulse,.scada-electric){animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] .scada-charge-fill,.scada-component[data-scada-host-state=false][data-scada-type=gas-holder][data-active=true][data-running=true] .twin-art-buffer-fill{animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-flow=true] .scada-flow{opacity:var(--scada-flow-opacity,.95)}
+.scada-component[data-scada-host-state=false][data-opening="0"] .scada-flow{opacity:0}
+.scada-component[data-scada-host-state=false][data-flow=true][data-running=true] .scada-flow{animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-active=true] :is(.scada-electric,.scada-traffic){opacity:1}
+.scada-component[data-scada-host-state=false][data-status=warning]{--scada-accent:#ffd38a}
+.scada-component[data-scada-host-state=false][data-status=warning] .scada-led{fill:#ffd38a;filter:drop-shadow(0 0 2px #ffd38a90)}
+.scada-component[data-scada-host-state=false][data-status=offline] :is(.scada-drawing,.twin-equipment-art){opacity:.45;filter:saturate(.3)}
+.scada-component[data-scada-host-state=false][data-failed=true] .scada-fault-mark{display:inline;animation:scada-fault 3s ease-in-out infinite}
+.scada-component[data-scada-host-state=false][data-failed=true] .scada-led{fill:#ff77ac;filter:drop-shadow(0 0 2px #ff77ac90)}
+.scada-component[data-scada-host-state=false][data-failed=true] .scada-drawing{opacity:.7}
+.scada-component[data-scada-host-state=false][data-connected=false] :is(.scada-traffic,.scada-scan){opacity:.12;animation-play-state:paused}
+
+/* Adapter for the shared process artwork when there is no .twin-node parent. */
+.scada-component[data-scada-host-state=false][data-scada-type=digester] .twin-art-wave{translate:0 var(--scada-level-offset)}
+.scada-component[data-scada-host-state=false][data-scada-type=electrical-meter] .twin-art-charge-orbit{animation-duration:var(--scada-activity-duration)}
+.scada-component[data-scada-host-state=false][data-active=true] :is(.twin-art-stream,.twin-art-filter-stream,.twin-art-charge-orbit,.twin-art-generator-current,.twin-art-generator-electric,.twin-art-generator-meter){opacity:1}
+.scada-component[data-scada-host-state=false][data-active=true] :is(.twin-art-stream,.twin-art-filter-stream,.twin-art-generator-current){opacity:calc(.18 + var(--scada-load,60)*.0082)}
+.scada-component[data-scada-host-state=false][data-active=true] .twin-art-status-light{fill:#62ffbc;filter:drop-shadow(0 0 3px #62ffbc)}
+.scada-component[data-scada-host-state=false][data-active=true] .twin-art-fire{opacity:1;visibility:visible}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] :is(.twin-art-rotor,.twin-art-wave,.twin-art-mixer,.twin-art-bubble,.twin-art-stream,.twin-art-filter-stream,.twin-art-charge-orbit,.twin-art-flame-outer,.twin-art-flame-middle,.twin-art-flame-core,.twin-art-fire-halo,.twin-art-ember,.twin-art-generator-current,.twin-art-generator-heat){animation-play-state:running}
+.scada-component[data-scada-host-state=false][data-active=false] :is(.twin-art-bubble,.twin-art-generator-heat){visibility:hidden}
+.scada-component[data-scada-host-state=false][data-speed-zero=true] :is(.scada-rotor,.scada-piston,.scada-shaft,.scada-flow,.twin-art-rotor,.twin-art-stream,.twin-art-generator-current){animation-play-state:paused!important}
+.scada-component[data-scada-host-state=false]:is([data-damage=jammed],[data-damage=seized],[data-damage=stuck],[data-damage=blocked],[data-damage=power-loss]) :is(.scada-rotor,.scada-piston,.scada-shaft,.scada-flow,.twin-art-rotor,.twin-art-stream,.twin-art-generator-current){animation-play-state:paused!important}
+.scada-component[data-scada-host-state=false][data-damage=comms-loss] :is(.scada-traffic,.scada-scan){animation-play-state:paused!important;opacity:.12}
+/* Lost power and invalid telemetry suppress only healthy operation cues.
+   Incident overlays and independently supplied heat remain visible. */
+.scada-component[data-scada-host-state=false][data-damage=power-loss] .scada-control-art :is(.scada-scan,.scada-traffic,.scada-screen-pulse,.scada-load-bar){animation-play-state:paused!important;opacity:.08}
+.scada-component[data-scada-host-state=false][data-reading-valid=false] :is(.scada-sensor-pulse,.scada-trace,.scada-flow,.twin-art-charge-orbit){animation-play-state:paused!important;visibility:hidden}
+.scada-component[data-scada-host-state=false][data-reading-valid=false] .scada-needle{visibility:hidden}
+.scada-component[data-scada-host-state=false][data-reading-valid=false] .scada-led{fill:#557080;filter:none}
+.scada-component[data-scada-host-state=false][data-scada-type=electrical-meter][data-reading-valid=false] :is(.twin-art-stream,.twin-art-bolt){animation-play-state:paused!important;opacity:.12}
+.scada-component[data-scada-host-state=false][data-failed=true] :is(.twin-art-fault-effects,.twin-art-buffer-damage){display:inline}
+.scada-component[data-scada-host-state=false][data-failed=true] .twin-art-status-light{fill:#ff77ac;filter:drop-shadow(0 0 3px #ff77ac)}
+.scada-component[data-scada-host-state=false][data-failed=true] .twin-art-body{opacity:.7}
+.scada-component[data-scada-host-state=false][data-status=warning] .twin-art-status-light{fill:#ffd38a}
+.scada-component[data-scada-host-state=false][data-status=warning] .twin-art-pressure-effects{opacity:.7}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+
+@keyframes scada-flow{to{stroke-dashoffset:-32}}
+@keyframes scada-spin{to{transform:rotate(360deg)}}
+@keyframes scada-piston{0%,100%{transform:translateX(-2px)}50%{transform:translateX(3px)}}
+@keyframes scada-wave{to{transform:translateX(-60px)}}
+@keyframes scada-mix{0%,100%{transform:scaleX(1)}50%{transform:scaleX(-1)}}
+@keyframes scada-scraper{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+@keyframes scada-solar{0%,100%{fill:#1d667b}50%{fill:#318ea0}}
+@keyframes scada-sense{0%{opacity:.1;transform:scale(.88)}35%{opacity:.6}100%{opacity:.08;transform:scale(1.12)}}
+@keyframes scada-trace{0%{stroke-dashoffset:130;opacity:.25}55%,85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:.25}}
+@keyframes scada-scan{0%,100%{opacity:.16}35%,65%{opacity:.95}}
+@keyframes scada-traffic{0%{stroke-dashoffset:0;opacity:.3}50%{opacity:1}100%{stroke-dashoffset:-24;opacity:.3}}
+@keyframes scada-screen{0%,100%{opacity:.5}50%{opacity:.95}}
+@keyframes scada-electric{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes scada-fault{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes scada-inventory{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.2)}}
+
+@media(prefers-reduced-motion:reduce){
+ .scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}
+ .scada-component[data-scada-host-state=false][data-active=true] .twin-art-bubble{opacity:.45}
+ .scada-component[data-active=true] :is(.scada-scan,.scada-traffic,.scada-sensor-pulse){opacity:.65}
+}

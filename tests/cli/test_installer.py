@@ -348,8 +348,15 @@ def test_it_installs_then_a_second_run_updates(world):
     assert set(expected) == {
         "cad-motion-validation", "cad-pr-review", "cad-remote-runs", "cad-supply-chain",
         "cad-work-tracking", "design-process", "mcmaster-parts", "pem-fastener-selection", "sheet-metal-hardware",
+        "repository-documentation", "scada-component-authoring", "scada-distribution-review",
+        "scada-model-adaptation", "scada-system-authoring", "scada-viewer-review",
     }
     assert skills == expected
+    for name in expected:
+        installed = home / ".claude/skills" / name
+        source = kit / ".agents/skills" / name
+        assert installed.resolve() == source, f"{name} links to this installed checkout"
+        assert (installed / "SKILL.md").read_bytes() == (source / "SKILL.md").read_bytes()
     assert (kit / "software/cadagent/cli.py").is_file()
     assert (home / ".claude" / "skills" / "design-process").resolve() == kit / ".agents/skills/design-process"
     assert {p.name for p in (home / ".agents" / "skills").iterdir()} >= set(skills), "the same skills for the other agents"
@@ -360,6 +367,8 @@ def test_it_installs_then_a_second_run_updates(world):
 
     new = (remote / "NEWS.txt")
     new.write_text("x\n")
+    changed_skill = remote / ".agents/skills/scada-model-adaptation/SKILL.md"
+    changed_skill.write_text(changed_skill.read_text() + "\nInstaller update fixture.\n")
     _git(remote, "add", "-A")
     _git(remote, "commit", "-q", "-m", "more")
     second = _install(env)
@@ -368,6 +377,9 @@ def test_it_installs_then_a_second_run_updates(world):
     assert "dependencies unchanged, nothing to reinstall" in second.stdout
     assert _git(kit, "rev-parse", "HEAD") == _git(remote, "rev-parse", "HEAD"), "fast-forwarded to the new main"
     assert len((home / "uv-calls.log").read_text().splitlines()) == 1, "no reinstall when the dependencies are the same"
+    updated_skill = home / ".claude/skills/scada-model-adaptation/SKILL.md"
+    assert updated_skill.read_bytes() == changed_skill.read_bytes(), "new SCADA instructions update with the checkout"
+    assert "Installer update fixture." in updated_skill.read_text()
 
     log = lambda: (home / "uv-calls.log").read_text().splitlines()
     with (remote / "pyproject.toml").open("a") as f:      # a dependency change: reinstall, with the extras it had
@@ -742,6 +754,8 @@ skills=list((root/'.agents/skills').glob('*/SKILL.md'));roles=[p for p in (root/
 assert {p.parent.name for p in skills} == {
     'cad-motion-validation', 'cad-pr-review', 'cad-remote-runs', 'cad-supply-chain',
     'cad-work-tracking', 'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware',
+    'repository-documentation', 'scada-component-authoring', 'scada-distribution-review',
+    'scada-model-adaptation', 'scada-system-authoring', 'scada-viewer-review',
 }
 assert {p.stem for p in roles} == {'cad-pr-reviewer', 'cad-resume'}
 for src in skills:

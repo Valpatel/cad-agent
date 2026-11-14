@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-capacitor-bank-base-active-title gallery-capacitor-bank-base-active-desc"><title id="gallery-capacitor-bank-base-active-title">Switched capacitor bank</title><desc id="gallery-capacitor-bank-base-active-desc">Switched capacitor bank. Active, closed, illustrative load 60%, illustrative steps 2. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component .scada-power-art{--scada-power-cycle:2.4s}
+.scada-component .scada-power-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component .scada-electrical-flow{animation:scada-power-electrons var(--scada-power-cycle) linear infinite paused;opacity:var(--scada-power-current-opacity,1)}
+.scada-component :is(.scada-power-monitor,.scada-power-charge,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-protection-pulse,.scada-power-signal){animation:scada-power-pulse var(--scada-power-cycle) ease-in-out infinite paused}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor){animation-play-state:running}
+.scada-component .scada-power-art [data-flowing=false] :is(.scada-energy-flow,.scada-electrical-flow),
+.scada-component .scada-power-art [data-conducting=false] :is(.scada-electrical-flow,.scada-power-convert-pulse,.scada-power-field-pulse),
+.scada-component .scada-power-art [data-connected=false] :is(.scada-power-signal,.scada-power-monitor),
+.scada-component .scada-power-art [data-cell-active=false] .scada-power-charge,
+.scada-component .scada-power-art [data-stressed=false] .scada-power-protection-pulse{animation-play-state:paused!important;opacity:0!important}
+@keyframes scada-power-electrons{to{stroke-dashoffset:-20}}
+@keyframes scada-power-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.scada-component .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc){animation:none!important;transform:none!important}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:194px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-capacitor-bank-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-capacitor-bank-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">POWER &amp; ENERGY</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Switched capacitor bank</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="capacitor-bank" data-scada-instance="scada-gallery-capacitor-bank-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" data-open="false" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:30px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.87" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="194" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-capacitor-bank-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-capacitor-bank-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-capacitor-bank-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-capacitor-bank-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-capacitor-bank-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-power-art scada-electrical-art" data-power-type="capacitor-bank" style="--scada-power-cycle:2.30s;--scada-power-current-opacity:0.6799999999999999">
+    <ellipse cx="90" cy="125" rx="68" ry="4.5" fill="#020d18" opacity=".72"/><path d="M27 119H155M35 48V120m112-72v72M34 52H148" stroke="#85a6b6" stroke-width="4"/>
+    <g class="scada-power-capacitor-cell" data-cell-active="true"><rect x="40" y="68" width="23" height="40" rx="3" fill="url(#scada-gallery-capacitor-bank-base-active-steel)" stroke="#a7cbd5"/>
+        <path d="M51 55v13" stroke="#7299a7" stroke-width="4.4"/>
+    <ellipse cx="51" cy="58" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="51" cy="61.5" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="51" cy="65" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><path d="M51 51v5" stroke="#abcdd6" stroke-width="2"/>
+        <path d="M45 83h13m-13 6h13" stroke="#7ff3da" stroke-width="2.3"/>
+        <circle class="scada-power-motion scada-power-charge" cx="51" cy="99" r="2" fill="#b8f5dd"/></g><g class="scada-power-capacitor-cell" data-cell-active="true"><rect x="68" y="68" width="23" height="40" rx="3" fill="url(#scada-gallery-capacitor-bank-base-active-steel)" stroke="#a7cbd5"/>
+        <path d="M79 55v13" stroke="#7299a7" stroke-width="4.4"/>
+    <ellipse cx="79" cy="58" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="79" cy="61.5" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="79" cy="65" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><path d="M79 51v5" stroke="#abcdd6" stroke-width="2"/>
+        <path d="M73 83h13m-13 6h13" stroke="#7ff3da" stroke-width="2.3"/>
+        <circle class="scada-power-motion scada-power-charge" cx="79" cy="99" r="2" fill="#b8f5dd"/></g><g class="scada-power-capacitor-cell" data-cell-active="false"><rect x="96" y="68" width="23" height="40" rx="3" fill="url(#scada-gallery-capacitor-bank-base-active-steel)" stroke="#a7cbd5"/>
+        <path d="M107 55v13" stroke="#7299a7" stroke-width="4.4"/>
+    <ellipse cx="107" cy="58" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="107" cy="61.5" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="107" cy="65" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><path d="M107 51v5" stroke="#abcdd6" stroke-width="2"/>
+        <path d="M101 83h13m-13 6h13" stroke="#7296a8" stroke-width="2.3"/>
+        <circle class="scada-power-motion scada-power-charge" cx="107" cy="99" r="2" fill="#b8f5dd"/></g><g class="scada-power-capacitor-cell" data-cell-active="false"><rect x="124" y="68" width="23" height="40" rx="3" fill="url(#scada-gallery-capacitor-bank-base-active-steel)" stroke="#a7cbd5"/>
+        <path d="M135 55v13" stroke="#7299a7" stroke-width="4.4"/>
+    <ellipse cx="135" cy="58" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="135" cy="61.5" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><ellipse cx="135" cy="65" rx="4" ry="2" fill="#4d8294" stroke="#a5cdd3" stroke-width=".8"/><path d="M135 51v5" stroke="#abcdd6" stroke-width="2"/>
+        <path d="M129 83h13m-13 6h13" stroke="#7296a8" stroke-width="2.3"/>
+        <circle class="scada-power-motion scada-power-charge" cx="135" cy="99" r="2" fill="#b8f5dd"/></g>
+    <g class="scada-power-circuit " data-conducting="true"><path d="M8 30H76" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round"/>
+    <path class="scada-electrical-flow scada-power-motion" d="M8 30H76" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7"/><path d="M104 30H171" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round"/>
+    <path class="scada-electrical-flow scada-power-motion" d="M104 30H171" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7"/><path d="M76 30H104" fill="none" stroke="#8d9eaa" stroke-width="3" stroke-linejoin="round"/>
+    <path class="scada-electrical-flow scada-power-motion" d="M76 30H104" fill="none" stroke="#ffd38a" stroke-width="1.6" stroke-dasharray="3 7"/></g>
+    <path d="M119 30v22" stroke="#adcbd6" stroke-width="3"/><circle cx="76" cy="30" r="4" fill="#143348" stroke="#c9d9df" stroke-width="1.8"/><circle cx="104" cy="30" r="4" fill="#143348" stroke="#c9d9df" stroke-width="1.8"/><g class="scada-power-indicator">
+    <rect x="45" y="113" width="28" height="15" rx="2" fill="#082633" stroke="#77a8bc"/>
+    <path d="M49 118h20m-20 5h14" stroke="#75f2ce" stroke-width="1.5"/>
+    <circle class="scada-power-monitor" cx="69" cy="124" r="1.5" fill="#8affd6"/>
+  </g>
+    
+  </g></g></svg></g></g><g data-scada-gauge="load"><text class="gallery-code" x="90" y="288" font-size="10">LOAD</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="87" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">60%</text></g><g data-scada-gauge="steps"><text class="gallery-code" x="90" y="300" font-size="10">STEPS</text><rect x="155" y="294" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="294" width="72.5" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="300" font-size="10" text-anchor="end">2</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">capacitor-bank</text></svg>

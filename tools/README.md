@@ -58,6 +58,7 @@ flowchart TD
 | Work | Entry point |
 |---|---|
 | Source selection and stable public paths | [site/](site/README.md) |
+| Reusable browser-library maintenance | [webkit/](webkit/README.md): SCADA registries, galleries, scenarios and visual checks |
 | Site build and preview | [build-site.mjs](site/build-site.mjs), [preview-site.mjs](site/preview-site.mjs), [pages-build.mjs](site/pages-build.mjs); `npm --prefix tools/site run build:site` |
 | Catalogue and references | [site-catalog.mjs](site/compiler/site-catalog.mjs), [site-references.mjs](site/compiler/site-references.mjs), [reference importer](import_refmap.py) |
 | Calculated diagrams | [figures/](figures/README.md): bearings, inserts, linkages, motion, printed joints, snaps and process rules |

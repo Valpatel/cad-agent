@@ -1,0 +1,2147 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-gas-simple-cycle",
+    "label": "Simple-cycle gas turbine",
+    "description": "Filtered/compressed air and regulated gas feed the combustion-turbine package. The shaft drives exactly one alternator; exhaust leaves through a separate discharge path."
+  },
+  "components": [
+    {
+      "id": "turbine",
+      "type": "gas-turbine",
+      "label": "Combustion turbine / shaft output",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "flow": 60,
+        "heat": 45,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/turbine/active",
+        "running": "/components/turbine/running",
+        "fault": "/components/turbine/fault",
+        "status": "/components/turbine/status",
+        "load": "/components/turbine/load",
+        "speed": "/components/turbine/speed",
+        "flow": "/components/turbine/flow",
+        "heat": "/components/turbine/heat",
+        "damage": "/components/turbine/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "fuel",
+      "type": "gas-holder",
+      "label": "Explicit natural-gas supply",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/fuel/active",
+        "running": "/components/fuel/running",
+        "fault": "/components/fuel/fault",
+        "status": "/components/fuel/status",
+        "level": "/components/fuel/level",
+        "damage": "/components/fuel/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "regulator",
+      "type": "fuel-pressure-regulator",
+      "label": "Fuel-gas pressure regulator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "pressure": 45,
+        "flow": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/regulator/active",
+        "running": "/components/regulator/running",
+        "fault": "/components/regulator/fault",
+        "status": "/components/regulator/status",
+        "open": "/components/regulator/open",
+        "opening": "/components/regulator/opening",
+        "pressure": "/components/regulator/pressure",
+        "flow": "/components/regulator/flow",
+        "damage": "/components/regulator/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "air",
+      "type": "fan",
+      "label": "Explicit ambient-air supply",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/air/active",
+        "running": "/components/air/running",
+        "fault": "/components/air/fault",
+        "status": "/components/air/status",
+        "load": "/components/air/load",
+        "speed": "/components/air/speed",
+        "damage": "/components/air/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "exhaust",
+      "type": "gas-holder",
+      "label": "Explicit exhaust boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exhaust/active",
+        "running": "/components/exhaust/running",
+        "fault": "/components/exhaust/fault",
+        "status": "/components/exhaust/status",
+        "level": "/components/exhaust/level",
+        "damage": "/components/exhaust/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "alternator",
+      "type": "alternator",
+      "label": "Shaft-driven alternator",
+      "variant": "generator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "heat": 45,
+        "field": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/alternator/active",
+        "running": "/components/alternator/running",
+        "fault": "/components/alternator/fault",
+        "status": "/components/alternator/status",
+        "load": "/components/alternator/load",
+        "speed": "/components/alternator/speed",
+        "heat": "/components/alternator/heat",
+        "field": "/components/alternator/field",
+        "damage": "/components/alternator/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "alternatorField",
+      "type": "excitation-system",
+      "label": "Independent excitation field",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "field": 60,
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/alternatorField/active",
+        "running": "/components/alternatorField/running",
+        "fault": "/components/alternatorField/fault",
+        "status": "/components/alternatorField/status",
+        "load": "/components/alternatorField/load",
+        "field": "/components/alternatorField/field",
+        "connected": "/components/alternatorField/connected",
+        "damage": "/components/alternatorField/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "transformer",
+      "type": "transformer",
+      "label": "Export transformer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transformer/active",
+        "running": "/components/transformer/running",
+        "fault": "/components/transformer/fault",
+        "status": "/components/transformer/status",
+        "load": "/components/transformer/load",
+        "damage": "/components/transformer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "exportBreaker",
+      "type": "hv-circuit-breaker",
+      "label": "Export breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exportBreaker/active",
+        "running": "/components/exportBreaker/running",
+        "fault": "/components/exportBreaker/fault",
+        "status": "/components/exportBreaker/status",
+        "open": "/components/exportBreaker/open",
+        "load": "/components/exportBreaker/load",
+        "damage": "/components/exportBreaker/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "load",
+      "type": "motor",
+      "label": "Explicit external electrical demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/load/active",
+        "running": "/components/load/running",
+        "fault": "/components/load/fault",
+        "status": "/components/load/status",
+        "load": "/components/load/load",
+        "speed": "/components/load/speed",
+        "damage": "/components/load/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P01"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "fuel-outlet-to-regulator-inlet",
+      "from": {
+        "component": "fuel",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "regulator",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "Natural gas",
+      "flowBinding": "/flows/fuel-outlet-to-regulator-inlet"
+    },
+    {
+      "id": "regulator-outlet-to-turbine-fuel",
+      "from": {
+        "component": "regulator",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "turbine",
+        "port": "fuel"
+      },
+      "medium": "gas",
+      "label": "Regulated fuel",
+      "flowBinding": "/flows/regulator-outlet-to-turbine-fuel"
+    },
+    {
+      "id": "air-outlet-to-turbine-air",
+      "from": {
+        "component": "air",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "turbine",
+        "port": "air"
+      },
+      "medium": "air",
+      "label": "Combustion air",
+      "flowBinding": "/flows/air-outlet-to-turbine-air"
+    },
+    {
+      "id": "turbine-exhaust-to-exhaust-inlet",
+      "from": {
+        "component": "turbine",
+        "port": "exhaust"
+      },
+      "to": {
+        "component": "exhaust",
+        "port": "inlet"
+      },
+      "medium": "gas",
+      "label": "Exhaust discharge",
+      "flowBinding": "/flows/turbine-exhaust-to-exhaust-inlet"
+    },
+    {
+      "id": "turbine-shaft-to-alternator-shaft",
+      "from": {
+        "component": "turbine",
+        "port": "shaft"
+      },
+      "to": {
+        "component": "alternator",
+        "port": "shaft"
+      },
+      "medium": "mechanical",
+      "label": "Accepted shaft power",
+      "flowBinding": "/flows/turbine-shaft-to-alternator-shaft"
+    },
+    {
+      "id": "alternatorField-field-to-alternator-field",
+      "from": {
+        "component": "alternatorField",
+        "port": "field"
+      },
+      "to": {
+        "component": "alternator",
+        "port": "field"
+      },
+      "medium": "electricity",
+      "label": "DC field",
+      "flowBinding": "/flows/alternatorField-field-to-alternator-field"
+    },
+    {
+      "id": "alternator-monitor-to-alternatorField-feedback",
+      "from": {
+        "component": "alternator",
+        "port": "monitor"
+      },
+      "to": {
+        "component": "alternatorField",
+        "port": "feedback"
+      },
+      "medium": "measurement",
+      "label": "Generator observation",
+      "flowBinding": "/flows/alternator-monitor-to-alternatorField-feedback"
+    },
+    {
+      "id": "alternator-output-to-transformer-primary",
+      "from": {
+        "component": "alternator",
+        "port": "output"
+      },
+      "to": {
+        "component": "transformer",
+        "port": "primary"
+      },
+      "medium": "electricity",
+      "label": "AC generation",
+      "flowBinding": "/flows/alternator-output-to-transformer-primary"
+    },
+    {
+      "id": "transformer-secondary-to-exportBreaker-line",
+      "from": {
+        "component": "transformer",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "Export circuit",
+      "flowBinding": "/flows/transformer-secondary-to-exportBreaker-line"
+    },
+    {
+      "id": "exportBreaker-load-to-load-supply",
+      "from": {
+        "component": "exportBreaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "load",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Delivered AC",
+      "flowBinding": "/flows/exportBreaker-load-to-load-supply"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "station-secondary-to-air-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "air",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-air-supply"
+    },
+    {
+      "id": "station-secondary-to-alternatorField-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "alternatorField",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-alternatorField-supply"
+    },
+    {
+      "id": "dcService-dc-to-exportBreaker-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-exportBreaker-supply"
+    },
+    {
+      "id": "station-secondary-to-turbine-supply",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "turbine",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-turbine-supply"
+    },
+    {
+      "id": "plc-io-to-turbine-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "turbine",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-turbine-control"
+    }
+  ],
+  "views": [
+    {
+      "id": "train",
+      "label": "Air, fuel & turbine",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "fuel",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "regulator",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "air",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "turbine",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exhaust",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "fuel-outlet-to-regulator-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "regulator-outlet-to-turbine-fuel",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "air-outlet-to-turbine-air",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "turbine-exhaust-to-exhaust-inlet",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shaft",
+      "label": "Shaft & electrical conversion",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "turbine",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "alternator",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "alternatorField",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transformer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exportBreaker",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "load",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "turbine-shaft-to-alternator-shaft",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "alternatorField-field-to-alternator-field",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "alternator-monitor-to-alternatorField-feedback",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "alternator-output-to-transformer-primary",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "transformer-secondary-to-exportBreaker-line",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "exportBreaker-load-to-load-supply",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control",
+      "label": "Station service & control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "turbine",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "alternatorField",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exportBreaker",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-alternatorField-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-exportBreaker-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-turbine-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-turbine-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "turbine-enabled",
+      "label": "Equipment enabled",
+      "component": "turbine",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "turbine"
+      }
+    },
+    {
+      "id": "turbine-load",
+      "label": "Requested output / load (%)",
+      "component": "turbine",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "turbine"
+      }
+    },
+    {
+      "id": "turbine-fault",
+      "label": "Inject fictional fault",
+      "component": "turbine",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "turbine",
+        "value": true
+      }
+    },
+    {
+      "id": "turbine-repair",
+      "label": "Repair damage",
+      "component": "turbine",
+      "action": "repair",
+      "arguments": {
+        "equipment": "turbine"
+      }
+    },
+    {
+      "id": "fuel-enabled",
+      "label": "Equipment enabled",
+      "component": "fuel",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "fuel-load",
+      "label": "Requested output / load (%)",
+      "component": "fuel",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "fuel-fault",
+      "label": "Inject fictional fault",
+      "component": "fuel",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "fuel",
+        "value": true
+      }
+    },
+    {
+      "id": "fuel-repair",
+      "label": "Repair damage",
+      "component": "fuel",
+      "action": "repair",
+      "arguments": {
+        "equipment": "fuel"
+      }
+    },
+    {
+      "id": "regulator-enabled",
+      "label": "Equipment enabled",
+      "component": "regulator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "regulator-load",
+      "label": "Requested output / load (%)",
+      "component": "regulator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "regulator-fault",
+      "label": "Inject fictional fault",
+      "component": "regulator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "regulator",
+        "value": true
+      }
+    },
+    {
+      "id": "regulator-repair",
+      "label": "Repair damage",
+      "component": "regulator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "regulator-open",
+      "label": "Flow path open",
+      "component": "regulator",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "regulator"
+      }
+    },
+    {
+      "id": "air-enabled",
+      "label": "Equipment enabled",
+      "component": "air",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-load",
+      "label": "Requested output / load (%)",
+      "component": "air",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-fault",
+      "label": "Inject fictional fault",
+      "component": "air",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "air",
+        "value": true
+      }
+    },
+    {
+      "id": "air-repair",
+      "label": "Repair damage",
+      "component": "air",
+      "action": "repair",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "exhaust-enabled",
+      "label": "Equipment enabled",
+      "component": "exhaust",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exhaust"
+      }
+    },
+    {
+      "id": "exhaust-load",
+      "label": "Requested output / load (%)",
+      "component": "exhaust",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exhaust"
+      }
+    },
+    {
+      "id": "exhaust-fault",
+      "label": "Inject fictional fault",
+      "component": "exhaust",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exhaust",
+        "value": true
+      }
+    },
+    {
+      "id": "exhaust-repair",
+      "label": "Repair damage",
+      "component": "exhaust",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exhaust"
+      }
+    },
+    {
+      "id": "alternator-enabled",
+      "label": "Equipment enabled",
+      "component": "alternator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "alternator"
+      }
+    },
+    {
+      "id": "alternator-load",
+      "label": "Requested output / load (%)",
+      "component": "alternator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "alternator"
+      }
+    },
+    {
+      "id": "alternator-fault",
+      "label": "Inject fictional fault",
+      "component": "alternator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "alternator",
+        "value": true
+      }
+    },
+    {
+      "id": "alternator-repair",
+      "label": "Repair damage",
+      "component": "alternator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "alternator"
+      }
+    },
+    {
+      "id": "alternator-mode-forward",
+      "label": "Forward conversion",
+      "component": "alternator",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "alternator",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "alternator-mode-idle",
+      "label": "Idle conversion",
+      "component": "alternator",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "alternator",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "alternatorField-enabled",
+      "label": "Equipment enabled",
+      "component": "alternatorField",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "alternatorField"
+      }
+    },
+    {
+      "id": "alternatorField-load",
+      "label": "Requested output / load (%)",
+      "component": "alternatorField",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "alternatorField"
+      }
+    },
+    {
+      "id": "alternatorField-fault",
+      "label": "Inject fictional fault",
+      "component": "alternatorField",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "alternatorField",
+        "value": true
+      }
+    },
+    {
+      "id": "alternatorField-repair",
+      "label": "Repair damage",
+      "component": "alternatorField",
+      "action": "repair",
+      "arguments": {
+        "equipment": "alternatorField"
+      }
+    },
+    {
+      "id": "transformer-enabled",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-load",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-fault",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transformer",
+        "value": true
+      }
+    },
+    {
+      "id": "transformer-repair",
+      "label": "Repair damage",
+      "component": "transformer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "exportBreaker-enabled",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-load",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-fault",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exportBreaker",
+        "value": true
+      }
+    },
+    {
+      "id": "exportBreaker-repair",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-open",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "load-enabled",
+      "label": "Equipment enabled",
+      "component": "load",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-load",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-fault",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "load",
+        "value": true
+      }
+    },
+    {
+      "id": "load-repair",
+      "label": "Repair damage",
+      "component": "load",
+      "action": "repair",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "turbine-enabled-control",
+      "label": "Equipment enabled",
+      "component": "turbine",
+      "kind": "toggle",
+      "command": "turbine-enabled",
+      "binding": "/controls/turbine/enabled"
+    },
+    {
+      "id": "turbine-load-control",
+      "label": "Requested output / load (%)",
+      "component": "turbine",
+      "kind": "range",
+      "command": "turbine-load",
+      "binding": "/controls/turbine/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "turbine-fault-control",
+      "label": "Inject fictional fault",
+      "component": "turbine",
+      "kind": "button",
+      "command": "turbine-fault"
+    },
+    {
+      "id": "turbine-repair-control",
+      "label": "Repair damage",
+      "component": "turbine",
+      "kind": "button",
+      "command": "turbine-repair"
+    },
+    {
+      "id": "fuel-enabled-control",
+      "label": "Equipment enabled",
+      "component": "fuel",
+      "kind": "toggle",
+      "command": "fuel-enabled",
+      "binding": "/controls/fuel/enabled"
+    },
+    {
+      "id": "fuel-load-control",
+      "label": "Requested output / load (%)",
+      "component": "fuel",
+      "kind": "range",
+      "command": "fuel-load",
+      "binding": "/controls/fuel/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "fuel-fault-control",
+      "label": "Inject fictional fault",
+      "component": "fuel",
+      "kind": "button",
+      "command": "fuel-fault"
+    },
+    {
+      "id": "fuel-repair-control",
+      "label": "Repair damage",
+      "component": "fuel",
+      "kind": "button",
+      "command": "fuel-repair"
+    },
+    {
+      "id": "regulator-enabled-control",
+      "label": "Equipment enabled",
+      "component": "regulator",
+      "kind": "toggle",
+      "command": "regulator-enabled",
+      "binding": "/controls/regulator/enabled"
+    },
+    {
+      "id": "regulator-load-control",
+      "label": "Requested output / load (%)",
+      "component": "regulator",
+      "kind": "range",
+      "command": "regulator-load",
+      "binding": "/controls/regulator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "regulator-fault-control",
+      "label": "Inject fictional fault",
+      "component": "regulator",
+      "kind": "button",
+      "command": "regulator-fault"
+    },
+    {
+      "id": "regulator-repair-control",
+      "label": "Repair damage",
+      "component": "regulator",
+      "kind": "button",
+      "command": "regulator-repair"
+    },
+    {
+      "id": "regulator-open-control",
+      "label": "Flow path open",
+      "component": "regulator",
+      "kind": "toggle",
+      "command": "regulator-open",
+      "binding": "/controls/regulator/open"
+    },
+    {
+      "id": "air-enabled-control",
+      "label": "Equipment enabled",
+      "component": "air",
+      "kind": "toggle",
+      "command": "air-enabled",
+      "binding": "/controls/air/enabled"
+    },
+    {
+      "id": "air-load-control",
+      "label": "Requested output / load (%)",
+      "component": "air",
+      "kind": "range",
+      "command": "air-load",
+      "binding": "/controls/air/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "air-fault-control",
+      "label": "Inject fictional fault",
+      "component": "air",
+      "kind": "button",
+      "command": "air-fault"
+    },
+    {
+      "id": "air-repair-control",
+      "label": "Repair damage",
+      "component": "air",
+      "kind": "button",
+      "command": "air-repair"
+    },
+    {
+      "id": "exhaust-enabled-control",
+      "label": "Equipment enabled",
+      "component": "exhaust",
+      "kind": "toggle",
+      "command": "exhaust-enabled",
+      "binding": "/controls/exhaust/enabled"
+    },
+    {
+      "id": "exhaust-load-control",
+      "label": "Requested output / load (%)",
+      "component": "exhaust",
+      "kind": "range",
+      "command": "exhaust-load",
+      "binding": "/controls/exhaust/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exhaust-fault-control",
+      "label": "Inject fictional fault",
+      "component": "exhaust",
+      "kind": "button",
+      "command": "exhaust-fault"
+    },
+    {
+      "id": "exhaust-repair-control",
+      "label": "Repair damage",
+      "component": "exhaust",
+      "kind": "button",
+      "command": "exhaust-repair"
+    },
+    {
+      "id": "alternator-enabled-control",
+      "label": "Equipment enabled",
+      "component": "alternator",
+      "kind": "toggle",
+      "command": "alternator-enabled",
+      "binding": "/controls/alternator/enabled"
+    },
+    {
+      "id": "alternator-load-control",
+      "label": "Requested output / load (%)",
+      "component": "alternator",
+      "kind": "range",
+      "command": "alternator-load",
+      "binding": "/controls/alternator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "alternator-fault-control",
+      "label": "Inject fictional fault",
+      "component": "alternator",
+      "kind": "button",
+      "command": "alternator-fault"
+    },
+    {
+      "id": "alternator-repair-control",
+      "label": "Repair damage",
+      "component": "alternator",
+      "kind": "button",
+      "command": "alternator-repair"
+    },
+    {
+      "id": "alternator-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "alternator",
+      "kind": "button",
+      "command": "alternator-mode-forward"
+    },
+    {
+      "id": "alternator-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "alternator",
+      "kind": "button",
+      "command": "alternator-mode-idle"
+    },
+    {
+      "id": "alternatorField-enabled-control",
+      "label": "Equipment enabled",
+      "component": "alternatorField",
+      "kind": "toggle",
+      "command": "alternatorField-enabled",
+      "binding": "/controls/alternatorField/enabled"
+    },
+    {
+      "id": "alternatorField-load-control",
+      "label": "Requested output / load (%)",
+      "component": "alternatorField",
+      "kind": "range",
+      "command": "alternatorField-load",
+      "binding": "/controls/alternatorField/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "alternatorField-fault-control",
+      "label": "Inject fictional fault",
+      "component": "alternatorField",
+      "kind": "button",
+      "command": "alternatorField-fault"
+    },
+    {
+      "id": "alternatorField-repair-control",
+      "label": "Repair damage",
+      "component": "alternatorField",
+      "kind": "button",
+      "command": "alternatorField-repair"
+    },
+    {
+      "id": "transformer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "kind": "toggle",
+      "command": "transformer-enabled",
+      "binding": "/controls/transformer/enabled"
+    },
+    {
+      "id": "transformer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "kind": "range",
+      "command": "transformer-load",
+      "binding": "/controls/transformer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transformer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-fault"
+    },
+    {
+      "id": "transformer-repair-control",
+      "label": "Repair damage",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-repair"
+    },
+    {
+      "id": "exportBreaker-enabled-control",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-enabled",
+      "binding": "/controls/exportBreaker/enabled"
+    },
+    {
+      "id": "exportBreaker-load-control",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "kind": "range",
+      "command": "exportBreaker-load",
+      "binding": "/controls/exportBreaker/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exportBreaker-fault-control",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-fault"
+    },
+    {
+      "id": "exportBreaker-repair-control",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-repair"
+    },
+    {
+      "id": "exportBreaker-open-control",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-open",
+      "binding": "/controls/exportBreaker/open"
+    },
+    {
+      "id": "load-enabled-control",
+      "label": "Equipment enabled",
+      "component": "load",
+      "kind": "toggle",
+      "command": "load-enabled",
+      "binding": "/controls/load/enabled"
+    },
+    {
+      "id": "load-load-control",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "kind": "range",
+      "command": "load-load",
+      "binding": "/controls/load/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "load-fault-control",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "kind": "button",
+      "command": "load-fault"
+    },
+    {
+      "id": "load-repair-control",
+      "label": "Repair damage",
+      "component": "load",
+      "kind": "button",
+      "command": "load-repair"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P01",
+      "label": "P01 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [How Gas Turbine Power Plants Work](https://www.energy.gov/hgeo/how-gas-turbine-power-plants-work), updated 2023-06-22",
+      "description": "Full short article, especially the three machine sections and exhaust heat recovery | Supports: Distinguish a combustion turbine from a reciprocating genset. A combined-cycle view connects turbine exhaust to an HRSG and a separate steam cycle. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

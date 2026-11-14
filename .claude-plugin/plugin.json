@@ -1,9 +1,11 @@
 {
   "name": "cad-agent",
   "version": "0.41.1",
-  "description": "Mechanical design workflows and independent review agents",
-  "license": "MIT",
-  "skills": ["./.agents/skills/"],
+  "description": "Engineering workflows, reusable viewers, SCADA models and independent review agents",
+  "license": "MIT AND LicenseRef-SCADA-Retained-Terms",
+  "skills": [
+    "./.agents/skills/"
+  ],
   "agents": [
     "./.agents/agents/cad-pr-reviewer.md",
     "./.agents/agents/cad-resume.md"

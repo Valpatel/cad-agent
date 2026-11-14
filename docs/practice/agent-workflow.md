@@ -185,6 +185,9 @@ agents: these also need what cad-agent can't check from here:
 | `ssh` | on PATH | `cad-remote-runs` |
 | `rsync` | on PATH; only to copy files that are not in git | `cad-remote-runs` |
 | Playwright and Google Chrome | the module in cad-agent's Python, and Chrome itself (not Chromium) on PATH or in its usual place; only to download a new part | `mcmaster-parts` |
+| `node` 22.22.2+, 24.15.0+, or 26+ | local `node --version`, no network | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
+| `npm` | on PATH | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
+| Python Playwright and local Chromium | Python module plus PATH Chromium or Playwright’s installed executable; launch and OS libraries are verified by the browser checks | `scada-component-authoring`, `scada-system-authoring`, `scada-model-adaptation`, `scada-viewer-review`, `scada-distribution-review`, `repository-documentation` |
 | write access to the repository it works in | not checkable here: you know whether you can push, open and merge PRs there | `cad-pr-review`, `cad-work-tracking` |
 | a compute host you can reach over `ssh` | not checkable here | `cad-remote-runs` |
 
@@ -205,6 +208,12 @@ your own repositories, or where you have been given write access; an agent shoul
 | Skill | [`mcmaster-parts`](../../.agents/skills/mcmaster-parts/SKILL.md) | Bought hardware: real part numbers and manufacturer models |
 | Skill | [`sheet-metal-hardware`](../../.agents/skills/sheet-metal-hardware/SKILL.md) | Bent sheet parts with clinch nuts, studs or rivets: bends, placement, seams and price, checked in order ([page](../sheet-metal-hardware.md)) |
 | Skill | [`cad-supply-chain`](../../.agents/skills/cad-supply-chain/SKILL.md) | Before adding a dependency, vendored file, catalogue entry or link, or recommending a tool: the supply-chain report, its rows in the PR, what blocks a merge or an adoption |
+| Skill | [`scada-component-authoring`](../../.agents/skills/scada-component-authoring/SKILL.md) | Author equipment artwork, metadata, states and generated previews |
+| Skill | [`scada-system-authoring`](../../.agents/skills/scada-system-authoring/SKILL.md) | Describe one system with shared model state and multiple views |
+| Skill | [`scada-model-adaptation`](../../.agents/skills/scada-model-adaptation/SKILL.md) | Replace equations or connect an external model with explicit units and evidence |
+| Skill | [`scada-viewer-review`](../../.agents/skills/scada-viewer-review/SKILL.md) | Inspect diagram controls, camera, lifecycle, states and accessibility in a browser |
+| Skill | [`scada-distribution-review`](../../.agents/skills/scada-distribution-review/SKILL.md) | Verify self-contained SCADA runtime and source distributions |
+| Skill | [`repository-documentation`](../../.agents/skills/repository-documentation/SKILL.md) | Maintain source-owned folder maps, galleries and agent documentation |
 | Subagent | [`cad-pr-reviewer`](../../.agents/agents/cad-pr-reviewer.md) | Reviews a PR it did not write: verifies, posts inline comments and a summary, never merges |
 | Subagent | [`cad-resume`](../../.agents/agents/cad-resume.md) | After a session ended: rebuilds the state from GitHub, checkouts and run logs; reports next steps |
 

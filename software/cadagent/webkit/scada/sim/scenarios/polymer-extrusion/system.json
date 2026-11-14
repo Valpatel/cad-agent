@@ -1,0 +1,2735 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "polymer-extrusion",
+    "label": "Polymer extrusion",
+    "description": "Receive, dry and meter generic material, then blend, extrude, form, cool and pack. Material chemistry, tooling and processing recipes are not represented."
+  },
+  "components": [
+    {
+      "id": "resin",
+      "type": "silo",
+      "label": "Material receiving silo",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/resin/active",
+        "running": "/components/resin/running",
+        "fault": "/components/resin/fault",
+        "status": "/components/resin/status",
+        "level": "/components/resin/level",
+        "damage": "/components/resin/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fill",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dryer",
+      "type": "dryer",
+      "label": "Material drying stage",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 90,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dryer/active",
+        "running": "/components/dryer/running",
+        "fault": "/components/dryer/fault",
+        "status": "/components/dryer/status",
+        "load": "/components/dryer/load",
+        "speed": "/components/dryer/speed",
+        "temperature": "/components/dryer/temperature",
+        "damage": "/components/dryer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "hopper",
+      "type": "weigh-hopper",
+      "label": "Blend weighing hopper",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/hopper/active",
+        "running": "/components/hopper/running",
+        "fault": "/components/hopper/fault",
+        "status": "/components/hopper/status",
+        "level": "/components/hopper/level",
+        "load": "/components/hopper/load",
+        "damage": "/components/hopper/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "feeder",
+      "type": "screw-feeder",
+      "label": "Metering feeder",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feeder/active",
+        "running": "/components/feeder/running",
+        "fault": "/components/feeder/fault",
+        "status": "/components/feeder/status",
+        "load": "/components/feeder/load",
+        "speed": "/components/feeder/speed",
+        "damage": "/components/feeder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "blend",
+      "type": "drum-mixer",
+      "label": "Feed blending drum",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/blend/active",
+        "running": "/components/blend/running",
+        "fault": "/components/blend/fault",
+        "status": "/components/blend/status",
+        "load": "/components/blend/load",
+        "speed": "/components/blend/speed",
+        "damage": "/components/blend/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "extruder",
+      "type": "extruder",
+      "label": "Extrusion line",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/extruder/active",
+        "running": "/components/extruder/running",
+        "fault": "/components/extruder/fault",
+        "status": "/components/extruder/status",
+        "load": "/components/extruder/load",
+        "speed": "/components/extruder/speed",
+        "damage": "/components/extruder/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "coolant-in",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "former",
+      "type": "forming-machine",
+      "label": "Product forming station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/former/active",
+        "running": "/components/former/running",
+        "fault": "/components/former/fault",
+        "status": "/components/former/status",
+        "load": "/components/former/load",
+        "speed": "/components/former/speed",
+        "damage": "/components/former/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "coolingTransfer",
+      "type": "conveyor",
+      "label": "Cooling transfer section",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/coolingTransfer/active",
+        "running": "/components/coolingTransfer/running",
+        "fault": "/components/coolingTransfer/fault",
+        "status": "/components/coolingTransfer/status",
+        "load": "/components/coolingTransfer/load",
+        "speed": "/components/coolingTransfer/speed",
+        "damage": "/components/coolingTransfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "cutting",
+      "type": "forming-machine",
+      "label": "Length-forming station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cutting/active",
+        "running": "/components/cutting/running",
+        "fault": "/components/cutting/fault",
+        "status": "/components/cutting/status",
+        "load": "/components/cutting/load",
+        "speed": "/components/cutting/speed",
+        "damage": "/components/cutting/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Product packaging",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "tower",
+      "type": "cooling-tower",
+      "label": "Illustrative cooling-water tower",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 32,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/tower/active",
+        "running": "/components/tower/running",
+        "fault": "/components/tower/fault",
+        "status": "/components/tower/status",
+        "load": "/components/tower/load",
+        "speed": "/components/tower/speed",
+        "temperature": "/components/tower/temperature",
+        "damage": "/components/tower/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "distribution",
+      "type": "busbar",
+      "label": "Extrusion power distribution",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/distribution/active",
+        "running": "/components/distribution/running",
+        "fault": "/components/distribution/fault",
+        "status": "/components/distribution/status",
+        "load": "/components/distribution/load",
+        "damage": "/components/distribution/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "branch-a",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "branch-b",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "branch-c",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Extrusion controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "temperature",
+      "type": "temperature-sensor",
+      "label": "Barrel display probe",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/temperature/active",
+        "running": "/components/temperature/running",
+        "fault": "/components/temperature/fault",
+        "status": "/components/temperature/status",
+        "value": "/components/temperature/value",
+        "damage": "/components/temperature/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "resin-to-dryer",
+      "from": {
+        "component": "resin",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/resin-to-dryer",
+      "label": "Material receiving silo \u2192 Material drying stage"
+    },
+    {
+      "id": "dryer-to-hopper",
+      "from": {
+        "component": "dryer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "hopper",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/dryer-to-hopper",
+      "label": "Material drying stage \u2192 Blend weighing hopper"
+    },
+    {
+      "id": "hopper-to-feeder",
+      "from": {
+        "component": "hopper",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "feeder",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/hopper-to-feeder",
+      "label": "Blend weighing hopper \u2192 Metering feeder"
+    },
+    {
+      "id": "feeder-to-blend",
+      "from": {
+        "component": "feeder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "blend",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/feeder-to-blend",
+      "label": "Metering feeder \u2192 Feed blending drum"
+    },
+    {
+      "id": "blend-to-extruder",
+      "from": {
+        "component": "blend",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "extruder",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/blend-to-extruder",
+      "label": "Feed blending drum \u2192 Extrusion line"
+    },
+    {
+      "id": "extruder-to-former",
+      "from": {
+        "component": "extruder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "former",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/extruder-to-former",
+      "label": "Extrusion line \u2192 Product forming station"
+    },
+    {
+      "id": "former-to-coolingTransfer",
+      "from": {
+        "component": "former",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "coolingTransfer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/former-to-coolingTransfer",
+      "label": "Product forming station \u2192 Cooling transfer section"
+    },
+    {
+      "id": "coolingTransfer-to-cutting",
+      "from": {
+        "component": "coolingTransfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cutting",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/coolingTransfer-to-cutting",
+      "label": "Cooling transfer section \u2192 Length-forming station"
+    },
+    {
+      "id": "cutting-to-packer",
+      "from": {
+        "component": "cutting",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/cutting-to-packer",
+      "label": "Length-forming station \u2192 Product packaging"
+    },
+    {
+      "id": "tower-to-extruder",
+      "from": {
+        "component": "tower",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "extruder",
+        "port": "coolant-in"
+      },
+      "medium": "thermal-fluid",
+      "flowBinding": "/flows/tower-to-extruder",
+      "label": "Illustrative cooling-water tower \u2192 Extrusion line"
+    },
+    {
+      "id": "power-to-distribution",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "distribution",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-distribution",
+      "label": "Demonstration site power \u2192 Extrusion power distribution"
+    },
+    {
+      "id": "distribution-to-dryer",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-dryer",
+      "label": "Extrusion power distribution \u2192 Material drying stage"
+    },
+    {
+      "id": "distribution-to-hopper",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "hopper",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-hopper",
+      "label": "Extrusion power distribution \u2192 Blend weighing hopper"
+    },
+    {
+      "id": "distribution-to-feeder",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "feeder",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-feeder",
+      "label": "Extrusion power distribution \u2192 Metering feeder"
+    },
+    {
+      "id": "distribution-to-blend",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "blend",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-blend",
+      "label": "Extrusion power distribution \u2192 Feed blending drum"
+    },
+    {
+      "id": "distribution-to-extruder",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "extruder",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-extruder",
+      "label": "Extrusion power distribution \u2192 Extrusion line"
+    },
+    {
+      "id": "distribution-to-former",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "former",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-former",
+      "label": "Extrusion power distribution \u2192 Product forming station"
+    },
+    {
+      "id": "distribution-to-coolingTransfer",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "coolingTransfer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-coolingTransfer",
+      "label": "Extrusion power distribution \u2192 Cooling transfer section"
+    },
+    {
+      "id": "distribution-to-cutting",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "cutting",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-cutting",
+      "label": "Extrusion power distribution \u2192 Length-forming station"
+    },
+    {
+      "id": "distribution-to-packer",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-packer",
+      "label": "Extrusion power distribution \u2192 Product packaging"
+    },
+    {
+      "id": "distribution-to-tower",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "tower",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-tower",
+      "label": "Extrusion power distribution \u2192 Illustrative cooling-water tower"
+    },
+    {
+      "id": "distribution-to-controller",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-controller",
+      "label": "Extrusion power distribution \u2192 Extrusion controller"
+    },
+    {
+      "id": "distribution-to-temperature",
+      "from": {
+        "component": "distribution",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/distribution-to-temperature",
+      "label": "Extrusion power distribution \u2192 Barrel display probe"
+    },
+    {
+      "id": "extruder-to-temperature",
+      "from": {
+        "component": "extruder",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "temperature",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/extruder-to-temperature",
+      "label": "Extrusion line \u2192 Barrel display probe"
+    },
+    {
+      "id": "temperature-to-controller",
+      "from": {
+        "component": "temperature",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/temperature-to-controller",
+      "label": "Barrel display probe \u2192 Extrusion controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "resin",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hopper",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feeder",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "blend",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "extruder",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "former",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingTransfer",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cutting",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "resin-to-dryer",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dryer-to-hopper",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "hopper-to-feeder",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "feeder-to-blend",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "blend-to-extruder",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "extruder-to-former",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "former-to-coolingTransfer",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "coolingTransfer-to-cutting",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "cutting-to-packer",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "tower",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "distribution",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "feeder",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cutting",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-distribution",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "distribution-to-feeder",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 284,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "distribution-to-cutting",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 596
+            },
+            {
+              "x": 284,
+              "y": 715
+            },
+            {
+              "x": 260,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "distribution-to-tower",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 36
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "distribution-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "distribution-to-temperature",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "extruder",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "former",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "coolingTransfer",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cutting",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "temperature",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "extruder-to-former",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "former-to-coolingTransfer",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "coolingTransfer-to-cutting",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "cutting-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "extruder-to-temperature",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "temperature-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "resin-enabled",
+      "label": "Material receiving silo \u00b7 Enabled",
+      "component": "resin",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "resin"
+      }
+    },
+    {
+      "id": "resin-load",
+      "label": "Material receiving silo \u00b7 Requested load",
+      "component": "resin",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "resin"
+      }
+    },
+    {
+      "id": "resin-fault",
+      "label": "Material receiving silo \u00b7 Injected failure",
+      "component": "resin",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "resin"
+      }
+    },
+    {
+      "id": "resin-repair",
+      "label": "Repair Material receiving silo",
+      "component": "resin",
+      "action": "repair",
+      "arguments": {
+        "equipment": "resin"
+      }
+    },
+    {
+      "id": "dryer-enabled",
+      "label": "Material drying stage \u00b7 Enabled",
+      "component": "dryer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-load",
+      "label": "Material drying stage \u00b7 Requested load",
+      "component": "dryer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-fault",
+      "label": "Material drying stage \u00b7 Injected failure",
+      "component": "dryer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-repair",
+      "label": "Repair Material drying stage",
+      "component": "dryer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "hopper-enabled",
+      "label": "Blend weighing hopper \u00b7 Enabled",
+      "component": "hopper",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "hopper"
+      }
+    },
+    {
+      "id": "hopper-load",
+      "label": "Blend weighing hopper \u00b7 Requested load",
+      "component": "hopper",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "hopper"
+      }
+    },
+    {
+      "id": "hopper-fault",
+      "label": "Blend weighing hopper \u00b7 Injected failure",
+      "component": "hopper",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "hopper"
+      }
+    },
+    {
+      "id": "hopper-repair",
+      "label": "Repair Blend weighing hopper",
+      "component": "hopper",
+      "action": "repair",
+      "arguments": {
+        "equipment": "hopper"
+      }
+    },
+    {
+      "id": "feeder-enabled",
+      "label": "Metering feeder \u00b7 Enabled",
+      "component": "feeder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-load",
+      "label": "Metering feeder \u00b7 Requested load",
+      "component": "feeder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-fault",
+      "label": "Metering feeder \u00b7 Injected failure",
+      "component": "feeder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "feeder-repair",
+      "label": "Repair Metering feeder",
+      "component": "feeder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feeder"
+      }
+    },
+    {
+      "id": "blend-enabled",
+      "label": "Feed blending drum \u00b7 Enabled",
+      "component": "blend",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-load",
+      "label": "Feed blending drum \u00b7 Requested load",
+      "component": "blend",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-fault",
+      "label": "Feed blending drum \u00b7 Injected failure",
+      "component": "blend",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-repair",
+      "label": "Repair Feed blending drum",
+      "component": "blend",
+      "action": "repair",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "extruder-enabled",
+      "label": "Extrusion line \u00b7 Enabled",
+      "component": "extruder",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "extruder"
+      }
+    },
+    {
+      "id": "extruder-load",
+      "label": "Extrusion line \u00b7 Requested load",
+      "component": "extruder",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "extruder"
+      }
+    },
+    {
+      "id": "extruder-fault",
+      "label": "Extrusion line \u00b7 Injected failure",
+      "component": "extruder",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "extruder"
+      }
+    },
+    {
+      "id": "extruder-repair",
+      "label": "Repair Extrusion line",
+      "component": "extruder",
+      "action": "repair",
+      "arguments": {
+        "equipment": "extruder"
+      }
+    },
+    {
+      "id": "former-enabled",
+      "label": "Product forming station \u00b7 Enabled",
+      "component": "former",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "former"
+      }
+    },
+    {
+      "id": "former-load",
+      "label": "Product forming station \u00b7 Requested load",
+      "component": "former",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "former"
+      }
+    },
+    {
+      "id": "former-fault",
+      "label": "Product forming station \u00b7 Injected failure",
+      "component": "former",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "former"
+      }
+    },
+    {
+      "id": "former-repair",
+      "label": "Repair Product forming station",
+      "component": "former",
+      "action": "repair",
+      "arguments": {
+        "equipment": "former"
+      }
+    },
+    {
+      "id": "coolingTransfer-enabled",
+      "label": "Cooling transfer section \u00b7 Enabled",
+      "component": "coolingTransfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "coolingTransfer-load",
+      "label": "Cooling transfer section \u00b7 Requested load",
+      "component": "coolingTransfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "coolingTransfer-fault",
+      "label": "Cooling transfer section \u00b7 Injected failure",
+      "component": "coolingTransfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "coolingTransfer-repair",
+      "label": "Repair Cooling transfer section",
+      "component": "coolingTransfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "coolingTransfer"
+      }
+    },
+    {
+      "id": "cutting-enabled",
+      "label": "Length-forming station \u00b7 Enabled",
+      "component": "cutting",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cutting"
+      }
+    },
+    {
+      "id": "cutting-load",
+      "label": "Length-forming station \u00b7 Requested load",
+      "component": "cutting",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cutting"
+      }
+    },
+    {
+      "id": "cutting-fault",
+      "label": "Length-forming station \u00b7 Injected failure",
+      "component": "cutting",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cutting"
+      }
+    },
+    {
+      "id": "cutting-repair",
+      "label": "Repair Length-forming station",
+      "component": "cutting",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cutting"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Product packaging \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Product packaging \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Product packaging \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Product packaging",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "tower-enabled",
+      "label": "Illustrative cooling-water tower \u00b7 Enabled",
+      "component": "tower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "tower"
+      }
+    },
+    {
+      "id": "tower-load",
+      "label": "Illustrative cooling-water tower \u00b7 Requested load",
+      "component": "tower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "tower"
+      }
+    },
+    {
+      "id": "tower-fault",
+      "label": "Illustrative cooling-water tower \u00b7 Injected failure",
+      "component": "tower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "tower"
+      }
+    },
+    {
+      "id": "tower-repair",
+      "label": "Repair Illustrative cooling-water tower",
+      "component": "tower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "tower"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "distribution-enabled",
+      "label": "Extrusion power distribution \u00b7 Enabled",
+      "component": "distribution",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "distribution"
+      }
+    },
+    {
+      "id": "distribution-load",
+      "label": "Extrusion power distribution \u00b7 Requested load",
+      "component": "distribution",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "distribution"
+      }
+    },
+    {
+      "id": "distribution-fault",
+      "label": "Extrusion power distribution \u00b7 Injected failure",
+      "component": "distribution",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "distribution"
+      }
+    },
+    {
+      "id": "distribution-repair",
+      "label": "Repair Extrusion power distribution",
+      "component": "distribution",
+      "action": "repair",
+      "arguments": {
+        "equipment": "distribution"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Extrusion controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Extrusion controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Extrusion controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Extrusion controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "temperature-enabled",
+      "label": "Barrel display probe \u00b7 Enabled",
+      "component": "temperature",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-load",
+      "label": "Barrel display probe \u00b7 Requested load",
+      "component": "temperature",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-fault",
+      "label": "Barrel display probe \u00b7 Injected failure",
+      "component": "temperature",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "temperature-repair",
+      "label": "Repair Barrel display probe",
+      "component": "temperature",
+      "action": "repair",
+      "arguments": {
+        "equipment": "temperature"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "resin-enabled-control",
+      "label": "Enabled",
+      "component": "resin",
+      "kind": "toggle",
+      "command": "resin-enabled",
+      "binding": "/controls/resin/enabled"
+    },
+    {
+      "id": "resin-load-control",
+      "label": "Requested load",
+      "component": "resin",
+      "kind": "range",
+      "command": "resin-load",
+      "binding": "/controls/resin/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "resin-fault-control",
+      "label": "Injected failure",
+      "component": "resin",
+      "kind": "toggle",
+      "command": "resin-fault",
+      "binding": "/controls/resin/fault"
+    },
+    {
+      "id": "resin-repair-control",
+      "label": "Repair component",
+      "component": "resin",
+      "kind": "button",
+      "command": "resin-repair"
+    },
+    {
+      "id": "dryer-enabled-control",
+      "label": "Enabled",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-enabled",
+      "binding": "/controls/dryer/enabled"
+    },
+    {
+      "id": "dryer-load-control",
+      "label": "Requested load",
+      "component": "dryer",
+      "kind": "range",
+      "command": "dryer-load",
+      "binding": "/controls/dryer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dryer-fault-control",
+      "label": "Injected failure",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-fault",
+      "binding": "/controls/dryer/fault"
+    },
+    {
+      "id": "dryer-repair-control",
+      "label": "Repair component",
+      "component": "dryer",
+      "kind": "button",
+      "command": "dryer-repair"
+    },
+    {
+      "id": "hopper-enabled-control",
+      "label": "Enabled",
+      "component": "hopper",
+      "kind": "toggle",
+      "command": "hopper-enabled",
+      "binding": "/controls/hopper/enabled"
+    },
+    {
+      "id": "hopper-load-control",
+      "label": "Requested load",
+      "component": "hopper",
+      "kind": "range",
+      "command": "hopper-load",
+      "binding": "/controls/hopper/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "hopper-fault-control",
+      "label": "Injected failure",
+      "component": "hopper",
+      "kind": "toggle",
+      "command": "hopper-fault",
+      "binding": "/controls/hopper/fault"
+    },
+    {
+      "id": "hopper-repair-control",
+      "label": "Repair component",
+      "component": "hopper",
+      "kind": "button",
+      "command": "hopper-repair"
+    },
+    {
+      "id": "feeder-enabled-control",
+      "label": "Enabled",
+      "component": "feeder",
+      "kind": "toggle",
+      "command": "feeder-enabled",
+      "binding": "/controls/feeder/enabled"
+    },
+    {
+      "id": "feeder-load-control",
+      "label": "Requested load",
+      "component": "feeder",
+      "kind": "range",
+      "command": "feeder-load",
+      "binding": "/controls/feeder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feeder-fault-control",
+      "label": "Injected failure",
+      "component": "feeder",
+      "kind": "toggle",
+      "command": "feeder-fault",
+      "binding": "/controls/feeder/fault"
+    },
+    {
+      "id": "feeder-repair-control",
+      "label": "Repair component",
+      "component": "feeder",
+      "kind": "button",
+      "command": "feeder-repair"
+    },
+    {
+      "id": "blend-enabled-control",
+      "label": "Enabled",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-enabled",
+      "binding": "/controls/blend/enabled"
+    },
+    {
+      "id": "blend-load-control",
+      "label": "Requested load",
+      "component": "blend",
+      "kind": "range",
+      "command": "blend-load",
+      "binding": "/controls/blend/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "blend-fault-control",
+      "label": "Injected failure",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-fault",
+      "binding": "/controls/blend/fault"
+    },
+    {
+      "id": "blend-repair-control",
+      "label": "Repair component",
+      "component": "blend",
+      "kind": "button",
+      "command": "blend-repair"
+    },
+    {
+      "id": "extruder-enabled-control",
+      "label": "Enabled",
+      "component": "extruder",
+      "kind": "toggle",
+      "command": "extruder-enabled",
+      "binding": "/controls/extruder/enabled"
+    },
+    {
+      "id": "extruder-load-control",
+      "label": "Requested load",
+      "component": "extruder",
+      "kind": "range",
+      "command": "extruder-load",
+      "binding": "/controls/extruder/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "extruder-fault-control",
+      "label": "Injected failure",
+      "component": "extruder",
+      "kind": "toggle",
+      "command": "extruder-fault",
+      "binding": "/controls/extruder/fault"
+    },
+    {
+      "id": "extruder-repair-control",
+      "label": "Repair component",
+      "component": "extruder",
+      "kind": "button",
+      "command": "extruder-repair"
+    },
+    {
+      "id": "former-enabled-control",
+      "label": "Enabled",
+      "component": "former",
+      "kind": "toggle",
+      "command": "former-enabled",
+      "binding": "/controls/former/enabled"
+    },
+    {
+      "id": "former-load-control",
+      "label": "Requested load",
+      "component": "former",
+      "kind": "range",
+      "command": "former-load",
+      "binding": "/controls/former/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "former-fault-control",
+      "label": "Injected failure",
+      "component": "former",
+      "kind": "toggle",
+      "command": "former-fault",
+      "binding": "/controls/former/fault"
+    },
+    {
+      "id": "former-repair-control",
+      "label": "Repair component",
+      "component": "former",
+      "kind": "button",
+      "command": "former-repair"
+    },
+    {
+      "id": "coolingTransfer-enabled-control",
+      "label": "Enabled",
+      "component": "coolingTransfer",
+      "kind": "toggle",
+      "command": "coolingTransfer-enabled",
+      "binding": "/controls/coolingTransfer/enabled"
+    },
+    {
+      "id": "coolingTransfer-load-control",
+      "label": "Requested load",
+      "component": "coolingTransfer",
+      "kind": "range",
+      "command": "coolingTransfer-load",
+      "binding": "/controls/coolingTransfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "coolingTransfer-fault-control",
+      "label": "Injected failure",
+      "component": "coolingTransfer",
+      "kind": "toggle",
+      "command": "coolingTransfer-fault",
+      "binding": "/controls/coolingTransfer/fault"
+    },
+    {
+      "id": "coolingTransfer-repair-control",
+      "label": "Repair component",
+      "component": "coolingTransfer",
+      "kind": "button",
+      "command": "coolingTransfer-repair"
+    },
+    {
+      "id": "cutting-enabled-control",
+      "label": "Enabled",
+      "component": "cutting",
+      "kind": "toggle",
+      "command": "cutting-enabled",
+      "binding": "/controls/cutting/enabled"
+    },
+    {
+      "id": "cutting-load-control",
+      "label": "Requested load",
+      "component": "cutting",
+      "kind": "range",
+      "command": "cutting-load",
+      "binding": "/controls/cutting/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cutting-fault-control",
+      "label": "Injected failure",
+      "component": "cutting",
+      "kind": "toggle",
+      "command": "cutting-fault",
+      "binding": "/controls/cutting/fault"
+    },
+    {
+      "id": "cutting-repair-control",
+      "label": "Repair component",
+      "component": "cutting",
+      "kind": "button",
+      "command": "cutting-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "tower-enabled-control",
+      "label": "Enabled",
+      "component": "tower",
+      "kind": "toggle",
+      "command": "tower-enabled",
+      "binding": "/controls/tower/enabled"
+    },
+    {
+      "id": "tower-load-control",
+      "label": "Requested load",
+      "component": "tower",
+      "kind": "range",
+      "command": "tower-load",
+      "binding": "/controls/tower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "tower-fault-control",
+      "label": "Injected failure",
+      "component": "tower",
+      "kind": "toggle",
+      "command": "tower-fault",
+      "binding": "/controls/tower/fault"
+    },
+    {
+      "id": "tower-repair-control",
+      "label": "Repair component",
+      "component": "tower",
+      "kind": "button",
+      "command": "tower-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "distribution-enabled-control",
+      "label": "Enabled",
+      "component": "distribution",
+      "kind": "toggle",
+      "command": "distribution-enabled",
+      "binding": "/controls/distribution/enabled"
+    },
+    {
+      "id": "distribution-load-control",
+      "label": "Requested load",
+      "component": "distribution",
+      "kind": "range",
+      "command": "distribution-load",
+      "binding": "/controls/distribution/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "distribution-fault-control",
+      "label": "Injected failure",
+      "component": "distribution",
+      "kind": "toggle",
+      "command": "distribution-fault",
+      "binding": "/controls/distribution/fault"
+    },
+    {
+      "id": "distribution-repair-control",
+      "label": "Repair component",
+      "component": "distribution",
+      "kind": "button",
+      "command": "distribution-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "temperature-enabled-control",
+      "label": "Enabled",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-enabled",
+      "binding": "/controls/temperature/enabled"
+    },
+    {
+      "id": "temperature-load-control",
+      "label": "Requested load",
+      "component": "temperature",
+      "kind": "range",
+      "command": "temperature-load",
+      "binding": "/controls/temperature/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "temperature-fault-control",
+      "label": "Injected failure",
+      "component": "temperature",
+      "kind": "toggle",
+      "command": "temperature-fault",
+      "binding": "/controls/temperature/fault"
+    },
+    {
+      "id": "temperature-repair-control",
+      "label": "Repair component",
+      "component": "temperature",
+      "kind": "button",
+      "command": "temperature-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

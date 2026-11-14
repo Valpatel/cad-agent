@@ -1,0 +1,59 @@
+/* Independent source, transport, residual-condition and incident layers. */
+.scada-component .scada-nuclear-art{--scada-nuclear-primary-duration:2.6s;--scada-nuclear-secondary-duration:2.6s;--scada-nuclear-source-duration:3s;--scada-nuclear-heat-opacity:.3;--scada-nuclear-load-opacity:.6;--scada-nuclear-primary-opacity:.7;--scada-nuclear-secondary-opacity:.7}
+.scada-component .scada-nuclear-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component .scada-nuclear-flow{animation:scada-nuclear-transport var(--scada-nuclear-primary-duration) linear infinite paused}
+.scada-component .scada-nuclear-primary{stroke:#5fffe0;opacity:var(--scada-nuclear-primary-opacity)}
+.scada-component .scada-nuclear-secondary{stroke:#d0f7ee;opacity:var(--scada-nuclear-secondary-opacity);animation-duration:var(--scada-nuclear-secondary-duration)}
+.scada-component .scada-nuclear-heat{opacity:var(--scada-nuclear-heat-opacity)}
+.scada-component .scada-nuclear-production{opacity:0;animation:scada-nuclear-source var(--scada-nuclear-source-duration) linear infinite paused}
+.scada-component .scada-nuclear-residual{opacity:var(--scada-nuclear-heat-opacity);animation:scada-nuclear-residual 4s ease-in-out infinite paused}
+.scada-component .scada-nuclear-steam{animation:scada-nuclear-steam var(--scada-nuclear-secondary-duration) ease-out var(--scada-nuclear-phase,0s) infinite paused}
+.scada-component .scada-nuclear-surface{animation:scada-nuclear-surface 4.5s ease-in-out infinite paused}
+.scada-component .scada-nuclear-monitor-scan{animation:scada-nuclear-monitor 3.2s ease-in-out infinite paused}
+.scada-component .scada-nuclear-indicator{fill:#456b7e}
+.scada-component .scada-nuclear-actuator{animation:scada-nuclear-actuator var(--scada-nuclear-drive-duration,2s) linear infinite paused}
+.scada-component .scada-nuclear-drip{animation:scada-nuclear-drip 2.7s ease-in-out infinite paused}
+.scada-component .scada-nuclear-gas-leak{animation-name:scada-nuclear-gas-leak}
+.scada-component .scada-nuclear-readout{fill:#baf7e8;font:600 10px ui-monospace,SFMono-Regular,Consolas,monospace}
+.scada-component .scada-nuclear-rods{transform-box:view-box;transition:none}
+.scada-component .scada-nuclear-art[data-nuclear-source=true] .scada-nuclear-production{opacity:var(--scada-nuclear-load-opacity);animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-primary=true] .scada-nuclear-primary{animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-secondary=true] :is(.scada-nuclear-secondary,.scada-nuclear-steam){animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-secondary=false] .scada-nuclear-steam{visibility:hidden}
+.scada-component .scada-nuclear-art[data-nuclear-heat=true] .scada-nuclear-residual{animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-primary=true] .scada-nuclear-surface{animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-monitor=true] .scada-nuclear-monitor-scan{animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-monitor=true] .scada-nuclear-indicator{fill:#62ffbc;filter:drop-shadow(0 0 2px #62ffbc80)}
+.scada-component .scada-nuclear-art[data-nuclear-moving=true] .scada-nuclear-actuator{animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-moving=true] .scada-nuclear-rods{transition:transform var(--scada-nuclear-drive-duration,2s) ease-in-out}
+.scada-component .scada-nuclear-art[data-nuclear-leaking=true] .scada-nuclear-drip{animation-play-state:running}
+.scada-component .scada-nuclear-art[data-nuclear-warning=true] .scada-nuclear-indicator{fill:#ffd38a;filter:drop-shadow(0 0 2px #ffd38a80)}
+.scada-component .scada-nuclear-art[data-nuclear-fault=true] .scada-nuclear-indicator{fill:#ff9cbe;filter:none}
+.scada-component .scada-nuclear-art[data-nuclear-valid=false] .scada-nuclear-readout{fill:#a9bdca}
+.scada-component .scada-nuclear-art[data-nuclear-online=false]{filter:saturate(.4)}
+.scada-component .scada-nuclear-art[data-nuclear-running=false] .scada-nuclear-motion,
+.scada-component .scada-nuclear-art[data-nuclear-online=false] .scada-nuclear-motion,
+.scada-component[data-running=false] .scada-nuclear-motion,
+html.motion-paused .scada-component .scada-nuclear-motion,
+.is-paused .scada-component .scada-nuclear-motion,
+.twin-document-hidden .scada-component .scada-nuclear-motion{animation-play-state:paused!important}
+.scada-component .scada-nuclear-art:is([data-nuclear-running=false],[data-nuclear-online=false]) .scada-nuclear-rods,
+html.motion-paused .scada-component .scada-nuclear-rods{transition:none!important}
+@keyframes scada-nuclear-transport{to{stroke-dashoffset:-33}}
+@keyframes scada-nuclear-source{to{stroke-dashoffset:-28}}
+@keyframes scada-nuclear-residual{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+@keyframes scada-nuclear-steam{0%{transform:translateY(2px);opacity:.15}35%,65%{opacity:.7}100%{transform:translateY(-9px);opacity:.1}}
+@keyframes scada-nuclear-surface{0%,100%{transform:translateX(-1px)}50%{transform:translateX(1px)}}
+@keyframes scada-nuclear-monitor{0%,100%{opacity:.35}50%{opacity:.9}}
+@keyframes scada-nuclear-actuator{to{stroke-dashoffset:-20}}
+@keyframes scada-nuclear-drip{0%{transform:translateY(-2px);opacity:.4}40%,70%{opacity:1}100%{transform:translateY(4px);opacity:.25}}
+@keyframes scada-nuclear-gas-leak{0%,100%{transform:translate(0,0);opacity:.35}50%{transform:translate(2px,-1px);opacity:.8}}
+@media(prefers-reduced-motion:reduce){
+ .scada-component .scada-nuclear-motion{animation:none!important}
+ .scada-component .scada-nuclear-rods{transition:none!important}
+ .scada-component .scada-nuclear-steam{opacity:.5}
+ .scada-component .scada-nuclear-monitor-scan{opacity:.7}
+}
+
+/* Thermal surface activity is supplied by heat, not an invented spray flow. */
+.scada-component .scada-nuclear-art[data-nuclear-heat=true] .scada-pressurizer-surface{animation-play-state:running}

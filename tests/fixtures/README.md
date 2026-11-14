@@ -70,3 +70,4 @@ Related: [tests](../README.md) · [where files go](../../.github/CONTRIBUTING.md
 | [prusa_logs/](prusa_logs/) | Recorded-format Prusa log fixtures. |
 | [assembly-guide/](assembly-guide/README.md) | Real cross-chapter guide and model-manifest contract from the pinned Gyropup pilot |
 | [evaluation/](evaluation/README.md) | Versioned analytical jobs and controller-only passing controls. |
+| [scada/](scada/README.md) | Frozen original SCADA scenario checkpoints and provenance. |

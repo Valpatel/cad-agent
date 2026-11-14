@@ -1,0 +1,17 @@
+SCADA package terms
+===================
+
+The transferred @valpatel/scada-ui and @valpatel/scada-sim packages retain
+their declared private: true and UNLICENSED terms. All rights are reserved
+unless a separate applicable permission or license states otherwise.
+
+The project maintainer authorized physical integration of this source and
+its public presentation in cad-agent. That authorization is recorded in
+SOURCE.json. It does not silently relicense these packages under the MIT
+license used by the surrounding cad-agent toolkit.
+
+Source identities and the original inventory digest are retained in the SCADA
+root SOURCE.json; the initial import and subsequent changes remain in Git history.
+Third-party dependencies and notices keep their own terms. Reference links
+identify studied sources; they do not grant redistribution rights to those
+external documents.

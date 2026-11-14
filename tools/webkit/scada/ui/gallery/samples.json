@@ -1,0 +1,319 @@
+[
+  {
+    "type": "pump",
+    "sample": "inactive",
+    "state": {
+      "active": false
+    },
+    "stateLabel": "Inactive · illustrative",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "pump",
+    "sample": "paused",
+    "state": {
+      "running": false
+    },
+    "stateLabel": "Animation paused · illustrative",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "pump",
+    "sample": "low-speed",
+    "state": {
+      "speed": 20,
+      "load": 20
+    },
+    "stateLabel": "20% speed and load · illustrative",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "pump",
+    "sample": "high-speed",
+    "state": {
+      "speed": 90,
+      "load": 90
+    },
+    "stateLabel": "90% speed and load · illustrative",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "pump",
+    "sample": "warning",
+    "state": {
+      "status": "warning"
+    },
+    "stateLabel": "Warning · illustrative",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
+  },
+  {
+    "type": "pump",
+    "sample": "fault",
+    "state": {
+      "fault": true
+    },
+    "stateLabel": "Fault · illustrative",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
+  },
+  {
+    "type": "pump",
+    "sample": "offline",
+    "state": {
+      "status": "offline"
+    },
+    "stateLabel": "Offline · illustrative",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "pump",
+    "sample": "leaking",
+    "state": {
+      "damage": "leaking"
+    },
+    "stateLabel": "Leak · illustrative",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
+  },
+  {
+    "type": "tank",
+    "sample": "empty",
+    "state": {
+      "level": 0
+    },
+    "stateLabel": "0% inventory · illustrative",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "tank",
+    "sample": "full",
+    "state": {
+      "level": 100
+    },
+    "stateLabel": "100% inventory · illustrative",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "tank",
+    "sample": "ruptured",
+    "state": {
+      "damage": "ruptured"
+    },
+    "stateLabel": "Rupture · illustrative",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
+  },
+  {
+    "type": "generator",
+    "variant": "diesel-skid",
+    "sample": "operating",
+    "state": {},
+    "stateLabel": "Diesel genset operating · illustrative",
+    "expectedMotion": "animated",
+    "group": "operating"
+  },
+  {
+    "type": "generator",
+    "variant": "gasoline-portable",
+    "sample": "fault",
+    "state": {
+      "fault": true
+    },
+    "stateLabel": "Gasoline genset fault · illustrative",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
+  },
+  {
+    "type": "plc-rack",
+    "sample": "connected",
+    "state": {
+      "connected": true
+    },
+    "stateLabel": "Connected · illustrative",
+    "expectedMotion": "animated",
+    "group": "availability"
+  },
+  {
+    "type": "plc-rack",
+    "sample": "disconnected",
+    "state": {
+      "connected": false
+    },
+    "stateLabel": "Disconnected · illustrative",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "control-valve",
+    "sample": "closed",
+    "state": {
+      "open": false
+    },
+    "stateLabel": "Closed · illustrative",
+    "expectedMotion": "still",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "control-valve",
+    "sample": "part-open",
+    "state": {
+      "opening": 35
+    },
+    "stateLabel": "35% open · illustrative",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "control-valve",
+    "sample": "open",
+    "state": {
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Fully open · illustrative",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "flare",
+    "sample": "burning",
+    "state": {
+      "active": true
+    },
+    "stateLabel": "Flame active · illustrative",
+    "expectedMotion": "animated",
+    "group": "operating"
+  },
+  {
+    "type": "flare",
+    "sample": "inactive",
+    "state": {
+      "active": false
+    },
+    "stateLabel": "Flame inactive · illustrative",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "pwr-reactor-vessel",
+    "sample": "operating",
+    "state": {},
+    "stateLabel": "Separate coolant circuits · fictional indices",
+    "expectedMotion": "animated",
+    "group": "operating"
+  },
+  {
+    "type": "pwr-reactor-vessel",
+    "sample": "inactive",
+    "state": {
+      "active": false
+    },
+    "stateLabel": "Production inactive · supplied heat retained",
+    "expectedMotion": "animated",
+    "group": "availability"
+  },
+  {
+    "type": "solar-panel",
+    "sample": "inactive",
+    "state": {
+      "active": false,
+      "load": 0
+    },
+    "stateLabel": "No supplied solar activity · illustrative",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "separator",
+    "sample": "operating",
+    "state": {
+      "level": 55,
+      "load": 70
+    },
+    "stateLabel": "Distinct process streams · illustrative",
+    "expectedMotion": "animated",
+    "group": "operating"
+  },
+  {
+    "type": "greenhouse-vent",
+    "sample": "closed",
+    "state": {
+      "opening": 0,
+      "airflow": 0
+    },
+    "stateLabel": "Closed · no supplied airflow",
+    "expectedMotion": "still",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "greenhouse-vent",
+    "sample": "open",
+    "state": {
+      "opening": 80,
+      "airflow": 75
+    },
+    "stateLabel": "80% opening · 75% airflow index",
+    "expectedMotion": "animated",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "nft-channel",
+    "sample": "inactive",
+    "state": {
+      "active": false,
+      "load": 0,
+      "moisture": 55
+    },
+    "stateLabel": "Feed inactive · retained moisture",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "oven",
+    "sample": "conveying",
+    "state": {},
+    "stateLabel": "Continuous conveyor oven · illustrative",
+    "expectedMotion": "animated",
+    "group": "operating"
+  },
+  {
+    "type": "rack-oven",
+    "sample": "door-open",
+    "state": {
+      "active": false,
+      "open": true
+    },
+    "stateLabel": "Batch chamber open · heating inactive",
+    "expectedMotion": "still",
+    "group": "levels-and-controls"
+  },
+  {
+    "type": "current-transformer",
+    "sample": "inactive",
+    "state": {
+      "active": false,
+      "connected": false
+    },
+    "stateLabel": "De-energized · sensing disconnected",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "protection-relay",
+    "sample": "tripped",
+    "state": {
+      "tripped": true
+    },
+    "stateLabel": "Trip contact active · monitoring retained",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
+  }
+]

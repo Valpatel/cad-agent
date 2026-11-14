@@ -5,6 +5,11 @@ not packages and the shared fixtures. A test goes in the folder of the package i
 else it imports. [`repo/test_layout.py`](repo/test_layout.py) refuses a test file directly in `tests/` and says
 which folder it belongs in.
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="../docs/img/architecture/verification-still.svg">
+  <img src="../docs/img/architecture/verification.svg" alt="Known inputs exercise a subject, compare results and retain evidence." width="480">
+</picture>
+
 Arrows: which code each group of folders tests.
 
 Physical-domain checks

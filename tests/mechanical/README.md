@@ -53,6 +53,7 @@ flowchart TD
 | `test_clearance.py` | `cadagent.mechanical.clearance`: range-of-motion collisions and swept-volume cutters |
 | `test_connectors.py` | Mating-connector envelopes, windows and the 3D plug-fit check |
 | `test_fasteners.py` | `cadagent.mechanical.fasteners`: screw stacks, bottomed and short screws, wall ribs |
+| `test_gears.py` | `cadagent.mechanical.gears`: dimensions against closed forms, and the solids measured: tooth count by symmetry, radii, tooth thickness along the involute, undercut, and the play and collisions of meshed spur and bevel pairs |
 | `test_holes.py` | `cadagent.mechanical.holes` and `cad-agent holes`: clearance, counterbores, ledges |
 | `test_insert_figures.py` | The threaded-insert figures stay in step with `cadagent.mechanical.inserts` |
 | `test_linkages.py` | Five-bar closed forms and the sweeps in `cadagent.mechanical.linkages` |

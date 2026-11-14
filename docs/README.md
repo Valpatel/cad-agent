@@ -8,7 +8,7 @@ Choose a task, then follow its method, sources and checks. [The topic tree](area
 |---|---|
 | Choose a guide collection | [Mechanical design](mechanical/README.md), [design and review practice](practice/README.md), [worked examples](examples/README.md) |
 | Design and check a part | [Toolkit and project format](toolkit.md), [design dossier](practice/dossier.md), [integrity gates](practice/gates.md) |
-| Choose a joint or mechanism | [Inserts](mechanical/inserts.md), [printed joints](mechanical/printed-joints.md), [snap fits](mechanical/compliant.md), [bearings](mechanical/bearings.md), [linkages](mechanical/linkages.md) |
+| Choose a joint or mechanism | [Inserts](mechanical/inserts.md), [printed joints](mechanical/printed-joints.md), [snap fits](mechanical/compliant.md), [bearings](mechanical/bearings.md), [gears](mechanical/gears.md), [linkages](mechanical/linkages.md) |
 | Make sheet-metal parts | [Sheet-metal hardware](sheet-metal-hardware.md), [source survey](research/manufacturing/sheet-metal.md) |
 | Compare designs | [Exploration](explore.md), [shared formulas](formulas.md), [fans](fans.md) |
 | Review electronics and evidence | [PCB workflow](pcb.md), [review packets](practice/review-packet.md), [pitfall checks](practice/common-issues.md) |

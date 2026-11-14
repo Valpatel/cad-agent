@@ -48,7 +48,8 @@ include = ["cadagent*"]
 [tool.setuptools.package-data]
 # The installed SDK is complete, including library-owned galleries, examples and
 # notices. Published assembly guides use their smaller explicit runtime profile.
-cadagent = ["webkit/*", "webkit/assembly/*", "webkit/vendor/**/*", "webkit/scada/**/*"]
+cadagent = ["webkit/*", "webkit/assembly/*", "webkit/vendor/**/*", "publish/runtime-profiles.json",
+            "webkit/host/*", "webkit/files/*", "webkit/scada/**/*"]
 
 # `cad-agent init`'s starter, for a wheel install: docs/examples/starter-box installed under <prefix>/share/cad-agent/. A
 # checkout's own docs/examples/starter-box comes first (cadagent.project.starter_dir); tests/cli/test_init.py keeps this list

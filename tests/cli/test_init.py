@@ -282,6 +282,27 @@ console.log('installed copied SCADA PASS: all symbols, scenarios, commands and r
     assert equations["replay"] == "exact saved-state continuation verified"
     assert len(equations["results"]) == 4
     print("installed copied SCADA PASS: full bytes, retained terms, all scenarios and swappable equations")
+    # Profiles must be installed data, resolving real nested files with no checkout fallback.
+    profile_probe = """import json
+from cadagent.publish.runtime import capture_profile
+bundle = capture_profile("assembly-reader")
+print(json.dumps({"identity": dict(bundle.identity), "files": sorted(bundle)}))"""
+    profile = json.loads(run([python, "-I", "-c", profile_probe]).stdout)
+    assert profile["identity"]["profile"] == "assembly-reader"
+    assert "assembly/playback.js" in profile["files"] and "vendor/fonts/fonts.css" in profile["files"]
+    module_probe = """import { pathToFileURL } from 'node:url';
+const reader = await import(pathToFileURL(process.argv[1]).href);
+if (typeof reader.validateGuide !== 'function') throw new Error('wrong installed reader');
+console.log('installed nested reader PASS');"""
+    assert "installed nested reader PASS" in run([node, "--input-type=module", "-e", module_probe,
+                                                    sdk / "assembly/guide.js"]).stdout
+    profile_file = sdk.parent / "publish/runtime-profiles.json"
+    declared = profile_file.read_bytes()
+    profile_file.unlink()
+    rejected_profile = run([python, "-I", "-c", profile_probe], check=False)
+    assert rejected_profile.returncode != 0 and "cannot read manifest" in rejected_profile.stderr
+    profile_file.write_bytes(declared)
+    print("installed runtime profile PASS: nested ESM and missing-manifest rejection")
     # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
     (sdk / "package.json").unlink()
     assert Path(paths["declared_config"]).is_file() and not source.exists()

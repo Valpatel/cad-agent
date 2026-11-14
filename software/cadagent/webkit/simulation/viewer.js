@@ -43,6 +43,10 @@ export function createReplayViewer(container,{recording,recordingUrl,expectedHas
         ownedScene.apply(poses);time.value=String(state.time);time.setAttribute('aria-valuetext',`${state.time.toFixed(2)} of ${state.duration.toFixed(2)} seconds`);
         readout.textContent=`${state.time.toFixed(2)} / ${state.duration.toFixed(2)} s`;
         play.textContent=state.playing?'Pause':'Play';play.setAttribute('aria-label',state.playing?'Pause recording':'Play recording');play.setAttribute('aria-pressed',String(state.playing));
+        let custom=speed.querySelector('[data-custom-speed]');
+        if(![.25,.5,1,2].includes(state.speed)){if(!custom){custom=el('option');custom.dataset.customSpeed='true';speed.append(custom);}custom.value=String(state.speed);custom.textContent=`${state.speed}×`;}
+        else custom?.remove();
+        speed.value=String(state.speed);
         onState({state:'ready',playback:state});
       });controller=ownedClock;
       const listen=(node,type,fn)=>node.addEventListener(type,fn,{signal:events.signal});

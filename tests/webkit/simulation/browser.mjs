@@ -7,7 +7,13 @@ import {serveWebkit} from '../webkit-server.mjs';
 
 const engine=process.env.PLAYWRIGHT_BROWSER==='webkit'?webkit:chromium;
 const browser=await engine.launch(engine===chromium?{headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:process.env.PLAYWRIGHT_CHANNEL==='chromium'?{}:{channel:'chrome'})}:{headless:true});
-const site=process.env.REPLAY_BASE_URL?null:await serveWebkit(new Map([['/favicon.ico',(_,res)=>res.writeHead(204).end()]]));
+const routes=new Map([
+  ['/favicon.ico',(_,res)=>res.writeHead(204).end()],
+  ['/away.html',(_,res)=>res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'max-age=60'}).end('<!doctype html><title>Away</title><p>Return to the recorded replay.</p>')],
+  // Cache-eligible document policy exercises native history restoration instead of forcing a fresh navigation.
+  ['/kit/simulation/viewer.html',async(_,res)=>res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'max-age=60'}).end(await readFile(new URL('../../../software/cadagent/webkit/simulation/viewer.html',import.meta.url)))],
+]);
+const site=process.env.REPLAY_BASE_URL?null:await serveWebkit(routes);
 const base=process.env.REPLAY_BASE_URL||site.url;
 const out=process.env.TEST_OUTPUT||'/tmp/cad-agent-robot-replay';await mkdir(out,{recursive:true});
 const errors=[],cases=[];
@@ -44,6 +50,8 @@ try{
     await page.getByRole('button',{name:'Pause recording',exact:true}).click();await page.waitForFunction(()=>!__replay.playback.state().playing);
     const paused=await page.evaluate(()=>__replay.playback.state().time);await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>__replay.playback.state().time),paused);
     await page.getByLabel('Playback speed',{exact:true}).selectOption('2');assert.equal(await page.evaluate(()=>__replay.playback.state().speed),2);
+    await page.evaluate(()=>{__replay.playback.setSpeed(.75);const saved=__replay.getViewState();__replay.playback.setSpeed(1);__replay.restoreViewState(saved);});
+    assert.equal(await page.getByLabel('Playback speed',{exact:true}).inputValue(),'0.75');
     const scrub=page.getByLabel('Recording time',{exact:true});await scrub.scrollIntoViewIfNeeded();await scrub.focus();
     await page.waitForFunction(()=>document.activeElement===document.querySelector('[aria-label="Recording time"]'));
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -57,7 +65,13 @@ try{
     const toggled=await page.evaluate(()=>({color:__replay.stage.scene.background.getHexString(),pressed:document.querySelector('.theme-toggle').getAttribute('aria-pressed')}));
     assert.notEqual(toggled.color,geom.background);assert.equal(toggled.pressed,String(theme==='light'));
     await page.getByRole('button',{name:'Toggle dark theme',exact:true}).click();
-    await page.evaluate(()=>__replay.playback.seek(3.2));await page.screenshot({path:`${out}/${engine.name()}-${width}-${theme}.png`,fullPage:true});
+    await page.waitForFunction(color=>__replay.stage.scene.background.getHexString()===color,geom.background);
+    const rendered=await page.evaluate(()=>{__replay.playback.seek(3.2);return __replay.stage.renderer.info.render.frame;});
+    await page.waitForFunction(frame=>__replay.stage.renderer.info.render.frame>frame+1,rendered);
+    const stagePng=await page.locator('.cad-viewer-viewport').screenshot();
+    const pixel=await page.evaluate(async url=>{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);return [...ctx.getImageData(8,8,1,1).data];},'data:image/png;base64,'+stagePng.toString('base64'));
+    const brightness=(pixel[0]+pixel[1]+pixel[2])/3;assert.ok(theme==='dark'?brightness<80:brightness>170,`${theme} stage pixel ${pixel}`);
+    await page.screenshot({path:`${out}/${engine.name()}-${width}-${theme}.png`,fullPage:true});
     if(width===1100&&theme==='dark')await page.locator('.cad-viewer-viewport').screenshot({path:`${out}/preview.png`});
     const cleanup=await page.evaluate(()=>{
       const clock=__replay.playback,scene=__replay.scene;let meshes=0,geometries=0,materials=0;
@@ -65,7 +79,7 @@ try{
       __replay.dispose();__replay.dispose();return {disposed:clock.state().disposed,canvas:document.querySelectorAll('#replay canvas').length,sceneDetached:scene.root.parent===null,meshes,geometries,materials};
     });
     assert.equal(cleanup.disposed,true);assert.equal(cleanup.canvas,0);assert.equal(cleanup.sceneDetached,true);assert.ok(cleanup.meshes>0);assert.equal(cleanup.geometries,cleanup.meshes);assert.equal(cleanup.materials,cleanup.meshes);
-    cases.push({width,theme,geom,pose:'all recorded world transforms match independent oracle',cleanup});await context.close();
+    cases.push({width,theme,geom,stagePixel:pixel,pose:'all recorded world transforms match independent oracle',cleanup});await context.close();
   }
   const context=await browser.newContext({viewport:{width:1100,height:900},reducedMotion:'reduce'}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
@@ -100,6 +114,24 @@ try{
     viewer.dispose();container.remove();return peaks;
   });
   assert.ok(sparse.every(p=>p.max<1),JSON.stringify(sparse));cases.push({name:'Fit contains sparse180-degree rotation between endpoints',sparse});await boundaryContext.close();
+  if(site){
+    const historyBrowser=engine===chromium?await chromium.launch({headless:true,ignoreDefaultArgs:['--disable-back-forward-cache'],...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chromium'})}):browser;
+    try{
+      const historyContext=await historyBrowser.newContext({viewport:{width:1100,height:900},colorScheme:'light'});
+      await historyContext.addInitScript(()=>{window.mountToken=Math.random();window.historyEvents=[];for(const kind of ['pagehide','pageshow'])addEventListener(kind,event=>historyEvents.push({kind,persisted:event.persisted}));});
+      const historyPage=await historyContext.newPage();historyPage.on('pageerror',e=>errors.push(e.message));
+      await historyPage.goto(base+'/kit/simulation/viewer.html');await historyPage.waitForFunction(()=>document.body.dataset.ready==='1');
+      const before=await historyPage.evaluate(()=>{__replay.playback.seek(3.2);return{token:mountToken,time:__replay.playback.state().time};});
+      await historyPage.goto(base+'/away.html');await historyPage.evaluate(()=>localStorage.setItem('cad-theme','dark'));await historyPage.goBack({waitUntil:'commit'});
+      await historyPage.waitForFunction(()=>document.body.dataset.ready==='1');
+      const after=await historyPage.evaluate(()=>{__replay.fit();return{token:mountToken,time:__replay.playback.state().time,canvas:document.querySelectorAll('#replay canvas').length,events:historyEvents,theme:document.documentElement.dataset.theme};});
+      assert.equal(after.canvas,1);assert.equal(after.theme,'dark');
+      if(engine===chromium){assert.equal(after.token,before.token,'native Chromium must exercise a retained document');assert.ok(after.events.some(e=>e.kind==='pageshow'&&e.persisted));}
+      if(after.token===before.token)assert.equal(after.time,before.time);
+      await historyPage.getByRole('button',{name:'Play recording',exact:true}).click();await historyPage.waitForFunction(t=>__replay.playback.state().time>t,after.time);
+      cases.push({name:'native browser Back leaves replay usable',before,after});await historyContext.close();
+    }finally{if(historyBrowser!==browser)await historyBrowser.close();}
+  }
   assert.deepEqual(errors,[]);
   await writeFile(`${out}/${engine.name()}.json`,JSON.stringify({engine:engine.name(),base,sourceRevision:process.env.TEST_SOURCE_REVISION||'unrecorded',...provenance,cases,errors},null,2));
   console.log(`${engine.name()}: ${cases.length} recorded replay layout/theme/controls/pose/disposal cases passed`);

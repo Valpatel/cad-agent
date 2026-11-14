@@ -23,5 +23,6 @@ async function start(){
     if(!viewer){placeholder.textContent='The recording receipt could not load.';const retry=document.createElement('button');retry.className='replay-retry';retry.type='button';retry.textContent='Retry recording';retry.addEventListener('click',start,{once:true,signal:lifetime.signal});placeholder.append(document.createElement('br'),retry);}
   }
 }
-window.addEventListener('pagehide',()=>{lifetime.abort();viewer?.dispose();},{once:true});
+// A BFCache entry keeps this document and WebGL owner alive; visibilitychange already pauses playback.
+window.addEventListener('pagehide',event=>{if(!event.persisted){lifetime.abort();viewer?.dispose();}});
 start();

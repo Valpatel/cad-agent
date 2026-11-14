@@ -1,0 +1,1 @@
+- Give the SCADA Explorer a fluid desktop workspace and the same local-font, light/dark palette and persisted theme controls as the public Toolkit, while preserving mobile document scrolling and standalone copied-kit operation.

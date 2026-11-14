@@ -185,7 +185,7 @@ async function loadScenario(id, {initial=false,fallback=null}={}) {
     const nextModel = new PlaceholderSystemModel(nextSystem,nextDefinition,{equationProviders});
     const nextAdapter = createPlaceholderAdapter(nextModel);
     // Validate the presentation before replacing a working session.
-    const nextViewer = new ScadaViewer({definition:nextSystem,adapter:nextAdapter,scope:'industry-viewer',fitMaxZoom:1.5});
+    const nextViewer = new ScadaViewer({definition:nextSystem,adapter:nextAdapter,scope:'industry-viewer',fitMaxZoom:1.5,responsiveLayout:'process-chain'});
     workspace.close({restoreFocus:false}); viewer?.destroy(); unsubscribe?.(); model?.destroy(); sound.reset();
     selectedScenario=entry; system=nextSystem; modelDefinition=nextDefinition; model=nextModel; adapter=nextAdapter; viewer=nextViewer;
     viewer.mount($('#lab-viewer'));

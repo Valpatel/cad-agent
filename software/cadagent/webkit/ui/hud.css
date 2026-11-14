@@ -44,7 +44,7 @@ body::after { content: ""; position: fixed; inset: 0; z-index: 2; pointer-events
 a.hud-tag:hover { color: var(--cyan); border-color: var(--cyan-dim); }
 
 #stage-overlay { grid-area: stage; position: relative; pointer-events: none; }
-.hud-hint { --dim: #c8d0dc; position: absolute; left: 16px; bottom: 14px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); }
+.hud-hint { --dim: #c8d0dc; position: absolute; left: 16px; right: 16px; bottom: 14px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); }
 .hud-card { position: absolute; left: 16px; top: 16px; max-width: 340px; background: var(--card); backdrop-filter: blur(8px);
   border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; }
 

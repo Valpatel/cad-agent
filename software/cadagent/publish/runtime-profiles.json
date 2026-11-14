@@ -39,7 +39,7 @@
             "assembly/guide.js",
             "vendor/three/three.module.min.js"
           ],
-          "sha256": "9dfa58e004a747105e375eeab456f011c844b3327944f3b7ad25684a02fa5f35"
+          "sha256": "b217d5957faccb8780169f2a03a8ac9e7071a48e854881c8d118e6aae5e60228"
         },
         "model/viewer.js": {
           "requires": [
@@ -61,7 +61,7 @@
           "requires": [
             "ui/theme.css"
           ],
-          "sha256": "94055a2a439e9ad5a4e0576f1409fc834ad0d1806100476d5c21ffc286e1b65f"
+          "sha256": "7c2c9f249455603cbee3ec0822fa919e449e4911be5913293f0e68f5c2e9b74c"
         },
         "ui/panel.js": {
           "requires": [],

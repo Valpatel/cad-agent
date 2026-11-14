@@ -32,6 +32,7 @@ flowchart TD
 | `test_gate_containment.py` | Containment gate: contents inside their container's cavity, per pose |
 | `test_gate_fasteners.py` | Fastener and stack gate |
 | `test_gate_motion.py` | Motion-range interference gate |
+| `test_gate_motion_symmetry.py` | Repeating poses in the motion gate: bodies of revolution and N-fold parts, measured from the solids |
 | `test_gate_relations.py` | Gate machinery: `Assembly`, broad phase, pairwise relations, the pair cache, verdicts |
 | `test_gate_subassembly.py` | A rigid module passes its own sequence before it enters another assembly |
 | `test_gate_wall.py` | Minimum-wall gate: mesh rays and exact B-rep rays |

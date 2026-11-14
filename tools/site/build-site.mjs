@@ -24,6 +24,7 @@ import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         /
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -48,7 +49,7 @@ if (RELEASE && WORKTREE) throw new Error('--release and --worktree are exclusive
 // Production is built from reviewed history only: a commit on origin/main or origin/dev (CD deploys from main).
 const onReviewed = ref => { try { execFileSync('git', ['merge-base', '--is-ancestor', 'HEAD', ref], { cwd: root }); return true; } catch { return false; } };
 if (RELEASE && !onReviewed('origin/main') && !onReviewed('origin/dev')) throw new Error('--release needs HEAD on origin/main or origin/dev (merged and pushed), so production only shows reviewed commits');
-const tracked = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split('\0').filter(Boolean);
+const tracked = (WORKTREE ? git('ls-files','-z') : git('ls-tree', '-r', '-z', '--name-only', 'HEAD')).split('\0').filter(Boolean);
 // Preserve the public image library; rendered pages also add their actual local illustrations below.
 const publishedImages = new Set(tracked.filter(f => /^docs\/img\/.*\.(svg|png|jpe?g|gif|webp)$/i.test(f)));
 const head = git('rev-parse', 'HEAD');
@@ -56,7 +57,7 @@ const revision = head;
 // The content is always HEAD's (or the working tree's with --worktree), but the build tools run from disk (from this
 // checkout, even with --root): say so when they differ from the built commit's, and never release with them.
 const TOOLS = ['tools/site/build-site.mjs', 'tools/site/compiler/site-html.mjs', 'tools/site/compiler/snap-demo.mjs', 'tools/site/compiler/site-catalog.mjs', 'tools/site/compiler/site-discovery.mjs', 'tools/site/compiler/site-explore-shell.mjs', 'tools/site/compiler/catalog-art.mjs',
-  'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
+  'tools/site/compiler/site-diagrams.mjs', 'tools/site/compiler/site-pages.mjs', 'tools/site/compiler/site-references.mjs', 'tools/site/compiler/site-toolkit.mjs', 'tools/site/publication.mjs', 'tools/site/page-sources.json', 'tools/site/package.json', 'tools/site/package-lock.json'];
 const toolsHere = path.join(import.meta.dirname, '../..');
 const toolsDirty = TOOLS.filter(t => {
   let committedCopy; try { committedCopy = gitRaw('show', `HEAD:${t}`); } catch { return true; }
@@ -178,7 +179,7 @@ if (commands.length !== parserCount) throw new Error(`read ${commands.length} of
 // The catalogue itself is built after the pages (it uses their figures): see `buildCatalog` below.
 
 // ----------------------------------------------------------------------------- HTML frame
-const NAV = [['/explore', 'Explore', true], ['/docs/toolkit', 'Toolkit', true], ['/docs/agent-workflow', 'For agents']];
+const NAV = [['/explore', 'Explore', true], ['/toolkit', 'Toolkit', true], ['/docs/agent-workflow', 'For agents']];
 // Feedback goes to GitHub: a short issue form with the page filled in, or an edit of the page's source.
 const feedbackURL = (title, url) => `${REPO}/issues/new?template=feedback.yml&title=${encodeURIComponent(`Feedback: ${title}`)}&page=${encodeURIComponent(ORIGIN + url)}`;
 const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="Feedback"><div><p class="feedback-title">Help us improve!</p>
@@ -189,7 +190,7 @@ const feedbackBox = (title, url, file) => `<aside class="feedback" aria-label="F
 const KIT_DEMOS = { 'cad-cantilever': 'cantilever', 'cad-fourbar': 'fourbar', 'cad-fan-curve': 'fan-curve',
   'cad-torsion-snap': 'torsion-snap', 'cad-printed-boss': 'printed-boss' };
 const kitDemos = body => Object.entries(KIT_DEMOS).filter(([tag]) => body.includes(`<${tag}`))
-  .map(([, f]) => `<link rel="stylesheet" href="/kit/${f}.css"><link rel="modulepreload" href="/kit/${f}.js">`).join('');
+  .map(([, f]) => `<link rel="stylesheet" href="/kit/calculators/${f}.css"><link rel="modulepreload" href="/kit/calculators/${f}.js">`).join('');
 // The theme button (web/theme.js shows it and keeps aria-pressed true while the page is dark).
 const THEME_BUTTON = '<button type="button" class="theme-toggle" aria-pressed="false" title="Dark theme" hidden><span class="visually-hidden">Dark theme</span>' +
   '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' +
@@ -200,13 +201,13 @@ function frame({ title, body, md, description = LEDE, current = '', page = 'doc'
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title === TAGLINE ? 'cad-agent · ' + TAGLINE : title + ' · cad-agent')}</title>
 <meta name="description" content="${esc(description)}">${current ? `<link rel="canonical" href="${esc(ORIGIN + current)}">` : ''}
-<script src="/web/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
+<script src="/web/theme.js"></script><link rel="icon" href="/web/icon.svg"><link rel="preload" href="/kit/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/kit/vendor/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/web/site.css"><link rel="stylesheet" href="/kit/documents/diagrams.css">${css.map(c => `<link rel="stylesheet" href="${c}">`).join('')}${kitDemos(body)}
 ${md ? `<link rel="alternate" type="text/markdown" href="${esc(md)}" title="Markdown for agents">` : ''}
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt"></head>
 <body class="${page}-page"><!--email_off--><a class="skip-link" href="#main:content">Skip to content</a><header class="site-header"><div class="wrap"><a class="wordmark" href="/"><img src="/web/icon.svg" alt="" width="34" height="34">cad-agent<b>.</b></a>
-<nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
+<nav aria-label="Main">${NAV.map(([h, t, keep]) => `<a href="${h}"${keep ? ' data-keep' : ''}${h === current || (h === '/toolkit' && current.startsWith('/toolkit/')) ? ' aria-current="page"' : ''}>${t}</a>`).join('')}<a class="pill-link" href="${REPO}">GitHub ↗</a>${THEME_BUTTON}</nav></div></header>
 <main class="${page === 'landing' ? '' : 'wrap'} ${page === 'doc' ? 'doc' : ''}"${body.includes('id="main:content"') ? '' : ' id="main:content" tabindex="-1"'}>${current === '/catalog' || current.startsWith('/references') || current === '/docs/common-issues' || current === '/research/landscape' ? `<p class="discovery-context"><a href="/explore${current.startsWith('/references') ? '?kind=references' + (current.split('/')[2] ? '&amp;area=' + encodeURIComponent(current.split('/')[2]) : '') : current === '/docs/common-issues' ? '?kind=lessons' : current === '/research/landscape' ? '?kind=external' : ''}">← Explore all knowledge${current.startsWith('/references') ? ' · search sources across topics' : current === '/docs/common-issues' ? ' · search individual lessons and pitfalls' : ''}</a></p>` : ''}${body}</main>
-<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Code under the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a>; every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${esc(updateTime(updated).datetime)}">${esc(updateTime(updated).label)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
+<footer class="site-footer"><div class="wrap"><p>Created by <a href="https://valpatel.com">Valpatel Software LLC</a>. Toolkit code uses the <a href="${REPO}/blob/dev/LICENSE">MIT licence</a> except where a package declares separate terms, including the transferred SCADA libraries. Every third-party tool keeps its own licence and credit. ${updated ? `Last updated <time datetime="${esc(updateTime(updated).datetime)}">${esc(updateTime(updated).label)}</time>.` : 'This page has uncommitted changes.'} Built from <a href="${REPO}/commit/${revision}">${esc(revisionLabel)}</a>.</p>
 <div class="links"><a href="${esc(feedbackURL(title === TAGLINE ? 'home page' : title, url))}">Help us improve ↗</a><a href="/llms.txt">llms.txt</a><a href="/llms-full.txt">llms-full.txt</a><a href="/catalog.json">catalog.json</a>${md ? `<a href="${esc(md)}">this page .md</a>` : ''}</div></div></footer>
 <script type="module" src="/web/site.js"></script><!--/email_off--></body></html>`;
 }
@@ -348,7 +349,7 @@ for (const p of allPages) {
     `<li class="h${h.level}"><a href="#${esc(encodeURIComponent(h.id))}">${h.text}</a></li>`).join('')}</ol>`;
   const nav = readerNav({areas:areaTree,pages,pageURL,current:pageURL(p.file),outlineHTML:outline('',true)});
   const rail = heads.length < 2 ? '' : `<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline(' cad-nav-rail', false)}</nav>`;
-  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
+  docPages.push([dest, frame({ title: p.title, body: `<div class="doc-layout explore-reader">${nav}<div class="doc-main" id="main:content" tabindex="-1">${crumbs}<article class="prose">${html}</article>` + feedbackBox(p.title, pageURL(p.file), p.file) + `</div>${rail}</div>`, md: '/' + publicPath(p.file), description: p.summary, current: pageURL(p.file), updated: lastChange(p.file), css: ['/kit/documents/nav.css', '/web/catalog.css', '/web/discovery.css', ...(html.includes('class="ref-cite') ? ['/web/references.css'] : [])] })]);
   visuals.set(p.file, (html.match(VISUAL) || []).length);
   p.html = html;                                                      // the catalogue takes each page's first figure
   p.updated = lastChange(p.file);
@@ -358,7 +359,7 @@ for (const p of allPages) await writeFile(path.join(out, publicPath(p.file)), tw
 placeVisuals.checkLinks(file => pages.find(q => q.file === file)?.html);   // band tiles' links to other pages' headings
 // Every Mermaid block drawn once in each of the site's themes and written into its page as two finished figures, which
 // web/site.css shows one of (#305). A block left as it is (no browser, or one Mermaid cannot draw) is drawn by
-// kit/diagrams.js in the reader's browser, in the page's theme.
+// kit/documents/diagrams.js in the reader's browser, in the page's theme.
 const drawIn = theme => drawDiagrams(docPages.map(([, html]) => html), {
   kit: f => readBuf(`software/cadagent/webkit/${f}`), site: f => readBuf(`${ASSETS}/${f}`), theme, client: CLIENT_DIAGRAMS,
   cacheDir: process.env.CAD_AGENT_DIAGRAM_CACHE || path.join(toolsHere, '.cache', 'site-diagrams'),
@@ -372,26 +373,37 @@ for (const f of publishedImages) await copyTracked(f, path.join(out, f));
 
 // Catalogue: catalog.json, catalog/index.json, catalog/<area>.json, the covers and the page (tools/site/compiler/site-catalog.mjs).
 const SNAP = snapDemo();                 // geometry-driven animation: tools/site/compiler/snap-demo.mjs
+const scadaSources = Object.fromEntries(await Promise.all(Object.entries(SCADA_INPUTS).map(async ([key,file]) => [key,JSON.parse(await read(file))])));
+const scada = scadaToolkitModel({...scadaSources,has:file=>tracked.includes(file)});
 const { catalog, files: catalogFiles, body: catalogBody, counts } = await buildCatalog({
   ORIGIN, REPO, revision, built: committed, tagline: TAGLINE, description: LEDE, commands, cli, upstreams, landscape, pages, pageURL, publicPath, safeUrl,
   areas: YAML.parse(await read('docs/areas.yaml')), data: YAML.parse(await read('docs/catalog.yaml')) || {}, tracked, read: readBuf,
   securityReport: JSON.parse(await read('docs/research/security-report.json')),
   snap: SNAP, cliUpdated: lastChange('software/cadagent/cli.py'), draft: WORKTREE,
+  generatedRoutes: TOOLKIT_ROUTES,
 });
 for (const [f, text] of catalogFiles) { await mkdir(path.dirname(path.join(out, f)), { recursive: true }); await writeFile(path.join(out, f), text); }
+const toolkit = toolkitPages(scada, {catalog:catalog.items});
+for (const [file,text] of toolkit.files) {await mkdir(path.dirname(path.join(out,file)),{recursive:true});await writeFile(path.join(out,file),text);}
+for (const p of toolkit.pages) {
+  const filename=p.url.slice(1);
+  await mkdir(path.dirname(path.join(out,filename)),{recursive:true});
+  await writeFile(path.join(out,filename+'.html'),frame({title:p.title,body:p.body,description:p.description,current:p.url,page:'toolkit',md:p.url+'.md',css:['/web/toolkit.css',...(p.url.endsWith('/elements')?['/kit/scada/ui/src/styles.css']:[])]}));
+  await writeFile(path.join(out,filename+'.md'),p.markdown);
+}
 // Each ### entry in a lesson file is one lesson (docs/lessons/README.md#lesson-format); the area READMEs are maps, not lessons.
 const lessonCount = pages.filter(p => p.section === 'lessons' && !/(?:^|\/)README\.md$/.test(p.file))
   .reduce((n, p) => n + (p.body.replace(/```[\s\S]*?```/g, '').match(/^### /gm) || []).length, 0);
 // A derived search view: no new source identity and no mutation of the catalogue/reference machine feeds.
 const discovery = discoveryModel({ catalog, pages, references: refModel, ORIGIN, revision, pageURL });
 await writeFile(path.join(out, 'discovery.json'), JSON.stringify(discovery) + '\n');
-await writeFile(path.join(out,'catalog.html'),frame({title:'Explore',current:'/catalog',page:'discovery',body:discoveryHTML(discovery,{areas:areaTree,pages,pageURL,catalog,legacy:true}),css:['/kit/gallery.css','/kit/nav.css','/web/catalog.css','/web/discovery.css']}));
+await writeFile(path.join(out,'catalog.html'),frame({title:'Explore',current:'/catalog',page:'discovery',body:discoveryHTML(discovery,{areas:areaTree,pages,pageURL,catalog,legacy:true}),css:['/kit/ui/gallery.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css']}));
 await writeFile(path.join(out, 'explore.html'), frame({ title: 'Explore', current: '/explore', page: 'discovery',
   description: 'Find tools, guides, practical lessons and reference records by topic.',
   body: discoveryHTML(discovery, { areas: areaTree, pages, pageURL, catalog }),
-  md: '/explore.md', css: ['/kit/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
+  md: '/explore.md', css: ['/kit/ui/gallery.css', '/web/catalog.css', '/web/discovery.css'] }));
 await writeFile(path.join(out, 'explore.md'), '# Explore hardware knowledge\n\nSearch: ' + ORIGIN + '/explore\n\n'
-  + '- [Toolkit and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
+  + '- [Engineering toolkit](/toolkit)\n- [Command and Python API](/docs/toolkit)\n- [Reference evidence](/references)\n- [Review pitfalls](/docs/common-issues)\n- [Tool landscape](/research/landscape)\n\n'
   + 'Derived search metadata: /discovery.json. Existing source IDs, evidence and adoption decisions remain separate.\n');
 
 // The reference pages and their twins, and catalog/references/*.json (no record is a catalogue entry).
@@ -408,7 +420,7 @@ for (const p of refSite.pages) {
   const outline=articleOutline(p.body),rail=outline?`<nav class="doc-rail" aria-labelledby="rail-title"><p class="doc-rail-title" id="rail-title">On this page</p>${outline.replace('class="cad-nav-outline"','class="cad-nav-outline cad-nav-rail"')}</nav>`:'';
   await mkdir(path.dirname(path.join(out, p.file)), { recursive: true });
   await writeFile(path.join(out, p.file), frame({ title: p.title, body: `<div class="doc-layout explore-reader">${readerNav({areas:areaTree,pages,pageURL,current:p.url,outlineHTML:outline})}<div class="doc-main" id="main:content" tabindex="-1">${p.body}</div>${rail}</div>`, md: '/' + p.md, description: p.description, current: p.url,
-    page: 'references', css: ['/web/references.css','/kit/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
+    page: 'references', css: ['/web/references.css','/kit/documents/nav.css','/web/catalog.css','/web/discovery.css'], updated: refsUpdated }));
   await writeFile(path.join(out, p.md), p.markdown);
 }
 
@@ -580,7 +592,7 @@ ${useCard}
 </div></section>
 <section class="section help-band"><div class="lead"><h2>Help us <span>improve!</span></h2><p>Found a mistake, a better tool, or a page that wasted your time? It takes a minute, and ideas we use are credited by name.</p></div>
 <div class="help-actions"><a class="button primary" href="${esc(feedbackURL('home page', '/'))}">Give feedback</a><a class="button" href="${REPO}/issues">See open issues</a><a class="button" href="/CONTRIBUTING">How to contribute</a></div></section></div>`;
-await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model.css', '/web/home.css'] }));
+await writeFile(path.join(out, 'index.html'), frame({ title: TAGLINE, body: landing, md: '/index.md', current: '/', page: 'landing', css: ['/web/snap-demo.css', '/kit/model/model.css', '/web/home.css'] }));
 
 // ----------------------------------------------------------------------------- agent files
 const bySection = id => pages.filter(p => p.section === id);
@@ -626,6 +638,9 @@ ${agentGuide}
 ## Start here
 
 - [README](${ORIGIN}/README.md): what cad-agent is and how it grows
+- [Engineering toolkit](${ORIGIN}/toolkit.md): viewers, SCADA elements, simulations and build/review capabilities
+- [SCADA elements](${ORIGIN}/toolkit/scada/elements.md): animated equipment, variants and editable visual states
+- [SCADA simulations](${ORIGIN}/toolkit/scada/simulations.md): target-owned process examples, including wastewater digestion
 - [Tools](${ORIGIN}/docs/toolkit.md): every command, the project contract and the Python API
 - [Agent workflow](${ORIGIN}/${publicPath("docs/practice/agent-workflow.md")}): skills, subagents, work claims and crash-safe work
 - [Common issues](${ORIGIN}/${publicPath("docs/practice/common-issues.md")}): recurring CAD mistakes and the checks that catch them
@@ -662,7 +677,8 @@ ${homeMd.ours.join('\n')}
 - [J501 project](https://github.com/mvalancy/j501-agx-orin): an enclosure around a real carrier board; [model provenance](${ORIGIN}/web/models/j501-source.json) records this prototype's captured inputs and display-only simplification. Physical qualification and final current-source adoption remain separate.
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
-  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join(''));
+  pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join('') +
+  toolkitFullText(toolkit.pages, ORIGIN));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule
 // only: security headers on /*, Cache-Control only on /kit/vendor/*. Those stable URLs can change between releases,
 // so they revalidate, like the Pages default for everything else. The site's own pages have no inline script;
@@ -692,9 +708,9 @@ export const CSP = `default-src 'self'; script-src 'self' ${[...inlineHashes].so
 // Cloudflare Pages redirects: each moved page and its Markdown twin, to the new path.
 await writeFile(path.join(out, '_redirects'), redirects.flatMap(([from, to]) =>
   [`/${from.replace(/\.md$/, '')} /${publicPath(to).replace(/\.md$/, '')} 301`, `/${from} /${publicPath(to)} 301`]).join('\n') + (redirects.length ? '\n' : ''));
-// The kit's own pages are copied byte for byte, so their canonical is a Link header.
-// Include nested owner folders as well as standalone entrypoints.
-const kitPages = (await htmlFiles(path.join(out, 'kit'))).sort().map(f => '/' + path.relative(out, f).split(path.sep).join('/').replace(/\/index\.html$/, '/').replace(/\.html$/, ''));
+// Copied kit pages keep their source bytes. Pages sends their canonical address as a Link header, including
+// nested applications: x.html serves at /x and an index.html serves at its containing directory.
+const kitPages = (await htmlFiles(path.join(out, 'kit'))).sort().map(f => '/' + path.relative(out,f).split(path.sep).join('/').replace(/\/index\.html$/, '/').replace(/\.html$/, ''));
 await writeFile(path.join(out, '_headers'), [
   '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin', `  Content-Security-Policy: ${CSP}`,
   '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()', '  Cross-Origin-Opener-Policy: same-origin',
@@ -705,7 +721,7 @@ await writeFile(path.join(out, '_headers'), [
   ...kitPages.flatMap(u => [u, `  Link: <${ORIGIN}${u}>; rel="canonical"`]), ''].join('\n'));
 await writeFile(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 await writeFile(path.join(out, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-  ['/', '/explore', '/catalog', ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
+  ['/', '/explore', '/catalog', ...TOOLKIT_ROUTES, ...allPages.map(p => pageURL(p.file)), ...refSite.urls].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('') + '</urlset>\n');
 await writeFile(path.join(out, '404.html'), frame({ title: 'Not found', body: '<h1>Not here.</h1><p>Try the <a href="/explore">Explore search</a> or <a href="/llms.txt">llms.txt</a>.</p>' }));
 await writeFile(path.join(out, 'version.json'), JSON.stringify({ revision, built: catalog.built, pages: pages.length, folder_maps: folderMapPages.length, items: catalog.items.length }, null, 2) + '\n');
 // For agents and the tests: which pages still have nothing to look at.

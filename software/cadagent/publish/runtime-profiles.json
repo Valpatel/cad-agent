@@ -2,7 +2,7 @@
   "profiles": {
     "assembly-reader": {
       "entrypoints": [
-        "viewer.html"
+        "model/viewer.html"
       ],
       "files": {
         "assembly/NOTICE.txt": {
@@ -12,38 +12,59 @@
         "assembly/guide.js": {
           "requires": [
             "assembly/playback.js",
-            "viewer.js"
+            "model/viewer.js"
           ],
-          "sha256": "bb4d4d9e1940d313dd7c5e100219fe0a7bece14d61bda024c7985800b867e450"
+          "sha256": "e70c2d89fe631a159eefe8b0bb9a28013fa6ca621d10eb240f83322fd7779a5a"
         },
         "assembly/playback.js": {
           "requires": [],
           "sha256": "dd575ce02567129d9aa28376d3455f7e352118609cb30ae7dfe89066d17048d7"
         },
-        "file-geometry.js": {
+        "files/file-geometry.js": {
           "requires": [],
           "sha256": "1f503af4149f96624ecaba68043ea44eaaa68503988646c5139edb482ab922fd"
         },
-        "hud.css": {
+        "model/stage.js": {
           "requires": [
-            "vendor/fonts/fonts.css"
+            "vendor/three/three.module.min.js",
+            "vendor/three/addons/controls/OrbitControls.js"
           ],
-          "sha256": "ac4e00c68cf803581fb2a1f087b12d0f1f75158d882a99af78fc66b982a531d9"
+          "sha256": "f62b95e16a99e06686d32454397948fd50a67a973736ffc76a03b82f5e54b486"
+        },
+        "model/viewer.html": {
+          "requires": [
+            "ui/hud.css",
+            "model/viewer.js",
+            "assembly/guide.js",
+            "vendor/three/three.module.min.js"
+          ],
+          "sha256": "92e3df9838e31e38b3752ba316b40b76337f2dcdfdc001bfd7e1cdfe8dfb8bdc"
+        },
+        "model/viewer.js": {
+          "requires": [
+            "vendor/three/three.module.min.js",
+            "assembly/playback.js",
+            "vendor/three/addons/loaders/STLLoader.js",
+            "model/stage.js",
+            "ui/panel.js",
+            "assembly/guide.js",
+            "files/file-geometry.js"
+          ],
+          "sha256": "41100a263ff0204482258d5da85a27ba0da09eecfa848b8751791b06edd01241"
         },
         "package.json": {
           "requires": [],
           "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
         },
-        "panel.js": {
+        "ui/hud.css": {
+          "requires": [
+            "vendor/fonts/fonts.css"
+          ],
+          "sha256": "f4933895d9676f014f8cff85d3cf439dfbad74fa2a84fd8a8b1b42adcf949d21"
+        },
+        "ui/panel.js": {
           "requires": [],
           "sha256": "94c7a99a7d2d0fbf6305b77d0211487453994b5d5426aacc3f1d01d3020a7d9b"
-        },
-        "stage.js": {
-          "requires": [
-            "vendor/three/three.module.min.js",
-            "vendor/three/addons/controls/OrbitControls.js"
-          ],
-          "sha256": "30d2ce68020f2e1d37073468067847878eb8ecefd0a54c117c8568b8f7a01aa3"
         },
         "vendor/file-parsers/THREE-LICENSE.txt": {
           "requires": [],
@@ -95,27 +116,6 @@
         "vendor/three/three.module.min.js": {
           "requires": [],
           "sha256": "3e690ac7d180b0aadf0891bea39eec643e29e2d3e75c99b18689518665f69ba6"
-        },
-        "viewer.html": {
-          "requires": [
-            "hud.css",
-            "viewer.js",
-            "assembly/guide.js",
-            "vendor/three/three.module.min.js"
-          ],
-          "sha256": "4ef7ed0ad57ffc1fca510a985cb05b3a24c55565be86763bf322295e8b3e7de1"
-        },
-        "viewer.js": {
-          "requires": [
-            "vendor/three/three.module.min.js",
-            "assembly/playback.js",
-            "vendor/three/addons/loaders/STLLoader.js",
-            "stage.js",
-            "panel.js",
-            "assembly/guide.js",
-            "file-geometry.js"
-          ],
-          "sha256": "dd30ff92e4f8a3f48e8ead322e06119b4f143e2e8f46d93987602220636d73c5"
         }
       },
       "notices": [

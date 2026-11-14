@@ -1,0 +1,3395 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "hydroponics-nft",
+    "label": "NFT hydroponics",
+    "description": "A prepared solution reservoir feeds two separately valved shallow channels and a common return. Probe identities remain pH, EC and dissolved oxygen indices."
+  },
+  "components": [
+    {
+      "id": "reservoir",
+      "type": "mixing-tank",
+      "label": "Prepared nutrient reservoir",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/reservoir/active",
+        "running": "/components/reservoir/running",
+        "fault": "/components/reservoir/fault",
+        "status": "/components/reservoir/status",
+        "level": "/components/reservoir/level",
+        "damage": "/components/reservoir/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "supplyPump",
+      "type": "pump",
+      "label": "Solution circulation pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/supplyPump/active",
+        "running": "/components/supplyPump/running",
+        "fault": "/components/supplyPump/fault",
+        "status": "/components/supplyPump/status",
+        "load": "/components/supplyPump/load",
+        "speed": "/components/supplyPump/speed",
+        "damage": "/components/supplyPump/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "screen",
+      "type": "filter",
+      "label": "Supply screen filter",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/screen/active",
+        "running": "/components/screen/running",
+        "fault": "/components/screen/fault",
+        "status": "/components/screen/status",
+        "load": "/components/screen/load",
+        "damage": "/components/screen/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "header",
+      "type": "junction",
+      "label": "Channel feed header",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/header/active",
+        "running": "/components/header/running",
+        "fault": "/components/header/fault",
+        "status": "/components/header/status",
+        "open": "/components/header/open",
+        "damage": "/components/header/damage"
+      },
+      "ports": [
+        {
+          "id": "west",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "east",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "north",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "south",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "valveA",
+      "type": "control-valve",
+      "label": "Channel A feed valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/valveA/active",
+        "running": "/components/valveA/running",
+        "fault": "/components/valveA/fault",
+        "status": "/components/valveA/status",
+        "open": "/components/valveA/open",
+        "opening": "/components/valveA/opening",
+        "damage": "/components/valveA/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "channelA",
+      "type": "nft-channel",
+      "label": "Nutrient-film channel A",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "moisture": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/channelA/active",
+        "running": "/components/channelA/running",
+        "fault": "/components/channelA/fault",
+        "status": "/components/channelA/status",
+        "moisture": "/components/channelA/moisture",
+        "load": "/components/channelA/load",
+        "damage": "/components/channelA/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "valveB",
+      "type": "control-valve",
+      "label": "Channel B feed valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "opening": 100,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/valveB/active",
+        "running": "/components/valveB/running",
+        "fault": "/components/valveB/fault",
+        "status": "/components/valveB/status",
+        "open": "/components/valveB/open",
+        "opening": "/components/valveB/opening",
+        "damage": "/components/valveB/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ],
+      "variant": "water"
+    },
+    {
+      "id": "channelB",
+      "type": "nft-channel",
+      "label": "Nutrient-film channel B",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "moisture": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/channelB/active",
+        "running": "/components/channelB/running",
+        "fault": "/components/channelB/fault",
+        "status": "/components/channelB/status",
+        "moisture": "/components/channelB/moisture",
+        "load": "/components/channelB/load",
+        "damage": "/components/channelB/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "light",
+          "side": "top",
+          "offset": 0.5
+        },
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "sitePower",
+      "type": "transformer",
+      "label": "Explicit grid-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/sitePower/active",
+        "running": "/components/sitePower/running",
+        "fault": "/components/sitePower/fault",
+        "status": "/components/sitePower/status",
+        "load": "/components/sitePower/load",
+        "damage": "/components/sitePower/damage"
+      },
+      "ports": [
+        {
+          "id": "primary",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "secondary",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared growing-system controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "ports": [
+        {
+          "id": "network",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "io",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "lightA",
+      "type": "grow-light",
+      "label": "Channel A growing light",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "light": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lightA/active",
+        "running": "/components/lightA/running",
+        "fault": "/components/lightA/fault",
+        "status": "/components/lightA/status",
+        "light": "/components/lightA/light",
+        "load": "/components/lightA/load",
+        "damage": "/components/lightA/damage"
+      },
+      "ports": [
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "light",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "lightB",
+      "type": "grow-light",
+      "label": "Channel B growing light",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "light": 60,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/lightB/active",
+        "running": "/components/lightB/running",
+        "fault": "/components/lightB/fault",
+        "status": "/components/lightB/status",
+        "light": "/components/lightB/light",
+        "load": "/components/lightB/load",
+        "damage": "/components/lightB/damage"
+      },
+      "ports": [
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        },
+        {
+          "id": "light",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "heat",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "bottom",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "makeup",
+      "type": "tank",
+      "label": "Finite makeup / nutrient feed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/makeup/active",
+        "running": "/components/makeup/running",
+        "fault": "/components/makeup/fault",
+        "status": "/components/makeup/status",
+        "level": "/components/makeup/level",
+        "damage": "/components/makeup/damage"
+      },
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "metering",
+      "type": "dosing-pump",
+      "label": "Manual makeup metering pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/metering/active",
+        "running": "/components/metering/running",
+        "fault": "/components/metering/fault",
+        "status": "/components/metering/status",
+        "load": "/components/metering/load",
+        "speed": "/components/metering/speed",
+        "damage": "/components/metering/damage"
+      },
+      "ports": [
+        {
+          "id": "suction",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "dose",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "phProbe",
+      "type": "water-quality-probe",
+      "label": "pH \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/phProbe/active",
+        "running": "/components/phProbe/running",
+        "fault": "/components/phProbe/fault",
+        "status": "/components/phProbe/status",
+        "connected": "/components/phProbe/connected",
+        "measurement": "/components/phProbe/measurement",
+        "value": "/components/phProbe/value",
+        "damage": "/components/phProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "ecProbe",
+      "type": "water-quality-probe",
+      "label": "Conductivity \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/ecProbe/active",
+        "running": "/components/ecProbe/running",
+        "fault": "/components/ecProbe/fault",
+        "status": "/components/ecProbe/status",
+        "connected": "/components/ecProbe/connected",
+        "measurement": "/components/ecProbe/measurement",
+        "value": "/components/ecProbe/value",
+        "damage": "/components/ecProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    },
+    {
+      "id": "doProbe",
+      "type": "water-quality-probe",
+      "label": "Dissolved oxygen \u00b7 illustrative index",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "measurement": "do",
+        "value": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/doProbe/active",
+        "running": "/components/doProbe/running",
+        "fault": "/components/doProbe/fault",
+        "status": "/components/doProbe/status",
+        "connected": "/components/doProbe/connected",
+        "measurement": "/components/doProbe/measurement",
+        "value": "/components/doProbe/value",
+        "damage": "/components/doProbe/damage"
+      },
+      "ports": [
+        {
+          "id": "measurement",
+          "side": "top",
+          "offset": 0.75
+        },
+        {
+          "id": "signal",
+          "side": "bottom",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "bottom",
+          "offset": 0.75
+        }
+      ],
+      "provenance": [
+        "model-guesses",
+        "authored-topology",
+        "A1",
+        "A5",
+        "A6"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "header-north-to-valveA-inlet",
+      "from": {
+        "component": "header",
+        "port": "north"
+      },
+      "to": {
+        "component": "valveA",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/header-north-to-valveA-inlet"
+    },
+    {
+      "id": "valveA-outlet-to-channelA-inlet",
+      "from": {
+        "component": "valveA",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "channelA",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/valveA-outlet-to-channelA-inlet"
+    },
+    {
+      "id": "channelA-outlet-to-reservoir-inlet",
+      "from": {
+        "component": "channelA",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/channelA-outlet-to-reservoir-inlet"
+    },
+    {
+      "id": "header-south-to-valveB-inlet",
+      "from": {
+        "component": "header",
+        "port": "south"
+      },
+      "to": {
+        "component": "valveB",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/header-south-to-valveB-inlet"
+    },
+    {
+      "id": "valveB-outlet-to-channelB-inlet",
+      "from": {
+        "component": "valveB",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "channelB",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/valveB-outlet-to-channelB-inlet"
+    },
+    {
+      "id": "channelB-outlet-to-reservoir-inlet",
+      "from": {
+        "component": "channelB",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/channelB-outlet-to-reservoir-inlet"
+    },
+    {
+      "id": "reservoir-outlet-to-supplyPump-inlet",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "supplyPump",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/reservoir-outlet-to-supplyPump-inlet"
+    },
+    {
+      "id": "supplyPump-outlet-to-screen-inlet",
+      "from": {
+        "component": "supplyPump",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "screen",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/supplyPump-outlet-to-screen-inlet"
+    },
+    {
+      "id": "screen-outlet-to-header-west",
+      "from": {
+        "component": "screen",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "header",
+        "port": "west"
+      },
+      "medium": "liquid",
+      "label": "liquid",
+      "flowBinding": "/flows/screen-outlet-to-header-west"
+    },
+    {
+      "id": "sitePower-secondary-to-plc-power",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Control power",
+      "flowBinding": "/flows/sitePower-secondary-to-plc-power"
+    },
+    {
+      "id": "sitePower-secondary-to-reservoir-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-reservoir-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-supplyPump-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "supplyPump",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-supplyPump-drive"
+    },
+    {
+      "id": "plc-io-to-valveA-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "valveA",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-valveA-control"
+    },
+    {
+      "id": "sitePower-secondary-to-lightA-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "lightA",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-lightA-supply"
+    },
+    {
+      "id": "plc-io-to-lightA-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "lightA",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-lightA-control"
+    },
+    {
+      "id": "lightA-light-to-channelA-light",
+      "from": {
+        "component": "lightA",
+        "port": "light"
+      },
+      "to": {
+        "component": "channelA",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "Illustrative light energy",
+      "flowBinding": "/flows/lightA-light-to-channelA-light"
+    },
+    {
+      "id": "plc-io-to-valveB-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "valveB",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-valveB-control"
+    },
+    {
+      "id": "sitePower-secondary-to-lightB-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "lightB",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-lightB-supply"
+    },
+    {
+      "id": "plc-io-to-lightB-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "lightB",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "Shared controller command",
+      "flowBinding": "/flows/plc-io-to-lightB-control"
+    },
+    {
+      "id": "lightB-light-to-channelB-light",
+      "from": {
+        "component": "lightB",
+        "port": "light"
+      },
+      "to": {
+        "component": "channelB",
+        "port": "light"
+      },
+      "medium": "optical",
+      "label": "Illustrative light energy",
+      "flowBinding": "/flows/lightB-light-to-channelB-light"
+    },
+    {
+      "id": "makeup-outlet-to-metering-suction",
+      "from": {
+        "component": "makeup",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "metering",
+        "port": "suction"
+      },
+      "medium": "chemical",
+      "label": "chemical",
+      "flowBinding": "/flows/makeup-outlet-to-metering-suction"
+    },
+    {
+      "id": "metering-dose-to-reservoir-inlet",
+      "from": {
+        "component": "metering",
+        "port": "dose"
+      },
+      "to": {
+        "component": "reservoir",
+        "port": "inlet"
+      },
+      "medium": "chemical",
+      "label": "chemical",
+      "flowBinding": "/flows/metering-dose-to-reservoir-inlet"
+    },
+    {
+      "id": "sitePower-secondary-to-metering-drive",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "metering",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-metering-drive"
+    },
+    {
+      "id": "sitePower-secondary-to-phProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "phProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-phProbe-supply"
+    },
+    {
+      "id": "reservoir-outlet-to-phProbe-measurement",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "phProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/reservoir-outlet-to-phProbe-measurement"
+    },
+    {
+      "id": "phProbe-signal-to-plc-io",
+      "from": {
+        "component": "phProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/phProbe-signal-to-plc-io"
+    },
+    {
+      "id": "sitePower-secondary-to-ecProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "ecProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-ecProbe-supply"
+    },
+    {
+      "id": "reservoir-outlet-to-ecProbe-measurement",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "ecProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/reservoir-outlet-to-ecProbe-measurement"
+    },
+    {
+      "id": "ecProbe-signal-to-plc-io",
+      "from": {
+        "component": "ecProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/ecProbe-signal-to-plc-io"
+    },
+    {
+      "id": "sitePower-secondary-to-doProbe-supply",
+      "from": {
+        "component": "sitePower",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "doProbe",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Declared grid power",
+      "flowBinding": "/flows/sitePower-secondary-to-doProbe-supply"
+    },
+    {
+      "id": "reservoir-outlet-to-doProbe-measurement",
+      "from": {
+        "component": "reservoir",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "doProbe",
+        "port": "measurement"
+      },
+      "medium": "measurement",
+      "label": "Non-consuming observation",
+      "flowBinding": "/flows/reservoir-outlet-to-doProbe-measurement"
+    },
+    {
+      "id": "doProbe-signal-to-plc-io",
+      "from": {
+        "component": "doProbe",
+        "port": "signal"
+      },
+      "to": {
+        "component": "plc",
+        "port": "io"
+      },
+      "medium": "data",
+      "label": "Measured index",
+      "flowBinding": "/flows/doProbe-signal-to-plc-io"
+    }
+  ],
+  "views": [
+    {
+      "id": "water",
+      "label": "Parallel NFT channels",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "reservoir",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "supplyPump",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "screen",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "header",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "valveA",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "channelA",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "valveB",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "channelB",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "header-north-to-valveA-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 320
+            },
+            {
+              "x": 340,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "valveA-outlet-to-channelA-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 435
+            },
+            {
+              "x": 580,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 320
+            },
+            {
+              "x": 40,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "channelA-outlet-to-reservoir-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 435
+            },
+            {
+              "x": 280,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 155
+            },
+            {
+              "x": 60,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "header-south-to-valveB-inlet",
+          "points": [
+            {
+              "x": 760,
+              "y": 530
+            },
+            {
+              "x": 760,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 600
+            },
+            {
+              "x": 40,
+              "y": 715
+            },
+            {
+              "x": 60,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "valveB-outlet-to-channelB-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "channelB-outlet-to-reservoir-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 270
+            },
+            {
+              "x": 40,
+              "y": 155
+            },
+            {
+              "x": 60,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "reservoir-outlet-to-supplyPump-inlet",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "supplyPump-outlet-to-screen-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "screen-outlet-to-header-west",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 880,
+              "y": 155
+            },
+            {
+              "x": 880,
+              "y": 320
+            },
+            {
+              "x": 640,
+              "y": 320
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preparation",
+      "label": "Preparation & typed readings",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "makeup",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "metering",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "reservoir",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "phProbe",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "ecProbe",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "doProbe",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "makeup-outlet-to-metering-suction",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "metering-dose-to-reservoir-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "reservoir-outlet-to-phProbe-measurement",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 914,
+              "y": 155
+            },
+            {
+              "x": 914,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "reservoir-outlet-to-ecProbe-measurement",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 914,
+              "y": 155
+            },
+            {
+              "x": 914,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "reservoir-outlet-to-doProbe-measurement",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 914,
+              "y": 155
+            },
+            {
+              "x": 914,
+              "y": 286
+            },
+            {
+              "x": 210,
+              "y": 286
+            },
+            {
+              "x": 210,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Light, power & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "sitePower",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightA",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "channelA",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "lightB",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "channelB",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "supplyPump",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "valveA",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "valveB",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "valveA-outlet-to-channelA-inlet",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 715
+            },
+            {
+              "x": 580,
+              "y": 550
+            },
+            {
+              "x": 640,
+              "y": 550
+            },
+            {
+              "x": 640,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "valveB-outlet-to-channelB-inlet",
+          "points": [
+            {
+              "x": 860,
+              "y": 715
+            },
+            {
+              "x": 880,
+              "y": 715
+            },
+            {
+              "x": 880,
+              "y": 550
+            },
+            {
+              "x": 40,
+              "y": 550
+            },
+            {
+              "x": 40,
+              "y": 435
+            },
+            {
+              "x": 60,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 286
+            },
+            {
+              "x": 510,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-supplyPump-drive",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 846
+            },
+            {
+              "x": 210,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-valveA-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 312,
+              "y": 298
+            },
+            {
+              "x": 312,
+              "y": 858
+            },
+            {
+              "x": 460,
+              "y": 858
+            },
+            {
+              "x": 460,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-lightA-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 155
+            },
+            {
+              "x": 324,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 286
+            },
+            {
+              "x": 810,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-lightA-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 760,
+              "y": 298
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "lightA-light-to-channelA-light",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-valveB-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 612,
+              "y": 298
+            },
+            {
+              "x": 612,
+              "y": 858
+            },
+            {
+              "x": 760,
+              "y": 858
+            },
+            {
+              "x": 760,
+              "y": 810
+            }
+          ]
+        },
+        {
+          "connection": "sitePower-secondary-to-lightB-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 155
+            },
+            {
+              "x": 296,
+              "y": 304
+            },
+            {
+              "x": 324,
+              "y": 304
+            },
+            {
+              "x": 324,
+              "y": 566
+            },
+            {
+              "x": 510,
+              "y": 566
+            },
+            {
+              "x": 510,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-lightB-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 298
+            },
+            {
+              "x": 608,
+              "y": 298
+            },
+            {
+              "x": 608,
+              "y": 578
+            },
+            {
+              "x": 460,
+              "y": 578
+            },
+            {
+              "x": 460,
+              "y": 530
+            }
+          ]
+        },
+        {
+          "connection": "lightB-light-to-channelB-light",
+          "points": [
+            {
+              "x": 460,
+              "y": 530
+            },
+            {
+              "x": 460,
+              "y": 572
+            },
+            {
+              "x": 302,
+              "y": 572
+            },
+            {
+              "x": 302,
+              "y": 298
+            },
+            {
+              "x": 160,
+              "y": 298
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "reservoir-enabled",
+      "label": "Equipment enabled",
+      "component": "reservoir",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "reservoir-load",
+      "label": "Requested duty (%)",
+      "component": "reservoir",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "reservoir-fault",
+      "label": "Inject fictional failure",
+      "component": "reservoir",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "reservoir",
+        "value": true
+      }
+    },
+    {
+      "id": "reservoir-repair",
+      "label": "Repair selected equipment",
+      "component": "reservoir",
+      "action": "repair",
+      "arguments": {
+        "equipment": "reservoir"
+      }
+    },
+    {
+      "id": "supplyPump-enabled",
+      "label": "Equipment enabled",
+      "component": "supplyPump",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "supplyPump"
+      }
+    },
+    {
+      "id": "supplyPump-load",
+      "label": "Requested duty (%)",
+      "component": "supplyPump",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "supplyPump"
+      }
+    },
+    {
+      "id": "supplyPump-fault",
+      "label": "Inject fictional failure",
+      "component": "supplyPump",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "supplyPump",
+        "value": true
+      }
+    },
+    {
+      "id": "supplyPump-repair",
+      "label": "Repair selected equipment",
+      "component": "supplyPump",
+      "action": "repair",
+      "arguments": {
+        "equipment": "supplyPump"
+      }
+    },
+    {
+      "id": "screen-enabled",
+      "label": "Equipment enabled",
+      "component": "screen",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-load",
+      "label": "Requested duty (%)",
+      "component": "screen",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "screen-fault",
+      "label": "Inject fictional failure",
+      "component": "screen",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "screen",
+        "value": true
+      }
+    },
+    {
+      "id": "screen-repair",
+      "label": "Repair selected equipment",
+      "component": "screen",
+      "action": "repair",
+      "arguments": {
+        "equipment": "screen"
+      }
+    },
+    {
+      "id": "header-enabled",
+      "label": "Equipment enabled",
+      "component": "header",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-load",
+      "label": "Requested duty (%)",
+      "component": "header",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-fault",
+      "label": "Inject fictional failure",
+      "component": "header",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "header",
+        "value": true
+      }
+    },
+    {
+      "id": "header-repair",
+      "label": "Repair selected equipment",
+      "component": "header",
+      "action": "repair",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "header-open",
+      "label": "Flow path open",
+      "component": "header",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "header"
+      }
+    },
+    {
+      "id": "valveA-enabled",
+      "label": "Equipment enabled",
+      "component": "valveA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "valveA"
+      }
+    },
+    {
+      "id": "valveA-load",
+      "label": "Valve opening (%)",
+      "component": "valveA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "valveA"
+      }
+    },
+    {
+      "id": "valveA-fault",
+      "label": "Inject fictional failure",
+      "component": "valveA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "valveA",
+        "value": true
+      }
+    },
+    {
+      "id": "valveA-repair",
+      "label": "Repair selected equipment",
+      "component": "valveA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "valveA"
+      }
+    },
+    {
+      "id": "valveA-open",
+      "label": "Flow path open",
+      "component": "valveA",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "valveA"
+      }
+    },
+    {
+      "id": "channelA-enabled",
+      "label": "Equipment enabled",
+      "component": "channelA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "channelA"
+      }
+    },
+    {
+      "id": "channelA-load",
+      "label": "Requested duty (%)",
+      "component": "channelA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "channelA"
+      }
+    },
+    {
+      "id": "channelA-fault",
+      "label": "Inject fictional failure",
+      "component": "channelA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "channelA",
+        "value": true
+      }
+    },
+    {
+      "id": "channelA-repair",
+      "label": "Repair selected equipment",
+      "component": "channelA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "channelA"
+      }
+    },
+    {
+      "id": "valveB-enabled",
+      "label": "Equipment enabled",
+      "component": "valveB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "valveB"
+      }
+    },
+    {
+      "id": "valveB-load",
+      "label": "Valve opening (%)",
+      "component": "valveB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "valveB"
+      }
+    },
+    {
+      "id": "valveB-fault",
+      "label": "Inject fictional failure",
+      "component": "valveB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "valveB",
+        "value": true
+      }
+    },
+    {
+      "id": "valveB-repair",
+      "label": "Repair selected equipment",
+      "component": "valveB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "valveB"
+      }
+    },
+    {
+      "id": "valveB-open",
+      "label": "Flow path open",
+      "component": "valveB",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "valveB"
+      }
+    },
+    {
+      "id": "channelB-enabled",
+      "label": "Equipment enabled",
+      "component": "channelB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "channelB"
+      }
+    },
+    {
+      "id": "channelB-load",
+      "label": "Requested duty (%)",
+      "component": "channelB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "channelB"
+      }
+    },
+    {
+      "id": "channelB-fault",
+      "label": "Inject fictional failure",
+      "component": "channelB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "channelB",
+        "value": true
+      }
+    },
+    {
+      "id": "channelB-repair",
+      "label": "Repair selected equipment",
+      "component": "channelB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "channelB"
+      }
+    },
+    {
+      "id": "sitePower-enabled",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-load",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "sitePower-fault",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "sitePower",
+        "value": true
+      }
+    },
+    {
+      "id": "sitePower-repair",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "action": "repair",
+      "arguments": {
+        "equipment": "sitePower"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "lightA-enabled",
+      "label": "Equipment enabled",
+      "component": "lightA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lightA"
+      }
+    },
+    {
+      "id": "lightA-load",
+      "label": "Requested duty (%)",
+      "component": "lightA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lightA"
+      }
+    },
+    {
+      "id": "lightA-fault",
+      "label": "Inject fictional failure",
+      "component": "lightA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lightA",
+        "value": true
+      }
+    },
+    {
+      "id": "lightA-repair",
+      "label": "Repair selected equipment",
+      "component": "lightA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lightA"
+      }
+    },
+    {
+      "id": "lightB-enabled",
+      "label": "Equipment enabled",
+      "component": "lightB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "lightB"
+      }
+    },
+    {
+      "id": "lightB-load",
+      "label": "Requested duty (%)",
+      "component": "lightB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "lightB"
+      }
+    },
+    {
+      "id": "lightB-fault",
+      "label": "Inject fictional failure",
+      "component": "lightB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "lightB",
+        "value": true
+      }
+    },
+    {
+      "id": "lightB-repair",
+      "label": "Repair selected equipment",
+      "component": "lightB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "lightB"
+      }
+    },
+    {
+      "id": "makeup-enabled",
+      "label": "Equipment enabled",
+      "component": "makeup",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "makeup"
+      }
+    },
+    {
+      "id": "makeup-load",
+      "label": "Requested duty (%)",
+      "component": "makeup",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "makeup"
+      }
+    },
+    {
+      "id": "makeup-fault",
+      "label": "Inject fictional failure",
+      "component": "makeup",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "makeup",
+        "value": true
+      }
+    },
+    {
+      "id": "makeup-repair",
+      "label": "Repair selected equipment",
+      "component": "makeup",
+      "action": "repair",
+      "arguments": {
+        "equipment": "makeup"
+      }
+    },
+    {
+      "id": "metering-enabled",
+      "label": "Equipment enabled",
+      "component": "metering",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "metering-load",
+      "label": "Requested duty (%)",
+      "component": "metering",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "metering-fault",
+      "label": "Inject fictional failure",
+      "component": "metering",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "metering",
+        "value": true
+      }
+    },
+    {
+      "id": "metering-repair",
+      "label": "Repair selected equipment",
+      "component": "metering",
+      "action": "repair",
+      "arguments": {
+        "equipment": "metering"
+      }
+    },
+    {
+      "id": "phProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "phProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "phProbe"
+      }
+    },
+    {
+      "id": "phProbe-load",
+      "label": "Requested duty (%)",
+      "component": "phProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "phProbe"
+      }
+    },
+    {
+      "id": "phProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "phProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "phProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "phProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "phProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "phProbe"
+      }
+    },
+    {
+      "id": "ecProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "ecProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "ecProbe"
+      }
+    },
+    {
+      "id": "ecProbe-load",
+      "label": "Requested duty (%)",
+      "component": "ecProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "ecProbe"
+      }
+    },
+    {
+      "id": "ecProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "ecProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "ecProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "ecProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "ecProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "ecProbe"
+      }
+    },
+    {
+      "id": "doProbe-enabled",
+      "label": "Equipment enabled",
+      "component": "doProbe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "doProbe"
+      }
+    },
+    {
+      "id": "doProbe-load",
+      "label": "Requested duty (%)",
+      "component": "doProbe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "doProbe"
+      }
+    },
+    {
+      "id": "doProbe-fault",
+      "label": "Inject fictional failure",
+      "component": "doProbe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "doProbe",
+        "value": true
+      }
+    },
+    {
+      "id": "doProbe-repair",
+      "label": "Repair selected equipment",
+      "component": "doProbe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "doProbe"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "reservoir-enabled-control",
+      "label": "Equipment enabled",
+      "component": "reservoir",
+      "kind": "toggle",
+      "command": "reservoir-enabled",
+      "binding": "/controls/reservoir/enabled"
+    },
+    {
+      "id": "reservoir-load-control",
+      "label": "Requested duty (%)",
+      "component": "reservoir",
+      "kind": "range",
+      "command": "reservoir-load",
+      "binding": "/controls/reservoir/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "reservoir-fault-control",
+      "label": "Inject fictional failure",
+      "component": "reservoir",
+      "kind": "button",
+      "command": "reservoir-fault"
+    },
+    {
+      "id": "reservoir-repair-control",
+      "label": "Repair selected equipment",
+      "component": "reservoir",
+      "kind": "button",
+      "command": "reservoir-repair"
+    },
+    {
+      "id": "supplyPump-enabled-control",
+      "label": "Equipment enabled",
+      "component": "supplyPump",
+      "kind": "toggle",
+      "command": "supplyPump-enabled",
+      "binding": "/controls/supplyPump/enabled"
+    },
+    {
+      "id": "supplyPump-load-control",
+      "label": "Requested duty (%)",
+      "component": "supplyPump",
+      "kind": "range",
+      "command": "supplyPump-load",
+      "binding": "/controls/supplyPump/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "supplyPump-fault-control",
+      "label": "Inject fictional failure",
+      "component": "supplyPump",
+      "kind": "button",
+      "command": "supplyPump-fault"
+    },
+    {
+      "id": "supplyPump-repair-control",
+      "label": "Repair selected equipment",
+      "component": "supplyPump",
+      "kind": "button",
+      "command": "supplyPump-repair"
+    },
+    {
+      "id": "screen-enabled-control",
+      "label": "Equipment enabled",
+      "component": "screen",
+      "kind": "toggle",
+      "command": "screen-enabled",
+      "binding": "/controls/screen/enabled"
+    },
+    {
+      "id": "screen-load-control",
+      "label": "Requested duty (%)",
+      "component": "screen",
+      "kind": "range",
+      "command": "screen-load",
+      "binding": "/controls/screen/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "screen-fault-control",
+      "label": "Inject fictional failure",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-fault"
+    },
+    {
+      "id": "screen-repair-control",
+      "label": "Repair selected equipment",
+      "component": "screen",
+      "kind": "button",
+      "command": "screen-repair"
+    },
+    {
+      "id": "header-enabled-control",
+      "label": "Equipment enabled",
+      "component": "header",
+      "kind": "toggle",
+      "command": "header-enabled",
+      "binding": "/controls/header/enabled"
+    },
+    {
+      "id": "header-load-control",
+      "label": "Requested duty (%)",
+      "component": "header",
+      "kind": "range",
+      "command": "header-load",
+      "binding": "/controls/header/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "header-fault-control",
+      "label": "Inject fictional failure",
+      "component": "header",
+      "kind": "button",
+      "command": "header-fault"
+    },
+    {
+      "id": "header-repair-control",
+      "label": "Repair selected equipment",
+      "component": "header",
+      "kind": "button",
+      "command": "header-repair"
+    },
+    {
+      "id": "header-open-control",
+      "label": "Flow path open",
+      "component": "header",
+      "kind": "toggle",
+      "command": "header-open",
+      "binding": "/controls/header/open"
+    },
+    {
+      "id": "valveA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "valveA",
+      "kind": "toggle",
+      "command": "valveA-enabled",
+      "binding": "/controls/valveA/enabled"
+    },
+    {
+      "id": "valveA-load-control",
+      "label": "Valve opening (%)",
+      "component": "valveA",
+      "kind": "range",
+      "command": "valveA-load",
+      "binding": "/controls/valveA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "valveA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "valveA",
+      "kind": "button",
+      "command": "valveA-fault"
+    },
+    {
+      "id": "valveA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "valveA",
+      "kind": "button",
+      "command": "valveA-repair"
+    },
+    {
+      "id": "valveA-open-control",
+      "label": "Flow path open",
+      "component": "valveA",
+      "kind": "toggle",
+      "command": "valveA-open",
+      "binding": "/controls/valveA/open"
+    },
+    {
+      "id": "channelA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "channelA",
+      "kind": "toggle",
+      "command": "channelA-enabled",
+      "binding": "/controls/channelA/enabled"
+    },
+    {
+      "id": "channelA-load-control",
+      "label": "Requested duty (%)",
+      "component": "channelA",
+      "kind": "range",
+      "command": "channelA-load",
+      "binding": "/controls/channelA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "channelA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "channelA",
+      "kind": "button",
+      "command": "channelA-fault"
+    },
+    {
+      "id": "channelA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "channelA",
+      "kind": "button",
+      "command": "channelA-repair"
+    },
+    {
+      "id": "valveB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "valveB",
+      "kind": "toggle",
+      "command": "valveB-enabled",
+      "binding": "/controls/valveB/enabled"
+    },
+    {
+      "id": "valveB-load-control",
+      "label": "Valve opening (%)",
+      "component": "valveB",
+      "kind": "range",
+      "command": "valveB-load",
+      "binding": "/controls/valveB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "valveB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "valveB",
+      "kind": "button",
+      "command": "valveB-fault"
+    },
+    {
+      "id": "valveB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "valveB",
+      "kind": "button",
+      "command": "valveB-repair"
+    },
+    {
+      "id": "valveB-open-control",
+      "label": "Flow path open",
+      "component": "valveB",
+      "kind": "toggle",
+      "command": "valveB-open",
+      "binding": "/controls/valveB/open"
+    },
+    {
+      "id": "channelB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "channelB",
+      "kind": "toggle",
+      "command": "channelB-enabled",
+      "binding": "/controls/channelB/enabled"
+    },
+    {
+      "id": "channelB-load-control",
+      "label": "Requested duty (%)",
+      "component": "channelB",
+      "kind": "range",
+      "command": "channelB-load",
+      "binding": "/controls/channelB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "channelB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "channelB",
+      "kind": "button",
+      "command": "channelB-fault"
+    },
+    {
+      "id": "channelB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "channelB",
+      "kind": "button",
+      "command": "channelB-repair"
+    },
+    {
+      "id": "sitePower-enabled-control",
+      "label": "Equipment enabled",
+      "component": "sitePower",
+      "kind": "toggle",
+      "command": "sitePower-enabled",
+      "binding": "/controls/sitePower/enabled"
+    },
+    {
+      "id": "sitePower-load-control",
+      "label": "Requested duty (%)",
+      "component": "sitePower",
+      "kind": "range",
+      "command": "sitePower-load",
+      "binding": "/controls/sitePower/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "sitePower-fault-control",
+      "label": "Inject fictional failure",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-fault"
+    },
+    {
+      "id": "sitePower-repair-control",
+      "label": "Repair selected equipment",
+      "component": "sitePower",
+      "kind": "button",
+      "command": "sitePower-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested duty (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional failure",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair selected equipment",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "lightA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "lightA",
+      "kind": "toggle",
+      "command": "lightA-enabled",
+      "binding": "/controls/lightA/enabled"
+    },
+    {
+      "id": "lightA-load-control",
+      "label": "Requested duty (%)",
+      "component": "lightA",
+      "kind": "range",
+      "command": "lightA-load",
+      "binding": "/controls/lightA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lightA-fault-control",
+      "label": "Inject fictional failure",
+      "component": "lightA",
+      "kind": "button",
+      "command": "lightA-fault"
+    },
+    {
+      "id": "lightA-repair-control",
+      "label": "Repair selected equipment",
+      "component": "lightA",
+      "kind": "button",
+      "command": "lightA-repair"
+    },
+    {
+      "id": "lightB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "lightB",
+      "kind": "toggle",
+      "command": "lightB-enabled",
+      "binding": "/controls/lightB/enabled"
+    },
+    {
+      "id": "lightB-load-control",
+      "label": "Requested duty (%)",
+      "component": "lightB",
+      "kind": "range",
+      "command": "lightB-load",
+      "binding": "/controls/lightB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "lightB-fault-control",
+      "label": "Inject fictional failure",
+      "component": "lightB",
+      "kind": "button",
+      "command": "lightB-fault"
+    },
+    {
+      "id": "lightB-repair-control",
+      "label": "Repair selected equipment",
+      "component": "lightB",
+      "kind": "button",
+      "command": "lightB-repair"
+    },
+    {
+      "id": "makeup-enabled-control",
+      "label": "Equipment enabled",
+      "component": "makeup",
+      "kind": "toggle",
+      "command": "makeup-enabled",
+      "binding": "/controls/makeup/enabled"
+    },
+    {
+      "id": "makeup-load-control",
+      "label": "Requested duty (%)",
+      "component": "makeup",
+      "kind": "range",
+      "command": "makeup-load",
+      "binding": "/controls/makeup/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "makeup-fault-control",
+      "label": "Inject fictional failure",
+      "component": "makeup",
+      "kind": "button",
+      "command": "makeup-fault"
+    },
+    {
+      "id": "makeup-repair-control",
+      "label": "Repair selected equipment",
+      "component": "makeup",
+      "kind": "button",
+      "command": "makeup-repair"
+    },
+    {
+      "id": "metering-enabled-control",
+      "label": "Equipment enabled",
+      "component": "metering",
+      "kind": "toggle",
+      "command": "metering-enabled",
+      "binding": "/controls/metering/enabled"
+    },
+    {
+      "id": "metering-load-control",
+      "label": "Requested duty (%)",
+      "component": "metering",
+      "kind": "range",
+      "command": "metering-load",
+      "binding": "/controls/metering/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "metering-fault-control",
+      "label": "Inject fictional failure",
+      "component": "metering",
+      "kind": "button",
+      "command": "metering-fault"
+    },
+    {
+      "id": "metering-repair-control",
+      "label": "Repair selected equipment",
+      "component": "metering",
+      "kind": "button",
+      "command": "metering-repair"
+    },
+    {
+      "id": "phProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "phProbe",
+      "kind": "toggle",
+      "command": "phProbe-enabled",
+      "binding": "/controls/phProbe/enabled"
+    },
+    {
+      "id": "phProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "phProbe",
+      "kind": "range",
+      "command": "phProbe-load",
+      "binding": "/controls/phProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "phProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "phProbe",
+      "kind": "button",
+      "command": "phProbe-fault"
+    },
+    {
+      "id": "phProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "phProbe",
+      "kind": "button",
+      "command": "phProbe-repair"
+    },
+    {
+      "id": "ecProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "ecProbe",
+      "kind": "toggle",
+      "command": "ecProbe-enabled",
+      "binding": "/controls/ecProbe/enabled"
+    },
+    {
+      "id": "ecProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "ecProbe",
+      "kind": "range",
+      "command": "ecProbe-load",
+      "binding": "/controls/ecProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "ecProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "ecProbe",
+      "kind": "button",
+      "command": "ecProbe-fault"
+    },
+    {
+      "id": "ecProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "ecProbe",
+      "kind": "button",
+      "command": "ecProbe-repair"
+    },
+    {
+      "id": "doProbe-enabled-control",
+      "label": "Equipment enabled",
+      "component": "doProbe",
+      "kind": "toggle",
+      "command": "doProbe-enabled",
+      "binding": "/controls/doProbe/enabled"
+    },
+    {
+      "id": "doProbe-load-control",
+      "label": "Requested duty (%)",
+      "component": "doProbe",
+      "kind": "range",
+      "command": "doProbe-load",
+      "binding": "/controls/doProbe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "doProbe-fault-control",
+      "label": "Inject fictional failure",
+      "component": "doProbe",
+      "kind": "button",
+      "command": "doProbe-fault"
+    },
+    {
+      "id": "doProbe-repair-control",
+      "label": "Repair selected equipment",
+      "component": "doProbe",
+      "kind": "button",
+      "command": "doProbe-repair"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "model-guesses",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "All quantities, coefficients, inventories, timings and fault responses are author-selected teaching indices, not biological or engineering calibration."
+    },
+    {
+      "id": "authored-topology",
+      "label": "Authored demonstration topology",
+      "kind": "illustrative",
+      "description": "One selected process arrangement with separate water, air, optical, power and signal paths. Screen geometry is not physical sizing."
+    },
+    {
+      "id": "A1",
+      "label": "OSU Extension \u00b7 Hydroponics",
+      "kind": "external",
+      "source": "https://extension.okstate.edu/fact-sheets/hydroponics",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A5",
+      "label": "Cornell CEA \u00b7 Hydroponic Lettuce Handbook",
+      "kind": "external",
+      "source": "https://cea.cals.cornell.edu/files/2019/06/Cornell-CEA-Lettuce-Handbook-.pdf",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    },
+    {
+      "id": "A6",
+      "label": "Virginia Cooperative Extension \u00b7 NFT systems",
+      "kind": "external",
+      "source": "https://www.pubs.ext.vt.edu/SPES/spes-463/spes-463.html",
+      "description": "Read 2026-11-13. Supports equipment identity and structural distinctions only. See docs/agriculture-references.md; does not validate placeholder parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model values are editable teaching assumptions",
+      "value": true,
+      "provenance": "model-guesses"
+    },
+    {
+      "id": "separate-media",
+      "label": "Air and optical energy never add to water inventory",
+      "value": true,
+      "provenance": "authored-topology"
+    },
+    {
+      "id": "no-biology-prediction",
+      "label": "No crop-yield or fish-welfare prediction",
+      "value": true,
+      "provenance": "model-guesses"
+    }
+  ]
+}

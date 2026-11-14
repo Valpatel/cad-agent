@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-labelledby="gallery-hydro-turbine-base-active-title gallery-hydro-turbine-base-active-desc"><title id="gallery-hydro-turbine-base-active-title">Hydraulic turbine</title><desc id="gallery-hydro-turbine-base-active-desc">Hydraulic turbine. Active, illustrative speed 60%, illustrative load 60%, illustrative flow 60%. Standalone illustrative gallery preview; not a running model.</desc><style>:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::before,
+:is(.twin-root.is-paused,.twin-document-hidden,html.motion-paused) .twin-equipment-art *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.twin-equipment-art *,.twin-equipment-art *::before,.twin-equipment-art *::after{animation:none!important;transition:none!important}}
+.scada-component .scada-power-art{--scada-power-cycle:2.4s}
+.scada-component .scada-power-motion{animation-play-state:paused;transform-box:view-box}
+.scada-component .scada-power-rotor{animation:scada-power-spin var(--scada-power-cycle) linear infinite paused}
+.scada-component .scada-energy-flow{animation:scada-power-flow var(--scada-power-cycle) linear infinite paused;opacity:var(--scada-power-flow-opacity,1)}
+.scada-component .scada-power-load-mark{opacity:calc(.15 + var(--scada-power-load,.6) * .85)}
+.scada-component :is(.scada-power-monitor,.scada-power-charge,.scada-power-convert-pulse,.scada-power-field-pulse,.scada-power-protection-pulse,.scada-power-signal){animation:scada-power-pulse var(--scada-power-cycle) ease-in-out infinite paused}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true]:not([data-failed=true]):not([data-status=offline]) .scada-power-art :is(.scada-power-motion,.scada-power-monitor){animation-play-state:running}
+.scada-component[data-running=true]:not([data-status=offline]) .scada-power-art :is(.scada-power-flow-lane .scada-energy-flow,.scada-power-incident .scada-power-motion,.scada-power-incident.scada-power-arc,.scada-power-environment .scada-power-motion,.scada-power-thermal .scada-power-motion){animation-play-state:running}
+@keyframes scada-power-spin{to{transform:rotate(360deg)}}
+@keyframes scada-power-flow{to{stroke-dashoffset:-24}}
+@keyframes scada-power-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.scada-component .scada-power-art :is(.scada-power-motion,.scada-power-monitor,.scada-power-arc){animation:none!important;transform:none!important}}
+.scada-component{display:inline-flex;position:relative;align-items:center;justify-content:center;width:210px;height:160px;max-width:100%;vertical-align:middle;isolation:isolate;color:#c4ebf1;--scada-accent:#62ffbc;--scada-activity-duration:2.4s}
+.scada-component.scada-component-with-gauges{box-sizing:border-box;height:calc(136px + var(--scada-gauge-height,22px));padding-bottom:var(--scada-gauge-height,22px)}
+.scada-component&gt;.scada-component-svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.scada-component[data-scada-host-state=false][data-running=false] *,.scada-component[data-scada-host-state=false][data-running=false] *::before,.scada-component[data-scada-host-state=false][data-running=false] *::after{animation-play-state:paused!important;transition:none!important}
+html.motion-paused .scada-component *,html.motion-paused .scada-component *::before,html.motion-paused .scada-component *::after{animation-play-state:paused!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){.scada-component *,.scada-component *::before,.scada-component *::after{animation:none!important;transition:none!important}}
+
+.gallery-label{font-family:Arial,sans-serif;fill:#dcecf1}
+.gallery-code{font-family:monospace;fill:#8fbac9}
+.gallery-symbol.scada-component{display:block;width:auto;height:auto;padding:0;max-width:none;overflow:visible}
+.gallery-symbol&gt;.twin-equipment-art{display:block;width:auto;height:auto;max-width:none}
+.gallery-symbol&gt;svg,.gallery-symbol&gt;.twin-equipment-art&gt;svg{display:block;width:280px!important;height:182px!important;max-width:none!important;max-height:none!important;overflow:visible}
+.gallery-condition svg{width:24px;height:24px}
+</style><defs><linearGradient id="gallery-hydro-turbine-base-active-card" x2="1" y2="1"><stop offset="0" stop-color="#102635"/><stop offset="1" stop-color="#0b1724"/></linearGradient></defs><rect x="0.5" y="0.5" width="479" height="359" rx="14" fill="url(#gallery-hydro-turbine-base-active-card)" stroke="#355665"/><text class="gallery-label" x="20" y="28" font-size="11" letter-spacing="1" style="fill:#7acfc9">POWER &amp; ENERGY</text><text class="gallery-label" x="20" y="55" font-size="21" font-weight="600">Hydraulic turbine</text><g transform="translate(100 79)"><g class="scada-component scada-component-with-gauges gallery-symbol" data-scada-type="hydro-turbine" data-scada-instance="scada-gallery-hydro-turbine-base-active" data-scada-host-state="false" data-active="true" data-failed="false" data-running="true" data-status="normal" data-flow="true" data-damage="none" data-speed-zero="false" style="--scada-level:55;--scada-load:60;--scada-flow-opacity:0.95;--scada-gauge-height:43px;--scada-activity-duration:2.2s;--activity-speed:2.2s;--buffer-fraction:0.55;--scada-level-offset:0px;--flame-scale:0.87" aria-hidden="true"><svg class="scada-component-svg" viewBox="0 0 180 136" aria-hidden="true" focusable="false" x="0" y="0" width="280" height="182" preserveAspectRatio="xMidYMid meet"><defs>
+ <linearGradient id="scada-gallery-hydro-turbine-base-active-steel"><stop stop-color="#16374a"/><stop offset=".3" stop-color="#659bae"/><stop offset=".5" stop-color="#acd5de"/><stop offset=".72" stop-color="#396a81"/><stop offset="1" stop-color="#122e42"/></linearGradient>
+ <linearGradient id="scada-gallery-hydro-turbine-base-active-glass" x2=".8" y2="1"><stop stop-color="#69eff1" stop-opacity=".18"/><stop offset="1" stop-color="#081827" stop-opacity=".65"/></linearGradient>
+ <linearGradient id="scada-gallery-hydro-turbine-base-active-liquid" x2="0" y2="1"><stop stop-color="#57ffd0" stop-opacity=".85"/><stop offset="1" stop-color="#087a92" stop-opacity=".55"/></linearGradient>
+ <radialGradient id="scada-gallery-hydro-turbine-base-active-glow"><stop stop-color="#00e5e9" stop-opacity=".18"/><stop offset="1" stop-color="#00e5e9" stop-opacity="0"/></radialGradient>
+ </defs><ellipse cx="90" cy="75" rx="83" ry="59" fill="url(#scada-gallery-hydro-turbine-base-active-glow)"/><ellipse cx="90" cy="128" rx="67" ry="5" fill="#030d19" opacity=".65"/><g class="scada-drawing"><g class="scada-power-art scada-energy-art" data-power-type="hydro-turbine" data-power-speed-zero="false" data-power-drive-blocked="false" style="--scada-power-cycle:2.44s;--scada-power-load:0.6">
+    <ellipse cx="90" cy="125" rx="68" ry="4.5" fill="#020d18" opacity=".72"/><path d="M52 108v15m-7 0h14" fill="none" stroke="#6d9dad" stroke-width="4" stroke-linecap="round"/><path d="M127 108v15m-7 0h14" fill="none" stroke="#6d9dad" stroke-width="4" stroke-linecap="round"/>
+    <g class="scada-power-flow-lane " data-flowing="true" style="--scada-power-flow-opacity:0.648"><path d="M8 49H43V65" fill="none" stroke="#183c50" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M8 49H43V65" fill="none" stroke="#80adbd" stroke-width="13" stroke-linejoin="round"/>
+    <path class="scada-energy-flow scada-power-motion" d="M8 49H43V65" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8"/><path d="M112 104V119H171" fill="none" stroke="#183c50" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M112 104V119H171" fill="none" stroke="#80adbd" stroke-width="13" stroke-linejoin="round"/>
+    <path class="scada-energy-flow scada-power-motion" d="M112 104V119H171" fill="none" stroke="#65f6d0" stroke-width="2" stroke-dasharray="4 8"/></g>
+    <path d="M35 77Q35 42 78 41Q130 40 139 76Q146 111 107 115H69Q36 111 35 77Z" fill="url(#scada-gallery-hydro-turbine-base-active-steel)" stroke="#afd4dd" stroke-width="1.6"/>
+    <path d="M45 76Q45 50 80 50Q124 50 129 77Q135 102 105 106H72Q46 102 45 76Z" fill="#123c50" stroke="#6fb5c2" stroke-width="2"/>
+    <circle cx="89" cy="77" r="27" fill="#0c283a" stroke="#98cdd4" stroke-width="2"/>
+    <g class="scada-power-drive" data-drive-blocked="false"><g class="scada-power-motion scada-power-rotor" style="transform-origin:89px 77px">
+    <path d="M89 75Q93.14 57.22 109.7 66.88L111.53999999999999 72.86Q96.59 65.5 91.76 79.76Z" fill="#8bdadf" stroke="#b7eaf0" stroke-width=".6" transform="rotate(0 89 77)"/><path d="M89 75Q93.14 57.22 109.7 66.88L111.53999999999999 72.86Q96.59 65.5 91.76 79.76Z" fill="#8bdadf" stroke="#b7eaf0" stroke-width=".6" transform="rotate(60 89 77)"/><path d="M89 75Q93.14 57.22 109.7 66.88L111.53999999999999 72.86Q96.59 65.5 91.76 79.76Z" fill="#8bdadf" stroke="#b7eaf0" stroke-width=".6" transform="rotate(120 89 77)"/><path d="M89 75Q93.14 57.22 109.7 66.88L111.53999999999999 72.86Q96.59 65.5 91.76 79.76Z" fill="#8bdadf" stroke="#b7eaf0" stroke-width=".6" transform="rotate(180 89 77)"/><path d="M89 75Q93.14 57.22 109.7 66.88L111.53999999999999 72.86Q96.59 65.5 91.76 79.76Z" fill="#8bdadf" stroke="#b7eaf0" stroke-width=".6" transform="rotate(240 89 77)"/><path d="M89 75Q93.14 57.22 109.7 66.88L111.53999999999999 72.86Q96.59 65.5 91.76 79.76Z" fill="#8bdadf" stroke="#b7eaf0" stroke-width=".6" transform="rotate(300 89 77)"/>
+    <circle cx="89" cy="77" r="4.6000000000000005" fill="#235067" stroke="#9bd4dd" stroke-width="1.1"/>
+  </g></g>
+    <path d="M89 50V13" stroke="#adcbd5" stroke-width="8"/><path class="scada-power-load-mark" d="M89 48V14" stroke="#ffd38a" stroke-width="2" stroke-dasharray="4 5"/>
+    <path d="M69 12h40v14H69Z" fill="#264c64" stroke="#a4cbd7"/>
+    
+    <g class="scada-power-indicator">
+    <rect x="39" y="110" width="28" height="15" rx="2" fill="#082633" stroke="#77a8bc"/>
+    <path d="M43 115h20m-20 5h14" stroke="#75f2ce" stroke-width="1.5"/>
+    <circle class="scada-power-monitor" cx="63" cy="121" r="1.5" fill="#8affd6"/>
+  </g>
+    
+  </g></g></svg></g></g><g data-scada-gauge="speed"><text class="gallery-code" x="90" y="276" font-size="10">SPEED</text><rect x="155" y="270" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="270" width="87" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="276" font-size="10" text-anchor="end">60%</text></g><g data-scada-gauge="load"><text class="gallery-code" x="90" y="288" font-size="10">LOAD</text><rect x="155" y="282" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="282" width="87" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="288" font-size="10" text-anchor="end">60%</text></g><g data-scada-gauge="flow"><text class="gallery-code" x="90" y="300" font-size="10">FLOW</text><rect x="155" y="294" width="145" height="5" rx="2.5" fill="#153c50" stroke="#537d90" stroke-width="0.6"/><rect x="155" y="294" width="87" height="5" rx="2.5" fill="#63e6d9"/><text class="gallery-code" x="385" y="300" font-size="10" text-anchor="end">60%</text></g><text class="gallery-label" x="20" y="328" font-size="12" style="fill:#bdeee6">Active illustrative preview</text><text class="gallery-code" x="20" y="346" font-size="10">hydro-turbine</text></svg>

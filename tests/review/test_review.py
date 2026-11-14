@@ -16,7 +16,7 @@ def test_missing_check_cannot_show_pass(tmp_path):
 def test_model_review_uses_existing_toolkit_viewer(tmp_path):
     (tmp_path/'view.json').write_text('{}')
     h=review_html(tmp_path,{'groups':[{'views':[{'kind':'model','title':'Assembly','file':'view.json'}]}]})
-    assert '/_cadagent/kit/viewer.html?manifest=/view.json' in h and '<iframe' in h
+    assert '/_cadagent/kit/model/viewer.html?manifest=/view.json' in h and '<iframe' in h
 
 
 def test_variant_manifests_do_not_mix_assemblies():

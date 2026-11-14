@@ -1,4 +1,4 @@
-// The browser port of cadagent.formulas (software/cadagent/webkit/formulas.js) against the golden vectors the Python writes
+// The browser port of cadagent.formulas (software/cadagent/webkit/calculators/formulas.js) against the golden vectors the Python writes
 // (tools/formula_vectors.py, checked for staleness by tests/formulas/test_formulas.py), so the site's demos compute exactly what
 // agents get. Also: the demos' material and fan tables are the Python's, and the cantilever still is what the component
 // draws.
@@ -7,8 +7,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import * as fx from '../../software/cadagent/webkit/formulas.js';
-import { MATERIALS, FANS, SCREWS } from '../../software/cadagent/webkit/formulas-data.js';
+import * as fx from '../../software/cadagent/webkit/calculators/formulas.js';
+import { MATERIALS, FANS, SCREWS } from '../../software/cadagent/webkit/calculators/formulas-data.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const vectors = JSON.parse(await readFile(path.join(root, 'tests/fixtures/formula-vectors.json'), 'utf8'));

@@ -1,0 +1,2355 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "mineral-flotation",
+    "label": "Mineral flotation",
+    "description": "Prepare a generic slurry, explore sequential separation cells and thicken/filter the concentrate. No mineral-specific chemistry, dosage or recovery claim is encoded."
+  },
+  "components": [
+    {
+      "id": "feed",
+      "type": "weigh-hopper",
+      "label": "Ore receiving hopper",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/feed/active",
+        "running": "/components/feed/running",
+        "fault": "/components/feed/fault",
+        "status": "/components/feed/status",
+        "level": "/components/feed/level",
+        "load": "/components/feed/load",
+        "damage": "/components/feed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mill",
+      "type": "grinding-mill",
+      "label": "Slurry preparation mill",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/mill/active",
+        "running": "/components/mill/running",
+        "fault": "/components/mill/fault",
+        "status": "/components/mill/status",
+        "load": "/components/mill/load",
+        "speed": "/components/mill/speed",
+        "damage": "/components/mill/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "slurry",
+      "type": "mixing-tank",
+      "label": "Slurry conditioning vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/slurry/active",
+        "running": "/components/slurry/running",
+        "fault": "/components/slurry/fault",
+        "status": "/components/slurry/status",
+        "level": "/components/slurry/level",
+        "damage": "/components/slurry/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rougher",
+      "type": "flotation-cell",
+      "label": "Rougher separation cell",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/rougher/active",
+        "running": "/components/rougher/running",
+        "fault": "/components/rougher/fault",
+        "status": "/components/rougher/status",
+        "level": "/components/rougher/level",
+        "load": "/components/rougher/load",
+        "speed": "/components/rougher/speed",
+        "damage": "/components/rougher/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "cleaner",
+      "type": "flotation-cell",
+      "label": "Cleaner separation cell",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cleaner/active",
+        "running": "/components/cleaner/running",
+        "fault": "/components/cleaner/fault",
+        "status": "/components/cleaner/status",
+        "level": "/components/cleaner/level",
+        "load": "/components/cleaner/load",
+        "speed": "/components/cleaner/speed",
+        "damage": "/components/cleaner/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "air",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "thickener",
+      "type": "clarifier",
+      "label": "Concentrate thickener",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/thickener/active",
+        "running": "/components/thickener/running",
+        "fault": "/components/thickener/fault",
+        "status": "/components/thickener/status",
+        "level": "/components/thickener/level",
+        "damage": "/components/thickener/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "feed",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "effluent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "sludge",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filter",
+      "type": "membrane-filter",
+      "label": "Concentrate filtration",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filter/active",
+        "running": "/components/filter/running",
+        "fault": "/components/filter/fault",
+        "status": "/components/filter/status",
+        "load": "/components/filter/load",
+        "damage": "/components/filter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "hold",
+      "type": "tank",
+      "label": "Concentrate holding buffer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/hold/active",
+        "running": "/components/hold/running",
+        "fault": "/components/hold/fault",
+        "status": "/components/hold/status",
+        "level": "/components/hold/level",
+        "damage": "/components/hold/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "outfeed",
+      "type": "conveyor",
+      "label": "Concentrate transfer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/outfeed/active",
+        "running": "/components/outfeed/running",
+        "fault": "/components/outfeed/fault",
+        "status": "/components/outfeed/status",
+        "load": "/components/outfeed/load",
+        "speed": "/components/outfeed/speed",
+        "damage": "/components/outfeed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "air",
+      "type": "blower",
+      "label": "Separation air supply",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/air/active",
+        "running": "/components/air/running",
+        "fault": "/components/air/fault",
+        "status": "/components/air/status",
+        "load": "/components/air/load",
+        "speed": "/components/air/speed",
+        "damage": "/components/air/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "intake",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "discharge",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-rack",
+      "label": "Recovery-circuit controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "flow",
+      "type": "flow-meter",
+      "label": "Slurry transfer monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/flow/active",
+        "running": "/components/flow/running",
+        "fault": "/components/flow/fault",
+        "status": "/components/flow/status",
+        "value": "/components/flow/value",
+        "damage": "/components/flow/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "feed-to-mill",
+      "from": {
+        "component": "feed",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "mill",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/feed-to-mill",
+      "label": "Ore receiving hopper \u2192 Slurry preparation mill"
+    },
+    {
+      "id": "mill-to-slurry",
+      "from": {
+        "component": "mill",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "slurry",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/mill-to-slurry",
+      "label": "Slurry preparation mill \u2192 Slurry conditioning vessel"
+    },
+    {
+      "id": "slurry-to-rougher",
+      "from": {
+        "component": "slurry",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "rougher",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/slurry-to-rougher",
+      "label": "Slurry conditioning vessel \u2192 Rougher separation cell"
+    },
+    {
+      "id": "rougher-to-cleaner",
+      "from": {
+        "component": "rougher",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cleaner",
+        "port": "inlet"
+      },
+      "medium": "slurry",
+      "flowBinding": "/flows/rougher-to-cleaner",
+      "label": "Rougher separation cell \u2192 Cleaner separation cell"
+    },
+    {
+      "id": "cleaner-to-thickener",
+      "from": {
+        "component": "cleaner",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "thickener",
+        "port": "feed"
+      },
+      "medium": "slurry",
+      "flowBinding": "/flows/cleaner-to-thickener",
+      "label": "Cleaner separation cell \u2192 Concentrate thickener"
+    },
+    {
+      "id": "thickener-to-filter",
+      "from": {
+        "component": "thickener",
+        "port": "effluent"
+      },
+      "to": {
+        "component": "filter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/thickener-to-filter",
+      "label": "Concentrate thickener \u2192 Concentrate filtration"
+    },
+    {
+      "id": "filter-to-hold",
+      "from": {
+        "component": "filter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "hold",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/filter-to-hold",
+      "label": "Concentrate filtration \u2192 Concentrate holding buffer"
+    },
+    {
+      "id": "hold-to-outfeed",
+      "from": {
+        "component": "hold",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "outfeed",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/hold-to-outfeed",
+      "label": "Concentrate holding buffer \u2192 Concentrate transfer"
+    },
+    {
+      "id": "air-to-rougher",
+      "from": {
+        "component": "air",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "rougher",
+        "port": "air"
+      },
+      "medium": "air",
+      "flowBinding": "/flows/air-to-rougher",
+      "label": "Separation air supply \u2192 Rougher separation cell"
+    },
+    {
+      "id": "air-to-cleaner",
+      "from": {
+        "component": "air",
+        "port": "discharge"
+      },
+      "to": {
+        "component": "cleaner",
+        "port": "air"
+      },
+      "medium": "air",
+      "flowBinding": "/flows/air-to-cleaner",
+      "label": "Separation air supply \u2192 Cleaner separation cell"
+    },
+    {
+      "id": "power-to-feed",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "feed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-feed",
+      "label": "Demonstration site power \u2192 Ore receiving hopper"
+    },
+    {
+      "id": "power-to-mill",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "mill",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-mill",
+      "label": "Demonstration site power \u2192 Slurry preparation mill"
+    },
+    {
+      "id": "power-to-slurry",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "slurry",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-slurry",
+      "label": "Demonstration site power \u2192 Slurry conditioning vessel"
+    },
+    {
+      "id": "power-to-rougher",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "rougher",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-rougher",
+      "label": "Demonstration site power \u2192 Rougher separation cell"
+    },
+    {
+      "id": "power-to-cleaner",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "cleaner",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-cleaner",
+      "label": "Demonstration site power \u2192 Cleaner separation cell"
+    },
+    {
+      "id": "power-to-filter",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filter",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filter",
+      "label": "Demonstration site power \u2192 Concentrate filtration"
+    },
+    {
+      "id": "power-to-outfeed",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "outfeed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-outfeed",
+      "label": "Demonstration site power \u2192 Concentrate transfer"
+    },
+    {
+      "id": "power-to-air",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "air",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-air",
+      "label": "Demonstration site power \u2192 Separation air supply"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Recovery-circuit controller"
+    },
+    {
+      "id": "power-to-flow",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "flow",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-flow",
+      "label": "Demonstration site power \u2192 Slurry transfer monitor"
+    },
+    {
+      "id": "slurry-to-flow",
+      "from": {
+        "component": "slurry",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "flow",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/slurry-to-flow",
+      "label": "Slurry conditioning vessel \u2192 Slurry transfer monitor"
+    },
+    {
+      "id": "flow-to-controller",
+      "from": {
+        "component": "flow",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/flow-to-controller",
+      "label": "Slurry transfer monitor \u2192 Recovery-circuit controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "feed",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "mill",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "slurry",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rougher",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cleaner",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "thickener",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filter",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "outfeed",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "feed-to-mill",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "mill-to-slurry",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "slurry-to-rougher",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "rougher-to-cleaner",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "cleaner-to-thickener",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "thickener-to-filter",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "filter-to-hold",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-outfeed",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "air",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "flow",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rougher",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "air-to-rougher",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-rougher",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-air",
+          "points": [
+            {
+              "x": 360,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-flow",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "flow-to-controller",
+          "points": [
+            {
+              "x": 760,
+              "y": 340
+            },
+            {
+              "x": 760,
+              "y": 250
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "cleaner",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "thickener",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filter",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "outfeed",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "flow",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "cleaner-to-thickener",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "thickener-to-filter",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "filter-to-hold",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-outfeed",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "flow-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "feed-enabled",
+      "label": "Ore receiving hopper \u00b7 Enabled",
+      "component": "feed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-load",
+      "label": "Ore receiving hopper \u00b7 Requested load",
+      "component": "feed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-fault",
+      "label": "Ore receiving hopper \u00b7 Injected failure",
+      "component": "feed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "feed-repair",
+      "label": "Repair Ore receiving hopper",
+      "component": "feed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "feed"
+      }
+    },
+    {
+      "id": "mill-enabled",
+      "label": "Slurry preparation mill \u00b7 Enabled",
+      "component": "mill",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-load",
+      "label": "Slurry preparation mill \u00b7 Requested load",
+      "component": "mill",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-fault",
+      "label": "Slurry preparation mill \u00b7 Injected failure",
+      "component": "mill",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "mill-repair",
+      "label": "Repair Slurry preparation mill",
+      "component": "mill",
+      "action": "repair",
+      "arguments": {
+        "equipment": "mill"
+      }
+    },
+    {
+      "id": "slurry-enabled",
+      "label": "Slurry conditioning vessel \u00b7 Enabled",
+      "component": "slurry",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "slurry"
+      }
+    },
+    {
+      "id": "slurry-load",
+      "label": "Slurry conditioning vessel \u00b7 Requested load",
+      "component": "slurry",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "slurry"
+      }
+    },
+    {
+      "id": "slurry-fault",
+      "label": "Slurry conditioning vessel \u00b7 Injected failure",
+      "component": "slurry",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "slurry"
+      }
+    },
+    {
+      "id": "slurry-repair",
+      "label": "Repair Slurry conditioning vessel",
+      "component": "slurry",
+      "action": "repair",
+      "arguments": {
+        "equipment": "slurry"
+      }
+    },
+    {
+      "id": "rougher-enabled",
+      "label": "Rougher separation cell \u00b7 Enabled",
+      "component": "rougher",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "rougher"
+      }
+    },
+    {
+      "id": "rougher-load",
+      "label": "Rougher separation cell \u00b7 Requested load",
+      "component": "rougher",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "rougher"
+      }
+    },
+    {
+      "id": "rougher-fault",
+      "label": "Rougher separation cell \u00b7 Injected failure",
+      "component": "rougher",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "rougher"
+      }
+    },
+    {
+      "id": "rougher-repair",
+      "label": "Repair Rougher separation cell",
+      "component": "rougher",
+      "action": "repair",
+      "arguments": {
+        "equipment": "rougher"
+      }
+    },
+    {
+      "id": "cleaner-enabled",
+      "label": "Cleaner separation cell \u00b7 Enabled",
+      "component": "cleaner",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cleaner"
+      }
+    },
+    {
+      "id": "cleaner-load",
+      "label": "Cleaner separation cell \u00b7 Requested load",
+      "component": "cleaner",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cleaner"
+      }
+    },
+    {
+      "id": "cleaner-fault",
+      "label": "Cleaner separation cell \u00b7 Injected failure",
+      "component": "cleaner",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cleaner"
+      }
+    },
+    {
+      "id": "cleaner-repair",
+      "label": "Repair Cleaner separation cell",
+      "component": "cleaner",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cleaner"
+      }
+    },
+    {
+      "id": "thickener-enabled",
+      "label": "Concentrate thickener \u00b7 Enabled",
+      "component": "thickener",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "thickener"
+      }
+    },
+    {
+      "id": "thickener-load",
+      "label": "Concentrate thickener \u00b7 Requested load",
+      "component": "thickener",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "thickener"
+      }
+    },
+    {
+      "id": "thickener-fault",
+      "label": "Concentrate thickener \u00b7 Injected failure",
+      "component": "thickener",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "thickener"
+      }
+    },
+    {
+      "id": "thickener-repair",
+      "label": "Repair Concentrate thickener",
+      "component": "thickener",
+      "action": "repair",
+      "arguments": {
+        "equipment": "thickener"
+      }
+    },
+    {
+      "id": "filter-enabled",
+      "label": "Concentrate filtration \u00b7 Enabled",
+      "component": "filter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-load",
+      "label": "Concentrate filtration \u00b7 Requested load",
+      "component": "filter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-fault",
+      "label": "Concentrate filtration \u00b7 Injected failure",
+      "component": "filter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "filter-repair",
+      "label": "Repair Concentrate filtration",
+      "component": "filter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filter"
+      }
+    },
+    {
+      "id": "hold-enabled",
+      "label": "Concentrate holding buffer \u00b7 Enabled",
+      "component": "hold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-load",
+      "label": "Concentrate holding buffer \u00b7 Requested load",
+      "component": "hold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-fault",
+      "label": "Concentrate holding buffer \u00b7 Injected failure",
+      "component": "hold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-repair",
+      "label": "Repair Concentrate holding buffer",
+      "component": "hold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "outfeed-enabled",
+      "label": "Concentrate transfer \u00b7 Enabled",
+      "component": "outfeed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-load",
+      "label": "Concentrate transfer \u00b7 Requested load",
+      "component": "outfeed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-fault",
+      "label": "Concentrate transfer \u00b7 Injected failure",
+      "component": "outfeed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-repair",
+      "label": "Repair Concentrate transfer",
+      "component": "outfeed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "air-enabled",
+      "label": "Separation air supply \u00b7 Enabled",
+      "component": "air",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-load",
+      "label": "Separation air supply \u00b7 Requested load",
+      "component": "air",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-fault",
+      "label": "Separation air supply \u00b7 Injected failure",
+      "component": "air",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "air-repair",
+      "label": "Repair Separation air supply",
+      "component": "air",
+      "action": "repair",
+      "arguments": {
+        "equipment": "air"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Recovery-circuit controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Recovery-circuit controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Recovery-circuit controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Recovery-circuit controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "flow-enabled",
+      "label": "Slurry transfer monitor \u00b7 Enabled",
+      "component": "flow",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-load",
+      "label": "Slurry transfer monitor \u00b7 Requested load",
+      "component": "flow",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-fault",
+      "label": "Slurry transfer monitor \u00b7 Injected failure",
+      "component": "flow",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "flow-repair",
+      "label": "Repair Slurry transfer monitor",
+      "component": "flow",
+      "action": "repair",
+      "arguments": {
+        "equipment": "flow"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "feed-enabled-control",
+      "label": "Enabled",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-enabled",
+      "binding": "/controls/feed/enabled"
+    },
+    {
+      "id": "feed-load-control",
+      "label": "Requested load",
+      "component": "feed",
+      "kind": "range",
+      "command": "feed-load",
+      "binding": "/controls/feed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "feed-fault-control",
+      "label": "Injected failure",
+      "component": "feed",
+      "kind": "toggle",
+      "command": "feed-fault",
+      "binding": "/controls/feed/fault"
+    },
+    {
+      "id": "feed-repair-control",
+      "label": "Repair component",
+      "component": "feed",
+      "kind": "button",
+      "command": "feed-repair"
+    },
+    {
+      "id": "mill-enabled-control",
+      "label": "Enabled",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-enabled",
+      "binding": "/controls/mill/enabled"
+    },
+    {
+      "id": "mill-load-control",
+      "label": "Requested load",
+      "component": "mill",
+      "kind": "range",
+      "command": "mill-load",
+      "binding": "/controls/mill/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "mill-fault-control",
+      "label": "Injected failure",
+      "component": "mill",
+      "kind": "toggle",
+      "command": "mill-fault",
+      "binding": "/controls/mill/fault"
+    },
+    {
+      "id": "mill-repair-control",
+      "label": "Repair component",
+      "component": "mill",
+      "kind": "button",
+      "command": "mill-repair"
+    },
+    {
+      "id": "slurry-enabled-control",
+      "label": "Enabled",
+      "component": "slurry",
+      "kind": "toggle",
+      "command": "slurry-enabled",
+      "binding": "/controls/slurry/enabled"
+    },
+    {
+      "id": "slurry-load-control",
+      "label": "Requested load",
+      "component": "slurry",
+      "kind": "range",
+      "command": "slurry-load",
+      "binding": "/controls/slurry/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "slurry-fault-control",
+      "label": "Injected failure",
+      "component": "slurry",
+      "kind": "toggle",
+      "command": "slurry-fault",
+      "binding": "/controls/slurry/fault"
+    },
+    {
+      "id": "slurry-repair-control",
+      "label": "Repair component",
+      "component": "slurry",
+      "kind": "button",
+      "command": "slurry-repair"
+    },
+    {
+      "id": "rougher-enabled-control",
+      "label": "Enabled",
+      "component": "rougher",
+      "kind": "toggle",
+      "command": "rougher-enabled",
+      "binding": "/controls/rougher/enabled"
+    },
+    {
+      "id": "rougher-load-control",
+      "label": "Requested load",
+      "component": "rougher",
+      "kind": "range",
+      "command": "rougher-load",
+      "binding": "/controls/rougher/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "rougher-fault-control",
+      "label": "Injected failure",
+      "component": "rougher",
+      "kind": "toggle",
+      "command": "rougher-fault",
+      "binding": "/controls/rougher/fault"
+    },
+    {
+      "id": "rougher-repair-control",
+      "label": "Repair component",
+      "component": "rougher",
+      "kind": "button",
+      "command": "rougher-repair"
+    },
+    {
+      "id": "cleaner-enabled-control",
+      "label": "Enabled",
+      "component": "cleaner",
+      "kind": "toggle",
+      "command": "cleaner-enabled",
+      "binding": "/controls/cleaner/enabled"
+    },
+    {
+      "id": "cleaner-load-control",
+      "label": "Requested load",
+      "component": "cleaner",
+      "kind": "range",
+      "command": "cleaner-load",
+      "binding": "/controls/cleaner/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cleaner-fault-control",
+      "label": "Injected failure",
+      "component": "cleaner",
+      "kind": "toggle",
+      "command": "cleaner-fault",
+      "binding": "/controls/cleaner/fault"
+    },
+    {
+      "id": "cleaner-repair-control",
+      "label": "Repair component",
+      "component": "cleaner",
+      "kind": "button",
+      "command": "cleaner-repair"
+    },
+    {
+      "id": "thickener-enabled-control",
+      "label": "Enabled",
+      "component": "thickener",
+      "kind": "toggle",
+      "command": "thickener-enabled",
+      "binding": "/controls/thickener/enabled"
+    },
+    {
+      "id": "thickener-load-control",
+      "label": "Requested load",
+      "component": "thickener",
+      "kind": "range",
+      "command": "thickener-load",
+      "binding": "/controls/thickener/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "thickener-fault-control",
+      "label": "Injected failure",
+      "component": "thickener",
+      "kind": "toggle",
+      "command": "thickener-fault",
+      "binding": "/controls/thickener/fault"
+    },
+    {
+      "id": "thickener-repair-control",
+      "label": "Repair component",
+      "component": "thickener",
+      "kind": "button",
+      "command": "thickener-repair"
+    },
+    {
+      "id": "filter-enabled-control",
+      "label": "Enabled",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-enabled",
+      "binding": "/controls/filter/enabled"
+    },
+    {
+      "id": "filter-load-control",
+      "label": "Requested load",
+      "component": "filter",
+      "kind": "range",
+      "command": "filter-load",
+      "binding": "/controls/filter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filter-fault-control",
+      "label": "Injected failure",
+      "component": "filter",
+      "kind": "toggle",
+      "command": "filter-fault",
+      "binding": "/controls/filter/fault"
+    },
+    {
+      "id": "filter-repair-control",
+      "label": "Repair component",
+      "component": "filter",
+      "kind": "button",
+      "command": "filter-repair"
+    },
+    {
+      "id": "hold-enabled-control",
+      "label": "Enabled",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-enabled",
+      "binding": "/controls/hold/enabled"
+    },
+    {
+      "id": "hold-load-control",
+      "label": "Requested load",
+      "component": "hold",
+      "kind": "range",
+      "command": "hold-load",
+      "binding": "/controls/hold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "hold-fault-control",
+      "label": "Injected failure",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-fault",
+      "binding": "/controls/hold/fault"
+    },
+    {
+      "id": "hold-repair-control",
+      "label": "Repair component",
+      "component": "hold",
+      "kind": "button",
+      "command": "hold-repair"
+    },
+    {
+      "id": "outfeed-enabled-control",
+      "label": "Enabled",
+      "component": "outfeed",
+      "kind": "toggle",
+      "command": "outfeed-enabled",
+      "binding": "/controls/outfeed/enabled"
+    },
+    {
+      "id": "outfeed-load-control",
+      "label": "Requested load",
+      "component": "outfeed",
+      "kind": "range",
+      "command": "outfeed-load",
+      "binding": "/controls/outfeed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "outfeed-fault-control",
+      "label": "Injected failure",
+      "component": "outfeed",
+      "kind": "toggle",
+      "command": "outfeed-fault",
+      "binding": "/controls/outfeed/fault"
+    },
+    {
+      "id": "outfeed-repair-control",
+      "label": "Repair component",
+      "component": "outfeed",
+      "kind": "button",
+      "command": "outfeed-repair"
+    },
+    {
+      "id": "air-enabled-control",
+      "label": "Enabled",
+      "component": "air",
+      "kind": "toggle",
+      "command": "air-enabled",
+      "binding": "/controls/air/enabled"
+    },
+    {
+      "id": "air-load-control",
+      "label": "Requested load",
+      "component": "air",
+      "kind": "range",
+      "command": "air-load",
+      "binding": "/controls/air/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "air-fault-control",
+      "label": "Injected failure",
+      "component": "air",
+      "kind": "toggle",
+      "command": "air-fault",
+      "binding": "/controls/air/fault"
+    },
+    {
+      "id": "air-repair-control",
+      "label": "Repair component",
+      "component": "air",
+      "kind": "button",
+      "command": "air-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "flow-enabled-control",
+      "label": "Enabled",
+      "component": "flow",
+      "kind": "toggle",
+      "command": "flow-enabled",
+      "binding": "/controls/flow/enabled"
+    },
+    {
+      "id": "flow-load-control",
+      "label": "Requested load",
+      "component": "flow",
+      "kind": "range",
+      "command": "flow-load",
+      "binding": "/controls/flow/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "flow-fault-control",
+      "label": "Injected failure",
+      "component": "flow",
+      "kind": "toggle",
+      "command": "flow-fault",
+      "binding": "/controls/flow/fault"
+    },
+    {
+      "id": "flow-repair-control",
+      "label": "Repair component",
+      "component": "flow",
+      "kind": "button",
+      "command": "flow-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

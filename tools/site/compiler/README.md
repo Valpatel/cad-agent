@@ -20,6 +20,7 @@ flowchart TD
 | [catalog-art.mjs](catalog-art.mjs) | Select catalogue covers and visual summaries. |
 | [repo-map.json](repo-map.json) | Explicit exceptional parent-ownership contracts. |
 | [site-catalog.mjs](site-catalog.mjs) | Build catalogue/index/agent metadata. |
+| [site-toolkit.mjs](site-toolkit.mjs) | Validate target-owned SCADA metadata and publish Toolkit, equipment/state and simulation pages. |
 | [site-explore-shell.mjs](site-explore-shell.mjs) | Shared topic placement, reading navigation and Pacific timestamp formatting. |
 | [site-discovery.mjs](site-discovery.mjs) | Derive shared search links while retaining catalogue/reference identities. |
 | [site-diagrams.mjs](site-diagrams.mjs) | Draw shared light/dark Mermaid figures. |

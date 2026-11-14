@@ -1,0 +1,25 @@
+# Equipment
+
+[Parent map](../README.md) · [Package owner](../../../README.md) · [Image gallery](../../README.md)
+
+Generated previews from canonical equipment artwork and supplied illustrative state. Images do not run a process model. Open a preview for its full size.
+
+```mermaid
+flowchart LR
+  Source["Library artwork"] --> Preview["Generated images"]
+  Preview --> Browse["Browsable folder maps"]
+```
+
+| Folder | Previews | Example |
+| --- | ---: | --- |
+| [Growing &amp; aquaculture](agriculture/README.md) | 10 | <a href="agriculture/fish-tank/default.jpg"><img src="agriculture/fish-tank/default.jpg" width="160" alt="Growing &amp; aquaculture preview"></a> |
+| [PLC &amp; networks](automation/README.md) | 7 | <a href="automation/plc-rack/default.jpg"><img src="automation/plc-rack/default.jpg" width="160" alt="PLC &amp; networks preview"></a> |
+| [Climate control](climate/README.md) | 4 | <a href="climate/greenhouse-vent/default.jpg"><img src="climate/greenhouse-vent/default.jpg" width="160" alt="Climate control preview"></a> |
+| [Connections](connections/README.md) | 10 | <a href="connections/pipe/default.jpg"><img src="connections/pipe/default.jpg" width="160" alt="Connections preview"></a> |
+| [Instruments](instruments/README.md) | 8 | <a href="instruments/pressure-transmitter/default.jpg"><img src="instruments/pressure-transmitter/default.jpg" width="160" alt="Instruments preview"></a> |
+| [Manufacturing &amp; solids](manufacturing/README.md) | 18 | <a href="manufacturing/conveyor/default.jpg"><img src="manufacturing/conveyor/default.jpg" width="160" alt="Manufacturing &amp; solids preview"></a> |
+| [Nuclear systems](nuclear/README.md) | 19 | <a href="nuclear/pwr-reactor-vessel/default.jpg"><img src="nuclear/pwr-reactor-vessel/default.jpg" width="160" alt="Nuclear systems preview"></a> |
+| [Power &amp; energy](power/README.md) | 55 | <a href="power/generator/default.jpg"><img src="power/generator/default.jpg" width="160" alt="Power &amp; energy preview"></a> |
+| [Process vessels](process/README.md) | 39 | <a href="process/digester/default.jpg"><img src="process/digester/default.jpg" width="160" alt="Process vessels preview"></a> |
+| [Pumps &amp; machinery](rotating/README.md) | 24 | <a href="rotating/pump/default.jpg"><img src="rotating/pump/default.jpg" width="160" alt="Pumps &amp; machinery preview"></a> |
+| [Valves](valves/README.md) | 45 | <a href="valves/gate-valve/default.jpg"><img src="valves/gate-valve/default.jpg" width="160" alt="Valves preview"></a> |

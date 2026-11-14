@@ -1,0 +1,395 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 1,
+  "scenarioId": "mineral-crushing",
+  "seed": 4116,
+  "components": {
+    "feed": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Ore receiving hopper uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "feeder": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Ore feed screw uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "primary": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Primary crusher uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "screen": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Primary screen uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "secondary": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Secondary crusher uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "transfer": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Product transfer belt uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "classification": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Final classification screen uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "surge": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Product surge bin uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "outfeed": {
+      "kind": "sink",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Product outfeed uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit sink transfers product out of the model boundary; it does not accumulate a hidden storage inventory."
+      ]
+    },
+    "dust": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Dust separation utility uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "power": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.3,
+        "demand": 0,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 90,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 75,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Demonstration site power uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "controller": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Crushing-line IO uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "network": {
+      "kind": "network",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Control network switch uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "motor": {
+      "kind": "load",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Auxiliary extraction drive uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    }
+  },
+  "assumptions": [
+    "Run a generic receiving, crushing, screening and recirculation circuit. Particle distributions and equipment design capacities are deliberately abstract.",
+    "All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.",
+    "Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.",
+    "Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.",
+    "Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance."
+  ]
+}

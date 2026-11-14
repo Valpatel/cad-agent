@@ -1,7 +1,7 @@
 /** Concrete 3D adapters. Import viewer-host.js alone for a renderer-independent shell. */
 import * as THREE from 'three';
-import { createViewer } from '../viewer.js';
-import { createFileViewer } from '../file-viewer.js';
+import { createViewer } from '../model/viewer.js';
+import { createFileViewer } from '../files/file-viewer.js';
 import { createViewerHost } from './viewer-host.js';
 import { bindStageControls, captureCamera, restoreCamera, validateCamera } from './stage-controls.js';
 

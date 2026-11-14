@@ -1,0 +1,1070 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:valpatel:scada-placeholder-model:2",
+  "title": "SCADA circuit model configuration, version 2",
+  "description": "Data-only configuration for normalized teaching models with explicit resource circuits, energy domains, finite stores, thermal links, tracers, and environmental zones. It contains no engineering calibration or executable equations.",
+  "$comment": "This schema accepts authoring records as well as normalized exports. Component parameters and initial controls default from the registered type; omitted tracer indices default at runtime. Runtime validation additionally checks exact system/scenario/component coverage, registered model families and explicit variants, port ownership and isolated circuit groups, supported fluids, energy domains, referenced circuits/zones/environment, unique thermal-link IDs, initial mode membership, and mode-controlled connection identities. Runtime safeClone also rejects credentials, unsafe keys, accessors, cycles, nonfinite numbers, total text above 2 MiB, over 100000 values, and nesting deeper than 32. Schema validation alone does not establish a runnable topology.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "scenarioId",
+    "seed",
+    "components",
+    "connections",
+    "environment",
+    "zones",
+    "assumptions"
+  ],
+  "properties": {
+    "format": {
+      "const": "scada-placeholder-model"
+    },
+    "version": {
+      "const": 2
+    },
+    "scenarioId": {
+      "$ref": "#/$defs/text"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "components": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "connections": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/connection"
+      }
+    },
+    "environment": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/index"
+      }
+    },
+    "zones": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/zone"
+      }
+    },
+    "assumptions": {
+      "$ref": "#/$defs/assumptions"
+    },
+    "equations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "families": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "v1": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "version"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "version": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "parameters": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "v2": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "version"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "version": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                      },
+                      "parameters": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "version"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "parameters": {
+                    "type": "object"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "version"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$"
+                  },
+                  "parameters": {
+                    "type": "object"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": "Data-only references to trusted, host-registered equation providers. Component overrides type, type overrides engine-scoped family; null explicitly selects built-in equations. Runtime validates selector identities, provider availability, parameters, phases and units."
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "not": {
+        "anyOf": [
+          {
+            "enum": [
+              "__proto__",
+              "prototype",
+              "constructor"
+            ]
+          },
+          {
+            "pattern": "^([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii][Kk][Ee][Yy]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][Kk][Ee][Yy])$"
+          }
+        ]
+      }
+    },
+    "index": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "fraction": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 16384
+      }
+    },
+    "ports": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "response": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "demand": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "loss": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "pressureGain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "heatGain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "warningAt": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "damageRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "oxygenTransfer": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "tracerConversion": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "uptake": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mistDuty": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "ventExchange": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "condensation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cycleFill": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1000
+        },
+        "cycleHold": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1000
+        },
+        "cycleDrain": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1000
+        },
+        "humidityGain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "lightGain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "temperatureResponse": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "initial": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "load": {
+          "$ref": "#/$defs/index"
+        },
+        "damage": {
+          "$ref": "#/$defs/index"
+        },
+        "mode": {
+          "$ref": "#/$defs/text"
+        },
+        "rodPosition": {
+          "$ref": "#/$defs/index"
+        }
+      }
+    },
+    "tracers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "oxygen": {
+          "$ref": "#/$defs/index"
+        },
+        "nutrient": {
+          "$ref": "#/$defs/index"
+        },
+        "solids": {
+          "$ref": "#/$defs/index"
+        },
+        "ph": {
+          "$ref": "#/$defs/index"
+        },
+        "ec": {
+          "$ref": "#/$defs/index"
+        }
+      }
+    },
+    "circuitParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capacity",
+        "stockScale",
+        "thermalCapacity",
+        "loss",
+        "pressureGain"
+      ],
+      "properties": {
+        "capacity": {
+          "$ref": "#/$defs/index"
+        },
+        "stockScale": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1000
+        },
+        "thermalCapacity": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 100
+        },
+        "loss": {
+          "$ref": "#/$defs/fraction"
+        },
+        "pressureGain": {
+          "$ref": "#/$defs/index"
+        }
+      }
+    },
+    "circuitInitial": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inventory",
+        "temperature",
+        "pressure"
+      ],
+      "properties": {
+        "inventory": {
+          "$ref": "#/$defs/index"
+        },
+        "temperature": {
+          "$ref": "#/$defs/index"
+        },
+        "pressure": {
+          "$ref": "#/$defs/index"
+        },
+        "tracers": {
+          "$ref": "#/$defs/tracers"
+        }
+      }
+    },
+    "circuit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ports",
+        "medium",
+        "fluid",
+        "role",
+        "parameters",
+        "initial"
+      ],
+      "properties": {
+        "ports": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ports"
+            }
+          ],
+          "minItems": 1
+        },
+        "medium": {
+          "$ref": "#/$defs/text"
+        },
+        "fluid": {
+          "$ref": "#/$defs/text"
+        },
+        "role": {
+          "enum": [
+            "passage",
+            "storage",
+            "source",
+            "sink"
+          ]
+        },
+        "parameters": {
+          "$ref": "#/$defs/circuitParameters"
+        },
+        "initial": {
+          "$ref": "#/$defs/circuitInitial"
+        }
+      }
+    },
+    "thermalReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "circuit"
+      ],
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/text"
+        },
+        "circuit": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "thermalLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from",
+        "to",
+        "conductance",
+        "maximumTransfer",
+        "lossFraction"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/text"
+        },
+        "from": {
+          "$ref": "#/$defs/thermalReference"
+        },
+        "to": {
+          "$ref": "#/$defs/thermalReference"
+        },
+        "conductance": {
+          "$ref": "#/$defs/fraction"
+        },
+        "maximumTransfer": {
+          "$ref": "#/$defs/index"
+        },
+        "lossFraction": {
+          "$ref": "#/$defs/fraction"
+        }
+      }
+    },
+    "thermalStore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capacity",
+        "initial",
+        "loss"
+      ],
+      "properties": {
+        "capacity": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1000
+        },
+        "initial": {
+          "$ref": "#/$defs/index"
+        },
+        "loss": {
+          "$ref": "#/$defs/fraction"
+        }
+      }
+    },
+    "heatSupply": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "energy-input",
+            "resource"
+          ]
+        },
+        "circuit": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "resource"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "circuit"
+            ]
+          }
+        }
+      ]
+    },
+    "heatSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "capacity",
+        "control"
+      ],
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/text"
+        },
+        "capacity": {
+          "$ref": "#/$defs/index"
+        },
+        "control": {
+          "enum": [
+            "load",
+            "rodPosition"
+          ]
+        },
+        "inverted": {
+          "type": "boolean"
+        },
+        "environment": {
+          "$ref": "#/$defs/text"
+        },
+        "supply": {
+          "$ref": "#/$defs/heatSupply"
+        }
+      }
+    },
+    "energySupply": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "boundary",
+            "environment",
+            "resource",
+            "thermal"
+          ]
+        },
+        "circuit": {
+          "$ref": "#/$defs/text"
+        },
+        "environment": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "resource",
+                  "thermal"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "circuit"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "environment"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "environment"
+            ]
+          }
+        }
+      ]
+    },
+    "energyStore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capacity",
+        "initial"
+      ],
+      "properties": {
+        "capacity": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1000
+        },
+        "initial": {
+          "$ref": "#/$defs/index"
+        }
+      }
+    },
+    "energy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "inputs",
+        "outputs",
+        "capacity",
+        "demand",
+        "efficiency"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "boundary",
+            "source",
+            "load",
+            "relay",
+            "converter",
+            "store",
+            "prime-mover"
+          ]
+        },
+        "inputs": {
+          "$ref": "#/$defs/ports"
+        },
+        "outputs": {
+          "$ref": "#/$defs/ports"
+        },
+        "capacity": {
+          "$ref": "#/$defs/index"
+        },
+        "demand": {
+          "$ref": "#/$defs/index"
+        },
+        "efficiency": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 1
+        },
+        "supply": {
+          "$ref": "#/$defs/energySupply"
+        },
+        "store": {
+          "$ref": "#/$defs/energyStore"
+        },
+        "modes": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "enum": [
+              "forward",
+              "reverse",
+              "charge",
+              "discharge",
+              "idle"
+            ]
+          }
+        },
+        "requiredCircuits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "enum": [
+                  "source",
+                  "prime-mover"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "supply"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "store"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "store"
+            ]
+          }
+        }
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quantity"
+      ],
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/text"
+        },
+        "circuit": {
+          "$ref": "#/$defs/text"
+        },
+        "zone": {
+          "$ref": "#/$defs/text"
+        },
+        "quantity": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "component"
+          ],
+          "not": {
+            "required": [
+              "zone"
+            ]
+          }
+        },
+        {
+          "required": [
+            "zone"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "component"
+                ]
+              },
+              {
+                "required": [
+                  "circuit"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "circuits"
+      ],
+      "properties": {
+        "model": {
+          "enum": [
+            "actuator",
+            "conceptual-heat-source",
+            "controller",
+            "enclosure",
+            "energy-storage",
+            "environment-generator",
+            "generator",
+            "ground-switch",
+            "heat-exchanger",
+            "heat-rejection",
+            "heat-source",
+            "heater",
+            "load",
+            "network",
+            "pipe",
+            "power-controller",
+            "power-converter",
+            "prime-mover",
+            "processor",
+            "pump",
+            "reactive-support",
+            "reversible-prime-mover",
+            "sensor",
+            "shaft-converter",
+            "solar-collector",
+            "source",
+            "storage",
+            "surge-protection",
+            "switch",
+            "thermal-storage",
+            "transfer-switch",
+            "valve"
+          ]
+        },
+        "variant": {
+          "$ref": "#/$defs/text"
+        },
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "initial": {
+          "$ref": "#/$defs/initial"
+        },
+        "circuits": {
+          "type": "object",
+          "propertyNames": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/name"
+              },
+              {
+                "not": {
+                  "const": "body"
+                }
+              }
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/circuit"
+          }
+        },
+        "thermalLinks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/thermalLink"
+          }
+        },
+        "thermalStore": {
+          "$ref": "#/$defs/thermalStore"
+        },
+        "heatSource": {
+          "$ref": "#/$defs/heatSource"
+        },
+        "energy": {
+          "$ref": "#/$defs/energy"
+        },
+        "observation": {
+          "$ref": "#/$defs/observation"
+        },
+        "zone": {
+          "$ref": "#/$defs/text"
+        },
+        "measurement": {
+          "$ref": "#/$defs/text"
+        },
+        "presentation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "primaryCircuit"
+          ],
+          "properties": {
+            "primaryCircuit": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        },
+        "assumptions": {
+          "$ref": "#/$defs/assumptions"
+        }
+      }
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "initial",
+        "parameters"
+      ],
+      "properties": {
+        "initial": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "temperature",
+            "humidity",
+            "light",
+            "oxygen"
+          ],
+          "properties": {
+            "temperature": {
+              "$ref": "#/$defs/index"
+            },
+            "humidity": {
+              "$ref": "#/$defs/index"
+            },
+            "light": {
+              "$ref": "#/$defs/index"
+            },
+            "oxygen": {
+              "$ref": "#/$defs/index"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "response"
+          ],
+          "properties": {
+            "response": {
+              "$ref": "#/$defs/fraction"
+            }
+          }
+        }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "equipment",
+            "values"
+          ],
+          "properties": {
+            "equipment": {
+              "$ref": "#/$defs/text"
+            },
+            "values": {
+              "type": "object",
+              "propertyNames": {
+                "$ref": "#/$defs/name"
+              },
+              "additionalProperties": {
+                "enum": [
+                  -1,
+                  0,
+                  1
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

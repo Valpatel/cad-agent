@@ -1,0 +1,2667 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "pharma-oral-liquid",
+    "label": "Oral-liquid manufacturing",
+    "description": "A generic nonclinical liquid-manufacturing sequence with water preparation, blending, filtering, holding and filling. It is not a medicine recipe or validated production process."
+  },
+  "components": [
+    {
+      "id": "water",
+      "type": "tank",
+      "label": "Utility-water feed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/water/active",
+        "running": "/components/water/running",
+        "fault": "/components/water/fault",
+        "status": "/components/water/status",
+        "level": "/components/water/level",
+        "damage": "/components/water/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "purification",
+      "type": "reverse-osmosis",
+      "label": "Water preparation skid",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/purification/active",
+        "running": "/components/purification/running",
+        "fault": "/components/purification/fault",
+        "status": "/components/purification/status",
+        "load": "/components/purification/load",
+        "damage": "/components/purification/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "reject",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "type": "tank",
+      "label": "Demonstration base feed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/base/active",
+        "running": "/components/base/running",
+        "fault": "/components/base/fault",
+        "status": "/components/base/status",
+        "level": "/components/base/level",
+        "damage": "/components/base/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dose",
+      "type": "dosing-pump",
+      "label": "Metered addition",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dose/active",
+        "running": "/components/dose/running",
+        "fault": "/components/dose/fault",
+        "status": "/components/dose/status",
+        "load": "/components/dose/load",
+        "speed": "/components/dose/speed",
+        "damage": "/components/dose/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "suction",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "dose",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "blend",
+      "type": "mixing-tank",
+      "label": "Blend vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/blend/active",
+        "running": "/components/blend/running",
+        "fault": "/components/blend/fault",
+        "status": "/components/blend/status",
+        "level": "/components/blend/level",
+        "damage": "/components/blend/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "hold",
+      "type": "reactor",
+      "label": "Process holding vessel",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/hold/active",
+        "running": "/components/hold/running",
+        "fault": "/components/hold/fault",
+        "status": "/components/hold/status",
+        "level": "/components/hold/level",
+        "damage": "/components/hold/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "checkValve",
+      "type": "check-valve",
+      "label": "Transfer check valve",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/checkValve/active",
+        "running": "/components/checkValve/running",
+        "fault": "/components/checkValve/fault",
+        "status": "/components/checkValve/status",
+        "open": "/components/checkValve/open",
+        "damage": "/components/checkValve/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "type": "pump",
+      "label": "Bulk transfer pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transfer/active",
+        "running": "/components/transfer/running",
+        "fault": "/components/transfer/fault",
+        "status": "/components/transfer/status",
+        "load": "/components/transfer/load",
+        "speed": "/components/transfer/speed",
+        "damage": "/components/transfer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "transferPipe",
+      "type": "pipe",
+      "label": "Dedicated transfer section",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transferPipe/active",
+        "running": "/components/transferPipe/running",
+        "fault": "/components/transferPipe/fault",
+        "status": "/components/transferPipe/status",
+        "open": "/components/transferPipe/open",
+        "damage": "/components/transferPipe/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "bulk",
+      "type": "tank",
+      "label": "Bulk holding tank",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/bulk/active",
+        "running": "/components/bulk/running",
+        "fault": "/components/bulk/fault",
+        "status": "/components/bulk/status",
+        "level": "/components/bulk/level",
+        "damage": "/components/bulk/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "filler",
+      "type": "filling-line",
+      "label": "Liquid filling",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/filler/active",
+        "running": "/components/filler/running",
+        "fault": "/components/filler/fault",
+        "status": "/components/filler/status",
+        "load": "/components/filler/load",
+        "speed": "/components/filler/speed",
+        "damage": "/components/filler/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "packer",
+      "type": "packaging-line",
+      "label": "Carton packing",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/packer/active",
+        "running": "/components/packer/running",
+        "fault": "/components/packer/fault",
+        "status": "/components/packer/status",
+        "load": "/components/packer/load",
+        "speed": "/components/packer/speed",
+        "damage": "/components/packer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "plc-cpu",
+      "label": "Batch controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "pressure",
+      "type": "pressure-transmitter",
+      "label": "Transfer pressure monitor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "value": 42,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/pressure/active",
+        "running": "/components/pressure/running",
+        "fault": "/components/pressure/fault",
+        "status": "/components/pressure/status",
+        "value": "/components/pressure/value",
+        "damage": "/components/pressure/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "process",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "signal",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "water-to-purification",
+      "from": {
+        "component": "water",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "purification",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/water-to-purification",
+      "label": "Utility-water feed \u2192 Water preparation skid"
+    },
+    {
+      "id": "purification-to-blend",
+      "from": {
+        "component": "purification",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "blend",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/purification-to-blend",
+      "label": "Water preparation skid \u2192 Blend vessel"
+    },
+    {
+      "id": "base-to-dose",
+      "from": {
+        "component": "base",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "dose",
+        "port": "suction"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/base-to-dose",
+      "label": "Demonstration base feed \u2192 Metered addition"
+    },
+    {
+      "id": "dose-to-blend",
+      "from": {
+        "component": "dose",
+        "port": "dose"
+      },
+      "to": {
+        "component": "blend",
+        "port": "inlet"
+      },
+      "medium": "chemical",
+      "flowBinding": "/flows/dose-to-blend",
+      "label": "Metered addition \u2192 Blend vessel"
+    },
+    {
+      "id": "blend-to-hold",
+      "from": {
+        "component": "blend",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "hold",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/blend-to-hold",
+      "label": "Blend vessel \u2192 Process holding vessel"
+    },
+    {
+      "id": "hold-to-checkValve",
+      "from": {
+        "component": "hold",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "checkValve",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/hold-to-checkValve",
+      "label": "Process holding vessel \u2192 Transfer check valve"
+    },
+    {
+      "id": "checkValve-to-transfer",
+      "from": {
+        "component": "checkValve",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/checkValve-to-transfer",
+      "label": "Transfer check valve \u2192 Bulk transfer pump"
+    },
+    {
+      "id": "transfer-to-transferPipe",
+      "from": {
+        "component": "transfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "transferPipe",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/transfer-to-transferPipe",
+      "label": "Bulk transfer pump \u2192 Dedicated transfer section"
+    },
+    {
+      "id": "transferPipe-to-bulk",
+      "from": {
+        "component": "transferPipe",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "bulk",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/transferPipe-to-bulk",
+      "label": "Dedicated transfer section \u2192 Bulk holding tank"
+    },
+    {
+      "id": "bulk-to-filler",
+      "from": {
+        "component": "bulk",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "filler",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/bulk-to-filler",
+      "label": "Bulk holding tank \u2192 Liquid filling"
+    },
+    {
+      "id": "filler-to-packer",
+      "from": {
+        "component": "filler",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "packer",
+        "port": "inlet"
+      },
+      "medium": "product",
+      "flowBinding": "/flows/filler-to-packer",
+      "label": "Liquid filling \u2192 Carton packing"
+    },
+    {
+      "id": "power-to-purification",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "purification",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-purification",
+      "label": "Demonstration site power \u2192 Water preparation skid"
+    },
+    {
+      "id": "power-to-dose",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "dose",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-dose",
+      "label": "Demonstration site power \u2192 Metered addition"
+    },
+    {
+      "id": "power-to-blend",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "blend",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-blend",
+      "label": "Demonstration site power \u2192 Blend vessel"
+    },
+    {
+      "id": "power-to-transfer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "transfer",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-transfer",
+      "label": "Demonstration site power \u2192 Bulk transfer pump"
+    },
+    {
+      "id": "power-to-filler",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "filler",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-filler",
+      "label": "Demonstration site power \u2192 Liquid filling"
+    },
+    {
+      "id": "power-to-packer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "packer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-packer",
+      "label": "Demonstration site power \u2192 Carton packing"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Batch controller"
+    },
+    {
+      "id": "power-to-pressure",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-pressure",
+      "label": "Demonstration site power \u2192 Transfer pressure monitor"
+    },
+    {
+      "id": "transfer-to-pressure",
+      "from": {
+        "component": "transfer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "pressure",
+        "port": "process"
+      },
+      "medium": "measurement",
+      "flowBinding": "/flows/transfer-to-pressure",
+      "label": "Bulk transfer pump \u2192 Transfer pressure monitor"
+    },
+    {
+      "id": "pressure-to-controller",
+      "from": {
+        "component": "pressure",
+        "port": "signal"
+      },
+      "to": {
+        "component": "controller",
+        "port": "network"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/pressure-to-controller",
+      "label": "Transfer pressure monitor \u2192 Batch controller"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "water",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "purification",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "base",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dose",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "blend",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "hold",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "checkValve",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transfer",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transferPipe",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bulk",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 960,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "water-to-purification",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "purification-to-blend",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 936,
+              "y": 316
+            },
+            {
+              "x": 936,
+              "y": 435
+            },
+            {
+              "x": 960,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "base-to-dose",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dose-to-blend",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "blend-to-hold",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "hold-to-checkValve",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "checkValve-to-transfer",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-transferPipe",
+          "points": [
+            {
+              "x": 160,
+              "y": 530
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "transferPipe-to-bulk",
+          "points": [
+            {
+              "x": 260,
+              "y": 715
+            },
+            {
+              "x": 360,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "bulk-to-filler",
+          "points": [
+            {
+              "x": 560,
+              "y": 715
+            },
+            {
+              "x": 660,
+              "y": 715
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 860,
+              "y": 715
+            },
+            {
+              "x": 960,
+              "y": 715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "power",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pressure",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dose",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "power-to-dose",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-filler",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-pressure",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 660,
+              "y": 155
+            },
+            {
+              "x": 560,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "transfer",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transferPipe",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "bulk",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "filler",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "packer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "pressure",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "transfer-to-transferPipe",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transferPipe-to-bulk",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "bulk-to-filler",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "filler-to-packer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "transfer-to-pressure",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 316
+            },
+            {
+              "x": 36,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 596
+            },
+            {
+              "x": 160,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "pressure-to-controller",
+          "points": [
+            {
+              "x": 160,
+              "y": 620
+            },
+            {
+              "x": 160,
+              "y": 530
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "water-enabled",
+      "label": "Utility-water feed \u00b7 Enabled",
+      "component": "water",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-load",
+      "label": "Utility-water feed \u00b7 Requested load",
+      "component": "water",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-fault",
+      "label": "Utility-water feed \u00b7 Injected failure",
+      "component": "water",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "water-repair",
+      "label": "Repair Utility-water feed",
+      "component": "water",
+      "action": "repair",
+      "arguments": {
+        "equipment": "water"
+      }
+    },
+    {
+      "id": "purification-enabled",
+      "label": "Water preparation skid \u00b7 Enabled",
+      "component": "purification",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "purification"
+      }
+    },
+    {
+      "id": "purification-load",
+      "label": "Water preparation skid \u00b7 Requested load",
+      "component": "purification",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "purification"
+      }
+    },
+    {
+      "id": "purification-fault",
+      "label": "Water preparation skid \u00b7 Injected failure",
+      "component": "purification",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "purification"
+      }
+    },
+    {
+      "id": "purification-repair",
+      "label": "Repair Water preparation skid",
+      "component": "purification",
+      "action": "repair",
+      "arguments": {
+        "equipment": "purification"
+      }
+    },
+    {
+      "id": "base-enabled",
+      "label": "Demonstration base feed \u00b7 Enabled",
+      "component": "base",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "base"
+      }
+    },
+    {
+      "id": "base-load",
+      "label": "Demonstration base feed \u00b7 Requested load",
+      "component": "base",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "base"
+      }
+    },
+    {
+      "id": "base-fault",
+      "label": "Demonstration base feed \u00b7 Injected failure",
+      "component": "base",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "base"
+      }
+    },
+    {
+      "id": "base-repair",
+      "label": "Repair Demonstration base feed",
+      "component": "base",
+      "action": "repair",
+      "arguments": {
+        "equipment": "base"
+      }
+    },
+    {
+      "id": "dose-enabled",
+      "label": "Metered addition \u00b7 Enabled",
+      "component": "dose",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dose"
+      }
+    },
+    {
+      "id": "dose-load",
+      "label": "Metered addition \u00b7 Requested load",
+      "component": "dose",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dose"
+      }
+    },
+    {
+      "id": "dose-fault",
+      "label": "Metered addition \u00b7 Injected failure",
+      "component": "dose",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dose"
+      }
+    },
+    {
+      "id": "dose-repair",
+      "label": "Repair Metered addition",
+      "component": "dose",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dose"
+      }
+    },
+    {
+      "id": "blend-enabled",
+      "label": "Blend vessel \u00b7 Enabled",
+      "component": "blend",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-load",
+      "label": "Blend vessel \u00b7 Requested load",
+      "component": "blend",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-fault",
+      "label": "Blend vessel \u00b7 Injected failure",
+      "component": "blend",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "blend-repair",
+      "label": "Repair Blend vessel",
+      "component": "blend",
+      "action": "repair",
+      "arguments": {
+        "equipment": "blend"
+      }
+    },
+    {
+      "id": "hold-enabled",
+      "label": "Process holding vessel \u00b7 Enabled",
+      "component": "hold",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-load",
+      "label": "Process holding vessel \u00b7 Requested load",
+      "component": "hold",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-fault",
+      "label": "Process holding vessel \u00b7 Injected failure",
+      "component": "hold",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "hold-repair",
+      "label": "Repair Process holding vessel",
+      "component": "hold",
+      "action": "repair",
+      "arguments": {
+        "equipment": "hold"
+      }
+    },
+    {
+      "id": "checkValve-enabled",
+      "label": "Transfer check valve \u00b7 Enabled",
+      "component": "checkValve",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "checkValve"
+      }
+    },
+    {
+      "id": "checkValve-load",
+      "label": "Transfer check valve \u00b7 Requested load",
+      "component": "checkValve",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "checkValve"
+      }
+    },
+    {
+      "id": "checkValve-fault",
+      "label": "Transfer check valve \u00b7 Injected failure",
+      "component": "checkValve",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "checkValve"
+      }
+    },
+    {
+      "id": "checkValve-open",
+      "label": "Transfer check valve \u00b7 Open path",
+      "component": "checkValve",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "checkValve"
+      }
+    },
+    {
+      "id": "checkValve-repair",
+      "label": "Repair Transfer check valve",
+      "component": "checkValve",
+      "action": "repair",
+      "arguments": {
+        "equipment": "checkValve"
+      }
+    },
+    {
+      "id": "transfer-enabled",
+      "label": "Bulk transfer pump \u00b7 Enabled",
+      "component": "transfer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-load",
+      "label": "Bulk transfer pump \u00b7 Requested load",
+      "component": "transfer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-fault",
+      "label": "Bulk transfer pump \u00b7 Injected failure",
+      "component": "transfer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transfer-repair",
+      "label": "Repair Bulk transfer pump",
+      "component": "transfer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transfer"
+      }
+    },
+    {
+      "id": "transferPipe-enabled",
+      "label": "Dedicated transfer section \u00b7 Enabled",
+      "component": "transferPipe",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transferPipe"
+      }
+    },
+    {
+      "id": "transferPipe-load",
+      "label": "Dedicated transfer section \u00b7 Requested load",
+      "component": "transferPipe",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transferPipe"
+      }
+    },
+    {
+      "id": "transferPipe-fault",
+      "label": "Dedicated transfer section \u00b7 Injected failure",
+      "component": "transferPipe",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transferPipe"
+      }
+    },
+    {
+      "id": "transferPipe-open",
+      "label": "Dedicated transfer section \u00b7 Open path",
+      "component": "transferPipe",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "transferPipe"
+      }
+    },
+    {
+      "id": "transferPipe-repair",
+      "label": "Repair Dedicated transfer section",
+      "component": "transferPipe",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transferPipe"
+      }
+    },
+    {
+      "id": "bulk-enabled",
+      "label": "Bulk holding tank \u00b7 Enabled",
+      "component": "bulk",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "bulk-load",
+      "label": "Bulk holding tank \u00b7 Requested load",
+      "component": "bulk",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "bulk-fault",
+      "label": "Bulk holding tank \u00b7 Injected failure",
+      "component": "bulk",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "bulk-repair",
+      "label": "Repair Bulk holding tank",
+      "component": "bulk",
+      "action": "repair",
+      "arguments": {
+        "equipment": "bulk"
+      }
+    },
+    {
+      "id": "filler-enabled",
+      "label": "Liquid filling \u00b7 Enabled",
+      "component": "filler",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-load",
+      "label": "Liquid filling \u00b7 Requested load",
+      "component": "filler",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-fault",
+      "label": "Liquid filling \u00b7 Injected failure",
+      "component": "filler",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "filler-repair",
+      "label": "Repair Liquid filling",
+      "component": "filler",
+      "action": "repair",
+      "arguments": {
+        "equipment": "filler"
+      }
+    },
+    {
+      "id": "packer-enabled",
+      "label": "Carton packing \u00b7 Enabled",
+      "component": "packer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-load",
+      "label": "Carton packing \u00b7 Requested load",
+      "component": "packer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-fault",
+      "label": "Carton packing \u00b7 Injected failure",
+      "component": "packer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "packer-repair",
+      "label": "Repair Carton packing",
+      "component": "packer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "packer"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Batch controller \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Batch controller \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Batch controller \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Batch controller",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "pressure-enabled",
+      "label": "Transfer pressure monitor \u00b7 Enabled",
+      "component": "pressure",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-load",
+      "label": "Transfer pressure monitor \u00b7 Requested load",
+      "component": "pressure",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-fault",
+      "label": "Transfer pressure monitor \u00b7 Injected failure",
+      "component": "pressure",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "pressure-repair",
+      "label": "Repair Transfer pressure monitor",
+      "component": "pressure",
+      "action": "repair",
+      "arguments": {
+        "equipment": "pressure"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "water-enabled-control",
+      "label": "Enabled",
+      "component": "water",
+      "kind": "toggle",
+      "command": "water-enabled",
+      "binding": "/controls/water/enabled"
+    },
+    {
+      "id": "water-load-control",
+      "label": "Requested load",
+      "component": "water",
+      "kind": "range",
+      "command": "water-load",
+      "binding": "/controls/water/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "water-fault-control",
+      "label": "Injected failure",
+      "component": "water",
+      "kind": "toggle",
+      "command": "water-fault",
+      "binding": "/controls/water/fault"
+    },
+    {
+      "id": "water-repair-control",
+      "label": "Repair component",
+      "component": "water",
+      "kind": "button",
+      "command": "water-repair"
+    },
+    {
+      "id": "purification-enabled-control",
+      "label": "Enabled",
+      "component": "purification",
+      "kind": "toggle",
+      "command": "purification-enabled",
+      "binding": "/controls/purification/enabled"
+    },
+    {
+      "id": "purification-load-control",
+      "label": "Requested load",
+      "component": "purification",
+      "kind": "range",
+      "command": "purification-load",
+      "binding": "/controls/purification/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "purification-fault-control",
+      "label": "Injected failure",
+      "component": "purification",
+      "kind": "toggle",
+      "command": "purification-fault",
+      "binding": "/controls/purification/fault"
+    },
+    {
+      "id": "purification-repair-control",
+      "label": "Repair component",
+      "component": "purification",
+      "kind": "button",
+      "command": "purification-repair"
+    },
+    {
+      "id": "base-enabled-control",
+      "label": "Enabled",
+      "component": "base",
+      "kind": "toggle",
+      "command": "base-enabled",
+      "binding": "/controls/base/enabled"
+    },
+    {
+      "id": "base-load-control",
+      "label": "Requested load",
+      "component": "base",
+      "kind": "range",
+      "command": "base-load",
+      "binding": "/controls/base/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "base-fault-control",
+      "label": "Injected failure",
+      "component": "base",
+      "kind": "toggle",
+      "command": "base-fault",
+      "binding": "/controls/base/fault"
+    },
+    {
+      "id": "base-repair-control",
+      "label": "Repair component",
+      "component": "base",
+      "kind": "button",
+      "command": "base-repair"
+    },
+    {
+      "id": "dose-enabled-control",
+      "label": "Enabled",
+      "component": "dose",
+      "kind": "toggle",
+      "command": "dose-enabled",
+      "binding": "/controls/dose/enabled"
+    },
+    {
+      "id": "dose-load-control",
+      "label": "Requested load",
+      "component": "dose",
+      "kind": "range",
+      "command": "dose-load",
+      "binding": "/controls/dose/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dose-fault-control",
+      "label": "Injected failure",
+      "component": "dose",
+      "kind": "toggle",
+      "command": "dose-fault",
+      "binding": "/controls/dose/fault"
+    },
+    {
+      "id": "dose-repair-control",
+      "label": "Repair component",
+      "component": "dose",
+      "kind": "button",
+      "command": "dose-repair"
+    },
+    {
+      "id": "blend-enabled-control",
+      "label": "Enabled",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-enabled",
+      "binding": "/controls/blend/enabled"
+    },
+    {
+      "id": "blend-load-control",
+      "label": "Requested load",
+      "component": "blend",
+      "kind": "range",
+      "command": "blend-load",
+      "binding": "/controls/blend/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "blend-fault-control",
+      "label": "Injected failure",
+      "component": "blend",
+      "kind": "toggle",
+      "command": "blend-fault",
+      "binding": "/controls/blend/fault"
+    },
+    {
+      "id": "blend-repair-control",
+      "label": "Repair component",
+      "component": "blend",
+      "kind": "button",
+      "command": "blend-repair"
+    },
+    {
+      "id": "hold-enabled-control",
+      "label": "Enabled",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-enabled",
+      "binding": "/controls/hold/enabled"
+    },
+    {
+      "id": "hold-load-control",
+      "label": "Requested load",
+      "component": "hold",
+      "kind": "range",
+      "command": "hold-load",
+      "binding": "/controls/hold/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "hold-fault-control",
+      "label": "Injected failure",
+      "component": "hold",
+      "kind": "toggle",
+      "command": "hold-fault",
+      "binding": "/controls/hold/fault"
+    },
+    {
+      "id": "hold-repair-control",
+      "label": "Repair component",
+      "component": "hold",
+      "kind": "button",
+      "command": "hold-repair"
+    },
+    {
+      "id": "checkValve-enabled-control",
+      "label": "Enabled",
+      "component": "checkValve",
+      "kind": "toggle",
+      "command": "checkValve-enabled",
+      "binding": "/controls/checkValve/enabled"
+    },
+    {
+      "id": "checkValve-load-control",
+      "label": "Requested load",
+      "component": "checkValve",
+      "kind": "range",
+      "command": "checkValve-load",
+      "binding": "/controls/checkValve/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "checkValve-fault-control",
+      "label": "Injected failure",
+      "component": "checkValve",
+      "kind": "toggle",
+      "command": "checkValve-fault",
+      "binding": "/controls/checkValve/fault"
+    },
+    {
+      "id": "checkValve-open-control",
+      "label": "Open path",
+      "component": "checkValve",
+      "kind": "toggle",
+      "command": "checkValve-open",
+      "binding": "/controls/checkValve/open"
+    },
+    {
+      "id": "checkValve-repair-control",
+      "label": "Repair component",
+      "component": "checkValve",
+      "kind": "button",
+      "command": "checkValve-repair"
+    },
+    {
+      "id": "transfer-enabled-control",
+      "label": "Enabled",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-enabled",
+      "binding": "/controls/transfer/enabled"
+    },
+    {
+      "id": "transfer-load-control",
+      "label": "Requested load",
+      "component": "transfer",
+      "kind": "range",
+      "command": "transfer-load",
+      "binding": "/controls/transfer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transfer-fault-control",
+      "label": "Injected failure",
+      "component": "transfer",
+      "kind": "toggle",
+      "command": "transfer-fault",
+      "binding": "/controls/transfer/fault"
+    },
+    {
+      "id": "transfer-repair-control",
+      "label": "Repair component",
+      "component": "transfer",
+      "kind": "button",
+      "command": "transfer-repair"
+    },
+    {
+      "id": "transferPipe-enabled-control",
+      "label": "Enabled",
+      "component": "transferPipe",
+      "kind": "toggle",
+      "command": "transferPipe-enabled",
+      "binding": "/controls/transferPipe/enabled"
+    },
+    {
+      "id": "transferPipe-load-control",
+      "label": "Requested load",
+      "component": "transferPipe",
+      "kind": "range",
+      "command": "transferPipe-load",
+      "binding": "/controls/transferPipe/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transferPipe-fault-control",
+      "label": "Injected failure",
+      "component": "transferPipe",
+      "kind": "toggle",
+      "command": "transferPipe-fault",
+      "binding": "/controls/transferPipe/fault"
+    },
+    {
+      "id": "transferPipe-open-control",
+      "label": "Open path",
+      "component": "transferPipe",
+      "kind": "toggle",
+      "command": "transferPipe-open",
+      "binding": "/controls/transferPipe/open"
+    },
+    {
+      "id": "transferPipe-repair-control",
+      "label": "Repair component",
+      "component": "transferPipe",
+      "kind": "button",
+      "command": "transferPipe-repair"
+    },
+    {
+      "id": "bulk-enabled-control",
+      "label": "Enabled",
+      "component": "bulk",
+      "kind": "toggle",
+      "command": "bulk-enabled",
+      "binding": "/controls/bulk/enabled"
+    },
+    {
+      "id": "bulk-load-control",
+      "label": "Requested load",
+      "component": "bulk",
+      "kind": "range",
+      "command": "bulk-load",
+      "binding": "/controls/bulk/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "bulk-fault-control",
+      "label": "Injected failure",
+      "component": "bulk",
+      "kind": "toggle",
+      "command": "bulk-fault",
+      "binding": "/controls/bulk/fault"
+    },
+    {
+      "id": "bulk-repair-control",
+      "label": "Repair component",
+      "component": "bulk",
+      "kind": "button",
+      "command": "bulk-repair"
+    },
+    {
+      "id": "filler-enabled-control",
+      "label": "Enabled",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-enabled",
+      "binding": "/controls/filler/enabled"
+    },
+    {
+      "id": "filler-load-control",
+      "label": "Requested load",
+      "component": "filler",
+      "kind": "range",
+      "command": "filler-load",
+      "binding": "/controls/filler/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "filler-fault-control",
+      "label": "Injected failure",
+      "component": "filler",
+      "kind": "toggle",
+      "command": "filler-fault",
+      "binding": "/controls/filler/fault"
+    },
+    {
+      "id": "filler-repair-control",
+      "label": "Repair component",
+      "component": "filler",
+      "kind": "button",
+      "command": "filler-repair"
+    },
+    {
+      "id": "packer-enabled-control",
+      "label": "Enabled",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-enabled",
+      "binding": "/controls/packer/enabled"
+    },
+    {
+      "id": "packer-load-control",
+      "label": "Requested load",
+      "component": "packer",
+      "kind": "range",
+      "command": "packer-load",
+      "binding": "/controls/packer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "packer-fault-control",
+      "label": "Injected failure",
+      "component": "packer",
+      "kind": "toggle",
+      "command": "packer-fault",
+      "binding": "/controls/packer/fault"
+    },
+    {
+      "id": "packer-repair-control",
+      "label": "Repair component",
+      "component": "packer",
+      "kind": "button",
+      "command": "packer-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "pressure-enabled-control",
+      "label": "Enabled",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-enabled",
+      "binding": "/controls/pressure/enabled"
+    },
+    {
+      "id": "pressure-load-control",
+      "label": "Requested load",
+      "component": "pressure",
+      "kind": "range",
+      "command": "pressure-load",
+      "binding": "/controls/pressure/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "pressure-fault-control",
+      "label": "Injected failure",
+      "component": "pressure",
+      "kind": "toggle",
+      "command": "pressure-fault",
+      "binding": "/controls/pressure/fault"
+    },
+    {
+      "id": "pressure-repair-control",
+      "label": "Repair component",
+      "component": "pressure",
+      "kind": "button",
+      "command": "pressure-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

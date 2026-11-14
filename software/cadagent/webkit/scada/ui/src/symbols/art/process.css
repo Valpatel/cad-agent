@@ -1,0 +1,80 @@
+/* Process-specific movement and physical condition details. No timers or IO. */
+.scada-component .scada-process-label{fill:#b8dce6;font:600 7px ui-monospace,monospace;letter-spacing:.7px}
+.scada-component .scada-process-led{fill:#456f80}
+.scada-component .scada-process-flow{stroke:#6af5dc;stroke-linecap:round;stroke-dasharray:4 10;opacity:.2;animation:scada-process-flow 1.6s linear infinite;animation-play-state:paused}
+.scada-component .scada-process-power{stroke:#ffd38a}
+.scada-component :is(.scada-process-rotor,.scada-process-wind-rotor){transform-box:view-box;animation:scada-process-spin var(--process-cycle,2.5s) linear infinite;animation-play-state:paused}
+.scada-component .scada-process-wind-rotor{animation-duration:calc(var(--process-cycle,2.5s)*2)}
+.scada-component .scada-process-drum{transform-box:view-box;animation:scada-process-drum var(--process-cycle,2.5s) linear infinite;animation-play-state:paused}
+.scada-component .scada-process-agitator{transform-box:view-box;animation:scada-process-agitate var(--process-cycle,2.5s) ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-process-bubble{opacity:0;animation:scada-process-bubble 3.4s linear var(--process-phase,0s) infinite;animation-play-state:paused}
+.scada-component :is(.scada-process-membrane,.scada-process-swirl,.scada-process-spray path){stroke-dasharray:4 8;animation:scada-process-flow var(--process-cycle,2.5s) linear infinite;animation-play-state:paused}
+.scada-component :is(.scada-process-vapor,.scada-process-cooling-plume,.scada-process-heat){opacity:.4;animation:scada-process-vapor 3s ease-in-out var(--process-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-process-heat{opacity:calc(.2 + var(--process-heat,.3)*.7);filter:brightness(calc(.65 + var(--process-heat,.3)*.8))}
+.scada-component :is(.scada-process-cell,.scada-process-electric,.scada-process-cold,.scada-process-surface,.scada-process-froth,.scada-process-gas-bubbles){animation:scada-process-monitor 2.8s ease-in-out var(--process-phase,0s) infinite;animation-play-state:paused}
+.scada-component .scada-process-valve{transform-box:view-box;transition:transform .5s ease}
+.scada-component[data-scada-host-state=false][data-active=true][data-running=true] .scada-process-art :is(.scada-process-flow,.scada-process-rotor,.scada-process-wind-rotor,.scada-process-drum,.scada-process-agitator,.scada-process-bubble,.scada-process-membrane,.scada-process-swirl,.scada-process-spray path,.scada-process-vapor,.scada-process-cooling-plume,.scada-process-heat,.scada-process-cell,.scada-process-electric,.scada-process-cold,.scada-process-surface,.scada-process-froth,.scada-process-gas-bubbles){animation-play-state:running}
+.scada-component[data-active=true] .scada-process-flow{opacity:var(--process-material,1)}
+.scada-component .scada-process-art :is(.scada-process-bubbles,.scada-process-spray,.scada-process-membrane,.scada-process-swirl){opacity:var(--process-material,1)}
+.scada-component[data-active=true] .scada-process-led{fill:#75ffca;filter:drop-shadow(0 0 3px #75ffca)}
+.scada-component[data-active=false] :is(.scada-process-bubble,.scada-process-cooling-plume,.scada-process-vapor){visibility:hidden}
+.scada-component .scada-process-art:is([data-speed-zero=true],[data-damage=jammed],[data-damage=seized],[data-damage=bearing-fault],[data-damage=gearbox-fault],[data-damage=fan-fault],[data-damage=compressor-fault]) :is(.scada-process-rotor,.scada-process-wind-rotor,.scada-process-drum,.scada-process-agitator){animation-play-state:paused!important}
+.scada-component .scada-process-art[data-speed-zero=true] :is(.scada-process-flow,.scada-process-bubble,.scada-process-membrane,.scada-process-swirl,.scada-process-spray path){animation-play-state:paused!important}
+.scada-component .scada-process-art[data-damage=diffuser-fault] .scada-process-bubble{visibility:hidden}
+.scada-component .scada-process-art:is([data-damage=blocked],[data-damage=fuel-starved]) .scada-process-flow,.scada-component[data-open=false] .scada-process-wellhead .scada-process-flow{opacity:.1;animation-play-state:paused!important}
+
+.scada-component .scada-process-cyclone[data-damage=blocked] .scada-process-swirl,
+.scada-component .scada-process-fuel-cell[data-damage=fuel-starved] :is(.scada-process-cell,.scada-process-electric){animation-play-state:paused!important;opacity:.1}
+
+.scada-component .scada-damage-overlay{position:absolute;inset:0;width:100%;height:calc(100% - var(--scada-gauge-height,0px));pointer-events:none;overflow:visible;z-index:1}
+.scada-component .scada-damage-fracture{fill:none;stroke:#ff91ac;stroke-width:2.6;stroke-linejoin:round;filter:drop-shadow(0 0 2px #ff4b8055)}
+.scada-component .scada-damage-leak{fill:none;stroke:#aefff1;stroke-width:2;stroke-dasharray:3 5;animation:scada-damage-leak .9s linear infinite;animation-play-state:paused}
+.scada-component .scada-damage-puddle{fill:#63d8ce;opacity:.6}
+.scada-component :is(.scada-damage-fuel-leak,.scada-damage-refrigerant-leak) .scada-damage-leak{stroke:#ffe0a0}
+.scada-component :is(.scada-damage-fuel-leak,.scada-damage-refrigerant-leak) .scada-damage-puddle{fill:#bdb279}
+.scada-component .scada-damage-drop{fill:#befff3;stroke:none;animation:scada-damage-drop 1.4s linear var(--damage-delay,0s) infinite;animation-play-state:paused}
+.scada-component .scada-damage-hole{fill:#030b15;stroke:#f187a0;stroke-width:2}
+.scada-component .scada-damage-rust{fill:#ad744e;stroke:#6f4938;stroke-width:1.2;opacity:.9}
+.scada-component .scada-damage-blockage path:first-child{fill:#9e7771;stroke:#edbc9c;stroke-width:2}
+.scada-component .scada-damage-blockage path:last-child{fill:none;stroke:#ff9dae;stroke-width:3}
+.scada-component .scada-damage-wear{fill:none;stroke:#dda979;stroke-width:2;opacity:.85}
+.scada-component .scada-damage-heat{fill:none;stroke:#ffc793;stroke-width:2.8;opacity:.75;animation:scada-damage-heat 3s ease-out infinite;animation-play-state:paused}
+.scada-component .scada-damage-char{fill:#312a30;stroke:#946264;stroke-width:2;opacity:.9}
+.scada-component .scada-damage-arc{fill:none;stroke:#b7e9ff;stroke-width:2;animation:scada-damage-arc 2.8s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-damage-deposit{fill:none;stroke:#c3b17f;stroke-width:4;opacity:.9}
+.scada-component .scada-damage-mechanical{fill:none;stroke:#ff9dbb;stroke-width:3;filter:drop-shadow(0 0 2px #ff668822)}
+.scada-component .scada-damage-cavitation{fill:#d1fff4;stroke:#66d9d6;stroke-width:1}
+.scada-component .scada-damage-cavitation circle{animation:scada-damage-cavitation 1.8s ease-in-out var(--damage-delay,0s) infinite;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+.scada-component .scada-damage-foam{fill:#e5eee2;stroke:#b3d6ca;stroke-width:1;animation:scada-process-monitor 3s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-damage-starved{fill:none;stroke:#f4c58b;stroke-width:4;stroke-dasharray:2 7}
+.scada-component .scada-damage-drift{fill:none;stroke:#ffcf8d;stroke-width:2;stroke-dasharray:5 3;animation:scada-process-monitor 3.4s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-damage-signal{fill:none;stroke:#e4b288;stroke-width:2;opacity:.8}
+.scada-component .scada-damage-io rect{fill:#42283d;stroke:#dc8cae;stroke-width:1.4}.scada-component .scada-damage-io circle{fill:#ff80b4;animation:scada-process-monitor 3s ease-in-out infinite;animation-play-state:paused}
+.scada-component .scada-damage-power-loss{fill:none;stroke:#c4a8a8;stroke-width:4;opacity:.8}
+.scada-component[data-running=true] .scada-damage-art :is(.scada-damage-leak,.scada-damage-drop,.scada-damage-heat,.scada-damage-arc,.scada-damage-cavitation circle,.scada-damage-foam,.scada-damage-drift,.scada-damage-io circle){animation-play-state:running}
+.scada-component[data-running=false] .scada-damage-art *,.scada-component[data-status=offline] .scada-damage-art *{animation-play-state:paused!important}
+
+@keyframes scada-process-flow{to{stroke-dashoffset:-28}}
+@keyframes scada-process-spin{to{transform:rotate(360deg)}}
+@keyframes scada-process-drum{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.55)}}
+@keyframes scada-process-agitate{0%,100%{transform:scaleX(1)}50%{transform:scaleX(-1)}}
+@keyframes scada-process-bubble{0%{opacity:0;transform:translateY(0)}20%{opacity:.7}100%{opacity:0;transform:translateY(-47px)}}
+@keyframes scada-process-vapor{0%,100%{transform:translateY(0);opacity:.2}50%{transform:translateY(-4px);opacity:.65}}
+@keyframes scada-process-monitor{0%,100%{filter:brightness(.85);opacity:.65}50%{filter:brightness(1.2);opacity:1}}
+@keyframes scada-damage-leak{to{stroke-dashoffset:-24}}
+@keyframes scada-damage-drop{0%{opacity:0;transform:translateY(-4px)}25%{opacity:.9}100%{opacity:0;transform:translateY(9px)}}
+@keyframes scada-damage-heat{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:.8;transform:translateY(-5px)}}
+@keyframes scada-damage-arc{0%,100%{opacity:.2}50%{opacity:.9}}
+@keyframes scada-damage-cavitation{0%,100%{transform:scale(.5);opacity:.3}50%{transform:scale(1.2);opacity:.85}}
+@media(prefers-reduced-motion:reduce){.scada-component .scada-process-art *,.scada-component .scada-damage-art *{animation:none!important;transition:none!important}.scada-component[data-active=true] .scada-process-bubble{opacity:.4}}
+
+/* Separator phases remain distinct and labeled when motion is disabled. */
+.scada-component[data-scada-type=separator]>.scada-component-condition{right:auto;left:7px}
+.scada-component .scada-separator-gas{stroke:#bcf8de}
+.scada-component .scada-separator-oil{stroke:#ffe0a0}
+.scada-component .scada-separator-water{stroke:#79d7ff}
+.scada-component .scada-separator-label{fill:#c3e4ed;font:700 7px ui-monospace,monospace;letter-spacing:.35px}
+.scada-component .scada-separator-gas-text{fill:#bcf8de}
+.scada-component .scada-separator-oil-text{fill:#ffe0a0}
+.scada-component .scada-separator-water-text{fill:#8bdeff}
+.scada-component .scada-separator-vessel[data-liquid-empty=true] :is(.scada-separator-oil,.scada-separator-water).scada-separator-outlet-flow{opacity:0;animation-play-state:paused!important}

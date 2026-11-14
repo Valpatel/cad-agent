@@ -1,0 +1,43 @@
+{
+  "name": "cad-agent-scada-tools",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=2 ../../../tests/webkit/scada/ui/*.test.mjs ../../../tests/webkit/scada/sim/*.test.mjs ../../../tests/webkit/scada/sim/scenarios/*.test.mjs ../../../tests/webkit/scada/explorer/*.test.mjs ../../../tests/webkit/scada/external-adapter-render.test.mjs",
+    "build:schema": "node ui/build-schema.mjs",
+    "check:schema": "node ui/build-schema.mjs --check",
+    "build:metadata": "node ui/build-metadata.mjs && node sim/build-metadata.mjs",
+    "check:metadata": "node ui/build-metadata.mjs --check && node sim/build-metadata.mjs --check",
+    "check:default-baseline": "node sim/check-default-baseline.mjs",
+    "gallery:generate": "python3 ui/generate-gallery.py",
+    "gallery:check": "python3 ui/generate-gallery.py --check",
+    "topologies:generate": "python3 sim/generate-topologies.py",
+    "topologies:check": "python3 sim/generate-topologies.py --check",
+    "docs:scenarios": "python3 sim/generate-scenario-docs.py",
+    "docs:scenarios:check": "python3 sim/generate-scenario-docs.py --check",
+    "thumbnails": "python3 ui/generate-thumbnails.py",
+    "qa:viewer": "python3 ui/qa/check-scada-viewer-browser.py",
+    "qa:gallery": "python3 ui/qa/check-gallery.py",
+    "qa:component-states": "python3 ui/qa/check-component-states.py",
+    "qa:fault-semantics": "python3 ui/qa/check-fault-semantics.py",
+    "qa:components": "python3 ui/qa/check-component-kit.py --root ../../../software/cadagent/webkit/scada/ui",
+    "qa:topologies": "python3 sim/check-topologies-browser.py",
+    "thumbnails:scenarios": "python3 explorer/generate-scenario-thumbnails.py",
+    "thumbnails:scenarios:check": "python3 explorer/generate-scenario-thumbnails.py --check",
+    "thumbnails:check": "python3 ui/generate-thumbnails.py --check",
+    "qa:scenarios": "python3 explorer/qa/check-scenario-browser.py",
+    "qa:scenario-audio": "python3 explorer/qa/check-scenario-audio-browser.py",
+    "qa:explorer-edges": "python3 explorer/qa/check-explorer-browser-edges.py",
+    "measure:viewport": "python3 explorer/qa/measure-scada-viewport.py",
+    "qa:model-switching": "python3 sim/check-model-switching-browser.py"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "jsdom": "31.0.1",
+    "rrweb-cssom": "0.8.0"
+  }
+}

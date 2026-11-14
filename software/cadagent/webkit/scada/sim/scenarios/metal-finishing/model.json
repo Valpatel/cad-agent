@@ -1,0 +1,395 @@
+{
+  "format": "scada-placeholder-model",
+  "version": 1,
+  "scenarioId": "metal-finishing",
+  "seed": 4118,
+  "components": {
+    "intake": {
+      "kind": "source",
+      "parameters": {
+        "capacity": 90,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 55,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Work receiving conveyor uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit source is externally replenished at the model boundary. Its visual starting level is maintained; it is not a finite intermediate inventory."
+      ]
+    },
+    "cleaning": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Cleaning bath uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "rinseOne": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "First rinse bath uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "treatment": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative treatment bath uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "rinseTwo": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Second rinse bath uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "finalRinse": {
+      "kind": "storage",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Final rinse bath uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "dryer": {
+      "kind": "heater",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 5,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 15,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Drying station uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "outfeed": {
+      "kind": "sink",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Finished-work outfeed uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom.",
+        "This explicit sink transfers product out of the model boundary; it does not accumulate a hidden storage inventory."
+      ]
+    },
+    "extraction": {
+      "kind": "load",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative extraction fan uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "scrubber": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Illustrative exhaust scrubber uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "recycle": {
+      "kind": "pump",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 3,
+        "loss": 0.03,
+        "pressureGain": 12,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Rinse recycle pump uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "recycleFilter": {
+      "kind": "processor",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 4,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 55,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Rinse recycle filter uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "power": {
+      "kind": "generator",
+      "parameters": {
+        "capacity": 100,
+        "response": 0.3,
+        "demand": 0,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 90,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 80,
+        "open": true,
+        "load": 75,
+        "inventory": 80,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Demonstration site power uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    },
+    "controller": {
+      "kind": "controller",
+      "parameters": {
+        "capacity": 75,
+        "response": 0.3,
+        "demand": 1,
+        "loss": 0.03,
+        "pressureGain": 4,
+        "heatGain": 0,
+        "warningAt": 78,
+        "damageRate": 0.4
+      },
+      "initial": {
+        "enabled": true,
+        "level": 45,
+        "open": true,
+        "load": 20,
+        "inventory": 45,
+        "temperature": 30,
+        "pressure": 15,
+        "failed": false
+      },
+      "assumptions": [
+        "Finishing-line IO uses normalized demonstration parameters, not a manufacturer curve or industry operating recipe.",
+        "Nominal electrical demand is intentionally small relative to the demonstration supply so a healthy plant starts with headroom."
+      ]
+    }
+  },
+  "assumptions": [
+    "Move demonstration work through cleaning, rinsing, treatment baths, drying and outfeed. Chemistry, electrical treatment recipes and exposure limits are not supplied.",
+    "All quantities are editable normalized placeholders. Stage names do not supply a production recipe, validated quality criterion or real protection setting.",
+    "Material, electrical, thermal, data and measurement connections have separate roles. The external model owns one shared state and clock for every view.",
+    "Repair clears component damage; it does not undo intentionally changed load, valves, capacity or other operating inputs.",
+    "Optional utility skids illustrate dependency plumbing and are not claims about standard industry equipment or energy performance."
+  ]
+}

@@ -39,7 +39,7 @@ flowchart TD
 | `report.py` | Collects a project's check outputs into results JSON (schema 1.0) |
 | `htmlreport.py` | A standalone HTML page for a results file |
 | `render.py` | Off-screen VTK renders of CadQuery shapes and STL meshes, captioned |
-| `view.py` | Every part in assembly position, for the browser viewer (`webkit/viewer.html`) |
+| `view.py` | Every part in assembly position, for the browser viewer (`webkit/model/viewer.html`) |
 | `dotsvg.py` | Graphviz DOT to SVG without Graphviz: a small parser and a layered layout |
 | `site.py`, `site_review.py` | The project site: progress, designs, decisions, documents; review pages, requirements, gates |
 | `release.py` | The print release: a browsable page of printed parts with their CAD files and the source that builds them |

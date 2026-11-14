@@ -8,6 +8,11 @@ catalogue cards or entries to the full agent prompt. `version.json` reports edit
 separately. The dependency-free selector shares the ownership policy with the repo-map check; CI still validates
 every authored map and exercises the actual rendered HTML and Markdown destinations.
 
+`/toolkit` presents native viewer and simulation capabilities. Its SCADA sections derive equipment, state controls,
+SVG previews and simulation launches from the owned libraries' metadata; `/toolkit/scada/catalog.json` is a browser
+projection, while `/catalog.json` retains the shared discovery identities. The command/Python manual stays at
+`/docs/toolkit`. Package licence overrides in `docs/catalog.yaml` also apply to indexed guides and skills.
+
 Publication and compilers
 
 ```mermaid
@@ -60,6 +65,9 @@ npm --prefix tools/site run preview:site
 The default result remains the repository's dist/ folder. Release builds still require a clean reviewed commit and
 full history. The Pages settings transition is tracked and reviewed separately in
 [#362](https://github.com/Valpatel/cad-agent/issues/362); moving these files does not change a live setting.
+
+Local `--worktree` drafts include staged additions and read tracked files on disk. Ordinary and release builds
+select and read only committed files; untracked work never enters either output.
 
 [Tools](../README.md) · [Site tests](../../tests/site/README.md)
 

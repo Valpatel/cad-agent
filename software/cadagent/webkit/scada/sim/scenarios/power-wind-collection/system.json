@@ -1,0 +1,1648 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-wind-collection",
+    "label": "Wind collection network",
+    "description": "Onshore/offshore illustrative turbine variants each retain integrated electrical output, combining on a collection bus before step-up and an export bay."
+  },
+  "components": [
+    {
+      "id": "deviceA",
+      "type": "wind-turbine",
+      "label": "Onshore turbine concept",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/deviceA/active",
+        "running": "/components/deviceA/running",
+        "fault": "/components/deviceA/fault",
+        "status": "/components/deviceA/status",
+        "load": "/components/deviceA/load",
+        "speed": "/components/deviceA/speed",
+        "damage": "/components/deviceA/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "deviceB",
+      "type": "wind-turbine",
+      "label": "Offshore turbine concept",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/deviceB/active",
+        "running": "/components/deviceB/running",
+        "fault": "/components/deviceB/fault",
+        "status": "/components/deviceB/status",
+        "load": "/components/deviceB/load",
+        "speed": "/components/deviceB/speed",
+        "damage": "/components/deviceB/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "collection",
+      "type": "busbar",
+      "label": "Electrical collection bus",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/collection/active",
+        "running": "/components/collection/running",
+        "fault": "/components/collection/fault",
+        "status": "/components/collection/status",
+        "load": "/components/collection/load",
+        "damage": "/components/collection/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "transformer",
+      "type": "transformer",
+      "label": "Export transformer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transformer/active",
+        "running": "/components/transformer/running",
+        "fault": "/components/transformer/fault",
+        "status": "/components/transformer/status",
+        "load": "/components/transformer/load",
+        "damage": "/components/transformer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "exportBreaker",
+      "type": "hv-circuit-breaker",
+      "label": "Export breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exportBreaker/active",
+        "running": "/components/exportBreaker/running",
+        "fault": "/components/exportBreaker/fault",
+        "status": "/components/exportBreaker/status",
+        "open": "/components/exportBreaker/open",
+        "load": "/components/exportBreaker/load",
+        "damage": "/components/exportBreaker/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "load",
+      "type": "motor",
+      "label": "Explicit external electrical demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/load/active",
+        "running": "/components/load/running",
+        "fault": "/components/load/fault",
+        "status": "/components/load/status",
+        "load": "/components/load/load",
+        "speed": "/components/load/speed",
+        "damage": "/components/load/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    },
+    {
+      "id": "radio",
+      "type": "radio",
+      "label": "Array telemetry",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/radio/active",
+        "running": "/components/radio/running",
+        "fault": "/components/radio/fault",
+        "status": "/components/radio/status",
+        "connected": "/components/radio/connected",
+        "damage": "/components/radio/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P21"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "deviceA-output-to-collection-supply",
+      "from": {
+        "component": "deviceA",
+        "port": "output"
+      },
+      "to": {
+        "component": "collection",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Integrated electrical output A",
+      "flowBinding": "/flows/deviceA-output-to-collection-supply"
+    },
+    {
+      "id": "deviceB-output-to-collection-supply",
+      "from": {
+        "component": "deviceB",
+        "port": "output"
+      },
+      "to": {
+        "component": "collection",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Integrated electrical output B",
+      "flowBinding": "/flows/deviceB-output-to-collection-supply"
+    },
+    {
+      "id": "collection-branch-a-to-transformer-primary",
+      "from": {
+        "component": "collection",
+        "port": "branch-a"
+      },
+      "to": {
+        "component": "transformer",
+        "port": "primary"
+      },
+      "medium": "electricity",
+      "label": "AC generation",
+      "flowBinding": "/flows/collection-branch-a-to-transformer-primary"
+    },
+    {
+      "id": "transformer-secondary-to-exportBreaker-line",
+      "from": {
+        "component": "transformer",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "Export circuit",
+      "flowBinding": "/flows/transformer-secondary-to-exportBreaker-line"
+    },
+    {
+      "id": "exportBreaker-load-to-load-supply",
+      "from": {
+        "component": "exportBreaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "load",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Delivered AC",
+      "flowBinding": "/flows/exportBreaker-load-to-load-supply"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "dcService-dc-to-exportBreaker-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-exportBreaker-supply"
+    },
+    {
+      "id": "plc-io-to-deviceA-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "deviceA",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-deviceA-control"
+    },
+    {
+      "id": "plc-io-to-deviceB-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "deviceB",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-deviceB-control"
+    },
+    {
+      "id": "plc-network-to-radio-network",
+      "from": {
+        "component": "plc",
+        "port": "network"
+      },
+      "to": {
+        "component": "radio",
+        "port": "network"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-network-to-radio-network"
+    },
+    {
+      "id": "station-secondary-to-radio-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "radio",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary AC",
+      "flowBinding": "/flows/station-secondary-to-radio-power"
+    }
+  ],
+  "views": [
+    {
+      "id": "field",
+      "label": "Resource and conversion devices",
+      "canvas": {
+        "width": 980,
+        "height": 380
+      },
+      "placements": [
+        {
+          "component": "deviceA",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "deviceB",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "collection",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "deviceA-output-to-collection-supply",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "deviceB-output-to-collection-supply",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "export",
+      "label": "Collection and shore / grid interface",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "collection",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transformer",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exportBreaker",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "load",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "collection-branch-a-to-transformer-primary",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transformer-secondary-to-exportBreaker-line",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "exportBreaker-load-to-load-supply",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control",
+      "label": "Shared telemetry and commands",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "radio",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "deviceA",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "deviceB",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 160,
+              "y": 250
+            },
+            {
+              "x": 160,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-deviceA-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-deviceB-control",
+          "points": [
+            {
+              "x": 460,
+              "y": 250
+            },
+            {
+              "x": 460,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "plc-network-to-radio-network",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-radio-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "deviceA-enabled",
+      "label": "Equipment enabled",
+      "component": "deviceA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "deviceA"
+      }
+    },
+    {
+      "id": "deviceA-load",
+      "label": "Requested output / load (%)",
+      "component": "deviceA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "deviceA"
+      }
+    },
+    {
+      "id": "deviceA-fault",
+      "label": "Inject fictional fault",
+      "component": "deviceA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "deviceA",
+        "value": true
+      }
+    },
+    {
+      "id": "deviceA-repair",
+      "label": "Repair damage",
+      "component": "deviceA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "deviceA"
+      }
+    },
+    {
+      "id": "deviceA-environment",
+      "label": "Shared environmental wind index",
+      "component": "deviceA",
+      "action": "setEnvironment",
+      "arguments": {
+        "key": "wind"
+      }
+    },
+    {
+      "id": "deviceB-enabled",
+      "label": "Equipment enabled",
+      "component": "deviceB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "deviceB"
+      }
+    },
+    {
+      "id": "deviceB-load",
+      "label": "Requested output / load (%)",
+      "component": "deviceB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "deviceB"
+      }
+    },
+    {
+      "id": "deviceB-fault",
+      "label": "Inject fictional fault",
+      "component": "deviceB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "deviceB",
+        "value": true
+      }
+    },
+    {
+      "id": "deviceB-repair",
+      "label": "Repair damage",
+      "component": "deviceB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "deviceB"
+      }
+    },
+    {
+      "id": "deviceB-environment",
+      "label": "Shared environmental wind index",
+      "component": "deviceB",
+      "action": "setEnvironment",
+      "arguments": {
+        "key": "wind"
+      }
+    },
+    {
+      "id": "collection-enabled",
+      "label": "Equipment enabled",
+      "component": "collection",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "collection"
+      }
+    },
+    {
+      "id": "collection-load",
+      "label": "Requested output / load (%)",
+      "component": "collection",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "collection"
+      }
+    },
+    {
+      "id": "collection-fault",
+      "label": "Inject fictional fault",
+      "component": "collection",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "collection",
+        "value": true
+      }
+    },
+    {
+      "id": "collection-repair",
+      "label": "Repair damage",
+      "component": "collection",
+      "action": "repair",
+      "arguments": {
+        "equipment": "collection"
+      }
+    },
+    {
+      "id": "transformer-enabled",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-load",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-fault",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transformer",
+        "value": true
+      }
+    },
+    {
+      "id": "transformer-repair",
+      "label": "Repair damage",
+      "component": "transformer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "exportBreaker-enabled",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-load",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-fault",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exportBreaker",
+        "value": true
+      }
+    },
+    {
+      "id": "exportBreaker-repair",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-open",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "load-enabled",
+      "label": "Equipment enabled",
+      "component": "load",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-load",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-fault",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "load",
+        "value": true
+      }
+    },
+    {
+      "id": "load-repair",
+      "label": "Repair damage",
+      "component": "load",
+      "action": "repair",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "radio-enabled",
+      "label": "Equipment enabled",
+      "component": "radio",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "radio-load",
+      "label": "Requested output / load (%)",
+      "component": "radio",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "radio-fault",
+      "label": "Inject fictional fault",
+      "component": "radio",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "radio",
+        "value": true
+      }
+    },
+    {
+      "id": "radio-repair",
+      "label": "Repair damage",
+      "component": "radio",
+      "action": "repair",
+      "arguments": {
+        "equipment": "radio"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "deviceA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "deviceA",
+      "kind": "toggle",
+      "command": "deviceA-enabled",
+      "binding": "/controls/deviceA/enabled"
+    },
+    {
+      "id": "deviceA-load-control",
+      "label": "Requested output / load (%)",
+      "component": "deviceA",
+      "kind": "range",
+      "command": "deviceA-load",
+      "binding": "/controls/deviceA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "deviceA-fault-control",
+      "label": "Inject fictional fault",
+      "component": "deviceA",
+      "kind": "button",
+      "command": "deviceA-fault"
+    },
+    {
+      "id": "deviceA-repair-control",
+      "label": "Repair damage",
+      "component": "deviceA",
+      "kind": "button",
+      "command": "deviceA-repair"
+    },
+    {
+      "id": "deviceA-environment-control",
+      "label": "Shared environmental wind index",
+      "component": "deviceA",
+      "kind": "range",
+      "command": "deviceA-environment",
+      "binding": "/environment/wind",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "deviceB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "deviceB",
+      "kind": "toggle",
+      "command": "deviceB-enabled",
+      "binding": "/controls/deviceB/enabled"
+    },
+    {
+      "id": "deviceB-load-control",
+      "label": "Requested output / load (%)",
+      "component": "deviceB",
+      "kind": "range",
+      "command": "deviceB-load",
+      "binding": "/controls/deviceB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "deviceB-fault-control",
+      "label": "Inject fictional fault",
+      "component": "deviceB",
+      "kind": "button",
+      "command": "deviceB-fault"
+    },
+    {
+      "id": "deviceB-repair-control",
+      "label": "Repair damage",
+      "component": "deviceB",
+      "kind": "button",
+      "command": "deviceB-repair"
+    },
+    {
+      "id": "deviceB-environment-control",
+      "label": "Shared environmental wind index",
+      "component": "deviceB",
+      "kind": "range",
+      "command": "deviceB-environment",
+      "binding": "/environment/wind",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "collection-enabled-control",
+      "label": "Equipment enabled",
+      "component": "collection",
+      "kind": "toggle",
+      "command": "collection-enabled",
+      "binding": "/controls/collection/enabled"
+    },
+    {
+      "id": "collection-load-control",
+      "label": "Requested output / load (%)",
+      "component": "collection",
+      "kind": "range",
+      "command": "collection-load",
+      "binding": "/controls/collection/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "collection-fault-control",
+      "label": "Inject fictional fault",
+      "component": "collection",
+      "kind": "button",
+      "command": "collection-fault"
+    },
+    {
+      "id": "collection-repair-control",
+      "label": "Repair damage",
+      "component": "collection",
+      "kind": "button",
+      "command": "collection-repair"
+    },
+    {
+      "id": "transformer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "kind": "toggle",
+      "command": "transformer-enabled",
+      "binding": "/controls/transformer/enabled"
+    },
+    {
+      "id": "transformer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "kind": "range",
+      "command": "transformer-load",
+      "binding": "/controls/transformer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transformer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-fault"
+    },
+    {
+      "id": "transformer-repair-control",
+      "label": "Repair damage",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-repair"
+    },
+    {
+      "id": "exportBreaker-enabled-control",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-enabled",
+      "binding": "/controls/exportBreaker/enabled"
+    },
+    {
+      "id": "exportBreaker-load-control",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "kind": "range",
+      "command": "exportBreaker-load",
+      "binding": "/controls/exportBreaker/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exportBreaker-fault-control",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-fault"
+    },
+    {
+      "id": "exportBreaker-repair-control",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-repair"
+    },
+    {
+      "id": "exportBreaker-open-control",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-open",
+      "binding": "/controls/exportBreaker/open"
+    },
+    {
+      "id": "load-enabled-control",
+      "label": "Equipment enabled",
+      "component": "load",
+      "kind": "toggle",
+      "command": "load-enabled",
+      "binding": "/controls/load/enabled"
+    },
+    {
+      "id": "load-load-control",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "kind": "range",
+      "command": "load-load",
+      "binding": "/controls/load/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "load-fault-control",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "kind": "button",
+      "command": "load-fault"
+    },
+    {
+      "id": "load-repair-control",
+      "label": "Repair damage",
+      "component": "load",
+      "kind": "button",
+      "command": "load-repair"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "radio-enabled-control",
+      "label": "Equipment enabled",
+      "component": "radio",
+      "kind": "toggle",
+      "command": "radio-enabled",
+      "binding": "/controls/radio/enabled"
+    },
+    {
+      "id": "radio-load-control",
+      "label": "Requested output / load (%)",
+      "component": "radio",
+      "kind": "range",
+      "command": "radio-load",
+      "binding": "/controls/radio/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "radio-fault-control",
+      "label": "Inject fictional fault",
+      "component": "radio",
+      "kind": "button",
+      "command": "radio-fault"
+    },
+    {
+      "id": "radio-repair-control",
+      "label": "Repair damage",
+      "component": "radio",
+      "kind": "button",
+      "command": "radio-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P21",
+      "label": "P21 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [How Do Wind Turbines Work?](https://www.energy.gov/cmei/systems/how-do-wind-turbines-work), updated 2026-07-17",
+      "description": "Rotor/shaft/generator and deployment sections | Supports: Reuse the existing wind family with onshore/offshore/distributed variants; distinguish direct-drive versus gearbox presentation without claiming a detailed aeroelastic model. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

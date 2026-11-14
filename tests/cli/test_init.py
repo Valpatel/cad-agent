@@ -183,6 +183,9 @@ def _wheel_smoke(tmp_path):
         metadata_paths = [name for name in names if name.endswith(".dist-info/METADATA")]
         assert len(metadata_paths) == 1
         metadata = BytesParser().parsebytes(wheel.read(metadata_paths[0]))
+        assert metadata["License"] == "MIT AND LicenseRef-SCADA-Retained-Terms"
+        for notice in ("LICENSE.txt", "ui/LICENSE.txt", "sim/LICENSE.txt"):
+            assert "UNLICENSED" in wheel.read(f"cadagent/webkit/scada/{notice}").decode()
         pardiso = [Requirement(r) for r in metadata.get_all("Requires-Dist", []) if Requirement(r).name == "pypardiso"]
         assert len(pardiso) == 1 and pardiso[0].marker is not None
         for system, machine, expected_pardiso in (("Linux", "x86_64", True), ("Windows", "AMD64", True),
@@ -232,8 +235,53 @@ print(json.dumps({"package": str(Path(cadagent.__file__).resolve()), "project": 
 const sdk = await import(pathToFileURL(process.argv[1]).href);
 if (typeof sdk.snapArm !== 'function' || sdk.SMALL_DEFLECTION !== 0.1) throw new Error('wrong installed SDK exports');
 console.log('installed SDK ESM PASS');"""
-    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"])
+    good_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"])
     assert "installed SDK ESM PASS" in good_sdk.stdout
+    # Consume the actual copied SDK after installation and source removal. This
+    # catches missing nested assets as well as imports that reach into a checkout.
+    run([cli, "webkit", "--project", target, "webkit"])
+    copied_sdk = target / "webkit"
+    assert {p.relative_to(copied_sdk).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in copied_sdk.rglob("*") if p.is_file()} == sdk_expected
+    scada_probe = """import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+const root = pathToFileURL(process.argv[1] + '/');
+const read = name => JSON.parse(readFileSync(new URL(name, root), 'utf8'));
+for (const key of ['fetch', 'setInterval', 'setTimeout']) globalThis[key] = () => { throw Error('unexpected IO: ' + key); };
+const ui = await import(new URL('ui/src/index.mjs', root));
+const sim = await import(new URL('sim/src/index.mjs', root));
+const types = ui.SCADA_COMPONENTS;
+assert.ok(types.length >= 142);
+for (const item of types) assert.match(ui.renderScadaComponent(item.type), /<svg/);
+for (const item of read('sim/scenarios/index.json').scenarios) {
+  const system = read('sim/scenarios/' + item.system);
+  const definition = read('sim/scenarios/' + item.model);
+  assert.equal(ui.validateSystemDefinition(system).ok, true, item.id);
+  const model = new sim.PlaceholderSystemModel(system, definition);
+  model.step(.1);
+  const before = model.exportSnapshot();
+  model.step(.1); const after = model.exportSnapshot();
+  model.importSnapshot(before); model.step(.1);
+  assert.deepEqual(model.exportSnapshot(), after, item.id);
+  model.destroy();
+}
+const system = read('sim/scenarios/wastewater-digester/system.json');
+const model = new sim.PlaceholderSystemModel(system, read('sim/scenarios/wastewater-digester/model.json'));
+model.dispatch({action:'setEnabled', arguments:{equipment:'liftPump',value:false}});
+assert.equal(model.exportSnapshot().state.components.liftPump.enabled, false);
+model.destroy();
+for (const name of ['explorer/index.html', 'explorer/main.mjs', 'ui/src/styles.css',
+                   'ui/schema/scada-system.schema.json', 'ui/metadata/gallery.json',
+                   'ui/img/README.md', 'sim/img/README.md', 'sim/docs/INTEGRATION.md'])
+  assert.ok(existsSync(new URL(name, root)), name);
+console.log('installed copied SCADA PASS: all symbols, scenarios, commands and replay without IO');"""
+    scada = run([node, "--input-type=module", "-e", scada_probe, copied_sdk / "scada"])
+    assert "installed copied SCADA PASS" in scada.stdout
+    equations = json.loads(run([node, copied_sdk / "scada/sim/examples/equation-models/run.mjs"]).stdout)
+    assert equations["replay"] == "exact saved-state continuation verified"
+    assert len(equations["results"]) == 4
+    print("installed copied SCADA PASS: full bytes, retained terms, all scenarios and swappable equations")
     # Profiles must be installed data, resolving real nested files with no checkout fallback.
     profile_probe = """import json
 from cadagent.publish.runtime import capture_profile
@@ -258,10 +306,10 @@ console.log('installed nested reader PASS');"""
     # Only the installed scope metadata changes; source is gone, starter remains installed and module bytes match.
     (sdk / "package.json").unlink()
     assert Path(paths["declared_config"]).is_file() and not source.exists()
-    assert hashlib.sha256((sdk / "formulas.js").read_bytes()).hexdigest() == sdk_expected["formulas.js"]
-    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "formulas.js"], check=False)
+    assert hashlib.sha256((sdk / "calculators/formulas.js").read_bytes()).hexdigest() == sdk_expected["calculators/formulas.js"]
+    bad_sdk = run([node, "--input-type=module", "-e", sdk_probe, sdk / "calculators/formulas.js"], check=False)
     assert bad_sdk.returncode != 0 and "SyntaxError" in bad_sdk.stderr and "export" in bad_sdk.stderr, (bad_sdk.stdout, bad_sdk.stderr)
-    assert str(sdk / "formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
+    assert str(sdk / "calculators/formulas.js") in bad_sdk.stderr and "installed SDK ESM PASS" not in bad_sdk.stdout
     print(f"installed SDK scope PASS on Node {node_version}: real file-URL import and missing-metadata rejection")
     Path(paths["declared_config"]).unlink()
     rejected = outside / "missing-starter"

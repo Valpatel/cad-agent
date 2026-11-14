@@ -1,0 +1,1703 @@
+{
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "power-solar-pv",
+    "label": "Photovoltaic field",
+    "description": "PV arrays collect DC through explicit isolators and one inverter before AC interconnection. Environmental availability is independent from inverter on/off."
+  },
+  "components": [
+    {
+      "id": "arrayA",
+      "type": "solar-panel",
+      "label": "PV string group A",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/arrayA/active",
+        "running": "/components/arrayA/running",
+        "fault": "/components/arrayA/fault",
+        "status": "/components/arrayA/status",
+        "load": "/components/arrayA/load",
+        "damage": "/components/arrayA/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "arrayB",
+      "type": "solar-panel",
+      "label": "PV string group B",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/arrayB/active",
+        "running": "/components/arrayB/running",
+        "fault": "/components/arrayB/fault",
+        "status": "/components/arrayB/status",
+        "load": "/components/arrayB/load",
+        "damage": "/components/arrayB/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "isolator",
+      "type": "disconnect-switch",
+      "label": "DC array isolator",
+      "variant": "dc-isolator",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/isolator/active",
+        "running": "/components/isolator/running",
+        "fault": "/components/isolator/fault",
+        "status": "/components/isolator/status",
+        "open": "/components/isolator/open",
+        "load": "/components/isolator/load",
+        "damage": "/components/isolator/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "inverter",
+      "type": "power-inverter",
+      "label": "DC to AC inverter",
+      "variant": "dc-to-ac",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/inverter/active",
+        "running": "/components/inverter/running",
+        "fault": "/components/inverter/fault",
+        "status": "/components/inverter/status",
+        "load": "/components/inverter/load",
+        "direction": "/components/inverter/direction",
+        "damage": "/components/inverter/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "transformer",
+      "type": "transformer",
+      "label": "Export transformer",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/transformer/active",
+        "running": "/components/transformer/running",
+        "fault": "/components/transformer/fault",
+        "status": "/components/transformer/status",
+        "load": "/components/transformer/load",
+        "damage": "/components/transformer/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "exportBreaker",
+      "type": "hv-circuit-breaker",
+      "label": "Export breaker",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "open": false,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/exportBreaker/active",
+        "running": "/components/exportBreaker/running",
+        "fault": "/components/exportBreaker/fault",
+        "status": "/components/exportBreaker/status",
+        "open": "/components/exportBreaker/open",
+        "load": "/components/exportBreaker/load",
+        "damage": "/components/exportBreaker/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "load",
+      "type": "motor",
+      "label": "Explicit external electrical demand",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/load/active",
+        "running": "/components/load/running",
+        "fault": "/components/load/fault",
+        "status": "/components/load/status",
+        "load": "/components/load/load",
+        "speed": "/components/load/speed",
+        "damage": "/components/load/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "station",
+      "type": "transformer",
+      "label": "Explicit station-service boundary",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/station/active",
+        "running": "/components/station/running",
+        "fault": "/components/station/fault",
+        "status": "/components/station/status",
+        "load": "/components/station/load",
+        "damage": "/components/station/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "plc",
+      "type": "plc-rack",
+      "label": "Shared plant controller",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/plc/active",
+        "running": "/components/plc/running",
+        "fault": "/components/plc/fault",
+        "status": "/components/plc/status",
+        "connected": "/components/plc/connected",
+        "load": "/components/plc/load",
+        "damage": "/components/plc/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    },
+    {
+      "id": "dcService",
+      "type": "power-rectifier",
+      "label": "Explicit station AC/DC service",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "direction": "forward",
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dcService/active",
+        "running": "/components/dcService/running",
+        "fault": "/components/dcService/fault",
+        "status": "/components/dcService/status",
+        "load": "/components/dcService/load",
+        "direction": "/components/dcService/direction",
+        "damage": "/components/dcService/damage"
+      },
+      "provenance": [
+        "assumed-model",
+        "authored-layout",
+        "P18"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "arrayA-dc-to-isolator-line",
+      "from": {
+        "component": "arrayA",
+        "port": "dc"
+      },
+      "to": {
+        "component": "isolator",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "PV DC",
+      "flowBinding": "/flows/arrayA-dc-to-isolator-line"
+    },
+    {
+      "id": "arrayB-dc-to-isolator-line",
+      "from": {
+        "component": "arrayB",
+        "port": "dc"
+      },
+      "to": {
+        "component": "isolator",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "PV DC",
+      "flowBinding": "/flows/arrayB-dc-to-isolator-line"
+    },
+    {
+      "id": "isolator-load-to-inverter-dc",
+      "from": {
+        "component": "isolator",
+        "port": "load"
+      },
+      "to": {
+        "component": "inverter",
+        "port": "dc"
+      },
+      "medium": "electricity",
+      "label": "Isolated DC",
+      "flowBinding": "/flows/isolator-load-to-inverter-dc"
+    },
+    {
+      "id": "inverter-ac-to-transformer-primary",
+      "from": {
+        "component": "inverter",
+        "port": "ac"
+      },
+      "to": {
+        "component": "transformer",
+        "port": "primary"
+      },
+      "medium": "electricity",
+      "label": "AC generation",
+      "flowBinding": "/flows/inverter-ac-to-transformer-primary"
+    },
+    {
+      "id": "transformer-secondary-to-exportBreaker-line",
+      "from": {
+        "component": "transformer",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "line"
+      },
+      "medium": "electricity",
+      "label": "Export circuit",
+      "flowBinding": "/flows/transformer-secondary-to-exportBreaker-line"
+    },
+    {
+      "id": "exportBreaker-load-to-load-supply",
+      "from": {
+        "component": "exportBreaker",
+        "port": "load"
+      },
+      "to": {
+        "component": "load",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Delivered AC",
+      "flowBinding": "/flows/exportBreaker-load-to-load-supply"
+    },
+    {
+      "id": "station-secondary-to-dcService-ac",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "dcService",
+        "port": "ac"
+      },
+      "medium": "electricity",
+      "label": "Station AC input",
+      "flowBinding": "/flows/station-secondary-to-dcService-ac"
+    },
+    {
+      "id": "station-secondary-to-plc-power",
+      "from": {
+        "component": "station",
+        "port": "secondary"
+      },
+      "to": {
+        "component": "plc",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "label": "Station control power",
+      "flowBinding": "/flows/station-secondary-to-plc-power"
+    },
+    {
+      "id": "dcService-dc-to-exportBreaker-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "exportBreaker",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-exportBreaker-supply"
+    },
+    {
+      "id": "dcService-dc-to-isolator-supply",
+      "from": {
+        "component": "dcService",
+        "port": "dc"
+      },
+      "to": {
+        "component": "isolator",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "label": "Station auxiliary DC",
+      "flowBinding": "/flows/dcService-dc-to-isolator-supply"
+    },
+    {
+      "id": "plc-io-to-inverter-control",
+      "from": {
+        "component": "plc",
+        "port": "io"
+      },
+      "to": {
+        "component": "inverter",
+        "port": "control"
+      },
+      "medium": "data",
+      "label": "data",
+      "flowBinding": "/flows/plc-io-to-inverter-control"
+    }
+  ],
+  "views": [
+    {
+      "id": "dc",
+      "label": "PV collection and DC isolation",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "arrayA",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "arrayB",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "isolator",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inverter",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "arrayA-dc-to-isolator-line",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 155
+            },
+            {
+              "x": 336,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 36
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "arrayB-dc-to-isolator-line",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "isolator-load-to-inverter-dc",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ac",
+      "label": "AC conversion and interconnection",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "inverter",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "transformer",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "exportBreaker",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "load",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "inverter-ac-to-transformer-primary",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "transformer-secondary-to-exportBreaker-line",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "exportBreaker-load-to-load-supply",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control",
+      "label": "Array and station controls",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "station",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "plc",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "isolator",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "inverter",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dcService",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "isolator-load-to-inverter-dc",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-dcService-ac",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 284,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 316
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 360,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "station-secondary-to-plc-power",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "dcService-dc-to-isolator-supply",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "plc-io-to-inverter-control",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 155
+            },
+            {
+              "x": 584,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 316
+            },
+            {
+              "x": 636,
+              "y": 435
+            },
+            {
+              "x": 660,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "arrayA-enabled",
+      "label": "Equipment enabled",
+      "component": "arrayA",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "arrayA"
+      }
+    },
+    {
+      "id": "arrayA-load",
+      "label": "Requested output / load (%)",
+      "component": "arrayA",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "arrayA"
+      }
+    },
+    {
+      "id": "arrayA-fault",
+      "label": "Inject fictional fault",
+      "component": "arrayA",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "arrayA",
+        "value": true
+      }
+    },
+    {
+      "id": "arrayA-repair",
+      "label": "Repair damage",
+      "component": "arrayA",
+      "action": "repair",
+      "arguments": {
+        "equipment": "arrayA"
+      }
+    },
+    {
+      "id": "arrayA-environment",
+      "label": "Shared environmental light index",
+      "component": "arrayA",
+      "action": "setEnvironment",
+      "arguments": {
+        "key": "light"
+      }
+    },
+    {
+      "id": "arrayB-enabled",
+      "label": "Equipment enabled",
+      "component": "arrayB",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "arrayB"
+      }
+    },
+    {
+      "id": "arrayB-load",
+      "label": "Requested output / load (%)",
+      "component": "arrayB",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "arrayB"
+      }
+    },
+    {
+      "id": "arrayB-fault",
+      "label": "Inject fictional fault",
+      "component": "arrayB",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "arrayB",
+        "value": true
+      }
+    },
+    {
+      "id": "arrayB-repair",
+      "label": "Repair damage",
+      "component": "arrayB",
+      "action": "repair",
+      "arguments": {
+        "equipment": "arrayB"
+      }
+    },
+    {
+      "id": "arrayB-environment",
+      "label": "Shared environmental light index",
+      "component": "arrayB",
+      "action": "setEnvironment",
+      "arguments": {
+        "key": "light"
+      }
+    },
+    {
+      "id": "isolator-enabled",
+      "label": "Equipment enabled",
+      "component": "isolator",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "isolator-load",
+      "label": "Requested output / load (%)",
+      "component": "isolator",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "isolator-fault",
+      "label": "Inject fictional fault",
+      "component": "isolator",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "isolator",
+        "value": true
+      }
+    },
+    {
+      "id": "isolator-repair",
+      "label": "Repair damage",
+      "component": "isolator",
+      "action": "repair",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "isolator-open",
+      "label": "Contacts open / isolated",
+      "component": "isolator",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "isolator"
+      }
+    },
+    {
+      "id": "inverter-enabled",
+      "label": "Equipment enabled",
+      "component": "inverter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "inverter"
+      }
+    },
+    {
+      "id": "inverter-load",
+      "label": "Requested output / load (%)",
+      "component": "inverter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "inverter"
+      }
+    },
+    {
+      "id": "inverter-fault",
+      "label": "Inject fictional fault",
+      "component": "inverter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "inverter",
+        "value": true
+      }
+    },
+    {
+      "id": "inverter-repair",
+      "label": "Repair damage",
+      "component": "inverter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "inverter"
+      }
+    },
+    {
+      "id": "inverter-mode-forward",
+      "label": "Forward conversion",
+      "component": "inverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "inverter",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "inverter-mode-idle",
+      "label": "Idle conversion",
+      "component": "inverter",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "inverter",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "transformer-enabled",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-load",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "transformer-fault",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "transformer",
+        "value": true
+      }
+    },
+    {
+      "id": "transformer-repair",
+      "label": "Repair damage",
+      "component": "transformer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "transformer"
+      }
+    },
+    {
+      "id": "exportBreaker-enabled",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-load",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-fault",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "exportBreaker",
+        "value": true
+      }
+    },
+    {
+      "id": "exportBreaker-repair",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "action": "repair",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "exportBreaker-open",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "action": "setOpen",
+      "arguments": {
+        "equipment": "exportBreaker"
+      }
+    },
+    {
+      "id": "load-enabled",
+      "label": "Equipment enabled",
+      "component": "load",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-load",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "load-fault",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "load",
+        "value": true
+      }
+    },
+    {
+      "id": "load-repair",
+      "label": "Repair damage",
+      "component": "load",
+      "action": "repair",
+      "arguments": {
+        "equipment": "load"
+      }
+    },
+    {
+      "id": "station-enabled",
+      "label": "Equipment enabled",
+      "component": "station",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-load",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "station-fault",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "station",
+        "value": true
+      }
+    },
+    {
+      "id": "station-repair",
+      "label": "Repair damage",
+      "component": "station",
+      "action": "repair",
+      "arguments": {
+        "equipment": "station"
+      }
+    },
+    {
+      "id": "plc-enabled",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-load",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "plc-fault",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "plc",
+        "value": true
+      }
+    },
+    {
+      "id": "plc-repair",
+      "label": "Repair damage",
+      "component": "plc",
+      "action": "repair",
+      "arguments": {
+        "equipment": "plc"
+      }
+    },
+    {
+      "id": "dcService-enabled",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-load",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-fault",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dcService",
+        "value": true
+      }
+    },
+    {
+      "id": "dcService-repair",
+      "label": "Repair damage",
+      "component": "dcService",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dcService"
+      }
+    },
+    {
+      "id": "dcService-mode-forward",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "forward"
+      }
+    },
+    {
+      "id": "dcService-mode-idle",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "action": "setMode",
+      "arguments": {
+        "equipment": "dcService",
+        "value": "idle"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one toy minute",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "arrayA-enabled-control",
+      "label": "Equipment enabled",
+      "component": "arrayA",
+      "kind": "toggle",
+      "command": "arrayA-enabled",
+      "binding": "/controls/arrayA/enabled"
+    },
+    {
+      "id": "arrayA-load-control",
+      "label": "Requested output / load (%)",
+      "component": "arrayA",
+      "kind": "range",
+      "command": "arrayA-load",
+      "binding": "/controls/arrayA/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "arrayA-fault-control",
+      "label": "Inject fictional fault",
+      "component": "arrayA",
+      "kind": "button",
+      "command": "arrayA-fault"
+    },
+    {
+      "id": "arrayA-repair-control",
+      "label": "Repair damage",
+      "component": "arrayA",
+      "kind": "button",
+      "command": "arrayA-repair"
+    },
+    {
+      "id": "arrayA-environment-control",
+      "label": "Shared environmental light index",
+      "component": "arrayA",
+      "kind": "range",
+      "command": "arrayA-environment",
+      "binding": "/environment/light",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "arrayB-enabled-control",
+      "label": "Equipment enabled",
+      "component": "arrayB",
+      "kind": "toggle",
+      "command": "arrayB-enabled",
+      "binding": "/controls/arrayB/enabled"
+    },
+    {
+      "id": "arrayB-load-control",
+      "label": "Requested output / load (%)",
+      "component": "arrayB",
+      "kind": "range",
+      "command": "arrayB-load",
+      "binding": "/controls/arrayB/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "arrayB-fault-control",
+      "label": "Inject fictional fault",
+      "component": "arrayB",
+      "kind": "button",
+      "command": "arrayB-fault"
+    },
+    {
+      "id": "arrayB-repair-control",
+      "label": "Repair damage",
+      "component": "arrayB",
+      "kind": "button",
+      "command": "arrayB-repair"
+    },
+    {
+      "id": "arrayB-environment-control",
+      "label": "Shared environmental light index",
+      "component": "arrayB",
+      "kind": "range",
+      "command": "arrayB-environment",
+      "binding": "/environment/light",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "isolator-enabled-control",
+      "label": "Equipment enabled",
+      "component": "isolator",
+      "kind": "toggle",
+      "command": "isolator-enabled",
+      "binding": "/controls/isolator/enabled"
+    },
+    {
+      "id": "isolator-load-control",
+      "label": "Requested output / load (%)",
+      "component": "isolator",
+      "kind": "range",
+      "command": "isolator-load",
+      "binding": "/controls/isolator/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "isolator-fault-control",
+      "label": "Inject fictional fault",
+      "component": "isolator",
+      "kind": "button",
+      "command": "isolator-fault"
+    },
+    {
+      "id": "isolator-repair-control",
+      "label": "Repair damage",
+      "component": "isolator",
+      "kind": "button",
+      "command": "isolator-repair"
+    },
+    {
+      "id": "isolator-open-control",
+      "label": "Contacts open / isolated",
+      "component": "isolator",
+      "kind": "toggle",
+      "command": "isolator-open",
+      "binding": "/controls/isolator/open"
+    },
+    {
+      "id": "inverter-enabled-control",
+      "label": "Equipment enabled",
+      "component": "inverter",
+      "kind": "toggle",
+      "command": "inverter-enabled",
+      "binding": "/controls/inverter/enabled"
+    },
+    {
+      "id": "inverter-load-control",
+      "label": "Requested output / load (%)",
+      "component": "inverter",
+      "kind": "range",
+      "command": "inverter-load",
+      "binding": "/controls/inverter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "inverter-fault-control",
+      "label": "Inject fictional fault",
+      "component": "inverter",
+      "kind": "button",
+      "command": "inverter-fault"
+    },
+    {
+      "id": "inverter-repair-control",
+      "label": "Repair damage",
+      "component": "inverter",
+      "kind": "button",
+      "command": "inverter-repair"
+    },
+    {
+      "id": "inverter-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "inverter",
+      "kind": "button",
+      "command": "inverter-mode-forward"
+    },
+    {
+      "id": "inverter-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "inverter",
+      "kind": "button",
+      "command": "inverter-mode-idle"
+    },
+    {
+      "id": "transformer-enabled-control",
+      "label": "Equipment enabled",
+      "component": "transformer",
+      "kind": "toggle",
+      "command": "transformer-enabled",
+      "binding": "/controls/transformer/enabled"
+    },
+    {
+      "id": "transformer-load-control",
+      "label": "Requested output / load (%)",
+      "component": "transformer",
+      "kind": "range",
+      "command": "transformer-load",
+      "binding": "/controls/transformer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "transformer-fault-control",
+      "label": "Inject fictional fault",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-fault"
+    },
+    {
+      "id": "transformer-repair-control",
+      "label": "Repair damage",
+      "component": "transformer",
+      "kind": "button",
+      "command": "transformer-repair"
+    },
+    {
+      "id": "exportBreaker-enabled-control",
+      "label": "Equipment enabled",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-enabled",
+      "binding": "/controls/exportBreaker/enabled"
+    },
+    {
+      "id": "exportBreaker-load-control",
+      "label": "Requested output / load (%)",
+      "component": "exportBreaker",
+      "kind": "range",
+      "command": "exportBreaker-load",
+      "binding": "/controls/exportBreaker/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "exportBreaker-fault-control",
+      "label": "Inject fictional fault",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-fault"
+    },
+    {
+      "id": "exportBreaker-repair-control",
+      "label": "Repair damage",
+      "component": "exportBreaker",
+      "kind": "button",
+      "command": "exportBreaker-repair"
+    },
+    {
+      "id": "exportBreaker-open-control",
+      "label": "Contacts open / isolated",
+      "component": "exportBreaker",
+      "kind": "toggle",
+      "command": "exportBreaker-open",
+      "binding": "/controls/exportBreaker/open"
+    },
+    {
+      "id": "load-enabled-control",
+      "label": "Equipment enabled",
+      "component": "load",
+      "kind": "toggle",
+      "command": "load-enabled",
+      "binding": "/controls/load/enabled"
+    },
+    {
+      "id": "load-load-control",
+      "label": "Requested output / load (%)",
+      "component": "load",
+      "kind": "range",
+      "command": "load-load",
+      "binding": "/controls/load/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "load-fault-control",
+      "label": "Inject fictional fault",
+      "component": "load",
+      "kind": "button",
+      "command": "load-fault"
+    },
+    {
+      "id": "load-repair-control",
+      "label": "Repair damage",
+      "component": "load",
+      "kind": "button",
+      "command": "load-repair"
+    },
+    {
+      "id": "station-enabled-control",
+      "label": "Equipment enabled",
+      "component": "station",
+      "kind": "toggle",
+      "command": "station-enabled",
+      "binding": "/controls/station/enabled"
+    },
+    {
+      "id": "station-load-control",
+      "label": "Requested output / load (%)",
+      "component": "station",
+      "kind": "range",
+      "command": "station-load",
+      "binding": "/controls/station/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "station-fault-control",
+      "label": "Inject fictional fault",
+      "component": "station",
+      "kind": "button",
+      "command": "station-fault"
+    },
+    {
+      "id": "station-repair-control",
+      "label": "Repair damage",
+      "component": "station",
+      "kind": "button",
+      "command": "station-repair"
+    },
+    {
+      "id": "plc-enabled-control",
+      "label": "Equipment enabled",
+      "component": "plc",
+      "kind": "toggle",
+      "command": "plc-enabled",
+      "binding": "/controls/plc/enabled"
+    },
+    {
+      "id": "plc-load-control",
+      "label": "Requested output / load (%)",
+      "component": "plc",
+      "kind": "range",
+      "command": "plc-load",
+      "binding": "/controls/plc/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "plc-fault-control",
+      "label": "Inject fictional fault",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-fault"
+    },
+    {
+      "id": "plc-repair-control",
+      "label": "Repair damage",
+      "component": "plc",
+      "kind": "button",
+      "command": "plc-repair"
+    },
+    {
+      "id": "dcService-enabled-control",
+      "label": "Equipment enabled",
+      "component": "dcService",
+      "kind": "toggle",
+      "command": "dcService-enabled",
+      "binding": "/controls/dcService/enabled"
+    },
+    {
+      "id": "dcService-load-control",
+      "label": "Requested output / load (%)",
+      "component": "dcService",
+      "kind": "range",
+      "command": "dcService-load",
+      "binding": "/controls/dcService/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dcService-fault-control",
+      "label": "Inject fictional fault",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-fault"
+    },
+    {
+      "id": "dcService-repair-control",
+      "label": "Repair damage",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-repair"
+    },
+    {
+      "id": "dcService-mode-forward-control",
+      "label": "Forward conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-forward"
+    },
+    {
+      "id": "dcService-mode-idle-control",
+      "label": "Idle conversion",
+      "component": "dcService",
+      "kind": "button",
+      "command": "dcService-mode-idle"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one toy minute",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 retain edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "assumed-model",
+      "label": "Editable normalized model guesses",
+      "kind": "assumed",
+      "description": "Every capacity, inventory, thermal index, loss, response and incident coefficient is an authoring choice, not validated by the references."
+    },
+    {
+      "id": "authored-layout",
+      "label": "Illustrative plant routing and layout",
+      "kind": "illustrative",
+      "description": "Coordinates, asset tags, selected concept composition and simplified connections are editable authored diagrams, not a verified P&ID or electrical design."
+    },
+    {
+      "id": "P18",
+      "label": "P18 \u00b7 structural reference",
+      "kind": "external",
+      "source": "DOE, [Solar Photovoltaic System Design Basics](https://www.energy.gov/cmei/systems/solar-photovoltaic-system-design-basics), updated 2022-07-08",
+      "description": "Mounting, inverter and storage sections | Supports: PV DC output, inverter conversion and optional storage are explicit components. Tracking is a visual/configuration variant, not a different generator family. | Reviewed 2026-11-13. Does not validate toy parameters."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "normalized",
+      "label": "All model numbers are editable teaching assumptions",
+      "value": true,
+      "provenance": "assumed-model"
+    },
+    {
+      "id": "circuitIdentity",
+      "label": "Separate named circuits never mix stock through heat links",
+      "value": true,
+      "provenance": "authored-layout"
+    }
+  ],
+  "units": {
+    "power": "normalized power units; explicit optional display mapping",
+    "flow": "normalized material units per toy minute",
+    "inventory": "normalized finite stock",
+    "heat": "normalized stored heat; not a physical operating temperature"
+  }
+}

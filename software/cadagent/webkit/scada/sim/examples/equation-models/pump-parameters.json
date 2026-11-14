@@ -1,0 +1,24 @@
+{
+  "provenance": "Illustrative engineering assumptions; no measured pump data or plant calibration.",
+  "parameters": {
+    "shutoffHeadM": 40,
+    "staticHeadM": 4,
+    "systemResistanceS2M5": 30000,
+    "densityKgM3": 1000,
+    "gravityMS2": 9.80665,
+    "pumpEfficiency": 0.8,
+    "motorEfficiency": 0.9,
+    "driveEfficiency": 1,
+    "idlePowerW": 100,
+    "flowAt100M3s": 0.05,
+    "powerAt100W": 10000,
+    "pressureAt100Pa": 1000000,
+    "shaftTimeConstantS": 30,
+    "initialSpeedRatio": 0.6,
+    "maxSpeedRatio": 1
+  },
+  "curves": {
+    "quadratic": {"quadraticResistanceS2M5": 60000},
+    "linear": {"linearResistanceSM2": 1200}
+  }
+}

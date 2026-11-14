@@ -53,6 +53,26 @@ test('folder routes are injective and dot-safe, with explicit delegated ownershi
 test('ordinary owner maps pass without an exception baseline', () => assert.deepEqual(check(base()).problems, []));
 test('missing owner map fails', () => rejects(d => delete d['code/README.md'], /missing owner map code\/README/));
 test('missing diagram fails', () => rejects(d => d['code/README.md'] = owner.replace(diagram, ''), /missing Mermaid/));
+test('owned SVG maps and linked thumbnail tables are valid navigable maps', () => {
+  for (const figure of ['![Module map](map.svg)', '<img src="map.svg" alt="Module map">']) {
+    const d = base();
+    d['code/map.svg'] = '<svg xmlns="http://www.w3.org/2000/svg"><title>Module map</title></svg>';
+    d['code/README.md'] = owner.replace(diagram, figure + '\n').replace('| [unit.py](unit.py) | Actual module. |',
+      '| [Implementation](unit.py) | Actual module. |\n| <a href="map.svg"><img src="map.svg" alt="Module map"></a> | Architecture. |');
+    assert.deepEqual(check(d).problems, []);
+    delete d['code/map.svg'];
+    assert.match(check(d).problems.join('\n'), /missing Mermaid or local SVG map/);
+  }
+});
+test('unowned, mislabeled and raster images do not replace a source map', () => {
+  for (const href of ['https://example.com/map.svg', 'map.png', 'map.svg']) {
+    const d = base();
+    d['code/README.md'] = owner.replace(diagram, `![Picture](${href})`);
+    d['code/map.png'] = 'raster bytes';
+    d['code/map.svg'] = 'not an SVG';
+    assert.match(check(d).problems.join('\n'), /missing Mermaid or local SVG map/);
+  }
+});
 test('missing file table fails', () => rejects(d => d['code/README.md'] = diagram + '[Up](../README.md)', /missing file\/folder table/));
 test('a prose mention cannot stand in for a missing file row', () => rejects(d => d['code/README.md'] = owner.replace('| [unit.py](unit.py) | Actual module. |', '') + '\nunit.py\n', /table missing unit.py/));
 test('missing up link fails', () => rejects(d => d['code/README.md'] = owner.replace('[Up](../README.md)', ''), /missing up link/));

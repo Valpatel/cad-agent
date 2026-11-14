@@ -1,0 +1,2423 @@
+{
+  "$schema": "../../../scada-ui/schema/scada-system.schema.json",
+  "format": "scada-system",
+  "version": 1,
+  "system": {
+    "id": "metal-finishing",
+    "label": "Metal-finishing line",
+    "description": "Move demonstration work through cleaning, rinsing, treatment baths, drying and outfeed. Chemistry, electrical treatment recipes and exposure limits are not supplied."
+  },
+  "components": [
+    {
+      "id": "intake",
+      "type": "conveyor",
+      "label": "Work receiving conveyor",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/intake/active",
+        "running": "/components/intake/running",
+        "fault": "/components/intake/fault",
+        "status": "/components/intake/status",
+        "load": "/components/intake/load",
+        "speed": "/components/intake/speed",
+        "damage": "/components/intake/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "cleaning",
+      "type": "tank",
+      "label": "Cleaning bath",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/cleaning/active",
+        "running": "/components/cleaning/running",
+        "fault": "/components/cleaning/fault",
+        "status": "/components/cleaning/status",
+        "level": "/components/cleaning/level",
+        "damage": "/components/cleaning/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rinseOne",
+      "type": "tank",
+      "label": "First rinse bath",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/rinseOne/active",
+        "running": "/components/rinseOne/running",
+        "fault": "/components/rinseOne/fault",
+        "status": "/components/rinseOne/status",
+        "level": "/components/rinseOne/level",
+        "damage": "/components/rinseOne/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "treatment",
+      "type": "reactor",
+      "label": "Illustrative treatment bath",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/treatment/active",
+        "running": "/components/treatment/running",
+        "fault": "/components/treatment/fault",
+        "status": "/components/treatment/status",
+        "level": "/components/treatment/level",
+        "damage": "/components/treatment/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "vent",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "gas-inlet",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rinseTwo",
+      "type": "tank",
+      "label": "Second rinse bath",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/rinseTwo/active",
+        "running": "/components/rinseTwo/running",
+        "fault": "/components/rinseTwo/fault",
+        "status": "/components/rinseTwo/status",
+        "level": "/components/rinseTwo/level",
+        "damage": "/components/rinseTwo/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "finalRinse",
+      "type": "tank",
+      "label": "Final rinse bath",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/finalRinse/active",
+        "running": "/components/finalRinse/running",
+        "fault": "/components/finalRinse/fault",
+        "status": "/components/finalRinse/status",
+        "level": "/components/finalRinse/level",
+        "damage": "/components/finalRinse/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "dryer",
+      "type": "dryer",
+      "label": "Drying station",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "temperature": 90,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/dryer/active",
+        "running": "/components/dryer/running",
+        "fault": "/components/dryer/fault",
+        "status": "/components/dryer/status",
+        "load": "/components/dryer/load",
+        "speed": "/components/dryer/speed",
+        "temperature": "/components/dryer/temperature",
+        "damage": "/components/dryer/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "outfeed",
+      "type": "conveyor",
+      "label": "Finished-work outfeed",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/outfeed/active",
+        "running": "/components/outfeed/running",
+        "fault": "/components/outfeed/fault",
+        "status": "/components/outfeed/status",
+        "load": "/components/outfeed/load",
+        "speed": "/components/outfeed/speed",
+        "damage": "/components/outfeed/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "extraction",
+      "type": "fan",
+      "label": "Illustrative extraction fan",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/extraction/active",
+        "running": "/components/extraction/running",
+        "fault": "/components/extraction/fault",
+        "status": "/components/extraction/status",
+        "load": "/components/extraction/load",
+        "speed": "/components/extraction/speed",
+        "damage": "/components/extraction/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "control",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "scrubber",
+      "type": "scrubber",
+      "label": "Illustrative exhaust scrubber",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "level": 55,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/scrubber/active",
+        "running": "/components/scrubber/running",
+        "fault": "/components/scrubber/fault",
+        "status": "/components/scrubber/status",
+        "level": "/components/scrubber/level",
+        "load": "/components/scrubber/load",
+        "damage": "/components/scrubber/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "supply",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "wash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "recycle",
+      "type": "pump",
+      "label": "Rinse recycle pump",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/recycle/active",
+        "running": "/components/recycle/running",
+        "fault": "/components/recycle/fault",
+        "status": "/components/recycle/status",
+        "load": "/components/recycle/load",
+        "speed": "/components/recycle/speed",
+        "damage": "/components/recycle/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "drive",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "recycleFilter",
+      "type": "filter",
+      "label": "Rinse recycle filter",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/recycleFilter/active",
+        "running": "/components/recycleFilter/running",
+        "fault": "/components/recycleFilter/fault",
+        "status": "/components/recycleFilter/status",
+        "load": "/components/recycleFilter/load",
+        "damage": "/components/recycleFilter/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "inlet",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outlet",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "backwash",
+          "side": "left",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "power",
+      "type": "generator",
+      "label": "Demonstration site power",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "load": 60,
+        "speed": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/power/active",
+        "running": "/components/power/running",
+        "fault": "/components/power/fault",
+        "status": "/components/power/status",
+        "load": "/components/power/load",
+        "speed": "/components/power/speed",
+        "damage": "/components/power/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "fuel",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "output",
+          "side": "right",
+          "offset": 0.5
+        },
+        {
+          "id": "exhaust",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "remote-io",
+      "label": "Finishing-line IO",
+      "state": {
+        "active": false,
+        "running": false,
+        "fault": false,
+        "status": "offline",
+        "connected": true,
+        "load": 60,
+        "damage": "none"
+      },
+      "bindings": {
+        "active": "/components/controller/active",
+        "running": "/components/controller/running",
+        "fault": "/components/controller/fault",
+        "status": "/components/controller/status",
+        "connected": "/components/controller/connected",
+        "load": "/components/controller/load",
+        "damage": "/components/controller/damage"
+      },
+      "provenance": [
+        "demo-model",
+        "assumed-topology"
+      ],
+      "ports": [
+        {
+          "id": "power",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "inputs",
+          "side": "left",
+          "offset": 0.5
+        },
+        {
+          "id": "outputs",
+          "side": "right",
+          "offset": 0.5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "intake-to-cleaning",
+      "from": {
+        "component": "intake",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "cleaning",
+        "port": "inlet"
+      },
+      "medium": "solids",
+      "flowBinding": "/flows/intake-to-cleaning",
+      "label": "Work receiving conveyor \u2192 Cleaning bath"
+    },
+    {
+      "id": "cleaning-to-rinseOne",
+      "from": {
+        "component": "cleaning",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "rinseOne",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/cleaning-to-rinseOne",
+      "label": "Cleaning bath \u2192 First rinse bath"
+    },
+    {
+      "id": "rinseOne-to-treatment",
+      "from": {
+        "component": "rinseOne",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "treatment",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/rinseOne-to-treatment",
+      "label": "First rinse bath \u2192 Illustrative treatment bath"
+    },
+    {
+      "id": "treatment-to-rinseTwo",
+      "from": {
+        "component": "treatment",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "rinseTwo",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/treatment-to-rinseTwo",
+      "label": "Illustrative treatment bath \u2192 Second rinse bath"
+    },
+    {
+      "id": "rinseTwo-to-finalRinse",
+      "from": {
+        "component": "rinseTwo",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "finalRinse",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/rinseTwo-to-finalRinse",
+      "label": "Second rinse bath \u2192 Final rinse bath"
+    },
+    {
+      "id": "finalRinse-to-dryer",
+      "from": {
+        "component": "finalRinse",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/finalRinse-to-dryer",
+      "label": "Final rinse bath \u2192 Drying station"
+    },
+    {
+      "id": "dryer-to-outfeed",
+      "from": {
+        "component": "dryer",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "outfeed",
+        "port": "inlet"
+      },
+      "medium": "material",
+      "flowBinding": "/flows/dryer-to-outfeed",
+      "label": "Drying station \u2192 Finished-work outfeed"
+    },
+    {
+      "id": "extraction-to-scrubber",
+      "from": {
+        "component": "extraction",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "scrubber",
+        "port": "inlet"
+      },
+      "medium": "air",
+      "flowBinding": "/flows/extraction-to-scrubber",
+      "label": "Illustrative extraction fan \u2192 Illustrative exhaust scrubber"
+    },
+    {
+      "id": "rinseTwo-to-recycle",
+      "from": {
+        "component": "rinseTwo",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "recycle",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/rinseTwo-to-recycle",
+      "label": "Second rinse bath \u2192 Rinse recycle pump"
+    },
+    {
+      "id": "recycle-to-recycleFilter",
+      "from": {
+        "component": "recycle",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "recycleFilter",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/recycle-to-recycleFilter",
+      "label": "Rinse recycle pump \u2192 Rinse recycle filter"
+    },
+    {
+      "id": "recycleFilter-to-rinseOne",
+      "from": {
+        "component": "recycleFilter",
+        "port": "outlet"
+      },
+      "to": {
+        "component": "rinseOne",
+        "port": "inlet"
+      },
+      "medium": "liquid",
+      "flowBinding": "/flows/recycleFilter-to-rinseOne",
+      "label": "Rinse recycle filter \u2192 First rinse bath"
+    },
+    {
+      "id": "power-to-intake",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "intake",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-intake",
+      "label": "Demonstration site power \u2192 Work receiving conveyor"
+    },
+    {
+      "id": "power-to-dryer",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "dryer",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-dryer",
+      "label": "Demonstration site power \u2192 Drying station"
+    },
+    {
+      "id": "power-to-outfeed",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "outfeed",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-outfeed",
+      "label": "Demonstration site power \u2192 Finished-work outfeed"
+    },
+    {
+      "id": "power-to-extraction",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "extraction",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-extraction",
+      "label": "Demonstration site power \u2192 Illustrative extraction fan"
+    },
+    {
+      "id": "power-to-scrubber",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "scrubber",
+        "port": "supply"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-scrubber",
+      "label": "Demonstration site power \u2192 Illustrative exhaust scrubber"
+    },
+    {
+      "id": "power-to-recycle",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "recycle",
+        "port": "drive"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-recycle",
+      "label": "Demonstration site power \u2192 Rinse recycle pump"
+    },
+    {
+      "id": "power-to-controller",
+      "from": {
+        "component": "power",
+        "port": "output"
+      },
+      "to": {
+        "component": "controller",
+        "port": "power"
+      },
+      "medium": "electricity",
+      "flowBinding": "/flows/power-to-controller",
+      "label": "Demonstration site power \u2192 Finishing-line IO"
+    },
+    {
+      "id": "controller-to-extraction",
+      "from": {
+        "component": "controller",
+        "port": "network"
+      },
+      "to": {
+        "component": "extraction",
+        "port": "control"
+      },
+      "medium": "data",
+      "flowBinding": "/flows/controller-to-extraction",
+      "label": "Finishing-line IO \u2192 Illustrative extraction fan"
+    }
+  ],
+  "views": [
+    {
+      "id": "process",
+      "label": "Main process",
+      "canvas": {
+        "width": 1280,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "intake",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "cleaning",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rinseOne",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "treatment",
+          "x": 960,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rinseTwo",
+          "x": 960,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "finalRinse",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "outfeed",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "intake-to-cleaning",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "cleaning-to-rinseOne",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "rinseOne-to-treatment",
+          "points": [
+            {
+              "x": 860,
+              "y": 155
+            },
+            {
+              "x": 960,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "treatment-to-rinseTwo",
+          "points": [
+            {
+              "x": 1060,
+              "y": 250
+            },
+            {
+              "x": 1060,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "rinseTwo-to-finalRinse",
+          "points": [
+            {
+              "x": 960,
+              "y": 435
+            },
+            {
+              "x": 860,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "finalRinse-to-dryer",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "dryer-to-outfeed",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities & control",
+      "canvas": {
+        "width": 980,
+        "height": 940
+      },
+      "placements": [
+        {
+          "component": "extraction",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "scrubber",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "recycle",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "recycleFilter",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "power",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "treatment",
+          "x": 60,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 360,
+          "y": 620,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "extraction-to-scrubber",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "recycle-to-recycleFilter",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "power-to-dryer",
+          "points": [
+            {
+              "x": 460,
+              "y": 530
+            },
+            {
+              "x": 460,
+              "y": 620
+            }
+          ]
+        },
+        {
+          "connection": "power-to-extraction",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 435
+            },
+            {
+              "x": 336,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 274
+            },
+            {
+              "x": 284,
+              "y": 155
+            },
+            {
+              "x": 260,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-scrubber",
+          "points": [
+            {
+              "x": 460,
+              "y": 340
+            },
+            {
+              "x": 460,
+              "y": 250
+            }
+          ]
+        },
+        {
+          "connection": "power-to-recycle",
+          "points": [
+            {
+              "x": 560,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 435
+            },
+            {
+              "x": 584,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 274
+            },
+            {
+              "x": 636,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "power-to-controller",
+          "points": [
+            {
+              "x": 360,
+              "y": 435
+            },
+            {
+              "x": 260,
+              "y": 435
+            }
+          ]
+        },
+        {
+          "connection": "controller-to-extraction",
+          "points": [
+            {
+              "x": 160,
+              "y": 340
+            },
+            {
+              "x": 160,
+              "y": 250
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing & storage",
+      "canvas": {
+        "width": 980,
+        "height": 660
+      },
+      "placements": [
+        {
+          "component": "treatment",
+          "x": 60,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "rinseTwo",
+          "x": 360,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "finalRinse",
+          "x": 660,
+          "y": 60,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "dryer",
+          "x": 660,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "outfeed",
+          "x": 360,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        },
+        {
+          "component": "controller",
+          "x": 60,
+          "y": 340,
+          "width": 200,
+          "height": 190
+        }
+      ],
+      "routes": [
+        {
+          "connection": "treatment-to-rinseTwo",
+          "points": [
+            {
+              "x": 260,
+              "y": 155
+            },
+            {
+              "x": 360,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "rinseTwo-to-finalRinse",
+          "points": [
+            {
+              "x": 560,
+              "y": 155
+            },
+            {
+              "x": 660,
+              "y": 155
+            }
+          ]
+        },
+        {
+          "connection": "finalRinse-to-dryer",
+          "points": [
+            {
+              "x": 760,
+              "y": 250
+            },
+            {
+              "x": 760,
+              "y": 340
+            }
+          ]
+        },
+        {
+          "connection": "dryer-to-outfeed",
+          "points": [
+            {
+              "x": 660,
+              "y": 435
+            },
+            {
+              "x": 560,
+              "y": 435
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "id": "intake-enabled",
+      "label": "Work receiving conveyor \u00b7 Enabled",
+      "component": "intake",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "intake-load",
+      "label": "Work receiving conveyor \u00b7 Requested load",
+      "component": "intake",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "intake-fault",
+      "label": "Work receiving conveyor \u00b7 Injected failure",
+      "component": "intake",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "intake-repair",
+      "label": "Repair Work receiving conveyor",
+      "component": "intake",
+      "action": "repair",
+      "arguments": {
+        "equipment": "intake"
+      }
+    },
+    {
+      "id": "cleaning-enabled",
+      "label": "Cleaning bath \u00b7 Enabled",
+      "component": "cleaning",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "cleaning"
+      }
+    },
+    {
+      "id": "cleaning-load",
+      "label": "Cleaning bath \u00b7 Requested load",
+      "component": "cleaning",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "cleaning"
+      }
+    },
+    {
+      "id": "cleaning-fault",
+      "label": "Cleaning bath \u00b7 Injected failure",
+      "component": "cleaning",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "cleaning"
+      }
+    },
+    {
+      "id": "cleaning-repair",
+      "label": "Repair Cleaning bath",
+      "component": "cleaning",
+      "action": "repair",
+      "arguments": {
+        "equipment": "cleaning"
+      }
+    },
+    {
+      "id": "rinseOne-enabled",
+      "label": "First rinse bath \u00b7 Enabled",
+      "component": "rinseOne",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "rinseOne"
+      }
+    },
+    {
+      "id": "rinseOne-load",
+      "label": "First rinse bath \u00b7 Requested load",
+      "component": "rinseOne",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "rinseOne"
+      }
+    },
+    {
+      "id": "rinseOne-fault",
+      "label": "First rinse bath \u00b7 Injected failure",
+      "component": "rinseOne",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "rinseOne"
+      }
+    },
+    {
+      "id": "rinseOne-repair",
+      "label": "Repair First rinse bath",
+      "component": "rinseOne",
+      "action": "repair",
+      "arguments": {
+        "equipment": "rinseOne"
+      }
+    },
+    {
+      "id": "treatment-enabled",
+      "label": "Illustrative treatment bath \u00b7 Enabled",
+      "component": "treatment",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "treatment"
+      }
+    },
+    {
+      "id": "treatment-load",
+      "label": "Illustrative treatment bath \u00b7 Requested load",
+      "component": "treatment",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "treatment"
+      }
+    },
+    {
+      "id": "treatment-fault",
+      "label": "Illustrative treatment bath \u00b7 Injected failure",
+      "component": "treatment",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "treatment"
+      }
+    },
+    {
+      "id": "treatment-repair",
+      "label": "Repair Illustrative treatment bath",
+      "component": "treatment",
+      "action": "repair",
+      "arguments": {
+        "equipment": "treatment"
+      }
+    },
+    {
+      "id": "rinseTwo-enabled",
+      "label": "Second rinse bath \u00b7 Enabled",
+      "component": "rinseTwo",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "rinseTwo"
+      }
+    },
+    {
+      "id": "rinseTwo-load",
+      "label": "Second rinse bath \u00b7 Requested load",
+      "component": "rinseTwo",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "rinseTwo"
+      }
+    },
+    {
+      "id": "rinseTwo-fault",
+      "label": "Second rinse bath \u00b7 Injected failure",
+      "component": "rinseTwo",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "rinseTwo"
+      }
+    },
+    {
+      "id": "rinseTwo-repair",
+      "label": "Repair Second rinse bath",
+      "component": "rinseTwo",
+      "action": "repair",
+      "arguments": {
+        "equipment": "rinseTwo"
+      }
+    },
+    {
+      "id": "finalRinse-enabled",
+      "label": "Final rinse bath \u00b7 Enabled",
+      "component": "finalRinse",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "finalRinse"
+      }
+    },
+    {
+      "id": "finalRinse-load",
+      "label": "Final rinse bath \u00b7 Requested load",
+      "component": "finalRinse",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "finalRinse"
+      }
+    },
+    {
+      "id": "finalRinse-fault",
+      "label": "Final rinse bath \u00b7 Injected failure",
+      "component": "finalRinse",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "finalRinse"
+      }
+    },
+    {
+      "id": "finalRinse-repair",
+      "label": "Repair Final rinse bath",
+      "component": "finalRinse",
+      "action": "repair",
+      "arguments": {
+        "equipment": "finalRinse"
+      }
+    },
+    {
+      "id": "dryer-enabled",
+      "label": "Drying station \u00b7 Enabled",
+      "component": "dryer",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-load",
+      "label": "Drying station \u00b7 Requested load",
+      "component": "dryer",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-fault",
+      "label": "Drying station \u00b7 Injected failure",
+      "component": "dryer",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "dryer-repair",
+      "label": "Repair Drying station",
+      "component": "dryer",
+      "action": "repair",
+      "arguments": {
+        "equipment": "dryer"
+      }
+    },
+    {
+      "id": "outfeed-enabled",
+      "label": "Finished-work outfeed \u00b7 Enabled",
+      "component": "outfeed",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-load",
+      "label": "Finished-work outfeed \u00b7 Requested load",
+      "component": "outfeed",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-fault",
+      "label": "Finished-work outfeed \u00b7 Injected failure",
+      "component": "outfeed",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "outfeed-repair",
+      "label": "Repair Finished-work outfeed",
+      "component": "outfeed",
+      "action": "repair",
+      "arguments": {
+        "equipment": "outfeed"
+      }
+    },
+    {
+      "id": "extraction-enabled",
+      "label": "Illustrative extraction fan \u00b7 Enabled",
+      "component": "extraction",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "extraction-load",
+      "label": "Illustrative extraction fan \u00b7 Requested load",
+      "component": "extraction",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "extraction-fault",
+      "label": "Illustrative extraction fan \u00b7 Injected failure",
+      "component": "extraction",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "extraction-repair",
+      "label": "Repair Illustrative extraction fan",
+      "component": "extraction",
+      "action": "repair",
+      "arguments": {
+        "equipment": "extraction"
+      }
+    },
+    {
+      "id": "scrubber-enabled",
+      "label": "Illustrative exhaust scrubber \u00b7 Enabled",
+      "component": "scrubber",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "scrubber"
+      }
+    },
+    {
+      "id": "scrubber-load",
+      "label": "Illustrative exhaust scrubber \u00b7 Requested load",
+      "component": "scrubber",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "scrubber"
+      }
+    },
+    {
+      "id": "scrubber-fault",
+      "label": "Illustrative exhaust scrubber \u00b7 Injected failure",
+      "component": "scrubber",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "scrubber"
+      }
+    },
+    {
+      "id": "scrubber-repair",
+      "label": "Repair Illustrative exhaust scrubber",
+      "component": "scrubber",
+      "action": "repair",
+      "arguments": {
+        "equipment": "scrubber"
+      }
+    },
+    {
+      "id": "recycle-enabled",
+      "label": "Rinse recycle pump \u00b7 Enabled",
+      "component": "recycle",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "recycle"
+      }
+    },
+    {
+      "id": "recycle-load",
+      "label": "Rinse recycle pump \u00b7 Requested load",
+      "component": "recycle",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "recycle"
+      }
+    },
+    {
+      "id": "recycle-fault",
+      "label": "Rinse recycle pump \u00b7 Injected failure",
+      "component": "recycle",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "recycle"
+      }
+    },
+    {
+      "id": "recycle-repair",
+      "label": "Repair Rinse recycle pump",
+      "component": "recycle",
+      "action": "repair",
+      "arguments": {
+        "equipment": "recycle"
+      }
+    },
+    {
+      "id": "recycleFilter-enabled",
+      "label": "Rinse recycle filter \u00b7 Enabled",
+      "component": "recycleFilter",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "recycleFilter"
+      }
+    },
+    {
+      "id": "recycleFilter-load",
+      "label": "Rinse recycle filter \u00b7 Requested load",
+      "component": "recycleFilter",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "recycleFilter"
+      }
+    },
+    {
+      "id": "recycleFilter-fault",
+      "label": "Rinse recycle filter \u00b7 Injected failure",
+      "component": "recycleFilter",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "recycleFilter"
+      }
+    },
+    {
+      "id": "recycleFilter-repair",
+      "label": "Repair Rinse recycle filter",
+      "component": "recycleFilter",
+      "action": "repair",
+      "arguments": {
+        "equipment": "recycleFilter"
+      }
+    },
+    {
+      "id": "power-enabled",
+      "label": "Demonstration site power \u00b7 Enabled",
+      "component": "power",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-load",
+      "label": "Demonstration site power \u00b7 Requested load",
+      "component": "power",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-fault",
+      "label": "Demonstration site power \u00b7 Injected failure",
+      "component": "power",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "power-repair",
+      "label": "Repair Demonstration site power",
+      "component": "power",
+      "action": "repair",
+      "arguments": {
+        "equipment": "power"
+      }
+    },
+    {
+      "id": "controller-enabled",
+      "label": "Finishing-line IO \u00b7 Enabled",
+      "component": "controller",
+      "action": "setEnabled",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-load",
+      "label": "Finishing-line IO \u00b7 Requested load",
+      "component": "controller",
+      "action": "setLoad",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-fault",
+      "label": "Finishing-line IO \u00b7 Injected failure",
+      "component": "controller",
+      "action": "setFault",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "controller-repair",
+      "label": "Repair Finishing-line IO",
+      "component": "controller",
+      "action": "repair",
+      "arguments": {
+        "equipment": "controller"
+      }
+    },
+    {
+      "id": "plant-setRunning",
+      "label": "Run the shared plant",
+      "action": "setRunning",
+      "arguments": {}
+    },
+    {
+      "id": "plant-step",
+      "label": "Advance one model step",
+      "action": "step",
+      "arguments": {
+        "value": 1
+      }
+    },
+    {
+      "id": "plant-reset",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "action": "reset",
+      "arguments": {}
+    }
+  ],
+  "controls": [
+    {
+      "id": "intake-enabled-control",
+      "label": "Enabled",
+      "component": "intake",
+      "kind": "toggle",
+      "command": "intake-enabled",
+      "binding": "/controls/intake/enabled"
+    },
+    {
+      "id": "intake-load-control",
+      "label": "Requested load",
+      "component": "intake",
+      "kind": "range",
+      "command": "intake-load",
+      "binding": "/controls/intake/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "intake-fault-control",
+      "label": "Injected failure",
+      "component": "intake",
+      "kind": "toggle",
+      "command": "intake-fault",
+      "binding": "/controls/intake/fault"
+    },
+    {
+      "id": "intake-repair-control",
+      "label": "Repair component",
+      "component": "intake",
+      "kind": "button",
+      "command": "intake-repair"
+    },
+    {
+      "id": "cleaning-enabled-control",
+      "label": "Enabled",
+      "component": "cleaning",
+      "kind": "toggle",
+      "command": "cleaning-enabled",
+      "binding": "/controls/cleaning/enabled"
+    },
+    {
+      "id": "cleaning-load-control",
+      "label": "Requested load",
+      "component": "cleaning",
+      "kind": "range",
+      "command": "cleaning-load",
+      "binding": "/controls/cleaning/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "cleaning-fault-control",
+      "label": "Injected failure",
+      "component": "cleaning",
+      "kind": "toggle",
+      "command": "cleaning-fault",
+      "binding": "/controls/cleaning/fault"
+    },
+    {
+      "id": "cleaning-repair-control",
+      "label": "Repair component",
+      "component": "cleaning",
+      "kind": "button",
+      "command": "cleaning-repair"
+    },
+    {
+      "id": "rinseOne-enabled-control",
+      "label": "Enabled",
+      "component": "rinseOne",
+      "kind": "toggle",
+      "command": "rinseOne-enabled",
+      "binding": "/controls/rinseOne/enabled"
+    },
+    {
+      "id": "rinseOne-load-control",
+      "label": "Requested load",
+      "component": "rinseOne",
+      "kind": "range",
+      "command": "rinseOne-load",
+      "binding": "/controls/rinseOne/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "rinseOne-fault-control",
+      "label": "Injected failure",
+      "component": "rinseOne",
+      "kind": "toggle",
+      "command": "rinseOne-fault",
+      "binding": "/controls/rinseOne/fault"
+    },
+    {
+      "id": "rinseOne-repair-control",
+      "label": "Repair component",
+      "component": "rinseOne",
+      "kind": "button",
+      "command": "rinseOne-repair"
+    },
+    {
+      "id": "treatment-enabled-control",
+      "label": "Enabled",
+      "component": "treatment",
+      "kind": "toggle",
+      "command": "treatment-enabled",
+      "binding": "/controls/treatment/enabled"
+    },
+    {
+      "id": "treatment-load-control",
+      "label": "Requested load",
+      "component": "treatment",
+      "kind": "range",
+      "command": "treatment-load",
+      "binding": "/controls/treatment/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "treatment-fault-control",
+      "label": "Injected failure",
+      "component": "treatment",
+      "kind": "toggle",
+      "command": "treatment-fault",
+      "binding": "/controls/treatment/fault"
+    },
+    {
+      "id": "treatment-repair-control",
+      "label": "Repair component",
+      "component": "treatment",
+      "kind": "button",
+      "command": "treatment-repair"
+    },
+    {
+      "id": "rinseTwo-enabled-control",
+      "label": "Enabled",
+      "component": "rinseTwo",
+      "kind": "toggle",
+      "command": "rinseTwo-enabled",
+      "binding": "/controls/rinseTwo/enabled"
+    },
+    {
+      "id": "rinseTwo-load-control",
+      "label": "Requested load",
+      "component": "rinseTwo",
+      "kind": "range",
+      "command": "rinseTwo-load",
+      "binding": "/controls/rinseTwo/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "rinseTwo-fault-control",
+      "label": "Injected failure",
+      "component": "rinseTwo",
+      "kind": "toggle",
+      "command": "rinseTwo-fault",
+      "binding": "/controls/rinseTwo/fault"
+    },
+    {
+      "id": "rinseTwo-repair-control",
+      "label": "Repair component",
+      "component": "rinseTwo",
+      "kind": "button",
+      "command": "rinseTwo-repair"
+    },
+    {
+      "id": "finalRinse-enabled-control",
+      "label": "Enabled",
+      "component": "finalRinse",
+      "kind": "toggle",
+      "command": "finalRinse-enabled",
+      "binding": "/controls/finalRinse/enabled"
+    },
+    {
+      "id": "finalRinse-load-control",
+      "label": "Requested load",
+      "component": "finalRinse",
+      "kind": "range",
+      "command": "finalRinse-load",
+      "binding": "/controls/finalRinse/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "finalRinse-fault-control",
+      "label": "Injected failure",
+      "component": "finalRinse",
+      "kind": "toggle",
+      "command": "finalRinse-fault",
+      "binding": "/controls/finalRinse/fault"
+    },
+    {
+      "id": "finalRinse-repair-control",
+      "label": "Repair component",
+      "component": "finalRinse",
+      "kind": "button",
+      "command": "finalRinse-repair"
+    },
+    {
+      "id": "dryer-enabled-control",
+      "label": "Enabled",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-enabled",
+      "binding": "/controls/dryer/enabled"
+    },
+    {
+      "id": "dryer-load-control",
+      "label": "Requested load",
+      "component": "dryer",
+      "kind": "range",
+      "command": "dryer-load",
+      "binding": "/controls/dryer/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "dryer-fault-control",
+      "label": "Injected failure",
+      "component": "dryer",
+      "kind": "toggle",
+      "command": "dryer-fault",
+      "binding": "/controls/dryer/fault"
+    },
+    {
+      "id": "dryer-repair-control",
+      "label": "Repair component",
+      "component": "dryer",
+      "kind": "button",
+      "command": "dryer-repair"
+    },
+    {
+      "id": "outfeed-enabled-control",
+      "label": "Enabled",
+      "component": "outfeed",
+      "kind": "toggle",
+      "command": "outfeed-enabled",
+      "binding": "/controls/outfeed/enabled"
+    },
+    {
+      "id": "outfeed-load-control",
+      "label": "Requested load",
+      "component": "outfeed",
+      "kind": "range",
+      "command": "outfeed-load",
+      "binding": "/controls/outfeed/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "outfeed-fault-control",
+      "label": "Injected failure",
+      "component": "outfeed",
+      "kind": "toggle",
+      "command": "outfeed-fault",
+      "binding": "/controls/outfeed/fault"
+    },
+    {
+      "id": "outfeed-repair-control",
+      "label": "Repair component",
+      "component": "outfeed",
+      "kind": "button",
+      "command": "outfeed-repair"
+    },
+    {
+      "id": "extraction-enabled-control",
+      "label": "Enabled",
+      "component": "extraction",
+      "kind": "toggle",
+      "command": "extraction-enabled",
+      "binding": "/controls/extraction/enabled"
+    },
+    {
+      "id": "extraction-load-control",
+      "label": "Requested load",
+      "component": "extraction",
+      "kind": "range",
+      "command": "extraction-load",
+      "binding": "/controls/extraction/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "extraction-fault-control",
+      "label": "Injected failure",
+      "component": "extraction",
+      "kind": "toggle",
+      "command": "extraction-fault",
+      "binding": "/controls/extraction/fault"
+    },
+    {
+      "id": "extraction-repair-control",
+      "label": "Repair component",
+      "component": "extraction",
+      "kind": "button",
+      "command": "extraction-repair"
+    },
+    {
+      "id": "scrubber-enabled-control",
+      "label": "Enabled",
+      "component": "scrubber",
+      "kind": "toggle",
+      "command": "scrubber-enabled",
+      "binding": "/controls/scrubber/enabled"
+    },
+    {
+      "id": "scrubber-load-control",
+      "label": "Requested load",
+      "component": "scrubber",
+      "kind": "range",
+      "command": "scrubber-load",
+      "binding": "/controls/scrubber/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "scrubber-fault-control",
+      "label": "Injected failure",
+      "component": "scrubber",
+      "kind": "toggle",
+      "command": "scrubber-fault",
+      "binding": "/controls/scrubber/fault"
+    },
+    {
+      "id": "scrubber-repair-control",
+      "label": "Repair component",
+      "component": "scrubber",
+      "kind": "button",
+      "command": "scrubber-repair"
+    },
+    {
+      "id": "recycle-enabled-control",
+      "label": "Enabled",
+      "component": "recycle",
+      "kind": "toggle",
+      "command": "recycle-enabled",
+      "binding": "/controls/recycle/enabled"
+    },
+    {
+      "id": "recycle-load-control",
+      "label": "Requested load",
+      "component": "recycle",
+      "kind": "range",
+      "command": "recycle-load",
+      "binding": "/controls/recycle/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "recycle-fault-control",
+      "label": "Injected failure",
+      "component": "recycle",
+      "kind": "toggle",
+      "command": "recycle-fault",
+      "binding": "/controls/recycle/fault"
+    },
+    {
+      "id": "recycle-repair-control",
+      "label": "Repair component",
+      "component": "recycle",
+      "kind": "button",
+      "command": "recycle-repair"
+    },
+    {
+      "id": "recycleFilter-enabled-control",
+      "label": "Enabled",
+      "component": "recycleFilter",
+      "kind": "toggle",
+      "command": "recycleFilter-enabled",
+      "binding": "/controls/recycleFilter/enabled"
+    },
+    {
+      "id": "recycleFilter-load-control",
+      "label": "Requested load",
+      "component": "recycleFilter",
+      "kind": "range",
+      "command": "recycleFilter-load",
+      "binding": "/controls/recycleFilter/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "recycleFilter-fault-control",
+      "label": "Injected failure",
+      "component": "recycleFilter",
+      "kind": "toggle",
+      "command": "recycleFilter-fault",
+      "binding": "/controls/recycleFilter/fault"
+    },
+    {
+      "id": "recycleFilter-repair-control",
+      "label": "Repair component",
+      "component": "recycleFilter",
+      "kind": "button",
+      "command": "recycleFilter-repair"
+    },
+    {
+      "id": "power-enabled-control",
+      "label": "Enabled",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-enabled",
+      "binding": "/controls/power/enabled"
+    },
+    {
+      "id": "power-load-control",
+      "label": "Requested load",
+      "component": "power",
+      "kind": "range",
+      "command": "power-load",
+      "binding": "/controls/power/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "power-fault-control",
+      "label": "Injected failure",
+      "component": "power",
+      "kind": "toggle",
+      "command": "power-fault",
+      "binding": "/controls/power/fault"
+    },
+    {
+      "id": "power-repair-control",
+      "label": "Repair component",
+      "component": "power",
+      "kind": "button",
+      "command": "power-repair"
+    },
+    {
+      "id": "controller-enabled-control",
+      "label": "Enabled",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-enabled",
+      "binding": "/controls/controller/enabled"
+    },
+    {
+      "id": "controller-load-control",
+      "label": "Requested load",
+      "component": "controller",
+      "kind": "range",
+      "command": "controller-load",
+      "binding": "/controls/controller/load",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "controller-fault-control",
+      "label": "Injected failure",
+      "component": "controller",
+      "kind": "toggle",
+      "command": "controller-fault",
+      "binding": "/controls/controller/fault"
+    },
+    {
+      "id": "controller-repair-control",
+      "label": "Repair component",
+      "component": "controller",
+      "kind": "button",
+      "command": "controller-repair"
+    },
+    {
+      "id": "plant-setRunning-control",
+      "label": "Run the shared plant",
+      "kind": "toggle",
+      "command": "plant-setRunning",
+      "binding": "/running"
+    },
+    {
+      "id": "plant-step-control",
+      "label": "Advance one model step",
+      "kind": "button",
+      "command": "plant-step"
+    },
+    {
+      "id": "plant-reset-control",
+      "label": "Reset dynamics \u00b7 keep edited parameters",
+      "kind": "button",
+      "command": "plant-reset"
+    }
+  ],
+  "units": {
+    "flow": "normalized flow units",
+    "inventory": "normalized inventory units",
+    "load": "% requested demonstration load",
+    "pressure": "normalized pressure index",
+    "temperature": "normalized model thermal index; artwork displays an illustrative range"
+  },
+  "provenance": [
+    {
+      "id": "demo-model",
+      "label": "Editable placeholder model",
+      "kind": "assumed",
+      "description": "Family-level normalized behavior for UI experimentation; no calibrated industry process, safety envelope or recipe."
+    },
+    {
+      "id": "assumed-topology",
+      "label": "Illustrative editable routing",
+      "kind": "illustrative",
+      "description": "Industry-inspired stage names and interfaces. This is not a verified plant P&ID, wiring diagram or production design."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "nominalCapacity",
+      "label": "Default normalized stage capacity",
+      "value": 75,
+      "unit": "normalized units",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "warningIndex",
+      "label": "Demonstration warning threshold",
+      "value": 78,
+      "unit": "normalized index",
+      "provenance": "demo-model"
+    },
+    {
+      "id": "optionalUtilities",
+      "label": "Utility equipment is illustrative and may be optional",
+      "value": true,
+      "provenance": "assumed-topology"
+    }
+  ]
+}

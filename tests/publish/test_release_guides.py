@@ -153,7 +153,7 @@ def test_symlink_dependency_is_rejected_even_inside_project(tmp_path):
 def runtime(monkeypatch):
     # Packaging fixture, deliberately not a claim that a browser can run these
     # stub bytes. The actual pinned runtime/extracted-ZIP browser check is separate.
-    files = {"viewer.html": b"<title>Reader fixture</title>", "viewer.js": b"// viewer fixture",
+    files = {"model/viewer.html": b"<title>Reader fixture</title>", "model/viewer.js": b"// viewer fixture",
              "assembly/guide.js": b"// guide fixture", "vendor/three/three.module.min.js": b"// engine fixture"}
     monkeypatch.setattr(release, "_guide_runtime", lambda: dict(files))
     return files
@@ -190,7 +190,7 @@ def test_release_contains_distinct_snapshots_runtime_and_static_fallback(tmp_pat
         import html
         link = html.unescape(re.search(r'href="([^\"]+)">Open interactive', static).group(1))
         viewer = (result.folder / entry["href"]).parent / unquote(urlsplit(link).path)
-        assert viewer.resolve() == (result.folder / "guides/_cadagent/viewer.html").resolve()
+        assert viewer.resolve() == (result.folder / "guides/_cadagent/model/viewer.html").resolve()
         selected = parse_qs(urlsplit(link).query)["guide"][0]
         assert (viewer.parent / selected).resolve() == (result.folder / entry["guide"]).resolve()
         back = parse_qs(urlsplit(link).query)["back"][0]
@@ -274,7 +274,7 @@ def test_runtime_copies_checked_resources_and_refuses_missing_reader_or_symlinks
     target.unlink()
     with pytest.raises(CadConfigError, match="runtime"):
         REAL_GUIDE_RUNTIME()
-    target.symlink_to(kit / "viewer.js")
+    target.symlink_to(kit / "model/viewer.js")
     with pytest.raises(CadConfigError, match="symlink"):
         REAL_GUIDE_RUNTIME()
 

@@ -1,4 +1,4 @@
-"""3D view export: every part in assembly position, for the browser viewer (webkit/viewer.html).
+"""3D view export: every part in assembly position, for the browser viewer (webkit/model/viewer.html).
 
 Works for any CAD project: a housing, a bracket set, a mechanism or a robot. ``cad-agent view`` reads each part's STEP
 (assembly coordinates, as cad-agent projects export them) and writes ``exports/view/<part>.stl`` (binary, mm) plus
@@ -229,7 +229,7 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
     """Pack a ``cad-agent view`` export (view.json and its STLs) into one small model for a web page.
 
     Writes ``<out>.json`` (the parts, their colours and where each lives in the binary) and ``<out>.bin``, gzip-
-    compressed here so it arrives small from any static host (the kit's ``<cad-model>``, ``kit/model.js``, inflates it
+    compressed here so it arrives small from any static host (the kit's ``<cad-model>``, ``kit/model/model.js``, inflates it
     with the browser's DecompressionStream). Each part's triangles are welded into shared vertices, numbered in the
     order the triangles first use them. Per part, at ``offset`` in the inflated binary:
 
@@ -314,7 +314,7 @@ def pack_view(manifest: Path, out: Path, *, title: Optional[str] = None, colors:
 
 def unpack_model(model: Dict[str, Any], packed: bytes) -> List[tuple]:
     """[(vertices (m, 3) float mm, triangles (k, 3) int)] per part from a pack_view model and its binary: the
-    reference decoder (kit/model.js does the same in the browser; the tests hold the two to each other)."""
+    reference decoder (kit/model/model.js does the same in the browser; the tests hold the two to each other)."""
     import gzip
     raw = np.frombuffer(gzip.decompress(packed) if packed[:2] == b"\x1f\x8b" else packed, dtype=np.uint8)
     lo, hi = np.array(model["box_mm"][:3]), np.array(model["box_mm"][3:])

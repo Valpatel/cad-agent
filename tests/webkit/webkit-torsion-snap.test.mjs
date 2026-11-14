@@ -1,13 +1,13 @@
-// <cad-torsion-snap> (software/cadagent/webkit/torsion-snap.js) without a browser: every bar it can show gives the port's
+// <cad-torsion-snap> (software/cadagent/webkit/calculators/torsion-snap.js) without a browser: every bar it can show gives the port's
 // numbers, the strain scales as Saint-Venant says, the figure stays inside its box, and the still on docs/compliant is
 // what the component draws for the page's attributes (tools/site/figures/torsion-snap-still.mjs --check).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import { readState, compute, summary, drawTorsionSnap, strainColour, CONTROLS, DEFAULTS, VIEW, PALETTES } from '../../software/cadagent/webkit/torsion-snap.js';
-import { torsionShearStrainRect } from '../../software/cadagent/webkit/formulas.js';
-import { MATERIALS } from '../../software/cadagent/webkit/formulas-data.js';
+import { readState, compute, summary, drawTorsionSnap, strainColour, CONTROLS, DEFAULTS, VIEW, PALETTES } from '../../software/cadagent/webkit/calculators/torsion-snap.js';
+import { torsionShearStrainRect } from '../../software/cadagent/webkit/calculators/formulas.js';
+import { MATERIALS } from '../../software/cadagent/webkit/calculators/formulas-data.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const DEG = Math.PI / 180;

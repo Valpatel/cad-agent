@@ -1,9 +1,9 @@
 /* The catalogue page (/catalog): hero and search, the "Play with it" strip, kind tabs, the area tree and filters
-   (a sheet on small screens), and the card grid. Behaviour: kit/gallery.js and kit/gallery.css. Covers are our own
+   (a sheet on small screens), and the card grid. Behaviour: kit/ui/gallery.js and kit/ui/gallery.css. Covers are our own
    figures or drawn from data by tools/catalog-art.mjs; the tints below match theirs. */
 .catalog{--bar-top:84px;--side-w:268px;--glyph-accent:var(--orange)}
 /* Each domain's tone: two tints for backgrounds (the covers' too: TINT in tools/catalog-art.mjs) and an ink for accents,
-   at least 3:1 against white and against both tints. Every domain in docs/areas.yaml has one: tests/site/website-catalog.test.mjs. */
+   at least 3:1 against white and against both tints. Every domain in docs/areas.yaml has one: tests/site/toolkit/website-catalog.test.mjs. */
 [data-tone=mechanical]{--tint-a:#eef8fb;--tint-b:#cfe3ec;--tone-ink:#3f7f9c}[data-tone=manufacturing]{--tint-a:#fff7d9;--tint-b:#f4e1a2;--tone-ink:#a07a0c}
 [data-tone=thermal]{--tint-a:#ffefe3;--tint-b:#f6d3b8;--tone-ink:#c0602a}[data-tone=simulation]{--tint-a:#eef8e4;--tint-b:#d0e8b6;--tone-ink:#4f8a35}
 [data-tone=electrical]{--tint-a:#eef1fb;--tint-b:#d3dbf0;--tone-ink:#5468b0}[data-tone=practice]{--tint-a:#f7f5ea;--tint-b:#e5e7d3;--tone-ink:#7d7f55}
@@ -103,7 +103,7 @@ svg.glyph{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-
    (glyph | name | maturity | count), so bars and counts line up from row to row.
    Hover (on screens that hover) and keyboard focus sweep the domain's tint in from the left, grow a bar in its ink and
    step the glyph right; the chosen row is inked, with an orange edge and count. Which row is chosen, and which panels
-   start folded in the sheet: kit/gallery.js. */
+   start folded in the sheet: kit/ui/gallery.js. */
 .area-tree,.area-tree ul{list-style:none;margin:0;padding:0}
 .area-tree>li+li{margin-top:10px}
 .area-tree :focus-visible{outline-offset:-3px}

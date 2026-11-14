@@ -12,7 +12,8 @@ Generated previews from canonical equipment artwork and supplied illustrative st
 
 | Folder | Previews | Example |
 | --- | ---: | --- |
-| [Availability](availability/README.md) | 10 | <a href="availability/pump--inactive.svg"><img src="availability/pump--inactive.svg" width="160" alt="Availability preview"></a> |
-| [Damage And Alarms](damage-and-alarms/README.md) | 6 | <a href="damage-and-alarms/pump--warning.svg"><img src="damage-and-alarms/pump--warning.svg" width="160" alt="Damage And Alarms preview"></a> |
-| [Levels And Controls](levels-and-controls/README.md) | 10 | <a href="levels-and-controls/pump--low-speed.svg"><img src="levels-and-controls/pump--low-speed.svg" width="160" alt="Levels And Controls preview"></a> |
+| [Availability](availability/README.md) | 13 | <a href="availability/pump--inactive.svg"><img src="availability/pump--inactive.svg" width="160" alt="Availability preview"></a> |
+| [Damage And Alarms](damage-and-alarms/README.md) | 7 | <a href="damage-and-alarms/pump--warning.svg"><img src="damage-and-alarms/pump--warning.svg" width="160" alt="Damage And Alarms preview"></a> |
+| [Levels And Controls](levels-and-controls/README.md) | 7 | <a href="levels-and-controls/pump--low-speed.svg"><img src="levels-and-controls/pump--low-speed.svg" width="160" alt="Levels And Controls preview"></a> |
 | [Operating](operating/README.md) | 5 | <a href="operating/generator--diesel-skid--operating.svg"><img src="operating/generator--diesel-skid--operating.svg" width="160" alt="Operating preview"></a> |
+| [Valve Position](valve-position/README.md) | 19 | <a href="valve-position/gate-valve--closed.svg"><img src="valve-position/gate-valve--closed.svg" width="160" alt="Valve Position preview"></a> |

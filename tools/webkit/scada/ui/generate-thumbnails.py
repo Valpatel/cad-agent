@@ -53,12 +53,12 @@ body{width:480px;height:360px;overflow:hidden}.thumbnail-stage{height:100%;paddi
 '''
 FIXTURE = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SCADA package thumbnail renderer</title><link rel="stylesheet" href="/software/cadagent/webkit/scada/ui/src/styles.css"><style>''' + STYLE + '''</style><main class="thumbnail-stage"></main><script type="module">
 import {SCADA_COMPONENTS,SCADA_CATEGORIES,getScadaComponent,getScadaVariants,normalizeScadaState,renderScadaComponent} from '/software/cadagent/webkit/scada/ui/src/symbols/index.mjs';
-import {ScadaWorkspace,renderScadaDialog,renderScadaToolbar} from '/software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs';
+import {ScadaPopover,ScadaWorkspace,renderScadaDialog,renderScadaToolbar} from '/software/cadagent/webkit/scada/ui/src/workspace/workspace.mjs';
 const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const stage=document.querySelector('main');let workspace=null;
+const stage=document.querySelector('main');let workspace=null,popover=null;
 const heading=(family,label)=>`<header class="thumb-heading"><div class="thumb-family">${esc(family)}</div><h1>${esc(label)}</h1></header>`;
 const caption=(label,id)=>`<footer class="thumb-caption"><strong>${esc(label)}</strong><code>${esc(id)}</code></footer>`;
-function clean(){workspace?.destroy();workspace=null;}
+function clean(){popover?.destroy();popover=null;workspace?.destroy();workspace=null;}
 window.thumbnailRegistry={components:SCADA_COMPONENTS,categories:SCADA_CATEGORIES,variants:SCADA_COMPONENTS.flatMap(component=>getScadaVariants(component.type).map(variant=>{const descriptor=getScadaComponent(component.type,{variant:variant.id});return {type:component.type,variant:variant.id,label:variant.label,componentLabel:descriptor.label,description:variant.description??descriptor.description,circuits:descriptor.circuits??[],ports:descriptor.ports,state:normalizeScadaState(component.type,{}, {variant:variant.id}),fuel:variant.fuel,enclosure:variant.enclosure}}))};
 window.renderComponentThumbnail=({type,variant,state={},caption:customCaption})=>{
  clean();const options=variant?{variant}:{},descriptor=getScadaComponent(type,options),normalized=normalizeScadaState(type,{...descriptor.defaultState,...state},options),family=SCADA_CATEGORIES.find(item=>item.id===descriptor.category).label;
@@ -68,6 +68,12 @@ window.renderComponentThumbnail=({type,variant,state={},caption:customCaption})=
 };
 window.renderWorkspaceThumbnail=kind=>{
  clean();let markup;
+ if(kind==='popover'){
+  stage.innerHTML=heading('Workspace primitives','Anchored quick controls')+`<section class="scada-workspace"><button class="scada-toolbutton" id="thumbnail-popover-anchor" style="position:absolute;bottom:8px;right:18px">P-101 · Feed pump</button><section data-scada-popover popover="manual" hidden role="dialog" aria-modal="false" aria-labelledby="thumbnail-popover-title"><header class="scada-popover-header"><div class="scada-popover-heading"><h2 id="thumbnail-popover-title">Feed pump</h2><p>P-101 · Illustrative settings</p></div><button data-scada-popover-close aria-label="Close quick controls">×</button></header><div class="scada-popover-body"><label style="display:flex;align-items:center;gap:12px">Speed <input type="range" min="0" max="100" value="65" aria-label="Illustrative pump speed" style="min-width:0;flex:1"> 65%</label></div><footer class="scada-popover-footer"><button class="scada-toolbutton" aria-pressed="true">On</button><button class="scada-toolbutton">Details &amp; model</button></footer></section></section>`;
+  const root=stage.querySelector('.scada-workspace'),anchor=root.querySelector('#thumbnail-popover-anchor');
+  popover=new ScadaPopover(root);popover.open(root.querySelector('[data-scada-popover]'),{anchor,opener:anchor,focus:false});
+  return;
+ }
  if(kind==='toolbar')markup=renderScadaToolbar({label:'Example workspace toolbar',content:'<button class="scada-toolbutton is-primary">▸ Run</button><button class="scada-toolbutton">Equipment</button><button class="scada-toolbutton">Trends</button><button class="scada-toolbutton">Alarms <span class="scada-toolbadge" data-severity="warning">2</span></button>'});
  else if(kind==='buttons')markup='<div class="scada-actions"><button class="scada-toolbutton">Default</button><button class="scada-toolbutton is-primary">Primary</button><button class="scada-toolbutton" aria-pressed="true">Selected</button></div><div class="scada-actions"><button class="scada-toolbutton is-danger">Fault</button><button class="scada-toolbutton" disabled>Disabled</button></div><div class="scada-actions"><span>Warning <span class="scada-toolbadge" data-severity="warning">2</span></span><span>Critical <span class="scada-toolbadge" data-severity="critical">1</span></span></div>';
  else if(kind==='panels')markup='<section class="scada-panel-section"><h3>Equipment settings</h3><p class="scada-panel-note">Group related controls in a clear, bounded surface.</p><div class="scada-actions"><button class="scada-toolbutton is-primary">Apply</button><button class="scada-toolbutton">Reset</button></div></section>';
@@ -190,7 +196,7 @@ def check_manifest(manifest, registry):
     for path, data in thumbnail_indexes(manifest, registry).items():
         assert (PACKAGE / path).read_bytes() == data, 'Thumbnail folder map changed; regenerate: ' + path
     assert VARIANT_MAP.read_text() == variant_map(registry, manifest), 'Variant map changed; regenerate thumbnails.'
-    assert {entry['id'] for entry in manifest['workspace']} == {'toolbar', 'dialog', 'statusbar', 'buttons', 'panels', 'metrics'}
+    assert {entry['id'] for entry in manifest['workspace']} == {'toolbar', 'dialog', 'popover', 'statusbar', 'buttons', 'panels', 'metrics'}
     assert len(manifest['states']) == 6
     assert not list(THUMBS.rglob('*.png')), 'Distributed thumbnails must not retain duplicate PNG files.'
 
@@ -205,7 +211,8 @@ with sync_playwright() as playwright:
     page.wait_for_function('window.thumbnailReady')
     registry = page.evaluate('window.thumbnailRegistry')
     if args.check:
-        check_manifest(json.loads(MANIFEST.read_text()), registry)
+        manifest = json.loads(MANIFEST.read_text())
+        check_manifest(manifest, registry)
     else:
         THUMBS.mkdir(parents=True, exist_ok=True)
         manifest = {'format':'scada-ui-thumbnails','version':1,'package':'@valpatel/scada-ui',
@@ -222,7 +229,7 @@ with sync_playwright() as playwright:
             category = next(item['category'] for item in registry['components'] if item['type'] == kind)
             info=capture(page,THUMBS/'equipment'/category/kind/(variant+'.jpg'))
             manifest['variants'].append({'type':kind,'variant':variant,'label':descriptor['label'],'componentLabel':descriptor['componentLabel'],'state':state,**info})
-        for kind, exports in (('toolbar',['renderScadaToolbar']),('dialog',['renderScadaDialog','ScadaWorkspace']),('statusbar',[]),('buttons',[]),('panels',[]),('metrics',[])):
+        for kind, exports in (('toolbar',['renderScadaToolbar']),('dialog',['renderScadaDialog','ScadaWorkspace']),('popover',['ScadaPopover']),('statusbar',[]),('buttons',[]),('panels',[]),('metrics',[])):
             page.evaluate('kind=>window.renderWorkspaceThumbnail(kind)', kind)
             if kind == 'toolbar':
                 assert page.locator('.scada-toolbar').evaluate('el=>getComputedStyle(el).display') == 'flex', 'Toolbar CSS must work without an app-specific #main host.'
@@ -230,7 +237,14 @@ with sync_playwright() as playwright:
                 assert page.locator('.scada-statusbar').evaluate('el=>getComputedStyle(el).display') == 'flex', 'Statusbar CSS must work without an app-specific #main host.'
             if kind == 'dialog':
                 assert page.locator('dialog').evaluate('el=>el.matches(":modal")')
-            manifest['workspace'].append({'id':kind,'exports':exports,'css_class':{'toolbar':'.scada-toolbar','dialog':'.scada-dialog','statusbar':'.scada-statusbar','buttons':'.scada-toolbutton','panels':'.scada-panel-section','metrics':'.scada-metric-strip'}[kind],**capture(page,THUMBS / 'workspace' / (kind+'.jpg'))})
+            if kind == 'popover':
+                panel = page.locator('[data-scada-popover]')
+                assert panel.evaluate('el=>el.matches(":popover-open") && !el.matches(":modal")')
+                assert panel.get_attribute('aria-modal') == 'false'
+                bounds = panel.bounding_box()
+                assert bounds and bounds['x'] >= 0 and bounds['y'] >= 0
+                assert bounds['x'] + bounds['width'] <= WIDTH and bounds['y'] + bounds['height'] <= HEIGHT
+            manifest['workspace'].append({'id':kind,'exports':exports,'css_class':{'toolbar':'.scada-toolbar','dialog':'.scada-dialog','popover':'[data-scada-popover]','statusbar':'.scada-statusbar','buttons':'.scada-toolbutton','panels':'.scada-panel-section','metrics':'.scada-metric-strip'}[kind],**capture(page,THUMBS / 'workspace' / (kind+'.jpg'))})
         examples = [('pump-running','pump',{},'Running'),('pump-stopped','pump',{'active':False,'running':False},'Stopped'),
                     ('tank-empty','tank',{'level':0},'Empty · illustrative level 0%'),('tank-full','tank',{'level':100},'Full · illustrative level 100%'),
                     ('plc-warning','plc-rack',{'status':'warning'},'Warning'),('plc-fault','plc-rack',{'fault':True},'Fault')]
@@ -288,4 +302,4 @@ with sync_playwright() as playwright:
         check_manifest(manifest,registry)
     assert not errors, errors
     browser.close()
-print(json.dumps({'checked':True,'generated':not args.check,'components':len(registry['components']),'variants':len(registry['variants']),'workspace':6,'state_examples':6,'manifest':str(MANIFEST.relative_to(PACKAGE)),'errors':errors}))
+print(json.dumps({'checked':True,'generated':not args.check,'components':len(registry['components']),'variants':len(registry['variants']),'workspace':len(manifest['workspace']),'state_examples':6,'manifest':str(MANIFEST.relative_to(PACKAGE)),'errors':errors}))

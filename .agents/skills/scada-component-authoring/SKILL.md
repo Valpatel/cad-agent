@@ -46,7 +46,7 @@ flowchart TD
    independent of rendering, and keep the UI independent of models and host policy.
 3. Design a recognisable silhouette and state matrix: off/on, zero/low/normal/high
    output, disconnected/unavailable, open/closed, warning, damage and recovery as
-   relevant. Off does not imply empty, cold or depressurized. Show retained stock,
+   relevant. Off does not imply empty, cold, depressurized or a closed valve. Show retained stock,
    heat and leakage when supplied. Colour and animation supplement readable labels.
 4. Use shared artwork/animation helpers; inspect small cards, full diagram and
    equipment inspector. Distinct devices need distinct silhouettes. Repeated SVGs
@@ -57,8 +57,11 @@ flowchart TD
    [model adaptation](../scada-model-adaptation/SKILL.md).
 6. Extend focused [UI tests](../../../tests/webkit/scada/ui/README.md) and affected
    model/scenario cases. Test actual damage-only state, healthy → failed → repaired,
-   unavailable observations and numeric bounds. A changed class name is not proof
-   of motion or correct state meaning.
+   unavailable observations and numeric bounds. For valves, compare the shared
+   SVG and HTML position cues at exact/near endpoints, partial opening where
+   declared, inactive, fault and offline states. Preserve position independently
+   of activity; unavailable input must not appear as known OPEN. A changed class
+   name is not proof of motion, measured flow or actuator feedback.
 7. Run the owning generators and checks from the repository root:
 
    ```sh

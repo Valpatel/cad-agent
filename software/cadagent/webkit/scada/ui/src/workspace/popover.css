@@ -1,0 +1,16 @@
+/* Screen-space equipment controls: no backdrop, document lock or diagram scale. */
+[data-scada-popover]{position:fixed;inset:auto;box-sizing:border-box;width:360px;max-width:calc(100vw - 24px);max-height:min(440px,calc(100dvh - 24px));margin:0;padding:0;border:1px solid var(--scada-border,#426178);border-radius:12px;background:var(--scada-bg,#102237);color:var(--scada-text,#e8f6ff);font:15px/1.45 var(--font,system-ui,sans-serif);box-shadow:0 12px 40px #0006;overflow:hidden;z-index:1000}
+[data-scada-popover][hidden]{display:none!important}
+[data-scada-popover][data-scada-popover-open=true]{display:flex;flex-direction:column}
+[data-scada-popover]::backdrop{background:transparent;pointer-events:none}
+[data-scada-popover] *{box-sizing:border-box}
+.scada-popover-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--scada-border,#426178);flex:none}
+.scada-popover-heading{min-width:0}
+.scada-popover-heading h2{margin:0;font:650 17px/1.3 var(--font,system-ui,sans-serif);overflow-wrap:anywhere}
+.scada-popover-heading p{margin:3px 0 0;color:var(--scada-muted,#acc7d8);font-size:12px;overflow-wrap:anywhere}
+[data-scada-popover-close]{display:inline-flex;justify-content:center;align-items:center;flex:none;min-width:44px;min-height:44px;padding:6px;border:1px solid var(--scada-border,#426178);border-radius:8px;background:var(--scada-panel,#142c42);color:var(--scada-text,#e8f6ff);font:inherit;cursor:pointer}
+.scada-popover-body{padding:12px 14px;overflow:auto;overscroll-behavior:contain;min-height:0;scrollbar-color:var(--scada-border,#426178) var(--scada-bg,#102237)}
+.scada-popover-footer{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--scada-border,#426178);flex:none}
+[data-scada-popover] :is(button,input,select){font:inherit;min-height:44px}
+[data-scada-popover] :focus-visible{outline:3px solid var(--scada-accent,#76f5d3);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){[data-scada-popover]{scroll-behavior:auto}}

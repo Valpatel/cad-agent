@@ -14,6 +14,8 @@ do not edit or fetch the historical example repository as a build step.
 - Separate system topology, model configuration, snapshots and view state. Stable
   equipment/port IDs belong to documents; screen positions and display names do
   not establish identity. Record assumptions and source/measurement provenance.
+  Show the raw equipment ID on diagrams, in selectors and in both inspection
+  levels. Never generate a replacement tag from a label or array position.
 - Contained diagrams pan/zoom with mouse, touch and keyboard and keep Fit visible.
   They have no canvas scrollbars. Preserve accessible inspector/form scrolling,
   focus, reduced motion and host-owned sound controls.
@@ -21,6 +23,16 @@ do not edit or fetch the historical example repository as a build step.
   the same bound command as the inspector. Keep the viewer independent of action
   names and model families. Test actual downstream effects, read-only observation,
   rejected commands, keyboard/touch operation and drag-without-command behavior.
+- Equipment inspection has two levels: nonmodal, camera-following quick controls
+  and full details/model inspection. Equipment buttons are not pressed toggles
+  and have no persistent selection fill. Quick controls are component-scoped;
+  both levels use the same adapter. Preserve drafts during same-ID ticks, and
+  close or replace the old inspection context when the ID changes. Test focus
+  return, outside/Escape dismissal, nested/observer viewers and disposal.
+- Model details must identify the selected equipment's accepted configuration
+  and actual active kernel/provider source, with its units and limitations.
+  Never substitute decorative equations or imply that changing presentation
+  replaces an executable model. Keep that inspection in the model-owning host.
 - Every equipment addition needs distinct artwork, meaningful operating/warning/
   failure states, metadata/schema coverage, a placeholder or explicit model limit,
   and an owned gallery preview. Do not advertise unsupported states or physics.

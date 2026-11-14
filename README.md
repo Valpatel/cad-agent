@@ -24,9 +24,11 @@
 ## What is it?
 
 An open-source toolkit that helps your AI assistant design physical things: find a method, build a model, check
-its assumptions and keep the evidence for review.
+its assumptions and keep the evidence for review. Reusable viewers, SCADA diagrams, simulation playback and build
+instructions help people inspect and operate that work inside their own applications.
 
-Start with the [guides](docs/README.md), or explore the [visual catalogue](https://cad-agent.valpatel.com/catalog).
+Start with the [guides](docs/README.md), explore the [visual catalogue](https://cad-agent.valpatel.com/catalog),
+or try the [toolkit viewers and simulations](https://cad-agent.valpatel.com/toolkit).
 
 <a id="find-your-next-step"></a>
 <a id="how-it-improves-itself"></a>

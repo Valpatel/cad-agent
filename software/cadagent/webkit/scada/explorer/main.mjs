@@ -6,6 +6,7 @@ import {pumpEquationProviders, resistiveHeaterProvider} from '../sim/src/equatio
 import {LabSound} from './sound.mjs';
 import {filterScenarios, scenarioFacets} from './search.mjs';
 import {ExtendedModelEditor} from './model-editor.mjs';
+import {equipmentModelReport, renderEquipmentModel} from './equipment-model.mjs';
 import {selectScenario, selectEquipment} from './selection.mjs';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
@@ -19,6 +20,7 @@ const base = new URL('../sim/scenarios/', import.meta.url);
 const equationProviders = [...pumpEquationProviders, resistiveHeaterProvider];
 let catalog = [], selectedScenario = null, system = null, modelDefinition = null, model = null, adapter = null, viewer = null, observer = null;
 const sound = new LabSound({onChange: updateSound});
+let modelOpener = null;
 let unsubscribe = null, workspace = null, extendedEditor = null, speed = 1, timer = null, loadEpoch = 0, lastEventSignature = '', pendingImport = false, loadAbort = null, disposed = false;
 
 async function json(url, signal) {
@@ -42,7 +44,7 @@ function selectedEquipment(kind='fault') {
   return tools.querySelector(`[data-${kind}-equipment]`)?.value ?? viewer?.selected ?? system?.components[0]?.id;
 }
 function equipmentOptions(selected) {
-  return (system?.components ?? []).map(item => `<option value="${esc(item.id)}"${item.id === selected ? ' selected' : ''}>${esc(item.label ?? item.id)}</option>`).join('');
+  return (system?.components ?? []).map(item => `<option value="${esc(item.id)}"${item.id === selected ? ' selected' : ''}>${esc(item.id)} · ${esc(item.label ?? item.id)}</option>`).join('');
 }
 function component(id) { return system?.components.find(item => item.id === id); }
 function descriptor(id) { return getModelDescriptor(component(id).type,{version:modelDefinition.version,variant:modelDefinition.components[id].variant??component(id).variant}); }
@@ -53,7 +55,7 @@ function setBusy(value) {
 }
 function command(action, args={}) {
   if (!model) return;
-  try { adapter.dispatch({action, arguments:args}); return true; }
+  try { adapter.dispatch({action, arguments:args}); if (workspace?.activeId === 'model') updateModelReport(); return true; }
   catch (error) { message(error.message, true); if(workspace?.activeId)dialogMessage(workspace.activeId,error.message,true); return false; }
 }
 
@@ -65,14 +67,7 @@ function renderTools() {
   </div>
   ${renderScadaDialog({id:'scenarios',scope:'industry',title:'Choose your control room',subtitle:`${catalog.length} example systems built from one shared symbol library and one model interface.`,kind:'wide',body:`<p class="lab-scenario-warning">Opening another industry starts its initial model. Download your current session first if you want to return to it.</p><div class="lab-search"><label>Find a process<input type="search" data-scenario-search placeholder="Beer, cookies, minerals, medicine, aquaponics…" autocomplete="off"></label><label>Sector<select data-scenario-sector><option value="">All sectors</option>${facets.sectors.map(sector=>`<option>${esc(sector)}</option>`).join('')}</select></label><label>Technology<select data-scenario-technology><option value="">All technologies</option>${facets.technologies.map(value=>`<option value="${esc(value)}">${esc(technologyLabel(value))}</option>`).join('')}</select></label></div><details class="lab-filter-details"><summary>Facility filter</summary><label class="lab-field">Facility<select data-scenario-facility><option value="">All facilities</option>${facets.facilities.map(value=>`<option>${esc(value)}</option>`).join('')}</select></label></details><div class="lab-results-toolbar"><p class="lab-results-count" data-scenario-count role="status"></p><button type="button" class="scada-toolbutton" data-action="clear-filters">Clear filters</button></div><p class="lab-current-scenario" data-scenario-current></p><div class="lab-scenario-grid" data-scenario-grid></div>`})}
   ${renderScadaDialog({id:'faults',scope:'industry',title:'Fault lab',subtitle:'Experiment with equipment failures. These are illustrative responses, with no connection to real equipment.',kind:'wide',body:`<label class="lab-field">Target equipment<select data-fault-equipment></select></label><div data-fault-readings></div><div data-fault-controls></div><div class="lab-actions"><button type="button" class="scada-toolbutton" data-action="repair">Repair selected equipment</button><button type="button" class="scada-toolbutton" data-action="inspect-fault">Open equipment controls</button></div><p class="lab-form-message" data-dialog-message="faults" role="status"></p><h3 class="lab-section-title">Try a scenario experiment</h3><div class="lab-fault-grid" data-experiments></div><p class="lab-panel-note" style="margin-top:16px">Run or step the model to observe how the fault affects connected equipment. Switching diagram layouts keeps the same faults and readings.</p>`})}
-  ${renderScadaDialog({id:'model',scope:'industry',title:'Model & editable guesses',subtitle:'Every number here is a placeholder. Replace the model or adapter when a real system model is available.',kind:'wide',footer:'<div class="lab-actions"><button type="submit" form="lab-parameter-form" class="scada-toolbutton" data-apply-parameters>Apply parameter edits</button><button type="button" class="scada-toolbutton" data-action="parameter-defaults">Restore equipment parameters</button></div><p class="lab-form-message" data-dialog-message="model" role="status"></p>',body:`<p class="lab-notice">Editable demonstration values. These models prove commands and connections; they are not calibrated process or equipment models.</p><p class="lab-model-description"><a href="../sim/examples/model-switching/" target="_blank" rel="noopener">Open pump equation bench ↗</a> — compare registered pump laws, edit SI assumptions and replay a separate example session.</p><details class="lab-code-disclosure"><summary>About this industry</summary><h3 class="lab-section-title" data-model-scenario-title></h3><p class="lab-model-description" data-model-scenario-description></p><ol class="lab-stage-list" data-process-steps></ol></details><label class="lab-field lab-model-equipment">Equipment model<select data-model-equipment></select></label><div data-model-description></div><form id="lab-parameter-form" class="lab-parameter-form" data-parameter-form><div data-parameters></div></form><div data-extended-model></div><details class="lab-code-disclosure"><summary>Integration contract</summary><p class="lab-model-description">The JSON system defines components, connections, layouts and bindings. A separate JSON model supplies placeholder parameters. The viewer only reads an adapter and sends commands; it does not calculate physics.</p><pre class="lab-source-code">// Register trusted provider code; JSON selects provider IDs and parameters.
-const equationProviders = [...pumpEquationProviders, resistiveHeaterProvider];
-const model = new PlaceholderSystemModel(system, modelConfig, {equationProviders});
-const adapter = createPlaceholderAdapter(model);
-const viewer = new ScadaViewer({definition: system, adapter});
-viewer.mount(container);
-// One host-owned clock; all views share the same model.
-model.step(1);</pre></details>`})}
+  ${renderScadaDialog({id:'model',scope:'industry',title:'Equipment model & settings',subtitle:'Inspect active equations, accepted configuration and editable assumptions.',kind:'panel',footer:'<div class="lab-actions"><button type="submit" form="lab-parameter-form" class="scada-toolbutton" data-apply-parameters>Apply parameter edits</button><button type="button" class="scada-toolbutton" data-action="parameter-defaults">Restore equipment parameters</button></div><p class="lab-form-message" data-dialog-message="model" role="status"></p>',body:`<p class="lab-notice">Illustrative models with editable assumptions. Inspect the active equations and current configuration, then adjust the equipment below.</p><label class="lab-field lab-model-equipment">Equipment model<select data-model-equipment></select></label><div data-model-description></div><div data-equipment-equations></div><details class="lab-model-section" open><summary>Equipment parameters</summary><form id="lab-parameter-form" class="lab-parameter-form" data-parameter-form><div data-parameters></div></form></details><div data-extended-model></div><details class="lab-model-section"><summary>System context & integration</summary><h3 class="lab-section-title" data-model-scenario-title></h3><p class="lab-model-description" data-model-scenario-description></p><ol class="lab-stage-list" data-process-steps></ol><p class="lab-model-description">System JSON owns equipment IDs, topology and views. Model JSON owns accepted configuration. One host-owned session supplies every view; the viewer does not calculate physics.</p><p class="lab-model-description"><a href="../sim/docs/REAL_MODEL_ADAPTATION.md" target="_blank" rel="noopener">Model adaptation contract ↗</a> · <a href="../sim/examples/model-switching/" target="_blank" rel="noopener">Compare & swap pump laws ↗</a></p></details>`})}
   ${renderScadaDialog({id:'sound',scope:'industry',title:'Sound & alarms',subtitle:'Optional procedural sound, generated in this tab. Sound starts off on every reload.',kind:'panel',body:`<p class="lab-panel-note">A quiet machinery mix follows the current model load. Warning and fault tones repeat until acknowledged or repaired. Sound is silent while the model is paused or the tab is hidden.</p><div class="lab-actions"><button type="button" class="scada-toolbutton" data-action="sound-enabled" aria-pressed="false">Enable sound</button><button type="button" class="scada-toolbutton" data-action="sound-ack">Acknowledge alarms</button></div><div class="lab-fields" style="margin-top:20px"><label class="lab-field">Volume <output data-sound-volume-label>25%</output><input type="range" data-sound-volume min="0" max="100" value="25" aria-label="Sound volume"></label><label class="lab-field">Machinery ambience<select data-sound-ambience><option value="on">On</option><option value="off">Alarms only</option></select></label></div><p class="lab-form-message" data-dialog-message="sound" role="status"></p><h3 class="lab-section-title">Current model alarms</h3><ol class="lab-events" data-sound-alarms></ol>`})}
   ${renderScadaDialog({id:'session',scope:'industry',title:'Simulation session',subtitle:'Save an experiment, inspect recent events or restart the current industry.',kind:'wide',body:`<p class="lab-panel-note">This session lives in this browser tab. No equipment commands leave your browser. A saved session can be restored into the matching industry.</p><div class="lab-actions"><button type="button" class="scada-toolbutton" data-action="export">↓ Save session JSON</button><button type="button" class="scada-toolbutton" data-action="import">↑ Restore session JSON</button><button type="button" class="scada-toolbutton lab-danger" data-action="reset">Reset process state</button><button type="button" class="scada-toolbutton" data-scada-open="observer">Open read-only observer</button></div><input class="lab-import-file" type="file" accept="application/json,.json" data-import-file tabindex="-1" aria-label="Session JSON file"><p class="lab-form-message" data-dialog-message="session" role="status"></p><h3 class="lab-section-title">Reusable definitions</h3><p class="lab-model-description">Keep these documents separate: the system is presentation and topology; the model config is replaceable behavior and estimated values.</p><div class="lab-actions"><button type="button" class="scada-toolbutton" data-action="system-json">↓ System JSON</button><button type="button" class="scada-toolbutton" data-action="model-json">↓ Model JSON</button></div><div class="lab-session-links"><a href="../sim/docs/INTEGRATION.md" target="_blank" rel="noopener">CAD integration guide</a><a href="../ui/schema/scada-system.schema.json" target="_blank" rel="noopener">System JSON Schema</a><a href="https://github.com/Valpatel/cad-agent/tree/dev/software/cadagent/webkit/scada" target="_blank" rel="noopener">Source packages</a></div><h3 class="lab-section-title">Recent model events</h3><ol class="lab-events" data-events></ol>`})}`;
   tools.insertAdjacentHTML('beforeend', renderScadaDialog({id:'observer',scope:'industry',title:'Read-only observer',subtitle:'A second viewer of this same simulation session. Inspect equipment and change the layout; process commands are unavailable.',kind:'wide',body:'<p class="lab-observer-status">Shared simulation time: <strong data-observer-time>0.0 min</strong></p><div data-observer-viewer></div>'}));
@@ -84,7 +79,11 @@ model.step(1);</pre></details>`})}
     if (id === 'session') renderEvents(true);
     if (id === 'sound') updateSound();
     if (id === 'observer') openObserver();
-  }, onClose:({id}) => {
+  }, onClose:({id,reason}) => {
+    if(id==='model'){
+      const returnTo=modelOpener;modelOpener=null;
+      if(!['switch','destroy'].includes(reason)&&returnTo?.isConnected){try{returnTo.focus({preventScroll:true});}catch{returnTo.focus();}}
+    }
     if(id==='observer'){
       observer?.destroy();observer=null;
       tools.querySelector('[data-observer-viewer]')?.replaceChildren();
@@ -128,14 +127,35 @@ function renderModelPanel(id=selectedEquipment('model')) {
   $('[data-model-scenario-title]').textContent = selectedScenario.title;
   $('[data-model-scenario-description]').textContent = selectedScenario.description;
   $('[data-process-steps]').innerHTML = (selectedScenario.processSteps ?? []).map(step => `<li>${esc(step)}</li>`).join('');
-  const info = descriptor(id), state = model.getSnapshot(), configured = modelDefinition.components[id];
+  const info = descriptor(id), state = model.getSnapshot(), configured = model.exportModelDefinition().components[id];
+  const dialog=$('[data-scada-dialog="model"]'), title=`${id} · ${component(id).label ?? info.label}`;
+  dialog.querySelector('[data-scada-dialog-title]').textContent=title;
+  dialog.querySelector('[data-scada-close]').setAttribute('aria-label',`Close ${title}`);
   $('[data-model-description]').innerHTML = `<h3 class="lab-section-title">${esc(component(id).label ?? info.label)}</h3><p class="lab-model-description">${esc(component(id).description ?? info.label)} ${esc((configured.assumptions ?? []).join(' '))}</p><details class="lab-code-disclosure"><summary>Placeholder behavior &amp; assumptions</summary><p class="lab-model-description">Model family: ${esc(configured.kind??configured.model)}. ${info.assumptions.map(esc).join(' ')}</p></details>`;
   $('[data-parameters]').innerHTML = info.parameters.map(parameter => {
     const value = state.parameters?.[id]?.[parameter.key] ?? info.defaultModel?.parameters?.[parameter.key] ?? parameter.default;
     return `<div class="lab-parameter-row"><div><label for="lab-param-${esc(parameter.key)}">${esc(parameter.label)} <span class="lab-parameter-value">${esc(parameter.unit)} · assumed</span></label><p id="lab-param-${esc(parameter.key)}-help">${esc(parameter.description)}</p></div><input type="number" id="lab-param-${esc(parameter.key)}" name="${esc(parameter.key)}" data-parameter="${esc(parameter.key)}" min="${parameter.min}" max="${parameter.max}" step="any" value="${finite(value)}" required aria-describedby="lab-param-${esc(parameter.key)}-help"></div>`;
   }).join('');
+  updateModelReport(id);
   extendedEditor.render({id,model,descriptor:info,component:component(id)});
   dialogMessage('model','');
+}
+function updateModelReport(id=selectedEquipment('model')) {
+  if(!model||!id)return;
+  const root=$('[data-equipment-equations]');if(!root)return;
+  const expanded=new Set([...root.querySelectorAll('details[open]')].map(item=>item.querySelector('summary')?.textContent));
+  const definition=model.exportModelDefinition(), saved=model.exportSnapshot();
+  root.innerHTML=renderEquipmentModel(equipmentModelReport({system,definition,id,providers:equationProviders,equationState:saved.equationState}));
+  for(const item of root.querySelectorAll('details'))item.open=expanded.has(item.querySelector('summary')?.textContent);
+}
+function openEquipmentDetails({id,opener}) {
+  if(!model||!component(id))return;
+  // The tools workspace uses its own trigger as a stable fallback. The host
+  // restores the diagram opener when this deliberate deeper dialog is closed.
+  viewer.select(id);
+  modelOpener=[...viewer.root.querySelectorAll('[data-scada-equipment]')].find(node=>node.dataset.scadaEquipment===id)??opener??viewer.root.querySelector('[data-scada-picker]');
+  workspace.open('model',{opener:$('[data-scada-open="model"]')});
+  renderModelPanel(id);
 }
 function renderEvents(force=false) {
   if (!model || (!force && workspace.activeId !== 'session')) return;
@@ -185,7 +205,7 @@ async function loadScenario(id, {initial=false,fallback=null}={}) {
     const nextModel = new PlaceholderSystemModel(nextSystem,nextDefinition,{equationProviders});
     const nextAdapter = createPlaceholderAdapter(nextModel);
     // Validate the presentation before replacing a working session.
-    const nextViewer = new ScadaViewer({definition:nextSystem,adapter:nextAdapter,scope:'industry-viewer',fitMaxZoom:1.5,responsiveLayout:'process-chain'});
+    const nextViewer = new ScadaViewer({definition:nextSystem,adapter:nextAdapter,scope:'industry-viewer',fitMaxZoom:1.5,responsiveLayout:'process-chain',onDetails:openEquipmentDetails});
     workspace.close({restoreFocus:false}); viewer?.destroy(); unsubscribe?.(); model?.destroy(); sound.reset();
     selectedScenario=entry; system=nextSystem; modelDefinition=nextDefinition; model=nextModel; adapter=nextAdapter; viewer=nextViewer;
     viewer.mount($('#lab-viewer'));

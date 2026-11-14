@@ -151,6 +151,76 @@ test('variable valves interpolate physical opening and an explicit close overrid
  }
 });
 
+test('valve families and carrier variants show position by color, geometry and readable text',()=>{
+ const types=['gate-valve','control-valve','check-valve','relief-valve','butterfly-valve','fuel-pressure-regulator','intake-gate'];
+ for(const type of types){
+  const descriptor=getScadaComponent(type),variable=descriptor.stateFields.some(field=>field.key==='opening');
+  for(const variant of [undefined,...(descriptor.variants??[]).map(item=>item.id)]){
+   const states=[{open:true},{open:false},...(variable?[{open:true,opening:35},{open:true,opening:.001},{open:true,opening:99.999},{open:false,opening:73}]:[])];
+   const dom=new JSDOM(states.map(state=>renderScadaComponent(type,{variant,state})).join(''));
+   try{
+    const [open,closed,partial,nearlyClosed,nearlyOpen,overridden]=dom.window.document.querySelectorAll('.scada-component');
+    assert.equal(open.dataset.valvePosition,'open',`${type}/${variant} open`);
+    assert.equal(closed.dataset.valvePosition,'closed');
+    assert.equal(open.querySelector('.scada-valve-position-tag text').textContent,'OPEN');
+    assert.equal(closed.querySelector('.scada-valve-position-tag text').textContent,'CLOSED');
+    assert.equal(open.querySelector('.scada-valve-body').getAttribute('stroke'),'#62ffbc');
+    assert.equal(closed.querySelector('.scada-valve-body').getAttribute('stroke'),'#ff8585');
+    assert.notEqual(open.querySelector('.scada-valve-body').getAttribute('fill'),closed.querySelector('.scada-valve-body').getAttribute('fill'));
+    assert.notEqual(open.querySelector('.scada-valve-disc').outerHTML,closed.querySelector('.scada-valve-disc').outerHTML,'physical mechanism changes with position');
+    if(variable){
+     assert.equal(partial.dataset.valvePosition,'partial');
+     assert.equal(partial.querySelector('.scada-valve-position-tag text').textContent,'35% OPEN');
+     assert.equal(partial.querySelector('.scada-valve-body').getAttribute('stroke'),'#7ee9ef');
+     assert.equal(nearlyClosed.dataset.valvePosition,'partial');assert.equal(nearlyOpen.dataset.valvePosition,'partial');
+     assert.equal(nearlyClosed.querySelector('.scada-valve-position-tag text').textContent,'<0.1% OPEN');
+     assert.equal(nearlyOpen.querySelector('.scada-valve-position-tag text').textContent,'>99.9% OPEN');
+     assert.equal(nearlyClosed.querySelector('[data-scada-reading="opening"]').textContent,'<0.1%');
+     assert.equal(nearlyOpen.querySelector('[data-scada-reading="opening"]').textContent,'>99.9%');
+     assert.equal(nearlyClosed.dataset.opening,'0.001');assert.equal(nearlyOpen.dataset.opening,'99.999','formatting does not change geometry inputs');
+     for(const [node,entity] of [[nearlyClosed,'&lt;0.1% OPEN'],[nearlyOpen,'&gt;99.9% OPEN']]){
+      const text=node.querySelector('.scada-valve-position-tag text');
+      assert.equal(text.childElementCount,0,'position bounds remain text, never SVG elements');
+      assert.ok(text.outerHTML.includes(entity),'SVG position bounds are escaped');
+     }
+     assert.equal(overridden.dataset.valvePosition,'closed');
+    }
+   }finally{dom.window.close();}
+  }
+ }
+ for(const type of ['breaker','hv-circuit-breaker','disconnect-switch','wellhead','greenhouse-vent']){
+  const dom=new JSDOM(renderScadaComponent(type));
+  try{assert.equal(dom.window.document.querySelector('[data-valve-position]'),null,`${type} retains its own semantics`);}
+  finally{dom.window.close();}
+ }
+});
+
+test('valve position survives inactivity and damage while unavailable data stays neutral',()=>{
+ for(const type of ['gate-valve','control-valve','check-valve','relief-valve','butterfly-valve','fuel-pressure-regulator','intake-gate']){
+  for(const override of [{active:false},{running:false},{fault:true},{status:'warning'},{damage:'stuck'}]){
+   const dom=new JSDOM(renderScadaComponent(type,{state:{open:true,...override}})+renderScadaComponent(type,{state:{open:false,...override}}));
+   try{
+    const [open,closed]=dom.window.document.querySelectorAll('.scada-component');
+    assert.equal(open.dataset.valvePosition,'open');assert.equal(closed.dataset.valvePosition,'closed');
+    assert.equal(open.querySelector('.scada-valve-position-tag text').textContent,'OPEN');
+    assert.equal(closed.querySelector('.scada-valve-position-tag text').textContent,'CLOSED');
+    if(override.fault)assert.ok(open.querySelector('[data-condition="fault"]'));
+    if(override.status==='warning')assert.ok(closed.querySelector('[data-condition="warning"]'));
+   }finally{dom.window.close();}
+  }
+  const dom=new JSDOM(renderScadaComponent(type,{state:{status:'offline',open:true}}));
+  try{
+   const offline=dom.window.document.querySelector('.scada-component');
+   assert.equal(offline.dataset.valvePosition,'unavailable');
+   assert.equal(offline.querySelector('.scada-valve-position-tag text').textContent,'UNKNOWN');
+   assert.equal(offline.querySelector('.scada-valve-body').getAttribute('stroke'),'#b4c4d0');
+   assert.match(offline.getAttribute('aria-label'),/position unavailable/);
+   assert.doesNotMatch(offline.getAttribute('aria-label'),/, open(?:,|\.)/);
+   for(const gauge of offline.querySelectorAll('[data-scada-reading]'))assert.equal(gauge.textContent,'—','offline defaults are not reported as measurements');
+  }finally{dom.window.close();}
+ }
+});
+
 test('every standalone component exposes distinct warning and fault cues without contradicting stopped state',()=>{
  for(const item of SCADA_COMPONENTS){
   const dom=new JSDOM(renderScadaComponent(item.type,{state:{status:'warning',running:false}})+renderScadaComponent(item.type,{state:{fault:true,running:false}}));

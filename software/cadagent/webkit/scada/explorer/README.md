@@ -24,6 +24,7 @@ flowchart TD
 | [index.html](index.html), [styles.css](styles.css) | Accessible standalone workspace and Toolkit navigation |
 | [main.mjs](main.mjs) | Scenario loading, one clock, command dispatch, shared observer and session persistence |
 | [model-editor.mjs](model-editor.mjs) | Editable v2 circuit, energy and environmental assumptions |
+| [equipment-model.mjs](equipment-model.mjs), [equipment-model.css](equipment-model.css) | Compact equipment settings, active equation identity, loaded implementation source and accepted configuration |
 | [selection.mjs](selection.mjs) | Explicit scenario/type/variant deep-link resolution |
 | [search.mjs](search.mjs) | Catalog search and composable industry/technology/facility filters |
 | [sound.mjs](sound.mjs) | Opt-in browser audio and deduplicated current-state alarms |
@@ -46,6 +47,19 @@ protection or treatment-quality acceptance.
 
 Use **Fault lab** to inject failures, **Model & guesses** to edit declared
 parameters, and **Session** to save/restore state or open the read-only observer.
+The diagram's quick controls open **Details & model** for the exact equipment ID.
+IDs stay visible beside names in equipment selectors and detailed settings. This
+deeper panel separates equations, current configuration and editable parameters
+into readable sections; its text stays at screen resolution while the diagram zooms.
+
+The equation section reads the loaded implementation rather than maintaining a
+second formula list. Built-in families expose their actual method/kernel excerpts.
+A registered provider exposes its exact ID/version, phase contracts, units,
+resolved parameters and executable callback source; bundled physical helpers are
+shown only for the exact registered bundled implementation. No source text is
+executed from JSON. Parameter changes remain model commands, and inspecting code
+does not replace equations or create another simulation session.
+
 The observer has its own camera and layout but no process-command capability.
 Closing it removes its viewer subscription; the original session continues.
 Reset preserves parameter edits, while choosing another scenario loads that

@@ -152,24 +152,57 @@
     "group": "availability"
   },
   {
+    "type": "gate-valve",
+    "sample": "closed",
+    "state": {
+      "open": false
+    },
+    "stateLabel": "Closed · supplied illustrative position",
+    "expectedMotion": "still",
+    "group": "valve-position"
+  },
+  {
+    "type": "gate-valve",
+    "sample": "part-open",
+    "state": {
+      "open": true,
+      "opening": 35
+    },
+    "stateLabel": "35% open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "gate-valve",
+    "sample": "open",
+    "state": {
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Fully open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
     "type": "control-valve",
     "sample": "closed",
     "state": {
       "open": false
     },
-    "stateLabel": "Closed · illustrative",
+    "stateLabel": "Closed · supplied illustrative position",
     "expectedMotion": "still",
-    "group": "levels-and-controls"
+    "group": "valve-position"
   },
   {
     "type": "control-valve",
     "sample": "part-open",
     "state": {
+      "open": true,
       "opening": 35
     },
-    "stateLabel": "35% open · illustrative",
+    "stateLabel": "35% open · supplied illustrative position",
     "expectedMotion": "animated",
-    "group": "levels-and-controls"
+    "group": "valve-position"
   },
   {
     "type": "control-valve",
@@ -178,9 +211,194 @@
       "open": true,
       "opening": 100
     },
-    "stateLabel": "Fully open · illustrative",
+    "stateLabel": "Fully open · supplied illustrative position",
     "expectedMotion": "animated",
-    "group": "levels-and-controls"
+    "group": "valve-position"
+  },
+  {
+    "type": "check-valve",
+    "sample": "closed",
+    "state": {
+      "open": false
+    },
+    "stateLabel": "Closed · supplied illustrative position",
+    "expectedMotion": "still",
+    "group": "valve-position"
+  },
+  {
+    "type": "check-valve",
+    "sample": "open",
+    "state": {
+      "open": true
+    },
+    "stateLabel": "Fully open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "relief-valve",
+    "sample": "closed",
+    "state": {
+      "open": false
+    },
+    "stateLabel": "Closed · supplied illustrative position",
+    "expectedMotion": "still",
+    "group": "valve-position"
+  },
+  {
+    "type": "relief-valve",
+    "sample": "open",
+    "state": {
+      "open": true
+    },
+    "stateLabel": "Fully open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "butterfly-valve",
+    "sample": "closed",
+    "state": {
+      "open": false
+    },
+    "stateLabel": "Closed · supplied illustrative position",
+    "expectedMotion": "still",
+    "group": "valve-position"
+  },
+  {
+    "type": "butterfly-valve",
+    "sample": "part-open",
+    "state": {
+      "open": true,
+      "opening": 35
+    },
+    "stateLabel": "35% open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "butterfly-valve",
+    "sample": "open",
+    "state": {
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Fully open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "fuel-pressure-regulator",
+    "sample": "closed",
+    "state": {
+      "open": false,
+      "flow": 0
+    },
+    "stateLabel": "Closed · supplied illustrative position",
+    "expectedMotion": "still",
+    "group": "valve-position"
+  },
+  {
+    "type": "fuel-pressure-regulator",
+    "sample": "part-open",
+    "state": {
+      "open": true,
+      "opening": 35
+    },
+    "stateLabel": "35% open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "fuel-pressure-regulator",
+    "sample": "open",
+    "state": {
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Fully open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "intake-gate",
+    "sample": "closed",
+    "state": {
+      "open": false
+    },
+    "stateLabel": "Closed · supplied illustrative position",
+    "expectedMotion": "still",
+    "group": "valve-position"
+  },
+  {
+    "type": "intake-gate",
+    "sample": "part-open",
+    "state": {
+      "open": true,
+      "opening": 35
+    },
+    "stateLabel": "35% open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "intake-gate",
+    "sample": "open",
+    "state": {
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Fully open · supplied illustrative position",
+    "expectedMotion": "animated",
+    "group": "valve-position"
+  },
+  {
+    "type": "control-valve",
+    "sample": "inactive-open",
+    "state": {
+      "active": false,
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Inactive · supplied open position retained",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "control-valve",
+    "sample": "paused-open",
+    "state": {
+      "running": false,
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Animation paused · supplied open position retained",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "control-valve",
+    "sample": "offline",
+    "state": {
+      "status": "offline",
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Position unavailable · offline",
+    "expectedMotion": "still",
+    "group": "availability"
+  },
+  {
+    "type": "control-valve",
+    "sample": "fault-open",
+    "state": {
+      "fault": true,
+      "open": true,
+      "opening": 100
+    },
+    "stateLabel": "Fault · supplied open position retained",
+    "expectedMotion": "animated",
+    "group": "damage-and-alarms"
   },
   {
     "type": "flare",

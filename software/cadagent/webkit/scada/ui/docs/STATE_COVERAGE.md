@@ -1,10 +1,39 @@
 # SCADA state coverage
 
-The library has broad animated coverage, but **not every component yet has a fully designed operating, failure and recovery lifecycle**. Shared controls, equipment-specific SVG states and placeholder-model behavior are separate layers. This reviewed inventory makes that difference visible before integration.
+The library has broad animated coverage, but **not every component yet has a fully designed operating, failure and recovery lifecycle**. Shared controls, equipment-specific SVG states and placeholder-model behavior are separate layers. This inventory records reviewed behavior and remaining gaps.
 
 [Machine-readable review](./state-coverage.json) records every type and variant, declared state fields, observed geometry/CSS responses, actual motion checks, model availability, known gaps and exact source hashes. It is a reviewed source snapshot, not build-generated certification. Re-run the relevant checks and update the review when those sources change.
 
-## What was verified
+## Valve position checks
+
+The focused review in [#734](https://github.com/Valpatel/cad-agent/pull/734)
+checks the renderer at
+[`35e81c56d`](https://github.com/Valpatel/cad-agent/commit/35e81c56db64498a26947d9b1f1792c234da54ec).
+It covers gate, control, check, relief and butterfly valves and their carrier
+variants, plus the fuel-pressure regulator and intake gate. The shared position
+helper describes supplied model state; it does not establish flow or independent
+actuator feedback.
+
+- The [component and viewer tests](https://github.com/Valpatel/cad-agent/tree/dev/tests/webkit/scada/ui)
+  check exact/near endpoints, partial opening where declared, explicit closure,
+  inactive/fault retention, unavailable readings, accepted/rejected commands,
+  read-only observers and consistent quick/full readings without model mutation.
+  All 31 focused cases passed after the position changes.
+- Independent Chromium and WebKit checks each passed 102 geometry cases across
+  seven families, fault/warning states and three sizes, including partial labels
+  near zero/full opening. Position text fits its tag and stays clear of condition
+  badges. These bounds checks supplement visual inspection; they do not prove
+  animation quality or physical behavior.
+- Small wastewater cards and the seven-family visual matrix distinguish green
+  open, red closed, cyan partial and neutral unavailable states. Inspect the
+  [canonical position examples](../img/states/valve-position/README.md) alongside
+  the [style contract](../STYLE_GUIDE.md) when changing these cues.
+
+The full-library inventory below and its JSON retain their original source-bound
+review. This focused pass does not refresh the 4,153-case inventory or certify
+every unchanged component and state combination.
+
+## Full-library inventory snapshot
 
 - 142 equipment types and 97 variants: 239 specimens, 4,153 isolated field samples.
 - All 738 declared non-normal damage selections changed SVG appearance from normal; some share the same physical picture and depend on readable labels to distinguish the cause.

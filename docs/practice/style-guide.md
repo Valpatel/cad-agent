@@ -1,8 +1,8 @@
 # README and diagram style guide
 
 Every folder in this repo explains itself in a `README.md`, so a person or an agent landing anywhere can tell what the
-folder is for, how its pieces connect, and where to go next. This page says how those READMEs look. The checker that
-keeps them present and linked is tracked in #113.
+folder is for, how its pieces connect, and where to go next. This page says how those READMEs look. The implemented `tools/site/compiler/site-repo-map.mjs --check` verifies owner maps and local destinations.
+A passing structural check does not establish that prose accurately describes the code.
 
 The **root README is a mini hyperpage**, not a file inventory or a manual. Answer three questions: **What is it?**,
 **Why this is cool**, and **How to join in**. Show the pixel workflow header beside a compact genuine CAD example
@@ -19,7 +19,7 @@ side by side.
 
 ```mermaid
 flowchart TD
-    N["# folder name<br/>one line: what it is for"] --> D["one Mermaid diagram<br/>arrows from the code"]
+    N["# folder name<br/>one line: what it is for"] --> D["one compact diagram<br/>arrows from the code"]
     D --> W["What's here<br/>a row per file"]
     W --> R["Related<br/>parent, neighbours, docs"]
     W --> C["Credits<br/>whose work it builds on"]
@@ -115,6 +115,19 @@ flowchart TD
     class B near
     class O out
 ```
+
+## Animated explanations
+
+Use motion to explain a handoff or state change, with all labels readable in a still frame. Prefer an owned,
+self-contained SVG in the existing topic or library `img/` folder; preserve library-local paths for copied kits.
+Use CSS without scripts, external fonts or remote assets. Give each SVG a title, description and meaningful alt text.
+Keep the generator and source owners discoverable; `--check` must detect stale output. Use a `<picture>` with a
+static SVG for `prefers-reduced-motion`, as well as an internal reduced-motion rule. Validate actual SVG image mode,
+not just inline DOM: check motion, its disabled state, text bounds, narrow rendering and light/dark surroundings.
+Animation timing is illustrative unless a source-bound measurement establishes otherwise.
+
+The [architecture figures](../img/architecture/README.md) explain current handoffs. Existing symbol galleries and
+engineering figures retain their own generators and evidence; do not replace them with decorative flowcharts.
 
 ## Writing
 

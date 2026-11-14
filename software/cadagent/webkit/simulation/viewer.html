@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recorded robot simulation · cad-agent</title>
+<script src="../ui/theme.js"></script>
+<link rel="stylesheet" href="../ui/theme.css"><link rel="stylesheet" href="../host/viewer-host.css"><link rel="stylesheet" href="viewer.css">
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.min.js","three/addons/":"../vendor/three/addons/"}}</script>
+</head>
+<body>
+<header class="replay-page-header"><div><p class="replay-eyebrow">CAD-AGENT · RECORDED SIMULATION</p><h1>Two-link robot arm</h1><p>A real MuJoCo run. Orbit the arm, scrub time, and inspect its inputs.</p></div>
+<button class="theme-toggle" type="button" aria-label="Toggle dark theme" aria-pressed="false" hidden><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11Z"/></svg></button></header>
+<main>
+<p class="replay-assumption">Illustrative masses and controls are editable in the source. Playback does not run live physics or validate physical hardware.</p>
+<div id="replay" class="replay-stage" aria-label="Recorded robot simulation"></div>
+<p id="receipt-status" role="status">Checking the recording receipt…</p>
+<details class="replay-evidence"><summary>Model, inputs and solver evidence</summary><p id="solver-summary"></p><p>Rigid uniform-box links and ideal torque motors omit backlash, flexibility, electrical/thermal limits and payload qualification. Targets drive bounded joint PD torque; displayed motion comes from the solver. Interpolation does not enforce constraints between samples.</p>
+<nav aria-label="Recording evidence"><a href="examples/two-link-arm/receipt.json">Solver receipt + input snapshot</a><a href="examples/two-link-arm/model.xml">Generated MJCF model</a><a href="examples/two-link-arm/recording.json">Recorded poses</a><a href="https://github.com/Valpatel/cad-agent/tree/main/docs/examples/robot-replay">Editable producer and configuration</a><a href="README.md">Reusable playback API</a></nav></details>
+</main>
+<footer><a href="https://cad-agent.valpatel.com/toolkit">Explore the toolkit</a><a href="https://valpatel.com">Created by Valpatel Software LLC</a></footer>
+<script type="module" src="page.js"></script>
+</body></html>

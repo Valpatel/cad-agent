@@ -51,7 +51,7 @@ export function validateRecording(input) {
       return {position:vector(p.position,3,'world position'),quaternion:quaternion(p.quaternion)};
     })};
   });
-  return freeze({schema:input.schema,title:input.title,convention:{...c},bodies,frames,duration:previous});
+  return freeze({schema:input.schema,title:input.title,convention:{length:'m',up:'z',handedness:'right',quaternion:'xyzw'},bodies,frames,duration:previous});
 }
 
 /** Shortest-path unit-quaternion interpolation, including equivalent q/-q endpoints. */
@@ -94,17 +94,30 @@ export function createPlayback(recording,onChange=()=>{}) {
 }
 
 /** Bounded same-origin JSON loading with optional exact-byte SHA-256 verification. */
-export async function loadRecording(url,{signal,expectedHash}={}) {
+async function readJsonDocument(url,{signal,expectedHash,maxBytes=RECORDING_LIMITS.bytes}={}) {
   const target=new URL(url,globalThis.location?.href);
   if(!['http:','https:'].includes(target.protocol)||target.username||target.password||(globalThis.location&&target.origin!==location.origin))throw new TypeError('Recording URL must be same-origin HTTP(S)');
   if(expectedHash!==undefined&&!/^[0-9a-f]{64}$/.test(expectedHash))throw new TypeError('Invalid recording SHA-256');
-  const response=await fetch(target,{signal});if(!response.ok)throw new Error(`Recording request failed: ${response.status}`);
-  if(+response.headers.get('content-length')>RECORDING_LIMITS.bytes)throw new Error('Recording exceeds byte limit');
+  const response=await fetch(target,{signal,mode:'same-origin'});if(!response.ok)throw new Error(`Recording request failed: ${response.status}`);
+  if(+response.headers.get('content-length')>maxBytes){await response.body?.cancel();throw new Error('Recording exceeds byte limit');}
   const reader=response.body.getReader(),chunks=[];let size=0;
-  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>RECORDING_LIMITS.bytes)throw new Error('Recording exceeds byte limit');chunks.push(value);}}
+  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>maxBytes)throw new Error('Recording exceeds byte limit');chunks.push(value);}}
   catch(error){await reader.cancel().catch(()=>{});throw error;}
   finally{reader.releaseLock();}
   const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
   if(expectedHash){const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');if(hash!==expectedHash)throw new Error('Recording SHA-256 mismatch');}
-  return validateRecording(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes)));
+  return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+}
+
+export async function loadRecording(url,options={}) {return validateRecording(await readJsonDocument(url,options));}
+
+/** Load only the bounded receipt fields the standalone example presents. Hashes establish byte identity. */
+export async function loadReceipt(url,{signal}={}) {
+  const r=await readJsonDocument(url,{signal,maxBytes:65536}),s=r?.effective_settings;
+  if(r?.schema!=='cad-agent.simulation-receipt/1'||r.engine?.name!=='MuJoCo'||!text(r.engine.version,32)||!s
+    ||!/^[0-9a-f]{64}$/.test(r.artifacts?.['recording.json'])||!Number.isInteger(s.frame_count)||s.frame_count<2||s.frame_count>RECORDING_LIMITS.frames
+    ||!Number.isInteger(s.completed_steps)||s.completed_steps<1||s.completed_steps>100000
+    ||!finite(s.duration_s,RECORDING_LIMITS.duration)||s.duration_s<=0||!finite(s.timestep_s,1)||s.timestep_s<=0
+    ||!finite(s.sample_hz,1000)||s.sample_hz<=0||Math.abs(s.completed_steps*s.timestep_s-s.duration_s)>1e-8)throw new TypeError('Invalid simulation receipt');
+  return r;
 }

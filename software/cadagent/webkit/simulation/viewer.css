@@ -1,0 +1,17 @@
+/* Recorded replay owns layout; shared theme and host own colors, gestures and camera HUD. */
+body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 var(--font,system-ui,sans-serif)}
+*{box-sizing:border-box}a{color:var(--link)}button,input,select{font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.replay-page-header,main,footer{width:100%;padding-inline:clamp(16px,2.6vw,72px)}
+.replay-page-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:20px 8px}
+.replay-page-header p{margin:.3em 0}.replay-eyebrow{font:700 12px/1.4 var(--mono,monospace);letter-spacing:.1em;color:var(--eyebrow)}
+h1{margin:.15em 0;font-size:clamp(25px,2.3vw,42px);line-height:1.15}.replay-assumption{max-width:95ch;color:var(--muted);margin:8px 0 16px}
+.replay-stage{height:clamp(520px,70dvh,1100px);min-width:0}.cad-replay-host{grid-template-rows:auto auto minmax(0,1fr) auto;--viewer-bg:var(--soft);--viewer-surface:var(--card);--viewer-text:var(--ink);--viewer-muted:var(--muted);--viewer-line:var(--line-3);--viewer-accent:var(--accent);color-scheme:inherit}
+.cad-replay-host .cad-viewer-viewport{background:var(--viewer-bg)}
+.replay-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 12px;background:var(--viewer-surface);border-bottom:1px solid var(--viewer-line)}
+.replay-controls>label{display:flex;align-items:center;gap:8px}.replay-controls .replay-time{flex:1 1 180px;min-width:120px}.replay-time input{min-height:44px;min-width:60px;flex:1}
+.replay-readout{font:14px var(--mono,monospace);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cad-replay-host .cad-viewer-inspector{font-size:15px}.cad-replay-host .cad-viewer-inspector h3{font-size:17px;margin-top:0}
+.replay-evidence{max-width:100ch;margin:16px 0;padding:14px 18px;border:1px solid var(--line-2);border-radius:10px;background:var(--card)}
+.replay-evidence summary{cursor:pointer;font-weight:650}.replay-evidence nav{display:flex;flex-wrap:wrap;gap:12px 24px}.replay-evidence nav a{min-height:32px}
+#receipt-status{color:var(--muted);font-size:14px;overflow-wrap:anywhere}footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding-block:20px 30px}
+@media(max-width:600px){.replay-page-header{align-items:flex-start}.replay-stage{height:620px}.replay-controls{gap:8px}.replay-controls .replay-time{order:3;flex-basis:100%}.replay-readout{margin-left:auto}.replay-controls>label:last-child{order:2}.cad-replay-host .cad-viewer-inspector{overflow:auto}.cad-replay-host .cad-viewer-selection{font-size:11px}}

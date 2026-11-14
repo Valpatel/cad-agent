@@ -218,7 +218,7 @@ import { EventEmitter } from 'node:events';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { readerBoundaryGoto, readerBoundaryProblems } from './site-outline.mjs';
+import { readerBoundaryGoto, readerBoundaryProblems } from './layout/outline.mjs';
 
 class ReaderProbePage extends EventEmitter {
   calls = [];
@@ -329,7 +329,7 @@ test('a disconnected page and unavailable receipt directory never mask the origi
 });
 
 // #663: the prior filtered sample was internally consistent before the resized layout arrived.
-import { readerOverflowSnapshot } from './site-outline.mjs';
+import { readerOverflowSnapshot } from './layout/outline.mjs';
 test('reader overflow readiness rejects stale viewport/layout/containment and captures the passing sample', t => {
   const mockGlobal=(name,value)=>{const old=Object.getOwnPropertyDescriptor(globalThis,name);Object.defineProperty(globalThis,name,{value,configurable:true});t.after(()=>old?Object.defineProperty(globalThis,name,old):delete globalThis[name]);};
   const panel = { clientHeight:345, scrollHeight:345, hasAttribute:()=>false };
@@ -350,4 +350,43 @@ test('reader overflow readiness rejects stale viewport/layout/containment and ca
   assert.equal(sample.content,1429);assert.equal(sample.contain,'contain');assert.equal(sample.fits,false);
   panel.clientHeight=345;panel.scrollHeight=345;
   assert.equal(sample.height,488,'returned value is the captured sample, not a second layout read');
+});
+
+
+import { wideGeometryProblems } from './layout/wide.mjs';
+
+// Fixed presentation examples, not CSS-derived expected values: a broad healthy layout and independent defects.
+const wideFixture = (route, extra = {}) => ({
+  route, viewport: { width: 3440, height: 1440 }, overflow: 0,
+  shells: { header: { width: 3200 }, main: { width: 3200 } },
+  ...extra,
+});
+test('wide geometry accepts a flexible shell with readable cards, bounded prose and a broad visual column', () => {
+  for (const m of [
+    wideFixture('/', { hero: { width: 1560, height: 780, loaded: true } }),
+    wideFixture('/toolkit/scada/elements', { cards: Array.from({ length: 7 }, (_, i) => ({ x: i * 450, y: 400, width: 430 })) }),
+    wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [{ width: 760 }, { width: 120 }], table: { width: 2600 } }),
+    wideFixture('/explore', { groupArea: { width: 3000 }, groups: Array.from({ length: 4 }, (_, i) => ({ x: i * 750, y: 400, width: 730 })) }),
+  ]) assert.deepEqual(wideGeometryProblems(m), [], m.route);
+});
+test('wide geometry rejects the old narrow shell, three giant cards and a vertically stretched hero', () => {
+  assert.match(wideGeometryProblems(wideFixture('/explore', { shells: { header: { width: 1240 }, main: { width: 1240 } } })).join(';'), /shell uses/);
+  const cards = Array.from({ length: 3 }, (_, i) => ({ x: i * 1066, y: 400, width: 1040 }));
+  const gallery = wideGeometryProblems(wideFixture('/toolkit/scada/elements', { cards })).join(';');
+  assert.match(gallery, /gallery has 3 columns/);
+  assert.match(gallery, /card widths/);
+  assert.match(wideGeometryProblems(wideFixture('/', { hero: { width: 3344, height: 1672, loaded: true } })).join(';'), /artwork is/);
+});
+test('wide geometry rejects stretched prose, capped document visuals, overflow and missing measurements', () => {
+  const doc = { document: { width: 2600 }, paragraphs: [{ width: 2600 }], table: { width: 880 } };
+  const problems = wideGeometryProblems(wideFixture('/docs/toolkit', doc)).join(';');
+  assert.match(problems, /narrative paragraphs/);
+  assert.match(problems, /table frame/);
+  assert.match(wideGeometryProblems(wideFixture('/docs/toolkit', { ...doc, document: { width: 880 } })).join(';'), /visual column/);
+  assert.match(wideGeometryProblems(wideFixture('/explore', { overflow: 48 })).join(';'), /horizontal overflow/);
+  assert.match(wideGeometryProblems(wideFixture('/', { shells: {}, hero: null })).join(';'), /missing main shell/);
+  assert.match(wideGeometryProblems(wideFixture('/toolkit/scada/elements', { cards: [] })).join(';'), /gallery has 0 columns/);
+  assert.match(wideGeometryProblems(wideFixture('/docs/toolkit', { document: { width: 2600 }, paragraphs: [], table: { width: 2600 } })).join(';'), /missing substantial/);
+  const groups = Array.from({ length: 4 }, (_, i) => ({ x: i * 375, y: 400, width: 350 }));
+  assert.match(wideGeometryProblems(wideFixture('/explore', { groups, groupArea: { width: 3000 } })).join(';'), /group row leaves/);
 });

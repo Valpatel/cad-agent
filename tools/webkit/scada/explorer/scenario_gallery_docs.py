@@ -53,7 +53,7 @@ def asset_gallery_maps(records, kind):
     base = f'img/{kind}'
     captured = kind == 'thumbnails'
     heading = 'Captured simulation views' if captured else 'Compact topology diagrams'
-    explanation = ('Real Explorer images captured after reset, pause and Zoom to fit. Values and behavior remain illustrative; overview text size is not an operating-scale readability guarantee.' if captured else 'Static SVG schematics of the first declared view. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.')
+    explanation = ('Real Explorer images captured after reset, pause and Zoom to fit. Values and behavior remain illustrative; overview text size is not an operating-scale readability guarantee.' if captured else 'Static SVG schematics of a declared view, selected by the catalog topologyView when present. Symbols identify equipment; arrows show declared connections, not instantaneous flow or measured facility performance.')
     manifest = 'metadata/' + ('thumbnails.json' if captured else 'topologies.json')
     maps = {base + '/gallery-map.svg': folder_map_svg('scada/sim/' + base + '/', [('sector / scenario /', 'Stable system identity'), ('preview.jpg' if captured else 'topology.svg', 'Fitted initial view' if captured else 'Declared equipment and links'), ('README.md', 'Definitions and companion view')], 'Each sector contains a folder per scenario, with its preview and links to system definitions.')}
 
@@ -94,11 +94,12 @@ def asset_gallery_maps(records, kind):
             scenario_map = dirname(expected) + '/README.md'
             lines.append(f'| {link(safe(entry["title"]), scenario_map, sector_map)}<br>`{entry["id"]}` | {picture(entry, sector_map, 360)} |')
             peer = scenario_asset_path('topologies' if captured else 'thumbnails', entry)
+            preview_purpose = 'Actual fitted initial model state' if captured else 'Static declared `' + entry['view'] + '` view'
             local = [f'# {entry["title"]}', '', link(label, sector_map, scenario_map) + ' · ' + link('All sectors', root, scenario_map), '',
                      explanation, '', picture(entry, scenario_map, 900 if not captured else 720), '',
                      '```mermaid', 'flowchart LR', '  System[System definition] --> View[Preview]', ('  Model[Model assumptions] --> View' if captured else '  Symbols[Equipment symbols] --> View'), '```', '',
                      '| File or source | Purpose |', '| --- | --- |',
-                     f'| {link("Preview", expected, scenario_map)} | {"Actual fitted initial model state" if captured else "Compact declared first-view topology"} |',
+                     f'| {link("Preview", expected, scenario_map)} | {preview_purpose} |',
                      f'| {link("Scenario documentation", "scenarios/" + entry["id"] + "/README.md", scenario_map)} | Equipment roles, focused views and editable assumptions |',
                      f'| {link("System JSON", "scenarios/" + entry["system"], scenario_map)} | Equipment, ports, connections and layouts |',
                      f'| {link("Model JSON", "scenarios/" + entry["id"] + "/model.json", scenario_map)} | Replaceable behavior and initial values |',

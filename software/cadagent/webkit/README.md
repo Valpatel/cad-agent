@@ -10,10 +10,8 @@ SCADA and FEA retain their own integration contracts. Arrows below show composit
 ```mermaid
 flowchart TD
   App[Application] --> Host[Contained host]
-  Host --> Model[Model + file viewers]
-  Host --> Replay[Recorded replay]
-  App --> Scada[SCADA session + views]
-  App --> FEA[Standalone FEA viewer]
+  Host --> Adapters[Model / files / replay]
+  App --> Native["SCADA and FEA<br>Own mount contracts"]
 ```
 
 | Owner | Responsibility |

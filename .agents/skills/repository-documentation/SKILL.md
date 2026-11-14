@@ -61,6 +61,9 @@ flowchart TD
    machine paths/credentials out of maintained guides and historical receipts intact.
 6. Regenerate only the affected owners:
 
+   <details>
+   <summary>Owner-specific regeneration and checks</summary>
+
    ```sh
    node tools/site/compiler/site-repo-map.mjs --write
    node tools/site/compiler/site-repo-map.mjs --check
@@ -70,6 +73,8 @@ flowchart TD
    npm --prefix tools/webkit/scada run gallery:check
    npm --prefix tools/webkit/scada run topologies:check
    ```
+
+   </details>
 
 7. Register new guides/skills in docs/areas.yaml and the actual existing catalogue
    and installer. The map checker inspects the current source inventory, including
@@ -86,7 +91,8 @@ keeps reference metadata, mirrored bytes and source ownership distinct.
 
 [Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)
 
-## Repository-wide prose sweeps
+<details>
+<summary>Repository-wide prose and animation review</summary>
 
 Start with tracked Markdown and the existing owner map. Distinguish maintained guides, generated maps/galleries,
 pinned upstream documentation and immutable history. Record the scope and scan results in the work issue; do not
@@ -98,3 +104,5 @@ For workflow illustrations, reuse the owned animation tooling and the
 [animated explanation rules](../../../docs/practice/style-guide.md#animated-explanations).
 Keep still alternatives and meaningful labels, test SVG image-mode rendering, and separate conceptual handoffs from
 measured engineering evidence. A diagram must not imply that a planned shared host or model adapter already exists.
+
+</details>

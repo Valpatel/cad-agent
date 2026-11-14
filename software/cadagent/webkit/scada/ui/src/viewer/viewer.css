@@ -45,6 +45,11 @@ html.motion-paused .scada-diagram-flow{animation-play-state:paused!important}
 .scada-diagram-connection:is([data-medium=electrical],[data-medium=electricity]) .scada-diagram-flow{stroke-width:2}
 
 /* Canonical equipment IDs remain visible independently of human labels. */
+/* WebKit can include clipped native option text in page scroll overflow. Keep
+   that paint within the picker while preserving its native menu and outline. */
+.scada-viewer-toolbar select{contain:paint}
+.scada-viewer-status>span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.scada-dialog-equipment .scada-dialog-heading h2{overflow-wrap:anywhere}
 .scada-viewer-equipment-id{font:600 12px/1.2 var(--mono,ui-monospace,monospace);color:#a7d8ec;max-width:100%;overflow-wrap:anywhere}
 .scada-viewer .scada-inspection-id{font:600 12px/1.3 var(--mono,ui-monospace,monospace);color:var(--scada-accent);margin:0 0 4px}
 .scada-viewer .scada-quick-readings{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 12px}

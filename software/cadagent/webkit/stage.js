@@ -21,6 +21,44 @@ function radialGlow(stops) {
   return t;
 }
 
+// Native GL_LINES crossing the camera's near plane can become filled polygons in WebKit (#536).
+// Draw the same finite 52-division grid on two triangles instead. Derivatives keep lines about a pixel
+// wide while the camera moves; fade only subpixel spacing at the horizon, not the near-camera floor.
+function floorGrid(accent, color) {
+  const material = new THREE.ShaderMaterial({
+    // WebGL 1 needs the GLSL extension directive for fwidth; it is core in WebGL 2.
+    extensions: { derivatives: true },
+    uniforms: { axisColor: { value: new THREE.Color(accent) }, gridColor: { value: new THREE.Color(color) },
+      opacity: { value: 1 } },
+    vertexShader: `varying vec2 vGrid;
+      void main() {
+        vGrid = position.xy * 52.0;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `uniform vec3 axisColor;
+      uniform vec3 gridColor;
+      uniform float opacity;
+      varying vec2 vGrid;
+      void main() {
+        vec2 width = max(fwidth(vGrid), vec2(0.000001));
+        vec2 distance = abs(fract(vGrid - 0.5) - 0.5);
+        vec2 fade = 1.0 - smoothstep(vec2(0.5), vec2(1.0), width);
+        vec2 lines = (1.0 - smoothstep(0.25 * width, 0.75 * width, distance)) * fade;
+        vec2 axes = 1.0 - smoothstep(0.25 * width, 0.75 * width, abs(vGrid));
+        float coverage = max(lines.x, lines.y);
+        if (coverage <= 0.0) discard;
+        gl_FragColor = vec4(mix(gridColor, axisColor, max(axes.x, axes.y)), opacity * coverage);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  });
+  const grid = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+  grid.name = 'stage-grid';
+  grid.rotation.x = -Math.PI / 2;
+  return grid;
+}
+
 /**
  * createStage(container, { height = 1, accent = 0x00f0ff, zoomSpeed = 0.25, dragZoomSpeed = 1, palette })
  * Returns { renderer, scene, camera, controls, root, setSceneLight(0..1), frame(height), onFrame(cb), start(), stop(), dispose(),
@@ -72,9 +110,7 @@ export function createStage(container, opts = {}) {
   const ground = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.ShadowMaterial({ opacity: 0.4 }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
-  const grid = new THREE.GridHelper(1, 52, accent, 0x0e7490);
-  grid.material.transparent = true;
-  grid.material.depthWrite = false;
+  const grid = floorGrid(accent, 0x0e7490);
   const pad = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({
     map: radialGlow([[0, 'rgba(120, 220, 255, 0.32)'], [0.5, 'rgba(0, 240, 255, 0.09)'], [1, 'rgba(0, 240, 255, 0)']]),
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -86,9 +122,8 @@ export function createStage(container, opts = {}) {
   function setPalette({accent:nextAccent=accent,grid:nextGrid=0x0e7490,glow:nextGlow=0x00f0ff,background}={}) {
     if(background!==undefined)scene.background=new THREE.Color(background);
     rim.color.set(nextAccent);
-    const replacement=new THREE.GridHelper(1,52,nextAccent,nextGrid);
-    grid.geometry.dispose();grid.geometry=replacement.geometry;
-    replacement.material.dispose();
+    grid.material.uniforms.axisColor.value.set(nextAccent);
+    grid.material.uniforms.gridColor.value.set(nextGrid);
     const rgb=new THREE.Color(nextGlow).getStyle();
     const components=rgb.match(/[\d.]+/g);
     const rgba=alpha=>`rgba(${components.join(',')},${alpha})`;
@@ -136,6 +171,7 @@ export function createStage(container, opts = {}) {
     ambient.intensity = light.base.ambient * lit;
     rim.intensity = light.base.rim * (0.12 + 0.88 * s);
     grid.material.opacity = light.base.grid * (0.35 + 0.65 * s);
+    grid.material.uniforms.opacity.value = grid.material.opacity;
     pad.material.opacity = light.base.pad * (0.45 + 0.55 * s);
   }
   applyLight();

@@ -1,3 +1,0 @@
-**Changed**
-
-- Standalone CAD and assembly viewers follow the shared application theme, with readable controls in both palettes; explicit original-file theme overrides and scoped embedded-viewer APIs remain available.

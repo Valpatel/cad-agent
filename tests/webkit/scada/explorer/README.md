@@ -18,6 +18,8 @@ flowchart TD
 | [audio.test.mjs](audio.test.mjs) | One opt-in audio context, alarm acknowledgement, mute/pause/hidden behavior and disposal |
 | [search.test.mjs](search.test.mjs) | Search aliases, independent facets and component discovery |
 | [selection.test.mjs](selection.test.mjs) | Scenario/type/variant identity and explicit fallback |
+| [equipment-model.test.mjs](equipment-model.test.mjs) | Loaded equation implementations, provider identity, canonical equipment tags and current accepted configuration |
+| [inspection-browser.mjs](inspection-browser.mjs) | Real compact-popover gestures, canonical IDs, camera anchoring, draft isolation and exact-equipment equation details; called by the main browser harness |
 | [wastewater.test.mjs](wastewater.test.mjs) | Connected pump/valve/generator faults, repair, readonly adapter, overload and deterministic snapshot replay |
 | [browser.mjs](browser.mjs) | Real controls, independent views, direct v2 read-only command capability, observer lifetime, sound, imports and contained viewport behavior |
 
@@ -49,6 +51,14 @@ to check connected load power; it does not reach into a hidden page model.
 The direct v2 adapter case mounts a separate public model/viewer consumer in the
 browser to verify native disabled controls and a borrowed session's lifetime.
 Screenshots cover both control-room views, generator failure, readonly observer,
-editable v2 assumptions, narrow diagrams, faults and the narrow observer.
+editable v2 assumptions, narrow diagrams, faults and the narrow observer. Equipment
+inspection additionally covers both themes at 320, 390, short landscape, ordinary
+desktop and 3440-pixel ultrawide sizes. The checks assert compact screen-space
+controls, nonmodal diagram access, camera anchoring, Escape focus, distinct equipment
+IDs and command targets, uncommitted same-equipment drafts, and the actual loaded
+equations and current model configuration behind the Details & model action.
+
+The draft-isolation case mounts a separate consumer through the public model and
+viewer APIs; it does not expose the Explorer session through a test-only hook.
 
 [SCADA tests](../README.md) · [Explorer source](../../../../software/cadagent/webkit/scada/explorer/README.md)

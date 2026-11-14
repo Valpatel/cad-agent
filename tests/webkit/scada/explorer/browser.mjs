@@ -95,8 +95,11 @@ try{
     await page.evaluate(()=>{window.themeEvents=[];document.addEventListener('cad-themechange',event=>window.themeEvents.push(event.detail.theme));});
     const mode=()=>page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme);
     assert.equal(await mode(),'light');
+    const equipmentScheme=()=>page.locator('#lab-viewer .scada-viewer-toolbar select').evaluate(element=>getComputedStyle(element).colorScheme);
+    assert.equal(await equipmentScheme(),'light');
     assert.match(await page.locator('body').evaluate(element=>getComputedStyle(element).fontFamily),/Inter/);
     await page.emulateMedia({colorScheme:'dark'});await expect.poll(mode).toBe('dark');
+    assert.equal(await equipmentScheme(),'dark','Native equipment menus must inherit the application palette');
     await expect.poll(()=>page.evaluate(()=>window.themeEvents)).toEqual(['dark']);
     await page.locator('.theme-toggle').click();await expect.poll(mode).toBe('light');
     assert.equal(await page.evaluate(()=>localStorage.getItem('cad-theme')),'light');
@@ -124,6 +127,7 @@ try{
       await page.emulateMedia({colorScheme});
       await page.locator('#lab-viewer [data-scada-inspect]').click();
       const dialog=page.locator('#industry-viewer-inspector-dialog');await expect(dialog).toBeVisible();
+      assert.equal(await dialog.evaluate(element=>getComputedStyle(element).colorScheme),colorScheme,'Inspector native controls must inherit the application palette');
       const buttons=dialog.locator('.scada-viewer-button:not(:disabled)');
       assert.ok(await buttons.count()>=6);
       await expect(dialog.locator('.scada-viewer-toggle[aria-pressed=true] span')).toContainText('On / open');

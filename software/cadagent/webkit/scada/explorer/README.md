@@ -63,4 +63,4 @@ placeholder kernel.
 [SCADA owner](../README.md) · [UI library](../ui/README.md) ·
 [Simulation library](../sim/README.md) ·
 [Model/API contract](../sim/docs/MODEL-API.md) ·
-[Explorer tests](../../../../../tests/webkit/scada/explorer/README.md)
+[Explorer tests](https://github.com/Valpatel/cad-agent/tree/dev/tests/webkit/scada/explorer)

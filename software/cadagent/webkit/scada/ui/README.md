@@ -375,7 +375,7 @@ Use a neutral `.scada-workspace` container; no application-specific `#main` wrap
 
 ## Thumbnails and verification
 
-[The contact sheet](./img/thumbnails/contact-sheet.jpg) compares equipment silhouettes. [metadata/thumbnails.json](./metadata/thumbnails.json) records generated files, render settings and state. [`img/thumbnails/states/`](./img/thumbnails/states/) contains representative non-default states. Static previews document appearance; they do not prove animation or command behavior.
+[The contact sheet](./img/thumbnails/contact-sheet.jpg) compares equipment silhouettes. [metadata/thumbnails.json](./metadata/thumbnails.json) records generated files, render settings and state. [`img/thumbnails/states/`](./img/thumbnails/states/README.md) contains representative non-default states. Static previews document appearance; they do not prove animation or command behavior.
 
 From the repository root, run `npm --prefix tools/webkit/scada run build:metadata`, `npm --prefix tools/webkit/scada test` and `npm --prefix tools/webkit/scada run thumbnails` for visual changes. `npm --prefix tools/webkit/scada run thumbnails -- --check` verifies the manifest and source/image hashes without silently accepting stale previews. The [contribution guide](./CONTRIBUTING.md) distinguishes source sync, rendered checks, npm packaging, the standalone ZIP and live deployment. A generated artifact or a green test does not publish a release.
 

@@ -20,6 +20,22 @@ source-owned generators are authoritative.
 
 This workflow verifies a concrete consumer or release from the maintained source. Follow the [integration architecture](../../../docs/practice/scada/architecture.md).
 
+Delivery scope changes which files are included, not their canonical owner.
+Verify both artifacts independently with the source checkout unavailable.
+
+```mermaid
+flowchart TD
+    S["Canonical web kit source"] --> F["Full SDK<br/>SCADA, galleries and guides"]
+    S --> A["Assembly reader closure<br/>model, controls and instructions"]
+    F --> P["Isolated SDK consumer"]
+    A --> R["Isolated assembly reader"]
+    P --> C["Resolve local imports, assets<br/>schemas and license notices"]
+    R --> C
+    class S here
+    class F,A near
+    class P,R,C out
+```
+
 1. Name source/target revisions, actual consumer, supported document/model versions,
    controls, public exports and completion evidence. Inspect the target rather
    than assuming its viewer lifecycle or packaging is suitable.

@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto';
 import { headersFor, parseHeaders } from '../../tools/site/preview-site.mjs';
 import { createPublication, selectPages, folderMapSources } from '../../tools/site/publication.mjs';
 import { builtSite } from './built-site.mjs';
+import {markdown as mapMarkdown} from '../../tools/site/compiler/site-repo-map.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const execFileAsync = promisify(execFile);
@@ -664,7 +665,8 @@ test('diagrams in files agents load leave the palette to the site', async () => 
     .filter(p => ['skills', 'agents'].includes(p.section.id)).map(p => p.file);
   assert.deepEqual(new Set(sources), new Set([
     ...['cad-motion-validation', 'cad-pr-review', 'cad-remote-runs', 'cad-supply-chain', 'cad-work-tracking',
-      'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware']
+      'design-process', 'mcmaster-parts', 'pem-fastener-selection', 'sheet-metal-hardware', 'repository-documentation',
+      'scada-component-authoring', 'scada-distribution-review', 'scada-model-adaptation', 'scada-system-authoring', 'scada-viewer-review']
       .map(name => `.agents/skills/${name}/SKILL.md`),
     '.agents/agents/cad-pr-reviewer.md', '.agents/agents/cad-resume.md',
   ]), 'the exact canonical skills and roles must reach the palette consumer');
@@ -949,6 +951,16 @@ test('repository map publishes folder details without flooding the catalogue', a
   const actual = new Set([...html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>Published folder map<\/a>/g)].map(m => m[1]));
   assert.deepEqual(actual, expected, 'every source-derived owned map needs its actual detail route');
   const folderPaths = new Map(maps.map(p => [p.file, p.public]));
+  const sources = new Set(tracked), sourceBytes = new Map();
+  const readSource = file => {
+    if(!sourceBytes.has(file))sourceBytes.set(file,execFileSync('git',['show',`HEAD:${file}`],{cwd:root}));
+    return sourceBytes.get(file);
+  };
+  const assertOwnedSVGs = (page, figures, file) => {
+    const images=new Set([...page.matchAll(/<img\b[^>]*\bsrc="([^"#?]+)(?:[?#][^"]*)?"/g)].map(m=>m[1]));
+    for(const source of figures)assert.ok(images.has('/'+source),`${file}: must show owned SVG ${source}`);
+  };
+  let mermaidMaps=0, svgMaps=0, negativeSVGChecked=false;
   for (const p of maps) {
     const dest = p.public.replace(/\.md$/, '.html');
     assert.ok(files.includes(dest) && files.includes(p.public), `${p.file}: both HTML and Markdown must exist`);
@@ -956,10 +968,33 @@ test('repository map publishes folder details without flooding the catalogue', a
     assert.match(page, /href="\/docs\/map">Repository map<\/a>/);
     const parent = '/' + (folderPaths.get(p.parent) || publication.publicPath(p.parent)).replace(/\.md$/, '');
     assert.ok(page.includes(`href="${parent}">Parent folder</a>`), `${p.file}: current parent route`);
-    assert.match(page, /<figure class="cad-diagram" data-theme-only="light"/);
-    assert.match(page, /<figure class="cad-diagram" data-theme-only="dark"/);
+    const source=mapMarkdown(readSource(p.file).toString('utf8'));
+    const ownedSVGs=[...new Set(source.figures.filter(href=>!/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(href)).map(href=>{
+      const file=decodeURIComponent(href.split(/[?#]/)[0]);
+      return file.startsWith('/') ? file.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(p.file),file));
+    }).filter(file=>file.endsWith('.svg')))];
+    assert.ok(source.diagrams.length || ownedSVGs.length,`${p.file}: source must declare a diagram or owned SVG`);
+    if(source.diagrams.length) {
+      mermaidMaps++;
+      assert.match(page, /<figure class="cad-diagram" data-theme-only="light"/,p.file);
+      assert.match(page, /<figure class="cad-diagram" data-theme-only="dark"/,p.file);
+    }
+    if(ownedSVGs.length) {
+      svgMaps++;assertOwnedSVGs(page,ownedSVGs,p.file);
+      for(const svg of ownedSVGs) {
+        assert.ok(sources.has(svg),`${p.file}: SVG must be committed: ${svg}`);
+        assert.match(readSource(svg).toString('utf8'),/<svg\b/,svg);
+        assert.ok((await readFile(path.join(out,svg))).equals(readSource(svg)),`${svg}: published SVG matches its owned source`);
+      }
+      if(!negativeSVGChecked) {
+        assert.throws(()=>assertOwnedSVGs(page.replace(/<img\b[^>]*>/g,''),ownedSVGs,p.file),/must show owned SVG/);
+        assert.throws(()=>assertOwnedSVGs(page.replaceAll('/'+ownedSVGs[0],'/unrelated.svg'),ownedSVGs,p.file),/must show owned SVG/);
+        negativeSVGChecked=true;
+      }
+    }
     assert.ok(!catalog.items.some(i => i.source?.endsWith('/' + p.file)), `${p.file}: folder map became a catalogue item`);
   }
+  assert.ok(mermaidMaps>0 && svgMaps>0 && negativeSVGChecked,'both actual map formats and missing/misrouted SVG controls are exercised');
   const version = JSON.parse(await readFile(path.join(out, 'version.json'), 'utf8'));
   assert.equal(version.folder_maps, maps.length);
   assert.equal(version.pages, publication.selectPages(tracked).length);

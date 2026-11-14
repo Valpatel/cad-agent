@@ -18,6 +18,23 @@ and scoped instructions before editing. Follow [work tracking](../cad-work-track
 where applicable; this skill adds no separate approval process. Runtime APIs and
 source-owned generators are authoritative.
 
+The descriptor is shared data; the renderer supplies both live and exported artwork.
+The model supplies state without becoming part of the drawing.
+
+```mermaid
+flowchart TD
+    D["Typed descriptor<br/>fields, ports, variants"] --> V["Validate supplied state"]
+    M["External model snapshot"] --> V
+    V --> R["One equipment renderer"]
+    R --> L["Live viewer"]
+    R --> G["SVG gallery and captures"]
+    L --> C["Compare state and appearance"]
+    G --> C
+    class D,V,R here
+    class M,L,G near
+    class C out
+```
+
 1. Read the [style guide](../../../software/cadagent/webkit/scada/ui/STYLE_GUIDE.md),
    [state coverage](../../../software/cadagent/webkit/scada/ui/docs/STATE_COVERAGE.md)
    and [public API](../../../software/cadagent/webkit/scada/ui/docs/API.md). Inspect

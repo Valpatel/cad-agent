@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages} from '../../../tools/site/compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText} from '../../../tools/site/compiler/site-toolkit.mjs';
 import {matchesToolkitCard} from '../../../tools/site/assets/toolkit.js';
 import {sourceLicenseResolver} from '../../../tools/site/compiler/site-catalog.mjs';
 
@@ -78,6 +78,21 @@ test('filters combine words, category and entry kind without altering catalogue 
   for(const choice of [{query:'pump solar'},{category:'power'},{kind:'variant'}])assert.equal(matchesToolkitCard(card,choice),false);
   assert.equal(matchesToolkitCard(card,{query:'  '}),true);
   assert.equal(matchesToolkitCard({search:'<script>',category:'x'},{query:'<script>'}),true,'search is plain text, never HTML or code');
+});
+
+test('combined Toolkit agent text binds every local link to its published origin without rewriting examples',()=>{
+  const pages=toolkitPages(scadaToolkitModel(fixture())).pages;
+  const full=toolkitFullText(pages,'https://cad.example');
+  const links=[...full.matchAll(/\]\(([^)\s]+)/g)].map(m=>m[1]);
+  assert.ok(links.length>10);assert.ok(links.every(href=>href.startsWith('https://cad.example/')));
+  assert.match(full,/https:\/\/cad\.example\/kit\/scada\/explorer\/index\.html\?scenario=wastewater-digester/);
+  assert.match(full,/Source: https:\/\/cad\.example\/toolkit\/scada\/elements\.md/);
+  const example=toolkitFullText([{url:'/toolkit/scada',markdown:'[local](elements?q=pump#state "Equipment") [anchor](#models) [external](https://other.example/a?q=b) [protocol-relative](//other.example/b)\n\n`[literal](/code)`\n\n```md\n[literal](/fenced)\n```'}],'https://cad.example');
+  assert.ok(example.includes('[local](https://cad.example/toolkit/elements?q=pump#state "Equipment")'));
+  assert.ok(example.includes('[anchor](https://cad.example/toolkit/scada.md#models)'));
+  assert.ok(example.includes('[external](https://other.example/a?q=b)'));
+  assert.ok(example.includes('[protocol-relative](https://other.example/b)'));
+  assert.ok(example.includes('`[literal](/code)`'));assert.ok(example.includes('[literal](/fenced)'));
 });
 
 test('source licence overrides preserve package terms without relabelling unrelated capabilities',()=>{

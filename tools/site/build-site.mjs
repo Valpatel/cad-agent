@@ -24,7 +24,7 @@ import { drawBoth, drawDiagrams } from './compiler/site-diagrams.mjs';         /
 import { ON, fold, pagePlacer } from './compiler/site-pages.mjs';    // docs/pages.yaml: bands, section cards, figures, folds
 import { SECTIONS, createPublication, validateRedirects, folderMapSources } from './publication.mjs';
 import { loadReferences, referenceModel, referenceSite, linkTags, mdTags, healthOf } from './compiler/site-references.mjs';   // /references (#323)
-import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages} from './compiler/site-toolkit.mjs';
+import {SCADA_INPUTS, TOOLKIT_ROUTES, scadaToolkitModel, toolkitPages, toolkitFullText} from './compiler/site-toolkit.mjs';
 
 // --root DIR builds another checkout of this repo (the tests use a scratch worktree); the build tools still run from here.
 const rootArg = process.argv.indexOf('--root');
@@ -678,7 +678,7 @@ ${homeMd.ours.join('\n')}
 `);
 await writeFile(path.join(out, 'llms-full.txt'), `# cad-agent: full text\n\n> ${TAGLINE}. ${LEDE}\n\n` +
   pages.map(p => `\n\n---\n\nSource: ${ORIGIN}/${publicPath(p.file)}\n\n${twinMd(p.file, p.body, true).trim()}\n`).join('') +
-  toolkit.pages.map(p => `\n\n---\n\nSource: ${ORIGIN}${p.url}.md\n\n${p.markdown.trim()}\n`).join(''));
+  toolkitFullText(toolkit.pages, ORIGIN));
 // Cloudflare Pages joins the values of a header set by more than one matching rule, so each header is set by one rule
 // only: security headers on /*, Cache-Control only on /kit/vendor/*. Those stable URLs can change between releases,
 // so they revalidate, like the Pages default for everything else. The site's own pages have no inline script;

@@ -18,6 +18,24 @@ and scoped instructions before editing. Follow [work tracking](../cad-work-track
 where applicable; this skill adds no separate approval process. Runtime APIs and
 source-owned generators are authoritative.
 
+Both layouts observe the same session. Camera changes remain local to a view;
+only declared commands can change the model.
+
+```mermaid
+flowchart TD
+    S["system.json<br/>IDs and views"] --> V["Validate references"]
+    D["model.json<br/>laws and assumptions"] --> V
+    V --> M["One model"]
+    C["Host clock"] --> M
+    M --> A["Snapshot adapter"]
+    A --> O["Operator view"]
+    A --> R["Read-only view"]
+    O -->|"commands"| M
+    class V,M,A here
+    class S,D,C near
+    class O,R out
+```
+
 1. Read the [system format](../../../software/cadagent/webkit/scada/ui/docs/SYSTEM_FORMAT.md),
    [model API](../../../software/cadagent/webkit/scada/sim/docs/MODEL-API.md) and
    [integration guide](../../../software/cadagent/webkit/scada/sim/docs/INTEGRATION.md).
@@ -36,9 +54,9 @@ source-owned generators are authoritative.
    engineering unit label. Use [model adaptation](../scada-model-adaptation/SKILL.md)
    when equations or an external engine must change.
 5. Mount all layouts against one model/adapter. The host owns one clock, loading,
-   persistence, sound and destruction. A view only subscribes. Read-only v1 adapters
-   omit dispatch; v2 read-only adapters reject dispatch. Express both as unavailable
-   controls, and test that observation never advances or resets the model.
+   persistence, sound and destruction. A view only subscribes. Both v1 and v2
+   read-only adapters omit `dispatch`; expose no writable controls, and test that
+   observation never advances or resets the model.
 6. Add `sim/scenarios/<id>/{system,model}.json` and its entry in authored
    `sim/scenarios/index.json`. Keep the canonical host in
    [explorer/](../../../software/cadagent/webkit/scada/explorer/README.md).

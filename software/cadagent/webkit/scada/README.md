@@ -39,12 +39,12 @@ here; the historical development repository is not needed to run or maintain the
 
 The two libraries retain their public package names and source exports. Their
 `img/` folders stay with the libraries. Generators live under the repository's
-[SCADA tools](../../../../tools/webkit/scada/README.md), and executable
-regressions live under [SCADA tests](../../../../tests/webkit/scada/README.md).
+[SCADA tools](https://github.com/Valpatel/cad-agent/tree/dev/tools/webkit/scada), and executable
+regressions live under [SCADA tests](https://github.com/Valpatel/cad-agent/tree/dev/tests/webkit/scada).
 This separates reusable assets from maintenance commands without duplicating them.
 
 Models are explicitly illustrative unless an independently qualified provider is
 installed. Equipment artwork does not establish physical accuracy. Keep assumptions
 editable and preserve the documented SI/index conversions when changing equations.
 
-[Web kit](../README.md) · [User and integration guides](../../../../docs/practice/scada/README.md)
+[Web kit](../README.md) · [User and integration guides](https://github.com/Valpatel/cad-agent/tree/dev/docs/practice/scada)

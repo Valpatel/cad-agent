@@ -23,6 +23,23 @@ Read the repository [structure rules](../../../AGENTS.md),
 The repository's existing map/compiler is authoritative; do not add a parallel
 README inventory or a second canonical guide.
 
+Authored maps explain ownership; generators derive previews from that same owner.
+Checks must verify both paths so a polished gallery cannot hide stale source links.
+
+```mermaid
+flowchart TD
+    S["Canonical source owner"] --> D["Authored README and API guide"]
+    S --> G["Owned generator"]
+    G --> P["Gallery, metadata and receipts"]
+    D --> L["Links and file-map check"]
+    P --> F["Freshness and render check"]
+    L --> R["Review navigable evidence"]
+    F --> R
+    class S,D,G here
+    class P,L,F near
+    class R out
+```
+
 1. Find the actual source owner and readers. Distinguish authored source, generated
    metadata/images/pages, installed runtime and immutable release receipts. Fix
    the owner/generator, not a copied site page or provenance hash.

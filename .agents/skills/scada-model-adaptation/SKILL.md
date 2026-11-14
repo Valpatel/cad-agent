@@ -34,6 +34,23 @@ Read the [model adaptation guide](../../../software/cadagent/webkit/scada/sim/do
    or provide a full external-engine adapter when it owns the network/state solve.
    Bindings are data-only `definition.equations`, never executable expressions or
    arbitrary module URLs in JSON. Do not replace executable support with prose.
+
+A provider proposes constitutive response; the kernel accepts bounded allocation.
+Only an accepted substep advances provider-owned state.
+
+```mermaid
+flowchart TD
+    C["Trusted provider and parameters"] --> E["Pure evaluate<br/>may run repeatedly"]
+    S["Current model state"] --> E
+    E --> K["Kernel allocation<br/>supply, stock and ratings"]
+    K -->|"accepted substep"| A["Advance owned state once"]
+    A --> N["Commit next snapshot"]
+    K -->|"invalid result or late failure"| R["Restore prior checkpoint"]
+    class E,K,A here
+    class C,S near
+    class N,R out
+```
+
 4. Specify command/setpoint versus observation, physical quantity versus display
    percentage, units/signs, absolute/gauge, sampling time and quality. Preserve zero,
    missing/stale, degraded, fault and retained-stock/heat states separately. A glyph,

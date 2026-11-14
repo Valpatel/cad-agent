@@ -29,6 +29,22 @@ Read the [style guide](../../../software/cadagent/webkit/scada/ui/STYLE_GUIDE.md
    connected/disconnected, open/closed, warning, supported damage and recovery.
    Include small cards, full diagrams and equipment inspectors. Add phone and short
    landscape sizes for layout changes. Name omitted cases rather than claiming all.
+
+Compare visible output against model evidence, and test the interaction path in
+the opposite direction. A moving symbol alone does not establish either contract.
+
+```mermaid
+flowchart TD
+    C["Adapter command result"] --> M["Shared model snapshot"]
+    M --> G["Glyph and flow"]
+    M --> I["Inspector readings"]
+    G --> E["Compare state and quality"]
+    I --> E
+    class G,I here
+    class C,M near
+    class E out
+```
+
 3. Compare the glyph/readout with canonical snapshot bindings. Commands are not
    observations; retained setpoints are not actual output. Off does not imply empty,
    cold or depressurized. Missing telemetry must not become a plausible zero.

@@ -3,4 +3,5 @@
 :root[data-file-theme=light]{--file-background:#f5f7fa;--file-canvas:#ffffff;--file-surface:#ffffff;--file-text:#20303d;--file-muted:#546572;--file-border:#8593a0;--file-control:#ffffff;--file-control-hover:#e4edf3;--file-control-text:#20303d;--file-focus:#006d94;--file-error:#b32828;--file-accent:#007d91;--file-grid:#8ba7b1;--file-glow:#d5e6ec;color-scheme:light}
 /* Before the renderer mounts, its loading/error shell follows the shared page palette. */
 :root:not([data-file-theme]),:root[data-file-shared-theme]{--file-background:var(--cream);--file-text:var(--ink);--file-font:var(--font)}
+.file-bootstrap [hidden]{display:none!important}.file-bootstrap :focus-visible{outline:3px solid var(--file-focus);outline-offset:2px}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}#file-viewer{width:100%;height:100%;position:relative;min-width:0}noscript{padding:16px}

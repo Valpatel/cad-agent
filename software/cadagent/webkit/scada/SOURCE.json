@@ -6,10 +6,10 @@
   "sourceRelease": "9.3.0",
   "initialCadAgentImportCommit": "6a3f011dd57a0658ebca035b0fa82c674e34ac2c",
   "sourceInventorySha256": "137c61c250db805bc54949300cbc12cf7788a4f688c79be4dbe8c3a8c5f6aca4",
-  "authorization": "Maintainer-authorized physical transfer and public cad-agent integration; original package terms retained.",
+  "authorization": "Project maintainer authorized physical integration and MIT licensing of project-owned SCADA source, artwork, documentation and skills in cad-agent; see https://github.com/Valpatel/cad-agent/issues/713. Third-party material retains its own terms.",
   "packageTerms": {
     "private": true,
-    "license": "UNLICENSED"
+    "license": "MIT"
   },
   "ownership": {
     "ui": "symbols, system contracts, renderer, gallery and UI API",

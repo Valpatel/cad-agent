@@ -24,7 +24,7 @@ test('real inventory exposes every equipment type, declared variant/state and ta
   assert.equal(model.counts.equipment,inputs.components.components.length);
   assert.equal(model.elements.length,inputs.gallery.symbols.length+inputs.gallery.states.length);
   assert.equal(model.simulations.length,inputs.scenarios.scenarios.length);
-  assert.equal(model.license,'UNLICENSED');
+  assert.equal(model.license,'MIT');
   for(const item of model.elements)assert.ok(item.image.startsWith('/kit/scada/ui/img/'));
   for(const item of model.simulations){assert.ok(item.href.startsWith('/kit/scada/explorer/index.html?scenario='));assert.ok(item.image.startsWith('/kit/scada/sim/img/'));}
   const pages=toolkitPages(model);
@@ -79,6 +79,22 @@ test('filters combine words, category and entry kind without altering catalogue 
   for(const choice of [{query:'pump solar'},{category:'power'},{kind:'variant'}])assert.equal(matchesToolkitCard(card,choice),false);
   assert.equal(matchesToolkitCard(card,{query:'  '}),true);
   assert.equal(matchesToolkitCard({search:'<script>',category:'x'},{query:'<script>'}),true,'search is plain text, never HTML or code');
+});
+
+test('SCADA human documentation and agent workflows use the existing rendered site owners',()=>{
+  const {pages}=toolkitPages(scadaToolkitModel(fixture()));
+  for(const page of pages.filter(page=>page.url.startsWith('/toolkit/scada'))) {
+    assert.match(page.body,/MIT-licensed/);
+    assert.doesNotMatch(page.body,/UNLICENSED|href="\/kit\/scada\/[^"#?]*\.md/);
+    assert.match(page.body,/href="\/docs\/practice\/scada\/README">Use &amp; extend|href="\/docs\/practice\/scada\/README">Use & extend/);
+  }
+  const overview=pages.find(page=>page.url==='/toolkit/scada');
+  for(const name of ['component-authoring','system-authoring','model-adaptation','viewer-review','distribution-review']) {
+    assert.ok(overview.body.includes(`/skills/scada-${name}/SKILL`));
+    assert.ok(overview.markdown.includes(`/skills/scada-${name}/SKILL`));
+  }
+  assert.match(overview.body,/href="\/docs\/agent-workflow">For agents/);
+  for(const owner of ['ui','sim'])assert.ok(overview.body.includes(`/repo/folders/d-software/d-cadagent/d-webkit/d-scada/d-${owner}/README`));
 });
 
 test('combined Toolkit agent text binds every local link to its published origin without rewriting examples',()=>{

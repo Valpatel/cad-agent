@@ -21,7 +21,7 @@ browser-dependent behavior of ES modules opened with `file:` URLs.
 
 The UI and simulation packages also expose ordinary package manifests under
 `software/cadagent/webkit/scada/{ui,sim}/`. A local consumer may use those source
-packages or create its own `npm pack` artifact under the retained package terms.
+packages or create its own `npm pack` artifact under the included MIT license.
 The runtime packages have no external JavaScript runtime dependencies. A runtime
 export omits authoring tools/tests intentionally; it is not a complete development
 checkout or a substitute for the local source copy.
@@ -30,7 +30,7 @@ checkout or a substitute for the local source copy.
 
 The Python wheel and `cad-agent webkit` copy carry the complete browser SDK,
 including SCADA modules, schemas, scenario definitions, local galleries, examples,
-reference notes and retained license notices. Gallery and documentation paths in
+reference notes and complete license notices. Gallery and documentation paths in
 package exports continue to resolve locally. The gallery makes this a larger SDK rather than a minimal viewer export; measure
 the selected artifact when sizing a deployment. The source checkout also supplies
 separate tools, tests and agent skills. A wheel is not the authoring checkout.

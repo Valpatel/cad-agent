@@ -1,5 +1,7 @@
 # Scope: software/cadagent/webkit/scada/ui
 
+Follow the repository [AGENTS.md](https://github.com/Valpatel/cad-agent/blob/dev/AGENTS.md) and shared [work-tracking workflow](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/cad-work-tracking/SKILL.md). This file adds domain boundaries, not a separate approval process.
+
 - Read `README.md`, `STYLE_GUIDE.md`, `CONTRIBUTING.md` and the relevant `docs/API.md` / `docs/SYSTEM_FORMAT.md` contract before changing public components, viewer behavior or system definitions. Do not invent an import or binding format.
 - Follow `src/README.md` for domain ownership. Public exports point to domain implementations; keep that single ownership. Keep catalog/contracts independent of symbols, viewer, workspace and host code.
 - `src/` is canonical. Use `npm --prefix tools/webkit/scada run build:metadata` and `check:metadata` for metadata; the site compiler copies the owner to `/kit/scada/ui/`. Never repair generated output.
@@ -7,7 +9,7 @@
 - Declare and validate state fields and ports. Preserve escaping, unique SVG instance IDs, accessible descriptions, keyboard controls and reduced motion. JSON/bindings are data, never executable expressions.
 - Keep geometry/styles in the existing namespaces and preserve the twin's `hostState` behavior. Do not override parent inventory, fault or incident state with standalone defaults.
 - For behavior/visual changes, run the relevant tests and inspect real renders, including small cards and large previews. Regenerate affected thumbnails/manifest/contact sheet from source; do not hand-edit generated images.
-- Keep the README map, public examples, style guide and prompts aligned with real exports and generated artifacts. Report checks actually performed. Do not infer public npm publication, an open-source license or a live Site update from local packaging.
+- Keep the README map, public examples, style guide and prompts aligned with real exports and generated artifacts. Report checks actually performed. The package is MIT-licensed; its private publication flag is separate. Do not infer public npm publication or a live site update from local packaging.
 - Use the [component-authoring skill](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-component-authoring/SKILL.md) for a new type or variant and the [viewer-review skill](https://github.com/Valpatel/cad-agent/blob/dev/.agents/skills/scada-viewer-review/SKILL.md) for rendered acceptance. Declare meaningful states and model support separately; adding artwork alone does not add an equipment solver.
 
 - The reusable gallery belongs to this package at `img/`. Generate SVGs and indexes with `npm --prefix tools/webkit/scada run gallery:generate`, verify `npm --prefix tools/webkit/scada run gallery:check` and image-mode QA, and regenerate affected JPEGs. Never patch output hashes or duplicate artwork in the exporter. A different library owns its own `img/`; scenario previews belong to `scada-sim/img/`.

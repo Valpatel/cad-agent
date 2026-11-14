@@ -1,6 +1,6 @@
 # SCADA ownership and maintenance
 
-Read the repository AGENTS.md, this [owner map](README.md), and the affected
+Read the repository [AGENTS.md](https://github.com/Valpatel/cad-agent/blob/dev/AGENTS.md), this [owner map](README.md), and the affected
 library's README before changing source. This is maintained cad-agent source;
 do not edit or fetch the historical example repository as a build step.
 
@@ -25,7 +25,7 @@ do not edit or fetch the historical example repository as a build step.
   galleries, topology maps or provenance hashes by hand.
 - Keep each library's `img/` with it. Minimal runtime profiles may omit galleries
   and tooling; this distribution decision must not scatter their source ownership.
-- Preserve package terms in LICENSE.txt and notices. New resources need provenance,
+- Preserve the MIT license in each package's LICENSE.txt and every third-party notice. New resources need provenance,
   declared rights and deterministic local inputs; no hidden remote runtime imports.
 - Update affected folder maps and canonical agent skills, register user guides in
   `docs/areas.yaml`, and regenerate `docs/map.md` after changing the folder tree.

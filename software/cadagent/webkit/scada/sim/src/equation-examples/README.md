@@ -185,6 +185,4 @@ Engineering references reviewed for the equations and their limitations:
 
 The implementation is original JavaScript; no Modelica source was copied or
 vendored and Modelica is not a dependency. Those projects are references, not
-endorsements or validation of this implementation. These files inherit this
-private package's `UNLICENSED` status; references do not grant redistribution
-rights to this repository's code.
+endorsements or validation of this implementation. These original files use the package's MIT license. Reference links do not grant redistribution rights to external publications or implementations.

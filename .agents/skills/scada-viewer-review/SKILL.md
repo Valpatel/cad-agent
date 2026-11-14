@@ -1,7 +1,7 @@
 ---
 name: scada-viewer-review
 description: Use when visually testing SCADA equipment states, animation, diagrams, inspectors, controls, audio or shared model-session behavior in a real browser.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm scada-browser"
 ---
@@ -86,4 +86,4 @@ new artwork to [component authoring](../scada-component-authoring/SKILL.md), and
 composition to [system authoring](../scada-system-authoring/SKILL.md). Refresh owned
 image outputs only after the relevant runtime source is stable.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

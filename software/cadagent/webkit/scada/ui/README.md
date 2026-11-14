@@ -8,7 +8,7 @@ The [state coverage review](./docs/STATE_COVERAGE.md) separates equipment-specif
 responses, shared effects, actual browser evidence and remaining lifecycle gaps
 for every type and variant. Catalog membership does not mean every state is complete.
 
-This is cad-agent’s canonical equipment and diagram library. The SCADA Explorer consumes it directly; another host can use a local file dependency, an npm tarball or the source browser modules. The package is `private: true` and `UNLICENSED`; it has not been published to the public npm registry, and packaging does not grant new license rights.
+This is cad-agent’s canonical equipment and diagram library. The SCADA Explorer consumes it directly; another host can use a local file dependency, an npm tarball or the source browser modules. Project-owned code, symbols and documentation use the [MIT license](LICENSE.txt). The package remains `private: true` to prevent accidental npm publication; this flag does not restrict MIT reuse.
 
 [API reference](./docs/API.md) · [System format](./docs/SYSTEM_FORMAT.md) · [Style guide](./STYLE_GUIDE.md) · [Contributing](./CONTRIBUTING.md) · [Agent prompts](./AGENT_PROMPTS.md) · [Animated image gallery](./img/README.md) · [Thumbnail manifest](./metadata/thumbnails.json) · [Variant previews](./docs/VARIANTS.md) · [Power references](./docs/POWER_REFERENCES.md) · [Agriculture references](./docs/AGRICULTURE_REFERENCES.md)
 
@@ -411,4 +411,4 @@ From the repository root, run `npm --prefix tools/webkit/scada run build:metadat
 
 The notice’s source-identity and authorization record is the repository-owned
 [source provenance](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/SOURCE.json);
-the package includes the actual retained terms in `LICENSE.txt`.
+the package includes the complete MIT license in `LICENSE.txt`.

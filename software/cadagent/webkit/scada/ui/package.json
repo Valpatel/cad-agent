@@ -3,7 +3,7 @@
   "version": "1.4.1",
   "description": "Framework-free animated SCADA equipment and accessible workspace primitives with typed visual state",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "./src/index.mjs",
   "module": "./src/index.mjs",

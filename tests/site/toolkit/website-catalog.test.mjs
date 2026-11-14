@@ -255,18 +255,34 @@ test('every cover is used once and no dense figure is a cover', async () => {
 test('Toolkit is a native capability with package terms and the same catalogue identity', async () => {
   for(const id of ['scada-elements','scada-simulations']) {
     const entry=catalog.items.find(i=>i.id==='demo-'+id);
-    assert.ok(entry,id);assert.equal(entry.kind,'demo');assert.equal(entry.status,'ours');assert.equal(entry.license,'UNLICENSED');
+    assert.ok(entry,id);assert.equal(entry.kind,'demo');assert.equal(entry.status,'ours');assert.equal(entry.license,'MIT');
     assert.ok(entry.url.startsWith(ORIGIN+'/toolkit/scada/'));
   }
   const toolkit=await json('toolkit/scada/catalog.json');
   assert.equal(toolkit.schema,'cad-agent-scada-browser/1');
+  assert.equal(toolkit.license,'MIT');
   assert.equal(toolkit.simulations[0].id,'wastewater-digester');
   for(const route of ['toolkit','toolkit/scada','toolkit/scada/elements','toolkit/scada/simulations','toolkit/models']) {
     const html=await readFile(path.join(out,route+'.html'),'utf8');
     assert.ok(html.includes(`<link rel="canonical" href="${ORIGIN}/${route}">`));
     assert.ok(html.includes('href="/toolkit" data-keep aria-current="page"'));
     assert.doesNotMatch(html,/<iframe\b|digester-insight|chatgpt\.site/);
+    assert.doesNotMatch(html,/UNLICENSED|including the transferred SCADA libraries/);
     assert.ok((await readFile(path.join(out,route+'.md'),'utf8')).startsWith('# '));
+  }
+});
+
+test('SCADA guides and skills resolve inside the published shared site frame',async()=>{
+  const html=await readFile(path.join(out,'toolkit/scada.html'),'utf8');
+  assert.doesNotMatch(html,/href="\/kit\/scada\/[^"#?]*\.md/);
+  const destinations=new Set([...html.matchAll(/href="([^"#]+)"/g)].map(match=>match[1]).filter(href=>href.startsWith('/repo/folders/')||href.startsWith('/skills/scada-')||href.startsWith('/docs/practice/scada/')));
+  assert.ok(destinations.size>=9,'library maps, local guide and all five domain skills are discoverable');
+  for(const href of destinations) {
+    const target=await readFile(local(href)+'.html','utf8');
+    assert.match(target,/aria-label="Main"/);
+    assert.match(target,/href="\/toolkit"/);
+    assert.match(target,/href="\/docs\/agent-workflow"/);
+    assert.match(target,/Valpatel Software LLC/);
   }
 });
 

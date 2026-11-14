@@ -1,7 +1,7 @@
 ---
 name: scada-distribution-review
 description: Use when verifying extraction or distribution of cad-agent SCADA assets into another application, including model/UI closure, license provenance and actual consumers.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm"
   optional: "scada-browser"
@@ -46,8 +46,8 @@ flowchart TD
    SDK, including local galleries, contextual guides, examples and package notices.
    An assembly-guide export uses its explicit reader closure and excludes SCADA.
    Do not create stripped SCADA metadata or an unused intermediate runtime profile.
-   Preserve [package terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
-   and recorded authorization; an export does not grant a new license.
+   Include the complete [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)
+   in portable packages, preserve third-party notices and keep source provenance accurate.
 3. Preserve `getSnapshot`, `subscribe` returning unsubscribe and optional dispatch,
    one host-owned clock/session, explicit read-only behavior and independent views.
    Keep domain documents, equations, camera and command authority separate. Share
@@ -76,4 +76,4 @@ Existing entrypoints include `npm --prefix tools/webkit/scada test`, package-loc
 or filter options. [Model adaptation](../scada-model-adaptation/SKILL.md) and
 [viewer review](../scada-viewer-review/SKILL.md) own their deeper behavior checks.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

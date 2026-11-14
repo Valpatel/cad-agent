@@ -2,6 +2,7 @@ import {toolkitExampleChecks} from './toolkit-examples-browser.mjs';
 /** Toolkit uses the same site frame, local assets and browser/error recorder as Explore. */
 export async function toolkitBrowserChecks({open,fail}) {
   await toolkitExampleChecks({open,fail});
+  await scadaNativeNavigationChecks({open,fail});
   for(const width of [320,1366]) for(const color of ['light','dark']) {
     const {page,done}=await open('/toolkit/scada/elements?q=pump&category=rotating&kind=equipment',{width,color});
     try {
@@ -73,4 +74,34 @@ export async function toolkitBrowserChecks({open,fail}) {
     await button.click();await retry.page.locator('[data-scada-preview-art] [data-scada-type="pump"]').waitFor();
     await retry.page.keyboard.press('Escape');
   } finally {await retry.done();}
+}
+
+/** Human documentation shares the existing frame; raw assets remain direct downloads. */
+export async function scadaNativeNavigationChecks({open,fail}) {
+  for(const options of [{width:320,color:'light',js:true},{width:1366,color:'dark',js:false}]) {
+    for(const route of ['/toolkit/scada','/toolkit/scada/elements','/toolkit/scada/simulations']) {
+      const {page,done}=await open(route,options);
+      try {
+        const nav=page.getByRole('navigation',{name:'Main'});
+        if(await nav.getByRole('link',{name:'Toolkit',exact:true}).getAttribute('aria-current')!=='page')fail('SCADA native frame',`${route}: Toolkit is not the current main section`);
+        if(await nav.getByRole('link',{name:'For agents',exact:true}).getAttribute('href')!=='/docs/agent-workflow')fail('SCADA native frame',`${route}: shared agent entrypoint missing`);
+        if(!/MIT-licensed/.test(await page.locator('.toolkit-license').textContent()))fail('SCADA terms',`${route}: project-owned terms are stale`);
+        if(await page.locator('.toolkit-shell a[href^="/kit/scada/"][href$=".md"]').count())fail('SCADA native guides',`${route}: human documentation exits to raw Markdown`);
+        if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))fail('SCADA native frame',`${route} @${options.width}: horizontal overflow`);
+        if(route!=='/toolkit/scada')continue;
+        for(const label of ['UI library','Models & equations','Replace equations','For agents']) {
+          const link=page.locator('.toolkit-shell').getByRole('link',{name:label,exact:true});
+          const destination=new URL(await link.getAttribute('href'),page.url());
+          await link.scrollIntoViewIfNeeded();await link.focus();
+          await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+          await Promise.all([page.waitForURL(url=>url.origin===destination.origin&&url.pathname===destination.pathname,{waitUntil:'domcontentloaded'}),link.press('Enter')]);
+          await page.getByRole('navigation',{name:'Main'}).waitFor();
+          if(!await page.getByRole('navigation',{name:'Main'}).getByRole('link',{name:'Toolkit',exact:true}).isVisible())fail('SCADA native guides',`${label}: shared navigation disappeared`);
+          if(!await page.locator('.site-footer').getByRole('link',{name:'Valpatel Software LLC',exact:true}).count())fail('SCADA native guides',`${label}: shared attribution disappeared`);
+          await page.goBack({waitUntil:'domcontentloaded'});
+          await page.getByRole('heading',{name:'Build a living system.',exact:true}).waitFor();
+        }
+      } finally {await done();}
+    }
+  }
 }

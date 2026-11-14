@@ -1,7 +1,7 @@
 ---
 name: scada-system-authoring
 description: Use when defining a SCADA process, adding an example simulation, composing multiple layouts over one model or integrating a supported model adapter.
-license: UNLICENSED
+license: MIT
 metadata:
   requires: "node npm"
   optional: "scada-browser"
@@ -86,4 +86,4 @@ flowchart TD
    evidence and missing physics. A topology SVG and a paused JPEG are useful
    previews; neither proves live interaction or engineering qualification.
 
-[Skill map](README.md) · [All skills](../README.md) · [Retained terms](../../../software/cadagent/webkit/scada/LICENSE.txt)
+[Skill map](README.md) · [All skills](../README.md) · [MIT license](../../../software/cadagent/webkit/scada/LICENSE.txt)

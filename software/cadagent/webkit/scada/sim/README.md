@@ -69,7 +69,7 @@ model.destroy();
 
 `model.start()` / `model.stop()` provide an optional explicit clock instead. Choose either a host timer or the model clock for a session. Creating or importing a model never starts that clock. A read-only `createPlaceholderAdapter` omits `dispatch` and retains the shared subscription.
 
-The package is `private: true`, `UNLICENSED`, with no public npm publication or new license grant. The repository can produce local npm tarballs for the owner's other applications. Install those tarballs or use the source package; the model package has no runtime dependency on the UI package.
+Project-owned models, scenarios and documentation use the [MIT license](LICENSE.txt). The package remains `private: true` to prevent accidental npm publication; local npm tarballs can be reused under MIT. Install those tarballs or use the source package; the model package has no runtime dependency on the UI package.
 
 ```mermaid
 flowchart TB
@@ -186,4 +186,4 @@ The package's [tests map](https://github.com/Valpatel/cad-agent/blob/dev/tests/w
 
 The notice’s source-identity and authorization record is the repository-owned
 [source provenance](https://github.com/Valpatel/cad-agent/blob/dev/software/cadagent/webkit/scada/SOURCE.json);
-the package includes the actual retained terms in `LICENSE.txt`.
+the package includes the complete MIT license in `LICENSE.txt`.

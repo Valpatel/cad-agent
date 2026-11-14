@@ -171,7 +171,8 @@ export function renderScadaComponent(type,{id,label,state={},variant,decorative=
  const gaugeLabels={temperature:'TEMP',opening:'OPEN',rodPosition:'RODS',primaryFlow:'PRI',secondaryFlow:'SEC',integrity:'INT',pressure:'PRESS',irradiance:'SUN',humidity:'RH',moisture:'MOIST',airflow:'AIR',oxygen:'O₂',position:'POS',current:'CURR'};
  const gaugeMarkup=gauges.length?`<span class="scada-component-gauges" aria-hidden="true">${gauges.map(field=>{
   const unit=field.unit==='index'?'idx':field.unit||'';
-  const value=invalidReading?'—':`${Number(current[field.key].toFixed(1))}${unit&&unit!=='%'?' ':''}${unit}`;
+  const reading=valvePosition&&field.key==='opening'?valvePosition.formattedOpening:Number(current[field.key].toFixed(1));
+  const value=invalidReading?'—':`${reading}${unit&&unit!=='%'?' ':''}${unit}`;
   const width=invalidReading?0:100*(current[field.key]-field.min)/(field.max-field.min);
   return `<span data-scada-gauge="${field.key}"${invalidReading?' data-reading-valid="false"':''}><small title="${esc(field.label)}">${esc(field.shortLabel??gaugeLabels[field.key]??field.key.toUpperCase())}</small><i><b style="width:${width}%"></b></i><strong data-scada-reading="${field.key}">${esc(value)}</strong></span>`;
  }).join('')}</span>`:'';

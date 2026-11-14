@@ -68,6 +68,20 @@ test('valve cards use supplied position rather than commands and keep unavailabl
     await new Promise(resolve=>setTimeout(resolve,0));
     assert.match(viewer.root.querySelector('[data-scada-viewer-error]').textContent,/Valve interlock/);
     assert.equal(status(viewer).textContent,'35% OPEN','rejected commands cannot repaint the supplied position');
+    for(const [opening,reading] of [[0,'0'],[.001,'<0.1'],[.1,'0.1'],[35.56,'35.6'],[99.9,'99.9'],[99.999,'>99.9'],[100,'100']]){
+      snapshot={...snapshot,components:{...snapshot.components,valve:{active:true,open:true,opening}}};
+      viewer.refresh();observer.refresh();
+      const label=opening===0?'CLOSED':opening===100?'OPEN':`${reading}% OPEN`;
+      for(const instance of [viewer,observer])assert.equal(status(instance).textContent,label);
+      viewer.select('valve');viewer.openInspector();
+      const quick=viewer.root.querySelector('[data-scada-popover] [data-scada-state-field="opening"] dd');
+      assert.equal(quick.textContent,reading);assert.equal(quick.childElementCount,0);
+      viewer.openDetails();
+      const detailed=viewer.root.querySelector('[data-scada-dialog] [data-scada-state-field="opening"] dd');
+      assert.equal(detailed.textContent,reading);assert.equal(detailed.childElementCount,0);
+      assert.equal(snapshot.components.valve.opening,opening,'display precision never changes the supplied model value');
+      viewer.closeInspector();
+    }
     for(const state of [{active:false,open:true,opening:85},{active:false,open:false,opening:73},{active:true,open:true,opening:100,fault:true}]){
       snapshot={...snapshot,components:{...snapshot.components,valve:state}};
       viewer.refresh();observer.refresh();

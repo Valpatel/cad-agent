@@ -16,6 +16,8 @@
 .scada-component-gauges i{display:block;height:4px;flex:1;background:#153c50;border:1px solid #537d90;border-radius:3px;overflow:hidden}
 .scada-component-gauges b{display:block;height:100%;background:#63e6d9;box-shadow:0 0 5px #63e6d9;transition:width .5s ease}
 .scada-component-condition{position:absolute;top:6px;right:7px;width:24px;height:24px;filter:drop-shadow(0 0 5px #ffd38a60);pointer-events:none}
+/* These two mechanisms reserve the upper right for their position tag. */
+.scada-component:is([data-scada-type=intake-gate],[data-scada-type=relief-valve])>.scada-component-condition{left:7px;right:auto}
 .scada-component-condition svg{display:block;width:100%;height:100%;overflow:visible}
 .scada-component-condition svg path:first-child{fill:#493c22;stroke:#ffd38a;stroke-width:1.4;stroke-linejoin:round}
 .scada-component-condition svg path:last-child{fill:none;stroke:#ffe7b4;stroke-width:2.4;stroke-linecap:round}

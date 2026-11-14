@@ -173,8 +173,16 @@ test('valve families and carrier variants show position by color, geometry and r
      assert.equal(partial.querySelector('.scada-valve-position-tag text').textContent,'35% OPEN');
      assert.equal(partial.querySelector('.scada-valve-body').getAttribute('stroke'),'#7ee9ef');
      assert.equal(nearlyClosed.dataset.valvePosition,'partial');assert.equal(nearlyOpen.dataset.valvePosition,'partial');
-     assert.equal(nearlyClosed.querySelector('.scada-valve-position-tag text').textContent,'0.1% OPEN');
-     assert.equal(nearlyOpen.querySelector('.scada-valve-position-tag text').textContent,'99.9% OPEN');
+     assert.equal(nearlyClosed.querySelector('.scada-valve-position-tag text').textContent,'<0.1% OPEN');
+     assert.equal(nearlyOpen.querySelector('.scada-valve-position-tag text').textContent,'>99.9% OPEN');
+     assert.equal(nearlyClosed.querySelector('[data-scada-reading="opening"]').textContent,'<0.1%');
+     assert.equal(nearlyOpen.querySelector('[data-scada-reading="opening"]').textContent,'>99.9%');
+     assert.equal(nearlyClosed.dataset.opening,'0.001');assert.equal(nearlyOpen.dataset.opening,'99.999','formatting does not change geometry inputs');
+     for(const [node,entity] of [[nearlyClosed,'&lt;0.1% OPEN'],[nearlyOpen,'&gt;99.9% OPEN']]){
+      const text=node.querySelector('.scada-valve-position-tag text');
+      assert.equal(text.childElementCount,0,'position bounds remain text, never SVG elements');
+      assert.ok(text.outerHTML.includes(entity),'SVG position bounds are escaped');
+     }
      assert.equal(overridden.dataset.valvePosition,'closed');
     }
    }finally{dom.window.close();}

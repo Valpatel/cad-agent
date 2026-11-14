@@ -269,7 +269,7 @@ export class ScadaViewer {
     return `<dl class="scada-viewer-readings${compact ? ' scada-quick-readings' : ''}">${values.map(([key, value]) => {
       const field = fields.find(item => item.key === key), title = field?.label ?? key;
       const unavailable = !resolved.ok || (position && !position.available && (key === 'open' || typeof value === 'number'));
-      const reading = position && key === 'opening' ? position.opening : value;
+      const reading = position && key === 'opening' ? position.formattedOpening : value;
       const displayed = unavailable ? 'Unavailable' : typeof reading === 'number' ? String(Math.round(reading * 100) / 100) : typeof reading === 'object' ? JSON.stringify(reading) : String(reading);
       return `<div data-scada-state-field="${esc(key)}"><dt>${esc(title)}</dt><dd>${esc(displayed)}</dd></div>`;
     }).join('')}</dl>`;

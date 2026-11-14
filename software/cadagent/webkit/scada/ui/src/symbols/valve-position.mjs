@@ -14,8 +14,10 @@ export function getValvePosition(type, state) {
   // contract has no independent position quality, so do not claim a reading.
   const available = state.status !== 'offline' && state.connected !== false;
   const kind = !available ? 'unavailable' : opening === 0 ? 'closed' : opening === 100 ? 'open' : 'partial';
-  // Keep rounded partial values distinct from the two exact endpoints.
-  const percent = Number(Math.max(.1, Math.min(99.9, opening)).toFixed(1));
-  const label = kind === 'partial' ? `${percent}% OPEN` : kind === 'unavailable' ? 'POSITION UNAVAILABLE' : kind.toUpperCase();
-  return {kind, opening, available, label, shortLabel:available ? label : 'UNKNOWN', ...PALETTE[kind]};
+  // Every position reading shares this precision. Bounds express tiny partial
+  // openings honestly instead of rounding them to an exact endpoint.
+  const formattedOpening = opening > 0 && opening < .1 ? '<0.1'
+    : opening > 99.9 && opening < 100 ? '>99.9' : String(Number(opening.toFixed(1)));
+  const label = kind === 'partial' ? `${formattedOpening}% OPEN` : kind === 'unavailable' ? 'POSITION UNAVAILABLE' : kind.toUpperCase();
+  return {kind, opening, formattedOpening, available, label, shortLabel:available ? label : 'UNKNOWN', ...PALETTE[kind]};
 }

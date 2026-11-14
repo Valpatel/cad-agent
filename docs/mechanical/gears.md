@@ -4,15 +4,18 @@
 involute spur gears, the same teeth on a ring, and straight bevel gears for shafts at 90°. It also returns the
 reference dimensions of a gear and of a pair, so the script places two gears from numbers and a test can check them.
 **The teeth are theoretical geometry. Nothing here says a gear is strong enough, and a pair that meshes in CAD is not
-a pair that runs.** The strength formulas are a separate module (#721).
+a pair that runs.** Strength is a separate piece of work (gear formulas, #721) that this module neither needs nor
+imports.
+
+**Units: millimetres and degrees, the module included.** `cadagent.formulas` works in SI (metres), so convert a
+length before passing it from one to the other. An inch gear of diametral pitch P has the module 25.4 / P mm.
 
 ```python
-from cadagent.mechanical.gears import (external_ring_gear, gear_pair_dimensions, module_from_diametral_pitch,
-                                       spur_gear)
+from cadagent.mechanical.gears import external_ring_gear, gear_pair_dimensions, spur_gear
 
 pair = gear_pair_dimensions(2.0, 18, 40, backlash=0.05)
 pinion = spur_gear(2.0, 18, 10, bore=6, backlash=0.05)
-steel = spur_gear(module_from_diametral_pitch(12), 16, 12.7, pressure_angle=14.5)   # warns: undercut
+steel = spur_gear(25.4 / 12, 16, 12.7, pressure_angle=14.5)   # 12 DP, so module 2.117 mm; warns: undercut
 ```
 
 ## How a tooth is drawn
@@ -45,7 +48,11 @@ flowchart TD
 | Undercut | Below 18 teeth at 20° and below 32 at 14.5°, the cutter's tip removes the bottom of the involute. The tooth is drawn undercut, as it would be cut; the dimensions say `undercut: True` and name the tooth count that avoids it, and the solid functions raise a `UserWarning`. A positive `profile_shift` removes it. |
 
 Curves are sampled until the polygon through the samples stays within `chord_tolerance` (0.005 mm by default) of the
-curve, and an interpolating spline is put through the samples.
+curve, and an interpolating spline is put through the samples. A tolerance that 1024 segments on one curve do not
+reach (about 1e-6 mm on a module 2 gear) is refused with a `ValueError`, not quietly missed.
+
+A `bore` leaves at least one module of wall under the root circle; `external_ring_gear` takes a thinner rim when
+asked. Every size is checked before a solid is made, and NaN or infinity is refused by name.
 
 `backlash` thins each tooth by that much along the pitch circle, so a pair made with the same value has about twice
 that play. `tooth_thickness_mm` is π·m/2, plus 2·x·m·tan α for a profile shift x, less the backlash allowance.
@@ -107,6 +114,19 @@ teeth / cos(pitch angle) teeth, laid on the back cone, and every point of it run
 to, but not, the spherical involute or the octoid a bevel generator cuts. The body is plain: back and front cones
 across the teeth, flat faces inside, a through bore.
 
+| Limit | What happens |
+|---|---|
+| Face width up to a third of the cone distance | The usual range. Nothing is reported. |
+| Face width above a third | The gear is drawn, the dimensions carry a note and `bevel_gear` raises a `UserWarning`: the small-end teeth get very fine. |
+| Face width above 0.9 of the cone distance | Refused with a `ValueError` that names the limit in mm: the teeth vanish toward the apex. |
+| Too few teeth for a back face (4 teeth against 40, say) | Refused with a `ValueError` that names the tooth counts; a smaller `backing` may fit. |
+
+**Backlash shrinks toward the apex.** `backlash` thins the large-end tooth, and the allowance scales with the tooth
+along the face. A pair has the same angular play all along the tooth, but the gap between the flanks is smaller at the
+small end, by (cone distance − face width) / cone distance. Measured on a 14/64 pair of module 2 with an 18 mm face
+and a backlash of 0.05: 0.034 mm at the small end against 0.047 mm at the large end. Size the allowance for the small
+end.
+
 ## How it was checked
 
 The tests measure the solids rather than only build them, and a meshed pair turns by the backlash it was given and no
@@ -119,11 +139,21 @@ In [`tests/mechanical/test_gears.py`](../../tests/mechanical/test_gears.py):
 
 - tooth count, by turning the gear one tooth pitch onto itself; tip and root radii; one valid solid;
 - tooth thickness on the pitch circle and along the involute against the closed form, to 0.002 mm;
-- a meshed pair has no common volume through a tooth pitch, the first gear can turn either way by the backlash
-  allowance and no further, and the teeth collide when the centres are 0.3 mm closer. This holds for 20° and 14.5°
-  pairs, an undercut pinion, a profile-shifted pinion and the bevel pairs at 90°;
-- the measured play matched the backlash allowance within 0.002 mm for the spur pairs and within 0.006 mm for the
-  bevel pairs, including one with an undercut virtual gear.
+- a meshed spur pair has no common area at twelve steps through one tooth pitch, and its flanks stand
+  backlash · cos(pressure angle) apart, within 0.001 mm, at two phases. The first gear can turn either way by the
+  backlash allowance and no further, and the teeth collide when the centres are 0.3 mm closer. This holds for a 20°
+  pair, a 14.5° pair with an undercut pinion and the same with a profile-shifted pinion;
+- a meshed bevel pair at 90° has no common volume, and at the small end its flanks stand apart by the reduced play
+  given above, within 0.001 mm. Turned 0.6 of the allowance either way, the gap left is within 0.001 mm of the expected one for a
+  20° pair of 13 and 14 teeth. For a 14.5° mitre pair of 10 teeth, whose virtual gears are undercut, one side has up
+  to 0.003 mm more play than the allowance, never less. Both collide at 1.4 of the allowance and when mounted 0.3 mm
+  too close. The bevel pairs are checked at two phases, not through a whole pitch;
+- pairs without backlash touch: a spur pair and a bevel mitre pair show no overlap in mesh and overlap after a turn
+  of 0.05°;
+- the same arguments give the same solid, to a nanometre at every corner.
+
+Spur gears are measured on their flat end face, after a check that the gear is the prism of that face. A bevel
+pair's gap is measured between the teeth within 5 mm of the plane of the two axes, which can only read too wide.
 
 Build times on a desktop, CadQuery 2.8: a 176-tooth spur gear 0.2 s (0.8 s for the first solid of a session); bevel
 gears of 16, 32 and 60 teeth 1.1 s,
@@ -133,8 +163,8 @@ gears of 16, 32 and 60 teeth 1.1 s,
 
 ## What it does not do
 
-- **No strength, wear or life check.** No bending or contact stress, no material. Use the gear formulas (#721) for a
-  first check and test the part.
+- **No strength, wear or life check.** No bending or contact stress, no material. Gear formulas for a first check
+  are tracked in #721; whatever they say, test the part.
 - **No helical, internal, rack, worm, spiral-bevel or hypoid gears**, and no bevel shaft angle other than 90°.
 - **No tip relief, crowning, chamfers, hubs or keyways**, and no tolerance classes: every tooth is identical and
   exact.

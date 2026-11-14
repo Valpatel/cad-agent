@@ -181,7 +181,7 @@ errors, missing = [], []
 manifest = {'format': 'scada-scenario-thumbnails', 'version': 1,
             'source_hashes': source_hashes(), 'generator_sha256': sha(Path(__file__)),
             'capture_helper_sha256': sha(CAPTURE_HELPER),
-            'capture': {'renderer': 'Chromium software rendering, sRGB', 'format': 'jpeg', 'quality': 85, 'viewport': {'width': 1440, 'height': 1600}, 'model_minutes': 0, 'running': False, 'animation_frame_ms': 1200, 'crop': 'Actual contained viewer after Zoom to fit; overview scale depends on the viewport and declared diagram bounds.'},
+            'capture': {'renderer': 'Chromium software rendering, sRGB', 'format': 'jpeg', 'quality': 85, 'viewport': {'width': 1440, 'height': 1600}, 'model_minutes': 0, 'running': False, 'animation_frame_ms': 1200, 'crop': 'Actual contained viewer after Zoom to fit; overview scale and eligible process-chain projection depend on the viewport; card sizes and port identities remain authored.'},
             'scenarios': []}
 with sync_playwright() as playwright:
     browser = playwright.chromium.launch(executable_path=args.chromium, headless=True, args=['--no-sandbox', '--disable-gpu', '--force-color-profile=srgb'])
@@ -220,7 +220,19 @@ with sync_playwright() as playwright:
         system = json.loads((PACKAGE / 'scenarios' / entry['system']).read_text())
         active_view = page.locator('#lab-viewer [data-scada-view-choice][aria-current=page]').get_attribute('data-scada-view-choice')
         view_definition = next(view for view in system['views'] if view['id'] == active_view)
-        coverage = fitted_camera_coverage(page, '#lab-viewer', [placement['component'] for placement in view_definition['placements']], view_definition['canvas'])
+        # Check the independently derived presentation geometry against the actual
+        # camera, while retaining the authored world and complete equipment IDs.
+        projection = page.evaluate("""async ({system, activeView}) => {
+          const {normalizeViewerDefinition} = await import('/software/cadagent/webkit/scada/ui/src/viewer/viewer.mjs');
+          const {projectProcessLayout} = await import('/software/cadagent/webkit/scada/ui/src/viewer/process-layout.mjs');
+          const viewport=document.querySelector('#lab-viewer [data-scada-scroll]');
+          const authored=normalizeViewerDefinition(system).views.find(view=>view.id===activeView);
+          const view=projectProcessLayout(authored,{width:viewport.clientWidth,height:viewport.clientHeight,fitMaxZoom:1.5});
+          return {canvas:view.canvas,policy:view.layoutProjection ?? null};
+        }""", {'system': system, 'activeView': active_view})
+        coverage = fitted_camera_coverage(page, '#lab-viewer', [placement['component'] for placement in view_definition['placements']], projection['canvas'])
+        coverage['authoredWorldSize'] = view_definition['canvas']
+        coverage['layoutProjection'] = projection['policy']
         path = PACKAGE / scenario_asset_path('thumbnails', entry)
         path.parent.mkdir(parents=True, exist_ok=True)
         viewer.screenshot(path=str(path), type='jpeg', quality=85, animations='allow', caret='hide')

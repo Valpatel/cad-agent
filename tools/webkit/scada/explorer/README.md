@@ -17,3 +17,5 @@ flowchart TD
 From the repository root: `npm --prefix tools/webkit/scada run thumbnails:scenarios`; verify with `npm --prefix tools/webkit/scada run thumbnails:scenarios:check`.
 
 [Parent map](../README.md)
+
+Captures verify the full authored equipment inventory against the fitted presentation. The receipt records both authored world bounds and any opt-in process-chain projection, with actual camera coverage and clipping checks. Shared palette, bootstrap and local font bytes are explicit capture dependencies.

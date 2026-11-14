@@ -43,6 +43,11 @@ const viewportContract=async selector=>{
   }));
   assert.ok(['hidden','clip'].includes(result.overflow),JSON.stringify(result));
   assert.equal(result.scrollLeft,0);assert.equal(result.scrollTop,0);assert.ok(result.width>100&&result.height>100);assert.equal(result.fit,true);
+  const viewport=page.locator(selector);await expect(viewport.locator('[data-scada-camera-controls]')).toHaveCount(1);
+  await expect(viewport.locator('[data-scada-zoom]')).toHaveCount(4);
+  await expect(viewport.locator('[data-scada-zoom=fit]')).toHaveCount(1);
+  const controls=await viewport.locator('[data-scada-camera-controls]').boundingBox(),bounds=await viewport.boundingBox();
+  assert.ok(controls.x>=bounds.x&&controls.y>=bounds.y&&controls.x+controls.width<=bounds.x+bounds.width&&controls.y+controls.height<=bounds.y+bounds.height,'Camera toolbar must stay within its own viewport');
 };
 const session=async()=>{
   await open('session');const promise=page.waitForEvent('download');await page.locator('[data-action="export"]').click();
@@ -89,6 +94,35 @@ try{
     await page.emulateMedia({colorScheme:'light'});await expect.poll(mode).toBe('light');
     assert.deepEqual(await session(),before);
   });
+  await check('equipment inspector actions and on/off labels retain readable contrast in both themes',async()=>{
+    receipt.inspectorContrast=[];
+    const before=await session();
+    for(const colorScheme of ['light','dark']){
+      await page.emulateMedia({colorScheme});
+      await page.locator('#lab-viewer [data-scada-inspect]').click();
+      const dialog=page.locator('#industry-viewer-inspector-dialog');await expect(dialog).toBeVisible();
+      const buttons=dialog.locator('.scada-viewer-button:not(:disabled)');
+      assert.ok(await buttons.count()>=6);
+      await expect(dialog.locator('.scada-viewer-toggle[aria-pressed=true] span')).toContainText('On / open');
+      assert.ok(await dialog.locator('.scada-viewer-toggle[aria-pressed=false] span').count()>0);
+      for(const button of await buttons.all())for(const state of ['default','hover']){
+        if(state==='hover')await button.hover();else await page.mouse.move(0,0);
+        const result=await button.evaluate(element=>{
+          const rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number);
+          const luminance=value=>rgb(value).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
+          const background=getComputedStyle(element).backgroundColor,b=luminance(background);
+          return [element,...element.querySelectorAll('span')].map(node=>{
+            const color=getComputedStyle(node).color,f=luminance(color);
+            return {text:node.textContent.trim(),color,background,ratio:(Math.max(f,b)+.05)/(Math.min(f,b)+.05)};
+          });
+        });
+        for(const item of result)assert.ok(item.ratio>=4.5,`${colorScheme} ${state}: ${JSON.stringify(item)}`);
+        receipt.inspectorContrast.push({colorScheme,state,readings:result});
+      }
+      await shot(`equipment-inspector-${colorScheme}`);await close();
+    }
+    await page.emulateMedia({colorScheme:'light'});assert.deepEqual(await session(),before);
+  });
   await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
     for(const scenario of ['winery','wastewater-digester'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
       await page.setViewportSize({width,height});await page.emulateMedia({colorScheme});
@@ -103,9 +137,51 @@ try{
       assert.ok(fit.x>=0&&fit.y>=0&&fit.x+fit.width<=width&&fit.y+fit.height<=height,'Fit is outside the window');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true);
       const zoom=Number(await viewport.getAttribute('data-camera-zoom'));assert.ok(zoom>0&&zoom<=1.5);
-      if(scenario==='wastewater-digester'&&width===3440)assert.ok(zoom>1,'The explicit host fit policy must use extra room');
+      if(width===3440){
+        assert.ok(zoom>1,'The explicit host fit policy must use extra room');
+        const occupied=await viewport.locator('[data-scada-equipment]').evaluateAll(nodes=>{
+          const rects=nodes.map(node=>node.getBoundingClientRect());
+          return {span:Math.max(...rects.map(r=>r.right))-Math.min(...rects.map(r=>r.left)),minimumWidth:Math.min(...rects.map(r=>r.width)),rows:new Set(rects.map(r=>Math.round(r.top))).size};
+        });
+        assert.ok(occupied.span/bounds.width>(scenario==='winery'?.6:.75),`${scenario}: equipment leaves the wide canvas unused ${JSON.stringify(occupied)}`);
+        assert.ok(occupied.minimumWidth>290,'Fitted equipment must remain readable');
+        assert.equal(occupied.rows,scenario==='winery'?2:1);
+      }
       await noHorizontalOverflow();await shot(`${scenario}-${colorScheme}-${width}`);
+      if(scenario==='winery'&&colorScheme==='light'&&width===3440){
+        await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);await page.mouse.wheel(0,-180);
+        await expect(viewport).toHaveAttribute('data-camera-fitted','false');
+        const state=()=>viewport.evaluate(element=>({x:Number(element.dataset.cameraX),y:Number(element.dataset.cameraY),zoom:Number(element.dataset.cameraZoom),width:element.clientWidth,height:element.clientHeight,world:[element.querySelector('[data-scada-canvas]').dataset.scadaWidth,element.querySelector('[data-scada-canvas]').dataset.scadaHeight]}));
+        const before=await state(),center={x:(before.width/2-before.x)/before.zoom,y:(before.height/2-before.y)/before.zoom};
+        const selected=await viewport.locator('[data-scada-equipment][aria-pressed=true]').getAttribute('data-scada-equipment'),time=await minutes();
+        await page.setViewportSize({width:1920,height:1080});
+        // WebKit may resize the DOM before delivering ResizeObserver; await the camera's actual world focus.
+        await expect.poll(async()=>{const after=await state();return Math.max(Math.abs((after.width/2-after.x)/after.zoom-center.x),Math.abs((after.height/2-after.y)/after.zoom-center.y));}).toBeLessThan(.01);
+        const after=await state();assert.deepEqual(after.world,before.world);assert.equal(after.zoom,before.zoom);
+        assert.equal(await viewport.locator('[data-scada-equipment][aria-pressed=true]').getAttribute('data-scada-equipment'),selected);assert.equal(await minutes(),time);
+        await viewport.locator('[data-scada-zoom=fit]').click();await expect(viewport).toHaveAttribute('data-camera-fitted','true');
+      }
     }
+    await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+  });
+  await check('tall desktop toolbar stays stable and short landscape retains page scrolling with contained pan/zoom',async()=>{
+    await page.setViewportSize({width:1440,height:1600});
+    await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=hydroponics-ebb-flow`);
+    await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
+    await expect(page.locator('#lab-viewer [data-scada-zoom=fit]')).toHaveCount(1);
+    await page.locator('#lab-viewer [data-scada-zoom=fit]').click();
+    const stable=await page.locator('#lab-viewer [data-scada-zoom=fit]').evaluate(async element=>{
+      const boxes=[];for(let i=0;i<12;i++){await new Promise(requestAnimationFrame);const r=element.getBoundingClientRect();boxes.push([r.x,r.y,r.width,r.height]);}return boxes;
+    });
+    assert.ok(stable.every(box=>box.every((value,index)=>Math.abs(value-stable[0][index])<.5)),'Fitted percentage must not cause toolbar resize feedback');
+    await page.setViewportSize({width:844,height:390});
+    await viewportContract('#lab-viewer [data-scada-scroll]');await noHorizontalOverflow();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight>innerHeight),true);
+    await page.locator('#lab-viewer [data-scada-camera-fit]').click();
+    await open('faults');await expect(page.locator('#industry-faults-dialog')).toBeVisible();await close();
+    await shot('short-landscape');
     await page.setViewportSize({width:1440,height:1100});await page.emulateMedia({colorScheme:'light'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
     await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
@@ -206,6 +282,19 @@ try{
     assert.ok(result.count>=4);assert.deepEqual({...result,count:undefined},{readOnly:true,dispatchPresent:false,count:undefined,disabled:true,commands:0,unchanged:true,observed:true,detached:true,continued:true});
   });
   await check('narrow viewport and reduced motion preserve readable controls and camera recovery',async()=>{
+    for(const width of [320,390]){
+      await page.setViewportSize({width,height:844});
+      const geometry=await page.locator('.lab-toolbar-group').first().evaluate(group=>{
+        const speed=group.querySelector('.lab-speed'),select=speed.querySelector('select'),step=group.querySelector('[data-action=step]');
+        const text=[...speed.childNodes].find(node=>node.nodeType===3&&node.textContent.trim()),range=document.createRange();range.selectNodeContents(text);
+        const label=range.getBoundingClientRect(),field=select.getBoundingClientRect(),button=step.getBoundingClientRect(),bounds=group.getBoundingClientRect();
+        return {label:{left:label.left,right:label.right},select:{left:field.left,right:field.right,height:field.height},step:{right:button.right,height:button.height},right:bounds.right};
+      });
+      assert.ok(geometry.label.left>=geometry.step.right+3,`Speed label overlaps Step at ${width}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.label.right<=geometry.select.left,`Speed label overlaps its field: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.select.right<=geometry.right+1);assert.ok(geometry.select.height>=44&&geometry.step.height>=44);
+      await noHorizontalOverflow();
+    }
     await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
     await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
     for(const view of ['treatment','sludge-energy','power-control']){

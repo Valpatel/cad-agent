@@ -38,7 +38,7 @@ export const BLOCK = /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/p
 // is about 5 % taller than Arial's, so 15px Inter reads at the size of the 16px Arial a reader's browser draws with,
 // and the diagrams come out as wide as they were (within 1 %), so each still fits the article column.
 export const FONT = "'Inter', Arial, sans-serif", FONT_SIZE = '15px';
-const KIT_FILES = ['documents/diagrams.js', 'documents/diagrams.css', 'vendor/mermaid/mermaid.min.js', 'vendor/fonts/fonts.css', 'vendor/fonts/inter.woff2'];
+const KIT_FILES = ['ui/theme.css', 'vendor/fonts/jetbrains-mono.woff2', 'documents/diagrams.js', 'documents/diagrams.css', 'vendor/mermaid/mermaid.min.js', 'vendor/fonts/fonts.css', 'vendor/fonts/inter.woff2'];
 const TYPES = { '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.html': 'text/html' };
 const ORIGIN = 'http://cad-agent-diagrams.invalid';      // routed in the page, never fetched
 const sha = x => createHash('sha256').update(x).digest('hex');
@@ -149,7 +149,7 @@ export function forDrawing(source, theme = 'light') {
 
 /** The site's diagram palette (the style guide's classDefs: tools/site/build-site.mjs PALETTE and the pages' own), drawn in
  * the page's theme: each of its colours in a `classDef` or `style` line, or in a `%%{init}` directive (a chart's plot
- * colours), becomes its counterpart in web/site.css's tokens for that theme; in the dark theme a stroke takes the HUD's
+ * colours), becomes its counterpart in kit/ui/theme.css's tokens for that theme; in the dark theme a stroke takes the HUD's
  * cyan hairline (STROKES) where the same colour as text stays light. Other colours are left as written. Only the
  * drawing changes; the reader sees the source as written. */
 export const PALETTES = {

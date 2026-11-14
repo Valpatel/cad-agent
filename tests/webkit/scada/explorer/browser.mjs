@@ -77,9 +77,10 @@ try{
   });
   await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=wastewater-digester`);
   await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');
-  await check('target-owned wastewater control room opens with three views and sound off',async()=>{
+  await check('target-owned wastewater control room opens with a whole-plant overview and sound off',async()=>{
     await expect(page.locator('[data-scenario-title]')).toContainText('Wastewater');
-    await expect(page.locator('#lab-viewer [data-scada-view-choice]')).toHaveCount(3);
+    await expect(page.locator('#lab-viewer [data-scada-view-choice]')).toHaveCount(4);
+    await expect(page.locator('#lab-viewer [data-scada-view-choice="overview"]')).toHaveAttribute('aria-current','page');
     await expect(page.locator('[data-sound-label]')).toHaveText('Sound off');
     await paused();await noHorizontalOverflow();await viewportContract('#lab-viewer [data-scada-scroll]');await shot('treatment');
   });
@@ -140,7 +141,7 @@ try{
     await page.emulateMedia({colorScheme:'light'});assert.deepEqual(await session(),before);
   });
   await check('desktop and ultrawide windows contain the workspace and enlarge fitted art within the host limit',async()=>{
-    for(const scenario of ['winery','wastewater-digester'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
+    for(const scenario of ['winery','wastewater-digester','brewery','fortune-cookies'])for(const colorScheme of ['light','dark'])for(const [width,height] of [[3440,1440],[1920,1080],[1366,768]]){
       await page.setViewportSize({width,height});await page.emulateMedia({colorScheme});
       await page.goto(`${baseURL}/kit/scada/explorer/index.html?scenario=${scenario}`);
       await expect(page.locator('#industry-lab')).toHaveAttribute('aria-busy','false');await paused();
@@ -154,14 +155,18 @@ try{
       assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true);
       const zoom=Number(await viewport.getAttribute('data-camera-zoom'));assert.ok(zoom>0&&zoom<=1.5);
       if(width===3440){
-        assert.ok(zoom>1,'The explicit host fit policy must use extra room');
         const occupied=await viewport.locator('[data-scada-equipment]').evaluateAll(nodes=>{
           const rects=nodes.map(node=>node.getBoundingClientRect());
-          return {span:Math.max(...rects.map(r=>r.right))-Math.min(...rects.map(r=>r.left)),minimumWidth:Math.min(...rects.map(r=>r.width)),rows:new Set(rects.map(r=>Math.round(r.top))).size};
+          return {span:Math.max(...rects.map(r=>r.right))-Math.min(...rects.map(r=>r.left)),minimumWidth:Math.min(...rects.map(r=>r.width)),rows:new Set(rects.map(r=>Math.round(r.top))).size,labelSize:Math.min(...nodes.map(node=>parseFloat(getComputedStyle(node.querySelector('.scada-viewer-equipment-label')).fontSize)*Number(node.closest('[data-scada-scroll]').dataset.cameraZoom)))};
         });
-        assert.ok(occupied.span/bounds.width>(scenario==='winery'?.6:.75),`${scenario}: equipment leaves the wide canvas unused ${JSON.stringify(occupied)}`);
-        assert.ok(occupied.minimumWidth>290,'Fitted equipment must remain readable');
-        assert.equal(occupied.rows,scenario==='winery'?2:1);
+        assert.ok(occupied.span/bounds.width>.6,`${scenario}: equipment leaves the wide canvas unused ${JSON.stringify(occupied)}`);
+        if(scenario==='fortune-cookies'){
+          assert.ok(zoom>1,'The explicit host fit policy must enlarge simple chains');
+          assert.ok(occupied.minimumWidth>290,'Simple-chain equipment must use available space');assert.equal(occupied.rows,2);
+        }else{
+          assert.ok(occupied.minimumWidth>130,'Instruments must remain identifiable in the whole-plant overview');
+          assert.ok(occupied.labelSize>=14,`${scenario}: whole-plant labels are too small ${JSON.stringify(occupied)}`);
+        }
       }
       await noHorizontalOverflow();await shot(`${scenario}-${colorScheme}-${width}`);
       if(scenario==='winery'&&colorScheme==='light'&&width===3440){

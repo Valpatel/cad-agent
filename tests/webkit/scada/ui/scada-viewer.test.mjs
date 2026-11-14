@@ -263,7 +263,7 @@ test('invalid focused drafts and their in-dialog feedback survive unrelated adap
 });
 
 test('opt-in process layout fits the viewport while manual camera, selection and shared adapter remain independent', async () => {
-  const document = JSON.parse(fs.readFileSync(new URL('../../../../software/cadagent/webkit/scada/sim/scenarios/winery/system.json',import.meta.url)));
+  const document = JSON.parse(fs.readFileSync(new URL('../../../fixtures/scada/default-model-inputs/winery.system.json',import.meta.url)));
   const original = structuredClone(document), dom=setup(), snapshot={running:false,session:'unchanged'};
   let subscriptions=0, commands=0, reads=0;
   const adapter={getSnapshot:()=>{reads++;return snapshot;},subscribe:()=>{subscriptions++;return()=>subscriptions--;},dispatch:()=>commands++};

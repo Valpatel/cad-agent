@@ -53,7 +53,7 @@ _TOL = ("tol",)
 _CONTAINMENT = ("support", "down", "support_mm", "mesh_samples", "seed", "deflection_mm", "max_points", "probe",
                 "probe_deflection_mm", "probe_points", "probe_spacing_mm")
 _MOTION = ("samples", "default_samples", "max_step_deg", "max_step_mm", "combine", "intended_contacts",
-           "strict_contacts", "refine_steps", "max_poses", "containment", "containment_options")
+           "strict_contacts", "refine_steps", "max_poses", "symmetry", "containment", "containment_options")
 _WALL = ("tol_mm", "max_rays", "grid", "spacing_mm", "max_grid", "parts")
 
 

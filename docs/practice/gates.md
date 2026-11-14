@@ -690,6 +690,30 @@ parent's. Independent joints are sampled one at a time with the others at home (
 get a `combination:` warning, since nothing sampled them moving at once. A grid over `max_poses` (2000) is
 coarsened evenly on every axis, with a `density:` warning.
 
+**Repeating poses (a shaft, a lugged wheel).** A revolute joint that carries no other joint turns its body about
+one fixed line. If every part of that body is unchanged by a turn about that line, two samples one period apart put
+every part in the same place, and asking the kernel about both adds nothing. The gate measures this on the solids
+(`cadagent.review.gates.symmetry.rotational_symmetry`); it is never declared. A part counts as unchanged by a turn
+when the volume it shares with its turned copy equals its own within `volume_check_mm3` plus 1e-6 of the volume, and
+every vertex and three points along every edge, turned, lie within `touch_mm` of its faces. A body of revolution must
+pass at three angles that are irrational fractions of a turn; a repeating part at `360 / N` degrees, the finest `N`
+up to 360 that passes. A body of several parts repeats at the turn they all share (a round hub in a 12-lug rim: 30°).
+
+The sampled values do not change, so the range, the density, the broad phase, `closes` points and per-pose
+containment are as before. Only the pose handed to the kernel is replaced by the equivalent one in the first period
+from home, and the placement-keyed memo and pair cache answer the repeats: one query per pair for a shaft, one period
+for a lugged wheel. Every sampled pose still gets its relation, so a collision is reported at the pose where it is
+first met. The `motion:<group>` message and `density[].symmetry` state what was measured (`kind`, `period_deg`, the
+largest volume and boundary-point differences, per part) and how many `distinct_poses` the samples are.
+
+It is not applied where it would not hold: a joint that carries another joint (turning it moves the child's axis),
+a slider or cylindrical joint, and any body with one part that does not measure symmetric (a missing lug, one lug
+longer, a keyway, an off-axis hole) are queried at every sample. A follower or a joint in a `combine` grid is
+judged on its own body like any other leaf joint. Limits: the measurement holds within the two tolerances above, so
+a feature that moves no sampled boundary point by more than `touch_mm` and changes less volume than the allowance is
+not seen; a kernel failure while measuring means no symmetry is claimed. `symmetry=False` (`cad: gates: motion:
+{symmetry: false}`) queries every sample.
+
 **Driven joints (one degree of freedom, several joints).** In a linkage one joint's value sets another's: the two
 arms of a parallelogram turn together and the link they carry keeps its attitude. Sampled as free joints, such a
 linkage is checked in poses it can never take, and reports collisions that are not there. Declare the dependent
@@ -787,7 +811,7 @@ rerun reads only the cache.
 | `collision:<a>\|<b>` | a moving part shares more than `overlap_mm3` with another (overlapping or contains) at any pose, unless declared in `intended_overlaps`; also an intended contact driven into its face (`intended_contact: true`) | `first_pose`: the colliding pose nearest home (the sum over axes of the distance from home as a fraction of the range; ties in sweep order), the one met first moving out from rest; its `overlap_mm3`, `overlap_centroid` and `overlap_box`; `last_clear_pose`, its clear grid neighbour nearest home (one sample away on one axis), with `last_clear_gap_mm` and the closest points `point_a`/`point_b`; `colliding_poses`, `worst_pose`, `worst_overlap_mm3`; the `onset` bisected between the two along that axis (`joint`, `clear`, `hit`, the overlap at the hit side and the gap and closest points at the clear side; `others` gives the other axes' values, held fixed, on a grid) |
 | `contact:<a>\|<b>` | (warning) a moving part touches one that is not an intended contact; fails with `strict_contacts` | first pose, number of poses, closest points |
 | `relation:<a>\|<b>` | the kernel could not decide a pair at some pose (`unknown`) | the relation |
-| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius from the axis of the parts it carries, over the sampled poses, and `max_travel_per_step_mm`; `drives`: the same for each joint that follows it); the smallest exact clearance (touching included) among the non-intended pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
+| `motion:<group>` | any of the above in the group; passes otherwise | per axis `density` (samples, declared samples, `step` in deg or mm, the largest radius from the axis of the parts it carries, over the sampled poses, and `max_travel_per_step_mm`; `drives`: the same for each joint that follows it; `symmetry` where the joint's body repeats: `kind`, `period_deg`, `distinct_poses`, the measured differences per part); the smallest exact clearance (touching included) among the non-intended pairs measured (`min_clearance_mm`, `at`: pair, pose, points) and, when smaller, the box distance of the nearest pair never measured (`unmeasured_gap_at_least_mm`: its gap is at least this); the intended contacts and the poses where they touch |
 | `joint:<id>` | a joint's part is missing, its `fixed` part is in its own moving body, two joints drive one body, joints carry each other in a loop, or a ranged joint has no range; a driven joint whose driver is not declared, is itself, forms a loop of followers, is not `revolute` or `slider`, or cannot be posed; a warning for `planar`/`ball` | |
 | `follows:<id>` | a driven joint's computed values leave the range it declares; passes otherwise (and when it declares none) | `joint`, `follows`, `multiplier`, `offset`, `driver` with the composed `driver_multiplier` and `driver_offset`, the `range` it took, `declared_range`, `law` |
 | `closure:<joint>:<a>\|<b>` | a declared `closes` point's two copies come more than `tol_mm` apart at a sampled pose, or the point can measure nothing (a part missing or with instances in several bodies, both parts in one body, neither part moved) | `at`, `tol_mm`, `max_apart_mm`, `worst_pose`, the `group` it was worst in, `poses` |
@@ -826,6 +850,9 @@ listed in `not_checked`. The cost is the containment gate's per pose.
 The synthetic 100-part assembly (`tools/gate_timing.py --motion 20`) with three joints at 20 samples each: 60 poses,
 92 candidate pairs plus 32 bisection queries, 1.7 s cold, 0.07 s warm from the pair cache. The broad phase keeps
 the queries to the pairs that come near: real parts cost more per query (see the relation table), not more queries.
+Repeating poses (#724): a shaft that is a body of revolution and a 12-lug wheel, each on a full-turn joint at
+`max_step_deg=2` with two neighbours: 362 poses, 720 kernel queries and 12.1 s with `symmetry=False`; 32 kernel
+queries and 1.2 s with it, the two symmetry measurements (0.4 s) included.
 
 Limits. Sampled poses, not a swept volume. Rigid bodies on ideal axes: no backlash, play, deflection or tolerance
 stack, so a clear pose in the model does not prove printed parts clear. Contacts are classified by the relation
@@ -1018,7 +1045,7 @@ cad:
 | all but wall | `tol`: `Tolerances` fields (`touch_mm`, `overlap_mm3`, `contain_mm3`, `near_mm`, `volume_check_mm3`); default `touch_mm` from the dossier's `gates.touch_tol_mm` |
 | containment | `support`, `down`, `support_mm`, `mesh_samples`, `seed`, `deflection_mm`, `max_points`, `probe`, `probe_deflection_mm`, `probe_points`, `probe_spacing_mm` |
 | fasteners | the `FastenerOptions` fields (`seat_tol_mm`, `gap_tol_mm`, `hole_clearance_mm`, `tip_clearance_mm`, `stack_tol_mm`, `length_tol_mm`, `min_engagement_d`, `look_ahead_mm`, `lines`, `service_access`, `stock_lengths_mm`) |
-| motion | `samples`, `default_samples`, `max_step_deg`, `max_step_mm`, `combine`, `intended_contacts`, `strict_contacts`, `refine_steps`, `max_poses`, `containment` (per-pose containment on or off), `containment_options` |
+| motion | `samples`, `default_samples`, `max_step_deg`, `max_step_mm`, `combine`, `intended_contacts`, `strict_contacts`, `refine_steps`, `max_poses`, `symmetry` (query repeating poses once; on by default), `containment` (per-pose containment on or off), `containment_options` |
 | assembly | the `AccessOptions` fields (`max_step_mm`, `margin_mm`, `refine_steps`, `max_samples`, `tool_access`, `missing_direction`) and `service` |
 | wall | `tol_mm`, `max_rays`, `grid`, `spacing_mm`, `max_grid`, `parts` (part: minimum wall in mm) |
 
